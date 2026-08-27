@@ -228,6 +228,27 @@ Also: how many shadow runs before `SHADOW MODE → APPROVED`, and does a human s
 
 ---
 
+### 🟠 Q-38 — What is the exact install command? *(new)*
+
+[07 §1a](07-installation-and-update.md) settles the *shape* of installation: one documented command that
+fetches a **signed release**, never *"paste this URL and let the AI run what it finds"* — which is a
+supply-chain attack pattern and the thing a contractor's IT department is trained to refuse.
+
+What is not settled is the command itself:
+
+| Option | Notes |
+|---|---|
+| **Claude Code plugin install** *(preferred)* | Matches [D-01](DECISIONS.md). Needs verifying against current plugin documentation — an install command that does not work is worse than none |
+| **A release script** | `irm <release-url> \| iex` style. Works today, but is closer to the pattern being avoided and needs signing to be defensible |
+| **Manual** | Download the release, run `deploy-addin.ps1`. Always available as the fallback, and what a cautious IT department will prefer |
+
+Blocks nothing now — it is needed before the repository goes public ([D-10](DECISIONS.md)), because the
+README's first command is the first impression.
+
+**Answer:**
+
+---
+
 ### 🟡 Q-37 — Can pyRevit Routes bind a per-process port? *(new, from research)*
 
 pyRevit ships an HTTP **Routes server**, and a shipping Revit MCP server uses it as its entire bridge --

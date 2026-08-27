@@ -26,6 +26,108 @@
 
 The user never hand-edits configuration unless they deliberately enter Developer Mode.
 
+## 1a. The user journey — what actually happens
+
+**[NOTE]** Added 2026-08-27 from the owner's question: *someone sees this on GitHub, opens Claude Code,
+adds a folder, pastes the link, and it installs itself — is that right?*
+
+Mostly. Three corrections, one of which matters a great deal.
+
+### The flow, corrected
+
+```text
+1.  Install Claude Code                          once, ever
+2.  Install the Heron plugin                     one documented command
+3.  Heron detects Revit 2020-2027                which versions are present
+4.  "Close Revit so I can install the add-in"    mandatory - see below
+5.  Heron deploys the add-in per version         per-user, no admin rights
+6.  Start Revit -> ribbon -> Connect Heron       explicit, by design
+7.  Open a project folder in Claude Code         THIS is the workspace
+8.  Work
+```
+
+### Correction 1 — **do not "paste a link and let it run"**
+
+> *"They copy the link, paste it, and run it."*
+
+This is the one to change, and it is not a style preference.
+
+*Point an AI at a URL and let it execute whatever it finds there* is the exact shape of a supply-chain
+attack. It is also the pattern a contractor's IT department is trained to refuse — and Heron's users
+work at contractors. For a tool that **writes to live client models**, it is the wrong first impression
+and the wrong precedent.
+
+It also contradicts Heron's own rules. [Golden Rule 19](14-golden-rules.md) says no text Heron reads
+may raise its own permission level. A pasted URL whose contents become instructions is precisely that,
+performed by the user's own hand.
+
+**Instead: one documented command that fetches a signed release.** The user reads the command in the
+README before running it, the command is the same for everyone, and what it downloads is a **versioned
+release artefact** — not whatever the default branch happens to say today.
+
+| Pattern | Verdict |
+|---|---|
+| *"Paste this URL and let the AI do what it says"* | **No.** Arbitrary instruction execution |
+| *"Run this documented command, which installs release v0.1.0"* | **Yes.** Auditable, versioned, repeatable |
+
+### Correction 2 — **the folder is the project workspace, not the installation**
+
+> *"Everything will be downloaded into that folder… then it will search from this folder."*
+
+Two different things are being conflated, and separating them is
+[D-17](DECISIONS.md) and [06 §2](06-heron-platform.md):
+
+| What | Where | Why |
+|---|---|---|
+| **Heron's code** | the plugin location | Replaced wholesale on update. The user never edits it |
+| **Heron's brain** — skills, fragments, learned patterns, audit log | `%APPDATA%\Heron` | **The user's.** Must survive every update, uninstall and folder deletion |
+| **Runtime state** — bridges, logs, caches | `%LOCALAPPDATA%\Heron` | Machine-local, rebuildable, safe to delete |
+| **The project folder** | wherever the user opens | **Project scope** — this project's standards, decisions and notes |
+
+If everything lived in the project folder, then deleting a finished project would destroy a year of
+accumulated knowledge. That is the exact failure the product / data / derived split exists to prevent.
+
+**What the folder is genuinely for:** BIM work *is* per project, so a per-project workspace is right.
+It holds Project-scope knowledge ([10](10-memory-and-knowledge.md)) and keeps one client's decisions
+out of another's. Opening a different folder should change **which project Heron is working on** — not
+which Heron is running, and not what it has learned.
+
+### Correction 3 — **download a release, do not build on the user's machine**
+
+Already settled in section 3 below, but it bears repeating here because the pasted-link flow implies it:
+building needs the .NET SDK, MSBuild and Revit API assemblies. A BIM modeller on a locked-down corporate
+laptop has none of those and cannot install them without a ticket.
+
+**CI builds; the user downloads.** The source stays available for anyone who wants to build it — that is
+what open source means — but nobody has to.
+
+### What the owner got right
+
+- **Claude Code is the entry point.** That is [D-01](DECISIONS.md).
+- **Installation is automatic after that one command.** Detect Revit versions, install, deploy, verify —
+  the user is never asked to edit a config file.
+- **"Close Revit first" is mandatory, not politeness.** Assemblies loaded into Revit cannot be unloaded,
+  so an installer that copies over a running add-in silently fails or half-updates
+  ([section 7](#7-note-update-rules)). `deploy-addin.ps1` already refuses when Revit is running.
+- **Connecting stays explicit.** A Revit that was never connected is invisible to every chat
+  ([00e](00e-field-notes-proven-bridge.md)). That is a safety property, not friction — nothing reaches a
+  model the user did not offer up.
+
+### Two audiences, two flows
+
+| | **BIM user** | **Developer** |
+|---|---|---|
+| Gets Heron by | one install command, prebuilt release | `git clone`, build from source |
+| Needs | Claude Code, Revit | Claude Code, Revit, .NET SDK |
+| Add-in deployed by | the installer | `tools/deploy-addin.ps1` |
+| Sees | *"Selected 126 ducts in Tower-A"* | agent chains, logs, the build pipeline |
+
+**[NOTE — open]** The exact plugin install command must be verified against current Claude Code plugin
+documentation before it goes in the README. Publishing an install command that does not work is worse
+than publishing none. Tracked as [Q-38](OPEN-QUESTIONS.md).
+
+---
+
 ## 2. Installation Agents
 
 | Agent | Responsibility |
