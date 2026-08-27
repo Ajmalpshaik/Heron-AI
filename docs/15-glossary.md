@@ -54,12 +54,67 @@ during review, the defining document is linked.
 | **Prompt injection** | Instructions hidden in content the system reads (a family name, an imported document) attempting to make the model act on them. Countered by Golden Rule 19. |
 | **Audit log** | The append-only structured record of every significant action. What makes invisible background work acceptable. [12 §5](12-security-and-permissions.md) |
 
+## Kernel & platform
+
+| Term | Meaning |
+|---|---|
+| **Heron Kernel** | The spine every module talks through instead of depending on each other. Holds the registries, permissions, event bus, state and logging. **Plumbing, never intelligence** — no BIM knowledge lives in it. [23 §1](23-heron-kernel.md) |
+| **Capability Registry** | *"What can Heron currently do?"* The Orchestrator matches **capabilities**, never agent names — which is what makes agents replaceable. [18 §2](18-agent-operating-system.md) |
+| **Workflow Engine** | Owns ordering, retries, timeouts, rollback and checkpoints. The Orchestrator decides *what*; this ensures it *happens correctly*. [23 §3](23-heron-kernel.md) |
+| **Checkpoint** | Persisted stage output letting a failed multi-stage workflow resume from the failed step rather than restarting. [23 §4](23-heron-kernel.md) |
+| **Evidence** | The stated reasons behind a decision — which fragment, which versions, what success history. For a `MODIFY`, **no evidence means refused, not downgraded**. [23 §6](23-heron-kernel.md) |
+| **Confidence** | An agent's self-reported certainty (`HIGH`/`MEDIUM`/`LOW`/`UNKNOWN`). **Never a substitute for validation.** [23 §5](23-heron-kernel.md) |
+| **Model Router** | Chooses the model class for a task. Heron declares *intent*; the host resolves it. [23 §8](23-heron-kernel.md) |
+| **Prompt/Instruction Registry** | One versioned, testable home for all system and agent instructions — never scattered through code. [23 §9](23-heron-kernel.md) |
+| **Dependency graph** | Skills → fragments → API → runtime → packages. Makes the blast radius of a change computable instead of requiring a full test sweep. [21 §1](21-resilience-and-operations.md) |
+| **Shadow Mode** | A new agent or fragment runs on real requests with its **output discarded**, so evidence accrues without risk. [18 §4](18-agent-operating-system.md) |
+| **Emergency Stop** | Global halt, in the Revit ribbon so it works when the agent side is stuck. Sticky until a person restarts. [21 §4](21-resilience-and-operations.md) |
+| **Safe Mode** | Disables recently installed components and returns to last-known-good. [21](21-resilience-and-operations.md) |
+| **Workflow ID** | The correlation key tying one user sentence to every agent, retrieval, model call and element touched. [21 §13](21-resilience-and-operations.md) |
+| **Constitution** | The runtime-enforceable subset of the Golden Rules, written as prohibitions and injected into agents. [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) |
+
+## Bridge & sessions *(field-proven)*
+
+| Term | Meaning |
+|---|---|
+| **Bridge** | The per-Revit connection between the MCP server and the add-in. One per Revit **process**. [25](25-multi-session-and-binding.md) |
+| **Discovery file** | `%APPDATA%\Heron\bridges\<pid>.json` — an **address book**, not a status report. Static facts only; the document name is deliberately absent. [25 §2](25-multi-session-and-binding.md) |
+| **Session binding** | One chat, one Revit. Asked once, sticky, and **fails closed** if that Revit closes. Never guessed. [25 §3](25-multi-session-and-binding.md) |
+| **Lease** | Prevents a second chat taking over a Revit mid-job — and is what makes `(free)`/`(in use)` truthful in the picker. Scoped to the **process**, not the document. [25 §3](25-multi-session-and-binding.md) |
+| **Document pinning** | Binding a write to a specific document by identity, so the user clicking to another project cannot move the target. [Golden Rule 20](14-golden-rules.md), [25 §4](25-multi-session-and-binding.md) |
+| **Stale read** | Acting on a picture of the model that has since changed. *"The real danger is not the freeze, it is the stale read."* [Golden Rule 21](14-golden-rules.md), [25 §5](25-multi-session-and-binding.md) |
+
+## Standards & references
+
+| Term | Meaning |
+|---|---|
+| **Reference model** | A correctly delivered model used as a source to **infer** a standard from, rather than writing one out. [10 §5a](10-memory-and-knowledge.md) |
+| **Profile** | The abstraction extracted from a reference model — conventions, frequencies, exceptions, provenance. **The model is discarded; the profile is kept.** [10 §5a](10-memory-and-knowledge.md) |
+| **Checkset** | Autodesk Model Checker's XML rule format. One of Heron's export targets — readable and runnable **without Heron**. [10 §5a](10-memory-and-knowledge.md) |
+| **IDS** | buildingSMART **Information Delivery Specification** — the open XML standard for machine-readable information requirements, official since June 2024. Heron's other export target. |
+
 ## Status vocabularies
 
-**Fragment lifecycle:** `DISCOVERED` → `DRAFT` → `TESTING` → `VALIDATED` → `PROVEN` → `PRODUCTION` → `DEPRECATED` → `ARCHIVED`
+> **Superseded by the [unified trust model](24-trust-model.md) ([D-14](DECISIONS.md), proposed).**
+> Six competing vocabularies across the four specifications were collapsed into two orthogonal axes.
 
-**Agent status:** `PROPOSED` → `DEVELOPMENT` → `TESTING` → `APPROVED` → `ACTIVE` → `DISABLED` → `DEPRECATED` → `ARCHIVED`
+**Lifecycle** — one vocabulary for fragments, skills, capabilities **and** agents:
+
+`DISCOVERED` → `DRAFT` → `TESTING` → `VALIDATED` → `SHADOW` → `PROVEN` → `PRODUCTION` → `DEPRECATED` → `ARCHIVED`
+
+**Source** — fixed at creation, never advances:
+
+`OFFICIAL` · `COMPANY` · `PROJECT` · `USER` · `COMMUNITY` · `IMPORTED` · `UNKNOWN`
+
+**Knowledge levels** — a derived band over lifecycle, used for ranking and for gating writes:
+
+| Level | Stages | May be used for |
+|---|---|---|
+| **L1 RAW** | `DISCOVERED`, `DRAFT` | inspection only |
+| **L2 TESTED** | `TESTING`, `VALIDATED` | `READ` / `ANALYZE` / `SUGGEST` |
+| **L3 VERIFIED** | `SHADOW`, `PROVEN` | `MODIFY` **with an accepted preview** |
+| **L4 PROVEN** | `PRODUCTION` | `MODIFY` unattended |
 
 **Permission levels:** `READ` · `ANALYZE` · `SUGGEST` · `EXECUTE` · `MODIFY` · `PUBLISH` · `ADMIN`
 
-**Scheduler priorities:** `P0` user task · `P1` required validation · `P2` required maintenance · `P3` knowledge improvement · `P4` optimization · `P5` cleanup
+**Scheduler priorities:** `P0` user task · `P1` required validation · `P2` system health · `P3` knowledge maintenance · `P4` learning · `P5` optimization · `P6` cleanup

@@ -76,7 +76,7 @@ Full proposal: **[24 — The Unified Trust Model](24-trust-model.md)**. Needs co
 
 §46 requests `HERON_CONSTITUTION.md` — rules agents must never violate, injected into every agent.
 
-**[Written: [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) — 27 Articles, pending confirmation ([Q-35](OPEN-QUESTIONS.md)).]**
+**[Written: [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) — 30 Articles, pending confirmation ([Q-35](OPEN-QUESTIONS.md)).]**
 
 It is reconciled with the Golden Rules rather than duplicating them. The distinction is real and worth
 keeping: **Golden Rules are design principles for people; the Constitution is the runtime-enforceable
@@ -209,9 +209,9 @@ discarded — the most wasteful possible ordering, and it defers scope isolation
 The adopted order keeps Part 3's Trust Evaluation stage and Parts 1–2's filter placement.
 See [20 §1](20-knowledge-trust-and-conflict.md).
 
-### Still open after all three documents
+### Still open after Parts 1 and 2
 
-Unchanged. None of the three documents addresses:
+Unchanged. Neither part addresses:
 
 **Revit API threading** · **undo** · **preview before modify** · **what data leaves the machine to a model provider** · **how a Revit test actually executes**.
 

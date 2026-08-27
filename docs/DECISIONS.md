@@ -525,6 +525,8 @@ Since the Golden Rules are the constitution — referenced by number throughout 
 All three parts remain source of truth and are preserved verbatim; where they differ, Part 3 governs
 the rule set, and Parts 1 and 2 remain the detailed reference for everything else.
 
+*(Written when three parts existed. Part 4 followed — see [D-13](#d-13--adopt-additional-requirements-part-4--kernel-workflow-engine-constitution) — and field notes after that, see [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour). Part 3 remains authoritative on the rule set.)*
+
 **All cross-references in the repository were mechanically remapped** to the new numbering:
 
 | Was | Now |
@@ -561,6 +563,7 @@ Evaluation stage and Parts 1–2's filter placement — see [20 §1](20-knowledg
 ### Consequences
 
 - The constitution is now **15 official + 4 proposed** rules, and it is stable across all three documents.
+  *(Two further rules were proposed later from field evidence — 20 and 21. Current total: 15 official + 6 proposed. See [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour).)*
 - No prior decision (D-01 to D-11) is overturned. Part 3 consolidates; it does not redirect.
 - The two tensions recorded in [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system)
   remain open — Part 3 restates Model Routing (§61) and Multi-User (§65) without resolving either.
@@ -612,7 +615,7 @@ mechanism proposed in [13 §4](13-testing-and-quality.md).
 
 ### On the Constitution
 
-Written as [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md), **27 Articles**, reconciled with the
+Written as [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md), **30 Articles**, reconciled with the
 Golden Rules rather than duplicating them:
 
 > Golden Rules are design principles for **people**. The Constitution is the runtime-enforceable subset,

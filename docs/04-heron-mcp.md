@@ -132,6 +132,33 @@ The spec's rule applies at every level: **do not blindly retry the same failed a
 
 ---
 
+## 6a. **[NOTE]** Units — fix the convention at the tool boundary
+
+Revit stores lengths internally in **decimal feet**, regardless of what the user sees on screen.
+Surveyed Revit MCP servers take **millimetres** at the tool boundary and convert
+([26 §6](26-prior-art-revit-mcp.md)).
+
+Heron must fix this explicitly, because a silent unit mismatch is the classic wrong-by-304.8 error and
+it is silent right up until someone looks at the model.
+
+**Rules:**
+
+1. **Tool schemas declare the unit in the parameter name or description**, always — `offsetMm`, not
+   `offset`.
+2. **Conversion happens once, at the add-in boundary**, never scattered through fragments.
+3. **Results state the unit they are reporting in.** *"Moved 247 ducts up 200 mm"*, never *"moved 247
+   ducts up 200"*.
+4. **The preview shows the unit** ([Golden Rule 17](14-golden-rules.md)) — it is the last point at which
+   a human can catch a factor-of-1000 mistake.
+5. **Never infer the unit from the user's phrasing.** *"Move it up 200"* is ambiguous and must be
+   clarified, not guessed — the same principle as never guessing which Revit
+   ([25 §3](25-multi-session-and-binding.md)).
+
+**[NOTE]** Angles, areas and volumes have the same problem and are easier to get wrong because they are
+less often checked by eye. The convention should cover every unit type, not just length.
+
+---
+
 ## 7. **[NOTE]** Long-running operations
 
 Some operations legitimately take minutes (large model export, a standards check across 200k elements). MCP tool calls should not simply block for that long.

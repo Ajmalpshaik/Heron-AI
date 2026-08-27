@@ -43,8 +43,8 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 |---|---|
 | Specification | ✅ Complete in 4 parts — [platform](docs/00-master-specification.md) · [Agent OS](docs/00b-master-specification-agent-os.md) · [baseline](docs/00c-master-handover-baseline.md) · [additional requirements](docs/00d-additional-requirements.md) |
 | Architecture review | ✅ Complete — [gaps, ideas, tensions](docs/PROPOSALS.md) across all four parts |
-| Constitution | ✅ Written — [27 Articles](HERON_CONSTITUTION.md), pending confirmation |
-| Open questions | ⏳ 13 answered, 21 open — **none blocking** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
+| Constitution | ✅ Written — [30 Articles](HERON_CONSTITUTION.md), pending confirmation |
+| Open questions | ⏳ 13 answered, 25 open — **none blocking** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
 | Licence & safety files | ✅ Complete — Apache 2.0, security policy, disclaimer, contribution guide |
 | Roadmap | ✅ Drafted — [Phase 0 → 7](docs/ROADMAP.md) |
 | Implementation | ⛔ Not started, by design ([D-00](docs/DECISIONS.md)) |

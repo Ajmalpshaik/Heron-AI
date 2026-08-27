@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 12 answered · 20 open · none blocking Phase 0**
+**Progress: 13 answered · 25 open · none blocking Phase 0**
 
 *(Five new questions — Q-29 to Q-33 — come from [Master Specification Part 2](00b-master-specification-agent-os.md).
 None of them block Phase 0 either; they shape Phases 2–5.)*
@@ -296,7 +296,7 @@ used for ranking and for gating `MODIFY` operations.
 ### 🟠 Q-35 — Confirm the Heron Constitution? *(new)*
 
 Requested in [Part 4 §46](00d-additional-requirements.md). Written as
-[HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) — **27 Articles** across knowledge, the user's model,
+[HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) — **30 Articles** across knowledge, the user's model,
 boundaries, self-modification and conduct.
 
 Reconciled with the Golden Rules rather than duplicating them: Golden Rules are design principles for
@@ -309,32 +309,13 @@ Worth reviewing specifically:
   `MODIFY`, or only above a size threshold?
 - Article 23 — *"for any `MODIFY`, an answer with no evidence is refused, not downgraded"* — is refusing
   the right default, or too strict for early versions?
-- Are 27 Articles too many to inject usefully? *(Mitigated by giving each agent only the Articles
+- Are 30 Articles too many to inject usefully? *(Mitigated by giving each agent only the Articles
   relevant to its permission level and department.)*
 
 **Answer:**
 
 ---
 
-### ✅ Q-30 — Who routes models — Heron or Claude Code? — *closed by Part 4 §24*
-
-Part 4 §24's **AI Model Abstraction Layer** resolves this by separating two things that were conflated:
-
-```text
-Heron AI Interface  ->  Model Router  ->  Provider Adapter  ->  Model
-    (Heron: intent)          (pluggable: host when hosted, Heron for batch work)
-```
-
-Heron always declares *intent* ("this needs strong reasoning"); resolution to a specific model is
-pluggable. Under [D-01](DECISIONS.md) Claude Code resolves conversational work; Heron's Python side
-resolves its own batch work through the same interface. Neither half hard-codes a model id.
-
-It also makes local/cloud routing (§25) a configuration choice rather than an architectural one — a
-project marked confidential selects a local provider adapter, and nothing above that layer needs to know.
-
-→ [23 §8](23-heron-kernel.md), [19 §3](19-context-and-cost.md)
-
----
 
 ### 🟡 Q-31 — What stores the dependency graph?
 
@@ -418,6 +399,25 @@ installer behaviour — cheaper to read the requirements before the installer is
 ---
 
 ## Answered
+
+### ✅ Q-30 — Who routes models — Heron or Claude Code? — *closed by Part 4 §24*
+
+Part 4 §24's **AI Model Abstraction Layer** resolves this by separating two things that were conflated:
+
+```text
+Heron AI Interface  ->  Model Router  ->  Provider Adapter  ->  Model
+    (Heron: intent)          (pluggable: host when hosted, Heron for batch work)
+```
+
+Heron always declares *intent* ("this needs strong reasoning"); resolution to a specific model is
+pluggable. Under [D-01](DECISIONS.md) Claude Code resolves conversational work; Heron's Python side
+resolves its own batch work through the same interface. Neither half hard-codes a model id.
+
+It also makes local/cloud routing (§25) a configuration choice rather than an architectural one — a
+project marked confidential selects a local provider adapter, and nothing above that layer needs to know.
+
+→ [23 §8](23-heron-kernel.md), [19 §3](19-context-and-cost.md)
+
 
 ### ✅ Q-2 — Transport between MCP server and add-in? → **Named pipes**
 

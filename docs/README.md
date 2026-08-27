@@ -19,7 +19,7 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**13 of 34 questions answered — none of the remaining 21 block Phase 0.**
+**13 of 38 questions answered — none of the remaining 25 block Phase 0.**
 It starts on the owner's go-ahead.
 
 **Specification is complete in four parts.** Part 1 is the platform and its organisation; Part 2 is the
@@ -110,7 +110,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | Document | Purpose |
 |---|---|
 | [PROPOSALS.md](PROPOSALS.md) | Gaps found in review, feature ideas, strategic questions |
-| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | 26 questions, prioritised, with answer slots |
+| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | 38 questions, prioritised, with answer slots |
 | [ROADMAP.md](ROADMAP.md) | Phase 0 → Phase 7, and what is deliberately deferred |
 | [DECISIONS.md](DECISIONS.md) | Append-only log of decisions actually made |
 
