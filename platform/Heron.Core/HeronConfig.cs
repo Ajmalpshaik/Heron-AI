@@ -50,6 +50,14 @@ namespace Heron.Core
             {
                 { "bridge.autoConnect", "false" },      // connecting stays explicit, by design
                 { "bridge.idleReleaseMinutes", "3" },    // safety net; preemption is the real mechanism
+
+                // Revit runs a queued request only when it is idle. These two
+                // must stay BELOW the client's own deadline, so the bridge is
+                // what answers "Revit is busy" - a client that gives up first
+                // can only say "no answer", which tells the user nothing.
+                { "revit.busyTimeoutSeconds", "10" },    // Revit never picked the request up
+                { "revit.operationTimeoutSeconds", "60" },  // it started, but has not finished
+
                 { "log.retainDays", "14" },
             };
 

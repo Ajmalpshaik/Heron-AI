@@ -28,7 +28,7 @@ namespace Heron.Bridge
     /// Every value written goes through Escape. A document name is user text
     /// and will contain a quote or a backslash eventually.
     /// </summary>
-    internal static class Json
+    public static class Json
     {
         // ------------------------------------------------------------ writing
 

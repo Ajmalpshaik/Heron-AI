@@ -33,7 +33,7 @@ STATUSES = {"DISCOVERED", "DRAFT", "TESTING", "VALIDATED", "SHADOW",
             "PROVEN", "PRODUCTION", "DEPRECATED", "ARCHIVED"}
 
 # Steps considered implemented so far. Raise this as build steps complete.
-CURRENT_STEP = 1
+CURRENT_STEP = 2
 
 
 def registry_agents():

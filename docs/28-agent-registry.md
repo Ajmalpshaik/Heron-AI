@@ -47,7 +47,7 @@ Roughly two thirds never call a model at all.
 | `HERON-REVIT-VER-002` | Revit Version Agent | Which Revit version this session is | T1 | READ | 1 |
 | `HERON-REVIT-APP-003` | Revit Application Agent | Application-level API surface, open documents list | T1 | READ | 2 |
 | `HERON-REVIT-DOC-004` | Revit Document Agent | Active and open documents, document state, save state | T1 | READ | 2 |
-| `HERON-REVIT-TRN-005` | Revit Transaction Agent | Opens, commits and rolls back transactions | T1 | MODIFY | 2 |
+| `HERON-REVIT-TRN-005` | Revit Transaction Agent | Opens, commits and rolls back transactions. **Step 6, not 2** - it is a write mechanism, and the build order is explicit that one built before its safety rails is one that ships without them | T1 | MODIFY | 6 |
 | `HERON-REVIT-TSA-006` | **Transaction Safety Agent** | One named `TransactionGroup` per operation; complete rollback on failure; document state integrity. Separate from general API logic ↗ | T1 | MODIFY | **6** |
 | `HERON-REVIT-CTX-007` | **Revit Context Agent** | Gathers document, version, view, selection, links, worksets, phase, design option in one cheap pass ↗ | T1 | READ | 6 |
 | `HERON-REVIT-SEL-008` | Revit Selection Agent | Reads and sets the selection set | T1 | EXECUTE | 4 |

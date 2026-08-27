@@ -51,6 +51,13 @@ namespace Heron.Revit.Addin
         /// it again - the ribbon API offers no way to look a button up later.
         /// </summary>
         internal static PushButton BridgeButton { get; private set; }
+
+        /// <summary>
+        /// The one way into the Revit API. Created on Revit's own thread
+        /// during startup, because ExternalEvent.Create is not valid from a
+        /// background thread.
+        /// </summary>
+        private static RevitDispatcher Dispatcher;
         internal static string LogDirectory { get; private set; }
 
         // Two listener threads and the Revit thread all log. AppendAllText from
@@ -77,6 +84,14 @@ namespace Heron.Revit.Addin
 
                 Bridge = new BridgeServer(
                     new BridgeIdentity(revitVersion, addinVersion), Log);
+
+                // The thread hop. OnStartup runs on Revit's thread, which is
+                // the only place the event may be created - and it is wired in
+                // before the bridge can start, so no request can ever arrive
+                // to find it missing.
+                Dispatcher = new RevitDispatcher(Log);
+                Dispatcher.Register();
+                Bridge.RequestHandler = Dispatcher.Dispatch;
 
                 BuildRibbon(application);
 
@@ -114,6 +129,7 @@ namespace Heron.Revit.Addin
         {
             try
             {
+                Dispatcher = null;
                 if (Bridge != null)
                 {
                     Bridge.Stop();

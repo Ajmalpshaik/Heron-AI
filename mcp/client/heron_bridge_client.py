@@ -15,6 +15,8 @@ No Revit API, no MCP yet. Just: can something outside Revit reach inside it?
     python mcp/client/heron_bridge_client.py           # list connected sessions
     python mcp/client/heron_bridge_client.py ping      # ping every session
     python mcp/client/heron_bridge_client.py ping 24312
+    python mcp/client/heron_bridge_client.py count     # count elements in the open model
+    python mcp/client/heron_bridge_client.py count 24312
     python mcp/client/heron_bridge_client.py doctor    # diagnose a failure
 
 Two rules from the field notes (docs/00e, docs/25) are enforced here:
@@ -426,6 +428,55 @@ def cmd_ping(pid=None):
 
 
 
+def cmd_count(pid=None):
+    """
+    Step 2 - the first question Heron asks a real model.
+
+    The answer always names the document. A bare number is how somebody acts
+    on a count that came from a model they were not looking at.
+    """
+    live, starting, _, mismatched = discover()
+    if not live and starting:
+        print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
+        return 1
+    if not live:
+        print("No Revit is connected. Press Heron on the ribbon to connect first.")
+        report_mismatched(mismatched)
+        return 1
+
+    if pid is not None:
+        live = [b for b in live if str(b.pid) == str(pid)]
+        if not live:
+            print("No connected Revit with session %s." % pid)
+            return 1
+
+    failures = 0
+    for bridge in live:
+        reply = bridge.request("count_elements")
+
+        if reply is None:
+            print("No reply from Revit %s (session %s)." % (bridge.revit_version, bridge.pid))
+            failures += 1
+        elif reply.get("ok"):
+            unsaved = "  (unsaved changes)" if reply.get("unsaved") else ""
+            print("%s elements in %s%s" % (
+                "{:,}".format(reply.get("count", 0)), reply.get("document"), unsaved))
+            print("        Revit %s, session %s - %s" % (
+                bridge.revit_version, bridge.pid, reply.get("counts")))
+            if reply.get("documentPath"):
+                print("        %s" % reply.get("documentPath"))
+        else:
+            # revit_busy and still_running are ordinary answers, not faults -
+            # they say what to do next, so print the message rather than a code.
+            print("Revit %s (session %s): %s" % (
+                bridge.revit_version, bridge.pid, reply.get("message") or reply.get("error")))
+            failures += 1
+
+    for bridge in live:
+        bridge.close()
+    return 1 if failures else 0
+
+
 def cmd_doctor():
     """
     Self-diagnostics - the prototype of HERON-OPS-DIA-005.
@@ -538,6 +589,8 @@ def main(argv):
         return cmd_list()
     if argv[1] == "ping":
         return cmd_ping(argv[2] if len(argv) > 2 else None)
+    if argv[1] == "count":
+        return cmd_count(argv[2] if len(argv) > 2 else None)
     if argv[1] == "doctor":
         return cmd_doctor()
 
