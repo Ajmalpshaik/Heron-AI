@@ -36,7 +36,21 @@ namespace Heron.Revit.Addin
         private const string TabName = "Heron AI";
         private const string PanelName = "Bridge";
 
+        /// <summary>The pictures that ARE the connected / disconnected state.</summary>
+        internal const string ConnectedIcon = "BridgeConnected.png";
+        internal const string DisconnectedIcon = "BridgeDisconnected.png";
+
         internal static BridgeServer Bridge { get; private set; }
+
+        /// <summary>
+        /// The one bridge button, captured as the ribbon is built.
+        ///
+        /// A Revit PushButton carries no on/off state of its own, so the
+        /// button's own picture is the state and the command swaps it after
+        /// every toggle. Capturing the instance here is the only way to reach
+        /// it again - the ribbon API offers no way to look a button up later.
+        /// </summary>
+        internal static PushButton BridgeButton { get; private set; }
         internal static string LogDirectory { get; private set; }
 
         // Two listener threads and the Revit thread all log. AppendAllText from
@@ -81,6 +95,7 @@ namespace Heron.Revit.Addin
                 if (config.GetBool("bridge.autoConnect", false))
                 {
                     Bridge.Start();
+                    SetBridgeIcon(true);
                     Log("bridge.autoConnect is on - bridge started without a button press.");
                 }
 
@@ -121,16 +136,20 @@ namespace Heron.Revit.Addin
             var panel = application.CreateRibbonPanel(TabName, PanelName);
             var assemblyPath = Assembly.GetExecutingAssembly().Location;
 
-            var connect = new PushButtonData(
-                "HeronConnect",
-                "Connect\nHeron",
+            // One button, both directions. Click to connect, click again to
+            // disconnect - and the picture on it says which state you are in, so
+            // "am I connected?" is answered without clicking anything.
+            var toggle = new PushButtonData(
+                "HeronBridgeToggle",
+                "Heron",
                 assemblyPath,
                 typeof(ConnectCommand).FullName);
-            connect.ToolTip = "Start the Heron bridge for this Revit session.";
-            connect.LongDescription =
-                "Opens a local named pipe so Heron can reach this Revit session, and " +
-                "announces it so a chat can find it.\n\n" +
-                "A Revit that has never been connected is invisible to every chat.";
+            toggle.ToolTip = "Connect or disconnect this Revit session. Click again to reverse it.";
+            toggle.LongDescription =
+                "Opens a local named pipe so Heron can reach this Revit session, and announces " +
+                "it so a chat can find it. Click again to close it.\n\n" +
+                "The picture shows the state: lit when connected, dark when not. A Revit that " +
+                "was never connected is invisible to every chat, by design.";
 
             var status = new PushButtonData(
                 "HeronStatus",
@@ -139,7 +158,12 @@ namespace Heron.Revit.Addin
                 typeof(StatusCommand).FullName);
             status.ToolTip = "Show whether the bridge is running, and on which pipe.";
 
-            panel.AddItem(connect);
+            // Starts on the disconnected picture - the bridge never connects on
+            // its own unless bridge.autoConnect says so, and OnStartup corrects
+            // this below when it does.
+            BridgeButton = panel.AddItem(toggle) as PushButton;
+            SetBridgeIcon(false);
+
             panel.AddItem(status);
         }
 
@@ -174,6 +198,25 @@ namespace Heron.Revit.Addin
             }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
+        }
+
+        /// <summary>
+        /// Puts the button's picture in step with the bridge. After every
+        /// toggle, and once at startup.
+        /// </summary>
+        internal static void SetBridgeIcon(bool connected)
+        {
+            var button = BridgeButton;
+            if (button == null) return;
+
+            var loader = new IconLoader(Assembly.GetExecutingAssembly().Location);
+            var fileName = connected ? ConnectedIcon : DisconnectedIcon;
+
+            var large = loader.LoadLarge(fileName);
+            if (large != null) button.LargeImage = large;
+
+            var small = loader.LoadSmall(fileName);
+            if (small != null) button.Image = small;
         }
 
         internal static void Log(string message)

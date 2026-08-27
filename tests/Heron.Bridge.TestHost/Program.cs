@@ -6,6 +6,7 @@
 // See docs/29-metadata-standard.md
 
 using System;
+using System.IO;
 using System.Threading;
 
 namespace Heron.Bridge.TestHost
@@ -28,10 +29,33 @@ namespace Heron.Bridge.TestHost
             var seconds = 0;
             if (args.Length > 1) int.TryParse(args[1], out seconds);
 
+            // "cycle" exercises the ribbon toggle without Revit: connect,
+            // disconnect, connect again. Stop() clears the listener threads and
+            // removes the discovery file, so a second Start() has to rebuild
+            // both - the path a user takes every time they press the button
+            // twice, and the one most likely to be left broken.
+            var cycle = args.Length > 2 &&
+                        string.Equals(args[2], "cycle", StringComparison.OrdinalIgnoreCase);
+
             var identity = new BridgeIdentity(revitVersion, "0.1.0-testhost");
             using (var bridge = new BridgeServer(identity, Console.WriteLine))
             {
+                if (cycle)
+                {
+                    bridge.Start();
+                    Console.WriteLine("  cycle: started   running=" + bridge.IsRunning +
+                                      "  announced=" + File.Exists(identity.DiscoveryFilePath));
+                    bridge.Stop();
+                    Console.WriteLine("  cycle: stopped   running=" + bridge.IsRunning +
+                                      "  announced=" + File.Exists(identity.DiscoveryFilePath));
+                }
+
                 bridge.Start();
+                if (cycle)
+                {
+                    Console.WriteLine("  cycle: restarted running=" + bridge.IsRunning +
+                                      "  announced=" + File.Exists(identity.DiscoveryFilePath));
+                }
 
                 Console.WriteLine();
                 Console.WriteLine("  Pretending to be Revit " + revitVersion);

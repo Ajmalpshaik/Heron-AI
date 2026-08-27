@@ -201,6 +201,66 @@ def main():
         except Exception:
             proc.kill()
 
+    # --- the ribbon toggle: connect, disconnect, connect again ---
+    # Stop() clears the listener threads and removes the discovery file, so
+    # the second Start() has to rebuild both. That is what the button does on
+    # every second press, and nothing else here covers it.
+    print()
+    print("Toggling the bridge off and on (no Revit)...")
+    cycled = subprocess.Popen(
+        [HOST_EXE, REVIT_VERSION, HOST_LIFETIME_S, "cycle"],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        universal_newlines=True, bufsize=1)
+    handle2 = None
+    try:
+        pipe2, seen = None, []
+        deadline = time.time() + 25
+        while time.time() < deadline:
+            line = cycled.stdout.readline()
+            if not line:
+                break
+            if line.strip().startswith("cycle:"):
+                seen.append(line.strip())
+                print("  " + line.strip())
+            m = re.search(r"Pipe\s+(heron\.\S+)", line)
+            if m:
+                pipe2 = m.group(1)
+                break
+    
+        if len(seen) != 3:
+            failures.append("toggle cycle did not report all three states: %r" % seen)
+        else:
+            if "running=True" not in seen[0] or "announced=True" not in seen[0]:
+                failures.append("after connect, expected running and announced: %s" % seen[0])
+            if "running=False" not in seen[1] or "announced=False" not in seen[1]:
+                failures.append("after disconnect, expected stopped and unannounced: %s" % seen[1])
+            if "running=True" not in seen[2] or "announced=True" not in seen[2]:
+                failures.append("after reconnect, expected running and announced: %s" % seen[2])
+            else:
+                print("  PASS  disconnect stops it and withdraws the announcement")
+    
+        if not pipe2:
+            failures.append("cycled host never reported a pipe name")
+        else:
+            handle2 = connect(pipe2, timeout=10.0)
+            if call(handle2, "ping").get("ok"):
+                print("  PASS  answers again after being toggled off and back on")
+            else:
+                failures.append("no reply after the toggle cycle")
+    except Exception as exc:
+        failures.append("toggle cycle: %s: %s" % (type(exc).__name__, exc))
+    finally:
+        if handle2:
+            try:
+                handle2.close()
+            except OSError:
+                pass
+        cycled.terminate()
+        try:
+            cycled.wait(timeout=5)
+        except Exception:
+            cycled.kill()
+
     print()
     if failures:
         print("FAILED")

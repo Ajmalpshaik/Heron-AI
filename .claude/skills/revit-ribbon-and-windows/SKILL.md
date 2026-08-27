@@ -35,6 +35,35 @@ Heron, may have made it first.
 **Use `typeof(X).FullName`, never a literal class name.** A renamed class then breaks the build instead
 of producing a button that fails at click time with a message the user cannot act on.
 
+### A button that is also a state
+
+Revit gives a `PushButton` no on/off state of its own. For something that toggles — connected or not,
+running or not — **the button's own picture is the state**, and the command swaps it after every click.
+
+Two things make it work:
+
+```csharp
+// 1. Capture the button as the ribbon is built. There is no way to look one
+//    up afterwards, so if it is not kept here it cannot be reached again.
+BridgeButton = panel.AddItem(toggle) as PushButton;
+
+// 2. Swap both images after every toggle, and at startup.
+button.LargeImage = loader.LoadLarge(connected ? ConnectedIcon : DisconnectedIcon);
+button.Image      = loader.LoadSmall(connected ? ConnectedIcon : DisconnectedIcon);
+```
+
+Set the icon from **what the state actually is**, never from what was just attempted — read it back from
+the thing itself. An operation that half-succeeded and rolled itself back must not leave the button
+claiming otherwise.
+
+A persistent picture beats a dialog here: it is visible at a glance, it is still visible ten minutes
+later, and it needs no dismissing. This is the case that makes "no success popup" easy to obey — there
+is something better to use instead.
+
+Icons load from a `Resources` folder deployed beside the assembly. Normalise them to 96 DPI: Revit sizes
+a ribbon image from its DPI, not its pixels, so an icon exported at 72 or 144 renders at the wrong size
+while looking perfectly correct in any image viewer.
+
 ### When the button does not appear
 
 Work down this list; it is ordered by how often each is the real cause.

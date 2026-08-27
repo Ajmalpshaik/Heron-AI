@@ -96,6 +96,18 @@ Get-ChildItem -Path $buildOut -Filter *.dll |
         Write-Host "  $($_.Name)"
     }
 
+# Ribbon icons. IconLoader looks for them in Resources beside the assembly,
+# so the folder has to travel with it - without them the buttons deploy blank.
+$resourceSource = Join-Path $buildOut "Resources"
+if (Test-Path $resourceSource) {
+    $resourceTarget = Join-Path $addinDir "Resources"
+    New-Item -ItemType Directory -Force -Path $resourceTarget | Out-Null
+    Get-ChildItem -Path $resourceSource -File | ForEach-Object {
+        Copy-Item $_.FullName -Destination $resourceTarget -Force
+        Write-Host "  Resources\$($_.Name)"
+    }
+}
+
 $pdb = Get-ChildItem -Path $buildOut -Filter *.pdb -ErrorAction SilentlyContinue
 if ($Configuration -eq "Debug" -and $pdb) {
     $pdb | ForEach-Object { Copy-Item $_.FullName -Destination $addinDir -Force }

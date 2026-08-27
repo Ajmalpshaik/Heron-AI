@@ -14,12 +14,18 @@ using Heron.Core;
 namespace Heron.Revit.Addin
 {
     /// <summary>
-    /// Starts the bridge for this Revit session.
+    /// Connects this Revit session, or disconnects it. One button, both ways.
     ///
     /// Connecting is deliberately explicit. A Revit that was never connected
-    /// is invisible to every chat - which is the behaviour proven in the
-    /// field (docs/00e) and worth keeping: nothing reaches a model the user
-    /// did not offer up.
+    /// is invisible to every chat - the behaviour proven in the field
+    /// (docs/00e) and worth keeping: nothing reaches a model the user did not
+    /// offer up. Disconnecting is the same property in reverse, and it is the
+    /// only way to take a session back without closing Revit.
+    ///
+    /// There is no dialog on success. The button's own picture changes - lit
+    /// when connected, dark when not - so the state is visible from across the
+    /// room and stays visible, which a dialog that has been dismissed does not.
+    /// Only a real failure interrupts, through Revit's own message mechanism.
     /// </summary>
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
@@ -41,28 +47,25 @@ namespace Heron.Revit.Addin
             {
                 if (bridge.IsRunning)
                 {
-                    TaskDialog.Show("Heron AI",
-                        "Already connected.\n\n" +
-                        "Pipe: " + bridge.Identity.PipeName + "\n" +
-                        "Process: " + bridge.Identity.ProcessId);
+                    bridge.Stop();
+                    HeronApplication.SetBridgeIcon(false);
+                    HeronApplication.Log("Disconnected from the ribbon.");
                     return Result.Succeeded;
                 }
 
                 bridge.Start();
-
-                TaskDialog.Show("Heron AI",
-                    "Connected.\n\n" +
-                    "Revit " + bridge.Identity.RevitVersion +
-                    ", process " + bridge.Identity.ProcessId + ".\n\n" +
-                    "This session is now visible to Heron. Open another Revit and " +
-                    "connect it too - each one gets its own bridge.");
-
+                HeronApplication.SetBridgeIcon(true);
+                HeronApplication.Log("Connected from the ribbon.");
                 return Result.Succeeded;
             }
             catch (Exception ex)
             {
-                HeronApplication.Log("Connect failed: " + ex);
-                message = "Could not start the Heron bridge: " + ex.Message;
+                // The icon follows what the bridge actually is, not what was
+                // attempted. A half-started bridge rolls itself back, so this
+                // reads false - and the button must not claim otherwise.
+                HeronApplication.SetBridgeIcon(bridge.IsRunning);
+                HeronApplication.Log("Bridge toggle failed: " + ex);
+                message = "Could not change the Heron bridge: " + ex.Message;
                 return Result.Failed;
             }
         }

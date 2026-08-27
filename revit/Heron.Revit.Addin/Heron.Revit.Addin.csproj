@@ -54,6 +54,10 @@
 
   <ItemGroup>
     <None Update="Heron.addin" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Ribbon icons, loaded from disk beside the assembly rather than embedded:
+         an icon can then be replaced without a rebuild, and IconLoader can fall
+         back to no picture instead of throwing during OnStartup. -->
+    <None Update="Resources\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
