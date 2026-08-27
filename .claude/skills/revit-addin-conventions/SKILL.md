@@ -185,6 +185,29 @@ Be honest about what that buys. The pipe's ACL is what keeps other *people* out.
 process running as the **same user** from reaching Revit by guessing a pipe name — it would have to read
 the discovery file first, which makes reaching a live model a deliberate act rather than an accident.
 
+## An assumption is not a choice
+
+When Heron picks something the user did not explicitly pick — which Revit session, which document,
+which of anything — **record that it was assumed**, and treat the two differently for ever after.
+
+| Bound how | What changed | What must happen |
+|---|---|---|
+| **Assumed** | a second candidate appears | **Ask.** They never chose this one |
+| **Assumed** | it disappears | Quietly take the remaining one |
+| **Chosen** | more appear | Keep it. Do not nag |
+| **Chosen** | it disappears | **Stop and say so.** Never slide onto another |
+
+Collapse those into one flag and "sticky" becomes "keep whatever we picked first" — so a second Revit
+opening mid-conversation sends every later command to the first one, silently. That is the wrong-model
+failure arriving through the mechanism built to prevent it, and it was found by running the code, not by
+reasoning about it ([docs/25](../../../docs/25-multi-session-and-binding.md)).
+
+**Every refusal says "nothing has been sent to Revit"** in as many words. The user's first thought on
+any refusal is *did it half-do something?* — answering that unasked is the difference between a safe
+stop and a frightening one.
+
+Covered by `tests/test_session_binding.py`, one case per row, no Revit needed.
+
 ## Configuration is a promise
 
 Every key in `HeronConfig` must be **read by something**. A setting that is declared, documented and

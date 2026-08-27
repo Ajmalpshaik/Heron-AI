@@ -38,9 +38,14 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "client"))
 
 import heron_bridge_client as bridge          # noqa: E402
+from heron_session import SessionBinding, NotBound   # noqa: E402
 from mcp.server.fastmcp import FastMCP        # noqa: E402
 
 server = FastMCP("heron")
+
+# One chat, one Revit. Lives as long as this server does, which is as long as
+# the chat does - the correct scope for a binding (docs/25).
+binding = SessionBinding()
 
 
 def _describe(b, reply):
@@ -88,9 +93,19 @@ def revit_health() -> str:
     if live:
         lines.append("Revit is connected." if len(live) == 1
                      else "%d Revit sessions are connected." % len(live))
-        for b in live:
-            lines.append(_describe(b, b.request("count_elements")))
+        for index, b in enumerate(live, 1):
+            # Numbered, so the user can answer "1" rather than read back a
+            # process id. Which one is in use is stated, not implied.
+            mark = ""
+            if b.pid == binding.pid:
+                mark = "  <- in use%s" % ("" if binding.was_chosen else " (assumed, not chosen)")
+            lines.append("  %d)%s%s" % (index, _describe(b, b.request("count_elements"))[1:], mark))
             b.close()
+
+        if len(live) > 1 and binding.pid is None:
+            lines.append("")
+            lines.append("More than one is connected, so Heron will ask which you mean before "
+                         "sending anything to Revit.")
 
     if starting:
         lines.append("")
@@ -135,29 +150,10 @@ def revit_select_by_category(category: str = "ducts") -> str:
     tried against a real model.
     """
     try:
-        live, starting, stale, mismatched = bridge.discover()
-    except Exception as exc:
-        return "Heron could not read its own session list: %s: %s" % (type(exc).__name__, exc)
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
 
-    if not live:
-        if starting:
-            return ("Revit is running but its bridge is not answering yet - it is probably "
-                    "still starting up. Try again in a moment.")
-        return "No Revit is connected. Open Revit, then press  Heron AI > Heron  on the ribbon."
-
-    if len(live) > 1:
-        # Step 5 builds the picker and the session binding. Until it exists,
-        # acting on a guess is precisely the wrong-model failure the field
-        # notes are about - so refuse, and say nothing was sent.
-        where = "\n".join("  Revit %s (session %s)" % (b.revit_version, b.pid) for b in live)
-        for b in live:
-            b.close()
-        return ("%d Revit sessions are connected, so it is not safe to guess which one you "
-                "mean:\n%s\n\nNothing has been sent to Revit. Close the one you are not "
-                "using, or ask again once Heron can be bound to a session."
-                % (len(live), where))
-
-    session = live[0]
     reply = session.request("select_by_category", op_args={"category": category})
     session.close()
 
@@ -177,6 +173,37 @@ def revit_select_by_category(category: str = "ducts") -> str:
     return ("Selected %s %s in %s.\n(%s)"
             % ("{:,}".format(selected), reply.get("category"),
                reply.get("document"), reply.get("scope")))
+
+
+@server.tool()
+def revit_use_session(session: str) -> str:
+    """
+    Choose which connected Revit this chat should work with, when more than
+    one is open.
+
+    Pass the number from the list Heron offered, or the session id. Use this
+    when the user says which Revit they mean, or when a request was refused
+    because more than one is connected.
+
+    The choice sticks for the rest of the conversation. If that Revit closes,
+    Heron stops and says so rather than moving to another model on its own.
+    """
+    try:
+        chosen = binding.choose(session)
+    except NotBound as unbound:
+        return str(unbound)
+
+    document = "the open model"
+    reply = chosen.request("count_elements")
+    if reply and reply.get("ok"):
+        document = "%s, %s elements" % (reply.get("document"),
+                                        "{:,}".format(reply.get("count", 0)))
+    chosen.close()
+
+    return ("Now working with Revit %s (session %s) - %s.\n"
+            "Every request goes there until you say otherwise. If it closes, Heron will stop "
+            "rather than switch to another model."
+            % (chosen.revit_version, chosen.pid, document))
 
 
 if __name__ == "__main__":
