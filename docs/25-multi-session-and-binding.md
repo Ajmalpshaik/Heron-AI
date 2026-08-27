@@ -363,6 +363,55 @@ rather than left for users to discover.
 
 ---
 
+## 6b. Cross-document work — the trade-off that decides the setup
+
+**[NOTE]** A real BIM workflow the four specifications never mention: **comparing two models**, or
+**borrowing from one model into another** — a family, a type, a set of elements from a tower model
+needed in a school model.
+
+This is ordinary Revit API work. `ElementTransformUtils.CopyElements` copies elements between two open
+documents; family symbols can be copied or loaded across; comparison is reading both and diffing.
+
+**But it has a hard constraint that interacts directly with everything above:**
+
+> The Revit API can only reach documents open in the **same Revit process**. It cannot copy or compare
+> across two separate Revit windows — different processes, no shared API surface.
+
+That produces a trade-off the user must actually choose between:
+
+| Setup | Parallel work | Cross-document work |
+|---|---|---|
+| **Two Revits** — one model each | ✅ Genuinely side-by-side (§6a) | ❌ **Impossible.** Separate processes |
+| **One Revit** — both models open | ❌ One thread; they take turns (§3) | ✅ Copy, compare, borrow families |
+
+**You cannot have both at once.** Heron should say so plainly when the user's request implies one or
+the other:
+
+- *"Work on this while the AI does that"* → **two Revits**
+- *"Take that family from Tower A into School B"* → **one Revit, both models open**
+
+### What this requires of Heron
+
+1. **Cross-document operations are a distinct capability**, not a variant of a single-document one. They
+   take a **source** document and a **destination** document, and both must be pinned
+   ([Golden Rule 20](14-golden-rules.md)) — the pinning problem doubles rather than disappearing.
+2. **The transaction belongs to the destination document.** The source is read-only throughout.
+3. **Report what did not copy.** Elements needing hosts absent from the target (levels, grids, walls),
+   view-specific elements (dimensions, tags), and system family types already present with a different
+   definition all fail or transform. Silently dropping them is the worst outcome — the user believes
+   the copy is complete.
+4. **Duplicate type names need a policy**, decided before the operation and stated in the preview:
+   use the destination's existing type, or bring the source's in renamed.
+5. **Comparison is read-only and safe**, and is a strong early capability — it needs no transaction, no
+   `MODIFY` permission, and answers a question BIM coordinators ask constantly.
+
+**[NOTE]** Model comparison deserves attention as a product feature, not just a mechanism. *"What
+changed between this model and last week's?"* and *"how does the subcontractor's model differ from
+ours?"* are daily coordination questions currently answered by hand or by expensive tooling. It is
+read-only, needs no code generation, and fits [PROPOSALS B2 and B8](PROPOSALS.md).
+
+---
+
 ## 7. Practical capacity
 
 > No technical limit, only memory. On a 64 GB machine, **three or four Revits at once is comfortable**;
