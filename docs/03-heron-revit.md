@@ -10,6 +10,75 @@
 
 Everything that directly touches Revit: the add-in, ribbon, connection, document, views, elements, parameters, transactions, families, worksets, links, warnings, selection, model operations, the Revit API itself, Revit versions, and deployment.
 
+## 1a. What actually goes inside Revit — and why it is tiny
+
+**[NOTE]** Added 2026-08-27 from the owner's question: *inside Revit it installs only a small file, and
+the whole brain works outside — right?* Yes. Measured, at Step 1:
+
+| Assembly | Size | What it does |
+|---|---|---|
+| `Heron.Revit.Addin.dll` | ~15 KB | Ribbon, Connect, Status. Step 2 adds the `ExternalEvent` handler |
+| `Heron.Bridge.dll` | 12.5 KB | The named-pipe server |
+| `Heron.Core.dll` | 9.5 KB | Paths, config, identity |
+
+**Under 40 KB inside Revit.** No RAG, no vector store, no fragments, no skills, no model calls, no
+knowledge of what a duct is.
+
+### Why it must stay this small
+
+Three reasons, and each is a real constraint rather than a preference:
+
+1. **An assembly loaded into Revit cannot be unloaded.** Every change to the add-in needs a Revit
+   restart ([07 §7](07-installation-and-update.md)). Whatever lives here is the most expensive code in
+   the platform to change, so as little as possible should live here.
+2. **It must be built once per Revit generation** — `net472`, `net48`, `net8.0-windows`,
+   `net10.0-windows` ([16](16-version-support-strategy.md)). Everything inside Revit is multiplied by
+   the version matrix. Everything outside is written once.
+3. **It runs inside Revit's process.** A crash here takes Revit down with the user's model open. Small
+   and dull is a safety property.
+
+> **Put as little as possible inside Revit, because everything inside Revit is expensive to change,
+> multiplied by the version matrix, and dangerous when wrong.**
+
+### One correction — **the add-in never touches the network**
+
+The owner's phrasing was *"that MCP connecting to the cloud"*. The add-in connects to **nothing**. It
+opens a **local named pipe** and waits.
+
+Verified rather than asserted: there is no `HttpClient`, `WebRequest`, `Socket`, `TcpClient` or any
+`System.Net` type anywhere in `Heron.Revit.Addin` or `Heron.Bridge`. A named pipe has **no network
+surface at all** ([D-02](DECISIONS.md)) — that was the reason for choosing it over localhost HTTP.
+
+```text
+CLOUD                  the model provider  -  only if configured that way
+   |  HTTPS            and only Claude Code ever speaks to it
+CLAUDE CODE            host, on the user's PC
+   |  MCP (stdio, local)
+HERON MCP SERVER       Python, on the user's PC  <- THE BRAIN LIVES HERE
+   |  named pipe (local only, no network)
+HERON ADD-IN           C#, inside Revit.exe      <- ~40 KB, no network
+   |  ExternalEvent
+REVIT
+```
+
+**What this buys, and it is worth more than it looks:**
+
+- The add-in **cannot phone home**, by construction rather than by policy. There is no code path that
+  could, and a reviewer can verify that in a minute.
+- On a restricted or air-gapped network, **the Revit half works unchanged**. Only the model provider
+  needs reaching, and with local models ([Q-11](OPEN-QUESTIONS.md)) even that stops being true.
+- A contractor's IT department can be told, accurately: *the thing installed into Revit opens no
+  sockets, listens on no ports, and talks only to another process on the same machine.* That is a
+  sentence worth being able to say ([12 §4](12-security-and-permissions.md)).
+
+### What is deliberately outside
+
+RAG, vector store, fragments, skills, memory, learning, the capability registry, the orchestrator,
+standards, reporting — **all of it runs outside Revit**, in Python, where it can be changed without a
+Revit restart, written once instead of per version, and crash without taking anyone's model with it.
+
+---
+
 ## 2. Revit Agent Department
 
 | Agent | Responsibility | Likely tier |
