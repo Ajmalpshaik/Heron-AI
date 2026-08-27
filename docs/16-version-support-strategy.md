@@ -45,8 +45,13 @@ This is the real one. **One assembly cannot target both runtimes.** There is no 
 ## 3. Strategy: one source tree, multi-targeted
 
 ```xml
-<TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
+<TargetFrameworks>net48;net8.0-windows;net10.0-windows</TargetFrameworks>
 ```
+
+**[NOTE]** Three runtimes, not two — Revit 2027 moves to .NET 10 ([26 §3](26-prior-art-revit-mcp.md)).
+This does not change the strategy; the adapter layer absorbs it. It does confirm that a new runtime
+arrives roughly every two years, which is the strongest argument for keeping all version-conditional
+code confined to adapters.
 
 One codebase. Two build outputs. Version differences handled by compilation symbols:
 
