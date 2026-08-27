@@ -278,7 +278,7 @@ namespace Heron.Revit.Addin
 
                         if (transaction.Commit() != TransactionStatus.Committed)
                         {
-                            group.RollBack();
+                            SafeRollBack(group);
                             return Failed(workflow, preview, handler,
                                 "Revit did not accept the change, so nothing was moved.");
                         }
@@ -290,7 +290,14 @@ namespace Heron.Revit.Addin
                 {
                     // Complete rollback, then say so. A partial move is worse
                     // than no move: it looks like it worked.
-                    if (group.GetStatus() == TransactionStatus.Started) group.RollBack();
+                    //
+                    // The rollback CANNOT be allowed to throw here. If it did,
+                    // its exception would replace the one being reported - and
+                    // the user would be told the group could not be rolled back
+                    // instead of what actually went wrong with their move. The
+                    // second error is the less useful of the two, and it would
+                    // arrive at the worst possible moment. See SafeRollBack.
+                    SafeRollBack(group);
                     return Failed(workflow, preview, handler,
                         "The move failed and was rolled back completely, so the model is as " +
                         "it was. Revit said: " + ex.Message);
@@ -321,6 +328,41 @@ namespace Heron.Revit.Addin
         }
 
         // ------------------------------------------------------------ helpers
+
+        /// <summary>
+        /// Roll back, and never throw doing it.
+        ///
+        /// A rollback is always a SECOND thing going wrong: something already
+        /// failed, and this is the cleanup. If the cleanup throws too, its
+        /// exception escapes and buries the original - the user is told the
+        /// group was not in a rollback-able state, which tells them nothing,
+        /// instead of what actually happened to their model.
+        ///
+        /// This is not a theoretical worry. The owner's existing Revit add-in
+        /// shipped exactly this bug and fixed it in July 2026: an unguarded
+        /// rollback in a catch block threw a second time, the exception escaped
+        /// before the result was ever reported, and the caller waited forever
+        /// on an answer that was never coming.
+        ///
+        /// Both guards are kept on purpose. The status check avoids provoking
+        /// an exception in the ordinary case; the catch handles everything the
+        /// status check cannot see - a group left un-rollback-able by an
+        /// Assimilate() that failed part way, or a GetStatus() that throws on
+        /// its own. Cheap first, then total.
+        /// </summary>
+        private static void SafeRollBack(TransactionGroup group)
+        {
+            try
+            {
+                if (group.GetStatus() == TransactionStatus.Started) group.RollBack();
+            }
+            catch
+            {
+                // Nothing more can be done to the group, and saying so would
+                // replace a useful message with a useless one. The `using`
+                // block's Dispose() rolls back anything still open.
+            }
+        }
 
         private static string Failed(string workflow, Preview preview, CollectWarnings handler,
                                      string message)

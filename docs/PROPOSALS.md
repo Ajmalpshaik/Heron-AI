@@ -504,3 +504,68 @@ State plainly what still works with no internet: proven fragments, cached skills
 That single path touches every layer in the architecture and will settle A1, A2, A3, A5, A6 and A8 with facts rather than opinion. Everything in the master specification is easier to design correctly once it exists — and almost everything is guesswork until it does.
 
 The full plan is in [ROADMAP.md](ROADMAP.md).
+
+---
+
+## Part E — What the owner's existing Revit add-in already proves
+
+**Added 2026-08-27**, after reading the AI shell inside the owner's own Revit add-in — a separate,
+working, in-daily-use codebase. It is not prior art from strangers ([26](26-prior-art-revit-mcp.md)
+covers that); it is the same person solving an overlapping problem first, which makes its scars worth
+more than its features.
+
+### E1 — Runtime C# compilation inside Revit is proven, and Heron will want it
+
+That add-in compiles C# **at run time, inside `Revit.exe`**, using Roslyn
+(`Microsoft.CodeAnalysis.CSharp.Scripting`) against the same 2020→2027 range Heron targets. A sentence
+becomes C#, is scanned, is compiled, and runs on Revit's thread inside a `TransactionGroup` — with no
+rebuild and no restart.
+
+Heron today can only run **operations compiled into the add-in ahead of time**. Adding a capability
+therefore means a rebuild, a redeploy and a Revit restart. That is the correct trade for Phase 0 and
+Phase 1 — a fixed, reviewable set of operations is exactly what makes the first write defensible — but
+it is not the endpoint, and [D-04](DECISIONS.md) already anticipates a hybrid.
+
+**The proposal:** when Phase 2 fragments arrive, do not design the execution half from scratch. The
+shape is already proven on this hardware, in this Revit range, by this owner.
+
+**What it does NOT solve, and this needs saying plainly:** Roslyn compiles *scripts* once the add-in is
+already loaded. The add-in itself — every `.cs` file in `revit/` and `platform/` — still needs an
+ahead-of-time build with the .NET SDK. Runtime compilation is not a way around Step 6 having never met
+a compiler.
+
+### E2 — Generated code needs a gate before it reaches the compiler
+
+That add-in scans every generated script **before** compiling it, and splits the result three ways:
+
+| | |
+|---|---|
+| **Blocked** | Process launch, registry, network, reflection, unmanaged calls, `unsafe`, file delete/move, `#r`/`#load` directives, `using static` and type aliases |
+| **Warning** | Legitimate but destructive — element delete, purge, writing a file |
+| **Safe** | Runs |
+
+Two details are worth more than the list. The blocklist grew **by finding its own holes**: `#r "..."`
+was a one-line bypass of every other check; reflection generalised past most of them; `using static`
+renamed a blocked call to a bare method name. Each was closed in a numbered version with the reasoning
+recorded. And the file **states plainly that it is a speed bump, not a security boundary** — text
+matching, not semantic analysis, and a determined bypass still gets through.
+
+This is [Golden Rule 18](14-golden-rules.md) — *generated code never touches a live model on its first
+run* — already implemented, already attacked, and already honest about what it does not cover.
+
+### E3 — A lesson taken today, not deferred
+
+`RevitWrite.SafeRollBack` exists because of that codebase, and it is the one thing from this study that
+changed Heron immediately.
+
+The bug: an unguarded `group.RollBack()` in a catch block. When the rollback **also** threw — a group
+left un-rollback-able by a `Commit()` that had just failed — the second exception escaped and buried the
+first. The caller never got a result at all and waited forever.
+
+Heron had the same shape, written blind the day before, guarded only by `GetStatus() == Started`. That
+check is not enough: it cannot see a group left broken by an `Assimilate()` that failed part way, and
+`GetStatus()` can throw on its own. Both guards are now kept — the status check to avoid provoking an
+exception in the ordinary case, the catch to handle everything it cannot see.
+
+**The general rule, which is the part worth keeping:** a rollback is always the *second* thing going
+wrong. It must never be able to become the first thing reported.
