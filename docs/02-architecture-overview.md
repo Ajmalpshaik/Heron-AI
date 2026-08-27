@@ -1,0 +1,158 @@
+# 02 — Architecture Overview
+
+> Derived from [Master Specification](00-master-specification.md) §3, §4, §50, §56–58, §73.
+> **[NOTE]** blocks are engineering commentary added during review.
+
+---
+
+## 1. Layer stack
+
+```text
+USER
+ |
+ v
+CONVERSATION / PERSONA LAYER
+ |
+ v
+INTENT + ORCHESTRATOR
+ |
+ +-------------------------------+
+ |                               |
+ v                               v
+TASK / WORKFLOW ENGINE       KNOWLEDGE SYSTEM
+ |                               |
+ v                               v
+SPECIALIZED AGENTS           RAG / LIBRARY / MEMORY
+ |
+ v
+VALIDATION
+ |
+ v
+EXECUTION
+ |
+ v
+RESULT
+ |
+ v
+LEARNING / MEMORY / FRAGMENT EVOLUTION
+```
+
+## 2. The four product parts
+
+| Part | Owns | Document |
+|---|---|---|
+| **Heron Revit** | Everything touching the Revit API and the add-in | [03](03-heron-revit.md) |
+| **Heron MCP** | The communication bridge between AI and Revit | [04](04-heron-mcp.md) |
+| **Heron Brain** | Skills, Fragments, RAG, memory, knowledge | [05](05-heron-brain.md) |
+| **Heron Platform** | Install, update, packages, registry, security, GitHub | [06](06-heron-platform.md) |
+
+## 3. Company analogy
+
+```text
+                    HERON AI
+                       |
+                 CEO / ORCHESTRATOR
+                       |
+       +---------------+----------------+
+       |               |                |
+   ENGINEERING      KNOWLEDGE       PLATFORM
+       |               |                |
+     Revit            RAG             Install
+     MCP              Brain           Update
+     .NET             Memory          Package
+     Coding           Skills          Security
+     QA               Fragments       Workspace
+     Testing          Library         GitHub
+       |               |                |
+       +---------------+----------------+
+                       |
+                 COMMUNICATION
+                       |
+                  BIM USER
+```
+
+## 4. Orchestrator responsibilities
+
+1. Understand request
+2. Identify required capability
+3. Select relevant agents
+4. Build workflow
+5. Execute workflow
+6. Handle failures
+7. Validate result
+8. Return result
+9. Trigger background learning
+
+The Orchestrator coordinates. It does **not** accumulate domain logic. The moment it starts knowing about ducts, it has become the monolith the architecture exists to prevent.
+
+## 5. Dynamic agent selection
+
+Not every agent runs for every request.
+
+| Request | Chain |
+|---|---|
+| "Select all ducts." | Intent → Orchestrator → Fragment Librarian → Revit Selection → Execution → Validation |
+| "Create a tool that dimensions ducts." | Requirement → Architecture → RAG → Revit API → .NET → Code Gen → Review → Build → Test → Revit Test → QA → Release |
+
+## 6. **[NOTE — critical]** "Agent" must not mean "LLM call"
+
+This is the single most important correction to make before any code is written.
+
+The specification names roughly **150 agents**. If each one is an LLM call, then "select all ducts" costs dozens of model round-trips: several seconds of latency and real money, for an operation that is fundamentally one `FilteredElementCollector` query.
+
+Heron must therefore recognise **three distinct kinds of "agent"**:
+
+| Tier | Name | Implementation | Cost | Examples |
+|---|---|---|---|---|
+| **T1** | **Service** | Plain deterministic code. No model call, ever. | ~0 ms | Revit Selection, Revit Transaction, Vector Search, Index Manager, Health Check, Environment Detection, File Discovery, Naming Validation |
+| **T2** | **Reasoner** | One scoped LLM call with a tight contract | 100s of ms – seconds | Intent Detection, Fragment Matcher, Ranking, Failure Analysis, Content Classification |
+| **T3** | **Worker** | Full agentic loop with tools | seconds – minutes | Code Generation, Architecture, Code Review, Import & Migration, Agent Creator |
+
+Rules that follow from this:
+
+1. **Default to T1.** An agent is only promoted to T2/T3 when the task genuinely requires judgement over ambiguous input.
+2. **The happy path must be LLM-free.** Once "select all ducts" has a proven fragment, the *entire* execution — match, compatibility check, execute, validate — should be deterministic. The model is consulted for intent, then gets out of the way.
+3. **Every T2/T3 agent declares its tier in the registry** (§38), so cost and latency are inspectable.
+4. **Background work is T1 wherever possible.** A vector re-index must never cost money.
+
+Rough target for a warm, cached "select all ducts": **one T2 call (intent), zero others.**
+
+## 7. **[NOTE]** Where does the orchestration actually run?
+
+The spec's install flow begins *"User installs Claude Code"*, which implies Heron is hosted inside Claude Code rather than being a standalone application with its own chat UI. These are very different products:
+
+| Option | Meaning | Consequence |
+|---|---|---|
+| **A. Claude Code plugin** | Heron ships as skills + subagents + an MCP server. Claude Code is the conversation layer and the agent host. | Fastest to build. Whole agent framework is free. User must install and run Claude Code, and needs a Claude subscription. Non-technical BIM users must live in a terminal. |
+| **B. Standalone app** | Heron has its own chat window (WPF dockable pane in Revit, or separate desktop app) and its own agent runtime. | Far better UX for a BIM modeller. Much more to build. Full control of persona, progress display, permissions. |
+| **C. Both** | Core engine + MCP is shared; Claude Code is the developer front-end, the Revit pane is the BIM front-end. | Best end state. Requires the core to be host-agnostic from day one. |
+
+**This is decision D-01 and it blocks almost everything else.** See [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) Q-1.
+
+Recommendation: **C, sequenced as A → C.** Build the engine host-agnostic, ship the Claude Code front-end first because it is nearly free, and add the in-Revit pane once the vertical slice works.
+
+## 8. Agent contracts
+
+Every agent declares:
+
+```text
+INPUT
+PROCESS
+OUTPUT
+ERROR
+STATUS
+DEPENDENCIES
+```
+
+No uncontrolled agent-to-agent chatter. The Workflow/Orchestrator layer coordinates.
+
+**[NOTE]** Recommend expressing every contract as a **JSON Schema** stored beside the agent. That gives, for free: validation at the boundary, structured-output enforcement for T2/T3 agents, generated documentation, and contract-diff detection when an agent version changes.
+
+## 9. One responsibility per agent
+
+| Bad | Good |
+|---|---|
+| `RevitSuperAgent` | `Revit Selection Agent` |
+| `KnowledgeEverythingAgent` | Librarian / Retriever / Ranking / Context Builder / Validator |
+
+**[NOTE]** The counter-pressure is real: 150 tiny modules with 150 contracts is its own maintenance burden. The discipline that keeps this healthy is **departments** — a stable outer boundary with many small parts inside. Callers depend on the *department*, not on individual agents, so agents can be split, merged or retired without breaking anything outside their department. This is what makes the Fragment Split / Merge / Evolution agents (§21–23) safe to apply to the agent layer itself.
