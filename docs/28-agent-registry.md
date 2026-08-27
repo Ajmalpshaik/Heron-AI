@@ -1,0 +1,352 @@
+# 28 — The Complete Agent Registry
+
+> **Every agent, what it does, and when it gets built.**
+>
+> [08 — Agent Catalogue](08-agent-catalog.md) explains the *shape* of the agent organisation — tiers,
+> departments, why the count is not frightening. **This document is the flat reference list.**
+>
+> Compiled from all four specification parts. Where a responsibility was only a name in the source, it
+> has been written out here; those entries are marked **↗** and are proposals, not quotations.
+
+---
+
+## How to read this
+
+| Column | Meaning |
+|---|---|
+| **ID** | Stable identity, per [Part 2 §5](00b-master-specification-agent-os.md). Format `HERON-{DEPT}-{ABBR}-{NNN}` |
+| **Tier** | **T1** deterministic code, no model call · **T2** one scoped LLM call · **T3** agentic loop ([02 §6](02-architecture-overview.md)) |
+| **Risk** | Highest permission level it can require ([12 §1](12-security-and-permissions.md)) |
+| **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
+
+**Totals: 166 agents · 122 T1 · 32 T2 · 12 T3.**
+Roughly three quarters are ordinary deterministic modules. Only 44 ever call a model.
+
+---
+
+## 1. Orchestration & Communication — 5
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-ORC-MAIN-001` | Orchestrator | Understands the request, selects capability and agents, builds and runs the workflow, returns the result | T2 | — | 3 |
+| `HERON-ORC-INT-002` | Intent Agent | Classifies what the user is asking for — command, question, debugging, development | T2 | READ | 4 |
+| `HERON-ORC-PER-003` | Communication / Persona Agent | Detects role and technical level; chooses wording. BIM language out, not API calls | T2 | READ | 4 |
+| `HERON-ORC-FAIL-004` | Failure Analysis Agent | Determines *why* something failed and routes it. Never blind-retries | T2 | READ | 6 |
+| `HERON-ORC-FIX-005` | Fix Agent | Applies a targeted repair chosen by failure analysis | T3 | MODIFY | — |
+
+## 2. Revit Engineering — 25
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-REVIT-CON-001` | Revit Connection Agent | Is a Revit session reachable and alive | T1 | READ | 1 |
+| `HERON-REVIT-VER-002` | Revit Version Agent | Which Revit version this session is | T1 | READ | 1 |
+| `HERON-REVIT-APP-003` | Revit Application Agent | Application-level API surface, open documents list | T1 | READ | 2 |
+| `HERON-REVIT-DOC-004` | Revit Document Agent | Active and open documents, document state, save state | T1 | READ | 2 |
+| `HERON-REVIT-TRN-005` | Revit Transaction Agent | Opens, commits and rolls back transactions | T1 | MODIFY | 2 |
+| `HERON-REVIT-TSA-006` | **Transaction Safety Agent** | One named `TransactionGroup` per operation; complete rollback on failure; document state integrity. Separate from general API logic ↗ | T1 | MODIFY | **6** |
+| `HERON-REVIT-CTX-007` | **Revit Context Agent** | Gathers document, version, view, selection, links, worksets, phase, design option in one cheap pass ↗ | T1 | READ | 6 |
+| `HERON-REVIT-SEL-008` | Revit Selection Agent | Reads and sets the selection set | T1 | EXECUTE | 4 |
+| `HERON-REVIT-CAT-009` | Revit Category Agent | Resolves a BIM word to a category — "ducts" → `OST_DuctCurves` | T1 | READ | 4 |
+| `HERON-REVIT-ELE-010` | Revit Element Agent | Element lookup, creation, deletion, geometry access | T1 | MODIFY | 4 |
+| `HERON-REVIT-PAR-011` | Revit Parameter Agent | Reads and writes instance, type and shared parameters | T1 | MODIFY | — |
+| `HERON-REVIT-FAM-012` | Revit Family Agent | Families, types, loading, placement | T1 | MODIFY | — |
+| `HERON-REVIT-VIE-013` | Revit View Agent | Views, sheets, view templates, visibility | T1 | MODIFY | — |
+| `HERON-REVIT-WRK-014` | Revit Workset Agent | Worksets, element ownership, checkout state. Ownership failure is a normal outcome | T1 | MODIFY | — |
+| `HERON-REVIT-LNK-015` | Revit Link Agent | Linked models — read only; never modifies a link's source | T1 | READ | — |
+| `HERON-REVIT-WRN-016` | Revit Warning Agent | Revit warnings and failure preprocessing; never silently swallows | T1 | READ | 6 |
+| `HERON-REVIT-PRF-017` | Revit Performance Agent | Timing, element counts, operation cost limits | T1 | READ | — |
+| `HERON-REVIT-EXP-018` | Revit Export Agent | Exports — IFC, DWG, PDF, images, schedules | T1 | PUBLISH | — |
+| `HERON-REVIT-IMP-019` | Revit Import Agent | Imports and links external files in | T1 | MODIFY | — |
+| `HERON-REVIT-API-020` | Revit API Agent | Correct API, namespace, method, deprecations, transaction requirements for a novel operation | T2 | READ | — |
+| `HERON-REVIT-CMP-021` | Revit Compatibility Agent | Will this fragment run on this Revit version | T1 | READ | — |
+| `HERON-REVIT-UI-022` | Revit UI Agent | Task dialogs, progress banner, the picker | T1 | READ | 5 |
+| `HERON-REVIT-RIB-023` | Revit Ribbon Agent | Ribbon tab, panels, buttons — including Emergency Stop | T1 | READ | 1 |
+| `HERON-REVIT-DEP-024` | Revit Deployment Agent | Builds and deploys the add-in per version | T1 | ADMIN | 1 |
+| `HERON-REVIT-HLT-025` | Revit Plugin Health Agent | Is Revit installed, add-in loaded, ribbon present, MCP connected, document open, tools registered | T1 | READ | 3 |
+
+## 3. MCP / Bridge — 11
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-MCP-SRV-001` | MCP Server Agent | Server lifecycle, stdio/SSE transport to the host | T1 | — | 1 |
+| `HERON-MCP-CON-002` | MCP Connection Agent | Opens and holds the pipe to a Revit bridge | T1 | — | 1 |
+| `HERON-MCP-REG-003` | MCP Tool Registry Agent | Which tools exist, their schemas, their declared risk level | T1 | — | 3 |
+| `HERON-MCP-CFG-004` | MCP Configuration Agent | Server configuration and host registration | T1 | ADMIN | 3 |
+| `HERON-MCP-HLT-005` | MCP Health Agent | Liveness and readiness of the bridge | T1 | READ | 3 |
+| `HERON-MCP-AUT-006` | MCP Authentication Agent | Who may call — pipe ACLs, local-only enforcement | T1 | ADMIN | — |
+| `HERON-MCP-VER-007` | MCP Version Agent | Protocol and Heron version reporting | T1 | — | 5 |
+| `HERON-MCP-CMP-008` | MCP Compatibility Agent | Server / add-in / Revit version triangle; refuses cleanly on mismatch | T1 | — | 5 |
+| `HERON-MCP-REC-009` | MCP Recovery Agent | Reconnect with backoff. Distinguishes transport faults from real failures | T1 | — | 5 |
+| `HERON-MCP-LOG-010` | MCP Logging Agent | Structured request/response logging into the audit log | T1 | — | 4 |
+| `HERON-MCP-SEC-011` | MCP Security Agent | **Enforces the permission gate in the add-in.** Returns `REQUIRES_CONFIRMATION` rather than executing | T1 | ADMIN | **6** |
+
+## 4. Session & Bridge Management — 5 *(field-derived)*
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-SES-DIS-001` | Bridge Discovery Agent | Reads `%APPDATA%\Heron\bridges\*.json`, verifies each is alive, removes stale files ↗ | T1 | READ | 1 |
+| `HERON-SES-LST-002` | Session List Agent | Builds the picker **live** — version, project, availability. Never a cached snapshot, never a PID shown ↗ | T1 | READ | 5 |
+| `HERON-SES-BND-003` | Session Binding Agent | One chat, one Revit. Asks once, stays bound, **fails closed** when that session closes ↗ | T1 | READ | 5 |
+| `HERON-SES-LEA-004` | Session Lease Agent | Prevents a second chat taking over mid-job. Scoped to the process. Never blocks a rollback ↗ | T1 | READ | — |
+| `HERON-SES-PIN-005` | Document Pinning Agent | Pins the target document by identity for any write; verifies at every step ↗ | T1 | MODIFY | **6** |
+
+## 5. Knowledge & RAG — 16
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-RAG-LIB-001` | RAG Librarian Agent | Decides *which scopes* to search before anything is searched | T1 | READ | — |
+| `HERON-RAG-DIS-002` | Knowledge Discovery Agent | Finds potentially relevant knowledge | T1 | READ | — |
+| `HERON-RAG-RET-003` | Retriever Agent | Retrieves candidates from the chosen scopes | T1 | READ | — |
+| `HERON-RAG-FMT-004` | Fragment Matcher Agent | Matches the request against existing fragments | T2 | READ | — |
+| `HERON-RAG-SMT-005` | Skill Matcher Agent | Finds applicable skills | T2 | READ | — |
+| `HERON-RAG-RNK-006` | Ranking Agent | Fuses keyword and vector results; ranks by trust, version match and success rate | T1 | READ | — |
+| `HERON-RAG-CTX-007` | Context Builder Agent | Assembles the minimal context an agent actually needs | T1 | READ | — |
+| `HERON-RAG-EMB-008` | Embedding Agent | Creates embeddings — local model by default | T1 | READ | — |
+| `HERON-RAG-VEC-009` | Vector Search Agent | Searches the vector index | T1 | READ | — |
+| `HERON-RAG-IDX-010` | Index Manager Agent | Maintains indexes and their metadata | T1 | MODIFY | — |
+| `HERON-RAG-RIX-011` | Re-index Agent | Re-indexes on change, by content hash not mtime | T1 | MODIFY | — |
+| `HERON-RAG-DUP-012` | Duplicate Detection Agent | Finds duplicate knowledge at write time, not only at read time | T1 | READ | — |
+| `HERON-RAG-VAL-013` | Knowledge Validation Agent | Checks retrieved knowledge before it is used | T2 | READ | — |
+| `HERON-RAG-CIT-014` | Citation / Source Agent | Tracks provenance. **No source, no claim** | T1 | READ | — |
+| `HERON-RAG-CNF-015` | **Knowledge Conflict Agent** | Two sources disagree — compares version, source, trust, project context, test history. Asks the user when unsure ↗ | T2 | SUGGEST | — |
+| `HERON-RAG-EVO-016` | Knowledge Evolution Agent | Restructures knowledge organisation when it stops fitting | T3 | MODIFY | — |
+
+## 6. Fragment Lifecycle — 6
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-FRG-VAL-001` | Fragment Validation Agent | Logic, API, versions, dependencies, metadata, duplication, reusability | T2 | READ | — |
+| `HERON-FRG-PRF-002` | Fragment Performance Agent | Success, failure, timing, user corrections, error frequency — **per Revit version** | T1 | READ | — |
+| `HERON-FRG-SPL-003` | Fragment Split Agent | Decomposes a compound fragment. Only when ≥2 real consumers exist | T3 | SUGGEST | — |
+| `HERON-FRG-MRG-004` | Fragment Merge Agent | Detects near-identical fragments; proposes merge, replace, keep separate or deprecate | T2 | SUGGEST | — |
+| `HERON-FRG-EVO-005` | Fragment Evolution Agent | Decides KEEP / UPDATE / EXTEND / SPLIT / MERGE / BRANCH / DEPRECATE / ARCHIVE. Always proposes | T3 | SUGGEST | — |
+| `HERON-FRG-REG-006` | Regression Testing Agent | Builds and tests every supported version; **rejects unsafe changes**; preserves the previous implementation | T1 | READ | — |
+
+## 7. Import & Migration — 14
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-IMP-MAIN-001` | Import Agent | Owns the import pipeline end to end. **Never modifies the source folder** | T2 | MODIFY | — |
+| `HERON-IMP-FIL-002` | File Discovery Agent | Walks the folder, identifies file types | T1 | READ | — |
+| `HERON-IMP-CLS-003` | Content Classification Agent | Code, documentation, config, metadata, asset | T2 | READ | — |
+| `HERON-IMP-FEX-004` | Fragment Extraction Agent | Pulls reusable implementation units out of existing code | T3 | READ | — |
+| `HERON-IMP-SEX-005` | Skill Extraction Agent | Identifies user-facing capabilities in existing tooling | T3 | READ | — |
+| `HERON-IMP-MEX-006` | Metadata Extraction Agent | Author, version, dependencies, target Revit versions | T2 | READ | — |
+| `HERON-IMP-DUP-007` | Duplicate Detection Agent | Compares against existing knowledge before anything is created | T1 | READ | — |
+| `HERON-IMP-CMP-008` | Compatibility Agent | Determines which Revit and .NET versions the import supports | T1 | READ | — |
+| `HERON-IMP-MIG-009` | Migration Agent | Transforms imported content into Heron's architecture | T3 | MODIFY | — |
+| `HERON-IMP-REN-010` | Rename Agent | Applies naming conventions to imported artefacts | T1 | MODIFY | — |
+| `HERON-IMP-ARC-011` | Architecture Matching Agent | Places content where the architecture says it belongs | T2 | MODIFY | — |
+| `HERON-IMP-VAL-012` | Validation Agent | Verifies the migrated result before it is saved | T1 | READ | — |
+| `HERON-IMP-IDX-013` | Indexing Agent | Indexes the accepted result | T1 | MODIFY | — |
+| `HERON-IMP-APR-014` | Approval Agent | Presents the manifest for human review. **Everything enters at `DISCOVERED`** | T1 | SUGGEST | — |
+
+## 8. Standards & BIM QA — 12
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-STD-BIM-001` | BIM Standard Agent | Applies a stated BIM standard to a model | T2 | ANALYZE | — |
+| `HERON-STD-CMP-002` | Company Standard Agent | The organisation's own approved standard | T2 | ANALYZE | — |
+| `HERON-STD-ISO-003` | ISO Standards Agent | ISO 19650 and related. **Cites, never invents** | T2 | ANALYZE | — |
+| `HERON-STD-NAM-004` | Naming Standard Agent | Naming rules for elements, views, sheets, files | T2 | ANALYZE | — |
+| `HERON-STD-MOD-005` | Modeling Standard Agent | How things should be modelled — connections, elevations, practice | T2 | ANALYZE | — |
+| `HERON-STD-QAQ-006` | QA/QC Standard Agent | The organisation's QA process requirements | T2 | ANALYZE | — |
+| `HERON-STD-LOD-007` | LOD Agent | Level of development / detail expected at this stage | T2 | ANALYZE | — |
+| `HERON-STD-DOC-008` | Documentation Standard Agent | Sheet, titleblock and annotation requirements | T2 | ANALYZE | — |
+| `HERON-STD-PRJ-009` | Project Standard Agent | This project's own rules — **outranks the company default**, and says so | T2 | ANALYZE | — |
+| `HERON-STD-REF-010` | **Reference Model Profiler** | Infers a standard from a correctly delivered model. Extracts the profile, **discards the model** ↗ | T3 | READ | — |
+| `HERON-QA-BIM-011` | **BIM QA Agent** | Checks the *model*: naming, parameters, categories, families, levels, worksets, views, MEP connectivity ↗ | T2 | ANALYZE | — |
+| `HERON-QA-CLS-012` | **Clash / Coordination Agent** | Clash analysis, clearance, system coordination, linked-model coordination reports ↗ | T2 | ANALYZE | — |
+
+## 9. Development — 18
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-DEV-REQ-001` | Requirement Agent | Turns a request into a buildable specification | T2 | — | — |
+| `HERON-DEV-PLN-002` | Planning Agent | Sequences the work | T2 | — | — |
+| `HERON-DEV-ARC-003` | Architecture Agent | Decides structure and placement within Heron's architecture | T3 | — | — |
+| `HERON-DEV-GEN-004` | Code Generation Agent | Writes code — **only after Fragment Matcher has reported** | T3 | — | — |
+| `HERON-DEV-CSH-005` | C# Agent | C# language and idiom | T2 | — | — |
+| `HERON-DEV-NET-006` | .NET Agent | Target framework, package and compiler requirements | T1 | — | — |
+| `HERON-DEV-RAP-007` | Revit API Domain Agent | Revit API knowledge for generation *(merge candidate with 005/006)* | T2 | — | — |
+| `HERON-DEV-REV-008` | Code Review Agent | Architecture, API usage, error handling, transaction safety, duplication | T2 | — | — |
+| `HERON-DEV-SEC-009` | Security Review Agent | Required for anything at MODIFY or above | T2 | — | — |
+| `HERON-DEV-BLD-010` | Build Agent | Compiles across all target frameworks | T1 | — | — |
+| `HERON-DEV-UNT-011` | Unit Test Agent | Runs unit tests | T1 | — | — |
+| `HERON-DEV-INT-012` | Integration Test Agent | Runs integration tests against a mocked Revit boundary | T1 | — | — |
+| `HERON-DEV-RVT-013` | Revit Test Agent | Runs tests **inside real Revit**. Code QA ≠ Revit QA | T1 | — | — |
+| `HERON-DEV-RGR-014` | Regression Test Agent | Golden-file comparison across supported versions | T1 | — | — |
+| `HERON-DEV-PRF-015` | Performance Agent | Execution time and resource cost | T1 | — | — |
+| `HERON-DEV-QA-016` | QA Agent | Final gate before approval. Never the implementer | T2 | — | — |
+| `HERON-DEV-DOC-017` | Documentation Agent | Generates docs from registries and metadata | T1 | — | — |
+| `HERON-DEV-REL-018` | Release Agent | Packages and releases | T1 | PUBLISH | — |
+
+## 10. Agent Lifecycle & HR — 12
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-AHR-GAP-001` | **Capability Gap Agent** | *"X is needed repeatedly and no capability covers it."* A read-only report over the audit log | T1 | READ | — |
+| `HERON-AHR-HR-002` | Agent HR Agent | Writes the job description — responsibility, capabilities, dependencies, tools | T2 | — | — |
+| `HERON-AHR-ARC-003` | Agent Architect | Designs the agent and its contract | T3 | — | — |
+| `HERON-AHR-BLD-004` | Agent Builder | Implements it | T3 | — | — |
+| `HERON-AHR-TRN-005` | Agent Trainer | Supplies architecture, standards, security rules, approved examples | T2 | — | — |
+| `HERON-AHR-CRT-006` | Agent Creator | Owns the pipeline. **May only ever assign `PROPOSED`** | T3 | ADMIN | — |
+| `HERON-AHR-EVL-007` | Agent Evaluator | Scores real performance against expectations | T2 | READ | — |
+| `HERON-AHR-REG-008` | Agent Registry Agent | System of record for every agent | T1 | ADMIN | — |
+| `HERON-AHR-OPT-009` | Agent Optimizer | Improves an existing agent | T2 | SUGGEST | — |
+| `HERON-AHR-RET-010` | Agent Retirement Agent | Retires with history preserved and rollback possible. **Archive, never delete** | T1 | ADMIN | — |
+| `HERON-AHR-MON-011` | Architecture Monitor | Detects drift from the architecture | T2 | READ | — |
+| `HERON-AHR-DEP-012` | Agent Deployment Agent | Activates an approved agent | T1 | ADMIN | — |
+
+## 11. Kernel & Platform — 14
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-KRN-CFG-001` | Configuration Manager | Versioned, auditable configuration. **A security boundary** | T1 | ADMIN | 1 |
+| `HERON-KRN-IDN-002` | Identity Manager | Identity for every registered object | T1 | — | 1 |
+| `HERON-KRN-PRM-003` | Permission Manager | Resolves permission level for an operation | T1 | ADMIN | 6 |
+| `HERON-KRN-EVT-004` | Event Bus | Internal events. Handlers notify, never perform MODIFY directly | T1 | — | — |
+| `HERON-KRN-STA-005` | State Manager | Task state and checkpoints | T1 | — | — |
+| `HERON-KRN-LOG-006` | Logging / Audit Agent | Append-only structured audit, keyed by Workflow ID | T1 | — | 4 |
+| `HERON-KRN-WFL-007` | Workflow Engine | Ordering, retries, timeouts, rollback, checkpoints, resume | T1 | — | — |
+| `HERON-KRN-CAP-008` | **Capability Registry Agent** | *"What can Heron currently do?"* Matched by capability, never agent name | T1 | — | — |
+| `HERON-KRN-TOL-009` | Tool Registry Agent | Tools, schemas, declared risk levels | T1 | — | 3 |
+| `HERON-KRN-MDL-010` | Model Router | Declares reasoning intent; resolution is pluggable | T1 | — | — |
+| `HERON-KRN-PRO-011` | Prompt / Instruction Registry | One versioned, testable home for all instructions | T1 | ADMIN | — |
+| `HERON-KRN-SEC-012` | Secret Manager | Credentials outside the workspace. Redaction on the way out | T1 | ADMIN | — |
+| `HERON-KRN-DEP-013` | Dependency Graph Agent | Skills → fragments → API → runtime → packages. Makes blast radius computable | T1 | READ | — |
+| `HERON-KRN-EVD-014` | Evidence Agent | Records *why* a decision was made. **No evidence, no MODIFY** | T1 | — | 6 |
+
+## 12. Workspace & Folder Architecture — 12
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-WSP-ARC-001` | Workspace Architect Agent | Owns the physical structure | T2 | ADMIN | — |
+| `HERON-WSP-CRE-002` | Folder Creation Agent | Creates the structure | T1 | MODIFY | — |
+| `HERON-WSP-VAL-003` | Folder Validation Agent | Detects misplaced files | T1 | READ | — |
+| `HERON-WSP-REP-004` | Folder Repair Agent | Corrects placement. Dry-run by default | T1 | MODIFY | — |
+| `HERON-WSP-PLC-005` | File Placement Agent | Decides where a new artefact belongs | T2 | MODIFY | — |
+| `HERON-WSP-TPL-006` | Template Agent | Workspace and project templates | T1 | MODIFY | — |
+| `HERON-WSP-PTH-007` | Path Manager Agent | Product / data / derived separation enforced in code | T1 | — | 1 |
+| `HERON-WSP-MIG-008` | Workspace Migration Agent | Schema and layout migrations. Idempotent, versioned, backed up | T1 | ADMIN | — |
+| `HERON-WSP-CLN-009` | Cleanup Agent | Identifies unused artefacts. **Archives, never deletes** | T1 | MODIFY | — |
+| `HERON-WSP-BAK-010` | Backup Agent | Backs up the data class. Not the derived index | T1 | — | — |
+| `HERON-WSP-RST-011` | Restore Agent | Restore and rebuild. Must be tested, not merely implemented | T1 | ADMIN | — |
+| `HERON-WSP-REG-012` | File Registry Agent | What exists, where, and under which identity | T1 | — | — |
+
+## 13. Naming & Taxonomy — 7
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-NAM-GEN-001` | Naming Agent | Generates a predictable name from domain, capability, purpose, platform, version | T2 | — | — |
+| `HERON-NAM-VAL-002` | Naming Validation Agent | Checks a name against the convention | T1 | READ | — |
+| `HERON-NAM-REN-003` | Auto Rename Agent | Renames — **only after identity exists**, never before | T1 | MODIFY | — |
+| `HERON-NAM-TAX-004` | Taxonomy Agent | Maintains the classification scheme | T2 | — | — |
+| `HERON-NAM-KEY-005` | Keyword Agent | Search terms and synonyms — "duct", "ductwork", "supply air" | T1 | — | — |
+| `HERON-NAM-MET-006` | Metadata Agent | Metadata completeness and schema validity | T1 | — | — |
+| `HERON-NAM-REF-007` | Reference Update Agent | After any rename or move: imports, references, metadata, registry, docs. **No broken references** | T1 | MODIFY | — |
+
+## 14. GitHub — 10
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-GIT-MAIN-001` | GitHub Agent | Owns repository interaction | T1 | PUBLISH | — |
+| `HERON-GIT-REP-002` | Repository Agent | Structure, remotes, settings | T1 | PUBLISH | — |
+| `HERON-GIT-BRN-003` | Branch Agent | Branching strategy | T1 | MODIFY | — |
+| `HERON-GIT-CMT-004` | Commit Agent | Stages and writes commits | T2 | MODIFY | — |
+| `HERON-GIT-PR-005` | Pull Request Agent | Opens PRs — **explicit confirmation, every time** | T1 | PUBLISH | — |
+| `HERON-GIT-ISS-006` | Issue Agent | Issues and triage | T1 | PUBLISH | — |
+| `HERON-GIT-REL-007` | Release Agent | Tags and publishes releases | T1 | PUBLISH | — |
+| `HERON-GIT-VER-008` | Version Agent | Semantic versioning and compatibility promises | T1 | — | — |
+| `HERON-GIT-CHG-009` | Change Detection Agent | Detects upstream changes affecting fragments or skills | T1 | READ | — |
+| `HERON-GIT-COM-010` | Community Contribution Agent | Prepares a submission. **Per-item human review of the actual payload** | T2 | PUBLISH | — |
+
+## 15. Installation & Update — 10
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-INS-ORC-001` | Installation Orchestrator | Owns the install workflow | T1 | ADMIN | — |
+| `HERON-INS-ENV-002` | Environment Detection Agent | Windows, Revit versions, .NET runtimes, storage, dependencies | T1 | READ | — |
+| `HERON-INS-RVT-003` | Revit Installation Agent | Deploys the add-in per version, per-user, no admin rights | T1 | ADMIN | — |
+| `HERON-INS-MCP-004` | MCP Installation Agent | Registers the MCP server with the host | T1 | ADMIN | — |
+| `HERON-INS-DEP-005` | Dependency Agent | Checks and installs dependencies. **Confirm, never automatic** | T1 | ADMIN | — |
+| `HERON-INS-CFG-006` | Configuration Agent | Writes initial configuration | T1 | ADMIN | — |
+| `HERON-INS-BRN-007` | Brain Initialization Agent | Initialises knowledge stores | T1 | ADMIN | — |
+| `HERON-INS-RAG-008` | RAG Initialization Agent | Creates vector store, indexes, embedding config | T1 | ADMIN | — |
+| `HERON-INS-HLT-009` | Health Check Agent | Verifies the install end to end | T1 | READ | — |
+| `HERON-INS-ONB-010` | First-Run Onboarding Agent | Guides the user once, then gets out of the way | T2 | READ | — |
+
+## 16. Operations, Health & Resilience — 11
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-OPS-SCH-001` | Background Scheduler Agent | P0–P6 priority. User work always wins | T1 | — | — |
+| `HERON-OPS-QUE-002` | Queue Manager | Background work queue | T1 | — | — |
+| `HERON-OPS-RES-003` | Resource Manager | CPU, RAM, disk, AI spend, **Revit responsiveness**. Pauses background work | T1 | — | — |
+| `HERON-OPS-HLT-004` | Platform Health Agent | HEALTHY / WARNING / DEGRADED / FAILED across every component | T1 | READ | 3 |
+| `HERON-OPS-DIA-005` | Self-Diagnostics Agent | *"Diagnose Heron"* — one clean report | T1 | READ | — |
+| `HERON-OPS-HEA-006` | Self-Healing Agent | Repairs **derived** state freely; proposes everything else | T1 | MODIFY | — |
+| `HERON-OPS-STP-007` | **Emergency Stop Agent** | Global halt from the ribbon. Works when the agent side is stuck. Sticky ↗ | T1 | READ | **6** |
+| `HERON-OPS-SAF-008` | Safe Mode Agent | Disables recent components, returns to last-known-good | T1 | ADMIN | — |
+| `HERON-OPS-FLG-009` | Feature Flag Agent | Flags for staged rollout and shadow running | T1 | ADMIN | — |
+| `HERON-OPS-UPD-010` | Update Agent | Detects, downloads, migrates, validates, **rolls back** | T1 | ADMIN | — |
+| `HERON-OPS-OBS-011` | Observability Agent | Latency, token usage, **model calls per request**, cost per request | T1 | READ | — |
+
+## 17. Documentation — 8
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-DOC-API-001` | API Documentation Agent | Generated from tool schemas | T1 | — | — |
+| `HERON-DOC-AGT-002` | Agent Documentation Agent | Generated from the agent registry | T1 | — | — |
+| `HERON-DOC-SKL-003` | Skill Documentation Agent | Generated from skill metadata | T1 | — | — |
+| `HERON-DOC-FRG-004` | Fragment Documentation Agent | Generated from fragment metadata | T1 | — | — |
+| `HERON-DOC-REL-005` | Release Notes Agent | Structured notes per release | T2 | — | — |
+| `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries | T2 | — | — |
+| `HERON-DOC-RDM-007` | README Agent | Keeps the README current | T2 | — | — |
+| `HERON-DOC-CHG-008` | Change Log Agent | Added / Improved / Fixed / Deprecated per version | T1 | — | — |
+
+---
+
+## Summary
+
+| Department | Agents | T1 | T2 | T3 |
+|---|---|---|---|---|
+| Orchestration & Communication | 5 | 0 | 4 | 1 |
+| Revit Engineering | 25 | 24 | 1 | 0 |
+| MCP / Bridge | 11 | 11 | 0 | 0 |
+| Session & Bridge Management | 5 | 5 | 0 | 0 |
+| Knowledge & RAG | 16 | 11 | 4 | 1 |
+| Fragment Lifecycle | 6 | 2 | 2 | 2 |
+| Import & Migration | 14 | 6 | 5 | 3 |
+| Standards & BIM QA | 12 | 0 | 11 | 1 |
+| Development | 18 | 9 | 7 | 2 |
+| Agent Lifecycle & HR | 12 | 5 | 4 | 3 |
+| Kernel & Platform | 14 | 14 | 0 | 0 |
+| Workspace & Folder | 12 | 10 | 2 | 0 |
+| Naming & Taxonomy | 7 | 5 | 2 | 0 |
+| GitHub | 10 | 8 | 2 | 0 |
+| Installation & Update | 10 | 9 | 1 | 0 |
+| Operations & Health | 11 | 11 | 0 | 0 |
+| Documentation | 8 | 5 | 3 | 0 |
+| **Total** | **166** | **135** | **48** | **13** |
+
+**[NOTE]** The distribution is the point. **135 of 166 agents never call a model** — they are ordinary
+classes with a method or two. Of the rest, 48 make one scoped call and 13 run a real agentic loop.
+
+Read that way, the platform is a normal application with about 135 services, 48 narrow model calls, and
+13 genuine agentic workflows. That is a tractable system, not an intimidating one.
+
+**Phase 0 and Phase 1 need about 20 of these**, 17 of them T1 —
+see [08](08-agent-catalog.md) and [27](27-build-order.md).
+
+---
+
+## Maintaining this list
+
+This is a **document today and a generated artefact later**. Once the Agent Registry
+([`HERON-AHR-REG-008`](#10-agent-lifecycle--hr--12)) exists, this page should be produced from it by the
+Agent Documentation Agent rather than hand-maintained — otherwise it drifts within weeks
+([06 §12](06-heron-platform.md)).
+
+Entries marked **↗** have responsibilities written during review rather than quoted from a
+specification. They are proposals and should be confirmed as each agent is built.

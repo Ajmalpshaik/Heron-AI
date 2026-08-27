@@ -5,6 +5,10 @@
 > **T1** = deterministic service, no model call · **T2** = single scoped LLM call · **T3** = full agentic loop.
 >
 > This is a **target organisation chart**, not a v1 backlog. See [ROADMAP.md](ROADMAP.md) for what actually gets built first.
+>
+> **For the full list — every agent, what it does, its tier, risk level and build step — see
+> [28 — The Complete Agent Registry](28-agent-registry.md).** This document explains the *shape*;
+> that one is the reference table.
 
 ---
 
