@@ -383,7 +383,7 @@ live client models).
 ### Decision
 
 **Apache License 2.0.** Canonical text fetched from GitHub's licence API, copyright
-"2026 Ajmal Alavudheen".
+"2026 Ajmal PS".
 
 ### Alternatives considered
 

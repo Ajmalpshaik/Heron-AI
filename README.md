@@ -139,4 +139,4 @@ See [17 — Open Source & Distribution](docs/17-open-source-and-distribution.md)
 
 ---
 
-**Owner:** Ajmal (AjmalPS) · **Domain:** BIM / Revit engineering automation
+**Owner:** Ajmal PS · **Domain:** BIM / Revit engineering automation
