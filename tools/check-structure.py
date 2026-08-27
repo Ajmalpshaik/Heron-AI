@@ -61,6 +61,14 @@ ALLOWED = {
 # the core has become untestable without Revit.
 REVIT_API = re.compile(r"\bAutodesk\.Revit\b")
 
+# Only the Path Manager may resolve a Windows special folder. Anything else
+# building its own path is how two parts of the system quietly disagree about
+# where something lives - which happened once, in the add-in's log path, and
+# is the reason this rule exists.
+SPECIAL_FOLDER = re.compile(r'GetFolderPath|SpecialFolder[.]|environ.\[.(APPDATA|LOCALAPPDATA)')
+PATH_OWNERS = ("platform/Heron.Core/HeronPaths.cs",
+               "mcp/client/heron_bridge_client.py")
+
 CODE_EXT = (".cs", ".py", ".ps1", ".csproj")
 SKIP_DIRS = {"bin", "obj", ".vs", "__pycache__", ".git", "node_modules"}
 
@@ -125,6 +133,11 @@ def main():
             # The adapter boundary. tools/ is exempt: scripts talk ABOUT the
             # code rather than being it - and this very checker contains the
             # pattern, which it duly flagged on its first run.
+            if (path not in PATH_OWNERS and part != "tools"
+                    and SPECIAL_FOLDER.search(text)):
+                problems.append("%s builds its own path - only HeronPaths may resolve a "
+                                "special folder (docs/06 section 2)" % path)
+
             if part not in ("revit", "tools") and REVIT_API.search(text):
                 problems.append("%s references Autodesk.Revit outside revit/ - "
                                 "the adapter boundary is broken (docs/16 section 4)" % path)

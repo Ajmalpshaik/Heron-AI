@@ -12,9 +12,10 @@ Heron bridge client - Step 1.
 Finds every connected Revit, talks to one, and proves the chain works.
 No Revit API, no MCP yet. Just: can something outside Revit reach inside it?
 
-    python python/heron_bridge_client.py           # list connected sessions
-    python python/heron_bridge_client.py ping      # ping every session
-    python python/heron_bridge_client.py ping 24312
+    python mcp/client/heron_bridge_client.py           # list connected sessions
+    python mcp/client/heron_bridge_client.py ping      # ping every session
+    python mcp/client/heron_bridge_client.py ping 24312
+    python mcp/client/heron_bridge_client.py doctor    # diagnose a failure
 
 Two rules from the field notes (docs/00e, docs/25) are enforced here:
 
@@ -197,6 +198,91 @@ def cmd_ping(pid=None):
     return 1 if failures else 0
 
 
+
+def cmd_doctor():
+    """
+    Self-diagnostics - the prototype of HERON-OPS-DIA-005.
+
+    Everything needed to explain a failure, in one paste. Reports what it
+    found rather than what it expected, so the output is useful even when
+    the conclusion is wrong.
+    """
+    import platform
+
+    print("Heron doctor")
+    print("=" * 60)
+    print("")
+    print("Environment")
+    print("  python          %s" % sys.version.split()[0])
+    print("  os              %s" % platform.platform())
+    print("  LOCALAPPDATA    %s" % os.environ.get("LOCALAPPDATA", "(not set)"))
+    print("")
+
+    print("Discovery directory")
+    print("  path            %s" % DISCOVERY_DIR)
+    print("  exists          %s" % os.path.isdir(DISCOVERY_DIR))
+    entries = []
+    if os.path.isdir(DISCOVERY_DIR):
+        entries = [f for f in sorted(os.listdir(DISCOVERY_DIR)) if f.endswith(".json")]
+        print("  files           %s" % (", ".join(entries) if entries else "(none)"))
+    print("")
+
+    if not entries:
+        print("  No Revit has announced itself.")
+        print("")
+        print("  Most likely, in order:")
+        print("    1. Revit is not running.")
+        print("    2. Revit is running but Connect Heron was never pressed.")
+        print("       A Revit that was never connected is invisible here, by design.")
+        print("    3. The add-in did not load. Check the log below.")
+        print("")
+
+    print("Bridges")
+    for name in entries:
+        path = os.path.join(DISCOVERY_DIR, name)
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                record = json.load(fh)
+        except (OSError, ValueError) as exc:
+            print("  %s  UNREADABLE: %s" % (name, exc))
+            continue
+
+        bridge = Bridge(record, path)
+        print("  %s" % name)
+        print("    pipe          %s" % bridge.pipe_name)
+        print("    revit         %s" % bridge.revit_version)
+        print("    addin         %s" % bridge.addin_version)
+        print("    protocol      %s (this client expects %s)"
+              % (bridge.protocol_version, PROTOCOL_VERSION))
+        reply = bridge.request("ping")
+        if reply is None:
+            print("    ping          NO REPLY - the file is stale, or the pipe is not listening")
+        else:
+            print("    ping          %s" % reply)
+    print("")
+
+    log = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "logs", "addin.log")
+    print("Add-in log")
+    print("  path            %s" % log)
+    if os.path.exists(log):
+        try:
+            with open(log, "r", encoding="utf-8", errors="replace") as fh:
+                tail = fh.readlines()[-15:]
+            print("  last %d lines:" % len(tail))
+            for line in tail:
+                print("    %s" % line.rstrip())
+        except OSError as exc:
+            print("  unreadable: %s" % exc)
+    else:
+        print("  NOT FOUND - the add-in has never started.")
+        print("  That means Revit did not load it. Check that the manifest is at:")
+        print("    %%APPDATA%%\Autodesk\Revit\Addins\<version>\Heron.addin")
+    print("")
+    print("=" * 60)
+    print("Paste all of the above when reporting a problem.")
+    return 0
+
+
 def main(argv):
     if os.name != "nt":
         print("Heron's bridge uses Windows named pipes. Revit is Windows-only.")
@@ -206,6 +292,8 @@ def main(argv):
         return cmd_list()
     if argv[1] == "ping":
         return cmd_ping(argv[2] if len(argv) > 2 else None)
+    if argv[1] == "doctor":
+        return cmd_doctor()
 
     print(__doc__.strip())
     return 2

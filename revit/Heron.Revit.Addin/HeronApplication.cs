@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Windows.Media.Imaging;
 using Autodesk.Revit.UI;
 using Heron.Bridge;
+using Heron.Core;
 
 namespace Heron.Revit.Addin
 {
@@ -41,10 +42,11 @@ namespace Heron.Revit.Addin
         {
             try
             {
-                LogPath = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Heron", "logs", "addin.log");
-                Directory.CreateDirectory(Path.GetDirectoryName(LogPath));
+                // Paths come from the Path Manager, never built here. An
+                // earlier version of this line hardcoded %APPDATA% and quietly
+                // disagreed with HeronPaths - which is the exact drift the
+                // Path Manager exists to prevent (docs/06 section 2).
+                LogPath = Path.Combine(HeronPaths.Logs, "addin.log");
 
                 var revitVersion = application.ControlledApplication.VersionNumber;
                 var addinVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
