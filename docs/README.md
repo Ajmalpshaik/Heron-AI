@@ -39,6 +39,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 
 | If you want to… | Read |
 |---|---|
+| **Pick up where the last session stopped** | [**../HANDOVER.md**](../HANDOVER.md) |
 | Understand what Heron AI is | [01 — Vision & Principles](01-vision-and-principles.md) |
 | See the original specification, unaltered | [00 — Master Specification](00-master-specification.md) |
 | Know what is missing or risky | [PROPOSALS.md](PROPOSALS.md) |

@@ -78,6 +78,11 @@ Revit
 
 ---
 
+## Picking this up
+
+**Start with [HANDOVER.md](HANDOVER.md)** — what exists, what is proven versus merely built, the five
+things that will bite you, and what is waiting on a decision.
+
 ## Documentation
 
 Full index: **[docs/README.md](docs/README.md)**
