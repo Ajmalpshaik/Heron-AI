@@ -491,8 +491,14 @@ classes with a method or two. Of the rest, 64 make one scoped call and 20 run a 
 Read that way, the platform is a normal application with about 166 services, 64 narrow model calls, and
 20 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
-**Phase 0 and Phase 1 need about 20 of these**, 17 of them T1 —
-see [08](08-agent-catalog.md) and [27](27-build-order.md).
+**Phase 0 and Phase 1 need 46 of these** — the ones carrying a step number in the tables above.
+See [08](08-agent-catalog.md) and [27](27-build-order.md).
+
+> **Correction, 2026-08-27:** this line said *"about 20"*, and [08](08-agent-catalog.md) said *"45 …
+> the other 175"*. Counting the rows gives **46** (11 · 2 · 7 · 9 · 6 · 11 across steps 1–6), leaving
+> **204**. Three wrong numbers about the same set, in two documents, none of them derived from the
+> rows they describe. `tools/check-metadata.py` now counts the rows and fails if a sentence here
+> disagrees, which is the only reason to trust the figure above over the three it replaces.
 
 ---
 

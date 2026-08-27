@@ -32,6 +32,8 @@
 | [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope) | Live session list; freeze out of scope | ✅ Accepted |
 | [D-17](#d-17--runtime-state-is-machine-local-not-roaming) | Runtime state is machine-local, not roaming | ✅ Accepted |
 | [D-18](#d-18--the-transaction-agent-belongs-to-step-6-not-step-2) | The Transaction Agent belongs to Step 6, not Step 2 | ✅ Accepted |
+| [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) | Writing is off by default until the write path has met a real Revit | ✅ Accepted |
+| [D-20](#d-20--millimetres-to-feet-is-arithmetic-not-unitutils) | Millimetres to feet is arithmetic, not UnitUtils | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -909,6 +911,87 @@ are READ.
 - The rule generalises, and is recorded in the conventions skill: a read-only operation opens no
   transaction, and none is created "for later".
 - Step 6 gains one agent. Its ordering does not change — the rails already come before the write.
+
+---
+
+## D-19 — Writing is off by default until the write path has met a real Revit
+
+**Status:** Accepted · **Date:** 2026-08-27 · **Found during:** Step 6 implementation
+
+### Context
+
+Until Step 6, Heron was read-only **by construction**: there was no transaction code in the repository,
+so the guarantee needed no trust and no configuration. [D-18](#d-18--the-transaction-agent-belongs-to-step-6-not-step-2)
+is the decision that kept it that way.
+
+Step 6 ends that, and it ended it under the worst available conditions. The write path was written on a
+machine with **no Revit, no Windows and no .NET SDK** — it has never been compiled, never loaded, and has
+never moved anything. The compiler has not read it.
+
+Golden Rule 18 already covers the general case: *generated code never touches a live model on its first
+run*. This is that rule arriving at the most consequential file in the repository.
+
+### Decision
+
+`HeronPermissions` refuses anything at `MODIFY` or above unless **`write.enabled = true`** is set in the
+user's config. It defaults to **false**, and the refusal names the setting and the file so the user is
+not left hunting.
+
+The shape is borrowed from a property Heron already has and has already proven: **a Revit that was never
+connected is invisible**, because `bridge.autoConnect` defaults to false. Nothing reaches a model the
+user did not offer up. This is the same sentence applied to writing rather than to connecting.
+
+### Consequences
+
+- The read-only guarantee is **weaker than it was**, and that must be said plainly rather than presented
+  as an improvement. It moved from "there is no code to do this" to "the code is switched off". The first
+  needs no trust; the second does.
+- The default flips to `true` **only** when [HANDOVER §6](../HANDOVER.md#6-the-return-to-the-machine-checklist)
+  has been walked end to end against a real model — not when the code merely compiles.
+- Anyone reading `HeronPermissions` finds the reasoning in the file, not only here. The comment saying
+  why it is off is written to be **deleted** once the path is proven, so a stale justification cannot sit
+  there looking current.
+
+---
+
+## D-20 — Millimetres to feet is arithmetic, not UnitUtils
+
+**Status:** Accepted · **Date:** 2026-08-27 · **Found during:** Step 6 implementation
+
+### Context
+
+Step 6 needs the user's millimetres as Revit's internal length unit. The obvious route is `UnitUtils`,
+and the obvious route has a hole in it across the range this repository supports.
+
+The units API was **replaced at Revit 2021**: `DisplayUnitType.DUT_MILLIMETERS` became
+`UnitTypeId.Millimeters`, the old overloads were deprecated and later removed. Heron builds 2020 through
+2027 from one codebase, so `UnitUtils` would need a compile symbol around it — and
+`Directory.Build.props` defines `REVIT2024_OR_GREATER` upward but has **no `REVIT2021_OR_GREATER`** to
+hang it on. The symbol would have to be added to guard a conversion whose answer never changes.
+
+The failure mode is not hypothetical. A unit call that a newer Revit rejects outright is a bug this
+work has already met elsewhere, and it hid for months because nothing exercised it.
+
+### Decision
+
+`HeronUnits` converts by the fixed ratio. Revit stores lengths internally in decimal **feet** in every
+supported release, and the international foot is **exactly 304.8 mm** by definition. The conversion has
+no version, no locale and no project setting in it.
+
+The boundary, for anyone extending it: a conversion with a **fixed ratio** (length, angle) belongs in
+`HeronUnits`. A conversion that depends on what the project displays, or on a unit family Heron does not
+define, genuinely needs the API — and needs the version split that comes with it.
+
+### Consequences
+
+- No compile symbol, no version branch, and nothing for Autodesk to move underneath it.
+- It lives in `platform/Heron.Core`, not in `revit/`, because it has no Revit reference. The layering
+  checker enforces that on its own.
+- The ratio is **exact and must never be "improved"** to more decimal places. It is a definition, not a
+  measurement.
+- A ceiling of 100 km and a rejection of NaN and infinity sit alongside it. Those are not unit concerns;
+  they are there because this is the last place a malformed number can be stopped before it reaches a
+  transaction on somebody's building.
 
 ---
 

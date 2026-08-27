@@ -20,14 +20,15 @@ namespace Heron.Revit.Addin
     /// <see cref="RevitDispatcher.Execute"/>, which means every method here is
     /// already on Revit's thread and inside an API context.
     ///
-    /// STEP 2 SCOPE: one operation, deliberately. Counting elements proves the
-    /// thread hop works and nothing else, which is the whole point of the step.
-    /// Categories arrive at Step 4 and writing at Step 6 - and writing arrives
-    /// WITH its safety rails, not before them.
+    /// EVERYTHING IN THIS FILE IS READ-ONLY, and nothing here opens a
+    /// transaction. Counting and selecting change what is shown, never what
+    /// exists, so Ctrl+Z has nothing to undo after either of them.
     ///
-    /// EVERYTHING HERE IS READ-ONLY, so nothing opens a transaction. An empty
-    /// transaction "for later" is how a write path appears before the
-    /// guardrails that make writing safe.
+    /// Writing arrived at Step 6 and lives in RevitWrite, which this file
+    /// routes to for any operation it does not recognise. Keeping it separate
+    /// is not tidiness: it means the whole set of things that can change a
+    /// model is one file a reviewer can read end to end, and it keeps the
+    /// proven read path from being edited every time the write path moves.
     /// </summary>
     internal static class RevitOperations
     {
@@ -44,9 +45,17 @@ namespace Heron.Revit.Addin
                     return SelectByCategory(app, Json.ReadString(request, "category"));
 
                 default:
+                    // Step 6 added the write path. It lives in its own file so
+                    // that everything able to change a model is in one place a
+                    // reviewer can read end to end, rather than interleaved
+                    // with the reads that are already proven.
+                    var written = RevitWrite.Run(app, request, op);
+                    if (written != null) return written;
+
                     return Json.Error("unknown_op",
                         "No handler for '" + (op ?? "(none)") + "'. " +
-                        "Step 4 supports ping, info, count_elements and select_by_category.");
+                        "Heron supports ping, info, count_elements, select_by_category, " +
+                        "preview_move and move_elements.");
             }
         }
 
@@ -116,19 +125,9 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string SelectByCategory(UIApplication app, string category)
         {
-            if (string.IsNullOrEmpty(category))
-            {
-                return Json.Error("no_category",
-                    "No category was given. Try 'ducts'.");
-            }
-
             BuiltInCategory builtIn;
-            if (!Categories.TryGetValue(category.Trim(), out builtIn))
-            {
-                return Json.Error("unknown_category",
-                    "Heron does not know the category '" + category + "' yet. " +
-                    "It understands: " + string.Join(", ", Known()) + ".");
-            }
+            var unknown = ResolveCategory(category, out builtIn);
+            if (unknown != null) return unknown;
 
             var uiDoc = app == null ? null : app.ActiveUIDocument;
             var doc = uiDoc == null ? null : uiDoc.Document;
@@ -150,6 +149,34 @@ namespace Heron.Revit.Addin
                 Json.Str("category", category.Trim()),
                 Json.Str("document", doc.Title),
                 Json.Str("scope", "the whole model, not just the active view"));
+        }
+
+        /// <summary>
+        /// A BIM word to a Revit category, or the refusal to give back.
+        ///
+        /// Shared with the write path on purpose. One table means "ducts"
+        /// cannot mean OST_DuctCurves when Heron SELECTS and something else
+        /// when it MOVES - which is the kind of divergence that is invisible
+        /// in review and obvious only in the model afterwards.
+        /// </summary>
+        internal static string ResolveCategory(string category, out BuiltInCategory builtIn)
+        {
+            builtIn = BuiltInCategory.INVALID;
+
+            if (string.IsNullOrEmpty(category))
+            {
+                return Json.Error("no_category",
+                    "No category was given. Try 'ducts'.");
+            }
+
+            if (!Categories.TryGetValue(category.Trim(), out builtIn))
+            {
+                return Json.Error("unknown_category",
+                    "Heron does not know the category '" + category + "' yet. " +
+                    "It understands: " + string.Join(", ", Known()) + ".");
+            }
+
+            return null;
         }
 
         private static string[] Known()

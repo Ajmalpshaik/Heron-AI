@@ -23,11 +23,19 @@ Then read [docs/README.md](docs/README.md) for the map and
 
 **Phase 0 is complete.** Steps 1 to 5 of 6 are built and **proven in real Revit 2020 and 2024**: the
 bridge, the thread hop onto Revit's own thread, a working MCP server inside Claude Code, *"select all
-ducts"* with an audit trail, and one-chat-one-Revit binding that fails closed. Eighteen decisions are
-recorded and 26 questions remain open, none blocking. The repository is **private**.
+ducts"* with an audit trail, and one-chat-one-Revit binding that fails closed. The repository is
+**private**.
 
-**Everything so far is read-only — by construction, not by discipline.** There is no transaction code
-anywhere in the repository, so Heron cannot change a model even by mistake. Step 6 is the first write.
+**Step 6 — the first write — is BUILT AND UNPROVEN, and the gap between those two words is the whole
+story of this section.** It was written on a phone, on a machine with no Revit, no Windows and no .NET
+SDK. The add-in half has never been compiled, never loaded and has never moved anything. The chat half
+is tested and passing. Do not read "Step 6 is built" as "Step 6 works".
+
+**Heron can no longer be read-only by construction, so it is read-only by default instead.** That is a
+real weakening and it was made deliberately: until 2026-08-27 there was no transaction code in the
+repository at all, and the guarantee needed no trust. Now there is, and the guarantee rests on
+`write.enabled` defaulting to `false` in `HeronPermissions`. **Leave it false until the write path has
+been through a real Revit.** [§6](#6-the-return-to-the-machine-checklist) is how that happens.
 
 ---
 
@@ -84,6 +92,15 @@ now that the next stretch of work happens where Revit cannot be reached.
 | **Revit 2027** | Builds and installs. Never launched — the owner says his 2027 does not work |
 | **Naming the session in a selection answer** | Fixed after both models turned out to be called `Project1`. Needs a Claude restart to go live, then one look |
 | **Anything committed from mobile after 2026-08-28** | **Assume untested.** Add it to [§6](#6-the-return-to-the-machine-checklist) |
+| **The whole of Step 6** | Never compiled. No .NET SDK on the machine it was written on, so not even the compiler has read it |
+| `RevitWrite.cs` — preview, re-count, TransactionGroup, rollback | The one file that can change a model. Every claim in it is unverified |
+| `HeronUnits`, `HeronPermissions`, `HeronStop` | Kernel C#. Plain arithmetic and flags, but still never compiled |
+| The Emergency Stop ribbon button | New `PushButtonData` in a file whose ribbon currently works. **If Heron will not load after this, look here first** |
+| `revit_preview_move`, `revit_apply_move`, `revit_use_this_model` | The three new MCP tools. Never seen by a running host |
+
+> The chat side of Step 6 **is** tested and passing — distance parsing, document pinning, single-use
+> approval: `python tests/test_write_safety.py`, 38 checks. That test says nothing whatsoever about the
+> transaction, the rollback or the move, and says so itself.
 
 ### Does not exist at all
 
@@ -144,6 +161,7 @@ python tools/check-metadata.py         # the standard, registry vs code, and ver
 python tools/check-structure.py        # layout, layering, adapter boundary, path ownership
 python tests/test_bridge_roundtrip.py  # the bridge end to end — Windows, but NO Revit
 python tests/test_session_binding.py   # one chat one Revit, all four cases — pure Python
+python tests/test_write_safety.py      # Step 6's CHAT half — distances, pinning, approval
 ```
 
 - **All documentation, decisions, specifications and open questions.**
@@ -175,7 +193,44 @@ Add a line every time something is built away from Revit; delete a line only whe
     whether that is the install or Heron
 [ ] Re-run everything in §3 once, in one sitting, against the current build
 [ ] Anything committed from mobile after 2026-08-28 — add it here as it happens
+
+STEP 6 — THE WRITE PATH. None of this has been compiled. Work down in order; each line
+assumes the ones above it passed. Do NOT set write.enabled until line 3 is green.
+
+[ ] 1. It COMPILES.  tools\check-scripts is not this repo — build it properly:
+       dotnet build -p:RevitVersion=2020 -p:SkipAjToolsAutoDeploy=true
+       then again for 2024. Expect real errors: nothing here has met a compiler.
+       Most likely spots — CreationGUID, WorksharingUtils.GetCheckoutStatus,
+       IFailuresPreprocessor, TransactionGroup.GetStatus, BuiltInCategory.INVALID.
+[ ] 2. Revit still LOADS and the ribbon still appears. A third button was added to a
+       panel that worked; if the tab is missing, that is the cause.
+[ ] 3. Emergency Stop toggles, and its dialog says what it does and does not do.
+[ ] 4. With write.enabled still FALSE: ask to move ducts. Heron must refuse and name
+       the setting. This proves the gate before anything can move.
+[ ] 5. Set write.enabled = true in %APPDATA%\Heron\config\heron.config. Restart Revit.
+[ ] 6. ON A SCRATCH MODEL, NOT A REAL PROJECT: "move the ducts up 200 mm".
+       Preview appears, says a count, changes nothing. Check the count by eye.
+[ ] 7. Say yes. They move. MEASURE ONE — 200 mm, not 200 feet and not 0.656 of
+       anything. This is the check that catches a unit error, and it is the whole
+       reason HeronUnits exists.
+[ ] 8. ONE Ctrl+Z puts it all back, as a single undo entry named "Heron: move ducts...".
+       If it takes two, Golden Rule 16 is broken.
+[ ] 9. Preview, then wait over 2 minutes, then approve. It must refuse as expired.
+[ ] 10. Preview, then draw one more duct, then approve. It must refuse — the model moved on.
+[ ] 11. Preview in one project, click into a second open project, approve. It must refuse
+        and name both models. This is Golden Rule 20, and it is the one that stops a
+        change landing in the wrong building.
+[ ] 12. Approve twice in a row. The second must find nothing to approve — not move
+        the ducts a further 200 mm.
+[ ] 13. A pinned duct, and (if a workshared model is to hand) one owned by another user:
+        both reported as skipped in the preview, and left alone.
+[ ] 14. Then set write.enabled back to FALSE until the whole of this list has passed.
 ```
+
+**On line 1 specifically — expect it to fail the first time, and do not read that as the design
+being wrong.** Untested code that compiles first go is the surprise, not the norm. The value of
+everything above is that each line names one thing to look at, so a failure is a five-minute fix
+rather than an afternoon of reading.
 
 The one-command path back to a working machine:
 
@@ -214,6 +269,8 @@ Eighteen are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-beari
 | **D-15** | **Where the field notes disagree with a specification, the field notes win.** Observed beats designed |
 | **D-17** | Runtime state is machine-local; user data roams; the audit log stays with the data because it is evidence |
 | **D-18** | The Transaction Agent belongs to **Step 6**, not Step 2 — a write path built before its rails ships without them |
+| **D-19** | **Writing is off by default** until the write path has met a real Revit. Read-only stopped being structural the moment Step 6 existed; this is what replaced it |
+| **D-20** | Millimetres to feet is **arithmetic, not `UnitUtils`** — exact, and nothing for Autodesk to move under it across 2020–2027 |
 
 **Golden Rules** — 15 official plus 6 proposed — are in [docs/14](docs/14-golden-rules.md). The proposed
 ones (16–21) cover undo, preview-before-modify, sandboxing, permission escalation, document pinning and

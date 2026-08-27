@@ -1,4 +1,4 @@
-// Heron-Agent:  HERON-REVIT-CON-001, HERON-REVIT-HLT-025, HERON-REVIT-UI-022
+// Heron-Agent:  HERON-REVIT-CON-001, HERON-REVIT-HLT-025, HERON-REVIT-UI-022, HERON-OPS-STP-007
 // Heron-Step:   1
 // Heron-Status: DRAFT
 // Heron-Since:  0.1.0
@@ -107,6 +107,46 @@ namespace Heron.Revit.Addin
                 "Protocol:  " + Heron.Bridge.BridgeIdentity.ProtocolVersion + "\n\n" +
                 "Announced in:\n" + id.DiscoveryFilePath);
 
+            return Result.Succeeded;
+        }
+    }
+
+    /// <summary>
+    /// Emergency Stop. Stops Heron changing anything further, and lets it
+    /// work again on a second press.
+    ///
+    /// It is a ribbon button rather than a chat command because of WHEN it is
+    /// needed: the user is looking at Revit, something is happening they did
+    /// not mean, and the last thing that should stand between them and
+    /// stopping it is finding a window and composing a sentence.
+    ///
+    /// The dialog is honest about the limit. This stops the NEXT thing Heron
+    /// would do; it cannot reach into a Revit API call already running. If
+    /// something has already changed, Ctrl+Z is the answer, and the user needs
+    /// to know that in the same breath - a stop button they believe is an
+    /// abort button is worse than none, because they stop reaching for undo.
+    /// </summary>
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class EmergencyStopCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            if (HeronStop.IsStopped)
+            {
+                HeronStop.Resume();
+                TaskDialog.Show("Heron AI",
+                    "Heron can work again.\n\n" +
+                    "It will still ask you to approve anything that changes the model.");
+                return Result.Succeeded;
+            }
+
+            HeronStop.Stop();
+            TaskDialog.Show("Heron AI",
+                "Heron is stopped.\n\n" +
+                "Nothing more will be sent to the model until you press this again.\n\n" +
+                "This stops what comes NEXT. It cannot interrupt something Revit has already " +
+                "started - if a change has already happened, Ctrl+Z in Revit is what puts it back.");
             return Result.Succeeded;
         }
     }

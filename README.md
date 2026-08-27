@@ -53,7 +53,7 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 | Step 4 — the first BIM answer | ✅ **Proven.** *"select all ducts"* — 4 found and highlighted on screen in both Revits, plus the audit trail |
 | Step 5 — more than one Revit | ✅ **Proven.** Refused to guess between two, took "1", and **stopped** when that Revit closed rather than using the other |
 | ⛔ **Phase 0 ends here** | Everything above is **read-only**. Nothing can change a model |
-| Step 6 — the first write | ⛔ Not started. Arrives **with** undo, preview and an emergency stop — that is Step 6, and it arrives with its safety rails ([build order](docs/27-build-order.md)) |
+| Step 6 — the first write | ⚠️ **Built, never compiled.** The rails came first as the [build order](docs/27-build-order.md) requires — one `TransactionGroup`, preview, re-count, document pinning, permission gate, emergency stop, then the move. The chat half is tested; **the add-in half has not been through a compiler**, so nothing here is proven. Writing stays off until it is ([D-19](docs/DECISIONS.md), [HANDOVER §6](HANDOVER.md#6-the-return-to-the-machine-checklist)) |
 
 **What is proven and what is only built are different things.**
 [HANDOVER.md](HANDOVER.md) §3 keeps that distinction honest, item by item.

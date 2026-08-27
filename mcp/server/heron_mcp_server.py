@@ -7,7 +7,7 @@
 # See docs/29-metadata-standard.md
 
 """
-Heron's MCP server - Step 3.
+Heron's MCP server - Step 3, extended at Steps 5 and 6.
 
 The moment the whole chain exists: a sentence in the AI host, through MCP, down
 the named pipe, onto Revit's own thread, and back. Everything after this step
@@ -16,10 +16,26 @@ than making the chain exist.
 
     python mcp/server/heron_mcp_server.py        # speaks MCP over stdio
 
-TWO TOOLS. revit_health answers "is Revit working?". revit_select_by_category
-is the Phase 0 goal - the first thing a modeller would actually ask for, and
-the first time Heron does something they can SEE on screen. Writing is Step 6
-and arrives with its safety rails, never before them.
+THE TOOLS, and which of them can change anything:
+
+    revit_health              reads      is Revit working, and what is open
+    revit_select_by_category  reads      the Phase 0 goal - visible on screen
+    heron_version             reads      do both halves agree
+    revit_use_session         reads      which Revit this chat means
+    revit_use_this_model      reads      which MODEL this chat means
+    revit_preview_move        reads      what a move WOULD do. Changes nothing
+    revit_apply_move          WRITES     the only tool here that can
+
+Six of the seven only look. revit_apply_move is the exception, and it cannot
+run on its own: it applies a preview the user has already seen, once, and the
+add-in re-checks the model before it writes. Writing is switched off entirely
+until write.enabled is set - see HeronPermissions.
+
+    ===================== NOT PROVEN =====================
+    The Step 6 half was written on a machine with no Revit.
+    The add-in code behind revit_apply_move has never been
+    compiled or run. See HANDOVER section 6.
+    ======================================================
 
 The answer is written for a person, not for a machine to parse. The host reads
 it aloud, so it says what is true and what to do next - never a status code.
@@ -39,6 +55,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 import heron_bridge_client as bridge          # noqa: E402
 from heron_session import SessionBinding, NotBound   # noqa: E402
+from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
+                         describe, parse_millimetres)
 from mcp.server.fastmcp import FastMCP        # noqa: E402
 
 server = FastMCP("heron")
@@ -46,6 +64,11 @@ server = FastMCP("heron")
 # One chat, one Revit. Lives as long as this server does, which is as long as
 # the chat does - the correct scope for a binding (docs/25).
 binding = SessionBinding()
+
+# One chat, one MODEL - the other half of the same question (Golden Rule 20),
+# and the approval the user has actually been shown. Same scope, same reason.
+pinned = DocumentPin()
+approval = PendingApproval()
 
 
 def _describe(b, reply):
@@ -262,6 +285,158 @@ def revit_use_session(session: str) -> str:
             "Every request goes there until you say otherwise. If it closes, Heron will stop "
             "rather than switch to another model."
             % (chosen.revit_version, chosen.pid, document))
+
+
+@server.tool()
+def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
+    """
+    Show what moving elements up or down WOULD do, without changing anything.
+
+    Use this whenever the user asks to move, raise, lower or shift elements.
+    It changes nothing: it reports how many would move, how many would be
+    skipped, and in which model. Call revit_apply_move afterwards only if the
+    user says yes to what this describes.
+
+    Distance is in millimetres - "200", "200 mm", "0.5 m". A negative distance
+    moves down. Heron does not accept feet or inches.
+    """
+    try:
+        millimetres = parse_millimetres(distance)
+    except BadDistance as bad:
+        return str(bad)
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("preview_move", op_args={
+        "category": category,
+        # As a string, matching what the add-in's JSON reader can read. The
+        # number has already been validated here and is validated again there.
+        "millimetres": repr(millimetres),
+    })
+    session.close()
+
+    if reply is None:
+        approval.clear()
+        return "Revit %s (session %s) did not answer. Nothing was changed." % (
+            session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        approval.clear()
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    # GOLDEN RULE 20. The preview is about whichever model is in front. If
+    # that is not the model this chat has been working on, say so and offer
+    # nothing to approve - a preview the user skims for the model they THINK
+    # they are in is exactly how the wrong building gets changed.
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        approval.clear()
+        return wrong_model
+
+    summary = "%s up %s in %s" % (
+        "{:,}".format(reply.get("willMove", 0)) + " " + str(reply.get("category")),
+        describe(millimetres), reply.get("document"))
+
+    approval.offer(reply.get("token"), summary)
+
+    lines = ["This would move %s." % summary]
+
+    skipped = reply.get("willSkip", 0)
+    if skipped:
+        lines.append("%s would be skipped - pinned, or owned by another user."
+                     % "{:,}".format(skipped))
+
+    lines.append("")
+    lines.append("Nothing has been changed yet. Say yes and Heron will apply it, "
+                 "and one Ctrl+Z in Revit puts it back.")
+    lines.append("(The preview lasts about %s minutes, and Heron checks the model "
+                 "again before it writes.)" % (int(reply.get("expiresInSeconds", 120)) // 60))
+
+    return "\n".join(lines)
+
+
+@server.tool()
+def revit_apply_move() -> str:
+    """
+    Apply the move the user has just approved, after seeing revit_preview_move.
+
+    Use ONLY when the user has seen a preview and said yes to it. It changes
+    the model. There is nothing to apply until a preview has been shown, and
+    each approval can be used once.
+    """
+    token, summary = approval.take()
+    if token is None:
+        return ("There is nothing waiting to be approved. Ask for the change and Heron "
+                "will show what it would do first. Nothing has been sent to Revit.")
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    # idempotent=False, and this is the whole reason that flag exists. If the
+    # answer is lost after the request left this machine, whether Revit ran it
+    # cannot be known from here - and asking again would move the same
+    # elements a second time. Everything before Step 6 only read, so retrying
+    # was free; this is the first request where it is not.
+    reply = session.request("move_elements", op_args={"token": token}, idempotent=False)
+    session.close()
+
+    if reply is None:
+        return ("Heron did not get an answer back from Revit, so it cannot tell you whether "
+                "the move happened. Look at the model before trying again - if the elements "
+                "moved, asking a second time would move them twice.")
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The change was refused."
+
+    moved = "{:,}".format(reply.get("moved", 0))
+    lines = ["Moved %s %s %s in %s." % (moved, reply.get("category"),
+                                        reply.get("distance"), reply.get("document"))]
+
+    if reply.get("skipped"):
+        lines.append("%s were skipped - pinned, or owned by another user."
+                     % "{:,}".format(reply.get("skipped")))
+
+    if reply.get("warnings"):
+        lines.append("Revit raised %s warning(s), which were allowed through."
+                     % "{:,}".format(reply.get("warnings")))
+
+    lines.append("")
+    lines.append("One Ctrl+Z in Revit puts this back - it is a single undo step called "
+                 "\"%s\"." % reply.get("undoEntry"))
+
+    return "\n".join(lines)
+
+
+@server.tool()
+def revit_use_this_model() -> str:
+    """
+    Move this chat onto whichever model is now in front in Revit.
+
+    Use when the user has deliberately switched project and says to work on
+    this one - "use this model", "I'm in the other project now". Only needed
+    after Heron has refused because the model changed.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("count_elements")
+    session.close()
+
+    if reply is None or not reply.get("ok"):
+        return "Heron could not read which model is open, so it has not moved the pin."
+
+    approval.clear()      # whatever was pending described the OLD model
+    title = pinned.repin(reply)
+
+    return ("This chat is now working on %s. Anything pending from the previous model "
+            "has been dropped." % title)
 
 
 if __name__ == "__main__":
