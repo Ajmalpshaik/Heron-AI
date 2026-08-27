@@ -125,6 +125,15 @@ Tracked as decision **D-02**, [Q-2](OPEN-QUESTIONS.md).
 
 The user must always be able to undo anything Heron did with **one** undo.
 
+> **[Part 4 §12](00d-additional-requirements.md) adds a dedicated Transaction Safety Agent** —
+> responsible for transaction handling, closure, rollback, failure handling and document state,
+> **separate from general Revit API logic**. That separation is correct: transaction discipline is a
+> safety concern, not an API concern, and giving it its own agent means it is testable in isolation and
+> impossible to skip.
+>
+> The agent is the *vehicle*. The rule below is what it must guarantee — and none of the four
+> specification documents states it.
+
 Proposed hard rule, to become Golden Rule 16:
 
 > Every Heron operation that modifies the model runs inside exactly one `TransactionGroup`, assimilated on success, named after what the user asked for.
@@ -202,11 +211,15 @@ The Revit Workset Agent must handle ownership as a normal, expected outcome — 
 
 ---
 
-## 10. **[NOTE]** Preview before modify
+## 10. Preview before modify — **now an official requirement**
+
+> **[Part 4 §11](00d-additional-requirements.md) — Simulation / Dry Run.**
+> *"I found 126 ducts. This operation will modify 126 elements."*
 
 Permission levels (§54) gate *whether* an action may run. They do not tell the user *what it will do*.
+Part 4 closes that gap independently, and it is the same mechanism proposed here during review.
 
-Recommendation: any `MODIFY`-level model operation supports a **dry run** that reports the intended effect without a transaction:
+Any `MODIFY`-level model operation supports a **dry run** that reports the intended effect without opening a transaction:
 
 ```text
 Heron: This will move 247 ducts up by 200 mm.
@@ -215,6 +228,27 @@ Heron: This will move 247 ducts up by 200 mm.
 ```
 
 This is cheap to build, catches the majority of "the AI did something unexpected to my model" incidents, and is the single feature most likely to make BIM professionals trust the tool.
+
+The [trust model](24-trust-model.md) makes it mechanical rather than discretionary: a level-3
+(`SHADOW`/`PROVEN`) fragment may only `MODIFY` **with a preview the user accepts**; unattended `MODIFY`
+requires level 4 (`PRODUCTION`).
+
+---
+
+## 10a. Revit Context Agent (Part 4 §13)
+
+Heron should automatically know: active document · Revit version · active view · selected elements ·
+linked models · worksets · view type · phase · design option · active user.
+
+**[NOTE]** *"This removes unnecessary questions"* — which is [Golden Rule 1](14-golden-rules.md) applied
+to conversation. A tool that asks *"which document?"* when exactly one is open has failed the user
+principle, however correct the question is.
+
+Context should be gathered **once per request, cheaply, on the Revit thread**, and passed down — not
+re-queried by every agent that needs it. It is also the natural input to the
+[Context Manager](19-context-and-cost.md), which decides what each agent actually receives, and to
+scope resolution ([10 §2](10-memory-and-knowledge.md)) — the active document determines the project
+scope, and that must never be inferred by a model.
 
 ---
 

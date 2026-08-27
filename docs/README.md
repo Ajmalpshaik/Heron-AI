@@ -19,13 +19,19 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | `AJ-AI-Brain` (brain) and `AJ-Connect` (Revit connector), upgraded to this architecture |
 
-**12 of 32 questions answered — none of the remaining 20 block Phase 0.**
+**13 of 34 questions answered — none of the remaining 21 block Phase 0.**
 It starts on the owner's go-ahead.
 
-**Specification is complete in three parts.** Part 1 is the platform and its organisation; Part 2 is
-the Agent Operating System; Part 3 is the consolidated baseline and is **authoritative on the Golden
-Rules** — it replaced the original ten with fifteen, and every cross-reference in this repository was
-remapped accordingly ([D-12](DECISIONS.md)). See [PROPOSALS Part 0a](PROPOSALS.md).
+**Specification is complete in four parts.** Part 1 is the platform and its organisation; Part 2 is the
+Agent Operating System; Part 3 is the consolidated baseline, **authoritative on the Golden Rules**
+(ten became fifteen, [D-12](DECISIONS.md)); Part 4 adds the **Kernel**, the **Workflow Engine**, the
+**Constitution** and 30 mandatory components ([D-13](DECISIONS.md)).
+
+**Two items need confirmation before building:** the [unified trust model](24-trust-model.md) —
+six competing status vocabularies resolved into two axes ([Q-34](OPEN-QUESTIONS.md)) — and the
+[Constitution](../HERON_CONSTITUTION.md) ([Q-35](OPEN-QUESTIONS.md)).
+
+Review of all four parts: [PROPOSALS](PROPOSALS.md).
 
 ---
 
@@ -49,6 +55,7 @@ remapped accordingly ([D-12](DECISIONS.md)). See [PROPOSALS Part 0a](PROPOSALS.m
 | 00 | [Master Specification — Part 1](00-master-specification.md) | The platform and its organisation, §1–§76. Source of truth. |
 | 00b | [Master Specification — Part 2](00b-master-specification-agent-os.md) | The Agent Operating System and self-evolution, §1–§84. Source of truth. |
 | 00c | [Master Handover Baseline — Part 3](00c-master-handover-baseline.md) | The consolidated baseline, §1–§80. **Authoritative on the Golden Rules.** |
+| 00d | [Additional Requirements — Part 4](00d-additional-requirements.md) | Kernel, Workflow Engine, Constitution, 30 mandatory components, §1–§48. |
 | 01 | [Vision & Principles](01-vision-and-principles.md) | What Heron is, personas, the defining principle |
 | 02 | [Architecture Overview](02-architecture-overview.md) | Layers, four parts, orchestration, **agent tiers** |
 | 03 | [Heron Revit](03-heron-revit.md) | Add-in, Revit agents, **threading, transactions, versions** |
@@ -76,6 +83,14 @@ remapped accordingly ([D-12](DECISIONS.md)). See [PROPOSALS Part 0a](PROPOSALS.m
 | 20 | [Knowledge Trust & Conflict](20-knowledge-trust-and-conflict.md) | Knowledge hierarchy, trust levels, **conflict resolution**, fragment branching, quality scores |
 | 21 | [Resilience & Operations](21-resilience-and-operations.md) | **Dependency graph**, safety tiers, **emergency stop**, health, self-healing, backup, migration |
 | 22 | [Users, Modes & Extensibility](22-users-modes-and-extensibility.md) | Conversation intelligence, User/Developer/Admin modes, multi-user, platform adapters, plugins, SDK |
+
+### From Additional Requirements Part 4
+
+| # | Document | Covers |
+|---|---|---|
+| 23 | [Heron Kernel & Workflow Engine](23-heron-kernel.md) | **The Kernel**, five registries, Workflow Engine, checkpoints, **Evidence System**, model abstraction, prompt registry |
+| 24 | [The Unified Trust Model](24-trust-model.md) | **Resolves six competing status vocabularies** into two orthogonal axes: lifecycle and source |
+| — | [**HERON_CONSTITUTION.md**](../HERON_CONSTITUTION.md) | 27 Articles agents must never violate — the runtime-enforceable subset of the Golden Rules |
 
 ## Working documents
 

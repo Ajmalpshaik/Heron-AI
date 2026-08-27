@@ -26,6 +26,8 @@
 | [D-10](#d-10--repository-stays-private-until-working-code-exists) | Repo stays private until code exists | ✅ Accepted |
 | [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system) | Adopt Master Specification Part 2 (Agent OS) | ✅ Accepted |
 | [D-12](#d-12--adopt-the-master-handover-baseline-part-3-and-its-fifteen-golden-rules) | Adopt Baseline (Part 3) + 15 Golden Rules | ✅ Accepted |
+| [D-13](#d-13--adopt-additional-requirements-part-4--kernel-workflow-engine-constitution) | Adopt Part 4 — Kernel, Workflow Engine, Constitution | ✅ Accepted |
+| [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes) | Unify six status vocabularies into two axes | ⏳ Proposed |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -561,6 +563,124 @@ Evaluation stage and Parts 1–2's filter placement — see [20 §1](20-knowledg
 - The two tensions recorded in [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system)
   remain open — Part 3 restates Model Routing (§61) and Multi-User (§65) without resolving either.
 - No new open questions. Part 3 raises none that Parts 1 and 2 had not already raised.
+
+---
+
+## D-13 — Adopt Additional Requirements (Part 4): Kernel, Workflow Engine, Constitution
+
+**Status:** Accepted · **Date:** 2026-08-27
+**Affects:** [23](23-heron-kernel.md), [24](24-trust-model.md), [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md), [ROADMAP](ROADMAP.md), [19](19-context-and-cost.md)
+
+### Context
+
+A fourth document was provided — *Additional Master Requirements & Recommendations* — framed as
+recommendations but closing with 30 items described as **"mandatory, not optional"**, and an explicit
+build order.
+
+### Decision
+
+**Part 4 is adopted.** It adds real architecture rather than restating; the mandatory list and the build
+order are both accepted.
+
+Principal additions:
+
+| Addition | Lands |
+|---|---|
+| **Heron Kernel** — config, identity, permissions, event bus, four registries, memory, workflow, state, logging, security | Phase 0/1 foundation. [23 §1](23-heron-kernel.md) |
+| **Workflow Engine**, separate from the Orchestrator | Phase 1. Orchestrator decides *what*; the engine ensures it *happens correctly* |
+| **Checkpoints / resume** — *"Continue."* from the failed step | Phase 1. [23 §4](23-heron-kernel.md) |
+| **Evidence System** — every important decision states its reasons | Phase 1, alongside the audit log |
+| **AI Model Abstraction Layer** | Phase 2. Resolves [Q-30](OPEN-QUESTIONS.md) |
+| **Prompt / Instruction Registry** | Phase 0. Cheap now, unmaintainable later |
+| **Transaction Safety Agent**, separate from Revit API logic | Phase 1 |
+| **Revit Context Agent** | Phase 1 |
+| **BIM QA** as a third QA type, distinct from Code QA and Revit QA | Phase 3 |
+| **Golden Test Library** | Phase 1 onward, grows continuously |
+| **Safe Mode**, **Feature Flags**, **Self-Diagnostics**, **Resource Manager** | Phase 6 (Safe Mode earlier if cheap) |
+| **Secret management**, **supply-chain security** | Phase 0 for secrets; Phase 7 for supply chain |
+| **Heron Constitution** | Written now — [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) |
+
+### Gaps this closes
+
+Four review gaps are closed by Part 4 independently arriving at the same conclusions:
+**A7** preview before modify (§11 Dry Run) · **A6** transactions (§12 Transaction Safety Agent) ·
+**A10** permission gate placement (§29 Security Boundary — confirms [12 §3](12-security-and-permissions.md)
+exactly) · review proposal **B9** offline mode (§31). §28 Golden Test Library adopts the regression
+mechanism proposed in [13 §4](13-testing-and-quality.md).
+
+### On the Constitution
+
+Written as [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md), **27 Articles**, reconciled with the
+Golden Rules rather than duplicating them:
+
+> Golden Rules are design principles for **people**. The Constitution is the runtime-enforceable subset,
+> written as prohibitions an **agent** can obey or violate.
+
+Stated prominently in the document: **a rule is not enforced by being written down.** Every Article that
+can be enforced in code is also enforced in code at the permission boundary — which is what §29 requires.
+Articles are assembled into agent instructions from that one file via the Prompt/Instruction Registry,
+so there are no copies to drift.
+
+### Consequences
+
+- No prior decision is overturned.
+- [Q-30](OPEN-QUESTIONS.md) is closed by §24's abstraction layer.
+- Two new questions: [Q-34](OPEN-QUESTIONS.md) (trust model unification, see D-14) and
+  [Q-35](OPEN-QUESTIONS.md) (confirm the Constitution).
+- The roadmap gains named foundation components rather than a general "build a slice first" instruction.
+
+---
+
+## D-14 — Unify six status vocabularies into two orthogonal axes
+
+**Status:** Proposed · **Date:** 2026-08-27 · **Question:** [Q-34](OPEN-QUESTIONS.md)
+**Affects:** [24](24-trust-model.md), [09](09-skills-and-fragments.md), [18](18-agent-operating-system.md), [20](20-knowledge-trust-and-conflict.md)
+
+### Context
+
+Across the four documents, **six different vocabularies** describe how much Heron trusts something:
+fragment lifecycle (Part 1 §18), knowledge trust (Part 2 §21), agent status (Part 3 §10), skill lifecycle
+(Part 3 §44), trust levels (Part 4 §38) and knowledge levels (Part 4 §47).
+
+They overlap, they disagree, and they apply to the same objects. Retrieval ranks by trust; promotion
+gates are defined per-vocabulary; and [Golden Rule 6](14-golden-rules.md) is unenforceable when
+"experimental" means four different things.
+
+### Decision *(proposed)*
+
+They are not six versions of one idea. They are **two ideas repeatedly collapsed into one linear scale**:
+
+| Axis | Question | Changes? |
+|---|---|---|
+| **Lifecycle** | *How far has this been proven?* | Advances over time |
+| **Source** | *Where did this come from?* | Fixed at creation |
+
+`OFFICIAL` was never a stage past `PROVEN` — it means *shipped by Heron*, a **source**. `UNKNOWN` was
+never a stage before `EXPERIMENTAL` — it means *provenance unclear*, also a source. That conflation is
+why the vocabularies kept multiplying.
+
+**Axis 1 — Lifecycle**, one vocabulary for fragments, skills, capabilities and agents:
+
+```text
+DISCOVERED -> DRAFT -> TESTING -> VALIDATED -> SHADOW -> PROVEN -> PRODUCTION -> DEPRECATED -> ARCHIVED
+```
+
+**Axis 2 — Source:** `OFFICIAL` · `COMPANY` · `PROJECT` · `USER` · `COMMUNITY` · `IMPORTED` · `UNKNOWN`
+
+**Part 4 §47's four levels are kept** as a derived band over lifecycle, used for ranking and for talking
+to users — and they do real work: L3 may `MODIFY` only with an accepted preview; L4 may `MODIFY`
+unattended. That is proposed [Golden Rule 17](14-golden-rules.md) made mechanical.
+
+### Consequences
+
+- Nothing is lost. Every distinction any of the six drew remains expressible — several more precisely,
+  since an object can now be `PROVEN` **and** `COMMUNITY`, which no single scale could express.
+- `SHADOW` becomes available to fragments, not only agents — a fragment can run in parallel with the
+  production one, results compared, output discarded. The cheapest way to earn `PROVEN` without risk.
+- Version compatibility, scope and level become **hard filters before ranking**, not weights. For
+  anything that writes to a model, only that is acceptable.
+
+Full proposal: [24 — The Unified Trust Model](24-trust-model.md).
 
 ---
 

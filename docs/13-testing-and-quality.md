@@ -27,6 +27,52 @@ Requirement -> Architecture -> Implementation -> Review -> Build
 -> Test -> Revit Test -> QA -> Approval -> Release
 ```
 
+## 2a. Three kinds of QA, not one
+
+[Part 4 §18](00d-additional-requirements.md) and [Part 2 §48](00b-master-specification-agent-os.md)
+together establish that "QA" means three genuinely different things:
+
+| QA type | Asks | Runs |
+|---|---|---|
+| **Code QA** | Is the code correct, safe, maintainable? | CI, no Revit |
+| **Revit QA** | Does it behave correctly *inside Revit*? | In Revit |
+| **BIM QA** | Is the resulting **model** correct? | In Revit, against the model |
+
+**Code QA ≠ Revit QA ≠ BIM QA.** All three are required, and the third is the one BIM professionals
+actually care about.
+
+**BIM QA** checks naming · parameters · categories · families · levels · worksets · views · modelling
+rules · MEP connectivity · coordination requirements.
+
+**[NOTE]** BIM QA is not really a test stage — it is a **product capability**. *"Check this model
+against our standard"* is one of the six example requests in [Part 1 §1](00-master-specification.md).
+The same engine that validates Heron's own output is the one a user invokes directly. Building it once
+and using it in both places is a significant economy, and it means the QA engine gets exercised daily
+rather than only in CI.
+
+## 2b. Evaluation System and the Golden Test Library
+
+[Part 4 §27–28](00d-additional-requirements.md) make automated evaluation a mandatory component.
+
+```text
+Agent:     Duct Selection Agent
+Test:      Select all ducts
+Expected:  All visible ducts selected
+Result:    PASS
+```
+
+> A permanent collection of known-good cases. Every major update runs against these tests.
+
+**[NOTE]** This adopts the golden-file mechanism proposed in §4 below, and it is what makes
+[Golden Rule 4](14-golden-rules.md) executable rather than aspirational.
+
+Two things determine whether it works:
+
+1. **Start it in Phase 1, not Phase 5.** A golden library only has value proportional to how long it has
+   been accumulating. Started late, it encodes today's behaviour as correct — including today's bugs.
+2. **Every fixed bug adds a case.** That is the discipline that makes the library grow from real
+   failures rather than from imagination, and it is the same signal the Capability Gap report uses.
+
 ---
 
 ## 3. **[NOTE — the hardest engineering problem in the project]** Testing against Revit

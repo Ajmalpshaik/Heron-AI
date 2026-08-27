@@ -18,6 +18,25 @@ decision is made against facts.
 
 > **Phase 0 exists to answer questions Q-1 through Q-7 with working code rather than opinion.**
 
+This matches the explicit instruction closing [Part 4](00d-additional-requirements.md):
+
+> *"Don't start by building 100+ agents. Build the **Kernel, Registry, Orchestrator, Workflow Engine,
+> RAG, Fragment/Skill system, MCP/Revit layer, and QA foundation** first. Then Heron can create and add
+> specialized agents safely as the platform grows."*
+
+Those eight named components map onto the phases below:
+
+| Foundation component | Phase |
+|---|---|
+| **Kernel** (config, identity, permissions, event bus, state, logging) | 0 |
+| **MCP / Revit layer** | 0 |
+| **Orchestrator** (thin) | 0 |
+| **Workflow Engine** (retries, timeouts, rollback, checkpoints) | 1 |
+| **Registries** (capability, agent, skill, fragment, tool) | 2 |
+| **Fragment / Skill system** with lifecycle | 2 |
+| **RAG** | 2 |
+| **QA foundation** (Golden Test Library, evaluation framework) | 1 onward, grows continuously |
+
 ---
 
 ## Phase 0 — Prove the bridge *(the only phase that matters right now)*
@@ -53,6 +72,9 @@ Claude Code as host ([D-01](DECISIONS.md)) · C# add-in + Python MCP server ([D-
 Revit 2020 → latest as the eventual target ([D-05](DECISIONS.md))
 
 **Structure to put in place from the first commit** (cheap now, ruinous to retrofit):
+**Kernel skeleton** — config, identity, permissions, event bus, logging, state ([23 §1](23-heron-kernel.md)) ·
+**Prompt/Instruction Registry** — never scatter prompts in code ([23 §9](23-heron-kernel.md)) ·
+**Secret store** — no credential ever in a fragment, prompt, log or commit ·
 multi-targeting (`net48` + `net8.0-windows`) · adapter layer for version differences ·
 `UniqueId` for all element identity · public-code / private-data separation ([17 §2](17-open-source-and-distribution.md))
 
@@ -70,12 +92,17 @@ six phases of code assume one runtime.
 
 **Goal:** "Move them 200 mm up" — with a preview, one undo, and a clean rollback on failure.
 
-- `TransactionGroup` wrapper — Golden Rule 16
-- Dry run / preview before any `MODIFY`
-- Permission gate enforced **in the add-in**
+- **Transaction Safety Agent** — separate from Revit API logic *(Part 4 §12)*; `TransactionGroup`
+  wrapper giving one Ctrl+Z — Golden Rule 16
+- **Dry run / preview** before any `MODIFY` *(Part 4 §11)* — Golden Rule 17
+- Permission gate enforced **in the add-in** *(Part 4 §29)*
+- **Revit Context Agent** — document, version, view, selection, links, worksets, phase *(Part 4 §13)*
+- **Workflow Engine** with retries, timeouts, rollback and **checkpoints** *([23 §3–4](23-heron-kernel.md))*
+- **Evidence System** — every important decision states its reasons *([23 §6](23-heron-kernel.md))*
 - **Emergency Stop** in the Revit ribbon — works even when the agent side is stuck
   *([21 §4](21-resilience-and-operations.md))*
 - Failure handling that does not retry blindly
+- **Golden Test Library** started — it only has value if it grows from day one *(Part 4 §28)*
 - The audit log records elements touched, keyed by **Workflow ID** *([21 §13](21-resilience-and-operations.md))*
 
 **Definition of done:** a wrong instruction can be reversed with one Ctrl+Z, and a failed operation leaves the model untouched.
@@ -113,9 +140,11 @@ knowledge — build it here, not later, because retrofitting it means rewriting 
 
 **Goal:** enough real Revit capability to be useful daily.
 
-- Element, Parameter, Category, View, Selection, Transaction, Warning agents
+- Element, Parameter, Category, View, Selection, Warning agents
 - Worksharing handling — ownership as a normal outcome, not an error
 - Progress, cancellation and job IDs for long operations
+- **BIM QA Agent** — naming, parameters, categories, families, levels, worksets, modelling rules,
+  MEP connectivity. Distinct from Code QA and Revit QA *(Part 4 §18)*
 - "What did Heron change?" report *(PROPOSALS B2)*
 - Model health baseline *(PROPOSALS B8)*
 

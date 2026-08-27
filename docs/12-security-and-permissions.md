@@ -53,7 +53,14 @@ Deleting files · deleting Revit elements · purge · replacing code · modifyin
 
 ---
 
-## 3. **[NOTE — important]** Where the gate is enforced
+## 3. Where the gate is enforced — **confirmed by Part 4 §29**
+
+> ```text
+> AI -> Permission Layer -> Tool Validation -> MCP -> Revit
+> ```
+>
+> *"The AI requests an operation; the platform decides whether that operation is allowed."*
+> — [Part 4 §29](00d-additional-requirements.md)
 
 **The permission gate must live in the Revit add-in, not in the AI layer.**
 
@@ -115,7 +122,30 @@ Recorded for every important action: user request · selected agents · selected
 
 Storage: append-only, structured (JSONL), rotated, and **local**. The audit log contains project information and must obey the same egress rules as everything else.
 
-The audit log is what makes the "invisible background work" of §2.2 acceptable rather than alarming. Invisible on screen, fully recorded on disk.
+The audit log is what makes the "invisible background work" of §2.2 acceptable rather than alarming. Invisible on screen, fully recorded on disk. This is now [Golden Rule 14](14-golden-rules.md).
+
+---
+
+## 5a. Secret management (Part 4 §30)
+
+> API keys, GitHub tokens and credentials must **never** be stored inside fragments, skills, prompts,
+> source code or logs.
+
+**[NOTE]** This becomes urgent rather than theoretical once the repository is public
+([D-07](DECISIONS.md)). Anything committed to a public repository is compromised permanently — history
+persists, forks propagate.
+
+Requirements:
+
+1. **A credential store** outside the workspace, in the **data** class ([06 §2](06-heron-platform.md)) —
+   Windows Credential Manager or DPAPI-protected local storage. Never a file in the repo tree.
+2. **Redaction on the way out.** The audit log, error messages, evidence records and anything shown to a
+   model pass through a redactor. A token that reaches a log has already leaked.
+3. **Secrets are never a fragment input.** A fragment that needs credentials receives a *handle*, and the
+   Kernel resolves it at call time.
+4. **Pre-commit scanning**, as a second layer — see [17 §2](17-open-source-and-distribution.md).
+
+This is Article 17 of the [Constitution](../HERON_CONSTITUTION.md).
 
 ---
 

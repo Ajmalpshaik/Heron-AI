@@ -221,23 +221,63 @@ Also: how many shadow runs before `SHADOW MODE → APPROVED`, and does a human s
 
 ---
 
-### 🟠 Q-30 — Who routes models — Heron or Claude Code?
+### 🟠 Q-34 — Confirm the unified trust model? *(new)*
 
-[Part 2 §17](00b-master-specification-agent-os.md) specifies a Model Router. But Heron runs as a
-Claude Code plugin ([D-01](DECISIONS.md)), and **Claude Code chooses the model**.
+Four documents now define **six overlapping status vocabularies** for how much Heron trusts something.
+Retrieval ranks by trust and promotion gates are defined per-vocabulary, so this must be settled before
+anything is built.
 
-| Option | Shape |
-|---|---|
-| **A. Host routes; Heron declares intent** *(recommended now)* | Agents declare reasoning needs; the host resolves them. No model ids in Heron |
-| **B. Heron routes its own calls** | Heron's Python brain calls model APIs directly. Full control, but a second API key and billing relationship |
-| **C. Hybrid** *(likely end state)* | Host routes conversation; Heron routes internal batch work — embedding, classification, bulk scoring |
+*Proposal:* two orthogonal axes — **Lifecycle** (`DISCOVERED` → … → `ARCHIVED`, one vocabulary for
+fragments, skills, capabilities and agents) and **Source** (`OFFICIAL` · `COMPANY` · `PROJECT` · `USER` ·
+`COMMUNITY` · `IMPORTED` · `UNKNOWN`). Part 4 §47's four knowledge levels are kept as a derived band
+used for ranking and for gating `MODIFY` operations.
 
-Either way, routing *intent* is recorded as the **cost tier** in the capability registry, so the design
-survives the choice.
-
-→ [19 §3](19-context-and-cost.md)
+→ [24 — The Unified Trust Model](24-trust-model.md) · decision **D-14**
 
 **Answer:**
+
+---
+
+### 🟠 Q-35 — Confirm the Heron Constitution? *(new)*
+
+Requested in [Part 4 §46](00d-additional-requirements.md). Written as
+[HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) — **27 Articles** across knowledge, the user's model,
+boundaries, self-modification and conduct.
+
+Reconciled with the Golden Rules rather than duplicating them: Golden Rules are design principles for
+people; the Constitution is the runtime-enforceable subset written as prohibitions an agent can obey or
+violate.
+
+Worth reviewing specifically:
+
+- Article 9 — *"show before you change"* — is a preview mandatory for **every** non-`PRODUCTION`
+  `MODIFY`, or only above a size threshold?
+- Article 23 — *"for any `MODIFY`, an answer with no evidence is refused, not downgraded"* — is refusing
+  the right default, or too strict for early versions?
+- Are 27 Articles too many to inject usefully? *(Mitigated by giving each agent only the Articles
+  relevant to its permission level and department.)*
+
+**Answer:**
+
+---
+
+### ✅ Q-30 — Who routes models — Heron or Claude Code? — *closed by Part 4 §24*
+
+Part 4 §24's **AI Model Abstraction Layer** resolves this by separating two things that were conflated:
+
+```text
+Heron AI Interface  ->  Model Router  ->  Provider Adapter  ->  Model
+    (Heron: intent)          (pluggable: host when hosted, Heron for batch work)
+```
+
+Heron always declares *intent* ("this needs strong reasoning"); resolution to a specific model is
+pluggable. Under [D-01](DECISIONS.md) Claude Code resolves conversational work; Heron's Python side
+resolves its own batch work through the same interface. Neither half hard-codes a model id.
+
+It also makes local/cloud routing (§25) a configuration choice rather than an architectural one — a
+project marked confidential selects a local provider adapter, and nothing above that layer needs to know.
+
+→ [23 §8](23-heron-kernel.md), [19 §3](19-context-and-cost.md)
 
 ---
 
