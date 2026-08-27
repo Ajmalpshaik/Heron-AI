@@ -138,3 +138,83 @@ function Format-RunningRevit {
         if ($_.Version) { "Revit $($_.Version)" } else { "Revit (release unknown)" }
     } | Sort-Object -Unique) -join ", ")
 }
+
+function Get-PythonStatus {
+    <#
+    .SYNOPSIS
+        Is Python present, and does it have what Heron's MCP server needs?
+    .DESCRIPTION
+        Heron's MCP server is Python (D-06, Q-39), so Python is a prerequisite
+        and not an optional extra. It was never written down as one, which is
+        how a prerequisite becomes a surprise on somebody else's machine.
+
+        NONE OF THIS NEEDS ADMINISTRATOR RIGHTS, which is the part worth
+        knowing on a locked-down company laptop: the Microsoft Store build and
+        winget both install Python per-user, into AppData, and pip installs
+        into a per-user site-packages folder.
+
+        Returns an object rather than printing, so the caller decides how loud
+        to be about it.
+    #>
+    $result = [PSCustomObject]@{
+        Found     = $false
+        Command   = $null
+        Version   = $null
+        HasMcp    = $false
+        PerUser   = $false
+    }
+
+    foreach ($candidate in @("python", "py")) {
+        $exe = (Get-Command $candidate -ErrorAction SilentlyContinue)
+        if (-not $exe) { continue }
+        try {
+            $version = & $candidate --version 2>&1 | Select-Object -First 1
+        } catch { continue }
+        if ($LASTEXITCODE -ne 0 -or -not $version) { continue }
+
+        $result.Found = $true
+        $result.Command = $candidate
+        $result.Version = "$version".Trim()
+
+        # Where it lives says whether it needed admin to get there.
+        try {
+            $where = & $candidate -c "import sys; print(sys.executable)" 2>$null
+            $result.PerUser = ("$where" -like "*\AppData\*")
+        } catch { }
+
+        try {
+            & $candidate -c "import mcp" 2>$null | Out-Null
+            $result.HasMcp = ($LASTEXITCODE -eq 0)
+        } catch { }
+        break
+    }
+
+    return $result
+}
+
+function Write-PythonAdvice {
+    <#
+    .SYNOPSIS
+        Says exactly what to install, in commands that need no admin rights.
+    #>
+    param($Python)
+
+    if (-not $Python.Found) {
+        Write-Host "    Python is not installed. Heron's MCP server needs it." -ForegroundColor Yellow
+        Write-Host "    Install it for yourself only - no administrator rights required:"
+        Write-Host "        winget install Python.Python.3.12 --scope user" -ForegroundColor White
+        Write-Host "    or get it from the Microsoft Store, which is also per-user."
+        Write-Host "    Then run this again."
+        return $false
+    }
+
+    if (-not $Python.HasMcp) {
+        Write-Host "    Python is here ($($Python.Version)) but the MCP package is not." -ForegroundColor Yellow
+        Write-Host "    Install it into your own profile - no administrator rights required:"
+        Write-Host "        $($Python.Command) -m pip install --user mcp" -ForegroundColor White
+        Write-Host "    Then run this again."
+        return $false
+    }
+
+    return $true
+}

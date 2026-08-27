@@ -462,6 +462,26 @@ Both can be bundled into a single executable later, so bundling does not favour 
 → **Python.** [D-06](DECISIONS.md) stands, and installation lists Python as a prerequisite rather than
 discovering it on someone else's machine. Bundling stays open under [Q-38](#-q-38--what-is-the-exact-install-command-new).
 
+**And it does not need administrator rights**, which was the real worry. Verified on the development
+machine: its Python is a Microsoft Store build living in `AppData\Local`, and the `mcp` package sits in
+a per-user site-packages folder. Nothing went near `Program Files` or the registry.
+
+| Needs admin | |
+|---|---|
+| Python, per-user | **No.** `winget install Python.Python.3.12 --scope user`, or the Microsoft Store |
+| The `mcp` package | **No.** `pip install --user mcp` |
+| The Revit add-in | **No.** Per-user add-in folder, which is why [D-05](DECISIONS.md) chose it |
+| Git | **Not needed at all** for a released install — only to build from source |
+| .NET SDK | **Not needed at all** for a released install — only to build from source |
+
+So the complete list for an ordinary user is **Claude Code, Revit, Python** — and none of it requires
+IT approval. `tools/setup.ps1` now detects Python and the `mcp` package and prints the exact per-user
+command when either is missing, rather than leaving someone to wonder why asking Claude a question does
+nothing.
+
+It **tells** rather than installs. Pulling a language runtime onto somebody's machine unasked is the
+kind of thing a careful user and a corporate laptop are both right to refuse.
+
 ### ✅ Q-4 — `ExternalEvent` or `Idling`? → **`ExternalEvent`, one queue, one handler**
 
 `Idling` used only for a liveness heartbeat. Heron must surface "Revit is busy" rather than hanging.

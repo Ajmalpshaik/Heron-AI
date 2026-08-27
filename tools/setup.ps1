@@ -55,6 +55,22 @@ Write-Host "  ================"
 # --- 1. environment ---------------------------------------------------------
 Write-Step 1 "Checking the environment"
 
+# Python is a prerequisite, not an extra - the MCP server is Python (D-06).
+# Checked and named here rather than discovered later by a user wondering why
+# nothing happens when they ask Claude a question.
+$python = Get-PythonStatus
+if ($python.Found -and $python.HasMcp) {
+    $scope = if ($python.PerUser) { ", per-user" } else { "" }
+    Write-Ok "$($python.Version)$scope, with the MCP package"
+} else {
+    Write-Host ""
+    [void](Write-PythonAdvice $python)
+    Write-Host ""
+    Write-Warn "The Revit add-in below will still install and work."
+    Write-Warn "Only asking Claude questions needs Python."
+    Write-Host ""
+}
+
 $dotnet = Get-Command dotnet -ErrorAction SilentlyContinue
 if (-not $dotnet) {
     throw "The .NET SDK is not installed. Get it from https://dotnet.microsoft.com/download"
