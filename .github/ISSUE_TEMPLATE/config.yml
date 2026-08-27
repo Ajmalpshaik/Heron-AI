@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Ajmalpshaik/Heron-AI/security/advisories/new
+    about: Report privately. Never open a public issue for a security problem — Heron modifies live project models.
+  - name: Architecture question or open design decision
+    url: https://github.com/Ajmalpshaik/Heron-AI/blob/main/docs/OPEN-QUESTIONS.md
+    about: The design decisions still open. If you have relevant experience, start a discussion rather than an issue.

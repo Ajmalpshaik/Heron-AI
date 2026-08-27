@@ -10,11 +10,17 @@
 | **Host** | Claude Code plugin — skills, subagents, MCP server, Revit add-in *(D-01)* |
 | **Revit support** | 2020 → latest, and every future release *(D-05)* |
 | **Languages** | C# for everything touching Revit · Python for the brain *(D-06)* |
+| **Transport** | Named pipes — add-in is the server, local-only by construction *(D-02)* |
+| **Revit threading** | One `ExternalEvent`, one request queue, one handler *(D-09)* |
+| **MCP tools** | Thick and specific, one per fragment, each with its own risk level *(D-03)* |
+| **Generated code** | Hybrid — scripting sandbox while testing, compiled C# for production *(D-04)* |
+| **Licence** | Apache 2.0 *(D-08)* |
 | **Distribution** | Free and open source on public GitHub; app store later, also free *(D-07)* |
+| **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | `AJ-AI-Brain` (brain) and `AJ-Connect` (Revit connector), upgraded to this architecture |
 
-**6 of 27 questions answered.** The four still blocking are transport (Q-2), Revit threading mechanism
-(Q-4), MCP tool granularity (Q-5) and the code execution model (Q-7).
+**12 of 27 questions answered — none of the remaining 15 block Phase 0.**
+It starts on the owner's go-ahead.
 
 ---
 

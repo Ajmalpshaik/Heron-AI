@@ -1,0 +1,83 @@
+name: Bug report
+description: Something in Heron AI did not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not report security issues here.** Use [SECURITY.md](../../SECURITY.md) to report privately.
+
+        **Never attach a real client model or project data.** If a model is needed to reproduce,
+        describe it or create a small synthetic one.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you ask Heron to do, and what did it actually do?
+      placeholder: |
+        I asked: "select all ducts on level 2"
+        Heron: selected ducts on every level
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: model-modified
+    attributes:
+      label: Did it modify your model?
+      options:
+        - "No — read only"
+        - "Yes, and undo restored it correctly"
+        - "Yes, and undo did NOT fully restore it"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: input
+    id: revit-version
+    attributes:
+      label: Revit version
+      placeholder: "e.g. Revit 2024"
+    validations:
+      required: true
+
+  - type: input
+    id: heron-version
+    attributes:
+      label: Heron AI version
+    validations:
+      required: true
+
+  - type: dropdown
+    id: worksharing
+    attributes:
+      label: Was the model worksharing-enabled?
+      options:
+        - "No — single user file"
+        - "Yes — local copy of a central model"
+        - "Not sure"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: From the Heron audit log. Remove anything project-identifying first.
+      render: text

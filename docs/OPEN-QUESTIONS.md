@@ -6,64 +6,29 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 6 answered · 21 open**
+**Progress: 12 answered · 15 open**
 
 ---
 
 ## Tier 1 — Blocking
 
-### 🔴 Q-2 — What transport connects the MCP server to the Revit add-in?
+> ✅ **All clear.** Every question that blocked Phase 0 has been answered — see
+> [D-01](DECISIONS.md) through [D-10](DECISIONS.md).
+>
+> **Phase 0 is unblocked.** It starts on the owner's go-ahead ([D-00](DECISIONS.md)).
 
-Named pipes, localhost HTTP/WebSocket, or gRPC? And how are multiple Revit versions / multiple open
-sessions handled?
+One sub-decision remains open inside [D-04](DECISIONS.md), but it does not block starting:
 
-Now also a **language boundary** (Python ↔ C#, [D-06](DECISIONS.md)), so the contract must be explicit
-and versioned.
+### 🟠 Q-7a — Which scripting runtime for the sandbox?
 
-*Recommendation:* named pipes, add-in as pipe server, pipe name encoding Revit version + process ID.
-JSON messages over the pipe, schema-versioned.
+[D-04](DECISIONS.md) settled *hybrid* — scripting while a fragment is in DRAFT/TESTING, compiled C# for
+PRODUCTION. Which scripting runtime is still open: **pyRevit**, **IronPython**, **Python.NET**, or
+**Roslyn scripting** (C# without compiling to an assembly).
 
-→ [03 §5](03-heron-revit.md) · decision **D-02**
+The owner's existing `PyRevit-Tools` work is the strongest available evidence and should be reviewed
+before choosing. Decidable during Phase 0 rather than before it, since Phase 0 generates no code.
 
-**Answer:**
-
----
-
-### 🔴 Q-4 — `ExternalEvent` or `Idling` for marshalling calls onto the Revit thread?
-
-*Recommendation:* `ExternalEvent` as the primary mechanism with a single request queue;
-`Idling` only for a lightweight heartbeat.
-
-→ [03 §4](03-heron-revit.md)
-
-**Answer:**
-
----
-
-### 🔴 Q-5 — Thin generic MCP tools, or thick specific ones?
-
-`revit_execute(script)` versus `revit_select_by_category(category)` + `revit_move_elements(ids, vector)` + …
-
-*Recommendation:* thick and specific — each maps to a fragment and carries its own risk level.
-A generic execute tool exists only in Developer Persona behind `ADMIN`.
-
-→ [04 §3](04-heron-mcp.md) · decision **D-03**
-
-**Answer:**
-
----
-
-### 🔴 Q-7 — How does generated code execute inside Revit?
-
-Runtime Roslyn compilation, a scripting layer (pyRevit / IronPython / Roslyn scripting),
-precompiled-only, or hybrid?
-
-Assemblies **cannot be unloaded** from .NET Framework, so runtime loading leaks on every iteration.
-
-*Recommendation:* hybrid — scripting for DRAFT/TESTING, compiled for PRODUCTION. It maps exactly onto
-the fragment lifecycle already in the spec.
-
-→ [09 §10](09-skills-and-fragments.md) · decision **D-04**
+→ [09 §10](09-skills-and-fragments.md)
 
 **Answer:**
 
@@ -229,34 +194,6 @@ with undo, audit log and a preview — and nothing else.
 
 ---
 
-### 🟡 Q-27 — Which open-source licence? *(new)*
-
-| Licence | Character |
-|---|---|
-| **Apache 2.0** *(recommended)* | Permissive, explicit patent grant, explicit warranty disclaimer — matters for a tool that writes to live client models |
-| **MIT** | Maximum permissiveness, most familiar in the Revit tooling world |
-| **GPL-3.0** | Derivatives must stay open. Protects against a closed fork, but many firms forbid GPL internally |
-| **MPL-2.0** | File-level copyleft, middle ground |
-
-→ [17 §3](17-open-source-and-distribution.md)
-
-**Answer:**
-
----
-
-### 🟡 Q-28 — When does the repository go public? *(new)*
-
-It is **private today**. Going public is irreversible in practice — history persists, forks propagate.
-
-Before flipping it: licence chosen, `SECURITY.md` and disclaimer written, and the public-code /
-private-knowledge separation verified so no client data can ever be committed.
-
-→ [17](17-open-source-and-distribution.md)
-
-**Answer:**
-
----
-
 ## Tier 4 — Strategic
 
 ### 🔵 Q-24 — Name and trademark
@@ -287,6 +224,37 @@ installer behaviour — cheaper to read the requirements before the installer is
 ---
 
 ## Answered
+
+### ✅ Q-2 — Transport between MCP server and add-in? → **Named pipes**
+
+C# add-in is the pipe server, Python MCP server is the client, pipe name encodes Revit version + PID.
+Local-only by construction. → [D-02](DECISIONS.md)
+
+### ✅ Q-4 — `ExternalEvent` or `Idling`? → **`ExternalEvent`, one queue, one handler**
+
+`Idling` used only for a liveness heartbeat. Heron must surface "Revit is busy" rather than hanging.
+→ [D-09](DECISIONS.md)
+
+### ✅ Q-5 — MCP tool granularity? → **Thick and specific**
+
+Each tool maps onto a fragment and carries its own risk level. Generic `revit_execute` only in
+Developer Persona behind `ADMIN`. Capability discovery keeps the context cost down. → [D-03](DECISIONS.md)
+
+### ✅ Q-7 — How does generated code execute? → **Hybrid**
+
+Scripting sandbox while DRAFT/TESTING, compiled signed C# for PRODUCTION. The `PROVEN → PRODUCTION`
+gate is where compilation happens. Sub-question Q-7a (which scripting runtime) remains open.
+→ [D-04](DECISIONS.md)
+
+### ✅ Q-27 — Which licence? → **Apache 2.0**
+
+Chosen over MIT for its explicit patent grant and warranty disclaimer, which matter for software that
+writes to live client models; over GPL because many construction firms forbid GPL internally.
+→ [D-08](DECISIONS.md)
+
+### ✅ Q-28 — When does the repo go public? → **When licence + safety files exist AND there is working code**
+
+Safety files completed 2026-08-27. Remaining condition: Phase 0 working code. → [D-10](DECISIONS.md)
 
 ### ✅ Q-1 — Where does Heron run? → **Claude Code plugin**
 

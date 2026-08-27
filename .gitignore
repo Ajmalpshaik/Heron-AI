@@ -1,10 +1,90 @@
-# Environment / secrets
+# =============================================================================
+#  NEVER COMMIT — client data, project knowledge, models
+#  This repository becomes public. Anything committed here is permanent:
+#  forks propagate and GitHub caches. See docs/17-open-source-and-distribution.md
+# =============================================================================
+
+# Revit files — models, families, templates.
+# Test models must be SYNTHETIC and go under tests/models/ (exception below).
+*.rvt
+*.rfa
+*.rte
+*.rft
+*.rvt.*
+*.0001.rvt
+*.slog
+*.dwg
+*.dwf
+*.nwc
+*.nwd
+*.ifc
+!tests/models/**/*.rvt
+!tests/models/**/*.rfa
+
+# Heron data class — belongs to the user, never to the repository
+/workspace/
+/data/
+/Memory/
+/Projects/
+/Company/
+/Community/
+/Logs/
+/Cache/
+/Backup/
+heron-workspace/
+*.heron-db
+
+# Knowledge stores and indexes (derived — rebuildable, never authoritative)
+*.sqlite
+*.sqlite3
+*.db
+*.duckdb
+*.lance
+/vector-index/
+/embeddings/
+
+# Audit logs — contain project information
+audit-*.jsonl
+*.audit.jsonl
+
+# Revit journals — contain file paths and project names
+journal.*.txt
+/journals/
+
+# =============================================================================
+#  Secrets
+# =============================================================================
 .env
 .env.*
 !.env.example
 *.key
 *.pem
+*.pfx
+*.snk
 secrets.json
+appsettings.Local.json
+credentials.*
+
+# =============================================================================
+#  Build output
+# =============================================================================
+
+# .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userprefs
+.vs/
+TestResults/
+*.nupkg
+
+# Autodesk API assemblies — never redistribute
+RevitAPI.dll
+RevitAPIUI.dll
+AdWindows.dll
 
 # Python
 __pycache__/
@@ -16,37 +96,29 @@ env/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+dist/
+build/
 
 # Node
 node_modules/
-dist/
-build/
 .next/
 .nuxt/
-*.log
 npm-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# .NET
-bin/
-obj/
-*.user
-*.suo
-
-# Editors / IDE
+# =============================================================================
+#  Editors / OS / misc
+# =============================================================================
 .vscode/
 .idea/
 *.swp
-
-# OS
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
-
-# Data / temp
+*.log
 *.tmp
 *.bak
 tmp/

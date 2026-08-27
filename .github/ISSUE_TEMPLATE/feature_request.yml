@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest a capability Heron AI should have
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check [docs/ROADMAP.md](../../docs/ROADMAP.md) and
+        [docs/08-agent-catalog.md](../../docs/08-agent-catalog.md) first — it may already be planned.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What BIM problem does this solve?
+      description: Describe the actual work you are trying to do, not the feature you imagine.
+      placeholder: |
+        Every time I receive an MEP model from a subcontractor I have to check
+        200 duct fittings for missing insulation parameters. It takes half a day.
+    validations:
+      required: true
+
+  - type: textarea
+    id: ask
+    attributes:
+      label: What would you say to Heron?
+      description: The sentence you would actually type.
+      placeholder: '"Check all duct fittings for missing insulation type and list the ones that fail."'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Would this modify the model?
+      options:
+        - "No — read or report only"
+        - "Yes — it would change elements or parameters"
+        - "It should offer both: report first, then optionally fix"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: How do you do it today?
+      description: Manually, with an existing add-in, with Dynamo, not at all?
+
+  - type: input
+    id: revit-versions
+    attributes:
+      label: Which Revit versions do you need this on?
+      placeholder: "e.g. 2022, 2024, 2025"

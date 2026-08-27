@@ -43,9 +43,12 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 |---|---|
 | Specification | ✅ Complete — [76 sections](docs/00-master-specification.md) |
 | Architecture review | ✅ Complete — [18 gaps, 9 ideas](docs/PROPOSALS.md) |
-| Open questions | ⏳ 6 answered, 21 open — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
+| Open questions | ⏳ 12 answered, 15 open — **none blocking** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
+| Licence & safety files | ✅ Complete — Apache 2.0, security policy, disclaimer, contribution guide |
 | Roadmap | ✅ Drafted — [Phase 0 → 7](docs/ROADMAP.md) |
 | Implementation | ⛔ Not started, by design ([D-00](docs/DECISIONS.md)) |
+
+**Phase 0 is unblocked.** It starts on the owner's go-ahead.
 
 ### Decided
 
@@ -54,6 +57,11 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 | **Host** | Claude Code plugin — skills, subagents, MCP server, Revit add-in |
 | **Revit support** | **2020 → latest**, and every future release |
 | **Languages** | C# for everything touching Revit · Python for the brain and RAG |
+| **Transport** | Named pipes — add-in is the server, local-only by construction |
+| **Revit threading** | One `ExternalEvent`, one request queue, one handler |
+| **MCP tools** | Thick and specific, one per fragment, each with its own risk level |
+| **Generated code** | Hybrid — scripting sandbox while testing, compiled C# for production |
+| **Licence** | Apache 2.0 |
 | **Distribution** | Free and **open source** on public GitHub; Autodesk App Store later, also free |
 | **Building on** | `AJ-AI-Brain` (brain) and `AJ-Connect` (Revit connector), upgraded to this architecture |
 
@@ -61,16 +69,11 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 Claude Code           host: conversation, agents, persona, orchestration
      |  MCP
 Heron MCP Server      Python — brain, RAG, fragments, skills, memory
-     |  IPC
+     |  named pipe
 Heron Revit Add-in    C# — one build per Revit version
      |  ExternalEvent
 Revit
 ```
-
-### Still blocking
-
-Transport between server and add-in · the Revit threading mechanism · MCP tool granularity ·
-how generated code executes. All four in [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md).
 
 ---
 

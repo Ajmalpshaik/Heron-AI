@@ -15,12 +15,18 @@
 |---|---|---|
 | [D-00](#d-00--documentation-first-no-implementation-yet) | Documentation first, no implementation yet | ✅ Accepted |
 | [D-01](#d-01--execution-host--claude-code-plugin) | Execution host — Claude Code plugin | ✅ Accepted |
-| [D-02](#d-02--mcp--add-in-transport-pending) | MCP ↔ add-in transport | ⏳ Proposed |
-| [D-03](#d-03--mcp-tool-granularity-pending) | MCP tool granularity | ⏳ Proposed |
-| [D-04](#d-04--generated-code-execution-model-pending) | Generated code execution model | ⏳ Proposed |
-| [D-05](#d-05--revit-version-support--2020-to-latest) | Revit version support — 2020 → latest | ✅ Accepted |
-| [D-06](#d-06--implementation-languages--c-for-revit-python-for-brain) | Languages — C# for Revit, Python for brain | ✅ Accepted |
+| [D-02](#d-02--mcp--add-in-transport-named-pipes) | MCP ↔ add-in transport — named pipes | ✅ Accepted |
+| [D-03](#d-03--mcp-tool-granularity--thick-and-specific) | MCP tool granularity — thick and specific | ✅ Accepted |
+| [D-04](#d-04--generated-code-execution--hybrid) | Generated code execution — hybrid | ✅ Accepted |
+| [D-05](#d-05--revit-version-support-2020-to-latest) | Revit version support — 2020 → latest | ✅ Accepted |
+| [D-06](#d-06--implementation-languages-c-for-revit-python-for-brain) | Languages — C# for Revit, Python for brain | ✅ Accepted |
 | [D-07](#d-07--free-open-source-on-public-github) | Free open source on public GitHub | ✅ Accepted |
+| [D-08](#d-08--licence--apache-20) | Licence — Apache 2.0 | ✅ Accepted |
+| [D-09](#d-09--revit-thread-marshalling--externalevent) | Revit thread marshalling — ExternalEvent | ✅ Accepted |
+| [D-10](#d-10--repository-stays-private-until-working-code-exists) | Repo stays private until code exists | ✅ Accepted |
+
+**All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
+go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
 
 ---
 
@@ -124,30 +130,119 @@ panel remains possible later without a rewrite.
 
 ---
 
-## D-02 — MCP ↔ add-in transport *(pending)*
+## D-02 — MCP ↔ add-in transport: named pipes
 
-**Status:** Proposed · **Question:** [Q-2](OPEN-QUESTIONS.md)
+**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-2](OPEN-QUESTIONS.md)
+**Affects:** [03 §5](03-heron-revit.md), [04](04-heron-mcp.md)
 
-Recommendation: named pipes, add-in as pipe server, pipe name encoding Revit version + PID.
-→ [03 §5](03-heron-revit.md)
+### Decision
+
+**Windows named pipes.** The C# add-in is the pipe **server**; the Python MCP server is the client.
+Pipe name encodes Revit version and process ID: `heron.{revitVersion}.{pid}`.
+Messages are JSON, schema-versioned, request/response with correlation IDs.
+
+### Alternatives considered
+
+- **Localhost HTTP/WebSocket** — easiest to debug, but brings port conflicts, firewall prompts, and
+  requires authentication or any local process could drive Revit.
+- **gRPC** — typed contracts and streaming, but heavier and adds a codegen step across two languages.
+
+### Consequences
+
+- **Local-only by construction** — no network surface at all, which removes a whole class of security
+  problem before it exists.
+- Pipe ACLs restrict access to the current user.
+- The version+PID naming handles the real case of Revit 2023 and 2025 open simultaneously; Heron must
+  still resolve "which Revit did you mean?" when more than one is running.
+- The pipe contract is also the **Python ↔ C# language boundary** ([D-06](#d-06--implementation-languages-c-for-revit-python-for-brain)),
+  so it must be explicitly versioned and treated as a public API between the two halves.
 
 ---
 
-## D-03 — MCP tool granularity *(pending)*
+## D-03 — MCP tool granularity: thick and specific
 
-**Status:** Proposed · **Question:** [Q-5](OPEN-QUESTIONS.md)
+**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-5](OPEN-QUESTIONS.md)
+**Affects:** [04 §3](04-heron-mcp.md), [09](09-skills-and-fragments.md), [12](12-security-and-permissions.md)
 
-Recommendation: thick, specific tools mapping one-to-one onto fragments. Generic execute only in
-Developer Persona behind `ADMIN`. → [04 §3](04-heron-mcp.md)
+### Decision
+
+**Narrow, specific tools** — `revit_select_by_category`, `revit_move_elements`, `revit_get_parameter` —
+each mapping onto a fragment and carrying its own declared risk level.
+
+A generic `revit_execute(script)` exists **only** in Developer Persona, behind `ADMIN`, and never
+against a live project model without a preview or a detached copy.
+
+### Alternatives considered
+
+- **Thin generic tools** (`revit_query`, `revit_execute`) — flexible, but effectively remote code
+  execution against a live project model, impossible to permission meaningfully, and captures nothing
+  reusable for the fragment system.
+
+### Consequences
+
+- Every tool has a clear risk level and a clear permission gate — this is what makes
+  [D-09](#d-09--revit-thread-marshalling--externalevent) and Golden Rule 9 enforceable.
+- Tools map one-to-one onto fragments, so the knowledge system accumulates naturally from use.
+- **Accepts:** the tool list grows large, and MCP tool schemas cost context on every request.
+  Mitigated by capability discovery — a small stable core set plus `heron_find_capability`,
+  registering specific tools only when needed. This must be designed in from the start, not retrofitted.
 
 ---
 
-## D-04 — Generated code execution model *(pending)*
+## D-04 — Generated code execution: hybrid
 
-**Status:** Proposed · **Question:** [Q-7](OPEN-QUESTIONS.md)
+**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-7](OPEN-QUESTIONS.md)
+**Affects:** [09 §10](09-skills-and-fragments.md), [13](13-testing-and-quality.md)
 
-Recommendation: hybrid — scripting for DRAFT/TESTING, compiled for PRODUCTION, matching the
-fragment lifecycle. → [09 §10](09-skills-and-fragments.md)
+### Decision
+
+**Hybrid, mapped onto the fragment lifecycle:**
+
+| Lifecycle stage | Execution |
+|---|---|
+| `DISCOVERED` → `TESTING` | **Scripting sandbox** — iterate freely, no assembly leak, fast feedback |
+| `VALIDATED` → `PRODUCTION` | **Compiled, signed C#** — shipped as a tested assembly |
+
+The `PROVEN → PRODUCTION` gate is exactly where a fragment gets compiled and signed.
+
+### Alternatives considered
+
+- **Runtime Roslyn compilation into Revit** — assemblies **cannot be unloaded** from .NET Framework
+  (Revit ≤ 2024), so every iteration leaks. `AssemblyLoadContext` helps only on .NET 8 (Revit 2025+),
+  which does not cover the supported range.
+- **Precompiled only** — safest and fastest, but "Heron builds a new tool during the session" becomes
+  impossible, losing a core part of the product idea.
+
+### Consequences
+
+- Iteration happens where it is cheap; permanence happens where it is safe.
+- The lifecycle in spec §18 turns out to *describe* this hybrid — a good sign the design is coherent.
+- Golden Rule 13 (generated code never touches a live model first) is enforced by the sandbox.
+- **Open sub-decision:** which scripting runtime (pyRevit / IronPython / Python.NET / Roslyn scripting).
+  The owner's existing pyRevit work is the strongest evidence and should be reviewed before choosing.
+
+---
+
+## D-09 — Revit thread marshalling: ExternalEvent
+
+**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-4](OPEN-QUESTIONS.md)
+**Affects:** [03 §4](03-heron-revit.md)
+
+### Decision
+
+**`ExternalEvent` with a single request queue and one `IExternalEventHandler`** — not one event per
+operation. `Idling` is used only for a lightweight liveness heartbeat.
+
+### Consequences
+
+- One queue makes ordering, cancellation and timeouts tractable, and avoids exhausting Revit's
+  appetite for registered external events.
+- Every operation is asynchronous from the caller's perspective; the MCP layer owns timeouts.
+- `ExternalEvent.Raise()` is a request, not a guarantee — if a modal dialog is open or the user is
+  mid-command, nothing runs. Heron must surface **"Revit is busy"** rather than hanging.
+- Nothing may block the Revit main thread. Long operations report progress, yield, and are cancellable.
+- No `Document` or `Element` may be cached across handler invocations — `UniqueId` is stored and
+  re-resolved each time.
 
 ---
 
@@ -266,6 +361,83 @@ public is irreversible in practice and has not been done — it needs an explici
 the owner, once the licence and the public/private file separation are in place.
 
 Full plan: [17 — Open Source & Distribution](17-open-source-and-distribution.md).
+
+---
+
+## D-08 — Licence: Apache 2.0
+
+**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-27](OPEN-QUESTIONS.md)
+**Affects:** `LICENSE`, `NOTICE`, [17 §3](17-open-source-and-distribution.md)
+
+### Context
+
+The owner delegated the choice. Four candidates were considered against two criteria that matter for
+this particular product: **company legal teams must be able to approve it** (the users work at
+contractors and consultancies), and it must **disclaim warranty explicitly** (the software writes to
+live client models).
+
+### Decision
+
+**Apache License 2.0.** Canonical text fetched from GitHub's licence API, copyright
+"2026 Ajmal Alavudheen".
+
+### Alternatives considered
+
+| Licence | Why not |
+|---|---|
+| **MIT** | Most familiar in Revit tooling and the closest alternative. Lacks an explicit patent grant and has a much thinner warranty clause — weaker protection for software that modifies client deliverables. |
+| **GPL-3.0** | Would prevent a closed commercial fork, but many construction and engineering firms forbid GPL software internally. Directly conflicts with D-07's goal of installation by anyone. |
+| **MPL-2.0** | Reasonable middle ground, but less familiar and buys little that Apache 2.0 does not. |
+
+### Consequences
+
+- Anyone may use, modify and commercialise Heron AI, including in closed products.
+- The explicit warranty disclaimer supports the position taken in `DISCLAIMER.md` and partially
+  addresses the liability question (Q-25).
+- The patent grant protects contributors and users.
+- **Accepts:** someone could fork Heron into a closed paid product. Judged acceptable — adoption
+  matters more than defensiveness at this stage.
+- The copyright holder name should be confirmed by the owner and corrected if it is not their
+  preferred legal name.
+
+---
+
+## D-10 — Repository stays private until working code exists
+
+**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-28](OPEN-QUESTIONS.md)
+**Affects:** repository visibility, [17](17-open-source-and-distribution.md)
+
+### Context
+
+Heron AI will be public open source ([D-07](#d-07--free-open-source-on-public-github)), but publishing
+is irreversible in practice — history persists, forks propagate, GitHub caches.
+
+### Decision
+
+**The repository stays private until both conditions are met:**
+
+1. Licence and safety files are in place — **done 2026-08-27**
+2. There is working code — Phase 0 complete
+
+### Safety files completed under condition 1
+
+| File | Purpose |
+|---|---|
+| `LICENSE` | Apache 2.0, canonical text |
+| `NOTICE` | Copyright, Autodesk trademark position, non-redistribution of Revit API assemblies |
+| `SECURITY.md` | Private vulnerability reporting; Heron-specific threat categories |
+| `DISCLAIMER.md` | No warranty; use on a copy; professional responsibility stays with the user |
+| `CONTRIBUTING.md` | Contribution process, fragment requirements, absolute rules |
+| `CODE_OF_CONDUCT.md` | Conduct standards |
+| `.github/ISSUE_TEMPLATE/` | Bug, feature, fragment proposal, security redirect |
+| `.gitignore` | **Hardened** — blocks `.rvt`/`.rfa`/`.ifc`/`.dwg`, the entire data class, knowledge stores, audit logs, Revit journals, secrets, and Autodesk API assemblies |
+
+### Consequences
+
+- Nothing blocks Phase 0 — the repository can go public the moment there is something worth publishing.
+- A public repository with no working code attracts no users anyway, so nothing is lost by waiting.
+- Before flipping to public, verify once more that no client data has entered the history — the
+  `.gitignore` is a safety net, not a guarantee against a deliberate `git add -f`.
 
 ---
 
