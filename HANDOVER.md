@@ -47,13 +47,19 @@ answer to "where do I go for this bug".
 
 | | Status |
 |---|---|
-| Bridge answers `ping` from **real Revit 2024** | ✅ **Proven.** `pong <- Revit 2024, session 17204 (0 ms)` |
-| Add-in builds for Revit **2020, 2024, 2027** | ✅ **Proven.** `net472`, `net48`, `net10.0-windows` — the whole span of D-05 |
-| Deploy per-user, no admin, no Autodesk DLLs shipped | ✅ **Proven.** 40 KB deployed |
-| Acceptance test — ping, info, bad-op refusal, second connection | ✅ **Proven**, runs without Revit |
+| Bridge answers `ping` from **real Revit 2024** | ✅ **Proven.** `pong <- Revit 2024, session 24336 (0 ms)` |
+| **One button connects and disconnects**, icon shows which | ✅ **Proven in real Revit.** Toggled repeatedly; every transition in the log |
+| **Disconnect withdraws the announcement** | ✅ **Proven in real Revit.** Discovery file gone, client says nothing is connected |
+| **The token is enforced** | ✅ **Proven in real Revit.** Wrong token → `unauthorized`, and it never leaks whether the op exists |
+| **The newest connection wins** | ✅ **Proven in real Revit.** *"A newer connection took the session"*, the older one dropped |
+| **Daily log, in real UTC** | ✅ **Proven in real Revit.** `addin-<date>.log`; `21:28Z` is 00:28 local, so the `Z` is honest |
+| Add-in builds for Revit **2020, 2024, 2027** | ✅ **Proven.** `net472`, `net48`, `net10.0-windows` — the whole span of D-05, read back out of each deployed DLL |
+| Deploy per-user, no admin, no Autodesk DLLs shipped | ✅ **Proven.** 34 KB deployed, all three versions |
+| `tools/setup.ps1` end to end | ✅ **Proven.** Detects, builds and deploys all three in one run |
+| Acceptance test — 20 cases incl. parser, token, preemption, toggle | ✅ **Proven**, runs without Revit |
 | Discovery survives Revit startup, prunes only dead processes | ✅ **Proven** by planting live and dead entries |
-| **Revit 2020 and 2027 actually running** | ⚠️ **Built, never launched.** Only 2024 was run |
-| **`tools/setup.ps1`** | ⚠️ **Never run end to end.** Its pieces were |
+| **The installer refusing while that Revit is open** | ⚠️ **Decided correctly, never met a real open Revit.** Proven by simulation only |
+| **Revit 2020 and 2027 actually running** | ⚠️ **Built and installed, never launched.** Only 2024 has been run |
 | **Anything touching the Revit API** | ⛔ **Does not exist.** That is Step 2 |
 
 > Nothing here is known-broken. Several things are **untested**, which is different and more honest.
