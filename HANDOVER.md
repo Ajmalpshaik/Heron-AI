@@ -58,8 +58,11 @@ answer to "where do I go for this bug".
 | `tools/setup.ps1` end to end | ✅ **Proven.** Detects, builds and deploys all three in one run |
 | Acceptance test — 20 cases incl. parser, token, preemption, toggle | ✅ **Proven**, runs without Revit |
 | Discovery survives Revit startup, prunes only dead processes | ✅ **Proven** by planting live and dead entries |
-| **The installer refusing while that Revit is open** | ⚠️ **Decided correctly, never met a real open Revit.** Proven by simulation only |
-| **Revit 2020 and 2027 actually running** | ⚠️ **Built and installed, never launched.** Only 2024 has been run |
+| **Two Revits at once, different releases** | ✅ **Proven.** 2024 and 2020 connected together, separate pipes, separate tokens |
+| **A session's token is worthless on another session** | ✅ **Proven in real Revit.** 2024's token on the 2020 pipe → `unauthorized` |
+| **The installer skips only the open release** | ✅ **Proven against real open Revits.** 2020 and 2024 open → both skipped by name, 2027 installed |
+| **Revit 2020 running the `net472` build** | ✅ **Proven.** Add-in loaded, bridge answers on `heron.2020.27160` |
+| **Revit 2027 actually running** | ⚠️ **Built and installed, never launched** |
 | **Anything touching the Revit API** | ⛔ **Does not exist.** That is Step 2 |
 
 > Nothing here is known-broken. Several things are **untested**, which is different and more honest.
