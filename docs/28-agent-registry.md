@@ -19,7 +19,7 @@
 | **Risk** | Highest permission level it can require ([12 §1](12-security-and-permissions.md)) |
 | **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
 
-**Totals: 217 agents · 147 T1 · 52 T2 · 18 T3.**
+**Totals: 220 agents · 149 T1 · 53 T2 · 18 T3.**
 Roughly two thirds never call a model at all.
 
 > **Correction, 2026-08-27:** an earlier version of this page stated 166. The departments actually
@@ -367,12 +367,13 @@ at all. This department closes that.
 | Installation & Update | 10 | 9 | 1 | 0 |
 | Operations & Health | 11 | 11 | 0 | 0 |
 | Documentation | 8 | 5 | 3 | 0 |
-| **Total** | **217** | **147** | **52** | **18** |
+| **Reporting & Output** | **3** | 2 | 1 | 0 |
+| **Total** | **220** | **149** | **53** | **18** |
 
-**[NOTE]** The distribution is the point. **147 of 217 agents never call a model** — they are ordinary
-classes with a method or two. Of the rest, 52 make one scoped call and 18 run a real agentic loop.
+**[NOTE]** The distribution is the point. **149 of 220 agents never call a model** — they are ordinary
+classes with a method or two. Of the rest, 53 make one scoped call and 18 run a real agentic loop.
 
-Read that way, the platform is a normal application with about 147 services, 52 narrow model calls, and
+Read that way, the platform is a normal application with about 149 services, 53 narrow model calls, and
 18 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
 **Phase 0 and Phase 1 need about 20 of these**, 17 of them T1 —
@@ -411,6 +412,49 @@ consumers, same tier, same failure mode. Those are marked as merge candidates
 > **The list grows from real gaps, not from grammar.** A new agent should be traceable to something that
 > was needed and had no owner — which is what the [Capability Gap Agent](#10-agent-lifecycle--hr--13)
 > exists to detect.
+
+---
+
+## 17a. Reporting & Output — 3 *(new department)*
+
+**[NOTE]** Added 2026-08-27 from a good question: *does producing a visual report need its own agent?*
+
+Yes, and nothing covered it. The Documentation department documents **Heron itself**; nothing produced
+output about **the user's model**. A standards check with 47 failures, a clash report, a model health
+baseline or a *"what did Heron change?"* summary are all far more useful as a page than a paragraph.
+
+**And a report is an egress surface.** A page carrying model data can leave the machine — which makes
+this a [Golden Rule 12](14-golden-rules.md) concern, not a presentation concern. That is why redaction
+is a separate agent with its own gate rather than a step inside rendering.
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-RPT-CMP-001` | **Report Composition Agent** | Decides *what goes in* and at what depth for this reader — a modeller wants the 47 failures, a BIM manager wants the trend. Judgement, so a model call ↗ | T2 | READ | — |
+| `HERON-RPT-RND-002` | **Report Rendering Agent** | Deterministic templates → page, PDF, schedule, CSV, image. **No model call** — data in, document out, same input same output ↗ | T1 | READ | — |
+| `HERON-RPT-RED-003` | **Report Redaction & Release Agent** | The gate before a report can be shared or leave the machine. Strips project identifiers, enforces scope, blocks confidential-project egress. **A report is an egress surface** ↗ | T1 | PUBLISH | — |
+
+**Why three and not one** — the [split test](#when-to-split-an-agent-and-when-not-to), applied:
+
+| Test | Result |
+|---|---|
+| **Risk** | Composition and rendering are `READ`. Redaction is a `PUBLISH` gate. **Differs** |
+| **Tier** | Composition is judgement (T2). Rendering is templates (T1). **Differs** — and keeping rendering deterministic removes a model call from every report |
+| **Failure mode** | Bad composition = wrong content. Bad rendering = broken page. Bad redaction = **client data leaves the building**. **Differs, severely** |
+| **Consumers** | Rendering is reused by exports and documentation. Redaction is reused by the GitHub and Community agents. **Differs** |
+
+Four of five. The split holds.
+
+### On a separate "show widget" agent — **not required**
+
+**[NOTE]** The same test says no, and it is worth recording why so it is not revisited.
+
+An inline widget — a preview panel, a picker, a progress display — is the *same work* as a report at a
+different size. Same risk, same consumers, same tier, same failure mode as rendering. The only distinct
+decision is *"should this be shown visually or said in a sentence?"* — and that is presentation, which
+already belongs to the **Communication / Persona Agent** (`HERON-ORC-PER-003`).
+
+Adding a widget agent would create exactly the near-duplicate the Fragment Merge Agent exists to
+prevent. The Persona Agent decides the format; the Rendering Agent produces it.
 
 ---
 
