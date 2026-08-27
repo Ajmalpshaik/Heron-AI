@@ -1,22 +1,33 @@
 # Heron AI — Session Handover
 
-**Written 2026-08-27, at the end of the first working session.**
-For whoever picks this up next — a fresh Claude session, or a person.
+**Written 2026-08-28, at the end of the second working session — the one that finished Phase 0.**
+For whoever picks this up next: a fresh Claude session, a person, or the owner on his phone.
 
-Read this first. Then [docs/README.md](docs/README.md) for the map, and
+> ## ⚠️ READ THIS FIRST — you are probably on a machine with no Revit
+>
+> The owner is continuing this work **from mobile**, in Claude Code. **There is no Revit there**, and
+> there is no Windows, so **nothing in this repository that touches Revit can be tested.**
+>
+> That does not mean stop. It means **be honest about which half you are in**, and mark every piece of
+> Revit-side work as untested until it has met a real Revit on the owner's own machine.
+>
+> **What still works away from Revit:** [§5](#5-what-you-can-and-cannot-do-without-revit).
+> **What must be re-tested on return:** [§6](#6-the-return-to-the-machine-checklist) — keep it up to date.
+
+Then read [docs/README.md](docs/README.md) for the map and
 [docs/27-build-order.md](docs/27-build-order.md) for what to build.
 
 ---
 
 ## 1. Where the project stands, in one paragraph
 
-Heron AI is specified in full (four documents plus field notes, ~13,000 lines), reviewed, and has its
-first working code. **Phase 0 is complete. Steps 1 to 5 of 6 are built and proven in real Revit** — the bridge answers `ping` from
-Revit 2024, and the add-in builds for Revit 2020, 2024 and 2027 across all three .NET runtimes. Seventeen
-decisions are recorded, 26 questions remain open and none of them block work. The repository is
-**private** and stays that way until there is more working code.
+**Phase 0 is complete.** Steps 1 to 5 of 6 are built and **proven in real Revit 2020 and 2024**: the
+bridge, the thread hop onto Revit's own thread, a working MCP server inside Claude Code, *"select all
+ducts"* with an audit trail, and one-chat-one-Revit binding that fails closed. Eighteen decisions are
+recorded and 26 questions remain open, none blocking. The repository is **private**.
 
-**The owner has said Step 1 is not finished and will specify what to add.** Do not assume it is closed.
+**Everything so far is read-only — by construction, not by discipline.** There is no transaction code
+anywhere in the repository, so Heron cannot change a model even by mistake. Step 6 is the first write.
 
 ---
 
@@ -24,142 +35,189 @@ decisions are recorded, 26 questions remain open and none of them block work. Th
 
 ```
 revit/          Part 1 — loads into Revit.exe. C#. Changing it needs a Revit RESTART
-  Heron.Revit.Addin/   ribbon, Connect, Status
-  Heron.Bridge/        named-pipe server. No Revit reference — testable without Revit
+  Heron.Revit.Addin/   ribbon toggle, icons, the ExternalEvent dispatcher, the operations
+  Heron.Bridge/        named-pipe server, per-session token. No Revit reference
 mcp/            Part 2 — the bridge to the AI host. Python, outside Revit
-  client/              discovery + ping + doctor
+  client/              discovery, retries, doctor. Dependency-free on purpose
+  server/              the MCP server and the session binding
 brain/          Part 3 — knowledge. EMPTY BY DESIGN until Phase 2
 platform/       Part 4 — the Kernel
-  Heron.Core/          HeronPaths, HeronConfig, HeronIdentity
-tests/          acceptance test + the Revit-free host
-tools/          five scripts that keep the repo honest
+  Heron.Core/          HeronPaths, HeronConfig, HeronIdentity, HeronAudit
+tests/          two suites, both runnable WITHOUT Revit
+tools/          scripts that keep the repo honest, plus setup and deploy
 docs/           40 documents — specification, decisions, questions, roadmap
+.claude/        skills and agents that ship with the repo
 ```
 
-Each part has a `README.md` saying what belongs there and **when to fix things there**. That is the
-answer to "where do I go for this bug".
+Each part has a `README.md` saying what belongs there and **when to fix things there**.
 
 ---
 
 ## 3. What is proven, and what is only built
 
-**This distinction matters more than anything else in this document.**
+**This distinction matters more than anything else in this document**, and it matters more than ever
+now that the next stretch of work happens where Revit cannot be reached.
 
-| | Status |
+### Proven against a real Revit
+
+| | |
 |---|---|
-| Bridge answers `ping` from **real Revit 2024** | ✅ **Proven.** `pong <- Revit 2024, session 24336 (0 ms)` |
-| **One button connects and disconnects**, icon shows which | ✅ **Proven in real Revit.** Toggled repeatedly; every transition in the log |
-| **Disconnect withdraws the announcement** | ✅ **Proven in real Revit.** Discovery file gone, client says nothing is connected |
-| **The token is enforced** | ✅ **Proven in real Revit.** Wrong token → `unauthorized`, and it never leaks whether the op exists |
-| **The newest connection wins** | ✅ **Proven in real Revit.** *"A newer connection took the session"*, the older one dropped |
-| **Daily log, in real UTC** | ✅ **Proven in real Revit.** `addin-<date>.log`; `21:28Z` is 00:28 local, so the `Z` is honest |
-| Add-in builds for Revit **2020, 2024, 2027** | ✅ **Proven.** `net472`, `net48`, `net10.0-windows` — the whole span of D-05, read back out of each deployed DLL |
-| Deploy per-user, no admin, no Autodesk DLLs shipped | ✅ **Proven.** 34 KB deployed, all three versions |
-| `tools/setup.ps1` end to end | ✅ **Proven.** Detects, builds and deploys all three in one run |
-| Acceptance test — 20 cases incl. parser, token, preemption, toggle | ✅ **Proven**, runs without Revit |
-| Discovery survives Revit startup, prunes only dead processes | ✅ **Proven** by planting live and dead entries |
-| **Two Revits at once, different releases** | ✅ **Proven.** 2024 and 2020 connected together, separate pipes, separate tokens |
-| **A session's token is worthless on another session** | ✅ **Proven in real Revit.** 2024's token on the 2020 pipe → `unauthorized` |
-| **The installer skips only the open release** | ✅ **Proven against real open Revits.** 2020 and 2024 open → both skipped by name, 2027 installed |
-| **Revit 2020 running the `net472` build** | ✅ **Proven.** Add-in loaded, bridge answers on `heron.2020.27160` |
-| **Revit 2027 actually running** | ⚠️ **Built and installed, never launched** |
-| **Step 2 - the thread hop** | ✅ **Proven on real Revit 2020 AND 2024.** `3,167 elements` and `5,844 elements`, each naming its own model |
-| **"Revit is busy" instead of a hang** | ✅ **Proven on both.** Dialog open → clean refusal after 10s, then recovers by itself |
-| **`bridge.autoConnect`** | ✅ **Proven.** Revit 2024 connected with no button press |
-| **Step 3 - a real MCP server** | ✅ **Proven inside Claude Code.** `revit_health` answered from both live Revits, with no command run |
-| **Step 4 - select all ducts** | ✅ **Proven on both.** 4 ducts found and **highlighted on screen**, confirmed by eye |
-| **The audit trail** | ✅ **Proven.** Every request recorded - op, outcome, document, timing |
-| **Step 5 - one chat, one Revit** | ✅ **Proven live in Claude Code.** Refused to guess, took "1", stayed bound |
-| **Fails closed when the chosen Revit goes** | ✅ **Proven with a real close.** 2024 closed with 2020 still open → Heron STOPPED |
-| **Anything that WRITES to a model** | ⛔ **Does not exist.** That is Step 6, and it arrives with its safety rails |
+| The bridge answers `ping` | Revit 2020 and 2024 |
+| One button connects **and** disconnects; the icon shows which | Toggled repeatedly, every transition logged |
+| Per-session token, minted per connect | 2024's token on the 2020 pipe → `unauthorized` |
+| Newest connection wins | *"A newer connection took the session"*, older one dropped |
+| Two Revits at once, separate pipes | `heron.2024.*` and `heron.2020.*` together |
+| **The thread hop** | `5,844 elements` from 2024, `3,167` from 2020 |
+| **"Revit is busy" instead of a hang** | Dialog open → clean refusal after 10s, recovers by itself |
+| **The MCP server inside Claude Code** | Answered from both live Revits, no command run |
+| **"Select all ducts"** | 4 found and **highlighted on screen**, confirmed by eye |
+| The audit trail | Every request recorded — op, outcome, document, timing |
+| **Fails closed when the chosen Revit closes** | 2024 closed with 2020 open → Heron **stopped** |
+| `setup.ps1` end to end | Detects, builds, deploys all three in one run |
+| Installer skips only the **open** release | 2020 and 2024 open → both skipped by name, 2027 installed |
+| Each build carries the right runtime | `net472` / `net48` / `net10.0-windows`, read from the deployed DLLs |
+
+### Built, never met a real Revit
+
+| | |
+|---|---|
+| **Revit 2027** | Builds and installs. Never launched — the owner says his 2027 does not work |
+| **Naming the session in a selection answer** | Fixed after both models turned out to be called `Project1`. Needs a Claude restart to go live, then one look |
+| **Anything committed from mobile after 2026-08-28** | **Assume untested.** Add it to [§6](#6-the-return-to-the-machine-checklist) |
+
+### Does not exist at all
+
+| | |
+|---|---|
+| **Any write to a model** | Step 6. There is no transaction code in the repository |
+| **The brain** | `brain/` is empty by design until Phase 2 |
 
 > Nothing here is known-broken. Several things are **untested**, which is different and more honest.
 
 ---
 
-## 4. The five things that will bite you
+## 4. The things that will bite you
 
-Learned the hard way this session. Each cost real time.
+Each of these cost real time. They are in the order they were learned.
 
 1. **The Revit API can only be called from Revit's own thread, inside an API context.** An MCP server is
-   a separate process and cannot call it at all. Everything must marshal through one `ExternalEvent`.
-   **This is absent from all four specification documents** and is the whole of Step 2.
+   a separate process and cannot call it at all. Everything marshals through one `ExternalEvent`.
    [docs/03 §4](docs/03-heron-revit.md)
 
 2. **A named pipe needs `CreateNewInstance`, not just `ReadWrite`.** Without it only the *first*
-   listener can be created and every retry fails with "access denied". Cost an hour.
+   listener can be created and every retry fails with "access denied".
 
 3. **The discovery file must never carry the document name.** Storing it produced the stale-name trap in
-   the owner's earlier work — the list said `BL006A` after `BL003A` was opened. Static facts in the file;
-   everything dynamic is queried live. [docs/25 §2a](docs/25-multi-session-and-binding.md)
+   the owner's earlier work. [docs/25 §2a](docs/25-multi-session-and-binding.md)
 
-4. **"No reply" does not mean "dead".** Revit takes a minute to start and publishes its discovery file
-   before the listener is ready. Test the *process*, not the reply. Never delete on a guess.
+4. **"No reply" does not mean "dead".** Test the *process*, not the reply — and check it is still the
+   right *program*, because Windows reuses process ids.
 
-5. **`Platform=x64` puts build output in `bin/x64/$Configuration`.** Scripts should *find* the assembly,
-   not assume the path shape.
+5. **An assumption is not a choice.** If one Revit was open, Heron *assumed* it. If the user answered,
+   they *chose*. Conflate the two and a second Revit opening mid-chat silently sends everything to the
+   first one. [docs/25](docs/25-multi-session-and-binding.md), and `tests/test_session_binding.py`.
+
+6. **Naming the document is not always enough.** Two sessions can both have `Project1` open — it
+   happened. Name the session too.
+
+7. **Two waits, not one.** *"Did Revit pick it up?"* and *"having started, did it finish?"* are
+   different questions. Collapsing them tells the user Revit is busy while it is actually working.
+
+8. **Retry only what never left the machine.** A failed connect can always be retried. A **lost answer**
+   cannot — Step 6 writes must pass `idempotent=False` or a move happens twice.
+
+9. **`Platform=x64` puts build output in `bin/x64/$Configuration`.** Scripts should *find* the
+   assembly, not assume the path shape.
+
+10. **An empty array passed to a PowerShell parameter arrives as `$null`**, and `@($null)` has one
+    element. This turned "no Revit open" into "one Revit open" and blocked every install.
 
 ---
 
-## 5. Run these before you change anything
+## 5. What you can and cannot do without Revit
 
-Five seconds, and they have caught four real bugs a person would not have.
+### Works anywhere, including mobile
 
 ```bash
-python tools/check-docs.py        # links, Golden Rule / decision / question references
-python tools/check-metadata.py    # the standard, AND registry vs code in both directions
-python tools/check-structure.py   # layout, layering, adapter boundary, path ownership
-python tests/test_bridge_roundtrip.py   # the bridge, no Revit needed
+python tools/check-docs.py             # links, Golden Rule / decision / question references
+python tools/check-metadata.py         # the standard, registry vs code, and version agreement
+python tools/check-structure.py        # layout, layering, adapter boundary, path ownership
+python tests/test_bridge_roundtrip.py  # the bridge end to end — Windows, but NO Revit
+python tests/test_session_binding.py   # one chat one Revit, all four cases — pure Python
 ```
 
-Things they have caught: **166 agents claimed against 196 actual** · three source files missing metadata ·
-a path built in two places · a file referencing `Autodesk.Revit` outside `revit/`.
+- **All documentation, decisions, specifications and open questions.**
+- **The session binding**, in full. Its test fakes the world and exercises the real logic.
+- **Reading and reasoning about the C#.** Just not running it.
 
-**A stated count is a claim. A derived count is a fact.** `tools/recount-agent-registry.py` rewrites every
-number in the agent registry from its own rows — never type one by hand.
+### Cannot be done without Revit — and cannot be faked
+
+- Anything that loads into `Revit.exe`: the ribbon, the icons, the dispatcher, the operations.
+- `tools/setup.ps1` and `tools/deploy-addin.ps1` — they need Revit installed, and Windows.
+- `test_bridge_roundtrip.py` needs **Windows named pipes**, so it will not run on a phone either.
+- Every claim in [§3](#3-what-is-proven-and-what-is-only-built) marked *proven against a real Revit*.
+
+> **If you change C# from mobile, you cannot know it works.** Say so in the commit message, and add it
+> to the checklist below. A commit that reads as though it were tested is worse than one that admits it
+> was not.
 
 ---
 
-## 6. To test in Revit yourself
+## 6. The return-to-the-machine checklist
+
+**Everything below is untested. Work through it when back at a machine with Revit.**
+Add a line every time something is built away from Revit; delete a line only when it has been proven.
+
+```
+[ ] Restart Claude Code, then confirm a selection answer names the SESSION as well as the
+    document — both models are called Project1, so "in Project1" alone identifies nothing
+[ ] Revit 2027 — has never been launched. The owner says his install does not work; find out
+    whether that is the install or Heron
+[ ] Re-run everything in §3 once, in one sitting, against the current build
+[ ] Anything committed from mobile after 2026-08-28 — add it here as it happens
+```
+
+The one-command path back to a working machine:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\setup.ps1
 ```
-Detects installed Revit versions, refuses while Revit is running, builds and deploys each.
 
-Then start Revit → **Heron AI** tab → **Heron** (click to connect, again to disconnect), and:
+It checks Python first, detects installed Revit versions, refuses only the ones that are **open**, and
+deploys per-user with no administrator rights. Then start Revit → **Heron AI** tab → **Heron** (click to
+connect, again to disconnect), and:
 
 ```bash
 python mcp/client/heron_bridge_client.py ping
+python mcp/client/heron_bridge_client.py count
 ```
 
 Anything wrong → `python mcp/client/heron_bridge_client.py doctor` prints everything needed to diagnose it.
 
 **For unattended testing**, set `bridge.autoConnect = true` in `%APPDATA%\Heron\config\heron.config`
 and the bridge starts without a button press. Default is `false` on purpose — a Revit that was never
-connected being invisible is a safety property.
+connected being invisible is a safety property. **Put it back afterwards.**
 
 ---
 
 ## 7. The decisions you must not quietly undo
 
-Seventeen are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-bearing ones:
+Eighteen are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-bearing ones:
 
 | | |
 |---|---|
 | **D-01** | Heron runs as a **Claude Code plugin** |
 | **D-02** | **Named pipes**, per-PID. Local-only by construction — the add-in has *no network code at all* |
-| **D-05** | **Revit 2020 → latest.** Three runtimes, one source tree, adapters absorb the differences |
-| **D-06** | **C# for Revit, Python for the brain** |
-| **D-08** | **Apache 2.0** |
+| **D-05** | **Revit 2020 → latest.** Never extrapolate the runtime table forward; an unlisted release is a build error |
+| **D-06** | **C# for Revit, Python for everything outside it.** Settled again on evidence in [Q-39](docs/OPEN-QUESTIONS.md) |
 | **D-09** | One `ExternalEvent`, one queue, one handler |
 | **D-15** | **Where the field notes disagree with a specification, the field notes win.** Observed beats designed |
-| **D-17** | Runtime state is machine-local (`%LOCALAPPDATA%`); user data roams (`%APPDATA%`); the audit log stays with the data because it is evidence |
+| **D-17** | Runtime state is machine-local; user data roams; the audit log stays with the data because it is evidence |
+| **D-18** | The Transaction Agent belongs to **Step 6**, not Step 2 — a write path built before its rails ships without them |
 
 **Golden Rules** — 15 official plus 6 proposed — are in [docs/14](docs/14-golden-rules.md). The proposed
 ones (16–21) cover undo, preview-before-modify, sandboxing, permission escalation, document pinning and
-stale reads. **None of the four specifications mention them**, and they are what would let a BIM manager
-approve Heron for live project work.
+stale reads. **They are exactly what Step 6 builds.**
 
 ---
 
@@ -167,28 +225,38 @@ approve Heron for live project work.
 
 | | |
 |---|---|
-| **Step 1 additions** | He has said it is not finished and will specify. **Ask before assuming it is closed.** |
 | [Q-34](docs/OPEN-QUESTIONS.md) | Confirm the unified trust model (D-14, still Proposed) |
 | [Q-35](docs/OPEN-QUESTIONS.md) | Confirm the [Constitution](HERON_CONSTITUTION.md) — 30 Articles |
-| [Q-19](docs/OPEN-QUESTIONS.md) | Confirm Golden Rules 16–21 |
+| [Q-19](docs/OPEN-QUESTIONS.md) | Confirm Golden Rules 16–21 — **needed before Step 6** |
 | [Q-38](docs/OPEN-QUESTIONS.md) | The exact install command — needed before going public |
 | Copyright | `LICENSE` and `NOTICE` say **Ajmal PS**. Confirm that is right |
 
 ---
 
-## 9. Next, when Step 1 closes
+## 9. Next — Step 6, the first write
 
-**Step 2 — the thread hop.** Add one `ExternalEvent`, one request queue, one `IExternalEventHandler`, and
-one operation: *count the elements in the active document*.
+⛔ **Phase 0 ends here.** Everything so far is read-only, which is why none of it has needed a permission
+gate, a transaction, an undo guarantee or a preview. **Step 6 changes that**, and the safety rules stop
+being theory.
 
-**Prove it:** a real number comes back from a real model. Then, with a modal dialog open in Revit, ask
-again and get a clean *"Revit is busy"* rather than a hang.
+Build in this order, as one step — the rails first:
 
-Small in code. **The highest-risk step in the project** — everything Heron will ever do passes through
-that one mechanism, and getting it wrong means every later feature inherits the mistake.
+1. **Transaction Safety** — one named `TransactionGroup` per operation, complete rollback on failure
+2. **Preview** — *"This will move 247 ducts up 200 mm. 12 are owned by another user and will be skipped."*
+3. **Re-count immediately before executing** the accepted preview
+4. **Document pinning** by identity
+5. **Permission gate in the add-in** — declared risk level per tool
+6. **Emergency Stop** in the ribbon
+7. Then, and only then: `revit_move_elements`
 
-Watch for: never cache a `Document` across invocations · nothing blocks the main thread · `Raise()` is a
-request, not a guarantee.
+**Prove it:** *"move them up 200 mm"* → preview → accept → it moves → **one Ctrl+Z puts it back
+exactly**. Then force a failure mid-operation and confirm the model is untouched.
+
+**None of that can be proven from mobile.** It can be designed, written and reviewed there; it cannot be
+believed until it has run.
+
+Also waiting: `idempotent=False` on every write request — the client already supports it and the reason
+is in [§4](#4-the-things-that-will-bite-you) item 8.
 
 ---
 
@@ -196,15 +264,19 @@ request, not a guarantee.
 
 - **The owner is a BIM modeller, not a developer.** Explain in BIM terms. He delegates technical choices
   and is right more often than not about product ones — the folder restructure, the metadata standard,
-  the report-checking agent and *"prove it yourself"* were all his, and all correct.
+  the toggle button, *"prove it yourself"* and *"study it but take none of its names"* were all his.
 - **Do not hand him commands to run when you can run them yourself.** He called that out, fairly.
-- **Field evidence beats specification.** Three of the sharpest findings in this repository came from his
-  earlier project, not from any document.
-- **Say what is untested.** "It builds" is not "it works".
+- **Field evidence beats specification.** The sharpest findings in this repository came from running
+  things, not from any document.
+- **Say what is untested.** "It builds" is not "it works", and on mobile almost nothing can be more than
+  built.
+- **Reference material is studied, never copied.** His earlier repositories are read for their
+  reasoning; none of their names, dependencies or branding come across.
 - **Every number in the docs should be derived, not typed.** The tooling exists; use it.
 - Commits are authored **Ajmal PS**. The repo is **private**.
 
 ---
 
-*Nothing in this repository is finished except Step 1's bridge, and the owner says even that has more to
-come. Everything else is specified, decided, or waiting — and the documents say honestly which.*
+*Phase 0 is finished and proven. Everything beyond it is specified, decided, or waiting — and the
+documents say honestly which. Where work happens away from Revit, [§6](#6-the-return-to-the-machine-checklist)
+is the record of what still owes a test.*
