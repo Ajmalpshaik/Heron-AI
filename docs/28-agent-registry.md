@@ -101,7 +101,7 @@ Roughly two thirds never call a model at all.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-SES-DIS-001` | Bridge Discovery Agent | Reads `%APPDATA%\Heron\bridges\*.json`, verifies each is alive, removes stale files ↗ | T1 | READ | 1 |
+| `HERON-SES-DIS-001` | Bridge Discovery Agent | Reads `%LOCALAPPDATA%\Heron\bridges\*.json`, verifies each is alive, removes stale files ↗ | T1 | READ | 1 |
 | `HERON-SES-LST-002` | Session List Agent | Builds the picker **live** — version, project, availability. Never a cached snapshot, never a PID shown ↗ | T1 | READ | 5 |
 | `HERON-SES-BND-003` | Session Binding Agent | One chat, one Revit. Asks once, stays bound, **fails closed** when that session closes ↗ | T1 | READ | 5 |
 | `HERON-SES-LEA-004` | Session Lease Agent | Prevents a second chat taking over mid-job. Scoped to the process. Never blocks a rollback ↗ | T1 | READ | — |

@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics;
+using Heron.Core;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -52,15 +53,15 @@ namespace Heron.Bridge
                 CultureInfo.InvariantCulture, "heron.{0}.{1}", revitVersion, ProcessId);
         }
 
-        /// <summary>%APPDATA%\Heron\bridges - the discovery directory.</summary>
+        /// <summary>
+        /// The discovery directory. Owned by the Path Manager, not by this
+        /// class - so DERIVED runtime state lives in one place, and an
+        /// update can never confuse it with the user's own data
+        /// (docs/06 section 2).
+        /// </summary>
         public static string DiscoveryDirectory
         {
-            get
-            {
-                return Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Heron", "bridges");
-            }
+            get { return HeronPaths.Bridges; }
         }
 
         public string DiscoveryFilePath
@@ -78,7 +79,6 @@ namespace Heron.Bridge
         /// </summary>
         public void Publish()
         {
-            Directory.CreateDirectory(DiscoveryDirectory);
 
             var json = new StringBuilder();
             json.Append("{\n");

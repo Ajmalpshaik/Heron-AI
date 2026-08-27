@@ -16,6 +16,10 @@
     <AssemblyName>Heron.Bridge</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Heron.Core\Heron.Core.csproj" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(HeronTfm)' == 'net472' OR '$(HeronTfm)' == 'net48'">
     <Reference Include="System.Web.Extensions" />
   </ItemGroup>

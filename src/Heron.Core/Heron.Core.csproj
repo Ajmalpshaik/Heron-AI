@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The Kernel (docs/23).
+
+    Plumbing, never intelligence. No Revit reference, no BIM knowledge, no
+    domain logic - if a duct is ever mentioned in here, the boundary has been
+    crossed.
+
+    Everything else depends on this. It depends on nothing.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Core</RootNamespace>
+    <AssemblyName>Heron.Core</AssemblyName>
+  </PropertyGroup>
+
+</Project>

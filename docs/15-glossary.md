@@ -78,7 +78,7 @@ during review, the defining document is linked.
 | Term | Meaning |
 |---|---|
 | **Bridge** | The per-Revit connection between the MCP server and the add-in. One per Revit **process**. [25](25-multi-session-and-binding.md) |
-| **Discovery file** | `%APPDATA%\Heron\bridges\<pid>.json` — an **address book**, not a status report. Static facts only; the document name is deliberately absent. [25 §2](25-multi-session-and-binding.md) |
+| **Discovery file** | `%LOCALAPPDATA%\Heron\bridges\<pid>.json` — an **address book**, not a status report. Static facts only; the document name is deliberately absent. [25 §2](25-multi-session-and-binding.md) |
 | **Session binding** | One chat, one Revit. Asked once, sticky, and **fails closed** if that Revit closes. Never guessed. [25 §3](25-multi-session-and-binding.md) |
 | **Lease** | Prevents a second chat taking over a Revit mid-job — and is what makes `(free)`/`(in use)` truthful in the picker. Scoped to the **process**, not the document. [25 §3](25-multi-session-and-binding.md) |
 | **Document pinning** | Binding a write to a specific document by identity, so the user clicking to another project cannot move the target. [Golden Rule 20](14-golden-rules.md), [25 §4](25-multi-session-and-binding.md) |

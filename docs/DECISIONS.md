@@ -30,6 +30,7 @@
 | [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes) | Unify six status vocabularies into two axes | ⏳ Proposed |
 | [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour) | Field notes authoritative on bridge behaviour | ✅ Accepted |
 | [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope) | Live session list; freeze out of scope | ✅ Accepted |
+| [D-17](#d-17--runtime-state-is-machine-local-not-roaming) | Runtime state is machine-local, not roaming | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -721,7 +722,7 @@ Observed behaviour outranks designed behaviour. The specifications are hypothese
 
 D-02 settled the transport but never said how the client **finds** the pipes. The field notes answer it:
 a **discovery directory**, one JSON file per live bridge, named by PID —
-`%APPDATA%\Heron\bridges\<pid>.json`.
+`%LOCALAPPDATA%\Heron\bridges\<pid>.json`.
 
 Two rules the notes make necessary: the discovery file **must not carry the document name** (that is
 exactly what produced the stale-name trap), and a file is **not proof the bridge is alive** — Revit
@@ -833,6 +834,44 @@ Recorded so this is not re-opened later.
 - Live session listing joins Phase 0 scope.
 - [Q-36](OPEN-QUESTIONS.md) is strengthened — the lease now has two justifications, safety and honesty.
 - No new open questions.
+
+---
+
+## D-17 — Runtime state is machine-local, not roaming
+
+**Status:** Accepted · **Date:** 2026-08-27 · **Found during:** Step 1 implementation
+**Affects:** `HeronPaths`, [25 §2](25-multi-session-and-binding.md), [06 §2](06-heron-platform.md)
+
+### Context
+
+The discovery directory was specified as `%APPDATA%\Heron\bridges`. Writing `HeronPaths` for Step 1
+forced the question of which of the three storage classes it actually belongs to.
+
+### Decision
+
+**Bridge discovery files and logs are DERIVED, and live under `%LOCALAPPDATA%`.**
+
+`%APPDATA%` (Roaming) **synchronises between machines** in a domain environment — which is precisely
+where Heron's users work. A discovery file announcing process 24156 would follow the user to another PC
+where that process does not exist.
+
+The system would self-heal, because a client verifies a bridge answers before trusting its file
+([25 §2](25-multi-session-and-binding.md)). But it is avoidable noise, and it puts machine state in a
+place that means "follows the person".
+
+| Class | Location | Contents |
+|---|---|---|
+| **Product** | install directory | assemblies. Replaced on update |
+| **Data** | `%APPDATA%\Heron` | config, **audit log**, memory, knowledge. Roams. Never touched by an update |
+| **Derived** | `%LOCALAPPDATA%\Heron` | bridges, logs, caches, indexes. Machine-local, rebuildable, safe to delete |
+
+### Consequences
+
+- Preferences and learned skills follow the user between machines. A live process id does not.
+- The **audit log stays under Data**, deliberately. It is evidence ([Golden Rule 14](14-golden-rules.md))
+  and must survive a cache wipe — which is the distinction the three classes exist to make.
+- `HeronPaths.IsSafeToDelete` returns false for anything under Data, so a cleanup or an update cannot
+  reach the user's own knowledge.
 
 ---
 

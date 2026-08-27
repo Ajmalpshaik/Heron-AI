@@ -1,3 +1,10 @@
+# Heron-Agent:  HERON-REVIT-DEP-024
+# Heron-Step:   1
+# Heron-Status: DRAFT
+# Heron-Since:  0.1.0
+# Heron-Layer:  tool
+# See docs/29-metadata-standard.md
+
 <#
 .SYNOPSIS
     Deploys the Heron add-in into Revit for the current user.

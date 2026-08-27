@@ -25,7 +25,7 @@ respectively, and the large majority are plain deterministic modules with no mod
 ## Step 1 — Prove the pipe *(no Revit API at all)*
 
 **Build:** a minimal C# Revit add-in that does one thing — opens a named pipe called
-`heron.{revitVersion}.{pid}`, writes `%APPDATA%\Heron\bridges\<pid>.json`, and answers `ping` with `pong`.
+`heron.{revitVersion}.{pid}`, writes `%LOCALAPPDATA%\Heron\bridges\<pid>.json`, and answers `ping` with `pong`.
 Plus a throwaway Python script that reads the discovery folder and connects.
 
 **Deliberately not in this step:** any Revit API call, any element, any document. The add-in loads and

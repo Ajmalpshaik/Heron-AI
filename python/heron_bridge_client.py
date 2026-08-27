@@ -32,7 +32,9 @@ import os
 import sys
 import time
 
-DISCOVERY_DIR = os.path.join(os.environ.get("APPDATA", ""), "Heron", "bridges")
+# DERIVED state: machine-local, never roaming (D-17). A roaming discovery
+# file would follow the user to a PC where that process does not exist.
+DISCOVERY_DIR = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "bridges")
 PROTOCOL_VERSION = 1
 CONNECT_TIMEOUT_S = 2.0
 

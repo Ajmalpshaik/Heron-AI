@@ -78,7 +78,7 @@ comfortable**; five works if the models are small. Watch the PC, not a rule.
 ## Why it works this way
 
 Each Revit hosts its own private line named after its process number, and advertises itself in a
-per-process file under the bridge directory — in Heron, `%APPDATA%\Heron\bridges\<pid>.json`.
+per-process file under the bridge directory — in Heron, `%LOCALAPPDATA%\Heron\bridges\<pid>.json`.
 
 Before 2026-08-20 every Revit tried to use one shared line and the second one simply refused to start.
 Inside one Revit that line has two slots — one serving the current chat, one already listening — which

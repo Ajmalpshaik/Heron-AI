@@ -35,7 +35,7 @@ running one, and it is why these field notes are treated as authoritative here.
 ## 2. Bridge discovery — the piece [D-02](DECISIONS.md) was missing
 
 > Each Revit hosts its own private line named after its process number, and advertises itself in
-> a per-process file under the bridge directory — in Heron, `%APPDATA%\Heron\bridges\<pid>.json`.
+> a per-process file under the bridge directory — in Heron, `%LOCALAPPDATA%\Heron\bridges\<pid>.json`.
 
 **[NOTE]** [D-02](DECISIONS.md) settled the *transport* (named pipes, per-PID naming) but never said how
 the client **finds** the pipes. Named pipes cannot be enumerated usefully. The working bridge answers it:
@@ -44,7 +44,7 @@ a **discovery directory** — one small JSON file per live bridge, named by PID.
 Adopted for Heron, with additions the field notes imply but do not state:
 
 ```text
-%APPDATA%\Heron\bridges\<pid>.json
+%LOCALAPPDATA%\Heron\bridges\<pid>.json
 ```
 
 Each file should carry:
@@ -57,6 +57,17 @@ Each file should carry:
 | `addinVersion` | The version triangle in [04 §5](04-heron-mcp.md) |
 | `startedAt` | Distinguishes a fresh session from a stale file |
 | `protocolVersion` | So an old add-in and a new server refuse cleanly |
+
+**[NOTE - changed during implementation, 2026-08-27]** The directory moved from `%APPDATA%`
+(Roaming) to `%LOCALAPPDATA%` (Local) while building Step 1.
+
+Roaming AppData **synchronises between machines** in a domain environment - which is exactly where
+Heron's users work. A discovery file announcing process 24156 would follow the user to a different PC,
+where that process does not exist. The client would try it, fail, and prune it, so the system
+self-heals - but it is noise that never needed to exist.
+
+Runtime state belongs to the **machine**, not to the person. Preferences and learned skills roam;
+a live process id does not. Enforced by `HeronPaths` ([D-17](DECISIONS.md)).
 
 **Two rules the field notes make necessary:**
 
