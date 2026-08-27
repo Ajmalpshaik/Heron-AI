@@ -159,6 +159,38 @@ is equally important and easy to get wrong. A naive implementation that re-runs 
 disconnection would silently rebind to whatever is left — and the user's next command would land on
 someone else's model. The binding must be **explicit, sticky, and fail closed**.
 
+### What the lease protects — **per process, not per document**
+
+**[NOTE]** A natural assumption, and a wrong one: *"two chats on the same Revit are fine as long as
+each talks about a different model."* They are not.
+
+The contention is at the **bridge**, not the document. Both chats connect to the same named pipe on the
+same Revit process, so the second still displaces the first regardless of which model each is discussing.
+Two models open does not make two sessions.
+
+> **One Revit is one door.** Two chats cannot walk through it at once, even heading for different rooms.
+
+So the lease is scoped to the **Revit process (PID)** — the same unit as the pipe, the discovery file and
+the session binding. One lease per Revit, held by one chat, covering everything that Revit has open.
+
+The conflict matrix, stated once:
+
+| Setup | Conflict | Why |
+|---|---|---|
+| Chat A → Revit 2020 · chat B → Revit 2024 | **No** | Different processes, different pipes |
+| Chat A → Revit 2020, no other chat | **No** | One holder |
+| Chat A → Revit 2024 · chat B → the **same** Revit 2024, **different models** | **Yes** | Same process, same pipe, same lease |
+| Chat A → one Revit holding two models, both handled by that one chat | **No** | One holder. But document pinning still applies — see §4 |
+
+**[NOTE]** Two documents in one Revit are also **not parallel**. They share the single Revit thread
+(§6), so work on one freezes the other. Two models is not two workers. Real concurrency only exists
+across two Revit processes — which is the same conclusion as §6a reaches from the freeze side.
+
+**[NOTE]** One consequence for the UI: selection is per-document. If Heron sets a selection in a model
+that is not in front, the operation succeeded but the user will not *see* it until they switch to that
+model. Any result reporting a selection should name the document it applies to — which
+[Golden Rule 20](14-golden-rules.md) requires anyway.
+
 ### The one thing Heron should improve
 
 > Chat A and chat B on the same Revit **fight**. Whichever speaks last takes over and cuts the other
