@@ -63,8 +63,9 @@ answer to "where do I go for this bug".
 | **The installer skips only the open release** | ✅ **Proven against real open Revits.** 2020 and 2024 open → both skipped by name, 2027 installed |
 | **Revit 2020 running the `net472` build** | ✅ **Proven.** Add-in loaded, bridge answers on `heron.2020.27160` |
 | **Revit 2027 actually running** | ⚠️ **Built and installed, never launched** |
-| **Step 2 - the thread hop** | ✅ **Proven in real Revit 2020.** `3,167 elements in Project1` |
-| **"Revit is busy" instead of a hang** | ✅ **Proven.** Modal dialog open → clean refusal after 10s, not a freeze |
+| **Step 2 - the thread hop** | ✅ **Proven on real Revit 2020 AND 2024.** `3,167 elements` and `5,844 elements`, each naming its own model |
+| **"Revit is busy" instead of a hang** | ✅ **Proven on both.** Dialog open → clean refusal after 10s, then recovers by itself |
+| **`bridge.autoConnect`** | ✅ **Proven.** Revit 2024 connected with no button press |
 | **Anything that WRITES to a model** | ⛔ **Does not exist.** That is Step 6, and it arrives with its safety rails |
 
 > Nothing here is known-broken. Several things are **untested**, which is different and more honest.
