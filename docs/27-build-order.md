@@ -16,6 +16,12 @@ regardless of how much of it is built.
 
 ---
 
+**Which agents each step builds:** [08 — Agent Catalogue](08-agent-catalog.md).
+All of Phase 0 and 1 needs about **20 of the ~150 agents**, and 17 of those are plain deterministic
+modules with no model call at all.
+
+---
+
 ## Step 1 — Prove the pipe *(no Revit API at all)*
 
 **Build:** a minimal C# Revit add-in that does one thing — opens a named pipe called

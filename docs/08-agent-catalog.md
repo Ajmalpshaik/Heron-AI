@@ -33,6 +33,58 @@ Several names appear in more than one department (Duplicate Detection, Migration
 
 ---
 
+## Which agents belong to which build step
+
+> Added 2026-08-27. The catalogue answers *what exists*; this answers *what to build now*.
+> Build order: [27](27-build-order.md).
+
+**The whole of Phase 0 and Phase 1 needs about 20 of the ~150 agents.** The other 130 are not deferred
+out of caution — they have nothing to act on until the layers below them exist.
+
+| Step | Agents built | Tier |
+|---|---|---|
+| **1 — prove the pipe** | MCP Server, MCP Connection, Revit Connection, Revit Version | all T1 |
+| **2 — thread hop** | Revit Application, Revit Document, Revit Transaction *(skeleton only)* | all T1 |
+| **3 — MCP server** | MCP Tool Registry, MCP Health, Revit Plugin Health | all T1 |
+| **4 — first BIM answer** | Revit Selection, Revit Category, Revit Element · **Intent**, **Communication/Persona** | T1 + two T2 |
+| **5 — multi-Revit** | MCP Recovery, MCP Version, MCP Compatibility | all T1 |
+| **6 — first write** | **Transaction Safety**, Revit Context, Revit Warning, MCP Security, Failure Analysis | T1 + one T2 |
+
+**Roughly 20 agents, and 17 of them are T1** — plain deterministic modules with no model call at all.
+Only Intent, Persona and Failure Analysis reason.
+
+### Why the agents cannot be built first
+
+**[NOTE]** A natural question: *build the agent layer first, then assign agents to each phase.* The
+definitions should indeed exist first — and they do. But **building** them first does not work, for
+three reasons the mapping above makes concrete:
+
+1. **Most agents are not a separate build.** Around 95 of the 150 are T1 services
+   ([02 §6](02-architecture-overview.md)) — they *are* the implementation of steps 1–6, not a layer
+   added afterwards. Building the Revit Selection Agent **is** building step 4. There is no separate
+   "agent work" to schedule.
+2. **An agent with nothing beneath it is a text file.** A Revit Selection Agent calls an MCP tool, which
+   calls the bridge, which marshals onto the Revit thread. Until steps 1–2 exist there is nothing for it
+   to call, and no way to test whether its contract is right.
+3. **Contracts written before first contact are wrong.** [The field notes](00e-field-notes-proven-bridge.md)
+   are the proof: the connect-time snapshot, the stale document name, the active-document hazard — none
+   were predictable from a specification. They were found by running the software. An agent contract
+   written before step 2 would encode the same wrong assumptions, and then 150 of them would need
+   revising instead of 4.
+
+This is also the explicit instruction closing [Part 4](00d-additional-requirements.md):
+
+> *"Don't start by building 100+ agents. Build the Kernel, Registry, Orchestrator, Workflow Engine, RAG,
+> Fragment/Skill system, MCP/Revit layer, and QA foundation first. Then Heron can create and add
+> specialized agents safely as the platform grows."*
+
+**What is right in the instinct:** agents should be **defined** and **assigned** before implementation,
+so work is scoped rather than improvised. That is exactly what this catalogue and the table above are
+for. The remaining ~130 arrive when the Capability Gap report ([06 §6](06-heron-platform.md)) shows real
+demand — built from usage, not from a list.
+
+---
+
 ## Orchestration & Communication
 
 | Agent | Tier | Responsibility |
