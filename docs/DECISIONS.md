@@ -28,6 +28,7 @@
 | [D-12](#d-12--adopt-the-master-handover-baseline-part-3-and-its-fifteen-golden-rules) | Adopt Baseline (Part 3) + 15 Golden Rules | ✅ Accepted |
 | [D-13](#d-13--adopt-additional-requirements-part-4--kernel-workflow-engine-constitution) | Adopt Part 4 — Kernel, Workflow Engine, Constitution | ✅ Accepted |
 | [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes) | Unify six status vocabularies into two axes | ⏳ Proposed |
+| [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour) | Field notes authoritative on bridge behaviour | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -323,11 +324,11 @@ The owner has existing work to build on rather than starting from zero:
 
 | Repository | Role |
 |---|---|
-| `AJ-AI-Brain` | Reference for the brain / knowledge layer |
-| `AJ-Connect` | Reference for the Revit connector / bridge |
+| Earlier brain work | Reference for the brain / knowledge layer |
+| Earlier connector work | Reference for the Revit bridge — behaviour proven live, see [field notes](00e-field-notes-proven-bridge.md) |
 | `AJ-Tools`, `PyRevit-Tools`, `AEB-Tools` | Existing Revit tooling — candidates for the first knowledge import |
 
-**Plan:** take the ideas from `AJ-AI-Brain` and `AJ-Connect`, upgrade them, and reshape them to
+**Plan:** take the ideas from the earlier brain and connector work, upgrade them, and reshape them to
 the Heron architecture. This work happens **after** documentation is finalised, on the owner's signal.
 
 ---
@@ -681,6 +682,74 @@ unattended. That is proposed [Golden Rule 17](14-golden-rules.md) made mechanica
   anything that writes to a model, only that is acceptable.
 
 Full proposal: [24 — The Unified Trust Model](24-trust-model.md).
+
+---
+
+## D-15 — Adopt the field notes as authoritative on bridge behaviour
+
+**Status:** Accepted · **Date:** 2026-08-27
+**Affects:** [25](25-multi-session-and-binding.md), [03](03-heron-revit.md), [04](04-heron-mcp.md), [14](14-golden-rules.md), [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md)
+
+### Context
+
+The owner provided [field notes](00e-field-notes-proven-bridge.md) describing **behaviour already proven
+to work** in his earlier Revit bridge, observed live on 2026-08-20. This is a different class of input
+from the four specification documents: those describe what Heron *should* be, this describes what a
+running system *does*.
+
+### Decision
+
+**Where the field notes disagree with a specification document, the field notes win.**
+
+Observed behaviour outranks designed behaviour. The specifications are hypotheses; this is evidence.
+
+### What the field notes settle
+
+| Finding | Effect |
+|---|---|
+| **Per-process pipes work; one shared pipe does not** — before 2026-08-20 the second Revit simply refused to start | [D-02](#d-02--mcp--add-in-transport-named-pipes) confirmed by a real failure, not a hypothetical |
+| **The AI's script runs on the thread that draws the screen; Revit is genuinely frozen while it runs; no add-in can change that** | **Confirms the Revit API threading constraint from the field.** Absent from all four specifications, present in the working code. Validates [D-09](#d-09--revit-thread-marshalling--externalevent) |
+| **If the user is mid-command the AI cannot interrupt — it waits** | "Revit is busy" is a normal state, not an error |
+| **The session list shows a stale document name** | Identity is the **PID**. Never the document name |
+| **One Revit can hold several projects open; commands land on whichever window is in front** | The most dangerous finding — see below |
+
+### Adopted, closing a real gap in [D-02](#d-02--mcp--add-in-transport-named-pipes)
+
+D-02 settled the transport but never said how the client **finds** the pipes. The field notes answer it:
+a **discovery directory**, one JSON file per live bridge, named by PID —
+`%APPDATA%\Heronridges\<pid>.json`.
+
+Two rules the notes make necessary: the discovery file **must not carry the document name** (that is
+exactly what produced the stale-name trap), and a file is **not proof the bridge is alive** — Revit
+crashes without cleaning up, so the client verifies before listing.
+
+### Two new proposed Golden Rules
+
+Both come from observed failure modes, not from review:
+
+- **Rule 20 — bind the document, not just the session.** One Revit can hold several projects, and the
+  active one changes when the user clicks. A write pins its target document by identity and verifies it
+  at every step. Every step of the failure is individually correct and the change still lands in the
+  wrong building.
+- **Rule 21 — re-read before acting; a preview expires.** *"The real danger is not the freeze, it is the
+  stale read."* Before executing an accepted preview, re-count; if the number changed, stop.
+
+### One change to the proven behaviour
+
+Today two chats on the same Revit **fight** — last speaker takes over and chops the running job.
+Harmless for reads; not acceptable for a `MODIFY` mid-transaction.
+
+**Adopted: a lease.** A second chat is refused with *"Revit 24312 is in use by another session"* rather
+than taking over. A lease must never block a rollback — cleanup always wins. Tracked as
+[Q-36](OPEN-QUESTIONS.md).
+
+### Consequences
+
+- The bridge problem is not only solved but **debugged**. The multi-instance failure was found and fixed
+  in the field; Heron does not repeat that.
+- Proposed Golden Rules rise from four to six.
+- Document pinning becomes Phase 0 scope, not a later refinement — it is cheap now and a silent
+  model-damage hazard if deferred.
 
 ---
 

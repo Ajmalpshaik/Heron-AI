@@ -64,7 +64,7 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 | **Generated code** | Hybrid — scripting sandbox while testing, compiled C# for production |
 | **Licence** | Apache 2.0 |
 | **Distribution** | Free and **open source** on public GitHub; Autodesk App Store later, also free |
-| **Building on** | `AJ-AI-Brain` (brain) and `AJ-Connect` (Revit connector), upgraded to this architecture |
+| **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
 ```text
 Claude Code           host: conversation, agents, persona, orchestration
@@ -111,7 +111,7 @@ Full index: **[docs/README.md](docs/README.md)**
 14. Every important autonomous operation must be auditable.
 15. The platform must be modular enough that agents, skills and fragments can be replaced without redesigning the system.
 
-*(Four more are [proposed](docs/14-golden-rules.md), covering undo, preview-before-modify, sandboxing generated code, and permission escalation from untrusted text.)*
+*(Six more are [proposed](docs/14-golden-rules.md): undo, preview-before-modify, sandboxing generated code, permission escalation from untrusted text — plus two learned in the field, **bind the document not just the session** and **a preview expires**.)*
 
 ---
 

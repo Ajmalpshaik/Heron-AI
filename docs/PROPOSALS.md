@@ -88,6 +88,49 @@ down.** Text in agent instructions is guidance a model can be argued out of. Eve
 enforced in code is also enforced in code, at the permission boundary — which is precisely what §29 asks
 for.
 
+### ✅ A1 — confirmed from the field, not merely argued
+
+**The Revit API threading constraint is real, and the owner's own working bridge proves it:**
+
+> *"Revit does one thing at a time, and the AI's script runs on the same thread that draws the screen.
+> While it runs, Revit is genuinely frozen. No add-in can change that; it is how Revit itself is built."*
+> — [field notes](00e-field-notes-proven-bridge.md)
+
+Four specification documents, several hundred sections, and the single hardest constraint in the
+platform appears in none of them — but it is written plainly in a note describing software that already
+runs. That is the difference between designing a system and operating one.
+
+A1 is no longer a review finding. It is settled fact, and [D-09](DECISIONS.md) is validated.
+
+### 🆕 P24 — the stale read *(field-proven, never specified)*
+
+> *"The real danger is not the freeze, it is the stale read: the AI reads the model, you change
+> something, and a later step acts on the old picture."*
+
+Not in any specification, and it generalises further than the note claims — the model can also change
+because another user synced, a link reloaded, or Heron's own earlier step changed it. Becomes proposed
+[Golden Rule 21](14-golden-rules.md), and it forces a rule that matters: **an accepted preview must be
+re-counted before executing.** A preview accepted for 247 elements must never silently run on 261.
+
+### 🔴 P25 — document binding *(field-proven, the sharpest hazard found so far)*
+
+> *"One Revit can hold several projects open. Picking the Revit is only half of it — commands land on
+> whichever project window is in front, and that changes when you click."*
+
+The failure is silent and nobody makes a mistake:
+
+```text
+1. Chat bound to Revit pid 24312.  Tower-A.rvt in front.
+2. "Move all ducts up 200 mm."
+3. User clicks over to Tower-B.rvt to check something.
+4. Heron resolves "the active document" -> Tower-B.rvt.
+5. 247 ducts move in the wrong building.
+```
+
+Every step individually correct. Model still damaged. Becomes proposed
+[Golden Rule 20](14-golden-rules.md), and moves into Phase 0 scope — cheap now, a silent hazard if
+deferred. → [25 §4](25-multi-session-and-binding.md)
+
 ### 🔴 Still open after all four documents
 
 **Unchanged.** Four documents, and the single hardest technical constraint in the platform is still

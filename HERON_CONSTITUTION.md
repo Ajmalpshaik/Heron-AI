@@ -91,6 +91,22 @@ Generated or newly imported code runs in a sandbox or against a detached copy fi
 **12. Element ownership is a normal outcome, not an error.**
 On worksharing models, report what was skipped and why. Never attempt to seize ownership.
 
+**12a. Never guess which Revit, and never guess which project.**
+With more than one Revit connected, send **nothing** until the user has chosen. Once bound, stay bound.
+If the bound session closes, stop and say so — never slide onto another one.
+*(Proposed Golden Rule 20 · [field-proven](docs/00e-field-notes-proven-bridge.md))*
+
+**12b. Pin the document before you write to it.**
+One Revit can hold several projects open, and the active one changes when the user clicks. Any write
+pins its target document by identity at the start and verifies it at every step. Never follow the active
+window. State which document you acted on, even for reads.
+*(Proposed Golden Rule 20)*
+
+**12c. Re-read before acting; a preview expires.**
+Never trust a read across an `ExternalEvent` boundary. Before executing an accepted preview, re-count —
+if the number changed, stop and re-present. A preview accepted for 247 elements must never execute on 261.
+*(Proposed Golden Rule 21)*
+
 ---
 
 ## Article III — Boundaries
@@ -182,6 +198,7 @@ a partial result as complete.
 | Article | Enforced in code at | Also injected into agent instructions |
 |---|---|---|
 | 7, 8, 9, 10, 11, 12 | Revit add-in permission gate + transaction wrapper | yes |
+| 12a, 12b, 12c | Session binding and document pinning in the bridge; preview re-validation before execute | yes |
 | 13, 14, 15, 16, 17 | Permission layer, credential store, egress filter | yes |
 | 1, 2, 4, 20, 21 | Lifecycle gates in the registries | yes |
 | 5, 6, 16 | Physical scope separation — one store per scope | yes |
@@ -205,5 +222,5 @@ and the compensating control. Articles are never weakened silently, and never by
 
 ---
 
-*Status: proposed, pending confirmation — see [Q-35](docs/OPEN-QUESTIONS.md).*
+*Status: proposed, pending confirmation — see [Q-35](docs/OPEN-QUESTIONS.md). 30 Articles.*
 *Derived from Golden Rules 1–15 (official) and 16–19 (proposed), plus Part 4 §5, §6, §29, §30, §46.*

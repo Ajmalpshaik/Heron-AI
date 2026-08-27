@@ -17,7 +17,7 @@
 | **Licence** | Apache 2.0 *(D-08)* |
 | **Distribution** | Free and open source on public GitHub; app store later, also free *(D-07)* |
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
-| **Building on** | `AJ-AI-Brain` (brain) and `AJ-Connect` (Revit connector), upgraded to this architecture |
+| **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
 **13 of 34 questions answered — none of the remaining 21 block Phase 0.**
 It starts on the owner's go-ahead.
@@ -56,6 +56,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 00b | [Master Specification — Part 2](00b-master-specification-agent-os.md) | The Agent Operating System and self-evolution, §1–§84. Source of truth. |
 | 00c | [Master Handover Baseline — Part 3](00c-master-handover-baseline.md) | The consolidated baseline, §1–§80. **Authoritative on the Golden Rules.** |
 | 00d | [Additional Requirements — Part 4](00d-additional-requirements.md) | Kernel, Workflow Engine, Constitution, 30 mandatory components, §1–§48. |
+| 00e | [Field Notes — Proven Bridge Behaviour](00e-field-notes-proven-bridge.md) | **Observed, not designed.** Multi-Revit, session binding, the stale read. Proven live 2026-08-20. |
 | 01 | [Vision & Principles](01-vision-and-principles.md) | What Heron is, personas, the defining principle |
 | 02 | [Architecture Overview](02-architecture-overview.md) | Layers, four parts, orchestration, **agent tiers** |
 | 03 | [Heron Revit](03-heron-revit.md) | Add-in, Revit agents, **threading, transactions, versions** |
@@ -69,7 +70,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 11 | [Orchestration & Workflows](11-orchestration-and-workflows.md) | Reference workflows, failure handling, performance |
 | 12 | [Security & Permissions](12-security-and-permissions.md) | Permission levels, gate location, confidentiality, audit |
 | 13 | [Testing & Quality](13-testing-and-quality.md) | Eight test levels, testing against real Revit, regression |
-| 14 | [Golden Rules](14-golden-rules.md) | The constitution — **15 official rules** plus 4 proposed |
+| 14 | [Golden Rules](14-golden-rules.md) | The constitution — **15 official rules** plus 6 proposed |
 | 15 | [Glossary](15-glossary.md) | Terms, Revit concepts, status vocabularies |
 | 16 | [Version Support Strategy](16-version-support-strategy.md) | **Revit 2020 → latest** — the two API breaks, multi-targeting, adapters, test matrix |
 | 17 | [Open Source & Distribution](17-open-source-and-distribution.md) | Licence, public/private separation, contribution, disclaimer, channels |
@@ -90,7 +91,13 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 |---|---|---|
 | 23 | [Heron Kernel & Workflow Engine](23-heron-kernel.md) | **The Kernel**, five registries, Workflow Engine, checkpoints, **Evidence System**, model abstraction, prompt registry |
 | 24 | [The Unified Trust Model](24-trust-model.md) | **Resolves six competing status vocabularies** into two orthogonal axes: lifecycle and source |
-| — | [**HERON_CONSTITUTION.md**](../HERON_CONSTITUTION.md) | 27 Articles agents must never violate — the runtime-enforceable subset of the Golden Rules |
+| — | [**HERON_CONSTITUTION.md**](../HERON_CONSTITUTION.md) | 30 Articles agents must never violate — the runtime-enforceable subset of the Golden Rules |
+
+### From the field
+
+| # | Document | Covers |
+|---|---|---|
+| 25 | [Multi-Session & Document Binding](25-multi-session-and-binding.md) | **Field-proven.** Bridge discovery, one chat one Revit, **document pinning**, **the stale read**, turn-taking |
 
 ## Working documents
 

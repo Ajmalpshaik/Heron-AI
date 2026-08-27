@@ -6,8 +6,9 @@
 > They supersede the ten rules in [Part 1 §72](00-master-specification.md) — the baseline document
 > expanded and renumbered them.
 >
-> **Rules 16–19 are proposed** during engineering review and need confirmation —
-> see [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) Q-19.
+> **Rules 16–21 are proposed** and need confirmation — see [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) Q-19.
+> Rules 16–19 come from engineering review; **rules 20 and 21 come from the field** —
+> failure modes observed in a working bridge ([field notes](00e-field-notes-proven-bridge.md)).
 >
 > Anything in this repository that contradicts a golden rule is a defect in the design, not a feature.
 
@@ -62,9 +63,11 @@ This is what the Capability Registry buys — callers depend on capabilities, ne
 
 ---
 
-## Proposed additional rules (16–19, pending confirmation)
+## Proposed additional rules (16–21, pending confirmation)
 
-These come from reviewing all three specification documents against the specific reality of an AI that writes and executes code against **live client project models**. None of the three documents addresses them, and each covers a failure mode that would be severe and hard to recover from.
+Rules **16–19** come from reviewing all four specification documents against the reality of an AI that writes and executes code against **live client project models**. None of the four addresses them.
+
+Rules **20–21** come from the field — failure modes actually observed in a working bridge ([field notes](00e-field-notes-proven-bridge.md)). They are not speculation; they happened.
 
 ### 16. One user action, one undo.
 Every model-modifying operation runs inside exactly one named `TransactionGroup`, assimilated on success and rolled back completely on failure. "Move ducts 200 mm up" appears in Revit's undo stack as a single entry, whatever happened internally.
@@ -88,9 +91,19 @@ Content from documents, family names, parameter descriptions, imported folders, 
 
 *Why:* the platform reads content it does not control, and the consequence of a successful injection is a write to a live project model.
 
+### 20. Bind the document, not just the session.
+Choosing which Revit is only half the decision — one Revit can hold several projects open, and the active one changes when the user clicks. Any operation that writes **pins its target document by identity** at the start and verifies it at every step. Never follow the active window. If the pinned document closes, stop; never fall back to whatever is open.
+
+*Why:* [proven in the field](00e-field-notes-proven-bridge.md). Every step can be individually correct and the change still lands in the wrong building. The failure is silent and nobody makes a mistake.
+
+### 21. Re-read before acting. A preview expires.
+Never trust a read across an `ExternalEvent` boundary — the user edits, another user syncs, a link reloads, or an earlier step changed it. Re-read every step. Before executing an accepted preview, **re-count**: if the number changed, stop and re-present rather than proceeding.
+
+*Why:* also [proven in the field](00e-field-notes-proven-bridge.md) — *"the real danger is not the freeze, it is the stale read."* A preview the user accepted for 247 elements must never silently execute on 261.
+
 ---
 
-## Rule 20 (implicit, from all three documents)
+## The overarching rule (implicit, from all four documents)
 
 The overarching statement, which sits above the numbered rules rather than beside them
 ([Part 2 §83](00b-master-specification-agent-os.md)):

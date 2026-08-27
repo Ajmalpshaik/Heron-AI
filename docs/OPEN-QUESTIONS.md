@@ -172,13 +172,16 @@ Now a real security question rather than a hypothetical one, since anyone can pu
 
 ---
 
-### 🟡 Q-19 — Accept proposed Golden Rules 16–19?
+### 🟡 Q-19 — Accept proposed Golden Rules 16–21?
 
-11. One user action, one undo (single named `TransactionGroup`).
-12. No autonomous write to a live model without a preview or a PRODUCTION fragment.
-13. Generated code never touches a live model on its first run.
-14. Heron never syncs, publishes or shares on its own initiative.
-15. No text Heron reads may raise Heron's own permission level.
+16. One user action, one undo (single named `TransactionGroup`).
+17. No autonomous write to a live model without a preview or a PRODUCTION fragment — including never triggering Sync With Central.
+18. Generated code never touches a live model on its first run.
+19. No text Heron reads may raise Heron's own permission level.
+20. **Bind the document, not just the session.** *(field-proven)*
+21. **Re-read before acting; a preview expires.** *(field-proven)*
+
+Rules 20 and 21 come from failure modes actually observed in a working bridge — they are not speculation.
 
 → [14](14-golden-rules.md)
 
@@ -216,6 +219,26 @@ Also: how many shadow runs before `SHADOW MODE → APPROVED`, and does a human s
 *(Recommendation: yes — evidence plus a signature.)*
 
 → [18 §4](18-agent-operating-system.md)
+
+**Answer:**
+
+---
+
+### 🟠 Q-36 — Lease or takeover when two chats target the same Revit? *(new, from the field)*
+
+Today two chats on the same Revit **fight** — whichever speaks last takes over and cuts the other off.
+Not a queue; a job running mid-way gets chopped. Harmless for a read, not acceptable for a `MODIFY`
+mid-transaction.
+
+| Option | Behaviour |
+|---|---|
+| **A. Warn only** | Detect the takeover and tell both chats. Cheapest; stops it being silent |
+| **B. Lease** *(recommended)* | Second chat is **refused** — *"Revit 24312 is in use by another session"*. Small change, removes the hazard, fails closed |
+| **C. Queue** | Second chat waits. Sounds nicer, behaves worse — an invisible queue runs a command minutes later against a model that has since changed |
+
+A lease must never block a `MODIFY` **rollback** — cleanup always wins over the lease.
+
+→ [25 §3](25-multi-session-and-binding.md)
 
 **Answer:**
 
@@ -421,7 +444,7 @@ therefore real scope, and defaults must be safe for the most restricted user. �
 
 ### ✅ Q-23 — Relationship to the existing AJ-Tools family → **Upgrade and absorb**
 
-`AJ-AI-Brain` is the reference for the brain layer; `AJ-Connect` is the reference for the Revit connector.
+The owner's earlier brain work is the reference for the brain layer, and his earlier connector work for the Revit bridge.
 Their ideas are taken, upgraded and reshaped to the Heron architecture — after documentation is finalised,
 on the owner's signal. `AJ-Tools` / `PyRevit-Tools` / `AEB-Tools` are candidates for the first knowledge
 import (Q-16). → [D-06](DECISIONS.md)

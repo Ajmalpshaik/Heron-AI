@@ -81,7 +81,7 @@ A fragment carries usage history, failure history, and sometimes literal paramet
 
 Scan → identify file types → identify code → fragments → skills → documentation → metadata → duplicates → compatibility → classify → rename → move into architecture → update metadata → validate → index → save.
 
-**[NOTE]** This is one of the most immediately valuable features in the spec — the user already has years of accumulated Revit tooling (`AJ-Tools`, `PyRevit-Tools`, `AEB-Tools`, `AJ-AI-Brain`), and importing it is what makes Heron useful on day one rather than after a year of accumulation.
+**[NOTE]** This is one of the most immediately valuable features in the spec — the user already has years of accumulated Revit tooling (`AJ-Tools`, `PyRevit-Tools`, `AEB-Tools`), and importing it is what makes Heron useful on day one rather than after a year of accumulation.
 
 Design constraints:
 

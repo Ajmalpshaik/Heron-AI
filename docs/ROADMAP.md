@@ -62,7 +62,11 @@ Those eight named components map onto the phases below:
 
 - **One** Revit version to start — with the multi-target structure and adapter layer already in place,
   so fanning out to 2020 → latest is later work, not a rewrite *([16 §8](16-version-support-strategy.md))*
-- One transport *(Q-2)*
+- One transport *(Q-2)*, with **bridge discovery** via `%APPDATA%\Heronridges\<pid>.json`
+  *([25 §2](25-multi-session-and-binding.md) — closes a real gap in D-02)*
+- **Session binding** — one chat, one Revit; ask once when several are connected; **never guess**;
+  fail closed when the bound session closes *([25 §3](25-multi-session-and-binding.md))*
+- **Document pinning** — bind the document, not just the Revit *([25 §4](25-multi-session-and-binding.md))*
 - Three MCP tools: `revit_health`, `revit_select_by_category`, `revit_get_selection`
 - No RAG, no vector DB, no fragments, no learning, no installer, no code generation
 - Hard-coded skill mapping — no matching intelligence at all
@@ -94,7 +98,9 @@ six phases of code assume one runtime.
 
 - **Transaction Safety Agent** — separate from Revit API logic *(Part 4 §12)*; `TransactionGroup`
   wrapper giving one Ctrl+Z — Golden Rule 16
-- **Dry run / preview** before any `MODIFY` *(Part 4 §11)* — Golden Rule 17
+- **Dry run / preview** before any `MODIFY` *(Part 4 §11)* — Golden Rule 17,
+  **re-counted immediately before execution** — Golden Rule 21 *([25 §5](25-multi-session-and-binding.md))*
+- **Session lease** instead of takeover, so a running job is never chopped *(Q-36)*
 - Permission gate enforced **in the add-in** *(Part 4 §29)*
 - **Revit Context Agent** — document, version, view, selection, links, worksets, phase *(Part 4 §13)*
 - **Workflow Engine** with retries, timeouts, rollback and **checkpoints** *([23 §3–4](23-heron-kernel.md))*
