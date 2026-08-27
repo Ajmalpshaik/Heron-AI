@@ -220,6 +220,13 @@ assumes the ones above it passed. Do NOT set write.enabled until line 3 is green
 [ ] 11. Preview in one project, click into a second open project, approve. It must refuse
         and name both models. This is Golden Rule 20, and it is the one that stops a
         change landing in the wrong building.
+[ ] 11a. Same again, but CLOSE the first project instead of clicking away. The refusal
+        must say it was CLOSED, not "go back to it" - two different situations, and
+        Golden Rule 20 treats them differently. Checks IsStillOpen, and that its
+        linked-document filter works (open a model that has a link loaded).
+[ ] 11b. After a successful move, the change is visible WITHOUT clicking or zooming.
+        That is TryRefresh. If a refresh ever throws, the move must still be reported
+        as the success it was - cosmetics must never rewrite the result.
 [ ] 12. Approve twice in a row. The second must find nothing to approve — not move
         the ducts a further 200 mm.
 [ ] 13. A pinned duct, and (if a workshared model is to hand) one owned by another user:

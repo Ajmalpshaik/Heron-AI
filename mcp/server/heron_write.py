@@ -215,10 +215,17 @@ class DocumentPin(object):
             return None
 
         was, now = self._title, title
+
+        # Deliberately does NOT say "click back to it". From here Heron cannot
+        # tell whether the old model is still open or has been closed, and
+        # sending someone to look for a model that is no longer there - at the
+        # moment they are already unsure what just happened to their work - is
+        # worse than saying less. The add-in CAN tell the two apart and does so
+        # when it matters, which is at the point of writing (RevitWrite).
         return ("This chat has been working on %s, but %s is in front in Revit now. "
                 "Heron will not change a model you did not point it at.\n\n"
-                "Nothing has been sent to Revit. Click back to %s, or say 'use this "
-                "model' to move this chat onto %s deliberately."
+                "Nothing has been sent to Revit. Go back to %s if you meant that one, "
+                "or say 'use this model' to move this chat onto %s deliberately."
                 % (was, now, was, now))
 
     def repin(self, reply):

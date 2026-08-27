@@ -120,6 +120,8 @@ def main():
           "the refusal names BOTH models, so the user knows which is which")
     check("Nothing has been sent to Revit" in (refusal or ""),
           "the refusal answers 'did it half-do something?' unasked")
+    check("click back" not in (refusal or "").lower(),
+          "it does NOT say 'click back' - from here it cannot know the old model is still open")
 
     print()
     print("Two models called Project1 - the case that actually happened")

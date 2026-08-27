@@ -222,10 +222,31 @@ namespace Heron.Revit.Addin
             if (DocumentKey(doc) != preview.DocumentKey)
             {
                 lock (PreviewLock) { _pending = null; }
-                return Json.Error("document_changed",
-                    "That preview was made for " + preview.DocumentTitle + ", but " +
-                    doc.Title + " is in front now. Heron will not move elements in a model " +
-                    "you did not approve. Nothing was changed - ask again.");
+
+                // TWO DIFFERENT THINGS HAVE HAPPENED, and Golden Rule 20 treats
+                // them differently, so Heron must not report them alike.
+                //
+                //   Still open, just not in front  -> the user clicked away.
+                //      Recoverable in one click, and saying so saves them
+                //      re-doing the whole request.
+                //
+                //   Gone                           -> "if the pinned document
+                //      closes, stop". Telling someone to click back to a model
+                //      that is no longer open sends them looking for something
+                //      that does not exist, at the exact moment they are
+                //      already unsure what just happened to their work.
+                if (IsStillOpen(app, preview.DocumentKey))
+                {
+                    return Json.Error("document_not_in_front",
+                        "That preview was made for " + preview.DocumentTitle + ", but " +
+                        doc.Title + " is in front now. " + preview.DocumentTitle +
+                        " is still open - click back to it and ask again. Nothing was changed.");
+                }
+
+                return Json.Error("document_closed",
+                    preview.DocumentTitle + " has been closed since that preview, so Heron has " +
+                    "stopped rather than moving elements in " + doc.Title +
+                    " instead. Nothing was changed.");
             }
 
             // GOLDEN RULE 21. Take the count again, right now, against the
@@ -306,6 +327,11 @@ namespace Heron.Revit.Addin
 
             lock (PreviewLock) { _pending = null; }
 
+            // After the group is assimilated, never inside it: a redraw is not
+            // part of the change and must not be able to affect whether the
+            // change is reported as having happened.
+            TryRefresh(app);
+
             HeronAudit.Record(workflow, "move_elements", true, new[]
             {
                 new KeyValuePair<string, string>("document", doc.Title),
@@ -376,6 +402,70 @@ namespace Heron.Revit.Addin
                 new KeyValuePair<string, string>("warnings", handler.Count.ToString(CultureInfo.InvariantCulture)),
             });
             return Json.Error("move_failed", message);
+        }
+
+        /// <summary>
+        /// Is the pinned document still open in this Revit, even if it is not
+        /// the one in front?
+        ///
+        /// LINKED DOCUMENTS ARE EXCLUDED. Application.Documents contains every
+        /// loaded link as well as the projects the user opened - an
+        /// architectural model linked into an MEP job is in that collection and
+        /// is not something the user ever chose to work in. Counting one as
+        /// "still open" would let a refusal point at a model that cannot be
+        /// clicked back to.
+        /// </summary>
+        private static bool IsStillOpen(UIApplication app, string documentKey)
+        {
+            if (app == null || app.Application == null) return false;
+
+            try
+            {
+                foreach (Document open in app.Application.Documents)
+                {
+                    if (open == null || open.IsLinked) continue;
+                    if (DocumentKey(open) == documentKey) return true;
+                }
+            }
+            catch
+            {
+                // Enumerating documents is a convenience for the wording of a
+                // refusal that is happening either way. If it fails, the
+                // refusal still stands - it just takes the more cautious of
+                // the two messages.
+                return false;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Redraw, so the user actually SEES what just happened.
+        ///
+        /// It is cosmetic, and it is in its own try/catch for a reason that is
+        /// not cosmetic at all: this runs AFTER the change has been committed.
+        /// If a refresh threw - an active view invalidated mid-operation, say -
+        /// and that exception reached the outer catch, Heron would report an
+        /// already-committed move as a failure and then try to roll back a
+        /// group it can no longer roll back. The user would be told nothing
+        /// happened, while their ducts had in fact moved.
+        ///
+        /// The owner's own Revit add-in shipped exactly that bug and fixed it
+        /// in July 2026. It is the same lesson as SafeRollBack from the other
+        /// direction: cleanup and cosmetics must never be able to change what
+        /// gets reported about the real work.
+        /// </summary>
+        private static void TryRefresh(UIApplication app)
+        {
+            try
+            {
+                var uiDoc = app == null ? null : app.ActiveUIDocument;
+                if (uiDoc != null) uiDoc.RefreshActiveView();
+            }
+            catch
+            {
+                // Never turn a committed success into a reported failure.
+            }
         }
 
         /// <summary>Permission and emergency stop, in that order.</summary>
