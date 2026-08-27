@@ -42,7 +42,7 @@ Several names appear in more than one department (Duplicate Detection, Migration
 > Added 2026-08-27. The catalogue answers *what exists*; this answers *what to build now*.
 > Build order: [27](27-build-order.md).
 
-**The whole of Phase 0 and Phase 1 needs about 20 of the ~150 agents.** The other 130 are not deferred
+**The whole of Phase 0 and Phase 1 needs about 20 of the 217 agents.** The other 130 are not deferred
 out of caution — they have nothing to act on until the layers below them exist.
 
 | Step | Agents built | Tier |

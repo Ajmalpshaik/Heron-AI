@@ -19,8 +19,12 @@
 | **Risk** | Highest permission level it can require ([12 §1](12-security-and-permissions.md)) |
 | **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
 
-**Totals: 166 agents · 122 T1 · 32 T2 · 12 T3.**
-Roughly three quarters are ordinary deterministic modules. Only 44 ever call a model.
+**Totals: 217 agents · 147 T1 · 52 T2 · 18 T3.**
+Roughly two thirds never call a model at all.
+
+> **Correction, 2026-08-27:** an earlier version of this page stated 166. The departments actually
+> summed to 196 — a straight arithmetic error on my part, caught when adding the agents below.
+> The count is now computed from the rows rather than asserted.
 
 ---
 
@@ -34,7 +38,7 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | `HERON-ORC-FAIL-004` | Failure Analysis Agent | Determines *why* something failed and routes it. Never blind-retries | T2 | READ | 6 |
 | `HERON-ORC-FIX-005` | Fix Agent | Applies a targeted repair chosen by failure analysis | T3 | MODIFY | — |
 
-## 2. Revit Engineering — 25
+## 2. Revit Engineering — 33
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -63,6 +67,14 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | `HERON-REVIT-RIB-023` | Revit Ribbon Agent | Ribbon tab, panels, buttons — including Emergency Stop | T1 | READ | 1 |
 | `HERON-REVIT-DEP-024` | Revit Deployment Agent | Builds and deploys the add-in per version | T1 | ADMIN | 1 |
 | `HERON-REVIT-HLT-025` | Revit Plugin Health Agent | Is Revit installed, add-in loaded, ribbon present, MCP connected, document open, tools registered | T1 | READ | 3 |
+| `HERON-REVIT-SCH-026` | **Revit Schedule Agent** | Schedules — the way BIM people actually extract data. Read, create, modify, export ↗ | T1 | MODIFY | — |
+| `HERON-REVIT-LVL-027` | **Revit Level & Grid Agent** | Levels and grids — the hosts almost everything depends on. Naming, elevation, extents ↗ | T1 | MODIFY | — |
+| `HERON-REVIT-RM-028` | **Revit Room & Space Agent** | Rooms, spaces, zones, areas. MEP loads and schedules depend on spaces existing and being bounded ↗ | T1 | MODIFY | — |
+| `HERON-REVIT-SHT-029` | **Revit Sheet Agent** | Sheets, numbering, titleblocks, revisions. Distinct from views ↗ | T1 | MODIFY | — |
+| `HERON-REVIT-SYS-030` | **Revit MEP System Agent** | Duct and pipe systems, connectors, system naming, connectivity — including unconnected elements ↗ | T1 | MODIFY | — |
+| `HERON-REVIT-DIM-031` | **Revit Dimension & Annotation Agent** | Dimensions, tags, text, keynotes. *"Create dimensions"* is one of the founding examples ↗ | T1 | MODIFY | — |
+| `HERON-REVIT-PHS-032` | **Revit Phase & Design Option Agent** | Phases and design options — both change what *"all ducts"* even means ↗ | T1 | MODIFY | — |
+| `HERON-REVIT-GRP-033` | **Revit Group & Assembly Agent** | Groups and assemblies. They behave unusually and break naive element edits ↗ | T1 | MODIFY | — |
 
 ## 3. MCP / Bridge — 11
 
@@ -90,7 +102,7 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | `HERON-SES-LEA-004` | Session Lease Agent | Prevents a second chat taking over mid-job. Scoped to the process. Never blocks a rollback ↗ | T1 | READ | — |
 | `HERON-SES-PIN-005` | Document Pinning Agent | Pins the target document by identity for any write; verifies at every step ↗ | T1 | MODIFY | **6** |
 
-## 5. Knowledge & RAG — 16
+## 5. Knowledge & RAG — 17
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -110,8 +122,9 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | `HERON-RAG-CIT-014` | Citation / Source Agent | Tracks provenance. **No source, no claim** | T1 | READ | — |
 | `HERON-RAG-CNF-015` | **Knowledge Conflict Agent** | Two sources disagree — compares version, source, trust, project context, test history. Asks the user when unsure ↗ | T2 | SUGGEST | — |
 | `HERON-RAG-EVO-016` | Knowledge Evolution Agent | Restructures knowledge organisation when it stops fitting | T3 | MODIFY | — |
+| `HERON-RAG-RSH-017` | **Research Agent** | Investigates a question Heron's own knowledge cannot answer — external docs, API references, standards, prior art. **Everything it returns carries a citation** ↗ | T3 | READ | — |
 
-## 6. Fragment Lifecycle — 6
+## 6. Fragment Lifecycle — 8
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -121,6 +134,27 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | `HERON-FRG-MRG-004` | Fragment Merge Agent | Detects near-identical fragments; proposes merge, replace, keep separate or deprecate | T2 | SUGGEST | — |
 | `HERON-FRG-EVO-005` | Fragment Evolution Agent | Decides KEEP / UPDATE / EXTEND / SPLIT / MERGE / BRANCH / DEPRECATE / ARCHIVE. Always proposes | T3 | SUGGEST | — |
 | `HERON-FRG-REG-006` | Regression Testing Agent | Builds and tests every supported version; **rejects unsafe changes**; preserves the previous implementation | T1 | READ | — |
+| `HERON-FRG-CRE-007` | **Fragment Creation Agent** | Authors a new fragment — identity, metadata, implementation, tests. Only after Fragment Matcher reports nothing reusable ↗ | T3 | MODIFY | — |
+| `HERON-FRG-UPD-008` | **Fragment Update Agent** | **Applies** what Fragment Evolution decided. Evolution decides; this one does it, and never to `PRODUCTION` without approval ↗ | T3 | MODIFY | — |
+
+## 6a. Skill Lifecycle — 6 *(new department)*
+
+**[NOTE]** Fragments had a lifecycle department; skills did not. Skill work was scattered across three
+others — Skill Matcher in RAG, Skill Extraction in Import, Skill Documentation in Documentation — and
+nothing owned creating, updating, validating or scoring a skill. [Part 2 §29](00b-master-specification-agent-os.md)
+(skill composition) and [§63](00b-master-specification-agent-os.md) (skill quality score) had no agent
+at all. This department closes that.
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-SKL-RES-001` | **Skill Research Agent** | Before building: does this skill already exist, what fragments would it need, what does the standard say ↗ | T2 | READ | — |
+| `HERON-SKL-CRE-002` | **Skill Creation Agent** | Authors a new skill — name, description, example utterances, required fragments, preconditions, risk level ↗ | T3 | MODIFY | — |
+| `HERON-SKL-UPD-003` | **Skill Update Agent** | Revises an existing skill without breaking callers. Enters the lifecycle at `DRAFT`, never straight to production ↗ | T3 | MODIFY | — |
+| `HERON-SKL-VAL-004` | **Skill Validation Agent** | Metadata complete, fragments exist and are compatible, risk level correct, no duplicate skill ↗ | T2 | READ | — |
+| `HERON-SKL-CMP-005` | **Skill Composition Agent** | Builds skills from skills. Validates the graph is **acyclic**, and propagates the highest risk level upward ↗ | T2 | READ | — |
+| `HERON-SKL-PRF-006` | **Skill Performance Agent** | Success, user corrections, execution time, failure rate — **per Revit version**. Poor performers enter review ↗ | T1 | READ | — |
+
+---
 
 ## 7. Import & Migration — 14
 
@@ -158,7 +192,7 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | `HERON-QA-BIM-011` | **BIM QA Agent** | Checks the *model*: naming, parameters, categories, families, levels, worksets, views, MEP connectivity ↗ | T2 | ANALYZE | — |
 | `HERON-QA-CLS-012` | **Clash / Coordination Agent** | Clash analysis, clearance, system coordination, linked-model coordination reports ↗ | T2 | ANALYZE | — |
 
-## 9. Development — 18
+## 9. Development — 20
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -167,7 +201,9 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | `HERON-DEV-ARC-003` | Architecture Agent | Decides structure and placement within Heron's architecture | T3 | — | — |
 | `HERON-DEV-GEN-004` | Code Generation Agent | Writes code — **only after Fragment Matcher has reported** | T3 | — | — |
 | `HERON-DEV-CSH-005` | C# Agent | C# language and idiom | T2 | — | — |
-| `HERON-DEV-NET-006` | .NET Agent | Target framework, package and compiler requirements | T1 | — | — |
+| `HERON-DEV-NET-006` | **.NET Compatibility Check Agent** | *Read-only.* Which target framework does this need, is it available, is the package set compatible, will it build on all supported versions ↗ | T1 | READ | — |
+| `HERON-DEV-NUP-019` | **.NET Update Agent** | *Changes projects.* Retargets a framework, bumps packages, migrates project files. Regression matrix must pass before it is accepted ↗ | T1 | MODIFY | — |
+| `HERON-DEV-NCR-020` | **.NET Project Creation Agent** | *Creates new.* Authors project files, target frameworks, references, build configuration for a new component ↗ | T1 | MODIFY | — |
 | `HERON-DEV-RAP-007` | Revit API Domain Agent | Revit API knowledge for generation *(merge candidate with 005/006)* | T2 | — | — |
 | `HERON-DEV-REV-008` | Code Review Agent | Architecture, API usage, error handling, transaction safety, duplication | T2 | — | — |
 | `HERON-DEV-SEC-009` | Security Review Agent | Required for anything at MODIFY or above | T2 | — | — |
@@ -181,7 +217,7 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | `HERON-DEV-DOC-017` | Documentation Agent | Generates docs from registries and metadata | T1 | — | — |
 | `HERON-DEV-REL-018` | Release Agent | Packages and releases | T1 | PUBLISH | — |
 
-## 10. Agent Lifecycle & HR — 12
+## 10. Agent Lifecycle & HR — 13
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -191,14 +227,15 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | `HERON-AHR-BLD-004` | Agent Builder | Implements it | T3 | — | — |
 | `HERON-AHR-TRN-005` | Agent Trainer | Supplies architecture, standards, security rules, approved examples | T2 | — | — |
 | `HERON-AHR-CRT-006` | Agent Creator | Owns the pipeline. **May only ever assign `PROPOSED`** | T3 | ADMIN | — |
-| `HERON-AHR-EVL-007` | Agent Evaluator | Scores real performance against expectations | T2 | READ | — |
+| `HERON-AHR-VAL-013` | **Agent Validation Agent** | *Before activation:* is this agent correct, does it meet its contract, does it follow the architecture, does it duplicate an existing agent, is its risk level right. **Never the agent that built it** ↗ | T2 | ADMIN | — |
+| `HERON-AHR-EVL-007` | Agent Evaluator | *After activation:* scores real performance against expectations | T2 | READ | — |
 | `HERON-AHR-REG-008` | Agent Registry Agent | System of record for every agent | T1 | ADMIN | — |
 | `HERON-AHR-OPT-009` | Agent Optimizer | Improves an existing agent | T2 | SUGGEST | — |
 | `HERON-AHR-RET-010` | Agent Retirement Agent | Retires with history preserved and rollback possible. **Archive, never delete** | T1 | ADMIN | — |
 | `HERON-AHR-MON-011` | Architecture Monitor | Detects drift from the architecture | T2 | READ | — |
 | `HERON-AHR-DEP-012` | Agent Deployment Agent | Activates an approved agent | T1 | ADMIN | — |
 
-## 11. Kernel & Platform — 14
+## 11. Kernel & Platform — 15
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -216,6 +253,7 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | `HERON-KRN-SEC-012` | Secret Manager | Credentials outside the workspace. Redaction on the way out | T1 | ADMIN | — |
 | `HERON-KRN-DEP-013` | Dependency Graph Agent | Skills → fragments → API → runtime → packages. Makes blast radius computable | T1 | READ | — |
 | `HERON-KRN-EVD-014` | Evidence Agent | Records *why* a decision was made. **No evidence, no MODIFY** | T1 | — | 6 |
+| `HERON-KRN-TOK-015` | **Tokenizer / Token Budget Agent** | Counts tokens **before** sending, enforces the context budget, tracks spend per request and per session. Feeds the visible cost meter ↗ | T1 | — | — |
 
 ## 12. Workspace & Folder Architecture — 12
 
@@ -312,32 +350,67 @@ Roughly three quarters are ordinary deterministic modules. Only 44 ever call a m
 | Department | Agents | T1 | T2 | T3 |
 |---|---|---|---|---|
 | Orchestration & Communication | 5 | 0 | 4 | 1 |
-| Revit Engineering | 25 | 24 | 1 | 0 |
+| Revit Engineering | 33 | 32 | 1 | 0 |
 | MCP / Bridge | 11 | 11 | 0 | 0 |
 | Session & Bridge Management | 5 | 5 | 0 | 0 |
-| Knowledge & RAG | 16 | 11 | 4 | 1 |
-| Fragment Lifecycle | 6 | 2 | 2 | 2 |
-| Import & Migration | 14 | 6 | 5 | 3 |
+| Knowledge & RAG | 17 | 11 | 4 | 2 |
+| Fragment Lifecycle | 8 | 2 | 2 | 4 |
+| **Skill Lifecycle** | **6** | 1 | 3 | 2 |
+| Import & Migration | 14 | 7 | 4 | 3 |
 | Standards & BIM QA | 12 | 0 | 11 | 1 |
-| Development | 18 | 9 | 7 | 2 |
-| Agent Lifecycle & HR | 12 | 5 | 4 | 3 |
-| Kernel & Platform | 14 | 14 | 0 | 0 |
+| Development | 20 | 11 | 7 | 2 |
+| Agent Lifecycle & HR | 13 | 4 | 6 | 3 |
+| Kernel & Platform | 15 | 15 | 0 | 0 |
 | Workspace & Folder | 12 | 10 | 2 | 0 |
 | Naming & Taxonomy | 7 | 5 | 2 | 0 |
 | GitHub | 10 | 8 | 2 | 0 |
 | Installation & Update | 10 | 9 | 1 | 0 |
 | Operations & Health | 11 | 11 | 0 | 0 |
 | Documentation | 8 | 5 | 3 | 0 |
-| **Total** | **166** | **135** | **48** | **13** |
+| **Total** | **217** | **147** | **52** | **18** |
 
-**[NOTE]** The distribution is the point. **135 of 166 agents never call a model** — they are ordinary
-classes with a method or two. Of the rest, 48 make one scoped call and 13 run a real agentic loop.
+**[NOTE]** The distribution is the point. **147 of 217 agents never call a model** — they are ordinary
+classes with a method or two. Of the rest, 52 make one scoped call and 18 run a real agentic loop.
 
-Read that way, the platform is a normal application with about 135 services, 48 narrow model calls, and
-13 genuine agentic workflows. That is a tractable system, not an intimidating one.
+Read that way, the platform is a normal application with about 147 services, 52 narrow model calls, and
+18 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
 **Phase 0 and Phase 1 need about 20 of these**, 17 of them T1 —
 see [08](08-agent-catalog.md) and [27](27-build-order.md).
+
+---
+
+## When to split an agent, and when not to
+
+**[NOTE]** Added 2026-08-27 after a good question: *should every kind of work get its own agent —
+checking, updating, creating, all separate?*
+
+Mostly yes, and the `.NET Agent` above was split into three for exactly that reason. But "separate verb,
+separate agent" taken to its limit produces thousands of agents and a system nobody can hold in their
+head. [Golden Rule 2](14-golden-rules.md) pulls one way; over-decomposition
+([09 §6](09-skills-and-fragments.md)) pulls the other.
+
+**Split when any of these differ. Do not split when none of them do:**
+
+| Test | Why it matters |
+|---|---|
+| **Risk level** | Checking is `READ`; updating is `MODIFY`. One permission gate cannot serve both honestly — that alone justifies a split |
+| **Consumers** | Compatibility checking is called constantly; project creation runs during scaffolding only. Different callers, different lifetimes |
+| **Failure mode** | A wrong check gives a wrong answer. A wrong update breaks the build. They fail differently and are tested differently |
+| **Tier** | If one half needs a model call and the other does not, splitting removes cost from the common path ([02 §6](02-architecture-overview.md)) |
+| **Lifecycle** | If one half changes every Revit release and the other never changes, they should version independently |
+
+**The .NET split passes on four of five** — risk, consumers, failure mode and lifecycle. That is why it
+was done.
+
+**A counter-example, so the rule has teeth:** `C# Agent`, `.NET Compatibility Check Agent` and
+`Revit API Domain Agent` are all *"know a technical domain, answer questions about it."* Same risk, same
+consumers, same tier, same failure mode. Those are marked as merge candidates
+([08](08-agent-catalog.md)), not split further.
+
+> **The list grows from real gaps, not from grammar.** A new agent should be traceable to something that
+> was needed and had no owner — which is what the [Capability Gap Agent](#10-agent-lifecycle--hr--13)
+> exists to detect.
 
 ---
 
