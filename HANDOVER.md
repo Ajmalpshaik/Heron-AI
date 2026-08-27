@@ -11,7 +11,7 @@ Read this first. Then [docs/README.md](docs/README.md) for the map, and
 ## 1. Where the project stands, in one paragraph
 
 Heron AI is specified in full (four documents plus field notes, ~13,000 lines), reviewed, and has its
-first working code. **Steps 1, 2 and 3 of 6 are built and proven in real Revit** — the bridge answers `ping` from
+first working code. **Steps 1 to 4 of 6 are built and proven in real Revit** — the bridge answers `ping` from
 Revit 2024, and the add-in builds for Revit 2020, 2024 and 2027 across all three .NET runtimes. Seventeen
 decisions are recorded, 26 questions remain open and none of them block work. The repository is
 **private** and stays that way until there is more working code.
@@ -67,6 +67,9 @@ answer to "where do I go for this bug".
 | **"Revit is busy" instead of a hang** | ✅ **Proven on both.** Dialog open → clean refusal after 10s, then recovers by itself |
 | **`bridge.autoConnect`** | ✅ **Proven.** Revit 2024 connected with no button press |
 | **Step 3 - a real MCP server** | ✅ **Proven inside Claude Code.** `revit_health` answered from both live Revits, with no command run |
+| **Step 4 - select all ducts** | ✅ **Proven on both.** 4 ducts found and **highlighted on screen**, confirmed by eye |
+| **The audit trail** | ✅ **Proven.** Every request recorded - op, outcome, document, timing |
+| **Refusing when two Revits are connected** | ⚠️ **Built, not proven.** The guard is in the MCP tool; the test went through the bridge directly |
 | **Anything that WRITES to a model** | ⛔ **Does not exist.** That is Step 6, and it arrives with its safety rails |
 
 > Nothing here is known-broken. Several things are **untested**, which is different and more honest.
