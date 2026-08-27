@@ -49,7 +49,7 @@ Concrete protections:
 2. `.gitignore` blocks the data paths anyway, as a second layer.
 3. A pre-commit secret/PII scan.
 4. Test models are **synthetic**, never real client models ([13 §5](13-testing-and-quality.md)).
-5. Community contribution stays a per-item human review — Golden Rule 14, [10 §4](10-memory-and-knowledge.md).
+5. Community contribution stays a per-item human review — Golden Rule 12, [10 §4](10-memory-and-knowledge.md).
 
 **A single accidental commit of a client model or a project knowledge base is not recoverable.**
 Git history persists, GitHub caches, forks propagate. This deserves more care than any other
@@ -154,7 +154,7 @@ state the promise plainly:
 | Agent contracts | Breaking change = major version |
 | Supported Revit versions | Removal = major version, announced in advance |
 
-This is Golden Rule 3 extended to the people who build on Heron.
+This is Golden Rule 4 extended to the people who build on Heron.
 
 ---
 

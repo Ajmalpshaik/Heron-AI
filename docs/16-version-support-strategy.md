@@ -59,7 +59,7 @@ REVIT2025_OR_GREATER     <- .NET 8
 ### Why not separate branches per version
 
 Branch-per-version is the intuitive answer and it is a trap. A fix made in one branch has to be
-cherry-picked into seven others, forever. Within a year the branches diverge, and Golden Rule 3
+cherry-picked into seven others, forever. Within a year the branches diverge, and Golden Rule 4
 ("never break a working version") becomes impossible to verify because there is no single thing to test.
 
 One source tree, multi-targeted, with a version matrix in CI, is the only approach where
@@ -137,7 +137,7 @@ are never shipped — Revit provides them at runtime.
 
 ## 7. The testing consequence
 
-Eight versions × every fragment is a large matrix. It is also the only thing that makes Golden Rule 3 real.
+Eight versions × every fragment is a large matrix. It is also the only thing that makes Golden Rule 4 real.
 
 **Practical tiering:**
 
@@ -185,5 +185,5 @@ An annual event, so it should be a routine rather than a project:
 4. Fix only what the adapters need
 5. Record any fragment that genuinely cannot support it — with the reason
 
-**Golden Rule 3 applies in both directions.** A new Revit version must never be the reason an older
+**Golden Rule 4 applies in both directions.** A new Revit version must never be the reason an older
 one stops working.

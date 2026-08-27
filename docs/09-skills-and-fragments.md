@@ -138,7 +138,7 @@ On every change to an existing fragment:
 5. **Reject unsafe changes**
 6. **Preserve the previous working implementation**
 
-This is Golden Rule 3 made executable. See [13 — Testing & Quality](13-testing-and-quality.md).
+This is Golden Rule 4 made executable. See [13 — Testing & Quality](13-testing-and-quality.md).
 
 ---
 
@@ -146,7 +146,7 @@ This is Golden Rule 3 made executable. See [13 — Testing & Quality](13-testing
 
 Generated code must know and follow: folder structure, naming conventions, metadata standards, coding standards, supported Revit versions, supported .NET versions, existing services, existing fragments, existing agents, dependency rules.
 
-**Reuse existing approved components before generating anything new** (Golden Rule 4).
+**Reuse existing approved components before generating anything new** (Golden Rule 3).
 
 **[NOTE]** Enforce this mechanically rather than by instruction. Before the Code Generation Agent runs, the Fragment Matcher must have searched and reported. If a proven fragment covers ≥80% of the request, generation is not permitted to start from scratch — it must start from that fragment. Otherwise the knowledge base fills with near-duplicates, and the Merge Agent spends its life cleaning up after the Generation Agent.
 

@@ -61,7 +61,7 @@ If an important decision is required, Heron asks.
 
 ## 6. The Golden Rules
 
-The ten permanent architecture rules live in their own document: [14 — Golden Rules](14-golden-rules.md). They are the constitution of the platform. Anything in this repository that contradicts them is a bug in the design, not a feature.
+The fifteen permanent architecture rules live in their own document: [14 — Golden Rules](14-golden-rules.md), together with four more proposed during engineering review. They are the constitution of the platform. Anything in this repository that contradicts them is a bug in the design, not a feature.
 
 ## 7. Target experience
 

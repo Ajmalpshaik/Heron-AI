@@ -5,7 +5,7 @@
 >
 > This log is append-only. A decision that is later reversed gets a **new entry** that supersedes
 > the old one — the original stays, so the reasoning history is never lost.
-> This mirrors Golden Rule 3: never destroy a working record.
+> This mirrors Golden Rule 4: never destroy a working record.
 
 ---
 
@@ -25,6 +25,7 @@
 | [D-09](#d-09--revit-thread-marshalling--externalevent) | Revit thread marshalling — ExternalEvent | ✅ Accepted |
 | [D-10](#d-10--repository-stays-private-until-working-code-exists) | Repo stays private until code exists | ✅ Accepted |
 | [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system) | Adopt Master Specification Part 2 (Agent OS) | ✅ Accepted |
+| [D-12](#d-12--adopt-the-master-handover-baseline-part-3-and-its-fifteen-golden-rules) | Adopt Baseline (Part 3) + 15 Golden Rules | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -218,7 +219,7 @@ The `PROVEN → PRODUCTION` gate is exactly where a fragment gets compiled and s
 
 - Iteration happens where it is cheap; permanence happens where it is safe.
 - The lifecycle in spec §18 turns out to *describe* this hybrid — a good sign the design is coherent.
-- Golden Rule 13 (generated code never touches a live model first) is enforced by the sandbox.
+- Golden Rule 18 (generated code never touches a live model first) is enforced by the sandbox.
 - **Open sub-decision:** which scripting runtime (pyRevit / IronPython / Python.NET / Roslyn scripting).
   The owner's existing pyRevit work is the strongest evidence and should be reviewed before choosing.
 
@@ -479,7 +480,7 @@ as sole source of truth (§77). Detail in [PROPOSALS Part 0](PROPOSALS.md).
 
 ### What Part 2 did not change
 
-**Golden Rules 11–15 remain necessary.** Neither specification mentions undo, preview-before-modify,
+**Golden Rules 16–19 remain necessary.** Neither specification mentions undo, preview-before-modify,
 data egress to a model provider, or how a Revit test actually executes. Part 2 strengthens the case for
 these rules rather than replacing them.
 
@@ -497,6 +498,69 @@ these rules rather than replacing them.
 - Five new open questions (Q-29 to Q-33). **None block Phase 0** — they shape Phases 2–5.
 - The Capability Registry moves into Phase 2 rather than later: retrofitting it would mean rewriting
   every call site.
+
+---
+
+## D-12 — Adopt the Master Handover Baseline (Part 3) and its fifteen Golden Rules
+
+**Status:** Accepted · **Date:** 2026-08-27
+**Affects:** [14 — Golden Rules](14-golden-rules.md) and **every document that cross-references a rule number**
+
+### Context
+
+A third document was provided: a consolidated *Master Project Handover Note*, describing itself as
+"the handover baseline". Roughly 90% of it restates Parts 1 and 2. But **§78 replaces the ten Golden
+Rules with fifteen**, renumbers two of the originals, and shifts the meaning of a third.
+
+Since the Golden Rules are the constitution — referenced by number throughout the repository, in
+`SECURITY.md` and in `CONTRIBUTING.md` — this could not be absorbed silently.
+
+### Decision
+
+**Part 3 is adopted as the consolidated baseline and is authoritative on the Golden Rules.**
+All three parts remain source of truth and are preserved verbatim; where they differ, Part 3 governs
+the rule set, and Parts 1 and 2 remain the detailed reference for everything else.
+
+**All cross-references in the repository were mechanically remapped** to the new numbering:
+
+| Was | Now |
+|---|---|
+| Rule 3 — never break a working implementation | **Rule 4** — never break a working Revit version |
+| Rule 4 — reuse proven fragments | **Rule 3** — reuse proven knowledge |
+| Rule 8 — background *remains invisible* | **Rule 8** — background *must not interfere* (visibility → performance) |
+| *(new)* | **Rules 11–15** — source of truth, no auto-publishing, no self-modification, auditability, modularity |
+| Proposed 11 — one undo | **Proposed 16** |
+| Proposed 12 — no autonomous write without preview | **Proposed 17** (now also carries the Sync With Central clause) |
+| Proposed 13 — sandbox generated code | **Proposed 18** |
+| Proposed 14 — never publish on own initiative | **absorbed into official Rule 12** |
+| Proposed 15 — no permission escalation from text | **Proposed 19** |
+
+Rules 1, 2, 5, 6, 7, 9 and 10 keep their numbers.
+
+### Also adopted from Part 3
+
+| § | Item |
+|---|---|
+| §1 | Future capabilities must be **explicitly marked** as not-yet-implemented. Matches [D-00](#d-00--documentation-first-no-implementation-yet) |
+| §42 | **Reference Update Agent** must verify imports, references, metadata, registry, documentation and relationships after any rename or move. *No broken references.* |
+| §32 | **Compatibility Agent combines** the Revit Version, Revit API, .NET and Dependency agent results, rather than duplicating them |
+| §57 | **Least privilege** — agents receive only the permissions they require. Becomes a required registry field |
+| §20 | **Trust Evaluation** as a retrieval pipeline stage |
+
+### Rejected from Part 3
+
+**§20's placement of metadata filtering after all three searches.** Parts 1 and 2 filter earlier, which
+is correct: filtering last means embedding and searching a corpus about to be discarded, and it defers
+scope isolation (Rule 5) from query time to ranking time. The adopted pipeline keeps Part 3's Trust
+Evaluation stage and Parts 1–2's filter placement — see [20 §1](20-knowledge-trust-and-conflict.md).
+
+### Consequences
+
+- The constitution is now **15 official + 4 proposed** rules, and it is stable across all three documents.
+- No prior decision (D-01 to D-11) is overturned. Part 3 consolidates; it does not redirect.
+- The two tensions recorded in [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system)
+  remain open — Part 3 restates Model Routing (§61) and Multi-User (§65) without resolving either.
+- No new open questions. Part 3 raises none that Parts 1 and 2 had not already raised.
 
 ---
 

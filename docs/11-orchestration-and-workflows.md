@@ -25,7 +25,7 @@ Intent Detection -> BIM Persona -> Task Classification -> Fragment Librarian
 -> Execute -> Validate Selection -> Return Result -> Record Success
 ```
 
-If an approved fragment exists, **reuse it**. Do not generate code (Golden Rule 4).
+If an approved fragment exists, **reuse it**. Do not generate code (Golden Rule 3).
 
 **[NOTE]** This is the path that must be fast, because it is 90% of real usage. Target after warm-up: **one T2 call (intent) and nothing else.** Everything downstream — fragment lookup, compatibility filter, execution, validation — is deterministic.
 
@@ -77,7 +77,7 @@ Discovery -> Compatibility Analysis -> Existing Fragment Analysis
 -> Regression Testing (2020 / 2021 / 2022 / 2023 ...) -> QA -> Approve
 ```
 
-Existing versions must remain functional. This is Golden Rule 3.
+Existing versions must remain functional. This is Golden Rule 4.
 
 ---
 

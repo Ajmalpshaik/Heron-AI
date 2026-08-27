@@ -18,7 +18,7 @@ Skill -> Fragment -> Revit API -> .NET -> Package
 ```
 
 **[NOTE]** This is the missing piece that makes [D-05](DECISIONS.md) (Revit 2020 → latest) and
-[Golden Rule 3](14-golden-rules.md) operationally possible.
+[Golden Rule 4](14-golden-rules.md) operationally possible.
 
 Without a dependency graph, "does this change break anything?" can only be answered by testing
 everything — which, across eight Revit versions and thousands of fragments, is not affordable. With
@@ -66,7 +66,7 @@ Low ≈ `READ`/`ANALYZE`, Medium ≈ `SUGGEST`/`EXECUTE`, High ≈ `MODIFY`/`PUB
 One adjustment: **`MODIFY` on a live project model belongs in High, not Medium.** Part 2 places "code
 generation" and "fragment updates" in Medium, which is right — those touch Heron's own artefacts. But
 moving 247 ducts in a client's model is a different category of act, and belongs behind a preview and a
-confirmation ([Golden Rule 12](14-golden-rules.md)).
+confirmation ([Golden Rule 17](14-golden-rules.md)).
 
 ---
 
@@ -111,7 +111,7 @@ it real rather than nominal:
    that works regardless of what the Python side is doing — plus a file-based kill switch the add-in
    checks before executing anything.
 2. **Stopping must leave the model clean.** A stop mid-operation rolls back the open `TransactionGroup`
-   ([Golden Rule 11](14-golden-rules.md)). Never a half-applied change.
+   ([Golden Rule 16](14-golden-rules.md)). Never a half-applied change.
 3. **It must be sticky.** After an emergency stop, Heron stays stopped until a person restarts it. It
    does not quietly resume on the next request or after a restart.
 
@@ -199,7 +199,7 @@ model routing · security policies · update policies · company standards. Chan
 
 1. **Security and permission policy is configuration, so configuration is a security boundary.** Editing
    it is `ADMIN`. Nothing Heron reads — a document, a community package, a model comment — may change
-   it ([Golden Rule 15](14-golden-rules.md)).
+   it ([Golden Rule 19](14-golden-rules.md)).
 2. **Configuration is Product/Data-split too.** Machine-specific settings (Revit paths, which versions
    are installed) differ from portable policy (company standards, enabled skills). Only the second
    should be shareable or committed.

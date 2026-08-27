@@ -172,7 +172,7 @@ Now a real security question rather than a hypothetical one, since anyone can pu
 
 ---
 
-### 🟡 Q-19 — Accept proposed Golden Rules 11–15?
+### 🟡 Q-19 — Accept proposed Golden Rules 16–19?
 
 11. One user action, one undo (single named `TransactionGroup`).
 12. No autonomous write to a live model without a preview or a PRODUCTION fragment.

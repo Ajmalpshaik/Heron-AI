@@ -71,7 +71,7 @@ On every change to an existing fragment:
 
 **[NOTE]** "Compare previous behaviour" needs a concrete mechanism, or it will not happen. The workable one is **golden-file testing**: each fragment has a fixed test model and a recorded expected result (element counts, `UniqueId` sets, parameter values, geometry hashes). A change that alters the golden output is a breaking change by definition, and must be explicitly acknowledged rather than silently accepted.
 
-This makes Golden Rule 3 executable instead of aspirational.
+This makes Golden Rule 4 executable instead of aspirational.
 
 ## 5. **[NOTE]** Test models are project assets
 

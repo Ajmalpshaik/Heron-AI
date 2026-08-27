@@ -26,10 +26,29 @@ approach [05 §4](05-heron-brain.md) recommended. The gap is closed.
 Two refinements still worth applying:
 
 1. **Reorder slightly.** Scope and metadata filtering should run **before** the expensive searches, not
-   between them — filtering first eliminates most of the corpus for free and enforces
+   between or after them — filtering first eliminates most of the corpus for free and enforces
    [Golden Rule 5](14-golden-rules.md) at query time rather than at ranking time.
 2. **Fuse rather than concatenate.** Keyword and vector results need reciprocal rank fusion, otherwise
    one modality dominates arbitrarily.
+
+**[NOTE]** The [Baseline §20](00c-master-handover-baseline.md) restates this pipeline with metadata
+filtering moved *after* all three searches, and adds an explicit **Trust Evaluation** stage before
+conflict detection. The added Trust Evaluation stage is an improvement and is adopted. The filter
+placement is not — running metadata filtering last means embedding and searching a corpus that is about
+to be discarded, which is the single most wasteful thing a retrieval pipeline can do.
+
+**Adopted order**, combining the best of all three statements:
+
+```text
+Intent -> Domain -> Knowledge Scope
+-> Metadata + version filter   (cheap, exact, enforces scope isolation)
+-> Keyword search + Vector search   (in parallel, over the survivors)
+-> Rank fusion
+-> Trust evaluation             (from Baseline §20)
+-> Conflict detection
+-> Knowledge validation
+-> Context assembly
+```
 
 **Conflict Detection as a pipeline stage is new in Part 2 and is a genuine improvement** — see §4 below.
 
@@ -74,7 +93,7 @@ Trust must be a **hard filter before ranking, not a ranking signal**, for two sp
 - **Version compatibility** — a fragment that does not support the running Revit version must be
   structurally unselectable, not merely ranked lower.
 - **`EXPERIMENTAL` / `UNVERIFIED`** — never reachable for a `MODIFY` operation on a live model.
-  That is [Golden Rule 12](14-golden-rules.md).
+  That is [Golden Rule 17](14-golden-rules.md).
 
 ---
 
@@ -130,7 +149,7 @@ of near-duplicate fragments and the knowledge base would be unusable on day one.
 
 **[NOTE]** "Similar → existing fragment may be improved" is the highest-value branch and the easiest to
 get wrong. It should produce a **diff and a proposal**, never an automatic merge — the imported version
-may be better, worse, or right for a different Revit version. See [Golden Rule 3](14-golden-rules.md).
+may be better, worse, or right for a different Revit version. See [Golden Rule 4](14-golden-rules.md).
 
 ---
 
@@ -169,7 +188,7 @@ Orchestrator asks for `ADD_DUCT_END_CAP` and never learns that three implementat
 Decides: `KEEP` · `UPDATE` · `EXTEND` · `SPLIT` · `MERGE` · `BRANCH` · `DEPRECATE` · `ARCHIVE`
 
 **[NOTE]** Part 2 adds `EXTEND` and `BRANCH` to Part 1's list. `BRANCH` is the important one — it is the
-decision that keeps Golden Rule 3 satisfiable when a new Revit version needs different code.
+decision that keeps Golden Rule 4 satisfiable when a new Revit version needs different code.
 
 All eight outcomes must **propose**, never apply autonomously, to anything at `PRODUCTION`
 ([09 §6](09-skills-and-fragments.md)). Splitting or merging a production fragment silently changes the

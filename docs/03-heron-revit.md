@@ -125,7 +125,7 @@ Tracked as decision **D-02**, [Q-2](OPEN-QUESTIONS.md).
 
 The user must always be able to undo anything Heron did with **one** undo.
 
-Proposed hard rule, to become Golden Rule 11:
+Proposed hard rule, to become Golden Rule 16:
 
 > Every Heron operation that modifies the model runs inside exactly one `TransactionGroup`, assimilated on success, named after what the user asked for.
 
@@ -179,7 +179,7 @@ Revit 2025 moved from .NET Framework to .NET. **One assembly cannot target both.
 **Settled approach:** multi-targeting from a single source tree —
 `<TargetFrameworks>net48;net8.0-windows</TargetFrameworks>` — with per-version compilation symbols and
 all version-conditional code confined to an adapter layer. Branch-per-version is explicitly rejected:
-a fix would have to be cherry-picked into seven branches forever, and Golden Rule 3 would become
+a fix would have to be cherry-picked into seven branches forever, and Golden Rule 4 would become
 unverifiable because there would be no single thing to test.
 
 **Sequencing:** supporting all eight versions is a requirement of the finished platform, not of the

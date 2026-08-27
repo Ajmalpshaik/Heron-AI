@@ -29,7 +29,7 @@ during review, the defining document is linked.
 | **API context** | A moment when Revit permits API calls — inside an `IExternalCommand`, `IExternalEventHandler`, `Idling` handler, or a document/application event. |
 | **ExternalEvent** | The mechanism for asking Revit to run code on its main thread from a background thread. The backbone of the Heron bridge. |
 | **Transaction** | The unit of model modification. Nothing changes a Revit model outside one. |
-| **TransactionGroup** | A wrapper over several transactions that can be assimilated into a single undo entry. The basis of Golden Rule 11. |
+| **TransactionGroup** | A wrapper over several transactions that can be assimilated into a single undo entry. The basis of Golden Rule 16. |
 | **ElementId** | A per-document, per-session element identifier. **Not stable** — 32-bit before Revit 2024, 64-bit from 2024. |
 | **UniqueId** | A stable GUID-based element identifier. What Heron stores and transmits. |
 | **Worksharing** | Revit's multi-user mode: a central model plus local copies, with element ownership and Sync With Central. |
@@ -51,7 +51,7 @@ during review, the defining document is linked.
 | **Hybrid search** | Combining keyword (BM25/FTS) and vector search, then fusing the rankings. The recommended retrieval strategy. [05 §4](05-heron-brain.md) |
 | **Golden file test** | A test that compares output against a recorded expected result. How "never break a working version" is enforced. [13 §4](13-testing-and-quality.md) |
 | **Sandbox** | An isolated environment — a detached model copy — where unproven code runs before it is allowed near a live project. |
-| **Prompt injection** | Instructions hidden in content the system reads (a family name, an imported document) attempting to make the model act on them. Countered by Golden Rule 15. |
+| **Prompt injection** | Instructions hidden in content the system reads (a family name, an imported document) attempting to make the model act on them. Countered by Golden Rule 19. |
 | **Audit log** | The append-only structured record of every significant action. What makes invisible background work acceptable. [12 §5](12-security-and-permissions.md) |
 
 ## Status vocabularies

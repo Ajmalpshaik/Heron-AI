@@ -50,11 +50,12 @@ them, that is a vulnerability worth reporting:
 - **The permission gate lives in the Revit add-in**, not in the AI layer. High-risk operations return
   `REQUIRES_CONFIRMATION` and do not execute.
 - **No text Heron reads may raise Heron's own permission level.** Content from documents, model text,
-  family names and community packages is data, never instruction. *(Golden Rule 15)*
+  family names and community packages is data, never instruction. *(Golden Rule 19)*
 - **Every model change runs in one named `TransactionGroup`** and rolls back completely on failure.
-  *(Golden Rule 11)*
-- **Generated code never touches a live model on its first run.** *(Golden Rule 13)*
-- **Heron never syncs, publishes or shares on its own initiative.** *(Golden Rule 14)*
+  *(Golden Rule 16)*
+- **Generated code never touches a live model on its first run.** *(Golden Rule 18)*
+- **No automatic external publishing of private knowledge.** *(Golden Rule 12)*
+- **Heron never triggers Sync With Central on its own initiative.** *(Golden Rule 17)*
 - **Project knowledge never leaves the machine** without explicit, per-item human review of the
   actual content being sent.
 

@@ -40,7 +40,7 @@ Every contributed fragment must include:
 - [ ] **Declared and tested** Revit version compatibility — declared alone is not enough
 - [ ] Tests that pass on at least one .NET Framework and one .NET 8 Revit version
 - [ ] A declared risk level
-- [ ] No duplicate of an existing fragment (search first — Golden Rule 4)
+- [ ] No duplicate of an existing fragment (search first — Golden Rule 3)
 
 Contributed fragments enter the lifecycle at `DISCOVERED`. Nothing becomes production knowledge because
 a contributor said it works (Golden Rule 6).
@@ -81,7 +81,7 @@ If you commit any of these by accident, **report it privately** via
    declined for architectural reasons.
 2. **One concern per pull request.** Mirrors Golden Rule 2 — one responsibility.
 3. **Explain the "why", not just the "what".** The reasoning is what gets reviewed.
-4. **Never break a working version** (Golden Rule 3). If your change affects Revit version support,
+4. **Never break a working version** (Golden Rule 4). If your change affects Revit version support,
    say which versions you tested and how.
 5. **Tests, written to fail before your fix.**
 6. **Be ready to discuss.** Review here is about design fit, not gatekeeping.

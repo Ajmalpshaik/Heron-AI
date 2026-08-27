@@ -41,8 +41,8 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 
 | | |
 |---|---|
-| Specification | ✅ Complete — [Part 1: the platform](docs/00-master-specification.md) (76 §) + [Part 2: the Agent OS](docs/00b-master-specification-agent-os.md) (84 §) |
-| Architecture review | ✅ Complete — [gaps, ideas, tensions](docs/PROPOSALS.md) across both parts |
+| Specification | ✅ Complete — [Part 1: the platform](docs/00-master-specification.md) (76 §) + [Part 2: the Agent OS](docs/00b-master-specification-agent-os.md) (84 §) + [Part 3: the baseline](docs/00c-master-handover-baseline.md) (80 §) |
+| Architecture review | ✅ Complete — [gaps, ideas, tensions](docs/PROPOSALS.md) across all three parts |
 | Open questions | ⏳ 12 answered, 20 open — **none blocking** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
 | Licence & safety files | ✅ Complete — Apache 2.0, security policy, disclaimer, contribution guide |
 | Roadmap | ✅ Drafted — [Phase 0 → 7](docs/ROADMAP.md) |
@@ -94,18 +94,23 @@ Full index: **[docs/README.md](docs/README.md)**
 
 ## The Golden Rules
 
-1. User does BIM work. Heron AI does everything else.
-2. One Agent = One Responsibility.
-3. Never break a working implementation unnecessarily.
-4. Reuse proven fragments before generating new code.
-5. Do not mix personal, project, company and community knowledge.
-6. Unproven knowledge must not automatically become production knowledge.
+1. User focuses on BIM. Heron handles technical complexity.
+2. One agent should have one primary responsibility.
+3. Reuse proven knowledge before creating new knowledge.
+4. Never break a working Revit version unnecessarily.
+5. Personal knowledge must remain separate from company knowledge.
+6. Experimental knowledge must remain separate from production knowledge.
 7. One agent creates; another agent validates.
-8. Background work should remain invisible unless user attention is required.
-9. High-risk actions require controlled permission.
-10. Every important component must have identity, version and lifecycle.
+8. Background work must not interfere with user work.
+9. High-risk actions require controlled approval.
+10. Every important object must have identity, version and lifecycle.
+11. Vector DB is an index, not the canonical source of truth.
+12. No automatic external publishing of private knowledge.
+13. No uncontrolled self-modification of production architecture.
+14. Every important autonomous operation must be auditable.
+15. The platform must be modular enough that agents, skills and fragments can be replaced without redesigning the system.
 
-*(Five more are [proposed](docs/14-golden-rules.md), covering undo, previews, sandboxing, publishing and permission escalation.)*
+*(Four more are [proposed](docs/14-golden-rules.md), covering undo, preview-before-modify, sandboxing generated code, and permission escalation from untrusted text.)*
 
 ---
 

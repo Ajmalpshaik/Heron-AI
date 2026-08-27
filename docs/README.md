@@ -22,9 +22,10 @@
 **12 of 32 questions answered — none of the remaining 20 block Phase 0.**
 It starts on the owner's go-ahead.
 
-**Specification is complete in two parts.** Part 1 is the platform and its organisation;
-Part 2 is the Agent Operating System and self-evolution. Part 2 closed four gaps found reviewing
-Part 1 — see [PROPOSALS Part 0](PROPOSALS.md).
+**Specification is complete in three parts.** Part 1 is the platform and its organisation; Part 2 is
+the Agent Operating System; Part 3 is the consolidated baseline and is **authoritative on the Golden
+Rules** — it replaced the original ten with fifteen, and every cross-reference in this repository was
+remapped accordingly ([D-12](DECISIONS.md)). See [PROPOSALS Part 0a](PROPOSALS.md).
 
 ---
 
@@ -47,6 +48,7 @@ Part 1 — see [PROPOSALS Part 0](PROPOSALS.md).
 |---|---|---|
 | 00 | [Master Specification — Part 1](00-master-specification.md) | The platform and its organisation, §1–§76. Source of truth. |
 | 00b | [Master Specification — Part 2](00b-master-specification-agent-os.md) | The Agent Operating System and self-evolution, §1–§84. Source of truth. |
+| 00c | [Master Handover Baseline — Part 3](00c-master-handover-baseline.md) | The consolidated baseline, §1–§80. **Authoritative on the Golden Rules.** |
 | 01 | [Vision & Principles](01-vision-and-principles.md) | What Heron is, personas, the defining principle |
 | 02 | [Architecture Overview](02-architecture-overview.md) | Layers, four parts, orchestration, **agent tiers** |
 | 03 | [Heron Revit](03-heron-revit.md) | Add-in, Revit agents, **threading, transactions, versions** |
@@ -60,7 +62,7 @@ Part 1 — see [PROPOSALS Part 0](PROPOSALS.md).
 | 11 | [Orchestration & Workflows](11-orchestration-and-workflows.md) | Reference workflows, failure handling, performance |
 | 12 | [Security & Permissions](12-security-and-permissions.md) | Permission levels, gate location, confidentiality, audit |
 | 13 | [Testing & Quality](13-testing-and-quality.md) | Eight test levels, testing against real Revit, regression |
-| 14 | [Golden Rules](14-golden-rules.md) | The constitution — rules 1–10 plus 5 proposed |
+| 14 | [Golden Rules](14-golden-rules.md) | The constitution — **15 official rules** plus 4 proposed |
 | 15 | [Glossary](15-glossary.md) | Terms, Revit concepts, status vocabularies |
 | 16 | [Version Support Strategy](16-version-support-strategy.md) | **Revit 2020 → latest** — the two API breaks, multi-targeting, adapters, test matrix |
 | 17 | [Open Source & Distribution](17-open-source-and-distribution.md) | Licence, public/private separation, contribution, disclaimer, channels |

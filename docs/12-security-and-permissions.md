@@ -123,14 +123,14 @@ The audit log is what makes the "invisible background work" of §2.2 acceptable 
 
 Proposed additions to the Golden Rules, in [14](14-golden-rules.md):
 
-> **11.** Every model-modifying operation runs in exactly one named `TransactionGroup`. One user action, one undo.
+> **16.** Every model-modifying operation runs in exactly one named `TransactionGroup`. One user action, one undo.
 
-> **12.** No autonomous write to a live project model without either a preview the user accepted, or a proven PRODUCTION fragment.
+> **17.** No autonomous write to a live project model without either a preview the user accepted, or a proven PRODUCTION fragment. Heron never triggers Sync With Central on its own initiative.
 
-> **13.** Generated code never executes against a live model on its first run. Sandbox, or detached copy, first.
+> **18.** Generated code never executes against a live model on its first run. Sandbox, or detached copy, first.
 
-> **14.** Heron never syncs, publishes, or shares anything on its own initiative.
+> **19.** No text Heron reads may raise Heron's own permission level.
 
-> **15.** No text Heron reads may raise Heron's own permission level.
+These four are what separate a tool a BIM manager will approve for use on live projects from one they will ban after the first incident.
 
-These five are what separate a tool a BIM manager will approve for use on live projects from one they will ban after the first incident.
+The fifth originally proposed here — *"Heron never syncs, publishes or shares on its own initiative"* — is now **official Golden Rule 12** ([Baseline §78](00c-master-handover-baseline.md)). Its Revit-specific half, Sync With Central, moved into rule 17 above.

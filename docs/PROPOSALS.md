@@ -9,6 +9,66 @@
 
 ---
 
+## Part 0a — What the Master Handover Baseline (Part 3) changed
+
+Part 3 is a **consolidation**, not a third set of requirements. Roughly 90% of it restates Parts 1 and 2.
+Three things in it are genuinely new, and one of them changes the constitution.
+
+### 🔴 The Golden Rules were replaced — ten became fifteen
+
+[Baseline §78](00c-master-handover-baseline.md) supersedes [Part 1 §72](00-master-specification.md).
+This is the most consequential change in the document, because every other document cross-references
+these rules by number.
+
+**Five new official rules**, all of which were previously scattered as principles rather than rules:
+
+| # | New rule | Previously |
+|---|---|---|
+| 11 | Vector DB is an index, not the canonical source of truth | Part 2 §77, a principle |
+| 12 | No automatic external publishing of private knowledge | Part 1 §35, a workflow step — **and it absorbs the review-proposed rule 14** |
+| 13 | No uncontrolled self-modification of production architecture | implied by Part 2 §10, never stated |
+| 14 | Every important autonomous operation must be auditable | Part 1 §55, a subsystem |
+| 15 | Platform modular enough to replace agents/skills/fragments without redesign | Part 2 §2, a requirement |
+
+**Two rules also swapped position** — old rule 3 (never break a working implementation) is now rule 4,
+narrowed to "Revit version"; old rule 4 (reuse proven fragments) is now rule 3, broadened to
+"proven knowledge". And rule 8 shifted meaning: from *"background work should remain invisible"* to
+*"background work must not interfere"* — from a visibility rule to a performance rule.
+
+**All cross-references in this repository were remapped on 2026-08-27.** The review-proposed rules moved
+to 16–19, and the proposed *"never publish on own initiative"* rule is now covered by official rule 12.
+Full mapping in [14 — Golden Rules](14-golden-rules.md).
+
+### 🆕 Other genuinely new content in Part 3
+
+| # | Item | Why it matters |
+|---|---|---|
+| **P9** | **§1 — "do not assume every architectural idea is already implemented; future capabilities must be explicitly marked"** | A governance instruction, and the right one. It is the same position as [D-00](DECISIONS.md). Every document in this repository already separates *specified* from *decided* from *built*; this makes that separation an explicit requirement rather than a convention. |
+| **P10** | **§42 — Reference Update Agent must verify imports, references, metadata, registry, documentation and relationships after any rename or move** | Stated as a hard requirement for the first time. *"No broken references should be introduced."* This is what makes the Auto Rename Agent safe — see [06 §7](06-heron-platform.md). |
+| **P11** | **§32 — Compatibility Agent explicitly *combines* the results of the Revit Version, Revit API, .NET and Dependency agents** | A cleaner decomposition than either earlier document. One agent per question, one agent to reconcile them. |
+| **P12** | **§57 — "Agents should only receive the permissions they require"** | Least privilege, stated explicitly for the first time. Should become a required field in the agent registry, not a guideline. |
+| **P13** | **§20 — Trust Evaluation added as a retrieval pipeline stage** | Adopted. See [20 §1](20-knowledge-trust-and-conflict.md). |
+
+### ⚠️ One thing in Part 3 to reject
+
+**§20 moves metadata filtering *after* all three searches.** Parts 1 and 2 had it earlier in the
+pipeline, which is correct. Filtering last means embedding and searching a corpus that is about to be
+discarded — the most wasteful possible ordering, and it defers scope isolation
+([Golden Rule 5](14-golden-rules.md)) from query time to ranking time.
+
+The adopted order keeps Part 3's Trust Evaluation stage and Parts 1–2's filter placement.
+See [20 §1](20-knowledge-trust-and-conflict.md).
+
+### Still open after all three documents
+
+Unchanged. None of the three documents addresses:
+
+**Revit API threading** · **undo** · **preview before modify** · **what data leaves the machine to a model provider** · **how a Revit test actually executes**.
+
+Proposed Golden Rules 16–19 remain necessary. Part 3 strengthens the case for them.
+
+---
+
 ## Part 0 — What Master Specification Part 2 changed
 
 Part 2 is not more of Part 1. Part 1 said *which agents exist*; Part 2 says *how they are governed*.
@@ -29,7 +89,7 @@ It closes four gaps the Part 1 review raised, and adds several mechanisms that w
 |---|---|---|
 | **P1** | **Capability Registry separate from Agent Registry** (§6) | The most valuable structural idea in either document. The Orchestrator matches *capabilities*, never agent names — so agents become replaceable, retirement becomes safe, the Orchestrator stays free of domain knowledge, and capability-gap detection becomes trivial. → [18 §2](18-agent-operating-system.md) |
 | **P2** | **Shadow Mode** (§10) | Safe self-evolution. A new agent runs on real requests and is scored, without its output reaching anything. → [18 §4](18-agent-operating-system.md) |
-| **P3** | **Dependency Graph** (§41) | Makes "does this change break anything?" computable instead of requiring a full test sweep. This is what makes [D-05](DECISIONS.md) (8 Revit versions) and Golden Rule 3 affordable in practice. → [21 §1](21-resilience-and-operations.md) |
+| **P3** | **Dependency Graph** (§41) | Makes "does this change break anything?" computable instead of requiring a full test sweep. This is what makes [D-05](DECISIONS.md) (8 Revit versions) and Golden Rule 4 affordable in practice. → [21 §1](21-resilience-and-operations.md) |
 | **P4** | **Knowledge Conflict Resolution** (§22) | Prevents the classic decay of an accumulated knowledge base: two fragments disagree and retrieval silently picks whichever ranked higher that day. → [20 §4](20-knowledge-trust-and-conflict.md) |
 | **P5** | **Emergency Stop** (§56) | Necessary as autonomy grows. Must live in the Revit add-in UI so it works when the agent system is stuck. → [21 §4](21-resilience-and-operations.md) |
 | **P6** | **Workflow ID in the audit log** (§57) | The correlation key tying one user sentence to every agent, retrieval, model call and element touched. Turns "what did Heron change?" into a query. → [21 §13](21-resilience-and-operations.md) |
@@ -44,12 +104,12 @@ the review documents; none are in either specification:
 | # | Gap | Where handled |
 |---|---|---|
 | **A1** | **Revit API threading** — an MCP server cannot call the Revit API at all; everything must marshal through `ExternalEvent` | [03 §4](03-heron-revit.md), settled in [D-09](DECISIONS.md) |
-| **A6** | **Undo** — still never mentioned in either document. One operation must equal one Ctrl+Z | [Golden Rule 11](14-golden-rules.md) |
-| **A7** | **Preview before modify** — Part 2 §54 gates *whether* an action runs, never shows *what it will do* | [Golden Rule 12](14-golden-rules.md), [03 §10](03-heron-revit.md) |
+| **A6** | **Undo** — still never mentioned in either document. One operation must equal one Ctrl+Z | [Golden Rule 16](14-golden-rules.md) |
+| **A7** | **Preview before modify** — Part 2 §54 gates *whether* an action runs, never shows *what it will do* | [Golden Rule 17](14-golden-rules.md), [03 §10](03-heron-revit.md) |
 | **A9** | **Data egress** — §74 covers isolation *inside* Heron, not what leaves the machine to a model provider | [12 §4](12-security-and-permissions.md), [Q-12](OPEN-QUESTIONS.md) |
 | **A11** | **How Revit tests actually run** — §43 says what to test and §48 rightly separates Code QA from Revit QA, but neither says how a test executes inside Revit | [13 §3](13-testing-and-quality.md), [Q-14](OPEN-QUESTIONS.md) |
 
-**Golden Rules 11–15 remain necessary.** Part 2 strengthens the case for them rather than replacing them.
+**Golden Rules 16–19 remain necessary.** Part 2 strengthens the case for them rather than replacing them.
 
 ### ⚠️ New tensions Part 2 creates
 
@@ -112,7 +172,7 @@ Recommendation: build the engine host-agnostic; ship the Claude Code front-end f
 
 The user must be able to reverse anything Heron did with one keystroke.
 
-Recommendation: **Golden Rule 11** — one operation, one named `TransactionGroup`, one undo entry.
+Recommendation: **Golden Rule 16** — one operation, one named `TransactionGroup`, one undo entry.
 
 → [03 §6](03-heron-revit.md), [14](14-golden-rules.md)
 
@@ -148,7 +208,7 @@ Recommendation: **hybrid, enforced structurally**. A project marked confidential
 
 If the gate lives in the AI layer, a family name or an imported document containing instructions could in principle drive a `MODIFY` call on a live model.
 
-Recommendation: enforce in the **add-in**, from a declared tool risk level. **Golden Rule 15** — no text Heron reads may raise Heron's own permission level.
+Recommendation: enforce in the **add-in**, from a declared tool risk level. **Golden Rule 19** — no text Heron reads may raise Heron's own permission level.
 
 → [12 §3](12-security-and-permissions.md)
 

@@ -70,7 +70,7 @@ six phases of code assume one runtime.
 
 **Goal:** "Move them 200 mm up" — with a preview, one undo, and a clean rollback on failure.
 
-- `TransactionGroup` wrapper — Golden Rule 11
+- `TransactionGroup` wrapper — Golden Rule 16
 - Dry run / preview before any `MODIFY`
 - Permission gate enforced **in the add-in**
 - **Emergency Stop** in the Revit ribbon — works even when the agent side is stuck
@@ -143,7 +143,7 @@ knowledge — build it here, not later, because retrofitting it means rewriting 
 **Goal:** Heron creates new capability, safely.
 
 - The hybrid execution model from [D-04](DECISIONS.md); scripting runtime chosen *(Q-7a)*
-- Sandbox execution — Golden Rule 13
+- Sandbox execution — Golden Rule 18
 - **Shadow Mode** for new agents and fragments *([18 §4](18-agent-operating-system.md), Q-29)*
 - Code review by a separate agent — Golden Rule 7
 - **Code QA and Revit QA as separate gates** *([21 §11](21-resilience-and-operations.md))*
