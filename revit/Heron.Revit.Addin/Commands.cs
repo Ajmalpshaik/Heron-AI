@@ -93,7 +93,7 @@ namespace Heron.Revit.Addin
             if (!bridge.IsRunning)
             {
                 TaskDialog.Show("Heron AI",
-                    "Not connected.\n\nPress Connect Heron to make this session reachable.");
+                    "Not connected.\n\nPress Heron on the ribbon to make this session reachable.");
                 return Result.Succeeded;
             }
 

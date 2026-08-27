@@ -28,8 +28,10 @@ namespace Heron.Core
     ///
     /// Every key here is read by something. A setting that is declared,
     /// documented and then ignored is worse than no setting: it is a promise
-    /// the code does not keep. log.verbose was removed for exactly that reason
-    /// and comes back when there is something for it to gate.
+    /// the code does not keep. log.verbose went for exactly that reason, and
+    /// bridge.listeners followed once the newest connection began winning
+    /// outright - a pool size stopped being a number worth tuning. Either can
+    /// come back when there is something for it to do.
     ///
     /// Deliberately flat key/value. Step 1 has three settings; a schema would
     /// be ceremony. When it outgrows this - Phase 1 or 2 - replace it with a
@@ -46,8 +48,8 @@ namespace Heron.Core
         private static readonly Dictionary<string, string> Defaults =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                { "bridge.listeners", "2" },        // docs/25: one serving, one waiting
-                { "bridge.autoConnect", "false" },  // connecting stays explicit, by design
+                { "bridge.autoConnect", "false" },      // connecting stays explicit, by design
+                { "bridge.idleReleaseMinutes", "3" },    // safety net; preemption is the real mechanism
                 { "log.retainDays", "14" },
             };
 

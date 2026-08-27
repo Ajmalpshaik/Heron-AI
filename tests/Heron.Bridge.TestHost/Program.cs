@@ -60,6 +60,7 @@ namespace Heron.Bridge.TestHost
                 Console.WriteLine();
                 Console.WriteLine("  Pretending to be Revit " + revitVersion);
                 Console.WriteLine("  Pipe       " + identity.PipeName);
+                Console.WriteLine("  Token      " + identity.Token);
                 Console.WriteLine("  Process    " + identity.ProcessId);
                 Console.WriteLine("  Announced  " + identity.DiscoveryFilePath);
                 Console.WriteLine();

@@ -165,6 +165,26 @@ model belongs to the person who has it open.
 Installing is checked **per release**. Revit 2024 being open says nothing about whether it is safe to
 install for 2020, so a single open session must not block every other version.
 
+## The bridge is a boundary, not a pipe
+
+Two rules govern how anything reaches Revit from outside.
+
+**The newest connection wins.** A chat that connects takes the session immediately and the previous one
+is dropped, rather than queueing or waiting out a timeout. That keeps *one chat, one Revit*
+([docs/25](../../../docs/25-multi-session-and-binding.md)) true by construction instead of by hope, and
+a dropped client simply reconnects on its next call. Growing a pool instead only postpones the question
+of which chat is really in charge.
+
+**Every request authenticates first — before the operation is even read.** A caller with the wrong token
+must not learn which operations exist. The token is minted on connect and destroyed on disconnect, so
+one read before a reconnect is refused rather than quietly served, and it is compared in constant time:
+a normal string comparison returns on the first differing character, which leaks the secret one
+character at a time to anything able to measure the reply.
+
+Be honest about what that buys. The pipe's ACL is what keeps other *people* out. The token stops another
+process running as the **same user** from reaching Revit by guessing a pipe name — it would have to read
+the discovery file first, which makes reaching a live model a deliberate act rather than an accident.
+
 ## Configuration is a promise
 
 Every key in `HeronConfig` must be **read by something**. A setting that is declared, documented and

@@ -41,7 +41,7 @@ Mostly. Three corrections, one of which matters a great deal.
 3.  Heron detects Revit 2020-2027                which versions are present
 4.  "Close Revit so I can install the add-in"    mandatory - see below
 5.  Heron deploys the add-in per version         per-user, no admin rights
-6.  Start Revit -> ribbon -> Connect Heron       explicit, by design
+6.  Start Revit -> ribbon -> Heron (toggle)      explicit, by design
 7.  Open a project folder in Claude Code         THIS is the workspace
 8.  Work
 ```

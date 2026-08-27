@@ -10,6 +10,7 @@ using System.Diagnostics;
 using Heron.Core;
 using System.Globalization;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Heron.Bridge
@@ -39,6 +40,59 @@ namespace Heron.Bridge
         public string AddinVersion { get; private set; }
         public string PipeName { get; private set; }
         public DateTime StartedAtUtc { get; private set; }
+
+        /// <summary>
+        /// The shared secret for this connected session. Minted on every
+        /// connect and cleared on disconnect, so a client still holding one
+        /// from an earlier session is refused rather than quietly served.
+        ///
+        /// What it is for, honestly: the pipe's ACL already limits it to this
+        /// user, so this is not what keeps other people out. It stops another
+        /// process running as the SAME user from reaching Revit by guessing a
+        /// pipe name - it would have to read the discovery file first, which
+        /// makes reaching Revit a deliberate act rather than an accident.
+        /// </summary>
+        public string Token { get; private set; }
+
+        /// <summary>
+        /// Starts a session: a new token, invalidating every earlier one.
+        /// Called on connect, before the bridge is announced.
+        /// </summary>
+        public void BeginSession()
+        {
+            var bytes = new byte[24];
+            // Create() rather than new RNGCryptoServiceProvider(): .NET 8 reports
+            // that obsolete (SYSLIB0023) and Revit 2025+ builds on it, while
+            // Create() exists on .NET Framework 4.7.2 too. Same platform CSPRNG.
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+            Token = Convert.ToBase64String(bytes);
+        }
+
+        /// <summary>Ends the session. A token that no longer exists cannot be replayed.</summary>
+        public void EndSession()
+        {
+            Token = null;
+        }
+
+        /// <summary>
+        /// Compares in constant time. A plain comparison returns on the first
+        /// differing character, which leaks the token one character at a time
+        /// to anything able to measure how long the reply took.
+        /// </summary>
+        public bool TokenMatches(string candidate)
+        {
+            var expected = Token;
+            if (expected == null || candidate == null) return false;
+            if (expected.Length != candidate.Length) return false;
+
+            var difference = 0;
+            for (var i = 0; i < expected.Length; i++)
+                difference |= expected[i] ^ candidate[i];
+            return difference == 0;
+        }
 
         public BridgeIdentity(string revitVersion, string addinVersion)
         {
@@ -87,6 +141,7 @@ namespace Heron.Bridge
             json.AppendFormat("  \"revitVersion\": \"{0}\",\n", Escape(RevitVersion));
             json.AppendFormat("  \"addinVersion\": \"{0}\",\n", Escape(AddinVersion));
             json.AppendFormat(CultureInfo.InvariantCulture, "  \"protocolVersion\": {0},\n", ProtocolVersion);
+            json.AppendFormat("  \"token\": \"{0}\",\n", Escape(Token));
             json.AppendFormat("  \"startedAt\": \"{0}\"\n",
                 StartedAtUtc.ToString("o", CultureInfo.InvariantCulture));
             json.Append("}\n");

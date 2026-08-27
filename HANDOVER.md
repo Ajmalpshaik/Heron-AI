@@ -110,7 +110,7 @@ powershell -ExecutionPolicy Bypass -File tools\setup.ps1
 ```
 Detects installed Revit versions, refuses while Revit is running, builds and deploys each.
 
-Then start Revit → **Heron AI** tab → **Connect Heron**, and:
+Then start Revit → **Heron AI** tab → **Heron** (click to connect, again to disconnect), and:
 
 ```bash
 python mcp/client/heron_bridge_client.py ping

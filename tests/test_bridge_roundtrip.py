@@ -48,6 +48,9 @@ def connect(pipe_name, timeout=CONNECT_TIMEOUT_S):
     raise RuntimeError("could not open %s within %.0fs: %s" % (path, timeout, last))
 
 
+TOKEN = None      # this session's secret, read from the host's own output
+
+
 def send_raw(handle, text):
     """Send an exact line. Needed for requests a dict cannot express."""
     handle.write((text + "\n").encode("utf-8"))
@@ -61,7 +64,7 @@ def send_raw(handle, text):
 
 
 def call(handle, op):
-    handle.write((json.dumps({"op": op}) + "\n").encode("utf-8"))
+    handle.write((json.dumps({"op": op, "token": TOKEN}) + "\n").encode("utf-8"))
     line = b""
     while not line.endswith(b"\n"):
         chunk = handle.read(1)
@@ -101,6 +104,10 @@ def main():
             m = re.search(r"Pipe\s+(heron\.\S+)", line)
             if m:
                 pipe_name = m.group(1)
+            t = re.search(r"Token\s+(\S+)", line)
+            if t:
+                globals()["TOKEN"] = t.group(1)
+            if pipe_name and TOKEN:
                 break
         if not pipe_name:
             print("FAIL  host never reported a pipe name")
@@ -160,7 +167,9 @@ def main():
              "an op buried inside nested arrays and objects"),
         ]
         for raw, why in parser_cases:
-            reply = send_raw(handle, raw)
+            # Token appended LAST on purpose: the parser has to walk the whole
+            # object, nested structures included, before it even authenticates.
+            reply = send_raw(handle, raw[:-1] + ', "token": "%s"}' % TOKEN)
             if reply.get("ok") and reply.get("pong") is True:
                 print("  PASS  parser: %s" % why)
             else:
@@ -176,14 +185,50 @@ def main():
         if not call(handle, "ping").get("ok"):
             failures.append("bridge stopped responding after malformed JSON")
 
-        # --- a SECOND connection, proving the two-listener design ---
+        # --- a wrong token is refused before anything else ---
+        reply = send_raw(handle, '{"op": "ping", "token": "not-the-token"}')
+        if reply.get("ok") is False and reply.get("error") == "unauthorized":
+            print("  PASS  wrong token -> refused")
+        else:
+            failures.append("wrong token returned %r" % reply)
+
+        reply = send_raw(handle, '{"op": "ping"}')
+        if reply.get("ok") is False and reply.get("error") == "unauthorized":
+            print("  PASS  no token -> refused")
+        else:
+            failures.append("missing token returned %r" % reply)
+
+        # An unauthenticated caller must not even learn which operations exist.
+        reply = send_raw(handle, '{"op": "no_such_operation", "token": "wrong"}')
+        if reply.get("error") == "unauthorized":
+            print("  PASS  unknown op with a bad token -> unauthorized, not unknown_op")
+        else:
+            failures.append("bad token leaked the op verdict: %r" % reply)
+
+        # --- a SECOND connection takes the session: newest wins ---
         second = connect(pipe_name, timeout=3.0)
         try:
-            reply = call(second, "ping")
-            if reply.get("ok"):
-                print("  PASS  second connection served immediately (two listeners)")
+            if call(second, "ping").get("ok"):
+                print("  PASS  second connection served immediately")
             else:
-                failures.append("second connection returned %r" % reply)
+                failures.append("second connection was not served")
+
+            # The first connection should now be gone - dropped, not queued.
+            try:
+                stale = call(handle, "ping")
+                failures.append("the older connection still answered: %r" % stale)
+            except Exception:
+                print("  PASS  the older connection was dropped, not left waiting")
+
+            # And a third preempts the second just as fast.
+            third = connect(pipe_name, timeout=3.0)
+            try:
+                if call(third, "ping").get("ok"):
+                    print("  PASS  a third connection preempts just as fast")
+                else:
+                    failures.append("third connection was not served")
+            finally:
+                third.close()
         finally:
             second.close()
 
@@ -213,7 +258,7 @@ def main():
         universal_newlines=True, bufsize=1)
     handle2 = None
     try:
-        pipe2, seen = None, []
+        pipe2, token2, seen = None, None, []
         deadline = time.time() + 25
         while time.time() < deadline:
             line = cycled.stdout.readline()
@@ -225,6 +270,10 @@ def main():
             m = re.search(r"Pipe\s+(heron\.\S+)", line)
             if m:
                 pipe2 = m.group(1)
+            t = re.search(r"Token\s+(\S+)", line)
+            if t:
+                token2 = t.group(1)
+            if pipe2 and token2:
                 break
     
         if len(seen) != 3:
@@ -242,6 +291,7 @@ def main():
         if not pipe2:
             failures.append("cycled host never reported a pipe name")
         else:
+            globals()["TOKEN"] = token2   # this host minted its own
             handle2 = connect(pipe2, timeout=10.0)
             if call(handle2, "ping").get("ok"):
                 print("  PASS  answers again after being toggled off and back on")

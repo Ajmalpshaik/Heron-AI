@@ -6,7 +6,6 @@
 // See docs/29-metadata-standard.md
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Pipes;
@@ -14,6 +13,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Heron.Core;
 
 namespace Heron.Bridge
@@ -23,12 +23,21 @@ namespace Heron.Bridge
     ///
     /// Design notes, from docs/25 and the field notes:
     ///
-    ///   * TWO listening instances, not one. While one serves a chat, another
-    ///     is already waiting - which is what makes a new connection instant
-    ///     instead of queued.
+    ///   * TWO pipe instances, never one. One is servicing the connected
+    ///     chat; the other is already waiting, which is what makes the next
+    ///     connection instant instead of queued.
+    ///
+    ///   * THE NEWEST CONNECTION WINS. A chat that connects takes the session
+    ///     immediately and the previous one is dropped, rather than being made
+    ///     to wait for a timeout. That matches how the tool is actually used -
+    ///     finish in one chat, move straight to the next - and it keeps the
+    ///     "one chat, one Revit" rule of docs/25 true by construction rather
+    ///     than by hoping. A dropped client reconnects on its next call.
     ///
     ///   * Local only by construction. A named pipe has no network surface,
-    ///     and the ACL restricts it to the current user.
+    ///     the ACL restricts it to the current user, and a per-session token
+    ///     means another process of that same user cannot reach Revit without
+    ///     first reading the discovery file.
     ///
     ///   * Newline-delimited JSON. One request, one response, both on one
     ///     line. Simple to frame, simple to debug.
@@ -39,14 +48,22 @@ namespace Heron.Bridge
     /// </summary>
     public sealed class BridgeServer : IDisposable
     {
-        private const int DefaultListeners = 2;
-        private const int MaxListeners = 16;
-        private const int MaxConsecutiveFailures = 5;
+        // 2, not 1: preemption needs one instance servicing the current chat
+        // AND a second already listening for the next one, at the same time.
+        private const int PipeInstances = 2;
 
-        private readonly int _listenerCount;
+        private const int DefaultIdleReleaseMinutes = 3;
+
         private readonly BridgeIdentity _identity;
         private readonly Action<string> _log;
-        private readonly List<Thread> _threads = new List<Thread>();
+        private readonly object _pipeLock = new object();
+        private readonly TimeSpan _idleRelease;
+
+        private CancellationTokenSource _cancellation;
+        private NamedPipeServerStream _activePipe;    // serving a connected chat, if any
+        private NamedPipeServerStream _waitingPipe;   // listening for the next connect
+        private Task _listenLoop;
+
         private volatile bool _running;
 
         /// <summary>
@@ -61,17 +78,11 @@ namespace Heron.Bridge
             _identity = identity;
             _log = log ?? delegate { };
 
-            // bridge.listeners is a real setting, not decoration: it is how many
-            // conversations can be connected at once. One serves while another
-            // waits, so two is the floor at which a new connection is instant.
-            var configured = HeronConfig.Load().GetInt("bridge.listeners", DefaultListeners);
-            if (configured < 1) configured = 1;
-            if (configured > MaxListeners) configured = MaxListeners;
-            _listenerCount = configured;
+            var minutes = HeronConfig.Load()
+                .GetInt("bridge.idleReleaseMinutes", DefaultIdleReleaseMinutes);
+            if (minutes < 1) minutes = 1;
+            _idleRelease = TimeSpan.FromMinutes(minutes);
         }
-
-        /// <summary>How many conversations can be connected at once.</summary>
-        public int ListenerCount { get { return _listenerCount; } }
 
         public bool IsRunning { get { return _running; } }
         public BridgeIdentity Identity { get { return _identity; } }
@@ -79,112 +90,159 @@ namespace Heron.Bridge
         public void Start()
         {
             if (_running) return;
-            _running = true;
 
+            NamedPipeServerStream first = null;
             try
             {
-                for (var i = 0; i < _listenerCount; i++)
-                {
-                    var thread = new Thread(ListenLoop);
-                    thread.IsBackground = true;   // never keeps Revit alive
-                    thread.Name = "Heron.Bridge.Listener." + i.ToString(CultureInfo.InvariantCulture);
-                    _threads.Add(thread);
-                    thread.Start();
-                }
+                first = CreatePipe();
+                lock (_pipeLock) { _waitingPipe = first; }
 
+                _identity.BeginSession();     // a fresh token; every older one dies here
                 _identity.Publish();
+
+                _cancellation = new CancellationTokenSource();
+                _running = true;
+
+                var token = _cancellation.Token;
+                _listenLoop = Task.Run(() => ListenLoopAsync(first, token));
             }
             catch
             {
-                // Roll all the way back. Without this, a failure to announce
-                // left the listeners running and unreachable while IsRunning
-                // stayed true - so pressing Connect again answered "already
-                // connected" for a bridge nobody could find, and only a Revit
-                // restart cleared it.
-                Stop();
+                // Roll all the way back. Without this, a failure to announce left
+                // a pipe listening and unreachable while IsRunning stayed true -
+                // so pressing Connect again answered "already connected" for a
+                // bridge nobody could find, until Revit was restarted. The pipe
+                // would leak too: the listen loop never took ownership of it.
+                _running = false;
+                _identity.EndSession();
+                lock (_pipeLock)
+                {
+                    if (ReferenceEquals(_waitingPipe, first)) _waitingPipe = null;
+                }
+                Dispose(first);
                 throw;
             }
 
             _log(string.Format(CultureInfo.InvariantCulture,
-                "Bridge listening on {0}, {1} listener(s).",
-                _identity.PipeName, _listenerCount));
+                "Bridge listening on {0}. Newest connection wins; idle release after {1} minute(s).",
+                _identity.PipeName, _idleRelease.TotalMinutes));
         }
 
         public void Stop()
         {
             if (!_running) return;
             _running = false;
+
+            if (_cancellation != null) _cancellation.Cancel();
+
+            // Disposing the pipes is what unblocks them - a pending
+            // WaitForConnection and a pending read both fail immediately. It
+            // replaces the older trick of connecting to our own pipe to nudge
+            // a listener awake, which could not reach a thread already parked
+            // inside a read.
+            lock (_pipeLock)
+            {
+                Dispose(_activePipe);
+                Dispose(_waitingPipe);
+                _activePipe = null;
+                _waitingPipe = null;
+            }
+
+            var loop = _listenLoop;
+            if (loop != null)
+            {
+                try { loop.Wait(2000); }
+                catch (AggregateException) { }
+            }
+            _listenLoop = null;
+
             _identity.Unpublish();
+            _identity.EndSession();
 
-            // Unblock the listeners: connecting to our own pipe releases a
-            // thread parked in WaitForConnection.
-            for (var i = 0; i < _listenerCount; i++)
+            if (_cancellation != null)
             {
-                try
-                {
-                    using (var nudge = new NamedPipeClientStream(
-                        ".", _identity.PipeName, PipeDirection.InOut))
-                    {
-                        nudge.Connect(200);
-                    }
-                }
-                catch (TimeoutException) { }
-                catch (IOException) { }
-                catch (UnauthorizedAccessException) { }
+                _cancellation.Dispose();
+                _cancellation = null;
             }
 
-            foreach (var t in _threads)
-            {
-                try { t.Join(1000); } catch (ThreadStateException) { }
-            }
-            _threads.Clear();
             _log("Bridge stopped.");
         }
 
-        private void ListenLoop()
+        private async Task ListenLoopAsync(NamedPipeServerStream firstWaiting, CancellationToken token)
         {
-            var failures = 0;
-            while (_running)
+            var waiting = firstWaiting;
+
+            while (!token.IsCancellationRequested)
             {
                 try
                 {
-                    using (var pipe = CreateServerStream())
+                    await waiting.WaitForConnectionAsync(token).ConfigureAwait(false);
+                }
+                catch
+                {
+                    if (token.IsCancellationRequested) break;
+
+                    // One bad connection must not take the bridge down. Replace
+                    // the instance and keep listening.
+                    Dispose(waiting);
+                    try
                     {
-                        pipe.WaitForConnection();
-                        failures = 0;               // a good connection clears the count
-                        if (!_running) return;
-                        Serve(pipe);
+                        waiting = CreatePipe();
+                        lock (_pipeLock) { _waitingPipe = waiting; }
                     }
+                    catch (Exception ex)
+                    {
+                        _log("Bridge stopped listening: " + ex.Message);
+                        break;
+                    }
+                    continue;
                 }
-                catch (IOException)
+
+                if (token.IsCancellationRequested) { Dispose(waiting); break; }
+
+                // This client becomes the session now, displacing whoever held
+                // it. Disposing the old pipe unblocks its pending read, so the
+                // handler for it exits on its own.
+                var accepted = waiting;
+                NamedPipeServerStream displaced;
+                lock (_pipeLock)
                 {
-                    // Client vanished mid-conversation. Normal. Listen again.
+                    displaced = _activePipe;
+                    _activePipe = accepted;
                 }
-                catch (ObjectDisposedException)
+                if (displaced != null)
                 {
-                    return;
+                    Dispose(displaced);
+                    _log("A newer connection took the session.");
+                }
+
+                // Serve on its own task so the loop can stand the next instance
+                // up immediately - a third chat preempts just as fast as this one.
+                var served = accepted;
+                var ignored = ServeAsync(served, token).ContinueWith(delegate
+                {
+                    Dispose(served);
+                    lock (_pipeLock)
+                    {
+                        if (ReferenceEquals(_activePipe, served)) _activePipe = null;
+                    }
+                }, TaskScheduler.Default);
+                GC.KeepAlive(ignored);
+
+                try
+                {
+                    waiting = CreatePipe();
+                    lock (_pipeLock) { _waitingPipe = waiting; }
                 }
                 catch (Exception ex)
                 {
-                    failures++;
-                    _log(string.Format("Listener error ({0}/{1}): {2}",
-                        failures, MaxConsecutiveFailures, ex.Message));
-
-                    // A listener that cannot create its pipe will never
-                    // recover by trying harder. Give up loudly rather than
-                    // filling the log forever.
-                    if (failures >= MaxConsecutiveFailures)
-                    {
-                        _log("Listener giving up after " + failures +
-                             " consecutive failures. The bridge may be degraded.");
-                        return;
-                    }
-                    Thread.Sleep(250);
+                    _log("Bridge stopped listening: " + ex.Message);
+                    break;
                 }
             }
         }
 
-        private NamedPipeServerStream CreateServerStream()
+        private NamedPipeServerStream CreatePipe()
         {
 #if NET472 || NET48
             // Restrict the pipe to the current user. On .NET Framework the ACL
@@ -193,9 +251,9 @@ namespace Heron.Bridge
             security.AddAccessRule(new PipeAccessRule(
                 WindowsIdentity.GetCurrent().User,
                 // CreateNewInstance is required as well as ReadWrite: without it
-                // only the FIRST listener can be created, and every additional
-                // instance fails with "access denied". That is what makes the
-                // second listener - the one that keeps a new connection instant -
+                // only the FIRST instance can be created, and every additional
+                // one fails with "access denied". That is what makes the second
+                // instance - the one that keeps a new connection instant -
                 // possible at all.
                 PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance,
                 AccessControlType.Allow));
@@ -203,54 +261,84 @@ namespace Heron.Bridge
             return new NamedPipeServerStream(
                 _identity.PipeName,
                 PipeDirection.InOut,
-                _listenerCount,
+                PipeInstances,
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous,
                 4096, 4096,
                 security);
 #else
-            // .NET 8+: default ACL already restricts to the creating user.
+            // .NET 8+: the default ACL already restricts to the creating user.
             return new NamedPipeServerStream(
                 _identity.PipeName,
                 PipeDirection.InOut,
-                _listenerCount,
+                PipeInstances,
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous,
                 4096, 4096);
 #endif
         }
 
-        private void Serve(NamedPipeServerStream pipe)
+        private async Task ServeAsync(NamedPipeServerStream pipe, CancellationToken token)
         {
-            var encoding = new UTF8Encoding(false);
-            using (var reader = new StreamReader(pipe, encoding, false, 4096, true))
-            using (var writer = new StreamWriter(pipe, encoding, 4096, true))
+            try
             {
-                writer.AutoFlush = true;
-
-                while (_running && pipe.IsConnected)
+                var encoding = new UTF8Encoding(false);
+                using (var reader = new StreamReader(pipe, encoding, false, 4096, true))
+                using (var writer = new StreamWriter(pipe, encoding, 4096, true))
                 {
-                    var line = reader.ReadLine();
-                    if (line == null) return;            // client closed
-                    if (line.Length == 0) continue;
+                    writer.AutoFlush = true;
 
-                    string response;
-                    try
+                    // The client holds one connection for a whole conversation
+                    // rather than reconnecting per request, so read in a loop.
+                    while (_running && !token.IsCancellationRequested)
                     {
-                        response = Dispatch(line);
-                    }
-                    catch (Exception ex)
-                    {
-                        response = Json.Error("handler_failed", ex.Message);
-                    }
+                        var read = reader.ReadLineAsync();
+                        var finished = await Task.WhenAny(read, Task.Delay(_idleRelease, token))
+                                                 .ConfigureAwait(false);
 
-                    writer.WriteLine(response);
+                        // Secondary safety net only. Preemption above is what
+                        // actually hands the session over; this just releases a
+                        // connection nobody is using and nobody is waiting for.
+                        if (!ReferenceEquals(finished, read)) return;
+
+                        var line = await read.ConfigureAwait(false);
+                        if (line == null) return;            // client closed
+                        if (line.Length == 0) continue;
+
+                        string response;
+                        try
+                        {
+                            response = Dispatch(line);
+                        }
+                        catch (Exception ex)
+                        {
+                            response = Json.Error("handler_failed", ex.Message);
+                        }
+
+                        await writer.WriteLineAsync(response).ConfigureAwait(false);
+                    }
                 }
+            }
+            catch (Exception)
+            {
+                // Preempted mid-read (the pipe was disposed by a newer
+                // connection), cancelled, or a client that vanished. All three
+                // mean the same thing here: stop serving this one.
             }
         }
 
         private string Dispatch(string request)
         {
+            // Authenticate before anything else, including before deciding the
+            // operation is unknown - an unauthenticated caller learns nothing
+            // about what this bridge can do.
+            if (!_identity.TokenMatches(Json.ReadString(request, "token")))
+            {
+                return Json.Error("unauthorized",
+                    "Missing or wrong token. Read it from this session's file in " +
+                    BridgeIdentity.DiscoveryDirectory + ".");
+            }
+
             var op = Json.ReadString(request, "op");
 
             switch (op)
@@ -271,6 +359,14 @@ namespace Heron.Bridge
                     return Json.Error("unknown_op",
                         "No handler for '" + (op ?? "(none)") + "'. Step 1 supports ping and info.");
             }
+        }
+
+        private static void Dispose(IDisposable resource)
+        {
+            if (resource == null) return;
+            try { resource.Dispose(); }
+            catch (IOException) { }
+            catch (ObjectDisposedException) { }
         }
 
         public void Dispose()

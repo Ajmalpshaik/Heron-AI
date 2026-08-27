@@ -63,6 +63,10 @@ class Bridge(object):
         self.addin_version = record.get("addinVersion")
         self.protocol_version = record.get("protocolVersion")
         self.started_at = record.get("startedAt")
+        # Minted when a session connects and gone when it disconnects, so a
+        # token read before a reconnect is refused rather than quietly served.
+        # Always re-read the discovery file; never remember one.
+        self.token = record.get("token")
         self.path = path
 
     @property
@@ -70,7 +74,11 @@ class Bridge(object):
         return r"\\.\pipe" + "\\" + self.pipe_name
 
     def request(self, op, timeout=CONNECT_TIMEOUT_S):
-        """Send one request, return the parsed response. None if unreachable."""
+        """Send one request, return the parsed response. None if unreachable.
+
+        Every request carries this session's token. The bridge checks it before
+        it will even say whether an operation exists.
+        """
         deadline = time.time() + timeout
         handle = None
         while handle is None:
@@ -82,7 +90,7 @@ class Bridge(object):
                 time.sleep(0.05)
 
         try:
-            handle.write((json.dumps({"op": op}) + "\n").encode("utf-8"))
+            handle.write((json.dumps({"op": op, "token": self.token}) + "\n").encode("utf-8"))
             line = b""
             while not line.endswith(b"\n"):
                 chunk = handle.read(1)
@@ -280,7 +288,7 @@ def cmd_list():
     if not live:
         print("No Revit is connected.")
         print("")
-        print("Open Revit, then press  Heron AI > Connect Heron  on the ribbon.")
+        print("Open Revit, then press  Heron AI > Heron  on the ribbon to connect.")
         print("A Revit that was never connected is invisible here, by design.")
         if stale:
             print("")
@@ -310,7 +318,7 @@ def cmd_ping(pid=None):
         report_mismatched(mismatched)
         return 1
     if not live:
-        print("No Revit is connected. Press Connect Heron on the ribbon first.")
+        print("No Revit is connected. Press Heron on the ribbon to connect first.")
         report_mismatched(mismatched)
         return 1
 
@@ -374,7 +382,7 @@ def cmd_doctor():
         print("")
         print("  Most likely, in order:")
         print("    1. Revit is not running.")
-        print("    2. Revit is running but Connect Heron was never pressed.")
+        print("    2. Revit is running but the Heron button was never pressed.")
         print("       A Revit that was never connected is invisible here, by design.")
         print("    3. The add-in did not load. Check the log below.")
         print("")
