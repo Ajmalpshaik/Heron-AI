@@ -721,7 +721,7 @@ Observed behaviour outranks designed behaviour. The specifications are hypothese
 
 D-02 settled the transport but never said how the client **finds** the pipes. The field notes answer it:
 a **discovery directory**, one JSON file per live bridge, named by PID —
-`%APPDATA%\Heronridges\<pid>.json`.
+`%APPDATA%\Heron\bridges\<pid>.json`.
 
 Two rules the notes make necessary: the discovery file **must not carry the document name** (that is
 exactly what produced the stale-name trap), and a file is **not proof the bridge is alive** — Revit

@@ -89,6 +89,7 @@ Full index: **[docs/README.md](docs/README.md)**
 - [Proposals](docs/PROPOSALS.md) — what is missing, what is risky, what to add
 - [Open Questions](docs/OPEN-QUESTIONS.md) — what must be decided
 - [Roadmap](docs/ROADMAP.md) — what gets built, in what order
+- [**Build Order**](docs/27-build-order.md) — **the six numbered steps to actually start**
 - [Golden Rules](docs/14-golden-rules.md) — the non-negotiables
 
 ---

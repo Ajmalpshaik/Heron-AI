@@ -44,6 +44,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | Know what is missing or risky | [PROPOSALS.md](PROPOSALS.md) |
 | Know what still needs deciding | [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) |
 | Know what gets built first | [ROADMAP.md](ROADMAP.md) |
+| **Actually start building** | [**27 — Build Order**](27-build-order.md) |
 | Know the non-negotiables | [14 — Golden Rules](14-golden-rules.md) |
 
 ---
@@ -104,6 +105,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | # | Document | Covers |
 |---|---|---|
 | 26 | [Prior Art: Existing Revit MCP Servers](26-prior-art-revit-mcp.md) | What already exists, what it confirms, **the two gaps every project shares**, pyRevit Routes |
+| 27 | [**Build Order**](27-build-order.md) | **Start here to build.** Six numbered steps, each independently provable |
 
 ## Working documents
 

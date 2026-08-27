@@ -58,33 +58,55 @@ Those eight named components map onto the phases below:
   -> audit log entry
 ```
 
-**Scope — deliberately minimal:**
+> **[Rescoped 2026-08-27 after an honest re-read.]** An earlier draft of this phase had accumulated
+> session binding, a live availability list, document pinning, a permission layer, an event bus, a prompt
+> registry and a secret store — while the surrounding text still called it a thin slice. That was scope
+> creep of exactly the kind this roadmap exists to prevent. It is corrected below.
+>
+> The test applied: **does Phase 0's goal — one sentence changes the selection — actually require this?**
+> If not, and it is not ruinous to retrofit, it moves to Phase 1.
 
-- **One** Revit version to start — with the multi-target structure and adapter layer already in place,
-  so fanning out to 2020 → latest is later work, not a rewrite *([16 §8](16-version-support-strategy.md))*
-- One transport *(Q-2)*, with **bridge discovery** via `%APPDATA%\Heronridges\<pid>.json`
-  *([25 §2](25-multi-session-and-binding.md) — closes a real gap in D-02)*
-- **Session binding** — one chat, one Revit; ask once when several are connected; **never guess**;
-  fail closed when the bound session closes *([25 §3](25-multi-session-and-binding.md))*
-- **Live session list** — built at ask-time, never from a cached snapshot; shows Revit version, project
-  and `(free)`/`(in use)`; **never a process number** *([25 §2a](25-multi-session-and-binding.md))*
-- **Document pinning** — bind the document, not just the Revit *([25 §4](25-multi-session-and-binding.md))*
+**In scope — the functional slice:**
+
+- **One** Revit version
+- **One transport**, with per-PID naming and a discovery file *(Q-2)*
+- **One `ExternalEvent`**, one request queue, one handler *([D-09](DECISIONS.md))*
 - Three MCP tools: `revit_health`, `revit_select_by_category`, `revit_get_selection`
-- No RAG, no vector DB, no fragments, no learning, no installer, no code generation
-- Hard-coded skill mapping — no matching intelligence at all
+- **Pick a Revit if several are running** — a simple numbered list, no availability column yet
+- **Every result names the document it acted on** — *"Found 126 ducts in Tower-A.rvt"*. Cheap, and it
+  builds the habit Golden Rule 20 later enforces
+- An **audit log** entry per request, keyed by Workflow ID
+- Hard-coded skill mapping. No RAG, no vector DB, no fragments, no learning, no installer, no
+  code generation, no matching intelligence at all
+
+**Structural, and genuinely ruinous to retrofit — so the first commit, not later:**
+
+| Item | Why it cannot wait |
+|---|---|
+| **Multi-targeting** `net48` + `net8.0-windows` (+ `net10.0-windows` for 2027) | Retrofitting means restructuring every project file |
+| **Adapter boundary** — core never references `Autodesk.Revit.*` | Retrofitting means touching every call site |
+| **`UniqueId` for all element identity** | Retrofitting means finding every place an `ElementId` leaked |
+| **Per-PID pipe naming + discovery file** | A fixed name is single-instance forever; this is the one bug the field notes already caught |
+| **Product / data / derived separation** | The repo goes public. Client data must be structurally unable to reach it |
+
+**Deliberately deferred to Phase 1** — needed only once Heron can *write*:
+
+session lease · `(free)`/`(in use)` availability · full session binding with fail-closed · document
+**pinning** (as opposed to naming) · permission gate · event bus · prompt registry · secret store
+
+**[NOTE]** Each deferred item is either write-safety (meaningless before writes exist) or infrastructure
+with no consumers yet — an event bus with no subscribers, a prompt registry with two prompts, a secret
+store with no secrets. Building them now is speculative work dressed as prudence.
 
 **Already settled, so this phase implements rather than explores:**
 Claude Code as host ([D-01](DECISIONS.md)) · C# add-in + Python MCP server ([D-06](DECISIONS.md)) ·
+named pipes ([D-02](DECISIONS.md)) · `ExternalEvent` ([D-09](DECISIONS.md)) ·
 Revit 2020 → latest as the eventual target ([D-05](DECISIONS.md))
 
-**Structure to put in place from the first commit** (cheap now, ruinous to retrofit):
-**Kernel skeleton** — config, identity, permissions, event bus, logging, state ([23 §1](23-heron-kernel.md)) ·
-**Prompt/Instruction Registry** — never scatter prompts in code ([23 §9](23-heron-kernel.md)) ·
-**Secret store** — no credential ever in a fragment, prompt, log or commit ·
-multi-targeting (`net48` + `net8.0-windows`) · adapter layer for version differences ·
-`UniqueId` for all element identity · public-code / private-data separation ([17 §2](17-open-source-and-distribution.md))
+**Definition of done:** it works twice in a row, from a cold Revit start, and the audit log shows what
+happened.
 
-**Definition of done:** it works twice in a row, from a cold Revit start, and the audit log shows what happened.
+**Step-by-step build order: [27 — Build Order](27-build-order.md).**
 
 **What this settles:** Q-2, Q-4, Q-5 — and it produces the skeleton every later phase builds on.
 
