@@ -19,7 +19,7 @@
 | **Risk** | Highest permission level it can require ([12 §1](12-security-and-permissions.md)) |
 | **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
 
-**Totals: 220 agents · 149 T1 · 53 T2 · 18 T3.**
+**Totals: 226 agents · 150 T1 · 57 T2 · 19 T3.**
 Roughly two thirds never call a model at all.
 
 > **Correction, 2026-08-27:** an earlier version of this page stated 166. The departments actually
@@ -175,7 +175,7 @@ at all. This department closes that.
 | `HERON-IMP-IDX-013` | Indexing Agent | Indexes the accepted result | T1 | MODIFY | — |
 | `HERON-IMP-APR-014` | Approval Agent | Presents the manifest for human review. **Everything enters at `DISCOVERED`** | T1 | SUGGEST | — |
 
-## 8. Standards & BIM QA — 12
+## 8. Standards & BIM QA — 13
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -189,10 +189,11 @@ at all. This department closes that.
 | `HERON-STD-DOC-008` | Documentation Standard Agent | Sheet, titleblock and annotation requirements | T2 | ANALYZE | — |
 | `HERON-STD-PRJ-009` | Project Standard Agent | This project's own rules — **outranks the company default**, and says so | T2 | ANALYZE | — |
 | `HERON-STD-REF-010` | **Reference Model Profiler** | Infers a standard from a correctly delivered model. Extracts the profile, **discards the model** ↗ | T3 | READ | — |
+| `HERON-STD-PVL-013` | **Profile Validation Agent** | Checks a standard **inferred** from a reference model before it can be trusted. Tests it against a second delivered model, separates convention from coincidence, and surfaces the exceptions rather than flagging correct work as wrong ↗ | T2 | READ | — |
 | `HERON-QA-BIM-011` | **BIM QA Agent** | Checks the *model*: naming, parameters, categories, families, levels, worksets, views, MEP connectivity ↗ | T2 | ANALYZE | — |
 | `HERON-QA-CLS-012` | **Clash / Coordination Agent** | Clash analysis, clearance, system coordination, linked-model coordination reports ↗ | T2 | ANALYZE | — |
 
-## 9. Development — 20
+## 9. Development — 21
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -213,11 +214,12 @@ at all. This department closes that.
 | `HERON-DEV-RVT-013` | Revit Test Agent | Runs tests **inside real Revit**. Code QA ≠ Revit QA | T1 | — | — |
 | `HERON-DEV-RGR-014` | Regression Test Agent | Golden-file comparison across supported versions | T1 | — | — |
 | `HERON-DEV-PRF-015` | Performance Agent | Execution time and resource cost | T1 | — | — |
+| `HERON-DEV-EXP-021` | **Experiment Agent** | The scientist. Designs and runs a **comparison** where the right answer is not known yet — is v2 actually better than v1, does this approach beat that one, is the change worth keeping. Reports a verdict with evidence, not an opinion ↗ | T3 | READ | — |
 | `HERON-DEV-QA-016` | QA Agent | Final gate before approval. Never the implementer | T2 | — | — |
 | `HERON-DEV-DOC-017` | Documentation Agent | Generates docs from registries and metadata | T1 | — | — |
 | `HERON-DEV-REL-018` | Release Agent | Packages and releases | T1 | PUBLISH | — |
 
-## 10. Agent Lifecycle & HR — 13
+## 10. Agent Lifecycle & HR — 14
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -227,6 +229,7 @@ at all. This department closes that.
 | `HERON-AHR-BLD-004` | Agent Builder | Implements it | T3 | — | — |
 | `HERON-AHR-TRN-005` | Agent Trainer | Supplies architecture, standards, security rules, approved examples | T2 | — | — |
 | `HERON-AHR-CRT-006` | Agent Creator | Owns the pipeline. **May only ever assign `PROPOSED`** | T3 | ADMIN | — |
+| `HERON-AHR-MEN-014` | **Agent Mentor Agent** | The senior on the team. Pairs a new agent with the **proven agent that currently owns that capability**, compares their output through Shadow Mode, and explains *why* they diverged. Active only while the new agent is in `SHADOW` ↗ | T2 | READ | — |
 | `HERON-AHR-VAL-013` | **Agent Validation Agent** | *Before activation:* is this agent correct, does it meet its contract, does it follow the architecture, does it duplicate an existing agent, is its risk level right. **Never the agent that built it** ↗ | T2 | ADMIN | — |
 | `HERON-AHR-EVL-007` | Agent Evaluator | *After activation:* scores real performance against expectations | T2 | READ | — |
 | `HERON-AHR-REG-008` | Agent Registry Agent | System of record for every agent | T1 | ADMIN | — |
@@ -235,7 +238,69 @@ at all. This department closes that.
 | `HERON-AHR-MON-011` | Architecture Monitor | Detects drift from the architecture | T2 | READ | — |
 | `HERON-AHR-DEP-012` | Agent Deployment Agent | Activates an approved agent | T1 | ADMIN | — |
 
-## 11. Kernel & Platform — 15
+### The full hiring lifecycle, in company terms
+
+**[NOTE]** Added 2026-08-27. The owner described the intended model as an engineering company: *the CEO
+needs a role filled, HR hires, the new person does not know the company, so a senior teaches them.*
+That is exactly what this department is for — set out here end to end so the mapping is explicit.
+
+| Company | Heron | Agent |
+|---|---|---|
+| A role keeps going unfilled | A capability is needed repeatedly and nothing provides it | `Capability Gap` |
+| The CEO says *"we need someone for this"* | The Orchestrator or the user asks directly | `Agent HR` |
+| HR writes the job description | Responsibility, capabilities, dependencies, tools | `Agent HR` |
+| The role is designed | Contract, inputs, outputs, risk level, tier | `Agent Architect` |
+| The person is hired | The agent is implemented | `Agent Builder` |
+| Induction — handbook, standards, security briefing | Architecture rules, coding and naming standards, approved fragments and skills | `Agent Trainer` |
+| **A senior sits with them on the job** | **Paired with the proven agent, output compared, divergences explained** | **`Agent Mentor`** |
+| Probation — real work, supervised, nothing shipped | `SHADOW` — runs on real requests, **output discarded** | `Agent Mentor` + `Agent Validation` |
+| Sign-off by someone who did not hire them | Validation before activation, never by the builder | `Agent Validation` |
+| Starts properly | `PRODUCTION` — **a human approves this transition** | `Agent Deployment` |
+| Performance review | Success, corrections, rollbacks, per Revit version | `Agent Evaluator` |
+| Coaching and development | Improving an existing agent | `Agent Optimizer` |
+| Changing how the team works | Improving the workflow itself, not the people in it | `Workflow Optimizer` |
+| Leaving — handover, records kept | Retired, replaced, archived. **Never deleted** | `Agent Retirement` |
+
+**Two triggers into this pipeline, not one.** `Agent HR` accepts both:
+
+- **Bottom-up** — `Capability Gap` sees the same unmet need recurring in the audit log. This is the
+  honest one, because it comes from real usage rather than imagination.
+- **Top-down** — the Orchestrator or the user says *"we need an agent for this."*
+
+**[NOTE — where the company analogy stops]** A company can hire someone and let them start on Monday.
+Heron cannot. `Agent Creator` **may only ever assign `PROPOSED`** ([Golden Rule 13](14-golden-rules.md)),
+and a human approves activation. The mentor and the shadow period produce the *evidence*; a person still
+signs. That is the one place where *"the user does BIM work, Heron does everything else"* is deliberately
+broken, and it should stay broken.
+
+### Heron is its own first customer
+
+**[NOTE]** The owner's other point — *"these agents do our side work also, internally it will update and
+upgrade, and their working ways also."* That is already the design, and it is worth naming:
+
+| Serving the **BIM user** | Serving **Heron itself** |
+|---|---|
+| Revit Engineering · MCP / Bridge · Session · Knowledge & RAG · Skills · Fragments · Standards & BIM QA · Reporting | Development · Agent Lifecycle & HR · Documentation · GitHub · Workspace · Naming · Installation & Update · Operations |
+
+Roughly half the organisation never touches a Revit model. It builds, tests, documents, deploys,
+monitors and improves **Heron** — which is exactly how a real engineering company is staffed: people who
+serve clients, and people who keep the firm running.
+
+The self-improvement loop that connects them:
+
+```text
+User work -> audit log -> Capability Gap -> Agent HR -> new capability
+     ^                                                        |
+     +--------------- Evaluator / Optimizer <-----------------+
+```
+
+**Controlled, not autonomous.** Every arrow that changes production knowledge or activates an agent
+passes a human gate. Heron proposes continuously; it promotes only with approval
+([Golden Rule 6](14-golden-rules.md), [13](14-golden-rules.md)).
+
+---
+
+## 11. Kernel & Platform — 16
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -253,6 +318,7 @@ at all. This department closes that.
 | `HERON-KRN-SEC-012` | Secret Manager | Credentials outside the workspace. Redaction on the way out | T1 | ADMIN | — |
 | `HERON-KRN-DEP-013` | Dependency Graph Agent | Skills → fragments → API → runtime → packages. Makes blast radius computable | T1 | READ | — |
 | `HERON-KRN-EVD-014` | Evidence Agent | Records *why* a decision was made. **No evidence, no MODIFY** | T1 | — | 6 |
+| `HERON-KRN-WOP-016` | **Workflow Optimizer Agent** | Improves *the way work is done*, not the agents doing it. Spots that a workflow always fails at the same stage, that two stages could merge, or that a step never changes the outcome ↗ | T2 | SUGGEST | — |
 | `HERON-KRN-TOK-015` | **Tokenizer / Token Budget Agent** | Counts tokens **before** sending, enforces the context budget, tracks spend per request and per session. Feeds the visible cost meter ↗ | T1 | — | — |
 
 ## 12. Workspace & Folder Architecture — 12
@@ -330,7 +396,7 @@ at all. This department closes that.
 | `HERON-OPS-UPD-010` | Update Agent | Detects, downloads, migrates, validates, **rolls back** | T1 | ADMIN | — |
 | `HERON-OPS-OBS-011` | Observability Agent | Latency, token usage, **model calls per request**, cost per request | T1 | READ | — |
 
-## 17. Documentation — 8
+## 17. Documentation — 9
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -341,6 +407,7 @@ at all. This department closes that.
 | `HERON-DOC-REL-005` | Release Notes Agent | Structured notes per release | T2 | — | — |
 | `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries | T2 | — | — |
 | `HERON-DOC-RDM-007` | README Agent | Keeps the README current | T2 | — | — |
+| `HERON-DOC-VAL-009` | **Documentation Validation Agent** | Do the documents match reality. Recomputes every stated count from its source, checks every internal link resolves, flags any figure asserted rather than derived ↗ | T1 | READ | — |
 | `HERON-DOC-CHG-008` | Change Log Agent | Added / Improved / Fixed / Deprecated per version | T1 | — | — |
 
 ---
@@ -357,27 +424,127 @@ at all. This department closes that.
 | Fragment Lifecycle | 8 | 2 | 2 | 4 |
 | **Skill Lifecycle** | **6** | 1 | 3 | 2 |
 | Import & Migration | 14 | 7 | 4 | 3 |
-| Standards & BIM QA | 12 | 0 | 11 | 1 |
-| Development | 20 | 11 | 7 | 2 |
-| Agent Lifecycle & HR | 13 | 4 | 6 | 3 |
-| Kernel & Platform | 15 | 15 | 0 | 0 |
+| Standards & BIM QA | 13 | 0 | 12 | 1 |
+| Development | 21 | 11 | 7 | 3 |
+| Agent Lifecycle & HR | 14 | 4 | 7 | 3 |
+| Kernel & Platform | 16 | 15 | 1 | 0 |
 | Workspace & Folder | 12 | 10 | 2 | 0 |
 | Naming & Taxonomy | 7 | 5 | 2 | 0 |
 | GitHub | 10 | 8 | 2 | 0 |
 | Installation & Update | 10 | 9 | 1 | 0 |
 | Operations & Health | 11 | 11 | 0 | 0 |
-| Documentation | 8 | 5 | 3 | 0 |
-| **Reporting & Output** | **3** | 2 | 1 | 0 |
-| **Total** | **220** | **149** | **53** | **18** |
+| Documentation | 9 | 6 | 3 | 0 |
+| **Reporting & Output** | **4** | 2 | 2 | 0 |
+| **Total** | **226** | **150** | **57** | **19** |
 
-**[NOTE]** The distribution is the point. **149 of 220 agents never call a model** — they are ordinary
-classes with a method or two. Of the rest, 53 make one scoped call and 18 run a real agentic loop.
+**[NOTE]** The distribution is the point. **150 of 226 agents never call a model** — they are ordinary
+classes with a method or two. Of the rest, 57 make one scoped call and 19 run a real agentic loop.
 
-Read that way, the platform is a normal application with about 149 services, 53 narrow model calls, and
-18 genuine agentic workflows. That is a tractable system, not an intimidating one.
+Read that way, the platform is a normal application with about 150 services, 57 narrow model calls, and
+19 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
 **Phase 0 and Phase 1 need about 20 of these**, 17 of them T1 —
 see [08](08-agent-catalog.md) and [27](27-build-order.md).
+
+---
+
+## Every creator has a named validator
+
+**[NOTE]** Added 2026-08-27 at the owner's instruction: *whatever the AI creates, there must be a
+checking and validating agent for it.*
+
+This is [Golden Rule 7](14-golden-rules.md) — *one agent creates, another validates* — made auditable.
+The rule is only real if the pairing can be **checked**, so the pairs are listed. A creating agent with
+no named validator is a defect in this registry, not an acceptable state.
+
+| What is created | Created by | Validated by |
+|---|---|---|
+| Code | `Code Generation` | `Code Review` + `Security Review` + `Unit/Integration/Revit Test` + `QA` |
+| A fragment | `Fragment Creation` | `Fragment Validation` |
+| A changed fragment | `Fragment Update` | `Fragment Validation` + `Regression Testing` |
+| A skill | `Skill Creation` | `Skill Validation` |
+| A composed skill | `Skill Composition` | `Skill Validation` *(acyclic graph, risk propagation)* |
+| An agent | `Agent Builder` | `Agent Validation` — **never the builder** |
+| A project / build config | `.NET Project Creation` | `Build` + `Unit Test` |
+| A migrated import | `Migration` | `Validation` *(Import)* |
+| A folder structure | `Folder Creation` | `Folder Validation` |
+| A name | `Naming` | `Naming Validation` + `Reference Update` |
+| Knowledge structure | `Knowledge Evolution` | `Knowledge Validation` |
+| **A report** | `Report Composition` + `Report Rendering` | **`Report Validation`** *(is it right)* + `Report Redaction` *(may it leave)* |
+| **Documentation** | the 8 Documentation agents | **`Documentation Validation`** |
+| **An inferred standard** | `Reference Model Profiler` | **`Profile Validation`** |
+| A workflow change | `Workflow Optimizer` | `Experiment` *(is the new shape actually better)* |
+| An experiment verdict | `Experiment` | **a human** — see below |
+
+### The three that were missing, and why they matter
+
+- **Report Validation.** `Report Redaction` gated whether a report may *leave*; nothing checked whether
+  it was *true*. A report stating 47 failures when there are 52 is worse than no report, because it
+  will be acted on and it looks authoritative.
+- **Documentation Validation.** Documentation is generated from the registries, so when generation
+  drifts, the documents lie confidently. **This page proved it:** it asserted 166 agents while its own
+  departments summed to 196. Nothing would have caught that except a person adding up columns by hand.
+  Recomputing every stated figure from its source is exactly this agent's job.
+- **Profile Validation.** A standard inferred from a reference model is a **hypothesis**, not a
+  standard. Without a validator, one project's mistake becomes the company rule.
+
+### Where the chain stops
+
+Validation cannot recurse forever — something must eventually be trusted. Two rules end it:
+
+1. **A validator is never the creator.** That single constraint provides most of the value, at one hop.
+2. **The chain terminates at a human**, at exactly one point: the `PROVEN → PRODUCTION` transition
+   ([Golden Rule 6](14-golden-rules.md), [13](14-golden-rules.md)). Everything below that may be
+   machine-validated; nothing becomes trusted-by-default without a person.
+
+That is why no validator has a validator. The last check is a signature.
+
+---
+
+## Seniority — worker, pro, manager, scientist
+
+**[NOTE]** Added 2026-08-27. The owner asked about *researcher, scientist, manager, worker, pro* agents.
+
+Four of those five already exist — **as the tier system**, arrived at from the cost side rather than the
+company side. Two independent routes reaching the same structure is a good sign, and the right response
+is to **map the metaphor onto the existing vocabulary, not to add a second one**. Two names for one
+concept is precisely the six-competing-vocabularies problem that
+[24 — The Unified Trust Model](24-trust-model.md) exists to undo.
+
+| Company role | Heron | Count | What it means in practice |
+|---|---|---|---|
+| **Worker** | **T1** — deterministic service | 150 | Does one job, the same way every time. No judgement, no model call, no cost |
+| **Pro / skilled** | **T2** — one scoped model call | 57 | One judgement over ambiguous input, then out of the way |
+| **Senior / lead** | **T3** — agentic loop | 19 | Owns a hard problem end to end, decides its own steps |
+| **Manager** | **Orchestrator** + **Workflow Engine** | 2 | Decides *what* happens and ensures it *happens correctly*. Deliberately **not** one manager per department — [Part 2 §83](00b-master-specification-agent-os.md) forbids the extra hops |
+| **Researcher** | `Research Agent` | 1 | Finds out what is already known. Everything it returns carries a citation |
+| **Scientist** | `Experiment Agent` | 1 | Finds out what **nobody** knows yet — designs a comparison and reports a verdict with evidence |
+
+### Why researcher and scientist are two agents, not one
+
+The [split test](#when-to-split-an-agent-and-when-not-to) separates them cleanly, and the distinction is
+real:
+
+- **Research** answers *"what is already known?"* It retrieves — from documentation, standards, prior
+  art, the knowledge base. Its failure mode is a **wrong citation**.
+- **Experiment** answers *"which of these is actually better?"* It compares — two fragments, two
+  approaches, before and after. Its failure mode is a **wrong conclusion**, which is worse, because it
+  gets acted on.
+
+Different tier (T2 vs T3), different failure mode, different consumers — Research serves the Brain,
+Experiment serves Fragment Evolution and Agent Optimizer, which have no other way to answer *"is this
+change worth keeping?"*
+
+### Why there is no separate manager layer
+
+A department head per department would add a hop to every request, for coordination the Orchestrator and
+Workflow Engine already provide. [Part 2 §83](00b-master-specification-agent-os.md) is explicit:
+
+> *ONE USER REQUEST → ONE ORCHESTRATED WORKFLOW → ONLY REQUIRED AGENTS*
+
+Middle management is the thing that rule exists to prevent. If the Orchestrator ever becomes the
+bottleneck the field notes predict, the fix is the **Capability Registry** doing more of the routing —
+not a layer of managers between it and the work.
 
 ---
 
@@ -415,7 +582,7 @@ consumers, same tier, same failure mode. Those are marked as merge candidates
 
 ---
 
-## 17a. Reporting & Output — 3 *(new department)*
+## 17a. Reporting & Output — 4 *(new department)*
 
 **[NOTE]** Added 2026-08-27 from a good question: *does producing a visual report need its own agent?*
 
@@ -431,6 +598,7 @@ is a separate agent with its own gate rather than a step inside rendering.
 |---|---|---|---|---|---|
 | `HERON-RPT-CMP-001` | **Report Composition Agent** | Decides *what goes in* and at what depth for this reader — a modeller wants the 47 failures, a BIM manager wants the trend. Judgement, so a model call ↗ | T2 | READ | — |
 | `HERON-RPT-RND-002` | **Report Rendering Agent** | Deterministic templates → page, PDF, schedule, CSV, image. **No model call** — data in, document out, same input same output ↗ | T1 | READ | — |
+| `HERON-RPT-VAL-004` | **Report Validation Agent** | Does the report say what the data says. Counts match the query, nothing dropped silently, every figure traceable to its source. A report claiming 47 failures when there are 52 is worse than no report ↗ | T2 | READ | — |
 | `HERON-RPT-RED-003` | **Report Redaction & Release Agent** | The gate before a report can be shared or leave the machine. Strips project identifiers, enforces scope, blocks confidential-project egress. **A report is an egress surface** ↗ | T1 | PUBLISH | — |
 
 **Why three and not one** — the [split test](#when-to-split-an-agent-and-when-not-to), applied:
