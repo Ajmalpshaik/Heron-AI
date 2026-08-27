@@ -31,6 +31,7 @@
 | [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour) | Field notes authoritative on bridge behaviour | ✅ Accepted |
 | [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope) | Live session list; freeze out of scope | ✅ Accepted |
 | [D-17](#d-17--runtime-state-is-machine-local-not-roaming) | Runtime state is machine-local, not roaming | ✅ Accepted |
+| [D-18](#d-18--the-transaction-agent-belongs-to-step-6-not-step-2) | The Transaction Agent belongs to Step 6, not Step 2 | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -872,6 +873,42 @@ place that means "follows the person".
   and must survive a cache wipe — which is the distinction the three classes exist to make.
 - `HeronPaths.IsSafeToDelete` returns false for anything under Data, so a cleanup or an update cannot
   reach the user's own knowledge.
+
+---
+
+## D-18 — The Transaction Agent belongs to Step 6, not Step 2
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Found during:** Step 2 implementation
+
+### Context
+
+[The registry](28-agent-registry.md) assigned `HERON-REVIT-TRN-005`, the Revit Transaction Agent, to
+Step 2. It was the only agent in that step carrying **MODIFY** risk — and Step 2 does not write. It
+counts elements.
+
+[The build order](27-build-order.md) is explicit about why that matters:
+
+> A write path built before its safety path is a write path that will ship without one.
+
+Step 6 exists precisely to build the rails *first* — the named transaction group, the preview, the
+re-count before executing, document pinning, the permission gate, the emergency stop — and only then
+the first write. Creating the transaction machinery four steps early puts the mechanism in place long
+before anything that makes using it safe, and leaves it sitting there available.
+
+### Decision
+
+`HERON-REVIT-TRN-005` moves to **Step 6**, alongside the safety rails it cannot be used without.
+
+Step 2 therefore builds two agents, not three: `HERON-REVIT-APP-003` and `HERON-REVIT-DOC-004`. Both
+are READ.
+
+### Consequences
+
+- Everything through Step 5 stays read-only **by construction**, not by discipline. There is no
+  transaction code to reach for.
+- The rule generalises, and is recorded in the conventions skill: a read-only operation opens no
+  transaction, and none is created "for later".
+- Step 6 gains one agent. Its ordering does not change — the rails already come before the write.
 
 ---
 
