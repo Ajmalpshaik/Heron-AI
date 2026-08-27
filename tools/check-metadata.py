@@ -77,6 +77,47 @@ def read_header(path):
     return found
 
 
+def build_version():
+    """The one version in Directory.Build.props - the C# side's own answer."""
+    try:
+        text = io.open("Directory.Build.props", encoding="utf-8").read()
+    except (IOError, OSError):
+        return None
+    m = re.search(r"<Version>([^<]+)</Version>", text)
+    return m.group(1).strip() if m else None
+
+
+def python_version():
+    """What the Python side believes Heron's version is."""
+    try:
+        text = io.open("mcp/client/heron_bridge_client.py", encoding="utf-8").read()
+    except (IOError, OSError):
+        return None
+    m = re.search(r'^HERON_VERSION\s*=\s*"([^"]+)"', text, re.M)
+    return m.group(1).strip() if m else None
+
+
+def check_version_agreement(problems):
+    """
+    Heron reports its version to the user from Python and stamps its
+    assemblies from MSBuild. Two places, one number - so it is verified rather
+    than trusted, the same reason every count in the docs is derived.
+    """
+    csharp, python = build_version(), python_version()
+    if csharp is None:
+        problems.append("could not read <Version> from Directory.Build.props")
+        return
+    if python is None:
+        problems.append("could not read HERON_VERSION from the bridge client")
+        return
+    if csharp != python:
+        problems.append(
+            "version disagreement: Directory.Build.props says %s, the bridge client says %s. "
+            "Heron would report one number and stamp another." % (csharp, python))
+    else:
+        print("Version:  %s, and both sides agree" % csharp)
+
+
 def main():
     agents = registry_agents()
     if not agents:
@@ -85,6 +126,7 @@ def main():
     print("Registry: %d agents" % len(agents))
 
     problems = []
+    check_version_agreement(problems)
     claimed = set()
     checked = 0
 

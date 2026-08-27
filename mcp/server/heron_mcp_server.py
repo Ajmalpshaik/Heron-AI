@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Heron-Agent:  HERON-MCP-SRV-001, HERON-MCP-HLT-005
-# Heron-Step:   4
+# Heron-Agent:  HERON-MCP-SRV-001, HERON-MCP-HLT-005, HERON-MCP-VER-007
+# Heron-Step:   5
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
 # Heron-Layer:  bridge
@@ -173,6 +173,60 @@ def revit_select_by_category(category: str = "ducts") -> str:
     return ("Selected %s %s in %s.\n(%s)"
             % ("{:,}".format(selected), reply.get("category"),
                reply.get("document"), reply.get("scope")))
+
+
+@server.tool()
+def heron_version() -> str:
+    """
+    Report Heron's version, the protocol it speaks, and the version of each
+    connected Revit add-in — and whether all three agree.
+
+    Use when the user asks which version they are running, when reporting a
+    problem, or when behaviour differs between two Revit sessions and the
+    versions might explain it.
+    """
+    lines = ["Heron %s, bridge protocol %s." % (bridge.HERON_VERSION, bridge.PROTOCOL_VERSION)]
+
+    try:
+        live, starting, stale, mismatched = bridge.discover()
+    except Exception as exc:
+        lines.append("Could not read the session list: %s: %s" % (type(exc).__name__, exc))
+        return "\n".join(lines)
+
+    if not live and not mismatched:
+        lines.append("")
+        lines.append("No Revit is connected, so there is no add-in version to compare against.")
+        return "\n".join(lines)
+
+    lines.append("")
+    disagreed = False
+
+    for b in live:
+        agrees = b.protocol_version == bridge.PROTOCOL_VERSION
+        note = "" if agrees else "   <- protocol %s, MISMATCH" % b.protocol_version
+        if not agrees:
+            disagreed = True
+        lines.append("  Revit %s (session %s) - add-in %s%s"
+                     % (b.revit_version, b.pid, b.addin_version, note))
+        b.close()
+
+    for b in mismatched:
+        disagreed = True
+        lines.append("  Revit %s (session %s) - add-in %s   <- protocol %s, MISMATCH"
+                     % (b.revit_version, b.pid, b.addin_version, b.protocol_version))
+
+    lines.append("")
+    if disagreed:
+        # A mismatch is not a warning to work around. The add-in and the client
+        # are two halves of one protocol, and half-understanding each other is
+        # how a wrong answer looks exactly like a right one.
+        lines.append("Those versions do not agree. Restart the Revit whose protocol differs so it "
+                     "picks up the installed add-in - Heron refuses to talk across protocols "
+                     "rather than guess what the other side meant.")
+    else:
+        lines.append("Everything agrees.")
+
+    return "\n".join(lines)
 
 
 @server.tool()

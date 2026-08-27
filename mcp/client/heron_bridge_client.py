@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Heron-Agent:  HERON-SES-DIS-001, HERON-SES-LST-002, HERON-MCP-CON-002
+# Heron-Agent:  HERON-SES-DIS-001, HERON-SES-LST-002, HERON-MCP-CON-002, HERON-MCP-REC-009
 # Heron-Step:   1
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -52,6 +52,16 @@ CONNECT_TIMEOUT_S = 2.0
 # and the client reports "no answer" for work Revit would have finished - the
 # worst kind of wrong, because the user then retries something already running.
 RESPONSE_TIMEOUT_S = 90.0
+
+#: Heron's own version. Checked against Directory.Build.props by
+#: tools/check-metadata.py, so the two can never quietly disagree - a version
+#: that is typed in two places is a version that is wrong in one of them.
+HERON_VERSION = "0.1.0"
+
+#: Transport retries. Three attempts with a widening gap, so a bridge that is
+#: mid-restart is given time to come back rather than hammered while it does.
+RETRY_ATTEMPTS = 3
+RETRY_BACKOFF_S = 0.15
 
 
 def newest_log():
@@ -140,7 +150,7 @@ class Bridge(object):
         return result.get("line") or None
 
     def request(self, op, timeout=CONNECT_TIMEOUT_S, response_timeout=RESPONSE_TIMEOUT_S,
-                op_args=None):
+                op_args=None, idempotent=True):
         """
         Send one request, return the parsed response. None if unreachable.
 
@@ -150,6 +160,16 @@ class Bridge(object):
 
         Every request carries this session's token. The bridge checks it before
         it will even say whether an operation exists.
+
+        RETRIES ONLY WHAT IS SAFE TO RETRY. A transport fault - the pipe was not
+        open, or the write failed - means the request never left this machine,
+        so it can always be sent again. An answer that is lost AFTER the request
+        was sent is a different thing entirely: whether Revit ran it is unknown.
+
+        Everything up to Step 5 only reads, so asking twice costs nothing and
+        `idempotent` defaults to True. Step 6 writes MUST pass False - repeating
+        a move because the answer went missing would move the same ducts twice,
+        and "it looked like it failed" is exactly how that happens.
         """
         body = {"op": op, "token": self.token}
         if op_args:
@@ -158,34 +178,55 @@ class Bridge(object):
             body.update(op_args)
         payload = (json.dumps(body) + "\n").encode("utf-8")
 
-        # Two attempts: the kept connection may have been dropped since it was
-        # last used - by a newer chat, or by the bridge being toggled off and on.
-        for attempt in (1, 2):
+        for attempt in range(1, RETRY_ATTEMPTS + 1):
+            if attempt > 1:
+                # Backoff, so a bridge that is mid-restart is given time to come
+                # back rather than hammered while it does.
+                time.sleep(RETRY_BACKOFF_S * (2 ** (attempt - 2)))
+
             handle = getattr(self, "_handle", None)
             if handle is None:
                 handle = self._connect(timeout)
                 if handle is None:
-                    return None
+                    continue          # never opened; nothing was sent
                 self._handle = handle
 
             try:
                 handle.write(payload)
             except (OSError, ValueError):
+                # The write failed, so the request never left this machine.
+                # Always safe to try again, whatever the operation was.
                 self.close()
                 continue
 
             line = self._read_line(handle, response_timeout)
+
             if line is None:
-                # Either a timeout, or the connection died mid-answer. Closing
-                # releases the reader thread in the first case.
                 self.close()
-                if attempt == 2:
-                    return None
+
+                # THE REQUEST WAS SENT AND THE ANSWER WAS LOST. Whether Revit
+                # ran it is unknown, and no amount of looking from here can
+                # settle that.
+                #
+                # For a read, asking again costs nothing. For a write it could
+                # do the work twice - move the same ducts 200 mm up, twice -
+                # and "it looked like it failed" is exactly how that happens.
+                # So retrying past this point is the CALLER's decision, and the
+                # default for anything that changes a model must be False.
+                if not idempotent:
+                    return {"ok": False, "error": "unknown_outcome",
+                            "message": ("The request reached Revit but the answer was lost, so "
+                                        "Heron cannot tell whether it ran. Check the model "
+                                        "before trying again - repeating it could do the work "
+                                        "twice.")}
                 continue
 
             try:
                 return json.loads(line.decode("utf-8").strip())
             except ValueError:
+                # A reply arrived and was unreadable. That is not a transport
+                # fault, and repeating the request will not produce a different
+                # answer.
                 return None
 
         return None
