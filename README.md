@@ -37,18 +37,19 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 
 ## Status
 
-**Implementation has started. Step 1 of 6 is built and proven in real Revit — and is not closed yet.**
+**Steps 1 and 2 of 6 are built and proven in real Revit 2020 and 2024.**
 
 | | |
 |---|---|
 | Specification | ✅ Complete in 4 parts — [platform](docs/00-master-specification.md) · [Agent OS](docs/00b-master-specification-agent-os.md) · [baseline](docs/00c-master-handover-baseline.md) · [additional requirements](docs/00d-additional-requirements.md) |
 | Architecture review | ✅ Complete — [gaps, ideas, tensions](docs/PROPOSALS.md) across all four parts |
 | Constitution | ✅ Written — [30 Articles](HERON_CONSTITUTION.md), pending confirmation |
-| Open questions | ⏳ 13 answered, 26 open — **none blocking** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
+| Open questions | ⏳ 14 answered, 26 open — **none blocking** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
 | Licence & safety files | ✅ Complete — Apache 2.0, security policy, disclaimer, contribution guide |
 | Roadmap | ✅ Drafted — [Phase 0 → 7](docs/ROADMAP.md) |
-| Step 1 — the bridge | 🔨 **Built and proven.** `ping` answered from real Revit 2024; builds for 2020, 2024 and 2027. The owner has said it is **not finished** and will specify what to add. |
-| Steps 2–6 | ⛔ Not started — **no Revit API call exists yet** ([build order](docs/27-build-order.md)) |
+| Step 1 — the bridge | ✅ **Proven.** One button connects and disconnects, per-session token, newest connection wins. Two Revits at once, each with its own pipe |
+| Step 2 — the thread hop | ✅ **Proven.** `5,844 elements in Project1` from Revit 2024, `3,167` from 2020 — and a clean *"Revit is busy"* instead of a hang |
+| Steps 3–6 | ⛔ Not started. **Nothing can write to a model yet** — that is Step 6, and it arrives with its safety rails ([build order](docs/27-build-order.md)) |
 
 **What is proven and what is only built are different things.**
 [HANDOVER.md](HANDOVER.md) §3 keeps that distinction honest, item by item.

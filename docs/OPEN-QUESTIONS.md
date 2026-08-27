@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 13 answered · 26 open · none blocking Phase 0**
+**Progress: 14 answered · 26 open · none blocking Phase 0**
 
 *(Five new questions — Q-29 to Q-33 — come from [Master Specification Part 2](00b-master-specification-agent-os.md).
 None of them block Phase 0 either; they shape Phases 2–5.)*
@@ -444,6 +444,23 @@ project marked confidential selects a local provider adapter, and nothing above 
 
 C# add-in is the pipe server, Python MCP server is the client, pipe name encodes Revit version + PID.
 Local-only by construction. → [D-02](DECISIONS.md)
+
+### ✅ Q-39 — Must the user install Python? → **Yes, and the installer says so**
+
+**Node is not the free option it looked like.** Claude Code ships as a native binary, not an npm
+package, so it does **not** require Node — checked on the development machine, where Claude Code is not
+an npm global and Node is a hand-downloaded folder. Neither runtime is pre-installed on a fresh machine,
+so "the user already has it" was simply false, and the install cost is the same either way.
+
+That leaves one question that actually differs: **the brain needs Python.** RAG, embeddings and vector
+search live in Python's ecosystem ([05](05-heron-brain.md)), which is what [D-06](DECISIONS.md) was
+decided on. Choosing Node for the MCP server would not avoid Python — it would ship **two** runtimes
+instead of one, and put a language boundary where no process boundary exists.
+
+Both can be bundled into a single executable later, so bundling does not favour either.
+
+→ **Python.** [D-06](DECISIONS.md) stands, and installation lists Python as a prerequisite rather than
+discovering it on someone else's machine. Bundling stays open under [Q-38](#-q-38--what-is-the-exact-install-command-new).
 
 ### ✅ Q-4 — `ExternalEvent` or `Idling`? → **`ExternalEvent`, one queue, one handler**
 

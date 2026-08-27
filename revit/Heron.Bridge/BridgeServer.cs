@@ -1,4 +1,4 @@
-// Heron-Agent:  HERON-MCP-SRV-001, HERON-MCP-CON-002
+// Heron-Agent:  none
 // Heron-Step:   1
 // Heron-Status: DRAFT
 // Heron-Since:  0.1.0

@@ -20,7 +20,7 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**13 of 39 questions answered — none of the remaining 26 block Phase 0.**
+**14 of 40 questions answered — none of the remaining 26 block Phase 0.**
 
 **Specification is complete in four parts.** Part 1 is the platform and its organisation; Part 2 is the
 Agent Operating System; Part 3 is the consolidated baseline, **authoritative on the Golden Rules**

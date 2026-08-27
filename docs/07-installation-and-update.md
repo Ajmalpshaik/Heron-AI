@@ -118,7 +118,7 @@ what open source means — but nobody has to.
 | | **BIM user** | **Developer** |
 |---|---|---|
 | Gets Heron by | one install command, prebuilt release | `git clone`, build from source |
-| Needs | Claude Code, Revit | Claude Code, Revit, .NET SDK |
+| Needs | Claude Code, Revit, **Python** *([Q-39](OPEN-QUESTIONS.md))* | Claude Code, Revit, **Python**, .NET SDK |
 | Add-in deployed by | the installer | `tools/deploy-addin.ps1` |
 | Sees | *"Selected 126 ducts in Tower-A"* | agent chains, logs, the build pipeline |
 
