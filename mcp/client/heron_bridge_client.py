@@ -139,7 +139,8 @@ class Bridge(object):
             return None            # still waiting; the caller closes the handle
         return result.get("line") or None
 
-    def request(self, op, timeout=CONNECT_TIMEOUT_S, response_timeout=RESPONSE_TIMEOUT_S):
+    def request(self, op, timeout=CONNECT_TIMEOUT_S, response_timeout=RESPONSE_TIMEOUT_S,
+                op_args=None):
         """
         Send one request, return the parsed response. None if unreachable.
 
@@ -150,7 +151,12 @@ class Bridge(object):
         Every request carries this session's token. The bridge checks it before
         it will even say whether an operation exists.
         """
-        payload = (json.dumps({"op": op, "token": self.token}) + "\n").encode("utf-8")
+        body = {"op": op, "token": self.token}
+        if op_args:
+            # Arguments sit alongside op and token, never nested one level down:
+            # the bridge reads top-level keys only, deliberately.
+            body.update(op_args)
+        payload = (json.dumps(body) + "\n").encode("utf-8")
 
         # Two attempts: the kept connection may have been dropped since it was
         # last used - by a newer chat, or by the bridge being toggled off and on.

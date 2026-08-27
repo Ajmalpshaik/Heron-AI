@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Heron-Agent:  HERON-MCP-SRV-001, HERON-MCP-HLT-005
-# Heron-Step:   3
+# Heron-Step:   4
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
 # Heron-Layer:  bridge
@@ -16,9 +16,10 @@ than making the chain exist.
 
     python mcp/server/heron_mcp_server.py        # speaks MCP over stdio
 
-ONE TOOL, deliberately (docs/27). revit_health answers "is Revit working?" and
-nothing else. Selecting by category is Step 4; writing is Step 6 and arrives
-with its safety rails.
+TWO TOOLS. revit_health answers "is Revit working?". revit_select_by_category
+is the Phase 0 goal - the first thing a modeller would actually ask for, and
+the first time Heron does something they can SEE on screen. Writing is Step 6
+and arrives with its safety rails, never before them.
 
 The answer is written for a person, not for a machine to parse. The host reads
 it aloud, so it says what is true and what to do next - never a status code.
@@ -118,6 +119,64 @@ def revit_health() -> str:
                      % len(stale))
 
     return "\n".join(lines)
+
+
+@server.tool()
+def revit_select_by_category(category: str = "ducts") -> str:
+    """
+    Select every element of one category in the open Revit model, so the user
+    can see them highlighted on screen.
+
+    Use when the user asks to select, highlight or find elements of a kind -
+    "select all ducts". Selecting changes only what is highlighted, never the
+    model itself, so it is safe and needs no confirmation.
+
+    Heron currently understands ducts. Other categories arrive as each one is
+    tried against a real model.
+    """
+    try:
+        live, starting, stale, mismatched = bridge.discover()
+    except Exception as exc:
+        return "Heron could not read its own session list: %s: %s" % (type(exc).__name__, exc)
+
+    if not live:
+        if starting:
+            return ("Revit is running but its bridge is not answering yet - it is probably "
+                    "still starting up. Try again in a moment.")
+        return "No Revit is connected. Open Revit, then press  Heron AI > Heron  on the ribbon."
+
+    if len(live) > 1:
+        # Step 5 builds the picker and the session binding. Until it exists,
+        # acting on a guess is precisely the wrong-model failure the field
+        # notes are about - so refuse, and say nothing was sent.
+        where = "\n".join("  Revit %s (session %s)" % (b.revit_version, b.pid) for b in live)
+        for b in live:
+            b.close()
+        return ("%d Revit sessions are connected, so it is not safe to guess which one you "
+                "mean:\n%s\n\nNothing has been sent to Revit. Close the one you are not "
+                "using, or ask again once Heron can be bound to a session."
+                % (len(live), where))
+
+    session = live[0]
+    reply = session.request("select_by_category", op_args={"category": category})
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        # revit_busy, unknown_category and no_document already say what to do.
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    selected = reply.get("selected", 0)
+    if selected == 0:
+        return ("No %s in %s. Nothing was selected."
+                % (reply.get("category"), reply.get("document")))
+
+    # Never a bare number: which model it came from is half the answer.
+    return ("Selected %s %s in %s.\n(%s)"
+            % ("{:,}".format(selected), reply.get("category"),
+               reply.get("document"), reply.get("scope")))
 
 
 if __name__ == "__main__":

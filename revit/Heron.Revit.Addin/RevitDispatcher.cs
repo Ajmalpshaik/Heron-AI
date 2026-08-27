@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using Autodesk.Revit.UI;
@@ -59,12 +60,14 @@ namespace Heron.Revit.Addin
         private readonly TimeSpan _busyTimeout;
         private readonly TimeSpan _operationTimeout;
         private readonly Action<string> _log;
+        private readonly string _session;
 
         private ExternalEvent _event;
 
-        public RevitDispatcher(Action<string> log)
+        public RevitDispatcher(Action<string> log, string session)
         {
             _log = log ?? delegate { };
+            _session = session;
 
             var config = HeronConfig.Load();
             _busyTimeout = TimeSpan.FromSeconds(
@@ -100,7 +103,7 @@ namespace Heron.Revit.Addin
                     "Heron has not finished starting. Try again in a moment.");
             }
 
-            var job = new RevitJob(request);
+            var job = new RevitJob(request, HeronAudit.NewWorkflowId());
             lock (_queueLock) { _queue.Enqueue(job); }
 
             try
@@ -118,6 +121,7 @@ namespace Heron.Revit.Addin
                 // Revit never became idle. Abandon it so the handler skips it
                 // rather than doing work whose answer nobody is waiting for.
                 job.Abandon();
+                RecordRefusal(job.WorkflowId, request, "revit_busy");
                 return Json.Error("revit_busy",
                     "Revit is busy and did not take the request. A dialog may be open, " +
                     "or a command may be running. Finish what is open in Revit and ask again.");
@@ -128,6 +132,7 @@ namespace Heron.Revit.Addin
                 // It IS running - Revit picked it up. Nothing can safely
                 // interrupt it, and calling this "busy" would invite a retry of
                 // something already in progress.
+                RecordRefusal(job.WorkflowId, request, "still_running");
                 return Json.Error("still_running",
                     "Revit started the request but has not finished within " +
                     _operationTimeout.TotalSeconds.ToString(CultureInfo.InvariantCulture) +
@@ -155,9 +160,12 @@ namespace Heron.Revit.Addin
                 if (job.IsAbandoned) continue;   // the caller already gave up
 
                 job.MarkStarted();
+                var op = Json.ReadString(job.Request, "op") ?? "(none)";
+                var clock = Stopwatch.StartNew();
+                string response;
                 try
                 {
-                    job.Finish(RevitOperations.Run(app, job.Request));
+                    response = RevitOperations.Run(app, job.Request);
                 }
                 catch (Exception ex)
                 {
@@ -165,9 +173,40 @@ namespace Heron.Revit.Addin
                     // Revit's own thread, and an escaping exception is Revit's
                     // problem, not just Heron's.
                     _log("Operation failed: " + ex);
-                    job.Finish(Json.Error("operation_failed", ex.Message));
+                    response = Json.Error("operation_failed", ex.Message);
                 }
+                clock.Stop();
+
+                // One line per request, whatever happened. A trail that only
+                // records successes answers the wrong question later.
+                HeronAudit.Record(job.WorkflowId, op,
+                    Json.ReadString(response, "error") == null,
+                    new[]
+                    {
+                        new KeyValuePair<string, string>("session", _session),
+                        new KeyValuePair<string, string>("document", Json.ReadString(response, "document")),
+                        new KeyValuePair<string, string>("error", Json.ReadString(response, "error")),
+                        new KeyValuePair<string, string>("ms",
+                            clock.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture)),
+                    });
+
+                job.Finish(response);
             }
+        }
+
+        /// <summary>
+        /// A request Revit never ran. It still happened, so it is still
+        /// recorded - "Heron asked and Revit was busy" is exactly the kind of
+        /// thing the trail exists to be able to answer later.
+        /// </summary>
+        private void RecordRefusal(string workflowId, string request, string reason)
+        {
+            HeronAudit.Record(workflowId, Json.ReadString(request, "op") ?? "(none)", false,
+                new[]
+                {
+                    new KeyValuePair<string, string>("session", _session),
+                    new KeyValuePair<string, string>("error", reason),
+                });
         }
 
         /// <summary>One request, and the two signals its caller waits on.</summary>
@@ -177,9 +216,16 @@ namespace Heron.Revit.Addin
             private readonly ManualResetEventSlim _finished = new ManualResetEventSlim(false);
             private volatile bool _abandoned;
 
-            public RevitJob(string request) { Request = request; }
+            public RevitJob(string request, string workflowId)
+            {
+                Request = request;
+                WorkflowId = workflowId;
+            }
 
             public string Request { get; private set; }
+
+            /// <summary>Follows this request through every layer that touches it.</summary>
+            public string WorkflowId { get; private set; }
             public string Response { get; private set; }
             public bool IsAbandoned { get { return _abandoned; } }
 

@@ -89,7 +89,8 @@ namespace Heron.Revit.Addin
                 // the only place the event may be created - and it is wired in
                 // before the bridge can start, so no request can ever arrive
                 // to find it missing.
-                Dispatcher = new RevitDispatcher(Log);
+                Dispatcher = new RevitDispatcher(Log,
+                    revitVersion + "/" + Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture));
                 Dispatcher.Register();
                 Bridge.RequestHandler = Dispatcher.Dispatch;
 
