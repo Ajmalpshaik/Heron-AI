@@ -37,7 +37,7 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 
 ## Status
 
-**Steps 1 to 4 of 6 are built and proven in real Revit 2020 and 2024.**
+**Phase 0 is complete — Steps 1 to 5 of 6, all proven in real Revit 2020 and 2024.**
 
 | | |
 |---|---|
@@ -51,7 +51,9 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 | Step 2 — the thread hop | ✅ **Proven.** `5,844 elements in Project1` from Revit 2024, `3,167` from 2020 — and a clean *"Revit is busy"* instead of a hang |
 | Step 3 — the MCP server | ✅ **Proven.** *"is Revit working?"* answered inside Claude Code from both live Revits, no command run |
 | Step 4 — the first BIM answer | ✅ **Proven.** *"select all ducts"* — 4 found and highlighted on screen in both Revits, plus the audit trail |
-| Steps 5–6 | ⛔ Not started. **Nothing can write to a model yet** — that is Step 6, and it arrives with its safety rails ([build order](docs/27-build-order.md)) |
+| Step 5 — more than one Revit | ✅ **Proven.** Refused to guess between two, took "1", and **stopped** when that Revit closed rather than using the other |
+| ⛔ **Phase 0 ends here** | Everything above is **read-only**. Nothing can change a model |
+| Step 6 — the first write | ⛔ Not started. Arrives **with** undo, preview and an emergency stop — that is Step 6, and it arrives with its safety rails ([build order](docs/27-build-order.md)) |
 
 **What is proven and what is only built are different things.**
 [HANDOVER.md](HANDOVER.md) §3 keeps that distinction honest, item by item.

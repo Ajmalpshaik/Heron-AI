@@ -164,15 +164,19 @@ def revit_select_by_category(category: str = "ducts") -> str:
         # revit_busy, unknown_category and no_document already say what to do.
         return reply.get("message") or reply.get("error") or "The request was refused."
 
+    # Naming the document is not enough on its own. Two Revit sessions can
+    # both have a model called Project1 open - it happened on the very first
+    # run of this tool - and then "in Project1" identifies nothing. The
+    # session is what actually distinguishes them, so it is always said.
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+
     selected = reply.get("selected", 0)
     if selected == 0:
-        return ("No %s in %s. Nothing was selected."
-                % (reply.get("category"), reply.get("document")))
+        return "No %s in %s. Nothing was selected." % (reply.get("category"), where)
 
-    # Never a bare number: which model it came from is half the answer.
     return ("Selected %s %s in %s.\n(%s)"
-            % ("{:,}".format(selected), reply.get("category"),
-               reply.get("document"), reply.get("scope")))
+            % ("{:,}".format(selected), reply.get("category"), where, reply.get("scope")))
 
 
 @server.tool()

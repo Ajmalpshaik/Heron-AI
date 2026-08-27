@@ -185,6 +185,17 @@ Be honest about what that buys. The pipe's ACL is what keeps other *people* out.
 process running as the **same user** from reaching Revit by guessing a pipe name — it would have to read
 the discovery file first, which makes reaching a live model a deliberate act rather than an accident.
 
+## Naming the document is not always enough
+
+Every answer names the model it came from — that rule stands. But two Revit sessions can have models
+with the **same name** open at once, and then *"in Project1"* identifies nothing at all. That is not
+hypothetical: it happened on the first live run of the selection tool.
+
+> When more than one session could be meant, **name the session too**, not just the document.
+
+The general rule: an identifier is only an identifier if it is unique among the things it has to
+distinguish. Check what it is competing with before trusting it.
+
 ## An assumption is not a choice
 
 When Heron picks something the user did not explicitly pick — which Revit session, which document,
