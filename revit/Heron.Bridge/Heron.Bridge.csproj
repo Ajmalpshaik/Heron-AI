@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Heron.Core\Heron.Core.csproj" />
+    <ProjectReference Include="..\..\platform\Heron.Core\Heron.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(HeronTfm)' == 'net472' OR '$(HeronTfm)' == 'net48'">

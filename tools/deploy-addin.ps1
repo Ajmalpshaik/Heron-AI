@@ -64,7 +64,7 @@ if (Get-Process -Name "Revit" -ErrorAction SilentlyContinue) {
     throw "Revit is running. Close it first - a loaded assembly cannot be replaced."
 }
 
-$buildOut = Join-Path $repoRoot "src\Heron.Revit.Addin\bin\$Configuration"
+$buildOut = Join-Path $repoRoot "revit\Heron.Revit.Addin\bin\$Configuration"
 if (-not (Test-Path $buildOut)) {
     throw "Build output not found at $buildOut. Run:`n  dotnet build -c $Configuration -p:RevitVersion=$RevitVersion"
 }
@@ -86,7 +86,7 @@ if ($Configuration -eq "Debug" -and $pdb) {
 }
 
 # Point the manifest at the deployed assembly.
-$manifestSource = Join-Path $repoRoot "src\Heron.Revit.Addin\Heron.addin"
+$manifestSource = Join-Path $repoRoot "revit\Heron.Revit.Addin\Heron.addin"
 (Get-Content $manifestSource -Raw).Replace(
     "<Assembly>Heron.Revit.Addin.dll</Assembly>",
     "<Assembly>Heron\Heron.Revit.Addin.dll</Assembly>"

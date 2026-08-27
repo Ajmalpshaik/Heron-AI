@@ -3,15 +3,15 @@
   <!--
     Runs the bridge WITHOUT Revit.
 
-    This is the mocked-Revit-boundary approach from docs/13 section 3, applied
-    from the first commit. Because Heron.Bridge has no Revit reference, the
-    whole transport - pipe naming, discovery, framing, ping - is testable in
-    CI on a machine with no Revit installed.
+    The mocked-Revit-boundary approach from docs/13 section 3, applied from
+    the first commit. Because Heron.Bridge has no Revit reference, the whole
+    transport - pipe naming, discovery, framing, ping - is testable on a
+    machine with no Revit installed.
 
-    Only Step 2 onward needs a real Revit, and only for what genuinely touches
-    the API.
+    Only Step 2 onward needs a real Revit, and only for what genuinely
+    touches the API.
 
-        dotnet run (project tests/Heron.Bridge.TestHost) with -p:RevitVersion=2024
+        dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024
   -->
 
   <PropertyGroup>
@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Heron.Bridge\Heron.Bridge.csproj" />
+    <ProjectReference Include="..\..\revit\Heron.Bridge\Heron.Bridge.csproj" />
   </ItemGroup>
 
 </Project>

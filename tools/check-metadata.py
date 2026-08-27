@@ -23,7 +23,7 @@ import re
 import sys
 
 REGISTRY = os.path.join("docs", "28-agent-registry.md")
-SOURCE_ROOTS = ["src", "tests", "tools", "python"]
+SOURCE_ROOTS = ["revit", "mcp", "brain", "platform", "tests", "tools"]
 SOURCE_EXT = (".cs", ".py", ".ps1")
 SKIP_NAMES = {"__pycache__", "bin", "obj", ".vs"}
 

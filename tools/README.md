@@ -47,6 +47,26 @@ Run it after adding, removing or re-tiering any agent.
 
 ---
 
+## `check-structure.py` — the layout, and the layering
+
+```bash
+python tools/check-structure.py
+```
+
+Two questions that used to be answered by hand:
+
+1. **Is every file in the part it belongs to?** Top-level folders mirror the four product parts,
+   so *"where do I fix the Revit thing"* has one answer.
+2. **Does any part depend on something it must not?** `platform` depends on nothing · `revit`
+   and `brain` never touch each other · **`Autodesk.Revit` appears only inside `revit/`**.
+
+The second matters more. A layering rule written only in a document gets broken quietly; a
+layering rule in a script gets broken loudly, once, and then fixed.
+
+The working prototype of `HERON-WSP-VAL-003` and `HERON-AHR-MON-011`.
+
+---
+
 ## `check-metadata.py` — the standard, enforced
 
 ```bash
