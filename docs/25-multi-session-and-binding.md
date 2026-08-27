@@ -20,8 +20,10 @@ settled here by evidence:
 | 1 | **Per-process pipes work; a single shared pipe does not.** Before 2026-08-20 every Revit tried to use one shared line and the second Revit simply refused to start | [D-02](DECISIONS.md) is confirmed — pipe name must carry the process id. This was a real failure, not a hypothetical |
 | 2 | **The AI's script runs on the thread that draws the screen. While it runs, Revit is genuinely frozen. No add-in can change that** | **[A1](PROPOSALS.md) confirmed from the field.** The Revit API threading constraint — absent from all four specifications — is real, and their own working code hit it |
 | 3 | **If the user is mid-command, the AI cannot interrupt. It waits** | Confirms `ExternalEvent.Raise()` is a request, not a guarantee ([03 §4](03-heron-revit.md)). "Revit is busy" is a normal state, not an error |
-| 4 | **The session list shows a stale file name** — whatever was in front when that Revit first connected. It does not update | Never identify a session by document name. **PID is the identity** |
+| 4 | **The whole session list is a connect-time snapshot.** It is written once, when Connect is clicked, and never updates | The list must be **built live at ask-time**, not read from a cache. See §2a |
 | 5 | **One Revit can hold several projects open**, and commands land on whichever window is in front — which changes when the user clicks | Choosing the *Revit* is only half the problem. See §4 — this is the most dangerous finding in the note |
+| 6 | **The list never shows which Revit another chat is already using.** *"The information exists in Revit, it is just never written down where I can see it"* | The lease (§3) is not only a safety mechanism — it is the missing data that makes the list honest |
+| 7 | **Making Revit not freeze cannot be done.** Working around it needs a whole separate process, already recorded as out of scope | Settled. Do not chase it. See §6a |
 
 **[NOTE]** Point 2 deserves emphasis. Four specification documents, several hundred sections, and the
 single hardest constraint in the platform never appears in any of them — but it is written plainly in a
@@ -63,6 +65,74 @@ Each file should carry:
 2. **A JSON file is not proof the bridge is alive.** Revit crashes without cleaning up. The client must
    verify the PID is running *and* the pipe answers before listing a session as available — and remove
    the stale file when it does not.
+
+---
+
+## 2a. The session list — static facts in the file, dynamic facts on demand
+
+> *"The list is written once, when you first click Connect. It never updates."*
+>
+> *"You close BL006A, open BL003A, and the list still says BL006A. This actually happened on 20 Aug.
+> You'd be picking from a list that lies to you — at exactly the moment where being wrong is most
+> expensive."*
+
+**[NOTE — this corrects §1.4 of an earlier draft of this document.]** The stale name is a *symptom*.
+The cause is that the entire list is a snapshot taken at connect time. Fixing the name field alone would
+leave the same class of bug waiting in every other field.
+
+One principle fixes all of it:
+
+| Kind of fact | Where it lives | Examples |
+|---|---|---|
+| **Static** — true for the life of the process | The discovery file | `pid`, `pipeName`, `revitVersion`, `addinVersion`, `protocolVersion`, `startedAt` |
+| **Dynamic** — can change at any moment | **Queried live, every time the list is built** | open documents, active document, lease state, health |
+
+The discovery file is an **address book**, not a status report. It tells the client *where* the bridges
+are. Everything about what a bridge is currently *doing* is asked of the bridge, at the moment the
+question is asked.
+
+That single rule removes both traps at once: the name cannot go stale because it is never stored, and
+availability becomes reportable because it is fetched rather than remembered.
+
+### Building the list costs one round trip per bridge
+
+Discovery enumerates the files; the client then pings each live bridge in parallel for its current
+document and lease state. Bridges that do not answer are dropped from the list **and their stale files
+removed**. On a machine running three or four Revits this is milliseconds, and it is the one moment in
+the whole platform where being wrong is most expensive — worth paying for.
+
+### What the user sees — never process numbers
+
+> *"Stop showing you process numbers like `39344`."*
+
+```text
+1) Revit 2024 — Tower A     (free)
+2) Revit 2020 — Podium      (in use)
+```
+
+The user says `1`. Heron does the rest.
+
+**[NOTE]** This corrects a mistake in the earlier draft, which said *"PID is the identity"* without
+qualification. Both halves are true, of different audiences:
+
+| | Identity used |
+|---|---|
+| **Internally** — binding, leases, pipe names, audit log | **PID.** Never the document name |
+| **To the user** — the picker, confirmations, results | **Revit version + project + availability**, chosen by list number |
+
+A process number is meaningless to a BIM modeller and asking them to read one is a small violation of
+[Golden Rule 1](14-golden-rules.md). The list should show what they actually recognise — which building
+they are working on — while Heron binds to the PID underneath.
+
+**Requirements for that display:**
+
+- **Project name comes from the live query**, never from the file. That is the whole point.
+- **`(free)` / `(in use)` comes from the lease** (§3). Without a lease there is nothing truthful to show,
+  which is why [Q-36](OPEN-QUESTIONS.md) is a display question as much as a safety one.
+- **If a Revit holds several projects open, say so** — `Revit 2024 — Tower A (+2 more projects)` — because
+  picking the Revit is only half the decision (§4).
+- **List numbers are per-question, not identities.** They are never reused across prompts and never
+  stored.
 
 ---
 
@@ -112,6 +182,19 @@ Three options, in increasing cost:
 
 **Recommendation: B.** And a lease must never block a `MODIFY` **rollback** — cleanup always wins over
 the lease, or an interrupted transaction could be stranded.
+
+**[NOTE]** The addendum note makes the case for a lease stronger than safety alone:
+
+> *"The list doesn't say which Revit another chat is already using. Nothing shows it. That's why you
+> have to tell me 'don't go to Revit, another session is running' — the information exists in Revit,
+> it is just never written down where I can see it."*
+
+The standing rule *"don't go to Revit, another session is running"* is a **human being used as a
+lock**. The user is manually carrying state the machine already has and simply never surfaces.
+
+A lease removes that job from the user twice over — it prevents the collision, **and** it is the
+thing that makes `(free)` / `(in use)` truthful in the picker (§2a). Without a lease there is no
+honest availability column to show, and the user goes on being the lock.
 
 Tracked as [Q-36](OPEN-QUESTIONS.md).
 
@@ -219,6 +302,35 @@ Observed in practice:
 
 ---
 
+## 6a. The freeze is out of scope — settled
+
+> *"Making Revit not freeze **can't be done**. Revit runs one thing at a time by design — working around
+> it needs a whole separate process, and my own code already records that decision as out of scope.
+> Chasing it would be a lot of work for something that will still break."*
+>
+> *"**The second-Revit answer is the real one.**"*
+
+**[NOTE]** Adopted as a scope decision, and worth recording explicitly so nobody re-opens it later.
+
+The theoretical workaround — running Revit's work in a separate process, or driving several documents
+concurrently — fights the Revit API's fundamental design. It is a large amount of work with a poor
+success rate, and it would remain fragile across eight Revit versions ([D-05](DECISIONS.md)).
+
+**Heron does not attempt it.** What it does instead, and what actually solves the user's problem:
+
+| Instead of removing the freeze | Heron does this |
+|---|---|
+| Make Revit responsive during work | **Keep jobs short** — most finish in one or two seconds |
+| Hide the freeze | **Show a banner.** A frozen app with no explanation reads as a crash; the same freeze with a banner reads as progress |
+| Interrupt the user mid-command | **Wait.** *"Waiting for you to finish"* is a normal state, not an error |
+| Fake concurrency inside one Revit | **Chunk and yield** so long jobs do not freeze it for minutes |
+| Pretend side-by-side work is possible | **Tell the user to open a second Revit.** Real parallel work exists across two Revits, never inside one |
+
+That last row is the actual product answer, and it should be said plainly in the docs and in the UI
+rather than left for users to discover.
+
+---
+
 ## 7. Practical capacity
 
 > No technical limit, only memory. On a 64 GB machine, **three or four Revits at once is comfortable**;
@@ -254,3 +366,12 @@ Changed:
   yet close
 - **Preview re-validation before execution** *(§5)* — required by [Golden Rule 17](14-golden-rules.md)
 - **No document name in the discovery file** *(§2)* — removes the stale-name trap at its source
+- **The session list is built live at ask-time** *(§2a)* — static facts in the file, dynamic facts on
+  demand. Fixes the whole class of staleness rather than one field
+- **The picker shows version, project and availability — never a process number** *(§2a)*
+- **`(free)` / `(in use)` shown in the picker** *(§2a, §3)* — stops the user having to act as the lock
+
+Explicitly **not** attempted:
+
+- **Removing the Revit freeze** *(§6a)*. Settled as out of scope. Short jobs, a banner, chunk-and-yield,
+  and a second Revit are the real answers

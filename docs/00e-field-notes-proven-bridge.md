@@ -83,3 +83,40 @@ per-process file under the bridge directory — in Heron, `%APPDATA%\Heron\bridg
 Before 2026-08-20 every Revit tried to use one shared line and the second one simply refused to start.
 Inside one Revit that line has two slots — one serving the current chat, one already listening — which
 is what makes a new chat take over instantly instead of waiting.
+
+---
+
+# Addendum — Why the "which Revit?" list cannot be trusted
+
+*Second note from the same source, 2026-08-27. Same status: observed, not designed.*
+
+## The list is written once and never updates
+
+When I ask "which Revit?", the list is written once, when you first click Connect. It never updates. So:
+
+**1. The file name in the list can be wrong.** You close BL006A, open BL003A, and the list still says
+BL006A. This actually happened on 20 Aug. You'd be picking from a list that lies to you — at exactly the
+moment where being wrong is most expensive.
+
+**2. The list doesn't say which Revit another chat is already using.** Nothing shows it. That's why you
+have to tell me *"don't go to Revit, another session is running"* — the information exists in Revit, it
+is just never written down where I can see it.
+
+## Stop showing process numbers
+
+No more `39344`. When I ask, I'll say:
+
+```text
+1) Revit 2024 — Tower A     (free)
+2) Revit 2020 — Podium      (in use)
+```
+
+You say "1". I handle the rest.
+
+## The freeze is not worth chasing
+
+Making Revit not freeze **can't be done**. Revit runs one thing at a time by design — working around it
+needs a whole separate process, and my own code already records that decision as out of scope. Chasing
+it would be a lot of work for something that will still break.
+
+**The second-Revit answer is the real one.**

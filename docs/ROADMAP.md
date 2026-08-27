@@ -66,6 +66,8 @@ Those eight named components map onto the phases below:
   *([25 §2](25-multi-session-and-binding.md) — closes a real gap in D-02)*
 - **Session binding** — one chat, one Revit; ask once when several are connected; **never guess**;
   fail closed when the bound session closes *([25 §3](25-multi-session-and-binding.md))*
+- **Live session list** — built at ask-time, never from a cached snapshot; shows Revit version, project
+  and `(free)`/`(in use)`; **never a process number** *([25 §2a](25-multi-session-and-binding.md))*
 - **Document pinning** — bind the document, not just the Revit *([25 §4](25-multi-session-and-binding.md))*
 - Three MCP tools: `revit_health`, `revit_select_by_category`, `revit_get_selection`
 - No RAG, no vector DB, no fragments, no learning, no installer, no code generation

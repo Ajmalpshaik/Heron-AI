@@ -238,7 +238,12 @@ mid-transaction.
 
 A lease must never block a `MODIFY` **rollback** — cleanup always wins over the lease.
 
-→ [25 §3](25-multi-session-and-binding.md)
+**Second justification, from the field:** the picker cannot currently show which Revit another chat is
+using, which is why the user has to remember *"don't go to Revit, another session is running"* — a human
+being used as a lock. A lease is what makes `(free)` / `(in use)` truthful in the list. Without it there
+is nothing honest to display. ([D-16](DECISIONS.md))
+
+→ [25 §3, §2a](25-multi-session-and-binding.md)
 
 **Answer:**
 
