@@ -47,6 +47,9 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+
+. (Join-Path $PSScriptRoot "HeronRevit.ps1")
+
 $target   = Join-Path $env:APPDATA "Autodesk\Revit\Addins\$RevitVersion"
 $addinDir = Join-Path $target "Heron"
 $manifest = Join-Path $target "Heron.addin"
@@ -60,8 +63,12 @@ if ($Remove) {
 }
 
 # Revit holds a lock on loaded assemblies; deploying under it silently fails.
-if (Get-Process -Name "Revit" -ErrorAction SilentlyContinue) {
-    throw "Revit is running. Close it first - a loaded assembly cannot be replaced."
+# Checked fresh here rather than trusting a caller: a build takes long enough
+# that Revit can be opened in between, and this is the last gate before files
+# are replaced.
+$blocked = Get-RevitBlockReason -RevitVersion $RevitVersion -Running (Get-RunningRevit)
+if ($blocked) {
+    throw "Cannot install for Revit ${RevitVersion}: $blocked. Close it and run this again - a loaded assembly cannot be replaced, so installing now would half-update and look like it worked."
 }
 
 # Find the build output rather than assuming its shape. Directory.Build.props

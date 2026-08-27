@@ -147,6 +147,24 @@ evidence cannot have.
 **One file per day**, named `addin-<yyyyMMdd>.log`, pruned by `log.retainDays`. A single file that grows
 for ever cannot be retained for fourteen days, so the setting would be a lie.
 
+## Never close Revit
+
+Heron detects that Revit is open. It never closes it, and there is no flag to
+make it.
+
+An open Revit has a model in it, and that model very likely has unsaved work. Closing it so an install
+can proceed would destroy hours of somebody's modelling to save them one click — and a script cannot
+tell an idle session from one mid-edit.
+
+> **Detect, report, refuse.** Name the release that is open and what to close. Then stop.
+
+The same reasoning bounds the installer generally: it never touches a model, never saves on someone's
+behalf, and never assumes an application it did not start is safe to shut down. Deciding to close a
+model belongs to the person who has it open.
+
+Installing is checked **per release**. Revit 2024 being open says nothing about whether it is safe to
+install for 2020, so a single open session must not block every other version.
+
 ## Configuration is a promise
 
 Every key in `HeronConfig` must be **read by something**. A setting that is declared, documented and

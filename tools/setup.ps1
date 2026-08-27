@@ -1,4 +1,4 @@
-# Heron-Agent:  HERON-INS-ORC-001, HERON-INS-ENV-002
+# Heron-Agent:  HERON-INS-ORC-001
 # Heron-Step:   1
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -42,6 +42,8 @@ param(
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 
+. (Join-Path $PSScriptRoot "HeronRevit.ps1")
+
 function Write-Step($n, $text) { Write-Host ""; Write-Host "[$n] $text" -ForegroundColor Cyan }
 function Write-Ok($text)       { Write-Host "    OK   $text" -ForegroundColor Green }
 function Write-Warn($text)     { Write-Host "    !    $text" -ForegroundColor Yellow }
@@ -59,14 +61,18 @@ if (-not $dotnet) {
 }
 Write-Ok ".NET SDK $(& dotnet --version)"
 
-if (Get-Process -Name "Revit" -ErrorAction SilentlyContinue) {
-    Write-Host ""
-    Write-Host "    Revit is running." -ForegroundColor Red
-    Write-Host "    Close it and run this again - a loaded assembly cannot be replaced," -ForegroundColor Red
-    Write-Host "    so installing now would half-update and look like it worked." -ForegroundColor Red
-    exit 1
+# Revit locks every assembly it has loaded, so an add-in cannot be replaced
+# underneath a running one. That is true PER VERSION: Revit 2024 being open
+# says nothing about whether 2020 can be installed for.
+$running = Get-RunningRevit
+if ($running.Count -eq 0) {
+    Write-Ok "No Revit is open"
+} else {
+    Write-Warn "Open right now: $(Format-RunningRevit $running)"
+    Write-Warn "Those releases will be skipped - installing under an open Revit"
+    Write-Warn "half-updates it and looks like it worked. Every other release is"
+    Write-Warn "installed as normal."
 }
-Write-Ok "Revit is not running"
 
 # --- 2. which Revit versions are installed ----------------------------------
 Write-Step 2 "Looking for Revit"
@@ -103,8 +109,18 @@ if ($RevitVersion -and $found.Count -gt 0 -and $found -notcontains $RevitVersion
 # --- 3. build and deploy, per version ---------------------------------------
 $succeeded = @()
 $failed = @()
+$skipped = @()
 
 foreach ($version in $targets) {
+    $blocked = Get-RevitBlockReason -RevitVersion $version -Running $running
+    if ($blocked) {
+        Write-Step 3 "Revit $version - skipped"
+        Write-Warn "$blocked."
+        Write-Warn "Close it and run this again to install for Revit $version."
+        $skipped += $version
+        continue
+    }
+
     Write-Step 3 "Revit $version - building"
 
     $proj = Join-Path $repoRoot "revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj"
@@ -149,8 +165,21 @@ if ($succeeded.Count -gt 0) {
     Write-Host "         python mcp\client\heron_bridge_client.py doctor" -ForegroundColor White
 }
 
+if ($skipped.Count -gt 0) {
+    Write-Host ""
+    Write-Host "  Skipped, still open in Revit: $($skipped -join ', ')" -ForegroundColor Yellow
+    Write-Host "  Close them and run this again. Nothing was changed for those."
+}
+
 if ($failed.Count -gt 0) {
+    Write-Host ""
     Write-Host "  Failed for Revit: $($failed -join ', ')" -ForegroundColor Red
+    exit 1
+}
+
+if ($succeeded.Count -eq 0 -and $skipped.Count -gt 0) {
+    Write-Host ""
+    Write-Host "  Nothing was installed - every release asked for is open." -ForegroundColor Red
     exit 1
 }
 
