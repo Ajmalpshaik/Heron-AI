@@ -32,6 +32,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 
 # DERIVED state: machine-local, never roaming (D-17). A roaming discovery
@@ -40,6 +41,15 @@ DISCOVERY_DIR = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "bridg
 LOG_DIR = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "logs")
 PROTOCOL_VERSION = 1
 CONNECT_TIMEOUT_S = 2.0
+
+# How long to wait for an answer once the bridge has accepted the connection.
+#
+# This must stay comfortably ABOVE any limit the bridge applies to its own work.
+# From Step 2 a request is queued onto Revit's thread and only runs when Revit is
+# idle, so a genuinely-running job can be quiet for a long time. Set this too low
+# and the client reports "no answer" for work Revit would have finished - the
+# worst kind of wrong, because the user then retries something already running.
+RESPONSE_TIMEOUT_S = 90.0
 
 
 def newest_log():
@@ -68,45 +78,109 @@ class Bridge(object):
         # Always re-read the discovery file; never remember one.
         self.token = record.get("token")
         self.path = path
+        self._handle = None      # kept open across requests, see request()
 
     @property
     def pipe_path(self):
         return r"\\.\pipe" + "\\" + self.pipe_name
 
-    def request(self, op, timeout=CONNECT_TIMEOUT_S):
-        """Send one request, return the parsed response. None if unreachable.
-
-        Every request carries this session's token. The bridge checks it before
-        it will even say whether an operation exists.
-        """
-        deadline = time.time() + timeout
-        handle = None
-        while handle is None:
+    def close(self):
+        """Drop the connection. Safe to call more than once."""
+        handle, self._handle = getattr(self, "_handle", None), None
+        if handle is not None:
             try:
-                handle = open(self.pipe_path, "r+b", buffering=0)
+                handle.close()
+            except OSError:
+                pass
+
+    def _connect(self, timeout):
+        """Open the pipe, retrying while the bridge finishes standing up."""
+        deadline = time.time() + timeout
+        while True:
+            try:
+                return open(self.pipe_path, "r+b", buffering=0)
             except OSError:
                 if time.time() >= deadline:
                     return None
                 time.sleep(0.05)
 
-        try:
-            handle.write((json.dumps({"op": op, "token": self.token}) + "\n").encode("utf-8"))
-            line = b""
-            while not line.endswith(b"\n"):
-                chunk = handle.read(1)
-                if not chunk:
-                    break
-                line += chunk
-            if not line:
-                return None
-            return json.loads(line.decode("utf-8").strip())
-        except (OSError, ValueError):
-            return None
-        finally:
+    def _read_line(self, handle, timeout):
+        """
+        One newline-terminated response, or None if it never arrives.
+
+        The read runs on a helper thread because a pipe handle cannot be given a
+        deadline of its own here. On timeout the caller closes the handle, which
+        unblocks the thread - it is a daemon, so it can never hold the process
+        open either way.
+        """
+        result = {}
+
+        def reader():
+            buffer = b""
             try:
-                handle.close()
-            except OSError:
-                pass
+                while not buffer.endswith(b"\n"):
+                    # In chunks, not byte at a time: a Step 4 answer listing
+                    # several hundred elements is one read instead of thousands.
+                    chunk = handle.read(4096)
+                    if not chunk:
+                        break
+                    buffer += chunk
+            except (OSError, ValueError):
+                buffer = b""
+            result["line"] = buffer
+
+        worker = threading.Thread(target=reader)
+        worker.daemon = True
+        worker.start()
+        worker.join(timeout)
+        if worker.is_alive():
+            return None            # still waiting; the caller closes the handle
+        return result.get("line") or None
+
+    def request(self, op, timeout=CONNECT_TIMEOUT_S, response_timeout=RESPONSE_TIMEOUT_S):
+        """
+        Send one request, return the parsed response. None if unreachable.
+
+        The connection is kept and reused. The bridge hands the session to
+        whichever connection is newest, so a client that reconnects for every
+        request spends its time preempting itself.
+
+        Every request carries this session's token. The bridge checks it before
+        it will even say whether an operation exists.
+        """
+        payload = (json.dumps({"op": op, "token": self.token}) + "\n").encode("utf-8")
+
+        # Two attempts: the kept connection may have been dropped since it was
+        # last used - by a newer chat, or by the bridge being toggled off and on.
+        for attempt in (1, 2):
+            handle = getattr(self, "_handle", None)
+            if handle is None:
+                handle = self._connect(timeout)
+                if handle is None:
+                    return None
+                self._handle = handle
+
+            try:
+                handle.write(payload)
+            except (OSError, ValueError):
+                self.close()
+                continue
+
+            line = self._read_line(handle, response_timeout)
+            if line is None:
+                # Either a timeout, or the connection died mid-answer. Closing
+                # releases the reader thread in the first case.
+                self.close()
+                if attempt == 2:
+                    return None
+                continue
+
+            try:
+                return json.loads(line.decode("utf-8").strip())
+            except ValueError:
+                return None
+
+        return None
 
 
 def process_is_running(pid, image="Revit.exe"):
@@ -223,6 +297,7 @@ def discover(prune=True):
             live.append(bridge)
             continue
 
+        bridge.close()          # not usable; do not leave the pipe held open
         alive = bridge_process_is_running(bridge.pid)
         if alive is False:
             stale.append(path)
@@ -345,6 +420,8 @@ def cmd_ping(pid=None):
             print("NO REPLY from session %s" % bridge.pid)
             failures += 1
 
+    for bridge in live:
+        bridge.close()
     return 1 if failures else 0
 
 
@@ -388,6 +465,7 @@ def cmd_doctor():
         print("")
 
     print("Bridges")
+    closing = []
     for name in entries:
         path = os.path.join(DISCOVERY_DIR, name)
         try:
@@ -402,6 +480,7 @@ def cmd_doctor():
         print("    pipe          %s" % bridge.pipe_name)
         print("    revit         %s" % bridge.revit_version)
         print("    addin         %s" % bridge.addin_version)
+        closing.append(bridge)
         agreed = bridge.protocol_version == PROTOCOL_VERSION
         print("    protocol      %s (this client expects %s)%s"
               % (bridge.protocol_version, PROTOCOL_VERSION,
@@ -424,6 +503,9 @@ def cmd_doctor():
                 print("    ping          no reply, and could not determine whether %s is running"
                       % bridge.pid)
     print("")
+
+    for bridge in closing:
+        bridge.close()
 
     log = newest_log()
     print("Add-in log")

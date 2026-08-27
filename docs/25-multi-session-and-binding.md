@@ -170,6 +170,33 @@ is equally important and easy to get wrong. A naive implementation that re-runs 
 disconnection would silently rebind to whatever is left — and the user's next command would land on
 someone else's model. The binding must be **explicit, sticky, and fail closed**.
 
+### A binding the user never made is not sticky
+
+**[NOTE]** **Field-proven, and absent from every specification.** *"Explicit, sticky, fail closed"*
+above covers a session the user actually chose. It says nothing about the far more common case: one
+Revit was open, so the client simply used it. That is an **assumption**, not a choice, and the two must
+not be treated alike.
+
+Track **how** the current session was arrived at, and the four cases resolve differently:
+
+| How it was bound | What changes | What must happen |
+|---|---|---|
+| Assumed — only one was open | a second Revit appears | **Ask.** The user never chose this one |
+| Assumed — only one was open | it closes | Quietly take the remaining one. Nothing of theirs is contradicted |
+| **Chosen** by the user | more Revits appear | Keep their choice. Do not ask again |
+| **Chosen** by the user | it closes | **Stop and say so.** Never slide onto another project |
+
+Without that distinction, *"sticky"* is implemented as *"keep whatever we picked first"* — and opening
+a second Revit mid-conversation leaves every later command silently going to the first one. That is the
+wrong-model failure this whole document exists to prevent, arriving through the mechanism meant to stop
+it. **Found by running it, not by reasoning about it.**
+
+Whichever way it refuses, the refusal must say **"nothing has been sent to Revit"** in as many words.
+The user's first thought on any refusal is *did it half-do something?*, and answering that unasked is
+the difference between a safe stop and a frightening one.
+
+Settles part of [Q-11](OPEN-QUESTIONS.md); the mechanism is built in [Step 5](27-build-order.md).
+
 ### What the lease protects — **per process, not per document**
 
 **[NOTE]** A natural assumption, and a wrong one: *"two chats on the same Revit are fine as long as
