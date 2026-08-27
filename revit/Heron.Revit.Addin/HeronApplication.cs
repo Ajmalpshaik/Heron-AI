@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Windows.Media.Imaging;
@@ -36,7 +37,13 @@ namespace Heron.Revit.Addin
         private const string PanelName = "Bridge";
 
         internal static BridgeServer Bridge { get; private set; }
-        internal static string LogPath { get; private set; }
+        internal static string LogDirectory { get; private set; }
+
+        // Two listener threads and the Revit thread all log. AppendAllText from
+        // several at once throws a sharing violation, and the catch below would
+        // swallow it - losing the line silently. For something Golden Rule 14
+        // calls evidence, that is not acceptable.
+        private static readonly object LogLock = new object();
 
         public Result OnStartup(UIControlledApplication application)
         {
@@ -46,7 +53,10 @@ namespace Heron.Revit.Addin
                 // earlier version of this line hardcoded %APPDATA% and quietly
                 // disagreed with HeronPaths - which is the exact drift the
                 // Path Manager exists to prevent (docs/06 section 2).
-                LogPath = Path.Combine(HeronPaths.Logs, "addin.log");
+                LogDirectory = HeronPaths.Logs;
+
+                var config = HeronConfig.Load();
+                PruneLogs(config.GetInt("log.retainDays", 14));
 
                 var revitVersion = application.ControlledApplication.VersionNumber;
                 var addinVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
@@ -68,7 +78,7 @@ namespace Heron.Revit.Addin
                 // users who have decided they want it. It only starts the
                 // pipe; it grants nothing. Which model may be touched is
                 // decided later, by session binding and document pinning.
-                if (HeronConfig.Load().GetBool("bridge.autoConnect", false))
+                if (config.GetBool("bridge.autoConnect", false))
                 {
                     Bridge.Start();
                     Log("bridge.autoConnect is on - bridge started without a button press.");
@@ -133,13 +143,52 @@ namespace Heron.Revit.Addin
             panel.AddItem(status);
         }
 
+        /// <summary>
+        /// Today's log file. One per day, so log.retainDays can mean what it
+        /// says - a single ever-growing file cannot be retained for 14 days.
+        /// </summary>
+        private static string CurrentLogPath()
+        {
+            return Path.Combine(
+                LogDirectory ?? HeronPaths.Logs,
+                "addin-" + DateTime.UtcNow.ToString("yyyyMMdd", CultureInfo.InvariantCulture) + ".log");
+        }
+
+        /// <summary>
+        /// Deletes log files past their retention. Logs are DERIVED state, so
+        /// removing them is always a valid recovery action - never touch
+        /// anything under DATA from here.
+        /// </summary>
+        private static void PruneLogs(int retainDays)
+        {
+            if (retainDays < 1) return;
+            try
+            {
+                var cutoff = DateTime.UtcNow.AddDays(-retainDays);
+                foreach (var file in Directory.GetFiles(LogDirectory, "addin-*.log"))
+                {
+                    if (File.GetLastWriteTimeUtc(file) >= cutoff) continue;
+                    if (!HeronPaths.IsSafeToDelete(file)) continue;
+                    File.Delete(file);
+                }
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
+
         internal static void Log(string message)
         {
             try
             {
-                File.AppendAllText(
-                    LogPath,
-                    string.Format("{0:u}  {1}{2}", DateTime.Now, message, Environment.NewLine));
+                lock (LogLock)
+                {
+                    File.AppendAllText(
+                        CurrentLogPath(),
+                        // UtcNow, not Now: the "u" format stamps a trailing Z, so local time
+                        // here would label every line UTC while being hours out locally. UTC
+                        // also matches startedAt in the discovery file, so the two line up.
+                        string.Format("{0:u}  {1}{2}", DateTime.UtcNow, message, Environment.NewLine));
+                }
             }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }

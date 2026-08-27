@@ -14,6 +14,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
+using Heron.Core;
 
 namespace Heron.Bridge
 {
@@ -38,9 +39,11 @@ namespace Heron.Bridge
     /// </summary>
     public sealed class BridgeServer : IDisposable
     {
-        private const int ListenerCount = 2;
+        private const int DefaultListeners = 2;
+        private const int MaxListeners = 16;
         private const int MaxConsecutiveFailures = 5;
 
+        private readonly int _listenerCount;
         private readonly BridgeIdentity _identity;
         private readonly Action<string> _log;
         private readonly List<Thread> _threads = new List<Thread>();
@@ -57,7 +60,18 @@ namespace Heron.Bridge
             if (identity == null) throw new ArgumentNullException("identity");
             _identity = identity;
             _log = log ?? delegate { };
+
+            // bridge.listeners is a real setting, not decoration: it is how many
+            // conversations can be connected at once. One serves while another
+            // waits, so two is the floor at which a new connection is instant.
+            var configured = HeronConfig.Load().GetInt("bridge.listeners", DefaultListeners);
+            if (configured < 1) configured = 1;
+            if (configured > MaxListeners) configured = MaxListeners;
+            _listenerCount = configured;
         }
+
+        /// <summary>How many conversations can be connected at once.</summary>
+        public int ListenerCount { get { return _listenerCount; } }
 
         public bool IsRunning { get { return _running; } }
         public BridgeIdentity Identity { get { return _identity; } }
@@ -67,17 +81,33 @@ namespace Heron.Bridge
             if (_running) return;
             _running = true;
 
-            for (var i = 0; i < ListenerCount; i++)
+            try
             {
-                var thread = new Thread(ListenLoop);
-                thread.IsBackground = true;   // never keeps Revit alive
-                thread.Name = "Heron.Bridge.Listener." + i.ToString(CultureInfo.InvariantCulture);
-                _threads.Add(thread);
-                thread.Start();
+                for (var i = 0; i < _listenerCount; i++)
+                {
+                    var thread = new Thread(ListenLoop);
+                    thread.IsBackground = true;   // never keeps Revit alive
+                    thread.Name = "Heron.Bridge.Listener." + i.ToString(CultureInfo.InvariantCulture);
+                    _threads.Add(thread);
+                    thread.Start();
+                }
+
+                _identity.Publish();
+            }
+            catch
+            {
+                // Roll all the way back. Without this, a failure to announce
+                // left the listeners running and unreachable while IsRunning
+                // stayed true - so pressing Connect again answered "already
+                // connected" for a bridge nobody could find, and only a Revit
+                // restart cleared it.
+                Stop();
+                throw;
             }
 
-            _identity.Publish();
-            _log("Bridge listening on " + _identity.PipeName);
+            _log(string.Format(CultureInfo.InvariantCulture,
+                "Bridge listening on {0}, {1} listener(s).",
+                _identity.PipeName, _listenerCount));
         }
 
         public void Stop()
@@ -88,7 +118,7 @@ namespace Heron.Bridge
 
             // Unblock the listeners: connecting to our own pipe releases a
             // thread parked in WaitForConnection.
-            for (var i = 0; i < ListenerCount; i++)
+            for (var i = 0; i < _listenerCount; i++)
             {
                 try
                 {
@@ -173,7 +203,7 @@ namespace Heron.Bridge
             return new NamedPipeServerStream(
                 _identity.PipeName,
                 PipeDirection.InOut,
-                ListenerCount,
+                _listenerCount,
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous,
                 4096, 4096,
@@ -183,7 +213,7 @@ namespace Heron.Bridge
             return new NamedPipeServerStream(
                 _identity.PipeName,
                 PipeDirection.InOut,
-                ListenerCount,
+                _listenerCount,
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous,
                 4096, 4096);
@@ -226,16 +256,14 @@ namespace Heron.Bridge
             switch (op)
             {
                 case "ping":
-                    return Json.Ok("\"pong\": true");
+                    return Json.Ok(Json.Bool("pong", true));
 
                 case "info":
-                    return Json.Ok(string.Format(
-                        CultureInfo.InvariantCulture,
-                        "\"pid\": {0}, \"revitVersion\": \"{1}\", \"addinVersion\": \"{2}\", \"protocolVersion\": {3}",
-                        _identity.ProcessId,
-                        _identity.RevitVersion,
-                        _identity.AddinVersion,
-                        BridgeIdentity.ProtocolVersion));
+                    return Json.Ok(
+                        Json.Num("pid", _identity.ProcessId),
+                        Json.Str("revitVersion", _identity.RevitVersion),
+                        Json.Str("addinVersion", _identity.AddinVersion),
+                        Json.Num("protocolVersion", BridgeIdentity.ProtocolVersion));
 
                 default:
                     var handler = RequestHandler;

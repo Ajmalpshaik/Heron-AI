@@ -71,10 +71,16 @@ Write-Ok "Revit is not running"
 # --- 2. which Revit versions are installed ----------------------------------
 Write-Step 2 "Looking for Revit"
 
+# Discover what is installed rather than checking a fixed list of years. A
+# hardcoded upper bound means the next Revit is invisible to Heron's own
+# installer - and D-05 promises 2020 to latest, permanently.
+$autodesk = Join-Path ${env:ProgramFiles} "Autodesk"
 $found = @()
-foreach ($year in 2020..2027) {
-    $exe = Join-Path ${env:ProgramFiles} "Autodesk\Revit $year\Revit.exe"
-    if (Test-Path $exe) { $found += "$year" }
+if (Test-Path $autodesk) {
+    $found = @(Get-ChildItem -Path $autodesk -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '^Revit (\d{4})$' -and (Test-Path (Join-Path $_.FullName "Revit.exe")) } |
+        ForEach-Object { $_.Name.Substring(6) } |
+        Sort-Object)
 }
 
 if ($found.Count -eq 0) {
@@ -112,9 +118,14 @@ foreach ($version in $targets) {
 
     Write-Host ""
     Write-Host "[4] Revit $version - deploying" -ForegroundColor Cyan
-    & (Join-Path $PSScriptRoot "deploy-addin.ps1") -RevitVersion $version -Configuration $Configuration
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warn "Deploy failed for Revit $version"
+    # try/catch, not $LASTEXITCODE: a PowerShell script does not set it, so the
+    # old check silently read the exit code of the dotnet build above - always 0 -
+    # and a failed deploy was recorded as a success.
+    try {
+        & (Join-Path $PSScriptRoot "deploy-addin.ps1") -RevitVersion $version -Configuration $Configuration
+    }
+    catch {
+        Write-Warn "Deploy failed for Revit $version - $($_.Exception.Message)"
         $failed += $version
         continue
     }

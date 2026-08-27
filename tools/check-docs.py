@@ -17,7 +17,12 @@ for dp, dn, fn in os.walk(root):
         if f.endswith('.md'):
             md.append(os.path.join(dp, f).replace(os.sep, '/'))
 
-out = sys.stdout.write
+# The docs carry characters the Windows console codepage cannot encode.
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    out = sys.stdout.write
+except AttributeError:
+    out = lambda s: sys.stdout.write(s.encode('ascii', 'replace').decode('ascii'))
 out("=== FILES ===\n")
 out("markdown files: %d\n\n" % len(md))
 

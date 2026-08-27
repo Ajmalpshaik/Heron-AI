@@ -37,8 +37,20 @@ import time
 # DERIVED state: machine-local, never roaming (D-17). A roaming discovery
 # file would follow the user to a PC where that process does not exist.
 DISCOVERY_DIR = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "bridges")
+LOG_DIR = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "logs")
 PROTOCOL_VERSION = 1
 CONNECT_TIMEOUT_S = 2.0
+
+
+def newest_log():
+    """The add-in writes one log file per day so retention can mean something.
+    Return the most recent, or None if it has never run."""
+    try:
+        files = [os.path.join(LOG_DIR, f) for f in os.listdir(LOG_DIR)
+                 if f.startswith("addin") and f.endswith(".log")]
+    except OSError:
+        return None
+    return max(files, key=os.path.getmtime) if files else None
 
 
 class Bridge(object):
@@ -89,10 +101,17 @@ class Bridge(object):
                 pass
 
 
-def process_is_running(pid):
+def process_is_running(pid, image="Revit.exe"):
     """
-    Is that process alive? Uses tasklist rather than a library so the client
-    stays dependency-free.
+    Is that process alive, AND is it still the program we think it is?
+
+    Both halves matter. Windows reuses process ids: when Revit crashes and
+    the id is handed to something else, asking only "does this number exist"
+    answers yes forever. The entry is then filed as "still starting", never
+    pruned, and the session picker offers a Revit that is not there - one
+    keystroke from the wrong model.
+
+    Uses tasklist rather than a library so the client stays dependency-free.
 
     Returns None when it cannot tell - and "cannot tell" must never be
     treated as "dead".
@@ -101,19 +120,50 @@ def process_is_running(pid):
         return None
     try:
         out = subprocess.check_output(
-            ["tasklist", "/FI", "PID eq %s" % pid, "/NH"],
+            ["tasklist", "/FI", "PID eq %s" % pid, "/FI", "IMAGENAME eq %s" % image, "/NH"],
             stderr=subprocess.STDOUT, universal_newlines=True,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        return str(pid) in out
     except Exception:
         return None
+
+    # A filter that matches nothing prints an INFO line, not a row. Look for
+    # the image name at the start of a row rather than for the id anywhere in
+    # the text, which would also match a memory figure or a session number.
+    for line in out.splitlines():
+        line = line.strip()
+        if line.lower().startswith(image.lower()):
+            return True
+    return False
+
+
+#: Programs a Heron bridge can legitimately be running inside. The
+#: Revit-free host in tests/ is not Revit.exe, so matching only Revit would
+#: call every test bridge dead.
+BRIDGE_IMAGES = ("Revit.exe", "Heron.Bridge.TestHost.exe", "dotnet.exe")
+
+
+def bridge_process_is_running(pid):
+    """
+    Is a bridge still alive at that process id?
+
+    True only if the id belongs to a program a bridge actually runs in.
+    None if it could not be determined - which is never treated as dead.
+    """
+    unknown = False
+    for image in BRIDGE_IMAGES:
+        answer = process_is_running(pid, image)
+        if answer is True:
+            return True
+        if answer is None:
+            unknown = True
+    return None if unknown else False
 
 
 def discover(prune=True):
     """
     Read the address book, then verify each entry by talking to it.
 
-    Returns (live, starting, stale).
+    Returns (live, starting, stale, mismatched).
 
     A bridge that does not answer is NOT automatically stale. Revit takes
     the better part of a minute to start, and the add-in publishes its file
@@ -127,10 +177,13 @@ def discover(prune=True):
         no reply, alive    -> starting. Leave the file alone
         no reply, gone     -> stale. Safe to remove
         no reply, unknown  -> leave it alone. Never delete on a guess
+
+    A bridge announcing a protocol this client does not speak is separated
+    out rather than talked to.
     """
-    live, starting, stale = [], [], []
+    live, starting, stale, mismatched = [], [], [], []
     if not os.path.isdir(DISCOVERY_DIR):
-        return live, starting, stale
+        return live, starting, stale, mismatched
 
     for name in sorted(os.listdir(DISCOVERY_DIR)):
         if not name.endswith(".json"):
@@ -140,15 +193,29 @@ def discover(prune=True):
             with open(path, "r", encoding="utf-8") as fh:
                 record = json.load(fh)
         except (OSError, ValueError):
-            stale.append(path)          # unreadable file, nothing to preserve
+            # An unreadable file is NOT proof of a dead bridge - it may be
+            # locked, or half-written this instant. Deleting it here removed a
+            # live Revit from the list, and nothing ever re-announces it. Same
+            # rule as everywhere else: prove the process is gone first.
+            pid = pid_from_filename(name)
+            if pid is not None and bridge_process_is_running(pid) is False:
+                stale.append(path)
             continue
 
         bridge = Bridge(record, path)
+
+        # A bridge speaking another protocol is refused rather than half-used.
+        # Reading it with the wrong assumptions is how a wrong answer looks
+        # exactly like a right one.
+        if bridge.protocol_version != PROTOCOL_VERSION:
+            mismatched.append(bridge)
+            continue
+
         if bridge.request("ping") is not None:
             live.append(bridge)
             continue
 
-        alive = process_is_running(bridge.pid)
+        alive = bridge_process_is_running(bridge.pid)
         if alive is False:
             stale.append(path)
         else:
@@ -161,7 +228,16 @@ def discover(prune=True):
             except OSError:
                 pass
 
-    return live, starting, stale
+    return live, starting, stale, mismatched
+
+
+def pid_from_filename(name):
+    """The discovery file is named <pid>.json - the last fact left when its
+    contents cannot be read."""
+    try:
+        return int(os.path.splitext(name)[0])
+    except (TypeError, ValueError):
+        return None
 
 
 def describe(bridge, index):
@@ -173,16 +249,24 @@ def describe(bridge, index):
     name from the file. Once Step 2 exists, the live-queried project name
     goes here (docs/25 section 2a).
     """
-    warn = ""
-    if bridge.protocol_version != PROTOCOL_VERSION:
-        warn = "  [protocol %s, expected %s - restart Revit to finish updating]" % (
-            bridge.protocol_version, PROTOCOL_VERSION)
-    return "  %d) Revit %s   (session %s, add-in %s)%s" % (
-        index, bridge.revit_version, bridge.pid, bridge.addin_version, warn)
+    return "  %d) Revit %s   (session %s, add-in %s)" % (
+        index, bridge.revit_version, bridge.pid, bridge.addin_version)
+
+
+def report_mismatched(mismatched):
+    """A version mismatch is a refusal with an instruction, not a warning."""
+    if not mismatched:
+        return
+    print("")
+    for b in mismatched:
+        print("  Revit %s (session %s) speaks protocol %s; this client speaks %s."
+              % (b.revit_version, b.pid, b.protocol_version, PROTOCOL_VERSION))
+    print("  Restart that Revit to finish updating. Heron will not talk to it "
+          "until the two agree.")
 
 
 def cmd_list():
-    live, starting, stale = discover()
+    live, starting, stale, mismatched = discover()
     if not live and starting:
         print("Revit is still starting.")
         print("")
@@ -191,6 +275,7 @@ def cmd_list():
                   (b.revit_version, b.pid))
         print("")
         print("Give it a few seconds and try again.")
+        report_mismatched(mismatched)
         return 1
     if not live:
         print("No Revit is connected.")
@@ -201,6 +286,7 @@ def cmd_list():
             print("")
             print("Removed %d stale entry(ies) from a Revit that did not shut down cleanly."
                   % len(stale))
+        report_mismatched(mismatched)
         return 1
 
     print("Connected Revit sessions:")
@@ -213,16 +299,19 @@ def cmd_list():
     if stale:
         print("")
         print("(removed %d stale entry(ies))" % len(stale))
+    report_mismatched(mismatched)
     return 0
 
 
 def cmd_ping(pid=None):
-    live, starting, _ = discover()
+    live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
+        report_mismatched(mismatched)
         return 1
     if not live:
         print("No Revit is connected. Press Connect Heron on the ribbon first.")
+        report_mismatched(mismatched)
         return 1
 
     if pid is not None:
@@ -305,13 +394,19 @@ def cmd_doctor():
         print("    pipe          %s" % bridge.pipe_name)
         print("    revit         %s" % bridge.revit_version)
         print("    addin         %s" % bridge.addin_version)
-        print("    protocol      %s (this client expects %s)"
-              % (bridge.protocol_version, PROTOCOL_VERSION))
+        agreed = bridge.protocol_version == PROTOCOL_VERSION
+        print("    protocol      %s (this client expects %s)%s"
+              % (bridge.protocol_version, PROTOCOL_VERSION,
+                 "" if agreed else "   MISMATCH - restart that Revit"))
+        if not agreed:
+            print("    ping          not attempted; Heron will not talk across protocols")
+            continue
+
         reply = bridge.request("ping")
         if reply is not None:
             print("    ping          %s" % reply)
         else:
-            alive = process_is_running(bridge.pid)
+            alive = bridge_process_is_running(bridge.pid)
             if alive is True:
                 print("    ping          no reply, but process %s IS running" % bridge.pid)
                 print("                  Revit is probably still starting up.")
@@ -322,10 +417,10 @@ def cmd_doctor():
                       % bridge.pid)
     print("")
 
-    log = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "logs", "addin.log")
+    log = newest_log()
     print("Add-in log")
-    print("  path            %s" % log)
-    if os.path.exists(log):
+    print("  path            %s" % (log or os.path.join(LOG_DIR, "addin-<date>.log")))
+    if log and os.path.exists(log):
         try:
             with open(log, "r", encoding="utf-8", errors="replace") as fh:
                 tail = fh.readlines()[-15:]
@@ -337,7 +432,7 @@ def cmd_doctor():
     else:
         print("  NOT FOUND - the add-in has never started.")
         print("  That means Revit did not load it. Check that the manifest is at:")
-        print("    %%APPDATA%%\Autodesk\Revit\Addins\<version>\Heron.addin")
+        print(r"    %APPDATA%\Autodesk\Revit\Addins\<version>\Heron.addin")
     print("")
     print("=" * 60)
     print("Paste all of the above when reporting a problem.")

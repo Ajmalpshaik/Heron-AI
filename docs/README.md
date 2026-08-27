@@ -1,7 +1,8 @@
 # Heron AI — Documentation Index
 
-> **Status:** Specification and planning only. No implementation until the owner says to start —
-> see [DECISIONS.md](DECISIONS.md) D-00.
+> **Status:** Implementation has started. **Step 1 of 6** — the bridge — is built and proven in
+> real Revit 2024, and the owner has said it is **not closed yet**. Steps 2–6 have not begun: no
+> Revit API call exists anywhere in the repository. Pick up from [**../HANDOVER.md**](../HANDOVER.md).
 
 ## Decided so far
 
@@ -19,8 +20,7 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**13 of 38 questions answered — none of the remaining 25 block Phase 0.**
-It starts on the owner's go-ahead.
+**13 of 39 questions answered — none of the remaining 26 block Phase 0.**
 
 **Specification is complete in four parts.** Part 1 is the platform and its organisation; Part 2 is the
 Agent Operating System; Part 3 is the consolidated baseline, **authoritative on the Golden Rules**

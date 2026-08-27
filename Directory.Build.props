@@ -33,13 +33,34 @@
     <Version>0.1.0</Version>
   </PropertyGroup>
 
-  <!-- Map Revit version to its runtime. -->
+  <!--
+    Map Revit version to its runtime.
+
+    Autodesk moved the runtime at 2025 (.NET Framework to .NET 8) and again at
+    2027 (.NET 8 to .NET 10). A version this table does not list is therefore an
+    ERROR, never a guess: confirm the target in the Autodesk SDK for that
+    release, then add a row here.
+
+    This used to read '>= 2027', which silently claimed every future Revit is
+    .NET 10 - and would have produced an add-in that does not load, with no
+    warning at build time.
+  -->
   <PropertyGroup>
     <HeronTfm Condition="'$(RevitVersion)' == '2020'">net472</HeronTfm>
     <HeronTfm Condition="'$(RevitVersion)' &gt;= '2021' AND '$(RevitVersion)' &lt;= '2024'">net48</HeronTfm>
     <HeronTfm Condition="'$(RevitVersion)' &gt;= '2025' AND '$(RevitVersion)' &lt;= '2026'">net8.0-windows</HeronTfm>
-    <HeronTfm Condition="'$(RevitVersion)' &gt;= '2027'">net10.0-windows</HeronTfm>
+    <HeronTfm Condition="'$(RevitVersion)' == '2027'">net10.0-windows</HeronTfm>
+
+    <!-- Keeps evaluation alive long enough to report the real problem below,
+         instead of failing with an unexplained empty-TargetFramework error. -->
+    <HeronVersionSupported Condition="'$(HeronTfm)' != ''">true</HeronVersionSupported>
+    <HeronTfm Condition="'$(HeronTfm)' == ''">net48</HeronTfm>
   </PropertyGroup>
+
+  <Target Name="HeronCheckRevitVersion" BeforeTargets="PrepareForBuild;Restore;CollectPackageReferences">
+    <Error Condition="'$(HeronVersionSupported)' != 'true'"
+           Text="Heron does not know which .NET runtime Revit $(RevitVersion) uses. Supported today: 2020 to 2027. Autodesk has moved the runtime twice (at 2025 and at 2027), so Heron will not guess - confirm the target for that release against the Autodesk SDK and add it to Directory.Build.props." />
+  </Target>
 
   <!-- Compilation symbols so version-conditional code is possible. Per docs/16,
        such code belongs ONLY in adapters, never in core logic. -->
@@ -47,6 +68,8 @@
     <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
     <DefineConstants Condition="'$(RevitVersion)' &gt;= '2024'">$(DefineConstants);REVIT2024_OR_GREATER</DefineConstants>
     <DefineConstants Condition="'$(RevitVersion)' &gt;= '2025'">$(DefineConstants);REVIT2025_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="'$(RevitVersion)' &gt;= '2026'">$(DefineConstants);REVIT2026_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="'$(RevitVersion)' &gt;= '2027'">$(DefineConstants);REVIT2027_OR_GREATER</DefineConstants>
   </PropertyGroup>
 
 </Project>

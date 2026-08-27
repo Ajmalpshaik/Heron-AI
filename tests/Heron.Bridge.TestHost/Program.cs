@@ -39,7 +39,7 @@ namespace Heron.Bridge.TestHost
                 Console.WriteLine("  Process    " + identity.ProcessId);
                 Console.WriteLine("  Announced  " + identity.DiscoveryFilePath);
                 Console.WriteLine();
-                Console.WriteLine("  Now run:   python python\\heron_bridge_client.py ping");
+                Console.WriteLine("  Now run:   python mcp\\client\\heron_bridge_client.py ping");
                 Console.WriteLine();
 
                 if (seconds > 0)

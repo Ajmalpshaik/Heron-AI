@@ -48,6 +48,18 @@ def connect(pipe_name, timeout=CONNECT_TIMEOUT_S):
     raise RuntimeError("could not open %s within %.0fs: %s" % (path, timeout, last))
 
 
+def send_raw(handle, text):
+    """Send an exact line. Needed for requests a dict cannot express."""
+    handle.write((text + "\n").encode("utf-8"))
+    line = b""
+    while not line.endswith(b"\n"):
+        chunk = handle.read(1)
+        if not chunk:
+            raise RuntimeError("pipe closed before a full response arrived")
+        line += chunk
+    return json.loads(line.decode("utf-8").strip())
+
+
 def call(handle, op):
     handle.write((json.dumps({"op": op}) + "\n").encode("utf-8"))
     line = b""
@@ -128,6 +140,41 @@ def main():
             print("  PASS  still responsive after a bad request")
         else:
             failures.append("bridge stopped responding after a bad request")
+
+        # --- the request parser reads keys, it does not search for them ---
+        # Every one of these would have fooled the substring search this
+        # replaced, and every one becomes reachable at Step 2, when a
+        # request starts carrying arguments.
+        parser_cases = [
+            ('{"args": {"op": "no_such_operation"}, "op": "ping"}',
+             "a nested op is not the real op"),
+            ('{"note": "the op is ping", "op": "ping"}',
+             "a key name inside a value is not a key"),
+            ('{"op": "ping", "trailing": "no_such_operation"}',
+             "a later value is not mistaken for the op"),
+            ('{ "op" : "ping" }',
+             "whitespace around the key and the colon"),
+            ('{"path": "C:\\\\Temp\\\\a b.rvt", "op": "ping"}',
+             "escaped backslashes in an earlier value"),
+            ('{"depth": {"a": {"b": [1, 2, {"op": "no_such_operation"}]}}, "op": "ping"}',
+             "an op buried inside nested arrays and objects"),
+        ]
+        for raw, why in parser_cases:
+            reply = send_raw(handle, raw)
+            if reply.get("ok") and reply.get("pong") is True:
+                print("  PASS  parser: %s" % why)
+            else:
+                failures.append("parser case (%s) on %s returned %r" % (why, raw, reply))
+
+        # --- malformed input is refused, and the bridge stays up ---
+        reply = send_raw(handle, '{"op": ')
+        if reply.get("ok") is False:
+            print("  PASS  malformed JSON -> clean refusal")
+        else:
+            failures.append("malformed JSON returned %r" % reply)
+
+        if not call(handle, "ping").get("ok"):
+            failures.append("bridge stopped responding after malformed JSON")
 
         # --- a SECOND connection, proving the two-listener design ---
         second = connect(pipe_name, timeout=3.0)

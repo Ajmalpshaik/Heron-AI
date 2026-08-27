@@ -26,7 +26,12 @@ namespace Heron.Core
     ///      That is Golden Rule 19, and it is why there is a Load and a Save
     ///      but no ApplyFromRequest.
     ///
-    /// Deliberately flat key/value. Step 1 has four settings; a schema would
+    /// Every key here is read by something. A setting that is declared,
+    /// documented and then ignored is worse than no setting: it is a promise
+    /// the code does not keep. log.verbose was removed for exactly that reason
+    /// and comes back when there is something for it to gate.
+    ///
+    /// Deliberately flat key/value. Step 1 has three settings; a schema would
     /// be ceremony. When it outgrows this - Phase 1 or 2 - replace it with a
     /// typed, versioned, migratable config and delete this without regret.
     /// </summary>
@@ -43,7 +48,6 @@ namespace Heron.Core
             {
                 { "bridge.listeners", "2" },        // docs/25: one serving, one waiting
                 { "bridge.autoConnect", "false" },  // connecting stays explicit, by design
-                { "log.verbose", "false" },
                 { "log.retainDays", "14" },
             };
 

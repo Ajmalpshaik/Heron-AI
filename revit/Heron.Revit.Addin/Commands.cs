@@ -9,6 +9,7 @@ using System;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using Heron.Core;
 
 namespace Heron.Revit.Addin
 {
@@ -29,7 +30,10 @@ namespace Heron.Revit.Addin
             var bridge = HeronApplication.Bridge;
             if (bridge == null)
             {
-                message = "Heron did not initialise. See the log in %APPDATA%\\Heron\\logs.";
+                // Asked for, never written out. A literal path here is exactly how the
+                // %APPDATA% / %LOCALAPPDATA% drift got in the first time.
+                message = "Heron did not start. The log that says why is in "
+                        + HeronPaths.Logs + ".";
                 return Result.Failed;
             }
 
@@ -77,7 +81,9 @@ namespace Heron.Revit.Addin
 
             if (bridge == null)
             {
-                TaskDialog.Show("Heron AI", "Heron did not initialise.");
+                TaskDialog.Show("Heron AI",
+                    "Heron did not start.\n\nThe log that says why is in\n"
+                    + HeronPaths.Logs + ".");
                 return Result.Succeeded;
             }
 

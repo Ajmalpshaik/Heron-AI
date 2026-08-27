@@ -74,7 +74,7 @@ $buildOut = Get-ChildItem -Path (Join-Path $projDir "bin") -Recurse -Filter "Her
             Select-Object -First 1 -ExpandProperty DirectoryName
 
 if (-not $buildOut) {
-    throw "No $Configuration build found under $projDirin. Run:`n  dotnet build -c $Configuration -p:RevitVersion=$RevitVersion"
+    throw "No $Configuration build found under $projDir\bin. Run:`n  dotnet build -c $Configuration -p:RevitVersion=$RevitVersion"
 }
 Write-Host "  from $buildOut"
 
@@ -108,4 +108,4 @@ Write-Host ""
 Write-Host "Next:"
 Write-Host "  1. Start Revit $RevitVersion"
 Write-Host "  2. Ribbon > Heron AI > Connect Heron"
-Write-Host "  3. python python\heron_bridge_client.py ping"
+Write-Host "  3. python mcp\client\heron_bridge_client.py ping"

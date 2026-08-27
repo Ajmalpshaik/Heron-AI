@@ -20,8 +20,4 @@
     <ProjectReference Include="..\..\platform\Heron.Core\Heron.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(HeronTfm)' == 'net472' OR '$(HeronTfm)' == 'net48'">
-    <Reference Include="System.Web.Extensions" />
-  </ItemGroup>
-
 </Project>
