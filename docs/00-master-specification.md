@@ -1,6 +1,10 @@
 # Heron AI — Master Platform Handover & Architecture Specification
 
-> **Status:** Source-of-truth record, as provided by the owner on 2026-08-27.
+> **Status:** Source-of-truth record, **part 1 of 2**, as provided by the owner on 2026-08-27.
+> Part 1 specifies **the platform and its organisation**.
+> Part 2 — [00b — Agent Operating System](00b-master-specification-agent-os.md) — specifies
+> **how Heron operates internally** as an autonomous engineering organisation.
+>
 > This file is the **verbatim architectural intent**. It is not a build plan.
 > Engineering annotations, gaps and decisions live in the sibling documents —
 > see [PROPOSALS.md](PROPOSALS.md), [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) and [DECISIONS.md](DECISIONS.md).

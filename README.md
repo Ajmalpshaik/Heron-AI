@@ -41,9 +41,9 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 
 | | |
 |---|---|
-| Specification | ✅ Complete — [76 sections](docs/00-master-specification.md) |
-| Architecture review | ✅ Complete — [18 gaps, 9 ideas](docs/PROPOSALS.md) |
-| Open questions | ⏳ 12 answered, 15 open — **none blocking** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
+| Specification | ✅ Complete — [Part 1: the platform](docs/00-master-specification.md) (76 §) + [Part 2: the Agent OS](docs/00b-master-specification-agent-os.md) (84 §) |
+| Architecture review | ✅ Complete — [gaps, ideas, tensions](docs/PROPOSALS.md) across both parts |
+| Open questions | ⏳ 12 answered, 20 open — **none blocking** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
 | Licence & safety files | ✅ Complete — Apache 2.0, security policy, disclaimer, contribution guide |
 | Roadmap | ✅ Drafted — [Phase 0 → 7](docs/ROADMAP.md) |
 | Implementation | ⛔ Not started, by design ([D-00](docs/DECISIONS.md)) |

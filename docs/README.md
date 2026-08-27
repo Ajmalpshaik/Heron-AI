@@ -19,8 +19,12 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | `AJ-AI-Brain` (brain) and `AJ-Connect` (Revit connector), upgraded to this architecture |
 
-**12 of 27 questions answered — none of the remaining 15 block Phase 0.**
+**12 of 32 questions answered — none of the remaining 20 block Phase 0.**
 It starts on the owner's go-ahead.
+
+**Specification is complete in two parts.** Part 1 is the platform and its organisation;
+Part 2 is the Agent Operating System and self-evolution. Part 2 closed four gaps found reviewing
+Part 1 — see [PROPOSALS Part 0](PROPOSALS.md).
 
 ---
 
@@ -41,7 +45,8 @@ It starts on the owner's go-ahead.
 
 | # | Document | Covers |
 |---|---|---|
-| 00 | [Master Specification](00-master-specification.md) | The complete original spec, §1–§76. Source of truth. |
+| 00 | [Master Specification — Part 1](00-master-specification.md) | The platform and its organisation, §1–§76. Source of truth. |
+| 00b | [Master Specification — Part 2](00b-master-specification-agent-os.md) | The Agent Operating System and self-evolution, §1–§84. Source of truth. |
 | 01 | [Vision & Principles](01-vision-and-principles.md) | What Heron is, personas, the defining principle |
 | 02 | [Architecture Overview](02-architecture-overview.md) | Layers, four parts, orchestration, **agent tiers** |
 | 03 | [Heron Revit](03-heron-revit.md) | Add-in, Revit agents, **threading, transactions, versions** |
@@ -59,6 +64,16 @@ It starts on the owner's go-ahead.
 | 15 | [Glossary](15-glossary.md) | Terms, Revit concepts, status vocabularies |
 | 16 | [Version Support Strategy](16-version-support-strategy.md) | **Revit 2020 → latest** — the two API breaks, multi-targeting, adapters, test matrix |
 | 17 | [Open Source & Distribution](17-open-source-and-distribution.md) | Licence, public/private separation, contribution, disclaimer, channels |
+
+### From Master Specification Part 2 — the Agent Operating System
+
+| # | Document | Covers |
+|---|---|---|
+| 18 | [Agent Operating System](18-agent-operating-system.md) | **Capability Registry**, dynamic discovery, Agent HR, **Shadow Mode**, trust scores, events |
+| 19 | [Context & Cost](19-context-and-cost.md) | Context Manager, compression, model routing, fallback, caching, observability |
+| 20 | [Knowledge Trust & Conflict](20-knowledge-trust-and-conflict.md) | Knowledge hierarchy, trust levels, **conflict resolution**, fragment branching, quality scores |
+| 21 | [Resilience & Operations](21-resilience-and-operations.md) | **Dependency graph**, safety tiers, **emergency stop**, health, self-healing, backup, migration |
+| 22 | [Users, Modes & Extensibility](22-users-modes-and-extensibility.md) | Conversation intelligence, User/Developer/Admin modes, multi-user, platform adapters, plugins, SDK |
 
 ## Working documents
 

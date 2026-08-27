@@ -24,6 +24,7 @@
 | [D-08](#d-08--licence--apache-20) | Licence — Apache 2.0 | ✅ Accepted |
 | [D-09](#d-09--revit-thread-marshalling--externalevent) | Revit thread marshalling — ExternalEvent | ✅ Accepted |
 | [D-10](#d-10--repository-stays-private-until-working-code-exists) | Repo stays private until code exists | ✅ Accepted |
+| [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system) | Adopt Master Specification Part 2 (Agent OS) | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -438,6 +439,64 @@ is irreversible in practice — history persists, forks propagate, GitHub caches
 - A public repository with no working code attracts no users anyway, so nothing is lost by waiting.
 - Before flipping to public, verify once more that no client data has entered the history — the
   `.gitignore` is a safety net, not a guarantee against a deliberate `git add -f`.
+
+---
+
+## D-11 — Adopt Master Specification Part 2 (Agent Operating System)
+
+**Status:** Accepted · **Date:** 2026-08-27
+**Affects:** [18](18-agent-operating-system.md), [19](19-context-and-cost.md), [20](20-knowledge-trust-and-conflict.md), [21](21-resilience-and-operations.md), [22](22-users-modes-and-extensibility.md), [ROADMAP](ROADMAP.md)
+
+### Context
+
+A second specification was provided, covering how Heron operates internally as an autonomous
+engineering organisation. It is not more of Part 1 — Part 1 says *which agents exist*, Part 2 says
+*how they are governed*.
+
+### Decision
+
+**Part 2 is adopted as source of truth alongside Part 1.** Both are preserved verbatim and neither is
+edited to reconcile with the other; conflicts are recorded as decisions here.
+
+The following Part 2 mechanisms are adopted into the architecture:
+
+| Mechanism | Where it lands |
+|---|---|
+| **Capability Registry**, separate from the agent registry | Phase 2. The Orchestrator resolves capabilities, never agent names |
+| **Shadow Mode** for agent onboarding | Phase 5, alongside the sandbox |
+| **Dependency graph** over skills → fragments → API → runtime | Phase 2. Makes change blast-radius computable |
+| **Knowledge trust levels and conflict resolution** | Phase 4, sharing one status vocabulary with the fragment lifecycle |
+| **Emergency Stop** | Phase 1, in the Revit ribbon — must work when the agent side is stuck |
+| **Workflow ID** in the audit log | Phase 1 |
+| **Approval only at meaningful boundaries** | Applies immediately to all permission design |
+| **Fragment branching** — one semantic fragment, many implementations | Confirms [16](16-version-support-strategy.md) |
+
+### What Part 2 closed
+
+Four gaps raised in the Part 1 review are resolved by Part 2 — agent/LLM conflation (§17, §59, §83),
+vector-only retrieval (§19), no safety boundary on agent creation (§10 Shadow Mode), and the vector DB
+as sole source of truth (§77). Detail in [PROPOSALS Part 0](PROPOSALS.md).
+
+### What Part 2 did not change
+
+**Golden Rules 11–15 remain necessary.** Neither specification mentions undo, preview-before-modify,
+data egress to a model provider, or how a Revit test actually executes. Part 2 strengthens the case for
+these rules rather than replacing them.
+
+### Conflicts recorded, not resolved by Part 2
+
+| Conflict | Position taken |
+|---|---|
+| **Model Router (§17) vs Claude Code as host ([D-01](#d-01--execution-host-claude-code-plugin))** | Routing *intent* is declared as a cost tier in the capability registry; the host resolves it. Heron may route its own batch work later. Open as [Q-30](OPEN-QUESTIONS.md) |
+| **Multi-user / Admin Mode (§72–73) vs single-user plugin** | Company knowledge as a shared **git repository**, not a server. Open as [Q-32](OPEN-QUESTIONS.md) |
+| **"1,000 agents or more" (§2)** | Not a conflict but a reinforcement — makes the T1/T2/T3 tiering non-optional |
+
+### Consequences
+
+- No change to any prior decision. Part 2 refines and reinforces; it does not overturn.
+- Five new open questions (Q-29 to Q-33). **None block Phase 0** — they shape Phases 2–5.
+- The Capability Registry moves into Phase 2 rather than later: retrofitting it would mean rewriting
+  every call site.
 
 ---
 

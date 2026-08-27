@@ -6,7 +6,10 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 12 answered · 15 open**
+**Progress: 12 answered · 20 open · none blocking Phase 0**
+
+*(Five new questions — Q-29 to Q-33 — come from [Master Specification Part 2](00b-master-specification-agent-os.md).
+None of them block Phase 0 either; they shape Phases 2–5.)*
 
 ---
 
@@ -189,6 +192,102 @@ Now a real security question rather than a hypothetical one, since anyone can pu
 with undo, audit log and a preview — and nothing else.
 
 → [ROADMAP.md](ROADMAP.md)
+
+**Answer:**
+
+---
+
+## From Master Specification Part 2
+
+### 🟠 Q-29 — How does Shadow Mode work per agent type?
+
+[Part 2 §10](00b-master-specification-agent-os.md) introduces Shadow Mode — an agent observes and
+recommends without modifying production data. "Observe without modifying" means different things for
+different agents, and needs defining:
+
+| Agent type | Proposed shadow behaviour |
+|---|---|
+| Read-only (T1) | Run normally, compare output against the production agent |
+| Analysis / ranking (T2) | Run in parallel, log both, score agreement |
+| Model-modifying (`MODIFY`) | Produce the **preview only**. Never open a transaction |
+| Code-generating (T3) | Generate and test in the sandbox. Never promote |
+
+Also: how many shadow runs before `SHADOW MODE → APPROVED`, and does a human still sign it off?
+*(Recommendation: yes — evidence plus a signature.)*
+
+→ [18 §4](18-agent-operating-system.md)
+
+**Answer:**
+
+---
+
+### 🟠 Q-30 — Who routes models — Heron or Claude Code?
+
+[Part 2 §17](00b-master-specification-agent-os.md) specifies a Model Router. But Heron runs as a
+Claude Code plugin ([D-01](DECISIONS.md)), and **Claude Code chooses the model**.
+
+| Option | Shape |
+|---|---|
+| **A. Host routes; Heron declares intent** *(recommended now)* | Agents declare reasoning needs; the host resolves them. No model ids in Heron |
+| **B. Heron routes its own calls** | Heron's Python brain calls model APIs directly. Full control, but a second API key and billing relationship |
+| **C. Hybrid** *(likely end state)* | Host routes conversation; Heron routes internal batch work — embedding, classification, bulk scoring |
+
+Either way, routing *intent* is recorded as the **cost tier** in the capability registry, so the design
+survives the choice.
+
+→ [19 §3](19-context-and-cost.md)
+
+**Answer:**
+
+---
+
+### 🟡 Q-31 — What stores the dependency graph?
+
+[Part 2 §41](00b-master-specification-agent-os.md) requires a graph over skills, fragments, Revit API
+surfaces, runtimes, packages, capabilities and agents — so the blast radius of a change is computable.
+
+*Recommendation:* **SQLite with recursive queries**, beside the knowledge store ([Q-10](#)). This is
+ordinary relational data; a dedicated graph database is not warranted. Both specifications mention a
+"Knowledge Graph", but §41 is the only place one is actually specified — build exactly this and not more.
+
+→ [21 §1](21-resilience-and-operations.md)
+
+**Answer:**
+
+---
+
+### 🟡 Q-32 — How far does multi-user / Admin Mode go?
+
+[Part 2 §72–§73](00b-master-specification-agent-os.md) describe enterprise user management and enforced
+policy. Heron is a single-user Claude Code plugin — there is no server to enforce anything.
+
+| Option | Shape |
+|---|---|
+| **A. Single-user only** *(recommended now)* | Scopes are folders. "Company knowledge" is a shared repo each user syncs. No enforcement |
+| **B. Company knowledge as a private git repo** *(recommended next)* | Admin = whoever reviews the pull requests. Uses machinery already specified in §38 |
+| **C. Full enterprise server** | Central service, user directory, enforced policy. A different product — only on real demand |
+
+Most of what a BIM manager actually wants — *"everyone uses our approved standards and tools"* — is
+delivered by B without any infrastructure.
+
+→ [22 §4](22-users-modes-and-extensibility.md)
+
+**Answer:**
+
+---
+
+### 🟡 Q-33 — Confidence thresholds for asking the user
+
+[Part 2 §22](00b-master-specification-agent-os.md) says knowledge conflicts fall back to asking the
+user "if confidence is insufficient". [§55](00b-master-specification-agent-os.md) says to ask only at
+meaningful boundaries.
+
+Both are right, and both need a number. What confidence level triggers a question? And are answers
+**recorded as decisions** so the same question is not asked again next week?
+
+*(Recommendation: yes — an unanswered-then-re-asked question is worse than a guess.)*
+
+→ [20 §4](20-knowledge-trust-and-conflict.md), [21 §3](21-resilience-and-operations.md)
 
 **Answer:**
 

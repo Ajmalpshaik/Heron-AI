@@ -74,6 +74,30 @@ Content from documents, family names, parameter descriptions, imported folders, 
 
 ---
 
+---
+
+## The overarching rule (Master Specification Part 2, §83)
+
+Both specifications converge on one statement, and it sits above the numbered rules rather than beside them:
+
+> **Heron AI must never become a giant AI that tries to do everything itself.**
+
+```text
+ONE USER REQUEST -> ONE ORCHESTRATED WORKFLOW -> ONLY REQUIRED AGENTS
+-> ONLY REQUIRED KNOWLEDGE -> ONLY REQUIRED TOOLS -> VALIDATED RESULT
+```
+
+This is Rule 2 (one responsibility per agent) applied to the *whole workflow* rather than to a single
+component. It is what keeps the platform modular, scalable, testable, maintainable, fast,
+understandable, secure and self-improving — all at once.
+
+Three independent lines of reasoning arrive here: the architectural argument
+([02 §6](02-architecture-overview.md)), the cost argument
+([Part 2 §59](00b-master-specification-agent-os.md)), and the modularity argument (§83 itself).
+When three routes reach the same conclusion, it is load-bearing.
+
+---
+
 ## How to use these rules
 
 When a design decision is unclear, work down the list. The first rule that applies decides it.

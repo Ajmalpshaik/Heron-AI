@@ -73,8 +73,10 @@ six phases of code assume one runtime.
 - `TransactionGroup` wrapper — Golden Rule 11
 - Dry run / preview before any `MODIFY`
 - Permission gate enforced **in the add-in**
+- **Emergency Stop** in the Revit ribbon — works even when the agent side is stuck
+  *([21 §4](21-resilience-and-operations.md))*
 - Failure handling that does not retry blindly
-- The audit log records elements touched
+- The audit log records elements touched, keyed by **Workflow ID** *([21 §13](21-resilience-and-operations.md))*
 
 **Definition of done:** a wrong instruction can be reversed with one Ctrl+Z, and a failed operation leaves the model untouched.
 
@@ -82,20 +84,28 @@ six phases of code assume one runtime.
 
 ---
 
-## Phase 2 — Fragments and knowledge
+## Phase 2 — Fragments, capabilities and knowledge
 
 **Goal:** stop hard-coding skills. Start accumulating.
 
+- **Capability Registry** — separate from the agent registry, with cost tier and risk level per
+  capability *([18 §2](18-agent-operating-system.md) — the highest-leverage single component in Part 2)*
 - Fragment storage format — folder + metadata + tests *(see [09 §4](09-skills-and-fragments.md))*
 - Knowledge identity — IDs, not filenames
 - SQLite + FTS + vectors, one file per scope *(Q-10, Q-11)*
-- Hybrid retrieval with exact-match short circuit
+- Hybrid retrieval with exact-match short circuit + **utterance cache**
 - Scope separation enforced physically — Golden Rule 5
-- **Import the existing AJ-Tools / PyRevit-Tools libraries** *(Q-16)*
+- **Dependency graph** — skills → fragments → API → runtime *([21 §1](21-resilience-and-operations.md))*
+- **Import the existing AJ-Tools / PyRevit-Tools libraries** *(Q-16)*, with duplicate detection
+  *([20 §5](20-knowledge-trust-and-conflict.md))*
 
-**Definition of done:** ten real skills work, none of them hard-coded, and importing an existing repo produces a reviewable manifest.
+**Definition of done:** ten real skills work, none of them hard-coded, importing an existing repo
+produces a reviewable manifest, and the Orchestrator resolves requests through capabilities rather
+than agent names.
 
-**Why this is the highest-value phase after safety:** it is what turns Heron from a demo into something that gets better every week.
+**Why this is the highest-value phase after safety:** it is what turns Heron from a demo into something
+that gets better every week. The Capability Registry is what stops the Orchestrator accumulating domain
+knowledge — build it here, not later, because retrofitting it means rewriting every call site.
 
 ---
 
@@ -113,11 +123,13 @@ six phases of code assume one runtime.
 
 ---
 
-## Phase 4 — Learning
+## Phase 4 — Learning and trust
 
-**Goal:** the system improves from use.
+**Goal:** the system improves from use, and knows how much to trust itself.
 
 - Fragment lifecycle with real promotion gates *(Q-9)*
+- **Knowledge trust levels and conflict resolution** *([20 §3–4](20-knowledge-trust-and-conflict.md))*
+- **Agent / fragment / skill trust scores**, per capability **per Revit version** *([18 §5](18-agent-operating-system.md))*
 - Success / failure tracking that counts user corrections as failures
 - **Capability Gap report** — *"here are the ten things people asked for that I could not do"*
 - Personal pattern learning, with confirmation before saving
@@ -130,10 +142,12 @@ six phases of code assume one runtime.
 
 **Goal:** Heron creates new capability, safely.
 
-- The execution model decided in Q-7
+- The hybrid execution model from [D-04](DECISIONS.md); scripting runtime chosen *(Q-7a)*
 - Sandbox execution — Golden Rule 13
+- **Shadow Mode** for new agents and fragments *([18 §4](18-agent-operating-system.md), Q-29)*
 - Code review by a separate agent — Golden Rule 7
-- Regression testing across versions with golden files
+- **Code QA and Revit QA as separate gates** *([21 §11](21-resilience-and-operations.md))*
+- Regression testing across versions with golden files, scoped by the dependency graph
 - Human approval before PRODUCTION
 
 **Why this is late despite being the most exciting part:** it is the highest-risk capability in the platform, and it is only safe once the lifecycle, the sandbox, the testing matrix and the audit log all exist.
