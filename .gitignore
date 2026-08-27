@@ -1,0 +1,53 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+*.log
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Data / temp
+*.tmp
+*.bak
+tmp/
+temp/
