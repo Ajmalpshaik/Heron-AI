@@ -42,6 +42,7 @@ SUPPORT = {
     "tests": "acceptance tests and the Revit-free host",
     "tools": "scripts that keep the repository honest",
     ".github": "issue templates and CI",
+    ".claude": "project skills that ship with the repository",
 }
 
 # ------------------------------------------------------------------ layering
