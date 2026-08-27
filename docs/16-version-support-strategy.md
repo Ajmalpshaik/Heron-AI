@@ -21,7 +21,7 @@ Eight versions today, growing by one every year:
 | 2024 | .NET Framework 4.8 | **64-bit** | `ElementId.IntegerValue` → `ElementId.Value` |
 | 2025 | **.NET 8** | 64-bit | **Runtime break** |
 | 2026 | .NET 8 | 64-bit | |
-| 2027 | .NET 8 (assumed) | 64-bit | Verify on release |
+| 2027 | **.NET 10** | 64-bit | **Third runtime.** Reported by a shipping project ([26 sec.3](26-prior-art-revit-mcp.md)); confirm against the SDK |
 
 *Runtime versions must be verified against the installed SDKs before being locked in — see spec §24.*
 

@@ -31,6 +31,10 @@ PRODUCTION. Which scripting runtime is still open: **pyRevit**, **IronPython**, 
 The owner's existing `PyRevit-Tools` work is the strongest available evidence and should be reviewed
 before choosing. Decidable during Phase 0 rather than before it, since Phase 0 generates no code.
 
+**Research favours pyRevit.** A shipping Revit MCP server executes IronPython inside Revit via pyRevit's
+built-in Routes server -- proven, maintained by someone else, and the owner already knows it
+([26](26-prior-art-revit-mcp.md)).
+
 → [09 §10](09-skills-and-fragments.md)
 
 **Answer:**
@@ -219,6 +223,29 @@ Also: how many shadow runs before `SHADOW MODE → APPROVED`, and does a human s
 *(Recommendation: yes — evidence plus a signature.)*
 
 → [18 §4](18-agent-operating-system.md)
+
+**Answer:**
+
+---
+
+### 🟡 Q-37 — Can pyRevit Routes bind a per-process port? *(new, from research)*
+
+pyRevit ships an HTTP **Routes server**, and a shipping Revit MCP server uses it as its entire bridge --
+no custom add-in needed. Attractive: proven, maintained elsewhere, and the owner already uses pyRevit.
+
+**But it listens on a fixed `localhost:48884`, which is single-instance by construction** -- exactly the
+failure the owner's field notes describe and already fixed: *"every Revit tried to use one shared line
+and the second one simply refused to start."*
+
+**The question:** can pyRevit Routes bind a **configurable port per Revit process**, and can that port be
+discovered?
+
+| Answer | Consequence |
+|---|---|
+| **Yes** | pyRevit Routes becomes a viable transport, potentially replacing the custom bridge |
+| **No** | It stays a **scripting-execution** option only (Q-7a). [D-02](DECISIONS.md) named pipes remain the transport -- multi-Revit is not negotiable |
+
+-> [26](26-prior-art-revit-mcp.md)
 
 **Answer:**
 

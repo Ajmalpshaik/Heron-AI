@@ -97,7 +97,13 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 
 | # | Document | Covers |
 |---|---|---|
-| 25 | [Multi-Session & Document Binding](25-multi-session-and-binding.md) | **Field-proven.** Bridge discovery, one chat one Revit, **document pinning**, **the stale read**, turn-taking |
+| 25 | [Multi-Session & Document Binding](25-multi-session-and-binding.md) | **Field-proven.** Bridge discovery, one chat one Revit, **document pinning**, **the stale read**, turn-taking, cross-document work |
+
+### Research
+
+| # | Document | Covers |
+|---|---|---|
+| 26 | [Prior Art: Existing Revit MCP Servers](26-prior-art-revit-mcp.md) | What already exists, what it confirms, **the two gaps every project shares**, pyRevit Routes |
 
 ## Working documents
 
