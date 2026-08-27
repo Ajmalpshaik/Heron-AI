@@ -60,6 +60,20 @@ namespace Heron.Revit.Addin
                     "Heron loaded. Revit {0}, add-in {1}, pid {2}.",
                     revitVersion, addinVersion, Process.GetCurrentProcess().Id));
 
+                // Connecting is explicit by default - a Revit that was never
+                // connected is invisible to every chat, and that is a safety
+                // property worth keeping (docs/00e).
+                //
+                // bridge.autoConnect exists for unattended testing and for
+                // users who have decided they want it. It only starts the
+                // pipe; it grants nothing. Which model may be touched is
+                // decided later, by session binding and document pinning.
+                if (HeronConfig.Load().GetBool("bridge.autoConnect", false))
+                {
+                    Bridge.Start();
+                    Log("bridge.autoConnect is on - bridge started without a button press.");
+                }
+
                 return Result.Succeeded;
             }
             catch (Exception ex)

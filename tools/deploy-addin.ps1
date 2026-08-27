@@ -64,10 +64,19 @@ if (Get-Process -Name "Revit" -ErrorAction SilentlyContinue) {
     throw "Revit is running. Close it first - a loaded assembly cannot be replaced."
 }
 
-$buildOut = Join-Path $repoRoot "revit\Heron.Revit.Addin\bin\$Configuration"
-if (-not (Test-Path $buildOut)) {
-    throw "Build output not found at $buildOut. Run:`n  dotnet build -c $Configuration -p:RevitVersion=$RevitVersion"
+# Find the build output rather than assuming its shape. Directory.Build.props
+# sets Platform=x64, so the path is bind\$Configuration - but that is a
+# build detail this script should not have to know.
+$projDir  = Join-Path $repoRoot "revit\Heron.Revit.Addin"
+$buildOut = Get-ChildItem -Path (Join-Path $projDir "bin") -Recurse -Filter "Heron.Revit.Addin.dll" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -like "*$Configuration*" } |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1 -ExpandProperty DirectoryName
+
+if (-not $buildOut) {
+    throw "No $Configuration build found under $projDirin. Run:`n  dotnet build -c $Configuration -p:RevitVersion=$RevitVersion"
 }
+Write-Host "  from $buildOut"
 
 New-Item -ItemType Directory -Force -Path $addinDir | Out-Null
 

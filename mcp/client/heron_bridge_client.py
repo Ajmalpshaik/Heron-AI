@@ -30,6 +30,7 @@ Two rules from the field notes (docs/00e, docs/25) are enforced here:
 
 import json
 import os
+import subprocess
 import sys
 import time
 
@@ -88,16 +89,48 @@ class Bridge(object):
                 pass
 
 
+def process_is_running(pid):
+    """
+    Is that process alive? Uses tasklist rather than a library so the client
+    stays dependency-free.
+
+    Returns None when it cannot tell - and "cannot tell" must never be
+    treated as "dead".
+    """
+    if not pid:
+        return None
+    try:
+        out = subprocess.check_output(
+            ["tasklist", "/FI", "PID eq %s" % pid, "/NH"],
+            stderr=subprocess.STDOUT, universal_newlines=True,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        return str(pid) in out
+    except Exception:
+        return None
+
+
 def discover(prune=True):
     """
     Read the address book, then verify each entry by talking to it.
 
-    Returns (live, stale). Stale files are deleted when prune is set - a
-    crashed Revit never removes its own.
+    Returns (live, starting, stale).
+
+    A bridge that does not answer is NOT automatically stale. Revit takes
+    the better part of a minute to start, and the add-in publishes its file
+    before the listener is ready - so a single failed ping during startup
+    used to delete a perfectly good entry, and the user saw "no Revit is
+    connected" while Revit was visibly loading. Found by running it.
+
+    So the liveness test is the PROCESS, not the reply:
+
+        answers            -> live
+        no reply, alive    -> starting. Leave the file alone
+        no reply, gone     -> stale. Safe to remove
+        no reply, unknown  -> leave it alone. Never delete on a guess
     """
-    live, stale = [], []
+    live, starting, stale = [], [], []
     if not os.path.isdir(DISCOVERY_DIR):
-        return live, stale
+        return live, starting, stale
 
     for name in sorted(os.listdir(DISCOVERY_DIR)):
         if not name.endswith(".json"):
@@ -107,14 +140,19 @@ def discover(prune=True):
             with open(path, "r", encoding="utf-8") as fh:
                 record = json.load(fh)
         except (OSError, ValueError):
-            stale.append(path)
+            stale.append(path)          # unreadable file, nothing to preserve
             continue
 
         bridge = Bridge(record, path)
         if bridge.request("ping") is not None:
             live.append(bridge)
-        else:
+            continue
+
+        alive = process_is_running(bridge.pid)
+        if alive is False:
             stale.append(path)
+        else:
+            starting.append(bridge)     # running, or we cannot tell
 
     if prune:
         for path in stale:
@@ -123,7 +161,7 @@ def discover(prune=True):
             except OSError:
                 pass
 
-    return live, stale
+    return live, starting, stale
 
 
 def describe(bridge, index):
@@ -144,7 +182,16 @@ def describe(bridge, index):
 
 
 def cmd_list():
-    live, stale = discover()
+    live, starting, stale = discover()
+    if not live and starting:
+        print("Revit is still starting.")
+        print("")
+        for b in starting:
+            print("  Revit %s (session %s) is running but its bridge is not answering yet." %
+                  (b.revit_version, b.pid))
+        print("")
+        print("Give it a few seconds and try again.")
+        return 1
     if not live:
         print("No Revit is connected.")
         print("")
@@ -160,6 +207,9 @@ def cmd_list():
     print("")
     for i, bridge in enumerate(live, 1):
         print(describe(bridge, i))
+    if starting:
+        print("")
+        print("(%d starting up, not ready yet)" % len(starting))
     if stale:
         print("")
         print("(removed %d stale entry(ies))" % len(stale))
@@ -167,7 +217,10 @@ def cmd_list():
 
 
 def cmd_ping(pid=None):
-    live, _ = discover()
+    live, starting, _ = discover()
+    if not live and starting:
+        print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
+        return 1
     if not live:
         print("No Revit is connected. Press Connect Heron on the ribbon first.")
         return 1
@@ -255,10 +308,18 @@ def cmd_doctor():
         print("    protocol      %s (this client expects %s)"
               % (bridge.protocol_version, PROTOCOL_VERSION))
         reply = bridge.request("ping")
-        if reply is None:
-            print("    ping          NO REPLY - the file is stale, or the pipe is not listening")
-        else:
+        if reply is not None:
             print("    ping          %s" % reply)
+        else:
+            alive = process_is_running(bridge.pid)
+            if alive is True:
+                print("    ping          no reply, but process %s IS running" % bridge.pid)
+                print("                  Revit is probably still starting up.")
+            elif alive is False:
+                print("    ping          no reply, and process %s is gone - stale entry" % bridge.pid)
+            else:
+                print("    ping          no reply, and could not determine whether %s is running"
+                      % bridge.pid)
     print("")
 
     log = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "logs", "addin.log")
