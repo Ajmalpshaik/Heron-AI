@@ -19,7 +19,7 @@
 | **Risk** | Highest permission level it can require ([12 §1](12-security-and-permissions.md)) |
 | **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
 
-**Totals: 244 agents · 162 T1 · 62 T2 · 20 T3.**
+**Totals: 249 agents · 165 T1 · 64 T2 · 20 T3.**
 Roughly two thirds never call a model at all.
 
 > **Correction, 2026-08-27:** an earlier version of this page stated 166. The departments actually
@@ -39,7 +39,7 @@ Roughly two thirds never call a model at all.
 | `HERON-ORC-SUM-006` | **User Result Agent** | Compresses the whole internal chain — 12 agents, 37 tool calls, 4 retrievals, 3 tests — into what the user actually needs to read. *"Done. Selected all ducts, moved them 200 mm up, verified in Revit."* This is what makes simple-outside / complex-inside real ↗ | T2 | READ | 4 |
 | `HERON-ORC-FIX-005` | Fix Agent | Applies a targeted repair chosen by failure analysis | T3 | MODIFY | — |
 
-## 2. Revit Engineering — 34
+## 2. Revit Engineering — 36
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -68,6 +68,8 @@ Roughly two thirds never call a model at all.
 | `HERON-REVIT-UI-022` | Revit UI Agent | Task dialogs, progress banner, the picker | T1 | READ | 5 |
 | `HERON-REVIT-RIB-023` | Revit Ribbon Agent | Ribbon tab, panels, buttons — including Emergency Stop | T1 | READ | 1 |
 | `HERON-REVIT-DEP-024` | Revit Deployment Agent | Builds and deploys the add-in per version | T1 | ADMIN | 1 |
+| `HERON-REVIT-UNI-035` | **Unit Conversion Agent** | Owns the boundary between Revit's internal **decimal feet** and everything a user says. Lengths, angles, areas, volumes. Converts once, at one place, and **states the unit in every result** ↗ | T1 | READ | 4 |
+| `HERON-REVIT-RBK-036` | **Session Rollback Agent** | The panic button. Reverses **everything Heron did this session**, newest first, using the audit log's transaction groups. Distinct from Transaction Safety, which owns one operation ↗ | T1 | MODIFY | — |
 | `HERON-REVIT-HLT-025` | Revit Plugin Health Agent | Is Revit installed, add-in loaded, ribbon present, MCP connected, document open, tools registered | T1 | READ | 3 |
 | `HERON-REVIT-SCH-026` | **Revit Schedule Agent** | Schedules — the way BIM people actually extract data. Read, create, modify, export ↗ | T1 | MODIFY | — |
 | `HERON-REVIT-LVL-027` | **Revit Level & Grid Agent** | Levels and grids — the hosts almost everything depends on. Naming, elevation, extents ↗ | T1 | MODIFY | — |
@@ -259,7 +261,7 @@ at all. This department closes that.
 | `HERON-AHR-GAP-001` | **Capability Gap Agent** | *"X is needed repeatedly and no capability covers it."* A read-only report over the audit log | T1 | READ | — |
 | `HERON-AHR-WFP-015` | **Workforce Planning Agent** | The agent that says **no**. Before anything is hired: does a capability already cover this, can an existing agent be extended, is this a fragment rather than an agent? **This is the guard against agent explosion** ↗ | T2 | SUGGEST | — |
 | `HERON-AHR-SBX-016` | **Agent Sandbox Agent** | Runs a newly built agent in isolation — never against a live model, never able to write production knowledge — before it is allowed anywhere near real work ↗ | T1 | READ | — |
-| `HERON-AHR-CON-017` | **Agent Contract Agent** | Owns the interface between agents: input and output schema, permissions, allowed tools, timeout, failure states, retry rules, version. Detects breaking contract changes across 244 agents ↗ | T1 | READ | — |
+| `HERON-AHR-CON-017` | **Agent Contract Agent** | Owns the interface between agents: input and output schema, permissions, allowed tools, timeout, failure states, retry rules, version. Detects breaking contract changes across 249 agents ↗ | T1 | READ | — |
 | `HERON-AHR-HR-002` | Agent HR Agent | Writes the job description — responsibility, capabilities, dependencies, tools | T2 | — | — |
 | `HERON-AHR-ARC-003` | Agent Architect | Designs the agent and its contract | T3 | — | — |
 | `HERON-AHR-BLD-004` | Agent Builder | Implements it | T3 | — | — |
@@ -336,7 +338,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 
 ---
 
-## 11. Kernel & Platform — 18
+## 11. Kernel & Platform — 19
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -351,6 +353,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-KRN-TOL-009` | Tool Registry Agent | Tools, schemas, declared risk levels | T1 | — | 3 |
 | `HERON-KRN-MDL-010` | Model Router | Declares reasoning intent; resolution is pluggable | T1 | — | — |
 | `HERON-KRN-PRO-011` | Prompt / Instruction Registry | One versioned, testable home for all instructions | T1 | ADMIN | — |
+| `HERON-KRN-TRU-019` | **Content Trust Agent** | Enforces [Golden Rule 19](14-golden-rules.md). Scans everything Heron **reads but does not control** — family names, parameter descriptions, model text, imported folders, community packages — for text addressed to the agent. Surfaces it to the user; never acts on it ↗ | T2 | READ | — |
 | `HERON-KRN-SEC-012` | Secret Manager | Credentials outside the workspace. Redaction on the way out | T1 | ADMIN | — |
 | `HERON-KRN-DEP-013` | Dependency Graph Agent | Skills → fragments → API → runtime → packages. Makes blast radius computable | T1 | READ | — |
 | `HERON-KRN-EVD-014` | Evidence Agent | Records *why* a decision was made. **No evidence, no MODIFY** | T1 | — | 6 |
@@ -403,7 +406,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-GIT-CHG-009` | Change Detection Agent | Detects upstream changes affecting fragments or skills | T1 | READ | — |
 | `HERON-GIT-COM-010` | Community Contribution Agent | Prepares a submission. **Per-item human review of the actual payload** | T2 | PUBLISH | — |
 
-## 15. Installation & Update — 11
+## 15. Installation & Update — 13
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -416,6 +419,8 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-INS-BRN-007` | Brain Initialization Agent | Initialises knowledge stores | T1 | ADMIN | — |
 | `HERON-INS-RAG-008` | RAG Initialization Agent | Creates vector store, indexes, embedding config | T1 | ADMIN | — |
 | `HERON-INS-HLT-009` | Health Check Agent | Verifies the install end to end | T1 | READ | — |
+| `HERON-INS-PKG-012` | **Package Manager Agent** | Optional Heron capabilities — skill packs, Revit tool packs, additional providers. Resolves dependencies, checks compatibility, installs, registers, and can uninstall cleanly. Named in Part 4's mandatory list and previously unowned ↗ | T1 | ADMIN | — |
+| `HERON-INS-SUP-013` | **Supply Chain Security Agent** | Anything arriving from outside: verify source, package identity and version, scan dependencies, check hashes and signatures, detect modification. **The highest-severity surface in the platform** once packages can install themselves ↗ | T2 | ADMIN | — |
 | `HERON-INS-EXT-011` | **External Tool Manager** | Optional tooling — AI CLIs, development utilities, additional MCP servers. Detect, check compatibility, **ask permission**, install, configure, verify, register. Never silent ↗ | T1 | ADMIN | — |
 | `HERON-INS-ONB-010` | First-Run Onboarding Agent | Guides the user once, then gets out of the way | T2 | READ | — |
 
@@ -457,7 +462,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | Department | Agents | T1 | T2 | T3 |
 |---|---|---|---|---|
 | Orchestration & Communication | 6 | 0 | 5 | 1 |
-| Revit Engineering | 34 | 32 | 2 | 0 |
+| Revit Engineering | 36 | 34 | 2 | 0 |
 | MCP / Bridge | 12 | 12 | 0 | 0 |
 | Session & Bridge Management | 5 | 5 | 0 | 0 |
 | Knowledge & RAG | 17 | 11 | 4 | 2 |
@@ -469,24 +474,58 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | Standards & BIM QA | 13 | 0 | 12 | 1 |
 | Development | 21 | 11 | 7 | 3 |
 | Agent Lifecycle & HR | 17 | 6 | 8 | 3 |
-| Kernel & Platform | 18 | 17 | 1 | 0 |
+| Kernel & Platform | 19 | 17 | 2 | 0 |
 | Workspace & Folder Architecture | 12 | 10 | 2 | 0 |
 | Naming & Taxonomy | 7 | 5 | 2 | 0 |
 | GitHub | 10 | 8 | 2 | 0 |
-| Installation & Update | 11 | 10 | 1 | 0 |
+| Installation & Update | 13 | 11 | 2 | 0 |
 | Operations, Health & Resilience | 12 | 12 | 0 | 0 |
 | Documentation | 9 | 6 | 3 | 0 |
 | **Reporting & Output** | **4** | 2 | 2 | 0 |
-| **Total** | **244** | **162** | **62** | **20** |
+| **Total** | **249** | **165** | **64** | **20** |
 
-**[NOTE]** The distribution is the point. **162 of 244 agents never call a model** — they are ordinary
-classes with a method or two. Of the rest, 62 make one scoped call and 20 run a real agentic loop.
+**[NOTE]** The distribution is the point. **165 of 249 agents never call a model** — they are ordinary
+classes with a method or two. Of the rest, 64 make one scoped call and 20 run a real agentic loop.
 
-Read that way, the platform is a normal application with about 162 services, 62 narrow model calls, and
+Read that way, the platform is a normal application with about 165 services, 64 narrow model calls, and
 20 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
 **Phase 0 and Phase 1 need about 20 of these**, 17 of them T1 —
 see [08](08-agent-catalog.md) and [27](27-build-order.md).
+
+---
+
+## Completeness audit
+
+**[NOTE]** Run 2026-08-27. Method: take every capability named in the four specification parts, the
+field notes and the Golden Rules, and check that **some agent owns it**. A requirement with no owner is
+a gap; an agent with no requirement is bloat.
+
+**Five gaps found and closed** — each traceable to a specific requirement that had no owner:
+
+| Requirement | Source | Was owned by | Now |
+|---|---|---|---|
+| Unit convention, feet vs millimetres | [04 §6a](04-heron-mcp.md) | nobody | `Unit Conversion Agent` |
+| *"Undo everything Heron did today"* | [PROPOSALS B3](PROPOSALS.md) | nobody — Transaction Safety owns one operation, not a session | `Session Rollback Agent` |
+| No text Heron reads may raise its permission | [Golden Rule 19](14-golden-rules.md) | the rule existed; nothing detected an attempt | `Content Trust Agent` |
+| Package manager | [Part 4](00d-additional-requirements.md) mandatory list | nobody | `Package Manager Agent` |
+| Supply-chain security | [Part 4 §43](00d-additional-requirements.md) | nobody | `Supply Chain Security Agent` |
+
+**Deliberately still unowned**, and correctly so:
+
+| Requirement | Why no agent yet |
+|---|---|
+| Marketplace | Explicitly deferred ([ROADMAP](ROADMAP.md) Phase 7) until licensing and liability are settled. `Community Contribution` covers submission |
+| AutoCAD / Navisworks / IFC / Rhino adapters | Deferred until Revit works properly. The Capability Registry is what will make them additive |
+| Localization | Open question [Q-17](OPEN-QUESTIONS.md). English only until answered |
+| Multi-user server, admin enforcement | [Q-32](OPEN-QUESTIONS.md) — company knowledge as a shared repository, not a server |
+
+**Coverage as it stands:** every capability named in the specifications, every Golden Rule that can have
+an enforcer, and every finding from the field notes now has exactly one owning agent — and every
+creating agent has a named validator.
+
+The registry is **complete against what has been specified.** It will grow again, but from the
+Capability Gap report reading real usage — not from another pass through the documents.
 
 ---
 
@@ -555,8 +594,8 @@ concept is precisely the six-competing-vocabularies problem that
 
 | Company role | Heron | Count | What it means in practice |
 |---|---|---|---|
-| **Worker** | **T1** — deterministic service | 162 | Does one job, the same way every time. No judgement, no model call, no cost |
-| **Pro / skilled** | **T2** — one scoped model call | 62 | One judgement over ambiguous input, then out of the way |
+| **Worker** | **T1** — deterministic service | 165 | Does one job, the same way every time. No judgement, no model call, no cost |
+| **Pro / skilled** | **T2** — one scoped model call | 64 | One judgement over ambiguous input, then out of the way |
 | **Senior / lead** | **T3** — agentic loop | 20 | Owns a hard problem end to end, decides its own steps |
 | **Manager** | **Orchestrator** + **Workflow Engine** | 2 | Decides *what* happens and ensures it *happens correctly*. Deliberately **not** one manager per department — [Part 2 §83](00b-master-specification-agent-os.md) forbids the extra hops |
 | **Researcher** | `Research Agent` | 1 | Finds out what is already known. Everything it returns carries a citation |

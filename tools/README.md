@@ -1,0 +1,73 @@
+# tools
+
+Three small scripts that keep the documentation honest. Plain Python 3, no dependencies.
+Run them from the repository root.
+
+They exist because this repository already got its own numbers wrong twice — the agent registry
+asserted **166 agents while its own departments summed to 196**, and a build-step figure said 20 where
+the rows said 42. Both were caught by adding up columns by hand, which is not a process.
+
+These are the working prototype of the **Documentation Validation Agent**
+(`HERON-DOC-VAL-009`) and the **Agent Documentation Agent** (`HERON-DOC-AGT-002`) — see
+[docs/28](../docs/28-agent-registry.md). When those agents exist, this is roughly what they do.
+
+---
+
+## `check-docs.py` — link and cross-reference integrity
+
+```bash
+python tools/check-docs.py
+```
+
+Verifies that:
+
+- every relative markdown link resolves to a file that exists
+- every `Golden Rule N` reference points to a rule defined in [docs/14](../docs/14-golden-rules.md)
+- every `D-NN` reference points to a decision defined in [docs/DECISIONS.md](../docs/DECISIONS.md)
+- every `Q-NN` reference points to a question defined in [docs/OPEN-QUESTIONS.md](../docs/OPEN-QUESTIONS.md)
+
+Run it after any edit that moves or renames a document. It is how the Golden Rule renumbering
+(ten rules to fifteen, [D-12](../docs/DECISIONS.md)) was verified across 31 files.
+
+---
+
+## `recount-agent-registry.py` — counts derived, never asserted
+
+```bash
+python tools/recount-agent-registry.py
+```
+
+Reads the agent rows in [docs/28](../docs/28-agent-registry.md) and **rewrites every stated count from
+what it finds**: each department heading, the summary table, the header totals, and the figures in the
+prose.
+
+> A number in that document is never typed by hand. If it disagrees with the rows, the rows win.
+
+Run it after adding, removing or re-tiering any agent.
+
+---
+
+## `generate-agent-map.py` — the visual map
+
+```bash
+python tools/generate-agent-map.py
+```
+
+Builds a self-contained, filterable HTML page of every agent, grouped by department and layer, from the
+same registry. Writes `agent-map.html` in the working directory; set `HERON_MAP_OUT` to change that.
+
+Filter by tier, filter to the build steps, search by name, ID or description. Colour encodes **cost** —
+T1 quiet, T3 loud — so the expensive agents are visible at a glance.
+
+Because it is generated, the map cannot drift from the registry. Regenerate rather than edit.
+
+---
+
+## Why these are committed
+
+They are small, they have no dependencies, and they encode three rules the project already learned the
+hard way:
+
+1. **A stated count is a claim; a derived count is a fact.**
+2. **A cross-reference that is not checked is a cross-reference that is broken.**
+3. **A generated artefact cannot lie about its source.**

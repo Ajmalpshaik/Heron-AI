@@ -106,7 +106,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 |---|---|---|
 | 26 | [Prior Art: Existing Revit MCP Servers](26-prior-art-revit-mcp.md) | What already exists, what it confirms, **the two gaps every project shares**, pyRevit Routes |
 | 27 | [**Build Order**](27-build-order.md) | **Start here to build.** Six numbered steps, each independently provable |
-| 28 | [**The Complete Agent Registry**](28-agent-registry.md) | **All 244 agents** — ID, what each one does, tier, risk level, build step |
+| 28 | [**The Complete Agent Registry**](28-agent-registry.md) | **All 249 agents** — ID, what each one does, tier, risk level, build step |
 
 ## Working documents
 
@@ -116,6 +116,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | 38 questions, prioritised, with answer slots |
 | [ROADMAP.md](ROADMAP.md) | Phase 0 → Phase 7, and what is deliberately deferred |
 | [DECISIONS.md](DECISIONS.md) | Append-only log of decisions actually made |
+| [../tools/](../tools/README.md) | Scripts that keep these documents honest — link checker, count recomputer, map generator |
 
 ---
 
