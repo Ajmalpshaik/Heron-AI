@@ -41,15 +41,28 @@ decision is made against facts.
 
 **Scope — deliberately minimal:**
 
-- One Revit version *(Q-3)*
+- **One** Revit version to start — with the multi-target structure and adapter layer already in place,
+  so fanning out to 2020 → latest is later work, not a rewrite *([16 §8](16-version-support-strategy.md))*
 - One transport *(Q-2)*
 - Three MCP tools: `revit_health`, `revit_select_by_category`, `revit_get_selection`
 - No RAG, no vector DB, no fragments, no learning, no installer, no code generation
 - Hard-coded skill mapping — no matching intelligence at all
 
+**Already settled, so this phase implements rather than explores:**
+Claude Code as host ([D-01](DECISIONS.md)) · C# add-in + Python MCP server ([D-06](DECISIONS.md)) ·
+Revit 2020 → latest as the eventual target ([D-05](DECISIONS.md))
+
+**Structure to put in place from the first commit** (cheap now, ruinous to retrofit):
+multi-targeting (`net48` + `net8.0-windows`) · adapter layer for version differences ·
+`UniqueId` for all element identity · public-code / private-data separation ([17 §2](17-open-source-and-distribution.md))
+
 **Definition of done:** it works twice in a row, from a cold Revit start, and the audit log shows what happened.
 
-**What this settles:** Q-1, Q-2, Q-3, Q-4, Q-5, Q-6 — and it produces the skeleton every later phase builds on.
+**What this settles:** Q-2, Q-4, Q-5 — and it produces the skeleton every later phase builds on.
+
+**Phase 0.5 — add the second runtime.** One `net48` version and one `net8` version, both working.
+This is where the .NET break stops being theoretical, and it is much cheaper to face here than after
+six phases of code assume one runtime.
 
 ---
 

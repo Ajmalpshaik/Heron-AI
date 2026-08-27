@@ -117,19 +117,29 @@ Rules that follow from this:
 
 Rough target for a warm, cached "select all ducts": **one T2 call (intent), zero others.**
 
-## 7. **[NOTE]** Where does the orchestration actually run?
+## 7. Where the orchestration runs — **decided**
 
-The spec's install flow begins *"User installs Claude Code"*, which implies Heron is hosted inside Claude Code rather than being a standalone application with its own chat UI. These are very different products:
+> **[D-01](DECISIONS.md), 2026-08-27: Heron AI runs as a Claude Code plugin.**
 
-| Option | Meaning | Consequence |
-|---|---|---|
-| **A. Claude Code plugin** | Heron ships as skills + subagents + an MCP server. Claude Code is the conversation layer and the agent host. | Fastest to build. Whole agent framework is free. User must install and run Claude Code, and needs a Claude subscription. Non-technical BIM users must live in a terminal. |
-| **B. Standalone app** | Heron has its own chat window (WPF dockable pane in Revit, or separate desktop app) and its own agent runtime. | Far better UX for a BIM modeller. Much more to build. Full control of persona, progress display, permissions. |
-| **C. Both** | Core engine + MCP is shared; Claude Code is the developer front-end, the Revit pane is the BIM front-end. | Best end state. Requires the core to be host-agnostic from day one. |
+Claude Code is the conversation layer and the agent host. Heron supplies skills, subagents, an MCP server and the Revit add-in.
 
-**This is decision D-01 and it blocks almost everything else.** See [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) Q-1.
+Combined with **[D-06](DECISIONS.md)** (C# for Revit, Python for the brain), the stack is:
 
-Recommendation: **C, sequenced as A → C.** Build the engine host-agnostic, ship the Claude Code front-end first because it is nearly free, and add the in-Revit pane once the vertical slice works.
+```text
+Claude Code           host: conversation, agents, persona, orchestration
+     |  MCP
+Heron MCP Server      Python — brain, RAG, fragments, skills, memory
+     |  IPC  (transport = D-02, pending)
+Heron Revit Add-in    C# — one build per Revit version
+     |  ExternalEvent
+Revit
+```
+
+**What this buys.** The agent framework, conversation layer, subagent orchestration, tool routing and update mechanism all come for free. A large part of Part 4 (Heron Platform) shrinks accordingly — Claude Code already provides skills, subagents, MCP configuration and plugin updates. What remains genuinely Heron's to build is the Revit bridge, the brain, and the knowledge system.
+
+**What this costs.** The user must install and run Claude Code and needs a Claude subscription. A BIM modeller works in a terminal, which sits in tension with Golden Rule 1 — mitigated by the Communication/Persona layer.
+
+**[NOTE]** Keep the core host-agnostic wherever that is free. An in-Revit docked panel remains the better long-term experience for a BIM modeller, and nothing in this decision should make adding one later require a rewrite. The MCP server and the add-in are already host-independent by construction; the discipline applies only to whatever orchestration logic ends up living on the Heron side.
 
 ## 8. Agent contracts
 

@@ -1,6 +1,20 @@
 # Heron AI — Documentation Index
 
-> **Status:** Specification and planning only. No implementation yet — see [DECISIONS.md](DECISIONS.md) D-00.
+> **Status:** Specification and planning only. No implementation until the owner says to start —
+> see [DECISIONS.md](DECISIONS.md) D-00.
+
+## Decided so far
+
+| | Decision |
+|---|---|
+| **Host** | Claude Code plugin — skills, subagents, MCP server, Revit add-in *(D-01)* |
+| **Revit support** | 2020 → latest, and every future release *(D-05)* |
+| **Languages** | C# for everything touching Revit · Python for the brain *(D-06)* |
+| **Distribution** | Free and open source on public GitHub; app store later, also free *(D-07)* |
+| **Building on** | `AJ-AI-Brain` (brain) and `AJ-Connect` (Revit connector), upgraded to this architecture |
+
+**6 of 27 questions answered.** The four still blocking are transport (Q-2), Revit threading mechanism
+(Q-4), MCP tool granularity (Q-5) and the code execution model (Q-7).
 
 ---
 
@@ -37,6 +51,8 @@
 | 13 | [Testing & Quality](13-testing-and-quality.md) | Eight test levels, testing against real Revit, regression |
 | 14 | [Golden Rules](14-golden-rules.md) | The constitution — rules 1–10 plus 5 proposed |
 | 15 | [Glossary](15-glossary.md) | Terms, Revit concepts, status vocabularies |
+| 16 | [Version Support Strategy](16-version-support-strategy.md) | **Revit 2020 → latest** — the two API breaks, multi-targeting, adapters, test matrix |
+| 17 | [Open Source & Distribution](17-open-source-and-distribution.md) | Licence, public/private separation, contribution, disclaimer, channels |
 
 ## Working documents
 

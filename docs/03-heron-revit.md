@@ -151,9 +151,15 @@ Rules:
 
 ---
 
-## 8. **[NOTE — must verify, do not guess]** Version & runtime matrix
+## 8. Version & runtime matrix
 
-The spec correctly says the matrix must be **determined from the build environment, not guessed**. Below is the *starting hypothesis to verify against the installed SDKs* — it must not be treated as fact until checked.
+> **[D-05](DECISIONS.md), 2026-08-27: Heron supports Revit 2020 through the latest release, and every future release.**
+>
+> Full strategy — multi-targeting, adapter layer, build matrix, test tiering, annual release routine —
+> is in **[16 — Version Support Strategy](16-version-support-strategy.md)**. The summary below is the
+> constraint; that document is the plan.
+
+**[NOTE — must verify, do not guess]** The spec correctly says the matrix must be **determined from the build environment, not guessed**. Below is the *starting hypothesis to verify against the installed SDKs* — it must not be treated as fact until checked.
 
 | Revit | Runtime (to verify) | Notes |
 |---|---|---|
@@ -168,14 +174,18 @@ The spec correctly says the matrix must be **determined from the build environme
 
 ### The .NET 8 break is the biggest single compatibility fact in the project
 
-Revit 2025 moved from .NET Framework to .NET. One assembly cannot target both. This forces either:
+Revit 2025 moved from .NET Framework to .NET. **One assembly cannot target both.**
 
-- **multi-targeting** — one source tree, `<TargetFrameworks>net48;net8.0-windows</TargetFrameworks>`, conditional compilation for API differences; or
-- **separate builds per Revit generation** from shared source.
+**Settled approach:** multi-targeting from a single source tree —
+`<TargetFrameworks>net48;net8.0-windows</TargetFrameworks>` — with per-version compilation symbols and
+all version-conditional code confined to an adapter layer. Branch-per-version is explicitly rejected:
+a fix would have to be cherry-picked into seven branches forever, and Golden Rule 3 would become
+unverifiable because there would be no single thing to test.
 
-Recommendation: multi-targeting from a single source tree, with a per-version `#if REVIT2024_OR_LESS` style symbol scheme, because it is the only approach that keeps "never break a working version" affordable.
-
-**Practical scope question:** supporting 2020 → 2027 is eight versions and a runtime break. That is a very large test matrix for v1. Strong recommendation to pick **one** version for the vertical slice and expand deliberately. Tracked as [Q-3](OPEN-QUESTIONS.md).
+**Sequencing:** supporting all eight versions is a requirement of the finished platform, not of the
+first commit. The vertical slice is built and proven on **one** version with the multi-target structure
+already in place, then the second runtime is added, then the rest fan out. See
+[16 §8](16-version-support-strategy.md).
 
 ---
 

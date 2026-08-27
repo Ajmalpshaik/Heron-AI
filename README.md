@@ -37,18 +37,40 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 
 ## Status
 
-**Specification and planning. No implementation yet.**
-
-The full architecture is documented. Twenty-six questions must be answered before code is written —
-seven of them block all work. See [DECISIONS.md](docs/DECISIONS.md) D-00.
+**Specification and planning. No implementation until the owner says to start.**
 
 | | |
 |---|---|
 | Specification | ✅ Complete — [76 sections](docs/00-master-specification.md) |
 | Architecture review | ✅ Complete — [18 gaps, 9 ideas](docs/PROPOSALS.md) |
-| Open questions | ⏳ 26 open, 0 answered — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
+| Open questions | ⏳ 6 answered, 21 open — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
 | Roadmap | ✅ Drafted — [Phase 0 → 7](docs/ROADMAP.md) |
-| Implementation | ⛔ Not started, by design |
+| Implementation | ⛔ Not started, by design ([D-00](docs/DECISIONS.md)) |
+
+### Decided
+
+| | |
+|---|---|
+| **Host** | Claude Code plugin — skills, subagents, MCP server, Revit add-in |
+| **Revit support** | **2020 → latest**, and every future release |
+| **Languages** | C# for everything touching Revit · Python for the brain and RAG |
+| **Distribution** | Free and **open source** on public GitHub; Autodesk App Store later, also free |
+| **Building on** | `AJ-AI-Brain` (brain) and `AJ-Connect` (Revit connector), upgraded to this architecture |
+
+```text
+Claude Code           host: conversation, agents, persona, orchestration
+     |  MCP
+Heron MCP Server      Python — brain, RAG, fragments, skills, memory
+     |  IPC
+Heron Revit Add-in    C# — one build per Revit version
+     |  ExternalEvent
+Revit
+```
+
+### Still blocking
+
+Transport between server and add-in · the Revit threading mechanism · MCP tool granularity ·
+how generated code executes. All four in [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md).
 
 ---
 
@@ -95,8 +117,17 @@ Phase 0 is one thin vertical slice through every layer:
 ```
 
 No RAG, no fragments, no installer, no code generation. Just proof that the bridge works —
-which settles six of the seven blocking questions with facts instead of opinion.
+which settles the remaining blocking questions with facts instead of opinion.
 
 ---
 
-**Owner:** Ajmal (AjmalPS) · **Domain:** BIM / Revit engineering automation · **Private repository**
+## A note on this repository
+
+It is currently **private**. It becomes public once the licence is chosen, the disclaimer and
+`SECURITY.md` are written, and the public-code / private-knowledge separation is verified — because
+publishing is irreversible in practice and client project data must never be able to reach it.
+See [17 — Open Source & Distribution](docs/17-open-source-and-distribution.md).
+
+---
+
+**Owner:** Ajmal (AjmalPS) · **Domain:** BIM / Revit engineering automation
