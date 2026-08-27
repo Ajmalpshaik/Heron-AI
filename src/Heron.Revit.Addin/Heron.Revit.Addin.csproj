@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The Revit add-in. The ONLY project that references Autodesk.Revit.
+
+    Revit API assemblies are Autodesk's and are NOT redistributable
+    (docs/07 section 4). They are referenced with Private=false so they are
+    never copied to the output - Revit supplies them at runtime.
+
+    Two ways to resolve them:
+
+      1. NuGet (default). Per-version packages.
+      2. A local Revit install, if NuGet is unavailable or you prefer the
+         exact DLLs from your machine:
+
+           dotnet build -p:RevitVersion=2024 -p:RevitApiDir="C:\Program Files\Autodesk\Revit 2024"
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Revit.Addin</RootNamespace>
+    <AssemblyName>Heron.Revit.Addin</AssemblyName>
+    <UseWPF Condition="'$(HeronTfm)' != 'net472' AND '$(HeronTfm)' != 'net48'">true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Heron.Bridge\Heron.Bridge.csproj" />
+  </ItemGroup>
+
+  <!-- Option 1: NuGet, when RevitApiDir is not supplied. -->
+  <ItemGroup Condition="'$(RevitApiDir)' == ''">
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" ExcludeAssets="runtime" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <!-- Option 2: local Revit install. -->
+  <ItemGroup Condition="'$(RevitApiDir)' != ''">
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitApiDir)\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitApiDir)\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(HeronTfm)' == 'net472' OR '$(HeronTfm)' == 'net48'">
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Heron.addin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The bridge. Pure .NET - no Revit reference, ever.
+
+    This is the adapter boundary from docs/16 section 4, enforced by the
+    project file: if this project ever needs Autodesk.Revit, the boundary has
+    been crossed and something belongs in Heron.Revit.Addin instead.
+
+    Keeping it Revit-free is also what makes it unit-testable without Revit.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Bridge</RootNamespace>
+    <AssemblyName>Heron.Bridge</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(HeronTfm)' == 'net472' OR '$(HeronTfm)' == 'net48'">
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+
+</Project>

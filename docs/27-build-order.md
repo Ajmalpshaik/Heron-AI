@@ -17,7 +17,7 @@ regardless of how much of it is built.
 ---
 
 **Which agents each step builds:** [08 — Agent Catalogue](08-agent-catalog.md).
-All of Phase 0 and 1 needs **45 of the 249 agents** — under a fifth. Steps 1-6 build 10, 3, 7, 7, 6 and 9
+All of Phase 0 and 1 needs **45 of the 250 agents** — under a fifth. Steps 1-6 build 10, 3, 7, 7, 6 and 9
 respectively, and the large majority are plain deterministic modules with no model call at all.
 
 ---

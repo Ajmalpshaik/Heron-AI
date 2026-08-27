@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+# Heron-Agent:  HERON-DOC-AGT-002
+# Heron-Step:   1
+# Heron-Status: DRAFT
+# Heron-Since:  0.1.0
+# Heron-Layer:  tool
+# See docs/29-metadata-standard.md
+
 """Recompute every stated count in the agent registry from its own rows."""
 import io, re, sys, collections
 

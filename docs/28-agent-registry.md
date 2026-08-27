@@ -19,7 +19,7 @@
 | **Risk** | Highest permission level it can require ([12 §1](12-security-and-permissions.md)) |
 | **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
 
-**Totals: 249 agents · 165 T1 · 64 T2 · 20 T3.**
+**Totals: 250 agents · 166 T1 · 64 T2 · 20 T3.**
 Roughly two thirds never call a model at all.
 
 > **Correction, 2026-08-27:** an earlier version of this page stated 166. The departments actually
@@ -210,7 +210,7 @@ at all. This department closes that.
 | `HERON-IMP-IDX-013` | Indexing Agent | Indexes the accepted result | T1 | MODIFY | — |
 | `HERON-IMP-APR-014` | Approval Agent | Presents the manifest for human review. **Everything enters at `DISCOVERED`** | T1 | SUGGEST | — |
 
-## 8. Standards & BIM QA — 13
+## 8. Standards & BIM QA — 14
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -224,6 +224,7 @@ at all. This department closes that.
 | `HERON-STD-DOC-008` | Documentation Standard Agent | Sheet, titleblock and annotation requirements | T2 | ANALYZE | — |
 | `HERON-STD-PRJ-009` | Project Standard Agent | This project's own rules — **outranks the company default**, and says so | T2 | ANALYZE | — |
 | `HERON-STD-REF-010` | **Reference Model Profiler** | Infers a standard from a correctly delivered model. Extracts the profile, **discards the model** ↗ | T3 | READ | — |
+| `HERON-STD-MET-014` | **Metadata & Policy Checker Agent** | Enforces the Heron metadata standard ([29](29-metadata-standard.md)) on everything Heron creates — every artefact declares its agent, step, status, version and layer. Also audits **the registry against the code**: an agent claimed by no file, or a file claiming no agent ↗ | T1 | READ | 1 |
 | `HERON-STD-PVL-013` | **Profile Validation Agent** | Checks a standard **inferred** from a reference model before it can be trusted. Tests it against a second delivered model, separates convention from coincidence, and surfaces the exceptions rather than flagging correct work as wrong ↗ | T2 | READ | — |
 | `HERON-QA-BIM-011` | **BIM QA Agent** | Checks the *model*: naming, parameters, categories, families, levels, worksets, views, MEP connectivity ↗ | T2 | ANALYZE | — |
 | `HERON-QA-CLS-012` | **Clash / Coordination Agent** | Clash analysis, clearance, system coordination, linked-model coordination reports ↗ | T2 | ANALYZE | — |
@@ -471,7 +472,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | **Learning & Self-Growth** | **4** | 2 | 1 | 1 |
 | **Skill Lifecycle** | **6** | 1 | 3 | 2 |
 | Import & Migration | 14 | 7 | 4 | 3 |
-| Standards & BIM QA | 13 | 0 | 12 | 1 |
+| Standards & BIM QA | 14 | 1 | 12 | 1 |
 | Development | 21 | 11 | 7 | 3 |
 | Agent Lifecycle & HR | 17 | 6 | 8 | 3 |
 | Kernel & Platform | 19 | 17 | 2 | 0 |
@@ -482,12 +483,12 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | Operations, Health & Resilience | 12 | 12 | 0 | 0 |
 | Documentation | 9 | 6 | 3 | 0 |
 | **Reporting & Output** | **4** | 2 | 2 | 0 |
-| **Total** | **249** | **165** | **64** | **20** |
+| **Total** | **250** | **166** | **64** | **20** |
 
-**[NOTE]** The distribution is the point. **165 of 249 agents never call a model** — they are ordinary
+**[NOTE]** The distribution is the point. **166 of 250 agents never call a model** — they are ordinary
 classes with a method or two. Of the rest, 64 make one scoped call and 20 run a real agentic loop.
 
-Read that way, the platform is a normal application with about 165 services, 64 narrow model calls, and
+Read that way, the platform is a normal application with about 166 services, 64 narrow model calls, and
 20 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
 **Phase 0 and Phase 1 need about 20 of these**, 17 of them T1 —
@@ -594,7 +595,7 @@ concept is precisely the six-competing-vocabularies problem that
 
 | Company role | Heron | Count | What it means in practice |
 |---|---|---|---|
-| **Worker** | **T1** — deterministic service | 165 | Does one job, the same way every time. No judgement, no model call, no cost |
+| **Worker** | **T1** — deterministic service | 166 | Does one job, the same way every time. No judgement, no model call, no cost |
 | **Pro / skilled** | **T2** — one scoped model call | 64 | One judgement over ambiguous input, then out of the way |
 | **Senior / lead** | **T3** — agentic loop | 20 | Owns a hard problem end to end, decides its own steps |
 | **Manager** | **Orchestrator** + **Workflow Engine** | 2 | Decides *what* happens and ensures it *happens correctly*. Deliberately **not** one manager per department — [Part 2 §83](00b-master-specification-agent-os.md) forbids the extra hops |

@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+# Heron-Agent:  HERON-DOC-VAL-009
+# Heron-Step:   1
+# Heron-Status: DRAFT
+# Heron-Since:  0.1.0
+# Heron-Layer:  tool
+# See docs/29-metadata-standard.md
+
 import io, os, re, sys
 
 root = '.'

@@ -1,0 +1,52 @@
+<Project>
+
+  <!--
+    Heron AI - shared build configuration.
+
+    ONE property controls which Revit generation is built:
+
+        dotnet build -p:RevitVersion=2024
+
+    The multi-targeting machinery is here from the first commit because it is
+    cheap now and ruinous to retrofit (D-05, docs/16). Step 1 proves ONE
+    version; the structure already supports the rest.
+
+    Runtime per Revit generation - see docs/16-version-support-strategy.md:
+        2020            net472
+        2021-2024       net48
+        2025-2026       net8.0-windows
+        2027            net10.0-windows
+  -->
+
+  <PropertyGroup>
+    <RevitVersion Condition="'$(RevitVersion)' == ''">2024</RevitVersion>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <Platform>x64</Platform>
+    <PlatformTarget>x64</PlatformTarget>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Company>Ajmal PS</Company>
+    <Product>Heron AI</Product>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <!-- Map Revit version to its runtime. -->
+  <PropertyGroup>
+    <HeronTfm Condition="'$(RevitVersion)' == '2020'">net472</HeronTfm>
+    <HeronTfm Condition="'$(RevitVersion)' &gt;= '2021' AND '$(RevitVersion)' &lt;= '2024'">net48</HeronTfm>
+    <HeronTfm Condition="'$(RevitVersion)' &gt;= '2025' AND '$(RevitVersion)' &lt;= '2026'">net8.0-windows</HeronTfm>
+    <HeronTfm Condition="'$(RevitVersion)' &gt;= '2027'">net10.0-windows</HeronTfm>
+  </PropertyGroup>
+
+  <!-- Compilation symbols so version-conditional code is possible. Per docs/16,
+       such code belongs ONLY in adapters, never in core logic. -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
+    <DefineConstants Condition="'$(RevitVersion)' &gt;= '2024'">$(DefineConstants);REVIT2024_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="'$(RevitVersion)' &gt;= '2025'">$(DefineConstants);REVIT2025_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+
+</Project>

@@ -106,7 +106,8 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 |---|---|---|
 | 26 | [Prior Art: Existing Revit MCP Servers](26-prior-art-revit-mcp.md) | What already exists, what it confirms, **the two gaps every project shares**, pyRevit Routes |
 | 27 | [**Build Order**](27-build-order.md) | **Start here to build.** Six numbered steps, each independently provable |
-| 28 | [**The Complete Agent Registry**](28-agent-registry.md) | **All 249 agents** — ID, what each one does, tier, risk level, build step |
+| 28 | [**The Complete Agent Registry**](28-agent-registry.md) | **All 250 agents** — ID, what each one does, tier, risk level, build step |
+| 29 | [Metadata Standard](29-metadata-standard.md) | The five fields every artefact carries — and how they tie the code back to the registry |
 
 ## Working documents
 

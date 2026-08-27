@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Heron AI - Revit add-in manifest.
+
+  Deployed per-user, which needs no administrator rights (docs/07 section 5):
+
+      %APPDATA%\Autodesk\Revit\Addins\<version>\
+
+  The Assembly path is rewritten by tools/deploy-addin.ps1 at deploy time.
+-->
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Heron AI</Name>
+    <Assembly>Heron.Revit.Addin.dll</Assembly>
+    <AddInId>7A1F4C62-9D3E-4B18-8E52-1C0A6F2D5B41</AddInId>
+    <FullClassName>Heron.Revit.Addin.HeronApplication</FullClassName>
+    <VendorId>AJPS</VendorId>
+    <VendorDescription>Ajmal PS - Heron AI</VendorDescription>
+  </AddIn>
+</RevitAddIns>

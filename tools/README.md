@@ -47,6 +47,23 @@ Run it after adding, removing or re-tiering any agent.
 
 ---
 
+## `check-metadata.py` — the standard, enforced
+
+```bash
+python tools/check-metadata.py
+```
+
+Enforces [docs/29](../docs/29-metadata-standard.md) — every source file declares its agent,
+build step, lifecycle status, version and layer.
+
+Then it does the thing that makes the standard worth having, and audits **in both directions**:
+code claiming an agent that is not in the registry, *and* registry agents due by now that no file
+implements. The second half is an honest to-do list rather than an error.
+
+The working prototype of `HERON-STD-MET-014`.
+
+---
+
 ## `generate-agent-map.py` — the visual map
 
 ```bash
