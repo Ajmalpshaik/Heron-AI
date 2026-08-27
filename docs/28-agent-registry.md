@@ -19,7 +19,7 @@
 | **Risk** | Highest permission level it can require ([12 §1](12-security-and-permissions.md)) |
 | **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
 
-**Totals: 226 agents · 150 T1 · 57 T2 · 19 T3.**
+**Totals: 244 agents · 162 T1 · 62 T2 · 20 T3.**
 Roughly two thirds never call a model at all.
 
 > **Correction, 2026-08-27:** an earlier version of this page stated 166. The departments actually
@@ -28,7 +28,7 @@ Roughly two thirds never call a model at all.
 
 ---
 
-## 1. Orchestration & Communication — 5
+## 1. Orchestration & Communication — 6
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -36,9 +36,10 @@ Roughly two thirds never call a model at all.
 | `HERON-ORC-INT-002` | Intent Agent | Classifies what the user is asking for — command, question, debugging, development | T2 | READ | 4 |
 | `HERON-ORC-PER-003` | Communication / Persona Agent | Detects role and technical level; chooses wording. BIM language out, not API calls | T2 | READ | 4 |
 | `HERON-ORC-FAIL-004` | Failure Analysis Agent | Determines *why* something failed and routes it. Never blind-retries | T2 | READ | 6 |
+| `HERON-ORC-SUM-006` | **User Result Agent** | Compresses the whole internal chain — 12 agents, 37 tool calls, 4 retrievals, 3 tests — into what the user actually needs to read. *"Done. Selected all ducts, moved them 200 mm up, verified in Revit."* This is what makes simple-outside / complex-inside real ↗ | T2 | READ | 4 |
 | `HERON-ORC-FIX-005` | Fix Agent | Applies a targeted repair chosen by failure analysis | T3 | MODIFY | — |
 
-## 2. Revit Engineering — 33
+## 2. Revit Engineering — 34
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -62,6 +63,7 @@ Roughly two thirds never call a model at all.
 | `HERON-REVIT-EXP-018` | Revit Export Agent | Exports — IFC, DWG, PDF, images, schedules | T1 | PUBLISH | — |
 | `HERON-REVIT-IMP-019` | Revit Import Agent | Imports and links external files in | T1 | MODIFY | — |
 | `HERON-REVIT-API-020` | Revit API Agent | Correct API, namespace, method, deprecations, transaction requirements for a novel operation | T2 | READ | — |
+| `HERON-REVIT-ACI-034` | **API Change Intelligence Agent** | Continuously tracks what changed between Revit versions — deprecated and renamed APIs, changed methods, parameters, units, namespaces, and silent behavioural changes. Feeds Fragment Evolution before a version breaks something ↗ | T2 | READ | — |
 | `HERON-REVIT-CMP-021` | Revit Compatibility Agent | Will this fragment run on this Revit version | T1 | READ | — |
 | `HERON-REVIT-UI-022` | Revit UI Agent | Task dialogs, progress banner, the picker | T1 | READ | 5 |
 | `HERON-REVIT-RIB-023` | Revit Ribbon Agent | Ribbon tab, panels, buttons — including Emergency Stop | T1 | READ | 1 |
@@ -76,7 +78,7 @@ Roughly two thirds never call a model at all.
 | `HERON-REVIT-PHS-032` | **Revit Phase & Design Option Agent** | Phases and design options — both change what *"all ducts"* even means ↗ | T1 | MODIFY | — |
 | `HERON-REVIT-GRP-033` | **Revit Group & Assembly Agent** | Groups and assemblies. They behave unusually and break naive element edits ↗ | T1 | MODIFY | — |
 
-## 3. MCP / Bridge — 11
+## 3. MCP / Bridge — 12
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -90,6 +92,7 @@ Roughly two thirds never call a model at all.
 | `HERON-MCP-CMP-008` | MCP Compatibility Agent | Server / add-in / Revit version triangle; refuses cleanly on mismatch | T1 | — | 5 |
 | `HERON-MCP-REC-009` | MCP Recovery Agent | Reconnect with backoff. Distinguishes transport faults from real failures | T1 | — | 5 |
 | `HERON-MCP-LOG-010` | MCP Logging Agent | Structured request/response logging into the audit log | T1 | — | 4 |
+| `HERON-MCP-DIS-012` | **MCP Discovery Agent** | Finds **other** MCP servers installed on the machine, reads their tools, versions and capabilities, and registers them with the Tool Registry. Distinct from Bridge Discovery, which finds Revit sessions ↗ | T1 | READ | — |
 | `HERON-MCP-SEC-011` | MCP Security Agent | **Enforces the permission gate in the add-in.** Returns `REQUIRES_CONFIRMATION` rather than executing | T1 | ADMIN | **6** |
 
 ## 4. Session & Bridge Management — 5 *(field-derived)*
@@ -124,7 +127,7 @@ Roughly two thirds never call a model at all.
 | `HERON-RAG-EVO-016` | Knowledge Evolution Agent | Restructures knowledge organisation when it stops fitting | T3 | MODIFY | — |
 | `HERON-RAG-RSH-017` | **Research Agent** | Investigates a question Heron's own knowledge cannot answer — external docs, API references, standards, prior art. **Everything it returns carries a citation** ↗ | T3 | READ | — |
 
-## 6. Fragment Lifecycle — 8
+## 6. Fragment Lifecycle — 9
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -134,8 +137,38 @@ Roughly two thirds never call a model at all.
 | `HERON-FRG-MRG-004` | Fragment Merge Agent | Detects near-identical fragments; proposes merge, replace, keep separate or deprecate | T2 | SUGGEST | — |
 | `HERON-FRG-EVO-005` | Fragment Evolution Agent | Decides KEEP / UPDATE / EXTEND / SPLIT / MERGE / BRANCH / DEPRECATE / ARCHIVE. Always proposes | T3 | SUGGEST | — |
 | `HERON-FRG-REG-006` | Regression Testing Agent | Builds and tests every supported version; **rejects unsafe changes**; preserves the previous implementation | T1 | READ | — |
+| `HERON-FRG-MTX-009` | **Compatibility Matrix Agent** | Owns the matrix itself — every fragment against every Revit version **and** its .NET runtime, with the status coming from **tests, never assumption**. The backbone of the 2020-to-latest commitment ↗ | T1 | READ | — |
 | `HERON-FRG-CRE-007` | **Fragment Creation Agent** | Authors a new fragment — identity, metadata, implementation, tests. Only after Fragment Matcher reports nothing reusable ↗ | T3 | MODIFY | — |
 | `HERON-FRG-UPD-008` | **Fragment Update Agent** | **Applies** what Fragment Evolution decided. Evolution decides; this one does it, and never to `PRODUCTION` without approval ↗ | T3 | MODIFY | — |
+
+## 5a. User & Personalization — 3 *(new department)*
+
+**[NOTE]** Added 2026-08-27. A genuine hole: the memory **scopes** were designed
+([10](10-memory-and-knowledge.md)) but no agent owned the user's own. Persona chose *wording*; nothing
+held the durable facts it was choosing from.
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-USR-PRO-001` | **User Profile Agent** | Holds the durable facts: role, discipline, experience level, language, working style, technical depth. **State, not behaviour** — Persona reads this to choose how to speak ↗ | T1 | READ | — |
+| `HERON-USR-MEM-002` | **User Memory Agent** | Decides what is worth remembering, what expires, what must **never** be stored, and when an old preference is superseded. The judgement is the job ↗ | T2 | MODIFY | — |
+| `HERON-USR-SKL-003` | **User Skill Manager** | Keeps this user's own learned skills separate from shared ones, and manages promotion upward. Personal stays personal until explicitly raised ↗ | T1 | MODIFY | — |
+
+---
+
+## 5b. Learning & Self-Growth — 4 *(new department)*
+
+**[NOTE]** Continuous learning ran through all four specification parts and **no agent owned any of it.**
+Fragment Performance measured, Knowledge Evolution restructured — but nothing watched real work and
+turned it into knowledge. This is the loop that makes Heron self-growing rather than merely large.
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-LRN-OBS-001` | **Learning Observation Agent** | Watches completed workflows, successes and failures alike. **Failure is the higher-value signal** ↗ | T1 | READ | — |
+| `HERON-LRN-ANA-002` | **Learning Analysis Agent** | Is this genuinely new and reusable, or a one-off? Frequency and corroboration, not novelty ↗ | T2 | READ | — |
+| `HERON-LRN-EXT-003` | **Knowledge Extraction Agent** | Turns an observed pattern into a candidate fragment, skill or rule — parameterised, not hard-coded to the numbers it happened to see ↗ | T3 | SUGGEST | — |
+| `HERON-LRN-PRO-004` | **Learning Promotion Agent** | Walks new knowledge through the lifecycle gates. **One success is not proof**, and `PRODUCTION` still needs a human ↗ | T1 | SUGGEST | — |
+
+---
 
 ## 6a. Skill Lifecycle — 6 *(new department)*
 
@@ -219,11 +252,14 @@ at all. This department closes that.
 | `HERON-DEV-DOC-017` | Documentation Agent | Generates docs from registries and metadata | T1 | — | — |
 | `HERON-DEV-REL-018` | Release Agent | Packages and releases | T1 | PUBLISH | — |
 
-## 10. Agent Lifecycle & HR — 14
+## 10. Agent Lifecycle & HR — 17
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
 | `HERON-AHR-GAP-001` | **Capability Gap Agent** | *"X is needed repeatedly and no capability covers it."* A read-only report over the audit log | T1 | READ | — |
+| `HERON-AHR-WFP-015` | **Workforce Planning Agent** | The agent that says **no**. Before anything is hired: does a capability already cover this, can an existing agent be extended, is this a fragment rather than an agent? **This is the guard against agent explosion** ↗ | T2 | SUGGEST | — |
+| `HERON-AHR-SBX-016` | **Agent Sandbox Agent** | Runs a newly built agent in isolation — never against a live model, never able to write production knowledge — before it is allowed anywhere near real work ↗ | T1 | READ | — |
+| `HERON-AHR-CON-017` | **Agent Contract Agent** | Owns the interface between agents: input and output schema, permissions, allowed tools, timeout, failure states, retry rules, version. Detects breaking contract changes across 244 agents ↗ | T1 | READ | — |
 | `HERON-AHR-HR-002` | Agent HR Agent | Writes the job description — responsibility, capabilities, dependencies, tools | T2 | — | — |
 | `HERON-AHR-ARC-003` | Agent Architect | Designs the agent and its contract | T3 | — | — |
 | `HERON-AHR-BLD-004` | Agent Builder | Implements it | T3 | — | — |
@@ -300,7 +336,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 
 ---
 
-## 11. Kernel & Platform — 16
+## 11. Kernel & Platform — 18
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -319,7 +355,9 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-KRN-DEP-013` | Dependency Graph Agent | Skills → fragments → API → runtime → packages. Makes blast radius computable | T1 | READ | — |
 | `HERON-KRN-EVD-014` | Evidence Agent | Records *why* a decision was made. **No evidence, no MODIFY** | T1 | — | 6 |
 | `HERON-KRN-WOP-016` | **Workflow Optimizer Agent** | Improves *the way work is done*, not the agents doing it. Spots that a workflow always fails at the same stage, that two stages could merge, or that a step never changes the outcome ↗ | T2 | SUGGEST | — |
-| `HERON-KRN-TOK-015` | **Tokenizer / Token Budget Agent** | Counts tokens **before** sending, enforces the context budget, tracks spend per request and per session. Feeds the visible cost meter ↗ | T1 | — | — |
+| `HERON-KRN-TOK-015` | **Token & Cost Budget Agent** | Counts tokens **before** sending, enforces per-request, per-session and background budgets, and can force a cheaper model when a budget is tight. Feeds the visible cost meter ↗ | T1 | — | — |
+| `HERON-KRN-MAV-017` | **Model Availability & Fallback Agent** | Is the provider actually reachable — auth, latency, context size, local or cloud. On failure, routes to the fallback **and marks the result as degraded**, so it never counts as evidence toward promotion ↗ | T1 | — | — |
+| `HERON-KRN-HUM-018` | **Human Approval Agent** | Owns the one boundary Heron cannot cross alone. Asks the person, records who approved what and when, scopes consent to that single action, and **never remembers it** ↗ | T1 | ADMIN | 6 |
 
 ## 12. Workspace & Folder Architecture — 12
 
@@ -365,7 +403,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-GIT-CHG-009` | Change Detection Agent | Detects upstream changes affecting fragments or skills | T1 | READ | — |
 | `HERON-GIT-COM-010` | Community Contribution Agent | Prepares a submission. **Per-item human review of the actual payload** | T2 | PUBLISH | — |
 
-## 15. Installation & Update — 10
+## 15. Installation & Update — 11
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -378,9 +416,10 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-INS-BRN-007` | Brain Initialization Agent | Initialises knowledge stores | T1 | ADMIN | — |
 | `HERON-INS-RAG-008` | RAG Initialization Agent | Creates vector store, indexes, embedding config | T1 | ADMIN | — |
 | `HERON-INS-HLT-009` | Health Check Agent | Verifies the install end to end | T1 | READ | — |
+| `HERON-INS-EXT-011` | **External Tool Manager** | Optional tooling — AI CLIs, development utilities, additional MCP servers. Detect, check compatibility, **ask permission**, install, configure, verify, register. Never silent ↗ | T1 | ADMIN | — |
 | `HERON-INS-ONB-010` | First-Run Onboarding Agent | Guides the user once, then gets out of the way | T2 | READ | — |
 
-## 16. Operations, Health & Resilience — 11
+## 16. Operations, Health & Resilience — 12
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
@@ -391,6 +430,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-OPS-DIA-005` | Self-Diagnostics Agent | *"Diagnose Heron"* — one clean report | T1 | READ | — |
 | `HERON-OPS-HEA-006` | Self-Healing Agent | Repairs **derived** state freely; proposes everything else | T1 | MODIFY | — |
 | `HERON-OPS-STP-007` | **Emergency Stop Agent** | Global halt from the ribbon. Works when the agent side is stuck. Sticky ↗ | T1 | READ | **6** |
+| `HERON-OPS-SHD-012` | **Shadow Execution Agent** | The harness, not the teacher. Runs a candidate **in parallel** with the production one, captures both results, and guarantees the candidate can modify nothing. Works for fragments and workflows, not only agents ↗ | T1 | READ | — |
 | `HERON-OPS-SAF-008` | Safe Mode Agent | Disables recent components, returns to last-known-good | T1 | ADMIN | — |
 | `HERON-OPS-FLG-009` | Feature Flag Agent | Flags for staged rollout and shadow running | T1 | ADMIN | — |
 | `HERON-OPS-UPD-010` | Update Agent | Detects, downloads, migrates, validates, **rolls back** | T1 | ADMIN | — |
@@ -416,32 +456,34 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 
 | Department | Agents | T1 | T2 | T3 |
 |---|---|---|---|---|
-| Orchestration & Communication | 5 | 0 | 4 | 1 |
-| Revit Engineering | 33 | 32 | 1 | 0 |
-| MCP / Bridge | 11 | 11 | 0 | 0 |
+| Orchestration & Communication | 6 | 0 | 5 | 1 |
+| Revit Engineering | 34 | 32 | 2 | 0 |
+| MCP / Bridge | 12 | 12 | 0 | 0 |
 | Session & Bridge Management | 5 | 5 | 0 | 0 |
 | Knowledge & RAG | 17 | 11 | 4 | 2 |
-| Fragment Lifecycle | 8 | 2 | 2 | 4 |
+| Fragment Lifecycle | 9 | 3 | 2 | 4 |
+| **User & Personalization** | **3** | 2 | 1 | 0 |
+| **Learning & Self-Growth** | **4** | 2 | 1 | 1 |
 | **Skill Lifecycle** | **6** | 1 | 3 | 2 |
 | Import & Migration | 14 | 7 | 4 | 3 |
 | Standards & BIM QA | 13 | 0 | 12 | 1 |
 | Development | 21 | 11 | 7 | 3 |
-| Agent Lifecycle & HR | 14 | 4 | 7 | 3 |
-| Kernel & Platform | 16 | 15 | 1 | 0 |
-| Workspace & Folder | 12 | 10 | 2 | 0 |
+| Agent Lifecycle & HR | 17 | 6 | 8 | 3 |
+| Kernel & Platform | 18 | 17 | 1 | 0 |
+| Workspace & Folder Architecture | 12 | 10 | 2 | 0 |
 | Naming & Taxonomy | 7 | 5 | 2 | 0 |
 | GitHub | 10 | 8 | 2 | 0 |
-| Installation & Update | 10 | 9 | 1 | 0 |
-| Operations & Health | 11 | 11 | 0 | 0 |
+| Installation & Update | 11 | 10 | 1 | 0 |
+| Operations, Health & Resilience | 12 | 12 | 0 | 0 |
 | Documentation | 9 | 6 | 3 | 0 |
 | **Reporting & Output** | **4** | 2 | 2 | 0 |
-| **Total** | **226** | **150** | **57** | **19** |
+| **Total** | **244** | **162** | **62** | **20** |
 
-**[NOTE]** The distribution is the point. **150 of 226 agents never call a model** — they are ordinary
-classes with a method or two. Of the rest, 57 make one scoped call and 19 run a real agentic loop.
+**[NOTE]** The distribution is the point. **162 of 244 agents never call a model** — they are ordinary
+classes with a method or two. Of the rest, 62 make one scoped call and 20 run a real agentic loop.
 
-Read that way, the platform is a normal application with about 150 services, 57 narrow model calls, and
-19 genuine agentic workflows. That is a tractable system, not an intimidating one.
+Read that way, the platform is a normal application with about 162 services, 62 narrow model calls, and
+20 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
 **Phase 0 and Phase 1 need about 20 of these**, 17 of them T1 —
 see [08](08-agent-catalog.md) and [27](27-build-order.md).
@@ -513,9 +555,9 @@ concept is precisely the six-competing-vocabularies problem that
 
 | Company role | Heron | Count | What it means in practice |
 |---|---|---|---|
-| **Worker** | **T1** — deterministic service | 150 | Does one job, the same way every time. No judgement, no model call, no cost |
-| **Pro / skilled** | **T2** — one scoped model call | 57 | One judgement over ambiguous input, then out of the way |
-| **Senior / lead** | **T3** — agentic loop | 19 | Owns a hard problem end to end, decides its own steps |
+| **Worker** | **T1** — deterministic service | 162 | Does one job, the same way every time. No judgement, no model call, no cost |
+| **Pro / skilled** | **T2** — one scoped model call | 62 | One judgement over ambiguous input, then out of the way |
+| **Senior / lead** | **T3** — agentic loop | 20 | Owns a hard problem end to end, decides its own steps |
 | **Manager** | **Orchestrator** + **Workflow Engine** | 2 | Decides *what* happens and ensures it *happens correctly*. Deliberately **not** one manager per department — [Part 2 §83](00b-master-specification-agent-os.md) forbids the extra hops |
 | **Researcher** | `Research Agent` | 1 | Finds out what is already known. Everything it returns carries a citation |
 | **Scientist** | `Experiment Agent` | 1 | Finds out what **nobody** knows yet — designs a comparison and reports a verdict with evidence |

@@ -90,7 +90,7 @@ Full index: **[docs/README.md](docs/README.md)**
 - [Open Questions](docs/OPEN-QUESTIONS.md) — what must be decided
 - [Roadmap](docs/ROADMAP.md) — what gets built, in what order
 - [**Build Order**](docs/27-build-order.md) — **the six numbered steps to actually start**
-- [**Agent Registry**](docs/28-agent-registry.md) — all 226 agents, what each one does
+- [**Agent Registry**](docs/28-agent-registry.md) — all 244 agents, what each one does
 - [Golden Rules](docs/14-golden-rules.md) — the non-negotiables
 
 ---
