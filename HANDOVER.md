@@ -419,13 +419,14 @@ was deliberate: a rule that only binds once the code passes is not a rule the co
 ## 8. What is waiting on the owner
 
 **Every question is answered — 41 of 41 — and nothing blocks any phase.** What is left is not decisions
-the code is waiting on. It is two review items at the PC, and one confirmation nobody has asked for yet.
+the code is waiting on: **two review items at the PC, and nothing else.** The copyright line was the last
+outstanding confirmation and it was given on 2026-08-28.
 
 | | |
 |---|---|
 | **`R1` — read the day's decisions back** | **D-23 to D-43, at the PC, before Phase 2 work starts.** His own instruction: *"now we just recorded, but we will do it one more time."* They are Accepted and are being built on — this is a review, not a hold. A decision reviewed after the code exists gets defended rather than examined, and **two were already reversed within hours** (D-26 three times, D-32 once), which is the evidence for doing it |
 | **`R1b` — show him the trust model working** | [D-14](docs/DECISIONS.md) stays **Proposed**. He agreed the direction and said *"show me it working at the PC first."* Use the framing that landed: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
-| Copyright | `LICENSE` and `NOTICE` say **Ajmal PS**. Confirm that is right. Nobody has asked him |
+| ~~Copyright~~ | **CONFIRMED 2026-08-28 — Ajmal PS is correct.** Checked consistent in all four places it appears: the Apache appendix in `LICENSE`, `NOTICE`, `<Company>` in `Directory.Build.props`, and `README.md`. The Apache appendix is filled in rather than left as the `[name of copyright owner]` placeholder, which is the one that is usually missed |
 
 **Two things were answered by NOT answering them, and both are publication tasks rather than gaps:**
 [Q-38](docs/OPEN-QUESTIONS.md) — the public install command — and the Autodesk App Store requirements in
