@@ -1278,6 +1278,35 @@ turns it off. Concretely, and each of these is checkable:
 - A knowledge scope leaves the machine only when a person deliberately publishes it — `PUBLISH`,
   explicit, per action ([12 §2](12-security-and-permissions.md)).
 
+### Where the line actually falls — the model, not the answer
+
+**Refined by Ajmal on 2026-08-28, after the first version of this decision was written**, and the
+refinement is what makes it workable rather than merely strict:
+
+> *"Revit model — it means Revit model. Okay, how many ducts are there? That is no issue. But the entire
+> model, it should not go to the cloud like that. The work-related everything in the cloud, no issue."*
+
+So the rule is **bulk versus answer**, and the two are not the same thing at all:
+
+| | |
+|---|---|
+| **Never leaves** | The model. The `.rvt`, an export of it, or a dump that amounts to one — every element, every parameter, the whole schedule |
+| **Fine** | The answer to a work question. *"126 ducts."* *"Sizes are 400×200 and 300×150."* That is the job |
+
+**This has a concrete design consequence and it is not a soft one: a Heron tool answers a question, it
+never returns the model.** That happens to align exactly with [Q-5](OPEN-QUESTIONS.md) — *MCP tool
+granularity: thick and specific* — which was decided for entirely different reasons, and the two
+now hold each other up. A thin, general tool (*"give me all elements"*) is both a worse tool and a
+breach of this decision; a thick, specific one (*"how many ducts, by size"*) is neither.
+
+Practically, for any tool added from here: **counts and summaries always, rows bounded and the true
+total stated** — *"126 ducts, showing the first 20"* rather than 126 rows, and never 5,844.
+
+**Checked 2026-08-28: all seven tools Heron currently exposes already comply** — they select, count,
+preview, apply, or report health. None returns the model. **That is a property of the current tools, not
+yet a rule enforced in code**, and it is written here so the next tool obeys it deliberately rather than
+by luck.
+
 ### The boundary Heron does not control, stated plainly
 
 A half-true privacy claim is worse than none, so this is written here rather than left to be discovered.

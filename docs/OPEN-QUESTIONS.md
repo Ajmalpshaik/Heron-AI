@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 21 answered · 20 open · none blocking Phase 0 or Phase 1**
+**Progress: 22 answered · 19 open · none blocking Phase 0 or Phase 1**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -16,10 +16,11 @@ still, which is the exact failure the tooling in [`tools/`](../tools/README.md) 
 **Five of the twenty gate Phase 2** — `Q-7a`, `Q-8`, `Q-9`, `Q-13`, `Q-15`. Four are technical and can be
 taken here; **Q-15** (is persona automatic or manual) is Ajmal's.
 
-**Q-12 was answered on 2026-08-28** — local only, every project ([D-26](DECISIONS.md)) — and answering it
-raised **[Q-40](#-q-40--do-replies-need-identifiers-redacted-before-they-reach-the-host)**, which is his
-and is not a Phase 2 gate: it is a contract question about what Heron may say out loud, and it wants
-answering before anyone runs Heron on a client's confidential model.
+**Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
+([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
+the job and may travel; the model, or a dump amounting to one, never does. That turned Q-40 from a
+question about redacting words into a rule about tools, which is cheaper to build and easier to explain
+to a client.
 
 *(Five new questions — Q-29 to Q-33 — come from [Master Specification Part 2](00b-master-specification-agent-os.md).
 None of them block Phase 0 either; they shape Phases 2–5.)*
@@ -407,7 +408,21 @@ confusion Phase 0 added the document name to prevent.
 
 → [12 §4](12-security-and-permissions.md), [D-26](DECISIONS.md)
 
-**Answer:**
+**Answer: no redaction. Work answers may travel; the model may not.** Ajmal, 2026-08-28, asked directly:
+*"how many ducts are there? That is no issue ... the work-related everything in the cloud, no issue. But
+the entire model, it should not go to the cloud like that."*
+
+So the concern this question was raised about turns out not to be the document's name or a room name in a
+reply — it is **bulk**. A model, or a dump amounting to one. Heron keeps naming the document in its
+answers, which is what Golden Rule 20 wants anyway, and no redaction layer is built.
+
+**What replaces it is a rule about tools rather than about wording:** a tool answers a question and never
+returns the model — see [D-26](DECISIONS.md). That is cheaper to build than redaction, easier to explain
+to a client, and it happens to be the same thing [Q-5](#-q-5--mcp-tool-granularity--thick-and-specific)
+already asked for.
+
+**Revisit if that ever stops being true** — the first tool that wants to return thousands of rows is the
+moment to re-read this, not the moment to quietly make an exception.
 
 ---
 
