@@ -6,7 +6,45 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 14 answered · 26 open · none blocking Phase 0**
+**Progress: 41 answered · 0 open · nothing blocking any phase**
+
+**This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
+questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
+2026-08-28, when the real figures were 20 and 20 — six questions had been answered and the sentence stayed
+still, which is the exact failure the tooling in [`tools/`](../tools/README.md) exists to prevent.
+
+**Nothing gates Phase 2 any more.** The last four — `Q-7a`, `Q-8`, `Q-9`, `Q-13` — were answered on
+2026-08-28 as [D-28](DECISIONS.md) to [D-31](DECISIONS.md), and answering `Q-7a` closed `Q-37` with it.
+
+Three of the four were settled by looking rather than deciding: at a system already doing the job
+(`Q-7a`, `Q-8`, `Q-9`) and at Heron's own code, where `Q-13`'s answer had been running since Step 1.
+**Ask what already exists before designing** — it worked four times out of five today.
+
+`Q-20` closed the same day and it reshaped the plan rather than confirming it: **v1 is read-only**
+([D-32](DECISIONS.md)). Asked which job he wanted first, Ajmal chose *answering questions about the
+model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
+instead of standing between him and something usable.
+
+**Nothing is open.** `Q-35` closed on 2026-08-28: Ajmal asked for all 30 Articles to be **read out**, and
+accepted them after reading ([D-43](DECISIONS.md)). The Constitution is binding.
+
+**One answer is agreed but not signed off**, and no count can show that — see `Q-34` below.
+
+**`Q-34` counts as answered here but is not closed.** Ajmal agreed the direction on 2026-08-28 and asked
+to see it working at the PC first, so [D-14](DECISIONS.md) stays **Proposed** and the confirmation is
+`R1b` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md). The count above cannot express *agreed but not
+signed off*; this sentence is where that lives.
+
+Everything else was answered on 2026-08-28. The last four — `Q-29`, `Q-31`, `Q-32`, `Q-38` — are
+[D-39](DECISIONS.md) to [D-42](DECISIONS.md); `Q-38` is answered *as far as it honestly can be*, with the
+public install command deferred to publication because the question's own warning says an install command
+that does not work is worse than none.
+
+**Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
+([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
+the job and may travel; the model, or a dump amounting to one, never does. That turned Q-40 from a
+question about redacting words into a rule about tools, which is cheaper to build and easier to explain
+to a client.
 
 *(Five new questions — Q-29 to Q-33 — come from [Master Specification Part 2](00b-master-specification-agent-os.md).
 None of them block Phase 0 either; they shape Phases 2–5.)*
@@ -20,7 +58,7 @@ None of them block Phase 0 either; they shape Phases 2–5.)*
 >
 > **Phase 0 is unblocked.** It starts on the owner's go-ahead ([D-00](DECISIONS.md)).
 
-One sub-decision remains open inside [D-04](DECISIONS.md), but it does not block starting:
+The one sub-decision that was open inside [D-04](DECISIONS.md) closed on 2026-08-28:
 
 ### 🟠 Q-7a — Which scripting runtime for the sandbox?
 
@@ -37,7 +75,17 @@ built-in Routes server -- proven, maintained by someone else, and the owner alre
 
 → [09 §10](09-skills-and-fragments.md)
 
-**Answer:**
+**Answer: Roslyn C# scripting, in process, through the existing bridge — not pyRevit. See
+[D-28](DECISIONS.md).** The research note above favoured pyRevit; reading a system already doing this job
+daily points the other way for three reasons the research could not show. What Ajmal actually runs today
+is **C#, not Python**. pyRevit Routes is an **HTTP server**, and Heron's add-in has *no network code at
+all* — verified against the source — so adopting it would trade [D-02](DECISIONS.md)'s structural
+local-only guarantee for a configuration promise. And one language means **one compile gate**: C#
+fragments go through `check-compile.py` and `check-api-surface.py`; Python fragments would go through
+neither.
+
+**This closes [Q-37](#-q-37--can-pyrevit-routes-bind-a-per-process-port-new-from-research) as not
+applicable** — Heron does not use Routes.
 
 ---
 
@@ -50,7 +98,16 @@ Proposed: **Skill** = what the user can ask for (BIM language, user-facing).
 
 → [09 §1](09-skills-and-fragments.md)
 
-**Answer:**
+**Answer: confirmed, with the part that decides the design added — a fragment is a *composable piece*, not
+a whole how. See [D-29](DECISIONS.md).**
+
+In a library of several hundred working fragments the unit is smaller than a job: a **filter** answers
+*which elements*, an **action** answers *what to do to them*, and they are joined, each declaring what it
+needs in scope and what it leaves. A job that genuinely cannot be composed is a **recipe** — a named third
+kind, so it cannot quietly become a giant fragment.
+
+That matters because reading *"fragment = how it is done"* as one fragment per job grows the library one
+entry per sentence a user might say, reuses nothing, and needs a separate proof for every entry.
 
 ---
 
@@ -62,7 +119,21 @@ community fragments?
 
 → [09 §5](09-skills-and-fragments.md)
 
-**Answer:**
+**Answer: not a count at all — one recorded proof, and it must include a negative case. See
+[D-30](DECISIONS.md).**
+
+A working library shows why a count is the wrong gate, with a real defect: a fragment whose level filter
+matched **zero** elements **and reported success**. That passes ten runs, and a thousand. A count measures
+that nothing threw, which is not the property anyone cares about — what caught it was a comparison, 3
+against 0, side by side.
+
+So the gate is one dated proof against a real model carrying a **positive** case, a **negative** case
+(*it returns nothing when it should*), and a **second route** to the answer where one exists.
+
+**Who approves:** whoever ran it, under their name and date. A company's BIM lead may approve for that
+company's scope, because the proof travels with the fragment as evidence a later reader can judge rather
+than trust. A community submission meets the same bar; one without a negative case is returned, not
+reviewed.
 
 ---
 
@@ -73,7 +144,11 @@ three retrieval stages in one engine.
 
 → [05 §5](05-heron-brain.md)
 
-**Answer:**
+**Answer: the recommendation, taken — see [D-23](DECISIONS.md).** Decided on the installation
+constraint rather than on retrieval quality: Heron installs per-user with no administrator rights, and a
+store needing a service breaks exactly the locked-down machines it is built for. One file per scope also
+makes Golden Rule 5's scope separation a fact of the filesystem instead of a `WHERE` clause somebody can
+forget.
 
 ---
 
@@ -84,7 +159,16 @@ machine. Cloud as opt-in.
 
 → [05 §6](05-heron-brain.md)
 
-**Answer:**
+**Answer: local by default, cloud opt-in per scope — see [D-24](DECISIONS.md).** The deciding argument is
+re-indexing: a per-call cost makes rebuilding the index something to avoid, and an index nobody rebuilds
+quietly stops matching what is on disk.
+
+**This does not answer [Q-12](#-q-12--what-is-the-data-confidentiality-position) and must not be read as
+answering it.** Asked directly on 2026-08-28, Ajmal's reply — *"now we are in Claude, am I right, so make
+it in this; when we are on the PC I will pull that there and we will test everything"* — was about where
+the **work** happens, not about what **project content** may leave a machine. That is a contractual
+question about client and authority work, it is his to answer, and it stays open. Local-by-default is the
+setting that is safe to hold while it is open.
 
 ---
 
@@ -100,7 +184,25 @@ under NDAs you have never seen. The default must be safe for the most restricted
 
 → [12 §4](12-security-and-permissions.md)
 
-**Answer:**
+**Answer: the model FILE is never uploaded; everything else about the work is fine. See
+[D-26](DECISIONS.md).**
+
+**It took three passes in one day to land there, and the final one is the rule.** The first answer was the
+strictest position in the table above — *nothing leaves* — and two clarifications narrowed it. Ajmal,
+finally and plainly: *"Any project name, data, typing, or content being in the cloud is not an issue ...
+The main thing is that we should not upload the model itself, specifically the RVT or RFA files ... Do not
+push the models."*
+
+So the line is **the file, not the information**. A `.rvt`, a `.rfa`, a family or project template — never.
+Project names, element counts, sizes, room names, engineering reasoning, code — that is the work, and it
+travels like any other conversation with an assistant.
+
+Third part of the same instruction: **project knowledge stays segregated.** Already the design — Golden
+Rule 5's *one store per scope*, made literal by [D-23](DECISIONS.md) — and Rule 5's wording has been
+broadened to name the project scope it always covered.
+
+**The earlier framings are recorded rather than erased**, in D-26, because commits from the same day quote
+them and a reader has to know which version won.
 
 ---
 
@@ -113,7 +215,20 @@ location — and the updater physically unable to write to the data class.
 
 → [06 §2](06-heron-platform.md), [17 §2](17-open-source-and-distribution.md)
 
-**Answer:**
+**Answer: the recommendation, and it is already built. See [D-31](DECISIONS.md).**
+
+`HeronPaths` has drawn these three classes since Step 1 and is the only place allowed to construct a Heron
+path — `check-structure.py` fails anything else that tries. PRODUCT is replaced wholesale on update; DATA
+is `%APPDATA%\Heron` and roams, so a preference follows the person; DERIVED is `%LOCALAPPDATA%\Heron` and
+deliberately does **not** roam, because a bridge file announcing process 24156 on another PC is
+meaningless.
+
+The updater half was **verified rather than assumed**: `deploy-addin.ps1` writes only into the Revit
+add-ins folder, never into `%APPDATA%\Heron`. So the public-repository worry is answered structurally —
+client data cannot reach the repository because it is never written inside it.
+
+**A question answered by code that already existed.** Worth asking of the other open questions before
+designing anything for them.
 
 ---
 
@@ -124,7 +239,17 @@ source of distrust.
 
 → [01 §4](01-vision-and-principles.md)
 
-**Answer:**
+**Answer: neither — the question had the wrong axis in it. See [D-27](DECISIONS.md).**
+
+Two assistants doing this job daily for months were read for this question, at Ajmal's suggestion. Neither
+switches persona at all, and neither has needed to. **One voice — plain language, always.** What actually
+varies is the **shape of the answer**, and it follows the **shape of the request**: a count gets a number,
+a breakdown gets a schedule-style table, a narrowed set gets the items and their ids, finished work gets a
+short close, and two comparable numbers get a picture unasked.
+
+That dissolves the distrust the recommendation was trying to manage. Inferring a persona is guessing about
+a person — wrong sometimes and invisible when wrong. Inferring an answer's shape is reading the request —
+deterministic, and visible when it is wrong.
 
 ---
 
@@ -140,6 +265,18 @@ can reach a public repository.
 
 → [10 §5](10-memory-and-knowledge.md)
 
+**Answer: all of them, as reference — and none of them is imported. See [D-25](DECISIONS.md).**
+Ajmal, 2026-08-28: *"use them as a reference only ... In our Heron AI, it should be written completely
+from scratch ... study each and every line, word by word, and create it as a new file."*
+
+This answers a different question than the one asked, and the difference matters: there is **no import
+pipeline to build**, and the duplicate detection an import would have needed largely goes with it. The
+question of *which first* dissolves — reading is cheap and carries no risk; only re-authoring costs
+anything, and that is decided one capability at a time.
+
+The confidentiality note above is resolved by the same decision rather than by review: nothing is copied,
+so no client-specific content can arrive by being carried across.
+
 **Answer:**
 
 ---
@@ -148,7 +285,21 @@ can reach a public repository.
 
 English only, or does Heron need to understand instructions in other languages used on site?
 
-**Answer:**
+**Answer: Heron's own wording is English; understanding the user is not Heron's job at all. See
+[D-34](DECISIONS.md).**
+
+Two questions here, not one. Asked the first, Ajmal chose **English only for now** — and declined the
+*"built ready for Arabic"* option, so no translation scaffolding is written either. The cost of adding it
+later is a pass over every user-facing message, and that is the accepted price rather than a hidden one.
+
+**The second half answers itself.** Heron never interprets language: that happens in the host before
+Heron is called ([D-01](DECISIONS.md)). A request in Arabic, in mixed Arabic and English, or dictated
+roughly, already works. So Heron builds no phrase list and no parser for near-misses — that would be a
+worse copy of something the host already does, needing maintenance forever.
+
+A **site word that means a Revit word** is a third thing and is not a language problem: it is knowledge,
+it belongs in the knowledge store, and Phase 2 owns it. Meanwhile an unfamiliar term is a **question**,
+never a quiet reinterpretation — [D-33](DECISIONS.md).
 
 ---
 
@@ -161,7 +312,24 @@ Now a real security question rather than a hypothetical one, since anyone can pu
 
 → [06 §10](06-heron-platform.md)
 
-**Answer:**
+**Answer: yes, code is allowed — and an unapproved fragment is REFUSED, not warned about. See
+[D-35](DECISIONS.md).** Ajmal chose *"yes, but only after review and approval"*.
+
+Under [D-28](DECISIONS.md) a fragment is C# compiled and run inside Revit, so a shared fragment is
+executable code by construction — this was never a hypothetical.
+
+**The decision is written around the way that choice fails, not around the way it works.** A gate that
+depends on somebody remembering to look decays: submissions outpace reading, a backlog forms, and
+*approved* quietly comes to mean *nobody objected*. That is the option he rejected, reached by drift. So
+there is **no warning dialog** — a warning hands the decision to the person least able to judge it and
+most likely to click through. Unapproved does not run.
+
+**Approval and proof are the same gate**, which is what makes the reviewer's job finite: the record
+required is the one [D-30](DECISIONS.md) already demands, and a submission without a negative case is
+returned rather than reviewed.
+
+**One thing must be built now:** the fragment format carries an approval record from its first version.
+Retrofitting provenance into a format already in use touches every file.
 
 ---
 
@@ -172,7 +340,20 @@ with undo, audit log and a preview — and nothing else.
 
 → [ROADMAP.md](ROADMAP.md)
 
-**Answer:**
+**Answer: v1 ships with both — it answers questions AND can change the model. See
+[D-32](DECISIONS.md).** Asked which job he wanted first, Ajmal chose **answering questions about the
+model**. Asked whether v1 must also change things, he answered **"it must change things too"**.
+
+Those are not in conflict: **first-to-use and finished are different things.** Answering questions is the
+daily work and the half already proven, so it is what gets used first — but a Heron that cannot change
+anything is a report tool, not the product.
+
+So the recommendation above stands after all, widened: v1 is select-and-move *plus* the questions. Writing
+stays **off by default** ([D-19](DECISIONS.md)), which is about the setting a user turns on, not about
+whether the capability ships.
+
+**Recorded as read-only first and reversed within the hour** — see D-32, where the reversal is kept in
+view rather than tidied away.
 
 ---
 
@@ -196,7 +377,18 @@ Also: how many shadow runs before `SHADOW MODE → APPROVED`, and does a human s
 
 → [18 §4](18-agent-operating-system.md)
 
-**Answer:**
+**Answer: the table stands as proposed; promotion needs an analysed DISAGREEMENT plus a signature, not a
+count of runs. See [D-39](DECISIONS.md).**
+
+Not a count, for the same reason [D-30](#-q-9--what-promotes-a-fragment-to-production) is not one.
+**Agreement is weak evidence**: two implementations are often wrong the same way, because the second was
+written by somebody who read the first — and an agent that silently does nothing agrees with everything. A
+hundred agreements prove less than one disagreement somebody sat down and explained.
+
+So shadow mode's product is a **disagreement log**, not an agreement rate — a percentage would invite a
+threshold, and a threshold is what [D-33](DECISIONS.md) already refused. And an agent that never disagrees
+is a **finding to investigate**, not a pass: it is either not running, not seeing the same inputs, or a
+copy of the thing it shadows.
 
 ---
 
@@ -217,7 +409,21 @@ What is not settled is the command itself:
 Blocks nothing now — it is needed before the repository goes public ([D-10](DECISIONS.md)), because the
 README's first command is the first impression.
 
-**Answer:**
+**Answer: deferred to publication — and the question's own warning is why. See [D-42](DECISIONS.md).**
+
+The preferred option *"needs verifying against current plugin documentation"*, and *"an install command
+that does not work is worse than none."* That documentation has not been read here, and writing one from
+memory is exactly the failure this repository has had twice — most recently the same day, when a Revit API
+property that reads like the obvious choice turned out not to exist before 2024. **A wrong install command
+fails on a stranger's machine, at the first thing they ever try.**
+
+**What is settled because it is proven:** `tools\setup.ps1` — one command, detects every installed Revit,
+builds for each, deploys per-user with no admin rights, run end to end in Phase 0. That is the fallback
+this question calls *always available*, and the route a cautious IT department prefers.
+
+This sits on the **publication** checklist beside reading the App Store requirements
+([D-38](DECISIONS.md)) — both are *read the current documentation* tasks, deferred for the same reason and
+cheap at that moment.
 
 ---
 
@@ -240,7 +446,18 @@ discovered?
 
 -> [26](26-prior-art-revit-mcp.md)
 
-**Answer:**
+**Answer: closed as not applicable — Heron does not use Routes, on either count.**
+[D-28](DECISIONS.md) settled Q-7a as **Roslyn C# in process**, which removes the scripting-execution use
+the "No" row kept it alive for. And the transport question is settled harder than "No": Routes is an
+**HTTP server**, while Heron's add-in contains **no network code at all** — verified against the source,
+not assumed. Adopting it would trade a structural guarantee for a configuration promise.
+
+**The port question therefore never needs answering.** Both rows of the table above lead to the same
+place, which is the sign that the question had already been overtaken.
+
+**Kept rather than deleted** because the reasoning is the useful part: a fixed `localhost:48884` is
+single-instance by construction, and multi-Revit is not negotiable ([D-02](DECISIONS.md)). That argument
+will come back the next time something proposes an HTTP transport.
 
 ---
 
@@ -257,7 +474,23 @@ used for ranking and for gating `MODIFY` operations.
 
 → [24 — The Unified Trust Model](24-trust-model.md) · decision **D-14**
 
-**Answer:**
+**Answer: the direction is agreed; the confirmation is deferred to the PC. [D-14](DECISIONS.md) stays
+PROPOSED until then.** Ajmal, 2026-08-28: *"yes, but show me it working at the PC first."*
+
+**Enough to build on, not enough to close.** The two-axis shape is settled well enough that Phase 2's
+storage and ranking can be designed against it; what is outstanding is him seeing it on a screen with his
+own fragments in it before it becomes binding.
+
+**It took two attempts to explain, and that is recorded because it matters.** The first explanation was
+abstract — *"lifecycle and source axes"* — and he said plainly that he did not follow it. The second used
+a Revit family: you want to know **who made it** (our office, the manufacturer, downloaded) and **whether
+it has been checked** (approved, still being tested), and nobody would put those on one dropdown. He
+agreed immediately.
+
+That is the argument for the proposal in one sentence, and it belongs in
+[24](24-trust-model.md) rather than in this file: **a vocabulary that answers two questions at once will
+keep splitting**, and it split six times here. Added to `R1` in
+[`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md).
 
 ---
 
@@ -280,7 +513,20 @@ Worth reviewing specifically:
 - Are 30 Articles too many to inject usefully? *(Mitigated by giving each agent only the Articles
   relevant to its permission level and department.)*
 
-**Answer:**
+**Answer:** ACCEPTED, 2026-08-28 — all 30 Articles, binding. See [D-43](DECISIONS.md).**
+
+Offered acceptance, deferral, or having all 30 read out, **Ajmal asked for all 30 to be read**, and
+accepted them after reading. That is the difference between a confirmation and a tap, and it is why the
+option was offered: a 30-article document accepted by pressing a button is not accepted, it is unread.
+
+**Reading it aloud found three stale statements in it**, none of which changed what an Article requires
+and all of which would have been read as current by whoever implements enforcement: it described its basis
+as *"Golden Rules 1–15 (official) and 16–19 (proposed)"* — wrong twice, since all **21** became official
+earlier the same day; **eight Articles cited a "Proposed" Golden Rule** that was no longer proposed; and
+it said an agent receives *"not all 27"* Articles when there are **30**. All corrected on acceptance.
+
+**Accepting the Articles does not make them true.** 8, 9, 11, 12a, 12b and 12c are precisely what groups
+`C`, `D` and `E` of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) exist to test.
 
 ---
 
@@ -296,7 +542,17 @@ ordinary relational data; a dedicated graph database is not warranted. Both spec
 
 → [21 §1](21-resilience-and-operations.md)
 
-**Answer:**
+**Answer: SQLite as recommended — and an edge is DERIVED before it is stored. See
+[D-40](DECISIONS.md).** Same engine as [D-23](DECISIONS.md), ordinary relational data, and §41's graph
+only rather than a general knowledge graph.
+
+The second rule came out of today's work and matters more than the storage choice.
+[`check-api-surface.py`](../tools/check-api-surface.py) answers *which Revit API members does Heron depend
+on* by reading the compiled assembly, so the answer **cannot go stale**. A hand-maintained table of the
+same facts drifts the first time somebody changes code without updating it — and a stale dependency graph
+is worse than none, because blast radius is exactly what people trust it for.
+
+So: store an edge only when it cannot be computed from an artifact on demand. What can be read is read.
 
 ---
 
@@ -316,7 +572,19 @@ delivered by B without any infrastructure.
 
 → [22 §4](22-users-modes-and-extensibility.md)
 
-**Answer:**
+**Answer: A now, B when there is demand, C not without it. See [D-41](DECISIONS.md).**
+
+The deciding fact is in the question: **there is no server to enforce anything.** User management in a
+product with no enforcement point is a settings screen describing a policy nothing can apply.
+
+**B costs almost nothing new**, which is the real finding: a scope is already its own file in a folder
+([D-23](DECISIONS.md)), so making that folder a git repository adds no Heron code at all. And the admin
+mechanism already exists — it is [D-35](DECISIONS.md) at a smaller radius. A company approving fragments
+for its staff and a maintainer approving them for everyone are the **same gate, the same approval record,
+and the same refusal when it is missing.** One mechanism, two uses.
+
+**Nothing is enforced and the documentation must not imply otherwise.** A reviewed shared repository
+delivers *everyone uses our approved standards*; nothing delivers stopping somebody who does not want to.
 
 ---
 
@@ -333,7 +601,56 @@ Both are right, and both need a number. What confidence level triggers a questio
 
 → [20 §4](20-knowledge-trust-and-conflict.md), [21 §3](21-resilience-and-operations.md)
 
-**Answer:**
+**Answer: there is no threshold — Heron never assumes an input, and it asks once. See
+[D-33](DECISIONS.md).** Ajmal, asked plainly: **"always ask before assuming anything."**
+
+**That dissolves the first half of the question rather than answering it**, which is the better outcome. A
+confidence figure is invented, unjustifiable, and free for any later session to tune — and the first tune
+to reduce interruptions starts it guessing about exactly what it was set up to protect. *Never assume* is
+a rule; it needs no number and cannot drift.
+
+The second half is answered **yes, and it is load-bearing**: *always ask* without memory becomes noise,
+and noise is clicked through unread — worse than not asking. Asking once is what keeps the rule usable.
+
+One boundary is drawn in D-33 that his answer did not mention — a **technical** choice is Heron's own, not
+an assumption — and it is flagged for the `R1` read-back rather than treated as settled.
+
+---
+
+### 🟠 Q-40 — Do replies need identifiers redacted before they reach the host? *(new, 2026-08-28)*
+
+[D-26](DECISIONS.md) settled that **Heron** never sends project content anywhere. It cannot settle what
+the **host** sees, because Heron's own answers are the conversation.
+
+Heron names the document on purpose — *"Found 126 ducts in Tower-A.rvt"* — a Phase 0 feature that builds
+the habit Golden Rule 20 later enforces. Under a strict reading of D-26 that filename is project content
+travelling to a model provider.
+
+So: does a project marked confidential need a mode where the document is called something neutral in
+replies, and identifiers are replaced before Heron says them?
+
+**This is a contract question, not a technical one.** It depends on what the NDAs actually forbid, which
+nobody here has read. The cost is real on both sides: redaction is work to build, and it makes every
+answer harder for the person reading it to trust — *"which model was that again?"* is exactly the
+confusion Phase 0 added the document name to prevent.
+
+→ [12 §4](12-security-and-permissions.md), [D-26](DECISIONS.md)
+
+**Answer: no redaction. Work answers may travel; the model may not.** Ajmal, 2026-08-28, asked directly:
+*"how many ducts are there? That is no issue ... the work-related everything in the cloud, no issue. But
+the entire model, it should not go to the cloud like that."*
+
+So the concern this question was raised about turns out not to be the document's name or a room name in a
+reply — it is **bulk**. A model, or a dump amounting to one. Heron keeps naming the document in its
+answers, which is what Golden Rule 20 wants anyway, and no redaction layer is built.
+
+**What replaces it is a rule about tools rather than about wording:** a tool answers a question and never
+returns the model — see [D-26](DECISIONS.md). That is cheaper to build than redaction, easier to explain
+to a client, and it happens to be the same thing [Q-5](#-q-5--mcp-tool-granularity--thick-and-specific)
+already asked for.
+
+**Revisit if that ever stops being true** — the first tool that wants to return thousands of rows is the
+moment to re-read this, not the moment to quietly make an exception.
 
 ---
 
@@ -343,7 +660,18 @@ Both are right, and both need a number. What confidence level triggers a questio
 
 "Heron" is widely used in software. Worth checking before branding, packaging and an app-store listing exist.
 
-**Answer:**
+**Answer: the name is Heron AI. It was CHOSEN, not cleared. See [D-37](DECISIONS.md).**
+
+Ajmal kept the name and declined the offer to check for an existing product first. **So no trademark or
+existing-product search has been done** — this question's own concern, that the name is widely used in
+software, stands unexamined. Recorded plainly so that a later session reading *"Q-24 answered"* does not
+conclude otherwise.
+
+A legitimate choice for a free tool with no branding to defend. The **technical** window to rename stays
+open until the repository goes public ([Q-28](#-q-28--when-does-the-repo-go-public--when-licence--safety-files-exist-and-there-is-working-code)):
+today it is a mechanical change across 53 code files; afterwards it breaks installed add-ins and user
+folder paths. If a check is ever wanted, before publication is the moment it is cheap — and the last
+one.
 
 ---
 
@@ -353,7 +681,15 @@ If a Heron-generated change causes a defect in a delivered model, who is respons
 question, not a personal one. Partly addressed by an explicit disclaimer ([17 §5](17-open-source-and-distribution.md))
 and by the licence choice (Q-27).
 
-**Answer:**
+**Answer: no warranty, the standard open-source position — and it is already in place twice. See
+[D-36](DECISIONS.md).** Apache 2.0 carries it as licence; [`DISCLAIMER.md`](../DISCLAIMER.md) already says
+it in plain words a modeller will read. Nothing new is written.
+
+Two things are recorded with it. **`DISCLAIMER.md` is load-bearing**: it promises a preview, a single undo
+entry, skipped owned elements and no unprompted sync to central — all of which are **unproven today**, so
+it must move with the code rather than after it. And this records a choice, **not legal advice**: it holds
+for Heron as it is now, free and open source. If Heron is ever sold or supplied as part of a paid service,
+reopen it rather than assume it carries.
 
 ---
 
@@ -362,7 +698,20 @@ and by the licence choice (Q-27).
 Confirmed as a later goal ([D-07](DECISIONS.md)). Their review constrains packaging, permissions and
 installer behaviour — cheaper to read the requirements before the installer is finalised than after.
 
-**Answer:**
+**Answer: GitHub now; the App Store door is kept open by not closing it, and nothing is built for it. See
+[D-38](DECISIONS.md).**
+
+**The requirements have NOT been read, and that is the honest half of this answer.** This question asked
+for them to be read before the installer is finalised. Writing Autodesk's current packaging, signing and
+review rules from memory would repeat the exact failure this repository has already had twice with the
+Revit API — a confident answer nobody checked. **Read them from Autodesk, at the time, or not at all**; so
+the reading is deferred along with the listing, and it is the **first** task if one is ever attempted, not
+the last.
+
+Four things are already true and may or may not help — stated as facts, not as compliance claims: per-user
+install with no admin rights (proven), **no network code in the add-in** (verified against the source), a
+standard `.addin` manifest, and Apache 2.0. [Q-38](#-q-38--what-is-the-exact-install-command-new) is the
+live piece and belongs to the GitHub route.
 
 ---
 
@@ -490,7 +839,8 @@ Developer Persona behind `ADMIN`. Capability discovery keeps the context cost do
 ### ✅ Q-7 — How does generated code execute? → **Hybrid**
 
 Scripting sandbox while DRAFT/TESTING, compiled signed C# for PRODUCTION. The `PROVEN → PRODUCTION`
-gate is where compilation happens. Sub-question Q-7a (which scripting runtime) remains open.
+gate is where compilation happens. Sub-question Q-7a (which scripting runtime) was answered on
+2026-08-28 — **Roslyn C#, in process** ([D-28](DECISIONS.md)).
 → [D-04](DECISIONS.md)
 
 ### ✅ Q-27 — Which licence? → **Apache 2.0**

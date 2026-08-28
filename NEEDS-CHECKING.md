@@ -1,8 +1,27 @@
 # Needs checking — the register
 
-**Everything in this file is UNPROVEN.** It was built on a machine with no Revit, no Windows and no
-.NET SDK, so none of it has been compiled or run. This is the list of what has to happen on a machine
-that has Revit before any of it can be called finished.
+**Almost everything in this file is UNPROVEN**, and what changed on 2026-08-28 is worth stating
+precisely rather than generally.
+
+It was written on a machine with no Revit, no Windows and no .NET SDK. Two of those three turned out
+to be avoidable: **the C# now compiles, and the bridge now runs** — on Linux, from NuGet, in about five
+minutes ([docs/30](docs/30-compiling-away-from-windows.md)). Group A below records what that settled and
+what it did not.
+
+**Most of what is left needs a real Revit on a real Windows machine** — 47 of the 51 remaining items, and
+every one that matters most. Compiling is not behaving: `D3` is still the line that catches a unit
+error, and nothing here has moved anything yet.
+
+**54 items, 3 done, 51 left** — counted from the rows on 2026-08-28, not carried forward. Of the 51:
+**47 need Revit**, **2 need Windows but not Revit** (`A4`, `A5`), and **2 need only a conversation**
+(`R1`, `R2` — reading the day's decisions back).
+
+**Count the rows before quoting a number here, and check the pattern you count with.** This file and
+[`HANDOVER.md`](HANDOVER.md) said *49 items* and *45 need a real Revit* from the day they were written,
+while the rows summed to 51 and 47 even then — rows were added and the sentences were not. Then group `R`
+was added and a count matching `[A-H]` silently skipped it and reported 52. **A count that quietly omits a
+whole group is worse than no count**, which is the same lesson as a grep that finds nothing: prove the
+pattern can see what you know is there.
 
 ---
 
@@ -31,18 +50,48 @@ right. Add an item every time something is built away from Revit.
 
 ## Group A — does it build, and does the bridge work
 
-**Needs Windows and the .NET SDK. Does NOT need Revit.** Blocks everything below it — nothing else in
-this file can be attempted until A2 passes.
+**Does NOT need Revit.** Most of this group is now **DONE**, and it no longer blocks the rest.
 
-A4 is the one worth doing before you ever open Revit: the round-trip test starts a Revit-free bridge
-host and exercises the pipe *and* the lease. Half of group H is already covered there.
+**A2, A3 and A4 passed on 2026-08-28**, on Linux, in a container — which nobody had tried, because
+"Revit is Windows-only" had been carried for three sessions as "so the C# cannot be compiled anywhere".
+The Revit API reference assemblies come from NuGet, which this repository's own add-in project already
+used by default, and Linux distributions package the .NET SDK. See
+[docs/30](docs/30-compiling-away-from-windows.md), and run it yourself with one command:
+
+```bash
+python tools/check-compile.py
+```
+
+**Two real defects came out of it, both of which reading had already missed twice:**
+
+- `Document.CreationGUID` **does not exist in Revit 2020.** It compiled clean on 2024 and failed on
+  2020. Fixed in `RevitWrite.DocumentKey()` with the Project Information element's `UniqueId`, which
+  exists on every release from 2020 to 2027 — so there is no `#if` and no version branch to maintain.
+- `test_bridge_roundtrip.py` asserted that **nothing held the lease**, at a point where an earlier
+  unknown-op probe had already claimed it. The bridge was right; the check had been written from
+  reading, in a file that could not run on the machine it was written on.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| **A1** | `dotnet --version` | A version number. If "not recognized", install the .NET SDK first — `tools/setup.ps1` checks this too and stops with the download link |
-| **A2** | `dotnet build -p:RevitVersion=2020` | Builds. **Expect errors first time.** Most likely spots: `Document.CreationGUID`, `WorksharingUtils.GetCheckoutStatus`, `IFailuresPreprocessor`, `TransactionGroup.GetStatus`, `BuiltInCategory.INVALID`, `UIDocument.RefreshActiveView` |
-| **A3** | `dotnet build -p:RevitVersion=2024` | Same, on net48. A 2024-only failure is the interesting kind — that is the version boundary that has bitten this work before |
-| **A4** | `dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024` then `python tests/test_bridge_roundtrip.py` | **Passes — with NO REVIT OPEN.** The pipe round trip *and* most of the lease. This is the biggest single result you can get before touching Revit: if the lease is wrong, it says so here rather than three groups later |
+| ~~**A1**~~ | ~~`dotnet --version`~~ | **DONE 2026-08-28.** SDK 8.0.130. Still worth one run on the owner's PC, where `tools/setup.ps1` checks it anyway and stops with the download link |
+| ~~**A2**~~ | ~~`dotnet build -p:RevitVersion=2020`~~ | **DONE 2026-08-28.** Compiles, 0 warnings, after the `CreationGUID` fix above. The other five spots this row used to warn about — `WorksharingUtils.GetCheckoutStatus`, `IFailuresPreprocessor`, `TransactionGroup.GetStatus`, `BuiltInCategory.INVALID`, `UIDocument.RefreshActiveView` — are all **clean on 2020 and 2024** |
+| ~~**A3**~~ | ~~`dotnet build -p:RevitVersion=2024`~~ | **DONE 2026-08-28.** So are 2021, 2022 and 2023 — all four projects, 0 warnings each |
+| **A4** | `dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024` then `python tests/test_bridge_roundtrip.py` — **on Windows** | **Mostly done 2026-08-28, and the remainder genuinely needs Windows.** All 32 checks pass on Linux: framing, the JSON parser, the token, newest-connection-wins, the toggle cycle and **the whole lease**. What a Linux run cannot touch is the Windows named pipe itself — its naming, its security descriptor, and the `CreateNewInstance` flag from [HANDOVER](HANDOVER.md) §4 note 2. Run it once on Windows and this row goes |
+| **A5** | `python tools/check-compile.py 2025 2026 2027` — **on Windows** | Builds. These three target `net8.0-windows` / `net10.0-windows` with WPF, so they need the Windows Desktop SDK and are reported **SKIPPED** off Windows. **A skip is not a pass**, and this row exists so it never reads as one. 2027 also needs the .NET 10 SDK. **Partly covered since 2026-08-28:** `python tools/check-api-surface.py` reports every Revit member Heron calls as present on **2020 through 2027** — that is the missing-member class closed for all eight releases, but it matches by name, so a changed signature would still only show up in a real compile |
+
+## Group R — read the five decisions back (no Revit needed, but do it at the PC)
+
+**Not a test — a conversation**, and the only item in this file that is not about code behaving. It is
+here because this file is what gets opened at the PC, and a review nobody is reminded of does not happen.
+
+| ID | Do this | Done looks like |
+|---|---|---|
+| **R1** | Read **D-23 to D-27** back to Ajmal — the knowledge store, local embeddings, study-never-import, the model file, and one voice. All five were settled in one conversation on 2026-08-28, from a phone, with no model open | He confirms each still says what he meant, **and the detail left out gets filled in** — his words, *"including deciding what details we need to go with"*. Several are principles and need numbers, formats and limits before code rests on them |
+| **R1b** | Show him **[D-14](docs/DECISIONS.md), the trust model**, working on a screen with his own fragments in it | He agreed the direction on 2026-08-28 — *"yes, but show me it working at the PC first"* — so D-14 stays **Proposed** until he has seen it. Use the framing that worked: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
+| **R2** | Pay particular attention to **D-26 and D-32** | **Both were reversed within hours of being recorded**, and neither reversal was a mistake — each was the first answer being sharpened once its consequence was visible. D-26 moved three times, each looser. D-32 was recorded as *"v1 is read-only"* and reversed to *"it must change things too"* on being asked the same question a second time. That is what this group exists for |
+
+**Do R1 before Phase 2 work begins.** A decision reviewed after the code is written gets defended rather
+than examined.
 
 ## Group B — does Revit still load
 

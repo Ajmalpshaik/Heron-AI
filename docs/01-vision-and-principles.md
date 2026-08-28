@@ -41,7 +41,11 @@ The **Communication Agent** detects intent, technical level and working role, th
 
 Core rule: **show the user what they need, not everything the system is doing.**
 
-**[NOTE — open decision]** Persona should be *explicit and switchable*, not only inferred. Silent mode-switching by an AI is a common source of user distrust: the same question gets two different answers on two days and the user cannot tell why. Recommendation: infer a default, show it as a small persistent indicator, and let the user pin it. Tracked as [Q-15](OPEN-QUESTIONS.md).
+**[DECIDED 2026-08-28 — there are no personas. See [D-27](DECISIONS.md).]** ~~Recommendation: infer a default, show it as a small persistent indicator, and let the user pin it.~~
+
+Heron has **one voice**: plain, non-developer language, always. Nothing is inferred about the user, so the distrust this note was written about — *the same question getting two different answers on two days* — is not managed, it is made impossible.
+
+What varies instead is the **shape of the answer**, taken from the **shape of the request**: a count gets a number, a breakdown gets a schedule-style table, a narrowed set gets the items and their ids, finished work gets a short close. The table above therefore describes **Developer Mode** ([22 §3](22-users-modes-and-extensibility.md)), which is *granted* rather than guessed — not a persona anyone can drift into.
 
 ## 5. Background intelligence
 

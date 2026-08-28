@@ -84,6 +84,48 @@ The working prototype of `HERON-STD-MET-014`.
 
 ---
 
+## `check-compile.py` — does the C# actually build
+
+```bash
+python tools/check-compile.py                 # every version it can reach
+python tools/check-compile.py 2020 2024       # just those two
+```
+
+Builds all four projects against every Revit version, using the Revit API reference assemblies from
+NuGet. This is `A2` and `A3` of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) in one command instead of
+one version at a time.
+
+**It does not need Windows and it does not need Revit** — which is the point, because until
+2026-08-28 not one `.cs` file here had been through a compiler at all. The first run found a real
+2020-only error. [docs/30](../docs/30-compiling-away-from-windows.md) is the whole story.
+
+Revit 2025+ needs the Windows Desktop SDK and is reported **SKIPPED** off Windows, never as passed.
+A pass means the API surface agrees; it is **not** evidence that anything behaves correctly.
+
+---
+
+## `check-api-surface.py` — the releases the compiler cannot reach
+
+```bash
+python tools/check-api-surface.py                 # 2020 through 2027
+python tools/check-api-surface.py 2025 2026       # just those
+```
+
+Reads the **compiled** add-in's reference tables — exactly the Revit types and members the code calls,
+not what a regex over the source can find — and checks each one exists in that release's shipped
+reference assemblies.
+
+It exists because `check-compile.py` stops at 2024 off Windows, so the newest three releases had
+nothing checking them at all on the machines this project is actually worked on. **Matching is by
+name**, so a changed signature passes here and would fail a real compile: this supplements the compile
+gate, never replaces it.
+
+**Validate it before trusting a clean result.** Put `doc.CreationGUID` back into
+`RevitWrite.DocumentKey()`, build for 2024, and run it against 2020 — it must report the missing
+member. A checker that finds nothing is evidence about the checker until it has caught something.
+
+---
+
 ## `generate-agent-map.py` — the visual map
 
 ```bash
@@ -108,3 +150,4 @@ hard way:
 1. **A stated count is a claim; a derived count is a fact.**
 2. **A cross-reference that is not checked is a cross-reference that is broken.**
 3. **A generated artefact cannot lie about its source.**
+4. **Code no compiler has read is a draft, whatever the documentation calls it.**

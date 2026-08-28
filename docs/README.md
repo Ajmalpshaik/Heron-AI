@@ -29,7 +29,7 @@ work in progress). Three of the open questions touch Step 6, and one of them mat
 |---|---|
 | **Q-36** — lease or takeover | **Answered.** Built as `HeronLease` in Step 6 ([D-22](DECISIONS.md)) |
 | **Q-19** — accept Golden Rules 16–21? | **Answered 2026-08-28 — accepted.** They are the rules Step 6 was built to obey (16, 17, 20, 21), and they are now binding rather than proposed |
-| **Q-14** — how is testing against real Revit done? | **Answered 2026-08-28** — [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md), 49 items in dependency order, with what needs Revit separated from what does not |
+| **Q-14** — how is testing against real Revit done? | **Answered 2026-08-28** — [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md), 52 items in dependency order, with what needs Revit separated from what does not. `A1`–`A3` passed the same day: the compile gate turned out not to need Windows ([30](30-compiling-away-from-windows.md)) |
 
 **Nothing now blocks Phase 1 except Revit itself.**
 
@@ -120,6 +120,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 27 | [**Build Order**](27-build-order.md) | **Start here to build.** Six numbered steps, each independently provable |
 | 28 | [**The Complete Agent Registry**](28-agent-registry.md) | **All 250 agents** — ID, what each one does, tier, risk level, build step |
 | 29 | [Metadata Standard](29-metadata-standard.md) | The five fields every artefact carries — and how they tie the code back to the registry |
+| 30 | [Compiling Away From Windows](30-compiling-away-from-windows.md) | **The compile gate runs anywhere.** Revit 2020–2024 from NuGet on Linux, what a pass proves, and the 2020-only defect it caught on its first run |
 
 ## Working documents
 

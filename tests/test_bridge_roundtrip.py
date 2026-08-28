@@ -9,15 +9,36 @@
 """
 Step 1 acceptance test - the pipe round trip, plus Step 6's lease.
 
-Runs on WINDOWS WITH NO REVIT. That is the whole point of it, and Step 6 made
-it more valuable: the lease lives in the Kernel and knows nothing about models,
-so this file verifies it without Revit ever being opened.
+Runs WITH NO REVIT. That is the whole point of it, and Step 6 made it more
+valuable: the lease lives in the Kernel and knows nothing about models, so
+this file verifies it without Revit ever being opened.
 
-Starts the Revit-free bridge host, connects over the named pipe, and checks
-that ping comes back. Proves the transport without Revit, without the
-discovery directory, and without any cross-process filesystem assumptions.
+Starts the Revit-free bridge host, connects to it, and checks that ping comes
+back. Proves the transport without Revit, without the discovery directory, and
+without any cross-process filesystem assumptions.
 
+    dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024
     python tests/test_bridge_roundtrip.py
+
+TWO PLATFORMS, ONE SET OF CHECKS
+--------------------------------
+It used to print SKIP anywhere but Windows. It no longer does, because the
+thing being tested is not Windows-specific: .NET implements NamedPipeServerStream
+on Unix as a socket in the temp directory, so the same compiled bridge answers
+the same protocol there. Only the two lines that OPEN the connection differ.
+
+That is why this is one file with a transport shim rather than a second copy
+for POSIX. Every assertion below runs on both, and a copy would have started
+drifting the first time one of them was edited - this repository has been bitten
+by two-lists-of-the-same-thing more than once.
+
+BE HONEST ABOUT WHICH RUN YOU HAVE. A POSIX run proves the framing, the JSON
+parser, the token check, the newest-connection-wins handover, the toggle cycle
+and ALL of the lease - every one of which is plain C# with no operating system
+in it. It does NOT prove the Windows named pipe itself: its naming, its
+security descriptor, or the CreateNewInstance flag in note 2 of HANDOVER
+section 4. Revit runs on Windows, so a POSIX pass is a strong signal and is
+never the final word - A4 in NEEDS-CHECKING.md means the WINDOWS run.
 
 Exit 0 = the bridge works. This is the "Prove it" line for Step 1 in
 docs/27-build-order.md, in a form that can run in CI on a machine with no
@@ -27,25 +48,97 @@ Revit installed.
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import time
 
-HOST_EXE = os.path.join(
-    "tests", "Heron.Bridge.TestHost", "bin", "x64", "Debug", "Heron.Bridge.TestHost.exe")
+WINDOWS = os.name == "nt"
+
 REVIT_VERSION = "2024"
 HOST_LIFETIME_S = "45"
 CONNECT_TIMEOUT_S = 10.0
 
+HOST_PROJECT = os.path.join("tests", "Heron.Bridge.TestHost")
+
+# TWO OUTPUT DIRECTORIES, ON PURPOSE.
+#
+# Revit 2020-2024 mean net472/net48, whose build output is an .exe that only
+# Windows can run. Off Windows the same sources are built for net8.0 instead,
+# which produces a .dll the installed runtime launches.
+#
+# They cannot share a directory. AppendTargetFrameworkToOutputPath is false
+# repo-wide, so every target framework writes to the SAME bin/x64/Debug - and
+# `tools/check-compile.py`, which builds this project once per Revit version,
+# would leave whichever it did last. That is not hypothetical: it happened the
+# first time the two were run in one sitting, and this file went from 32 passes
+# to "not found". The POSIX host therefore gets its own folder and the two
+# never meet.
+_WIN_DIR = os.path.join(HOST_PROJECT, "bin", "x64", "Debug")
+_POSIX_DIR = os.path.join(HOST_PROJECT, "bin", "x64", "Debug-net8.0")
+
+HOST_EXE = os.path.join(_WIN_DIR, "Heron.Bridge.TestHost.exe")
+HOST_DLL = os.path.join(_POSIX_DIR, "Heron.Bridge.TestHost.dll")
+
+# The exact command that produces the binary this file needs, so a failure
+# says what to run rather than what is missing.
+BUILD_HINT = (
+    "dotnet build %s -p:RevitVersion=%s" % (HOST_PROJECT, REVIT_VERSION)
+    if WINDOWS else
+    "dotnet build %s -p:RevitVersion=%s -p:HeronTfm=net8.0 -p:OutputPath=bin/x64/Debug-net8.0/"
+    % (HOST_PROJECT, REVIT_VERSION))
+
+
+def host_binary():
+    """Where the built host is, and whether it is there at all."""
+    return HOST_EXE if WINDOWS else HOST_DLL
+
+
+def host_command(*args):
+    """How to start the host: directly on Windows, through the runtime elsewhere."""
+    if WINDOWS:
+        return [HOST_EXE] + list(args)
+    return ["dotnet", HOST_DLL] + list(args)
+
+
+def _pipe_endpoint(pipe_name):
+    """
+    Where the server is listening, in this operating system's terms.
+
+    On Windows a named pipe is a path under \\.\pipe. On Unix, .NET has no
+    named pipes to use, so NamedPipeServerStream is a socket named
+    CoreFxPipe_<name> in the temp directory. Both are the SAME C# object;
+    only the address differs, which is why one shim is enough.
+    """
+    if WINDOWS:
+        return "\\\\.\\pipe\\" + pipe_name
+    return os.path.join(os.environ.get("TMPDIR", "/tmp"), "CoreFxPipe_" + pipe_name)
+
+
+def _open_endpoint(path):
+    """One connection, as a file-like object with read/write/close."""
+    if WINDOWS:
+        return open(path, "r+b", buffering=0)
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        sock.connect(path)
+    except OSError:
+        sock.close()
+        raise
+    # buffering=0 so a read of one byte is one byte, exactly as the Windows
+    # handle behaves - the framing checks below read a byte at a time on
+    # purpose, to prove the bridge terminates its own lines.
+    return sock.makefile("rwb", buffering=0)
+
 
 def connect(pipe_name, timeout=CONNECT_TIMEOUT_S):
-    """Open the named pipe, retrying until the server is listening."""
-    path = "\\\\.\\pipe\\" + pipe_name
+    """Open the connection, retrying until the server is listening."""
+    path = _pipe_endpoint(pipe_name)
     deadline = time.time() + timeout
     last = None
     while time.time() < deadline:
         try:
-            return open(path, "r+b", buffering=0)
+            return _open_endpoint(path)
         except OSError as exc:
             last = exc
             time.sleep(0.1)
@@ -91,18 +184,19 @@ def call(handle, op, client=CLIENT):
 
 
 def main():
-    if os.name != "nt":
-        print("SKIP  Windows named pipes only.")
-        return 0
-
-    if not os.path.exists(HOST_EXE):
-        print("FAIL  %s not found." % HOST_EXE)
-        print("      dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=%s" % REVIT_VERSION)
+    if not os.path.exists(host_binary()):
+        print("FAIL  %s not found." % host_binary())
+        print("      %s" % BUILD_HINT)
         return 1
 
-    print("Starting the bridge host (no Revit)...")
+    if WINDOWS:
+        print("Starting the bridge host (no Revit)...")
+    else:
+        print("Starting the bridge host (no Revit, no Windows)...")
+        print("  NOTE  this proves the protocol and the lease, NOT the Windows")
+        print("        named pipe itself. A4 still means the Windows run.")
     proc = subprocess.Popen(
-        [HOST_EXE, REVIT_VERSION, HOST_LIFETIME_S],
+        host_command(REVIT_VERSION, HOST_LIFETIME_S),
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         universal_newlines=True, bufsize=1)
 
@@ -149,6 +243,25 @@ def main():
                   % (reply.get("revitVersion"), reply.get("protocolVersion")))
         else:
             failures.append("info returned %r" % reply)
+
+        # A FREE LEASE, OBSERVED WHILE IT IS STILL FREE.
+        #
+        # This has to happen here and nowhere later. ping and info are the only
+        # exempt operations, so this is the last moment in the file at which
+        # nothing has claimed the Revit - the very next check sends an unknown
+        # op, and BridgeServer claims the lease for anything that is not ping
+        # or info, an unknown op included.
+        #
+        # It used to sit further down, in the lease section, where it read
+        # nicely and was false: chat A had already taken the lease by then and
+        # info correctly said so. Nothing was wrong with the bridge. The check
+        # was simply asserted from reading rather than from running, and this
+        # file could not run on the machine it was written on.
+        if reply.get("inUse") is False and reply.get("mine") is False:
+            print("  PASS  nothing has claimed it yet")
+        else:
+            failures.append("info said inUse=%r mine=%r before anyone claimed it"
+                            % (reply.get("inUse"), reply.get("mine")))
 
         # --- unknown op must fail cleanly, not crash the bridge ---
         reply = call(handle, "no_such_operation")
@@ -238,10 +351,17 @@ def main():
         else:
             failures.append("anonymous info returned %r" % reply)
 
-        if reply.get("inUse") is False:
-            print("  PASS  nothing has claimed it yet")
+        # By now chat A holds it - the unknown-op probe further up claimed it,
+        # because claiming is what the bridge does for every operation that is
+        # not exempt. So the honest check here is not that the lease is free,
+        # it is that an ANONYMOUS caller is told the truth about it: taken, and
+        # not yours. A stranger has to be able to see that without claiming it,
+        # or the picker's (in use) column cannot exist.
+        if reply.get("inUse") is True and reply.get("mine") is False:
+            print("  PASS  a stranger is told it is taken, and that it is not theirs")
         else:
-            failures.append("info said inUse=%r before anyone claimed it" % reply.get("inUse"))
+            failures.append("anonymous info said inUse=%r mine=%r while chat A held it"
+                            % (reply.get("inUse"), reply.get("mine")))
 
         # An anonymous request for real work is refused: without an identity
         # that survives reconnection there is no way to tell "the same chat
@@ -346,7 +466,7 @@ def main():
     print()
     print("Toggling the bridge off and on (no Revit)...")
     cycled = subprocess.Popen(
-        [HOST_EXE, REVIT_VERSION, HOST_LIFETIME_S, "cycle"],
+        host_command(REVIT_VERSION, HOST_LIFETIME_S, "cycle"),
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         universal_newlines=True, bufsize=1)
     handle2 = None
