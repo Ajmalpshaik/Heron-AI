@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 30 answered · 11 open · none blocking Phase 0, Phase 1 or Phase 2**
+**Progress: 31 answered · 10 open · none blocking Phase 0, Phase 1 or Phase 2**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -25,8 +25,8 @@ Three of the four were settled by looking rather than deciding: at a system alre
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
 instead of standing between him and something usable.
 
-What remains open is release and governance work (`Q-17`, `Q-18`, `Q-24` to `Q-26`, `Q-29`, `Q-31`,
-`Q-32`, `Q-34`, `Q-35`, `Q-38`), none of which blocks building.
+What remains open is release and governance work (`Q-18`, `Q-24` to `Q-26`, `Q-29`, `Q-31`, `Q-32`,
+`Q-34`, `Q-35`, `Q-38`), none of which blocks building.
 
 **Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
 ([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
@@ -273,7 +273,21 @@ so no client-specific content can arrive by being carried across.
 
 English only, or does Heron need to understand instructions in other languages used on site?
 
-**Answer:**
+**Answer: Heron's own wording is English; understanding the user is not Heron's job at all. See
+[D-34](DECISIONS.md).**
+
+Two questions here, not one. Asked the first, Ajmal chose **English only for now** — and declined the
+*"built ready for Arabic"* option, so no translation scaffolding is written either. The cost of adding it
+later is a pass over every user-facing message, and that is the accepted price rather than a hidden one.
+
+**The second half answers itself.** Heron never interprets language: that happens in the host before
+Heron is called ([D-01](DECISIONS.md)). A request in Arabic, in mixed Arabic and English, or dictated
+roughly, already works. So Heron builds no phrase list and no parser for near-misses — that would be a
+worse copy of something the host already does, needing maintenance forever.
+
+A **site word that means a Revit word** is a third thing and is not a language problem: it is knowledge,
+it belongs in the knowledge store, and Phase 2 owns it. Meanwhile an unfamiliar term is a **question**,
+never a quiet reinterpretation — [D-33](DECISIONS.md).
 
 ---
 

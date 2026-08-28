@@ -73,6 +73,7 @@ than examined.
 | [D-31](#d-31--product-data-and-derived-are-already-separated-and-the-code-is-the-record) | Product, data and derived are already separated | ✅ Accepted |
 | [D-32](#d-32--v1-must-be-able-to-change-the-model-and-reading-is-what-gets-used-first) | v1 must change the model; reading is used first | ✅ Accepted · ⏳ one pass at the PC |
 | [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) | Heron never assumes an input. It asks — and it asks once | ✅ Accepted · ⏳ one pass at the PC |
+| [D-34](#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job) | Heron's own wording is English; understanding the user is not Heron's job | ✅ Accepted · ⏳ one pass at the PC |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1737,3 +1738,46 @@ mention it. It belongs in the `R1` read-back, and if the line is wrong it is thi
   way round for work that damages a model when it is wrong.
 - **The failure mode to watch for is not too many questions — it is a remembered answer applied to a job
   it does not fit.** *Asks once* must be scoped to something real, not to the whole product.
+
+---
+
+## D-34 — Heron's own wording is English; understanding the user is not Heron's job
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-17](OPEN-QUESTIONS.md)
+
+### Context
+
+Q-17 asks two questions that look like one: *English only, or does Heron need to understand instructions
+in other languages used on site?* Ajmal was asked the first and answered **English only for now**. The
+second half answers itself, and in his favour.
+
+**Heron does not interpret language at all.** It runs inside Claude Code
+([D-01](#d-01--heron-runs-as-a-claude-code-plugin)), and turning a sentence into an intent happens there,
+before Heron is called. So a request typed in Arabic, in mixed Arabic and English, or dictated roughly and
+half-corrected, already works — and has all day: this decision and the eight before it were settled
+through exactly that kind of conversation.
+
+What is English is **Heron's own fixed wording**: its error messages, its dialogs, its tool descriptions,
+its report headings. Those are strings this repository writes.
+
+### Decision
+
+**Heron's own wording is English.** No translation layer is built, and none is scaffolded — Ajmal was
+offered *"English now, but built ready for Arabic"* and chose plain English only, so the preparation work
+is not done either.
+
+**Heron builds nothing to understand language.** No phrase list, no synonym table, no parser for dictated
+near-misses. That belongs to the host and duplicating it there would be worse than the host's version and
+would need maintaining forever.
+
+### Consequences
+
+- **The cost of adding Arabic later is stated now so it is not a surprise:** a pass over every
+  user-facing message in the add-in and the MCP server, finding them wherever they sit. That is the
+  accepted price of not scaffolding today, and *"for now"* in his answer suggests the day may come.
+- **A site word that maps to a Revit word is a different problem and is not solved by translation.** When
+  somebody says something the model calls by another name, that is knowledge — it belongs in Heron's own
+  knowledge store where it can be looked up and corrected, not in a language setting. Phase 2 owns it.
+- **What Heron must never do is quietly reinterpret a word it half-recognised.** That is an assumption,
+  and [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) forbids it: an unfamiliar term
+  is a question, not a guess.
