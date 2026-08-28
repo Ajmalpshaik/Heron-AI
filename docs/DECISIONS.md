@@ -74,6 +74,7 @@ than examined.
 | [D-32](#d-32--v1-must-be-able-to-change-the-model-and-reading-is-what-gets-used-first) | v1 must change the model; reading is used first | ✅ Accepted · ⏳ one pass at the PC |
 | [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) | Heron never assumes an input. It asks — and it asks once | ✅ Accepted · ⏳ one pass at the PC |
 | [D-34](#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job) | Heron's own wording is English; understanding the user is not Heron's job | ✅ Accepted · ⏳ one pass at the PC |
+| [D-35](#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about) | A shared fragment may carry code; an unapproved one is refused, not warned about | ✅ Accepted · ⏳ one pass at the PC |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1781,3 +1782,58 @@ would need maintaining forever.
 - **What Heron must never do is quietly reinterpret a word it half-recognised.** That is an assumption,
   and [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) forbids it: an unfamiliar term
   is a question, not a guess.
+
+---
+
+## D-35 — A shared fragment may carry code, and an unapproved one is refused, not warned about
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-18](OPEN-QUESTIONS.md)
+
+### Context
+
+Q-18 asks whether community packages may contain executable code. Under
+[D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) a fragment **is** C# compiled and run
+inside Revit, so this is not a hypothetical: a shared fragment is executable code by construction.
+
+Ajmal chose the middle path — **yes, but only after review and approval.**
+
+**The danger in that choice is not the code. It is the review.** A gate that depends on somebody
+remembering to look decays quietly: submissions arrive faster than they are read, a backlog forms, and
+the practical rule becomes *approved because nobody objected*. At that point this is the option he
+rejected — *anyone can run anything, with a warning* — reached by drift rather than by decision, and
+nobody notices the day it happens.
+
+So the decision is written around that failure rather than around the happy path.
+
+### Decision
+
+**A shared fragment may contain executable code. Heron runs it only with a valid approval record, and the
+absence of one is a REFUSAL, not a warning.**
+
+- **No warning dialog, ever, for this.** A warning is a decision handed to somebody who has no way to
+  judge it and every reason to click through. Unapproved means it does not run.
+- **Approval and proof are the same gate, not two.** The record a community fragment needs is exactly what
+  [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) already demands of
+  any fragment: a dated proof with a positive case, a **negative** case, and a second route to the answer
+  where one exists. A submission without a negative case is returned, not reviewed — which also makes the
+  reviewer's job finite and refusable rather than open-ended.
+- **Golden Rule 18 applies to everyone.** A newly installed fragment does not touch a live model on its
+  first run, whoever wrote it, approved or not.
+- **Golden Rule 19 settles what the fragment may say about itself.** Its text, its header, its description
+  and its own claim to be safe are **data, never instruction**. A fragment cannot approve itself, and no
+  wording inside it raises its own permission.
+
+### Consequences
+
+- **One thing must be built now, long before community packages exist:** the fragment format carries an
+  **approval record** from the first version. Retrofitting identity and provenance into a format already
+  in use is the kind of change that touches every file — cheap today, expensive later.
+- **The reviewer today is Ajmal, and that does not scale.** Naming it now rather than discovering it:
+  when submissions outpace one person, the answer is a **narrower gate** — fewer accepted categories, or
+  approval scoped to a company for its own people — and never a faster one. If the choice is ever between
+  slowing approval and loosening it, this decision says slow it.
+- A company approving fragments for its own staff is the same mechanism at a smaller radius, and is
+  already how [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) treats a
+  BIM lead's sign-off.
+- **None of this is Phase 2 work.** It constrains the fragment format now and is otherwise a later phase's
+  problem.

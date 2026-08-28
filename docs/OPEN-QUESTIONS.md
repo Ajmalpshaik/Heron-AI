@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 31 answered · 10 open · none blocking Phase 0, Phase 1 or Phase 2**
+**Progress: 32 answered · 9 open · none blocking Phase 0, Phase 1 or Phase 2**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -25,8 +25,8 @@ Three of the four were settled by looking rather than deciding: at a system alre
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
 instead of standing between him and something usable.
 
-What remains open is release and governance work (`Q-18`, `Q-24` to `Q-26`, `Q-29`, `Q-31`, `Q-32`,
-`Q-34`, `Q-35`, `Q-38`), none of which blocks building.
+What remains open is release and governance work (`Q-24` to `Q-26`, `Q-29`, `Q-31`, `Q-32`, `Q-34`,
+`Q-35`, `Q-38`), none of which blocks building.
 
 **Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
 ([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
@@ -300,7 +300,24 @@ Now a real security question rather than a hypothetical one, since anyone can pu
 
 → [06 §10](06-heron-platform.md)
 
-**Answer:**
+**Answer: yes, code is allowed — and an unapproved fragment is REFUSED, not warned about. See
+[D-35](DECISIONS.md).** Ajmal chose *"yes, but only after review and approval"*.
+
+Under [D-28](DECISIONS.md) a fragment is C# compiled and run inside Revit, so a shared fragment is
+executable code by construction — this was never a hypothetical.
+
+**The decision is written around the way that choice fails, not around the way it works.** A gate that
+depends on somebody remembering to look decays: submissions outpace reading, a backlog forms, and
+*approved* quietly comes to mean *nobody objected*. That is the option he rejected, reached by drift. So
+there is **no warning dialog** — a warning hands the decision to the person least able to judge it and
+most likely to click through. Unapproved does not run.
+
+**Approval and proof are the same gate**, which is what makes the reviewer's job finite: the record
+required is the one [D-30](DECISIONS.md) already demands, and a submission without a negative case is
+returned rather than reviewed.
+
+**One thing must be built now:** the fragment format carries an approval record from its first version.
+Retrofitting provenance into a format already in use touches every file.
 
 ---
 
