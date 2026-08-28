@@ -105,6 +105,9 @@ _KNOWN = {
                           "the request could not be handed to Revit at all"),
     "unauthorized":      (NEVER_RAN, FIX_FIRST,
                           "the session token was refused - that Revit was rebound or restarted"),
+    "session_in_use":    (NEVER_RAN, FIX_FIRST,
+                          "another chat holds the lease on that Revit, so Heron refused rather "
+                          "than taking it over mid-job"),
     "unknown_op":        (NEVER_RAN, STOP,
                           "this Revit's add-in does not know that operation - the two halves "
                           "are different versions"),

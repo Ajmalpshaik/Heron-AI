@@ -73,7 +73,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | The bridge answers `ping` | Revit 2020 and 2024 |
 | One button connects **and** disconnects; the icon shows which | Toggled repeatedly, every transition logged |
 | Per-session token, minted per connect | 2024's token on the 2020 pipe → `unauthorized` |
-| Newest connection wins | *"A newer connection took the session"*, older one dropped |
+| Newest connection wins — **the pipe only, since Step 6** | *"A newer connection took the session"*, older one dropped. Still true of the transport; a lease now decides who may actually send anything ([D-22](docs/DECISIONS.md)). **The lease itself is unproven** |
 | Two Revits at once, separate pipes | `heron.2024.*` and `heron.2020.*` together |
 | **The thread hop** | `5,844 elements` from 2024, `3,167` from 2020 |
 | **"Revit is busy" instead of a hang** | Dialog open → clean refusal after 10s, recovers by itself |
@@ -96,6 +96,8 @@ now that the next stretch of work happens where Revit cannot be reached.
 | `RevitWrite.cs` — preview, re-count, TransactionGroup, rollback | The one file that can change a model. Every claim in it is unverified |
 | `HeronUnits`, `HeronPermissions`, `HeronStop` | Kernel C#. Plain arithmetic and flags, but still never compiled |
 | The Emergency Stop ribbon button | New `PushButtonData` in a file whose ribbon currently works. **If Heron will not load after this, look here first** |
+| **The lease** (`HeronLease`) | Refuses a second chat instead of cutting the first off. Changes behaviour proven in Step 1, and needs two chats and one Revit to test at all |
+| **Bridge protocol 2** | A request now carries a `client` id. An add-in still on protocol 1 will refuse to talk — which is correct, and means the add-in MUST be rebuilt and redeployed |
 | `revit_preview_move`, `revit_apply_move`, `revit_use_this_model` | The three new MCP tools. Never seen by a running host |
 
 > The chat side of Step 6 **is** tested and passing — distance parsing, document pinning, single-use

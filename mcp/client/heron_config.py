@@ -44,6 +44,7 @@ import os
 DEFAULTS = {
     "bridge.autoConnect": "false",
     "bridge.idleReleaseMinutes": "3",
+    "bridge.leaseMinutes": "5",
     "revit.busyTimeoutSeconds": "10",
     "revit.operationTimeoutSeconds": "60",
     "write.enabled": "false",

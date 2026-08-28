@@ -38,14 +38,29 @@ sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 
 from heron_session import SessionBinding, NotBound      # noqa: E402
+import heron_bridge_client as bridge                   # noqa: E402
 
 
 class FakeSession(object):
-    """A connected Revit, without a Revit."""
+    """
+    A connected Revit, without a Revit.
 
-    def __init__(self, pid, revit_version):
+    It answers `info` because the picker now asks each session whether it is
+    free or already held by another chat (Step 6's lease). `held_by_other`
+    stages that answer. A fake that cannot answer what the real thing answers
+    is not a fake, it is a different object.
+    """
+
+    def __init__(self, pid, revit_version, held_by_other=False):
         self.pid = pid
         self.revit_version = revit_version
+        self.held_by_other = held_by_other
+
+    def request(self, op, **kwargs):
+        if op == "info":
+            return {"ok": True, "inUse": self.held_by_other, "mine": False,
+                    "leaseSecondsRemaining": 300 if self.held_by_other else 0}
+        return {"ok": True}
 
     def close(self):
         pass
@@ -125,6 +140,34 @@ def main():
     except NotBound as unbound:
         check("no longer safe to assume" in str(unbound),
               "ASSUMED + a second appears -> ASKS, because they never chose")
+
+    # --- the picker tells the truth about other chats (Step 6's lease) ------
+    binding = SessionBinding()
+    stage(binding, [FakeSession(100, "2024"), FakeSession(200, "2020", held_by_other=True)])
+    picker = binding.describe(binding.sessions()[0])
+    check("(free)" in picker,
+          "the picker marks a Revit nobody is using as (free)")
+    check("in use by another chat" in picker,
+          "and says plainly when another chat already holds one")
+
+    # --- the availability phrase itself, all four states ---------------------
+    class Reply(object):
+        def __init__(self, payload):
+            self.payload = payload
+        def request(self, op, **kwargs):
+            return self.payload
+
+    check(bridge.availability(Reply({"ok": True, "inUse": False, "mine": False,
+                                     "leaseSecondsRemaining": 0})) == "(free)",
+          "nobody holding it reads as (free)")
+    check("this chat" in bridge.availability(Reply({"ok": True, "inUse": True, "mine": True,
+                                                    "leaseSecondsRemaining": 120})),
+          "held by me is said differently from held by someone else")
+    check("another chat" in bridge.availability(Reply({"ok": True, "inUse": True, "mine": False,
+                                                       "leaseSecondsRemaining": 120})),
+          "held by another chat says so, with roughly how long is left")
+    check(bridge.availability(Reply({"ok": True})) == "(availability unknown)",
+          "an older add-in that cannot report it says UNKNOWN, never (free)")
 
     # --- nothing connected --------------------------------------------------
     binding = SessionBinding()

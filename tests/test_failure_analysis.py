@@ -121,6 +121,16 @@ def main():
               "%s: nothing happened to the model, next step is %s" % (code, step))
 
     print()
+    print("The lease refusal happened BEFORE anything reached the model")
+    busy = analyse(refusal("session_in_use"), writes=True)
+    check(busy.outcome == fa.NEVER_RAN,
+          "another chat holding the Revit means the request never ran")
+    check(busy.touched_the_model is False,
+          "so the model is untouched - NOT the unknown case")
+    check(busy.next_step == fa.FIX_FIRST and not busy.may_retry,
+          "the user waits or takes the session; Heron does not retry into a fight")
+
+    print()
     print("Golden Rule 20 survives the classification")
     closed = analyse(refusal("document_closed"), writes=True)
     check(closed.next_step == fa.STOP,

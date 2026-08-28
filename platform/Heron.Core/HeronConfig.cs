@@ -49,7 +49,12 @@ namespace Heron.Core
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "bridge.autoConnect", "false" },      // connecting stays explicit, by design
-                { "bridge.idleReleaseMinutes", "3" },    // safety net; preemption is the real mechanism
+                { "bridge.idleReleaseMinutes", "3" },    // safety net; the lease is the real mechanism
+
+                // How long one chat holds a Revit without asking anything.
+                // Longer than idleReleaseMinutes on purpose: the pipe going
+                // quiet does not mean the chat has gone (HeronLease).
+                { "bridge.leaseMinutes", "5" },
 
                 // Revit runs a queued request only when it is idle. These two
                 // must stay BELOW the client's own deadline, so the bridge is

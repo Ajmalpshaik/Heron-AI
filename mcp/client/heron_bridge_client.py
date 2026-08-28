@@ -36,18 +36,33 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 
 # DERIVED state: machine-local, never roaming (D-17). A roaming discovery
 # file would follow the user to a PC where that process does not exist.
 DISCOVERY_DIR = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "bridges")
 LOG_DIR = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "logs")
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
 CONNECT_TIMEOUT_S = 2.0
 
 # The settings the ADD-IN reads, read from this side too. Stdlib only, so the
 # client stays runnable on a machine where nothing else is installed - which is
 # the whole reason `doctor` exists.
 import heron_config                            # noqa: E402
+
+# THIS CHAT, for the lifetime of this process - which is the lifetime of one
+# chat. Sent with every request so the add-in's lease can tell "the same chat
+# coming back after a reconnect" from "a second chat arriving". Those two look
+# identical at the pipe, and confusing them is what made the old behaviour
+# chop a job in half.
+#
+# NOT the session token: that is minted per Revit connect and read from the
+# discovery file, so every chat talking to one Revit reads the SAME token. It
+# authenticates the Revit, not the chat, and cannot tell them apart.
+#
+# Random and meaningless on purpose. It identifies a conversation, never a
+# person or a machine.
+CLIENT_ID = uuid.uuid4().hex[:12]
 
 # How long to wait for an answer once the bridge has accepted the connection.
 #
@@ -187,7 +202,7 @@ class Bridge(object):
         a move because the answer went missing would move the same ducts twice,
         and "it looked like it failed" is exactly how that happens.
         """
-        body = {"op": op, "token": self.token}
+        body = {"op": op, "token": self.token, "client": CLIENT_ID}
         if op_args:
             # Arguments sit alongside op and token, never nested one level down:
             # the bridge reads top-level keys only, deliberately.
@@ -304,6 +319,42 @@ def bridge_process_is_running(pid):
         if answer is None:
             unknown = True
     return None if unknown else False
+
+
+def lease_state(bridge):
+    """
+    Who holds this Revit: (in_use, mine, seconds_remaining).
+
+    Asks `info`, which is lease-EXEMPT on purpose - looking must never be the
+    act of claiming. Before the lease existed there was nothing truthful to
+    return here at all, and the only way to know another chat was using a
+    Revit was for a person to remember and say so.
+
+    An older add-in (protocol 1) does not report it. That returns
+    (None, None, 0) - unknown, which is not the same as free and must not be
+    displayed as it.
+    """
+    reply = bridge.request("info")
+    if reply is None or not reply.get("ok") or "inUse" not in reply:
+        return None, None, 0
+    return bool(reply.get("inUse")), bool(reply.get("mine")), int(reply.get("leaseSecondsRemaining", 0))
+
+
+def availability(bridge):
+    """
+    The (free) / (in use) column, as one short phrase.
+
+    docs/25 called this "the missing data that makes the list honest".
+    """
+    in_use, mine, seconds = lease_state(bridge)
+    if in_use is None:
+        return "(availability unknown)"
+    if not in_use:
+        return "(free)"
+    if mine:
+        return "(in use by this chat)"
+    minutes = max(1, int((seconds + 59) // 60))
+    return "(in use by another chat, ~%d min left)" % minutes
 
 
 def discover(prune=True):

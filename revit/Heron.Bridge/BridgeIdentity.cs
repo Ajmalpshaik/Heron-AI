@@ -33,7 +33,12 @@ namespace Heron.Bridge
     {
         /// <summary>Bumped when the wire format changes. A client that does
         /// not recognise this refuses cleanly rather than half-working.</summary>
-        public const int ProtocolVersion = 1;
+        // 2 since Step 6: a request now carries a "client" id, and the lease
+        // (HeronLease) decides who may send anything at all. An older client
+        // sends no id and would be refused as anonymous - which is correct but
+        // reads as a fault, so the version is bumped instead and the mismatch
+        // is reported as what it is: restart that Revit to finish updating.
+        public const int ProtocolVersion = 2;
 
         public int ProcessId { get; private set; }
         public string RevitVersion { get; private set; }

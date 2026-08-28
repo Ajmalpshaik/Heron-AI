@@ -104,7 +104,7 @@ Roughly two thirds never call a model at all.
 | `HERON-SES-DIS-001` | Bridge Discovery Agent | Reads `%LOCALAPPDATA%\Heron\bridges\*.json`, verifies each is alive, removes stale files ↗ | T1 | READ | 1 |
 | `HERON-SES-LST-002` | Session List Agent | Builds the picker **live** — version, project, availability. Never a cached snapshot, never a PID shown ↗ | T1 | READ | 5 |
 | `HERON-SES-BND-003` | Session Binding Agent | One chat, one Revit. Asks once, stays bound, **fails closed** when that session closes ↗ | T1 | READ | 5 |
-| `HERON-SES-LEA-004` | Session Lease Agent | Prevents a second chat taking over mid-job. Scoped to the process. Never blocks a rollback ↗ | T1 | READ | — |
+| `HERON-SES-LEA-004` | Session Lease Agent | Prevents a second chat taking over mid-job. Scoped to the process. Never blocks a rollback ↗ | T1 | READ | **6** |
 | `HERON-SES-PIN-005` | Document Pinning Agent | Pins the target document by identity for any write; verifies at every step ↗ | T1 | MODIFY | **6** |
 
 ## 5. Knowledge & RAG — 17
@@ -491,12 +491,12 @@ classes with a method or two. Of the rest, 64 make one scoped call and 20 run a 
 Read that way, the platform is a normal application with about 167 services, 63 narrow model calls, and
 20 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
-**Phase 0 and Phase 1 need 46 of these** — the ones carrying a step number in the tables above.
+**Phase 0 and Phase 1 need 47 of these** — the ones carrying a step number in the tables above.
 See [08](08-agent-catalog.md) and [27](27-build-order.md).
 
 > **Correction, 2026-08-27:** this line said *"about 20"*, and [08](08-agent-catalog.md) said *"45 …
-> the other 175"*. Counting the rows gives **46** (11 · 2 · 7 · 9 · 6 · 11 across steps 1–6), leaving
-> **204**. Three wrong numbers about the same set, in two documents, none of them derived from the
+> the other 175"*. Counting the rows gives **46** (11 · 2 · 7 · 9 · 6 · 12 across steps 1–6), leaving
+> **203**. Three wrong numbers about the same set, in two documents, none of them derived from the
 > rows they describe. `tools/check-metadata.py` now counts the rows and fails if a sentence here
 > disagrees, which is the only reason to trust the figure above over the three it replaces.
 

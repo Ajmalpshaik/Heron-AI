@@ -63,11 +63,20 @@ def csharp_registry():
 
 
 def csharp_handlers():
-    """Every `case "op":` across the files that route operations."""
+    """
+    Every operation routed anywhere, in either form the code uses.
+
+    `case "op":` covers the switch in RevitOperations. `op == "op"` covers
+    ping and info, which BridgeServer routes with an if rather than a switch
+    because Step 6 made them lease-exempt and they had to be handled before the
+    lease check. Matching only the switch form quietly reported both as
+    unhandled - which is this check working, and then being wrong about why.
+    """
     handled = set()
     for path in HANDLER_FILES:
         text = io.open(path, encoding="utf-8").read()
         handled.update(re.findall(r'case\s+"([A-Za-z_][A-Za-z0-9_]*)"\s*:', text))
+        handled.update(re.findall(r'op\s*==\s*"([A-Za-z_][A-Za-z0-9_]*)"', text))
     return handled
 
 
@@ -98,7 +107,7 @@ def main():
     print("Every declared operation has a handler")
     for op in sorted(declared_cs):
         check(op in handled,
-              "'%s' is declared and has a `case \"%s\":`" % (op, op))
+              "'%s' is declared and is routed somewhere" % op)
 
     print()
     print("Every handler is declared - nothing routes that the gate has not seen")
@@ -108,7 +117,7 @@ def main():
     # the gate.
     for op in sorted(handled):
         check(op in declared_cs,
-              "`case \"%s\":` has a declaration in the registry" % op)
+              "the routed operation '%s' has a declaration in the registry" % op)
 
     print()
     print("Exactly one thing here can change the model")

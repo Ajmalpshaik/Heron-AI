@@ -95,13 +95,22 @@ class SessionBinding(object):
         return live, starting, mismatched
 
     def describe(self, sessions):
-        """The picker, numbered from 1. Numbers, because a process id is not
-        something a person should be asked to read or repeat."""
+        """
+        The picker, numbered from 1. Numbers, because a process id is not
+        something a person should be asked to read or repeat.
+
+        Each row now carries whether that Revit is FREE or already held by
+        another chat. docs/25 called this the missing data that makes the list
+        honest: before the lease, the only thing shown was which one THIS chat
+        was using, and a user picking a busy Revit found out by having their
+        request refused. Asking costs nothing and claims nothing - `info` is
+        lease-exempt.
+        """
         lines = []
         for index, b in enumerate(sessions, 1):
             mark = "  <- currently in use" if b.pid == self._pid else ""
-            lines.append("  %d) Revit %s   (session %s)%s"
-                         % (index, b.revit_version, b.pid, mark))
+            lines.append("  %d) Revit %s   (session %s)  %s%s"
+                         % (index, b.revit_version, b.pid, bridge.availability(b), mark))
         return "\n".join(lines)
 
     # ----------------------------------------------------------------- choose

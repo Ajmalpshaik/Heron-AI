@@ -158,7 +158,7 @@ Proven behaviour, adopted wholesale:
 | Already bound | Every command goes there. A third Revit opening later does **not** re-ask |
 | The bound Revit closes | **Stop and say so.** Never slide onto a different session |
 | Chat A → Revit 1, chat B → Revit 2 | Independent. No interference |
-| Chat A **and** chat B → the same Revit | **They fight.** Last speaker wins and cuts the other off |
+| Chat A **and** chat B → the same Revit | **The second is refused**, and told why. Since Step 6 a lease decides this ([D-22](DECISIONS.md)) — the newer connection still takes the *pipe*, but not the right to use it. Before that they fought and the last speaker cut the other off mid-job |
 
 **[NOTE]** *"Nothing is sent to Revit at all until you say which one — the AI is not allowed to guess"*
 is the correct default and it should be a hard rule, not a preference. Guessing which project to modify

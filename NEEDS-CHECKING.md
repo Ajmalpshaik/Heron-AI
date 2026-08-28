@@ -127,6 +127,21 @@ so until F3 passes, "Steps 1 to 5 are proven" describes history rather than the 
 | **F2** | Launch Revit 2027 | Unknown. The owner says his install does not work — find out whether that is the install or Heron |
 | **F3** | Re-run everything in [`HANDOVER.md`](HANDOVER.md) §3 once, in one sitting | All still true against the current build |
 
+## Group H — the lease (needs TWO chats and one Revit)
+
+Changes behaviour proven in Step 1, so it is the group most likely to surprise you.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **H1** | One chat, one Revit. Ask anything | Works exactly as before. The lease is claimed silently — you should notice nothing |
+| **H2** | Open a **second** Claude chat, connect to the **same** Revit, ask anything | **Refused**, saying the Revit is in use by another chat and roughly when it frees. It must NOT cut the first chat off |
+| **H3** | Go back to the **first** chat, ask again | Still works. It never lost its hold |
+| **H4** | In the second chat, run `revit_health` | Shows the Revit — `ping`/`info` are lease-exempt, so *looking* must never claim it |
+| **H5** | Two Revits open, one held by another chat. Ask for the picker | The rows read `(free)` and `(in use by another chat, ~N min left)`. **This is the column that did not exist before** |
+| **H6** | Leave the first chat idle over 5 minutes, then ask from the second | Now granted — the lease lapsed. An abandoned chat must not hold a Revit forever |
+| **H7** | First chat holding it, press the **Heron button** to disconnect, then ask from the second | Granted immediately. Pressing the button releases it rather than making anyone wait out the timer |
+| **H8** | Two chats, **different** Revits (2020 and 2024) | No interference at all. The lease is per process |
+
 ## Group G — hard to force, do last
 
 Not blocking. Listed so they are not mistaken for tested.
