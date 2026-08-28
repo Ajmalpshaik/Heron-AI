@@ -84,6 +84,26 @@ The working prototype of `HERON-STD-MET-014`.
 
 ---
 
+## `check-compile.py` — does the C# actually build
+
+```bash
+python tools/check-compile.py                 # every version it can reach
+python tools/check-compile.py 2020 2024       # just those two
+```
+
+Builds all four projects against every Revit version, using the Revit API reference assemblies from
+NuGet. This is `A2` and `A3` of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) in one command instead of
+one version at a time.
+
+**It does not need Windows and it does not need Revit** — which is the point, because until
+2026-08-28 not one `.cs` file here had been through a compiler at all. The first run found a real
+2020-only error. [docs/30](../docs/30-compiling-away-from-windows.md) is the whole story.
+
+Revit 2025+ needs the Windows Desktop SDK and is reported **SKIPPED** off Windows, never as passed.
+A pass means the API surface agrees; it is **not** evidence that anything behaves correctly.
+
+---
+
 ## `generate-agent-map.py` — the visual map
 
 ```bash
@@ -108,3 +128,4 @@ hard way:
 1. **A stated count is a claim; a derived count is a fact.**
 2. **A cross-reference that is not checked is a cross-reference that is broken.**
 3. **A generated artefact cannot lie about its source.**
+4. **Code no compiler has read is a draft, whatever the documentation calls it.**

@@ -19,10 +19,16 @@ namespace Heron.Revit.Addin
     /// The first code in Heron that can change a model.
     ///
     /// ============================ NEVER RUN ============================
-    /// Written on a machine with no Revit and no .NET SDK. It has never been
-    /// compiled, never loaded and has never moved anything. Do not point it
-    /// at a real project until it has been through Revit on a machine that
-    /// can build it. HeronPermissions keeps it switched off until then.
+    /// Written on a machine with no Revit. It COMPILES - Revit 2020 through
+    /// 2024, 0 warnings, since 2026-08-28 - and that is the whole of what is
+    /// known about it. It has never been loaded into Revit and has never
+    /// moved anything.
+    ///
+    /// Compiling proves the API surface agrees. It does not prove that a duct
+    /// moves 200 millimetres rather than 200 feet, and this file is where that
+    /// would happen. Do not point it at a real project until NEEDS-CHECKING.md
+    /// group D has passed - D3 in particular, which is "move them, then MEASURE
+    /// one". HeronPermissions keeps it switched off until then.
     /// ===================================================================
     ///
     /// It is deliberately shaped to REFUSE rather than to guess. Every check
@@ -593,15 +599,40 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// A document's identity, stable across saves and window switches.
         ///
-        /// CreationGUID is the document's own identity and survives being
-        /// saved, renamed and moved. Title and path are carried too, so that
-        /// a mismatch can be EXPLAINED to the user in words they recognise -
-        /// a bare GUID comparison can refuse correctly and still leave the
-        /// user with no idea which two models it is talking about.
+        /// The identity is the UniqueId of the document's own Project
+        /// Information element. It is created with the document, it survives
+        /// being saved, renamed and moved, and it is different for every
+        /// open model - which is all Golden Rule 20 asks of it.
+        ///
+        /// It is NOT Document.CreationGUID, and that is deliberate.
+        /// CreationGUID reads like the obvious answer and does not exist in
+        /// Revit 2020 - checked against the shipped RevitAPI.dll for both
+        /// releases, not from memory. Using it compiled on 2024 and failed
+        /// on 2020, which is D-05 and docs/16 exactly: the runtime table is
+        /// never extrapolated, and a member that arrived mid-range is a
+        /// version boundary whether or not anybody noticed it.
+        ///
+        /// A #if could have papered over it. This does not need one - the
+        /// same expression is correct on every release from 2020 to 2027 -
+        /// and that is worth more than the branch it avoids, for the same
+        /// reason D-20 prefers arithmetic to UnitUtils: there is nothing
+        /// here for Autodesk to move underneath it.
+        ///
+        /// Title and path are carried too, so that a mismatch can be
+        /// EXPLAINED to the user in words they recognise - a bare identity
+        /// comparison can refuse correctly and still leave the user with no
+        /// idea which two models it is talking about.
         /// </summary>
         private static string DocumentKey(Document doc)
         {
-            return doc.CreationGUID.ToString("N") + "|" + (doc.PathName ?? "") + "|" + doc.Title;
+            // ProjectInformation is present in every project document. A
+            // family document has none, and Heron does not write to those -
+            // but falling back to the path is cheaper than a null reference
+            // inside a refusal that exists to keep the user safe.
+            var info = doc.ProjectInformation;
+            var identity = info == null ? "no-project-info" : info.UniqueId;
+
+            return identity + "|" + (doc.PathName ?? "") + "|" + doc.Title;
         }
 
         /// <summary>
