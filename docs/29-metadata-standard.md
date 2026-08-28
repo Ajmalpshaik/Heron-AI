@@ -86,7 +86,25 @@ contract:                         # DATA, not prose            (D-29)
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
+
+utterances:                       # what somebody actually types  (Step 9)
+  - select these
+  - highlight them on screen
+  - OST_DuctCurves
 ```
+
+**`utterances` is required, and Step 9 is why.** [09 §2](09-skills-and-fragments.md) recommended it —
+*"utterances drive matching quality directly"* — and Step 7 built the shape without it. Step 9 then could
+not find the category filter by typing `OST_DuctCurves`, because a capability named for the general case
+contains none of the words a modeller uses for the specific one.
+
+They are not documentation. They are **the input the exact-match short circuit actually runs on**: nobody
+types *"all elements of one category in the active document"*, they type *"select all ducts"*. Revit's own
+tokens belong here for the same reason — they are what gets pasted in, and they are precisely the class a
+meaning-based search handles worst ([05 §4](05-heron-brain.md)).
+
+**A fragment nobody can phrase a request for is unfindable**, and being findable is the whole point of
+Steps 8 to 11 — so an empty list is refused rather than allowed as a to-do.
 
 **Two fields changed when Step 7 built the validator**, and both changes are here rather than left as a
 silent divergence between a document and the code that is supposed to implement it:

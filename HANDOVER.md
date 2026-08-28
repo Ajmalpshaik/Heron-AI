@@ -33,7 +33,16 @@ person, or the owner on his phone.
 > impossible to *write* — the API takes one scope and `ATTACH` is refused by name, which is the one
 > loophole in "one file per scope". Project knowledge with no project identified is **refused, never
 > defaulted**, because a wrong guess writes one client's knowledge into another's file.
-> `python tests/test_scope_store.py`, 26 checks. **Step 9 is next.**
+> `python tests/test_scope_store.py`, 26 checks.
+>
+> **Step 9 is built**: finding a fragment by exact words, on three routes that name themselves —
+> `identity` (one lookup, no search), `cache` (this wording was resolved before), `keywords` (FTS5).
+> **Only a `PROVEN` fragment may run off an exact match without asking**, and two fragments claiming one
+> sentence is a *miss* rather than a coin toss. It found a real gap in Step 7 on its first run: fragments
+> had no `utterances`, so `OST_DuctCurves` matched nothing — [09 §2](docs/09-skills-and-fragments.md) had
+> asked for them and Step 7 had not built them. Now required.
+> `python tests/test_search.py`. **Step 10 is next** — meaning, and it carries the phase's only real
+> install risk.
 >
 > **What that did NOT change:** `write.enabled` is still `false`, every parked item is still unproven,
 > and `R1` — read the day's decisions back — **did not happen before Phase 2 began**, contrary to the

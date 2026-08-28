@@ -60,3 +60,17 @@ compatibility-note: >
 
 # No proof, and therefore not past DRAFT. It has never run against a real
 # model; NEEDS-CHECKING.md carries that like everything else unproven.
+
+# What somebody might actually type. These are what the exact-match short
+# circuit runs on - nobody asks for "all elements of one category in the active
+# document", they ask for ducts. Revit's own tokens belong here too: they are
+# what a modeller pastes in, and they are exactly what a meaning-based search
+# handles worst.
+utterances:
+  - select all ducts
+  - how many ducts are there
+  - list every duct in the model
+  - find all elements of a category
+  - OST_DuctCurves
+  - all the pipes on level 2
+  - which walls are on this level

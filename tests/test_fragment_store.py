@@ -76,6 +76,7 @@ def well_formed(**over):
         },
         "revit": ["2020", "2024"],
         "runtime": ["net472", "net48"],
+        "utterances": ["do the test thing"],
     }
     data.update(over)
     return data
@@ -257,6 +258,16 @@ def main():
 
     check(F.folder_for("FILTER_ELEMENTS_BY_CATEGORY") == "filter-elements-by-category",
           "a folder name is derivable from its capability, not invented")
+
+    print()
+    print("A fragment nobody can phrase a request for is unfindable")
+    base_u, folder_u = scratch(well_formed(utterances=[]))
+    try:
+        broken = F.validate(F.load(folder_u))
+        check(any("utterances" in p for p in broken),
+              "an empty utterances list is refused, not allowed as a to-do")
+    finally:
+        shutil.rmtree(base_u, ignore_errors=True)
 
     print()
     print("Releases Heron does not know are an error, never a guess (D-05)")

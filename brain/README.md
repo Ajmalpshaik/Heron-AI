@@ -1,6 +1,6 @@
 # brain/ — Part 3, Heron Brain
 
-**Knowledge.** Runs outside Revit. **Phase 2 started 2026-08-28 — Steps 7 and 8 of 8 are in.**
+**Knowledge.** Runs outside Revit. **Phase 2 started 2026-08-28 — Steps 7, 8 and 9 done, 3 of its 8.**
 
 | | |
 |---|---|
@@ -14,15 +14,17 @@
 |---|---|
 | [`heron_fragment.py`](heron_fragment.py) | **Step 7.** What a fragment IS on disk, and the validator that will not let it lie. Identity is not the filename; the contract is data, not prose; a proof without a negative case is refused |
 | [`fragments/`](fragments/) | The library. Two so far, both `DRAFT` — written by hand to prove the shape, and **neither has met a real model** |
+| [`heron_search.py`](heron_search.py) | **Step 9.** Finding a fragment by exact words. Three routes and it says which answered: `identity` (one lookup, no search), `cache` (this wording was resolved before), `keywords` (FTS5, ranked). Only a **PROVEN** fragment may run off an exact match without asking |
 | [`heron_scope.py`](heron_scope.py) | **Step 8.** One knowledge store per scope, as one file each. A cross-scope query is impossible to *write*: the API takes one scope and `ATTACH` is refused by name. The stores are **derived** — delete them all and `--rebuild` puts them back |
 
 Run `python brain/heron_fragment.py` to validate the library and
-`python brain/heron_scope.py` to see the stores; `python tests/test_fragment_store.py` and
-`python tests/test_scope_store.py` are the 28 and 26 checks behind them.
+`python brain/heron_scope.py` to see the stores, and
+`python brain/heron_search.py "select all ducts"` to look something up.
+`test_fragment_store.py`, `test_scope_store.py` and `test_search.py` are the checks behind them.
 
 ## What is still to come
 
-Steps 9 to 14: keyword search and the exact-match short circuit · local
+Steps 10 to 14: local embeddings and the exact-match short circuit · local
 embeddings · hybrid retrieval · the capability registry · the dependency graph · ten real skills.
 
 ## Why it stayed empty until now

@@ -42,3 +42,10 @@ compatibility-note: >
 # not a change to the model, survives no transaction and needs no undo. The
 # gate that matters for this fragment is the one that lets it run at all with
 # write.enabled false - C5 in NEEDS-CHECKING.md is that exact test.
+
+utterances:
+  - select these
+  - highlight them on screen
+  - show me the ones you found
+  - put them in the selection
+  - clear the selection

@@ -98,7 +98,7 @@ REQUIRED = ("heron-agent", "heron-step", "heron-status", "heron-since",
             "heron-layer",
             "id", "semantic-identity", "kind", "domain", "capability",
             "version", "source", "risk", "purpose", "contract", "revit",
-            "runtime")
+            "runtime", "utterances")
 
 # Names the generated wrapper ALWAYS has in scope, so no fragment has to be
 # preceded by another one to get them. Found by writing the first two fragments
@@ -246,6 +246,12 @@ class Fragment(object):
         return [str(v) for v in self.data.get("revit", []) or []]
 
     # -- the contract, as data ----------------------------------------------
+
+    def utterances(self):
+        """What somebody might actually type to want this. Declared by the
+        author, indexed by Step 9, and the input the exact-match short circuit
+        really runs on."""
+        return list(self.data.get("utterances", []) or [])
 
     def needs(self):
         return list(self.data.get("contract", {}).get("needs", []))
@@ -427,6 +433,22 @@ def validate(frag):
             "%s: revit is empty - every fragment must name the releases it is "
             "for, as a LIST. A range like '>=2020' claims every future release, "
             "which is what D-05 exists to prevent" % where)
+
+    # docs/09 section 2 asked for these and Step 7 did not build them; Step 9
+    # found out why they matter. A fragment nobody can PHRASE A REQUEST FOR is
+    # unfindable, and being findable is the entire point of Steps 8 to 11.
+    # They are also the short circuit's real input: users type "select all
+    # ducts", never "all elements of one category in the active document".
+    said = frag.data.get("utterances")
+    if said is not None:
+        if not isinstance(said, list) or not said:
+            problems.append(
+                "%s: utterances must be a non-empty list of things somebody "
+                "might actually say" % where)
+        else:
+            for i, line in enumerate(said):
+                if not isinstance(line, str) or len(line.strip()) < 3:
+                    problems.append("%s: utterances[%d] is not a phrase" % (where, i))
 
     problems.extend(naming_problems(frag))
     problems.extend(proof_problems(frag))
