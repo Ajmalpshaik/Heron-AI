@@ -1,17 +1,26 @@
 # Heron AI — Session Handover
 
-**Updated 2026-08-28, at the end of the fourth working session — the one that found a compiler.**
-For whoever picks this up next: a fresh Claude session, a person, or the owner on his phone.
+**Updated 2026-08-28, at the end of the fourth working session — the one that found a compiler, then
+spent the rest of the day answering questions.** For whoever picks this up next: a fresh Claude session, a
+person, or the owner on his phone.
 
-> **If you read only one thing:** **the C# compiles now.** Revit 2020 through 2024, every project, zero
-> warnings — and the Revit-free bridge host *runs*, with all 32 of its checks passing including the whole
-> lease. None of that needed Windows and none of it needed Revit; it needed somebody to try
-> ([docs/30](docs/30-compiling-away-from-windows.md)). It caught two real defects on its first run, both
-> of which reading had already missed twice.
+> **If you read only one thing:** two walls fell on the same day, and neither needed a Windows machine.
 >
-> The next move is [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), now starting at **`B1`**, on a Windows
-> machine with Revit. `A1`–`A3` are done. Before writing any code, run `python tools/check-compile.py` —
-> it takes minutes and it is no longer somebody else's job.
+> **The C# compiles.** Revit 2020 through 2024, every project, zero warnings — and the Revit-free bridge
+> host *runs*, all 32 checks passing including the whole lease. It caught two real defects on its first
+> run, both of which reading had already missed twice ([docs/30](docs/30-compiling-away-from-windows.md)).
+>
+> **And nothing gates Phase 2 any more.** Eleven questions answered and **nine decisions taken**
+> (D-23 to D-31) in one conversation from a phone. Three of the last four were settled by *looking* — at
+> a system already doing the job, and at Heron's own code, where Q-13's answer had been running since
+> Step 1.
+>
+> **Two things to do next, in this order.** `R1` in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — read the
+> day's decisions back to Ajmal at the PC, his own instruction, *before* Phase 2 work starts. Then `B1`:
+> open Revit and see whether the tab is there. `A1`–`A3` are done.
+>
+> Before writing any code, run `python tools/check-compile.py`. It takes minutes and it is no longer
+> somebody else's job.
 
 > ## ⚠️ READ THIS FIRST — you are probably on a machine with no Revit
 >
@@ -75,6 +84,24 @@ flagged anywhere:
 **Phase 1's own definition of done is not met, and cannot be met here:** *"a wrong instruction can be
 reversed with one Ctrl+Z, and a failed operation leaves the model untouched."* Both are written, both are
 covered by reasoning, and **neither has been witnessed.**
+
+**PHASE 2 IS NO LONGER GATED — nine decisions on 2026-08-28 closed every open question in its path.**
+None of it is built; what changed is that building it no longer waits on anybody.
+
+| | |
+|---|---|
+| **D-23 / D-24** | The knowledge store is **SQLite, one file per scope**, decided on the per-user no-admin install constraint rather than on retrieval quality. Embeddings are **local** — now on the re-indexing argument, since D-26 narrowed the confidentiality one |
+| **D-25** | The existing libraries are **studied and re-authored, never imported.** Ajmal's, and it deleted a planned import pipeline rather than choosing between libraries |
+| **D-26** | **The model file is never uploaded.** Refined three times in one day, each time looser: the line is the `.rvt`/`.rfa`, not the information. Project names, counts, sizes and reasoning travel like any conversation |
+| **D-27** | **There are no personas.** One voice; the *shape* of the answer follows the shape of the request. Settled by reading two assistants already doing this job daily, both of which switch nothing |
+| **D-28** | Generated code is **Roslyn C#, in process** — not pyRevit, whose Routes server would put HTTP inside an add-in that has no network code at all. Closes Q-37 as not applicable |
+| **D-29** | A fragment is a **composable piece**, not a whole answer: filter + action, with a recipe as a named third kind |
+| **D-30** | A fragment is promoted by **one recorded proof with a negative case**, not by a count of runs — because the defect that matters is one that *succeeds while doing nothing*, and that passes a thousand runs |
+| **D-31** | Product / data / derived were **already separated** since Step 1, and the updater half was verified rather than assumed |
+
+**Five of those get one read-back at the PC before Phase 2 starts** — `R1`, Ajmal's own instruction. They
+are Accepted and are being built on; the review is to confirm each still says what he meant and to fill in
+detail left out. See the block at the top of [DECISIONS.md](docs/DECISIONS.md).
 
 ---
 
@@ -232,6 +259,20 @@ descriptor, and the `CreateNewInstance` flag in note 2 of [§4](#4-the-things-th
 in the register means the Windows run, and a POSIX pass is a strong signal ahead of it rather than a
 substitute for it.
 
+**A third thing, added 2026-08-28** — it covers the releases the compiler cannot reach:
+
+```bash
+python tools/check-api-surface.py              # every Revit member Heron calls, on 2020 THROUGH 2027
+```
+
+Revit 2025+ need the Windows Desktop SDK to compile, so `check-compile.py` reports them SKIPPED off
+Windows and the newest three releases had nothing checking them at all. This reads the **compiled**
+add-in's reference tables — exactly what the code calls — and looks each one up in that release's shipped
+assemblies. **All 103 exist on every release from 2020 to 2027.** It matches by name, so a changed
+signature would still only show up in a real compile; it supplements the compile gate and says so on every
+run. **It was validated before its clean result was believed**, by putting the `CreationGUID` defect back
+and watching it fail.
+
 - **All documentation, decisions, specifications and open questions.**
 - **The session binding**, in full. Its test fakes the world and exercises the real logic.
 - **Reading and reasoning about the C#.** Just not running it.
@@ -330,6 +371,11 @@ Twenty-two are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-bea
 | **D-20** | Millimetres to feet is **arithmetic, not `UnitUtils`** — exact, and nothing for Autodesk to move under it across 2020–2027 |
 | **D-21** | Failure analysis is a **table, not a model call** — Heron's failures are its own bounded set of codes |
 | **D-22** | A second chat is **refused, not allowed to take over**. *"Newest connection wins"* now describes the pipe only |
+| **D-25** | The existing libraries are **studied and re-authored, never imported.** Ajmal's. Nothing is copied; a capability is written from scratch here and starts unproven, whatever status it held where it was read |
+| **D-26** | **The model file is never uploaded** — the `.rvt`/`.rfa`, not the information. Refined three times in one day, each looser; read the final rule, not the earlier framings that same-day commits still quote |
+| **D-27** | **There are no personas.** One voice; the answer's *shape* follows the request's shape |
+| **D-28** | Generated code is **Roslyn C#, in process.** No Python runtime, and **no HTTP server enters the add-in** — the add-in having zero network code is a structural guarantee, not a setting |
+| **D-30** | A fragment is promoted by **one proof containing a negative case**, never by a count of successful runs |
 
 **Golden Rules** — **21, all official** — are in [docs/14](docs/14-golden-rules.md). 16–21 cover undo,
 preview-before-modify, sandboxing, permission escalation, document pinning and stale reads, and were
@@ -355,14 +401,20 @@ waiting on.
 
 ---
 
-## 9. Next — Step 6 is compiled; get it proven
+## 9. Next — read the decisions back, then prove Step 6
 
 **Step 6 is built. Do not build it again.** All seven items the build order asks for are in the
 repository, and so is everything an audit turned up afterwards: the lease, the Failure Analysis Agent,
 the tool registry, the configuration and health agents. 47 agents are assigned to a step and none is
 unimplemented.
 
-**A compiler is no longer what is missing.** `A1`, `A2` and `A3` are done — see
+**The first thing at the PC is not a test.** `R1`: read D-23 to D-31 back to Ajmal, confirm each still
+says what he meant, and fill in the detail deliberately left out. His instruction — *"now we just
+recorded, but we will do it one more time"* — and the timing matters: **before Phase 2 work starts**,
+because a decision reviewed after the code exists gets defended rather than examined. Q-12 moved three
+times in one conversation, each time looser, which is the argument for the pass in a single example.
+
+**Then the register, and a compiler is no longer what is missing.** `A1`, `A2` and `A3` are done — see
 [docs/30](docs/30-compiling-away-from-windows.md) for how, in one command:
 
 ```bash
@@ -431,6 +483,12 @@ old DLL is still deployed it will look like Heron has stopped working.
 - **Do not hand him commands to run when you can run them yourself.** He called that out, fairly.
 - **Field evidence beats specification.** The sharpest findings in this repository came from running
   things, not from any document.
+- **Ask what already exists before designing anything.** On 2026-08-28 it worked four times out of five:
+  three questions were settled by reading a system already doing the job, and `Q-13`'s answer had been
+  running inside Heron since Step 1 while the question sat open. Look first; decide second.
+- **An environment-specific block belongs in a sentence that names the environment.** *"The C# cannot be
+  compiled here"* was true of one container that could not reach one download server. Written without its
+  environment it became a fact about the project, and three sessions inherited it.
 - **Say what is untested.** "It builds" is not "it works". On mobile it can now genuinely be *built* —
   which is a real rung above where this project was, and still two below *proven*.
 - **Reference material is studied, never copied.** His earlier repositories are read for their
