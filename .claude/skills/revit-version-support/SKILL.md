@@ -143,13 +143,17 @@ This is the adapter boundary from [docs/16](../../../docs/16-version-support-str
   not the first move, because verification takes about two minutes and needs neither Windows nor Revit:
 
   ```bash
-  python tools/check-compile.py 2020 2024      # the whole repository, against both API surfaces
+  python tools/check-compile.py                # the whole repository, on all eight releases
   python tools/check-api-surface.py            # every member Heron calls, on 2020 THROUGH 2027
   ```
 
-  The second covers what the first cannot: 2025+ need the Windows Desktop SDK to compile, so the
-  compile gate reports them SKIPPED off Windows. It matches by name only — a changed signature still
-  needs a real compile — but it closes the missing-member class on every supported release.
+  The compile gate reaches **2020 through 2027 anywhere**, given an SDK that carries the WindowsDesktop
+  MSBuild targets — on Ubuntu `dotnet-sdk-10.0`, not `dotnet-sdk-8.0`, which stops at 2024. It skips a
+  release it cannot build and names the package to install; a skip is never reported as a pass.
+
+  The second adds what the first does not: it reads the **shipped** assemblies for all eight releases,
+  where a compile reads the NuGet reference packages for the one it is building. It matches by name only
+  — a changed signature still needs a real compile — but it closes the missing-member class everywhere.
 
   For one member rather than the whole repository, read the shipped `RevitAPI.dll` for each release —
   the NuGet reference assemblies under `~/.nuget/packages/` are the real API surface. That is how the

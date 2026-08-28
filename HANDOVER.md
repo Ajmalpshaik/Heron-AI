@@ -6,7 +6,7 @@ person, or the owner on his phone.
 
 > **If you read only one thing:** three walls fell on one day, none of which needed a Windows machine.
 >
-> **The C# compiles.** Revit 2020 through 2024, every project, zero warnings — and the Revit-free bridge
+> **The C# compiles.** Revit 2020 through **2027**, every project, zero warnings — and the Revit-free bridge
 > host *runs*, all 32 checks passing including the whole lease. It caught two real defects on its first
 > run, both of which reading had already missed twice ([docs/30](docs/30-compiling-away-from-windows.md)).
 >
@@ -20,10 +20,12 @@ person, or the owner on his phone.
 > **Three things to do next, in this order.** `R1` and `R1b` in
 > [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — read the day's decisions back at the PC and show him the
 > trust model working, his own instruction, *before* Phase 2 work starts. Then `B1`: open Revit and see
-> whether the tab is there. `A1`–`A3` are done.
+> whether the tab is there. **`A1`, `A2`, `A3` and `A5` are done** — the whole of Group A except the
+> Windows named pipe in `A4`.
 >
-> Before writing any code, run `python tools/check-compile.py`. It takes minutes and it is no longer
-> somebody else's job.
+> Before writing any code, run `python tools/check-compile.py`. It takes minutes, it now covers **all
+> eight releases**, and it is no longer somebody else's job. On a fresh Linux box it needs
+> `apt-get install -y dotnet-sdk-10.0` first — the .NET 8 package builds only 2020–2024.
 
 > ## ⚠️ READ THIS FIRST — you are probably on a machine with no Revit
 >
@@ -184,7 +186,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | **Revit 2027** | Builds and installs. Never launched — the owner says his 2027 does not work |
 | **Naming the session in a selection answer** | Fixed after both models turned out to be called `Project1`. Needs a Claude restart to go live, then one look |
 | **Anything committed from mobile after 2026-08-28** | **Assume untested** — but no longer assume unread: `python tools/check-compile.py` runs on mobile too. Add it to [§6](#6-the-return-to-the-machine-checklist) |
-| **The whole of Step 6** | **Compiles** on 2020–2024, 0 warnings (2026-08-28). Never loaded into Revit, and has never moved anything |
+| **The whole of Step 6** | **Compiles** on 2020–2027 — all eight releases, 0 warnings (2026-08-28). Never loaded into Revit, and has never moved anything |
 | `RevitWrite.cs` — preview, re-count, TransactionGroup, rollback | The one file that can change a model. It compiles; every **behavioural** claim in it is still unverified. Its `DocumentKey` was the one thing the compiler caught — `Document.CreationGUID` does not exist in Revit 2020 |
 | `HeronUnits`, `HeronPermissions`, `HeronStop` | Kernel C#. Plain arithmetic and flags. Compiles; `HeronUnits` is exactly what `D3` exists to measure |
 | The Emergency Stop ribbon button | New `PushButtonData` in a file whose ribbon currently works. **If Heron will not load after this, look here first** |
@@ -270,7 +272,7 @@ python tests/test_golden.py            # which proofs still stand against the cu
 [docs/30](docs/30-compiling-away-from-windows.md)):
 
 ```bash
-python tools/check-compile.py                  # Revit 2020-2024, all four projects, 0 warnings
+python tools/check-compile.py                  # Revit 2020-2027, all four projects, 0 warnings
 
 dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 -p:HeronTfm=net8.0
 python tests/test_bridge_roundtrip.py          # 32 checks, including the whole lease
@@ -285,23 +287,36 @@ descriptor, and the `CreateNewInstance` flag in note 2 of [§4](#4-the-things-th
 in the register means the Windows run, and a POSIX pass is a strong signal ahead of it rather than a
 substitute for it.
 
-**A third thing, added 2026-08-28** — it covers the releases the compiler cannot reach:
+**A third thing, added 2026-08-28** — it reads what the releases actually ship:
 
 ```bash
 python tools/check-api-surface.py              # every Revit member Heron calls, on 2020 THROUGH 2027
 ```
 
-Revit 2025+ need the Windows Desktop SDK to compile, so `check-compile.py` reports them SKIPPED off
-Windows and the newest three releases had nothing checking them at all. This reads the **compiled**
-add-in's reference tables — exactly what the code calls — and looks each one up in that release's shipped
-assemblies. **All 103 exist on every release from 2020 to 2027.** It matches by name, so a changed
-signature would still only show up in a real compile; it supplements the compile gate and says so on every
-run. **It was validated before its clean result was believed**, by putting the `CreationGUID` defect back
-and watching it fail.
+It was built while 2025–2027 were being skipped by the compile gate, to leave them with something rather
+than nothing. **That skip is gone** — see below — so this is no longer their only cover, and it is still
+worth running: it reads the **shipped** assemblies for all eight releases, where a compile reads the
+NuGet reference packages for the one release it is building. It looks up the **compiled** add-in's
+reference tables — exactly what the code calls. **All 103 exist on every release from 2020 to 2027.** It
+matches by name, so a changed signature would still only show up in a real compile; it supplements the
+compile gate and says so on every run. **It was validated before its clean result was believed**, by
+putting the `CreationGUID` defect back and watching it fail.
+
+**And the skip itself turned out to be one more environment-specific claim, found the same day.** The
+newest three releases were reported SKIPPED off Windows as *needing the Windows Desktop SDK*. Those
+targets are a property of **the installed SDK package**, not of the operating system: Ubuntu's
+`dotnet-sdk-10.0` ships them and its `dotnet-sdk-8.0` does not, and `check-compile.py` was passing
+`-p:EnableWindowsTargeting=true` — the flag whose whole purpose is the non-Windows case — **only on
+Windows**. With the .NET 10 SDK installed, **all eight releases compile here**, add-in included, 0
+warnings. [docs/30 §2a](docs/30-compiling-away-from-windows.md) has the account and the two-directional
+validation that was done before the eight greens were believed.
 
 - **All documentation, decisions, specifications and open questions.**
 - **The session binding**, in full. Its test fakes the world and exercises the real logic.
 - **Reading and reasoning about the C#.** Just not running it.
+- **Compiling it, on every supported release** — 2020 to 2027, since the .NET 10 SDK arrived on this
+  side of the fence. Two things this repository "could not do here" have now turned out to be things
+  nobody had attempted; assume the third is out there and go looking before writing the sentence.
 
 ### Cannot be done without Revit — and cannot be faked
 
@@ -458,7 +473,7 @@ consequence became visible, which is exactly what a read-back is for.
 [docs/30](docs/30-compiling-away-from-windows.md) for how, in one command:
 
 ```bash
-python tools/check-compile.py     # 2020-2024, all four projects, no Windows and no Revit needed
+python tools/check-compile.py     # 2020-2027, all four projects, no Windows and no Revit needed
 ```
 
 **It found the thing it was built to find, on its first run.** `RevitWrite.DocumentKey()` used
@@ -479,12 +494,21 @@ that matters most in this repository.
 ### The two things left that need Windows but NOT Revit
 
 ```
-A4   python tests/test_bridge_roundtrip.py         the WINDOWS named pipe itself
-A5   python tools/check-compile.py 2025 2026 2027  needs the Windows Desktop SDK
+A4   python tests/test_bridge_roundtrip.py    the WINDOWS named pipe itself
+A6   python tools/check-compile.py 2025       that the new SDK probe reads Windows correctly
 ```
 
-Everything in `A4` except the Windows pipe is already passing. `A5` is not a regression risk so much as a
-hole: those three versions are reported **SKIPPED** off Windows, and a skip must never read as a pass.
+Everything in `A4` except the Windows pipe is already passing — its naming, its security descriptor and
+the `CreateNewInstance` flag are what remain, and no amount of Linux gets at them.
+
+**`A5` was here and is done.** All eight releases compile off Windows with the .NET 10 SDK; the row that
+said otherwise had assumed an operating system where the answer was a package.
+
+**`A6` is `A5`'s own bill.** Deciding what to skip is now done by looking for the WindowsDesktop targets
+under each installed SDK rather than by asking what operating system this is — and that probe has only
+ever run on Linux. If it misreads Windows it would skip the three releases **on the one machine where
+they already built**, so it is worth thirty seconds at the PC. Writing a check for a machine you cannot
+run it on is how this file gets its rows.
 
 ### Then the rest of the register, in order
 
@@ -550,6 +574,10 @@ old DLL is still deployed it will look like Heron has stopped working.
 ---
 
 *Phase 0 is finished and proven. Step 6 is finished and proven of nothing — built carefully, obeying
-rules that are now binding, tested where testing was possible, and never once compiled. The documents say
-honestly which is which, and [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is the list of everything that still
-owes a test. Nothing in this repository is waiting on another session; it is waiting on a machine.*
+rules that are now binding, tested where testing was possible, and now compiled on every release from
+2020 to 2027. That last clause read **"and never once compiled"** for a day after it stopped being true,
+which is this repository's own recurring fault in miniature: the work moved and the sentence about it
+stayed still. The documents say honestly which is which, and [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is
+the list of everything that still owes a test. Nothing in this repository is waiting on another session;
+it is waiting on a machine — and twice now, something believed to be waiting on a machine was waiting
+on somebody trying it.*

@@ -92,14 +92,19 @@ python tools/check-compile.py 2020 2024       # just those two
 ```
 
 Builds all four projects against every Revit version, using the Revit API reference assemblies from
-NuGet. This is `A2` and `A3` of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) in one command instead of
-one version at a time.
+NuGet. This is `A2`, `A3` and `A5` of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) in one command instead
+of one version at a time.
 
 **It does not need Windows and it does not need Revit** — which is the point, because until
 2026-08-28 not one `.cs` file here had been through a compiler at all. The first run found a real
 2020-only error. [docs/30](../docs/30-compiling-away-from-windows.md) is the whole story.
 
-Revit 2025+ needs the Windows Desktop SDK and is reported **SKIPPED** off Windows, never as passed.
+**All eight releases, 2020 through 2027, compile off Windows** — but only with an SDK that carries the
+WindowsDesktop MSBuild targets, because the add-in uses WPF for its ribbon icons. On Ubuntu that is
+`dotnet-sdk-10.0`; the `dotnet-sdk-8.0` package omits them and stops at 2024. The script **probes for
+those targets** rather than for an operating system, and when they are missing it skips the affected
+releases and names the package to install. A skip is still never reported as a pass.
+
 A pass means the API surface agrees; it is **not** evidence that anything behaves correctly.
 
 ---

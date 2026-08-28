@@ -38,15 +38,21 @@ compile time and never copied to the output, which is what `Private=false` in th
 always meant.
 
 **The .NET SDK is packaged by Linux distributions.** Microsoft's own download CDN is often unreachable
-from a sandboxed container, which is the wall the earlier attempts hit. The distribution's package is
-not:
+from a sandboxed container, which is the wall the earlier attempts hit — and still is: a `CONNECT` to
+`builds.dotnet.microsoft.com` was refused `403` by the network policy on 2026-08-28. The distribution's
+package is not:
 
 ```bash
-apt-get install -y dotnet-sdk-8.0        # Debian/Ubuntu; other distributions have their own
+apt-get install -y dotnet-sdk-10.0       # Debian/Ubuntu; other distributions have their own
 ```
 
-That SDK builds `net472` and `net48` — the runtimes for Revit 2020 through 2024 — on Linux, without
-Mono and without Wine.
+**Install the .NET 10 SDK, not the .NET 8 one**, and it builds **every** runtime Heron targets —
+`net472`, `net48`, `net8.0-windows` and `net10.0-windows`, Revit 2020 through 2027 — on Linux, without
+Mono and without Wine. An SDK builds target frameworks older than itself, so the newest is the one to
+install even when the release being checked is the oldest.
+
+The distinction is not academic and §2a is the whole of it: Ubuntu's `dotnet-sdk-8.0` package **omits**
+the WindowsDesktop MSBuild targets, and its `dotnet-sdk-10.0` package ships them.
 
 ---
 
@@ -55,16 +61,70 @@ Mono and without Wine.
 | | |
 |---|---|
 | **Revit 2020–2024** | Fully compiled. `net472` and `net48`, every project |
-| **Revit 2025–2027** | **Cannot be built off Windows.** They target `net8.0-windows` / `net10.0-windows` with WPF, which needs the Windows Desktop SDK — that ships in Microsoft's own SDK build and is absent from the source-built packages distributions carry |
+| **Revit 2025–2027** | **Fully compiled too, since 2026-08-28.** `net8.0-windows` and `net10.0-windows`, every project, with the .NET 10 SDK and `-p:EnableWindowsTargeting=true`. This row said *cannot be built off Windows* until it was tried — §2a |
+| **The Windows named pipe** | Still cannot be reached here. `A4` in the register, and no compiler speaks to it |
+| **Behaviour, of any kind** | Still cannot be reached here, on any release. `D3` |
 
-`check-compile.py` reports those three as **SKIPPED**, never as passed, and its summary says in words
-that a skip is not a pass. That distinction is the whole point of the script: the failure this
-repository is most exposed to is a version-shaped hole that reads as green.
+`check-compile.py` reports a release it cannot build as **SKIPPED**, never as passed, and its summary
+says in words that a skip is not a pass. That distinction is the whole point of the script: the failure
+this repository is most exposed to is a version-shaped hole that reads as green. What changed is that it
+now skips only what it has **established** it cannot build, instead of everything on the far side of an
+assumption about the operating system.
 
-### The skip is now partly covered — `tools/check-api-surface.py`
+### 2a. The three newest releases were skipped for a year-shaped reason that was not the real one
 
-A skip left the newest three releases with **nothing** checking them at all on the machines this project
-is actually worked on. So the compiled add-in's reference tables are read instead — exactly the Revit
+The claim in the old row above was **half right, and the half that was wrong hid three releases.**
+
+WPF genuinely is required — the add-in builds its ribbon icons from `BitmapImage`, so
+`Heron.Revit.Addin` sets `UseWPF` on the windows-suffixed frameworks and needs the WindowsDesktop
+MSBuild targets. What was wrong was *where those targets come from*. They are not a property of the
+operating system; they are a property of **the SDK package that happens to be installed**:
+
+| Installed | `Microsoft.NET.Sdk.WindowsDesktop` | Builds |
+|---|---|---|
+| Ubuntu `dotnet-sdk-8.0` (8.0.130) | **absent** | 2020–2024, and the three non-WPF projects on 2025+. The add-in fails `MSB4019` |
+| Ubuntu `dotnet-sdk-10.0` (10.0.111) | **present** | **all eight releases, all four projects, 0 warnings** |
+
+So the skipped versions needed one `apt-get install` and one MSBuild property, and the property was
+already in the script — **applied to the wrong case.** `-p:EnableWindowsTargeting=true` is what makes
+the SDK restore the Windows targeting packs from NuGet when it is *not* running on Windows, and
+`check-compile.py` passed it **only when it was**, where it is a no-op. Both halves of the mistake
+pointed the same way, so neither corrected the other.
+
+**The script now probes for the targets rather than for an operating system** — it looks for
+`Sdks/Microsoft.NET.Sdk.WindowsDesktop` under each installed SDK — and when they are missing it names
+the package to install rather than printing a bare `SKIPPED`. *"Am I on Windows"* was answering a
+different question than the one being asked, and answering it confidently is what left a third of the
+supported range with nothing compiling it.
+
+**It was validated before its clean result was believed**, the same way `check-api-surface.py` was, and
+in both directions — because a checker that reports eight greens where it used to report five has to
+prove the three new ones are real compiles and not three more assumptions:
+
+| Probe | Expected | Got |
+|---|---|---|
+| `#if NET8_0_OR_GREATER` → invalid C# | 2020–2024 pass, 2025–2027 **fail** | exactly that |
+| `#if NETFRAMEWORK` → invalid C# | 2025+ pass, 2020–2024 **fail** | exactly that |
+| Plain syntax error | **every** release fails | exactly that |
+
+The first is the one that matters: it proves those three releases are genuinely being compiled against
+.NET 8 and .NET 10, rather than silently falling back to a framework that already passed. The compiled
+add-in's own `TargetFrameworkAttribute` was read back for the same reason — `net472` for 2020, `net48`
+for 2024, `.NETCoreApp,Version=v8.0` for 2025 and `v10.0` for 2027.
+
+Two earlier probes were **discarded for proving nothing**, and they are worth recording because each
+looked decisive: a `using System.Runtime.Remoting` and a call to `Thread.Suspend()`, both believed
+removed from .NET Core, both of which compiled cleanly on every release. A probe that passes where you
+expected it to fail has told you about your own assumption, not about the code.
+
+### `tools/check-api-surface.py` — written for the skip, still worth running without it
+
+This was built while 2025–2027 were being skipped, to leave them with *something* rather than nothing.
+The skip is gone, so it is no longer the only cover for those releases — but it is **not redundant**,
+because it answers a question a compile cannot: it reads the **shipped** assemblies for all eight
+releases, where a compile reads the NuGet reference packages for the one it is building. Run both.
+
+The compiled add-in's reference tables are read — exactly the Revit
 types and members the code calls — and each one is looked up in that release's shipped reference
 assemblies:
 
@@ -97,8 +157,9 @@ otherwise surfaces as an add-in that will not load, in front of the user, mid-jo
 millimetres and compile just as cleanly. `D3` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) — *move
 them, then measure one* — is what catches that, and no compiler substitutes for it.
 
-So the honest sentence after a green run is **"it compiles on 2020 through 2024"**, and not one word
-more.
+So the honest sentence after a green run is **"it compiles on 2020 through 2027"**, and not one word
+more. That sentence got three releases longer on 2026-08-28 and gained no strength at all: eight green
+compiles say exactly what five did, about more versions.
 
 ---
 
