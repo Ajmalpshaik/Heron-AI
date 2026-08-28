@@ -1,7 +1,12 @@
 # Heron AI — Session Handover
 
-**Written 2026-08-28, at the end of the second working session — the one that finished Phase 0.**
-For whoever picks this up next: a fresh Claude session, a person, or the owner on his phone.
+**Updated 2026-08-28, at the end of the third working session — the one that built Step 6 without a
+compiler.** For whoever picks this up next: a fresh Claude session, a person, or the owner on his phone.
+
+> **If you read only one thing:** everything that can be built away from Revit is built, and none of the
+> C# has ever been compiled. The next move is not more building — it is
+> [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), starting at `A1`, on a Windows machine. Four of its 49 items
+> need no Revit at all.
 
 > ## ⚠️ READ THIS FIRST — you are probably on a machine with no Revit
 >
@@ -35,7 +40,19 @@ is tested and passing. Do not read "Step 6 is built" as "Step 6 works".
 real weakening and it was made deliberately: until 2026-08-27 there was no transaction code in the
 repository at all, and the guarantee needed no trust. Now there is, and the guarantee rests on
 `write.enabled` defaulting to `false` in `HeronPermissions`. **Leave it false until the write path has
-been through a real Revit.** [§6](#6-the-return-to-the-machine-checklist) is how that happens.
+been through a real Revit.** [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is how that happens.
+
+**Four things arrived after the write path, because auditing found them missing rather than anybody
+remembering them.** The **lease** ([D-22](docs/DECISIONS.md)) — Step 5 deferred it to *"Phase 1 with
+writes"* and Step 6 is that write; a second chat is now refused instead of cutting the first off mid-job.
+The **Failure Analysis Agent**, which never blind-retries and fails closed. The **tool registry**, so risk
+is declared in a table rather than as a literal buried in the write path. And **configuration and health**,
+which between them exposed two silent bugs — `write.enabled` could never have been switched on, and the
+two halves disagreed about how long to wait.
+
+**All 21 Golden Rules are now official** ([Q-19](docs/OPEN-QUESTIONS.md), accepted 2026-08-28) — including
+the four Step 6 was built to obey. They were accepted *before* Step 6 is proven, deliberately: a rule that
+only binds once the code passes is not a rule the code was ever held to.
 
 ---
 
@@ -160,13 +177,20 @@ Each of these cost real time. They are in the order they were learned.
 ```bash
 python tools/check-docs.py             # links, Golden Rule / decision / question references
 python tools/check-metadata.py         # the standard, registry vs code, and version agreement
-python tools/check-structure.py        # layout, layering, adapter boundary, path ownership
-python tests/test_bridge_roundtrip.py  # the bridge end to end — Windows, but NO Revit
+python tools/check-structure.py        # layout, layering, paths, and the PowerShell ANSI trap
 python tests/test_session_binding.py   # one chat one Revit, all four cases — pure Python
 python tests/test_write_safety.py      # Step 6's CHAT half — distances, pinning, approval
 python tests/test_failure_analysis.py  # never blind-retries, and fails closed
 python tests/test_tool_registry.py     # both languages agree on what may write
 python tests/test_config_and_health.py # settings agree; health means something
+```
+
+**171 checks, all passing.** One more suite needs **Windows but still no Revit**, and it is the most
+valuable thing available before Revit is opened — it proves the transport *and* most of the lease:
+
+```bash
+dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024
+python tests/test_bridge_roundtrip.py
 ```
 
 - **All documentation, decisions, specifications and open questions.**
@@ -276,40 +300,63 @@ was deliberate: a rule that only binds once the code passes is not a rule the co
 
 ## 8. What is waiting on the owner
 
+**Nothing here blocks the next step.** Q-19 was the one that did, and it was answered on 2026-08-28 —
+Golden Rules 16–21 are accepted and binding. What remains is confirmation work, not decisions the code is
+waiting on.
+
 | | |
 |---|---|
 | [Q-34](docs/OPEN-QUESTIONS.md) | Confirm the unified trust model (D-14, still Proposed) |
 | [Q-35](docs/OPEN-QUESTIONS.md) | Confirm the [Constitution](HERON_CONSTITUTION.md) — 30 Articles |
-| [Q-19](docs/OPEN-QUESTIONS.md) | ✅ **Answered 2026-08-28** — Golden Rules 16–21 accepted, and now binding |
 | [Q-38](docs/OPEN-QUESTIONS.md) | The exact install command — needed before going public |
 | Copyright | `LICENSE` and `NOTICE` say **Ajmal PS**. Confirm that is right |
 
 ---
 
-## 9. Next — Step 6, the first write
+## 9. Next — get Step 6 compiled, then proven
 
-⛔ **Phase 0 ends here.** Everything so far is read-only, which is why none of it has needed a permission
-gate, a transaction, an undo guarantee or a preview. **Step 6 changes that**, and the safety rules stop
-being theory.
+**Step 6 is built. Do not build it again.** All seven items the build order asks for are in the
+repository, and so is everything an audit turned up afterwards: the lease, the Failure Analysis Agent,
+the tool registry, the configuration and health agents. 47 agents are assigned to a step and none is
+unimplemented.
 
-Build in this order, as one step — the rails first:
+**What is missing is a compiler.** Not one `.cs` file here has been through one.
 
-1. **Transaction Safety** — one named `TransactionGroup` per operation, complete rollback on failure
-2. **Preview** — *"This will move 247 ducts up 200 mm. 12 are owned by another user and will be skipped."*
-3. **Re-count immediately before executing** the accepted preview
-4. **Document pinning** by identity
-5. **Permission gate in the add-in** — declared risk level per tool
-6. **Emergency Stop** in the ribbon
-7. Then, and only then: `revit_move_elements`
+### Do these four first — they need Windows and the .NET SDK, but NO Revit
 
-**Prove it:** *"move them up 200 mm"* → preview → accept → it moves → **one Ctrl+Z puts it back
-exactly**. Then force a failure mid-operation and confirm the model is untouched.
+```
+A1   dotnet --version                                        is the SDK there at all
+A2   dotnet build -p:RevitVersion=2020                       expect errors the first time
+A3   dotnet build -p:RevitVersion=2024                       the version boundary that has bitten before
+A4   dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024
+     python tests/test_bridge_roundtrip.py                   the pipe AND most of the lease
+```
 
-**None of that can be proven from mobile.** It can be designed, written and reviewed there; it cannot be
-believed until it has run.
+**A4 is the one worth doing before Revit is ever opened.** It starts a Revit-free bridge host and
+exercises the transport and the session lease. If the lease is wrong, that is where it should be found —
+not three groups later with a model open.
 
-Also waiting: `idempotent=False` on every write request — the client already supports it and the reason
-is in [§4](#4-the-things-that-will-bite-you) item 8.
+**Expect A2 to fail.** Code no compiler has read almost never builds first go, and that is not evidence
+the design is wrong. The likely spots are named in the register: `Document.CreationGUID`,
+`WorksharingUtils.GetCheckoutStatus`, `IFailuresPreprocessor`, `TransactionGroup.GetStatus`,
+`BuiltInCategory.INVALID`, `UIDocument.RefreshActiveView`.
+
+### Then the rest of the register, in order
+
+45 items need a real Revit. They are in dependency order and each says what PASS actually looks like.
+The three that matter most:
+
+| | |
+|---|---|
+| **C3** | With `write.enabled` still false, a move must be **refused**, naming the setting. Prove the gate before testing the write, or a passing move proves nothing |
+| **D3** | Move the ducts 200 mm, then **MEASURE ONE.** The single most important line in the register — a unit error is the failure that looks fine until somebody measures it months later |
+| **D5** | **One** Ctrl+Z puts it all back, as a single undo entry. Two means Golden Rule 16 is broken |
+
+### One thing that is not in the register
+
+**The add-in must be rebuilt and redeployed.** The bridge protocol is now **2** — a request carries a chat
+id, and an add-in still on protocol 1 will refuse to talk. That refusal is correct behaviour, but if an
+old DLL is still deployed it will look like Heron has stopped working.
 
 ---
 
@@ -330,6 +377,7 @@ is in [§4](#4-the-things-that-will-bite-you) item 8.
 
 ---
 
-*Phase 0 is finished and proven. Everything beyond it is specified, decided, or waiting — and the
-documents say honestly which. Where work happens away from Revit, [§6](#6-the-return-to-the-machine-checklist)
-is the record of what still owes a test.*
+*Phase 0 is finished and proven. Step 6 is finished and proven of nothing — built carefully, obeying
+rules that are now binding, tested where testing was possible, and never once compiled. The documents say
+honestly which is which, and [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is the list of everything that still
+owes a test. Nothing in this repository is waiting on another session; it is waiting on a machine.*
