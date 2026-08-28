@@ -4,20 +4,23 @@
 spent the rest of the day answering questions.** For whoever picks this up next: a fresh Claude session, a
 person, or the owner on his phone.
 
-> **If you read only one thing:** two walls fell on the same day, and neither needed a Windows machine.
+> **If you read only one thing:** three walls fell on one day, none of which needed a Windows machine.
 >
 > **The C# compiles.** Revit 2020 through 2024, every project, zero warnings — and the Revit-free bridge
 > host *runs*, all 32 checks passing including the whole lease. It caught two real defects on its first
 > run, both of which reading had already missed twice ([docs/30](docs/30-compiling-away-from-windows.md)).
 >
-> **And nothing gates Phase 2 any more.** Eleven questions answered and **nine decisions taken**
-> (D-23 to D-31) in one conversation from a phone. Three of the last four were settled by *looking* — at
-> a system already doing the job, and at Heron's own code, where Q-13's answer had been running since
-> Step 1.
+> **Every open question is answered — 41 of 41**, and **24 decisions** were taken (D-20 to D-43). Nothing
+> gates any phase. Several were settled by *looking* rather than deciding: at a system already doing the
+> job, and at Heron's own code, where Q-13's answer had been running since Step 1.
 >
-> **Two things to do next, in this order.** `R1` in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — read the
-> day's decisions back to Ajmal at the PC, his own instruction, *before* Phase 2 work starts. Then `B1`:
-> open Revit and see whether the tab is there. `A1`–`A3` are done.
+> **The Constitution is accepted and binding** — all 30 Articles, after Ajmal asked for every one to be
+> read out rather than tapping yes. Reading it aloud found three stale statements inside it.
+>
+> **Three things to do next, in this order.** `R1` and `R1b` in
+> [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — read the day's decisions back at the PC and show him the
+> trust model working, his own instruction, *before* Phase 2 work starts. Then `B1`: open Revit and see
+> whether the tab is there. `A1`–`A3` are done.
 >
 > Before writing any code, run `python tools/check-compile.py`. It takes minutes and it is no longer
 > somebody else's job.
@@ -85,7 +88,8 @@ flagged anywhere:
 reversed with one Ctrl+Z, and a failed operation leaves the model untouched."* Both are written, both are
 covered by reasoning, and **neither has been witnessed.**
 
-**PHASE 2 IS NO LONGER GATED — nine decisions on 2026-08-28 closed every open question in its path.**
+**PHASE 2 IS NO LONGER GATED — and by the end of 2026-08-28 neither was anything else.** Twenty-four
+decisions that day (D-20 to D-43) closed **every open question in the project, 41 of 41.**
 None of it is built; what changed is that building it no longer waits on anybody.
 
 | | |
@@ -99,9 +103,31 @@ None of it is built; what changed is that building it no longer waits on anybody
 | **D-30** | A fragment is promoted by **one recorded proof with a negative case**, not by a count of runs — because the defect that matters is one that *succeeds while doing nothing*, and that passes a thousand runs |
 | **D-31** | Product / data / derived were **already separated** since Step 1, and the updater half was verified rather than assumed |
 
-**Five of those get one read-back at the PC before Phase 2 starts** — `R1`, Ajmal's own instruction. They
-are Accepted and are being built on; the review is to confirm each still says what he meant and to fill in
-detail left out. See the block at the top of [DECISIONS.md](docs/DECISIONS.md).
+**And the rest of the day closed every remaining question.** `D-32` to `D-43`, in the same conversation:
+
+| | |
+|---|---|
+| **D-32** | **v1 must be able to change the model**, and reading is what gets used first. Recorded as read-only and **reversed within the hour** when the same question was asked again |
+| **D-33** | **Heron never assumes an input. It asks — and it asks once.** There is no confidence threshold, because a number invented today is a number tuned tomorrow |
+| **D-34** | Heron's wording is **English**; understanding the user is the host's job, not Heron's |
+| **D-35** | A shared fragment may carry code, and an **unapproved one is refused, not warned about** — a warning hands the decision to whoever is least able to judge it |
+| **D-36** | **No warranty**, and it was already in place twice. `DISCLAIMER.md` makes four promises that are **still unproven** |
+| **D-37** | The name is **Heron AI** — *chosen, not cleared*. No trademark search has been done |
+| **D-38** | **GitHub now**, App Store possible, nothing built for it. Autodesk's requirements have **not been read**, and were not written from memory |
+| **D-39** | Shadow mode is approved on an **analysed disagreement**, never a count of agreements |
+| **D-40** | The dependency graph is SQLite, and **an edge is derived before it is stored** |
+| **D-41** | **Single-user now**; company knowledge is a git repo and the admin is the reviewer — D-35 at a smaller radius |
+| **D-42** | The **public install command is deferred**; `setup.ps1` is what is proven |
+| **D-43** | **The Constitution is accepted — all 30 Articles, binding** |
+
+**Five decisions get one read-back at the PC before Phase 2 starts** — `R1`, Ajmal's own instruction —
+**and `R1b` shows him the trust model working**, since [D-14](docs/DECISIONS.md) stays *Proposed* until he
+has seen it. They are Accepted and are being built on; the review confirms each still says what he meant
+and fills in detail left out. See the block at the top of [DECISIONS.md](docs/DECISIONS.md).
+
+**Two were reversed within hours of being recorded**, D-26 three times and D-32 once. Neither was a
+mistake — each was a first answer sharpened once its consequence was visible, which is the whole argument
+for that read-back.
 
 ---
 
@@ -376,6 +402,11 @@ Twenty-two are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-bea
 | **D-27** | **There are no personas.** One voice; the answer's *shape* follows the request's shape |
 | **D-28** | Generated code is **Roslyn C#, in process.** No Python runtime, and **no HTTP server enters the add-in** — the add-in having zero network code is a structural guarantee, not a setting |
 | **D-30** | A fragment is promoted by **one proof containing a negative case**, never by a count of successful runs |
+| **D-32** | **v1 must be able to change the model.** Reading is what gets used first, but a Heron that cannot change anything is a report tool, not the product |
+| **D-33** | **Never assume an input — ask, and ask once.** No confidence threshold: a number invented today is tuned tomorrow, and the first tune to reduce interruptions starts it guessing |
+| **D-35** | An unapproved shared fragment is **refused, not warned about**. A warning hands the decision to whoever is least able to judge it |
+| **D-39** | Shadow mode is approved on an **analysed disagreement**, never a count of agreements. Agreement is weak evidence; a thing that does nothing agrees with everything |
+| **D-43** | **The Constitution is binding** — all 30 Articles. Its own Amendment clause applies: never weakened silently, and never by an agent |
 
 **Golden Rules** — **21, all official** — are in [docs/14](docs/14-golden-rules.md). 16–21 cover undo,
 preview-before-modify, sandboxing, permission escalation, document pinning and stale reads, and were
@@ -387,17 +418,20 @@ was deliberate: a rule that only binds once the code passes is not a rule the co
 
 ## 8. What is waiting on the owner
 
-**Nothing here blocks the next step.** Q-19 was the one that did, and it was answered on 2026-08-28 —
-Golden Rules 16–21 are accepted and binding. What remains is confirmation work, not decisions the code is
-waiting on.
+**Every question is answered — 41 of 41 — and nothing blocks any phase.** What is left is not decisions
+the code is waiting on. It is two review items at the PC, and one confirmation nobody has asked for yet.
 
 | | |
 |---|---|
-| **The five decisions of 2026-08-28** | **Read D-23 to D-27 back, confirm each says what he meant, and fill in the detail left out.** His instruction — *"now we just recorded, but we will do it one more time"*. They are Accepted and are being built on; this is a review, not a hold. Do it at the PC alongside the register run and **before Phase 2 work starts**, because a decision reviewed after the code exists gets defended rather than examined. The list and the reasoning are at the top of [DECISIONS.md](docs/DECISIONS.md) |
-| [Q-34](docs/OPEN-QUESTIONS.md) | Confirm the unified trust model (D-14, still Proposed) |
-| [Q-35](docs/OPEN-QUESTIONS.md) | Confirm the [Constitution](HERON_CONSTITUTION.md) — 30 Articles |
-| [Q-38](docs/OPEN-QUESTIONS.md) | The exact install command — needed before going public |
-| Copyright | `LICENSE` and `NOTICE` say **Ajmal PS**. Confirm that is right |
+| **`R1` — read the day's decisions back** | **D-23 to D-43, at the PC, before Phase 2 work starts.** His own instruction: *"now we just recorded, but we will do it one more time."* They are Accepted and are being built on — this is a review, not a hold. A decision reviewed after the code exists gets defended rather than examined, and **two were already reversed within hours** (D-26 three times, D-32 once), which is the evidence for doing it |
+| **`R1b` — show him the trust model working** | [D-14](docs/DECISIONS.md) stays **Proposed**. He agreed the direction and said *"show me it working at the PC first."* Use the framing that landed: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
+| Copyright | `LICENSE` and `NOTICE` say **Ajmal PS**. Confirm that is right. Nobody has asked him |
+
+**Two things were answered by NOT answering them, and both are publication tasks rather than gaps:**
+[Q-38](docs/OPEN-QUESTIONS.md) — the public install command — and the Autodesk App Store requirements in
+[D-38](docs/DECISIONS.md). Both need **current documentation read at the time**, and writing either from
+memory is the failure this repository has already had twice. `tools\setup.ps1` is the proven route
+meanwhile.
 
 ---
 
@@ -408,11 +442,16 @@ repository, and so is everything an audit turned up afterwards: the lease, the F
 the tool registry, the configuration and health agents. 47 agents are assigned to a step and none is
 unimplemented.
 
-**The first thing at the PC is not a test.** `R1`: read D-23 to D-31 back to Ajmal, confirm each still
-says what he meant, and fill in the detail deliberately left out. His instruction — *"now we just
-recorded, but we will do it one more time"* — and the timing matters: **before Phase 2 work starts**,
-because a decision reviewed after the code exists gets defended rather than examined. Q-12 moved three
-times in one conversation, each time looser, which is the argument for the pass in a single example.
+**The first thing at the PC is not a test.** `R1`: read **D-23 to D-43** back to Ajmal, confirm each still
+says what he meant, and fill in the detail deliberately left out. Then `R1b`: show him the trust model
+working, because [D-14](docs/DECISIONS.md) is still *Proposed*. His instruction — *"now we just recorded,
+but we will do it one more time"* — and the timing matters: **before Phase 2 work starts**, because a
+decision reviewed after the code exists gets defended rather than examined.
+
+**The evidence for that pass is two reversals on the day itself.** D-26 moved three times, each looser.
+D-32 was recorded as *"v1 is read-only"* and reversed to *"it must change things too"* when the same
+question was asked again an hour later. Neither was a mistake — each was a first answer sharpened once its
+consequence became visible, which is exactly what a read-back is for.
 
 **Then the register, and a compiler is no longer what is missing.** `A1`, `A2` and `A3` are done — see
 [docs/30](docs/30-compiling-away-from-windows.md) for how, in one command:
@@ -489,6 +528,17 @@ old DLL is still deployed it will look like Heron has stopped working.
 - **An environment-specific block belongs in a sentence that names the environment.** *"The C# cannot be
   compiled here"* was true of one container that could not reach one download server. Written without its
   environment it became a fact about the project, and three sessions inherited it.
+- **Read a document aloud before asking anybody to accept it.** Ajmal asked for all 30 Constitution
+  Articles to be read out rather than tapping yes. Reading them found **three stale statements inside**,
+  including eight Articles citing a *"Proposed"* Golden Rule that had been official since that morning.
+  None changed what an Article required; all would have been read as current by whoever implements it.
+- **Explain in the user's own materials, not in the abstract.** The trust model was explained once as
+  *"lifecycle and source axes"* and he said plainly he did not follow it. Explained as a Revit family
+  having **a maker** and **an approval status** — two things nobody would put on one dropdown — he agreed
+  at once. The second explanation is also a better argument, which is usually the way round it goes.
+- **A count cannot express a nuance, and should not be taught to.** Q-34 is *agreed but not signed off*.
+  The question counter reads it as answered; the prose beside it carries the rest. The moment a counter
+  needs to understand nuance it stops being a fact about the rows.
 - **Say what is untested.** "It builds" is not "it works". On mobile it can now genuinely be *built* —
   which is a real rung above where this project was, and still two below *proven*.
 - **Reference material is studied, never copied.** His earlier repositories are read for their
