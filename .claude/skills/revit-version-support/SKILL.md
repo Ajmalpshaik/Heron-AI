@@ -87,6 +87,26 @@ matters on a locked-down corporate machine — and is unaffected by the 2027 mov
 Also removed or deprecated at 2027: AXM import, several `Mechanical.Zone` members, legacy rebar
 creation methods, and several `EnergyDataSettings` properties.
 
+## Members that simply ARRIVED — the class the table above misses
+
+Everything above is something that **changed**. The failure that actually reached this repository was
+a member that was **added** partway through the supported range: it does not look like a version
+problem, because there is no old spelling and no deprecation warning. It compiles on a new release and
+does not exist on an old one.
+
+| Member | Exists from | Use instead, on 2020+ |
+|---|---|---|
+| `Document.CreationGUID` | **2024** | `doc.ProjectInformation.UniqueId` — created with the document, survives save, rename and move, and present on every release 2020–2027 |
+
+`RevitWrite.DocumentKey()` used `CreationGUID` to pin the document for Golden Rule 20. It had been read
+several times, including once by a review that listed it as a *likely* problem spot, and it survived
+every reading. The compiler found it in seconds.
+
+**Prefer a member that exists everywhere over a `#if` that hides one that does not.** A branch is two
+code paths to keep true forever; `ProjectInformation.UniqueId` is one expression that is simply correct.
+That is [D-20](../../../docs/DECISIONS.md) applied to identity rather than units — prefer the thing with
+nothing in it for Autodesk to move.
+
 ### Two rules that follow
 
 **Never store an element id as `int`.** Use `long`, or a string in any report or export. A 2024+ id
@@ -118,8 +138,18 @@ This is the adapter boundary from [docs/16](../../../docs/16-version-support-str
 
 ## Honesty rules
 
-- If you are not certain a class, method or enum exists in a target release, **say so** — "this needs
-  verification in Revit 2026" — rather than assuming it because the name sounds right.
+- If you are not certain a class, method or enum exists in a target release, **do not assume it because
+  the name sounds right — go and look.** Saying "this needs verification in Revit 2026" is the fallback,
+  not the first move, because verification takes about two minutes and needs neither Windows nor Revit:
+
+  ```bash
+  python tools/check-compile.py 2020 2024      # the whole repository, against both API surfaces
+  ```
+
+  For one member rather than the whole repository, read the shipped `RevitAPI.dll` for each release —
+  the NuGet reference assemblies under `~/.nuget/packages/` are the real API surface. That is how the
+  `CreationGUID` row above was pinned to 2024 exactly, across five releases, rather than guessed at as
+  "somewhere after 2020". Online documentation does not reliably say which release introduced what.
 - "It builds" is not "it works". A release the add-in has compiled for but never been launched in is
   **built, not proven**, and should be described that way.
 - Re-check the newest release's runtime against the Autodesk SDK each year before building for it.
