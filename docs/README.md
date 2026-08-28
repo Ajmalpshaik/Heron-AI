@@ -21,6 +21,9 @@
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
 **14 of 40 questions answered — none of the remaining 26 block Phase 0.**
+**Phase 1 has not been assessed against them.** Phase 0 is complete, so that sentence now describes a
+phase that is finished: it is not wrong, it has simply stopped covering the work in progress. Step 6
+was built without anyone checking whether an open question blocks it.
 
 **Specification is complete in four parts.** Part 1 is the platform and its organisation; Part 2 is the
 Agent Operating System; Part 3 is the consolidated baseline, **authoritative on the Golden Rules**

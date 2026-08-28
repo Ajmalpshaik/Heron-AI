@@ -102,7 +102,24 @@ Each of these is a rail. A rail that has never been tested is decoration.
 | **E8** | On a **workshared** model with a duct owned by another user, preview | Reported as skipped, and the move does not fail because of it |
 | **E9** | Open a dialog in Revit, then ask to move | *"Revit is busy"* — a clean refusal, not a hang. Recovers by itself |
 
-## Group F — left over from before Step 6
+## Group F — Steps 1-5 are no longer proven on this build
+
+**This group got more important on 2026-08-28, and it is not a leftover any more.**
+
+Steps 1, 4 and 5 were proven in real Revit — but against a build that no longer exists. Step 6 modified
+six files that those proofs covered:
+
+| File | Belongs to | What changed |
+|---|---|---|
+| `HeronApplication.cs` | Step 1 | a third ribbon button |
+| `Commands.cs` | Step 1 | the Emergency Stop command |
+| `HeronConfig.cs` | Step 1 | `write.enabled` declared |
+| `heron_bridge_client.py` | Step 1 | the response deadline is now derived, not constant |
+| `RevitOperations.cs` | Step 4 | the gate, and a shared category resolver |
+| `heron_mcp_server.py` | Step 5 | three new tools and a health rollup |
+
+None of those changes has been compiled. **A proof against an older build is not a proof of this one**,
+so until F3 passes, "Steps 1 to 5 are proven" describes history rather than the current code.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
