@@ -7,7 +7,11 @@
 # See docs/29-metadata-standard.md
 
 """
-Step 1 acceptance test - the pipe round trip.
+Step 1 acceptance test - the pipe round trip, plus Step 6's lease.
+
+Runs on WINDOWS WITH NO REVIT. That is the whole point of it, and Step 6 made
+it more valuable: the lease lives in the Kernel and knows nothing about models,
+so this file verifies it without Revit ever being opened.
 
 Starts the Revit-free bridge host, connects over the named pipe, and checks
 that ping comes back. Proves the transport without Revit, without the
@@ -63,8 +67,20 @@ def send_raw(handle, text):
     return json.loads(line.decode("utf-8").strip())
 
 
-def call(handle, op):
-    handle.write((json.dumps({"op": op, "token": TOKEN}) + "\n").encode("utf-8"))
+# This test's own chat identity. Step 6 added the lease (HeronLease): a request
+# for anything except ping and info must say WHICH chat it is from, or it is
+# refused as anonymous. Without this every non-exempt call in this file started
+# failing with session_in_use - found by reading, since this file cannot run on
+# the machine it was edited on.
+CLIENT = "roundtrip-a"
+OTHER_CLIENT = "roundtrip-b"
+
+
+def call(handle, op, client=CLIENT):
+    body = {"op": op, "token": TOKEN}
+    if client is not None:
+        body["client"] = client
+    handle.write((json.dumps(body) + "\n").encode("utf-8"))
     line = b""
     while not line.endswith(b"\n"):
         chunk = handle.read(1)
@@ -197,6 +213,83 @@ def main():
             print("  PASS  no token -> refused")
         else:
             failures.append("missing token returned %r" % reply)
+
+        # ------------------------------------------------------------------
+        # THE LEASE (Step 6, D-22). One Revit is one door.
+        #
+        # All of this runs on Windows with NO REVIT, because the lease lives in
+        # the Kernel and knows nothing about models. That matters: it moves
+        # verifying the lease out of "needs Revit" and into "needs Windows",
+        # which is a much shorter wait.
+        # ------------------------------------------------------------------
+        print("The lease:")
+
+        # ping and info are EXEMPT. Asking who holds a Revit must never be the
+        # act of claiming it, or an honest (free)/(in use) list is impossible.
+        reply = call(handle, "ping", client=None)
+        if reply.get("ok") and reply.get("pong") is True:
+            print("  PASS  ping needs no lease - looking is not claiming")
+        else:
+            failures.append("anonymous ping returned %r" % reply)
+
+        reply = call(handle, "info", client=None)
+        if reply.get("ok") and "inUse" in reply:
+            print("  PASS  info needs no lease, and reports who holds it")
+        else:
+            failures.append("anonymous info returned %r" % reply)
+
+        if reply.get("inUse") is False:
+            print("  PASS  nothing has claimed it yet")
+        else:
+            failures.append("info said inUse=%r before anyone claimed it" % reply.get("inUse"))
+
+        # An anonymous request for real work is refused: without an identity
+        # that survives reconnection there is no way to tell "the same chat
+        # coming back" from "a second chat arriving".
+        reply = call(handle, "no_such_operation", client=None)
+        if reply.get("ok") is False and reply.get("error") == "session_in_use":
+            print("  PASS  anonymous work -> refused, cannot be told apart from a second chat")
+        else:
+            failures.append("anonymous non-exempt op returned %r" % reply)
+
+        # Chat A claims it by doing anything.
+        reply = call(handle, "no_such_operation", client=CLIENT)
+        if reply.get("ok") is False and reply.get("error") == "unknown_op":
+            print("  PASS  chat A claims the lease and gets a real answer")
+        else:
+            failures.append("first client's request returned %r" % reply)
+
+        reply = call(handle, "info", client=CLIENT)
+        if reply.get("inUse") is True and reply.get("mine") is True:
+            print("  PASS  info now reports it held, and held by THIS chat")
+        else:
+            failures.append("info after claiming returned %r" % reply)
+
+        # Chat B is refused rather than taking it over mid-job.
+        reply = call(handle, "no_such_operation", client=OTHER_CLIENT)
+        if reply.get("ok") is False and reply.get("error") == "session_in_use":
+            print("  PASS  chat B refused - not allowed to take it over")
+        else:
+            failures.append("second client's request returned %r" % reply)
+
+        if "another chat" in (reply.get("message") or ""):
+            print("  PASS  and the refusal says what is happening, in words")
+        else:
+            failures.append("refusal message was %r" % reply.get("message"))
+
+        # But chat B can still LOOK, and is told it is not theirs.
+        reply = call(handle, "info", client=OTHER_CLIENT)
+        if reply.get("inUse") is True and reply.get("mine") is False:
+            print("  PASS  chat B can see it is taken, and that it is not theirs")
+        else:
+            failures.append("info for the second client returned %r" % reply)
+
+        # Chat A still works. It never lost its hold.
+        reply = call(handle, "ping", client=CLIENT)
+        if reply.get("ok"):
+            print("  PASS  chat A was never cut off")
+        else:
+            failures.append("first client stopped working: %r" % reply)
 
         # An unauthenticated caller must not even learn which operations exist.
         reply = send_raw(handle, '{"op": "no_such_operation", "token": "wrong"}')

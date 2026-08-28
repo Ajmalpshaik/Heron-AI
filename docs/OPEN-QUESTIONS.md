@@ -272,31 +272,6 @@ discovered?
 
 ---
 
-### 🟠 Q-36 — Lease or takeover when two chats target the same Revit? *(new, from the field)*
-
-Today two chats on the same Revit **fight** — whichever speaks last takes over and cuts the other off.
-Not a queue; a job running mid-way gets chopped. Harmless for a read, not acceptable for a `MODIFY`
-mid-transaction.
-
-| Option | Behaviour |
-|---|---|
-| **A. Warn only** | Detect the takeover and tell both chats. Cheapest; stops it being silent |
-| **B. Lease** *(recommended)* | Second chat is **refused** — *"Revit 24312 is in use by another session"*. Small change, removes the hazard, fails closed |
-| **C. Queue** | Second chat waits. Sounds nicer, behaves worse — an invisible queue runs a command minutes later against a model that has since changed |
-
-A lease must never block a `MODIFY` **rollback** — cleanup always wins over the lease.
-
-**Second justification, from the field:** the picker cannot currently show which Revit another chat is
-using, which is why the user has to remember *"don't go to Revit, another session is running"* — a human
-being used as a lock. A lease is what makes `(free)` / `(in use)` truthful in the list. Without it there
-is nothing honest to display. ([D-16](DECISIONS.md))
-
-→ [25 §3, §2a](25-multi-session-and-binding.md)
-
-**Answer:**
-
----
-
 ### 🟠 Q-34 — Confirm the unified trust model? *(new)*
 
 Four documents now define **six overlapping status vocabularies** for how much Heron trusts something.
@@ -486,6 +461,20 @@ kind of thing a careful user and a corporate laptop are both right to refuse.
 
 `Idling` used only for a liveness heartbeat. Heron must surface "Revit is busy" rather than hanging.
 → [D-09](DECISIONS.md)
+
+### ✅ Q-36 — Lease or takeover when two chats target the same Revit? → **Lease (option B)**
+
+Built in Step 6 as `HeronLease`. A second chat is **refused** with a message saying what is happening and
+when it clears, rather than taking the session and chopping whatever the first was doing. Scoped to the
+Revit **process**, not the document — the contention is at the pipe. `ping` and `info` are exempt, which
+is what finally makes `(free)` / `(in use)` truthful in the picker and ends a person being used as a
+lock. It cannot block a rollback: the lease is checked when a request arrives, and a rollback happens
+inside a request already admitted.
+
+**One thing the question got slightly wrong**, worth keeping: option B does *not* "remove the hazard
+entirely". The pipe is displaced when a second chat CONNECTS, before the lease can be consulted, so the
+first chat still loses one in-flight reply. The lease removes the **takeover**; it narrows the
+**interruption**. → [D-22](DECISIONS.md), [25 §3](25-multi-session-and-binding.md)
 
 ### ✅ Q-5 — MCP tool granularity? → **Thick and specific**
 

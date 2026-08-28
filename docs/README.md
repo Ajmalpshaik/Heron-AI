@@ -20,10 +20,18 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**14 of 40 questions answered — none of the remaining 26 block Phase 0.**
-**Phase 1 has not been assessed against them.** Phase 0 is complete, so that sentence now describes a
-phase that is finished: it is not wrong, it has simply stopped covering the work in progress. Step 6
-was built without anyone checking whether an open question blocks it.
+**15 of 40 questions answered — none of the remaining 25 block Phase 0.**
+
+**Phase 1, assessed 2026-08-28** (it had not been, and the line above had quietly stopped covering the
+work in progress). Three of the open questions touch Step 6, and one of them matters:
+
+| | |
+|---|---|
+| **Q-36** — lease or takeover | **Answered.** Built as `HeronLease` in Step 6 ([D-22](DECISIONS.md)) |
+| **Q-19** — accept Golden Rules 16–21? | **Still open, and Step 6 rests on it.** The one transaction group, the preview, document pinning and the expiring preview are rules **16, 17, 20 and 21** — all still *proposed*. Step 6 was built to satisfy them as though settled. Nothing is wrong in the code; the rules it obeys simply have not been formally accepted, and accepting them is a one-line decision that should not wait until after they are proven |
+| **Q-14** — how is testing against real Revit done? | **Partly answered in practice** by [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) — 48 items in dependency order. Not yet written up as an answer |
+
+Nothing else blocks Phase 1.
 
 **Specification is complete in four parts.** Part 1 is the platform and its organisation; Part 2 is the
 Agent Operating System; Part 3 is the consolidated baseline, **authoritative on the Golden Rules**

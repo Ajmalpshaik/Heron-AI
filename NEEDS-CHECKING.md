@@ -29,15 +29,20 @@ right. Add an item every time something is built away from Revit.
 
 ---
 
-## Group A — does it build at all
+## Group A — does it build, and does the bridge work
 
-Blocks everything below it. Nothing else in this file can be attempted until A2 passes.
+**Needs Windows and the .NET SDK. Does NOT need Revit.** Blocks everything below it — nothing else in
+this file can be attempted until A2 passes.
+
+A4 is the one worth doing before you ever open Revit: the round-trip test starts a Revit-free bridge
+host and exercises the pipe *and* the lease. Half of group H is already covered there.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **A1** | `dotnet --version` | A version number. If "not recognized", install the .NET SDK first — `tools/setup.ps1` checks this too and stops with the download link |
 | **A2** | `dotnet build -p:RevitVersion=2020` | Builds. **Expect errors first time.** Most likely spots: `Document.CreationGUID`, `WorksharingUtils.GetCheckoutStatus`, `IFailuresPreprocessor`, `TransactionGroup.GetStatus`, `BuiltInCategory.INVALID`, `UIDocument.RefreshActiveView` |
 | **A3** | `dotnet build -p:RevitVersion=2024` | Same, on net48. A 2024-only failure is the interesting kind — that is the version boundary that has bitten this work before |
+| **A4** | `dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024` then `python tests/test_bridge_roundtrip.py` | **Passes — with NO REVIT OPEN.** The pipe round trip *and* most of the lease. This is the biggest single result you can get before touching Revit: if the lease is wrong, it says so here rather than three groups later |
 
 ## Group B — does Revit still load
 
@@ -131,12 +136,17 @@ so until F3 passes, "Steps 1 to 5 are proven" describes history rather than the 
 
 Changes behaviour proven in Step 1, so it is the group most likely to surprise you.
 
+**Do `A4` first.** The round-trip test already covers the refusal, the `ping`/`info` exemption, the
+`inUse`/`mine` reporting and that the first chat is never cut off — all without Revit. What is left here
+is only what genuinely needs real Revits and real chats: the picker column, expiry over real time, the
+button releasing it, and two Revits not interfering.
+
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **H1** | One chat, one Revit. Ask anything | Works exactly as before. The lease is claimed silently — you should notice nothing |
-| **H2** | Open a **second** Claude chat, connect to the **same** Revit, ask anything | **Refused**, saying the Revit is in use by another chat and roughly when it frees. It must NOT cut the first chat off |
+| **H2** | Open a **second** Claude chat, connect to the **same** Revit, ask anything | **Refused**, saying the Revit is in use by another chat and roughly when it frees. It must NOT cut the first chat off. *(Mostly covered by `A4` — this confirms it end to end through a real chat)* |
 | **H3** | Go back to the **first** chat, ask again | Still works. It never lost its hold |
-| **H4** | In the second chat, run `revit_health` | Shows the Revit — `ping`/`info` are lease-exempt, so *looking* must never claim it |
+| **H4** | In the second chat, run `revit_health` | Shows the Revit — `ping`/`info` are lease-exempt, so *looking* must never claim it. *(The exemption itself is covered by `A4`; this checks the tool uses it)* |
 | **H5** | Two Revits open, one held by another chat. Ask for the picker | The rows read `(free)` and `(in use by another chat, ~N min left)`. **This is the column that did not exist before** |
 | **H6** | Leave the first chat idle over 5 minutes, then ask from the second | Now granted — the lease lapsed. An abandoned chat must not hold a Revit forever |
 | **H7** | First chat holding it, press the **Heron button** to disconnect, then ask from the second | Granted immediately. Pressing the button releases it rather than making anyone wait out the timer |
