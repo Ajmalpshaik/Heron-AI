@@ -171,7 +171,14 @@ Write-Host "  ================" -ForegroundColor White
 if ($succeeded.Count -gt 0) {
     Write-Host "  Installed for Revit: $($succeeded -join ', ')" -ForegroundColor Green
     Write-Host ""
-    Write-Host "  Next:"
+    Write-Host "  First - and this needs no Revit at all:"
+    Write-Host "         dotnet build tests\Heron.Bridge.TestHost -p:RevitVersion=2024" -ForegroundColor White
+    Write-Host "         python tests\test_bridge_roundtrip.py" -ForegroundColor White
+    Write-Host "    It starts a Revit-free bridge host and checks the pipe and the session"
+    Write-Host "    lease. If something is wrong there, it is much easier to find here than"
+    Write-Host "    three steps later with Revit open."
+    Write-Host ""
+    Write-Host "  Then:"
     Write-Host "    1. Start Revit"
     Write-Host "    2. Ribbon -> Heron AI -> Heron   (click to connect, again to disconnect)"
     Write-Host "    3. Back here, run:"
