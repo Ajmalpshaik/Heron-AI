@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 34 answered · 7 open · none blocking Phase 0, Phase 1 or Phase 2**
+**Progress: 35 answered · 6 open · none blocking Phase 0, Phase 1 or Phase 2**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -25,8 +25,7 @@ Three of the four were settled by looking rather than deciding: at a system alre
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
 instead of standing between him and something usable.
 
-What remains open is release and governance work (`Q-26`, `Q-29`, `Q-31`, `Q-32`, `Q-34`, `Q-35`,
-`Q-38`), none of which blocks building.
+What remains open is release and governance work (`Q-29`, `Q-31`, `Q-32`, `Q-34`, `Q-35`, `Q-38`), none of which blocks building.
 
 **Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
 ([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
@@ -610,7 +609,20 @@ reopen it rather than assume it carries.
 Confirmed as a later goal ([D-07](DECISIONS.md)). Their review constrains packaging, permissions and
 installer behaviour — cheaper to read the requirements before the installer is finalised than after.
 
-**Answer:**
+**Answer: GitHub now; the App Store door is kept open by not closing it, and nothing is built for it. See
+[D-38](DECISIONS.md).**
+
+**The requirements have NOT been read, and that is the honest half of this answer.** This question asked
+for them to be read before the installer is finalised. Writing Autodesk's current packaging, signing and
+review rules from memory would repeat the exact failure this repository has already had twice with the
+Revit API — a confident answer nobody checked. **Read them from Autodesk, at the time, or not at all**; so
+the reading is deferred along with the listing, and it is the **first** task if one is ever attempted, not
+the last.
+
+Four things are already true and may or may not help — stated as facts, not as compliance claims: per-user
+install with no admin rights (proven), **no network code in the add-in** (verified against the source), a
+standard `.addin` manifest, and Apache 2.0. [Q-38](#-q-38--what-is-the-exact-install-command-new) is the
+live piece and belongs to the GitHub route.
 
 ---
 

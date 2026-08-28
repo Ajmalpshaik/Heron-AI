@@ -77,6 +77,7 @@ than examined.
 | [D-35](#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about) | A shared fragment may carry code; an unapproved one is refused, not warned about | ✅ Accepted · ⏳ one pass at the PC |
 | [D-36](#d-36--no-warranty--the-standard-position-and-it-is-already-in-place-twice) | No warranty — the standard position, already in place twice | ✅ Accepted |
 | [D-37](#d-37--the-name-is-heron-ai-and-no-trademark-check-has-been-done) | The name is Heron AI, and no trademark check has been done | ✅ Accepted |
+| [D-38](#d-38--github-now-app-store-kept-possible-and-nothing-built-for-it) | GitHub now, App Store kept possible, and nothing built for it | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1917,3 +1918,54 @@ cleared.**
   publication, and an Autodesk App Store listing ([Q-26](OPEN-QUESTIONS.md), still open), where a name
   clash is somebody else's decision rather than ours.
 - If a check is ever wanted, **before publication is the moment it is cheap** — and it is the last one.
+
+---
+
+## D-38 — GitHub now, App Store kept possible, and nothing built for it
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-26](OPEN-QUESTIONS.md)
+**Narrows** [D-07](#d-07--distribution--github-first-app-store-later), which named the App Store as a later goal.
+
+### Context
+
+Q-26 warns that Autodesk's review constrains packaging, permissions and installer behaviour, and that it
+is *"cheaper to read the requirements before the installer is finalised than after."* Ajmal chose
+**GitHub now, App Store later maybe** — keep the door open, build nothing for it.
+
+### Decision
+
+**Distribution is a GitHub download.** One install command, released whenever Ajmal likes, no review and
+no external timing. **Nothing is built, packaged or signed for an App Store listing**, and no requirement
+is designed around on the strength of a guess about what it might be.
+
+**The door is kept open by not closing it**, which costs nothing: no decision is taken that would make a
+listing impossible, and there is no such decision on the table today.
+
+### The requirements have NOT been read — and that is the actual answer to Q-26
+
+Q-26 asked for them to be read before the installer is finalised. **They have not been, and this session
+is the wrong place to pretend otherwise:** stating Autodesk's current packaging, signing and review rules
+from memory would be exactly the failure this repository has already been bitten by twice with the Revit
+API — a confident answer nobody checked. **Read them from Autodesk, at the time, or not at all.**
+
+So Q-26 is answered as a *direction*, and the reading it asks for is deferred with it. **Before any
+listing is attempted, that reading is the first task, not the last.**
+
+### What is already true, and may or may not help
+
+Stated as facts about Heron rather than as compliance claims, because no requirement has been read
+against them:
+
+- It **installs per user with no administrator rights**, proven end to end in Phase 0.
+- The add-in contains **no network code at all**, verified against the source.
+- It is a **standard `.addin` manifest plus assemblies** — the ordinary shape of a Revit add-in.
+- The licence is **Apache 2.0** ([Q-27](OPEN-QUESTIONS.md)), permissive and already chosen.
+
+### Consequences
+
+- [Q-38](OPEN-QUESTIONS.md) — the exact install command — is the live piece of this and is still open. It
+  belongs to the GitHub route and needs no App Store input.
+- **The name matters here too.** A store listing is where a name clash stops being ours to decide
+  ([D-37](#d-37--the-name-is-heron-ai-and-no-trademark-check-has-been-done)), and no check has been done.
+- Signing is not undertaken, and if a listing is ever pursued, **signing and the requirements reading are
+  the same piece of work** rather than two.
