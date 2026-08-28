@@ -312,6 +312,13 @@ its clean output is believed — the same standard `check-api-surface.py` was he
 the mechanism, then written here in Heron's shape, with Heron's reasoning, carrying **none** of their
 names, dependencies or branding. Each starts at `DRAFT` whatever status it held where it was read.
 
+**The method is [31 — Studying the existing libraries](31-studying-the-existing-libraries.md)**, written
+2026-08-28 on the owner's instruction: *check and edit · add · split*, with what may travel and what may
+not. Read it before taking anything. Its arithmetic is the part that shapes this step: there are
+**398 fragments there and 221 carry a verification**, and every one of those arrives here **unproven** —
+so the constraint is not how many can be written, it is how many can be **proved**, and that is gated on
+a machine. Ten proven beats three hundred DRAFT.
+
 **Prove it:** ten skills resolve through capabilities rather than agent names, and each carries **its
 own proof with a negative case** ([D-30](DECISIONS.md)).
 

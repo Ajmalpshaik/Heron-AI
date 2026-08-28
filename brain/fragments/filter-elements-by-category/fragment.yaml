@@ -20,9 +20,15 @@ risk: READ
 
 purpose: >
   Answers "which elements" for a single Revit category, in the active document,
-  excluding types. It is the filter half of every "select the X" and "how many
-  X" job, which is exactly why it is a fragment and not part of either: two
-  questions sharing one filter is D-29's design working.
+  excluding types, optionally scoped to one level. It is the filter half of
+  every "select the X" and "how many X" job, which is exactly why it is a
+  fragment and not part of either: two questions sharing one filter is D-29's
+  design working.
+
+  Pass ElementId.InvalidElementId as levelId for the whole model. The level
+  lookup is a CHAIN of five parameters and the implementation says at length
+  why - an MEP duct records its level on none of the first four, so a shorter
+  lookup returns a confident zero rather than an error.
 
 contract:
   needs:
@@ -30,6 +36,8 @@ contract:
       type: Document
     - name: category
       type: BuiltInCategory
+    - name: levelId
+      type: ElementId
   provides:
     - name: elements
       type: IList<Element>
