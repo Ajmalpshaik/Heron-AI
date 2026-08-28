@@ -6,7 +6,16 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 14 answered · 26 open · none blocking Phase 0**
+**Progress: 20 answered · 20 open · none blocking Phase 0 or Phase 1**
+
+**This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
+questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
+2026-08-28, when the real figures were 20 and 20 — six questions had been answered and the sentence stayed
+still, which is the exact failure the tooling in [`tools/`](../tools/README.md) exists to prevent.
+
+**Six of the twenty gate Phase 2** — `Q-7a`, `Q-8`, `Q-9`, `Q-12`, `Q-13`, `Q-15` — and two of those are
+Ajmal's rather than technical: **Q-12** (what project content may leave the machine) and **Q-15** (is
+persona automatic or manual).
 
 *(Five new questions — Q-29 to Q-33 — come from [Master Specification Part 2](00b-master-specification-agent-os.md).
 None of them block Phase 0 either; they shape Phases 2–5.)*
@@ -73,7 +82,11 @@ three retrieval stages in one engine.
 
 → [05 §5](05-heron-brain.md)
 
-**Answer:**
+**Answer: the recommendation, taken — see [D-23](DECISIONS.md).** Decided on the installation
+constraint rather than on retrieval quality: Heron installs per-user with no administrator rights, and a
+store needing a service breaks exactly the locked-down machines it is built for. One file per scope also
+makes Golden Rule 5's scope separation a fact of the filesystem instead of a `WHERE` clause somebody can
+forget.
 
 ---
 
@@ -84,7 +97,16 @@ machine. Cloud as opt-in.
 
 → [05 §6](05-heron-brain.md)
 
-**Answer:**
+**Answer: local by default, cloud opt-in per scope — see [D-24](DECISIONS.md).** The deciding argument is
+re-indexing: a per-call cost makes rebuilding the index something to avoid, and an index nobody rebuilds
+quietly stops matching what is on disk.
+
+**This does not answer [Q-12](#-q-12--what-is-the-data-confidentiality-position) and must not be read as
+answering it.** Asked directly on 2026-08-28, Ajmal's reply — *"now we are in Claude, am I right, so make
+it in this; when we are on the PC I will pull that there and we will test everything"* — was about where
+the **work** happens, not about what **project content** may leave a machine. That is a contractual
+question about client and authority work, it is his to answer, and it stays open. Local-by-default is the
+setting that is safe to hold while it is open.
 
 ---
 
@@ -139,6 +161,18 @@ Note: some are private and may contain client-specific work. Anything imported m
 can reach a public repository.
 
 → [10 §5](10-memory-and-knowledge.md)
+
+**Answer: all of them, as reference — and none of them is imported. See [D-25](DECISIONS.md).**
+Ajmal, 2026-08-28: *"use them as a reference only ... In our Heron AI, it should be written completely
+from scratch ... study each and every line, word by word, and create it as a new file."*
+
+This answers a different question than the one asked, and the difference matters: there is **no import
+pipeline to build**, and the duplicate detection an import would have needed largely goes with it. The
+question of *which first* dissolves — reading is cheap and carries no risk; only re-authoring costs
+anything, and that is decided one capability at a time.
+
+The confidentiality note above is resolved by the same decision rather than by review: nothing is copied,
+so no client-specific content can arrive by being carried across.
 
 **Answer:**
 

@@ -36,6 +36,9 @@
 | [D-20](#d-20--millimetres-to-feet-is-arithmetic-not-unitutils) | Millimetres to feet is arithmetic, not UnitUtils | ✅ Accepted |
 | [D-21](#d-21--failure-analysis-is-a-table-not-a-model-call) | Failure analysis is a table, not a model call | ✅ Accepted |
 | [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over) | A second chat is refused, not allowed to take over | ✅ Accepted |
+| [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) | The knowledge store is SQLite, one file per scope | ✅ Accepted |
+| [D-24](#d-24--embeddings-are-computed-locally-by-default) | Embeddings are computed locally by default | ✅ Accepted |
+| [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) | The existing libraries are studied and re-authored, never imported | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1109,3 +1112,125 @@ updating*.
 ---
 
 *Add new decisions below as they are made.*
+
+---
+
+## D-23 — The knowledge store is SQLite, one file per scope
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-10](OPEN-QUESTIONS.md)
+
+### Context
+
+Phase 2 has to find the right fragment from a sentence somebody typed, using three kinds of match at
+once: the exact phrase, the keywords, and the meaning. The choice is between a dedicated vector database
+— a server to install, run and keep running — and SQLite with its extensions.
+
+**The installation constraint decides it, and it is already proven rather than assumed.** Heron installs
+per-user with no administrator rights ([D-01](#d-01--heron-runs-as-a-claude-code-plugin),
+[07](07-installation-and-update.md)), and Phase 0 demonstrated that end to end on a real machine. A store
+that needs a service installed breaks that on exactly the machines Heron is for: locked-down corporate
+laptops where the user cannot install a service and will not be given permission to.
+
+**And Golden Rule 5 asks for scope separation *physically*.** In a server, a scope is a column and
+separation is a `WHERE` clause somebody can forget. As one file per scope, it is the filesystem, and
+forgetting it is not possible.
+
+### Decision
+
+**SQLite, one file per knowledge scope.** FTS5 for keywords, `sqlite-vec` for meaning, ordinary SQL for
+the exact-match short circuit — all three stages in one engine, one file, no server and no daemon.
+
+### Consequences
+
+- Backing up a scope is copying a file. Deleting one is deleting a file. Sending one to somebody is
+  sending a file.
+- Scope separation is enforced by the filesystem rather than by a query, which is what Golden Rule 5
+  actually asks for.
+- Corruption is contained: one damaged scope does not take the others with it.
+- **Revisit only on measurement, never on feeling.** The retrieval interface is the seam to swap behind
+  if a scope ever genuinely outgrows this. "It might get slow" is not evidence; a measured query time
+  against a real scope is.
+
+---
+
+## D-24 — Embeddings are computed locally by default
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-11](OPEN-QUESTIONS.md)
+**Does NOT answer [Q-12](OPEN-QUESTIONS.md)** — see the consequences.
+
+### Context
+
+Searching by meaning needs embeddings, and they can be computed on the machine or bought from an API.
+Three things point the same way.
+
+**Heron reads real projects.** Room names, client names, drawing numbers, revision comments. Sending
+that to a third party is a decision with contractual weight in the work this is built for, and it has
+not been made.
+
+**Re-indexing has to be free, or it stops happening.** The knowledge base grows every working day. Put a
+per-call cost on rebuilding the index and rebuilding becomes something to avoid — and an index nobody
+rebuilds is an index that quietly stops matching what is on disk. That failure has a long history in
+work of this kind and it is not a hypothetical one.
+
+**It has to work with no connection.** Site visits, locked-down networks, a laptop on a plane.
+
+### Decision
+
+**Local by default.** Cloud embeddings are opt-in per scope, off unless deliberately switched on, and the
+setting has to name what would leave the machine rather than reading as a quality slider.
+
+### Consequences
+
+- Installing Heron needs no API key and no account.
+- Matching quality is somewhat below the best cloud embedding. Accepted: the hybrid of keyword and
+  meaning recovers much of it, and a wrong fragment is visible in a way that a leaked room schedule
+  is not.
+- **This is an engineering default, not the confidentiality policy.** [Q-12](OPEN-QUESTIONS.md) — what
+  may be sent to a model provider, from which projects — is a contractual question and remains **open
+  and Ajmal's to answer**. Local-by-default is the setting that is safe to hold while it is open, and
+  is deliberately reversible once it is closed.
+
+---
+
+## D-25 — The existing libraries are studied and re-authored, never imported
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-16](OPEN-QUESTIONS.md)
+**Supersedes** the Phase 2 roadmap item that read *"import the existing libraries, with duplicate
+detection"*.
+
+### Context
+
+Q-16 asked **which** of the existing libraries to import first, and the roadmap described an import
+pipeline with duplicate detection. Ajmal's answer, 2026-08-28, changes the question rather than
+picking from the list:
+
+> *"You can take all of them ... but use them as a reference only. You have to write it cleanly on our
+> side because we have a splitting rule and everything. In our Heron AI, it should be written completely
+> from scratch. You can refer to everything and study the remaining repos, but study them hard. There is
+> no need to copy-paste. Study each and every line, word by word, and create it as a new file."*
+
+So the answer to *"which first"* is **all of them, and none of them** — all are in scope to be read, none
+is imported.
+
+### Decision
+
+Every existing library is **reference material**. Nothing is copied. A capability that earns a place in
+Heron is **re-authored from scratch here**, in Heron's shape, obeying Heron's splitting and metadata
+rules, and verified in Heron.
+
+### Consequences
+
+- **There is no bulk import to build.** The Phase 2 work is a study-and-re-author process, and the
+  duplicate detection that an import would have needed largely disappears with it: reading five
+  variations of the same job produces **one** Heron fragment, because a person decided they were the
+  same job.
+- **The unit of work is a capability, not a file.** A count of files in a reference library is not a
+  count of fragments Heron will end up with, and should never be quoted as a target.
+- It is slower per fragment, and that is the point. A copied fragment carries assumptions from where it
+  came from — hard-coded paths, another project's naming, conventions nobody here can see — and those
+  are invisible precisely because the code looks finished.
+- **A fragment proven elsewhere is not proven in Heron.** Re-authored work starts at DRAFT and earns its
+  status through Heron's own checks, whatever status it held in the library it was read from.
+- It reinforces what was already true: none of those projects' names, branding or dependencies come
+  across ([HANDOVER §7](../HANDOVER.md)). This decision is the same rule applied to substance rather
+  than to labels.

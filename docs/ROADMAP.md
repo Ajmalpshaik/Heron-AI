@@ -153,8 +153,10 @@ six phases of code assume one runtime.
 - Hybrid retrieval with exact-match short circuit + **utterance cache**
 - Scope separation enforced physically — Golden Rule 5
 - **Dependency graph** — skills → fragments → API → runtime *([21 §1](21-resilience-and-operations.md))*
-- **Import the existing AJ-Tools / PyRevit-Tools libraries** *(Q-16)*, with duplicate detection
-  *([20 §5](20-knowledge-trust-and-conflict.md))*
+- **Study the existing libraries and re-author what earns a place** *([D-25](DECISIONS.md), answering
+  Q-16)* — **not** an import. Nothing is copied; each capability is written from scratch in Heron's shape
+  and starts at DRAFT here, whatever status it held where it was read. This used to read *"import the
+  existing libraries, with duplicate detection"*, which describes work Ajmal ruled out on 2026-08-28
 
 **Definition of done:** ten real skills work, none of them hard-coded, importing an existing repo
 produces a reviewable manifest, and the Orchestrator resolves requests through capabilities rather

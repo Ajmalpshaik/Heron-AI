@@ -102,3 +102,54 @@ out("  ACTUAL: questions defined=%d, in Answered section=%d, constitution articl
 # nothing, because it is believed.
 out("  ACTUAL: golden rules defined=%d (all official; 16-21 accepted 2026-08-28)\n"
     % len(gr_def))
+
+# ---------- 6. the Progress line, derived rather than believed ----------
+#
+# Section 5 above prints count claims and says "verify by hand". Nobody does,
+# which is how the Progress line at the top of OPEN-QUESTIONS.md came to say
+# "14 answered - 26 open" while the file held 20 and 20. Six questions had been
+# answered and the sentence stayed still.
+#
+# So this one is derived and compared, and it is the ONLY part of this script
+# that can fail. Everything above is a report; a report cannot be wrong, which
+# is also why it cannot catch anything.
+oq = allsrc.get('./docs/OPEN-QUESTIONS.md', '')
+answered = open_ids = None
+if oq:
+    answered, open_ids = 0, []
+    for block in re.split(r'\n(?=### )', oq):
+        head = re.match(r'### (.*?)(Q-\d+[a-z]?)\s*—', block)
+        if not head:
+            continue
+        if '✅' in head.group(1):
+            answered += 1
+            continue
+        # An answered question has real text after its **Answer:** marker; an
+        # open one has the bare placeholder and nothing before the block ends.
+        mark = re.search(r'\*\*Answer:\*?\*?', block)
+        body = re.split(r'\n---', block[mark.end():])[0].strip() if mark else ''
+        if len(body) > 5:
+            answered += 1
+        else:
+            open_ids.append(head.group(2))
+
+out("\n=== 6. THE PROGRESS LINE ===\n")
+failed = False
+if answered is None:
+    out("  OPEN-QUESTIONS.md not found - nothing to check\n")
+else:
+    out("  ACTUAL: %d answered, %d open\n" % (answered, len(open_ids)))
+    out("  still open: %s\n" % ", ".join(open_ids))
+    stated = re.search(r'\*\*Progress:\s*(\d+)\s*answered\s*·\s*(\d+)\s*open', oq)
+    if not stated:
+        out("  DRIFT: no '**Progress: N answered - M open' line to check against.\n")
+        failed = True
+    elif (int(stated.group(1)), int(stated.group(2))) != (answered, len(open_ids)):
+        out("  DRIFT: the file says %s answered / %s open. The questions say %d / %d.\n"
+            % (stated.group(1), stated.group(2), answered, len(open_ids)))
+        out("  A stated count is a claim; a derived count is a fact. Fix the line.\n")
+        failed = True
+    else:
+        out("  agrees with the stated Progress line\n")
+
+sys.exit(1 if failed else 0)
