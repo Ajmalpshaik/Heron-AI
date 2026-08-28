@@ -6,15 +6,18 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 22 answered · 19 open · none blocking Phase 0 or Phase 1**
+**Progress: 23 answered · 18 open · none blocking Phase 0 or Phase 1**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
 2026-08-28, when the real figures were 20 and 20 — six questions had been answered and the sentence stayed
 still, which is the exact failure the tooling in [`tools/`](../tools/README.md) exists to prevent.
 
-**Five of the twenty gate Phase 2** — `Q-7a`, `Q-8`, `Q-9`, `Q-13`, `Q-15`. Four are technical and can be
-taken here; **Q-15** (is persona automatic or manual) is Ajmal's.
+**Four of the eighteen gate Phase 2** — `Q-7a`, `Q-8`, `Q-9`, `Q-13`. **All four are technical and can be
+taken here**, so nothing on the Phase 2 path is waiting on Ajmal any more.
+
+`Q-15` was the one that was his, and it closed on 2026-08-28 by reading two assistants already doing this
+job daily rather than by deciding anything ([D-27](DECISIONS.md)).
 
 **Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
 ([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
@@ -164,7 +167,17 @@ source of distrust.
 
 → [01 §4](01-vision-and-principles.md)
 
-**Answer:**
+**Answer: neither — the question had the wrong axis in it. See [D-27](DECISIONS.md).**
+
+Two assistants doing this job daily for months were read for this question, at Ajmal's suggestion. Neither
+switches persona at all, and neither has needed to. **One voice — plain language, always.** What actually
+varies is the **shape of the answer**, and it follows the **shape of the request**: a count gets a number,
+a breakdown gets a schedule-style table, a narrowed set gets the items and their ids, finished work gets a
+short close, and two comparable numbers get a picture unasked.
+
+That dissolves the distrust the recommendation was trying to manage. Inferring a persona is guessing about
+a person — wrong sometimes and invisible when wrong. Inferring an answer's shape is reading the request —
+deterministic, and visible when it is wrong.
 
 ---
 

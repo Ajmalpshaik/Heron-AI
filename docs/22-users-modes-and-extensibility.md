@@ -37,10 +37,19 @@ few minutes, I'll show you before it touches your model"*. A command deserves si
 
 > The underlying system remains the same. Only communication changes.
 
-**[NOTE]** Worth restating the recommendation from [01 §4](01-vision-and-principles.md): persona should
-be **inferred as a default, displayed, and pinnable**. Silent switching means the same question gets two
-different answers on two days with no visible cause, which reads as unreliability rather than
-intelligence.
+**[DECIDED 2026-08-28 — [D-27](DECISIONS.md).]** ~~Persona should be inferred as a default, displayed,
+and pinnable.~~ **There is no persona.** The warning above was right and it argues further than it went:
+if silent switching reads as unreliability, the fix is not to display the guess — it is not to guess.
+
+Heron has **one voice**, and what varies is the **shape of the answer**, read off the **shape of the
+request**: a count gets a number, a breakdown gets a schedule-style table, a narrowed set gets the items
+with their ids, finished work gets a short close, and two comparable numbers get a picture unasked. That
+is deterministic — the same request gets the same shape every time — so it cannot produce the two-answers-
+on-two-days problem at all.
+
+The *Developer* row of the table above is really Developer **Mode**, which §3 immediately below requires
+to be **granted rather than inferred**. Once that is where it belongs, a persona setting has nothing left
+to do.
 
 ---
 
