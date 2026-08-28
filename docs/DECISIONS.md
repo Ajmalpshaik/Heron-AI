@@ -75,6 +75,7 @@ than examined.
 | [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) | Heron never assumes an input. It asks — and it asks once | ✅ Accepted · ⏳ one pass at the PC |
 | [D-34](#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job) | Heron's own wording is English; understanding the user is not Heron's job | ✅ Accepted · ⏳ one pass at the PC |
 | [D-35](#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about) | A shared fragment may carry code; an unapproved one is refused, not warned about | ✅ Accepted · ⏳ one pass at the PC |
+| [D-36](#d-36--no-warranty--the-standard-position-and-it-is-already-in-place-twice) | No warranty — the standard position, already in place twice | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1837,3 +1838,42 @@ absence of one is a REFUSAL, not a warning.**
   BIM lead's sign-off.
 - **None of this is Phase 2 work.** It constrains the fragment format now and is otherwise a later phase's
   problem.
+
+---
+
+## D-36 — No warranty — the standard position, and it is already in place twice
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-25](OPEN-QUESTIONS.md)
+
+### Context
+
+Q-25 asks who is responsible if a Heron-made change causes a defect in a delivered model. Ajmal chose the
+**standard open-source position: no warranty, the user carries the risk** — the same terms as every free
+tool already in use in his office.
+
+**It needs no new work, because it is already in place twice.** Apache 2.0
+([Q-27](OPEN-QUESTIONS.md)) carries the disclaimer as a matter of licence, and
+[`DISCLAIMER.md`](../DISCLAIMER.md) already says the same thing in plain words a modeller will actually
+read — work on a copy, never first on a live deliverable, verify before issuing, use the preview, know how
+to undo.
+
+**So he chose the lighter of the two options offered and already has the stronger one.** That is worth
+saying rather than leaving him with less than he has.
+
+### Decision
+
+**No warranty. The licence text is the legal instrument; `DISCLAIMER.md` is the honest one.** Nothing new
+is written.
+
+### Consequences
+
+- Nothing to build, and nothing blocked.
+- **`DISCLAIMER.md` is load-bearing and must not drift from what Heron actually does.** It currently
+  promises a preview, a single undo entry, that owned elements are skipped with a message, and that Heron
+  never synchronises with central on its own. **Every one of those is unproven today** — they are Step 6's
+  claims, and the register exists to test them. If any turns out false, that file is a promise Heron
+  breaks, and it must change with the code rather than after it.
+- **This records a choice, not legal advice**, and it holds for Heron as it is today: free and open source
+  ([Q-21](OPEN-QUESTIONS.md)). **If Heron is ever sold, bundled into paid deliverables, or supplied to a
+  client as part of a service, the question is a different one** and this decision should be reopened
+  rather than assumed to carry over.

@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 32 answered · 9 open · none blocking Phase 0, Phase 1 or Phase 2**
+**Progress: 33 answered · 8 open · none blocking Phase 0, Phase 1 or Phase 2**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -25,7 +25,7 @@ Three of the four were settled by looking rather than deciding: at a system alre
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
 instead of standing between him and something usable.
 
-What remains open is release and governance work (`Q-24` to `Q-26`, `Q-29`, `Q-31`, `Q-32`, `Q-34`,
+What remains open is release and governance work (`Q-24`, `Q-26`, `Q-29`, `Q-31`, `Q-32`, `Q-34`,
 `Q-35`, `Q-38`), none of which blocks building.
 
 **Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
@@ -582,7 +582,15 @@ If a Heron-generated change causes a defect in a delivered model, who is respons
 question, not a personal one. Partly addressed by an explicit disclaimer ([17 §5](17-open-source-and-distribution.md))
 and by the licence choice (Q-27).
 
-**Answer:**
+**Answer: no warranty, the standard open-source position — and it is already in place twice. See
+[D-36](DECISIONS.md).** Apache 2.0 carries it as licence; [`DISCLAIMER.md`](../DISCLAIMER.md) already says
+it in plain words a modeller will read. Nothing new is written.
+
+Two things are recorded with it. **`DISCLAIMER.md` is load-bearing**: it promises a preview, a single undo
+entry, skipped owned elements and no unprompted sync to central — all of which are **unproven today**, so
+it must move with the code rather than after it. And this records a choice, **not legal advice**: it holds
+for Heron as it is now, free and open source. If Heron is ever sold or supplied as part of a paid service,
+reopen it rather than assume it carries.
 
 ---
 
