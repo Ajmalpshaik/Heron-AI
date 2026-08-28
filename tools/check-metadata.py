@@ -27,6 +27,18 @@ SOURCE_ROOTS = ["revit", "mcp", "brain", "platform", "tests", "tools"]
 SOURCE_EXT = (".cs", ".py", ".ps1")
 SKIP_NAMES = {"__pycache__", "bin", "obj", ".vs"}
 
+# Fragment implementations are CONTENT, not Heron's own source, and their
+# metadata standard is their own fragment.yaml - id, status, contract,
+# compatibility and proof, all in one place the validator reads.
+#
+# Giving them a Heron- header too would put `Heron-Status: DRAFT` in the .cs
+# beside `status: DRAFT` in the .yaml, and the moment a fragment is promoted
+# one of the two would be updated and the other would not. That is this
+# repository's most-repeated failure with a new face on it, so the rule is
+# ONE place per fact: brain/heron_fragment.py validates these files, and this
+# checker does not read them.
+SKIP_PREFIXES = (os.path.join("brain", "fragments") + os.sep,)
+
 FIELDS = ["Heron-Agent", "Heron-Step", "Heron-Status", "Heron-Since", "Heron-Layer"]
 LAYERS = {"bridge", "revit", "brain", "platform", "test", "tool"}
 STATUSES = {"DISCOVERED", "DRAFT", "TESTING", "VALIDATED", "SHADOW",
@@ -85,7 +97,8 @@ def source_files():
         for dirpath, dirnames, filenames in os.walk(root):
             dirnames[:] = [d for d in dirnames if d not in SKIP_NAMES]
             for fn in filenames:
-                if fn.endswith(SOURCE_EXT):
+                if fn.endswith(SOURCE_EXT) and not os.path.join(
+                        dirpath, fn).startswith(SKIP_PREFIXES):
                     yield os.path.join(dirpath, fn).replace(os.sep, "/")
 
 

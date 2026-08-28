@@ -61,6 +61,14 @@ this section were visible in the list and invisible in the number.
 copy, because two lists of the same thing drift and this repository has been bitten by that more than
 once.
 
+**Unproven FRAGMENTS are the one thing that does not get rows here** — for that same reason, not as an
+exception to it. Every fragment carries its own `heron-status` and its own proof, and
+`python brain/heron_fragment.py` lists them with what each still owes. Copying that list into this file
+would create exactly the second list this paragraph warns about, and it would go stale first: fragments
+are added and promoted far more often than register rows change. **A fragment below `PROVEN` has never
+met a model** — that is what the status means, it is machine-checked, and it needs no row here to be
+true.
+
 **Every item has an ID** — `A1`, `D3` — so it can be named in a message without describing it again.
 Say *"A1 passed"* or *"D3 failed, here is what it said"* and that is enough.
 

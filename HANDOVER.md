@@ -24,6 +24,11 @@ person, or the owner on his phone.
 > that day because Phase 2 had never been broken into steps. Seven of the eight need no Revit; only
 > Step 14's proof does.
 >
+> **Step 7 is built and proven-as-far-as-it-can-be**: the fragment's shape on disk, and the validator
+> that refuses a proof with no negative case. `python tests/test_fragment_store.py`, 22 checks. The two
+> fragments in `brain/fragments/` are `DRAFT` and **neither has met a model** — which is what DRAFT
+> means, and why they get no register row. **Step 8 is next.**
+>
 > **What that did NOT change:** `write.enabled` is still `false`, every parked item is still unproven,
 > and `R1` — read the day's decisions back — **did not happen before Phase 2 began**, contrary to the
 > instruction that asked for it. That was overridden by the owner, which is his to do; it stays on the

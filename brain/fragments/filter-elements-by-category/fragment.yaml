@@ -1,0 +1,51 @@
+# The five standard fields (docs/29). `heron-status` IS this fragment's
+# lifecycle state - there is no second `status` key, because one fact wants
+# one home and this repository has been bitten by the alternative.
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 7
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+# What this fragment IS. The folder name is where it happens to sit today -
+# rename it and nothing downstream notices. docs/09 section 4.
+id: frg-filter-category-0001
+semantic-identity: all elements of one category in the active document
+kind: filter
+domain: revit.elements
+capability: ELEMENTS_FILTER_BY_CATEGORY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers "which elements" for a single Revit category, in the active document,
+  excluding types. It is the filter half of every "select the X" and "how many
+  X" job, which is exactly why it is a fragment and not part of either: two
+  questions sharing one filter is D-29's design working.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: category
+      type: BuiltInCategory
+  provides:
+    - name: elements
+      type: IList<Element>
+
+# An explicit list, never a range. ">=2020" would claim 2028 and every release
+# after it, which is exactly what D-05 forbids - an unlisted release is an
+# error, never a guess.
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. FilteredElementCollector, OfCategory and
+  WhereElementIsNotElementType are unchanged across 2020 to 2027, and no
+  ElementId is constructed from an int - which is what would have made 2024's
+  move to 64-bit ids matter here.
+
+# No proof, and therefore not past DRAFT. It has never run against a real
+# model; NEEDS-CHECKING.md carries that like everything else unproven.
