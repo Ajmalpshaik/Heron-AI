@@ -246,6 +246,7 @@ def remember(store, text, fragment_id):
 
 def keywords(store, text, limit=5):
     """Route 3. FTS5 over the scope, best first."""
+    ensure_tables(store)          # asked before indexing is a normal order
     query = _fts_query(text)
     if not query:
         return []

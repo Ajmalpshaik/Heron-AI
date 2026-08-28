@@ -41,8 +41,19 @@ person, or the owner on his phone.
 > sentence is a *miss* rather than a coin toss. It found a real gap in Step 7 on its first run: fragments
 > had no `utterances`, so `OST_DuctCurves` matched nothing — [09 §2](docs/09-skills-and-fragments.md) had
 > asked for them and Step 7 had not built them. Now required.
-> `python tests/test_search.py`. **Step 10 is next** — meaning, and it carries the phase's only real
-> install risk.
+> `python tests/test_search.py`.
+>
+> **Step 10 is built, and it is the one to read the caveats on.** Embeddings are local, offline and need
+> nothing installed — but the built-in backend is **character n-grams, not meaning**, and the tests say
+> so in measured numbers rather than in prose: synonyms score **zero or less** (`diffuser`/`grille`
+> −0.136), while plurals, word endings and word order all work. The trained backend that *would*
+> understand synonyms **has never run**: `huggingface.co` is refused by this container's network, so no
+> weights could be fetched. `A7` in the register is that run, and it needs **no Revit and no Windows** —
+> any machine with a working network will do.
+>
+> It also recorded its own successor's acceptance test: on *"show me every duct"* the keyword route
+> ranks the right fragment first and the vector route ranks it second. **Step 11 must fuse them and
+> return the duct filter.** `python tests/test_embed.py`. **Step 11 is next.**
 >
 > **What that did NOT change:** `write.enabled` is still `false`, every parked item is still unproven,
 > and `R1` — read the day's decisions back — **did not happen before Phase 2 began**, contrary to the
