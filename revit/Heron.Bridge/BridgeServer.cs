@@ -132,7 +132,8 @@ namespace Heron.Bridge
             }
 
             _log(string.Format(CultureInfo.InvariantCulture,
-                "Bridge listening on {0}. Newest connection wins; idle release after {1} minute(s).",
+                "Bridge listening on {0}. Newest connection takes the pipe, the lease decides who " +
+                "may use it; idle release after {1} minute(s).",
                 _identity.PipeName, _idleRelease.TotalMinutes));
         }
 

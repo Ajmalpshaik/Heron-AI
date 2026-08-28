@@ -253,6 +253,24 @@ Three options, in increasing cost:
 **Recommendation: B.** And a lease must never block a `MODIFY` **rollback** — cleanup always wins over
 the lease, or an interrupted transaction could be stranded.
 
+> **Correction, 2026-08-28, after building it.** *"Removes the hazard entirely"* above is too strong,
+> and the gap is in the transport rather than in the lease.
+>
+> The pipe is displaced **when a second chat connects** — before any request arrives, and therefore
+> before the lease can be consulted, because the chat id travels in the request body and there is
+> nothing to identify the caller at connect time. So a second chat is refused, but the first chat's
+> **in-flight request is still lost**.
+>
+> What that costs, precisely: the first chat loses one reply, reconnects on its next call, and keeps its
+> lease. If it was mid-write, the operation itself is unaffected — it runs on Revit's own thread and the
+> pipe closing does not reach it — but the answer is lost, so the chat is told the outcome is unknown
+> and to check the model. Which is correct, and is still a worse experience than not being interrupted.
+>
+> Closing it properly means holding both pipes open until the lease has spoken, which is a change to the
+> **proven** transport layer (`MaxServerInstances` is 2 precisely so preemption works). Not attempted
+> from a machine that cannot compile it. The lease removes the **takeover**; it narrows rather than
+> eliminates the **interruption**.
+
 **[NOTE]** The addendum note makes the case for a lease stronger than safety alone:
 
 > *"The list doesn't say which Revit another chat is already using. Nothing shows it. That's why you

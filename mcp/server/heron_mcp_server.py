@@ -138,7 +138,31 @@ def revit_health() -> str:
             mark = ""
             if b.pid == binding.pid:
                 mark = "  <- in use%s" % ("" if binding.was_chosen else " (assumed, not chosen)")
-            lines.append("  %d)%s%s" % (index, _describe(b, b.request("count_elements"))[1:], mark))
+
+            # COUNT ONLY THE SESSION THIS CHAT ALREADY HOLDS.
+            #
+            # count_elements is NOT lease-exempt, so asking it of every session
+            # would claim a lease on every free Revit in the list - and then
+            # merely asking "is Revit working?" would quietly take every Revit
+            # the user has open, refusing the chats that were about to use them.
+            # A health check that changes who owns what is not a health check.
+            #
+            # This contradicted the exemption built for exactly this reason one
+            # commit earlier: looking must never be the act of claiming. Found
+            # by auditing after the lease, not before it.
+            #
+            # For the rest, `availability` uses `info`, which is exempt. The
+            # element count is lost for a session this chat does not hold, and
+            # that is the right trade - "in use by another chat" is the more
+            # useful fact anyway, and reading another chat's model through a
+            # health check was never the point.
+            if b.pid == binding.pid:
+                detail = _describe(b, b.request("count_elements"))[1:]
+            else:
+                detail = "  Revit %s, session %s - %s" % (
+                    b.revit_version, b.pid, bridge.availability(b))
+
+            lines.append("  %d)%s%s" % (index, detail, mark))
             b.close()
 
         if len(live) > 1 and binding.pid is None:
