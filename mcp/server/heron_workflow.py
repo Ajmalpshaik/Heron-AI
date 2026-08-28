@@ -41,6 +41,26 @@ The four requirements docs/23 sets, and how each is met here:
    waiting for?", so a job cannot silently die and be discovered three days
    later.
 
+NOTHING CALLS THIS YET, AND THAT IS DELIBERATE - say so rather than letting a
+reader assume otherwise.
+
+Phase 1's only multi-stage flow is preview -> approve -> apply, and that is
+already sequenced by the preview token inside the ADD-IN. The add-in is the
+better place for it: it is the side that can re-count against the live model
+immediately before writing, which is what Golden Rule 21 requires and what this
+engine, sitting outside Revit, cannot do. Wiring the engine into that flow would
+duplicate a mechanism that already exists and is better placed.
+
+Its real customer is the 18-stage new-tool pipeline in Phase 2, where a failure
+at stage 13 currently means discarding twelve finished stages. It is built now
+because the roadmap puts it in Phase 1 and because building it after the
+pipeline means retrofitting resume through code that assumes it restarts.
+
+So: this is proven by its tests and unproven in use. When the first real
+multi-stage workflow arrives, it is here - and if it turns out to be the wrong
+shape, changing it costs nothing today and would cost a rewrite once eighteen
+stages depend on it.
+
 IT NEVER RETRIES BLINDLY. The engine does not decide that for itself; it asks
 the Failure Analysis Agent (heron_failure), which is the one place that knows
 the difference between "never reached the model" and "was sent, and the answer

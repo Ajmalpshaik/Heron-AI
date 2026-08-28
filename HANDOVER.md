@@ -114,6 +114,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | `HeronUnits`, `HeronPermissions`, `HeronStop` | Kernel C#. Plain arithmetic and flags, but still never compiled |
 | The Emergency Stop ribbon button | New `PushButtonData` in a file whose ribbon currently works. **If Heron will not load after this, look here first** |
 | **The lease** (`HeronLease`) | Refuses a second chat instead of cutting the first off. Changes behaviour proven in Step 1, and needs two chats and one Revit to test at all |
+| **The Workflow Engine** (`heron_workflow.py`) | Built to spec and covered by 18 checks, but **nothing calls it yet** — and that is deliberate, not an oversight. Phase 1's only multi-stage flow is preview→apply, which the add-in already sequences better because it is the side that can re-count against the live model. Its real customer is Phase 2's 18-stage pipeline. Proven by its tests, unproven in use |
 | **Bridge protocol 2** | A request now carries a `client` id. An add-in still on protocol 1 will refuse to talk — which is correct, and means the add-in MUST be rebuilt and redeployed |
 | `revit_preview_move`, `revit_apply_move`, `revit_use_this_model` | The three new MCP tools. Never seen by a running host |
 
