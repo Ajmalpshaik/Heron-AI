@@ -27,7 +27,13 @@ person, or the owner on his phone.
 > **Step 7 is built and proven-as-far-as-it-can-be**: the fragment's shape on disk, and the validator
 > that refuses a proof with no negative case. `python tests/test_fragment_store.py`, 22 checks. The two
 > fragments in `brain/fragments/` are `DRAFT` and **neither has met a model** — which is what DRAFT
-> means, and why they get no register row. **Step 8 is next.**
+> means, and why they get no register row.
+>
+> **Step 8 is built too**: one knowledge store per scope, as one file each. A cross-scope query is
+> impossible to *write* — the API takes one scope and `ATTACH` is refused by name, which is the one
+> loophole in "one file per scope". Project knowledge with no project identified is **refused, never
+> defaulted**, because a wrong guess writes one client's knowledge into another's file.
+> `python tests/test_scope_store.py`, 26 checks. **Step 9 is next.**
 >
 > **What that did NOT change:** `write.enabled` is still `false`, every parked item is still unproven,
 > and `R1` — read the day's decisions back — **did not happen before Phase 2 began**, contrary to the

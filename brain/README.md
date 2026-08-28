@@ -1,6 +1,6 @@
 # brain/ — Part 3, Heron Brain
 
-**Knowledge.** Runs outside Revit. **Phase 2 started 2026-08-28 — Step 7 of 8 is in.**
+**Knowledge.** Runs outside Revit. **Phase 2 started 2026-08-28 — Steps 7 and 8 of 8 are in.**
 
 | | |
 |---|---|
@@ -14,13 +14,15 @@
 |---|---|
 | [`heron_fragment.py`](heron_fragment.py) | **Step 7.** What a fragment IS on disk, and the validator that will not let it lie. Identity is not the filename; the contract is data, not prose; a proof without a negative case is refused |
 | [`fragments/`](fragments/) | The library. Two so far, both `DRAFT` — written by hand to prove the shape, and **neither has met a real model** |
+| [`heron_scope.py`](heron_scope.py) | **Step 8.** One knowledge store per scope, as one file each. A cross-scope query is impossible to *write*: the API takes one scope and `ATTACH` is refused by name. The stores are **derived** — delete them all and `--rebuild` puts them back |
 
-Run `python brain/heron_fragment.py` to validate the library, and
-`python tests/test_fragment_store.py` for the 22 checks behind it.
+Run `python brain/heron_fragment.py` to validate the library and
+`python brain/heron_scope.py` to see the stores; `python tests/test_fragment_store.py` and
+`python tests/test_scope_store.py` are the 28 and 26 checks behind them.
 
 ## What is still to come
 
-Steps 8 to 14: the scope as a file · keyword search and the exact-match short circuit · local
+Steps 9 to 14: keyword search and the exact-match short circuit · local
 embeddings · hybrid retrieval · the capability registry · the dependency graph · ten real skills.
 
 ## Why it stayed empty until now
