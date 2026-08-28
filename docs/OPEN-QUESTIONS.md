@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 40 answered · 1 open · nothing blocking any phase**
+**Progress: 41 answered · 0 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -25,8 +25,10 @@ Three of the four were settled by looking rather than deciding: at a system alre
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
 instead of standing between him and something usable.
 
-**Only `Q-35` remains open** — read and confirm the Constitution's 30 Articles. It belongs with the `R1`
-read-back at the PC, because confirming a 30-article document by tapping an option is not confirming it.
+**Nothing is open.** `Q-35` closed on 2026-08-28: Ajmal asked for all 30 Articles to be **read out**, and
+accepted them after reading ([D-43](DECISIONS.md)). The Constitution is binding.
+
+**One answer is agreed but not signed off**, and no count can show that — see `Q-34` below.
 
 **`Q-34` counts as answered here but is not closed.** Ajmal agreed the direction on 2026-08-28 and asked
 to see it working at the PC first, so [D-14](DECISIONS.md) stays **Proposed** and the confirmation is
@@ -511,7 +513,20 @@ Worth reviewing specifically:
 - Are 30 Articles too many to inject usefully? *(Mitigated by giving each agent only the Articles
   relevant to its permission level and department.)*
 
-**Answer:**
+**Answer:** ACCEPTED, 2026-08-28 — all 30 Articles, binding. See [D-43](DECISIONS.md).**
+
+Offered acceptance, deferral, or having all 30 read out, **Ajmal asked for all 30 to be read**, and
+accepted them after reading. That is the difference between a confirmation and a tap, and it is why the
+option was offered: a 30-article document accepted by pressing a button is not accepted, it is unread.
+
+**Reading it aloud found three stale statements in it**, none of which changed what an Article requires
+and all of which would have been read as current by whoever implements enforcement: it described its basis
+as *"Golden Rules 1–15 (official) and 16–19 (proposed)"* — wrong twice, since all **21** became official
+earlier the same day; **eight Articles cited a "Proposed" Golden Rule** that was no longer proposed; and
+it said an agent receives *"not all 27"* Articles when there are **30**. All corrected on acceptance.
+
+**Accepting the Articles does not make them true.** 8, 9, 11, 12a, 12b and 12c are precisely what groups
+`C`, `D` and `E` of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) exist to test.
 
 ---
 

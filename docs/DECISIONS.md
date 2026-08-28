@@ -82,6 +82,7 @@ than examined.
 | [D-40](#d-40--the-dependency-graph-is-sqlite-and-an-edge-is-derived-before-it-is-stored) | The dependency graph is SQLite, and an edge is derived before it is stored | ✅ Accepted |
 | [D-41](#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer) | Single-user now; company knowledge is a git repo and the admin is the reviewer | ✅ Accepted |
 | [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is setup.ps1 | ✅ Accepted |
+| [D-43](#d-43--the-constitution-is-accepted-all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -2123,3 +2124,55 @@ prefer.
   *read the current documentation* tasks, both deferred for the same reason, and both cheap at that moment.
 - **The README's first command is the first impression**, and it must be one somebody has actually run on
   a clean machine. Until then it should show the route that has been run.
+
+---
+
+## D-43 — The Constitution is accepted — all 30 Articles, binding
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-35](OPEN-QUESTIONS.md)
+
+### Context
+
+[`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) had stood as *proposed, pending confirmation* since it
+was written. Offered the choice of accepting it, deferring it, or having all 30 read out, **Ajmal asked
+for all 30 to be read**, and accepted them after reading.
+
+**That is the difference between a confirmation and a tap**, and it is why the option existed. A
+30-article document accepted by pressing a button is not accepted; it is unread.
+
+### Decision
+
+**All 30 Articles are binding.** The document's status moves from proposed to accepted.
+
+Its own Amendment clause now applies: an Article may not contradict a Golden Rule, changing one is a
+**decision recorded here with its reasoning and compensating control**, and Articles are *"never weakened
+silently, and never by an agent."*
+
+### Reading it aloud found three stale statements in it
+
+None changed what any Article requires. All three would have been read as current by whoever implements
+the enforcement:
+
+- It described its own basis as *"Golden Rules 1–15 (official) and 16–19 (proposed)"* — **wrong twice**,
+  since all **21** became official earlier the same day ([Q-19](OPEN-QUESTIONS.md)).
+- **Eight Articles cited a *"Proposed"* Golden Rule** that was no longer proposed.
+- It said an agent receives *"not all 27"* Articles. There are **30** — the count predates 12a, 12b
+  and 12c.
+
+All corrected on acceptance, and named in the file rather than quietly fixed. **A document about to
+become binding must not misdescribe its own authority.**
+
+### Consequences
+
+- **The belt-and-braces split in the file is the part that matters most**, and it is already written
+  there: *"a rule stated here is not enforced by being stated here."* Text in an agent's instructions is
+  guidance a model can be argued out of. **Every Article that can be enforced in code must also be
+  enforced in code**, at the add-in's permission boundary — and the file's own enforcement table says
+  which ones those are.
+- Articles 8, 9, 11, 12a, 12b and 12c are **exactly what the register tests**. Accepting them does not
+  make them true: groups `C`, `D` and `E` are still what proves the code obeys them.
+- Article 24 — *confidence is not validation* — is this same day's lesson stated as a rule. A property
+  that read like the obvious choice compiled cleanly and did not exist in Revit 2020.
+- Article 20 — *a new capability starts unproven and stays unproven* — is
+  [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) at constitutional
+  level, and the two agree.
