@@ -162,6 +162,7 @@ python tools/check-structure.py        # layout, layering, adapter boundary, pat
 python tests/test_bridge_roundtrip.py  # the bridge end to end — Windows, but NO Revit
 python tests/test_session_binding.py   # one chat one Revit, all four cases — pure Python
 python tests/test_write_safety.py      # Step 6's CHAT half — distances, pinning, approval
+python tests/test_failure_analysis.py  # never blind-retries, and fails closed
 ```
 
 - **All documentation, decisions, specifications and open questions.**
@@ -183,61 +184,19 @@ python tests/test_write_safety.py      # Step 6's CHAT half — distances, pinni
 
 ## 6. The return-to-the-machine checklist
 
-**Everything below is untested. Work through it when back at a machine with Revit.**
-Add a line every time something is built away from Revit; delete a line only when it has been proven.
+**The list lives in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), not here.**
 
-```
-[ ] Restart Claude Code, then confirm a selection answer names the SESSION as well as the
-    document — both models are called Project1, so "in Project1" alone identifies nothing
-[ ] Revit 2027 — has never been launched. The owner says his install does not work; find out
-    whether that is the install or Heron
-[ ] Re-run everything in §3 once, in one sitting, against the current build
-[ ] Anything committed from mobile after 2026-08-28 — add it here as it happens
+Every item is unproven, every item has an ID (`A1`, `D3`) so it can be named in a message without
+being described again, and they are in dependency order — nothing in group D can be attempted before
+group A passes.
 
-STEP 6 — THE WRITE PATH. None of this has been compiled. Work down in order; each line
-assumes the ones above it passed. Do NOT set write.enabled until line 3 is green.
+It is kept as ONE register rather than a copy in each file, because two lists of the same thing drift
+and this repository has been bitten by that more than once. Add to it every time something is built
+away from Revit; delete an item only when it has actually passed.
 
-[ ] 1. It COMPILES.  tools\check-scripts is not this repo — build it properly:
-       dotnet build -p:RevitVersion=2020 -p:SkipAjToolsAutoDeploy=true
-       then again for 2024. Expect real errors: nothing here has met a compiler.
-       Most likely spots — CreationGUID, WorksharingUtils.GetCheckoutStatus,
-       IFailuresPreprocessor, TransactionGroup.GetStatus, BuiltInCategory.INVALID.
-[ ] 2. Revit still LOADS and the ribbon still appears. A third button was added to a
-       panel that worked; if the tab is missing, that is the cause.
-[ ] 3. Emergency Stop toggles, and its dialog says what it does and does not do.
-[ ] 4. With write.enabled still FALSE: ask to move ducts. Heron must refuse and name
-       the setting. This proves the gate before anything can move.
-[ ] 5. Set write.enabled = true in %APPDATA%\Heron\config\heron.config. Restart Revit.
-[ ] 6. ON A SCRATCH MODEL, NOT A REAL PROJECT: "move the ducts up 200 mm".
-       Preview appears, says a count, changes nothing. Check the count by eye.
-[ ] 7. Say yes. They move. MEASURE ONE — 200 mm, not 200 feet and not 0.656 of
-       anything. This is the check that catches a unit error, and it is the whole
-       reason HeronUnits exists.
-[ ] 8. ONE Ctrl+Z puts it all back, as a single undo entry named "Heron: move ducts...".
-       If it takes two, Golden Rule 16 is broken.
-[ ] 9. Preview, then wait over 2 minutes, then approve. It must refuse as expired.
-[ ] 10. Preview, then draw one more duct, then approve. It must refuse — the model moved on.
-[ ] 11. Preview in one project, click into a second open project, approve. It must refuse
-        and name both models. This is Golden Rule 20, and it is the one that stops a
-        change landing in the wrong building.
-[ ] 11a. Same again, but CLOSE the first project instead of clicking away. The refusal
-        must say it was CLOSED, not "go back to it" - two different situations, and
-        Golden Rule 20 treats them differently. Checks IsStillOpen, and that its
-        linked-document filter works (open a model that has a link loaded).
-[ ] 11b. After a successful move, the change is visible WITHOUT clicking or zooming.
-        That is TryRefresh. If a refresh ever throws, the move must still be reported
-        as the success it was - cosmetics must never rewrite the result.
-[ ] 12. Approve twice in a row. The second must find nothing to approve — not move
-        the ducts a further 200 mm.
-[ ] 13. A pinned duct, and (if a workshared model is to hand) one owned by another user:
-        both reported as skipped in the preview, and left alone.
-[ ] 14. Then set write.enabled back to FALSE until the whole of this list has passed.
-```
-
-**On line 1 specifically — expect it to fail the first time, and do not read that as the design
-being wrong.** Untested code that compiles first go is the surprise, not the norm. The value of
-everything above is that each line names one thing to look at, so a failure is a five-minute fix
-rather than an afternoon of reading.
+**The single most important line in it is `D3`:** move the ducts 200 mm, then *measure one*. That is
+what catches a unit error, and a unit error is the failure that looks fine until somebody measures it
+months later.
 
 The one-command path back to a working machine:
 

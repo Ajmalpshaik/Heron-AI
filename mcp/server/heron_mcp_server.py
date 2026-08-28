@@ -57,6 +57,7 @@ import heron_bridge_client as bridge          # noqa: E402
 from heron_session import SessionBinding, NotBound   # noqa: E402
 from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
                          describe, parse_millimetres)
+from heron_failure import analyse, explain          # noqa: E402
 from mcp.server.fastmcp import FastMCP        # noqa: E402
 
 server = FastMCP("heron")
@@ -385,13 +386,14 @@ def revit_apply_move() -> str:
     reply = session.request("move_elements", op_args={"token": token}, idempotent=False)
     session.close()
 
-    if reply is None:
-        return ("Heron did not get an answer back from Revit, so it cannot tell you whether "
-                "the move happened. Look at the model before trying again - if the elements "
-                "moved, asking a second time would move them twice.")
-
-    if not reply.get("ok"):
-        return reply.get("message") or reply.get("error") or "The change was refused."
+    # Everything that is not a success goes through the Failure Analysis Agent,
+    # including a reply that never arrived. writes=True is the important
+    # argument: it is what makes an unrecognised or lost outcome fail closed
+    # rather than look retryable. Never pass False from here to keep a message
+    # tidier - this tool is the one that can change the model.
+    failure = analyse(reply, writes=True)
+    if failure is not None:
+        return explain(failure)
 
     moved = "{:,}".format(reply.get("moved", 0))
     lines = ["Moved %s %s %s in %s." % (moved, reply.get("category"),

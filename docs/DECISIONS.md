@@ -34,6 +34,7 @@
 | [D-18](#d-18--the-transaction-agent-belongs-to-step-6-not-step-2) | The Transaction Agent belongs to Step 6, not Step 2 | ✅ Accepted |
 | [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) | Writing is off by default until the write path has met a real Revit | ✅ Accepted |
 | [D-20](#d-20--millimetres-to-feet-is-arithmetic-not-unitutils) | Millimetres to feet is arithmetic, not UnitUtils | ✅ Accepted |
+| [D-21](#d-21--failure-analysis-is-a-table-not-a-model-call) | Failure analysis is a table, not a model call | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -992,6 +993,51 @@ define, genuinely needs the API — and needs the version split that comes with 
 - A ceiling of 100 km and a rejection of NaN and infinity sit alongside it. Those are not unit concerns;
   they are there because this is the last place a malformed number can be stopped before it reaches a
   transaction on somebody's building.
+
+---
+
+## D-21 — Failure analysis is a table, not a model call
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Found during:** Step 6 implementation
+**Supersedes:** the **T2** tier given to `HERON-ORC-FAIL-004` in [28](28-agent-registry.md)
+
+### Context
+
+The registry assigned the Failure Analysis Agent **T2** — one scoped model call. Building it made two
+things obvious.
+
+**Heron's failures are its own bounded set.** They do not arrive as arbitrary text from an unknown
+system; they arrive as error codes this repository defines, from a bridge this repository wrote —
+`revit_busy`, `preview_expired`, `document_closed`, `unknown_outcome` and about twenty more. Classifying
+a known set is a lookup. A model call would be asked to re-derive, each time and at cost, an answer that
+is already written down.
+
+**And the one answer that must never be wrong is exactly the one a model should not be asked for.** The
+question is *"did this reach the model, and can we know?"* — and when the answer is *"it was sent and the
+answer was lost"*, the only safe next step is a person looking at the model. A table gives that answer
+identically every time. A model call gives it *almost* every time, and the failure mode is retrying a
+move that already happened.
+
+### Decision
+
+`HERON-ORC-FAIL-004` is **T1** — deterministic, no model call — and it **fails closed**: an error code
+it has never seen, on an operation that can write, is classified as *unknown outcome*, not as
+retryable. A future operation added by someone who never read the file gets the safe answer by default
+rather than the convenient one.
+
+The registry's tier is corrected, along with the department and platform totals that quoted it
+(167 T1 · 63 T2 · 20 T3).
+
+### Consequences
+
+- It is testable without Revit and without a model, and it is:
+  `tests/test_failure_analysis.py`, 30 checks. The central one is a property asserted over **every**
+  known code — no write failure may come back retryable unless the request provably never ran.
+- The judgement a model *would* genuinely add — reading an unfamiliar Revit exception message and
+  guessing what it means — is not needed at this layer. When it is, it belongs in a separate agent that
+  this one can defer to, not inside the classification that guards the write.
+- The general rule: **if the set of inputs is one Heron itself defines, the agent that reads them is
+  T1.** T2 is for text Heron did not write.
 
 ---
 
