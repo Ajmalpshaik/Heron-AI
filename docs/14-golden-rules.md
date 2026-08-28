@@ -34,8 +34,10 @@ Generation is the last resort, not the first move. Search first, always. This is
 ### 4. Never break a working Revit version unnecessarily.
 A new API capability does not justify replacing code that works. Keep, extend, adapt, or version-branch — in that order of preference. Enforced by regression testing across every declared supported version ([13 §4](13-testing-and-quality.md)).
 
-### 5. Personal knowledge must remain separate from company knowledge.
+### 5. Knowledge from one scope must remain separate from another — personal, company, and project.
 Enforced physically, not by convention — one store per scope. In consultancy work this is a contractual requirement, not a preference ([10 §2](10-memory-and-knowledge.md)).
+
+**Project scope named explicitly, 2026-08-28** ([D-26](DECISIONS.md)), on Ajmal's instruction that *"project-based knowledge must be kept segregated and separated"*. This is a clarification, not a new rule: *one store per scope* always covered it, [22 §9](22-users-modes-and-extensibility.md) already stated that Project B does not inherit Project A's decisions, and [D-23](DECISIONS.md) makes each scope literally its own file. The wording named two of the three scopes and now names all three, because a rule should say what it does.
 
 ### 6. Experimental knowledge must remain separate from production knowledge.
 Working once is not proof. The lifecycle exists to be walked. Nothing reaches `PRODUCTION` without passing its gates ([09 §5](09-skills-and-fragments.md)).

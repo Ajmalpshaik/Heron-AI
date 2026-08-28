@@ -130,20 +130,25 @@ under NDAs you have never seen. The default must be safe for the most restricted
 
 → [12 §4](12-security-and-permissions.md)
 
-**Answer: local only, for every project — the strictest of the three, and not the hybrid recommended
-above. See [D-26](DECISIONS.md).** Ajmal, 2026-08-28: *"All project content, including model data, room
-names, and everything else, must remain on local machines ... there is no need to push anything to an AI
-service."*
+**Answer: the model FILE is never uploaded; everything else about the work is fine. See
+[D-26](DECISIONS.md).**
 
-He also drew the line that makes this workable: **a fragment is not project content.** *"Taking codes and
-everything, fragments that you can scan wherever you need, you can save it."* Technique may be scanned,
-saved and one day shared; a client's room schedule may not.
+**It took three passes in one day to land there, and the final one is the rule.** The first answer was the
+strictest position in the table above — *nothing leaves* — and two clarifications narrowed it. Ajmal,
+finally and plainly: *"Any project name, data, typing, or content being in the cloud is not an issue ...
+The main thing is that we should not upload the model itself, specifically the RVT or RFA files ... Do not
+push the models."*
 
-**One half of this question is answered and the other has moved to [Q-40](#-q-40--do-replies-need-identifiers-redacted-before-they-reach-the-host).**
-Heron never *initiates* egress — that is now a guarantee. But Heron runs inside an AI host, so the
-sentences it writes reach that host by the host's own design, exactly as [12 §4](12-security-and-permissions.md)
-has always said. What Heron chooses to put in a reply is therefore a confidentiality decision, and that
-part is not settled.
+So the line is **the file, not the information**. A `.rvt`, a `.rfa`, a family or project template — never.
+Project names, element counts, sizes, room names, engineering reasoning, code — that is the work, and it
+travels like any other conversation with an assistant.
+
+Third part of the same instruction: **project knowledge stays segregated.** Already the design — Golden
+Rule 5's *one store per scope*, made literal by [D-23](DECISIONS.md) — and Rule 5's wording has been
+broadened to name the project scope it always covered.
+
+**The earlier framings are recorded rather than erased**, in D-26, because commits from the same day quote
+them and a reader has to know which version won.
 
 ---
 

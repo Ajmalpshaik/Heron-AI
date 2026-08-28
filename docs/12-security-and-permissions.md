@@ -92,11 +92,13 @@ Three positions, and the choice must be deliberate:
 | **Local only** | Local model, local embeddings, no egress | Deployable anywhere. Lower reasoning quality, real hardware cost. |
 | **Hybrid, per project** | Project metadata sets the policy | Best fit for reality. Requires the policy to be enforced in code. |
 
-~~**Recommendation: hybrid, enforced structurally.**~~ **DECIDED 2026-08-28 — `Local only`, for every project, not the hybrid.** See [D-26](DECISIONS.md). Ajmal chose the strictest row in the table above and applied it to everything rather than per project: no cloud embeddings, no telemetry, no upload of any kind, and a knowledge scope leaves only by a deliberate `PUBLISH`.
+~~**Recommendation: hybrid, enforced structurally.**~~ **DECIDED 2026-08-28 — and the answer does not sit in any row of the table above.** See [D-26](DECISIONS.md).
 
-**The "lower reasoning quality, real hardware cost" consequence in that row applies to the LOCAL EMBEDDINGS only, and it is accepted.** It does not mean a local reasoning model: Heron runs inside Claude Code ([D-01](DECISIONS.md)), which is the boundary the next paragraph is about.
+The table asks *which content may leave*. The rule Ajmal actually set draws the line at **the file, not the information**: a `.rvt`, an `.rfa`, a family or project template is **never** uploaded — partly confidentiality, and partly that it is hundreds of megabytes and no useful answer needs it. Project names, element data, sizes, room names, engineering reasoning and code are the work, and they travel like any other conversation with an assistant.
 
-**What this does not settle:** Heron's own replies are the conversation, so they reach the host by its design — the paragraph opening this section still stands and always will. Whether a confidential project needs identifiers redacted *before Heron says them* is [Q-40](OPEN-QUESTIONS.md), and it is a contract question rather than a technical one.
+**Two things from the strict reading survive on their own merits**, and both are worth keeping: embeddings stay **local**, now on the re-indexing argument rather than the confidentiality one ([D-24](DECISIONS.md)); and a tool **answers a question, never returns the model**, which is as much about a useful answer as a private one.
+
+**Unchanged and permanent:** Heron's own replies *are* the conversation, so they reach the host by its design — the paragraph opening this section stands and always will. [Q-40](OPEN-QUESTIONS.md) asked whether identifiers should be redacted before Heron says them; the answer is **no**, for exactly the reason above.
 
 Also needed regardless of position:
 

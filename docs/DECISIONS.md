@@ -39,7 +39,7 @@
 | [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) | The knowledge store is SQLite, one file per scope | ✅ Accepted |
 | [D-24](#d-24--embeddings-are-computed-locally-by-default) | Embeddings are computed locally by default | ✅ Accepted |
 | [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) | The existing libraries are studied and re-authored, never imported | ✅ Accepted |
-| [D-26](#d-26--project-content-never-leaves-the-machine) | Project content never leaves the machine | ✅ Accepted |
+| [D-26](#d-26--the-model-file-is-never-uploaded) | The model file is never uploaded | ✅ Accepted |
 | [D-27](#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape) | One voice, and the answer's shape follows the question's shape | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
@@ -1158,8 +1158,9 @@ the exact-match short circuit — all three stages in one engine, one file, no s
 ## D-24 — Embeddings are computed locally by default
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-11](OPEN-QUESTIONS.md)
-**Amended the same day by [D-26](#d-26--project-content-never-leaves-the-machine):** the cloud opt-in
-below is **withdrawn**. Q-12 was answered hours later and left no room for it.
+**Amended the same day by [D-26](#d-26--the-model-file-is-never-uploaded):** the cloud opt-in below is
+**withdrawn**. Note that D-26 was itself refined afterwards and its confidentiality argument narrowed —
+this decision now stands on its *re-indexing* reason, which did not change. See D-26's consequences.
 
 ### Context
 
@@ -1182,8 +1183,8 @@ work of this kind and it is not a hypothetical one.
 ~~**Local by default.** Cloud embeddings are opt-in per scope, off unless deliberately switched on, and
 the setting has to name what would leave the machine rather than reading as a quality slider.~~
 
-**Superseded within hours by [D-26](#d-26--project-content-never-leaves-the-machine): embeddings are
-computed locally, full stop.** There is no opt-in and no setting. The reasoning below still holds and is
+**Superseded within hours by [D-26](#d-26--the-model-file-is-never-uploaded): embeddings are computed
+locally, full stop.** There is no opt-in and no setting. The reasoning below still holds and is
 kept because it is now the *second* reason rather than the only one — a rule with two independent
 justifications is worth more than a rule with one.
 
@@ -1245,100 +1246,73 @@ rules, and verified in Heron.
 
 ---
 
-## D-26 — Project content never leaves the machine
+## D-26 — The model file is never uploaded
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-12](OPEN-QUESTIONS.md)
-**Amends [D-24](#d-24--embeddings-are-computed-locally-by-default)** — the per-scope cloud opt-in is
-withdrawn.
+
+> **This decision was refined three times on the day it was written, each time in the same direction:
+> from *nothing may travel* toward *the file may not travel*. The rule below is the final one. It is
+> narrower than the first two, and commits from that day quote the earlier framings — so the movement is
+> recorded here rather than quietly overwritten, because a reader needs to know which version won.**
 
 ### Context
 
-[12 §4](12-security-and-permissions.md) set out three positions — cloud only, local only, hybrid per
-project — and recommended the hybrid, enforced structurally. Ajmal chose the strictest of the three, and
-for every project rather than per project:
+[12 §4](12-security-and-permissions.md) offered three positions — cloud only, local only, hybrid per
+project. The first answer taken was the strictest, and it was stricter than intended:
 
-> *"All project content, including model data, room names, and everything else, must remain on local
-> machines. Whoever is working should use their local machine only; there is no need to push anything to
-> an AI service."*
+1. *"All project content ... must remain on local machines."* → recorded as: nothing leaves.
+2. *"How many ducts are there? That is no issue. But the entire model, it should not go to the cloud like
+   that."* → refined to: bulk versus answer.
+3. And then, plainly:
 
-It fits the work. BIM consultancy in Qatar, government and authority projects, NDAs written before
-anybody had heard of an AI assistant. And Q-12 framed the harder version itself: Heron is public, so
-**other firms will run it on their clients' models under NDAs nobody here will ever read.** The default
-has to be safe for the most restricted user, and the simplest thing to defend to a client is a rule with
-no exceptions in it.
+> *"Any project name, data, typing, or content being in the cloud is not an issue. The ideas, engineering
+> ideas, file names, content names, and coding are all fine to go to the cloud. The main thing is that we
+> should not upload the model itself, specifically the RVT or RFA files, as they will be too heavy ...
+> Do not push the models."*
 
 ### Decision
 
-**Heron never sends project content anywhere.** No per-project exception, no opt-in, no setting that
-turns it off. Concretely, and each of these is checkable:
+**The model file is never uploaded. Everything else about the work is fine.**
 
-- **Embeddings are computed locally. Always** — amending [D-24](#d-24--embeddings-are-computed-locally-by-default),
-  which had allowed a per-scope cloud opt-in.
-- **No telemetry, no analytics, no crash upload, no "help improve the product" channel.**
-- **No model, export, schedule or drawing is uploaded by Heron under any circumstance.**
-- A knowledge scope leaves the machine only when a person deliberately publishes it — `PUBLISH`,
-  explicit, per action ([12 §2](12-security-and-permissions.md)).
-
-### Where the line actually falls — the model, not the answer
-
-**Refined by Ajmal on 2026-08-28, after the first version of this decision was written**, and the
-refinement is what makes it workable rather than merely strict:
-
-> *"Revit model — it means Revit model. Okay, how many ducts are there? That is no issue. But the entire
-> model, it should not go to the cloud like that. The work-related everything in the cloud, no issue."*
-
-So the rule is **bulk versus answer**, and the two are not the same thing at all:
-
-| | |
+| Never leaves the machine | Fine in the conversation |
 |---|---|
-| **Never leaves** | The model. The `.rvt`, an export of it, or a dump that amounts to one — every element, every parameter, the whole schedule |
-| **Fine** | The answer to a work question. *"126 ducts."* *"Sizes are 400×200 and 300×150."* That is the job |
+| The `.rvt` and `.rfa` files themselves | Project names, file names, content names |
+| Family and project templates | Element data — counts, sizes, parameters |
+| Any Revit binary | Engineering ideas, reasoning, and code |
 
-**This has a concrete design consequence and it is not a soft one: a Heron tool answers a question, it
-never returns the model.** That happens to align exactly with [Q-5](OPEN-QUESTIONS.md) — *MCP tool
-granularity: thick and specific* — which was decided for entirely different reasons, and the two
-now hold each other up. A thin, general tool (*"give me all elements"*) is both a worse tool and a
-breach of this decision; a thick, specific one (*"how many ducts, by size"*) is neither.
+**And project knowledge stays segregated** — Ajmal's third point in the same message: *"project-based
+knowledge must be kept segregated and separated."* Project A's knowledge does not leak into Project B.
 
-Practically, for any tool added from here: **counts and summaries always, rows bounded and the true
-total stated** — *"126 ducts, showing the first 20"* rather than 126 rows, and never 5,844.
+That was already the design rather than a new requirement: Golden Rule 5 enforces **one store per
+scope**, [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) makes that literally one file per
+scope, and [22 §9](22-users-modes-and-extensibility.md) already stated that Project B does not inherit
+Project A's decisions. Golden Rule 5's *wording* named only personal and company; it has been broadened to
+name project too, because the mechanism always covered it and the rule should say what it does.
 
-**Checked 2026-08-28: all seven tools Heron currently exposes already comply** — they select, count,
-preview, apply, or report health. None returns the model. **That is a property of the current tools, not
-yet a rule enforced in code**, and it is written here so the next tool obeys it deliberately rather than
-by luck.
+### Why it lands here rather than at the strict end
 
-### The boundary Heron does not control, stated plainly
-
-A half-true privacy claim is worse than none, so this is written here rather than left to be discovered.
-
-**Heron runs as a Claude Code plugin ([D-01](#d-01--heron-runs-as-a-claude-code-plugin)).** The request a
-person types, and the answer Heron gives, travel through the AI host — that is what makes Heron work at
-all, and no setting in this repository changes it. [12 §4](12-security-and-permissions.md) has said so
-since it was written: *"every request potentially sends project content ... to a model provider."*
-
-So the rule divides, and both halves must be said together:
-
-- **Heron never initiates egress of project content.** That is a guarantee, it is enforceable in code,
-  and it is what this decision is.
-- **What appears in a reply reaches the host by the host's own design.** Heron chooses what to put in a
-  reply, which makes that a confidentiality decision rather than a formatting one — and it is what
-  [Q-40](OPEN-QUESTIONS.md) now asks about.
+- **Heron never needs to upload a model.** The add-in reads it in place, in the Revit that has it open.
+  No feature wants the file, so this rule costs nothing to keep — which is the best kind of rule.
+- **Size is a real reason by itself**, and it is the one Ajmal gave: a `.rvt` is hundreds of megabytes.
+  Uploading one is slow, expensive and pointless when the answer is a number.
+- **The looser half is simply what using an assistant means.** A count, a size, a room name — that is the
+  work. A rule forbidding it would forbid Heron.
 
 ### Consequences
 
-- Local embeddings stop being a default and become a **requirement**. The retrieval-quality trade is
-  closed, not deferred: it is no longer something a later session may reopen on performance grounds.
-- **Any feature that would need cloud embeddings is simply not built.** Better to know that before
-  designing than after.
-- *"Does using Heron breach our NDA?"* now has a straight first half — Heron sends nothing. The second
-  half is the host, and it is the same answer as for any AI coding assistant the firm already allows.
-- **Fragments are a different category from project content, and the distinction is load-bearing.**
-  Ajmal drew it in the same message: *"taking codes and everything, fragments that you can scan wherever
-  you need, you can save it."* A fragment is technique — how to place an air terminal — not a client's
-  room schedule. Scanned locally, saved locally, and it is the thing Heron may one day share precisely
-  because there is no project inside it. Keeping the two apart is what lets Heron be confidential and
-  shareable at once.
+- **[D-24](#d-24--embeddings-are-computed-locally-by-default) loses one of its two reasons and stands on
+  the other.** Local embeddings were argued from confidentiality *and* from re-indexing having to stay
+  free. The confidentiality half has now weakened. The re-indexing half has not: put a per-call cost on
+  rebuilding and rebuilding stops happening, and an index nobody rebuilds quietly stops matching what is
+  on disk. **Local stays** — written down so that nobody later finds a decision resting on an argument
+  that had silently stopped applying.
+- **The tool rule from the second refinement survives unchanged, and is now better motivated:** a tool
+  answers a question and never returns the model. What made that right was never only privacy — it is
+  also that no useful answer is 5,844 rows.
+- **What a client can be told is short and true:** *Heron never uploads your models. What you ask it
+  about goes to the assistant, the same as any AI tool you already use.*
+- The `PUBLISH` boundary is untouched: a knowledge scope still leaves only by a deliberate action
+  ([12 §2](12-security-and-permissions.md)).
 
 ---
 
