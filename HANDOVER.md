@@ -183,9 +183,11 @@ python tests/test_write_safety.py      # Step 6's CHAT half — distances, pinni
 python tests/test_failure_analysis.py  # never blind-retries, and fails closed
 python tests/test_tool_registry.py     # both languages agree on what may write
 python tests/test_config_and_health.py # settings agree; health means something
+python tests/test_workflow.py          # stages resume, stale inputs re-run, no blind retry
+python tests/test_golden.py            # which proofs still stand against the current code
 ```
 
-**171 checks, all passing.** One more suite needs **Windows but still no Revit**, and it is the most
+**232 checks, all passing.** One more suite needs **Windows but still no Revit**, and it is the most
 valuable thing available before Revit is opened — it proves the transport *and* most of the lease:
 
 ```bash

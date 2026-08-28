@@ -347,9 +347,9 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-KRN-IDN-002` | Identity Manager | Identity for every registered object | T1 | — | 1 |
 | `HERON-KRN-PRM-003` | Permission Manager | Resolves permission level for an operation | T1 | ADMIN | 6 |
 | `HERON-KRN-EVT-004` | Event Bus | Internal events. Handlers notify, never perform MODIFY directly | T1 | — | — |
-| `HERON-KRN-STA-005` | State Manager | Task state and checkpoints | T1 | — | — |
+| `HERON-KRN-STA-005` | State Manager | Task state and checkpoints | T1 | — | **6** |
 | `HERON-KRN-LOG-006` | Logging / Audit Agent | Append-only structured audit, keyed by Workflow ID | T1 | — | 4 |
-| `HERON-KRN-WFL-007` | Workflow Engine | Ordering, retries, timeouts, rollback, checkpoints, resume | T1 | — | — |
+| `HERON-KRN-WFL-007` | Workflow Engine | Ordering, retries, timeouts, rollback, checkpoints, resume. Never decides a retry itself — it asks `HERON-ORC-FAIL-004` | T1 | — | **6** |
 | `HERON-KRN-CAP-008` | **Capability Registry Agent** | *"What can Heron currently do?"* Matched by capability, never agent name | T1 | — | — |
 | `HERON-KRN-TOL-009` | Tool Registry Agent | Tools, schemas, declared risk levels | T1 | — | 3 |
 | `HERON-KRN-MDL-010` | Model Router | Declares reasoning intent; resolution is pluggable | T1 | — | — |
@@ -491,12 +491,12 @@ classes with a method or two. Of the rest, 64 make one scoped call and 20 run a 
 Read that way, the platform is a normal application with about 167 services, 63 narrow model calls, and
 20 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
-**Phase 0 and Phase 1 need 47 of these** — the ones carrying a step number in the tables above.
+**Phase 0 and Phase 1 need 49 of these** — the ones carrying a step number in the tables above.
 See [08](08-agent-catalog.md) and [27](27-build-order.md).
 
 > **Correction, 2026-08-27:** this line said *"about 20"*, and [08](08-agent-catalog.md) said *"45 …
-> the other 175"*. Counting the rows gives **46** (11 · 2 · 7 · 9 · 6 · 12 across steps 1–6), leaving
-> **203**. Three wrong numbers about the same set, in two documents, none of them derived from the
+> the other 175"*. Counting the rows gives **46** (11 · 2 · 7 · 9 · 6 · 14 across steps 1–6), leaving
+> **201**. Three wrong numbers about the same set, in two documents, none of them derived from the
 > rows they describe. `tools/check-metadata.py` now counts the rows and fails if a sentence here
 > disagrees, which is the only reason to trust the figure above over the three it replaces.
 

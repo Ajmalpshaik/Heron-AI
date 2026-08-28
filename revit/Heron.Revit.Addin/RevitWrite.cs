@@ -347,13 +347,32 @@ namespace Heron.Revit.Addin
             // change is reported as having happened.
             TryRefresh(app);
 
+            // WHAT WAS TOUCHED, not just how many. docs/21 section 13 and
+            // docs/12 section 5: the audit log carries document identity,
+            // element UniqueIds and the transaction group name, all keyed by
+            // Workflow ID.
+            //
+            // The count alone cannot answer the question anybody actually asks
+            // after something goes wrong - "WHICH ducts did it move?" - and
+            // that question is the entire point of an append-only record. With
+            // the ids in the log it is a query; without them the log can only
+            // confirm that something happened to some number of things.
+            //
+            // UniqueId rather than ElementId on purpose: an ElementId is only
+            // meaningful inside one open document, and the log outlives the
+            // session. A UniqueId identifies the element across saves, and
+            // across the central file.
             HeronAudit.Record(workflow, "move_elements", true, new[]
             {
                 new KeyValuePair<string, string>("document", doc.Title),
+                new KeyValuePair<string, string>("documentId", preview.DocumentKey),
                 new KeyValuePair<string, string>("category", preview.Category),
                 new KeyValuePair<string, string>("moved", movable.Count.ToString(CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string>("millimetres", preview.MillimetresUp.ToString("0.###", CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string>("warnings", handler.Count.ToString(CultureInfo.InvariantCulture)),
+                new KeyValuePair<string, string>("undoEntry", name),
+                new KeyValuePair<string, string>("elements", UniqueIds(doc, movable)),
+                new KeyValuePair<string, string>("skippedElements", UniqueIds(doc, skipped)),
             });
 
             return Json.Ok(
@@ -482,6 +501,38 @@ namespace Heron.Revit.Addin
             catch
             {
                 // Never turn a committed success into a reported failure.
+            }
+        }
+
+        /// <summary>
+        /// The UniqueIds of these elements, comma separated, for the audit log.
+        ///
+        /// Every id, not a sample. A truncated list answers "roughly what did
+        /// Heron touch?", which is not a question anybody asks - they ask
+        /// whether ONE specific duct was moved, and a sample cannot answer
+        /// that. Several hundred ids is a few kilobytes in an append-only file;
+        /// the alternative is a record that cannot settle an argument.
+        ///
+        /// Never throws. An audit failure must not take down the operation
+        /// being audited, and this runs after a change has already committed.
+        /// </summary>
+        private static string UniqueIds(Document doc, IList<ElementId> ids)
+        {
+            if (ids == null || ids.Count == 0) return null;
+
+            try
+            {
+                var parts = new List<string>(ids.Count);
+                foreach (var id in ids)
+                {
+                    var element = doc.GetElement(id);
+                    if (element != null) parts.Add(element.UniqueId);
+                }
+                return parts.Count == 0 ? null : string.Join(",", parts.ToArray());
+            }
+            catch
+            {
+                return null;
             }
         }
 
