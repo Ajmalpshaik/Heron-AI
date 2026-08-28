@@ -25,10 +25,11 @@ purpose: >
   fragment and not part of either: two questions sharing one filter is D-29's
   design working.
 
-  Pass ElementId.InvalidElementId as levelId for the whole model. The level
-  lookup is a CHAIN of five parameters and the implementation says at length
-  why - an MEP duct records its level on none of the first four, so a shorter
-  lookup returns a confident zero rather than an error.
+  Pass ElementId.InvalidElementId as levelId for the whole model.
+
+  Reports unresolvedLevel - how many elements had NO level found at all - so a
+  broken level lookup reads as "12 found, 12 with no level" instead of as a
+  plausible zero. Silently dropping them is what makes that failure invisible.
 
 contract:
   needs:
@@ -41,6 +42,8 @@ contract:
   provides:
     - name: elements
       type: IList<Element>
+    - name: unresolvedLevel
+      type: int
 
 # An explicit list, never a range. ">=2020" would claim 2028 and every release
 # after it, which is exactly what D-05 forbids - an unlisted release is an

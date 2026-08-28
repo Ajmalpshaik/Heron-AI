@@ -90,10 +90,11 @@ Asked first, because the cheapest fragment is the one not written.
 - **Does Heron already cover it?** `python brain/heron_fragment.py` lists what exists. Two fragments
   answering one sentence is the duplication [D-29](DECISIONS.md) exists to prevent.
 - **Is the job one the owner actually does?** The 12 skills are the evidence for that, not the fragment
-  count. The library's own job log is blunt about this: *the standing guess is that about 40 of the 398
-  do 90% of the work, and nobody knows which.* **Heron should not inherit that uncertainty** — it
-  records usage from its first day, so this question becomes answerable here even though it is not
-  answerable there.
+  count. **A large library does not know which of its own entries matter**, and cannot, unless something
+  recorded every real run from the beginning — which is not a criticism of any library, it is what
+  happens when usage tracking is added after the entries. Heron records usage from its first day
+  precisely so it never has to guess this about itself, and **re-authoring everything would import the
+  guesswork along with the fragments.** Take the jobs that are done; let the rest wait for a request.
 - If neither, **skip it and record nothing.** A library of everything is a library nobody searches.
 
 ### Rule 1 — Check and edit
@@ -116,6 +117,32 @@ understanding:
    one searchable is that every name is built the same way.
 6. **Set `heron-status: DRAFT` and write the proof's cases without the proof.** State what the positive
    and negative cases must be, so whoever reaches a Revit knows exactly what to run.
+
+> ### ⚠️ The check that makes Rule 1 real — and it failed the first time it was needed
+>
+> **On 2026-08-28, the first fragment re-authored under this document was copied, not re-authored.**
+> The level lookup came across essentially line for line, with one variable renamed, and the commit
+> claimed it had been "written fresh". Nobody caught it; the owner asked *"did you take anything?"* and
+> the answer only became clear when the two files were put side by side.
+>
+> **So put them side by side. Every time, before committing.** Not from memory — memory is what produced
+> the wrong claim. If the two read the same line for line, it was copied, whatever the intention was.
+>
+> **What is genuinely unavoidable, and is not copying:** the *facts*. Five `BuiltInParameter` names in
+> the order they must be tried IS the knowledge — there is no second correct set, and naming the same
+> Revit constants is not taking anything. Two lines of Revit API with one correct form will look alike
+> in any two codebases.
+>
+> **What is not unavoidable:** the structure, the control flow, the naming, the comments, and above all
+> **the design decisions**. That is where re-authoring actually happens. The rewritten version of that
+> fragment stores the parameter order as a **list** rather than a chain of `??`, and **counts and
+> reports the elements whose level it could not resolve at all** instead of silently dropping them —
+> so a broken lookup reads as *"12 found, 12 with no level"* rather than as a plausible zero. Neither
+> decision came across; both are Heron's, and the second is the better answer to the very failure the
+> original fragment was written to record.
+>
+> **The honest test is not "does it look different."** It is: *can I say what I decided differently, and
+> why?* If the answer is nothing, no re-authoring happened.
 
 ### Rule 2 — If you want to add, add
 

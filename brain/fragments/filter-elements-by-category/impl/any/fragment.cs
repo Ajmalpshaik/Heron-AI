@@ -1,50 +1,76 @@
 // NOT STANDALONE. Assumes `doc` and `category` are already in scope, and leaves
-// `elements` in scope for whatever is composed after it. The wrapper supplies
-// `doc`; `category` and the optional `levelId` come from the request.
+// `elements` and `unresolvedLevel` in scope for whatever is composed after it.
 //
-// WHY THE LEVEL LOOKUP IS A CHAIN AND NOT A PROPERTY.
+// WHAT REVIT ACTUALLY DOES WITH LEVELS, AND WHY THIS IS NOT A PROPERTY READ.
 //
-// Revit has no single "which level is this on" API. Where an element records
-// its level depends on what kind of element it is, and the storage is genuinely
-// different rather than merely inconsistent:
+// There is no single "which level is this on" call. Where an element records
+// its level depends on what kind of element it is, and these are genuinely
+// different storage locations rather than aliases of one:
 //
-//   - a Wall exposes LevelId directly
-//   - many elements populate Element.LevelId
-//   - a FamilyInstance uses FAMILY_LEVEL_PARAM or SCHEDULE_LEVEL_PARAM
-//   - an MEP CURVE - duct, pipe, cable tray, conduit - uses NONE of those.
-//     It records the level on RBS_START_LEVEL_PARAM and the others are not
-//     merely empty on it, they are ABSENT.
+//   Wall                     -> Wall.LevelId
+//   many elements            -> Element.LevelId
+//   FamilyInstance           -> FAMILY_LEVEL_PARAM / SCHEDULE_LEVEL_PARAM
+//   MEP CURVE (duct, pipe,   -> RBS_START_LEVEL_PARAM, and the others above are
+//   cable tray, conduit)        NOT MERELY EMPTY ON IT - THEY ARE ABSENT
 //
-// That last line is why this is a chain and why RBS_START_LEVEL_PARAM is in it.
-// A lookup that stops earlier does not throw and does not warn on a duct: it
-// returns nothing, every duct fails the comparison, and the filter reports a
-// confident, successful ZERO. That is the failure this whole library is built
-// to make impossible, and it is invisible to any number of successful runs -
-// which is exactly why this fragment's proof must include a level scope that
-// SHOULD match and does. See D-30.
+// The last row is the whole reason this code exists. A lookup that stops before
+// RBS_START_LEVEL_PARAM does not throw on a duct and does not warn: every duct
+// resolves to nothing, fails the comparison, and the filter returns a confident,
+// successful ZERO.
+//
+// HERON'S DECISION, WHICH IS NOT THE OBVIOUS ONE: an element whose level cannot
+// be resolved at all is COUNTED AND REPORTED, not silently dropped. Silently
+// dropping it is what makes the failure above invisible - the caller sees a
+// smaller number and no reason for it. Reporting it means a broken lookup shows
+// up as "12 elements, 12 with no level found" instead of as a plausible zero.
+// That is D-30's rule applied to code rather than to a proof: a thing that does
+// nothing must never be able to look like a thing that worked.
+//
+// The order below is data rather than a chain of ?? operators, because the order
+// IS the knowledge here and it should be readable as a list, changeable in one
+// place, and quotable in the fragment's own documentation.
 
-var found = new FilteredElementCollector(doc)
+var levelParameterOrder = new[]
+{
+    BuiltInParameter.FAMILY_LEVEL_PARAM,
+    BuiltInParameter.SCHEDULE_LEVEL_PARAM,
+    BuiltInParameter.LEVEL_PARAM,
+    BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM,
+    BuiltInParameter.RBS_START_LEVEL_PARAM,   // MEP curves. Never drop this one.
+};
+
+Func<Element, ElementId> levelOf = e =>
+{
+    var wall = e as Wall;
+    if (wall != null) return wall.LevelId;
+
+    if (e.LevelId != ElementId.InvalidElementId) return e.LevelId;
+
+    foreach (var candidate in levelParameterOrder)
+    {
+        var p = e.get_Parameter(candidate);
+        if (p != null) return p.AsElementId();
+    }
+    return ElementId.InvalidElementId;
+};
+
+var matching = new FilteredElementCollector(doc)
     .OfCategory(category)
     .WhereElementIsNotElementType()
-    .AsEnumerable();
+    .ToElements();
 
-if (levelId != ElementId.InvalidElementId)
+var unresolvedLevel = 0;
+var elements = new List<Element>();
+
+foreach (var e in matching)
 {
-    Func<Element, ElementId> levelOf = e =>
+    if (levelId == ElementId.InvalidElementId)
     {
-        if (e is Wall wall) return wall.LevelId;
-        if (e.LevelId != ElementId.InvalidElementId) return e.LevelId;
+        elements.Add(e);
+        continue;
+    }
 
-        var p = e.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM)
-             ?? e.get_Parameter(BuiltInParameter.SCHEDULE_LEVEL_PARAM)
-             ?? e.get_Parameter(BuiltInParameter.LEVEL_PARAM)
-             ?? e.get_Parameter(BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM)
-             ?? e.get_Parameter(BuiltInParameter.RBS_START_LEVEL_PARAM);
-
-        return p?.AsElementId() ?? ElementId.InvalidElementId;
-    };
-
-    found = found.Where(e => levelOf(e) == levelId);
+    var found = levelOf(e);
+    if (found == ElementId.InvalidElementId) unresolvedLevel++;
+    else if (found == levelId) elements.Add(e);
 }
-
-var elements = found.ToList();
