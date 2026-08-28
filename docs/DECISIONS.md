@@ -71,7 +71,7 @@ than examined.
 | [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer) | A fragment is a composable piece, not a whole answer | ✅ Accepted |
 | [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) | A fragment is promoted by one recorded proof, not a count of runs | ✅ Accepted |
 | [D-31](#d-31--product-data-and-derived-are-already-separated-and-the-code-is-the-record) | Product, data and derived are already separated | ✅ Accepted |
-| [D-32](#d-32--v1-answers-questions-about-the-model-and-does-not-change-it) | v1 answers questions about the model and does not change it | ✅ Accepted |
+| [D-32](#d-32--v1-must-be-able-to-change-the-model-and-reading-is-what-gets-used-first) | v1 must change the model; reading is used first | ✅ Accepted · ⏳ one pass at the PC |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1597,46 +1597,63 @@ choice.
 
 ---
 
-## D-32 — v1 answers questions about the model, and does not change it
+## D-32 — v1 must be able to change the model, and reading is what gets used first
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-20](OPEN-QUESTIONS.md)
-**Supersedes** the recommendation that v1 is *"select all ducts and move them 200 mm"*.
+**Reversed once, within the hour.** This decision was first recorded as *"v1 is read-only"*. Asked the
+same question again, Ajmal answered **"it must change things too"**. The rule below is the one that
+stands; the reversal is kept in view because a commit from the same day argues the opposite case at
+length.
 
 ### Context
 
-Q-20 proposed a v1 of *select and move, end to end, on one Revit version, with undo, audit and a preview —
-and nothing else.* Asked directly which job he wanted first, and whether v1 had to change anything, Ajmal
-chose **answering questions about the model**, and **reading first, writing soon after**.
+Q-20 proposed a v1 of *select and move, end to end, with undo, audit and a preview.* Two questions were
+put to Ajmal:
 
-That reverses the emphasis, and it is the better call for a reason worth writing down: **the risky half is
-not the useful half.** Reading is where the daily value is — *how many, what size, which ones, on which
-level* — and it is the half that is already proven against a real Revit. Writing is where the danger is,
-and it is the half that has never run. Shipping them together makes the safe, finished, useful part wait
-for the dangerous, unfinished one.
+1. **Which job first?** → *answering questions about the model.*
+2. **Is reading enough for v1, or must it change things?** → first *"reading first, writing soon after"*,
+   then on being asked again, **"it must change things too"**.
+
+**The two answers are not in conflict, and reading them as one picture is what makes sense of it.**
+Answering questions is what he will *use* first — it is the daily work, and it is the half already proven
+against a real Revit. But a Heron that cannot change anything is not a finished product to him; it is a
+report tool. **First-to-use and finished are different things**, and the earlier read-only decision
+collapsed them into one.
 
 ### Decision
 
-**v1 is read-only.** Heron answers questions about the open model: counts, sizes, breakdowns, lists,
-selections. It does not change anything.
+**v1 ships with both.** Heron answers questions about the model *and* can change it — moving elements and
+setting parameters, behind the preview, the single undo and the permission gate that Step 6 already
+builds.
 
-**Writing stays built and stays off** ([D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)),
-and is proven **soon after** rather than never — Ajmal's *"reading first, then writing soon after"*. It
-is v1.1, not a someday.
+**Reading is what gets built out and used first**, because it is proven, it is the daily value, and it
+carries no risk while the write path is still being tested. It is the first thing in Ajmal's hands, not a
+separate release.
+
+**Writing stays off by default** ([D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit))
+— that is about the *setting a user turns on deliberately*, not about whether the capability ships. Both
+remain true at once.
 
 ### Consequences
 
-- **The register splits by version rather than by dependency.** Group `B` (does Revit still load) and
-  group `F` (Steps 1–5 still hold on this build) gate **v1**. Groups `C`, `D`, `E`, `G` and `H` — the
-  gate, the move, the refusals, the lease — gate **v1.1**. Everything still has to pass; what changed is
-  that the write groups no longer stand between Ajmal and something he can use.
-- **Phase 2 is confirmed as the right next phase, and its purpose sharpens.** What makes a read-only
-  Heron *good* is knowing which question to answer and how — which is exactly the fragment and knowledge
-  work. Reading is not a smaller Phase 2; it is the whole of it, pointed at questions instead of changes.
-- **[D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer)'s split earns its keep immediately.**
-  A read-only v1 is almost entirely *filter* fragments plus reporting *actions* — which is the half of the
-  library with no way to damage a model, and the half where one filter serves many questions.
-- **[D-27](#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape) becomes the product, not a
-  style rule.** If v1's whole job is answering questions, then the shape of the answer — a bare number, a
-  schedule-style table, the items with their ids — *is* the feature.
-- A read-only v1 is also the safest thing to put in a stranger's hands, which matters now that Heron is
-  public and other firms will run it on models nobody here has seen.
+- **The whole register gates v1 again.** Groups `C`, `D`, `E`, `G` and `H` — the gate, the move, the
+  refusals, the failures, the lease — are not deferred to a later version. All 47 Revit items stand
+  between here and v1, and `D3` (*move them, then measure one*) is on the critical path rather than
+  beside it.
+- **Phase 1's proof is required, not optional.** Its definition of done — *one Ctrl+Z puts it back, and a
+  failed operation leaves the model untouched* — is a v1 requirement.
+- **Phase 2 still comes next, and for the reason it always did**: what makes the reading half good is
+  knowing which question to answer and how. That work is independent of the write path and can proceed
+  while the register is worked through at the PC.
+- [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer)'s filter/action split still earns its
+  keep first on the reading side, which is the half with no way to damage a model.
+
+### The reversal is the point
+
+**Two decisions were reversed within hours of being recorded on 2026-08-28** — this one, and
+[D-26](#d-26--the-model-file-is-never-uploaded), which moved three times. Neither reversal was a mistake
+by Ajmal; both were the first answer being sharpened once its consequence was visible.
+
+That is the whole argument for `R1` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md), and it is now
+evidence rather than caution: **a decision taken in one pass, from a phone, reads differently when its
+consequence is in front of you.** Read them back before building on them.

@@ -297,16 +297,20 @@ with undo, audit log and a preview — and nothing else.
 
 → [ROADMAP.md](ROADMAP.md)
 
-**Answer: v1 is read-only — it answers questions about the model. See [D-32](DECISIONS.md).** Asked which
-job he wanted first, Ajmal chose **answering questions about the model**; asked whether v1 must also
-change things, he chose **reading first, then writing soon after**.
+**Answer: v1 ships with both — it answers questions AND can change the model. See
+[D-32](DECISIONS.md).** Asked which job he wanted first, Ajmal chose **answering questions about the
+model**. Asked whether v1 must also change things, he answered **"it must change things too"**.
 
-That reverses the recommendation above, and rightly: **the risky half is not the useful half.** Reading is
-where the daily value is and it is already proven against a real Revit; writing is where the danger is and
-it has never run. Shipping them together makes the finished, useful part wait for the dangerous,
-unfinished one.
+Those are not in conflict: **first-to-use and finished are different things.** Answering questions is the
+daily work and the half already proven, so it is what gets used first — but a Heron that cannot change
+anything is a report tool, not the product.
 
-Writing stays built and off ([D-19](DECISIONS.md)) and becomes **v1.1** — soon after, not someday.
+So the recommendation above stands after all, widened: v1 is select-and-move *plus* the questions. Writing
+stays **off by default** ([D-19](DECISIONS.md)), which is about the setting a user turns on, not about
+whether the capability ships.
+
+**Recorded as read-only first and reversed within the hour** — see D-32, where the reversal is kept in
+view rather than tidied away.
 
 ---
 
