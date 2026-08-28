@@ -109,7 +109,12 @@ understanding:
 3. **Write it fresh against that contract.** Not a transcription with the names changed.
 4. **Carry the knowledge into Heron's own words**, including *why*. A fix whose reason is not recorded
    gets removed by the next person who thinks it looks redundant.
-5. **Set `heron-status: DRAFT` and write the proof's cases without the proof.** State what the positive
+5. **Name it for what it really does, to Heron's standard** — [29 §2](29-metadata-standard.md): a
+   `FRG-<AREA>-<NNN>` id that carries no name and no kind, a verb-first `SCREAMING_SNAKE` capability, and
+   a folder derived from that capability rather than invented. **The name a fragment had where it was
+   read carries no weight here** — it was named for that library's folders, and half of what makes this
+   one searchable is that every name is built the same way.
+6. **Set `heron-status: DRAFT` and write the proof's cases without the proof.** State what the positive
    and negative cases must be, so whoever reaches a Revit knows exactly what to run.
 
 ### Rule 2 — If you want to add, add

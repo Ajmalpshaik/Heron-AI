@@ -4,11 +4,11 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: frg-action-setselection-0001
+id: FRG-SEL-001
 semantic-identity: put these elements in the current selection
 kind: action
 domain: revit.selection
-capability: SELECTION_SET
+capability: SET_SELECTION
 version: 1
 source: OFFICIAL
 risk: EXECUTE

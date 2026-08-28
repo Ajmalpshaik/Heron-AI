@@ -41,7 +41,7 @@ def check(condition, what):
         FAILURES.append(what)
 
 
-def scratch(data, name="some-folder", impl="// code"):
+def scratch(data, name="do-a-test-thing", impl="// code"):
     """A fragment folder in a temp dir, so nothing here touches the library."""
     import yaml
     base = tempfile.mkdtemp(prefix="heron-frg-")
@@ -61,11 +61,11 @@ def well_formed(**over):
         "heron-status": "DRAFT",
         "heron-since": "0.1.0",
         "heron-layer": "brain",
-        "id": "frg-test-0001",
+        "id": "FRG-ELE-001",
         "semantic-identity": "a test fragment",
         "kind": "filter",
         "domain": "test",
-        "capability": "TEST_THING",
+        "capability": "DO_A_TEST_THING",
         "version": 1,
         "source": "OFFICIAL",
         "risk": "READ",
@@ -100,12 +100,16 @@ def main():
         renamed = os.path.join(base, "a-completely-different-name")
         os.rename(folder, renamed)
         second = F.load(renamed)
-        check(first.id == second.id == "frg-test-0001",
+        check(first.id == second.id == "FRG-ELE-001",
               "renaming the folder does not change the id")
         check(first.slug != second.slug,
               "the folder name did change, so the test is testing something")
         check(second.semantic_identity == "a test fragment",
               "and everything else came with it")
+        misfiled = F.naming_problems(second)
+        check(any("belongs in a folder called" in p for p in misfiled),
+              "and it is reported as MISFILED - still the same fragment, now in "
+              "the wrong place. Identity and naming are different questions")
     finally:
         shutil.rmtree(base, ignore_errors=True)
 
@@ -125,8 +129,8 @@ def main():
     print()
     print("2. The contract is data, and composition is checkable")
     by_id = dict((f.id, f) for f in found.values())
-    filt = by_id.get("frg-filter-category-0001")
-    act = by_id.get("frg-action-setselection-0001")
+    filt = by_id.get("FRG-ELE-001")
+    act = by_id.get("FRG-SEL-001")
     check(filt is not None and act is not None,
           "the filter and the action are both loadable by id")
     if filt and act:
@@ -138,9 +142,10 @@ def main():
 
     print("  ..a need nothing provides is caught")
     base_b, folder_b = scratch(well_formed(
-        id="frg-consumer-0001",
+        id="FRG-SEL-002", capability="MAKE_A_CONSUMER",
         contract={"needs": [{"name": "nothingProvidesThis", "type": "int"}],
-                  "provides": [{"name": "x", "type": "int"}]}))
+                  "provides": [{"name": "x", "type": "int"}]}),
+        name="make-a-consumer")
     try:
         consumer = F.load(folder_b)
         ok, why = F.composable(filt, consumer) if filt else (False, "no filter")
@@ -227,6 +232,31 @@ def main():
               "not fresh - unknown is never a pass here")
     finally:
         shutil.rmtree(base_g, ignore_errors=True)
+
+    print()
+    print("Names follow the standard, and the checker says so")
+    for bad_id, why in [("select-elements-by-category", "a name, not an id"),
+                        ("FRG-filter-001", "a lower-case kind in it"),
+                        ("FRG-ELE-1", "an unpadded number"),
+                        ("FRG-NOSUCHAREA-001", "an area nobody defined")]:
+        base_i, folder_i = scratch(well_formed(id=bad_id))
+        try:
+            broken = F.naming_problems(F.load(folder_i))
+            check(bool(broken), "%r is refused - %s" % (bad_id, why))
+        finally:
+            shutil.rmtree(base_i, ignore_errors=True)
+
+    base_j, folder_j = scratch(well_formed(capability="doATestThing"),
+                               name="do-a-test-thing")
+    try:
+        broken = F.naming_problems(F.load(folder_j))
+        check(any("SCREAMING_SNAKE_CASE" in p for p in broken),
+              "a camelCase capability is refused")
+    finally:
+        shutil.rmtree(base_j, ignore_errors=True)
+
+    check(F.folder_for("FILTER_ELEMENTS_BY_CATEGORY") == "filter-elements-by-category",
+          "a folder name is derivable from its capability, not invented")
 
     print()
     print("Releases Heron does not know are an error, never a guess (D-05)")

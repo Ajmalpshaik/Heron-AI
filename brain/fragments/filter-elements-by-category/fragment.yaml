@@ -9,11 +9,11 @@ heron-layer: brain
 
 # What this fragment IS. The folder name is where it happens to sit today -
 # rename it and nothing downstream notices. docs/09 section 4.
-id: frg-filter-category-0001
+id: FRG-ELE-001
 semantic-identity: all elements of one category in the active document
 kind: filter
 domain: revit.elements
-capability: ELEMENTS_FILTER_BY_CATEGORY
+capability: FILTER_ELEMENTS_BY_CATEGORY
 version: 1
 source: OFFICIAL
 risk: READ

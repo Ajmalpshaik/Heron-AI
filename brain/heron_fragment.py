@@ -44,6 +44,7 @@ is the truth.
 
 import io
 import os
+import re
 import sys
 import hashlib
 
@@ -114,6 +115,91 @@ AMBIENT = {
     "uidoc": "UIDocument",
     "app":   "Application",
 }
+
+# ---------------------------------------------------------------------------
+# Naming
+# ---------------------------------------------------------------------------
+#
+# docs/10 section 6 asks for two things that pull against each other, and the
+# split below is how both are had:
+#
+#   "Naming must be predictable and searchable"   -> the CAPABILITY and the
+#                                                    folder, which are the same
+#                                                    words in two casings
+#   "identity is an ID, never a name.             -> the ID, which is stable and
+#    Rename freely; identity survives"               says nothing about the name
+#
+# So an id NEVER contains the fragment's name, its kind or its version. Encoding
+# `kind` in an id was the first mistake here: a fragment that later stops being
+# a filter would carry an id that lies about it forever, and ids are the one
+# thing that cannot be corrected without breaking every reference.
+#
+# The pattern follows the agent registry's house style (HERON-RAG-FMT-004) - a
+# stable area, a number, readable at a glance - with its own namespace, because
+# a fragment is knowledge and an agent is code.
+ID_PATTERN = re.compile(r"^FRG-[A-Z]{2,5}-[0-9]{3}$")
+
+# Fixed on purpose. An unlisted area is an error rather than a guess - the same
+# rule D-05 applies to Revit releases, for the same reason: the moment this is
+# open, one fragment says MEP and the next says MECH and neither search finds
+# both. Adding an area is a deliberate edit here.
+AREAS = {
+    "ELE":  "elements in general",
+    "SEL":  "selection",
+    "VIEW": "views",
+    "SHT":  "sheets",
+    "PAR":  "parameters",
+    "MEP":  "ducts, pipes, systems",
+    "GEO":  "geometry and location",
+    "QA":   "checks and audits",
+    "DOC":  "the document and the session",
+}
+
+CAPABILITY_PATTERN = re.compile(r"^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$")
+
+
+def folder_for(capability):
+    """The folder name a capability must live in. Mechanically derivable, so
+    the library is predictable to search and impossible to misfile quietly."""
+    return capability.lower().replace("_", "-")
+
+
+def naming_problems(frag):
+    """Whether this fragment is named the way the standard says.
+
+    Kept separate from identity on purpose. A fragment in a renamed folder is
+    STILL THE SAME FRAGMENT - that is what an id is for - and it is ALSO
+    misfiled. Heron reports both and confuses neither.
+    """
+    problems = []
+    where = frag.slug
+
+    if frag.id and not ID_PATTERN.match(frag.id):
+        problems.append(
+            "%s: id %r must look like FRG-<AREA>-<NNN>, e.g. FRG-ELE-001. An id "
+            "never carries the name, the kind or the version - those all change "
+            "and an id may not" % (where, frag.id))
+    elif frag.id:
+        area = frag.id.split("-")[1]
+        if area not in AREAS:
+            problems.append(
+                "%s: id area %r is not one Heron knows. Known: %s. Adding one is "
+                "a deliberate edit to AREAS, never a guess"
+                % (where, area, ", ".join(sorted(AREAS))))
+
+    cap = frag.data.get("capability")
+    if cap and not CAPABILITY_PATTERN.match(cap):
+        problems.append(
+            "%s: capability %r must be SCREAMING_SNAKE_CASE, verb first - "
+            "FILTER_ELEMENTS_BY_CATEGORY, not ElementsFilterByCategory" % (where, cap))
+    elif cap and frag.slug != folder_for(cap):
+        problems.append(
+            "%s: capability %s belongs in a folder called %r, not %r. The folder "
+            "IS the capability in lower case - that is what makes the library "
+            "predictable to search. (The fragment's identity is unaffected: it is "
+            "still %s.)" % (where, cap, folder_for(cap), frag.slug, frag.id))
+
+    return problems
 
 
 class Fragment(object):
@@ -342,6 +428,7 @@ def validate(frag):
             "for, as a LIST. A range like '>=2020' claims every future release, "
             "which is what D-05 exists to prevent" % where)
 
+    problems.extend(naming_problems(frag))
     problems.extend(proof_problems(frag))
     return problems
 

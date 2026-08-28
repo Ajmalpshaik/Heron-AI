@@ -63,11 +63,11 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: frg-action-setselection-0001
+id: FRG-SEL-001
 semantic-identity: put these elements in the current selection
 kind: action                      # filter | action | recipe   (D-29)
 domain: revit.selection
-capability: SELECTION_SET
+capability: SET_SELECTION
 version: 1
 source: OFFICIAL
 risk: EXECUTE
@@ -95,6 +95,34 @@ silent divergence between a document and the code that is supposed to implement 
 |---|---|---|
 | `inputs: { … }` / `outputs: { … }` | `contract: { needs: […], provides: […] }` | [D-29](DECISIONS.md) was taken after this document was written and says the contract is **data, not prose**: named and typed entries, so a tool can check that a filter's `provides` satisfies an action's `needs` before Revit is involved. A flat map of `name: type` could not carry the two sides separately |
 | `revit: ">=2020"` | an explicit **list** | A range **claims every future release**. `">=2020"` asserts 2028 and everything after it, sight unseen — which is exactly what [D-05](DECISIONS.md) exists to forbid, and the same mistake `Directory.Build.props` already carries a comment about having made once (`>= 2027`) |
+
+### Naming — the id, the capability and the folder
+
+[docs/10 §6](10-memory-and-knowledge.md) asks for two things that pull against each other, and these
+three fields are how both are had:
+
+> *"Naming must be predictable and searchable"* … *"identity is an **ID**, never a name. Rename freely;
+> identity survives."*
+
+| Field | Shape | Rule |
+|---|---|---|
+| `id` | `FRG-<AREA>-<NNN>` — `FRG-SEL-001` | **Stable forever.** It carries the area and a number and **nothing else** — never the name, never the kind, never the version. Follows the agent registry's house style (`HERON-RAG-FMT-004`) in its own namespace, because a fragment is knowledge and an agent is code |
+| `capability` | `SCREAMING_SNAKE_CASE`, **verb first** | `FILTER_ELEMENTS_BY_CATEGORY`, `SET_SELECTION`. A capability is a thing the system can *do*, so it reads as one. This is the searchable, renameable name |
+| the folder | the capability, lower case, hyphens | `FILTER_ELEMENTS_BY_CATEGORY` → `filter-elements-by-category`. **Derived, never invented** — so a fragment can be found from its capability and cannot be quietly misfiled |
+
+`AREA` is a fixed list in [`brain/heron_fragment.py`](../brain/heron_fragment.py) — `ELE`, `SEL`, `VIEW`,
+`SHT`, `PAR`, `MEP`, `GEO`, `QA`, `DOC`. **An unlisted area is an error, never a guess**, which is
+[D-05](DECISIONS.md)'s rule applied to a second table for the same reason: the moment it is open, one
+fragment says `MEP` and the next says `MECH`, and no search finds both.
+
+**Why an id may not carry the kind.** The first ids written here were `frg-filter-category-0001` and
+`frg-action-setselection-0001` — readable, and wrong. A fragment that stops being a filter would carry
+an id claiming it is one **forever**, and an id is the single thing that cannot be corrected without
+breaking every reference into it. Kind changes; ids may not.
+
+**Renaming a folder does not change what a fragment is, and Heron reports both facts separately.** Move
+one and its identity is untouched — that is what the id is for — *and* it is now misfiled, which
+`naming_problems()` says in those words. Two different questions, never confused for each other.
 
 **`heron-status` is the fragment's lifecycle state.** There is no second `status` key. The temptation is
 real — a fragment feels like it should own its own status field — and it is the two-homes-for-one-fact
