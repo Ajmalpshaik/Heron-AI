@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 28 answered · 13 open · none blocking Phase 0, Phase 1 or Phase 2**
+**Progress: 29 answered · 12 open · none blocking Phase 0, Phase 1 or Phase 2**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -20,8 +20,13 @@ Three of the four were settled by looking rather than deciding: at a system alre
 (`Q-7a`, `Q-8`, `Q-9`) and at Heron's own code, where `Q-13`'s answer had been running since Step 1.
 **Ask what already exists before designing** — it worked four times out of five today.
 
-What remains open is release and governance work (`Q-17`, `Q-18`, `Q-20`, `Q-24` to `Q-26`, `Q-29`,
-`Q-31` to `Q-35`, `Q-38`), none of which blocks building.
+`Q-20` closed the same day and it reshaped the plan rather than confirming it: **v1 is read-only**
+([D-32](DECISIONS.md)). Asked which job he wanted first, Ajmal chose *answering questions about the
+model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
+instead of standing between him and something usable.
+
+What remains open is release and governance work (`Q-17`, `Q-18`, `Q-24` to `Q-26`, `Q-29`, `Q-31` to
+`Q-35`, `Q-38`), none of which blocks building.
 
 **Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
 ([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
@@ -292,7 +297,16 @@ with undo, audit log and a preview — and nothing else.
 
 → [ROADMAP.md](ROADMAP.md)
 
-**Answer:**
+**Answer: v1 is read-only — it answers questions about the model. See [D-32](DECISIONS.md).** Asked which
+job he wanted first, Ajmal chose **answering questions about the model**; asked whether v1 must also
+change things, he chose **reading first, then writing soon after**.
+
+That reverses the recommendation above, and rightly: **the risky half is not the useful half.** Reading is
+where the daily value is and it is already proven against a real Revit; writing is where the danger is and
+it has never run. Shipping them together makes the finished, useful part wait for the dangerous,
+unfinished one.
+
+Writing stays built and off ([D-19](DECISIONS.md)) and becomes **v1.1** — soon after, not someday.
 
 ---
 

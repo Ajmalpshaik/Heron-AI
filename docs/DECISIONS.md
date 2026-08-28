@@ -71,6 +71,7 @@ than examined.
 | [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer) | A fragment is a composable piece, not a whole answer | ✅ Accepted |
 | [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) | A fragment is promoted by one recorded proof, not a count of runs | ✅ Accepted |
 | [D-31](#d-31--product-data-and-derived-are-already-separated-and-the-code-is-the-record) | Product, data and derived are already separated | ✅ Accepted |
+| [D-32](#d-32--v1-answers-questions-about-the-model-and-does-not-change-it) | v1 answers questions about the model and does not change it | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1593,3 +1594,49 @@ choice.
   legal way to build the path, and the structure check fails anyone who tries.
 - **A question can be answered by code that already exists.** This one sat open while its answer ran
   every day. Worth asking of the remaining open questions before designing anything for them.
+
+---
+
+## D-32 — v1 answers questions about the model, and does not change it
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-20](OPEN-QUESTIONS.md)
+**Supersedes** the recommendation that v1 is *"select all ducts and move them 200 mm"*.
+
+### Context
+
+Q-20 proposed a v1 of *select and move, end to end, on one Revit version, with undo, audit and a preview —
+and nothing else.* Asked directly which job he wanted first, and whether v1 had to change anything, Ajmal
+chose **answering questions about the model**, and **reading first, writing soon after**.
+
+That reverses the emphasis, and it is the better call for a reason worth writing down: **the risky half is
+not the useful half.** Reading is where the daily value is — *how many, what size, which ones, on which
+level* — and it is the half that is already proven against a real Revit. Writing is where the danger is,
+and it is the half that has never run. Shipping them together makes the safe, finished, useful part wait
+for the dangerous, unfinished one.
+
+### Decision
+
+**v1 is read-only.** Heron answers questions about the open model: counts, sizes, breakdowns, lists,
+selections. It does not change anything.
+
+**Writing stays built and stays off** ([D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)),
+and is proven **soon after** rather than never — Ajmal's *"reading first, then writing soon after"*. It
+is v1.1, not a someday.
+
+### Consequences
+
+- **The register splits by version rather than by dependency.** Group `B` (does Revit still load) and
+  group `F` (Steps 1–5 still hold on this build) gate **v1**. Groups `C`, `D`, `E`, `G` and `H` — the
+  gate, the move, the refusals, the lease — gate **v1.1**. Everything still has to pass; what changed is
+  that the write groups no longer stand between Ajmal and something he can use.
+- **Phase 2 is confirmed as the right next phase, and its purpose sharpens.** What makes a read-only
+  Heron *good* is knowing which question to answer and how — which is exactly the fragment and knowledge
+  work. Reading is not a smaller Phase 2; it is the whole of it, pointed at questions instead of changes.
+- **[D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer)'s split earns its keep immediately.**
+  A read-only v1 is almost entirely *filter* fragments plus reporting *actions* — which is the half of the
+  library with no way to damage a model, and the half where one filter serves many questions.
+- **[D-27](#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape) becomes the product, not a
+  style rule.** If v1's whole job is answering questions, then the shape of the answer — a bare number, a
+  schedule-style table, the items with their ids — *is* the feature.
+- A read-only v1 is also the safest thing to put in a stranger's hands, which matters now that Heron is
+  public and other firms will run it on models nobody here has seen.
