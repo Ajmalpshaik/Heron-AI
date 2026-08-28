@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 39 answered · 2 open · nothing blocking any phase**
+**Progress: 40 answered · 1 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -25,9 +25,13 @@ Three of the four were settled by looking rather than deciding: at a system alre
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
 instead of standing between him and something usable.
 
-**Only `Q-34` and `Q-35` remain open, and neither is a decision.** Both ask Ajmal to *read and confirm*
-something already written — the unified trust model, and the Constitution's 30 Articles. They belong with
-the `R1` read-back at the PC, because confirming a document by tapping an option is not confirming it.
+**Only `Q-35` remains open** — read and confirm the Constitution's 30 Articles. It belongs with the `R1`
+read-back at the PC, because confirming a 30-article document by tapping an option is not confirming it.
+
+**`Q-34` counts as answered here but is not closed.** Ajmal agreed the direction on 2026-08-28 and asked
+to see it working at the PC first, so [D-14](DECISIONS.md) stays **Proposed** and the confirmation is
+`R1b` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md). The count above cannot express *agreed but not
+signed off*; this sentence is where that lives.
 
 Everything else was answered on 2026-08-28. The last four — `Q-29`, `Q-31`, `Q-32`, `Q-38` — are
 [D-39](DECISIONS.md) to [D-42](DECISIONS.md); `Q-38` is answered *as far as it honestly can be*, with the
