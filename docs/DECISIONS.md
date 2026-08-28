@@ -78,6 +78,10 @@ than examined.
 | [D-36](#d-36--no-warranty--the-standard-position-and-it-is-already-in-place-twice) | No warranty — the standard position, already in place twice | ✅ Accepted |
 | [D-37](#d-37--the-name-is-heron-ai-and-no-trademark-check-has-been-done) | The name is Heron AI, and no trademark check has been done | ✅ Accepted |
 | [D-38](#d-38--github-now-app-store-kept-possible-and-nothing-built-for-it) | GitHub now, App Store kept possible, and nothing built for it | ✅ Accepted |
+| [D-39](#d-39--shadow-mode-is-approved-on-an-analysed-disagreement-not-a-count-of-agreements) | Shadow mode is approved on an analysed disagreement, not a count of agreements | ✅ Accepted |
+| [D-40](#d-40--the-dependency-graph-is-sqlite-and-an-edge-is-derived-before-it-is-stored) | The dependency graph is SQLite, and an edge is derived before it is stored | ✅ Accepted |
+| [D-41](#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer) | Single-user now; company knowledge is a git repo and the admin is the reviewer | ✅ Accepted |
+| [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is setup.ps1 | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1969,3 +1973,153 @@ against them:
   ([D-37](#d-37--the-name-is-heron-ai-and-no-trademark-check-has-been-done)), and no check has been done.
 - Signing is not undertaken, and if a listing is ever pursued, **signing and the requirements reading are
   the same piece of work** rather than two.
+
+---
+
+## D-39 — Shadow mode is approved on an analysed disagreement, not a count of agreements
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-29](OPEN-QUESTIONS.md)
+
+### Context
+
+Q-29's per-agent-type table is right and is accepted as proposed — *"observe without modifying"* genuinely
+does mean different things for a read-only agent, a ranking agent, a `MODIFY` agent and a code generator,
+and the table says what each one means. What was open is the promotion rule: **how many shadow runs**, and
+whether a human still signs off.
+
+**Not a count, for the same reason [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)
+is not a count.** Agreement is weak evidence. Two implementations can be wrong in the same way — they
+often are, because the second was written by someone who read the first. And an agent that silently does
+nothing agrees with everything. **A hundred agreements prove less than one disagreement somebody sat down
+and explained.**
+
+### Decision
+
+The table stands as written. Promotion out of shadow needs two things:
+
+1. **At least one disagreement, examined and explained** — what differed, which was right, and why. If
+   none occurred, a stated reason that is not *"it always matched"*: too few runs, a case never exercised,
+   an input the shadow could not see.
+2. **A human signature.** Evidence plus a name, as Q-29 recommended.
+
+### Consequences
+
+- **Shadow mode's product is a disagreement log, not an agreement rate.** Build the log. A percentage
+  score would invite a threshold, and a threshold is the thing
+  [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) already refused for the same
+  reason: it is a number somebody invents and a later session tunes.
+- **An agent that never disagrees is a finding to investigate, not a pass.** Either it is not running,
+  not seeing the same inputs, or it is a copy of what it is shadowing — and each of those is worth
+  knowing before promotion, not after.
+
+---
+
+## D-40 — The dependency graph is SQLite, and an edge is derived before it is stored
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-31](OPEN-QUESTIONS.md)
+
+### Context
+
+Q-31 recommends SQLite with recursive queries, beside the knowledge store, and warns against building a
+general *"Knowledge Graph"* when only [Part 2 §41](00b-master-specification-agent-os.md) actually specifies
+one. Both points are taken: it is ordinary relational data, the engine is already chosen
+([D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope)), and a graph database would be a second
+technology for no gain.
+
+**Today added a second rule that matters more than the storage choice.**
+[`check-api-surface.py`](../tools/check-api-surface.py) answers *"which Revit API members does Heron
+depend on?"* by reading the compiled assembly. That answer is **always current and cannot go stale**,
+because it is computed from the artifact rather than remembered about it. A hand-maintained table of the
+same facts would drift the first time somebody changed code without updating it — and **a stale dependency
+graph is worse than none**, because blast radius is precisely the question people trust it for.
+
+### Decision
+
+**SQLite, beside the knowledge store. Build §41's graph and nothing wider.**
+
+**And an edge is derived before it is stored.** Store an edge only when it cannot be computed from an
+artifact on demand — a fragment's declared inputs, an assembly's references, a manifest's contents. What
+can be read is read.
+
+### Consequences
+
+- The stored half shrinks to the genuinely declarative: which skill claims which fragment, which
+  capability a fragment offers. The rest is computed.
+- Freshness stops being a maintenance problem for the computed half, which is most of it.
+- **A derived edge needs its deriver to be checked**, which is [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)
+  again: `check-api-surface.py` was believed only after it was shown to catch a defect it was known to
+  have. Any future deriver earns trust the same way.
+
+---
+
+## D-41 — Single-user now; company knowledge is a git repo, and the admin is the reviewer
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-32](OPEN-QUESTIONS.md)
+
+### Context
+
+Q-32 sets out three shapes and recommends **A now, B next**. The deciding fact is in the question itself:
+Heron is a single-user plugin and **there is no server to enforce anything.** Building user management
+into a product with no enforcement point produces security theatre — a settings screen that describes a
+policy nothing can apply.
+
+### Decision
+
+**A now: scopes are folders**, which they already are —
+[D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) makes each one its own file, and Golden
+Rule 5 keeps them apart physically.
+
+**B when there is demand: company knowledge is a private git repository**, and *"admin"* is whoever
+reviews the pull requests.
+
+**C — a central enterprise server — is not built without real demand**, and would be a different product.
+
+### Consequences
+
+- **B costs almost nothing new, and that is the point.** A shared scope is already a file in a folder;
+  making that folder a git repository adds no Heron code at all.
+- **The admin mechanism already exists — it is [D-35](#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about) at a smaller radius.**
+  A company approving fragments for its own staff and a maintainer approving them for everyone are the
+  same gate, the same approval record, and the same refusal when it is missing. One mechanism, two uses,
+  rather than an enterprise feature built alongside a community one.
+- **Nothing is enforced, and the documentation must not imply otherwise.** What a BIM manager actually
+  wants — *everyone uses our approved standards* — is delivered by a reviewed shared repository. What
+  cannot be delivered is stopping someone who does not want to comply, and no wording should suggest it
+  can.
+
+---
+
+## D-42 — The public install command is not settled; the proven one is `setup.ps1`
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-38](OPEN-QUESTIONS.md) — **partly, and it says which part**
+
+### Context
+
+Q-38 settles the *shape* — one documented command fetching a signed release, never *"paste this URL and
+let the AI run what it finds"* — and leaves the command itself open. Its preferred option, a Claude Code
+plugin install, carries its own warning: it **needs verifying against current plugin documentation**, and
+*"an install command that does not work is worse than none."*
+
+**That warning is the answer for now.** The documentation has not been read in this session, and writing
+an install command from memory is precisely the failure this repository has already had twice — most
+recently this same day, when a Revit API property that reads like the obvious choice turned out not to
+exist before 2024. A wrong install command fails on a stranger's machine, at the first thing they ever try.
+
+### Decision
+
+**The public headline command is deferred to publication, when the documentation can be read.** It is
+named as the first task of publishing, not the last.
+
+**What is settled, because it is proven:** `tools\setup.ps1` — one command that detects every installed
+Revit, builds for each, and deploys per-user with no administrator rights. It ran end to end in Phase 0.
+It is the fallback Q-38 calls *"always available"*, and it is also the route a cautious IT department will
+prefer.
+
+### Consequences
+
+- **Nothing is blocked.** Q-38 says so itself, and the working route exists today.
+- **This is on the publication checklist, not the build one**, alongside reading the App Store
+  requirements ([D-38](#d-38--github-now-app-store-kept-possible-and-nothing-built-for-it)) — both are
+  *read the current documentation* tasks, both deferred for the same reason, and both cheap at that moment.
+- **The README's first command is the first impression**, and it must be one somebody has actually run on
+  a clean machine. Until then it should show the route that has been run.

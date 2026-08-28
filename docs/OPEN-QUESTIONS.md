@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 35 answered · 6 open · none blocking Phase 0, Phase 1 or Phase 2**
+**Progress: 39 answered · 2 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -25,7 +25,14 @@ Three of the four were settled by looking rather than deciding: at a system alre
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
 instead of standing between him and something usable.
 
-What remains open is release and governance work (`Q-29`, `Q-31`, `Q-32`, `Q-34`, `Q-35`, `Q-38`), none of which blocks building.
+**Only `Q-34` and `Q-35` remain open, and neither is a decision.** Both ask Ajmal to *read and confirm*
+something already written — the unified trust model, and the Constitution's 30 Articles. They belong with
+the `R1` read-back at the PC, because confirming a document by tapping an option is not confirming it.
+
+Everything else was answered on 2026-08-28. The last four — `Q-29`, `Q-31`, `Q-32`, `Q-38` — are
+[D-39](DECISIONS.md) to [D-42](DECISIONS.md); `Q-38` is answered *as far as it honestly can be*, with the
+public install command deferred to publication because the question's own warning says an install command
+that does not work is worse than none.
 
 **Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
 ([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
@@ -45,7 +52,7 @@ None of them block Phase 0 either; they shape Phases 2–5.)*
 >
 > **Phase 0 is unblocked.** It starts on the owner's go-ahead ([D-00](DECISIONS.md)).
 
-One sub-decision remains open inside [D-04](DECISIONS.md), but it does not block starting:
+The one sub-decision that was open inside [D-04](DECISIONS.md) closed on 2026-08-28:
 
 ### 🟠 Q-7a — Which scripting runtime for the sandbox?
 
@@ -364,7 +371,18 @@ Also: how many shadow runs before `SHADOW MODE → APPROVED`, and does a human s
 
 → [18 §4](18-agent-operating-system.md)
 
-**Answer:**
+**Answer: the table stands as proposed; promotion needs an analysed DISAGREEMENT plus a signature, not a
+count of runs. See [D-39](DECISIONS.md).**
+
+Not a count, for the same reason [D-30](#-q-9--what-promotes-a-fragment-to-production) is not one.
+**Agreement is weak evidence**: two implementations are often wrong the same way, because the second was
+written by somebody who read the first — and an agent that silently does nothing agrees with everything. A
+hundred agreements prove less than one disagreement somebody sat down and explained.
+
+So shadow mode's product is a **disagreement log**, not an agreement rate — a percentage would invite a
+threshold, and a threshold is what [D-33](DECISIONS.md) already refused. And an agent that never disagrees
+is a **finding to investigate**, not a pass: it is either not running, not seeing the same inputs, or a
+copy of the thing it shadows.
 
 ---
 
@@ -385,7 +403,21 @@ What is not settled is the command itself:
 Blocks nothing now — it is needed before the repository goes public ([D-10](DECISIONS.md)), because the
 README's first command is the first impression.
 
-**Answer:**
+**Answer: deferred to publication — and the question's own warning is why. See [D-42](DECISIONS.md).**
+
+The preferred option *"needs verifying against current plugin documentation"*, and *"an install command
+that does not work is worse than none."* That documentation has not been read here, and writing one from
+memory is exactly the failure this repository has had twice — most recently the same day, when a Revit API
+property that reads like the obvious choice turned out not to exist before 2024. **A wrong install command
+fails on a stranger's machine, at the first thing they ever try.**
+
+**What is settled because it is proven:** `tools\setup.ps1` — one command, detects every installed Revit,
+builds for each, deploys per-user with no admin rights, run end to end in Phase 0. That is the fallback
+this question calls *always available*, and the route a cautious IT department prefers.
+
+This sits on the **publication** checklist beside reading the App Store requirements
+([D-38](DECISIONS.md)) — both are *read the current documentation* tasks, deferred for the same reason and
+cheap at that moment.
 
 ---
 
@@ -475,7 +507,17 @@ ordinary relational data; a dedicated graph database is not warranted. Both spec
 
 → [21 §1](21-resilience-and-operations.md)
 
-**Answer:**
+**Answer: SQLite as recommended — and an edge is DERIVED before it is stored. See
+[D-40](DECISIONS.md).** Same engine as [D-23](DECISIONS.md), ordinary relational data, and §41's graph
+only rather than a general knowledge graph.
+
+The second rule came out of today's work and matters more than the storage choice.
+[`check-api-surface.py`](../tools/check-api-surface.py) answers *which Revit API members does Heron depend
+on* by reading the compiled assembly, so the answer **cannot go stale**. A hand-maintained table of the
+same facts drifts the first time somebody changes code without updating it — and a stale dependency graph
+is worse than none, because blast radius is exactly what people trust it for.
+
+So: store an edge only when it cannot be computed from an artifact on demand. What can be read is read.
 
 ---
 
@@ -495,7 +537,19 @@ delivered by B without any infrastructure.
 
 → [22 §4](22-users-modes-and-extensibility.md)
 
-**Answer:**
+**Answer: A now, B when there is demand, C not without it. See [D-41](DECISIONS.md).**
+
+The deciding fact is in the question: **there is no server to enforce anything.** User management in a
+product with no enforcement point is a settings screen describing a policy nothing can apply.
+
+**B costs almost nothing new**, which is the real finding: a scope is already its own file in a folder
+([D-23](DECISIONS.md)), so making that folder a git repository adds no Heron code at all. And the admin
+mechanism already exists — it is [D-35](DECISIONS.md) at a smaller radius. A company approving fragments
+for its staff and a maintainer approving them for everyone are the **same gate, the same approval record,
+and the same refusal when it is missing.** One mechanism, two uses.
+
+**Nothing is enforced and the documentation must not imply otherwise.** A reviewed shared repository
+delivers *everyone uses our approved standards*; nothing delivers stopping somebody who does not want to.
 
 ---
 
@@ -750,7 +804,8 @@ Developer Persona behind `ADMIN`. Capability discovery keeps the context cost do
 ### ✅ Q-7 — How does generated code execute? → **Hybrid**
 
 Scripting sandbox while DRAFT/TESTING, compiled signed C# for PRODUCTION. The `PROVEN → PRODUCTION`
-gate is where compilation happens. Sub-question Q-7a (which scripting runtime) remains open.
+gate is where compilation happens. Sub-question Q-7a (which scripting runtime) was answered on
+2026-08-28 — **Roslyn C#, in process** ([D-28](DECISIONS.md)).
 → [D-04](DECISIONS.md)
 
 ### ✅ Q-27 — Which licence? → **Apache 2.0**
