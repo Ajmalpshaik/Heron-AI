@@ -233,8 +233,13 @@ connected being invisible is a safety property. **Put it back afterwards.**
 > Revit add-in and a knowledge package. Both are **reference only**:
 >
 > - **Never commit to them, never open a pull request on them, never update or upgrade them.** Every
->   change goes to Heron. *(A commit and a draft PR were made to the knowledge package on 2026-08-28
->   before this was said; both were withdrawn.)*
+>   change goes to Heron.
+>
+>   *One exception exists and is closed:* a commit and draft PR were made to the knowledge package on
+>   2026-08-28 before this rule was given. They were withdrawn, and then the owner allowed that one
+>   through — *"do it for AJ AI, this time only, next time no need"* — so
+>   [AJ-AI-Brain#47](https://github.com/Ajmalpshaik/AJ-AI-Brain/pull/47) is open on purpose. **It is not a
+>   precedent.** If you find yourself about to add a second one, the answer is no.
 > - **Read them freely** — they solve overlapping problems and their scars are worth more than their
 >   features. [PROPOSALS Part E](docs/PROPOSALS.md) is what that study produced.
 > - **Never copy code or text out of them.** Understand the mechanism, then write it for Heron, in
