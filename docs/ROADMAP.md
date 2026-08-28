@@ -158,9 +158,15 @@ six phases of code assume one runtime.
   and starts at DRAFT here, whatever status it held where it was read. This used to read *"import the
   existing libraries, with duplicate detection"*, which describes work Ajmal ruled out on 2026-08-28
 
-**Definition of done:** ten real skills work, none of them hard-coded, importing an existing repo
-produces a reviewable manifest, and the Orchestrator resolves requests through capabilities rather
-than agent names.
+**Definition of done:** ten real skills work, none of them hard-coded; a capability **studied from an
+existing library and re-authored here** carries its own proof ([D-25](DECISIONS.md),
+[D-30](DECISIONS.md)); and the Orchestrator resolves requests through capabilities rather than agent
+names.
+
+> This used to read *"importing an existing repo produces a reviewable manifest"*. There is no import —
+> Ajmal ruled it out on 2026-08-28 ([D-25](DECISIONS.md)) — so the clause described work nobody will do.
+> The Phase 2 item above was corrected the same day and **this sentence was missed**, which is the drift
+> this repository keeps catching itself in: the list moved and the summary stayed still.
 
 **Why this is the highest-value phase after safety:** it is what turns Heron from a demo into something
 that gets better every week. The Capability Registry is what stops the Orchestrator accumulating domain
