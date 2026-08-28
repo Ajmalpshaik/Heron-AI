@@ -44,6 +44,11 @@ LOG_DIR = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "logs")
 PROTOCOL_VERSION = 1
 CONNECT_TIMEOUT_S = 2.0
 
+# The settings the ADD-IN reads, read from this side too. Stdlib only, so the
+# client stays runnable on a machine where nothing else is installed - which is
+# the whole reason `doctor` exists.
+import heron_config                            # noqa: E402
+
 # How long to wait for an answer once the bridge has accepted the connection.
 #
 # This must stay comfortably ABOVE any limit the bridge applies to its own work.
@@ -51,7 +56,18 @@ CONNECT_TIMEOUT_S = 2.0
 # idle, so a genuinely-running job can be quiet for a long time. Set this too low
 # and the client reports "no answer" for work Revit would have finished - the
 # worst kind of wrong, because the user then retries something already running.
-RESPONSE_TIMEOUT_S = 90.0
+#
+# DERIVED, not chosen. It used to be the constant 90.0, which was correct only
+# while the add-in's own operationTimeoutSeconds stayed at its default of 60.
+# That value is configurable; this one was not. Raise the add-in's to 120 for a
+# slow model and the ordering inverted silently - the client gave up first, and
+# "Revit started it and is still working" was replaced by "no answer", which is
+# the message that tells the user nothing. Now the add-in's setting decides
+# both, so they cannot disagree.
+#
+# With the defaults this is 60 + 30 = 90.0, exactly what it was before, so
+# nothing proven in Steps 1-5 changes behaviour.
+RESPONSE_TIMEOUT_S = heron_config.response_timeout()
 
 #: Heron's own version. Checked against Directory.Build.props by
 #: tools/check-metadata.py, so the two can never quietly disagree - a version

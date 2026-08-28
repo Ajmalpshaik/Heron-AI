@@ -164,6 +164,7 @@ python tests/test_session_binding.py   # one chat one Revit, all four cases — 
 python tests/test_write_safety.py      # Step 6's CHAT half — distances, pinning, approval
 python tests/test_failure_analysis.py  # never blind-retries, and fails closed
 python tests/test_tool_registry.py     # both languages agree on what may write
+python tests/test_config_and_health.py # settings agree; health means something
 ```
 
 - **All documentation, decisions, specifications and open questions.**

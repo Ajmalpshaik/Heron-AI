@@ -69,6 +69,9 @@ useless.
 | **C5** | With `write.enabled` still false, ask to **select** ducts | **Works.** The gate blocks MODIFY, not READ or EXECUTE — if selecting is refused, the levels are wrong |
 | **C6** | Press Emergency Stop on, then ask to **count** elements | **Works.** The stop blocks changes only; taking away the read tools at the moment somebody is diagnosing would be the wrong help |
 | **C7** | Now set `write.enabled = true` in `%APPDATA%\Heron\config\heron.config`, restart Revit | — |
+| **C8** | Ask to move ducts again | **It is now permitted** (a preview appears). If it still refuses, `write.enabled` is not being read — that exact bug existed until 2026-08-28: the key was read but never *declared*, so `Load()` dropped it silently and the refusal told you to set the thing you had just set |
+| **C9** | `revit_health` | First line is a four-state rollup — `Heron: HEALTHY / WARNING / DEGRADED / FAILED`. With writing on it must show **WARNING** on the write gate and say the path is unproven |
+| **C10** | Set `revit.operationTimeoutSeconds = 120`, restart Revit, then make Revit busy long enough to time out | The message is *"Revit started the request but has not finished"* — **not** *"no answer"*. Proves the client's deadline follows the add-in's setting instead of the old hardcoded 90 s |
 
 ## Group D — the move itself
 

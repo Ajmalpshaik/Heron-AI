@@ -59,6 +59,8 @@ from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E4
                          describe, parse_millimetres)
 from heron_failure import analyse, explain          # noqa: E402
 import heron_tools as tools                         # noqa: E402
+import heron_config as configuration                # noqa: E402
+import heron_health as health                       # noqa: E402
 from mcp.server.fastmcp import FastMCP        # noqa: E402
 
 server = FastMCP("heron")
@@ -113,7 +115,19 @@ def revit_health() -> str:
                 "Run  python mcp/client/heron_bridge_client.py doctor  for the full picture."
                 % (type(exc).__name__, exc))
 
-    lines = []
+    # The four-state rollup first, so "is anything wrong?" is answered before
+    # the detail rather than having to be inferred from it. The detail below is
+    # unchanged - it was proven in Steps 3 and 5 and is what a person actually
+    # reads when something IS wrong.
+    settings = configuration.load()
+    rollup = health.assess(
+        live=live, starting=starting, mismatched=mismatched,
+        config_problems=configuration.problems(settings),
+        writing=configuration.writing_enabled(settings),
+        protocol_version=bridge.PROTOCOL_VERSION,
+        versions_agree=not mismatched)
+
+    lines = [rollup.describe(), ""]
 
     if live:
         lines.append("Revit is connected." if len(live) == 1
