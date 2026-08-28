@@ -9,6 +9,32 @@
 
 ---
 
+## ⏳ Five of these get one more pass, at the PC
+
+**Ajmal's instruction, 2026-08-28:** *"We will do this after we finalize one more time ... when I am at
+the PC, we will do it one more time. Now we just recorded, but we will do it one more time."*
+
+**D-23, D-24, D-25, D-26 and D-27** — and the six questions they answer (Q-10, Q-11, Q-12, Q-15, Q-16,
+Q-40) — were all settled in a single conversation on **2026-08-28**, from a phone, with no Revit and no
+model open. They are **Accepted and are being built on**: work does not stop waiting for the review, and
+nothing here is provisional in the sense of being ignorable.
+
+What they have not had is **him sitting in front of the thing they are about to shape.** Q-12 alone moved
+three times in that one conversation, each time looser, because a rule about what may leave a machine
+reads differently in the abstract than it does with a client's model open. That is the argument for the
+pass, and it is a good one.
+
+**The review is not a re-vote.** It is: read the five back, confirm each still says what he meant, and
+**fill in the detail that was deliberately left out** — his words, *"including deciding what details we
+need to go with"*. Several were taken at the level of a principle and will need numbers, formats and
+limits before anything is built on them.
+
+**When:** at the PC, alongside the [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) run, and **before Phase 2
+work begins.** A decision reviewed after the code is written is a decision that will be defended rather
+than examined.
+
+---
+
 ## Status summary
 
 | # | Decision | Status |
@@ -36,11 +62,11 @@
 | [D-20](#d-20--millimetres-to-feet-is-arithmetic-not-unitutils) | Millimetres to feet is arithmetic, not UnitUtils | ✅ Accepted |
 | [D-21](#d-21--failure-analysis-is-a-table-not-a-model-call) | Failure analysis is a table, not a model call | ✅ Accepted |
 | [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over) | A second chat is refused, not allowed to take over | ✅ Accepted |
-| [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) | The knowledge store is SQLite, one file per scope | ✅ Accepted |
-| [D-24](#d-24--embeddings-are-computed-locally-by-default) | Embeddings are computed locally by default | ✅ Accepted |
-| [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) | The existing libraries are studied and re-authored, never imported | ✅ Accepted |
-| [D-26](#d-26--the-model-file-is-never-uploaded) | The model file is never uploaded | ✅ Accepted |
-| [D-27](#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape) | One voice, and the answer's shape follows the question's shape | ✅ Accepted |
+| [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) | The knowledge store is SQLite, one file per scope | ✅ Accepted · ⏳ one pass at the PC |
+| [D-24](#d-24--embeddings-are-computed-locally-by-default) | Embeddings are computed locally by default | ✅ Accepted · ⏳ one pass at the PC |
+| [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) | The existing libraries are studied and re-authored, never imported | ✅ Accepted · ⏳ one pass at the PC |
+| [D-26](#d-26--the-model-file-is-never-uploaded) | The model file is never uploaded | ✅ Accepted · ⏳ one pass at the PC |
+| [D-27](#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape) | One voice, and the answer's shape follows the question's shape | ✅ Accepted · ⏳ one pass at the PC |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).

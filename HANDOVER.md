@@ -347,6 +347,7 @@ waiting on.
 
 | | |
 |---|---|
+| **The five decisions of 2026-08-28** | **Read D-23 to D-27 back, confirm each says what he meant, and fill in the detail left out.** His instruction — *"now we just recorded, but we will do it one more time"*. They are Accepted and are being built on; this is a review, not a hold. Do it at the PC alongside the register run and **before Phase 2 work starts**, because a decision reviewed after the code exists gets defended rather than examined. The list and the reasoning are at the top of [DECISIONS.md](docs/DECISIONS.md) |
 | [Q-34](docs/OPEN-QUESTIONS.md) | Confirm the unified trust model (D-14, still Proposed) |
 | [Q-35](docs/OPEN-QUESTIONS.md) | Confirm the [Constitution](HERON_CONSTITUTION.md) — 30 Articles |
 | [Q-38](docs/OPEN-QUESTIONS.md) | The exact install command — needed before going public |

@@ -8,15 +8,20 @@ to be avoidable: **the C# now compiles, and the bridge now runs** — on Linux, 
 minutes ([docs/30](docs/30-compiling-away-from-windows.md)). Group A below records what that settled and
 what it did not.
 
-**What is left still needs a real Revit on a real Windows machine** — 47 of the 49 remaining items, and
+**Most of what is left needs a real Revit on a real Windows machine** — 47 of the 51 remaining items, and
 every one that matters most. Compiling is not behaving: `D3` is still the line that catches a unit
 error, and nothing here has moved anything yet.
 
-**52 items, 3 done, 49 left** — counted from the rows on 2026-08-28, not carried forward. This file and
-[`HANDOVER.md`](HANDOVER.md) had been saying *49 items* and *45 need a real Revit* since the day they
-were written, and the rows summed to 51 and 47 even then. Nobody mistyped; the rows were added to and
-the sentences were not. The same failure the tooling in [`tools/`](tools/README.md) exists to prevent,
-in the one file that had no tool watching it — so **count the rows before quoting a number here.**
+**54 items, 3 done, 51 left** — counted from the rows on 2026-08-28, not carried forward. Of the 51:
+**47 need Revit**, **2 need Windows but not Revit** (`A4`, `A5`), and **2 need only a conversation**
+(`R1`, `R2` — reading the day's decisions back).
+
+**Count the rows before quoting a number here, and check the pattern you count with.** This file and
+[`HANDOVER.md`](HANDOVER.md) said *49 items* and *45 need a real Revit* from the day they were written,
+while the rows summed to 51 and 47 even then — rows were added and the sentences were not. Then group `R`
+was added and a count matching `[A-H]` silently skipped it and reported 52. **A count that quietly omits a
+whole group is worse than no count**, which is the same lesson as a grep that finds nothing: prove the
+pattern can see what you know is there.
 
 ---
 
@@ -73,6 +78,19 @@ python tools/check-compile.py
 | ~~**A3**~~ | ~~`dotnet build -p:RevitVersion=2024`~~ | **DONE 2026-08-28.** So are 2021, 2022 and 2023 — all four projects, 0 warnings each |
 | **A4** | `dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024` then `python tests/test_bridge_roundtrip.py` — **on Windows** | **Mostly done 2026-08-28, and the remainder genuinely needs Windows.** All 32 checks pass on Linux: framing, the JSON parser, the token, newest-connection-wins, the toggle cycle and **the whole lease**. What a Linux run cannot touch is the Windows named pipe itself — its naming, its security descriptor, and the `CreateNewInstance` flag from [HANDOVER](HANDOVER.md) §4 note 2. Run it once on Windows and this row goes |
 | **A5** | `python tools/check-compile.py 2025 2026 2027` — **on Windows** | Builds. These three target `net8.0-windows` / `net10.0-windows` with WPF, so they need the Windows Desktop SDK and are reported **SKIPPED** off Windows. **A skip is not a pass**, and this row exists so it never reads as one. 2027 also needs the .NET 10 SDK. **Partly covered since 2026-08-28:** `python tools/check-api-surface.py` reports every Revit member Heron calls as present on **2020 through 2027** — that is the missing-member class closed for all eight releases, but it matches by name, so a changed signature would still only show up in a real compile |
+
+## Group R — read the five decisions back (no Revit needed, but do it at the PC)
+
+**Not a test — a conversation**, and the only item in this file that is not about code behaving. It is
+here because this file is what gets opened at the PC, and a review nobody is reminded of does not happen.
+
+| ID | Do this | Done looks like |
+|---|---|---|
+| **R1** | Read **D-23 to D-27** back to Ajmal — the knowledge store, local embeddings, study-never-import, the model file, and one voice. All five were settled in one conversation on 2026-08-28, from a phone, with no model open | He confirms each still says what he meant, **and the detail left out gets filled in** — his words, *"including deciding what details we need to go with"*. Several are principles and need numbers, formats and limits before code rests on them |
+| **R2** | Pay particular attention to **D-26** | It moved three times in that one conversation, each time looser. A rule about what may leave a machine reads differently with a client's model open in front of you |
+
+**Do R1 before Phase 2 work begins.** A decision reviewed after the code is written gets defended rather
+than examined.
 
 ## Group B — does Revit still load
 
