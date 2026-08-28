@@ -67,6 +67,10 @@ than examined.
 | [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) | The existing libraries are studied and re-authored, never imported | ✅ Accepted · ⏳ one pass at the PC |
 | [D-26](#d-26--the-model-file-is-never-uploaded) | The model file is never uploaded | ✅ Accepted · ⏳ one pass at the PC |
 | [D-27](#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape) | One voice, and the answer's shape follows the question's shape | ✅ Accepted · ⏳ one pass at the PC |
+| [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) | Generated code is C#, compiled at run time, in process | ✅ Accepted |
+| [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer) | A fragment is a composable piece, not a whole answer | ✅ Accepted |
+| [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) | A fragment is promoted by one recorded proof, not a count of runs | ✅ Accepted |
+| [D-31](#d-31--product-data-and-derived-are-already-separated-and-the-code-is-the-record) | Product, data and derived are already separated | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1404,3 +1408,188 @@ persona-like variation survives is the one place it is safe.
 - **The method is worth more than the answer.** An hour reading two systems that already do the job
   settled a question that designing had left open for weeks — [D-15](#d-15--where-the-field-notes-disagree-with-a-specification-the-field-notes-win)
   again, and this time the field note was somebody else's working habit rather than a Revit behaviour.
+
+---
+
+## D-28 — Generated code is C#, compiled at run time, in process
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-7a](OPEN-QUESTIONS.md)
+**Completes** [D-04](#d-04--generated-code-execution--hybrid), which settled *hybrid* and left the runtime open.
+
+### Context
+
+D-04 settled the shape — scripting while a fragment is DRAFT or TESTING, compiled C# for PRODUCTION — and
+left open **which** scripting runtime: pyRevit, IronPython, Python.NET, or Roslyn C# scripting. The
+research note favoured pyRevit: a shipping Revit MCP server executes IronPython through pyRevit's Routes
+server, it is maintained by somebody else, and Ajmal already knows it.
+
+Reading a system that has been doing exactly this job daily points the other way, for three reasons the
+research could not show:
+
+**1. What he already runs is C#, not Python.** That system composes stored C# snippets and compiles them
+inside Revit at run time. *"He already knows pyRevit"* is true and is not the relevant fact.
+
+**2. Routes is an HTTP server, and Heron's add-in has no network code at all.** That is not an accident:
+[D-02](#d-02--mcp--add-in-transport-named-pipes) made the transport named pipes, per-PID, **local-only by
+construction**, and it was verified against the source this session — zero networking types in the add-in
+or the bridge. Adopting Routes would put an HTTP listener inside Revit and turn a structural guarantee
+into a promise about configuration. It would also re-open the multi-Revit binding problem that per-PID
+pipe naming already solved, which is precisely what [Q-37](OPEN-QUESTIONS.md) is asking about.
+
+**3. One language means one compile gate.** Heron already compiles every project against every Revit
+release it can reach ([`check-compile.py`](../tools/check-compile.py)) and checks the API surface for the
+releases it cannot ([`check-api-surface.py`](../tools/check-api-surface.py)). C# fragments pass through
+both. Python fragments would pass through neither — leaving the version boundary uncovered for exactly
+the code most likely to be newest, which is the failure this project already hit once this same day.
+
+### Decision
+
+**Roslyn C# scripting, in process, through the existing bridge.** A fragment is C#: composed and compiled
+at run time while DRAFT or TESTING, compiled into an assembly for PRODUCTION. That is what D-04's hybrid
+always meant, with the runtime now named. **No Python runtime is embedded and no HTTP server enters the
+add-in.**
+
+### Consequences
+
+- [Q-37](OPEN-QUESTIONS.md) — *can pyRevit Routes bind a per-process port?* — stops applying to Heron.
+  It should be closed as not applicable rather than researched.
+- One language, one debugger, one compile gate, for stored and generated code alike.
+- **The warning worth more than the decision.** In that same working system, roughly half the C# that
+  reaches Revit is *not* a stored fragment — it is generated line by line by the tool layer at run time.
+  That half went unchecked for months, and a Revit API call removed after 2020 sat in **eight** places
+  with a green compile check the whole time, because the checker only ever read the stored library.
+  **Heron will have exactly the same shape**, so its compile gate must cover generated code as well as
+  stored fragments — and it must walk **branches, not tools**: in that case three of the eight copies
+  appeared only on one filter mode and one only on a numeric branch, so calling every tool once would
+  have caught none of them.
+
+---
+
+## D-29 — A fragment is a composable piece, not a whole answer
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-8](OPEN-QUESTIONS.md)
+
+### Context
+
+The proposed definition — **Skill** = what the user can ask for, **Fragment** = how it is done — is right
+as far as it goes. The field adds the part that decides the design: **a fragment is not a whole *how*.**
+
+In a library of several hundred working fragments the unit is smaller than a job. A job is *composed*: a
+**filter** fragment answers *which elements*, an **action** fragment answers *what to do to them*, and
+they are joined. Each declares its contract in its own header — one reads *"assumes `elements` and `sb`
+already exist ... NOT STANDALONE"*. Where a job genuinely cannot be composed it is a **recipe**: bespoke,
+multi-stage, and named as a third kind rather than allowed to masquerade as a fragment.
+
+**Why the distinction is load-bearing.** Read *"fragment = how it is done"* as one fragment per job and
+the library grows one entry per sentence a user might say, nothing is ever reused, and every entry needs
+its own proof. Composition is what lets a few hundred fragments cover far more than a few hundred jobs —
+*"how many 300×300 VCDs"* and *"list the 300×300 VCDs"* share a filter — and it is what makes each piece
+small enough to test on its own.
+
+### Decision
+
+| | |
+|---|---|
+| **Skill** | What the user can ask for, in BIM language. User-facing. **Confirmed as proposed** |
+| **Fragment** | A **composable piece** of the how, with a declared contract: what it needs in scope, what it leaves in scope. Not standalone by default |
+| **Recipe** | A bespoke multi-stage job that genuinely cannot be composed. A **third kind**, named, so it cannot quietly become a giant fragment |
+
+### Consequences
+
+- **The contract is data, not prose.** A fragment declares what it needs and what it provides in a form a
+  machine can read, because composition then becomes checkable: a filter that provides nothing the action
+  needs is a defect a tool can find before Revit does.
+- Reuse is the measure. Two questions sharing a filter is the design working.
+- **A rising recipe count means composition is failing** and is worth watching as a signal, not accepted
+  as growth.
+
+---
+
+## D-30 — A fragment is promoted by one recorded proof, not by a count of runs
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-9](OPEN-QUESTIONS.md)
+
+### Context
+
+Q-9 proposed a count — *how many successful executions, suggest N = 10?*
+
+A working library shows why a count is the wrong gate, and shows it with a real defect. One fragment's
+record reads: the level chain never tried `RBS_START_LEVEL_PARAM`, so setting a level filter matched
+**zero** ducts **and reported success**.
+
+**A fragment that succeeds while doing nothing passes ten runs. It passes a thousand.** A count measures
+that nothing threw, which is not the property anybody cares about.
+
+What caught it was a **comparison** — 3 against 0, side by side. And the strongest records in that library
+share a shape: they say what was checked, against what, on what date, and they include a case that should
+come back empty. One records that two different mechanisms returned the same five elements, *"so neither
+can be quietly wrong on its own"*.
+
+### Decision
+
+A fragment reaches `PRODUCTION` on **one recorded proof against a real model** — dated, naming the model
+or the kind of model — containing:
+
+1. **A positive case.** It returns what it should.
+2. **A negative case.** It returns *nothing* when it should return nothing. This is the one that catches
+   *succeeded and did nothing*, and a proof without it is not a proof.
+3. **A second route to the answer where one exists.** Two mechanisms agreeing, or a number the user can
+   check by eye.
+
+**Not a count.** Runs after the first add confidence; they are not the gate.
+
+**Who approves:** whoever ran it records it, under their name and the date, not a tick. A company's BIM
+lead may approve for that company's own scope — the proof travels with the fragment as evidence, so a
+later reader can *judge* it rather than trust it. A community submission meets the same bar, and one
+arriving without a negative case is returned rather than reviewed.
+
+### Consequences
+
+- **A proof can go stale, and that must be visible.** Heron's golden test library already reports proofs
+  as `STALE` when the files they rested on change; the same mechanism applies per fragment.
+- *"It worked"* is not a proof and there is nowhere to record it as one.
+- The gate is cheap for a well-scoped fragment and expensive for a vague one, which is the right way
+  round: a fragment whose negative case is hard to state is a fragment whose purpose is not yet clear.
+
+---
+
+## D-31 — Product, data and derived are already separated, and the code is the record
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-13](OPEN-QUESTIONS.md)
+
+### Context
+
+Q-13 recommended product under the install location, data under the user profile, derived under a cache
+location, and the updater physically unable to write to the data class — *"now critical: the repository is
+public, so client data must be physically incapable of reaching it."*
+
+**Checked against the code: it is already built, and has been running since Step 1.** `HeronPaths` is the
+single place permitted to construct a Heron path — [`check-structure.py`](../tools/check-structure.py)
+enforces that nothing else does — and it draws the three classes:
+
+| Class | Where | Why |
+|---|---|---|
+| **PRODUCT** | Where the assemblies live | Replaced wholesale on update; the user never edits it |
+| **DATA** | `%APPDATA%\Heron` | The user's own. **Roaming** — a preference or a learned skill should follow the person between machines |
+| **DERIVED** | `%LOCALAPPDATA%\Heron` | Rebuildable. **Deliberately not roaming**: runtime state belongs to the machine, and a bridge file announcing process 24156 on somebody else's PC is meaningless here |
+
+The updater half was **verified rather than assumed**: `deploy-addin.ps1` writes only into the Revit
+add-ins folder and never into `%APPDATA%\Heron`.
+
+One placement looks wrong and is right: **the audit log is DATA, not DERIVED.** It is evidence, and
+evidence a cache-clear can delete is not evidence — [D-17](#d-17--state-lives-where-its-lifetime-says-it-should)
+already.
+
+### Decision
+
+**Confirmed as built.** Q-13 is answered by code that has been running for weeks rather than by a fresh
+choice.
+
+### Consequences
+
+- The public-repository worry is answered **structurally**: client data cannot reach the repository
+  because it is never written inside it — DATA and DERIVED are both under the user profile.
+- Adding a new file means adding a property to `HeronPaths` and choosing its class. There is no other
+  legal way to build the path, and the structure check fails anyone who tries.
+- **A question can be answered by code that already exists.** This one sat open while its answer ran
+  every day. Worth asking of the remaining open questions before designing anything for them.

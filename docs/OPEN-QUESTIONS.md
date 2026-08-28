@@ -6,18 +6,22 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 23 answered · 18 open · none blocking Phase 0 or Phase 1**
+**Progress: 28 answered · 13 open · none blocking Phase 0, Phase 1 or Phase 2**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
 2026-08-28, when the real figures were 20 and 20 — six questions had been answered and the sentence stayed
 still, which is the exact failure the tooling in [`tools/`](../tools/README.md) exists to prevent.
 
-**Four of the eighteen gate Phase 2** — `Q-7a`, `Q-8`, `Q-9`, `Q-13`. **All four are technical and can be
-taken here**, so nothing on the Phase 2 path is waiting on Ajmal any more.
+**Nothing gates Phase 2 any more.** The last four — `Q-7a`, `Q-8`, `Q-9`, `Q-13` — were answered on
+2026-08-28 as [D-28](DECISIONS.md) to [D-31](DECISIONS.md), and answering `Q-7a` closed `Q-37` with it.
 
-`Q-15` was the one that was his, and it closed on 2026-08-28 by reading two assistants already doing this
-job daily rather than by deciding anything ([D-27](DECISIONS.md)).
+Three of the four were settled by looking rather than deciding: at a system already doing the job
+(`Q-7a`, `Q-8`, `Q-9`) and at Heron's own code, where `Q-13`'s answer had been running since Step 1.
+**Ask what already exists before designing** — it worked four times out of five today.
+
+What remains open is release and governance work (`Q-17`, `Q-18`, `Q-20`, `Q-24` to `Q-26`, `Q-29`,
+`Q-31` to `Q-35`, `Q-38`), none of which blocks building.
 
 **Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
 ([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
@@ -54,7 +58,17 @@ built-in Routes server -- proven, maintained by someone else, and the owner alre
 
 → [09 §10](09-skills-and-fragments.md)
 
-**Answer:**
+**Answer: Roslyn C# scripting, in process, through the existing bridge — not pyRevit. See
+[D-28](DECISIONS.md).** The research note above favoured pyRevit; reading a system already doing this job
+daily points the other way for three reasons the research could not show. What Ajmal actually runs today
+is **C#, not Python**. pyRevit Routes is an **HTTP server**, and Heron's add-in has *no network code at
+all* — verified against the source — so adopting it would trade [D-02](DECISIONS.md)'s structural
+local-only guarantee for a configuration promise. And one language means **one compile gate**: C#
+fragments go through `check-compile.py` and `check-api-surface.py`; Python fragments would go through
+neither.
+
+**This closes [Q-37](#-q-37--can-pyrevit-routes-bind-a-per-process-port-new-from-research) as not
+applicable** — Heron does not use Routes.
 
 ---
 
@@ -67,7 +81,16 @@ Proposed: **Skill** = what the user can ask for (BIM language, user-facing).
 
 → [09 §1](09-skills-and-fragments.md)
 
-**Answer:**
+**Answer: confirmed, with the part that decides the design added — a fragment is a *composable piece*, not
+a whole how. See [D-29](DECISIONS.md).**
+
+In a library of several hundred working fragments the unit is smaller than a job: a **filter** answers
+*which elements*, an **action** answers *what to do to them*, and they are joined, each declaring what it
+needs in scope and what it leaves. A job that genuinely cannot be composed is a **recipe** — a named third
+kind, so it cannot quietly become a giant fragment.
+
+That matters because reading *"fragment = how it is done"* as one fragment per job grows the library one
+entry per sentence a user might say, reuses nothing, and needs a separate proof for every entry.
 
 ---
 
@@ -79,7 +102,21 @@ community fragments?
 
 → [09 §5](09-skills-and-fragments.md)
 
-**Answer:**
+**Answer: not a count at all — one recorded proof, and it must include a negative case. See
+[D-30](DECISIONS.md).**
+
+A working library shows why a count is the wrong gate, with a real defect: a fragment whose level filter
+matched **zero** elements **and reported success**. That passes ten runs, and a thousand. A count measures
+that nothing threw, which is not the property anyone cares about — what caught it was a comparison, 3
+against 0, side by side.
+
+So the gate is one dated proof against a real model carrying a **positive** case, a **negative** case
+(*it returns nothing when it should*), and a **second route** to the answer where one exists.
+
+**Who approves:** whoever ran it, under their name and date. A company's BIM lead may approve for that
+company's scope, because the proof travels with the fragment as evidence a later reader can judge rather
+than trust. A community submission meets the same bar; one without a negative case is returned, not
+reviewed.
 
 ---
 
@@ -161,7 +198,20 @@ location — and the updater physically unable to write to the data class.
 
 → [06 §2](06-heron-platform.md), [17 §2](17-open-source-and-distribution.md)
 
-**Answer:**
+**Answer: the recommendation, and it is already built. See [D-31](DECISIONS.md).**
+
+`HeronPaths` has drawn these three classes since Step 1 and is the only place allowed to construct a Heron
+path — `check-structure.py` fails anything else that tries. PRODUCT is replaced wholesale on update; DATA
+is `%APPDATA%\Heron` and roams, so a preference follows the person; DERIVED is `%LOCALAPPDATA%\Heron` and
+deliberately does **not** roam, because a bridge file announcing process 24156 on another PC is
+meaningless.
+
+The updater half was **verified rather than assumed**: `deploy-addin.ps1` writes only into the Revit
+add-ins folder, never into `%APPDATA%\Heron`. So the public-repository worry is answered structurally —
+client data cannot reach the repository because it is never written inside it.
+
+**A question answered by code that already existed.** Worth asking of the other open questions before
+designing anything for them.
 
 ---
 
@@ -310,7 +360,18 @@ discovered?
 
 -> [26](26-prior-art-revit-mcp.md)
 
-**Answer:**
+**Answer: closed as not applicable — Heron does not use Routes, on either count.**
+[D-28](DECISIONS.md) settled Q-7a as **Roslyn C# in process**, which removes the scripting-execution use
+the "No" row kept it alive for. And the transport question is settled harder than "No": Routes is an
+**HTTP server**, while Heron's add-in contains **no network code at all** — verified against the source,
+not assumed. Adopting it would trade a structural guarantee for a configuration promise.
+
+**The port question therefore never needs answering.** Both rows of the table above lead to the same
+place, which is the sign that the question had already been overtaken.
+
+**Kept rather than deleted** because the reasoning is the useful part: a fixed `localhost:48884` is
+single-instance by construction, and multi-Revit is not negotiable ([D-02](DECISIONS.md)). That argument
+will come back the next time something proposes an HTTP transport.
 
 ---
 
