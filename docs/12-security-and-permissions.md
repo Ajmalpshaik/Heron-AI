@@ -92,7 +92,11 @@ Three positions, and the choice must be deliberate:
 | **Local only** | Local model, local embeddings, no egress | Deployable anywhere. Lower reasoning quality, real hardware cost. |
 | **Hybrid, per project** | Project metadata sets the policy | Best fit for reality. Requires the policy to be enforced in code. |
 
-**Recommendation: hybrid, enforced structurally.** A project marked `confidential` must be **incapable** of egress — not "the prompt says not to". Concretely: local embeddings, redaction at the boundary, and a hard block on `PUBLISH` for that project's scope.
+~~**Recommendation: hybrid, enforced structurally.**~~ **DECIDED 2026-08-28 — `Local only`, for every project, not the hybrid.** See [D-26](DECISIONS.md). Ajmal chose the strictest row in the table above and applied it to everything rather than per project: no cloud embeddings, no telemetry, no upload of any kind, and a knowledge scope leaves only by a deliberate `PUBLISH`.
+
+**The "lower reasoning quality, real hardware cost" consequence in that row applies to the LOCAL EMBEDDINGS only, and it is accepted.** It does not mean a local reasoning model: Heron runs inside Claude Code ([D-01](DECISIONS.md)), which is the boundary the next paragraph is about.
+
+**What this does not settle:** Heron's own replies are the conversation, so they reach the host by its design — the paragraph opening this section still stands and always will. Whether a confidential project needs identifiers redacted *before Heron says them* is [Q-40](OPEN-QUESTIONS.md), and it is a contract question rather than a technical one.
 
 Also needed regardless of position:
 

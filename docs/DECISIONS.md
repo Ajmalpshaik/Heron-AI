@@ -39,6 +39,7 @@
 | [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) | The knowledge store is SQLite, one file per scope | ✅ Accepted |
 | [D-24](#d-24--embeddings-are-computed-locally-by-default) | Embeddings are computed locally by default | ✅ Accepted |
 | [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) | The existing libraries are studied and re-authored, never imported | ✅ Accepted |
+| [D-26](#d-26--project-content-never-leaves-the-machine) | Project content never leaves the machine | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1156,7 +1157,8 @@ the exact-match short circuit — all three stages in one engine, one file, no s
 ## D-24 — Embeddings are computed locally by default
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-11](OPEN-QUESTIONS.md)
-**Does NOT answer [Q-12](OPEN-QUESTIONS.md)** — see the consequences.
+**Amended the same day by [D-26](#d-26--project-content-never-leaves-the-machine):** the cloud opt-in
+below is **withdrawn**. Q-12 was answered hours later and left no room for it.
 
 ### Context
 
@@ -1176,8 +1178,13 @@ work of this kind and it is not a hypothetical one.
 
 ### Decision
 
-**Local by default.** Cloud embeddings are opt-in per scope, off unless deliberately switched on, and the
-setting has to name what would leave the machine rather than reading as a quality slider.
+~~**Local by default.** Cloud embeddings are opt-in per scope, off unless deliberately switched on, and
+the setting has to name what would leave the machine rather than reading as a quality slider.~~
+
+**Superseded within hours by [D-26](#d-26--project-content-never-leaves-the-machine): embeddings are
+computed locally, full stop.** There is no opt-in and no setting. The reasoning below still holds and is
+kept because it is now the *second* reason rather than the only one — a rule with two independent
+justifications is worth more than a rule with one.
 
 ### Consequences
 
@@ -1234,3 +1241,71 @@ rules, and verified in Heron.
 - It reinforces what was already true: none of those projects' names, branding or dependencies come
   across ([HANDOVER §7](../HANDOVER.md)). This decision is the same rule applied to substance rather
   than to labels.
+
+---
+
+## D-26 — Project content never leaves the machine
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-12](OPEN-QUESTIONS.md)
+**Amends [D-24](#d-24--embeddings-are-computed-locally-by-default)** — the per-scope cloud opt-in is
+withdrawn.
+
+### Context
+
+[12 §4](12-security-and-permissions.md) set out three positions — cloud only, local only, hybrid per
+project — and recommended the hybrid, enforced structurally. Ajmal chose the strictest of the three, and
+for every project rather than per project:
+
+> *"All project content, including model data, room names, and everything else, must remain on local
+> machines. Whoever is working should use their local machine only; there is no need to push anything to
+> an AI service."*
+
+It fits the work. BIM consultancy in Qatar, government and authority projects, NDAs written before
+anybody had heard of an AI assistant. And Q-12 framed the harder version itself: Heron is public, so
+**other firms will run it on their clients' models under NDAs nobody here will ever read.** The default
+has to be safe for the most restricted user, and the simplest thing to defend to a client is a rule with
+no exceptions in it.
+
+### Decision
+
+**Heron never sends project content anywhere.** No per-project exception, no opt-in, no setting that
+turns it off. Concretely, and each of these is checkable:
+
+- **Embeddings are computed locally. Always** — amending [D-24](#d-24--embeddings-are-computed-locally-by-default),
+  which had allowed a per-scope cloud opt-in.
+- **No telemetry, no analytics, no crash upload, no "help improve the product" channel.**
+- **No model, export, schedule or drawing is uploaded by Heron under any circumstance.**
+- A knowledge scope leaves the machine only when a person deliberately publishes it — `PUBLISH`,
+  explicit, per action ([12 §2](12-security-and-permissions.md)).
+
+### The boundary Heron does not control, stated plainly
+
+A half-true privacy claim is worse than none, so this is written here rather than left to be discovered.
+
+**Heron runs as a Claude Code plugin ([D-01](#d-01--heron-runs-as-a-claude-code-plugin)).** The request a
+person types, and the answer Heron gives, travel through the AI host — that is what makes Heron work at
+all, and no setting in this repository changes it. [12 §4](12-security-and-permissions.md) has said so
+since it was written: *"every request potentially sends project content ... to a model provider."*
+
+So the rule divides, and both halves must be said together:
+
+- **Heron never initiates egress of project content.** That is a guarantee, it is enforceable in code,
+  and it is what this decision is.
+- **What appears in a reply reaches the host by the host's own design.** Heron chooses what to put in a
+  reply, which makes that a confidentiality decision rather than a formatting one — and it is what
+  [Q-40](OPEN-QUESTIONS.md) now asks about.
+
+### Consequences
+
+- Local embeddings stop being a default and become a **requirement**. The retrieval-quality trade is
+  closed, not deferred: it is no longer something a later session may reopen on performance grounds.
+- **Any feature that would need cloud embeddings is simply not built.** Better to know that before
+  designing than after.
+- *"Does using Heron breach our NDA?"* now has a straight first half — Heron sends nothing. The second
+  half is the host, and it is the same answer as for any AI coding assistant the firm already allows.
+- **Fragments are a different category from project content, and the distinction is load-bearing.**
+  Ajmal drew it in the same message: *"taking codes and everything, fragments that you can scan wherever
+  you need, you can save it."* A fragment is technique — how to place an air terminal — not a client's
+  room schedule. Scanned locally, saved locally, and it is the thing Heron may one day share precisely
+  because there is no project inside it. Keeping the two apart is what lets Heron be confidential and
+  shareable at once.

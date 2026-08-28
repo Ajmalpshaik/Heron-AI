@@ -6,16 +6,20 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 20 answered · 20 open · none blocking Phase 0 or Phase 1**
+**Progress: 21 answered · 20 open · none blocking Phase 0 or Phase 1**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
 2026-08-28, when the real figures were 20 and 20 — six questions had been answered and the sentence stayed
 still, which is the exact failure the tooling in [`tools/`](../tools/README.md) exists to prevent.
 
-**Six of the twenty gate Phase 2** — `Q-7a`, `Q-8`, `Q-9`, `Q-12`, `Q-13`, `Q-15` — and two of those are
-Ajmal's rather than technical: **Q-12** (what project content may leave the machine) and **Q-15** (is
-persona automatic or manual).
+**Five of the twenty gate Phase 2** — `Q-7a`, `Q-8`, `Q-9`, `Q-13`, `Q-15`. Four are technical and can be
+taken here; **Q-15** (is persona automatic or manual) is Ajmal's.
+
+**Q-12 was answered on 2026-08-28** — local only, every project ([D-26](DECISIONS.md)) — and answering it
+raised **[Q-40](#-q-40--do-replies-need-identifiers-redacted-before-they-reach-the-host)**, which is his
+and is not a Phase 2 gate: it is a contract question about what Heron may say out loud, and it wants
+answering before anyone runs Heron on a client's confidential model.
 
 *(Five new questions — Q-29 to Q-33 — come from [Master Specification Part 2](00b-master-specification-agent-os.md).
 None of them block Phase 0 either; they shape Phases 2–5.)*
@@ -122,7 +126,20 @@ under NDAs you have never seen. The default must be safe for the most restricted
 
 → [12 §4](12-security-and-permissions.md)
 
-**Answer:**
+**Answer: local only, for every project — the strictest of the three, and not the hybrid recommended
+above. See [D-26](DECISIONS.md).** Ajmal, 2026-08-28: *"All project content, including model data, room
+names, and everything else, must remain on local machines ... there is no need to push anything to an AI
+service."*
+
+He also drew the line that makes this workable: **a fragment is not project content.** *"Taking codes and
+everything, fragments that you can scan wherever you need, you can save it."* Technique may be scanned,
+saved and one day shared; a client's room schedule may not.
+
+**One half of this question is answered and the other has moved to [Q-40](#-q-40--do-replies-need-identifiers-redacted-before-they-reach-the-host).**
+Heron never *initiates* egress — that is now a guarantee. But Heron runs inside an AI host, so the
+sentences it writes reach that host by the host's own design, exactly as [12 §4](12-security-and-permissions.md)
+has always said. What Heron chooses to put in a reply is therefore a confidentiality decision, and that
+part is not settled.
 
 ---
 
@@ -366,6 +383,29 @@ Both are right, and both need a number. What confidence level triggers a questio
 *(Recommendation: yes — an unanswered-then-re-asked question is worse than a guess.)*
 
 → [20 §4](20-knowledge-trust-and-conflict.md), [21 §3](21-resilience-and-operations.md)
+
+**Answer:**
+
+---
+
+### 🟠 Q-40 — Do replies need identifiers redacted before they reach the host? *(new, 2026-08-28)*
+
+[D-26](DECISIONS.md) settled that **Heron** never sends project content anywhere. It cannot settle what
+the **host** sees, because Heron's own answers are the conversation.
+
+Heron names the document on purpose — *"Found 126 ducts in Tower-A.rvt"* — a Phase 0 feature that builds
+the habit Golden Rule 20 later enforces. Under a strict reading of D-26 that filename is project content
+travelling to a model provider.
+
+So: does a project marked confidential need a mode where the document is called something neutral in
+replies, and identifiers are replaced before Heron says them?
+
+**This is a contract question, not a technical one.** It depends on what the NDAs actually forbid, which
+nobody here has read. The cost is real on both sides: redaction is work to build, and it makes every
+answer harder for the person reading it to trust — *"which model was that again?"* is exactly the
+confusion Phase 0 added the document name to prevent.
+
+→ [12 §4](12-security-and-permissions.md), [D-26](DECISIONS.md)
 
 **Answer:**
 
