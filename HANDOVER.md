@@ -242,9 +242,11 @@ Eighteen are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-beari
 | **D-19** | **Writing is off by default** until the write path has met a real Revit. Read-only stopped being structural the moment Step 6 existed; this is what replaced it |
 | **D-20** | Millimetres to feet is **arithmetic, not `UnitUtils`** — exact, and nothing for Autodesk to move under it across 2020–2027 |
 
-**Golden Rules** — 15 official plus 6 proposed — are in [docs/14](docs/14-golden-rules.md). The proposed
-ones (16–21) cover undo, preview-before-modify, sandboxing, permission escalation, document pinning and
-stale reads. **They are exactly what Step 6 builds.**
+**Golden Rules** — **21, all official** — are in [docs/14](docs/14-golden-rules.md). 16–21 cover undo,
+preview-before-modify, sandboxing, permission escalation, document pinning and stale reads, and were
+**accepted on 2026-08-28** ([Q-19](docs/OPEN-QUESTIONS.md)) *while Step 6 remained unproven*. That order
+was deliberate: a rule that only binds once the code passes is not a rule the code was ever held to.
+**They are exactly what Step 6 builds.**
 
 ---
 
@@ -254,7 +256,7 @@ stale reads. **They are exactly what Step 6 builds.**
 |---|---|
 | [Q-34](docs/OPEN-QUESTIONS.md) | Confirm the unified trust model (D-14, still Proposed) |
 | [Q-35](docs/OPEN-QUESTIONS.md) | Confirm the [Constitution](HERON_CONSTITUTION.md) — 30 Articles |
-| [Q-19](docs/OPEN-QUESTIONS.md) | Confirm Golden Rules 16–21 — **needed before Step 6** |
+| [Q-19](docs/OPEN-QUESTIONS.md) | ✅ **Answered 2026-08-28** — Golden Rules 16–21 accepted, and now binding |
 | [Q-38](docs/OPEN-QUESTIONS.md) | The exact install command — needed before going public |
 | Copyright | `LICENSE` and `NOTICE` say **Ajmal PS**. Confirm that is right |
 

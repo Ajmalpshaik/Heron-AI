@@ -569,7 +569,9 @@ Evaluation stage and Parts 1–2's filter placement — see [20 §1](20-knowledg
 ### Consequences
 
 - The constitution is now **15 official + 4 proposed** rules, and it is stable across all three documents.
-  *(Two further rules were proposed later from field evidence — 20 and 21. Current total: 15 official + 6 proposed. See [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour).)*
+  *(Two further rules were proposed later from field evidence — 20 and 21. **All six were accepted on
+  2026-08-28**, so the total is now 21 official and none proposed — see [Q-19](OPEN-QUESTIONS.md). Also
+  [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour).)*
 - No prior decision (D-01 to D-11) is overturned. Part 3 consolidates; it does not redirect.
 - The two tensions recorded in [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system)
   remain open — Part 3 restates Model Routing (§61) and Multi-User (§65) without resolving either.

@@ -20,7 +20,7 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**15 of 40 questions answered — none of the remaining 25 block Phase 0.**
+**17 of 40 questions answered — none of the remaining 23 block Phase 0 or Phase 1.**
 
 **Phase 1, assessed 2026-08-28** (it had not been, and the line above had quietly stopped covering the
 work in progress). Three of the open questions touch Step 6, and one of them matters:
@@ -28,10 +28,10 @@ work in progress). Three of the open questions touch Step 6, and one of them mat
 | | |
 |---|---|
 | **Q-36** — lease or takeover | **Answered.** Built as `HeronLease` in Step 6 ([D-22](DECISIONS.md)) |
-| **Q-19** — accept Golden Rules 16–21? | **Still open, and Step 6 rests on it.** The one transaction group, the preview, document pinning and the expiring preview are rules **16, 17, 20 and 21** — all still *proposed*. Step 6 was built to satisfy them as though settled. Nothing is wrong in the code; the rules it obeys simply have not been formally accepted, and accepting them is a one-line decision that should not wait until after they are proven |
-| **Q-14** — how is testing against real Revit done? | **Partly answered in practice** by [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) — 48 items in dependency order. Not yet written up as an answer |
+| **Q-19** — accept Golden Rules 16–21? | **Answered 2026-08-28 — accepted.** They are the rules Step 6 was built to obey (16, 17, 20, 21), and they are now binding rather than proposed |
+| **Q-14** — how is testing against real Revit done? | **Answered 2026-08-28** — [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md), 49 items in dependency order, with what needs Revit separated from what does not |
 
-Nothing else blocks Phase 1.
+**Nothing now blocks Phase 1 except Revit itself.**
 
 **Specification is complete in four parts.** Part 1 is the platform and its organisation; Part 2 is the
 Agent Operating System; Part 3 is the consolidated baseline, **authoritative on the Golden Rules**
@@ -83,7 +83,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 11 | [Orchestration & Workflows](11-orchestration-and-workflows.md) | Reference workflows, failure handling, performance |
 | 12 | [Security & Permissions](12-security-and-permissions.md) | Permission levels, gate location, confidentiality, audit |
 | 13 | [Testing & Quality](13-testing-and-quality.md) | Eight test levels, testing against real Revit, regression |
-| 14 | [Golden Rules](14-golden-rules.md) | The constitution — **15 official rules** plus 6 proposed |
+| 14 | [Golden Rules](14-golden-rules.md) | The constitution — **21 official rules**, 16–21 accepted 2026-08-28 |
 | 15 | [Glossary](15-glossary.md) | Terms, Revit concepts, status vocabularies |
 | 16 | [Version Support Strategy](16-version-support-strategy.md) | **Revit 2020 → latest** — the two API breaks, multi-targeting, adapters, test matrix |
 | 17 | [Open Source & Distribution](17-open-source-and-distribution.md) | Licence, public/private separation, contribution, disclaimer, channels |

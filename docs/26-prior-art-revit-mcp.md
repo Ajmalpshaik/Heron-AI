@@ -106,7 +106,7 @@ The advice *"save periodically"* is the tell. It is a reasonable thing to say wh
 guarantee — and it puts the safety burden on the user, which is the opposite of
 [Golden Rule 1](14-golden-rules.md).
 
-**Proposed Golden Rules 16–21 are not industry standard practice. That is the point.** They are what
+**Golden Rules 16–21 are not industry standard practice. That is the point.** They are what
 would make Heron safe to approve for live project work when the alternatives are not.
 
 ---

@@ -96,5 +96,9 @@ n_answered = len(re.findall(r'### ', answered_section[1])) if len(answered_secti
 articles = len(re.findall(r'^\*\*(\d+[a-c]?)\.', allsrc.get('./HERON_CONSTITUTION.md', ''), re.M))
 out("  ACTUAL: questions defined=%d, in Answered section=%d, constitution articles=%d\n"
     % (len(q_def), n_answered, articles))
-out("  ACTUAL: golden rules defined=%d (official 1-15, proposed %s)\n"
-    % (len(gr_def), sorted(x for x in gr_def if x > 15)))
+# All 21 are official since 2026-08-28 (Q-19). This line used to print
+# "official 1-15, proposed [...]" and would have become the stale claim itself -
+# a checker that reports a superseded split is worse than one that reports
+# nothing, because it is believed.
+out("  ACTUAL: golden rules defined=%d (all official; 16-21 accepted 2026-08-28)\n"
+    % len(gr_def))
