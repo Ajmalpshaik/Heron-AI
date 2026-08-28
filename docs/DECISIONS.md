@@ -76,6 +76,7 @@ than examined.
 | [D-34](#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job) | Heron's own wording is English; understanding the user is not Heron's job | ✅ Accepted · ⏳ one pass at the PC |
 | [D-35](#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about) | A shared fragment may carry code; an unapproved one is refused, not warned about | ✅ Accepted · ⏳ one pass at the PC |
 | [D-36](#d-36--no-warranty--the-standard-position-and-it-is-already-in-place-twice) | No warranty — the standard position, already in place twice | ✅ Accepted |
+| [D-37](#d-37--the-name-is-heron-ai-and-no-trademark-check-has-been-done) | The name is Heron AI, and no trademark check has been done | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1877,3 +1878,42 @@ is written.
   ([Q-21](OPEN-QUESTIONS.md)). **If Heron is ever sold, bundled into paid deliverables, or supplied to a
   client as part of a service, the question is a different one** and this decision should be reopened
   rather than assumed to carry over.
+
+---
+
+## D-37 — The name is Heron AI, and no trademark check has been done
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-24](OPEN-QUESTIONS.md)
+
+### Context
+
+Q-24 notes that *"Heron" is widely used in software* and asks that it be checked before branding,
+packaging and an app-store listing exist. Offered the choice, Ajmal chose **keep Heron AI**, and did not
+take the option to check first.
+
+### Decision
+
+**The name is Heron AI.** It stays in the ribbon tab, the assemblies, the folder names, the install
+command and the documents — **53 code files** carry it today.
+
+### What has NOT been done, recorded so nobody assumes otherwise
+
+**No trademark or existing-product search has been carried out.** Not by this session and not, as far as
+this repository records, by anyone. Q-24 asked for one and it was declined rather than performed, so the
+question's own concern — that the name is widely used in software — **stands unexamined**.
+
+That is a legitimate choice for a free tool with no branding to defend, and it is recorded here so that a
+later session reading *"Q-24 answered"* does not conclude the name was cleared. **It was chosen, not
+cleared.**
+
+### Consequences
+
+- **The technical window to rename stays open until the repository goes public**
+  ([Q-28](OPEN-QUESTIONS.md) — when licence, safety files and working code all exist). While it is
+  private and nobody has installed anything, a rename is a mechanical change across 53 files. **After
+  publication it is a breaking change** to installed add-ins, folder paths under the user profile, and
+  anything anyone has written down.
+- **The two places where this could actually bite are both still ahead**, and neither is imminent:
+  publication, and an Autodesk App Store listing ([Q-26](OPEN-QUESTIONS.md), still open), where a name
+  clash is somebody else's decision rather than ours.
+- If a check is ever wanted, **before publication is the moment it is cheap** — and it is the last one.

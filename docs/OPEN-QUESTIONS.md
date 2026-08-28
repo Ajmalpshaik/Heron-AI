@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 33 answered · 8 open · none blocking Phase 0, Phase 1 or Phase 2**
+**Progress: 34 answered · 7 open · none blocking Phase 0, Phase 1 or Phase 2**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -25,8 +25,8 @@ Three of the four were settled by looking rather than deciding: at a system alre
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
 instead of standing between him and something usable.
 
-What remains open is release and governance work (`Q-24`, `Q-26`, `Q-29`, `Q-31`, `Q-32`, `Q-34`,
-`Q-35`, `Q-38`), none of which blocks building.
+What remains open is release and governance work (`Q-26`, `Q-29`, `Q-31`, `Q-32`, `Q-34`, `Q-35`,
+`Q-38`), none of which blocks building.
 
 **Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
 ([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
@@ -572,7 +572,18 @@ moment to re-read this, not the moment to quietly make an exception.
 
 "Heron" is widely used in software. Worth checking before branding, packaging and an app-store listing exist.
 
-**Answer:**
+**Answer: the name is Heron AI. It was CHOSEN, not cleared. See [D-37](DECISIONS.md).**
+
+Ajmal kept the name and declined the offer to check for an existing product first. **So no trademark or
+existing-product search has been done** — this question's own concern, that the name is widely used in
+software, stands unexamined. Recorded plainly so that a later session reading *"Q-24 answered"* does not
+conclude otherwise.
+
+A legitimate choice for a free tool with no branding to defend. The **technical** window to rename stays
+open until the repository goes public ([Q-28](#-q-28--when-does-the-repo-go-public--when-licence--safety-files-exist-and-there-is-working-code)):
+today it is a mechanical change across 53 code files; afterwards it breaks installed add-ins and user
+folder paths. If a check is ever wanted, before publication is the moment it is cheap — and the last
+one.
 
 ---
 
