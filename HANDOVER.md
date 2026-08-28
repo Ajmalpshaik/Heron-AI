@@ -54,6 +54,20 @@ two halves disagreed about how long to wait.
 the four Step 6 was built to obey. They were accepted *before* Step 6 is proven, deliberately: a rule that
 only binds once the code passes is not a rule the code was ever held to.
 
+**PHASE 1 IS BUILT IN FULL — all eleven items, not just Step 6's seven.** The last three were found by
+auditing Phase 1 against its own list rather than against the build order, and none of them had been
+flagged anywhere:
+
+| | |
+|---|---|
+| **The audit says WHICH elements** | It logged `moved: 4`. A count cannot answer the question anybody asks after something goes wrong — *which* ducts — and that is the entire point of an append-only record. It now carries every moved element's `UniqueId`, the document identity and the undo entry name, under one Workflow ID |
+| **The Golden Test Library** | 17 cases: the 7 things Phase 0 proved, and 10 that have never met Revit. Each records the files its proof rested on, so `python tests/test_golden.py` reports the proofs that have gone **stale**. It currently reports all seven as stale, which is exactly true |
+| **The Workflow Engine** | Checkpoints and resume. Built to spec, 18 checks — and **nothing calls it yet**, deliberately. See the untested table in [§3](#3-what-is-proven-and-what-is-only-built) |
+
+**Phase 1's own definition of done is not met, and cannot be met here:** *"a wrong instruction can be
+reversed with one Ctrl+Z, and a failed operation leaves the model untouched."* Both are written, both are
+covered by reasoning, and **neither has been witnessed.**
+
 ---
 
 ## 2. What exists
@@ -114,6 +128,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | `HeronUnits`, `HeronPermissions`, `HeronStop` | Kernel C#. Plain arithmetic and flags, but still never compiled |
 | The Emergency Stop ribbon button | New `PushButtonData` in a file whose ribbon currently works. **If Heron will not load after this, look here first** |
 | **The lease** (`HeronLease`) | Refuses a second chat instead of cutting the first off. Changes behaviour proven in Step 1, and needs two chats and one Revit to test at all |
+| **The audit's element list** | Every moved element's `UniqueId` now goes into the log. Never seen against a real model, and a move of several hundred elements writes a correspondingly long line |
 | **The Workflow Engine** (`heron_workflow.py`) | Built to spec and covered by 18 checks, but **nothing calls it yet** — and that is deliberate, not an oversight. Phase 1's only multi-stage flow is preview→apply, which the add-in already sequences better because it is the side that can re-count against the live model. Its real customer is Phase 2's 18-stage pipeline. Proven by its tests, unproven in use |
 | **Bridge protocol 2** | A request now carries a `client` id. An add-in still on protocol 1 will refuse to talk — which is correct, and means the add-in MUST be rebuilt and redeployed |
 | `revit_preview_move`, `revit_apply_move`, `revit_use_this_model` | The three new MCP tools. Never seen by a running host |
@@ -354,6 +369,16 @@ The three that matter most:
 | **C3** | With `write.enabled` still false, a move must be **refused**, naming the setting. Prove the gate before testing the write, or a passing move proves nothing |
 | **D3** | Move the ducts 200 mm, then **MEASURE ONE.** The single most important line in the register — a unit error is the failure that looks fine until somebody measures it months later |
 | **D5** | **One** Ctrl+Z puts it all back, as a single undo entry. Two means Golden Rule 16 is broken |
+
+### Record what you prove, as you prove it
+
+`tests/golden/cases.py` is the permanent record — 17 cases, each with what to do and what PASS looks
+like. When you prove one, set its `status` to `PROVEN`, the date, the Revit versions, and stamp its
+`fingerprint` (run `python tests/test_golden.py --stamp` to see the value; it prints and writes nothing,
+because a fingerprint is a claim that a person watched it work).
+
+That is what makes the next regression findable. All seven Phase 0 proofs currently read **STALE** —
+proven against a build that no longer exists — and that is the library doing its job, not a fault.
 
 ### One thing that is not in the register
 
