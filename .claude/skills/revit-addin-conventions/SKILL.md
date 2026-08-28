@@ -165,6 +165,23 @@ model belongs to the person who has it open.
 Installing is checked **per release**. Revit 2024 being open says nothing about whether it is safe to
 install for 2020, so a single open session must not block every other version.
 
+## The other repositories are reference only
+
+Two other repositories sit alongside this one: an existing Revit add-in and a knowledge package. They
+solve overlapping problems and are genuinely worth reading — but **nothing you write goes into them.**
+
+- **Never commit, never open a pull request, never update them.** Every change belongs to Heron.
+- **Never copy code or comments out of them.** Understand the mechanism, then write it here, in this
+  repository's shape, with the reasoning stated for this codebase. The owner's instruction, 2026-08-28:
+  *"study and use and make it part of our heron, blindly copy paste dont do it."*
+- **Never cite them as this codebase's authority.** They stop being used once Heron is finished, so a
+  comment whose argument is *"that other repository does it this way"* is worthless the day that
+  happens. Put the reasoning in the file that needs it.
+
+What that looks like in practice is `RevitWrite.SafeRollBack` and `RevitWrite.TryRefresh`: both exist
+because of what that study revealed, and neither shares a line with what it came from — the hazard is
+explained here, in terms of what `TransactionGroup` actually guarantees.
+
 ## The bridge is a boundary, not a pipe
 
 Three rules govern how anything reaches Revit from outside.

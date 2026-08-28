@@ -379,11 +379,13 @@ namespace Heron.Revit.Addin
         /// group was not in a rollback-able state, which tells them nothing,
         /// instead of what actually happened to their model.
         ///
-        /// This is not a theoretical worry. The owner's existing Revit add-in
-        /// shipped exactly this bug and fixed it in July 2026: an unguarded
-        /// rollback in a catch block threw a second time, the exception escaped
-        /// before the result was ever reported, and the caller waited forever
-        /// on an answer that was never coming.
+        /// This is not a theoretical worry - it is a shipped bug in real Revit
+        /// tooling, met and fixed before Heron existed. The shape: an unguarded
+        /// rollback in a catch block throws a second time, that exception
+        /// escapes before the result is ever reported, and the caller waits
+        /// forever on an answer that is never coming. Heron's version of the
+        /// hazard is the same one because the API is: TransactionGroup has no
+        /// state in which RollBack() is guaranteed to succeed.
         ///
         /// Both guards are kept on purpose. The status check avoids provoking
         /// an exception in the ordinary case; the catch handles everything the
@@ -465,10 +467,10 @@ namespace Heron.Revit.Addin
         /// group it can no longer roll back. The user would be told nothing
         /// happened, while their ducts had in fact moved.
         ///
-        /// The owner's own Revit add-in shipped exactly that bug and fixed it
-        /// in July 2026. It is the same lesson as SafeRollBack from the other
-        /// direction: cleanup and cosmetics must never be able to change what
-        /// gets reported about the real work.
+        /// Also a shipped bug in real Revit tooling rather than a hypothetical,
+        /// and the same lesson as SafeRollBack from the other direction:
+        /// cleanup and cosmetics must never be able to change what gets
+        /// reported about the real work. Neither of them IS the work.
         /// </summary>
         private static void TryRefresh(UIApplication app)
         {

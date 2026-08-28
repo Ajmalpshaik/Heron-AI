@@ -227,7 +227,24 @@ connected being invisible is a safety property. **Put it back afterwards.**
 
 ## 7. The decisions you must not quietly undo
 
-Eighteen are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-bearing ones:
+> ### ⛔ Heron is the only codebase you write to
+>
+> **The owner's instruction, 2026-08-28.** There are two other repositories on this machine — an existing
+> Revit add-in and a knowledge package. Both are **reference only**:
+>
+> - **Never commit to them, never open a pull request on them, never update or upgrade them.** Every
+>   change goes to Heron. *(A commit and a draft PR were made to the knowledge package on 2026-08-28
+>   before this was said; both were withdrawn.)*
+> - **Read them freely** — they solve overlapping problems and their scars are worth more than their
+>   features. [PROPOSALS Part E](docs/PROPOSALS.md) is what that study produced.
+> - **Never copy code or text out of them.** Understand the mechanism, then write it for Heron, in
+>   Heron's shape, with Heron's reasoning. His words: *"study and use and make it part of our heron,
+>   blindly copy paste dont do it."*
+> - **Do not cite them as Heron's authority.** He stops using both once Heron is finished, so a note
+>   whose argument is *"go read that other repository"* becomes worthless on that day. State the
+>   reasoning here, in full, so it stands on its own.
+
+Twenty-two are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-bearing ones:
 
 | | |
 |---|---|
@@ -241,6 +258,8 @@ Eighteen are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-beari
 | **D-18** | The Transaction Agent belongs to **Step 6**, not Step 2 — a write path built before its rails ships without them |
 | **D-19** | **Writing is off by default** until the write path has met a real Revit. Read-only stopped being structural the moment Step 6 existed; this is what replaced it |
 | **D-20** | Millimetres to feet is **arithmetic, not `UnitUtils`** — exact, and nothing for Autodesk to move under it across 2020–2027 |
+| **D-21** | Failure analysis is a **table, not a model call** — Heron's failures are its own bounded set of codes |
+| **D-22** | A second chat is **refused, not allowed to take over**. *"Newest connection wins"* now describes the pipe only |
 
 **Golden Rules** — **21, all official** — are in [docs/14](docs/14-golden-rules.md). 16–21 cover undo,
 preview-before-modify, sandboxing, permission escalation, document pinning and stale reads, and were
