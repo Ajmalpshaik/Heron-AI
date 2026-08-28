@@ -468,7 +468,23 @@ used for ranking and for gating `MODIFY` operations.
 
 → [24 — The Unified Trust Model](24-trust-model.md) · decision **D-14**
 
-**Answer:**
+**Answer: the direction is agreed; the confirmation is deferred to the PC. [D-14](DECISIONS.md) stays
+PROPOSED until then.** Ajmal, 2026-08-28: *"yes, but show me it working at the PC first."*
+
+**Enough to build on, not enough to close.** The two-axis shape is settled well enough that Phase 2's
+storage and ranking can be designed against it; what is outstanding is him seeing it on a screen with his
+own fragments in it before it becomes binding.
+
+**It took two attempts to explain, and that is recorded because it matters.** The first explanation was
+abstract — *"lifecycle and source axes"* — and he said plainly that he did not follow it. The second used
+a Revit family: you want to know **who made it** (our office, the manufacturer, downloaded) and **whether
+it has been checked** (approved, still being tested), and nobody would put those on one dropdown. He
+agreed immediately.
+
+That is the argument for the proposal in one sentence, and it belongs in
+[24](24-trust-model.md) rather than in this file: **a vocabulary that answers two questions at once will
+keep splitting**, and it split six times here. Added to `R1` in
+[`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md).
 
 ---
 
