@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Reads which Revit API members an assembly REFERENCES, and checks each one
+    against another release. Deliberately NOT part of the solution build: it is
+    a tool that talks ABOUT Heron, not part of Heron.
+
+    net8.0 and no Revit reference of its own - it reads assemblies as data.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <AssemblyName>ApiSurface</AssemblyName>
+    <RootNamespace>Heron.Tools.ApiSurface</RootNamespace>
+    <!-- The repo-wide x64/Platform settings are for Revit; this is a plain tool. -->
+    <Platform>AnyCPU</Platform>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

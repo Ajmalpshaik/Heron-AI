@@ -61,6 +61,29 @@ Mono and without Wine.
 that a skip is not a pass. That distinction is the whole point of the script: the failure this
 repository is most exposed to is a version-shaped hole that reads as green.
 
+### The skip is now partly covered — `tools/check-api-surface.py`
+
+A skip left the newest three releases with **nothing** checking them at all on the machines this project
+is actually worked on. So the compiled add-in's reference tables are read instead — exactly the Revit
+types and members the code calls — and each one is looked up in that release's shipped reference
+assemblies:
+
+```bash
+python tools/check-api-surface.py
+```
+
+**Measured 2026-08-28: all 103 Revit types and members Heron calls exist in 2020, 2021, 2022, 2023,
+2024, 2025, 2026 and 2027.** That is the missing-member class — the `CreationGUID` class — closed on
+every supported release without a Windows machine.
+
+It **matches by name**, so a member that still exists with a changed signature passes here and would
+fail a real compile. It supplements the compile gate and never replaces it, and it says so on every run.
+
+**It was validated before its clean result was believed**, by putting `doc.CreationGUID` back into
+`RevitWrite.DocumentKey()` and running it against 2020: it reported the missing member and exited
+non-zero. A checker that finds nothing is evidence about the checker until it has caught something —
+the same lesson as the grep that "found nothing" and was reported as clean.
+
 ---
 
 ## 3. What a pass actually proves

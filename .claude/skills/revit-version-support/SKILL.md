@@ -144,7 +144,12 @@ This is the adapter boundary from [docs/16](../../../docs/16-version-support-str
 
   ```bash
   python tools/check-compile.py 2020 2024      # the whole repository, against both API surfaces
+  python tools/check-api-surface.py            # every member Heron calls, on 2020 THROUGH 2027
   ```
+
+  The second covers what the first cannot: 2025+ need the Windows Desktop SDK to compile, so the
+  compile gate reports them SKIPPED off Windows. It matches by name only — a changed signature still
+  needs a real compile — but it closes the missing-member class on every supported release.
 
   For one member rather than the whole repository, read the shipped `RevitAPI.dll` for each release —
   the NuGet reference assemblies under `~/.nuget/packages/` are the real API surface. That is how the

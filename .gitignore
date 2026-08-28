@@ -123,3 +123,7 @@ $RECYCLE.BIN/
 *.bak
 tmp/
 temp/
+
+# Revit reference assemblies fetched by tools/check-api-surface.py.
+# Autodesk's, cached locally, never committed.
+tools/api-surface/.assemblies/

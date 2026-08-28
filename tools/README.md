@@ -104,6 +104,28 @@ A pass means the API surface agrees; it is **not** evidence that anything behave
 
 ---
 
+## `check-api-surface.py` — the releases the compiler cannot reach
+
+```bash
+python tools/check-api-surface.py                 # 2020 through 2027
+python tools/check-api-surface.py 2025 2026       # just those
+```
+
+Reads the **compiled** add-in's reference tables — exactly the Revit types and members the code calls,
+not what a regex over the source can find — and checks each one exists in that release's shipped
+reference assemblies.
+
+It exists because `check-compile.py` stops at 2024 off Windows, so the newest three releases had
+nothing checking them at all on the machines this project is actually worked on. **Matching is by
+name**, so a changed signature passes here and would fail a real compile: this supplements the compile
+gate, never replaces it.
+
+**Validate it before trusting a clean result.** Put `doc.CreationGUID` back into
+`RevitWrite.DocumentKey()`, build for 2024, and run it against 2020 — it must report the missing
+member. A checker that finds nothing is evidence about the checker until it has caught something.
+
+---
+
 ## `generate-agent-map.py` — the visual map
 
 ```bash
