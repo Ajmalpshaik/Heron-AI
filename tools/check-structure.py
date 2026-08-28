@@ -154,6 +154,40 @@ def main():
     print("Layering rules:   %d" % len(ALLOWED))
     print()
 
+    # --- 4. PowerShell encoding ----------------------------------------------
+    #
+    # A .ps1 that is BOM-less AND contains a non-ASCII character is a file
+    # Windows PowerShell 5.1 reads as ANSI. An em dash's last byte becomes a
+    # smart quote, which PowerShell accepts as a STRING DELIMITER - so one dash
+    # opens an unterminated string and cascades into dozens of parse errors
+    # that look like syntax. The script never runs at all.
+    #
+    # This is checked here because nothing else can catch it. These scripts are
+    # written and edited on machines with NO POWERSHELL - there is nothing to
+    # fail on until the file reaches Windows, which is exactly the wrong moment
+    # to find out. Safe either way: a BOM, or no non-ASCII byte.
+    ps_checked = 0
+    for dirpath, dirnames, filenames in os.walk("."):
+        dirnames[:] = [d for d in dirnames
+                       if d not in ("__pycache__", "bin", "obj", ".vs", ".git")]
+        for name in filenames:
+            if not name.endswith(".ps1"):
+                continue
+            path = os.path.join(dirpath, name)
+            raw = io.open(path, "rb").read()
+            ps_checked += 1
+            if raw[:3] == b"\xef\xbb\xbf":
+                continue                      # a BOM settles it
+            try:
+                raw.decode("ascii")
+            except UnicodeDecodeError:
+                problems.append(
+                    "%s has no UTF-8 BOM and contains a non-ASCII byte. Windows PowerShell "
+                    "5.1 will read it as ANSI and may fail to parse it at all - give it a BOM "
+                    "or keep it pure ASCII." % path)
+
+    print("PowerShell files: %d checked for the ANSI trap" % ps_checked)
+
     if problems:
         print("STRUCTURE PROBLEMS (%d):" % len(problems))
         for p in problems:

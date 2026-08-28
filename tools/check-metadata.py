@@ -33,7 +33,32 @@ STATUSES = {"DISCOVERED", "DRAFT", "TESTING", "VALIDATED", "SHADOW",
             "PROVEN", "PRODUCTION", "DEPRECATED", "ARCHIVED"}
 
 # Steps considered implemented so far. Raise this as build steps complete.
-CURRENT_STEP = 2
+#
+# This was left at 2 while steps 3, 4 and 5 were finished and proven, so the
+# reverse audit below silently skipped three whole steps while still printing
+# "Metadata clean". A check that is quietly narrower than it looks is worse
+# than no check, because it is trusted. If you complete a step, raise this in
+# the same commit.
+CURRENT_STEP = 6
+
+# Agents the HOST performs, so no file here implements them and none ever will.
+#
+# Not an omission - a recorded decision. docs/02 section 7 settles where the
+# orchestration runs: "Claude Code - host: conversation, agents, persona,
+# orchestration". These four are that layer. Heron declares them in the
+# registry because they are real parts of the system that must be reasoned
+# about; it does not build them because building them again would replace a
+# working host with a worse copy.
+#
+# They are listed rather than deleted so the audit stays honest in both
+# directions: an agent with no file is either delegated ON PURPOSE and named
+# here, or it is work still to do. Silence would make those two look alike.
+HOST_PROVIDED = {
+    "HERON-ORC-MAIN-001": "the host plans and sequences the work",
+    "HERON-ORC-INT-002":  "the host classifies what is being asked",
+    "HERON-ORC-PER-003":  "the host chooses the wording and the level",
+    "HERON-ORC-SUM-006":  "the host writes the reply the user reads",
+}
 
 
 def registry_agents():
@@ -118,6 +143,49 @@ def check_version_agreement(problems):
         print("Version:  %s, and both sides agree" % csharp)
 
 
+def check_phase_counts(agents, problems):
+    """
+    Every sentence claiming how many agents Phase 0 and Phase 1 need must
+    match the rows that actually carry a step number.
+
+    This check exists because three different figures for one set were in
+    circulation at once - "about 20" in the registry, "45" and "175" in the
+    catalogue - and the real answer was 46 and 204. None of them was derived
+    from the rows; each was typed once and then went stale as agents were
+    added. That is the same failure the 250-agent total already suffered and
+    was fixed by counting, so it is fixed the same way here.
+    """
+    assigned = [aid for aid, (_, step) in agents.items() if step and step.isdigit()]
+    total = len(assigned)
+
+    pattern = re.compile(
+        r"Phase 0 and Phase 1 needs? (?:about )?\*{0,2}(\d+)", re.IGNORECASE)
+
+    checked_any = False
+    for name in sorted(os.listdir("docs")):
+        if not name.endswith(".md"):
+            continue
+        path = os.path.join("docs", name)
+        for number, line in enumerate(io.open(path, encoding="utf-8"), 1):
+            found = pattern.search(line)
+            if not found:
+                continue
+            checked_any = True
+            claimed = int(found.group(1))
+            if claimed != total:
+                problems.append(
+                    "%s line %d says Phase 0 and Phase 1 need %d agents, but %d rows "
+                    "carry a step number" % (path, number, claimed, total))
+
+    if not checked_any:
+        problems.append(
+            "No document states how many agents Phase 0 and Phase 1 need. The claim was "
+            "removed or reworded, so this check is now guarding nothing - restore it or "
+            "delete the check.")
+
+    return total
+
+
 def main():
     agents = registry_agents()
     if not agents:
@@ -157,13 +225,28 @@ def main():
                 else:
                     claimed.add(aid)
 
+    assigned = check_phase_counts(agents, problems)
+
     print("Source files checked: %d" % checked)
+    print("Assigned to a step:   %d" % assigned)
     print("Agents implemented:   %d" % len(claimed))
 
-    # The reverse audit: registry agents due by now with no implementing file.
+    # A delegated agent must still BE an agent. If an id here is not in the
+    # registry, the exemption is silently covering nothing - the usual cause
+    # being a renamed or renumbered agent, which is exactly when an audit
+    # should speak up rather than pass.
+    for aid in sorted(HOST_PROVIDED):
+        if aid not in agents:
+            problems.append("HOST_PROVIDED lists '%s', which is not in the registry" % aid)
+
+    # The reverse audit: registry agents due by now with no implementing file,
+    # excluding the ones the host provides on purpose.
     unimplemented = sorted(
         aid for aid, (_, step) in agents.items()
-        if step and step.isdigit() and int(step) <= CURRENT_STEP and aid not in claimed)
+        if step and step.isdigit() and int(step) <= CURRENT_STEP
+        and aid not in claimed and aid not in HOST_PROVIDED)
+
+    delegated = sorted(aid for aid in HOST_PROVIDED if aid in agents)
 
     print()
     if problems:
@@ -179,6 +262,12 @@ def main():
         print()
         print("  Not an error while a step is in progress - it is the honest")
         print("  to-do list for finishing step %d." % CURRENT_STEP)
+        print()
+
+    if delegated:
+        print("Provided by the host, so no file here implements them (docs/02 section 7):")
+        for aid in delegated:
+            print("  - %-28s %s" % (aid, HOST_PROVIDED[aid]))
         print()
 
     if problems:

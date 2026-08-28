@@ -42,7 +42,7 @@ Several names appear in more than one department (Duplicate Detection, Migration
 > Added 2026-08-27. The catalogue answers *what exists*; this answers *what to build now*.
 > Build order: [27](27-build-order.md).
 
-**The whole of Phase 0 and Phase 1 needs 45 of the 250 agents** — under a fifth. The other 175 are not
+**The whole of Phase 0 and Phase 1 needs 47 of the 250 agents** — under a fifth. The other 203 are not
 deferred out of caution; they have nothing to act on until the layers below them exist.
 
 The table below names the principal agents per step. The authoritative per-agent assignment is the

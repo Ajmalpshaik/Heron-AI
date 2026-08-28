@@ -27,6 +27,14 @@ namespace Heron.Bridge
     ///     chat; the other is already waiting, which is what makes the next
     ///     connection instant instead of queued.
     ///
+    ///   * A CHAT THAT CONNECTS TAKES THE PIPE, but not the right to use it.
+    ///     The newest connection still displaces the older pipe - that part is
+    ///     unchanged and proven - but from Step 6 the LEASE decides who may
+    ///     actually send anything (HeronLease). A second chat is refused with
+    ///     a message rather than silently cutting the first one off mid-job.
+    ///     The old comment below described the whole behaviour; it now
+    ///     describes only the transport half.
+    ///
     ///   * THE NEWEST CONNECTION WINS. A chat that connects takes the session
     ///     immediately and the previous one is dropped, rather than being made
     ///     to wait for a timeout. That matches how the tool is actually used -
@@ -124,7 +132,8 @@ namespace Heron.Bridge
             }
 
             _log(string.Format(CultureInfo.InvariantCulture,
-                "Bridge listening on {0}. Newest connection wins; idle release after {1} minute(s).",
+                "Bridge listening on {0}. Newest connection takes the pipe, the lease decides who " +
+                "may use it; idle release after {1} minute(s).",
                 _identity.PipeName, _idleRelease.TotalMinutes));
         }
 
@@ -132,6 +141,11 @@ namespace Heron.Bridge
         {
             if (!_running) return;
             _running = false;
+
+            // The user pressed the button. Whatever chat was holding this
+            // Revit is not holding it any more, and the next one should not
+            // have to wait out a lease on a bridge that is no longer running.
+            HeronLease.Clear();
 
             if (_cancellation != null) _cancellation.Cancel();
 
@@ -341,24 +355,50 @@ namespace Heron.Bridge
 
             var op = Json.ReadString(request, "op");
 
-            switch (op)
+            // PING AND INFO NEED NO LEASE, and that exemption is the point of
+            // the lease as much as the refusal is.
+            //
+            // docs/25: the picker's (free)/(in use) column has nothing
+            // truthful to show without a lease - and it would have nothing to
+            // show WITH one either, if merely looking took the Revit. Asking
+            // "who has this?" must not be the act of claiming it.
+            if (op == "ping")
             {
-                case "ping":
-                    return Json.Ok(Json.Bool("pong", true));
-
-                case "info":
-                    return Json.Ok(
-                        Json.Num("pid", _identity.ProcessId),
-                        Json.Str("revitVersion", _identity.RevitVersion),
-                        Json.Str("addinVersion", _identity.AddinVersion),
-                        Json.Num("protocolVersion", BridgeIdentity.ProtocolVersion));
-
-                default:
-                    var handler = RequestHandler;
-                    if (handler != null) return handler(request);
-                    return Json.Error("unknown_op",
-                        "No handler for '" + (op ?? "(none)") + "'. Step 1 supports ping and info.");
+                return Json.Ok(Json.Bool("pong", true));
             }
+
+            if (op == "info")
+            {
+                var holder = HeronLease.Holder;
+                return Json.Ok(
+                    Json.Num("pid", _identity.ProcessId),
+                    Json.Str("revitVersion", _identity.RevitVersion),
+                    Json.Str("addinVersion", _identity.AddinVersion),
+                    Json.Num("protocolVersion", BridgeIdentity.ProtocolVersion),
+                    // The missing data. Before this, the only way to know that
+                    // another chat was using a Revit was for a person to
+                    // remember and say so.
+                    Json.Bool("inUse", holder != null),
+                    Json.Bool("mine", holder != null && holder == Json.ReadString(request, "client")),
+                    Json.Num("leaseSecondsRemaining", (long)HeronLease.SecondsRemaining));
+            }
+
+            // THE LEASE. One Revit is one door: a second chat is refused here
+            // rather than taking the session and chopping whatever the first
+            // was doing. Claiming also RENEWS, so an active chat never loses
+            // its hold.
+            var lease = HeronLease.Claim(Json.ReadString(request, "client"));
+            if (!lease.Granted)
+            {
+                return Json.Error("session_in_use", lease.Message);
+            }
+
+            var handler = RequestHandler;
+            if (handler != null) return handler(request);
+
+            return Json.Error("unknown_op",
+                "No handler for '" + (op ?? "(none)") + "'. This bridge supports ping and info " +
+                "on its own; everything else needs the add-in's request handler.");
         }
 
         private static void Dispose(IDisposable resource)

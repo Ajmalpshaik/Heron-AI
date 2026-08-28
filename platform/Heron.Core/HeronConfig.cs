@@ -49,7 +49,12 @@ namespace Heron.Core
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "bridge.autoConnect", "false" },      // connecting stays explicit, by design
-                { "bridge.idleReleaseMinutes", "3" },    // safety net; preemption is the real mechanism
+                { "bridge.idleReleaseMinutes", "3" },    // safety net; the lease is the real mechanism
+
+                // How long one chat holds a Revit without asking anything.
+                // Longer than idleReleaseMinutes on purpose: the pipe going
+                // quiet does not mean the chat has gone (HeronLease).
+                { "bridge.leaseMinutes", "5" },
 
                 // Revit runs a queued request only when it is idle. These two
                 // must stay BELOW the client's own deadline, so the bridge is
@@ -57,6 +62,14 @@ namespace Heron.Core
                 // can only say "no answer", which tells the user nothing.
                 { "revit.busyTimeoutSeconds", "10" },    // Revit never picked the request up
                 { "revit.operationTimeoutSeconds", "60" },  // it started, but has not finished
+
+                // MUST be declared here, not only read by HeronPermissions.
+                // Load() adopts a file value ONLY for a key in this table, so
+                // an undeclared key is silently ignored - and a setting that
+                // is silently ignored while a refusal tells the user to set it
+                // is the most opaque failure this file can produce. Off by
+                // default (D-19); it is turned on deliberately or not at all.
+                { "write.enabled", "false" },
 
                 { "log.retainDays", "14" },
             };

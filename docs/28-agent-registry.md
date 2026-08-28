@@ -19,7 +19,7 @@
 | **Risk** | Highest permission level it can require ([12 §1](12-security-and-permissions.md)) |
 | **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
 
-**Totals: 250 agents · 166 T1 · 64 T2 · 20 T3.**
+**Totals: 250 agents · 167 T1 · 63 T2 · 20 T3.**
 Roughly two thirds never call a model at all.
 
 > **Correction, 2026-08-27:** an earlier version of this page stated 166. The departments actually
@@ -35,7 +35,7 @@ Roughly two thirds never call a model at all.
 | `HERON-ORC-MAIN-001` | Orchestrator | Understands the request, selects capability and agents, builds and runs the workflow, returns the result | T2 | — | 3 |
 | `HERON-ORC-INT-002` | Intent Agent | Classifies what the user is asking for — command, question, debugging, development | T2 | READ | 4 |
 | `HERON-ORC-PER-003` | Communication / Persona Agent | Detects role and technical level; chooses wording. BIM language out, not API calls | T2 | READ | 4 |
-| `HERON-ORC-FAIL-004` | Failure Analysis Agent | Determines *why* something failed and routes it. Never blind-retries | T2 | READ | 6 |
+| `HERON-ORC-FAIL-004` | Failure Analysis Agent | Determines *why* something failed and routes it. Never blind-retries. **T1, not T2** — Heron's failures are its own bounded set of codes, so the classification is a table, and the one answer that must never be wrong is one a model should not be asked for ([D-21](DECISIONS.md)) | T1 | READ | 6 |
 | `HERON-ORC-SUM-006` | **User Result Agent** | Compresses the whole internal chain — 12 agents, 37 tool calls, 4 retrievals, 3 tests — into what the user actually needs to read. *"Done. Selected all ducts, moved them 200 mm up, verified in Revit."* This is what makes simple-outside / complex-inside real ↗ | T2 | READ | 4 |
 | `HERON-ORC-FIX-005` | Fix Agent | Applies a targeted repair chosen by failure analysis | T3 | MODIFY | — |
 
@@ -104,7 +104,7 @@ Roughly two thirds never call a model at all.
 | `HERON-SES-DIS-001` | Bridge Discovery Agent | Reads `%LOCALAPPDATA%\Heron\bridges\*.json`, verifies each is alive, removes stale files ↗ | T1 | READ | 1 |
 | `HERON-SES-LST-002` | Session List Agent | Builds the picker **live** — version, project, availability. Never a cached snapshot, never a PID shown ↗ | T1 | READ | 5 |
 | `HERON-SES-BND-003` | Session Binding Agent | One chat, one Revit. Asks once, stays bound, **fails closed** when that session closes ↗ | T1 | READ | 5 |
-| `HERON-SES-LEA-004` | Session Lease Agent | Prevents a second chat taking over mid-job. Scoped to the process. Never blocks a rollback ↗ | T1 | READ | — |
+| `HERON-SES-LEA-004` | Session Lease Agent | Prevents a second chat taking over mid-job. Scoped to the process. Never blocks a rollback ↗ | T1 | READ | **6** |
 | `HERON-SES-PIN-005` | Document Pinning Agent | Pins the target document by identity for any write; verifies at every step ↗ | T1 | MODIFY | **6** |
 
 ## 5. Knowledge & RAG — 17
@@ -462,7 +462,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 
 | Department | Agents | T1 | T2 | T3 |
 |---|---|---|---|---|
-| Orchestration & Communication | 6 | 0 | 5 | 1 |
+| Orchestration & Communication | 6 | 1 | 4 | 1 |
 | Revit Engineering | 36 | 34 | 2 | 0 |
 | MCP / Bridge | 12 | 12 | 0 | 0 |
 | Session & Bridge Management | 5 | 5 | 0 | 0 |
@@ -483,16 +483,22 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | Operations, Health & Resilience | 12 | 12 | 0 | 0 |
 | Documentation | 9 | 6 | 3 | 0 |
 | **Reporting & Output** | **4** | 2 | 2 | 0 |
-| **Total** | **250** | **166** | **64** | **20** |
+| **Total** | **250** | **167** | **63** | **20** |
 
-**[NOTE]** The distribution is the point. **166 of 250 agents never call a model** — they are ordinary
+**[NOTE]** The distribution is the point. **167 of 250 agents never call a model** — they are ordinary
 classes with a method or two. Of the rest, 64 make one scoped call and 20 run a real agentic loop.
 
-Read that way, the platform is a normal application with about 166 services, 64 narrow model calls, and
+Read that way, the platform is a normal application with about 167 services, 63 narrow model calls, and
 20 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
-**Phase 0 and Phase 1 need about 20 of these**, 17 of them T1 —
-see [08](08-agent-catalog.md) and [27](27-build-order.md).
+**Phase 0 and Phase 1 need 47 of these** — the ones carrying a step number in the tables above.
+See [08](08-agent-catalog.md) and [27](27-build-order.md).
+
+> **Correction, 2026-08-27:** this line said *"about 20"*, and [08](08-agent-catalog.md) said *"45 …
+> the other 175"*. Counting the rows gives **46** (11 · 2 · 7 · 9 · 6 · 12 across steps 1–6), leaving
+> **203**. Three wrong numbers about the same set, in two documents, none of them derived from the
+> rows they describe. `tools/check-metadata.py` now counts the rows and fails if a sentence here
+> disagrees, which is the only reason to trust the figure above over the three it replaces.
 
 ---
 

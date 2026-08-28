@@ -32,6 +32,10 @@
 | [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope) | Live session list; freeze out of scope | ✅ Accepted |
 | [D-17](#d-17--runtime-state-is-machine-local-not-roaming) | Runtime state is machine-local, not roaming | ✅ Accepted |
 | [D-18](#d-18--the-transaction-agent-belongs-to-step-6-not-step-2) | The Transaction Agent belongs to Step 6, not Step 2 | ✅ Accepted |
+| [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) | Writing is off by default until the write path has met a real Revit | ✅ Accepted |
+| [D-20](#d-20--millimetres-to-feet-is-arithmetic-not-unitutils) | Millimetres to feet is arithmetic, not UnitUtils | ✅ Accepted |
+| [D-21](#d-21--failure-analysis-is-a-table-not-a-model-call) | Failure analysis is a table, not a model call | ✅ Accepted |
+| [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over) | A second chat is refused, not allowed to take over | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -565,7 +569,9 @@ Evaluation stage and Parts 1–2's filter placement — see [20 §1](20-knowledg
 ### Consequences
 
 - The constitution is now **15 official + 4 proposed** rules, and it is stable across all three documents.
-  *(Two further rules were proposed later from field evidence — 20 and 21. Current total: 15 official + 6 proposed. See [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour).)*
+  *(Two further rules were proposed later from field evidence — 20 and 21. **All six were accepted on
+  2026-08-28**, so the total is now 21 official and none proposed — see [Q-19](OPEN-QUESTIONS.md). Also
+  [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour).)*
 - No prior decision (D-01 to D-11) is overturned. Part 3 consolidates; it does not redirect.
 - The two tensions recorded in [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system)
   remain open — Part 3 restates Model Routing (§61) and Multi-User (§65) without resolving either.
@@ -909,6 +915,196 @@ are READ.
 - The rule generalises, and is recorded in the conventions skill: a read-only operation opens no
   transaction, and none is created "for later".
 - Step 6 gains one agent. Its ordering does not change — the rails already come before the write.
+
+---
+
+## D-19 — Writing is off by default until the write path has met a real Revit
+
+**Status:** Accepted · **Date:** 2026-08-27 · **Found during:** Step 6 implementation
+
+### Context
+
+Until Step 6, Heron was read-only **by construction**: there was no transaction code in the repository,
+so the guarantee needed no trust and no configuration. [D-18](#d-18--the-transaction-agent-belongs-to-step-6-not-step-2)
+is the decision that kept it that way.
+
+Step 6 ends that, and it ended it under the worst available conditions. The write path was written on a
+machine with **no Revit, no Windows and no .NET SDK** — it has never been compiled, never loaded, and has
+never moved anything. The compiler has not read it.
+
+Golden Rule 18 already covers the general case: *generated code never touches a live model on its first
+run*. This is that rule arriving at the most consequential file in the repository.
+
+### Decision
+
+`HeronPermissions` refuses anything at `MODIFY` or above unless **`write.enabled = true`** is set in the
+user's config. It defaults to **false**, and the refusal names the setting and the file so the user is
+not left hunting.
+
+The shape is borrowed from a property Heron already has and has already proven: **a Revit that was never
+connected is invisible**, because `bridge.autoConnect` defaults to false. Nothing reaches a model the
+user did not offer up. This is the same sentence applied to writing rather than to connecting.
+
+### Consequences
+
+- The read-only guarantee is **weaker than it was**, and that must be said plainly rather than presented
+  as an improvement. It moved from "there is no code to do this" to "the code is switched off". The first
+  needs no trust; the second does.
+- The default flips to `true` **only** when [HANDOVER §6](../HANDOVER.md#6-the-return-to-the-machine-checklist)
+  has been walked end to end against a real model — not when the code merely compiles.
+- Anyone reading `HeronPermissions` finds the reasoning in the file, not only here. The comment saying
+  why it is off is written to be **deleted** once the path is proven, so a stale justification cannot sit
+  there looking current.
+
+---
+
+## D-20 — Millimetres to feet is arithmetic, not UnitUtils
+
+**Status:** Accepted · **Date:** 2026-08-27 · **Found during:** Step 6 implementation
+
+### Context
+
+Step 6 needs the user's millimetres as Revit's internal length unit. The obvious route is `UnitUtils`,
+and the obvious route has a hole in it across the range this repository supports.
+
+The units API was **replaced at Revit 2021**: `DisplayUnitType.DUT_MILLIMETERS` became
+`UnitTypeId.Millimeters`, the old overloads were deprecated and later removed. Heron builds 2020 through
+2027 from one codebase, so `UnitUtils` would need a compile symbol around it — and
+`Directory.Build.props` defines `REVIT2024_OR_GREATER` upward but has **no `REVIT2021_OR_GREATER`** to
+hang it on. The symbol would have to be added to guard a conversion whose answer never changes.
+
+The failure mode is not hypothetical. A unit call that a newer Revit rejects outright is a bug this
+work has already met elsewhere, and it hid for months because nothing exercised it.
+
+### Decision
+
+`HeronUnits` converts by the fixed ratio. Revit stores lengths internally in decimal **feet** in every
+supported release, and the international foot is **exactly 304.8 mm** by definition. The conversion has
+no version, no locale and no project setting in it.
+
+The boundary, for anyone extending it: a conversion with a **fixed ratio** (length, angle) belongs in
+`HeronUnits`. A conversion that depends on what the project displays, or on a unit family Heron does not
+define, genuinely needs the API — and needs the version split that comes with it.
+
+### Consequences
+
+- No compile symbol, no version branch, and nothing for Autodesk to move underneath it.
+- It lives in `platform/Heron.Core`, not in `revit/`, because it has no Revit reference. The layering
+  checker enforces that on its own.
+- The ratio is **exact and must never be "improved"** to more decimal places. It is a definition, not a
+  measurement.
+- A ceiling of 100 km and a rejection of NaN and infinity sit alongside it. Those are not unit concerns;
+  they are there because this is the last place a malformed number can be stopped before it reaches a
+  transaction on somebody's building.
+
+---
+
+## D-21 — Failure analysis is a table, not a model call
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Found during:** Step 6 implementation
+**Supersedes:** the **T2** tier given to `HERON-ORC-FAIL-004` in [28](28-agent-registry.md)
+
+### Context
+
+The registry assigned the Failure Analysis Agent **T2** — one scoped model call. Building it made two
+things obvious.
+
+**Heron's failures are its own bounded set.** They do not arrive as arbitrary text from an unknown
+system; they arrive as error codes this repository defines, from a bridge this repository wrote —
+`revit_busy`, `preview_expired`, `document_closed`, `unknown_outcome` and about twenty more. Classifying
+a known set is a lookup. A model call would be asked to re-derive, each time and at cost, an answer that
+is already written down.
+
+**And the one answer that must never be wrong is exactly the one a model should not be asked for.** The
+question is *"did this reach the model, and can we know?"* — and when the answer is *"it was sent and the
+answer was lost"*, the only safe next step is a person looking at the model. A table gives that answer
+identically every time. A model call gives it *almost* every time, and the failure mode is retrying a
+move that already happened.
+
+### Decision
+
+`HERON-ORC-FAIL-004` is **T1** — deterministic, no model call — and it **fails closed**: an error code
+it has never seen, on an operation that can write, is classified as *unknown outcome*, not as
+retryable. A future operation added by someone who never read the file gets the safe answer by default
+rather than the convenient one.
+
+The registry's tier is corrected, along with the department and platform totals that quoted it
+(167 T1 · 63 T2 · 20 T3).
+
+### Consequences
+
+- It is testable without Revit and without a model, and it is:
+  `tests/test_failure_analysis.py`, 30 checks. The central one is a property asserted over **every**
+  known code — no write failure may come back retryable unless the request provably never ran.
+- The judgement a model *would* genuinely add — reading an unfamiliar Revit exception message and
+  guessing what it means — is not needed at this layer. When it is, it belongs in a separate agent that
+  this one can defer to, not inside the classification that guards the write.
+- The general rule: **if the set of inputs is one Heron itself defines, the agent that reads them is
+  T1.** T2 is for text Heron did not write.
+
+---
+
+## D-22 — A second chat is refused, not allowed to take over
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Found during:** Step 6, auditing for gaps
+**Changes proven behaviour.** Supersedes *"last speaker wins"* as the rule that decides who may work.
+
+### Context
+
+[Step 5's own *"Not yet"*](27-build-order.md) defers three things to *"Phase 1 with writes"* — the lease,
+the `(free)`/`(in use)` column, and full document pinning. Step 6 **is** that write. Document pinning
+was built; the lease was not, and an audit found it missing rather than anybody noticing at the time.
+
+Until now, two chats on one Revit **fought**: whichever spoke last took the pipe and cut the other off
+mid-job. [docs/25](25-multi-session-and-binding.md) is blunt that this is tolerable only while Heron
+reads — *"chopping a read is harmless. Chopping a MODIFY mid-transaction is not"* — and weighs three
+options, rejecting a queue because *"an invisible queue means a command runs minutes later against a
+model that has since changed."*
+
+There was a second cost, and the owner named it himself: the list never showed which Revit another chat
+was already using. His standing workaround was to say *"don't go to Revit, another session is
+running"* — **a person being used as a lock**, because the information existed and was never written
+down anywhere visible.
+
+### Decision
+
+`HeronLease` — one lease per **Revit process**, held by one chat, short and renewable.
+
+- A second chat is **refused** with a message saying what is happening and when it clears. It is no
+  longer silently cut off.
+- Scoped to the **process, not the document**: the contention is at the pipe, so two chats on one Revit
+  collide even when each is discussing a different project. Two models open does not make two sessions.
+- **`ping` and `info` are exempt.** Asking who holds a Revit must never be the act of claiming it —
+  without that exemption the honest picker this enables would be impossible.
+- Renewed by every request, so an active chat never loses its hold; a chat that goes quiet releases it
+  by lapsing. Cleared outright when the user presses the Heron button.
+- **It cannot block a rollback**, as docs/25 requires. Not by a special case: the lease is checked once
+  when a request arrives, and a rollback happens *inside* a request already admitted. Cleanup never
+  asks permission.
+
+**The transport half is unchanged.** A new connection still displaces the older pipe — that is proven
+behaviour and it still happens. What changed is that taking the pipe is no longer the same thing as
+taking the right to use it.
+
+**Protocol raised to 2.** A request now carries a `client` id, because the per-Revit token cannot tell
+one chat from another — every chat reading a Revit's discovery file reads the *same* token. An older
+client sending no id would be refused as anonymous, which is correct but reads as a fault; the version
+bump turns that into the honest message Heron already has for it — *restart that Revit to finish
+updating*.
+
+### Consequences
+
+- **This changes behaviour proven in Step 1.** "Newest connection wins" now describes the pipe only.
+  Every document stating it as the whole rule has been corrected rather than left to be discovered.
+- The picker finally answers *"which of these is free?"* — the missing data, and the end of a human
+  being used as a lock.
+- `bridge.leaseMinutes` (default 5) is longer than `bridge.idleReleaseMinutes` on purpose: the pipe
+  going quiet does not mean the chat has gone.
+- Five minutes is a judgement, not a measurement. Too long and a dead chat holds a Revit; too short and
+  a chat loses its hold between two of the user's own messages — the takeover this prevents, arriving
+  on a timer instead. It is configurable so the number can be argued with.
+- `session_in_use` classifies as **NEVER_RAN**, not unknown: the refusal happens before anything reaches
+  the model, so the user must never be sent to inspect a model nothing touched.
 
 ---
 

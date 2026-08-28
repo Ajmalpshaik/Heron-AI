@@ -178,10 +178,26 @@ namespace Heron.Revit.Addin
             // Starts on the disconnected picture - the bridge never connects on
             // its own unless bridge.autoConnect says so, and OnStartup corrects
             // this below when it does.
+            // In front of the user, on the ribbon, because of WHEN it is
+            // needed: something is happening in the model that they did not
+            // mean, and reaching for a chat window is the wrong ask.
+            var stop = new PushButtonData(
+                "HeronEmergencyStop",
+                "Emergency\nStop",
+                assemblyPath,
+                typeof(EmergencyStopCommand).FullName);
+            stop.ToolTip = "Stop Heron changing anything. Press again to let it work.";
+            stop.LongDescription =
+                "Stops the next thing Heron would do to the model, and everything after it, " +
+                "until you press this again.\n\n" +
+                "It cannot interrupt something Revit has already started. If a change has " +
+                "already happened, Ctrl+Z in Revit is what puts it back.";
+
             BridgeButton = panel.AddItem(toggle) as PushButton;
             SetBridgeIcon(false);
 
             panel.AddItem(status);
+            panel.AddItem(stop);
         }
 
         /// <summary>

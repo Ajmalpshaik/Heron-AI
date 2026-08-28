@@ -1,0 +1,121 @@
+// Heron-Agent:  HERON-KRN-PRM-003
+// Heron-Step:   6
+// Heron-Status: DRAFT
+// Heron-Since:  0.1.0
+// Heron-Layer:  platform
+// See docs/29-metadata-standard.md
+
+using System;
+
+namespace Heron.Core
+{
+    /// <summary>
+    /// The seven permission levels of docs/12 section 1, in order of how much
+    /// they can cost if wrong.
+    ///
+    /// The ORDER is the point - it is what makes "is this allowed?" a
+    /// comparison rather than a list of special cases. The boundary that
+    /// matters sits between Execute and Modify: everything at Modify or above
+    /// changes something the user cares about and cannot always undo.
+    /// </summary>
+    public enum HeronRisk
+    {
+        Read = 0,
+        Analyze = 1,
+        Suggest = 2,
+        Execute = 3,
+        Modify = 4,
+        Publish = 5,
+        Admin = 6,
+    }
+
+    /// <summary>
+    /// Permission Manager. Decides whether an operation at a given risk level
+    /// may run at all, before anything is done and before the user is asked
+    /// to approve anything.
+    ///
+    /// GOLDEN RULE 19 - no text Heron reads may raise Heron's own permission
+    /// level. The risk of an operation is DECLARED by the operation, in code,
+    /// at the point it is registered. It is never parsed out of a request,
+    /// never read from a model, and never inferred from what an element is
+    /// called. That is why the level arrives here as an enum from a switch
+    /// statement rather than as a string from the wire: a string from the wire
+    /// is exactly the thing an instruction hidden in a parameter value could
+    /// set, and an enum from a switch is not reachable that way at all.
+    ///
+    /// WHY WRITING IS OFF BY DEFAULT.
+    ///
+    /// Heron already has one safety property of this shape: a Revit that was
+    /// never connected is invisible, because autoConnect defaults to false.
+    /// Nothing reaches a model the user did not offer up.
+    ///
+    /// The write path deserves the same treatment for a stronger reason. The
+    /// first version of it was written on a machine with no Revit, so it has
+    /// never compiled, never loaded and never moved anything. Code in that
+    /// state must not be one sentence away from a real project. Turning it on
+    /// is a deliberate act by someone who has read it:
+    ///
+    ///     write.enabled = true      in %APPDATA%\Heron\config\heron.config
+    ///
+    /// Delete this paragraph when the write path has been proven against a
+    /// real model - but change the default only then, and only on purpose.
+    /// </summary>
+    public static class HeronPermissions
+    {
+        /// <summary>
+        /// The highest risk level Heron will run without the user turning
+        /// writing on. Everything up to and including Execute changes what is
+        /// shown, never what exists.
+        /// </summary>
+        public const HeronRisk ReadOnlyCeiling = HeronRisk.Execute;
+
+        /// <summary>Config key that lifts the ceiling to Modify.</summary>
+        public const string WriteEnabledKey = "write.enabled";
+
+        /// <summary>
+        /// Whether an operation at this risk level may proceed.
+        ///
+        /// Reads the config FRESH each time rather than caching. A user who
+        /// turns writing off mid-session has done so for a reason, and a
+        /// cached "true" from before they changed their mind is the worst
+        /// possible way to discover the value was read once at startup.
+        /// </summary>
+        public static bool Allows(HeronRisk risk)
+        {
+            if (risk <= ReadOnlyCeiling) return true;
+
+            // Publish and Admin are not reachable in Phase 0 or Phase 1 at
+            // all. They are refused here rather than left to a caller that
+            // does not exist yet, so that adding one is a deliberate edit to
+            // this method and not an accident of an unhandled case.
+            if (risk > HeronRisk.Modify) return false;
+
+            var config = HeronConfig.Load();
+            return config.GetBool(WriteEnabledKey, false);
+        }
+
+        /// <summary>
+        /// Why a refusal happened, in the user's terms and with the way
+        /// forward in it.
+        ///
+        /// A refusal that only says "not permitted" sends the user hunting
+        /// through documentation for a setting whose name they do not know.
+        /// </summary>
+        public static string Explain(HeronRisk risk)
+        {
+            if (Allows(risk)) return null;
+
+            if (risk > HeronRisk.Modify)
+            {
+                return "That would need the '" + risk.ToString().ToUpperInvariant() +
+                       "' permission level, which Heron does not grant to anything yet.";
+            }
+
+            return "Heron's ability to change the model is switched off, so nothing was sent " +
+                   "to Revit. This is the default, and while the write path has never been " +
+                   "run against a real model it is the right default. To turn it on, set " +
+                   WriteEnabledKey + " = true in " + HeronConfig.FilePath +
+                   " and restart Revit.";
+        }
+    }
+}

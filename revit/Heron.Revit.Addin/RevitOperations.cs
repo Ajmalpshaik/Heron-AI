@@ -11,6 +11,7 @@ using System.Globalization;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Heron.Bridge;
+using Heron.Core;
 
 namespace Heron.Revit.Addin
 {
@@ -20,20 +21,39 @@ namespace Heron.Revit.Addin
     /// <see cref="RevitDispatcher.Execute"/>, which means every method here is
     /// already on Revit's thread and inside an API context.
     ///
-    /// STEP 2 SCOPE: one operation, deliberately. Counting elements proves the
-    /// thread hop works and nothing else, which is the whole point of the step.
-    /// Categories arrive at Step 4 and writing at Step 6 - and writing arrives
-    /// WITH its safety rails, not before them.
+    /// EVERYTHING IN THIS FILE IS READ-ONLY, and nothing here opens a
+    /// transaction. Counting and selecting change what is shown, never what
+    /// exists, so Ctrl+Z has nothing to undo after either of them.
     ///
-    /// EVERYTHING HERE IS READ-ONLY, so nothing opens a transaction. An empty
-    /// transaction "for later" is how a write path appears before the
-    /// guardrails that make writing safe.
+    /// Writing arrived at Step 6 and lives in RevitWrite, which this file
+    /// routes to for any operation it does not recognise. Keeping it separate
+    /// is not tidiness: it means the whole set of things that can change a
+    /// model is one file a reviewer can read end to end, and it keeps the
+    /// proven read path from being edited every time the write path moves.
     /// </summary>
     internal static class RevitOperations
     {
         public static string Run(UIApplication app, string request)
         {
             var op = Json.ReadString(request, "op");
+
+            // ================= THE GATE =================
+            // Every operation, one place, BEFORE any routing. This is what
+            // makes docs/12 section 71 true - "risk level is declared in the
+            // tool registry, not decided per call".
+            //
+            // It sits here rather than inside each operation for the sake of
+            // the operation nobody has written yet. An operation that forgot
+            // to check its own permission used to write unchecked and nothing
+            // noticed; now it is refused before it is reached, because being
+            // absent from the registry is a refusal rather than a default of
+            // zero risk.
+            //
+            // GOLDEN RULE 19: the risk is looked up BY NAME. Nothing in the
+            // request can influence it - a caller may ask for an operation,
+            // but not say how dangerous that operation is.
+            var gate = Gate(op);
+            if (gate != null) return gate;
 
             switch (op)
             {
@@ -44,10 +64,59 @@ namespace Heron.Revit.Addin
                     return SelectByCategory(app, Json.ReadString(request, "category"));
 
                 default:
-                    return Json.Error("unknown_op",
-                        "No handler for '" + (op ?? "(none)") + "'. " +
-                        "Step 4 supports ping, info, count_elements and select_by_category.");
+                    // Step 6 added the write path. It lives in its own file so
+                    // that everything able to change a model is in one place a
+                    // reviewer can read end to end, rather than interleaved
+                    // with the reads that are already proven.
+                    var written = RevitWrite.Run(app, request, op);
+                    if (written != null) return written;
+
+                    // Declared in the registry but with no handler here. That
+                    // is a bug in Heron rather than a bad request, and saying
+                    // so plainly is more use than repeating the op list.
+                    return Json.Error("not_implemented",
+                        "'" + op + "' is declared but Heron has no handler for it. " +
+                        "That is a fault in Heron, not something you did.");
             }
+        }
+
+        /// <summary>
+        /// Declared? Permitted? Not stopped? In that order, and all three
+        /// before anything reaches a model.
+        ///
+        /// Returns null to let the operation proceed, or the refusal to send
+        /// back instead of running it.
+        /// </summary>
+        private static string Gate(string op)
+        {
+            // 1. UNDECLARED IS REFUSED, never assumed harmless. The list of
+            //    what IS available comes from the registry rather than being
+            //    typed here - a hand-written copy of a table eventually
+            //    disagrees with it.
+            if (!HeronOperationRegistry.IsDeclared(op))
+            {
+                return Json.Error("unknown_op",
+                    "Heron has no operation called '" + (op ?? "(none)") + "'. " +
+                    "It has: " + HeronOperationRegistry.Describe() + ".");
+            }
+
+            var risk = HeronOperationRegistry.RiskOf(op);
+
+            // 2. THE EMERGENCY STOP, and it deliberately blocks only what can
+            //    CHANGE the model. Counting and selecting still work while
+            //    stopped, which matters: diagnosing what went wrong is exactly
+            //    what somebody does after pressing that button, and taking
+            //    away the read tools at that moment would be the wrong help.
+            if (HeronStop.IsStopped && risk >= HeronRisk.Modify)
+            {
+                return Json.Error("stopped", HeronStop.Message);
+            }
+
+            // 3. THE PERMISSION LEVEL.
+            var denied = HeronPermissions.Explain(risk);
+            if (denied != null) return Json.Error("write_disabled", denied);
+
+            return null;
         }
 
         /// <summary>
@@ -116,19 +185,9 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string SelectByCategory(UIApplication app, string category)
         {
-            if (string.IsNullOrEmpty(category))
-            {
-                return Json.Error("no_category",
-                    "No category was given. Try 'ducts'.");
-            }
-
             BuiltInCategory builtIn;
-            if (!Categories.TryGetValue(category.Trim(), out builtIn))
-            {
-                return Json.Error("unknown_category",
-                    "Heron does not know the category '" + category + "' yet. " +
-                    "It understands: " + string.Join(", ", Known()) + ".");
-            }
+            var unknown = ResolveCategory(category, out builtIn);
+            if (unknown != null) return unknown;
 
             var uiDoc = app == null ? null : app.ActiveUIDocument;
             var doc = uiDoc == null ? null : uiDoc.Document;
@@ -150,6 +209,34 @@ namespace Heron.Revit.Addin
                 Json.Str("category", category.Trim()),
                 Json.Str("document", doc.Title),
                 Json.Str("scope", "the whole model, not just the active view"));
+        }
+
+        /// <summary>
+        /// A BIM word to a Revit category, or the refusal to give back.
+        ///
+        /// Shared with the write path on purpose. One table means "ducts"
+        /// cannot mean OST_DuctCurves when Heron SELECTS and something else
+        /// when it MOVES - which is the kind of divergence that is invisible
+        /// in review and obvious only in the model afterwards.
+        /// </summary>
+        internal static string ResolveCategory(string category, out BuiltInCategory builtIn)
+        {
+            builtIn = BuiltInCategory.INVALID;
+
+            if (string.IsNullOrEmpty(category))
+            {
+                return Json.Error("no_category",
+                    "No category was given. Try 'ducts'.");
+            }
+
+            if (!Categories.TryGetValue(category.Trim(), out builtIn))
+            {
+                return Json.Error("unknown_category",
+                    "Heron does not know the category '" + category + "' yet. " +
+                    "It understands: " + string.Join(", ", Known()) + ".");
+            }
+
+            return null;
         }
 
         private static string[] Known()

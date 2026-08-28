@@ -6,7 +6,13 @@
 > They supersede the ten rules in [Part 1 §72](00-master-specification.md) — the baseline document
 > expanded and renumbered them.
 >
-> **Rules 16–21 are proposed** and need confirmation — see [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) Q-19.
+> **Rules 16–21 were accepted on 2026-08-28** by the owner, closing
+> [Q-19](OPEN-QUESTIONS.md). They are now official and binding, on the same footing as 1–15.
+>
+> They were accepted *while Step 6 remained unproven*, and deliberately so: 16, 17, 20 and 21 are what
+> Step 6 was built to obey, and a rule that only becomes binding once the code passes is not a rule the
+> code was ever held to. Accepting them first is what makes the checking that follows a test of the
+> code, rather than a negotiation about the standard.
 > Rules 16–19 come from engineering review; **rules 20 and 21 come from the field** —
 > failure modes observed in a working bridge ([field notes](00e-field-notes-proven-bridge.md)).
 >
@@ -63,7 +69,7 @@ This is what the Capability Registry buys — callers depend on capabilities, ne
 
 ---
 
-## Proposed additional rules (16–21, pending confirmation)
+## Additional official rules (16–21, accepted 2026-08-28)
 
 Rules **16–19** come from reviewing all four specification documents against the reality of an AI that writes and executes code against **live client project models**. None of the four addresses them.
 

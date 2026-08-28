@@ -117,17 +117,6 @@ location — and the updater physically unable to write to the data class.
 
 ---
 
-### 🟠 Q-14 — How is testing against real Revit done?
-
-Manual in-Revit test runner, a self-hosted CI machine with licensed Revit versions, or Autodesk Design
-Automation for Revit? With eight supported versions ([D-05](DECISIONS.md)) this matters more than it did.
-
-→ [13 §3](13-testing-and-quality.md), [16 §7](16-version-support-strategy.md)
-
-**Answer:**
-
----
-
 ### 🟠 Q-15 — Is persona automatic, manual, or both?
 
 *Recommendation:* infer a default, display it, let the user pin it. Silent mode-switching is a common
@@ -171,23 +160,6 @@ source allowlist, version pinning — or declarative skills/fragments only, no e
 Now a real security question rather than a hypothetical one, since anyone can publish.
 
 → [06 §10](06-heron-platform.md)
-
-**Answer:**
-
----
-
-### 🟡 Q-19 — Accept proposed Golden Rules 16–21?
-
-16. One user action, one undo (single named `TransactionGroup`).
-17. No autonomous write to a live model without a preview or a PRODUCTION fragment — including never triggering Sync With Central.
-18. Generated code never touches a live model on its first run.
-19. No text Heron reads may raise Heron's own permission level.
-20. **Bind the document, not just the session.** *(field-proven)*
-21. **Re-read before acting; a preview expires.** *(field-proven)*
-
-Rules 20 and 21 come from failure modes actually observed in a working bridge — they are not speculation.
-
-→ [14](14-golden-rules.md)
 
 **Answer:**
 
@@ -267,31 +239,6 @@ discovered?
 | **No** | It stays a **scripting-execution** option only (Q-7a). [D-02](DECISIONS.md) named pipes remain the transport -- multi-Revit is not negotiable |
 
 -> [26](26-prior-art-revit-mcp.md)
-
-**Answer:**
-
----
-
-### 🟠 Q-36 — Lease or takeover when two chats target the same Revit? *(new, from the field)*
-
-Today two chats on the same Revit **fight** — whichever speaks last takes over and cuts the other off.
-Not a queue; a job running mid-way gets chopped. Harmless for a read, not acceptable for a `MODIFY`
-mid-transaction.
-
-| Option | Behaviour |
-|---|---|
-| **A. Warn only** | Detect the takeover and tell both chats. Cheapest; stops it being silent |
-| **B. Lease** *(recommended)* | Second chat is **refused** — *"Revit 24312 is in use by another session"*. Small change, removes the hazard, fails closed |
-| **C. Queue** | Second chat waits. Sounds nicer, behaves worse — an invisible queue runs a command minutes later against a model that has since changed |
-
-A lease must never block a `MODIFY` **rollback** — cleanup always wins over the lease.
-
-**Second justification, from the field:** the picker cannot currently show which Revit another chat is
-using, which is why the user has to remember *"don't go to Revit, another session is running"* — a human
-being used as a lock. A lease is what makes `(free)` / `(in use)` truthful in the list. Without it there
-is nothing honest to display. ([D-16](DECISIONS.md))
-
-→ [25 §3, §2a](25-multi-session-and-binding.md)
 
 **Answer:**
 
@@ -486,6 +433,54 @@ kind of thing a careful user and a corporate laptop are both right to refuse.
 
 `Idling` used only for a liveness heartbeat. Heron must surface "Revit is busy" rather than hanging.
 → [D-09](DECISIONS.md)
+
+### ✅ Q-36 — Lease or takeover when two chats target the same Revit? → **Lease (option B)**
+
+Built in Step 6 as `HeronLease`. A second chat is **refused** with a message saying what is happening and
+when it clears, rather than taking the session and chopping whatever the first was doing. Scoped to the
+Revit **process**, not the document — the contention is at the pipe. `ping` and `info` are exempt, which
+is what finally makes `(free)` / `(in use)` truthful in the picker and ends a person being used as a
+lock. It cannot block a rollback: the lease is checked when a request arrives, and a rollback happens
+inside a request already admitted.
+
+**One thing the question got slightly wrong**, worth keeping: option B does *not* "remove the hazard
+entirely". The pipe is displaced when a second chat CONNECTS, before the lease can be consulted, so the
+first chat still loses one in-flight reply. The lease removes the **takeover**; it narrows the
+**interruption**. → [D-22](DECISIONS.md), [25 §3](25-multi-session-and-binding.md)
+
+### ✅ Q-19 — Accept proposed Golden Rules 16–21? → **Accepted, 2026-08-28**
+
+All six are now official and binding, on the same footing as 1–15. Four of them — **16** (one user action,
+one undo), **17** (no autonomous write without a preview), **20** (bind the document, not just the
+session) and **21** (re-read before acting; a preview expires) — are exactly what Step 6 was built to
+obey.
+
+**Accepted while Step 6 is still unproven, and deliberately so.** A rule that only becomes binding once
+the code passes is not a rule the code was ever held to. Settling the standard first is what makes the
+checking that follows a test of the code rather than a negotiation about the standard.
+
+18 (generated code never touches a live model on its first run) and 19 (no text Heron reads may raise
+its own permission level) bind work that does not exist yet. That is the right time to accept them —
+before there is any code with an interest in the answer. → [14](14-golden-rules.md)
+
+### ✅ Q-14 — How is testing against real Revit done? → **A written register, in dependency order**
+
+[`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) — every unproven claim as a numbered item (`A1`, `D3`), in
+dependency order, each stating what PASS actually looks like. Items are added whenever something is built
+away from Revit, and deleted only when they have actually passed.
+
+Three things make it work rather than being a to-do list:
+
+- **Dependency order.** Nothing in group D can be attempted before group A compiles. Working down instead
+  of around is what stops a "pass" that was never really tested.
+- **What needs Revit is separated from what does not.** Group A needs Windows and the SDK only — and the
+  round-trip test proves the bridge *and* most of the lease there, before Revit is ever opened.
+- **One register, not one per document.** [HANDOVER](../HANDOVER.md) §6 points at it rather than keeping
+  a copy, because two lists of the same thing drift.
+
+**What it does not answer:** automated testing against a real Revit, in CI. That needs a machine with
+Revit installed and is a Phase 2 question. This is the manual practice, written down — which is what was
+actually being asked for.
 
 ### ✅ Q-5 — MCP tool granularity? → **Thick and specific**
 

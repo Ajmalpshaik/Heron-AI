@@ -165,15 +165,49 @@ model belongs to the person who has it open.
 Installing is checked **per release**. Revit 2024 being open says nothing about whether it is safe to
 install for 2020, so a single open session must not block every other version.
 
+## The other repositories are reference only
+
+Two other repositories sit alongside this one: an existing Revit add-in and a knowledge package. They
+solve overlapping problems and are genuinely worth reading — but **nothing you write goes into them.**
+
+- **Never commit, never open a pull request, never update them.** Every change belongs to Heron.
+- **Never copy code or comments out of them.** Understand the mechanism, then write it here, in this
+  repository's shape, with the reasoning stated for this codebase. The owner's instruction, 2026-08-28:
+  *"study and use and make it part of our heron, blindly copy paste dont do it."*
+- **Never cite them as this codebase's authority.** They stop being used once Heron is finished, so a
+  comment whose argument is *"that other repository does it this way"* is worthless the day that
+  happens. Put the reasoning in the file that needs it.
+
+What that looks like in practice is `RevitWrite.SafeRollBack` and `RevitWrite.TryRefresh`: both exist
+because of what that study revealed, and neither shares a line with what it came from — the hazard is
+explained here, in terms of what `TransactionGroup` actually guarantees.
+
 ## The bridge is a boundary, not a pipe
 
-Two rules govern how anything reaches Revit from outside.
+Three rules govern how anything reaches Revit from outside.
 
-**The newest connection wins.** A chat that connects takes the session immediately and the previous one
-is dropped, rather than queueing or waiting out a timeout. That keeps *one chat, one Revit*
-([docs/25](../../../docs/25-multi-session-and-binding.md)) true by construction instead of by hope, and
-a dropped client simply reconnects on its next call. Growing a pool instead only postpones the question
-of which chat is really in charge.
+**The newest connection takes the PIPE.** A chat that connects displaces the previous pipe immediately,
+rather than queueing or waiting out a timeout, and the dropped client reconnects on its next call.
+Growing a pool instead only postpones the question of which chat is really in charge.
+
+**But taking the pipe is not taking the right to use it.** Since Step 6 a **lease** decides that
+(`HeronLease`, [D-22](../../../docs/DECISIONS.md)): one lease per Revit process, held by one chat, short
+and renewable. A second chat is **refused with a message** rather than silently cutting the first off
+mid-job — chopping a read is harmless, chopping a `MODIFY` mid-transaction is not.
+
+Two things about it are easy to get wrong, and both have already been got wrong once:
+
+- **`ping` and `info` are lease-EXEMPT.** Asking who holds a Revit must never be the act of claiming it,
+  or the `(free)`/`(in use)` picker this enables becomes impossible. A tool that reads *every* session
+  must use `info`, not `count_elements` — `revit_health` claimed a lease on every free Revit for one
+  commit because it used the latter.
+- **It cannot block a rollback** ([docs/25](../../../docs/25-multi-session-and-binding.md)). It holds by
+  construction rather than by a special case: the lease is checked once when a request arrives, and a
+  rollback happens *inside* a request already admitted.
+
+It narrows rather than eliminates interruption: the pipe is displaced at connect time, before the lease
+can speak, so the first chat still loses one in-flight reply. See docs/25 for why closing that properly
+was not attempted.
 
 **Every request authenticates first — before the operation is even read.** A caller with the wrong token
 must not learn which operations exist. The token is minted on connect and destroyed on disconnect, so
