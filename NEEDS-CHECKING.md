@@ -1,5 +1,28 @@
 # Needs checking — the register
 
+> ## 📌 This is a RECORD now, not a gate — 2026-08-28
+>
+> **The owner's instruction:** *"checking in Revit is not possible within 1 week, so keep the checking
+> process as a document and start Phase 2 — we need to finish that."*
+>
+> So: **no Revit until roughly 2026-09-04.** Nothing below has changed status, nothing has been
+> downgraded, and nothing has been quietly assumed to pass. What changed is only this — **work no longer
+> waits here.** Phase 2 began on that instruction ([27 — Build Order](docs/27-build-order.md), Steps 7
+> to 14), and Steps 7 to 13 were chosen and ordered so that none of them needs a Revit.
+>
+> **Two things this does NOT license:**
+>
+> - **`write.enabled` stays `false`.** [D-19](docs/DECISIONS.md) is untouched. No Phase 2 step asks for
+>   it, and a step that started asking would be the wrong step.
+> - **A parked item is still unproven.** The single failure this file exists to prevent is an untested
+>   claim ageing into a believed one. A week of not looking at it does not make `D3` any more true.
+>
+> **`R1` was meant to happen first** — read the day's decisions back before Phase 2 work begins — and it
+> has not. That was the owner's own instruction and this one supersedes it, which is his to do. It stays
+> below as a review to do at the PC. The reason it was wanted has not gone away: **two decisions were
+> reversed within hours of being recorded**, and Phase 2 is being built on five of that set.
+
+
 **Almost everything in this file is UNPROVEN**, and what changed on 2026-08-28 is worth stating
 precisely rather than generally.
 

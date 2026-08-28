@@ -17,11 +17,18 @@ person, or the owner on his phone.
 > **The Constitution is accepted and binding** — all 30 Articles, after Ajmal asked for every one to be
 > read out rather than tapping yes. Reading it aloud found three stale statements inside it.
 >
-> **Three things to do next, in this order.** `R1` and `R1b` in
-> [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — read the day's decisions back at the PC and show him the
-> trust model working, his own instruction, *before* Phase 2 work starts. Then `B1`: open Revit and see
-> whether the tab is there. **`A1`, `A2`, `A3` and `A5` are done** — the whole of Group A except the
-> Windows named pipe in `A4`.
+> **PHASE 2 STARTED, 2026-08-28.** The owner has **no Revit for about a week** and said so plainly:
+> *"checking in Revit is not possible within 1 week, so keep the checking process as a document and
+> start Phase 2 — we need to finish that."* [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is now a **record
+> rather than a gate**, and [27 — Build Order](docs/27-build-order.md) carries **Steps 7 to 14**, written
+> that day because Phase 2 had never been broken into steps. Seven of the eight need no Revit; only
+> Step 14's proof does.
+>
+> **What that did NOT change:** `write.enabled` is still `false`, every parked item is still unproven,
+> and `R1` — read the day's decisions back — **did not happen before Phase 2 began**, contrary to the
+> instruction that asked for it. That was overridden by the owner, which is his to do; it stays on the
+> list for the PC. **`A1`, `A2`, `A3` and `A5` are done** — the whole of Group A except the Windows named
+> pipe in `A4` and the probe check in `A6`.
 >
 > Before writing any code, run `python tools/check-compile.py`. It takes minutes, it now covers **all
 > eight releases**, and it is no longer somebody else's job. On a fresh Linux box it needs
