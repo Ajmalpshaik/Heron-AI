@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 29 answered · 12 open · none blocking Phase 0, Phase 1 or Phase 2**
+**Progress: 30 answered · 11 open · none blocking Phase 0, Phase 1 or Phase 2**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -25,8 +25,8 @@ Three of the four were settled by looking rather than deciding: at a system alre
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
 instead of standing between him and something usable.
 
-What remains open is release and governance work (`Q-17`, `Q-18`, `Q-24` to `Q-26`, `Q-29`, `Q-31` to
-`Q-35`, `Q-38`), none of which blocks building.
+What remains open is release and governance work (`Q-17`, `Q-18`, `Q-24` to `Q-26`, `Q-29`, `Q-31`,
+`Q-32`, `Q-34`, `Q-35`, `Q-38`), none of which blocks building.
 
 **Q-12 and Q-40 were both answered on 2026-08-28.** Local only, every project
 ([D-26](DECISIONS.md)) — and the line falls at **the model, not the answer**: a count or a size list is
@@ -482,7 +482,19 @@ Both are right, and both need a number. What confidence level triggers a questio
 
 → [20 §4](20-knowledge-trust-and-conflict.md), [21 §3](21-resilience-and-operations.md)
 
-**Answer:**
+**Answer: there is no threshold — Heron never assumes an input, and it asks once. See
+[D-33](DECISIONS.md).** Ajmal, asked plainly: **"always ask before assuming anything."**
+
+**That dissolves the first half of the question rather than answering it**, which is the better outcome. A
+confidence figure is invented, unjustifiable, and free for any later session to tune — and the first tune
+to reduce interruptions starts it guessing about exactly what it was set up to protect. *Never assume* is
+a rule; it needs no number and cannot drift.
+
+The second half is answered **yes, and it is load-bearing**: *always ask* without memory becomes noise,
+and noise is clicked through unread — worse than not asking. Asking once is what keeps the rule usable.
+
+One boundary is drawn in D-33 that his answer did not mention — a **technical** choice is Heron's own, not
+an assumption — and it is flagged for the `R1` read-back rather than treated as settled.
 
 ---
 

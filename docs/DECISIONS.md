@@ -72,6 +72,7 @@ than examined.
 | [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) | A fragment is promoted by one recorded proof, not a count of runs | ✅ Accepted |
 | [D-31](#d-31--product-data-and-derived-are-already-separated-and-the-code-is-the-record) | Product, data and derived are already separated | ✅ Accepted |
 | [D-32](#d-32--v1-must-be-able-to-change-the-model-and-reading-is-what-gets-used-first) | v1 must change the model; reading is used first | ✅ Accepted · ⏳ one pass at the PC |
+| [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) | Heron never assumes an input. It asks — and it asks once | ✅ Accepted · ⏳ one pass at the PC |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1679,3 +1680,60 @@ by Ajmal; both were the first answer being sharpened once its consequence was vi
 That is the whole argument for `R1` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md), and it is now
 evidence rather than caution: **a decision taken in one pass, from a phone, reads differently when its
 consequence is in front of you.** Read them back before building on them.
+
+---
+
+## D-33 — Heron never assumes an input. It asks — and it asks once
+
+**Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-33](OPEN-QUESTIONS.md)
+
+### Context
+
+Q-33 asked for a **number**: what confidence level triggers a question? Asked plainly whether Heron
+should stop and ask or make its best guess, Ajmal answered **"always ask before assuming anything."**
+
+**That dissolves the question rather than answering it, and that is the better outcome.** A confidence
+threshold is a figure somebody invents, nobody can justify, and every future session is free to tune —
+and the first time it is tuned to reduce interruptions, it starts guessing about the thing it was set up
+to protect. *Never assume* is a rule. It needs no number and cannot drift.
+
+It is also what the code already does. `RevitWrite` is described in its own header as *deliberately shaped
+to REFUSE rather than to guess*, the failure analysis fails closed
+([D-21](#d-21--failure-analysis-is-a-table-not-a-model-call)), and writing is off until proven
+([D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)). This makes the
+habit a rule.
+
+### Decision
+
+**Heron never supplies a value the user did not give.** Not a clearance, not a distance, not a size, not
+a level, not a category it inferred from a word it half-recognised. If an input is missing, it asks.
+
+**And it asks once.** The answer is recorded and reused, because *always ask* without memory becomes noise
+— and noise is clicked through without being read, which is worse than not asking at all. The pairing is
+not a convenience; it is what keeps the rule working.
+
+### The one boundary, and it needs confirming
+
+**A technical choice is not an assumption.** Which API call, which filter, how to structure the code —
+Heron decides those itself and says what it did.
+
+The reasoning stands on its own: asking somebody to choose between options they have no basis to judge is
+not consultation. It transfers the decision without transferring the ability to make it, and the answer
+that comes back is a guess wearing the user's name. Heron would have assumed anyway — it would just have
+laundered the assumption through a question.
+
+**This line is drawn from Ajmal's standing way of working, not from his answer to Q-33**, which did not
+mention it. It belongs in the `R1` read-back, and if the line is wrong it is this decision that moves.
+
+### Consequences
+
+- **Numbers are where this bites hardest.** Clearances, spacings, heights, margins — a plausible default
+  is the most dangerous thing Heron could offer, because it is the one nobody checks. A fragment whose
+  inputs are marked *edit every time, never a fixed default* is this rule written into the fragment.
+- **Every asked question is a small decision that must be stored**, findable by whatever it was about —
+  so the storage design in [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) has one more
+  customer than Phase 2 planned for.
+- It makes Heron slower to start on an unfamiliar job and faster on a repeated one, which is the right
+  way round for work that damages a model when it is wrong.
+- **The failure mode to watch for is not too many questions — it is a remembered answer applied to a job
+  it does not fit.** *Asks once* must be scoped to something real, not to the whole product.
