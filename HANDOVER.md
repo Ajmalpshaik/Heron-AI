@@ -1,12 +1,17 @@
 # Heron AI — Session Handover
 
-**Updated 2026-08-28, at the end of the third working session — the one that built Step 6 without a
-compiler.** For whoever picks this up next: a fresh Claude session, a person, or the owner on his phone.
+**Updated 2026-08-28, at the end of the fourth working session — the one that found a compiler.**
+For whoever picks this up next: a fresh Claude session, a person, or the owner on his phone.
 
-> **If you read only one thing:** everything that can be built away from Revit is built, and none of the
-> C# has ever been compiled. The next move is not more building — it is
-> [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), starting at `A1`, on a Windows machine. Four of its 49 items
-> need no Revit at all.
+> **If you read only one thing:** **the C# compiles now.** Revit 2020 through 2024, every project, zero
+> warnings — and the Revit-free bridge host *runs*, with all 32 of its checks passing including the whole
+> lease. None of that needed Windows and none of it needed Revit; it needed somebody to try
+> ([docs/30](docs/30-compiling-away-from-windows.md)). It caught two real defects on its first run, both
+> of which reading had already missed twice.
+>
+> The next move is [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), now starting at **`B1`**, on a Windows
+> machine with Revit. `A1`–`A3` are done. Before writing any code, run `python tools/check-compile.py` —
+> it takes minutes and it is no longer somebody else's job.
 
 > ## ⚠️ READ THIS FIRST — you are probably on a machine with no Revit
 >
@@ -31,10 +36,13 @@ bridge, the thread hop onto Revit's own thread, a working MCP server inside Clau
 ducts"* with an audit trail, and one-chat-one-Revit binding that fails closed. The repository is
 **private**.
 
-**Step 6 — the first write — is BUILT AND UNPROVEN, and the gap between those two words is the whole
-story of this section.** It was written on a phone, on a machine with no Revit, no Windows and no .NET
-SDK. The add-in half has never been compiled, never loaded and has never moved anything. The chat half
-is tested and passing. Do not read "Step 6 is built" as "Step 6 works".
+**Step 6 — the first write — is BUILT, COMPILED, AND STILL UNPROVEN, and the gap between those words is
+the whole story of this section.** It was written on a phone, on a machine with no Revit, no Windows and
+no .NET SDK. **A compiler has now read every line of it** — Revit 2020, 2021, 2022, 2023 and 2024, zero
+warnings — which it had not on 2026-08-27, and which cost one 2020-only defect to find out. The chat half
+is tested and passing. But it has still **never loaded into Revit and has never moved anything**. Do not
+read "Step 6 compiles" as "Step 6 works": compiling proves the API surface agrees, and says nothing
+whatever about whether a duct moves 200 millimetres or 200 feet.
 
 **Heron can no longer be read-only by construction, so it is read-only by default instead.** That is a
 real weakening and it was made deliberately: until 2026-08-27 there was no transaction code in the
@@ -122,15 +130,15 @@ now that the next stretch of work happens where Revit cannot be reached.
 |---|---|
 | **Revit 2027** | Builds and installs. Never launched — the owner says his 2027 does not work |
 | **Naming the session in a selection answer** | Fixed after both models turned out to be called `Project1`. Needs a Claude restart to go live, then one look |
-| **Anything committed from mobile after 2026-08-28** | **Assume untested.** Add it to [§6](#6-the-return-to-the-machine-checklist) |
-| **The whole of Step 6** | Never compiled. No .NET SDK on the machine it was written on, so not even the compiler has read it |
-| `RevitWrite.cs` — preview, re-count, TransactionGroup, rollback | The one file that can change a model. Every claim in it is unverified |
-| `HeronUnits`, `HeronPermissions`, `HeronStop` | Kernel C#. Plain arithmetic and flags, but still never compiled |
+| **Anything committed from mobile after 2026-08-28** | **Assume untested** — but no longer assume unread: `python tools/check-compile.py` runs on mobile too. Add it to [§6](#6-the-return-to-the-machine-checklist) |
+| **The whole of Step 6** | **Compiles** on 2020–2024, 0 warnings (2026-08-28). Never loaded into Revit, and has never moved anything |
+| `RevitWrite.cs` — preview, re-count, TransactionGroup, rollback | The one file that can change a model. It compiles; every **behavioural** claim in it is still unverified. Its `DocumentKey` was the one thing the compiler caught — `Document.CreationGUID` does not exist in Revit 2020 |
+| `HeronUnits`, `HeronPermissions`, `HeronStop` | Kernel C#. Plain arithmetic and flags. Compiles; `HeronUnits` is exactly what `D3` exists to measure |
 | The Emergency Stop ribbon button | New `PushButtonData` in a file whose ribbon currently works. **If Heron will not load after this, look here first** |
-| **The lease** (`HeronLease`) | Refuses a second chat instead of cutting the first off. Changes behaviour proven in Step 1, and needs two chats and one Revit to test at all |
+| **The lease** (`HeronLease`) | Refuses a second chat instead of cutting the first off. **Now exercised end to end against the compiled bridge** (2026-08-28) — claim, renew, refuse a second chat, never cut off the first, exempt `ping`/`info`. Not against Revit, and not over a Windows pipe: group H is what remains |
 | **The audit's element list** | Every moved element's `UniqueId` now goes into the log. Never seen against a real model, and a move of several hundred elements writes a correspondingly long line |
 | **The Workflow Engine** (`heron_workflow.py`) | Built to spec and covered by 18 checks, but **nothing calls it yet** — and that is deliberate, not an oversight. Phase 1's only multi-stage flow is preview→apply, which the add-in already sequences better because it is the side that can re-count against the live model. Its real customer is Phase 2's 18-stage pipeline. Proven by its tests, unproven in use |
-| **Bridge protocol 2** | A request now carries a `client` id. An add-in still on protocol 1 will refuse to talk — which is correct, and means the add-in MUST be rebuilt and redeployed |
+| **Bridge protocol 2** | A request now carries a `client` id. An add-in still on protocol 1 will refuse to talk — which is correct, and means the add-in MUST be rebuilt and redeployed. The handshake itself is proven: `info` reports `protocolVersion 2` |
 | `revit_preview_move`, `revit_apply_move`, `revit_use_this_model` | The three new MCP tools. Never seen by a running host |
 
 > The chat side of Step 6 **is** tested and passing — distance parsing, document pinning, single-use
@@ -203,13 +211,26 @@ python tests/test_workflow.py          # stages resume, stale inputs re-run, no 
 python tests/test_golden.py            # which proofs still stand against the current code
 ```
 
-**232 checks, all passing.** One more suite needs **Windows but still no Revit**, and it is the most
-valuable thing available before Revit is opened — it proves the transport *and* most of the lease:
+**232 checks, all passing.**
+
+**And two more things that were believed to need Windows, and do not** (2026-08-28,
+[docs/30](docs/30-compiling-away-from-windows.md)):
 
 ```bash
-dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024
-python tests/test_bridge_roundtrip.py
+python tools/check-compile.py                  # Revit 2020-2024, all four projects, 0 warnings
+
+dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 -p:HeronTfm=net8.0
+python tests/test_bridge_roundtrip.py          # 32 checks, including the whole lease
 ```
+
+The first needs the .NET SDK, which Linux distributions package — Microsoft's CDN is often blocked from a
+container and that is the wall earlier sessions hit. The second runs because `Heron.Bridge` has no Revit
+reference, so it compiles for `net8.0` and .NET implements named pipes on Unix as a socket.
+
+**What that still does not cover is the Windows named pipe itself** — its naming, its security
+descriptor, and the `CreateNewInstance` flag in note 2 of [§4](#4-the-things-that-will-bite-you). `A4`
+in the register means the Windows run, and a POSIX pass is a strong signal ahead of it rather than a
+substitute for it.
 
 - **All documentation, decisions, specifications and open questions.**
 - **The session binding**, in full. Its test fakes the world and exercises the real logic.
@@ -222,9 +243,11 @@ python tests/test_bridge_roundtrip.py
 - `test_bridge_roundtrip.py` needs **Windows named pipes**, so it will not run on a phone either.
 - Every claim in [§3](#3-what-is-proven-and-what-is-only-built) marked *proven against a real Revit*.
 
-> **If you change C# from mobile, you cannot know it works.** Say so in the commit message, and add it
-> to the checklist below. A commit that reads as though it were tested is worse than one that admits it
-> was not.
+> **If you change C# from mobile, you cannot know it works — but you can now know it BUILDS, so build
+> it.** `python tools/check-compile.py` is minutes, needs nothing installed but the .NET SDK, and it
+> catches the entire "worked in 2020, broke in 2024" class. Compiling is not testing: say which one you
+> did in the commit message, and add the rest to the checklist below. A commit that reads as though it
+> were tested is worse than one that admits it was not.
 
 ---
 
@@ -331,37 +354,48 @@ waiting on.
 
 ---
 
-## 9. Next — get Step 6 compiled, then proven
+## 9. Next — Step 6 is compiled; get it proven
 
 **Step 6 is built. Do not build it again.** All seven items the build order asks for are in the
 repository, and so is everything an audit turned up afterwards: the lease, the Failure Analysis Agent,
 the tool registry, the configuration and health agents. 47 agents are assigned to a step and none is
 unimplemented.
 
-**What is missing is a compiler.** Not one `.cs` file here has been through one.
+**A compiler is no longer what is missing.** `A1`, `A2` and `A3` are done — see
+[docs/30](docs/30-compiling-away-from-windows.md) for how, in one command:
 
-### Do these four first — they need Windows and the .NET SDK, but NO Revit
-
-```
-A1   dotnet --version                                        is the SDK there at all
-A2   dotnet build -p:RevitVersion=2020                       expect errors the first time
-A3   dotnet build -p:RevitVersion=2024                       the version boundary that has bitten before
-A4   dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024
-     python tests/test_bridge_roundtrip.py                   the pipe AND most of the lease
+```bash
+python tools/check-compile.py     # 2020-2024, all four projects, no Windows and no Revit needed
 ```
 
-**A4 is the one worth doing before Revit is ever opened.** It starts a Revit-free bridge host and
-exercises the transport and the session lease. If the lease is wrong, that is where it should be found —
-not three groups later with a model open.
+**It found the thing it was built to find, on its first run.** `RevitWrite.DocumentKey()` used
+`Document.CreationGUID`, which **does not exist in Revit 2020** — it compiled clean on 2024 and failed on
+2020. That property was named in the register as a *likely* problem spot, by reading; reading had already
+passed it twice. The fix is not a `#if`: the Project Information element's `UniqueId` is created with the
+document, survives save, rename and move, and exists on every release from 2020 to 2027.
 
-**Expect A2 to fail.** Code no compiler has read almost never builds first go, and that is not evidence
-the design is wrong. The likely spots are named in the register: `Document.CreationGUID`,
-`WorksharingUtils.GetCheckoutStatus`, `IFailuresPreprocessor`, `TransactionGroup.GetStatus`,
-`BuiltInCategory.INVALID`, `UIDocument.RefreshActiveView`.
+**And running the bridge found a second one, in the test rather than the code.**
+`test_bridge_roundtrip.py` asserted that nothing held the lease at a point where an earlier unknown-op
+probe had already claimed it — the bridge was right and the check was false. It had been written from
+reading, in a file that could not run on the machine it was written on. That file now runs on both
+platforms, one shim, one set of assertions, and passes 32 checks including the whole lease.
+
+**What no compiler will ever do is tell you a duct moved the right distance.** `D3` is still the line
+that matters most in this repository.
+
+### The two things left that need Windows but NOT Revit
+
+```
+A4   python tests/test_bridge_roundtrip.py         the WINDOWS named pipe itself
+A5   python tools/check-compile.py 2025 2026 2027  needs the Windows Desktop SDK
+```
+
+Everything in `A4` except the Windows pipe is already passing. `A5` is not a regression risk so much as a
+hole: those three versions are reported **SKIPPED** off Windows, and a skip must never read as a pass.
 
 ### Then the rest of the register, in order
 
-45 items need a real Revit. They are in dependency order and each says what PASS actually looks like.
+47 items need a real Revit. They are in dependency order and each says what PASS actually looks like.
 The three that matter most:
 
 | | |
@@ -396,8 +430,8 @@ old DLL is still deployed it will look like Heron has stopped working.
 - **Do not hand him commands to run when you can run them yourself.** He called that out, fairly.
 - **Field evidence beats specification.** The sharpest findings in this repository came from running
   things, not from any document.
-- **Say what is untested.** "It builds" is not "it works", and on mobile almost nothing can be more than
-  built.
+- **Say what is untested.** "It builds" is not "it works". On mobile it can now genuinely be *built* —
+  which is a real rung above where this project was, and still two below *proven*.
 - **Reference material is studied, never copied.** His earlier repositories are read for their
   reasoning; none of their names, dependencies or branding come across.
 - **Every number in the docs should be derived, not typed.** The tooling exists; use it.
