@@ -1634,6 +1634,28 @@ separate release.
 — that is about the *setting a user turns on deliberately*, not about whether the capability ships. Both
 remain true at once.
 
+### What "answers questions" means, concretely
+
+Asked which kind of question he asks most in real work, Ajmal answered **all of them**. Four shapes, and
+the answer that matters is what they have in common:
+
+| The question | The answer |
+|---|---|
+| *How many VCDs?* | A number. One line |
+| *What duct sizes, and how many of each?* | A schedule-style table, sorted the way a schedule sorts |
+| *The 300×300 ones on Level 2* | The items themselves, **with their ids** — this is almost always the step before doing something to them |
+| *What is missing or wrong?* | Blank Marks, unset system names, parameters nobody filled in |
+
+**All four share the same first half.** Each is a *filter* — which elements — joined to a different small
+*action*: count, group and count, report with ids, check for blanks. That is
+[D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer) arriving as a practical result rather
+than a principle: **the filters are built once and answer all four**, so "all of them" is far less work
+than four separate features, provided the split holds.
+
+It also sets the build order inside the reading half: **filters first, actions after.** A missing action
+means one question shape is unavailable; a missing filter means every shape is unavailable for that kind
+of element.
+
 ### Consequences
 
 - **The whole register gates v1 again.** Groups `C`, `D`, `E`, `G` and `H` — the gate, the move, the
