@@ -11,6 +11,7 @@ using System.Globalization;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Heron.Bridge;
+using Heron.Core;
 
 namespace Heron.Revit.Addin
 {
@@ -36,6 +37,24 @@ namespace Heron.Revit.Addin
         {
             var op = Json.ReadString(request, "op");
 
+            // ================= THE GATE =================
+            // Every operation, one place, BEFORE any routing. This is what
+            // makes docs/12 section 71 true - "risk level is declared in the
+            // tool registry, not decided per call".
+            //
+            // It sits here rather than inside each operation for the sake of
+            // the operation nobody has written yet. An operation that forgot
+            // to check its own permission used to write unchecked and nothing
+            // noticed; now it is refused before it is reached, because being
+            // absent from the registry is a refusal rather than a default of
+            // zero risk.
+            //
+            // GOLDEN RULE 19: the risk is looked up BY NAME. Nothing in the
+            // request can influence it - a caller may ask for an operation,
+            // but not say how dangerous that operation is.
+            var gate = Gate(op);
+            if (gate != null) return gate;
+
             switch (op)
             {
                 case "count_elements":
@@ -52,11 +71,52 @@ namespace Heron.Revit.Addin
                     var written = RevitWrite.Run(app, request, op);
                     if (written != null) return written;
 
-                    return Json.Error("unknown_op",
-                        "No handler for '" + (op ?? "(none)") + "'. " +
-                        "Heron supports ping, info, count_elements, select_by_category, " +
-                        "preview_move and move_elements.");
+                    // Declared in the registry but with no handler here. That
+                    // is a bug in Heron rather than a bad request, and saying
+                    // so plainly is more use than repeating the op list.
+                    return Json.Error("not_implemented",
+                        "'" + op + "' is declared but Heron has no handler for it. " +
+                        "That is a fault in Heron, not something you did.");
             }
+        }
+
+        /// <summary>
+        /// Declared? Permitted? Not stopped? In that order, and all three
+        /// before anything reaches a model.
+        ///
+        /// Returns null to let the operation proceed, or the refusal to send
+        /// back instead of running it.
+        /// </summary>
+        private static string Gate(string op)
+        {
+            // 1. UNDECLARED IS REFUSED, never assumed harmless. The list of
+            //    what IS available comes from the registry rather than being
+            //    typed here - a hand-written copy of a table eventually
+            //    disagrees with it.
+            if (!HeronOperationRegistry.IsDeclared(op))
+            {
+                return Json.Error("unknown_op",
+                    "Heron has no operation called '" + (op ?? "(none)") + "'. " +
+                    "It has: " + HeronOperationRegistry.Describe() + ".");
+            }
+
+            var risk = HeronOperationRegistry.RiskOf(op);
+
+            // 2. THE EMERGENCY STOP, and it deliberately blocks only what can
+            //    CHANGE the model. Counting and selecting still work while
+            //    stopped, which matters: diagnosing what went wrong is exactly
+            //    what somebody does after pressing that button, and taking
+            //    away the read tools at that moment would be the wrong help.
+            if (HeronStop.IsStopped && risk >= HeronRisk.Modify)
+            {
+                return Json.Error("stopped", HeronStop.Message);
+            }
+
+            // 3. THE PERMISSION LEVEL.
+            var denied = HeronPermissions.Explain(risk);
+            if (denied != null) return Json.Error("write_disabled", denied);
+
+            return null;
         }
 
         /// <summary>

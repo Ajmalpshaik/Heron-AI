@@ -163,6 +163,7 @@ python tests/test_bridge_roundtrip.py  # the bridge end to end — Windows, but 
 python tests/test_session_binding.py   # one chat one Revit, all four cases — pure Python
 python tests/test_write_safety.py      # Step 6's CHAT half — distances, pinning, approval
 python tests/test_failure_analysis.py  # never blind-retries, and fails closed
+python tests/test_tool_registry.py     # both languages agree on what may write
 ```
 
 - **All documentation, decisions, specifications and open questions.**

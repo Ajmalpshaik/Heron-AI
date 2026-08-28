@@ -114,7 +114,16 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string PreviewMove(UIApplication app, string category, string millimetresText)
         {
-            var refusal = Refuse(HeronRisk.Modify);
+            // This operation is declared ANALYZE - it genuinely changes
+            // nothing - so the gate in RevitOperations has already let it
+            // through. What is checked here is the risk of the operation it is
+            // a preview OF: showing somebody a change Heron is not permitted
+            // to make reads as though it is about to happen, and wastes the
+            // time they spend deciding.
+            //
+            // Read from the registry rather than named as a literal, so this
+            // and the gate cannot come to disagree about what a move costs.
+            var refusal = Refuse(HeronOperationRegistry.RiskOf("move_elements"));
             if (refusal != null) return refusal;
 
             double millimetres;
@@ -179,7 +188,13 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string ExecuteMove(UIApplication app, string token)
         {
-            var refusal = Refuse(HeronRisk.Modify);
+            // Belt and braces. The gate in RevitOperations is the primary
+            // check and has already run; this is the second one, kept because
+            // this is the only method in Heron that can change a model and the
+            // cost of a check is nothing against the cost of one being
+            // missed. It reads the SAME registry entry, so the two cannot
+            // drift into disagreeing.
+            var refusal = Refuse(HeronOperationRegistry.RiskOf("move_elements"));
             if (refusal != null) return refusal;
 
             Preview preview;

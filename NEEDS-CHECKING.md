@@ -55,13 +55,20 @@ A third ribbon button was added to a panel that already worked. If Heron disappe
 **Do not skip to D.** C3 is what proves the write path cannot fire by accident; testing the move before
 it is pointless, because a passing move tells you nothing about whether the gate works.
 
+The gate now sits at **one** place — every operation passes through it before routing, and its risk
+comes from `HeronOperationRegistry` rather than from a literal inside the write path. C5 and C6 are what
+prove it blocks the right level rather than simply blocking everything, which would pass C3 while being
+useless.
+
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **C1** | Press Emergency Stop | Dialog says Heron is stopped, **and** says it cannot interrupt something already running, **and** names Ctrl+Z |
 | **C2** | Press it again | Says Heron can work again |
 | **C3** | With `write.enabled` still **false** (the default — do not change it yet), ask to move ducts | **Refuses**, and names `write.enabled` and the config file path. Nothing goes to Revit |
 | **C4** | Press Emergency Stop on, then ask to move ducts | Refuses because of the stop, not because of the permission — two different refusals, and the message must say which |
-| **C5** | Now set `write.enabled = true` in `%APPDATA%\Heron\config\heron.config`, restart Revit | — |
+| **C5** | With `write.enabled` still false, ask to **select** ducts | **Works.** The gate blocks MODIFY, not READ or EXECUTE — if selecting is refused, the levels are wrong |
+| **C6** | Press Emergency Stop on, then ask to **count** elements | **Works.** The stop blocks changes only; taking away the read tools at the moment somebody is diagnosing would be the wrong help |
+| **C7** | Now set `write.enabled = true` in `%APPDATA%\Heron\config\heron.config`, restart Revit | — |
 
 ## Group D — the move itself
 

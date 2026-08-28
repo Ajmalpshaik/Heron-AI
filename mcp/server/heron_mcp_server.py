@@ -58,6 +58,7 @@ from heron_session import SessionBinding, NotBound   # noqa: E402
 from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
                          describe, parse_millimetres)
 from heron_failure import analyse, explain          # noqa: E402
+import heron_tools as tools                         # noqa: E402
 from mcp.server.fastmcp import FastMCP        # noqa: E402
 
 server = FastMCP("heron")
@@ -387,11 +388,16 @@ def revit_apply_move() -> str:
     session.close()
 
     # Everything that is not a success goes through the Failure Analysis Agent,
-    # including a reply that never arrived. writes=True is the important
-    # argument: it is what makes an unrecognised or lost outcome fail closed
-    # rather than look retryable. Never pass False from here to keep a message
-    # tidier - this tool is the one that can change the model.
-    failure = analyse(reply, writes=True)
+    # including a reply that never arrived. `writes` is the important argument:
+    # it is what makes an unrecognised or lost outcome fail closed rather than
+    # look retryable.
+    #
+    # It comes from the tool registry rather than a literal True typed here.
+    # A hand-typed flag can end up disagreeing with the declaration that says
+    # what this tool does, and the direction it would disagree in - a write
+    # being treated as a read - is the one that retries a move that already
+    # happened.
+    failure = analyse(reply, writes=tools.writes("revit_apply_move"))
     if failure is not None:
         return explain(failure)
 
