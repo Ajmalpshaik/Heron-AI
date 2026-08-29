@@ -448,6 +448,35 @@ def revit_apply_move() -> str:
         lines.append("%s were skipped - pinned, or owned by another user."
                      % "{:,}".format(reply.get("skipped")))
 
+    # THE THREE THAT MUST NEVER BE FOLDED INTO "MOVED".
+    #
+    # Revit's move call returns normally and moves nothing when an element
+    # cannot be moved - a group member is the case that gets through, because
+    # it is not pinned and so passes the skip filter. The add-in now compares
+    # positions either side rather than trusting that no exception was thrown,
+    # and these are what that comparison found.
+    #
+    # Said plainly and without jargon: the user needs to know which elements to
+    # go and look at, not that a count was smaller than they expected.
+    if reply.get("blocked"):
+        lines.append(
+            "%s did NOT move at all, even though Revit reported no error - "
+            "they are almost certainly inside a group. Move the group itself, "
+            "or ungroup them first."
+            % "{:,}".format(reply.get("blocked")))
+
+    if reply.get("partly"):
+        lines.append(
+            "%s moved, but not the full distance - something they are attached "
+            "to is holding them back."
+            % "{:,}".format(reply.get("partly")))
+
+    if reply.get("unverified"):
+        lines.append(
+            "%s could not be checked afterwards, so Heron cannot say whether "
+            "they moved. Look at those before trusting this."
+            % "{:,}".format(reply.get("unverified")))
+
     if reply.get("warnings"):
         lines.append("Revit raised %s warning(s), which were allowed through."
                      % "{:,}".format(reply.get("warnings")))

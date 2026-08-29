@@ -31,14 +31,15 @@ to be avoidable: **the C# now compiles, and the bridge now runs** — on Linux, 
 minutes ([docs/30](docs/30-compiling-away-from-windows.md)). Group A below records what that settled and
 what it did not.
 
-**Most of what is left needs a real Revit on a real Windows machine** — 47 of the 52 remaining items, and
+**Most of what is left needs a real Revit on a real Windows machine** — 48 of the 53 remaining items, and
 every one that matters most. Compiling is not behaving: `D3` is still the line that catches a unit
 error, and nothing here has moved anything yet.
 
-**58 items, 6 done, 52 left** — counted from the rows on 2026-08-29, not carried forward. Of the 52:
-**47 need Revit**, **3 need Windows but not Revit** (`A4`, `A6`, `A8`), **1 needs only a reachable
+**59 items, 6 done, 53 left** — counted from the rows on 2026-08-29, not carried forward. Of the 53:
+**48 need Revit**, **3 need Windows but not Revit** (`A4`, `A6`, `A8`), **1 needs only a reachable
 network** (`A7`), and **1 needs a screen in front of him** (`R1b` — seeing the trust model work).
-`R1` and `R2` were closed on 2026-08-29.
+`R1` and `R2` were closed on 2026-08-29; `E10` was added the same day, when studying the owner's
+earlier library found a case Heron's write path did not handle.
 
 **Count the rows before quoting a number here, and check the pattern you count with.** This file and
 [`HANDOVER.md`](HANDOVER.md) said *49 items* and *45 need a real Revit* from the day they were written,
@@ -210,6 +211,7 @@ Each of these is a rail. A rail that has never been tested is decoration.
 | **E7** | Pin a duct, then preview | Reported as **skipped**, and left alone after the move |
 | **E8** | On a **workshared** model with a duct owned by another user, preview | Reported as skipped, and the move does not fail because of it |
 | **E9** | Open a dialog in Revit, then ask to move | *"Revit is busy"* — a clean refusal, not a hang. Recovers by itself |
+| **E10** | Put two ducts in a **Revit group**, then ask to move that category up 200 mm | They are reported as **did NOT move at all**, by count, with the words *"almost certainly inside a group"* — and the ungrouped ones still move. **This is the case Revit will not tell you about**: `MoveElements` returns normally and moves nothing for a group member, no exception and no warning, so counting "it did not throw" as "it moved" reports a clean success for elements that have not shifted a millimetre. Proved against a real model in the owner's earlier work; Heron now compares positions either side instead of trusting the call. A group member is **not** pinned, so `E7`'s skip filter does not catch it |
 
 ## Group F — Steps 1-5 are no longer proven on this build
 

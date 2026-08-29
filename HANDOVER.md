@@ -529,6 +529,16 @@ Each of these cost real time. They are in the order they were learned.
     *resolves* that path rather than only printing it, and resolves it against the project. Found by
     running all eight releases instead of the one that happened to work.
 
+13. **Revit's move call returns normally and moves nothing, for a group member.** No exception, no
+    return value, no warning. Counting *"it did not throw"* as *"it moved"* reports **"Moved 5,
+    skipped 0"** for five air terminals that have not shifted a millimetre — the "succeeded and did
+    nothing" failure [D-30](docs/DECISIONS.md) exists to catch, in the one place Heron can actually
+    change a model. Heron skipped **pinned** elements, which is one half of the case; a group member
+    is not pinned and went straight through. `RevitWrite` now probes each position before and after
+    and reports four outcomes — moved, partly, blocked, unverified — instead of the count it asked
+    for. **Found by studying the owner's earlier library rather than by reading Heron's own code**,
+    which had been read several times. `E10` is the check.
+
 ---
 
 ## 5. What you can and cannot do without Revit

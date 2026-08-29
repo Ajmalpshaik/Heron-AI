@@ -297,6 +297,11 @@ namespace Heron.Revit.Addin
             var handler = new CollectWarnings();
             var workflow = HeronAudit.NewWorkflowId();
 
+            // WHAT ACTUALLY MOVED, which is not the same as what was asked to.
+            // Filled in by Verify. Declared out here because the answer has to
+            // outlive the transaction that produced it.
+            int reallyMoved = 0, partly = 0, blocked = 0, unverified = 0;
+
             // GOLDEN RULE 16. ONE group, named, so the whole thing is a single
             // entry in Revit's undo stack whatever happened inside it. The
             // user must be able to reverse Heron with one keystroke, and a
@@ -316,7 +321,20 @@ namespace Heron.Revit.Addin
                         options.SetClearAfterRollback(true);
                         transaction.SetFailureHandlingOptions(options);
 
+                        // WHERE EVERYTHING WAS, BEFORE. The only evidence that
+                        // survives the next four lines - see Verify below for
+                        // why "it did not throw" is not evidence at all.
+                        var before = ProbeAll(doc, movable);
+
                         ElementTransformUtils.MoveElements(doc, movable, up);
+
+                        // Positions do not update until the document has
+                        // regenerated, so a check before this would compare
+                        // each element against itself and pass every time.
+                        doc.Regenerate();
+
+                        Verify(doc, movable, before, up,
+                               out reallyMoved, out partly, out blocked, out unverified);
 
                         if (transaction.Commit() != TransactionStatus.Committed)
                         {
@@ -373,7 +391,14 @@ namespace Heron.Revit.Addin
                 new KeyValuePair<string, string>("document", doc.Title),
                 new KeyValuePair<string, string>("documentId", preview.DocumentKey),
                 new KeyValuePair<string, string>("category", preview.Category),
-                new KeyValuePair<string, string>("moved", movable.Count.ToString(CultureInfo.InvariantCulture)),
+                // VERIFIED against the model, not the number Heron asked to
+                // move. The four are recorded separately because an audit that
+                // says "moved 5" when 5 did not budge is worse than no audit.
+                new KeyValuePair<string, string>("moved", reallyMoved.ToString(CultureInfo.InvariantCulture)),
+                new KeyValuePair<string, string>("attempted", movable.Count.ToString(CultureInfo.InvariantCulture)),
+                new KeyValuePair<string, string>("partly", partly.ToString(CultureInfo.InvariantCulture)),
+                new KeyValuePair<string, string>("blocked", blocked.ToString(CultureInfo.InvariantCulture)),
+                new KeyValuePair<string, string>("unverified", unverified.ToString(CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string>("millimetres", preview.MillimetresUp.ToString("0.###", CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string>("warnings", handler.Count.ToString(CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string>("undoEntry", name),
@@ -382,8 +407,14 @@ namespace Heron.Revit.Addin
             });
 
             return Json.Ok(
-                Json.Num("moved", movable.Count),
+                Json.Num("moved", reallyMoved),
                 Json.Num("skipped", skipped.Count),
+                // Three counts that are normally zero and must never be
+                // folded into "moved" when they are not. `blocked` in
+                // particular is the one Revit itself will not tell you about.
+                Json.Num("partly", partly),
+                Json.Num("blocked", blocked),
+                Json.Num("unverified", unverified),
                 Json.Str("category", preview.Category),
                 Json.Str("distance", HeronUnits.DescribeMillimetres(preview.MillimetresUp)),
                 Json.Str("document", doc.Title),
@@ -479,6 +510,116 @@ namespace Heron.Revit.Addin
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// A point on this element that can be compared before and after a move.
+        ///
+        /// Not for reporting and not for geometry - only for answering "did
+        /// this actually move?". Three routes because elements keep their
+        /// position in different places: a point for a placed family, a curve
+        /// for a duct or pipe, and a bounding box for everything else.
+        ///
+        /// Returns null when none of the three works, and the caller counts
+        /// that as UNVERIFIED rather than as moved. A thing that cannot be
+        /// checked must never be reported as checked.
+        /// </summary>
+        private static XYZ ProbePoint(Element element)
+        {
+            if (element == null) return null;
+
+            var point = element.Location as LocationPoint;
+            if (point != null) return point.Point;
+
+            var curve = element.Location as LocationCurve;
+            if (curve != null && curve.Curve != null) return curve.Curve.Evaluate(0.5, true);
+
+            try
+            {
+                var box = element.get_BoundingBox(null);
+                if (box != null) return (box.Min + box.Max) * 0.5;
+            }
+            catch
+            {
+                // A bounding box can throw on an element with no geometry in
+                // the current view. Not knowing where something is is a normal
+                // outcome here, and it is reported as such.
+            }
+            return null;
+        }
+
+        private static Dictionary<ElementId, XYZ> ProbeAll(Document doc, IList<ElementId> ids)
+        {
+            var where = new Dictionary<ElementId, XYZ>();
+            foreach (var id in ids)
+            {
+                var point = ProbePoint(doc.GetElement(id));
+                if (point != null) where[id] = point;
+            }
+            return where;
+        }
+
+        /// <summary>
+        /// Did the elements actually move, and by how much.
+        ///
+        /// THE REASON THIS EXISTS, and it is not a hypothetical.
+        ///
+        /// `ElementTransformUtils.MoveElements` RETURNS NORMALLY AND MOVES
+        /// NOTHING when an element cannot be moved - a member of a group is the
+        /// case that matters here. No exception, no return value, no warning.
+        /// Counting "it did not throw" as "it moved" reports *"Moved 5, skipped
+        /// 0"* for five air terminals that have not shifted by a millimetre.
+        /// That was proved against a real model in the owner's earlier work,
+        /// and it is exactly the "succeeded and did nothing" failure
+        /// [D-30](../../docs/DECISIONS.md) makes every fragment prove against.
+        ///
+        /// Heron already skips PINNED elements before it gets here, which
+        /// covers one half of that case and not the other: a group member is
+        /// not pinned, so it passes the filter and then silently does not move.
+        ///
+        /// The only honest evidence is the position itself, so that is what is
+        /// compared. Four outcomes, kept apart because they need different
+        /// answers from the user:
+        ///
+        ///   moved       it is where it was asked to be
+        ///   partly      it moved, but not the whole way - constrained by a
+        ///               host or an attachment, which is legitimate
+        ///   blocked     it did not move at all, and Revit reported no error
+        ///   unverified  its position could not be read either side
+        ///
+        /// Nothing here rolls the move back. A blocked element is a fact to
+        /// report, not a failure - and rolling back the ones that DID move
+        /// because one did not would be its own surprise.
+        /// </summary>
+        private static void Verify(Document doc, IList<ElementId> ids,
+                                   Dictionary<ElementId, XYZ> before, XYZ asked,
+                                   out int moved, out int partly,
+                                   out int blocked, out int unverified)
+        {
+            moved = 0; partly = 0; blocked = 0; unverified = 0;
+
+            // One millimetre, in Revit's feet. The tolerance has to be smaller
+            // than the smallest move worth asking for and larger than the noise
+            // in a coordinate, and a millimetre is both.
+            var tolerance = HeronUnits.MillimetresToFeet(1.0);
+
+            // A move of nothing is a move nobody can measure. Asked for zero,
+            // every element is where it should be, and comparing would report
+            // all of them blocked.
+            var askedForNothing = asked.GetLength() < tolerance;
+
+            foreach (var id in ids)
+            {
+                var now = ProbePoint(doc.GetElement(id));
+                XYZ was;
+
+                if (askedForNothing) { moved++; continue; }
+                if (now == null || !before.TryGetValue(id, out was)) { unverified++; continue; }
+
+                if (now.DistanceTo(was) < tolerance) blocked++;
+                else if (now.DistanceTo(was + asked) > tolerance) partly++;
+                else moved++;
+            }
         }
 
         /// <summary>
