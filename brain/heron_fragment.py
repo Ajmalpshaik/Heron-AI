@@ -560,6 +560,30 @@ def proof_problems(frag):
     where = frag.slug
     proof = frag.proof
 
+    # A PROOF TAKEN SOMEWHERE ELSE IS NOT A PROOF OF THIS CODE.
+    #
+    # Ajmal's instruction, 2026-08-29, on re-authoring from his earlier
+    # library: *"even in the AJ AI proven fragment don't mark in Heron this is
+    # proven, because we will check each and every one again in Heron AI."*
+    #
+    # This is where that is made true rather than merely agreed. The fingerprint
+    # in a proof is a hash of THIS fragment's own implementation bytes, so a
+    # proof carried over from another library cannot match one - it reads as
+    # stale, which is exactly what it is.
+    #
+    # `can_promote` already refused a stale proof. `validate` did NOT, and
+    # validate is what `python brain/heron_fragment.py` and check-gaps run. So
+    # a fragment could sit at PROVEN on somebody else's proof and pass every
+    # check in the repository - measured on 2026-08-29 by writing one and
+    # watching it come back clean. The gate existed and nothing stood on it.
+    if frag.status in NEEDS_PROOF and proof is not None and frag.proof_is_stale():
+        problems.append(
+            "%s: status is %s but the proof does not match this "
+            "implementation - no fingerprint, or one taken against different "
+            "bytes. A proof recorded elsewhere, or before the code changed, is "
+            "evidence about THAT code. Re-take it here (D-30), or set the "
+            "status back to DRAFT" % (where, frag.status))
+
     if proof is None:
         if frag.status in NEEDS_PROOF:
             problems.append(

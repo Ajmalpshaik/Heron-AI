@@ -90,6 +90,7 @@ an edit.
 | [D-41](#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer) | Single-user now; company knowledge is a git repo and the admin is the reviewer | ✅ Accepted |
 | [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is setup.ps1 | ✅ Accepted |
 | [D-43](#d-43--the-constitution-is-accepted-all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
+| [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -2191,3 +2192,57 @@ become binding must not misdescribe its own authority.**
 - Article 20 — *a new capability starts unproven and stays unproven* — is
   [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) at constitutional
   level, and the two agree.
+
+---
+
+## D-44 — A re-authored fragment starts unproven in Heron, whatever it was elsewhere
+
+**Status:** Accepted · **Date:** 2026-08-29 · **Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported), [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)
+
+### Context
+
+[D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) settled that the
+owner's existing libraries are studied and re-authored here, never imported. It did not say what happens
+to the **status** of a fragment whose original had been proven against a real model — and the originals
+carry exactly that, dated and detailed, which makes carrying it over look reasonable rather than lazy.
+
+Ajmal closed it himself on 2026-08-29, as the re-authoring began:
+
+> *"Even in the AJ AI proven fragment, don't mark in Heron this is proven, because we will check each and
+> every one again in Heron AI. So mark it as not proven in Heron."*
+
+### Decision
+
+**A re-authored fragment enters Heron at `DRAFT` and is promoted only by a proof taken here, against
+Heron's own implementation.** A proof recorded elsewhere is evidence about the code that ran there. It
+is not evidence about the code in this repository, however faithfully that code was re-authored — and
+"faithfully" is the word doing all the work in that sentence, which is the reason.
+
+### Why this is not over-caution
+
+The re-authoring is a **rewrite**: different contract shape, different composition model, different
+naming, split differently, and running inside a wrapper this repository generates rather than the one it
+came from. Every one of those is a place a behaviour can change without anybody intending it. The
+original's proof says the ORIGINAL worked.
+
+And the failure it guards against is the one this whole project keeps meeting: a thing that succeeds
+while doing nothing. The move fragment studied on the same day is precisely that story — its own library
+found, live, that Revit's move call **returns normally and moves nothing** for a group member. A proof
+inherited rather than re-taken is a claim nobody has watched.
+
+### Consequences
+
+- **It is enforced, not agreed.** `proof_problems` in
+  [`brain/heron_fragment.py`](../brain/heron_fragment.py) now refuses `PROVEN` or `PRODUCTION` when the
+  proof does not match this fragment's own implementation bytes. The fingerprint in a proof is a hash of
+  those bytes, so a carried-over proof cannot match one.
+- **That gate existed and nothing stood on it.** `can_promote` refused a stale proof; `validate` — which
+  is what `python brain/heron_fragment.py` and `check-gaps.py` actually run — did not. Measured on
+  2026-08-29 by writing a fragment that declared `PROVEN` on a proof from another model and watching
+  every check in the repository pass it.
+- **The lessons still cross, and they are the valuable half.** What a studied fragment carries is *where
+  Revit lies to you* — and that knowledge belongs in the new file's own words, argued from what it
+  guards against rather than from having been proven somewhere else.
+- **Expect the DRAFT count to rise as re-authoring goes on**, and expect that to look like a growing
+  debt. It is: a debt of Revit-checking, which is the only kind the owner's standing instruction wants
+  left.
