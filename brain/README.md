@@ -1,6 +1,6 @@
 # brain/ — Part 3, Heron Brain
 
-**Knowledge.** Runs outside Revit. **Phase 2 started 2026-08-28 — Steps 7 to 10 done, 4 of its 8.**
+**Knowledge.** Runs outside Revit. **Phase 2 started 2026-08-28 — Steps 7 to 11 done, 5 of its 8.**
 
 | | |
 |---|---|
@@ -15,17 +15,18 @@
 | [`heron_fragment.py`](heron_fragment.py) | **Step 7.** What a fragment IS on disk, and the validator that will not let it lie. Identity is not the filename; the contract is data, not prose; a proof without a negative case is refused |
 | [`fragments/`](fragments/) | The library. Two so far, both `DRAFT` — written by hand to prove the shape, and **neither has met a real model** |
 | [`heron_search.py`](heron_search.py) | **Step 9.** Finding a fragment by exact words. Three routes and it says which answered: `identity` (one lookup, no search), `cache` (this wording was resolved before), `keywords` (FTS5, ranked). Only a **PROVEN** fragment may run off an exact match without asking |
+| [`heron_retrieve.py`](heron_retrieve.py) | **Step 11.** The whole lookup: a structured filter **first**, then keywords and nearness over the survivors, fused by reciprocal rank. **The Revit version filter is a wall** — an incompatible fragment is not demoted, it is absent — and what was excluded is reported with its reason |
 | [`heron_embed.py`](heron_embed.py) | **Step 10.** Finding a fragment by something other than its exact words. **Two backends**: `lexical` is built in, offline, needs nothing installed — and is measured, in numbers, as *not meaning*; `model` is a trained encoder used when one is present, and **has never run** (`A7`). Content-hashed, so re-indexing unchanged files costs nothing |
 | [`heron_scope.py`](heron_scope.py) | **Step 8.** One knowledge store per scope, as one file each. A cross-scope query is impossible to *write*: the API takes one scope and `ATTACH` is refused by name. The stores are **derived** — delete them all and `--rebuild` puts them back |
 
 Run `python brain/heron_fragment.py` to validate the library and
 `python brain/heron_scope.py` to see the stores, and
-`python brain/heron_search.py "select all ducts"` to look something up.
+`python brain/heron_retrieve.py "select all ducts" --revit 2024` to look something up.
 `test_fragment_store.py`, `test_scope_store.py` and `test_search.py` are the checks behind them.
 
 ## What is still to come
 
-Steps 11 to 14: hybrid retrieval and the exact-match short circuit · local
+Steps 12 to 14: the capability registry and the exact-match short circuit · local
 embeddings · hybrid retrieval · the capability registry · the dependency graph · ten real skills.
 
 ## Why it stayed empty until now

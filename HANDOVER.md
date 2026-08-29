@@ -53,7 +53,21 @@ person, or the owner on his phone.
 >
 > It also recorded its own successor's acceptance test: on *"show me every duct"* the keyword route
 > ranks the right fragment first and the vector route ranks it second. **Step 11 must fuse them and
-> return the duct filter.** `python tests/test_embed.py`. **Step 11 is next.**
+> return the duct filter.** `python tests/test_embed.py`.
+>
+> **Step 11 is built, and it passes that test — but read how.** The version filter runs **first, as a
+> wall**: a fragment declared for 2021 is not returned for 2025, proven by making it the best possible
+> textual match and watching it stay absent. The two routes are then **fused** rather than chosen
+> between, weighted by which embedding backend is running, because Step 10 measured the built-in one as
+> not-meaning and an equal vote would over-trust it.
+>
+> Two of its own claims were wrong and the tests caught both. The quality nudge was **eight times larger
+> than one rank of fusion** — it could have jumped a `PROVEN` fragment eight places over better matches,
+> which is precisely what its docstring said it could not do. And *"both routes agree"* turns out to mean
+> **nothing** while the library is smaller than the retrieval pool: the nearness route ranks every
+> eligible fragment, so everything agrees, including a question about cats. The answer now says so in
+> its own note. `python tests/test_retrieve.py`. **Step 12 is next** — the capability registry, the
+> phase's highest-leverage piece.
 >
 > **What that did NOT change:** `write.enabled` is still `false`, every parked item is still unproven,
 > and `R1` — read the day's decisions back — **did not happen before Phase 2 began**, contrary to the

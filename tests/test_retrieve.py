@@ -1,0 +1,220 @@
+# Heron-Agent:  HERON-RAG-RNK-006, HERON-RAG-CTX-007
+# Heron-Step:   11
+# Heron-Status: DRAFT
+# Heron-Since:  0.1.0
+# Heron-Layer:  test
+# See docs/29-metadata-standard.md
+
+"""
+Step 11 - the two searches, fused, behind a filter that is a wall.
+
+    python tests/test_retrieve.py
+
+WHAT IT PROVES
+  1. THE VERSION FILTER IS A WALL. A fragment declared for one release is not
+     returned for another - made the best possible textual match, and still
+     absent. Not demoted. Absent.
+  2. Step 10's recorded disagreement is settled the right way, AND NOT BY A
+     TIE: the scores must actually differ.
+  3. Fusion rewards agreement - a fragment both routes like beats one that only
+     one route loves.
+  4. What was excluded is reported, with a reason.
+  5. The short circuit obeys the filter too. There is no door in the wall.
+"""
+
+import os
+import shutil
+import sys
+import tempfile
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "brain"))
+
+FAILURES = []
+
+
+def check(condition, what):
+    print("  %-5s %s" % ("ok" if condition else "FAIL", what))
+    if not condition:
+        FAILURES.append(what)
+
+
+def add(store, fid, capability, identity, status="DRAFT", revit="2020,2024",
+        kind="filter", domain="test"):
+    store.execute(
+        "INSERT OR REPLACE INTO fragments (id, capability, semantic_identity, "
+        "kind, status, domain, risk, folder, revit) VALUES (?,?,?,?,?,?,?,?,?)",
+        (fid, capability, identity, kind, status, domain, "READ", "x", revit))
+    store.db.commit()
+
+
+def main():
+    home = tempfile.mkdtemp(prefix="heron-retrieve-")
+    os.environ["HERON_KNOWLEDGE"] = home
+
+    import heron_scope as SCOPE
+    import heron_search as SEARCH
+    import heron_embed as EMBED
+    import heron_retrieve as R
+
+    def reindex(store):
+        SEARCH.index(store)
+        EMBED.index(store, force=True)
+
+    try:
+        SCOPE.rebuild()
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            reindex(store)
+
+            print("1. Step 10's disagreement, settled - and NOT by a tie")
+            got, _ = R.retrieve(store, "show me every duct in the model",
+                                revit="2024")
+            check(got and got[0].id == "FRG-ELE-001",
+                  "the duct filter wins: %s" % ", ".join(c.id for c in got))
+            check(len(got) > 1 and got[0].score != got[1].score,
+                  "and the scores DIFFER (%.4f vs %.4f) - it is not winning on "
+                  "alphabetical order" % (got[0].score, got[1].score))
+            check(got[0].keyword_rank == 1 and got[0].vector_rank == 2,
+                  "the two routes still disagree underneath: %s" % got[0].why())
+
+            print()
+            print("2. THE VERSION FILTER IS A WALL")
+            add(store, "FRG-QA-800", "OLD_DUCT_THING",
+                "show me every duct in the model", revit="2021")
+            reindex(store)
+
+            best_match, _ = R.retrieve(store, "show me every duct in the model",
+                                       revit="2021")
+            check(any(c.id == "FRG-QA-800" for c in best_match),
+                  "on Revit 2021 it IS offered - so the filter is not just "
+                  "excluding everything")
+
+            on_2025, excluded = R.retrieve(store,
+                                           "show me every duct in the model",
+                                           revit="2025")
+            check(not any(c.id == "FRG-QA-800" for c in on_2025),
+                  "on Revit 2025 the SAME fragment - an exact phrase match - "
+                  "does not appear at all")
+            check(any(e.id == "FRG-QA-800" and "Revit" in e.reason
+                      for e in excluded),
+                  "and the exclusion is reported with its reason")
+            reason = [e.reason for e in excluded if e.id == "FRG-QA-800"][0]
+            check("NOT ranked lower" in reason,
+                  "which says plainly that it was not merely demoted")
+
+            print()
+            print("  ..and the short circuit obeys the same wall")
+            answer = R.find(store, "show me every duct in the model",
+                            revit="2025")
+            check(answer.fragment_id != "FRG-QA-800",
+                  "an exact declared phrasing does NOT get a door in the wall")
+
+            print()
+            print("3. Fusion rewards agreement")
+            add(store, "FRG-QA-801", "BOTH_LIKE_ME", "ducts on a level")
+            add(store, "FRG-QA-802", "ONE_LIKES_ME", "ducts ducts ducts ducts")
+            reindex(store)
+            ranked, _ = R.retrieve(store, "ducts on a level", revit="2024")
+            top = ranked[0]
+            check(top.keyword_rank is not None and top.vector_rank is not None,
+                  "the winner is one BOTH routes found: %s" % top.why())
+
+            print()
+            print("4. Retired knowledge is kept but not offered")
+            add(store, "FRG-QA-803", "OLD_WAY", "select all ducts",
+                status="DEPRECATED")
+            reindex(store)
+            ranked, excluded = R.retrieve(store, "select all ducts", revit="2024")
+            check(not any(c.id == "FRG-QA-803" for c in ranked),
+                  "a DEPRECATED fragment is not returned")
+            check(any(e.id == "FRG-QA-803" for e in excluded),
+                  "but it is still there, and the exclusion says so - Golden "
+                  "Rule 4, a record is never destroyed")
+
+            print()
+            print("5. The quality nudge settles ties, and only ties")
+            add(store, "FRG-QA-804", "PROVEN_TWIN", "a tie breaker phrase",
+                status="PROVEN")
+            add(store, "FRG-QA-805", "DRAFT_TWIN", "a tie breaker phrase")
+            reindex(store)
+            ranked, _ = R.retrieve(store, "a tie breaker phrase", revit="2024")
+            ids = [c.id for c in ranked]
+            check(ids and ids[0] == "FRG-QA-804",
+                  "between two equal matches, the PROVEN one wins: %s"
+                  % ", ".join(ids[:2]))
+
+            far = R.QUALITY["PROVEN"] < (1.0 / (R.RRF_K + 1)) - (1.0 / (R.RRF_K + 2))
+            check(far,
+                  "and the nudge (%.4f) is smaller than one rank of fusion "
+                  "(%.4f) - it cannot overturn a better match"
+                  % (R.QUALITY["PROVEN"],
+                     (1.0 / (R.RRF_K + 1)) - (1.0 / (R.RRF_K + 2))))
+
+            print()
+            print("6. A weak match is LABELLED weak, not dressed up")
+            answer = R.find(store, "a completely unrelated sentence about cats",
+                            revit="2024")
+            check(answer.route in ("hybrid", "nothing"),
+                  "an unrelated question still returns something - common words "
+                  "overlap, and pretending otherwise would need an invented "
+                  "threshold (route: %s)" % answer.route)
+            if answer.route == "hybrid":
+                check(not answer.autorun,
+                      "and nothing runs off it - only an exact identity match "
+                      "on a PROVEN fragment may do that")
+                check("means nothing here yet" in answer.note,
+                      "and the answer says WHY it cannot vouch for itself: the "
+                      "library is smaller than the pool, so every candidate is "
+                      "found by both routes and 'both agree' is true of "
+                      "everything - including a question about cats")
+
+            print()
+            print("  ..nothing found and nothing ALLOWED are different sentences")
+            empty = SCOPE.open_scope(SCOPE.EXPERIMENTAL)
+            try:
+                SEARCH.ensure_tables(empty)
+                add(empty, "FRG-QA-810", "ONLY_2021", "the only thing here",
+                    revit="2021")
+                SEARCH.index(empty)
+                EMBED.index(empty, force=True)
+                blocked = R.find(empty, "the only thing here", revit="2025")
+                check(blocked.route == "nothing",
+                      "with every candidate version-blocked, the route is nothing")
+                check("version filter" in blocked.note,
+                      "and it says they EXIST but are not for this release, "
+                      "rather than letting the user hunt for one that is there")
+            finally:
+                empty.close()
+
+            print()
+            print("7. No filter given means no version wall")
+            ranked, _ = R.retrieve(store, "show me every duct in the model")
+            check(any(c.id == "FRG-QA-800" for c in ranked),
+                  "with no Revit named, the 2021-only fragment is eligible - "
+                  "Heron does not invent a version it was not told")
+        finally:
+            store.close()
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+        os.environ.pop("HERON_KNOWLEDGE", None)
+
+    print()
+    if FAILURES:
+        print("FAILED - %d check(s):" % len(FAILURES))
+        for line in FAILURES:
+            print("  %s" % line)
+        return 1
+
+    print("PASSED - the version filter is a wall, the two routes are fused")
+    print("rather than picked between, and the winner beats the runner-up on")
+    print("score rather than on alphabetical order.")
+    print()
+    print("It proves nothing about whether any fragment WORKS. Retrieval")
+    print("returning the right fragment and that fragment doing the right")
+    print("thing are separate claims, and only the first is tested here.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
