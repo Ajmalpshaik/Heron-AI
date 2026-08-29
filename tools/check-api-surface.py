@@ -11,15 +11,20 @@ Check every Revit API member Heron uses against every supported release.
     python tools/check-api-surface.py                 2020 through 2027
     python tools/check-api-surface.py 2025 2026       just those
 
-WHY IT EXISTS — it covers what the compiler cannot reach
---------------------------------------------------------
-`tools/check-compile.py` is the stronger check and should be run first, but it
-stops at Revit 2024 off Windows: 2025+ target `net8.0-windows` with WPF, which
-needs the Windows Desktop SDK. Those releases were reported SKIPPED, and a
-skip is not a pass — so the newest three releases had nothing checking them at
-all on the machines this project is actually worked on.
+WHY IT EXISTS — it reads what the releases actually ship
+-------------------------------------------------------
+`tools/check-compile.py` is the stronger check and should be run first. This
+was written while that gate stopped at Revit 2024 off Windows, leaving the
+newest three releases with nothing checking them at all.
 
-This closes that hole for the failure that has actually happened here:
+That gap closed on 2026-08-28 - the compile gate now reaches 2020 through 2027
+anywhere, given an SDK carrying the WindowsDesktop targets (docs/30 section 2a).
+This is therefore no longer the only cover for those releases, and is still
+worth running, because it answers a question a compile does not: it reads the
+SHIPPED assemblies for all eight releases at once, where a compile reads the
+NuGet reference packages for the single release it is building.
+
+It remains the sharpest tool for the failure that has actually happened here:
 **a member that simply does not exist in a release.** `Document.CreationGUID`
 compiled clean on 2024 and does not exist on 2020; it had been read several
 times and survived every reading.

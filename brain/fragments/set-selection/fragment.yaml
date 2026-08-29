@@ -1,0 +1,51 @@
+heron-agent: HERON-REVIT-SEL-008
+heron-step: 7
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-001
+semantic-identity: "put these elements in the current selection"
+kind: action
+domain: revit.selection
+capability: SET_SELECTION
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+purpose: >
+  Answers "what to do to them" for the commonest read-only job there is: show
+  the user what was found, on screen, where they can see it. Pairs with any
+  filter - that is the point of it being a separate fragment rather than part
+  of a "select ducts" whole.
+
+contract:
+  needs:
+    - name: uidoc
+      type: UIDocument
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: selectedCount
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Selection.SetElementIds takes an ICollection<ElementId> on every release from
+  2020 to 2027. No ElementId is built from an int, so 2024's move to 64-bit ids
+  does not reach this code.
+
+# risk is EXECUTE and not MODIFY on purpose: changing what is highlighted is
+# not a change to the model, survives no transaction and needs no undo. The
+# gate that matters for this fragment is the one that lets it run at all with
+# write.enabled false - C5 in NEEDS-CHECKING.md is that exact test.
+
+utterances:
+  - select these
+  - highlight them on screen
+  - show me the ones you found
+  - put them in the selection
+  - clear the selection

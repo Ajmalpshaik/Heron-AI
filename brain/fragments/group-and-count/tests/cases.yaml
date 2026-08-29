@@ -1,0 +1,15 @@
+positive:
+  - given: 4 ducts, three at 300x300 and one at 400x200
+    expect: two rows - 300x300 with 3 first, then 400x200 with 1
+
+  - given: the same values in a different order
+    expect: the SAME table - the order does not depend on how they arrived
+
+negative:
+  - given: an empty values dictionary
+    expect: >
+      an empty table, not a single row with a blank size. A blank row is how a
+      data problem gets reported as if it were a size
+
+second_route:
+  - a Revit schedule grouped by the same parameter

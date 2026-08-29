@@ -1,0 +1,78 @@
+# The five standard fields (docs/29). `heron-status` IS this fragment's
+# lifecycle state - there is no second `status` key, because one fact wants
+# one home and this repository has been bitten by the alternative.
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 7
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+# What this fragment IS. The folder name is where it happens to sit today -
+# rename it and nothing downstream notices. docs/09 section 4.
+id: FRG-ELE-001
+semantic-identity: "all elements of one category in the active document"
+kind: filter
+domain: revit.elements
+capability: FILTER_ELEMENTS_BY_CATEGORY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers "which elements" for a single Revit category, in the active document,
+  excluding types, optionally scoped to one level. It is the filter half of
+  every "select the X" and "how many X" job, which is exactly why it is a
+  fragment and not part of either: two questions sharing one filter is D-29's
+  design working.
+
+  Pass ElementId.InvalidElementId as levelId for the whole model.
+
+  Reports unresolvedLevel - how many elements had NO level found at all - so a
+  broken level lookup reads as "12 found, 12 with no level" instead of as a
+  plausible zero. Silently dropping them is what makes that failure invisible.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: category
+      type: BuiltInCategory
+      source: request
+    - name: levelId
+      type: ElementId
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: unresolvedLevel
+      type: int
+
+# An explicit list, never a range. ">=2020" would claim 2028 and every release
+# after it, which is exactly what D-05 forbids - an unlisted release is an
+# error, never a guess.
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. FilteredElementCollector, OfCategory and
+  WhereElementIsNotElementType are unchanged across 2020 to 2027, and no
+  ElementId is constructed from an int - which is what would have made 2024's
+  move to 64-bit ids matter here.
+
+# No proof, and therefore not past DRAFT. It has never run against a real
+# model; NEEDS-CHECKING.md carries that like everything else unproven.
+
+# What somebody might actually type. These are what the exact-match short
+# circuit runs on - nobody asks for "all elements of one category in the active
+# document", they ask for ducts. Revit's own tokens belong here too: they are
+# what a modeller pastes in, and they are exactly what a meaning-based search
+# handles worst.
+utterances:
+  - select all ducts
+  - how many ducts are there
+  - list every duct in the model
+  - find all elements of a category
+  - OST_DuctCurves
+  - all the pipes on level 2
+  - which walls are on this level

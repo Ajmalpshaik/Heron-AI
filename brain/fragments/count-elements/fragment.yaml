@@ -1,0 +1,38 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-002
+semantic-identity: "how many elements a filter found"
+kind: action
+domain: revit.reporting
+capability: COUNT_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  How many elements a filter found.
+  Trivial arithmetic, and a separate fragment on purpose: every count question in
+  the library ends here, so the one place a count can go wrong is one place.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: count
+      type: int
+    - name: countedNothing
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+utterances:
+  - how many are there
+  - count them
+  - give me the number

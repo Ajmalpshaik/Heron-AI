@@ -1,0 +1,44 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-001
+semantic-identity: "reads one named parameter off every element"
+kind: action
+domain: revit.parameters
+capability: READ_ELEMENT_PARAMETERS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads one named parameter off every element, and says which of three things
+  was true for each: it had a value, it had the parameter but blank, or it did not
+  have the parameter at all.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: parameterName
+      type: string
+      source: request
+  provides:
+    - name: values
+      type: IDictionary<ElementId, string>
+    - name: blank
+      type: IList<ElementId>
+    - name: absent
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+utterances:
+  - what is the system name on these
+  - read the mark values
+  - get the size parameter
+  - which ones have no value

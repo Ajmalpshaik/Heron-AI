@@ -1,0 +1,42 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-001
+semantic-identity: "turns a list of findings into the reply a modeller reads"
+kind: action
+domain: revit.qa
+capability: REPORT_FINDINGS
+version: 1
+source: OFFICIAL
+risk: SUGGEST
+
+purpose: >
+  Turns a list of findings into the reply a modeller reads: what was checked,
+  what was found, and - said out loud - when nothing was found at all.
+
+contract:
+  needs:
+    - name: findings
+      type: IList<string>
+    - name: checked
+      type: int
+      source: request
+    - name: whatWasChecked
+      type: string
+      source: request
+  provides:
+    - name: report
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+utterances:
+  - report what you found
+  - tell me what is wrong
+  - give me the results
+  - what did the check say

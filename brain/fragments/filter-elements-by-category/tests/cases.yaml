@@ -1,0 +1,37 @@
+# What a proof of this fragment must contain. D-30: the negative case is the one
+# that catches "succeeded and did nothing", so it is not optional.
+
+positive:
+  - given: a model with 4 ducts, whole model (levelId = InvalidElementId)
+    category: OST_DuctCurves
+    expect: 4 elements, and the same 4 a manual selection gives
+
+  # THE CASE THAT MATTERS MOST, and the reason this fragment was re-authored.
+  # A level lookup that stops before RBS_START_LEVEL_PARAM does not throw on a
+  # duct - it silently matches nothing and reports success. Only a level scope
+  # that SHOULD match can tell the two apart, so a proof of this fragment
+  # without this row is not a proof of the thing most likely to be wrong.
+  - given: the same model, scoped to the level those 4 ducts are actually on
+    category: OST_DuctCurves
+    expect: >
+      4 - the SAME count as the whole-model run. Anything less, and especially
+      0, means the level chain is not reaching MEP curves
+
+  - given: walls on a known level, to prove the chain's other end
+    category: OST_Walls
+    expect: the walls on that level only, via Wall.LevelId rather than a parameter
+
+negative:
+  - given: the same model, which has no air terminals
+    category: OST_DuctTerminal
+    expect: EMPTY, and reported as empty rather than as a success with no count
+
+  - given: ducts, scoped to a level that has none on it
+    category: OST_DuctCurves
+    expect: >
+      EMPTY - and this zero is only meaningful once the positive level case
+      above has passed. On its own it is indistinguishable from a broken chain
+
+second_route:
+  - compare against Revit's own schedule count for the category
+  - for the level cases, compare against a view filtered to that level by eye

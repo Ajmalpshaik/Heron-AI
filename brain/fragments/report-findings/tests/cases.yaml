@@ -1,0 +1,17 @@
+positive:
+  - given: 247 elements checked, 3 findings
+    expect: names the 247 AND the 3, and lists all three
+
+  - given: 247 elements checked, 0 findings
+    expect: "Checked 247 ... No problems found."
+
+negative:
+  - given: 0 elements checked, 0 findings
+    expect: >
+      "NOTHING WAS CHECKED ... this is not a pass." It must NOT read as a clean
+      result. This is the single most important line in the fragment - a check
+      that ran over nothing and reported success is the defect the library
+      exists to prevent
+
+second_route:
+  - count the same category by eye in Revit before running the check

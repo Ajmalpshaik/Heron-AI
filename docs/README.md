@@ -120,7 +120,8 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 27 | [**Build Order**](27-build-order.md) | **Start here to build.** Six numbered steps, each independently provable |
 | 28 | [**The Complete Agent Registry**](28-agent-registry.md) | **All 250 agents** — ID, what each one does, tier, risk level, build step |
 | 29 | [Metadata Standard](29-metadata-standard.md) | The five fields every artefact carries — and how they tie the code back to the registry |
-| 30 | [Compiling Away From Windows](30-compiling-away-from-windows.md) | **The compile gate runs anywhere.** Revit 2020–2024 from NuGet on Linux, what a pass proves, and the 2020-only defect it caught on its first run |
+| 30 | [Compiling Away From Windows](30-compiling-away-from-windows.md) | **The compile gate runs anywhere.** All eight releases, 2020–2027, from NuGet on Linux; what a pass proves; the 2020-only defect it caught on its first run; and why three releases were skipped for a reason that was about the SDK package, not the operating system |
+| 31 | [Studying The Existing Libraries](31-studying-the-existing-libraries.md) | **How a fragment is studied and re-authored, never imported.** What travels (the mechanism, the scar) and what cannot (the code, the words, the proof); the owner's three rules — check and edit, add, split; and why 221 verified fragments arrive here as 221 unproven ones |
 
 ## Working documents
 

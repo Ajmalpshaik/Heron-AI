@@ -1,0 +1,46 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-002
+semantic-identity: "turns blank and absent parameter results into findings"
+kind: action
+domain: revit.qa
+capability: DESCRIBE_BLANK_PARAMETERS
+version: 1
+source: OFFICIAL
+risk: ANALYZE
+
+purpose: >
+  The missing link between reading a parameter and reporting on it: turns the
+  blank and absent lists into sentences a modeller can act on, keeping the two
+  apart because they go to different people.
+
+  It exists because the graph said so. REPORT_FINDINGS needed `findings` and
+  nothing in the library produced any - the orphan check named it, which is
+  what a dependency graph is for.
+
+contract:
+  needs:
+    - name: blank
+      type: IList<ElementId>
+    - name: absent
+      type: IList<ElementId>
+    - name: parameterName
+      type: string
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+utterances:
+  - which ones are blank
+  - what is missing
+  - describe the empty parameters
+  - list the ones with no value

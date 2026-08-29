@@ -1,0 +1,12 @@
+positive:
+  - given: 4 elements found by a filter
+    expect: 4 highlighted on screen, confirmed by eye, and selectedCount is 4
+
+negative:
+  - given: a filter that found nothing
+    expect: >
+      the selection is CLEARED and selectedCount is 0 - not left holding
+      whatever was selected before, which would read on screen as a success
+
+second_route:
+  - Revit's own status bar count for the active selection

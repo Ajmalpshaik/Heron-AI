@@ -1,0 +1,17 @@
+positive:
+  - given: 4 ducts, all with a System Name filled in
+    expect: 4 in values, 0 blank, 0 absent
+
+  - given: the same 4 ducts, reading Comments which nobody has filled in
+    expect: >
+      0 in values, 4 BLANK, 0 absent - the parameter exists and is empty, which
+      is a different finding from not having it
+
+negative:
+  - given: the same 4 ducts, reading a parameter name that does not exist
+    expect: >
+      0 in values, 0 blank, 4 ABSENT - and it must not throw. This is the case
+      that proves blank and absent are genuinely separated rather than merged
+
+second_route:
+  - open one element's properties in Revit and read the value by eye

@@ -1,0 +1,39 @@
+heron-status: DRAFT
+heron-step: 14
+heron-since: 0.1.0
+heron-layer: brain
+
+id: find-blank-parameters
+name: Which of these is missing something
+domain: revit.qa
+risk: READ
+
+purpose: >
+  A QA sweep: which elements have a parameter attached but empty. The report a
+  model gets checked with before it is issued.
+
+# The words Ajmal actually says, not the words the technique is named after.
+utterances:
+  - which ducts have no system name
+  - find the blank parameters
+  - what is missing before I issue this
+  - check for empty values
+
+# CAPABILITIES, never fragment ids. A fragment can be replaced, split or
+# retired without this file changing - that is what the registry is for.
+needs:
+  - FILTER_ELEMENTS_BY_CATEGORY
+  - READ_ELEMENT_PARAMETERS
+  - REPORT_FINDINGS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a document is open
+  - the parameter name is given or resolvable
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Has-the-parameter, has-a-value and missing-the-parameter are three
+  different answers, and collapsing them into "blank" hides which one is true.

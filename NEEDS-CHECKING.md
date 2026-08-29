@@ -1,5 +1,28 @@
 # Needs checking — the register
 
+> ## 📌 This is a RECORD now, not a gate — 2026-08-28
+>
+> **The owner's instruction:** *"checking in Revit is not possible within 1 week, so keep the checking
+> process as a document and start Phase 2 — we need to finish that."*
+>
+> So: **no Revit until roughly 2026-09-04.** Nothing below has changed status, nothing has been
+> downgraded, and nothing has been quietly assumed to pass. What changed is only this — **work no longer
+> waits here.** Phase 2 began on that instruction ([27 — Build Order](docs/27-build-order.md), Steps 7
+> to 14), and Steps 7 to 13 were chosen and ordered so that none of them needs a Revit.
+>
+> **Two things this does NOT license:**
+>
+> - **`write.enabled` stays `false`.** [D-19](docs/DECISIONS.md) is untouched. No Phase 2 step asks for
+>   it, and a step that started asking would be the wrong step.
+> - **A parked item is still unproven.** The single failure this file exists to prevent is an untested
+>   claim ageing into a believed one. A week of not looking at it does not make `D3` any more true.
+>
+> **`R1` was meant to happen first** — read the day's decisions back before Phase 2 work begins — and it
+> has not. That was the owner's own instruction and this one supersedes it, which is his to do. It stays
+> below as a review to do at the PC. The reason it was wanted has not gone away: **two decisions were
+> reversed within hours of being recorded**, and Phase 2 is being built on five of that set.
+
+
 **Almost everything in this file is UNPROVEN**, and what changed on 2026-08-28 is worth stating
 precisely rather than generally.
 
@@ -12,9 +35,9 @@ what it did not.
 every one that matters most. Compiling is not behaving: `D3` is still the line that catches a unit
 error, and nothing here has moved anything yet.
 
-**54 items, 3 done, 51 left** — counted from the rows on 2026-08-28, not carried forward. Of the 51:
-**47 need Revit**, **2 need Windows but not Revit** (`A4`, `A5`), and **2 need only a conversation**
-(`R1`, `R2` — reading the day's decisions back).
+**57 items, 4 done, 53 left** — counted from the rows on 2026-08-28, not carried forward. Of the 53:
+**47 need Revit**, **2 need Windows but not Revit** (`A4`, `A6`), **1 needs only a reachable network**
+(`A7`), and **3 need only a conversation** (`R1`, `R1b`, `R2` — reading the day's decisions back).
 
 **Count the rows before quoting a number here, and check the pattern you count with.** This file and
 [`HANDOVER.md`](HANDOVER.md) said *49 items* and *45 need a real Revit* from the day they were written,
@@ -23,6 +46,13 @@ was added and a count matching `[A-H]` silently skipped it and reported 52. **A 
 whole group is worse than no count**, which is the same lesson as a grep that finds nothing: prove the
 pattern can see what you know is there.
 
+**It happened a third time, and the same way.** The line above read *54 items, 3 done* until 2026-08-28,
+against **55** rows — a pattern matching `[A-Z][0-9]+` cannot see `R1b`, the one ID with a letter on the
+end, and `R1b` is also why *"2 need only a conversation"* was three. The pattern that gets this right is
+`^\| (~~)?\*\*[A-Z][0-9]+[a-z]?\*\*`. The discipline that gets it right whatever the pattern is to
+**print the IDs it matched and read them** rather than trusting the total — all three drifts recorded in
+this section were visible in the list and invisible in the number.
+
 ---
 
 ## How this file works
@@ -30,6 +60,14 @@ pattern can see what you know is there.
 **It is the single register.** [`HANDOVER.md`](HANDOVER.md) §6 points here rather than keeping its own
 copy, because two lists of the same thing drift and this repository has been bitten by that more than
 once.
+
+**Unproven FRAGMENTS are the one thing that does not get rows here** — for that same reason, not as an
+exception to it. Every fragment carries its own `heron-status` and its own proof, and
+`python brain/heron_fragment.py` lists them with what each still owes. Copying that list into this file
+would create exactly the second list this paragraph warns about, and it would go stale first: fragments
+are added and promoted far more often than register rows change. **A fragment below `PROVEN` has never
+met a model** — that is what the status means, it is machine-checked, and it needs no row here to be
+true.
 
 **Every item has an ID** — `A1`, `D3` — so it can be named in a message without describing it again.
 Say *"A1 passed"* or *"D3 failed, here is what it said"* and that is enough.
@@ -50,16 +88,25 @@ right. Add an item every time something is built away from Revit.
 
 ## Group A — does it build, and does the bridge work
 
-**Does NOT need Revit.** Most of this group is now **DONE**, and it no longer blocks the rest.
+**Does NOT need Revit.** This group is now **four rows done of six**, and both that are left (`A4`, `A6`)
+need Windows for one specific reason rather than in general.
 
-**A2, A3 and A4 passed on 2026-08-28**, on Linux, in a container — which nobody had tried, because
-"Revit is Windows-only" had been carried for three sessions as "so the C# cannot be compiled anywhere".
-The Revit API reference assemblies come from NuGet, which this repository's own add-in project already
-used by default, and Linux distributions package the .NET SDK. See
-[docs/30](docs/30-compiling-away-from-windows.md), and run it yourself with one command:
+**A1, A2, A3 and A5 are done, and A4 all but its last mile** — all on 2026-08-28, on Linux, in a
+container, which nobody had tried because "Revit is Windows-only" had been carried for three sessions as
+"so the C# cannot be compiled anywhere". The Revit API reference assemblies come from NuGet, which this
+repository's own add-in project already used by default, and Linux distributions package the .NET SDK.
+
+**A5 fell to the same mistake wearing different clothes, later the same day.** With 2020–2024 compiling,
+the three newest releases were still skipped as *needing the Windows Desktop SDK* — and that turned out
+to be a fact about **which SDK package was installed**, not about the operating system. Ubuntu's
+`dotnet-sdk-10.0` carries those targets; its `dotnet-sdk-8.0` does not. **All eight releases now compile
+here**, and the lesson is the one this project keeps re-learning: an environment-specific block belongs
+in a sentence that names the environment, or it hardens into a fact about the project. See
+[docs/30 §2a](docs/30-compiling-away-from-windows.md), and run it yourself with one command:
 
 ```bash
-python tools/check-compile.py
+apt-get install -y dotnet-sdk-10.0     # the .NET 8 package builds 2020-2024 only
+python tools/check-compile.py          # 2020 through 2027, all four projects, 0 warnings
 ```
 
 **Two real defects came out of it, both of which reading had already missed twice:**
@@ -77,7 +124,9 @@ python tools/check-compile.py
 | ~~**A2**~~ | ~~`dotnet build -p:RevitVersion=2020`~~ | **DONE 2026-08-28.** Compiles, 0 warnings, after the `CreationGUID` fix above. The other five spots this row used to warn about — `WorksharingUtils.GetCheckoutStatus`, `IFailuresPreprocessor`, `TransactionGroup.GetStatus`, `BuiltInCategory.INVALID`, `UIDocument.RefreshActiveView` — are all **clean on 2020 and 2024** |
 | ~~**A3**~~ | ~~`dotnet build -p:RevitVersion=2024`~~ | **DONE 2026-08-28.** So are 2021, 2022 and 2023 — all four projects, 0 warnings each |
 | **A4** | `dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024` then `python tests/test_bridge_roundtrip.py` — **on Windows** | **Mostly done 2026-08-28, and the remainder genuinely needs Windows.** All 32 checks pass on Linux: framing, the JSON parser, the token, newest-connection-wins, the toggle cycle and **the whole lease**. What a Linux run cannot touch is the Windows named pipe itself — its naming, its security descriptor, and the `CreateNewInstance` flag from [HANDOVER](HANDOVER.md) §4 note 2. Run it once on Windows and this row goes |
-| **A5** | `python tools/check-compile.py 2025 2026 2027` — **on Windows** | Builds. These three target `net8.0-windows` / `net10.0-windows` with WPF, so they need the Windows Desktop SDK and are reported **SKIPPED** off Windows. **A skip is not a pass**, and this row exists so it never reads as one. 2027 also needs the .NET 10 SDK. **Partly covered since 2026-08-28:** `python tools/check-api-surface.py` reports every Revit member Heron calls as present on **2020 through 2027** — that is the missing-member class closed for all eight releases, but it matches by name, so a changed signature would still only show up in a real compile |
+| ~~**A5**~~ | ~~`python tools/check-compile.py 2025 2026 2027`~~ | **DONE 2026-08-28, and it did not need Windows either.** All four projects compile on 2025, 2026 and 2027 — `net8.0-windows` and `net10.0-windows`, 0 warnings — on Linux, with the .NET 10 SDK and `-p:EnableWindowsTargeting=true`. This row assumed the Windows Desktop SDK was a property of the operating system; it is a property of the **SDK package**, and Ubuntu's `dotnet-sdk-10.0` ships it while its `dotnet-sdk-8.0` does not. The script had the right MSBuild flag and applied it **only on Windows**, where it does nothing. Full account and the validation in [docs/30 §2a](docs/30-compiling-away-from-windows.md). `python tools/check-api-surface.py` still runs and still adds something a compile cannot — it reads the **shipped** assemblies, where a compile reads the NuGet reference packages |
+| **A6** | On **Windows**, run `python tools/check-compile.py 2025` and read the first lines of output | It says **WindowsDesktop targets found in the .NET N SDK** and then builds. `check-compile.py` now decides whether it can build the WPF releases by looking for `Sdks/Microsoft.NET.Sdk.WindowsDesktop` under each installed SDK, instead of by asking whether it is on Windows — and **that probe has only ever been run on Linux.** Microsoft's SDK is expected to carry those targets on every platform, but expected is the word this register exists to distrust. If it wrongly reports them absent, 2025–2027 would be **skipped on the one machine where they used to build**, so this is a five-minute check with a real downside behind it. If it does misread, the script attempts the build anyway whenever it cannot read the SDK list at all — that fallback is also unproven here |
+| **A7** | On a machine that can reach a model host, `pip install --user model2vec` then `python brain/heron_embed.py "stop the air going the wrong way"` | The first line reads **`Backend: model`**, not `lexical`, and the duct fragment comes back for a sentence that contains none of its words. **Step 10 shipped with two backends and only one of them has ever run.** The built-in `lexical` one works offline with nothing installed and is measured, in numbers, as *not meaning* — synonyms score zero. The trained one is the half that understands a grille and a diffuser are cousins, and it could not be tested where it was written: `huggingface.co` is refused by that container's network policy (`connect_rejected`, measured 2026-08-28). **This needs no Revit and no Windows** — any machine that can reach the model host will do, which may well be the same phone this was written on |
 
 ## Group R — read the five decisions back (no Revit needed, but do it at the PC)
 

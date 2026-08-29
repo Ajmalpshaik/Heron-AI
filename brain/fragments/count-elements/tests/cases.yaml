@@ -1,0 +1,12 @@
+positive:
+  - given: a model with 4 ducts, filtered by category
+    expect: count is 4, countedNothing is false
+
+negative:
+  - given: a filter for a category the model has none of
+    expect: >
+      count is 0 AND countedNothing is TRUE - the caller must be able to tell
+      this apart from a broken filter, which is the whole reason the flag exists
+
+second_route:
+  - Revit's own schedule count for the same category

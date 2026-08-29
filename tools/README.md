@@ -92,14 +92,19 @@ python tools/check-compile.py 2020 2024       # just those two
 ```
 
 Builds all four projects against every Revit version, using the Revit API reference assemblies from
-NuGet. This is `A2` and `A3` of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) in one command instead of
-one version at a time.
+NuGet. This is `A2`, `A3` and `A5` of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) in one command instead
+of one version at a time.
 
 **It does not need Windows and it does not need Revit** — which is the point, because until
 2026-08-28 not one `.cs` file here had been through a compiler at all. The first run found a real
 2020-only error. [docs/30](../docs/30-compiling-away-from-windows.md) is the whole story.
 
-Revit 2025+ needs the Windows Desktop SDK and is reported **SKIPPED** off Windows, never as passed.
+**All eight releases, 2020 through 2027, compile off Windows** — but only with an SDK that carries the
+WindowsDesktop MSBuild targets, because the add-in uses WPF for its ribbon icons. On Ubuntu that is
+`dotnet-sdk-10.0`; the `dotnet-sdk-8.0` package omits them and stops at 2024. The script **probes for
+those targets** rather than for an operating system, and when they are missing it skips the affected
+releases and names the package to install. A skip is still never reported as a pass.
+
 A pass means the API surface agrees; it is **not** evidence that anything behaves correctly.
 
 ---
@@ -151,3 +156,37 @@ hard way:
 2. **A cross-reference that is not checked is a cross-reference that is broken.**
 3. **A generated artefact cannot lie about its source.**
 4. **Code no compiler has read is a draft, whatever the documentation calls it.**
+
+---
+
+## `check-gaps.py` — what is unfinished, and what is only waiting
+
+```bash
+python tools/check-gaps.py
+```
+
+One sweep over everything built — the build order against what is on disk, every test run, every
+checker, every agent id the code claims against the registry, the fragment library, the capability
+registry, the graph, **whether the brain is reachable from the host at all**, and the register — sorted
+into **two lists that must never be one**:
+
+| | |
+|---|---|
+| **UNFINISHED** | somebody could do this here, today. **The exit code follows this list only** |
+| **WAITING** | needs a real Revit, or Windows, or a reachable network. Not work anybody can do here |
+
+**Why the split is the point.** This repository's recurring failure is not bugs — it is an unproven
+claim quietly ageing into a believed one. *"Nobody finished this"* and *"nobody has a Revit"* look
+identical in one list, and a reader taught to skim past the second stops seeing the first.
+
+**It found two bugs in itself on its first run**: it scans files for the `Heron-Agent:` field, its own
+source contains that pattern, and it duly reported its own regex as two undeclared agents. A scanner
+that scans itself finds itself. It now skips its own file and anchors the match to a comment line.
+
+**And on 2026-08-29 it was found reporting a green it had not earned.** Every section asked whether a
+thing *exists*; none asked whether anything *calls* it. So it passed the whole of Phase 2 while all
+eight `brain/` modules, seven fragments and ten skills sat unreachable — imported by nothing but their
+own tests, and therefore unusable from a conversation. The `THE BRAIN` section was added for exactly
+that, and was validated in both directions before its result was believed: with an import present it
+reports the call site, with none it reports the gap. **The general lesson is worth more than the fix —
+a checker written from a build order can only ever ask whether the build order was followed.**
