@@ -66,8 +66,22 @@ person, or the owner on his phone.
 > which is precisely what its docstring said it could not do. And *"both routes agree"* turns out to mean
 > **nothing** while the library is smaller than the retrieval pool: the nearness route ranks every
 > eligible fragment, so everything agrees, including a question about cats. The answer now says so in
-> its own note. `python tests/test_retrieve.py`. **Step 12 is next** — the capability registry, the
-> phase's highest-leverage piece.
+> its own note. `python tests/test_retrieve.py`.
+>
+> **Step 12 is built** — the capability registry, and it passes its own acceptance test: a second
+> provider is added and **the call site is the same line of code**, then the first is deleted and the
+> same line still answers. A capability nobody provides **is** the gap, so there is no second list to
+> keep in step.
+>
+> Its one real design decision: **almost everything is derived rather than stored**, which is
+> [D-40](docs/DECISIONS.md) applied. Risk in particular — it already has two homes (the tool registry
+> and each fragment) and a third declaration would guarantee that one day two disagree and nobody knows
+> which is true. So a capability's risk is the **highest among its providers**, computed — and providers
+> that disagree about it are **reported as a defect**, because a thing that reads and a thing that
+> modifies are not two implementations of one capability. A declared value would have hidden exactly
+> that. Platform support is an **intersection** for the same reason: a union would claim 2027 because
+> one provider manages it, then hand back one that does not. `python tests/test_capability.py`.
+> **Step 13 is next** — the dependency graph, then Step 14 is the fragments.
 >
 > **What that did NOT change:** `write.enabled` is still `false`, every parked item is still unproven,
 > and `R1` — read the day's decisions back — **did not happen before Phase 2 began**, contrary to the

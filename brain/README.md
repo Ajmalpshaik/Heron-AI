@@ -1,6 +1,6 @@
 # brain/ — Part 3, Heron Brain
 
-**Knowledge.** Runs outside Revit. **Phase 2 started 2026-08-28 — Steps 7 to 11 done, 5 of its 8.**
+**Knowledge.** Runs outside Revit. **Phase 2 started 2026-08-28 — Steps 7 to 12 done, 6 of its 8.**
 
 | | |
 |---|---|
@@ -15,6 +15,7 @@
 | [`heron_fragment.py`](heron_fragment.py) | **Step 7.** What a fragment IS on disk, and the validator that will not let it lie. Identity is not the filename; the contract is data, not prose; a proof without a negative case is refused |
 | [`fragments/`](fragments/) | The library. Two so far, both `DRAFT` — written by hand to prove the shape, and **neither has met a real model** |
 | [`heron_search.py`](heron_search.py) | **Step 9.** Finding a fragment by exact words. Three routes and it says which answered: `identity` (one lookup, no search), `cache` (this wording was resolved before), `keywords` (FTS5, ranked). Only a **PROVEN** fragment may run off an exact match without asking |
+| [`heron_capability.py`](heron_capability.py) | **Step 12.** Ask for *what you want done*, never for *who does it*. Add a provider, retire one, split one into three — **no call site changes**. Almost all of it is **derived** from the fragments (D-40), including risk, which already has two homes and must not gain a third |
 | [`heron_retrieve.py`](heron_retrieve.py) | **Step 11.** The whole lookup: a structured filter **first**, then keywords and nearness over the survivors, fused by reciprocal rank. **The Revit version filter is a wall** — an incompatible fragment is not demoted, it is absent — and what was excluded is reported with its reason |
 | [`heron_embed.py`](heron_embed.py) | **Step 10.** Finding a fragment by something other than its exact words. **Two backends**: `lexical` is built in, offline, needs nothing installed — and is measured, in numbers, as *not meaning*; `model` is a trained encoder used when one is present, and **has never run** (`A7`). Content-hashed, so re-indexing unchanged files costs nothing |
 | [`heron_scope.py`](heron_scope.py) | **Step 8.** One knowledge store per scope, as one file each. A cross-scope query is impossible to *write*: the API takes one scope and `ATTACH` is refused by name. The stores are **derived** — delete them all and `--rebuild` puts them back |
@@ -26,7 +27,7 @@ Run `python brain/heron_fragment.py` to validate the library and
 
 ## What is still to come
 
-Steps 12 to 14: the capability registry and the exact-match short circuit · local
+Steps 13 and 14: the dependency graph and the exact-match short circuit · local
 embeddings · hybrid retrieval · the capability registry · the dependency graph · ten real skills.
 
 ## Why it stayed empty until now
