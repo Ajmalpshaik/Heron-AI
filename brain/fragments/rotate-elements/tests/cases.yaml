@@ -1,0 +1,41 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 4 free-standing air terminals, 90 degrees, no pivot
+    expect: >
+      rotated = 4, and each one has turned about ITSELF - the row is where it
+      was, every terminal facing a new way. Read one Rotation value back
+
+  - given: the same 4 with a pivot at the room corner
+    expect: >
+      the whole row SWINGS about that corner and ends up somewhere else
+      entirely. This and the case above are different jobs, and a pivot that
+      was quietly defaulted would turn one into the other
+
+  - given: a DUCT rotated about its own centre
+    expect: >
+      counted as rotated. Its midpoint has not moved at all, so a position
+      probe would call this blocked - which is why rotation reads an endpoint
+      rather than reusing the move fragment's check
+
+negative:
+  - given: 2 of the terminals put inside a REVIT GROUP
+    expect: >
+      those 2 in `blocked` BY ID, the others rotated. Revit returns normally and
+      turns nothing for a group member - five grouped terminals once stayed at
+      0.00 degrees while the code reported rotating five
+
+  - given: 0 degrees, or exactly 360
+    expect: >
+      counted as rotated, NOT blocked. Asking for a whole turn is a legitimate
+      request that legitimately changes nothing, and a checker that could not
+      tell the two apart would report a clean run as a failure
+
+  - given: a curve-based element with no pivot given
+    expect: >
+      its id in `unverified` - there is no location point to turn it about, and
+      this fragment will not invent one
+
+second_route:
+  - the element's own Rotation in Revit's properties palette, read after
+  - one Ctrl+Z puts the whole rotation back in a single step (Golden Rule 16)

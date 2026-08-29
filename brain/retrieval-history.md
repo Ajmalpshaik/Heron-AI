@@ -18,11 +18,18 @@ so it is the one with history.
 |---|---|---|---|---|---|
 | 2026-08-28 | 7 | top 3 | top 3 | **1st** | `lexical` |
 | 2026-08-29 | 14 | 3rd | 5th | 4th | `lexical` |
-| 2026-08-29 | 17 | **3rd** | **not in the top 5** | 5th | `lexical` |
+| 2026-08-29 | 17 | 3rd | not in the top 5 | 5th | `lexical` |
+| 2026-08-29 | 19 | **3rd** | **not in the top 5** | 5th | `lexical` |
 
-**The words route is flat. The nearness route is collapsing.** At 17 fragments it ranks a *move*
-fragment first for a question about ducts, and `report-findings` has ranked first at every size since 14.
-No meaning-based encoder would do either.
+**The words route is flat at 3rd across every size measured. The nearness route has collapsed and
+stayed collapsed.** At 17 it ranked a *move* fragment first for a question about ducts; at 19 the duct
+filter is still outside the shortlist, and `report-findings` has ranked first after fusion at every size
+since 14. No meaning-based encoder would do either.
+
+The two rows at 17 and 19 are worth reading together: adding two more fragments changed **nothing**. The
+degradation is not a slope that will keep sliding - it fell off between 7 and 14 and has been flat since.
+That reads as the built-in backend having no useful signal for this question at all, rather than as
+gradual dilution.
 
 That is not a defect in the fragments and it is not retrieval "getting worse" in general — it is exactly
 what [`heron_embed.py`](heron_embed.py) measures the built-in backend to be: **character n-grams, not

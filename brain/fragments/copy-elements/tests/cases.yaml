@@ -1,0 +1,31 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 4 air terminals, offset 3 m sideways
+    expect: >
+      4 ids in `copies`, notCopied 0, and 8 terminals in the model. Check the
+      copies are 3 m away and not on top of the originals - an offset that
+      silently came through as zero looks like a successful copy until somebody
+      tries to select one
+
+  - given: a duct AND its fitting, copied together in one call
+    expect: >
+      the copies are still CONNECTED to each other. This is why the fragment
+      takes a list rather than looping: copied one at a time they arrive
+      unjoined, and that is invisible until somebody traces the system
+
+negative:
+  - given: an empty element list
+    expect: >
+      `copies` EMPTY and notCopied 0, reported as nothing to do rather than as
+      a successful copy of nothing
+
+  - given: an element Revit refuses to duplicate
+    expect: >
+      it is missing from `copies` and counted in `notCopied`. The two lists must
+      not be assumed to line up - a caller pairing originals with copies by
+      index would pair the wrong ones from that point on
+
+second_route:
+  - a count of that category before and after, differing by exactly the number copied
+  - one Ctrl+Z removes every copy in a single step (Golden Rule 16)
