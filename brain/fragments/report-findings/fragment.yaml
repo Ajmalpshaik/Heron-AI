@@ -21,7 +21,12 @@ contract:
   needs:
     - name: findings
       type: IList<string>
-    - name: checked
+    # NOT `checked`, which is what this was called until 2026-08-29. `checked`
+    # is a RESERVED C# KEYWORD, so the fragment could never compile - and
+    # nothing had ever compiled a fragment, so it read as fine for as long as
+    # it was only ever read. tools/check-fragments-compile.py found it on its
+    # first run, and heron_fragment.py now refuses the whole class.
+    - name: checkedCount
       type: int
       source: request
     - name: whatWasChecked

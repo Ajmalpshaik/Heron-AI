@@ -463,7 +463,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | | |
 |---|---|
 | **The eight `brain/` modules** | Each has its own suite and each passes — the fragment store, the scope store, exact-word search, nearness, fusion, the capability registry, the graph, and skills. What they are proven to do is **behave as specified against fixtures**. Not one of them has been handed a real Revit's answer |
-| **7 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists seven items under *needs a real Revit* |
+| **7 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists seven items under *needs a real Revit*. **Since 2026-08-29 all seven at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)). That is not behaviour, but it does mean none of them will fail at the PC for a reason a compiler could have found |
 | **10 skills, all `DRAFT`** | Each names **capabilities and never fragments**, and each carries the words Ajmal actually says rather than the words the technique is named after. Whether any of them does what it says is unknown |
 | **The trained embedding backend** | Never run — `huggingface.co` is refused by this container. The backend that *is* running is character n-grams, which measurably **does not do synonyms** (`diffuser`/`grille` scored −0.136). `A7` is that run and needs no Revit and no Windows |
 | **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py). The resolution beneath them is tested and passes; **`FastMCP` has never served them**, because the machine they were written on has no MCP SDK. `tests/test_brain_reachable.py` reads the server as *text* to confirm they are declared, which is the same technique `test_tool_registry.py` uses on the C# and has the same limit. `A8`, and it needs Windows rather than Revit |
@@ -516,6 +516,17 @@ Each of these cost real time. They are in the order they were learned.
 10. **An empty array passed to a PowerShell parameter arrives as `$null`**, and `@($null)` has one
     element. This turned "no Revit open" into "one Revit open" and blocked every install.
 
+11. **A contract name becomes a C# variable, so it has to be able to be one.** `FRG-QA-001` declared a
+    value called `checked` — a reserved C# keyword — and its own code read `if (checked == 0)`. It could
+    never have compiled, and it passed every check for as long as nothing compiled a fragment.
+    `heron_fragment.py` now refuses reserved words and non-identifiers outright.
+
+12. **A `#line` path must be absolute.** The fragment compile harness pointed errors back at each
+    fragment's own file with a repo-relative `#line`. That built fine on `net472` and `net48` and failed
+    on every `net8`/`net10` release with `CS1504 source file could not be opened` — the newer compiler
+    *resolves* that path rather than only printing it, and resolves it against the project. Found by
+    running all eight releases instead of the one that happened to work.
+
 ---
 
 ## 5. What you can and cannot do without Revit
@@ -546,6 +557,10 @@ python tests/test_skills.py            # a skill names capabilities, never fragm
 
 # The seam, added 2026-08-29. Also needs no Revit
 python tests/test_brain_reachable.py   # the host resolves through a capability, not a fragment id
+
+# The fragments, compiled for the first time - 2026-08-29. Needs the .NET SDK,
+# no Revit and no Windows. ~10 minutes for all eight releases
+python tools/check-fragments-compile.py   # every fragment, every release it claims
 ```
 
 **15 suites, 435 individual `ok`/`PASS` lines, all passing** — derived, not typed:
