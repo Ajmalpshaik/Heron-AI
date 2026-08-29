@@ -1,0 +1,51 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      air terminals at one height under THREE ceilings at DIFFERENT heights,
+      direction up, in a 3D view showing everything
+    expect: >
+      every terminal finds the ceiling above ITSELF, not one shared height.
+      This is the whole reason the fragment exists - a fixed Z would bury the
+      ones under the low ceiling and leave the rest hanging. Read each Z back
+      and check it matches the ceiling directly over it
+
+  - given: the same run with a negative offsetAlongRay
+    expect: >
+      each element sits BELOW the surface by that amount rather than centred in
+      it. Look at one on screen: a terminal half-buried in a slab is what a
+      zero offset looks like on most families
+
+negative:
+  - given: >
+      THE SAME MODEL, in a 3D view with the ceiling category HIDDEN
+    expect: >
+      every element in `noHit` and NOTHING MOVED. Harmless, and it must stay
+      harmless - a fragment that fell back to some other surface here would be
+      the dangerous version
+
+  - given: >
+      a view where the ceilings are only PARTIALLY visible - some hidden, some not
+    expect: >
+      RECORD WHAT HAPPENS. The elements under visible ceilings snap; the others
+      find whatever is behind. This case cannot be defended against in code and
+      is the reason the caller must pass a full-visibility view. Prove it once
+      so the danger is measured rather than described
+
+  - given: ceilings that live in a LINKED model, which is the normal arrangement
+    expect: >
+      they are still found. Without linked-model rays every ray misses and the
+      fragment reads as broken on an ordinary project
+
+  - given: an element whose only neighbour is itself
+    expect: >
+      it is in `noHit` and does not move. A self-hit must never count - the
+      element is sitting inside its own geometry, and snapping to it is a move
+      of zero reported as a success
+
+  - given: a duct or pipe (curve-based) in the list
+    expect: its id in `notPointBased`, and no attempt made
+
+second_route:
+  - a section through the room, measured by eye against the ceiling underside
+  - one Ctrl+Z puts the whole batch back (Golden Rule 16)

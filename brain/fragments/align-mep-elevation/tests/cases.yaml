@@ -1,0 +1,42 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a 600 mm rectangular duct and a 100 mm pipe in one corridor, edge "bottom"
+    expect: >
+      THEIR UNDERSIDES ARE LEVEL, measured in a section - not their centrelines.
+      This is the whole point: a version that moved both centrelines to the same
+      Z leaves the soffits 250 mm apart and looks plausible on plan
+
+  - given: the same two, edge "top"
+    expect: their tops level, and the centrelines therefore NOT level
+
+  - given: edge "centre"
+    expect: centrelines level, which is the one case where half-height does not matter
+
+negative:
+  - given: an element carrying none of the four size parameters
+    expect: >
+      its id in `noSize` and NOT MOVED. Never treated as zero-height: it would
+      align its centreline while everything else aligned its soffit, and the
+      result looks almost right, which is worse than looking wrong
+
+  - given: a family instance - a damper, a valve - in the list
+    expect: its id in `notCurveBased`, and no attempt made
+
+  - given: an INSULATED duct
+    expect: >
+      aligned on its BARE size, so its insulation sits proud of the line. This
+      is deliberate and must be confirmed rather than fixed: read the fragment's
+      purpose before changing it
+
+  - given: a SLOPED run
+    expect: >
+      RECORD WHAT HAPPENS. Its midpoint lands on the target and its slope is
+      kept, so its ends are above and below the line. That is the honest reading
+      of "level them" for a run that was never horizontal, but a drainage
+      designer may want something else - ask before changing it
+
+second_route:
+  - a section through the corridor, with the soffits measured by eye
+  - one Ctrl+Z puts the whole alignment back in a single step (Golden Rule 16)

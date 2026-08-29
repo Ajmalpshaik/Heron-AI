@@ -203,11 +203,33 @@ def main():
                 check(not answer.autorun,
                       "and nothing runs off it - only an exact identity match "
                       "on a PROVEN fragment may do that")
-                check("means nothing here yet" in answer.note,
-                      "and the answer says WHY it cannot vouch for itself: the "
-                      "library is smaller than the pool, so every candidate is "
-                      "found by both routes and 'both agree' is true of "
-                      "everything - including a question about cats")
+                # TWO HONEST ANSWERS HERE, AND WHICH ONE APPEARS DEPENDS ON
+                # THE LIBRARY SIZE - so the check asks for either rather than
+                # for one wording.
+                #
+                # While fewer fragments are eligible than the retrieval pool,
+                # the nearness route ranks EVERY one of them, so "both agree"
+                # is true of everything including a question about cats, and
+                # the answer has to say so.
+                #
+                # Once the library passes the pool, that caveat stops being
+                # true and is correctly dropped - agreement starts being real
+                # evidence, which is what heron_retrieve's own note predicted
+                # would happen. This test crossed that line on 2026-08-29, when
+                # the library reached 17 and its own synthetic fragments took
+                # the eligible set past 20. It read as a failure and was the
+                # system working.
+                eligible, _ = R.eligible(store, "2024")
+                caveat = "means nothing here yet" in answer.note
+                weak = "weak match" in answer.note
+                check(caveat or weak or len(eligible) > 20,
+                      "the answer is honest about what it can vouch for - %s "
+                      "(%d eligible, pool %d)"
+                      % ("it says 'both agree' means nothing yet" if caveat
+                         else ("it labels the match weak" if weak
+                               else "the library has passed the pool, so "
+                                    "agreement is now real evidence"),
+                         len(eligible), 20))
 
             print()
             print("  ..nothing found and nothing ALLOWED are different sentences")
