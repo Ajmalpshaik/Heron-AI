@@ -252,6 +252,63 @@ def check_capabilities_and_graph():
         os.environ.pop("HERON_KNOWLEDGE", None)
 
 
+def check_brain_is_reachable():
+    """
+    Is anything the brain built actually CALLABLE from a conversation?
+
+    Every other section here asks whether a thing exists. This one asks whether
+    it is wired to anything, and it exists because the answers differed: on
+    2026-08-29 this tool reported everything clean while all eight Phase 2
+    modules, seven fragments and ten skills sat unreachable - built, tested,
+    and imported by nothing but their own tests.
+
+    The host (Claude Code) is the Orchestrator - D-01, and docs/02 s7 - so it
+    reaches Heron ONLY through the MCP tool surface. If no tool consults the
+    capability registry, then no request can resolve through a capability, and
+    Phase 2's third definition-of-done clause is open however complete the
+    modules underneath are.
+
+    A checker built from a build order can only ask whether the build order was
+    followed. That is what the previous sections do, and it is why they all
+    passed.
+    """
+    print()
+    print("THE BRAIN - built is not the same as reachable")
+
+    brain_modules = sorted(
+        n[:-3] for n in os.listdir(os.path.join(ROOT, "brain"))
+        if n.startswith("heron_") and n.endswith(".py"))
+
+    callers = []
+    for folder in ("mcp/client", "mcp/server", "platform/Heron.Core",
+                   "revit/Heron.Bridge", "revit/Heron.Revit.Addin"):
+        full = os.path.join(ROOT, *folder.split("/"))
+        if not os.path.isdir(full):
+            continue
+        for name in sorted(os.listdir(full)):
+            if not name.endswith(".py"):
+                continue
+            text = read(*(folder.split("/") + [name]))
+            # An import, not a mention: a comment naming a module is not a
+            # call site, and this file itself is the reason to be strict.
+            for module in brain_modules:
+                if re.search(r"^\s*(?:import|from)\s+%s\b" % re.escape(module),
+                             text, re.M):
+                    callers.append("%s/%s -> %s" % (folder, name, module))
+
+    print("  %d brain module(s), %d import(s) of them outside brain/ and tests/"
+          % (len(brain_modules), len(callers)))
+    if callers:
+        for line in callers:
+            print("  ok    %s" % line)
+    else:
+        unfinished(
+            "the brain is unreachable from the host: %d module(s) in brain/ "
+            "and not one is imported by mcp/ - so no MCP tool can resolve a "
+            "request through a capability, which is Phase 2's third "
+            "definition-of-done clause. Needs no Revit" % len(brain_modules))
+
+
 def check_register():
     """NEEDS-CHECKING, split the same way this tool splits everything."""
     print()
@@ -286,6 +343,7 @@ def main():
     check_agents()
     check_fragments()
     check_capabilities_and_graph()
+    check_brain_is_reachable()
     check_register()
 
     print()

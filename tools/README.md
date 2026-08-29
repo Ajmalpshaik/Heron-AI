@@ -167,7 +167,8 @@ python tools/check-gaps.py
 
 One sweep over everything built — the build order against what is on disk, every test run, every
 checker, every agent id the code claims against the registry, the fragment library, the capability
-registry, the graph, and the register — sorted into **two lists that must never be one**:
+registry, the graph, **whether the brain is reachable from the host at all**, and the register — sorted
+into **two lists that must never be one**:
 
 | | |
 |---|---|
@@ -181,3 +182,11 @@ identical in one list, and a reader taught to skim past the second stops seeing 
 **It found two bugs in itself on its first run**: it scans files for the `Heron-Agent:` field, its own
 source contains that pattern, and it duly reported its own regex as two undeclared agents. A scanner
 that scans itself finds itself. It now skips its own file and anchors the match to a comment line.
+
+**And on 2026-08-29 it was found reporting a green it had not earned.** Every section asked whether a
+thing *exists*; none asked whether anything *calls* it. So it passed the whole of Phase 2 while all
+eight `brain/` modules, seven fragments and ten skills sat unreachable — imported by nothing but their
+own tests, and therefore unusable from a conversation. The `THE BRAIN` section was added for exactly
+that, and was validated in both directions before its result was believed: with an import present it
+reports the call site, with none it reports the gap. **The general lesson is worth more than the fix —
+a checker written from a build order can only ever ask whether the build order was followed.**

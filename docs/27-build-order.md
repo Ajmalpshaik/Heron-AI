@@ -332,6 +332,21 @@ existing library carries its own proof; and the Orchestrator resolves through ca
 agent names. **Two of those three can be finished without Revit. The first cannot**, and saying so now is
 cheaper than discovering it in week two.
 
+> **Status, 2026-08-29 — Steps 7 to 14 are all built, and none of the three clauses is met.**
+>
+> The first two wait on a model: every fragment and every skill is `DRAFT`, because [D-30](DECISIONS.md)
+> promotes on a proof containing a negative case and a negative case needs Revit. **The third waits on
+> nothing.** The Orchestrator is the host ([D-01](DECISIONS.md),
+> [02 §7](02-architecture-overview.md)), the host reaches Heron only through MCP tools, and every tool in
+> `mcp/server/heron_tools.py` goes straight to the bridge — **no tool consults the capability registry,
+> and nothing outside `brain/` and `tests/` imports the brain at all.** So the modules are complete and
+> unreachable, which is not what "built" was meant to mean.
+>
+> `tools/check-gaps.py` passed the whole phase while this was true, because it checked that each step's
+> module and test were on disk and never asked whether anything called them. It now has a section that
+> does. **A checker written from a build order can only ask whether the build order was followed** — the
+> clause above is the part no step was ever assigned, which is why no step reported it missing.
+
 ---
 
 ## Honest scale — Phase 2
