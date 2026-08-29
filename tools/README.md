@@ -156,3 +156,28 @@ hard way:
 2. **A cross-reference that is not checked is a cross-reference that is broken.**
 3. **A generated artefact cannot lie about its source.**
 4. **Code no compiler has read is a draft, whatever the documentation calls it.**
+
+---
+
+## `check-gaps.py` — what is unfinished, and what is only waiting
+
+```bash
+python tools/check-gaps.py
+```
+
+One sweep over everything built — the build order against what is on disk, every test run, every
+checker, every agent id the code claims against the registry, the fragment library, the capability
+registry, the graph, and the register — sorted into **two lists that must never be one**:
+
+| | |
+|---|---|
+| **UNFINISHED** | somebody could do this here, today. **The exit code follows this list only** |
+| **WAITING** | needs a real Revit, or Windows, or a reachable network. Not work anybody can do here |
+
+**Why the split is the point.** This repository's recurring failure is not bugs — it is an unproven
+claim quietly ageing into a believed one. *"Nobody finished this"* and *"nobody has a Revit"* look
+identical in one list, and a reader taught to skim past the second stops seeing the first.
+
+**It found two bugs in itself on its first run**: it scans files for the `Heron-Agent:` field, its own
+source contains that pattern, and it duly reported its own regex as two undeclared agents. A scanner
+that scans itself finds itself. It now skips its own file and anchors the match to a comment line.
