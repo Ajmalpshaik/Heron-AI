@@ -41,7 +41,7 @@ existed and never asked whether anything called them. The check that catches it 
 
 | | What | Where it happens |
 |---|---|---|
-| **1** | **`R1` and `R1b`** — read decisions **D-23 to D-43** back to Ajmal, then show him the trust model working. His own instruction, and it was meant to happen *before* Phase 2 was built. It did not. It is now a review of code that exists, which is weaker — so do it early rather than dropping it | A conversation, at the PC |
+| **1** | ~~`R1`~~ **DONE 2026-08-29 — all 21 read back, all 21 confirmed, nothing moved.** What is left of the review is **`R1b`**: show him the trust model working with his own fragments in it, because [D-14](docs/DECISIONS.md) stays *Proposed* until he has seen it | Needs a screen |
 | **2** | **`B1` to `B4`** — open Revit 2020, look for the **Heron AI** tab, press **Heron**, then `ping` and `count` | Needs Revit |
 | **3** | **`C3`** — with `write.enabled` still **false**, ask for a move and watch it be **refused, by name**. Prove the gate before testing the write, or a passing move proves nothing | Needs Revit |
 | **4** | **`D1`–`D3`** — *"move the ducts up 200 mm"*, say yes, then **MEASURE ONE**. The single most important line in the whole register | Needs Revit |
@@ -221,11 +221,12 @@ outstanding. Ask before building them.
 > assertion asked the wrong layer. That sentence is filter-**then**-select: a composition, which is what
 > a **skill** names. **Next is proof, and it needs the machine.**
 >
-> **What that did NOT change:** `write.enabled` is still `false`, every parked item is still unproven,
-> and `R1` — read the day's decisions back — **did not happen before Phase 2 began**, contrary to the
-> instruction that asked for it. That was overridden by the owner, which is his to do; it stays on the
-> list for the PC. **`A1`, `A2`, `A3` and `A5` are done** — the whole of Group A except the Windows named
-> pipe in `A4` and the probe check in `A6`.
+> **What that did NOT change:** `write.enabled` is still `false` and every parked item is still unproven.
+> `R1` — read the day's decisions back — **did not happen before Phase 2 began**, contrary to the
+> instruction that asked for it; that was overridden by the owner, which is his to do. **It happened on
+> 2026-08-29 instead, and all twenty-one were confirmed with nothing moved** — so the cost of doing it
+> late was, on this occasion, nothing measurable. **`A1`, `A2`, `A3` and `A5` are done** — the whole of
+> Group A except the Windows named pipe in `A4`, the probe check in `A6`, and `A8`.
 >
 > Before writing any code, run `python tools/check-compile.py`. It takes minutes, it now covers **all
 > eight releases**, and it is no longer somebody else's job. On a fresh Linux box it needs
@@ -370,9 +371,10 @@ fragments are `DRAFT`, and [D-30](docs/DECISIONS.md) promotes on a proof contain
 | **D-42** | The **public install command is deferred**; `setup.ps1` is what is proven |
 | **D-43** | **The Constitution is accepted — all 30 Articles, binding** |
 
-**Five decisions get one read-back at the PC before Phase 2 starts** — `R1`, Ajmal's own instruction —
-**and `R1b` shows him the trust model working**, since [D-14](docs/DECISIONS.md) stays *Proposed* until he
-has seen it. They are Accepted and are being built on; the review confirms each still says what he meant
+**`R1` is done — 2026-08-29, and it covered D-23 to D-43 rather than the five it asked for.** All
+twenty-one were read back and confirmed; the three carrying real consequence (D-33's boundary, D-26,
+D-32) were put to him one at a time and none moved. **`R1b` still needs a screen**, since
+[D-14](docs/DECISIONS.md) stays *Proposed* until he has seen the trust model working. They are Accepted and are being built on; the review confirms each still says what he meant
 and fills in detail left out. See the block at the top of [DECISIONS.md](docs/DECISIONS.md).
 
 **Two were reversed within hours of being recorded**, D-26 three times and D-32 once. Neither was a
@@ -746,12 +748,13 @@ was deliberate: a rule that only binds once the code passes is not a rule the co
 ## 8. What is waiting on the owner
 
 **Every question is answered — 41 of 41 — and nothing blocks any phase.** What is left is **three review
-items at the PC** (`R1`, `R1b`, `R2`) **and two choices Phase 2 created by finishing.** The copyright
+item at the PC** (`R1b` — `R1` and `R2` were closed on 2026-08-29) **and two choices Phase 2 created by
+finishing, both of which have since been made.** The copyright
 line was the last outstanding confirmation and it was given on 2026-08-28.
 
 | | |
 |---|---|
-| **`R1` — read the day's decisions back** | **D-23 to D-43, at the PC, before Phase 2 work starts.** His own instruction: *"now we just recorded, but we will do it one more time."* They are Accepted and are being built on — this is a review, not a hold. A decision reviewed after the code exists gets defended rather than examined, and **two were already reversed within hours** (D-26 three times, D-32 once), which is the evidence for doing it |
+| ~~`R1` — read the day's decisions back~~ | **DONE 2026-08-29.** All twenty-one read back, all confirmed. It happened in conversation rather than at the PC, and **after** Phase 2 was built rather than before — both recorded rather than smoothed over. What that cost turned out to be **nothing measurable**: the two that had been reversed within hours did not move a fourth time, and no missing detail surfaced. `R2` went with it — D-26 and D-32 were the two put to him individually |
 | **`R1b` — show him the trust model working** | [D-14](docs/DECISIONS.md) stays **Proposed**. He agreed the direction and said *"show me it working at the PC first."* Use the framing that landed: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
 | ~~Copyright~~ | **CONFIRMED 2026-08-28 — Ajmal PS is correct.** Checked consistent in all four places it appears: the Apache appendix in `LICENSE`, `NOTICE`, `<Company>` in `Directory.Build.props`, and `README.md`. The Apache appendix is filled in rather than left as the `[name of copyright owner]` placeholder, which is the one that is usually missed |
 
@@ -786,8 +789,8 @@ which is not the same as being finished, and the tool is careful to say so in it
 *"waiting is not failing — but a waiting item is still UNPROVEN, and no number of days spent waiting
 makes `D3` any more true."*
 
-**The first thing at the PC is not a test.** `R1`: read **D-23 to D-43** back to Ajmal, confirm each still
-says what he meant, and fill in the detail deliberately left out. Then `R1b`: show him the trust model
+**`R1` is no longer the first thing at the PC — it is done** (2026-08-29, all twenty-one confirmed).
+What remains of the review is `R1b`: show him the trust model
 working, because [D-14](docs/DECISIONS.md) is still *Proposed*. His instruction — *"now we just recorded,
 but we will do it one more time"*.
 

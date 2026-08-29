@@ -31,14 +31,14 @@ to be avoidable: **the C# now compiles, and the bridge now runs** — on Linux, 
 minutes ([docs/30](docs/30-compiling-away-from-windows.md)). Group A below records what that settled and
 what it did not.
 
-**Most of what is left needs a real Revit on a real Windows machine** — 47 of the 54 remaining items, and
+**Most of what is left needs a real Revit on a real Windows machine** — 47 of the 52 remaining items, and
 every one that matters most. Compiling is not behaving: `D3` is still the line that catches a unit
 error, and nothing here has moved anything yet.
 
-**58 items, 4 done, 54 left** — counted from the rows on 2026-08-29, not carried forward. Of the 54:
+**58 items, 6 done, 52 left** — counted from the rows on 2026-08-29, not carried forward. Of the 52:
 **47 need Revit**, **3 need Windows but not Revit** (`A4`, `A6`, `A8`), **1 needs only a reachable
-network** (`A7`), and **3 need only a conversation** (`R1`, `R1b`, `R2` — reading the day's decisions
-back).
+network** (`A7`), and **1 needs a screen in front of him** (`R1b` — seeing the trust model work).
+`R1` and `R2` were closed on 2026-08-29.
 
 **Count the rows before quoting a number here, and check the pattern you count with.** This file and
 [`HANDOVER.md`](HANDOVER.md) said *49 items* and *45 need a real Revit* from the day they were written,
@@ -132,19 +132,21 @@ python tools/check-compile.py          # 2020 through 2027, all four projects, 0
 | **A8** | On the PC, with the Heron MCP server configured in Claude Code, ask it *"what can you do?"* and watch `heron_capabilities` run. Then `heron_lookup` with *"select all the ducts"* | It lists **ten** jobs, **four** with every part provided, names the seven missing capabilities, and says plainly that it **cannot run** any of them. `heron_lookup` answers `FILTER_ELEMENTS_BY_CATEGORY` and names the route. **Why this is a row rather than a passing test:** the three brain tools were written on a machine with **no MCP SDK installed**, so `FastMCP` has never served them. [`tests/test_brain_reachable.py`](tests/test_brain_reachable.py) proves the layer underneath — the catalogue, the capability resolution, the version wall — and then reads the server **as text** to confirm the tools are declared, exactly as `test_tool_registry.py` reads the C#. Text is not a running server: it cannot show that a docstring reached the host or that a tool appeared in the list at all. **Needs Windows and Claude Code; needs no Revit** — every one of the three reads only files that shipped with Heron |
 | **A7** | On a machine that can reach a model host, `pip install --user model2vec` then `python brain/heron_embed.py "stop the air going the wrong way"` | The first line reads **`Backend: model`**, not `lexical`, and the duct fragment comes back for a sentence that contains none of its words. **Step 10 shipped with two backends and only one of them has ever run.** The built-in `lexical` one works offline with nothing installed and is measured, in numbers, as *not meaning* — synonyms score zero. The trained one is the half that understands a grille and a diffuser are cousins, and it could not be tested where it was written: `huggingface.co` is refused by that container's network policy (`connect_rejected`, measured 2026-08-28). **This needs no Revit and no Windows** — any machine that can reach the model host will do, which may well be the same phone this was written on |
 
-## Group R — read the five decisions back (no Revit needed, but do it at the PC)
+## Group R — read the decisions back (no Revit needed)
 
 **Not a test — a conversation**, and the only item in this file that is not about code behaving. It is
 here because this file is what gets opened at the PC, and a review nobody is reminded of does not happen.
 
 | ID | Do this | Done looks like |
 |---|---|---|
-| **R1** | Read **D-23 to D-27** back to Ajmal — the knowledge store, local embeddings, study-never-import, the model file, and one voice. All five were settled in one conversation on 2026-08-28, from a phone, with no model open | He confirms each still says what he meant, **and the detail left out gets filled in** — his words, *"including deciding what details we need to go with"*. Several are principles and need numbers, formats and limits before code rests on them |
+| ~~**R1**~~ | ~~Read **D-23 to D-27** back to Ajmal~~ | **DONE 2026-08-29 — and it covered D-23 to D-43, not just the five.** All twenty-one were read back and he confirmed them. **In conversation rather than at the PC**, which is worth recording: the instruction said *at the PC*, and what that was for — him sitting with them rather than tapping yes — did happen. Three were put to him individually because they carried real consequence, and all three came back unchanged: **D-33's boundary** (Heron never invents a Revit number and does decide its own code — the line the decision file itself flagged as never actually stated by him), **D-26** (the model file never leaves; names, counts, sizes and reasoning are fine), and **D-32** (v1 both reads and writes, reading first, writing off by default). The remaining eighteen were confirmed as a block |
 | **R1b** | Show him **[D-14](docs/DECISIONS.md), the trust model**, working on a screen with his own fragments in it | He agreed the direction on 2026-08-28 — *"yes, but show me it working at the PC first"* — so D-14 stays **Proposed** until he has seen it. Use the framing that worked: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
-| **R2** | Pay particular attention to **D-26 and D-32** | **Both were reversed within hours of being recorded**, and neither reversal was a mistake — each was the first answer being sharpened once its consequence was visible. D-26 moved three times, each looser. D-32 was recorded as *"v1 is read-only"* and reversed to *"it must change things too"* on being asked the same question a second time. That is what this group exists for |
+| ~~**R2**~~ | ~~Pay particular attention to **D-26 and D-32**~~ | **DONE 2026-08-29.** Both were put to him as separate questions with their reversal history stated, and both were confirmed as they stand. The reason this row existed — that a first answer sharpened once its consequence was visible — held up: neither moved a fourth time |
 
-**Do R1 before Phase 2 work begins.** A decision reviewed after the code is written gets defended rather
-than examined.
+**R1 and R2 are done; R1b needs a screen.** The review happened *after* Phase 2 was built rather than
+before, which is weaker than intended and was the owner's own call to override. Worth recording that it
+changed nothing: twenty-one decisions read back, twenty-one confirmed. The two that had been reversed
+within hours on the day did not move again.
 
 ## Group B — does Revit still load
 
