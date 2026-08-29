@@ -79,6 +79,7 @@ USINGS = [
     "Autodesk.Revit.DB.Mechanical",
     "Autodesk.Revit.DB.Plumbing",
     "Autodesk.Revit.DB.Electrical",
+    "Autodesk.Revit.DB.Structure",
     "Autodesk.Revit.UI",
 ]
 

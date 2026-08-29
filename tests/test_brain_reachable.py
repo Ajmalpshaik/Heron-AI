@@ -99,15 +99,23 @@ def main():
         # --- 2. the gap names itself ----------------------------------------
         print()
         print("A capability nobody provides")
+        # The seven capabilities that were missing were written on 2026-08-29,
+        # so the real library reports NO gaps - and asserting that it has one
+        # would be asserting the work is unfinished. What still has to hold is
+        # that an unprovided capability RESOLVES TO NOTHING rather than to an
+        # error or to a plausible wrong provider, which is tested with a name
+        # nothing will ever provide.
         gaps = dict(found["gaps"])
-        check(bool(gaps), "%d capability(ies) are wanted and unprovided, and "
-                          "the absence IS the report" % len(gaps))
-        check("TRACE_CONNECTIVITY" in gaps,
-              "TRACE_CONNECTIVITY is named as wanted by %s"
-              % ", ".join(gaps.get("TRACE_CONNECTIVITY", [])))
-        missing = BRAIN.resolve("TRACE_CONNECTIVITY")
+        check(not gaps,
+              "no capability is wanted and unprovided - all %d skills are "
+              "fully provided" % len(found["skills"]))
+        missing = BRAIN.resolve("NO_SUCH_CAPABILITY_EXISTS")
         check(missing["providers"] == [] and not missing["known"],
-              "resolving it returns no provider rather than an error")
+              "a capability nobody provides resolves to NO PROVIDER rather "
+              "than to an error - the absence IS the answer")
+        check(not missing.get("blocked_by_version"),
+              "and it is not mistaken for a version refusal, which would send "
+              "the reader looking for a fragment that does not exist")
 
         # --- 3. the wall ----------------------------------------------------
         print()

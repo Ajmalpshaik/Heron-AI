@@ -1,0 +1,63 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-001
+semantic-identity: "apply one graphic override to these elements in one view"
+kind: action
+domain: revit.views
+capability: OVERRIDE_GRAPHICS_IN_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Applies a prepared OverrideGraphicSettings to elements in one view, and
+  reports what it could not override. It is the working half of the grayout -
+  grey the background, bring the services forward - and of any other job that
+  changes how something LOOKS without changing what it IS.
+
+  It takes the settings ALREADY BUILT rather than building them from colours
+  and weights. That is deliberate and it is what makes one implementation work
+  on eight releases - see the compatibility note.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: overrides
+      type: OverrideGraphicSettings
+      source: request
+  provides:
+    - name: overridden
+      type: int
+    - name: skipped
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, because the part that MOVED is not in
+  here. `OverrideGraphicSettings`' own setters were renamed - the fill-pattern
+  calls became surface-pattern calls, foreground and background split - and any
+  fragment that built the settings would need a branch per release. Taking the
+  settings as an input puts that churn at the caller, and leaves this fragment
+  holding only `View.SetElementOverrides`, which is unchanged 2020 to 2027.
+
+utterances:
+  - do the grayout
+  - do the grayout for MEP
+  - grey the background
+  - bring the services forward
+  - make the architecture faint
+  - override the colour in this view
+  - halftone the walls

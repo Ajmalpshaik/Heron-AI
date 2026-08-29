@@ -94,9 +94,23 @@ def main():
             check(covered,
                   "%d skill(s) have every capability provided: %s"
                   % (len(covered), ", ".join(sorted(s.id for s in covered))))
-            check(gaps,
-                  "%d capability(ies) are wanted and unprovided - reported, "
-                  "not discovered at run time" % len(gaps))
+            # EVERY capability the ten skills need is now provided - the seven
+            # that were missing were written on 2026-08-29. So the real library
+            # can no longer demonstrate a gap, and asserting that it has one
+            # would be asserting that the work is unfinished.
+            #
+            # What must still be proven is the MECHANISM: that a capability
+            # nobody provides is REPORTED rather than discovered at run time.
+            # Tested with a name nothing will ever provide, so this check keeps
+            # meaning whatever the library does next.
+            check(len(covered) == len(skills),
+                  "ALL %d skill(s) have every capability provided" % len(skills))
+            CAP.want(store, "NO_SUCH_CAPABILITY_EXISTS",
+                     "asked for by this test, and provided by nothing")
+            invented = dict(CAP.gaps(store))
+            check("NO_SUCH_CAPABILITY_EXISTS" in invented,
+                  "a capability nobody provides is REPORTED as a gap - the "
+                  "absence IS the finding, with no second list to keep in step")
 
             for skill in covered:
                 for capability in skill.needs():
@@ -107,16 +121,24 @@ def main():
 
             print()
             print("4. Writing skills first PRODUCES the build queue")
+            # The queue is EMPTY now, and that is the queue having been worked
+            # rather than the mechanism being broken. What is still worth
+            # proving is that it would be ORDERED BY REAL DEMAND if it were not
+            # empty - so it is built over every capability the skills ask for,
+            # which is the same arithmetic the gap queue used.
             demand = {}
             for skill in skills.values():
                 for capability in skill.needs():
-                    if capability in gaps:
-                        demand.setdefault(capability, []).append(skill.id)
+                    demand.setdefault(capability, []).append(skill.id)
             ordered = sorted(demand.items(), key=lambda kv: (-len(kv[1]), kv[0]))
-            check(ordered, "there is a queue at all")
-            check(len(ordered[0][1]) >= 2,
-                  "and it is ordered by real demand - %s is wanted by %d skills"
-                  % (ordered[0][0], len(ordered[0][1])))
+            outstanding = [(c, w) for c, w in ordered if c in gaps]
+            check(not outstanding,
+                  "nothing is outstanding - every capability the skills ask "
+                  "for has a provider")
+            check(ordered and len(ordered[0][1]) >= 2,
+                  "and demand is still counted per capability - %s is wanted "
+                  "by %d skills, which is what ordered the queue while there "
+                  "was one" % (ordered[0][0], len(ordered[0][1])))
             for capability, wanters in ordered[:4]:
                 print("        %-28s %d skill(s)" % (capability, len(wanters)))
 

@@ -1,0 +1,31 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a normal rectangular room, bounded
+    expect: >
+      4 boundary curves, area matching Revit's own Area parameter, unbounded
+      false. Compare the area against the room tag on the drawing
+
+  - given: an L-shaped room
+    expect: 6 curves and the correct area - proves the loop is walked, not assumed rectangular
+
+  - given: a room with an internal island (a core, a column enclosure)
+    expect: >
+      MORE THAN ONE loop, and every loop's curves present. A fragment that read
+      only the first loop would return a plausible outline and the wrong area
+
+negative:
+  - given: a room whose bounding walls do not close
+    expect: >
+      boundary EMPTY, unbounded TRUE, and area 0 REPORTED AS UNBOUNDED rather
+      than as an area. This is the case that matters: Revit returns 0 silently,
+      and a layout built on it places nothing and calls it success
+
+  - given: a spatial element with no height parameter or a height of 0
+    expect: >
+      heightKnown FALSE. Never a height of 0.0 that a spacing calculation can
+      pick up and use as though it were measured
+
+second_route:
+  - the room's Area parameter in Revit's properties palette
+  - the room tag on the plan, which is what a checker reads

@@ -1,0 +1,36 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a loaded, ALREADY-USED air terminal type and 6 points inside a room
+    expect: 6 ids in `placed`, failed 0, and six terminals VISIBLE on the plan
+
+  - given: >
+      a family type loaded but NEVER PLACED in this document, so its symbol is
+      inactive - the same 6 points
+    expect: >
+      still 6 placed. This is the row the fragment exists for: without
+      Activate() and Regenerate() this case places nothing, and it is the
+      normal state of a family the moment it is loaded
+
+negative:
+  - given: an empty point list
+    expect: >
+      `placed` EMPTY and failed 0, reported as nothing to do rather than as a
+      successful placement of nothing
+
+  - given: points outside the level's extents, or where the family has no host
+    expect: >
+      RECORD WHICH HAPPENS, because it decides an open question. If Revit
+      returns null, the point is counted in `failed` and the rest are placed.
+      If it THROWS, the exception propagates and the operation's
+      TransactionGroup rolls the whole layout back - which is Golden Rule 16
+      being obeyed, and may or may not be what a modeller wants from a layout.
+      Ask before making it partial: hiding the exception here would leave 37
+      placed, 3 missing and no transaction aware anything went wrong
+
+  - given: a point list containing a null
+    expect: counted in failed, everything else placed
+
+second_route:
+  - a schedule of that family, counted against the number asked for
+  - one Ctrl+Z removes the whole layout in a single step (Golden Rule 16)

@@ -1,0 +1,39 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 4 ducts and an editable text parameter (Comments)
+    expect: written = 4, and the value readable in Revit's own properties palette
+
+  - given: 4 Spaces and a NUMERIC parameter, value typed as the user would type it
+    expect: >
+      written = 4, and the number shown in Revit MATCHES WHAT WAS TYPED. This is
+      the case the whole design rests on - if a length comes back 304.8 times too
+      small or too large, SetValueString is not doing what this fragment claims
+
+  - given: the same numeric write, with the project's units set to something else
+    expect: >
+      still matches what the user typed, because the parse follows the document.
+      Without this row the units claim is untested
+
+negative:
+  - given: 4 elements that do not have the named parameter at all
+    expect: >
+      written = 0 and all 4 in `absent`. NOT an exception, and NOT reported as a
+      successful write of nothing
+
+  - given: a read-only parameter, such as a computed area
+    expect: written = 0 and all in `readOnly`, kept apart from `absent`
+
+  - given: text that cannot be parsed as a number, on a numeric parameter
+    expect: >
+      written = 0 and the element in `refused`. SetValueString returns false
+      here rather than throwing, so a fragment that ignored the return value
+      would report a clean success having changed nothing - which is exactly
+      the failure D-30 exists to catch
+
+  - given: a parameter that stores an ElementId, such as a Level
+    expect: refused, by name. Never resolved from text by guessing
+
+second_route:
+  - a Revit schedule of the same parameter, read after the write
+  - one Ctrl+Z must put every element back in a single step (Golden Rule 16)

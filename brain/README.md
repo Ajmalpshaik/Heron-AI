@@ -20,7 +20,7 @@ here replaceable. What they still cannot do is **run** one: a fragment's C# has 
 | | |
 |---|---|
 | [`heron_fragment.py`](heron_fragment.py) | **Step 7.** What a fragment IS on disk, and the validator that will not let it lie. Identity is not the filename; the contract is data, not prose; a proof without a negative case is refused |
-| [`fragments/`](fragments/) | The library. Seven so far, every one `DRAFT` — and **not one has met a real model**. All seven do now **compile**, on all eight releases, via [`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py) (2026-08-29). Its first run found one that never could have: `FRG-QA-001` had a value called `checked`, a reserved C# keyword |
+| [`fragments/`](fragments/) | The library. **Fourteen**, every one `DRAFT` — and **not one has met a real model**. All fourteen do now **compile**, on all eight releases, via [`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py) (2026-08-29). Its first run found one that never could have: `FRG-QA-001` had a value called `checked`, a reserved C# keyword |
 | [`heron_search.py`](heron_search.py) | **Step 9.** Finding a fragment by exact words. Three routes and it says which answered: `identity` (one lookup, no search), `cache` (this wording was resolved before), `keywords` (FTS5, ranked). Only a **PROVEN** fragment may run off an exact match without asking |
 | [`heron_skill.py`](heron_skill.py) · [`skills/`](skills/) | **Step 14.** What the user can *ask for*, in their own words. A skill names **capabilities, never fragments** — so a fragment can be replaced without editing a skill, and a skill can be written **before** the fragment that will serve it. Ten of them, all `DRAFT` |
 | [`heron_graph.py`](heron_graph.py) | **Step 13.** *What breaks if this changes.* Every edge but one is **computed from the fragments on demand** (D-40) — the only stored edge is a skill's requirement, which no artifact underneath carries. Names the dangerous case out loud: a **sole provider**, because whatever asked for its capability never named it |
@@ -49,9 +49,11 @@ fixed set of operations, and none of them compiles one. So a request can now be 
 [D-28](../docs/DECISIONS.md), Roslyn in-process, unbuilt — but it is the reason no answer here may imply
 it can act.
 
-**And the fragments the skills are asking for.** Writing the skills first produced a queue ordered by
-real demand rather than by guessing — `python brain/heron_skill.py` prints it. Seven capabilities are
-wanted and unprovided; the ones two skills each want come first.
+**The queue the skills produced has been worked.** Writing the skills first ordered it by real demand
+rather than by guessing, and on 2026-08-29 all seven were written — so `python brain/heron_skill.py` now
+prints **no gaps** and all ten skills have every capability provided. What that bought is a shorter list
+of *kinds* of outstanding work, not less of it: the seven are `DRAFT` like the rest, and every one is
+waiting on the same machine.
 
 ## Why it stayed empty until now
 

@@ -1,0 +1,71 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-001
+semantic-identity: "walk a real system outward from one element and report what it reaches"
+kind: action
+domain: revit.mep
+capability: TRACE_CONNECTIVITY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Walks a duct or pipe system outward from one element and reports what it
+  ACTUALLY reaches - not what the system name says it reaches, and not what
+  Connector.IsConnected says.
+
+  Both of those have been wrong in real work, on the same model, at the same
+  time: tag names implied one pairing and the flag reported nothing connected,
+  end to end, while the pipework was plainly joined. So this fragment walks the
+  declared connections AND checks geometry, and reports the difference as a
+  number - `joinedByGeometry` is how often the flag was wrong.
+
+  The tolerance is an input and is never assumed (D-33). How close two
+  connector ends have to be before they count as joined is a judgement about a
+  particular model, and a number invented here would be a number tuned later.
+
+contract:
+  needs:
+    - name: start
+      type: Element
+      source: request
+    # `elements`, NOT `candidates`. Both filters provide `elements`, and
+    # composition here is by name - the first draft called this `candidates`
+    # and the orphan check caught it immediately as "an action nothing can
+    # feed". The noun has to match what the other half actually leaves behind.
+    - name: elements
+      type: IList<Element>
+    - name: tolerance
+      type: double
+      source: request
+  provides:
+    - name: reached
+      type: IList<Element>
+    - name: openEnds
+      type: int
+    - name: joinedByGeometry
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ConnectorManager`, `Connector.AllRefs`
+  and `Connector.Origin` are unchanged 2020 to 2027. Elements are keyed by
+  `UniqueId` rather than by `ElementId` - a string that is stable on every
+  release, which sidesteps 2024's widening of ElementId to 64 bits entirely
+  rather than relying on it hashing the same way before and after.
+
+utterances:
+  - what connects to what
+  - trace this system
+  - what is this duct connected to
+  - follow the pipe
+  - is this still connected
+  - where does this run go
+  - check the connectivity

@@ -1,0 +1,69 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-003
+semantic-identity: "write one parameter value onto these elements"
+kind: action
+domain: revit.parameters
+capability: WRITE_ELEMENT_PARAMETERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Writes one named parameter on many elements, and reports every element it did
+  NOT write and why - read-only, absent, or a kind this fragment refuses.
+
+  It is the write half of FRG-PAR-001's read, and it takes the value as TEXT on
+  purpose. A number alone cannot be written safely: Revit stores lengths in
+  decimal feet, and the same fragment is asked to set an airflow, an area and a
+  comment. See the implementation note - this is the decision most likely to be
+  "improved" by somebody who has not hit it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one. Golden Rule 16 puts the
+  TransactionGroup at the OPERATION, so that one user action is one undo; a
+  fragment that opened its own would add a second entry to the undo stack and
+  break exactly the rule it looks like it is obeying.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: parameterName
+      type: string
+      source: request
+    - name: value
+      type: string
+      source: request
+  provides:
+    - name: written
+      type: int
+    - name: readOnly
+      type: IList<ElementId>
+    - name: absent
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, and the units API is the reason there
+  is only one. `SetValueString` parses in the DOCUMENT's own display units and
+  has been unchanged from 2020 to 2027, while everything around it moved:
+  `DisplayUnitType` became `ForgeTypeId` in 2021, and `ParameterType` became
+  `GetDataType()` in 2022. This fragment touches none of them, so there is no
+  `#if` and no version branch to keep in step.
+
+utterances:
+  - set the comments on these
+  - write the airflow back
+  - fill in the parameter
+  - update the mark on all of them
+  - put 500 in the flow parameter
+  - set the room number

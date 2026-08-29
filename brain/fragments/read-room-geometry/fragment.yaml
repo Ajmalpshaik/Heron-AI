@@ -1,0 +1,72 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-001
+semantic-identity: "the shape, area and height of one room or space"
+kind: action
+domain: revit.geometry
+capability: READ_ROOM_GEOMETRY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the outline, area and height of one Room or Space, so a layout job has
+  something real to lay out inside. It is the first step of every "how many fit
+  in here, and where" question - air terminals, sprinkler heads, detectors.
+
+  KIND: `action`, NOT `filter`, and the distinction is D-29's rather than a
+  convenience. A filter answers *which elements*. This answers *what is true of
+  this one*, which is the shape `read-element-parameters` already has.
+
+  It was written as a filter first, and the orphan check reported it as one
+  nothing can consume. That report was right about the fact and wrong about the
+  cause: nothing consumes it because what it produces is consumed by the
+  CALLER, not by another fragment. Turning an outline and a spacing into a list
+  of points is arithmetic, and arithmetic between two Revit calls belongs to the
+  Orchestrator - which is the host (D-01, docs/02 s4), not this library. The
+  label was corrected; the composition was never the problem.
+
+  It reports `unbounded` and `heightKnown` as separate facts rather than folding
+  either into a zero. An unbounded room returns an area of 0 from Revit, and a
+  layout that trusts that number places nothing and reports success.
+
+contract:
+  needs:
+    - name: room
+      type: SpatialElement
+      source: request
+  provides:
+    - name: boundary
+      type: IList<Curve>
+    - name: area
+      type: double
+    - name: height
+      type: double
+    - name: unbounded
+      type: bool
+    - name: heightKnown
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `SpatialElement` is the shared base of
+  Room and Space, so one fragment serves both, and `GetBoundarySegments` with
+  `SpatialElementBoundaryOptions` is unchanged 2020 to 2027. Area and height
+  come back in Revit's internal feet and are handed on in feet - converting
+  here would be a second place that knows about millimetres, and D-20 keeps
+  that conversion at the edge where the user is.
+
+utterances:
+  - how big is this room
+  - what is the room size
+  - the ceiling height in here
+  - how many fit in this room
+  - lay them out in this space
+  - the shape of the room

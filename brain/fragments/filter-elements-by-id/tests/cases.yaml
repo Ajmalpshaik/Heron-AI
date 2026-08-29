@@ -1,0 +1,32 @@
+# What a proof of this fragment must contain. D-30: the negative case is the one
+# that catches "succeeded and did nothing", so it is not optional.
+
+positive:
+  - given: a model with 4 ducts, passing the ids of all 4
+    expect: 4 elements, the same 4, and `missing` EMPTY
+
+  - given: the ids of 4 ducts, one of which has been deleted since
+    expect: >
+      3 elements and 1 in `missing` - and the count of the two together must
+      equal what was asked for. That sum is the check: it is what makes a stale
+      id visible instead of looking like a smaller system
+
+negative:
+  - given: ids from a DIFFERENT open document
+    expect: >
+      EMPTY elements, and every id in `missing`. NOT an exception, and not a
+      list of unrelated elements that happen to share the numbers. This is the
+      case that matters most, because an id carries no document identity and
+      the wrong answer here is plausible rather than obviously broken
+
+  - given: an empty id list
+    expect: >
+      EMPTY elements and EMPTY missing, reported as empty rather than as a
+      success with no count
+
+  - given: a list containing ElementId.InvalidElementId
+    expect: it appears in `missing`, and nothing is looked up for it
+
+second_route:
+  - select the same elements by hand in Revit and compare the count
+  - for the deleted case, Revit's own undo stack says whether it is really gone
