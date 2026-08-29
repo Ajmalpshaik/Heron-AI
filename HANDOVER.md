@@ -1,8 +1,10 @@
 # Heron AI — Session Handover
 
-**Updated 2026-08-29, at the end of the fifth working session — the one that built Phase 2 end to end
-and then wrote the tool that looks for what is missing.** For whoever picks this up next: a fresh Claude
-session, a person, or the owner on his phone.
+**Updated 2026-08-29, at the end of the sixth working session — the one that wired the brain to the
+host, which was the last thing in this repository that could be built without a machine.** The fifth
+session, earlier the same day, built Phase 2 end to end and then wrote the tool that looks for what is
+missing; that tool is what found this. For whoever picks this up next: a fresh Claude session, a person,
+or the owner on his phone.
 
 ---
 
@@ -20,9 +22,15 @@ every agent id against the registry, walks the fragment library, the capability 
 dependency graph, and reads the register. Then it sorts everything into **UNFINISHED** and **WAITING**,
 and its exit code follows only the first.
 
-**As of 2026-08-29 it reports 1 unfinished and 54 waiting.** The one unfinished thing is that
-**the brain is not wired to anything** — see below. Everything waiting needs a machine or a
-conversation: 47 a real Revit, 2 Windows, 1 a network, 3 the owner.
+**As of 2026-08-29, later the same day, it reports 0 unfinished and 55 waiting.** The one thing that was
+unfinished — **the brain was wired to nothing** — is now wired, and the section below that used to say so
+records what that did and did not buy. Everything waiting needs a machine or a conversation: 47 a real
+Revit, **3 Windows** (`A4`, `A6` and the new `A8`), 1 a network, 3 the owner.
+
+**`A8` is new and it is the honest half of that work.** The three MCP tools were written on a machine
+with **no MCP SDK installed**, so `FastMCP` has never served them. The test underneath them passes and
+then reads the server *as text* — which proves they are declared, never that they appear in a host. Two
+minutes at the PC clears it.
 
 **If the tool and this file ever disagree, believe the tool.** It is computed from disk; this file is
 typed. That is not a hypothetical — for most of 2026-08-29 this tool reported `UNFINISHED - nothing`
@@ -50,18 +58,41 @@ dependency order on purpose: nothing in group D can be attempted before group A 
 - **`A4` and `A6`** — both need Windows but not Revit. `A4` is the Windows named pipe itself; `A6` is
   thirty seconds confirming the SDK probe reads Windows correctly.
 
-### The one thing that is buildable here, and is not built
+### The one thing that was buildable here — now built
 
-**The brain is wired to nothing.** Eight modules, seven fragments and ten skills are on disk, tested and
-passing — and **no MCP tool reaches any of them.** The host talks to Heron only through the seven tools
-in [`mcp/server/heron_tools.py`](mcp/server/heron_tools.py): five go to the Revit bridge, and the other
-two report health and version. **None consults the capability registry.** That leaves Phase 2's third
-definition-of-done clause open, and it is open for **no external reason at all**: no Revit, no Windows,
-no network. [§1](#1-where-the-project-stands-in-one-paragraph) carries the evidence and the one-line
-command that shows it.
+**The brain was wired to nothing, and now it is wired.** Eight modules, seven fragments and ten skills
+were on disk, tested and passing, with **no MCP tool reaching any of them.** The host talks to Heron only
+through the tools in [`mcp/server/heron_tools.py`](mcp/server/heron_tools.py), and every one of them went
+straight to the bridge. That left Phase 2's third definition-of-done clause open for **no external reason
+at all**, which is why it was worth doing on a machine with no Revit.
 
-**This was found by running `tools/check-metadata.py` and following what it said**, hours after
-`check-gaps.py` had reported everything clean. `check-gaps` now has a check for it.
+**What was added**, all of it read-only and none of it touching a model:
+
+| | |
+|---|---|
+| [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py) | The one seam between the MCP side and `brain/`. Opens the store, rebuilds it if the machine is fresh, indexes if stale, and hands back rows. **It holds no knowledge of its own** |
+| `heron_capabilities` | What Heron knows how to do: ten jobs, which have every part provided, and the seven capabilities nothing provides |
+| `heron_resolve` | Who can do one capability, at what risk, on which releases — **asked for by capability, never by fragment id** |
+| `heron_lookup` | The user's own sentence resolved to a **capability**, with the provider underneath as evidence rather than as the answer |
+| [`tests/test_brain_reachable.py`](tests/test_brain_reachable.py) | Step 12's acceptance test re-run through the seam: add a better provider and the call site is the same line; delete the original and it still answers |
+
+**Two things it deliberately does not do, and every answer says both out loud:**
+
+- **Resolving is not running.** A fragment carries C# in `impl/`, the bridge speaks a fixed set of
+  operations, and none of them compiles one — [D-28](docs/DECISIONS.md)'s in-process Roslyn is unbuilt.
+  So the host can now learn *what would do the job* and still cannot have it done. A tool that let that
+  be inferred would be worse than no tool, because a plan built on it fails at the last step.
+- **Nothing underneath is proven.** Every skill and every fragment is still `DRAFT`.
+
+**The version filter reaches the host as a wall, not a preference.** The release comes from the bound
+Revit session, read **without ever asking and without claiming a lease** — looking must never be the act
+of claiming, which is the lesson `revit_health` learned about the lease one commit after building it.
+With no Revit connected the tools still answer and say the filter did not run.
+
+**The original finding came from running `tools/check-metadata.py` and following what it said**, hours
+after `check-gaps.py` had reported everything clean. `check-gaps` now has a check for it — and that check
+is an **import** check, so treat its green accordingly: it can see that the seam exists, not that a host
+ever called through it. That is `A8`.
 
 ### And the seven capabilities nothing provides
 
@@ -171,10 +202,12 @@ outstanding. Ask before building them.
 > **`python tools/check-gaps.py` is the one command to run first now.** It sweeps everything — the build
 > order against disk, every test, every checker, every agent id, the library, the registry, the graph,
 > the register — and sorts it into **UNFINISHED** and **WAITING**, with the exit code following only the
-> first. It currently reports **one thing unfinished** — the brain is wired to nothing — and **54
-> waiting**: 47 need a real Revit, 2 need Windows, 1 needs a reachable network, 3 need a conversation
-> with the owner. **It reported nothing unfinished until 2026-08-29**, when the reachability check was
-> added; that green was real about the build order and wrong about the repository.
+> first. It now reports **nothing unfinished** and **55 waiting**: 47 need a real Revit, 3 need Windows,
+> 1 needs a reachable network, 3 need a conversation with the owner. **It reported nothing unfinished
+> until 2026-08-29 for the wrong reason**, when the reachability check was added; that earlier green was
+> real about the build order and wrong about the repository. This one was earned by wiring the brain up —
+> but read it knowing what the new check asks: whether the seam **exists**, not whether a host has ever
+> called through it. That second question is `A8`.
 >
 > **It found real defects on its first runs, including two in itself.** A scanner that scans itself finds
 > itself — it reported its own regex as two undeclared agents. It also caught a second invented agent id
@@ -264,8 +297,10 @@ covered by reasoning, and **neither has been witnessed.**
 **PHASE 2 IS BUILT — all eight steps, 7 to 14, on 2026-08-28 and 2026-08-29.** It was unblocked by the
 twenty-four decisions taken on 2026-08-28 (D-20 to D-43), which closed **every open question in the
 project, 41 of 41**, and then it was built. What is on disk: eight Python modules under `brain/`, seven
-fragments, ten skills, eight new test suites, and [`tools/check-gaps.py`](tools/check-gaps.py) — the
-sweep that looks for what is missing rather than waiting to be told.
+fragments, ten skills, **nine** new test suites, and [`tools/check-gaps.py`](tools/check-gaps.py) — the
+sweep that looks for what is missing rather than waiting to be told. The ninth suite is
+[`tests/test_brain_reachable.py`](tests/test_brain_reachable.py), and it arrived last with the seam that
+made any of the other eight reachable from a conversation.
 
 **Phase 2's own definition of done is NOT met, and only two thirds of the reason is the missing Revit.**
 The [build order](docs/27-build-order.md) states it as three clauses: *ten real skills work, none
@@ -273,7 +308,15 @@ hard-coded; a re-authored capability carries its own proof; and the Orchestrator
 capabilities rather than agent names.* The first two need a model — all ten skills and all seven
 fragments are `DRAFT`, and [D-30](docs/DECISIONS.md) promotes on a proof containing a negative case.
 
-> ### The third clause is not blocked by anything, and it is not done
+> ### The third clause was not blocked by anything — and is now done
+>
+> **RESOLVED 2026-08-29, later the same day.** [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py)
+> is the seam and three read-only tools stand on it — `heron_capabilities`, `heron_resolve`,
+> `heron_lookup` — each asking for a **capability** and never for a fragment. `check-gaps.py` now reports
+> **nothing unfinished**. What follows is the finding as it stood, kept because the *way* it was missed
+> matters more than the fix, and because two limits it names are still true: **resolving is not running**
+> (there is no executor, [D-28](docs/DECISIONS.md) is unbuilt), and the tools have **never been served by
+> a real `FastMCP`** — that is `A8` in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md).
 >
 > **The brain is wired to nothing.** Found on 2026-08-29 by running `tools/check-metadata.py` and
 > following what it said. The Orchestrator is **the host's job, not Heron's** — `HERON-ORC-MAIN-001` is
@@ -360,7 +403,7 @@ brain/          Part 3 — knowledge. BUILT IN PHASE 2, and all of it runs witho
   skills/              10, all DRAFT — same
 platform/       Part 4 — the Kernel
   Heron.Core/          HeronPaths, HeronConfig, HeronIdentity, HeronAudit
-tests/          16 suites. 15 run anywhere; test_bridge_roundtrip needs its host built first
+tests/          17 suites. 16 run anywhere; test_bridge_roundtrip needs its host built first
 tools/          scripts that keep the repo honest, plus setup and deploy
 docs/           41 documents — specification, decisions, questions, roadmap
 .claude/        skills and agents that ship with the repo
@@ -423,12 +466,14 @@ now that the next stretch of work happens where Revit cannot be reached.
 | **7 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists seven items under *needs a real Revit* |
 | **10 skills, all `DRAFT`** | Each names **capabilities and never fragments**, and each carries the words Ajmal actually says rather than the words the technique is named after. Whether any of them does what it says is unknown |
 | **The trained embedding backend** | Never run — `huggingface.co` is refused by this container. The backend that *is* running is character n-grams, which measurably **does not do synonyms** (`diffuser`/`grille` scored −0.136). `A7` is that run and needs no Revit and no Windows |
+| **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py). The resolution beneath them is tested and passes; **`FastMCP` has never served them**, because the machine they were written on has no MCP SDK. `tests/test_brain_reachable.py` reads the server as *text* to confirm they are declared, which is the same technique `test_tool_registry.py` uses on the C# and has the same limit. `A8`, and it needs Windows rather than Revit |
 
 ### Does not exist at all
 
 | | |
 |---|---|
-| **Any way for the host to reach the brain** | The MCP surface is seven `revit_*` tools and every one goes to the bridge. No tool asks the capability registry anything, and nothing outside `brain/` and `tests/` imports it. **The single buildable item left here** — see [§1](#1-where-the-project-stands-in-one-paragraph) |
+| ~~Any way for the host to reach the brain~~ | **BUILT 2026-08-29.** Three read-only tools on one seam. Moved to the table above, which is where an untested thing belongs |
+| **Any way to RUN a fragment** | **The gap that wiring the brain up revealed rather than closed.** A fragment carries C# under `impl/`, the bridge speaks a fixed set of operations, and **none of them compiles or executes one** — [D-28](docs/DECISIONS.md) chose Roslyn in-process and it is not built. So a request now resolves all the way to *this capability, provided by that fragment*, and then stops. Every brain tool says so on every answer, because a host that inferred otherwise would build a plan that fails at its last step |
 | **Seven capabilities the skills ask for** | `PLACE_FAMILY_INSTANCES`, `READ_ROOM_GEOMETRY`, `TRACE_CONNECTIVITY`, `CHECK_OBSTRUCTIONS`, `FILTER_ELEMENTS_BY_ID`, `OVERRIDE_GRAPHICS_IN_VIEW`, `WRITE_ELEMENT_PARAMETERS`. A capability nobody provides **is** the gap — there is no second list to keep in step |
 
 > Nothing here is known-broken. Several things are **untested**, which is different and more honest.
@@ -498,6 +543,9 @@ python tests/test_retrieve.py          # the two fused, behind a hard Revit-vers
 python tests/test_capability.py        # a provider is swapped and the call site does not change
 python tests/test_graph.py             # the deriver shown catching a break before it was believed
 python tests/test_skills.py            # a skill names capabilities, never fragments
+
+# The seam, added 2026-08-29. Also needs no Revit
+python tests/test_brain_reachable.py   # the host resolves through a capability, not a fragment id
 ```
 
 **15 suites, 435 individual `ok`/`PASS` lines, all passing** — derived, not typed:
@@ -698,7 +746,7 @@ on — both are the owner's to make, and both were deliberately left rather than
 | | |
 |---|---|
 | **Write the seven missing capabilities, or wait?** | Ten skills ask for capabilities nothing provides — `PLACE_FAMILY_INSTANCES`, `READ_ROOM_GEOMETRY` and `TRACE_CONNECTIVITY` are each wanted by two. They can be written away from Revit; **they cannot be promoted away from one** ([D-30](docs/DECISIONS.md)), so building them now adds seven more `DRAFT` rows to a queue already waiting on the same machine. His standing instruction is that **only Revit-checking should remain outstanding** — seven unprovable drafts would be a second kind of outstanding, which is why nobody started them |
-| **Wire the brain to the host now, or after the Revit checks?** | Phase 2's third done-clause needs one MCP tool that answers from the capability registry instead of going straight to the bridge. It needs **no Revit** — it is the only buildable item left. The argument for doing it now is that it closes Phase 2's one unblocked clause and makes the brain usable the moment Revit is back; the argument for waiting is that his instruction was *only Revit-checking should remain*, and every hour spent here is an hour the register does not move. **His call** |
+| ~~Wire the brain to the host now, or after the Revit checks?~~ | **DECIDED AND DONE 2026-08-29 — he chose to wire it now.** Three read-only tools on one seam; `check-gaps.py` reports nothing unfinished. It cost the register one new row (`A8`, two minutes at the PC) and moved no other row, so his standing instruction that *only Revit-checking should remain outstanding* holds: what remains is 47 Revit rows, 3 Windows, 1 network, 3 conversations |
 
 **Two things were answered by NOT answering them, and both are publication tasks rather than gaps:**
 [Q-38](docs/OPEN-QUESTIONS.md) — the public install command — and the Autodesk App Store requirements in
@@ -715,9 +763,10 @@ of Step 6 are in the repository, and so is everything an audit turned up afterwa
 Failure Analysis Agent, the tool registry, the configuration and health agents. Steps 7 to 14 are all on
 disk with a test each. 59 agent ids are claimed by code and every one exists in the registry.
 
-**`python tools/check-gaps.py` is what says this, rather than this paragraph.** Run it first. It reports
-**one** unfinished thing — the brain is reachable from nothing — and everything else it lists is
-**waiting on a machine or on a conversation** —
+**`python tools/check-gaps.py` is what says this, rather than this paragraph.** Run it first. It now
+reports **nothing** unfinished — the brain was reachable from nothing on the morning of 2026-08-29 and
+was wired up the same day — and everything else it lists is **waiting on a machine or on a
+conversation** —
 which is not the same as being finished, and the tool is careful to say so in its own closing line:
 *"waiting is not failing — but a waiting item is still UNPROVEN, and no number of days spent waiting
 makes `D3` any more true."*
@@ -880,9 +929,11 @@ every release from 2020 to 2027. Seventeen fragments and skills sit at `DRAFT`, 
 but [D-30](docs/DECISIONS.md) being obeyed: promotion needs one proof containing a negative case, and a
 negative case needs a model. `python tools/check-gaps.py` is now the file that answers "what is left",
 because it is computed from disk and this one is not — and where they disagree, believe the tool. It
-currently says **one** thing here is unfinished and 54 are waiting: 47 on a Revit, 2 on Windows, 1 on a
-network, 3 on a conversation. The one is that **the brain is wired to nothing**, and it was invisible
-for a day because the tool had only ever been taught to ask whether the build order was followed.
+currently says **nothing** here is unfinished and 55 are waiting: 47 on a Revit, 3 on Windows, 1 on a
+network, 3 on a conversation. The one thing that *was* unfinished — **the brain wired to nothing** — was
+invisible for a day because the tool had only ever been taught to ask whether the build order was
+followed; it is now wired, and the newest waiting row is the half of that work this machine could not
+prove.
 Almost nothing in this repository is waiting on another session; it is waiting on a machine — and three
 times now, something believed to be waiting on a machine was waiting on somebody trying it. `D3` is
 still the line that matters most: move the ducts 200 mm, then measure one.*

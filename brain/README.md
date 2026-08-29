@@ -2,6 +2,13 @@
 
 **Knowledge.** Runs outside Revit. **All eight Phase 2 steps are built — 7 to 14. None of it is proven.**
 
+**And since 2026-08-29 it is reachable.** Everything here was imported by nothing but its own tests until
+[`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) was written — complete, tested, and invisible
+to any conversation. Three MCP tools now stand on that seam: `heron_capabilities`, `heron_resolve` and
+`heron_lookup`. **They ask for a capability and never for a fragment**, which is what keeps everything in
+here replaceable. What they still cannot do is **run** one: a fragment's C# has no route to Revit, and
+[D-28](../docs/DECISIONS.md)'s in-process Roslyn is not built.
+
 | | |
 |---|---|
 | Language | Python |
@@ -32,8 +39,15 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, and nothing else.** Every fragment and every skill here is `DRAFT`. Phase 2's definition of
-done is *"ten real skills **work**"* — ten are written, and the word that needs a Revit is the last one.
+**Proof, and a way to run any of it.** Every fragment and every skill here is `DRAFT`. Phase 2's
+definition of done is *"ten real skills **work**"* — ten are written, and the word that needs a Revit is
+the last one.
+
+**And an executor, which nothing has yet.** A fragment carries C# under `impl/`, the bridge speaks a
+fixed set of operations, and none of them compiles one. So a request can now be resolved all the way to
+*this capability, provided by that fragment* and then stop. That is not a gap in this folder — it is
+[D-28](../docs/DECISIONS.md), Roslyn in-process, unbuilt — but it is the reason no answer here may imply
+it can act.
 
 **And the fragments the skills are asking for.** Writing the skills first produced a queue ordered by
 real demand rather than by guessing — `python brain/heron_skill.py` prints it. Seven capabilities are

@@ -332,20 +332,38 @@ existing library carries its own proof; and the Orchestrator resolves through ca
 agent names. **Two of those three can be finished without Revit. The first cannot**, and saying so now is
 cheaper than discovering it in week two.
 
-> **Status, 2026-08-29 — Steps 7 to 14 are all built, and none of the three clauses is met.**
+> **Status, 2026-08-29 — Steps 7 to 14 are all built. The third clause is met; the first two wait on a
+> model.**
 >
 > The first two wait on a model: every fragment and every skill is `DRAFT`, because [D-30](DECISIONS.md)
-> promotes on a proof containing a negative case and a negative case needs Revit. **The third waits on
-> nothing.** The Orchestrator is the host ([D-01](DECISIONS.md),
-> [02 §7](02-architecture-overview.md)), the host reaches Heron only through MCP tools, and every tool in
-> `mcp/server/heron_tools.py` goes straight to the bridge — **no tool consults the capability registry,
-> and nothing outside `brain/` and `tests/` imports the brain at all.** So the modules are complete and
-> unreachable, which is not what "built" was meant to mean.
+> promotes on a proof containing a negative case and a negative case needs Revit.
 >
-> `tools/check-gaps.py` passed the whole phase while this was true, because it checked that each step's
-> module and test were on disk and never asked whether anything called them. It now has a section that
-> does. **A checker written from a build order can only ask whether the build order was followed** — the
-> clause above is the part no step was ever assigned, which is why no step reported it missing.
+> **The third was open for no external reason, and was closed the same day it was found.** The
+> Orchestrator is the host ([D-01](DECISIONS.md), [02 §7](02-architecture-overview.md)), the host reaches
+> Heron only through MCP tools, and every tool in `mcp/server/heron_tools.py` went straight to the
+> bridge — **no tool consulted the capability registry, and nothing outside `brain/` and `tests/`
+> imported the brain at all.** The modules were complete and unreachable, which is not what "built" was
+> meant to mean.
+>
+> [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) is the seam, and three tools stand on it:
+> `heron_capabilities` (what Heron knows how to do, and what nothing provides), `heron_resolve` (who can
+> do one capability, on this Revit) and `heron_lookup` (the user's own sentence, resolved to a
+> capability). **All three ask for a capability and never for a fragment** — Step 12's acceptance test is
+> re-run through the seam in [`tests/test_brain_reachable.py`](../tests/test_brain_reachable.py): add a
+> better provider and the call site is the same line, delete the original and it still answers.
+>
+> **What that clause does NOT buy, and the tools say so on every answer.** Resolving is not running.
+> A fragment carries C# in `impl/` and there is no executor — the bridge speaks a fixed set of
+> operations and none of them compiles one, because [D-28](DECISIONS.md)'s in-process Roslyn is not
+> built. So the host can now learn *what would do the job* and still cannot have it done.
+> `A8` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) carries the other half: the tools were written
+> where no MCP SDK is installed, so **`FastMCP` has never actually served them.**
+>
+> `tools/check-gaps.py` passed the whole phase while the brain was unreachable, because it checked that
+> each step's module and test were on disk and never asked whether anything called them. It now has a
+> section that does. **A checker written from a build order can only ask whether the build order was
+> followed** — the clause above is the part no step was ever assigned, which is why no step reported it
+> missing.
 
 ---
 

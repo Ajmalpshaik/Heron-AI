@@ -48,10 +48,26 @@ SUPPORT = {
 # ------------------------------------------------------------------ layering
 # Who may depend on whom. Everything may depend on platform; platform depends
 # on nothing. revit and brain never touch each other.
+#
+# mcp MAY depend on brain, and the direction is not a convenience. docs/02 s7
+# draws the stack with the brain UNDERNEATH the MCP server - "Heron MCP Server
+# — Python: brain, RAG, fragments, skills, memory" - because the host reaches
+# Heron only through MCP tools (D-01). A brain nothing on that side may import
+# is a brain no conversation can reach, which is exactly the state Phase 2 was
+# found in on 2026-08-29: eight modules, seven fragments and ten skills, built,
+# tested and imported by nothing but their own tests.
+#
+# This table did not permit that import and did not forbid it either - it only
+# ever ran against C# ProjectReferences, so the Python side has never been
+# checked here at all. Writing the rule down is the point: the omission read as
+# a prohibition to anybody who opened this file.
+#
+# The isolation that matters is unchanged. revit and brain still never touch:
+# the brain must stay runnable, and testable, on a machine with no Revit on it.
 ALLOWED = {
     "platform": set(),
     "revit":    {"platform"},
-    "mcp":      {"platform"},
+    "mcp":      {"platform", "brain"},
     "brain":    {"platform"},
     "tests":    {"platform", "revit", "mcp", "brain"},
     "tools":    set(),

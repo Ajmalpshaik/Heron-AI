@@ -324,7 +324,11 @@ def check_register():
         group = item[0]
         if group == "R":
             waiting("%s - a conversation at the PC" % item, "the owner")
-        elif item in ("A4", "A6"):
+        elif item in ("A4", "A6", "A8"):
+            # A8 is the MCP tool surface being SERVED, not just declared. It
+            # needs Windows and Claude Code and no Revit at all - filing it
+            # under "needs a real Revit" would hide a row that a PC session
+            # could clear in two minutes.
             waiting("%s - %s" % (item, body.split("|")[0].strip()[:60]), "Windows")
         elif item == "A7":
             waiting("%s - the trained embedding backend" % item,
