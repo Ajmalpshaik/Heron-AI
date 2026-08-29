@@ -1,0 +1,36 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-002
+semantic-identity: "turns a set of parameter values into a schedule-style table"
+kind: action
+domain: revit.reporting
+capability: GROUP_AND_COUNT
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Turns a set of parameter values into a schedule-style table: each distinct
+  value, and how many carried it, largest group first.
+
+contract:
+  needs:
+    - name: values
+      type: IDictionary<ElementId, string>
+  provides:
+    - name: groups
+      type: IList<KeyValuePair<string, int>>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+utterances:
+  - what sizes are they
+  - break it down by size
+  - group them and count
+  - give me a schedule of the types

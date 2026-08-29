@@ -93,10 +93,11 @@ def main():
             check(got["exists"], "the fragment is found")
             check(got["provides"] == "FILTER_ELEMENTS_BY_CATEGORY",
                   "its capability is reported")
-            check(got["downstream"] == ["FRG-SEL-001"],
-                  "what could run after it: %s" % got["downstream"])
+            check("FRG-SEL-001" in got["downstream"],
+                  "what could run after it: %s" % ", ".join(got["downstream"]))
             check(got["upstream"] == [],
-                  "and nothing feeds a filter that only needs ambient names")
+                  "and NOTHING feeds it - every need it has comes from the "
+                  "wrapper or the request, so no fragment has to run first")
 
             missing = G.impact(store, "FRG-NOPE-999")
             check(not missing["exists"],

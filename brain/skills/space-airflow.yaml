@@ -1,0 +1,39 @@
+heron-status: DRAFT
+heron-step: 14
+heron-since: 0.1.0
+heron-layer: brain
+
+id: space-airflow
+name: Work out the airflow for this room
+domain: revit.hvac
+risk: MODIFY
+
+purpose: >
+  Calculates a Space's required airflow and writes it back. Every number is a
+  per-request input - never a remembered default.
+
+# The words Ajmal actually says, not the words the technique is named after.
+utterances:
+  - work out the airflow for this room
+  - calculate the air for these spaces
+  - set the supply air flow
+  - how much air does this room need
+
+# CAPABILITIES, never fragment ids. A fragment can be replaced, split or
+# retired without this file changing - that is what the registry is for.
+needs:
+  - FILTER_ELEMENTS_BY_CATEGORY
+  - READ_ELEMENT_PARAMETERS
+  - WRITE_ELEMENT_PARAMETERS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - Spaces exist and are bounded - an unbounded Space has no volume to work from
+  - the air change rate or load basis has been confirmed for THIS request
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Ajmal speaks in mm and in air changes; Revit stores internal units. The
+  conversion is explicit both ways, and the reply is in his units.

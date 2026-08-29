@@ -82,8 +82,26 @@ def _fts_query(text):
     dropped rather than escaped: it carries no meaning in a lookup and every
     one of these characters means something to FTS5.
     """
-    words = [w for w in _FTS_UNSAFE.sub(" ", text or "").split() if w]
-    return " OR ".join('"%s"*' % w for w in words)
+    terms = []
+    for word in _FTS_UNSAFE.sub(" ", text or "").split():
+        if not word:
+            continue
+        # PREFIX MATCHING ONLY WHERE A PREFIX MEANS SOMETHING.
+        #
+        # The point of a prefix is to catch word endings - duct, ducts,
+        # ducting. A word of three characters or fewer has no stem worth
+        # matching: "in*" hits instance, internal, insulation; "me*" hits
+        # measure, member, metadata; "the*" hits there, these, thermal. Every
+        # one of those is a false hit, and enough of them together outrank the
+        # one word in the sentence that actually carried meaning.
+        #
+        # This was invisible with two fragments and wrong with seven: "show me
+        # every duct in the model" ranked the SELECTION fragment above the duct
+        # filter, because five stopword prefixes outvoted one real term. Found
+        # by the library growing, which is the only way this class of defect
+        # ever shows up.
+        terms.append('"%s"*' % word if len(word) > 3 else '"%s"' % word)
+    return " OR ".join(terms)
 
 
 class Answer(object):

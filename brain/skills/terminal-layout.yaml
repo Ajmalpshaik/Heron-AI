@@ -1,0 +1,36 @@
+heron-status: DRAFT
+heron-step: 14
+heron-since: 0.1.0
+heron-layer: brain
+
+id: terminal-layout
+name: How many air terminals, and where
+domain: revit.hvac
+risk: MODIFY
+
+purpose: >
+  Works out how many air terminals a room needs and places them on a sensible
+  grid.
+
+# The words Ajmal actually says, not the words the technique is named after.
+utterances:
+  - how many diffusers for this room
+  - lay out the air terminals
+  - place the grilles
+  - how many at 3 m coverage and where
+
+# CAPABILITIES, never fragment ids. A fragment can be replaced, split or
+# retired without this file changing - that is what the registry is for.
+needs:
+  - FILTER_ELEMENTS_BY_CATEGORY
+  - READ_ROOM_GEOMETRY
+  - PLACE_FAMILY_INSTANCES
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - the room or space is bounded
+  - the terminal family and type are loaded
+  - the coverage or throw figure has been confirmed for THIS request
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

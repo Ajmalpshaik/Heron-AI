@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SEL-001
-semantic-identity: put these elements in the current selection
+semantic-identity: "put these elements in the current selection"
 kind: action
 domain: revit.selection
 capability: SET_SELECTION

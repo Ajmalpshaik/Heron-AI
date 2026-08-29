@@ -116,6 +116,34 @@ AMBIENT = {
     "app":   "Application",
 }
 
+# WHERE A NEEDED NAME CAN COME FROM. Found the same way AMBIENT was - by writing
+# real fragments and watching the model fail to describe them.
+#
+#   fragment   another fragment provides it. The default, and the only one
+#              composition has anything to say about
+#   ambient    the wrapper always has it - doc, uidoc, app
+#   request    THE REQUEST supplies it. `category` for a filter,
+#              `parameterName` for a parameter read, `whatWasChecked` for a
+#              report. No fragment will ever provide these and none should:
+#              they are what the user's sentence carries
+#
+# Without the third, the orphan check reported two perfectly good fragments as
+# "an action nothing can feed", because it was looking for a producer of a value
+# that only a human can supply. A contract model that cannot say "this comes
+# from the question" makes every parameterised fragment look broken.
+SOURCES = ("fragment", "ambient", "request")
+
+
+def need_source(entry):
+    """Where this need comes from. Ambient names are recognised by name, so a
+    fragment does not have to remember to label doc and uidoc."""
+    declared = entry.get("source")
+    if declared in SOURCES:
+        return declared
+    if AMBIENT.get(entry.get("name")) == entry.get("type"):
+        return "ambient"
+    return "fragment"
+
 # ---------------------------------------------------------------------------
 # Naming
 # ---------------------------------------------------------------------------
@@ -388,6 +416,10 @@ def _check_contract_side(side, entries, problems, where):
             if not entry.get(key):
                 problems.append("%s: contract.%s[%d] has no %s"
                                 % (where, side, i, key))
+        if entry.get("source") and entry["source"] not in SOURCES:
+            problems.append(
+                "%s: contract.%s[%d] source %r is not one of %s"
+                % (where, side, i, entry["source"], ", ".join(SOURCES)))
 
 
 def validate(frag):
@@ -553,11 +585,23 @@ def composable(producer, consumer):
     is a defect found here rather than in front of a user, mid-job, with a
     transaction open.
     """
+    # A consumer that needs nothing FROM A FRAGMENT does not compose after
+    # anything - it stands alone. Without this, composable() returns True
+    # against every producer, because there is nothing left to fail on, and
+    # "anything may precede a thing that needs nothing" is true in the way that
+    # is no use to anybody. It made the graph report all seven fragments as
+    # feeding the category filter, and made an action look composable before a
+    # filter that consumes nothing it makes.
+    wanted = [n for n in consumer.needs() if need_source(n) == "fragment"]
+    if not wanted:
+        return False, ("%s consumes nothing another fragment provides - its "
+                       "inputs come from the wrapper or the request, so it "
+                       "starts a chain rather than continuing one"
+                       % consumer.slug)
+
     supply = dict((p.get("name"), p.get("type")) for p in producer.provides())
-    for need in consumer.needs():
+    for need in wanted:
         name, want = need.get("name"), need.get("type")
-        if AMBIENT.get(name) == want:
-            continue                      # the wrapper supplies it, not a fragment
         if name not in supply:
             return False, ("%s needs %r and %s does not provide it"
                            % (consumer.slug, name, producer.slug))

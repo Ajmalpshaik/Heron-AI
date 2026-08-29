@@ -1,0 +1,40 @@
+heron-status: DRAFT
+heron-step: 14
+heron-since: 0.1.0
+heron-layer: brain
+
+id: count-elements
+name: How many of these are there
+domain: revit.reporting
+risk: READ
+
+purpose: >
+  Answers a bare count question with a bare number. The commonest thing anybody
+  asks a model, and the one where a wrong answer is least visible - a count that
+  silently filtered to nothing looks exactly like a model with nothing in it.
+
+# The words Ajmal actually says, not the words the technique is named after.
+utterances:
+  - how many ducts are there
+  - count the air terminals
+  - how many sprinklers on level 2
+  - give me the number of fire dampers
+
+# CAPABILITIES, never fragment ids. A fragment can be replaced, split or
+# retired without this file changing - that is what the registry is for.
+needs:
+  - FILTER_ELEMENTS_BY_CATEGORY
+  - COUNT_ELEMENTS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a document is open
+  - the category is named or can be resolved from the request
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  A count of zero must be reported as zero AND as which filter produced it.
+  D-30 exists because a filter that matches nothing while reporting success is
+  the defect that survives a thousand runs.

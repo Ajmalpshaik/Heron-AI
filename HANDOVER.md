@@ -81,7 +81,28 @@ person, or the owner on his phone.
 > modifies are not two implementations of one capability. A declared value would have hidden exactly
 > that. Platform support is an **intersection** for the same reason: a union would claim 2027 because
 > one provider manages it, then hand back one that does not. `python tests/test_capability.py`.
-> **Step 13 is next** — the dependency graph, then Step 14 is the fragments.
+>
+> **PHASE 2 IS BUILT IN FULL — all eight steps, 7 to 14.** Step 13 is the dependency graph, where every
+> edge but one is computed on demand and the deriver was **shown catching a break** before its clean
+> answers were believed. Step 14 is ten skills, each naming **capabilities and never fragments**.
+>
+> **`python tools/check-gaps.py` is the one command to run first now.** It sweeps everything — the build
+> order against disk, every test, every checker, every agent id, the library, the registry, the graph,
+> the register — and sorts it into **UNFINISHED** and **WAITING**, with the exit code following only the
+> first. It currently reports **nothing unfinished** and **54 waiting**: 47 need a real Revit, 2 need
+> Windows, 1 needs a reachable network, 3 need a conversation with the owner.
+>
+> **It found real defects on its first runs, including two in itself.** A scanner that scans itself finds
+> itself — it reported its own regex as two undeclared agents. It also caught a second invented agent id
+> in as many steps. And growing the library from 2 fragments to 7 exposed a **query bug that was
+> invisible at two**: every word was prefix-matched, so `in*`, `me*` and `the*` outvoted the one word in
+> the sentence that carried meaning.
+>
+> **One assertion was retired rather than repaired, and the reasoning matters.** Steps 10 and 11 both
+> asserted that *"show me every duct"* must rank the duct **filter** first. That held at two fragments
+> and stopped at seven — and the honest reading is not that retrieval got worse, it is that the
+> assertion asked the wrong layer. That sentence is filter-**then**-select: a composition, which is what
+> a **skill** names. **Next is proof, and it needs the machine.**
 >
 > **What that did NOT change:** `write.enabled` is still `false`, every parked item is still unproven,
 > and `R1` — read the day's decisions back — **did not happen before Phase 2 began**, contrary to the

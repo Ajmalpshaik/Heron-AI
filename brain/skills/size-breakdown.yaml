@@ -1,0 +1,40 @@
+heron-status: DRAFT
+heron-step: 14
+heron-since: 0.1.0
+heron-layer: brain
+
+id: size-breakdown
+name: What sizes are these
+domain: revit.reporting
+risk: READ
+
+purpose: >
+  A schedule-style table of sizes and quantities - the shape of answer a
+  modeller reads without translating. Size, then count, nothing else unless asked.
+
+# The words Ajmal actually says, not the words the technique is named after.
+utterances:
+  - what sizes are the ducts
+  - give me a breakdown of the pipe sizes
+  - duct schedule by size
+  - how many of each size
+
+# CAPABILITIES, never fragment ids. A fragment can be replaced, split or
+# retired without this file changing - that is what the registry is for.
+needs:
+  - FILTER_ELEMENTS_BY_CATEGORY
+  - READ_ELEMENT_PARAMETERS
+  - GROUP_AND_COUNT
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a document is open
+  - the elements carry the size parameter being grouped by
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Round and rectangular are different parameters on the same category -
+  Diameter against Width and Height - and a breakdown that reads only one of them
+  reports a confident partial answer.

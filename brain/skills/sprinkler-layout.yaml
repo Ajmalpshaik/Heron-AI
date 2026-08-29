@@ -1,0 +1,42 @@
+heron-status: DRAFT
+heron-step: 14
+heron-since: 0.1.0
+heron-layer: brain
+
+id: sprinkler-layout
+name: Sprinkler heads and spacing
+domain: revit.fire
+risk: MODIFY
+
+purpose: >
+  Lays out sprinkler heads to a stated hazard class and spacing, and reports
+  what a beam or column does to the coverage.
+
+# The words Ajmal actually says, not the words the technique is named after.
+utterances:
+  - how many sprinklers
+  - check my sprinkler spacing
+  - lay out the heads
+  - there is a beam in the room
+  - pendent or upright here
+
+# CAPABILITIES, never fragment ids. A fragment can be replaced, split or
+# retired without this file changing - that is what the registry is for.
+needs:
+  - FILTER_ELEMENTS_BY_CATEGORY
+  - READ_ROOM_GEOMETRY
+  - PLACE_FAMILY_INSTANCES
+  - CHECK_OBSTRUCTIONS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - the hazard class has been stated or confirmed - it is never assumed
+  - the ceiling and any beams are modelled, or their absence is stated
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Its own code rules, not the plain coverage job. Hazard class changes both
+  spacing and count, and guessing it produces a layout that looks finished and is
+  not compliant.

@@ -116,6 +116,9 @@ def composes_from(fragment_id, fragments=None):
     if consumer is None:
         return []
 
+    # No special case for "needs nothing from a fragment" - composable() now
+    # refuses that itself, which is where the rule belongs: it is a fact about
+    # composition, not about this query.
     out = []
     for other_id, other in fragments.items():
         if other_id == fragment_id:
@@ -183,8 +186,11 @@ def orphans(store):
                                        "what it provides against what the "
                                        "actions need"))
         if frag.kind == "action" and not composes_from(fragment_id, fragments):
+            # Only names another FRAGMENT could supply. A need the request
+            # carries - a category, a parameter name - will never have a
+            # producer and must not make the fragment look orphaned.
             needs = [n.get("name") for n in frag.needs()
-                     if FRAG.AMBIENT.get(n.get("name")) != n.get("type")]
+                     if FRAG.need_source(n) == "fragment"]
             if needs:
                 found.append((fragment_id,
                               "an action nothing can feed - it needs %s and no "
