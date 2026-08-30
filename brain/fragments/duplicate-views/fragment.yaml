@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-009
+semantic-identity: "make copies of these views, plain or with the detailing, or as dependents"
+kind: action
+domain: revit.views
+capability: DUPLICATE_VIEWS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Duplicates every view handed in, one of three ways, and hands back the ids of
+  what was made so the next fragment can rename them, apply a template to them
+  or place them on sheets.
+
+  THE THREE WAYS ARE NOT INTERCHANGEABLE and the caller must choose:
+    Duplicate       the view alone. Annotation and detail items are NOT copied
+    WithDetailing   the view and everything drawn on it
+    AsDependent     a dependent view that stays tied to its parent's crop
+
+  Revit is asked FIRST whether each view can be duplicated that particular way,
+  because the answer differs per option - a view can be duplicable plainly and
+  refuse to become a dependent. Asking per option rather than per view is the
+  difference between a clean skip and an exception.
+
+  EACH VIEW IS TRIED ON ITS OWN. The version this was re-authored from wrapped
+  the whole loop in one try, so one awkward view rolled back thirty-nine good
+  duplicates. Under Golden Rule 16 the transaction belongs to the caller, so a
+  throw let out of here would abort work this fragment never saw. Catching per
+  view and reporting the id is both safer and more useful.
+
+  The returned id is resolved back to a real view before it is counted. Every
+  fragment here reports what HAPPENED rather than what was asked for, and an id
+  that does not resolve is not a duplicated view.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
+  duplicating forty views is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: duplicateOption
+      type: string
+      source: request
+  provides:
+    - name: newViewIds
+      type: IList<ElementId>
+    - name: duplicated
+      type: int
+    - name: notDuplicated
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.Duplicate`,
+  `View.CanViewBeDuplicated` and the three `ViewDuplicateOption` members are
+  unchanged 2020 to 2027 and no units call is made. The option arrives as a
+  STRING and is matched by name, so an unrecognised one is reported rather than
+  silently becoming a default, and a release that adds a member needs no change
+  here. `ElementId` values are collected and resolved only, never converted to
+  or from an integer, which keeps this clear of the 2024 change.
+
+utterances:
+  - duplicate these views
+  - make a copy of this plan
+  - copy the view with detailing
+  - create dependent views
+  - duplicate with detailing
+  - i need another copy of these plans
