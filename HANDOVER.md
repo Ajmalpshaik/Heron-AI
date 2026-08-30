@@ -102,24 +102,83 @@ after `check-gaps.py` had reported everything clean. `check-gaps` now has a chec
 is an **import** check, so treat its green accordingly: it can see that the seam exists, not that a host
 ever called through it. That is `A8`.
 
-### And the seven capabilities nothing provides
+### The library, and the question that was put to the owner
 
-**Seven capabilities are wanted by the ten skills and provided by nothing.** They are the real demand
-signal, ordered by how many skills ask for each:
+**This section used to say seven capabilities were wanted by the skills and provided by nothing, and to
+ask before building them.** It was right to ask. He answered, and the answer changed the shape of the
+work: build the fragments now, re-authored from his earlier library, and check every one of them in Revit
+later — *"checking in revit we will do after because that is a big work... mark as not verified and when
+pc came we will check."*
 
-| Capability | Skills wanting it |
+**So the library is 32 fragments and every skill has every capability provided.** The seven were written
+on 2026-08-29; twenty-five more followed. `python brain/heron_skill.py` shows no gaps.
+
+**And his second instruction is the one that must not be quietly undone.** None of them inherits the
+earlier library's proven status, however well proven it is there:
+
+> *"Even in the aj ai proven fragment dont mark in heron this is proven because we will check each and
+> everyone again in heron ai so mark it as a not proven in heron."*
+
+That is [D-44](docs/DECISIONS.md), and it is **enforced rather than remembered** —
+[`brain/heron_fragment.py`](brain/heron_fragment.py) refuses a status above `DRAFT` whose proof does not
+match the implementation in front of it. The gate had existed and nothing stood on it: a fragment
+declaring `PROVEN` on another model's proof passed every check in this repository, which was measured by
+writing one.
+
+**What that buys, and what it does not.** Thirty-two fragments compile on all eight releases and none of
+them will fail at the PC for a reason a compiler could have found. Not one has met a model. The debt did
+not go away — it got **counted**, which is the whole point of `check-gaps` keeping *unfinished* and
+*waiting* in two lists that must never be one.
+
+---
+
+## The seventh session, 2026-08-30 — the library, and two bugs it found
+
+**What it did:** took the fragment library from 7 to **32**, re-authored from the owner's earlier Brain
+under [D-25](docs/DECISIONS.md) — studied and rewritten, never copied, split where a 243-line original
+was really two jobs. All 32 compile on all eight releases. All 32 are `DRAFT` ([D-44](docs/DECISIONS.md)).
+
+**Two real bugs came out of the studying, and they are the same bug wearing different clothes.** Both are
+this project's defining failure: **reporting the number that was ASKED FOR as the number that HAPPENED.**
+
+| | |
 |---|---|
-| `PLACE_FAMILY_INSTANCES` | 2 |
-| `READ_ROOM_GEOMETRY` | 2 |
-| `TRACE_CONNECTIVITY` | 2 |
-| `CHECK_OBSTRUCTIONS`, `FILTER_ELEMENTS_BY_ID`, `OVERRIDE_GRAPHICS_IN_VIEW`, `WRITE_ELEMENT_PARAMETERS` | 1 each |
+| **The move path** | Revit's move call returns normally and moves nothing for a pinned element **or a group member**. Heron skipped pinned ones — but *a duct in a group is not pinned*, so it passed the filter and the wrong count reached the answer **and the audit log**. `RevitWrite` now probes positions before and after: **moved / partly / blocked / unverified**. `E10` is the check |
+| **The parameter path** | Revit accepts a size, returns **TRUE**, throws nothing, then **snaps** it to the nearest size the type carries — ask a pipe for 77 and it comes out 80. `WRITE_ELEMENT_PARAMETERS` trusted that return value. Its own proof case asked a *human* to check the stored number matched, which the code had no way of knowing |
 
-They can be written here. **They cannot be proven here** — [D-30](docs/DECISIONS.md) promotes a fragment
-on one recorded proof **containing a negative case**, and a negative case needs a model. So writing them
-now adds seven more `DRAFT` rows to a list of things waiting for the same machine. That is a real choice
-and it belongs to the owner, not to whoever opens this file: **his standing instruction is that only
-Revit-checking should remain outstanding**, and seven unprovable drafts would be a second kind of
-outstanding. Ask before building them.
+**The parameter fix is worth reading before writing anything that sets a value.** It needs no string
+parsing and no unit handling, because it uses the snap's own timing: *straight after the set the
+parameter still reports what was asked for, and the snap happens at REGENERATION.* So read the internal
+double, regenerate once for the batch, read it again, compare. Two numbers from the same API in the same
+units. `SET_MEP_SIZE` carries the same check for sizes reached by `BuiltInParameter` — deliberately a
+second home, because a name lookup for *"Width"* finds nothing on a French install.
+
+**A new tool, and it earned itself on its first run.** Adding a fragment can make an **existing one
+unfindable**, silently, and nothing here would have noticed. It had already happened twice.
+[`tools/check-routing.py`](tools/check-routing.py) asks every fragment its own declared words back to the
+search. It found sixteen contested sentences; **three were real errors** — a filter claiming two of
+`TRACE_CONNECTIVITY`'s sentences, and an override fragment claiming the grayout **skill's**. Fixing those
+took the words route to **100% in the top three**. The other thirteen are genuine English ambiguities and
+were left alone.
+
+> **It never fails a build, on purpose.** A collision is a judgement, not a defect. A checker that failed
+> here would teach people to weaken their own utterances to buy back a rank — and that is the one
+> response ruled out, because taking *"show me just these"* off the isolate fragment would make the
+> isolate unfindable in order to protect a number.
+
+**One decision is waiting for the owner at the PC.** `SET_CATEGORY_GRAPHICS` made the grayout skill
+wrong: greying every wall one at a time gives the right drawing today and a wrong one tomorrow, because a
+wall drawn afterwards keeps its normal graphics and nobody finds out until it prints. The skill now greys
+the background **by category**. Whether he wants that, or wants it selection-scoped so he can grey some
+walls and not others, is a modelling preference the API does not settle — it is written into
+[`brain/skills/mep-grayout.yaml`](brain/skills/mep-grayout.yaml) as a decision for him, not a default
+someone chose quietly.
+
+**And four tools were found answering when they should have declined** — retrieval printing `nothing
+matched` against an **empty store** (indistinguishable from a real miss), searching unknown flags as
+text, a structure checker failing purely on **timing** if a compile was running, and a test asserting a
+fact about the corpus while its comment claimed it tested the backend. None changed a recorded number.
+All four would have corrupted a later one.
 
 ---
 
@@ -475,7 +534,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | **The eight `brain/` modules** | Each has its own suite and each passes — the fragment store, the scope store, exact-word search, nearness, fusion, the capability registry, the graph, and skills. What they are proven to do is **behave as specified against fixtures**. Not one of them has been handed a real Revit's answer |
 | **32 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists **thirty-two** items under *needs a real Revit*. **Since 2026-08-29 all of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)). That is not behaviour, but it does mean none of them will fail at the PC for a reason a compiler could have found |
 | **10 skills, all `DRAFT`** | Each names **capabilities and never fragments**, and each carries the words Ajmal actually says rather than the words the technique is named after. Whether any of them does what it says is unknown |
-| **The trained embedding backend** | **Now the highest-value item that needs no Revit** — [`brain/retrieval-history.md`](brain/retrieval-history.md) tracks one query across 7, 14 and 17 fragments: the words route is flat at 3rd, the nearness route has gone from top-3 to **not in the top 5**, and at 17 it ranks a *move* fragment first for a question about ducts. Never run — `huggingface.co` is refused by this container. The backend that *is* running is character n-grams, which measurably **does not do synonyms** (`diffuser`/`grille` scored −0.136). `A7` is that run and needs no Revit and no Windows |
+| **The trained embedding backend** | **The highest-value item that needs no Revit, and 2026-08-30 sharpened what it buys.** [`brain/retrieval-history.md`](brain/retrieval-history.md) tracks one query across eight library sizes (7 → 32) *and* now measures a second way: every fragment's own declared words asked back to the search — 169 sentences, **words 92% first and 100% in the top three, nearness 60% and 82%**. That corrects the older headline in this file's own history: the nearness route has **not** collapsed in general. It handles **vocabulary overlap** and fails at **disambiguation**, which is why the tracked query — a sentence several fragments fairly claim — sits mid-library while a sentence naming one fragment comes back first. So `A7` should be expected to change the **contested** lookups, not every lookup. Never run — `huggingface.co` is refused by this container. The backend that *is* running is character n-grams, which measurably does not do synonyms (`diffuser`/`grille` scored −0.136). Needs no Revit and no Windows |
 | **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py). The resolution beneath them is tested and passes; **`FastMCP` has never served them**, because the machine they were written on has no MCP SDK. `tests/test_brain_reachable.py` reads the server as *text* to confirm they are declared, which is the same technique `test_tool_registry.py` uses on the C# and has the same limit. `A8`, and it needs Windows rather than Revit |
 
 ### Does not exist at all
@@ -484,7 +543,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 |---|---|
 | ~~Any way for the host to reach the brain~~ | **BUILT 2026-08-29.** Three read-only tools on one seam. Moved to the table above, which is where an untested thing belongs |
 | **Any way to RUN a fragment** | **The gap that wiring the brain up revealed rather than closed.** A fragment carries C# under `impl/`, the bridge speaks a fixed set of operations, and **none of them compiles or executes one** — [D-28](docs/DECISIONS.md) chose Roslyn in-process and it is not built. So a request now resolves all the way to *this capability, provided by that fragment*, and then stops. Every brain tool says so on every answer, because a host that inferred otherwise would build a plan that fails at its last step |
-| ~~Seven capabilities the skills ask for~~ | **WRITTEN 2026-08-29.** All seven, so the library is **14 fragments** and **all ten skills have every capability provided** — `python brain/heron_skill.py` shows no gaps. Each one compiles on all eight releases and each carries proof cases with a negative case, **and not one has met a model**: they are `DRAFT`, which is what makes them the seven newest rows of Revit-checking debt rather than seven finished things |
+| ~~Seven capabilities the skills ask for~~ | **WRITTEN 2026-08-29**, taking the library to 14 that day and to **32** by 2026-08-30. **All ten skills have every capability provided** — `python brain/heron_skill.py` shows no gaps. Each one compiles on all eight releases and each carries proof cases with a negative case, **and not one has met a model**: they are `DRAFT`, which is what makes them the seven newest rows of Revit-checking debt rather than seven finished things |
 
 > Nothing here is known-broken. Several things are **untested**, which is different and more honest.
 
@@ -581,7 +640,17 @@ python tests/test_brain_reachable.py   # the host resolves through a capability,
 # The fragments, compiled for the first time - 2026-08-29. Needs the .NET SDK,
 # no Revit and no Windows. ~10 minutes for all eight releases
 python tools/check-fragments-compile.py   # every fragment, every release it claims
+
+# Did a new fragment make an OLD one unfindable? - added 2026-08-30.
+# Run it after adding any fragment. It never fails a build; it reports judgements
+python tools/check-routing.py             # every fragment, asked its own words back
 ```
+
+> **Set `HERON_KNOWLEDGE` before anything that touches `brain/`.** On Windows the stores go under
+> `%APPDATA%`; anywhere else there is no such folder and the store has nowhere to live, so the tools stop
+> with a named error rather than inventing a location. `export HERON_KNOWLEDGE=~/.heron` is enough. The
+> stores are **derived** — deleting them is always a safe recovery, and `python brain/heron_scope.py
+> --rebuild` puts them back.
 
 **15 suites, 435 individual `ok`/`PASS` lines, all passing** — derived, not typed:
 `for f in tests/test_*.py; do python3 "$f"; done | grep -cE '^\s*(ok|PASS)\b'`. The sixteenth suite,
