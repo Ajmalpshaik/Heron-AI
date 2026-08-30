@@ -91,6 +91,7 @@ an edit.
 | [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is setup.ps1 | ✅ Accepted |
 | [D-43](#d-43--the-constitution-is-accepted-all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
 | [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted |
+| [D-45](#d-45--the-library-is-built-out-first-and-proved-in-one-pass-later) | The library is built out first, and proved in one pass later | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -2246,3 +2247,71 @@ inherited rather than re-taken is a claim nobody has watched.
 - **Expect the DRAFT count to rise as re-authoring goes on**, and expect that to look like a growing
   debt. It is: a debt of Revit-checking, which is the only kind the owner's standing instruction wants
   left.
+
+---
+
+## D-45 — The library is built out first, and proved in one pass later
+
+**Status:** Accepted · **Date:** 2026-08-30 · **Revises:** [31 §4](31-studying-the-existing-libraries.md),
+**Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported), [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere)
+
+### Context
+
+[31 §4](31-studying-the-existing-libraries.md) said the opposite of this, and said it for reasons that
+were good at the time: *"not a race to a number"*, *"most of the 398 will correctly never be made"*,
+*"take the jobs that are done; let the rest wait for a request."* The argument was that a library does
+not know which of its own entries matter, and that re-authoring everything imports that guesswork.
+
+**The owner has decided otherwise, and his argument is about sequencing rather than about volume.** In
+his words, 2026-08-30:
+
+> *"If we build everything now, checking for any small or even big errors later will take much less time
+> compared to trying to generate and make everything as we go… Doing a real review and checking might
+> take two to three days, but this way we can get everything completed first."*
+
+### Decision
+
+**Re-author the library out in full, then prove it in one concentrated Revit pass.** Building is not
+gated on proving. [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported)'s
+method is unchanged — studied and re-authored, never copied — and
+[D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) is unchanged:
+every one arrives `DRAFT`.
+
+### Why this is right, stated in full rather than deferred to
+
+- **Checking has a large fixed cost per sitting and a small one per fragment.** One Revit session with
+  one model open, worked down a list, is far cheaper than the same fragments checked in three hundred
+  separate sittings. The saving is real and it is the owner's to claim.
+- **Building is not blind.** The compile gate reads every fragment against every release it claims, so
+  the entire *worked-in-2020-broke-in-2024* class is caught before Revit is opened at all.
+- **There is no Revit for the moment**, so the alternative to building is not "build less, prove more".
+  It is idling.
+
+### The condition this decision carries, because without it the arithmetic fails
+
+**A repeated mistake is the one thing that breaks the plan.** The risk is not the number of unproven
+fragments; it is one misunderstood mechanism copied across many of them. A wrong level lookup, a wrong
+unit conversion, a parameter that snaps — found on the first day at the PC — is not one fix, it is
+eighty, and 2–3 days becomes two weeks. This is not hypothetical here: the system these fragments come
+from carried one removed Revit call in **eight** places behind a green compile, and the two bugs found
+while re-authoring were the same bug wearing different clothes.
+
+**So a mechanism that more than one fragment needs is written ONCE, as its own fragment, and composed.**
+That is [31 §3](31-studying-the-existing-libraries.md)'s split rule applied deliberately rather than
+opportunistically: with the whole library in view, the shared mechanisms are visible up front instead of
+emerging after the tenth copy. Proving those few mechanisms then validates most of what stands on them,
+and a defect found in one is fixed in one place.
+
+### Consequences
+
+- **[31 §4](31-studying-the-existing-libraries.md) no longer governs scope** and now points here. Its
+  method sections (Rules 0–3) are untouched and still binding — this changes *how many*, never *how*.
+- Rule 0's *"does it earn a place"* narrows rather than disappears: it stops asking *is this job one the
+  owner does* and asks only **does Heron already cover it**. Duplication is still the thing to avoid;
+  scarcity no longer is.
+- **The DRAFT count will rise steeply and that is the plan, not a fault.** `check-gaps.py` keeps
+  *unfinished* and *waiting* apart precisely so a growing pile of unproven work stays visible as a debt
+  rather than disappearing into a pass.
+- **A recipe is not a fragment.** The 44 multi-stage recipes read as **skills** in Heron's shape, which
+  name capabilities rather than fragments; they are re-authored as skills or not at all.
+

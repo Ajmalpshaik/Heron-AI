@@ -173,8 +173,26 @@ Where one read fragment is really two jobs joined:
 
 ## 4. What this is NOT
 
+> ### ⚠️ The scope rule in this section was REVISED on 2026-08-30 — see [D-45](DECISIONS.md)
+>
+> This section used to say *"most of the 398 will correctly never be made"* and *"not a race to a
+> number"*, and Rule 0 above used to ask whether a job is one the owner actually does. **The owner
+> decided otherwise**: the library is re-authored **in full** now, and proved in one concentrated Revit
+> pass later, because checking costs little per fragment and a great deal per sitting.
+>
+> **What that changes:** how many. **What it does not change:** anything else on this page. Rules 0–3
+> are untouched and still binding — studied and re-authored, never copied; the contract stated before
+> the code; a negative case in every proof. Rule 0 still asks **does Heron already cover it**, because
+> duplication is still the thing to avoid; it no longer asks whether the job is one somebody has
+> requested.
+>
+> D-45 also carries a condition that belongs here: **a mechanism more than one fragment needs is written
+> once and composed**, not copied. That is Rule 3 applied up front. It is what keeps a single
+> misunderstood mechanism from becoming eighty fixes on the first day at the machine.
+
 - **Not a migration.** There is no batch, no importer and no mapping file. Every fragment is a separate
-  decision, and most of the 398 will correctly never be made.
+  decision — a separate act of understanding, which is what D-45 leaves untouched even as it asks for
+  all of them.
 - **Not a race to a number.** *"Heron has 398 fragments"* would be a claim about a folder. Ten fragments
   that are proven, composable and used beat three hundred that are none of those.
 - **Not one-directional.** A mechanism understood well enough to re-author is usually understood well

@@ -92,13 +92,26 @@ def main(argv):
     # setup step. Rebuild rather than refuse - but rebuild EXPLICITLY, because
     # the one thing this must never do is print a routing result computed over
     # an empty library.
+    # STALE counts as empty here, and that distinction cost a real run. A store
+    # that simply has not seen the fragments added since it was last built
+    # reports every one of them as rank #None - not "ranked badly", ABSENT - and
+    # that reads as a routing catastrophe when nothing is wrong at all. It is
+    # the same failure the empty case guards against, one step milder, and the
+    # comment above already states the principle: never print a routing result
+    # computed over a library this store does not actually hold.
+    on_disk = len([
+        name for name in os.listdir(FRAGMENTS)
+        if os.path.exists(os.path.join(FRAGMENTS, name, "fragment.yaml"))
+    ])
     store = SCOPE.open_scope(SCOPE.GLOBAL)
-    if store.count() == 0:
+    if store.count() != on_disk:
+        was = store.count()
         store.close()
         built, problems = SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
-        print("  (store was empty - rebuilt %d fragment(s)%s)"
-              % (built, "; %d problem(s)" % len(problems) if problems else ""))
+        print("  (store held %d of %d fragment(s) on disk - rebuilt %d%s)"
+              % (was, on_disk, built,
+                 "; %d problem(s)" % len(problems) if problems else ""))
         if store.count() == 0:
             store.close()
             print("  the store is STILL empty after a rebuild - nothing to route")

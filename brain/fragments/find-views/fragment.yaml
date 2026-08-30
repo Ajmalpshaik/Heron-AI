@@ -1,0 +1,71 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-007
+semantic-identity: "the real views in this model, optionally narrowed by type and by name"
+kind: filter
+domain: revit.views
+capability: FIND_VIEWS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers "which views" for everything that acts on views - applying a template,
+  duplicating, placing on a sheet, exporting. It is the filter half of that whole
+  family of jobs, which is why it is one fragment rather than a lookup copied into
+  each of them (D-45).
+
+  THE TRAP IT EXISTS FOR. Asking Revit for views returns far more than a person
+  means by "a view". View templates ARE views. Schedules and sheets ARE views. So
+  are the Project Browser and System Browser, which are real View elements nobody
+  ever wants back. A plain collector hands all of them over, and a template then
+  gets a template applied to it.
+
+  So the excluded ones are COUNTED AND REPORTED rather than silently dropped.
+  Asking for "Level 3" and getting nothing must be distinguishable from asking for
+  "Level 3" and matching only a template of that name - the first means the view
+  does not exist, the second means it does and this fragment refused it. A bare
+  zero cannot tell those apart, and the difference changes what the user does next.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: viewType
+      type: string
+      source: request
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: skippedTemplates
+      type: int
+    - name: skippedNonDrawing
+      type: int
+    - name: matchedButExcluded
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View`, `View.IsTemplate`, `View.ViewType`
+  and the `ViewType` enum members used here are unchanged 2020 to 2027, and no
+  units call is made. `viewType` is matched by NAME against the enum rather than
+  taking a typed enum value, so a release that adds a member needs no change here
+  and an unknown name is reported instead of silently matching nothing.
+
+utterances:
+  - which views are in this model
+  - list the floor plans
+  - find the sections
+  - show me the 3d views
+  - all the views with level in the name
+  - what plans do we have
