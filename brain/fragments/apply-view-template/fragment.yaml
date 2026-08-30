@@ -1,0 +1,79 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-008
+semantic-identity: "put a named view template on these views, and check it actually took"
+kind: action
+domain: revit.views
+capability: APPLY_VIEW_TEMPLATE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Applies one named view template to every view handed in, and reports FOUR
+  outcomes, because "the assignment did not throw" is not the same as "the view
+  now has that template".
+
+  Assigning a template is a property set. It can leave the view unchanged - a
+  template of the wrong kind for that view, or a view whose template is not
+  free to change - and a property set that does not take is silent. Counting the
+  line after the assignment as a success is the same failure MOVE_ELEMENTS was
+  rewritten to catch and the same one the parameter path was: reporting the
+  number that was ASKED FOR as the number that HAPPENED.
+
+  So the template id is read back off each view and compared. That comparison is
+  the fragment; the assignment is one line.
+
+  ALREADY-HAD IS COUNTED SEPARATELY. "Applied to 12 views" when 8 of them
+  already carried that template is true and useless - it hides that the request
+  changed 4 things, which is what a person needs to know before deciding whether
+  to undo.
+
+  WHEN THE TEMPLATE IS NOT FOUND, the names that DO exist are handed back rather
+  than a bare failure. Nearly every miss here is a spelling or a stale name, and
+  the list is the answer to the question the user is about to ask.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
+  applying a template to forty views is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: templateName
+      type: string
+      source: request
+  provides:
+    - name: applied
+      type: int
+    - name: alreadyHad
+      type: int
+    - name: notApplied
+      type: IList<ElementId>
+    - name: availableTemplates
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.IsTemplate`, `View.ViewTemplateId`
+  and `ElementId.InvalidElementId` are unchanged 2020 to 2027 and no units call
+  is made. Template ids are compared with `==` on `ElementId` rather than by
+  converting to an integer, which is what keeps this clear of the 2024 change to
+  the width behind `ElementId`.
+
+utterances:
+  - apply the view template
+  - put the coordination template on these views
+  - set the template for these plans
+  - use the mechanical template here
+  - give these views the same settings
+  - apply my standard view template
