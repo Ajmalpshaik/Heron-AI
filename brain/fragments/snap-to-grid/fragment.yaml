@@ -1,0 +1,71 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-008
+semantic-identity: "move each element sideways onto the nearest cell centre of a grid"
+kind: action
+domain: revit.geometry
+capability: SNAP_TO_GRID
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves each point-based element sideways onto the nearest CELL CENTRE of a grid
+  it is given - diffusers, sprinklers, light fittings and detectors sitting
+  neatly on the ceiling grid instead of somewhere in the room.
+
+  **Plan move only.** Every element keeps its own height, because the two jobs
+  are separate: this puts things in the right place on the ceiling, and
+  MOVE_TO_RAY_HIT puts them at the right height. A real layout usually wants
+  both, in that order, and merging them would make it impossible to do one
+  without the other.
+
+  It takes the grid as numbers rather than reading it from a ceiling. That is
+  what makes it usable for any grid - a setting-out grid, a structural bay, a
+  raised-floor grid - and it is why the ceiling half is its own capability.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: anchor
+      type: XYZ
+      source: request
+    - name: spacingX
+      type: double
+      source: request
+    - name: spacingY
+      type: double
+      source: request
+  provides:
+    - name: snapped
+      type: int
+    - name: notPointBased
+      type: IList<ElementId>
+    - name: blocked
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. It is arithmetic plus one move call, and
+  neither has changed 2020 to 2027. All distances are internal feet with no
+  units call.
+
+utterances:
+  - put them on the ceiling grid
+  - line the diffusers up with the tiles
+  - snap them to the grid
+  - centre them in the tiles
+  - they are not on the grid
+  - tidy up the sprinkler positions

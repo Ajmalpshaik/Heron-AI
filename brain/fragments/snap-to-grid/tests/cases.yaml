@@ -1,0 +1,44 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 6 diffusers scattered in a room, a 600 x 600 grid, anchor at a room corner
+    expect: >
+      all 6 land on tile CENTRES, evenly spaced, and their heights are UNCHANGED.
+      Check the Z of one before and after - a fragment that moved them in 3D
+      would look right in plan and be wrong in section
+
+  - given: a diffuser already exactly on a centre
+    expect: >
+      counted as snapped and NOT reported blocked. It is where it should be, and
+      a zero-length move must not read as a failure to move
+
+  - given: a 1200 x 600 grid
+    expect: >
+      centres spaced 1200 one way and 600 the other. A fragment that used one
+      spacing for both would produce a neat, wrong layout
+
+negative:
+  - given: a spacing of zero
+    expect: >
+      nothing moved, nothing reported snapped. It is a division by zero on every
+      element, so it is refused rather than attempted
+
+  - given: elements inside a REVIT GROUP
+    expect: >
+      their ids in `blocked`. The same silent no-op as every other move - Revit
+      reports no error and the element stays put
+
+  - given: a duct or other curve-based element in the list
+    expect: its id in `notPointBased`, and no attempt made
+
+  - given: >
+      THE ANCHOR HALF A TILE OUT from the real ceiling grid - which is what
+      READ_CEILING_GRID's `anchorIsGuessed` warns about
+    expect: >
+      a PERFECTLY EVEN layout that does not line up with the tiles on screen.
+      Prove this once and look at it, because it is the failure this pair is
+      most likely to produce in real use, and nothing in the code can detect it
+
+second_route:
+  - look at the ceiling in plan - the diffusers either sit in tile centres or they do not
+  - one Ctrl+Z puts the whole layout back in a single step (Golden Rule 16)

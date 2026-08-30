@@ -1,0 +1,40 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a ceiling whose type carries a 600 x 600 MODEL surface pattern
+    expect: >
+      spacingX and spacingY both 600 mm when converted, found true. Check
+      against the ceiling type's own material in Revit - not against an
+      assumption that ceilings are 600
+
+  - given: a ceiling with a 1200 x 600 pattern
+    expect: >
+      the two spacings DIFFER and are the right way round. A fragment that read
+      only one grid would report a square grid and be plausibly wrong
+
+negative:
+  - given: a ceiling whose material has a DRAFTING pattern, not a model one
+    expect: >
+      found FALSE. A drafting pattern's spacing is a paper distance that changes
+      with view scale - reading it would give a tile size that moves when
+      somebody changes a view
+
+  - given: a ceiling with no surface pattern at all
+    expect: found false, and no spacing offered
+
+  - given: a pattern that reads as an absurd size - under 15 mm or over 10 m
+    expect: >
+      found FALSE rather than that number used. A misread pattern gives
+      nonsense, not a plausible error, so this is catchable - and catching it is
+      what stops two hundred diffusers moving onto it
+
+  - given: any ceiling at all
+    expect: >
+      anchorIsGuessed is TRUE. On every release this supports, Revit does not
+      store where the grid starts. If this ever comes back false without a
+      person having supplied an intersection, the flag has stopped meaning
+      anything
+
+second_route:
+  - open the ceiling type's material in Revit and read the surface pattern by hand
+  - measure one tile on screen with a dimension
