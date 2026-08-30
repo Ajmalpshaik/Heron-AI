@@ -152,4 +152,87 @@ else:
     else:
         out("  agrees with the stated Progress line\n")
 
+# ---------- 7. the same claim, everywhere it is made ----------
+#
+# Section 6 derives the truth and enforces it against ONE sentence in ONE file.
+# That is where "14 answered - 26 open" was caught and corrected on 2026-08-28.
+# The identical sentence sat in README.md for two more days, printed by section
+# 5 on every run under "verify by hand". Nobody verified it by hand - which is
+# the whole finding, because section 5's own comment had already predicted it
+# about a different file and the prediction was not acted on.
+#
+# A claim is not safer for being made somewhere else. So the truth section 6
+# derives is now enforced against EVERY markdown file in the repository, and
+# this section can fail.
+#
+# Two false positives, both found by running it rather than by reasoning:
+#
+#   * "Q-24 answered" is a question id, not a count of twenty-four. Hence the
+#     lookbehind; and \b stops the pattern re-entering the number at its
+#     second digit and reading "4 answered".
+#   * "N open" alone is not a question claim - "Revit 2023 and Revit 2025 open
+#     at the same time" is two release numbers. So the open count is only ever
+#     read from a line that already carries an "answered" claim, which is the
+#     shape a progress sentence actually has.
+#
+# And one deliberate exemption. A superseded figure QUOTED AS HISTORY is
+# correct writing, not drift: OPEN-QUESTIONS.md records what its line used to
+# say, and DECISIONS.md records what the Constitution's status used to be.
+# Lines carrying a history marker are skipped - which makes the marker
+# load-bearing. Write "it said 14 answered" and this stays quiet; write
+# "14 answered" and it fails. That is the intended bargain, and it is cheaper
+# than the alternative, which is a checker nobody can leave green.
+HISTORY = re.compile(r'(used to|it said|until 20\d\d|no longer|superseded'
+                     r'|was wrong|had stood|had been|stopped saying)', re.I)
+
+out("\n=== 7. THE SAME CLAIM, EVERYWHERE IT IS MADE ===\n")
+drift = []
+if answered is None:
+    out("  OPEN-QUESTIONS.md not found - nothing to enforce against\n")
+else:
+    n_open = len(open_ids)
+    n_total = len(q_def)
+    for p in md:
+        for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
+            if HISTORY.search(line):
+                continue
+
+            for m in re.finditer(r'(?<!Q-)\b(\d+)\s+of\s+(\d+)\s+questions?\s+answered', line):
+                if int(m.group(1)) != answered or int(m.group(2)) != n_total:
+                    drift.append((p, i, '%s of %s questions answered' % m.group(1, 2),
+                                  '%d of %d' % (answered, n_total)))
+
+            if not re.search(r'(?<!Q-)\b\d+\s+answered', line):
+                continue
+            for m in re.finditer(r'(?<!Q-)\b(\d+)\s+answered', line):
+                if int(m.group(1)) != answered:
+                    drift.append((p, i, '%s answered' % m.group(1), '%d answered' % answered))
+            for m in re.finditer(r'(?<!Q-)\b(\d+)\s+open\b', line):
+                if int(m.group(1)) != n_open:
+                    drift.append((p, i, '%s open' % m.group(1), '%d open' % n_open))
+
+    # The Constitution's own status line is the only thing entitled to say what
+    # it is. Anything else describing it as unconfirmed is repeating a claim
+    # that the document itself has already moved past.
+    con = allsrc.get('./HERON_CONSTITUTION.md', '')
+    if re.search(r'Status:\s*\*\*ACCEPTED', con):
+        pend = re.compile(r'pending (?:confirmation|acceptance)|not yet accepted'
+                          r'|awaiting confirmation', re.I)
+        for p in md:
+            for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
+                if HISTORY.search(line) or not pend.search(line):
+                    continue
+                if 'onstitution' in line or 'HERON_CONSTITUTION' in line:
+                    drift.append((p, i, 'the Constitution is pending confirmation',
+                                  'ACCEPTED - the Constitution says so itself'))
+
+    if drift:
+        for p, i, said, real in drift:
+            out("  DRIFT: %s:%d says '%s'; the source says %s\n" % (p, i, said, real))
+        out("  A stated count is a claim; a derived count is a fact. Fix the claim.\n")
+        failed = True
+    else:
+        out("  %d markdown file(s): every question count and every Constitution\n" % len(md))
+        out("  status claim agrees with the document that owns it\n")
+
 sys.exit(1 if failed else 0)

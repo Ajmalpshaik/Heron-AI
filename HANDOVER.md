@@ -1,5 +1,9 @@
 # Heron AI — Session Handover
 
+**Updated 2026-08-30, during the eighth working session — the one that went looking for work the
+checker could not see, and found the front door telling a new reader things that stopped being true
+weeks ago.** The seventh re-authored the fragment library; the eighth is below.
+
 **Updated 2026-08-30, during the seventh working session — the one re-authoring the owner's earlier
 fragment library into this one.** The sixth wired the brain to the host, which was the last thing here
 that could be *built* without a machine; the seventh is doing the thing that can still be done without
@@ -60,9 +64,14 @@ dependency order on purpose: nothing in group D can be attempted before group A 
 
 ### And two that need no Revit at all
 
-- **`A7`** — the trained embedding backend has **never run**. One `pip install --user model2vec` on any
-  machine with a working network. No Revit, no Windows. Until it runs, search finds words and not
-  meaning, and [`tests/test_embed.py`](tests/test_embed.py) says so in measured numbers.
+- **`A7`** — the trained embedding backend has **never run**, and after 2026-08-30 the row asks for
+  something narrower than it used to. `pip install --user model2vec` **works** — that half was tried
+  here and succeeded, so it is no longer a variable. What fails is the **weights fetch**:
+  `huggingface.co` answered **403 to CONNECT**, an egress-policy denial, in a *second* container that
+  had nothing to do with the first. So `A7` needs **a machine whose network policy permits the model
+  host**, not merely a machine with a network — most likely the owner's own PC. Until it runs, search
+  finds words and not meaning, and [`tests/test_embed.py`](tests/test_embed.py) says so in measured
+  numbers.
 - **`A4` and `A6`** — both need Windows but not Revit. `A4` is the Windows named pipe itself; `A6` is
   thirty seconds confirming the SDK probe reads Windows correctly.
 
@@ -129,6 +138,107 @@ writing one.
 them will fail at the PC for a reason a compiler could have found. Not one has met a model. The debt did
 not go away — it got **counted**, which is the whole point of `check-gaps` keeping *unfinished* and
 *waiting* in two lists that must never be one.
+
+---
+
+## The eighth session, 2026-08-30 — the checker was right, and nobody was reading it
+
+**What it set out to do:** start the remaining work. **What it found first:** by the register, there
+is none — `check-gaps.py` reports **0 unfinished and 54 waiting**, and every waiting item needs a
+real Revit, a Windows machine, an egress policy, or a conversation. The build order ends at Step 14
+and there is no Step 15. So the session did what the sixth and seventh did before it: went looking
+for **what the checker cannot see**.
+
+### The front door was three versions stale, and one checker had been printing it all along
+
+`docs/README.md` — the map a new session is *told to read first* — opened with this:
+
+> *"**Step 1 of 6** — the bridge — is built and proven in real Revit 2024... Steps 2–6 have not begun:
+> **no Revit API call exists anywhere in the repository.**"*
+
+Steps 1 to 5 are proven, Step 6 compiles on eight releases, Phase 2 is built in full, and
+`check-api-surface.py` verifies **103 Revit members** across 2020–2027. Every clause of that sentence
+was false. `README.md` was no better: it had stood describing the Constitution as *"pending confirmation"* two days after acceptance, and Step 6 as **"Built, never compiled"** — which understates the work, and is the rarer and
+more corrosive direction for a status line to be wrong in, because nobody re-checks a claim that
+flatters them less than the truth.
+
+**The question count was the one that gave the game away.** `README.md` used to say *"14 answered, 26 open."*
+That is not merely stale — it is **the exact sentence `docs/OPEN-QUESTIONS.md` records as having been
+caught and corrected on 2026-08-28**, when the real figures were 20 and 20. The fix was applied to the
+file the checker enforces and to no other. The identical claim then sat in the README for two more
+days while `check-docs.py` **printed it on every single run**, under a heading that reads
+`COUNT CLAIMS (verify by hand)`.
+
+> **Nobody verifies by hand.** The script's own comment says so, in writing, about a different file:
+> *"Section 5 above prints count claims and says 'verify by hand'. Nobody does, which is how the
+> Progress line came to say 14 answered - 26 open"* — a line that no longer says it. The diagnosis was correct, it was written down,
+> and it was applied to one sentence in one file. **A checker that reports is not a checker.**
+
+### So the reporting was turned into enforcement — section 7
+
+[`tools/check-docs.py`](tools/check-docs.py) now derives the truth once and enforces it against **every
+markdown file in the repository**, and it fails. Five real drifts on its first run: two counts in
+`README.md`, one in `docs/README.md`, and the Constitution's status in `README.md` and
+`docs/PROPOSALS.md`. All five are fixed; the checker is green.
+
+**A sixth was found by hand, in the wreckage of fixing the fifth** — and it is the one the new check
+still cannot catch. `docs/README.md` described the register as **"52 items in dependency order"**; it
+holds **59** rows today. That number is not wrong so much as *dated*: it was true when Q-14 was
+answered on 2026-08-28. It now reads as a description of the register rather than of a moment, so it
+has been marked as the figure of that day, with a pointer to the tool that knows the current one.
+**Enforcing register counts was considered and not done**, for the same reason fragment counts were
+not: the sentence is legitimately historical, and a checker that cannot tell a dated figure from a
+live claim would demand the wrong fix.
+
+**Two false positives were found by running it rather than by reasoning about it**, which is the only
+way either would have surfaced:
+
+| | |
+|---|---|
+| `"Q-24 answered"` | A question **id**, not a count of twenty-four. Hence a lookbehind — and a `\b`, because without one the pattern re-enters the number at its second digit and reads the trailing **4** as a count of its own |
+| `"Revit 2023 and Revit 2025 open at the same time"` | Two release numbers, not two open questions. So the *open* count is only ever read from a line that already carries an *answered* claim, which is the shape a progress sentence actually has |
+
+**And one deliberate exemption, which is the interesting one.** A superseded figure **quoted as
+history** is correct writing, not drift — `OPEN-QUESTIONS.md` records what its line used to say, and
+`DECISIONS.md` records what the Constitution's status used to be. Both must stay. Lines carrying a
+history marker (*"used to"*, *"it said"*, *"had stood"*, *"until 20xx"*) are skipped, **which makes the
+marker load-bearing**: write *"it said 14 answered"* and the checker stays quiet, write *"14 answered"*
+and it fails. **The marker has to sit on the same physical line as the figure**, since the check reads
+lines — that cost this session two rounds, once on a sentence whose marker had wrapped onto the next
+line, so wrap accordingly or the checker will tell you.
+
+**That exemption was validated in both directions before its green was believed**, the same way the
+`CreationGUID` defect was put back to test the compile gate: the history marker was stripped from
+`OPEN-QUESTIONS.md` line 12 in a throwaway copy, and the checker **caught the line it had just been
+silent about**. The exemption is doing work, not hiding a miss.
+
+### `A7` was attempted, and it failed better than last time
+
+The trained embedding backend needs a model host. **`pip install --user model2vec` succeeded here** —
+PyPI is reachable, sixteen dependencies installed clean — so that half is settled and no future session
+need spend a run on it. The weights are the wall: `huggingface.co:443` answered **403 to CONNECT**, which
+the proxy itself records as a policy denial and its own documentation says to report rather than route
+around.
+
+**This is the second container to fail `A7`, for a second distinct reason** — 2026-08-28 was
+`connect_rejected` at a different layer. That is what turned the row from *"any machine with a working
+network"* into *"a machine whose egress policy permits the model host"*, which is a much rarer thing and
+points squarely at the owner's own PC. Worth knowing before trying again: the `sentence_transformers`
+fallback fetches from **the same host**, so it is not a second route.
+
+### What was deliberately NOT done
+
+- **No fragments were added.** [31 §4](docs/31-studying-the-existing-libraries.md) is explicit that this
+  is *"not a race to a number"* and that after Phase 2 the library grows **when a real job needs
+  something**. Thirty-two DRAFT fragments and no model to prove them on is not improved by making it
+  sixty.
+- **No executor.** [D-28](docs/DECISIONS.md)'s in-process Roslyn is what *"resolving is not running"*
+  refers to, and it is **Phase 5** on the roadmap. Three phases early is not initiative.
+- **No fragment or skill counts were written into the front-door documents.** They would be two more
+  unenforced numbers, in the very files this session had to correct for carrying unenforced numbers.
+  `check-gaps.py` prints them, computed. Enforcing them in prose was considered and rejected for a
+  concrete reason: [31 §1](docs/31-studying-the-existing-libraries.md) legitimately states the *other*
+  library's **398**, and a naive count check would call that drift.
 
 ---
 

@@ -37,14 +37,23 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 
 ## Status
 
-**Phase 0 is complete — Steps 1 to 5 of 6, all proven in real Revit 2020 and 2024.**
+**Phase 0 is complete — Steps 1 to 5, all proven in real Revit 2020 and 2024.**
+
+**Phase 1 and Phase 2 are BUILT AND UNPROVEN, and those are different words on purpose.** The C# —
+the write path, and the fragment bodies — compiles on all eight releases from 2020 to 2027 with zero
+warnings. The Python that reasons about it has sixteen test suites, all passing. **None of it has ever
+loaded into Revit**, and no fragment has met a model. A compiler proves the API surface agrees; a test
+proves the logic agrees with itself; neither says whether a duct moves 200 millimetres or 200 feet.
+[`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) carries that debt item by item, and
+`python tools/check-gaps.py` prints what is genuinely unfinished versus what is only waiting on a
+machine.
 
 | | |
 |---|---|
 | Specification | ✅ Complete in 4 parts — [platform](docs/00-master-specification.md) · [Agent OS](docs/00b-master-specification-agent-os.md) · [baseline](docs/00c-master-handover-baseline.md) · [additional requirements](docs/00d-additional-requirements.md) |
 | Architecture review | ✅ Complete — [gaps, ideas, tensions](docs/PROPOSALS.md) across all four parts |
-| Constitution | ✅ Written — [30 Articles](HERON_CONSTITUTION.md), pending confirmation |
-| Open questions | ⏳ 14 answered, 26 open — **none blocking** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
+| Constitution | ✅ **Accepted 2026-08-28** — all [30 Articles](HERON_CONSTITUTION.md), confirmed after every one was read out rather than tapped through. Reading them aloud found three stale statements inside |
+| Open questions | ✅ **41 answered · 0 open** — nothing gates any phase — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
 | Licence & safety files | ✅ Complete — Apache 2.0, security policy, disclaimer, contribution guide |
 | Roadmap | ✅ Drafted — [Phase 0 → 7](docs/ROADMAP.md) |
 | Step 1 — the bridge | ✅ **Proven.** One button connects and disconnects, per-session token, newest connection takes the pipe. Two Revits at once, each with its own pipe. **Since Step 6 a lease decides who may actually send anything** ([D-22](docs/DECISIONS.md)) — taking the pipe is no longer taking the right to use it, and that half is unproven |
@@ -53,7 +62,10 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 | Step 4 — the first BIM answer | ✅ **Proven.** *"select all ducts"* — 4 found and highlighted on screen in both Revits, plus the audit trail |
 | Step 5 — more than one Revit | ✅ **Proven.** Refused to guess between two, took "1", and **stopped** when that Revit closed rather than using the other |
 | ⛔ **Phase 0 ends here** | Everything above is **read-only**. Nothing can change a model |
-| Step 6 — the first write | ⚠️ **Built, never compiled.** The rails came first as the [build order](docs/27-build-order.md) requires — one `TransactionGroup`, preview, re-count, document pinning, permission gate, emergency stop, then the move. The chat half is tested; **the add-in half has not been through a compiler**, so nothing here is proven. Writing stays off until it is ([D-19](docs/DECISIONS.md), [HANDOVER §6](HANDOVER.md#6-the-return-to-the-machine-checklist)) |
+| Step 6 — the first write | ⚠️ **Built and compiled. Never run.** The rails came first as the [build order](docs/27-build-order.md) requires — one `TransactionGroup`, preview, re-count, document pinning, permission gate, emergency stop, then the move. The chat half is tested, and a compiler has now read every line on **all eight releases, zero warnings** — which cost one 2020-only defect to discover. It has still **never loaded into Revit and has never moved anything.** Writing stays off until it has ([D-19](docs/DECISIONS.md), [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md)) |
+| ⛔ **Phase 1 ends here, unproven** | `write.enabled` defaults to **`false`** and stays there until a real Revit has been through the register. Heron can no longer be read-only by construction, so it is read-only by default instead — a real weakening, made deliberately and written down rather than smoothed over |
+| Steps 7–14 — Phase 2 | ✅ **Built in full, none of it proven.** The fragment store, one knowledge store per scope, exact-word search, local offline embeddings, the two fused behind a hard Revit-version filter, the capability registry, the dependency graph, and ten skills that name capabilities rather than fragments. **Every fragment and every skill is `DRAFT`** — a fragment re-authored from an earlier library arrives here unproven whatever it was there ([D-44](docs/DECISIONS.md)), and that rule is enforced in code rather than remembered |
+| The brain, reachable | ✅ Three read-only MCP tools resolve a request through a **capability**, never a fragment id. **Resolving is not running:** there is no executor, so the host can learn what would do the job and still cannot have it done |
 
 **What is proven and what is only built are different things.**
 [HANDOVER.md](HANDOVER.md) §3 keeps that distinction honest, item by item.
