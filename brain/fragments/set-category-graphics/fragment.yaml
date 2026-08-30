@@ -1,0 +1,67 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-006
+semantic-identity: "override whole categories' graphics in one view"
+kind: action
+domain: revit.views
+capability: SET_CATEGORY_GRAPHICS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Applies a graphic override to entire CATEGORIES in one view rather than to a
+  list of elements - the grey background of a grayout, done as two or three
+  settings instead of as an override on every wall in the building.
+
+  **This is what the background half of a grayout should use.** Overriding
+  elements one by one gives the same picture today and a different one tomorrow:
+  a wall drawn after the grayout ran keeps its normal graphics, because nothing
+  ever touched it. A category override covers everything in that category, now
+  and later.
+
+  Pass an empty settings object to clear a category's override - the same trick
+  the per-element reset uses, and the reason there is no separate clear here.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: view
+      type: View
+      source: request
+    - name: categories
+      type: IList<Category>
+      source: request
+    - name: overrides
+      type: OverrideGraphicSettings
+      source: request
+  provides:
+    - name: overridden
+      type: int
+    - name: notControllable
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, for the same reason
+  OVERRIDE_GRAPHICS_IN_VIEW is: the settings object arrives already built, so
+  the setters that were renamed across releases are the caller's problem and
+  not this fragment's. `View.SetCategoryOverrides` and
+  `Category.get_AllowsVisibilityControl` are unchanged 2020 to 2027.
+
+utterances:
+  - grey the whole background
+  - make all the architecture faint
+  - halftone the structure
+  - override the category colour
+  - flatten everything except the services

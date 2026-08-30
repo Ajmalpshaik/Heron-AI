@@ -56,6 +56,18 @@ TOOLS = {
     "revit_select_by_category": (EXECUTE, "select_by_category"),
     "revit_preview_move":       (ANALYZE, "preview_move"),
     "revit_apply_move":         (MODIFY,  "move_elements"),
+
+    # The brain, reachable. These three read what Heron KNOWS - the skills, the
+    # capability registry and the fragment library - and none of them sends
+    # anything to Revit, which is why every operation here is None.
+    #
+    # READ rather than ANALYZE, and the line is worth stating because it is not
+    # obvious: retrieval ranks and fuses, which feels like analysis, but nothing
+    # here looks at the user's MODEL. It reads files that shipped with Heron.
+    # Risk is about what a tool can reach, not about how clever it is.
+    "heron_capabilities":       (READ,    None),
+    "heron_resolve":            (READ,    None),
+    "heron_lookup":             (READ,    None),
 }
 
 

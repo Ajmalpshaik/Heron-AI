@@ -1,7 +1,12 @@
 # tools
 
-Three small scripts that keep the documentation honest. Plain Python 3, no dependencies.
-Run them from the repository root.
+**Ten scripts that keep this repository honest.** Plain Python 3; the two that compile also need the
+.NET SDK, and `check-fragments-compile.py` and `check-routing.py` need PyYAML. Run them from the
+repository root.
+
+It said *"three small scripts that keep the documentation honest"* until 2026-08-29, which had been
+wrong on both halves for a while: there are ten, and five of them check **code** rather than prose.
+Counting them is the same discipline the rest of this file is about.
 
 They exist because this repository already got its own numbers wrong twice — the agent registry
 asserted **166 agents while its own departments summed to 196**, and a build-step figure said 20 where
@@ -109,6 +114,77 @@ A pass means the API surface agrees; it is **not** evidence that anything behave
 
 ---
 
+## `check-fragments-compile.py` — does the *fragment* C# build
+
+```bash
+python tools/check-fragments-compile.py             # every release each claims
+python tools/check-fragments-compile.py 2020 2024   # just those two
+python tools/check-fragments-compile.py --keep      # leave the build tree to read
+```
+
+`check-compile.py` builds the four **projects**. Until 2026-08-29 **nothing built the fragments** — and
+a fragment is C# that will one day be handed to Roslyn and run inside Revit ([D-28](../docs/DECISIONS.md)).
+The part of the library that does the work was the one part no compiler had read.
+
+A fragment is a **snippet**, not a file: it assumes names are in scope and leaves names behind
+([D-29](../docs/DECISIONS.md)). So each one is wrapped in a method **whose parameters are its declared
+`needs`**, generated from the contract rather than guessed.
+
+**It checks the contract, not only the syntax.** After the snippet, every name the contract `provides`
+is assigned to a local of the declared type — so a fragment that promises `IList<Element> elements` and
+leaves something else, or leaves nothing of that name, **fails**. That half is worth more than the
+syntax: a snippet that compiles while breaking its promise is the one that composes into something
+broken later, far from here.
+
+**Its first run found a real defect**, which is the same story `check-compile.py` has: `FRG-QA-001`
+declared a value called `checked` — a **reserved C# keyword** — and its own code read `if (checked == 0)`.
+It could never have compiled, and it had passed every other check, because nothing had ever asked
+whether a contract name could be a variable. [`brain/heron_fragment.py`](../brain/heron_fragment.py)
+now refuses that whole class instantly, so the compiler is the authority and the validator is the fast
+half that stops the mistake being made.
+
+Needs the .NET SDK (`dotnet-sdk-10.0` on Ubuntu) and no Revit and no Windows. **All 32 fragments compile
+on all 8 releases, 2020 to 2027**, verified 2026-08-30. Errors point at the fragment's own file and line,
+not at the generated wrapper.
+
+Same limit as every compiler: it says nothing about **behaviour**. That is [D-30](../docs/DECISIONS.md)'s
+proof with a negative case, and it needs a real model.
+
+---
+
+## `check-routing.py` — did a new fragment make an old one unfindable
+
+```bash
+python tools/check-routing.py
+```
+
+Asks **every fragment's own declared utterances** back to the search, and checks the fragment that
+claimed the sentence comes back first.
+
+It exists because adding a fragment can make an existing one unreachable, silently, and nothing else
+here would notice. That happened twice while the library was being written, and neither was visible at
+the time: `isolate-elements` declared *"show me just these"*, and later `create-duct` declared *"duct"*
+phrasings — each time the duct **filter** slid down the tracked query in
+[`brain/retrieval-history.md`](../brain/retrieval-history.md), and each time the new fragment was
+perfectly entitled to its own words.
+
+**Read a pass as a lower bound.** A fragment's phrasing shares vocabulary with its own indexed text, so
+passing is close to circular. A **failure** is real information: a request phrased that way now lands
+somewhere else.
+
+**It never fails a build, on purpose.** A collision is a judgement, not a defect — the other fragment may
+genuinely be the better answer, or the sentence may name a **composition**, which no fragment can win
+and a skill should claim. A tool that failed here would teach people to weaken utterances to buy a rank,
+and that is the one response ruled out: taking *"show me just these"* away from the isolate fragment
+would make the isolate unfindable in order to protect a measurement.
+
+Its first run over 169 sentences found sixteen contested ones. **Three were genuine errors** — a filter
+claiming two of `TRACE_CONNECTIVITY`'s sentences, and an override fragment claiming the grayout
+**skill**'s — and correcting those took the words route to **100% in the top three**. The other thirteen
+were left alone and written down.
+
+---
+
 ## `check-api-surface.py` — the releases the compiler cannot reach
 
 ```bash
@@ -120,10 +196,12 @@ Reads the **compiled** add-in's reference tables — exactly the Revit types and
 not what a regex over the source can find — and checks each one exists in that release's shipped
 reference assemblies.
 
-It exists because `check-compile.py` stops at 2024 off Windows, so the newest three releases had
-nothing checking them at all on the machines this project is actually worked on. **Matching is by
-name**, so a changed signature passes here and would fail a real compile: this supplements the compile
-gate, never replaces it.
+It was written when `check-compile.py` stopped at 2024 off Windows, leaving the newest three releases
+with nothing checking them on the machines this project is actually worked on. **That is no longer
+true** — `A5` established that all eight compile off Windows given `dotnet-sdk-10.0`, and the section
+above says so — so this tool is now a second opinion rather than the only one for 2025-2027. **Matching
+is by name**, so a changed signature passes here and would fail a real compile: it supplements the
+compile gate, never replaces it.
 
 **Validate it before trusting a clean result.** Put `doc.CreationGUID` back into
 `RevitWrite.DocumentKey()`, build for 2024, and run it against 2020 — it must report the missing

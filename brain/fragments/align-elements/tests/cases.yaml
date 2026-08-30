@@ -1,0 +1,41 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 5 scattered diffusers, one chosen as reference, alignY only
+    expect: >
+      all 5 share the reference's Y, each keeps its own X and Z, and the
+      reference itself has NOT moved. Check the reference - a fragment that
+      moved it too would still look like a tidy row
+
+  - given: the same 5 with alignX and alignY both true
+    expect: they end up stacked on one point, which is what was asked for
+
+negative:
+  - given: TWO DUCTS OF DIFFERENT LENGTHS aligned in X
+    expect: >
+      their MIDPOINTS share an X and their ENDS DO NOT. Right for equipment,
+      wrong for somebody who meant "make the ends meet" - record it so the
+      difference is known rather than discovered
+
+  - given: two MEP runs of different sizes aligned in Z
+    expect: >
+      their centrelines match and their tops and bottoms do not. This is the
+      case that belongs to ALIGN_MEP_ELEVATION instead, and proving it here is
+      what makes the boundary between the two fragments real
+
+  - given: elements inside a REVIT GROUP
+    expect: their ids in `blocked` - the usual silent no-op, reported
+
+  - given: a reference element with no readable position
+    expect: >
+      NOTHING moved at all. There is nothing to align to, and moving everything
+      to an invented coordinate would be far worse than doing nothing
+
+  - given: all three axes false
+    expect: >
+      every element counted as aligned and nothing moved - asking for no
+      alignment changes nothing, and that is not a failure
+
+second_route:
+  - a dimension between two aligned elements along the chosen axis reads zero
+  - one Ctrl+Z puts the whole row back (Golden Rule 16)

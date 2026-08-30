@@ -1,0 +1,73 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-012
+semantic-identity: "line these elements up with one reference element, axis by axis"
+kind: action
+domain: revit.geometry
+capability: ALIGN_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves elements so they share one reference element's position along whichever
+  axes are asked for - *"get these diffusers on the same line"*, *"line the
+  equipment up with that one"*. Each axis is chosen separately, so aligning in X
+  leaves every element's own Y and Z alone.
+
+  **It aligns each element's own position point, which for a duct or pipe is
+  its MIDPOINT, not an end.** Two runs of different lengths aligned this way
+  share a centre, and their ends do not line up. That is the right answer for
+  equipment and the wrong one for somebody who meant "make the ends meet" - and
+  the difference is invisible until it is looked at.
+
+  For MEP runs levelled by their top or bottom rather than their centre, that
+  is ALIGN_MEP_ELEVATION, which reads each run's own size.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: reference
+      type: Element
+      source: request
+    - name: alignX
+      type: bool
+      source: request
+    - name: alignY
+      type: bool
+      source: request
+    - name: alignZ
+      type: bool
+      source: request
+  provides:
+    - name: aligned
+      type: int
+    - name: blocked
+      type: IList<ElementId>
+    - name: unverified
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. It is a position read and a move, and
+  neither has changed 2020 to 2027. All coordinates are internal feet with no
+  units call.
+
+utterances:
+  - line these up
+  - get them on the same line
+  - align with that one
+  - they should all be at the same X
+  - straighten this row

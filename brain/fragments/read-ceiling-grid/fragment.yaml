@@ -1,0 +1,68 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-007
+semantic-identity: "the tile size of this ceiling, and where its grid starts"
+kind: action
+domain: revit.geometry
+capability: READ_CEILING_GRID
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads a ceiling's real tile size out of its surface pattern - never assuming
+  600 x 600 - and offers a starting point for the grid.
+
+  It reports `anchorIsGuessed` as its own answer, and that flag is the whole
+  reason this is a separate fragment. Revit stores the tile SIZE but not where
+  the grid actually STARTS: the interactive ceiling tools ask a person to click
+  a grid intersection for exactly that reason. Without one, this uses a corner
+  of the ceiling and produces centres that are evenly spaced and PARALLEL to
+  the real grid - but possibly half a tile out from what is drawn on screen.
+
+  Nothing about that fails loudly. It lands on a neat, wrong grid. So the
+  uncertainty is returned as data rather than buried, and whatever snaps things
+  is expected to pass it on to the user.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: ceiling
+      type: Element
+      source: request
+  provides:
+    - name: spacingX
+      type: double
+    - name: spacingY
+      type: double
+    - name: anchor
+      type: XYZ
+    - name: anchorIsGuessed
+      type: bool
+    - name: found
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, and one call is deliberately NOT used to
+  keep it that way. Revit 2025.3 added a way to read a ceiling's real grid lines,
+  which would give a true anchor for free - and naming it here would stop this
+  fragment compiling on 2020 to 2024, which D-05 forbids. The pattern route
+  below works on every release. If that call is ever worth having, it belongs in
+  a SECOND provider of this capability declared only for the releases that have
+  it - which is exactly what the capability registry is for.
+
+utterances:
+  - what size are the ceiling tiles
+  - read the ceiling grid
+  - is this a 600 grid
+  - the tile size in this room
+  - where does the ceiling grid start

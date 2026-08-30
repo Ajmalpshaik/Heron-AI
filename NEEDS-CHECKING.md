@@ -31,13 +31,15 @@ to be avoidable: **the C# now compiles, and the bridge now runs** — on Linux, 
 minutes ([docs/30](docs/30-compiling-away-from-windows.md)). Group A below records what that settled and
 what it did not.
 
-**Most of what is left needs a real Revit on a real Windows machine** — 47 of the 51 remaining items, and
+**Most of what is left needs a real Revit on a real Windows machine** — 48 of the 53 remaining items, and
 every one that matters most. Compiling is not behaving: `D3` is still the line that catches a unit
 error, and nothing here has moved anything yet.
 
-**57 items, 4 done, 53 left** — counted from the rows on 2026-08-28, not carried forward. Of the 53:
-**47 need Revit**, **2 need Windows but not Revit** (`A4`, `A6`), **1 needs only a reachable network**
-(`A7`), and **3 need only a conversation** (`R1`, `R1b`, `R2` — reading the day's decisions back).
+**59 items, 6 done, 53 left** — counted from the rows on 2026-08-29, not carried forward. Of the 53:
+**48 need Revit**, **3 need Windows but not Revit** (`A4`, `A6`, `A8`), **1 needs only a reachable
+network** (`A7`), and **1 needs a screen in front of him** (`R1b` — seeing the trust model work).
+`R1` and `R2` were closed on 2026-08-29; `E10` was added the same day, when studying the owner's
+earlier library found a case Heron's write path did not handle.
 
 **Count the rows before quoting a number here, and check the pattern you count with.** This file and
 [`HANDOVER.md`](HANDOVER.md) said *49 items* and *45 need a real Revit* from the day they were written,
@@ -88,8 +90,10 @@ right. Add an item every time something is built away from Revit.
 
 ## Group A — does it build, and does the bridge work
 
-**Does NOT need Revit.** This group is now **four rows done of six**, and both that are left (`A4`, `A6`)
-need Windows for one specific reason rather than in general.
+**Does NOT need Revit.** This group is now **four rows done of seven**, and the three that are left
+(`A4`, `A6`, `A8`) each need Windows for one specific reason rather than in general. `A8` arrived on
+2026-08-29 with the MCP tools that made the brain reachable: they were written where no MCP SDK is
+installed, so nothing has ever served them.
 
 **A1, A2, A3 and A5 are done, and A4 all but its last mile** — all on 2026-08-28, on Linux, in a
 container, which nobody had tried because "Revit is Windows-only" had been carried for three sessions as
@@ -123,24 +127,27 @@ python tools/check-compile.py          # 2020 through 2027, all four projects, 0
 | ~~**A1**~~ | ~~`dotnet --version`~~ | **DONE 2026-08-28.** SDK 8.0.130. Still worth one run on the owner's PC, where `tools/setup.ps1` checks it anyway and stops with the download link |
 | ~~**A2**~~ | ~~`dotnet build -p:RevitVersion=2020`~~ | **DONE 2026-08-28.** Compiles, 0 warnings, after the `CreationGUID` fix above. The other five spots this row used to warn about — `WorksharingUtils.GetCheckoutStatus`, `IFailuresPreprocessor`, `TransactionGroup.GetStatus`, `BuiltInCategory.INVALID`, `UIDocument.RefreshActiveView` — are all **clean on 2020 and 2024** |
 | ~~**A3**~~ | ~~`dotnet build -p:RevitVersion=2024`~~ | **DONE 2026-08-28.** So are 2021, 2022 and 2023 — all four projects, 0 warnings each |
-| **A4** | `dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024` then `python tests/test_bridge_roundtrip.py` — **on Windows** | **Mostly done 2026-08-28, and the remainder genuinely needs Windows.** All 32 checks pass on Linux: framing, the JSON parser, the token, newest-connection-wins, the toggle cycle and **the whole lease**. What a Linux run cannot touch is the Windows named pipe itself — its naming, its security descriptor, and the `CreateNewInstance` flag from [HANDOVER](HANDOVER.md) §4 note 2. Run it once on Windows and this row goes |
+| **A4** | `dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024` then `python tests/test_bridge_roundtrip.py` — **on Windows** | **Mostly done 2026-08-28, and the remainder genuinely needs Windows.** All 32 checks pass on Linux: framing, the JSON parser, the token, newest-connection-wins, the toggle cycle and **the whole lease**. What a Linux run cannot touch is the Windows named pipe itself — its naming, its security descriptor, and the `CreateNewInstance` flag from [HANDOVER](HANDOVER.md) §4 note 2. Run it once on Windows and this row goes. **Build it for the runtime that is actually installed**: the command above pins `-p:HeronTfm=net8.0`, and on a box carrying only the .NET 10 runtime the host builds and then refuses to start — *"You must install or update .NET"*, which reads like a broken test rather than a missing runtime. `-p:HeronTfm=net10.0` runs it. Re-run on Linux 2026-08-29: **all 32 checks pass**, lease included |
 | ~~**A5**~~ | ~~`python tools/check-compile.py 2025 2026 2027`~~ | **DONE 2026-08-28, and it did not need Windows either.** All four projects compile on 2025, 2026 and 2027 — `net8.0-windows` and `net10.0-windows`, 0 warnings — on Linux, with the .NET 10 SDK and `-p:EnableWindowsTargeting=true`. This row assumed the Windows Desktop SDK was a property of the operating system; it is a property of the **SDK package**, and Ubuntu's `dotnet-sdk-10.0` ships it while its `dotnet-sdk-8.0` does not. The script had the right MSBuild flag and applied it **only on Windows**, where it does nothing. Full account and the validation in [docs/30 §2a](docs/30-compiling-away-from-windows.md). `python tools/check-api-surface.py` still runs and still adds something a compile cannot — it reads the **shipped** assemblies, where a compile reads the NuGet reference packages |
 | **A6** | On **Windows**, run `python tools/check-compile.py 2025` and read the first lines of output | It says **WindowsDesktop targets found in the .NET N SDK** and then builds. `check-compile.py` now decides whether it can build the WPF releases by looking for `Sdks/Microsoft.NET.Sdk.WindowsDesktop` under each installed SDK, instead of by asking whether it is on Windows — and **that probe has only ever been run on Linux.** Microsoft's SDK is expected to carry those targets on every platform, but expected is the word this register exists to distrust. If it wrongly reports them absent, 2025–2027 would be **skipped on the one machine where they used to build**, so this is a five-minute check with a real downside behind it. If it does misread, the script attempts the build anyway whenever it cannot read the SDK list at all — that fallback is also unproven here |
+| **A8** | On the PC, with the Heron MCP server configured in Claude Code, ask it *"what can you do?"* and watch `heron_capabilities` run. Then `heron_lookup` with *"select all the ducts"* | It lists **ten** jobs, **four** with every part provided, names the seven missing capabilities, and says plainly that it **cannot run** any of them. `heron_lookup` answers `FILTER_ELEMENTS_BY_CATEGORY` and names the route. **Why this is a row rather than a passing test:** the three brain tools were written on a machine with **no MCP SDK installed**, so `FastMCP` has never served them. [`tests/test_brain_reachable.py`](tests/test_brain_reachable.py) proves the layer underneath — the catalogue, the capability resolution, the version wall — and then reads the server **as text** to confirm the tools are declared, exactly as `test_tool_registry.py` reads the C#. Text is not a running server: it cannot show that a docstring reached the host or that a tool appeared in the list at all. **Needs Windows and Claude Code; needs no Revit** — every one of the three reads only files that shipped with Heron |
 | **A7** | On a machine that can reach a model host, `pip install --user model2vec` then `python brain/heron_embed.py "stop the air going the wrong way"` | The first line reads **`Backend: model`**, not `lexical`, and the duct fragment comes back for a sentence that contains none of its words. **Step 10 shipped with two backends and only one of them has ever run.** The built-in `lexical` one works offline with nothing installed and is measured, in numbers, as *not meaning* — synonyms score zero. The trained one is the half that understands a grille and a diffuser are cousins, and it could not be tested where it was written: `huggingface.co` is refused by that container's network policy (`connect_rejected`, measured 2026-08-28). **This needs no Revit and no Windows** — any machine that can reach the model host will do, which may well be the same phone this was written on |
 
-## Group R — read the five decisions back (no Revit needed, but do it at the PC)
+## Group R — read the decisions back (no Revit needed)
 
 **Not a test — a conversation**, and the only item in this file that is not about code behaving. It is
 here because this file is what gets opened at the PC, and a review nobody is reminded of does not happen.
 
 | ID | Do this | Done looks like |
 |---|---|---|
-| **R1** | Read **D-23 to D-27** back to Ajmal — the knowledge store, local embeddings, study-never-import, the model file, and one voice. All five were settled in one conversation on 2026-08-28, from a phone, with no model open | He confirms each still says what he meant, **and the detail left out gets filled in** — his words, *"including deciding what details we need to go with"*. Several are principles and need numbers, formats and limits before code rests on them |
+| ~~**R1**~~ | ~~Read **D-23 to D-27** back to Ajmal~~ | **DONE 2026-08-29 — and it covered D-23 to D-43, not just the five.** All twenty-one were read back and he confirmed them. **In conversation rather than at the PC**, which is worth recording: the instruction said *at the PC*, and what that was for — him sitting with them rather than tapping yes — did happen. Three were put to him individually because they carried real consequence, and all three came back unchanged: **D-33's boundary** (Heron never invents a Revit number and does decide its own code — the line the decision file itself flagged as never actually stated by him), **D-26** (the model file never leaves; names, counts, sizes and reasoning are fine), and **D-32** (v1 both reads and writes, reading first, writing off by default). The remaining eighteen were confirmed as a block |
 | **R1b** | Show him **[D-14](docs/DECISIONS.md), the trust model**, working on a screen with his own fragments in it | He agreed the direction on 2026-08-28 — *"yes, but show me it working at the PC first"* — so D-14 stays **Proposed** until he has seen it. Use the framing that worked: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
-| **R2** | Pay particular attention to **D-26 and D-32** | **Both were reversed within hours of being recorded**, and neither reversal was a mistake — each was the first answer being sharpened once its consequence was visible. D-26 moved three times, each looser. D-32 was recorded as *"v1 is read-only"* and reversed to *"it must change things too"* on being asked the same question a second time. That is what this group exists for |
+| ~~**R2**~~ | ~~Pay particular attention to **D-26 and D-32**~~ | **DONE 2026-08-29.** Both were put to him as separate questions with their reversal history stated, and both were confirmed as they stand. The reason this row existed — that a first answer sharpened once its consequence was visible — held up: neither moved a fourth time |
 
-**Do R1 before Phase 2 work begins.** A decision reviewed after the code is written gets defended rather
-than examined.
+**R1 and R2 are done; R1b needs a screen.** The review happened *after* Phase 2 was built rather than
+before, which is weaker than intended and was the owner's own call to override. Worth recording that it
+changed nothing: twenty-one decisions read back, twenty-one confirmed. The two that had been reversed
+within hours on the day did not move again.
 
 ## Group B — does Revit still load
 
@@ -204,6 +211,7 @@ Each of these is a rail. A rail that has never been tested is decoration.
 | **E7** | Pin a duct, then preview | Reported as **skipped**, and left alone after the move |
 | **E8** | On a **workshared** model with a duct owned by another user, preview | Reported as skipped, and the move does not fail because of it |
 | **E9** | Open a dialog in Revit, then ask to move | *"Revit is busy"* — a clean refusal, not a hang. Recovers by itself |
+| **E10** | Put two ducts in a **Revit group**, then ask to move that category up 200 mm | They are reported as **did NOT move at all**, by count, with the words *"almost certainly inside a group"* — and the ungrouped ones still move. **This is the case Revit will not tell you about**: `MoveElements` returns normally and moves nothing for a group member, no exception and no warning, so counting "it did not throw" as "it moved" reports a clean success for elements that have not shifted a millimetre. Proved against a real model in the owner's earlier work; Heron now compares positions either side instead of trusting the call. A group member is **not** pinned, so `E7`'s skip filter does not catch it |
 
 ## Group F — Steps 1-5 are no longer proven on this build
 

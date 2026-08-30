@@ -185,6 +185,28 @@ AREAS = {
 
 CAPABILITY_PATTERN = re.compile(r"^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$")
 
+# A contract name is composed into generated C# (D-28), so it has to survive
+# being a variable there. Deliberately stricter than C# itself, which would
+# accept `@checked` and Unicode identifiers: a name that needs escaping to be
+# legal is a name that will be got wrong by whoever composes it next.
+IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+# C#'s reserved words. A contract may not use one as a name - see the check in
+# _check_contract_side for the fragment that made this necessary.
+CSHARP_KEYWORDS = {
+    "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char",
+    "checked", "class", "const", "continue", "decimal", "default", "delegate",
+    "do", "double", "else", "enum", "event", "explicit", "extern", "false",
+    "finally", "fixed", "float", "for", "foreach", "goto", "if", "implicit",
+    "in", "int", "interface", "internal", "is", "lock", "long", "namespace",
+    "new", "null", "object", "operator", "out", "override", "params",
+    "private", "protected", "public", "readonly", "ref", "return", "sbyte",
+    "sealed", "short", "sizeof", "stackalloc", "static", "string", "struct",
+    "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong",
+    "unchecked", "unsafe", "ushort", "using", "virtual", "void", "volatile",
+    "while",
+}
+
 
 def folder_for(capability):
     """The folder name a capability must live in. Mechanically derivable, so
@@ -421,6 +443,33 @@ def _check_contract_side(side, entries, problems, where):
                 "%s: contract.%s[%d] source %r is not one of %s"
                 % (where, side, i, entry["source"], ", ".join(SOURCES)))
 
+        # A CONTRACT NAME BECOMES A C# VARIABLE, so it has to be able to be one.
+        #
+        # Found on 2026-08-29 by compiling the fragments for the first time:
+        # FRG-QA-001 declared a value called `checked`, which is a reserved C#
+        # keyword. The fragment's own code read `if (checked == 0)` and could
+        # never have compiled - and it had passed every check here, because
+        # nothing had ever asked whether a name was a legal identifier.
+        #
+        # Checked here as well as by the compiler on purpose: this costs
+        # nothing and answers instantly, while the compile check needs the
+        # .NET SDK and several minutes. The compiler stays the authority; this
+        # is the fast half that stops the mistake being made.
+        name = entry.get("name")
+        if isinstance(name, str) and name:
+            if not IDENTIFIER_PATTERN.match(name):
+                problems.append(
+                    "%s: contract.%s[%d] is named %r, which cannot be a C# "
+                    "variable. A contract name is composed into generated code "
+                    "(D-28), so it must be a plain identifier"
+                    % (where, side, i, name))
+            elif name in CSHARP_KEYWORDS:
+                problems.append(
+                    "%s: contract.%s[%d] is named %r, which is a RESERVED C# "
+                    "keyword. The generated code will not compile - rename it "
+                    "(e.g. %sCount, or what it actually counts)"
+                    % (where, side, i, name, name))
+
 
 def validate(frag):
     """Every way this fragment is malformed. Empty list means well-formed -
@@ -510,6 +559,30 @@ def proof_problems(frag):
     problems = []
     where = frag.slug
     proof = frag.proof
+
+    # A PROOF TAKEN SOMEWHERE ELSE IS NOT A PROOF OF THIS CODE.
+    #
+    # Ajmal's instruction, 2026-08-29, on re-authoring from his earlier
+    # library: *"even in the AJ AI proven fragment don't mark in Heron this is
+    # proven, because we will check each and every one again in Heron AI."*
+    #
+    # This is where that is made true rather than merely agreed. The fingerprint
+    # in a proof is a hash of THIS fragment's own implementation bytes, so a
+    # proof carried over from another library cannot match one - it reads as
+    # stale, which is exactly what it is.
+    #
+    # `can_promote` already refused a stale proof. `validate` did NOT, and
+    # validate is what `python brain/heron_fragment.py` and check-gaps run. So
+    # a fragment could sit at PROVEN on somebody else's proof and pass every
+    # check in the repository - measured on 2026-08-29 by writing one and
+    # watching it come back clean. The gate existed and nothing stood on it.
+    if frag.status in NEEDS_PROOF and proof is not None and frag.proof_is_stale():
+        problems.append(
+            "%s: status is %s but the proof does not match this "
+            "implementation - no fingerprint, or one taken against different "
+            "bytes. A proof recorded elsewhere, or before the code changed, is "
+            "evidence about THAT code. Re-take it here (D-30), or set the "
+            "status back to DRAFT" % (where, frag.status))
 
     if proof is None:
         if frag.status in NEEDS_PROOF:

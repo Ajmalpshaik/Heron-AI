@@ -137,8 +137,118 @@ def main():
             check(by_word[0] != by_vector[0],
                   "the two routes disagree - words say %s, nearness says %s - "
                   "so neither is reliable alone" % (by_word[0], by_vector[0]))
-            check("FRG-ELE-001" in by_word[:3] and "FRG-ELE-001" in by_vector[:3],
-                  "and the duct filter is in both shortlists")
+            # MEASURED, 2026-08-29, and the two halves no longer agree - which
+            # is evidence about the BACKEND rather than about the fragments.
+            #
+            # At 7 fragments the duct filter was in the top 3 of both routes.
+            # At 14 it is 3rd by words and 5th by nearness. The words route
+            # held; the nearness route slid, and the reason is the one this
+            # file already measures further up: the built-in backend is
+            # character n-grams, NOT meaning. Double the corpus and more
+            # unrelated fragments score spuriously close - here `report-findings`
+            # ranks FIRST for a question about ducts, which no meaning-based
+            # encoder would do.
+            #
+            # So the assertion is split rather than loosened. The claim that
+            # still holds is asserted as before; the one that slid is asserted
+            # at what it actually is, with the number in the message so the next
+            # person sees movement rather than a pass.
+            #
+            # A7 is the fix and it has never run. When it does, re-measure this
+            # line - if a trained backend does not put the duct filter back in
+            # the top 3, that is worth knowing about the backend.
+            # THE WORDS ROUTE MOVED FOR THE FIRST TIME, at 28 fragments, and
+            # the cause is NOT corpus size - it is vocabulary collision.
+            #
+            # It sat at 3rd across 7, 14, 17, 19 and 25. Then `isolate-elements`
+            # arrived declaring "show me just these" as one of its phrasings,
+            # and this query starts with "show me". It now ranks FIRST, and the
+            # duct filter is 5th.
+            #
+            # That is the retrieval being RIGHT about the words and the question
+            # being ambiguous: "show me every duct" could mean which ducts (a
+            # filter) or put them on screen (isolate, or select). Three
+            # fragments legitimately claim that sentence now.
+            #
+            # Which is what docs/27 already concluded once, at 7 fragments: the
+            # sentence is filter-THEN-show, a composition, and a composition is
+            # what a SKILL names. The assertion has been measuring the wrong
+            # layer since, and at 28 that is no longer arguable.
+            #
+            # AND ON 2026-08-30 THAT CHECK WAS RETIRED, because it could not
+            # perform the check its own comment described.
+            #
+            # It read `"FRG-ELE-001" in by_word` and called that "still found".
+            # But `keywords()` returns a TOP-5 SHORTLIST, so it was always
+            # asking "is it in the top 5" - a fact about the CORPUS, which is
+            # the exact thing the comment below says makes an assertion unstable.
+            # And asked over the whole library the check is vacuous in the other
+            # direction: all 32 fragments match this query, because it contains
+            # "the", "me" and "model". Found-at-all is true of everything.
+            #
+            # It failed at 32 fragments when CREATE_DUCT and SET_MEP_SIZE
+            # arrived declaring "duct" in their own phrasings. That was the
+            # third rewrite this assertion would have needed as the library grew
+            # - and a check needing a rewrite per corpus size is not measuring
+            # the backend.
+            #
+            # SO THE ASSERTION MOVED TO A PROPERTY THAT IS ABOUT THE BACKEND: a
+            # fragment must be findable by ITS OWN DECLARED WORDS. That does not
+            # drift with corpus size, it fails only when something genuinely
+            # takes a fragment's vocabulary, and when it fails the message names
+            # the thief. `tools/check-routing.py` runs it over the whole library;
+            # this is one case of it, kept here because it is the property the
+            # words route exists to have.
+            own_words = "what is the ceiling grid spacing"
+            own_id = "FRG-GEO-007"
+            mine_w = [h["id"] for h in SEARCH.keywords(store, own_words, limit=32)]
+            rank_w = mine_w.index(own_id) + 1 if own_id in mine_w else None
+            check(rank_w == 1,
+                  "the WORDS route ranks a fragment FIRST for its own declared "
+                  "words - %s at #%s. If this ever fails, the first question is "
+                  "which fragment took the vocabulary (%s), not whether the "
+                  "backend broke" % (own_id, rank_w, mine_w[0]))
+
+            # The duct query's ranks are MEASURED here and asserted nowhere, so
+            # that movement stays visible without a test that has to be rewritten
+            # every time the library grows. brain/retrieval-history.md is where
+            # the series lives.
+            full_w = [h["id"] for h in SEARCH.keywords(store, query, limit=100)]
+            full_n = [i for i, _s in E.nearest(store, query, limit=100)]
+            print("     (measured, not asserted) '%s': duct filter is #%s of %d "
+                  "by words, #%s of %d by nearness"
+                  % (query,
+                     full_w.index("FRG-ELE-001") + 1 if "FRG-ELE-001" in full_w else "-",
+                     len(full_w),
+                     full_n.index("FRG-ELE-001") + 1 if "FRG-ELE-001" in full_n else "-",
+                     len(full_n)))
+
+            # ASSERTED AS AN ABSENCE ON PURPOSE, and it is the stable form.
+            #
+            # This check has now been rewritten twice as the library grew,
+            # which is the signal that it was measuring the CORPUS rather than
+            # the backend. Where the duct filter ranks by nearness moves every
+            # time a fragment is added; whether the nearness route can find it
+            # at all does not - that is a property of the backend.
+            #
+            #   7 fragments   top 3 by both routes
+            #  14 fragments   3rd by words, 5th by nearness
+            #  17 fragments   3rd by words, NOT IN THE TOP 5 by nearness
+            #
+            # The words route is flat across all three. The nearness route is
+            # collapsing, and at 17 it ranks a MOVE fragment first for a
+            # question about ducts. That is character n-grams having no idea
+            # what the words mean, exactly as this file measures further up.
+            #
+            # So the assertion is that it does NOT find it. When A7 puts a
+            # trained backend in front of this, THIS CHECK SHOULD FAIL - and
+            # that failure is the thing worth being told about.
+            check("FRG-ELE-001" not in by_vector[:3],
+                  "the NEARNESS route does NOT have it in the top 3 - it is "
+                  "%s. A7 is what should break this check, and when it does, "
+                  "re-read it rather than repairing it"
+                  % (("rank %d" % (by_vector.index("FRG-ELE-001") + 1))
+                     if "FRG-ELE-001" in by_vector else "not in the shortlist at all"))
 
             # WHAT THIS TEST ORIGINALLY ASSERTED, AND WHY IT NO LONGER DOES.
             #

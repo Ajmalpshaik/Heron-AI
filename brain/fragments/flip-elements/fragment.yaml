@@ -1,0 +1,65 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-010
+semantic-identity: "turn these family instances round using their own flip controls"
+kind: action
+domain: revit.elements
+capability: FLIP_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Flips the hand or facing of family instances - a door swinging the wrong way,
+  a diffuser or a piece of equipment pointing the wrong direction. It is
+  Revit's own flip arrows, done to many elements at once.
+
+  This is NOT rotation. A flip uses the family's own built-in controls and
+  respects how the family was authored; rotating 180 degrees moves geometry and
+  can leave a hosted element wrong against its host. When somebody says *"it is
+  the wrong way round"* about a door or a diffuser, this is usually what they
+  mean.
+
+  Not every family can flip, and the ones that cannot are reported rather than
+  attempted - a family author decides whether a flip control exists at all.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: flipHand
+      type: bool
+      source: request
+    - name: flipFacing
+      type: bool
+      source: request
+  provides:
+    - name: flipped
+      type: int
+    - name: cannotFlip
+      type: IList<ElementId>
+    - name: notFamilyInstance
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FamilyInstance.CanFlipHand`,
+  `CanFlipFacing`, `flipHand()` and `flipFacing()` are unchanged 2020 to 2027.
+  No geometry is computed here, so there is nothing for a units change to reach.
+
+utterances:
+  - the door opens the wrong way
+  - flip the diffuser round
+  - it is facing backwards
+  - turn the equipment the other way
+  - the handing is wrong
+  - flip them

@@ -1,0 +1,39 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 4 free-standing ducts, offset 200 mm up
+    expect: >
+      moved = 4, and MEASURE ONE IN REVIT. A count of 4 is what the broken
+      version returns too - the only thing that separates them is a tape measure
+      on one duct reading 200 mm and not 200 feet
+
+  - given: the same 4, offset 0
+    expect: moved = 4 and nothing reported blocked - asking for nothing is not a failure
+
+negative:
+  - given: >
+      2 of the 4 ducts put inside a REVIT GROUP, the same 200 mm up
+    expect: >
+      moved = 2, and the 2 group members in `blocked` BY ID. This is the case
+      the fragment exists for: Revit moves nothing and reports no error, so a
+      version that trusted the call would say "moved 4" with two ducts exactly
+      where they started. They are NOT pinned, so a pinned-check does not catch
+      them
+
+  - given: an element attached to something that limits how far it can go
+    expect: >
+      counted in `partly`, not in `moved` and not in `blocked` - it did move,
+      just not the whole way, and that is legitimate rather than a fault
+
+  - given: an element with no readable location
+    expect: >
+      its id in `unverified`. Never counted as moved. A thing that cannot be
+      checked must not be reported as checked
+
+  - given: an empty element list
+    expect: all four outputs empty or zero, reported as nothing to do
+
+second_route:
+  - a tape measure in Revit on ONE element, which is the only check that catches feet-for-millimetres
+  - one Ctrl+Z puts the whole move back in a single step (Golden Rule 16)
+  - select the ids reported as blocked and look at what they belong to

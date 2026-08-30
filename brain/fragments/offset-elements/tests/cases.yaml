@@ -1,0 +1,42 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a straight horizontal duct, offset 300 mm
+    expect: >
+      it sits 300 mm to one side, MEASURED perpendicular to its own direction -
+      and still the same length. A translated element would also look right at a
+      glance, so measure
+
+  - given: a CURVED run
+    expect: >
+      it stays parallel to itself with a changed radius - not translated
+      sideways. This is what makes an offset different from a move, and it is
+      the only case that shows the difference
+
+negative:
+  - given: two parallel ducts DRAWN IN OPPOSITE DIRECTIONS, same distance
+    expect: >
+      they offset to OPPOSITE sides. Not a bug - the side follows each run's own
+      direction. Prove it once, because the alternative is somebody deciding the
+      fragment is unreliable when it is being exactly consistent
+
+  - given: a CONNECTED duct run with fittings, offset in place
+    expect: >
+      the run COMES APART at the joints. Revit's behaviour, not this fragment's.
+      Record it so it is known rather than discovered - the answer is to include
+      the fittings or reconnect after
+
+  - given: a vertical riser
+    expect: >
+      RECORD WHAT HAPPENS. There is no meaningful sideways-in-plan for a
+      vertical run, and this fragment does not pretend otherwise
+
+  - given: an arc offset inward by more than its own radius
+    expect: its id in `refused`, no exception, and the rest of the batch still done
+
+  - given: a family instance or a wall-hosted element in the list
+    expect: its id in `notLinear`, nothing attempted
+
+second_route:
+  - a dimension in plan between the original position and the new one
+  - one Ctrl+Z puts it back in a single step (Golden Rule 16)

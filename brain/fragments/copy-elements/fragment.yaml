@@ -1,0 +1,60 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-005
+semantic-identity: "duplicate these elements at an offset, and hand back the copies"
+kind: action
+domain: revit.geometry
+capability: COPY_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Duplicates every element at one offset and hands back the NEW elements, so
+  the next step can act on the copies alone - select just them, set a parameter
+  on just them, move just them.
+
+  Unlike moving and rotating, this one is self-evidencing: Revit returns the
+  ids it created, and a copy that did not happen is a copy that is not in that
+  list. There is no before-and-after comparison here because there is nothing
+  to compare - the evidence arrives with the answer. That is worth saying out
+  loud, because the sibling fragments are full of position probes and their
+  absence here looks like an oversight.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: offset
+      type: XYZ
+      source: request
+  provides:
+    - name: copies
+      type: IList<ElementId>
+    - name: notCopied
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementTransformUtils.CopyElements`
+  returning an `ICollection<ElementId>` is unchanged 2020 to 2027, and the
+  offset arrives in internal feet with no units call.
+
+utterances:
+  - copy the terminals to the next room
+  - duplicate these
+  - make another row of them
+  - copy them across
+  - repeat this equipment
+  - put a second set 3 metres over

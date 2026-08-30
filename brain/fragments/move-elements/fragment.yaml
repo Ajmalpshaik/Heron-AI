@@ -1,0 +1,68 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-003
+semantic-identity: "shift these elements by one offset, and check that they actually moved"
+kind: action
+domain: revit.geometry
+capability: MOVE_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Shifts every element by one offset and reports FOUR outcomes, because "it did
+  not throw" is not the same as "it moved".
+
+  Revit's move call returns normally and moves nothing when an element cannot be
+  moved - a member of a group is the case that gets through, because it is not
+  pinned and so passes every filter that looks for pinning. No exception, no
+  warning. Counting a clean return as a move reports success for elements that
+  have not shifted a millimetre, which is the "succeeded and did nothing"
+  failure D-30 makes every fragment prove against.
+
+  So the position is read before and after and compared. That comparison is the
+  fragment; the move itself is one line.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a bulk
+  move is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: offset
+      type: XYZ
+      source: request
+  provides:
+    - name: moved
+      type: int
+    - name: partly
+      type: int
+    - name: blocked
+      type: IList<ElementId>
+    - name: unverified
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementTransformUtils.MoveElement`,
+  `Location`, `LocationPoint` and `LocationCurve` are unchanged 2020 to 2027,
+  and the offset arrives in Revit's internal feet so no units call is made -
+  which is what keeps this clear of the 2021 units move.
+
+utterances:
+  - move the ducts up 200
+  - shift them 300 to the left
+  - raise the terminals
+  - nudge these over
+  - move them down 50
+  - drop the services 100 mm

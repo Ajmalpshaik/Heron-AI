@@ -1,0 +1,36 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a room with one beam, a grid of 12 points, ray straight up, clearance set
+      so the beam is inside it - in a 3D view WITH structural framing visible
+    expect: >
+      the points under the beam in `blocked`, the rest in `clear`, and the split
+      matching what a person sees looking at the 3D view
+
+  - given: the same points and a clearance SHORTER than the distance to the beam
+    expect: >
+      all 12 clear. The distance is what decides, not whether something was hit
+      - and this row is what proves maxDistance is actually being read
+
+negative:
+  - given: >
+      THE SAME MODEL AND POINTS, in a 3D view with structural framing SWITCHED
+      OFF
+    expect: >
+      every point reported clear - and this is the fragment behaving correctly
+      while giving a dangerous answer. It is recorded as a proof case because it
+      is the failure most likely to happen in real use, and the only defence is
+      the caller passing a view that can see what is being looked for
+
+  - given: a VIEW TEMPLATE passed as the view
+    expect: >
+      notChecked = every point, `clear` EMPTY, no exception. A template must
+      never come back as a clear result
+
+  - given: an empty point list
+    expect: all three outputs empty or zero, reported as nothing to do
+
+second_route:
+  - look at the 3D view and count the heads under the beam by eye
+  - a section through the beam line, measured

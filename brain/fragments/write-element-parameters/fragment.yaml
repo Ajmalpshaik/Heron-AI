@@ -1,0 +1,94 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-003
+semantic-identity: "write one parameter value onto these elements"
+kind: action
+domain: revit.parameters
+capability: WRITE_ELEMENT_PARAMETERS
+version: 2
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Writes one named parameter on many elements, and reports every element it did
+  NOT write and why - read-only, absent, or a kind this fragment refuses.
+
+  It is the write half of FRG-PAR-001's read, and it takes the value as TEXT on
+  purpose. A number alone cannot be written safely: Revit stores lengths in
+  decimal feet, and the same fragment is asked to set an airflow, an area and a
+  comment. See the implementation note - this is the decision most likely to be
+  "improved" by somebody who has not hit it.
+
+  **It reports what the MODEL holds, not what was asked for.** Revit accepts a
+  size and then snaps it to the nearest size its type allows - the set returns
+  TRUE, nothing throws, and a pipe asked for 77 comes out 80. Version 1 trusted
+  that return value and would have reported a clean success over a different
+  number. `snapped` is that case, named and carrying ids.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one. Golden Rule 16 puts the
+  TransactionGroup at the OPERATION, so that one user action is one undo; a
+  fragment that opened its own would add a second entry to the undo stack and
+  break exactly the rule it looks like it is obeying.
+
+contract:
+  needs:
+    # Needed for the ONE regeneration that makes the snap visible. Without it
+    # this fragment can only report what it asked for.
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: parameterName
+      type: string
+      source: request
+    - name: value
+      type: string
+      source: request
+  provides:
+    # Written AND read back as the value asked for. Nothing else counts here.
+    - name: written
+      type: int
+    # Accepted, then changed by Revit - almost always a size snapped to the
+    # type's size table. Carries ids, because "two were snapped" is a fact
+    # nobody can act on.
+    - name: snapped
+      type: IList<ElementId>
+    # The read-back could not be run. Not written, and never assumed away.
+    - name: unverified
+      type: IList<ElementId>
+    - name: readOnly
+      type: IList<ElementId>
+    - name: absent
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, and the units API is the reason there
+  is only one. `SetValueString` parses in the DOCUMENT's own display units and
+  has been unchanged from 2020 to 2027, while everything around it moved:
+  `DisplayUnitType` became `ForgeTypeId` in 2021, and `ParameterType` became
+  `GetDataType()` in 2022. This fragment touches none of them, so there is no
+  `#if` and no version branch to keep in step.
+
+  The read-back is version-safe for the same reason: it compares two internal
+  doubles from `AsDouble`/`AsInteger`, never a formatted string. Comparing
+  `AsValueString` against the user's text would have dragged the display units,
+  the thousands separator and the project's decimal-places setting into a check
+  that needs none of them.
+
+utterances:
+  - set the comments on these
+  - write the airflow back
+  - fill in the parameter
+  - update the mark on all of them
+  - put 500 in the flow parameter
+  - set the room number

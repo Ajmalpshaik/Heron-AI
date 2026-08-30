@@ -1,0 +1,60 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-005
+semantic-identity: "clear the per-element graphic overrides on these, in this view"
+kind: action
+domain: revit.views
+capability: RESET_GRAPHIC_OVERRIDES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Clears the per-element colour, fill, halftone and line overrides on the given
+  elements in one view - the other half of OVERRIDE_GRAPHICS_IN_VIEW, and the
+  answer to *"put it back how it was"*.
+
+  Without it, a grayout is a one-way door: something applied it and nothing
+  could take it off short of resetting the whole view by hand.
+
+  **It clears the PER-ELEMENT override only.** A category-level override in the
+  same view is a different setting and survives this untouched - which is
+  usually right, and is confusing the first time somebody clears an element and
+  watches it stay grey because the whole category was overridden too.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: cleared
+      type: int
+    - name: hadNothing
+      type: int
+    - name: viewRefused
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. An empty `OverrideGraphicSettings` IS
+  the cleared state - there is no separate clear call - and both it and
+  `GetElementOverrides` are unchanged 2020 to 2027.
+
+utterances:
+  - put it back how it was
+  - clear the overrides
+  - undo the grayout
+  - remove the colours
+  - reset the graphics on these

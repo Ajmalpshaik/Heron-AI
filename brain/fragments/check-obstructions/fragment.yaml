@@ -1,0 +1,77 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-002
+semantic-identity: "which of these points has something in the way"
+kind: action
+domain: revit.geometry
+capability: CHECK_OBSTRUCTIONS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Casts a ray from each point and reports which ones hit something within a
+  stated distance. It is what turns "here is a nice even grid" into "and these
+  four are under a beam" - the step between a layout and a layout that can
+  actually be built.
+
+  KIND: `action`, NOT `filter`, and the distinction is D-29's rather than a
+  convenience. A filter answers *which elements*. This answers *what is true of
+  this one*, which is the shape `read-element-parameters` already has.
+
+  It was written as a filter first, and the orphan check reported it as one
+  nothing can consume. That report was right about the fact and wrong about the
+  cause: nothing consumes it because what it produces is consumed by the
+  CALLER, not by another fragment. Turning an outline and a spacing into a list
+  of points is arithmetic, and arithmetic between two Revit calls belongs to the
+  Orchestrator - which is the host (D-01, docs/02 s4), not this library. The
+  label was corrected; the composition was never the problem.
+
+  Every number is an input. The direction and the distance are asked for, never
+  assumed (D-33): how far above a sprinkler must be clear is a code question
+  with a different answer per hazard class, and a default here would be a
+  number nobody chose being applied to a life-safety layout.
+
+contract:
+  needs:
+    - name: view3d
+      type: View3D
+      source: request
+    - name: points
+      type: IList<XYZ>
+      source: request
+    - name: direction
+      type: XYZ
+      source: request
+    - name: maxDistance
+      type: double
+      source: request
+  provides:
+    - name: blocked
+      type: IList<XYZ>
+    - name: clear
+      type: IList<XYZ>
+    - name: notChecked
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ReferenceIntersector` and
+  `FindNearest` are unchanged 2020 to 2027. Distances are in Revit's internal
+  feet throughout and no unit call is made, so the 2021 units move does not
+  reach this fragment.
+
+utterances:
+  - is there a beam in the way
+  - there is a beam in the room
+  - check the clearance above
+  - what is blocking these
+  - is anything obstructing the head
+  - check for obstructions

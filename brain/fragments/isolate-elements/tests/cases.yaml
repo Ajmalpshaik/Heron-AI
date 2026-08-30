@@ -1,0 +1,34 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a floor plan and 4 ducts
+    expect: >
+      only those 4 are visible, and Revit's Temporary Hide/Isolate border is
+      showing round the view. Check by eye - a count of 4 proves nothing about
+      what the view is displaying
+
+  - given: >
+      an isolate of 4 ducts, THEN an isolate of 3 pipes in the same view
+    expect: >
+      only the 3 PIPES visible - not seven things. Revit's isolate is additive
+      to the running state, so without the reset this shows the union and reads
+      as the filter having found too much
+
+  - given: Reset Temporary Hide/Isolate pressed afterwards
+    expect: the view returns to normal with nothing saved into it
+
+negative:
+  - given: a SCHEDULE or a sheet as the view
+    expect: >
+      `viewRefused` TRUE, nothing attempted, no exception. Asking to isolate in
+      a schedule is an ordinary mistake and deserves an answer, not a crash
+
+  - given: an EMPTY element list
+    expect: >
+      nothing isolated and THE VIEW LEFT AS IT WAS. Isolating nothing produces
+      a blank view, which is indistinguishable from a broken tool - so it is
+      refused rather than obeyed
+
+second_route:
+  - look at the view. This is a visibility change and the eye is the check
+  - Revit's own Reset Temporary Hide/Isolate restores it

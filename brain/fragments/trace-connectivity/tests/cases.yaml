@@ -1,0 +1,46 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a straight run of 5 ducts, properly connected, starting at one end
+    expect: >
+      all 5 in `reached`, openEnds = 2 (the two ends of the run), and
+      joinedByGeometry = 0. The two open ends are the proof the walk terminated
+      rather than the proof something is wrong
+
+  - given: a branch - a main with two spurs
+    expect: every element reached once, no duplicates, whichever end it starts from
+
+  - given: >
+      a run that IS physically joined but whose connectors report IsConnected
+      false - the case this fragment was written for
+    expect: >
+      the far side still reached, and joinedByGeometry NOT ZERO. A trace that
+      reported a short run and a clean zero here would be repeating the exact
+      mistake that made this fragment necessary
+
+negative:
+  - given: a single duct with nothing attached to it
+    expect: >
+      reached = just that duct, openEnds = 2, joinedByGeometry = 0. Reported as
+      an isolated element, never as an empty result or as a failure
+
+  - given: a run with a genuine break in the middle, wider than the tolerance
+    expect: >
+      only the near side reached, and the break shows as an open end. The
+      elements past the break must NOT appear - a trace that reaches them
+      anyway has a tolerance so loose it would join two unrelated systems
+
+  - given: a start element that is not MEP at all - a wall
+    expect: >
+      reached = just that element, no exception, and no connectors walked.
+      Stopping is the honest outcome
+
+  - given: an empty `elements` list
+    expect: >
+      the declared route still walks, and joinedByGeometry is 0 because there
+      was nothing to check against. It must not silently report a clean trace
+      as though geometry had confirmed it
+
+second_route:
+  - select the run in Revit and use its own system browser or system name
+  - follow the run by eye in a 3D view, which is what caught the real case

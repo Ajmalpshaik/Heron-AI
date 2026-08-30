@@ -1,0 +1,63 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-004
+semantic-identity: "place instances of one family type at these points"
+kind: action
+domain: revit.elements
+capability: PLACE_FAMILY_INSTANCES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places one family type at a list of points on a level, and reports every
+  point it could not place at. It is the last step of every layout job - air
+  terminals, sprinkler heads, detectors - after something else has worked out
+  WHERE they go.
+
+  It activates the symbol first, which is the step that makes this fragment
+  worth having: an unactivated type places nothing and says nothing.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
+  twenty-four sprinklers are one undo entry rather than twenty-four.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: symbol
+      type: FamilySymbol
+      source: request
+    - name: points
+      type: IList<XYZ>
+      source: request
+    - name: level
+      type: Level
+      source: request
+  provides:
+    - name: placed
+      type: IList<ElementId>
+    - name: failed
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The `NewFamilyInstance(XYZ, FamilySymbol,
+  Level, StructuralType)` overload and `FamilySymbol.Activate()` are unchanged
+  2020 to 2027. Points arrive in Revit's internal feet - this fragment does no
+  unit arithmetic at all, which is what keeps it clear of the 2021 units move.
+
+utterances:
+  - place the air terminals
+  - put the sprinklers in
+  - add the diffusers
+  - place them on the grid
+  - drop a detector at each point
+  - insert the family at these locations

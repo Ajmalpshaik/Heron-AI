@@ -32,6 +32,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 FAILURES = []
+# EVERY provider of `elements`, not just the first. The library grew a second
+# one (FRG-ELE-003) on 2026-08-29, and breaking one of two stopped orphaning the
+# consumer - which is the capability registry working exactly as designed, and
+# this test being written when there was only ever one way to do the job.
 FRAGMENT = os.path.join(ROOT, "brain", "fragments",
                         "filter-elements-by-category", "fragment.yaml")
 
@@ -45,7 +49,23 @@ def check(condition, what):
 def main():
     home = tempfile.mkdtemp(prefix="heron-graph-")
     os.environ["HERON_KNOWLEDGE"] = home
+    second = os.path.join(ROOT, "brain", "fragments",
+                          "filter-elements-by-id", "fragment.yaml")
     original = io.open(FRAGMENT, encoding="utf-8").read()
+    original_second = io.open(second, encoding="utf-8").read()
+
+    def break_providers():
+        """Rename what BOTH providers of `elements` leave behind."""
+        for path, text in ((FRAGMENT, original), (second, original_second)):
+            io.open(path, "w", encoding="utf-8").write(
+                text.replace("    - name: elements\n"
+                             "      type: IList<Element>",
+                             "    - name: somethingElse\n"
+                             "      type: IList<Element>"))
+
+    def restore_providers():
+        io.open(FRAGMENT, "w", encoding="utf-8").write(original)
+        io.open(second, "w", encoding="utf-8").write(original_second)
 
     import heron_scope as SCOPE
     import heron_graph as G
@@ -65,11 +85,7 @@ def main():
 
             # Break it on purpose: rename what the filter provides, so the
             # action's `elements` need is no longer met by anything.
-            io.open(FRAGMENT, "w", encoding="utf-8").write(
-                original.replace("    - name: elements\n"
-                                 "      type: IList<Element>",
-                                 "    - name: somethingElse\n"
-                                 "      type: IList<Element>"))
+            break_providers()
             after = G.composes_into("FRG-ELE-001")
             check("FRG-SEL-001" not in after,
                   "rename what it provides and the composition is GONE - the "
@@ -81,7 +97,7 @@ def main():
             check(any(i == "FRG-SEL-001" for i, _w in broken),
                   "and the action as one nothing can feed")
 
-            io.open(FRAGMENT, "w", encoding="utf-8").write(original)
+            restore_providers()
             check(G.composes_into("FRG-ELE-001") == before,
                   "put it back and the graph returns to what it was - it is "
                   "reading the files, not remembering")
@@ -143,7 +159,7 @@ def main():
         finally:
             store.close()
     finally:
-        io.open(FRAGMENT, "w", encoding="utf-8").write(original)
+        restore_providers()
         shutil.rmtree(home, ignore_errors=True)
         os.environ.pop("HERON_KNOWLEDGE", None)
 

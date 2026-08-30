@@ -1,0 +1,63 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-003
+semantic-identity: "the elements carrying these ids, in the active document"
+kind: filter
+domain: revit.elements
+capability: FILTER_ELEMENTS_BY_ID
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Turns a list of element ids into the elements themselves - the starting point
+  for any job that begins from what the user already has selected, or from ids
+  carried over from an earlier answer.
+
+  Reports `missing` - ids that resolve to nothing - rather than dropping them.
+  An id goes stale the moment somebody deletes the element or undoes the thing
+  that made it, and this fragment exists to be composed onto a trace, so a
+  silently shorter list would read as "the system is smaller than you thought"
+  rather than as "three of these are gone".
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elementIds
+      type: IList<ElementId>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: missing
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.GetElement(ElementId)` is
+  unchanged from 2020 to 2027, and no ElementId is ever CONSTRUCTED here - the
+  ids arrive from the request. That matters: 2024 widened ElementId to 64-bit,
+  and `new ElementId(int)` is the call that breaks across that boundary. Taking
+  ids rather than integers is what makes this fragment version-proof.
+
+# Three sentences were removed on 2026-08-30, found by tools/check-routing.py:
+# "trace from this element" and "what is connected to that duct" are
+# TRACE_CONNECTIVITY's, and "check these elements" is a QA sentence. This
+# fragment turns ids into elements - it is the FIRST STEP of those jobs, and a
+# fragment claiming the whole sentence is the composition mistake that
+# brain/retrieval-history.md keeps arriving at: a composition is what a SKILL
+# names. The search was already routing all three elsewhere, correctly.
+utterances:
+  - these ones
+  - the ones I have selected
+  - use the ids from the last answer
+  - the elements with these ids
+  - get the elements for those ids

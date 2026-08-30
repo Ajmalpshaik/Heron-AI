@@ -1,0 +1,44 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a floor plan, 20 walls, and a halftone override
+    expect: >
+      overridden = 20, `skipped` EMPTY, and THE VIEW LOOKS DIFFERENT. Checked by
+      eye, not only by the count - the count is what a broken call returns too
+
+  - given: the same view and the settings the grayout actually uses
+    expect: >
+      the architecture recedes and the services stay solid. This is the whole
+      job; a number is not a proof that it looks right
+
+negative:
+  - given: a view whose TEMPLATE controls visibility and graphics
+    expect: >
+      overridden = 0, every element in `skipped`, AND NO EXCEPTION. This is the
+      case that happens in real projects: the user asks, nothing appears to
+      change, and nobody is told why. A fragment that threw here would be a
+      stack trace instead of "that view has a template"
+
+  - given: a schedule or a sheet as the view
+    expect: overridden = 0, everything skipped, no exception
+
+  - given: an empty element list on a perfectly good view
+    expect: >
+      overridden = 0 and `skipped` EMPTY - the two zeros mean different things
+      and must not merge into one
+
+  - given: an element that has been deleted since the list was built
+    expect: it is skipped and the rest are still overridden
+
+  - given: >
+      an element that ALREADY has a colour override, then a settings object
+      carrying only halftone
+    expect: >
+      THE COLOUR IS GONE. This fragment replaces the whole override rather than
+      merging, and nothing warns. It is correct behaviour and it is the trap the
+      caller has to know about - the fix is to read the current overrides,
+      modify them, and pass those. Prove it once so the behaviour is known
+
+second_route:
+  - open Visibility/Graphics on the view and read the overrides back by hand
+  - one Ctrl+Z restores the whole view in a single step (Golden Rule 16)

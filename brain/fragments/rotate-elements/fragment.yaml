@@ -1,0 +1,68 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-006
+semantic-identity: "turn these elements about a vertical axis, and check they really turned"
+kind: action
+domain: revit.geometry
+capability: ROTATE_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Turns every element about a vertical axis - a mis-oriented piece of equipment
+  spun 90 degrees, a cluster of terminals turned to match a new room layout.
+
+  Like moving, and for the same reason: Revit's rotate call returns normally and
+  rotates NOTHING for a pinned element or a group member. Five grouped air
+  terminals stayed at 0.00 degrees while the code reported *"rotated 5, skipped
+  0"*. So orientation is read before and after, and only a change in it counts.
+
+  The pivot may be left out, and then each element turns about its own position
+  - which is what *"spin that damper round"* means, as against *"swing this
+  whole row about the corner"*.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: angleRadians
+      type: double
+      source: request
+    - name: pivot
+      type: XYZ
+      source: request
+  provides:
+    - name: rotated
+      type: int
+    - name: blocked
+      type: IList<ElementId>
+    - name: unverified
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementTransformUtils.RotateElement`,
+  `Line.CreateBound` and `LocationPoint.Rotation` are unchanged 2020 to 2027.
+  The angle arrives in RADIANS, which is what the API takes - the degrees a
+  person says are converted at the edge, not here (D-20's rule applied to an
+  angle rather than a length).
+
+utterances:
+  - rotate the equipment 90 degrees
+  - spin that damper round
+  - turn them to face the other way
+  - swing this row about the corner
+  - the diffuser is the wrong way round
+  - rotate them 180

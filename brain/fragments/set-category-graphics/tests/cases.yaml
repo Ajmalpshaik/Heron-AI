@@ -1,0 +1,38 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: Walls, Floors and Ceilings, with a grey halftone override, on a plan
+    expect: >
+      the whole architectural background recedes and the services stay solid.
+      This is the grayout's background half - look at it, do not count it
+
+  - given: >
+      the same override applied, then A NEW WALL DRAWN in that view
+    expect: >
+      THE NEW WALL IS GREY TOO. That is the whole reason a grayout uses
+      categories rather than elements: an element-by-element version leaves it
+      at full strength and the drawing quietly stops matching itself
+
+  - given: an EMPTY settings object passed for the same categories
+    expect: the override is cleared - apply and undo are the same call here
+
+negative:
+  - given: a view whose TEMPLATE controls graphics
+    expect: >
+      the category names in `refused`, nothing changed, no exception. "That view
+      has a template" is an answer somebody can act on
+
+  - given: a category that cannot be controlled in this view
+    expect: its NAME in `notControllable` - by name, never as a count
+
+  - given: >
+      a category that already has a colour override, then a settings object
+      carrying only halftone
+    expect: >
+      THE COLOUR IS GONE. This replaces rather than merges, exactly like the
+      per-element version. Read the current overrides and modify them if the
+      rest must survive
+
+second_route:
+  - Visibility/Graphics on the view, read by hand
+  - a second view of the same model, which must be unaffected

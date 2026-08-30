@@ -9,29 +9,36 @@
 
 ---
 
-## ⏳ Five of these get one more pass, at the PC
+## ✅ The read-back happened — 2026-08-29, and nothing moved
 
 **Ajmal's instruction, 2026-08-28:** *"We will do this after we finalize one more time ... when I am at
 the PC, we will do it one more time. Now we just recorded, but we will do it one more time."*
 
-**D-23, D-24, D-25, D-26 and D-27** — and the six questions they answer (Q-10, Q-11, Q-12, Q-15, Q-16,
-Q-40) — were all settled in a single conversation on **2026-08-28**, from a phone, with no Revit and no
-model open. They are **Accepted and are being built on**: work does not stop waiting for the review, and
-nothing here is provisional in the sense of being ignorable.
+**Done on 2026-08-29, and it covered D-23 to D-43 rather than only the five.** Twenty-one decisions were
+read back and twenty-one were confirmed. Three were put to him one at a time because they carried real
+consequence, and all three came back unchanged:
 
-What they have not had is **him sitting in front of the thing they are about to shape.** Q-12 alone moved
-three times in that one conversation, each time looser, because a rule about what may leave a machine
-reads differently in the abstract than it does with a client's model open. That is the argument for the
-pass, and it is a good one.
+| | |
+|---|---|
+| [**D-33**](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) | The boundary this log itself flagged as **never actually stated by him** — Heron never invents a Revit number and does decide its own code. **Confirmed as written**, so the decision stands rather than moves |
+| [**D-26**](#d-26--the-model-file-is-never-uploaded) | The model file never leaves; names, counts, sizes and reasoning are fine. **Confirmed** after moving three times on the day it was written |
+| [**D-32**](#d-32--v1-must-be-able-to-change-the-model-and-reading-is-what-gets-used-first) | v1 both reads and writes, reading first, writing off by default. **Confirmed** after being reversed once within the hour |
 
-**The review is not a re-vote.** It is: read the five back, confirm each still says what he meant, and
-**fill in the detail that was deliberately left out** — his words, *"including deciding what details we
-need to go with"*. Several were taken at the level of a principle and will need numbers, formats and
-limits before anything is built on them.
+**It happened in conversation rather than at the PC**, which is recorded rather than smoothed over. What
+*at the PC* was for — him sitting with them rather than tapping yes — did happen. What still needs a
+screen is [`R1b`](../NEEDS-CHECKING.md): [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes)
+stays **Proposed** until he has seen the trust model working with his own fragments in it.
 
-**When:** at the PC, alongside the [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) run, and **before Phase 2
-work begins.** A decision reviewed after the code is written is a decision that will be defended rather
-than examined.
+**And it happened AFTER Phase 2 was built, not before**, which was his own override and is weaker than
+intended — a decision reviewed once the code exists gets defended rather than examined. Worth recording
+what that cost: **nothing measurable.** The two that had been reversed within hours did not move a fourth
+time, and no detail was found missing. That is evidence about these particular decisions, not a reason to
+review late next time.
+
+**This heading said *"Five of these get one more pass"* while the table below marked NINE** — D-32 to
+D-35 were added later and the sentence was not. Nobody noticed because the sentence and the markers were
+never read together. All nine are now confirmed, so the discrepancy is closed by the work rather than by
+an edit.
 
 ---
 
@@ -62,19 +69,19 @@ than examined.
 | [D-20](#d-20--millimetres-to-feet-is-arithmetic-not-unitutils) | Millimetres to feet is arithmetic, not UnitUtils | ✅ Accepted |
 | [D-21](#d-21--failure-analysis-is-a-table-not-a-model-call) | Failure analysis is a table, not a model call | ✅ Accepted |
 | [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over) | A second chat is refused, not allowed to take over | ✅ Accepted |
-| [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) | The knowledge store is SQLite, one file per scope | ✅ Accepted · ⏳ one pass at the PC |
-| [D-24](#d-24--embeddings-are-computed-locally-by-default) | Embeddings are computed locally by default | ✅ Accepted · ⏳ one pass at the PC |
-| [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) | The existing libraries are studied and re-authored, never imported | ✅ Accepted · ⏳ one pass at the PC |
-| [D-26](#d-26--the-model-file-is-never-uploaded) | The model file is never uploaded | ✅ Accepted · ⏳ one pass at the PC |
-| [D-27](#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape) | One voice, and the answer's shape follows the question's shape | ✅ Accepted · ⏳ one pass at the PC |
+| [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) | The knowledge store is SQLite, one file per scope | ✅ Accepted · ✔ read back 2026-08-29 |
+| [D-24](#d-24--embeddings-are-computed-locally-by-default) | Embeddings are computed locally by default | ✅ Accepted · ✔ read back 2026-08-29 |
+| [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) | The existing libraries are studied and re-authored, never imported | ✅ Accepted · ✔ read back 2026-08-29 |
+| [D-26](#d-26--the-model-file-is-never-uploaded) | The model file is never uploaded | ✅ Accepted · ✔ read back 2026-08-29 |
+| [D-27](#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape) | One voice, and the answer's shape follows the question's shape | ✅ Accepted · ✔ read back 2026-08-29 |
 | [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) | Generated code is C#, compiled at run time, in process | ✅ Accepted |
 | [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer) | A fragment is a composable piece, not a whole answer | ✅ Accepted |
 | [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) | A fragment is promoted by one recorded proof, not a count of runs | ✅ Accepted |
 | [D-31](#d-31--product-data-and-derived-are-already-separated-and-the-code-is-the-record) | Product, data and derived are already separated | ✅ Accepted |
-| [D-32](#d-32--v1-must-be-able-to-change-the-model-and-reading-is-what-gets-used-first) | v1 must change the model; reading is used first | ✅ Accepted · ⏳ one pass at the PC |
-| [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) | Heron never assumes an input. It asks — and it asks once | ✅ Accepted · ⏳ one pass at the PC |
-| [D-34](#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job) | Heron's own wording is English; understanding the user is not Heron's job | ✅ Accepted · ⏳ one pass at the PC |
-| [D-35](#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about) | A shared fragment may carry code; an unapproved one is refused, not warned about | ✅ Accepted · ⏳ one pass at the PC |
+| [D-32](#d-32--v1-must-be-able-to-change-the-model-and-reading-is-what-gets-used-first) | v1 must change the model; reading is used first | ✅ Accepted · ✔ read back 2026-08-29 |
+| [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) | Heron never assumes an input. It asks — and it asks once | ✅ Accepted · ✔ read back 2026-08-29 |
+| [D-34](#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job) | Heron's own wording is English; understanding the user is not Heron's job | ✅ Accepted · ✔ read back 2026-08-29 |
+| [D-35](#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about) | A shared fragment may carry code; an unapproved one is refused, not warned about | ✅ Accepted · ✔ read back 2026-08-29 |
 | [D-36](#d-36--no-warranty--the-standard-position-and-it-is-already-in-place-twice) | No warranty — the standard position, already in place twice | ✅ Accepted |
 | [D-37](#d-37--the-name-is-heron-ai-and-no-trademark-check-has-been-done) | The name is Heron AI, and no trademark check has been done | ✅ Accepted |
 | [D-38](#d-38--github-now-app-store-kept-possible-and-nothing-built-for-it) | GitHub now, App Store kept possible, and nothing built for it | ✅ Accepted |
@@ -83,6 +90,7 @@ than examined.
 | [D-41](#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer) | Single-user now; company knowledge is a git repo and the admin is the reviewer | ✅ Accepted |
 | [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is setup.ps1 | ✅ Accepted |
 | [D-43](#d-43--the-constitution-is-accepted-all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
+| [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -1237,9 +1245,12 @@ justifications is worth more than a rule with one.
   meaning recovers much of it, and a wrong fragment is visible in a way that a leaked room schedule
   is not.
 - **This is an engineering default, not the confidentiality policy.** [Q-12](OPEN-QUESTIONS.md) — what
-  may be sent to a model provider, from which projects — is a contractual question and remains **open
-  and Ajmal's to answer**. Local-by-default is the setting that is safe to hold while it is open, and
-  is deliberately reversible once it is closed.
+  may be sent to a model provider, from which projects — is the contractual question, and this bullet
+  said it *"remains open and Ajmal's to answer"* **until 2026-08-29, having been closed the same day it
+  was written**: [D-26](#d-26--the-model-file-is-never-uploaded) answers Q-12, and D-24's own header has
+  pointed at D-26 all along. A decision amended by another on the same day is exactly where a sentence
+  goes stale without anybody noticing, because the amendment is read and the consequences are not.
+  Local-by-default stays, now on the re-indexing argument rather than on the confidentiality one.
 
 ---
 
@@ -1732,8 +1743,13 @@ not consultation. It transfers the decision without transferring the ability to 
 that comes back is a guess wearing the user's name. Heron would have assumed anyway — it would just have
 laundered the assumption through a question.
 
-**This line is drawn from Ajmal's standing way of working, not from his answer to Q-33**, which did not
-mention it. It belongs in the `R1` read-back, and if the line is wrong it is this decision that moves.
+**This line was drawn from Ajmal's standing way of working, not from his answer to Q-33**, which did not
+mention it — so it was put to him on its own in the `R1` read-back, with the option of moving it either
+way: asking him about code choices too, or letting Heron supply some standard numbers.
+
+**CONFIRMED AS WRITTEN, 2026-08-29.** He kept both halves: every Revit number is asked for, and the
+technical choices are Heron's to make and report. The line stands, and it is now his rather than
+inferred from his habits.
 
 ### Consequences
 
@@ -2176,3 +2192,57 @@ become binding must not misdescribe its own authority.**
 - Article 20 — *a new capability starts unproven and stays unproven* — is
   [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) at constitutional
   level, and the two agree.
+
+---
+
+## D-44 — A re-authored fragment starts unproven in Heron, whatever it was elsewhere
+
+**Status:** Accepted · **Date:** 2026-08-29 · **Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported), [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)
+
+### Context
+
+[D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) settled that the
+owner's existing libraries are studied and re-authored here, never imported. It did not say what happens
+to the **status** of a fragment whose original had been proven against a real model — and the originals
+carry exactly that, dated and detailed, which makes carrying it over look reasonable rather than lazy.
+
+Ajmal closed it himself on 2026-08-29, as the re-authoring began:
+
+> *"Even in the AJ AI proven fragment, don't mark in Heron this is proven, because we will check each and
+> every one again in Heron AI. So mark it as not proven in Heron."*
+
+### Decision
+
+**A re-authored fragment enters Heron at `DRAFT` and is promoted only by a proof taken here, against
+Heron's own implementation.** A proof recorded elsewhere is evidence about the code that ran there. It
+is not evidence about the code in this repository, however faithfully that code was re-authored — and
+"faithfully" is the word doing all the work in that sentence, which is the reason.
+
+### Why this is not over-caution
+
+The re-authoring is a **rewrite**: different contract shape, different composition model, different
+naming, split differently, and running inside a wrapper this repository generates rather than the one it
+came from. Every one of those is a place a behaviour can change without anybody intending it. The
+original's proof says the ORIGINAL worked.
+
+And the failure it guards against is the one this whole project keeps meeting: a thing that succeeds
+while doing nothing. The move fragment studied on the same day is precisely that story — its own library
+found, live, that Revit's move call **returns normally and moves nothing** for a group member. A proof
+inherited rather than re-taken is a claim nobody has watched.
+
+### Consequences
+
+- **It is enforced, not agreed.** `proof_problems` in
+  [`brain/heron_fragment.py`](../brain/heron_fragment.py) now refuses `PROVEN` or `PRODUCTION` when the
+  proof does not match this fragment's own implementation bytes. The fingerprint in a proof is a hash of
+  those bytes, so a carried-over proof cannot match one.
+- **That gate existed and nothing stood on it.** `can_promote` refused a stale proof; `validate` — which
+  is what `python brain/heron_fragment.py` and `check-gaps.py` actually run — did not. Measured on
+  2026-08-29 by writing a fragment that declared `PROVEN` on a proof from another model and watching
+  every check in the repository pass it.
+- **The lessons still cross, and they are the valuable half.** What a studied fragment carries is *where
+  Revit lies to you* — and that knowledge belongs in the new file's own words, argued from what it
+  guards against rather than from having been proven somewhere else.
+- **Expect the DRAFT count to rise as re-authoring goes on**, and expect that to look like a growing
+  debt. It is: a debt of Revit-checking, which is the only kind the owner's standing instruction wants
+  left.

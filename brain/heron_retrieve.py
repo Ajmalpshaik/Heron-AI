@@ -365,6 +365,17 @@ def main(argv):
         revit = argv[i + 1]
         argv = argv[:i] + argv[i + 2:]
 
+    # An unknown flag used to become part of the QUESTION. "--rebuild" - a flag
+    # this tool does not have - was silently searched for, matched nothing, and
+    # printed "nothing matched", which reads as a measured result rather than a
+    # typo. Anything starting with "-" is now refused by name. (2026-08-30)
+    unknown = [a for a in argv if a.startswith("-")]
+    if unknown:
+        print("  not a flag this tool has: %s" % " ".join(unknown))
+        print('  python brain/heron_retrieve.py "show me every duct" --revit 2024')
+        print("  the store is filled by brain/heron_scope.py, not from here")
+        return 2
+
     if not argv:
         print('  python brain/heron_retrieve.py "show me every duct" --revit 2024')
         return 2
@@ -373,6 +384,17 @@ def main(argv):
     try:
         SEARCH.index(store)
         EMBED.index(store)
+
+        # An EMPTY store is not a retrieval result, and must never be printed as
+        # one. On a fresh machine the store has no fragments in it yet, and this
+        # tool used to answer "nothing matched" - indistinguishable from a real
+        # measurement of a real miss. A retrieval history built out of that is
+        # exactly the drift retrieval-history.md exists to prevent. (2026-08-30)
+        if store.count() == 0:
+            print("  the knowledge store is EMPTY - this is not a retrieval result.")
+            print("  nothing has been indexed, so no question can be answered yet.")
+            print("  fill it first:  python brain/heron_scope.py --rebuild")
+            return 2
         text = " ".join(argv)
         answer = find(store, text, revit=revit)
 

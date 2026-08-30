@@ -1,0 +1,72 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-002
+semantic-identity: "line MEP runs up by their top, their bottom or their centre"
+kind: action
+domain: revit.mep
+capability: ALIGN_MEP_ELEVATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Lines up ducts, pipes, trays and conduits by their TOP, their BOTTOM or their
+  CENTRE - *"get the services level with each other"*, *"align the soffits so
+  the ceiling fits"*.
+
+  It works out each run's own vertical half-size from its real size parameter,
+  so a 600 mm duct and a 100 mm pipe genuinely share a soffit line. That is the
+  difference between this and moving them all to one height: **the insertion
+  point of an MEP run is its CENTRELINE**, so making the centrelines equal
+  leaves the tops and bottoms at different heights - which is exactly the thing
+  a coordinated corridor needs to be equal.
+
+  Insulation is NOT included. These parameters give the bare service size, and
+  an insulated duct's real top is higher. If the job is about clearance to a
+  ceiling, the caller adds it - it is not read here, because a fragment that
+  quietly included it would give a different answer to the same question
+  depending on whether somebody had modelled the insulation yet.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: edge
+      type: string
+      source: request
+    - name: targetZ
+      type: double
+      source: request
+  provides:
+    - name: aligned
+      type: int
+    - name: noSize
+      type: IList<ElementId>
+    - name: notCurveBased
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The four size parameters are
+  BuiltInParameter values unchanged 2020 to 2027, and they are asked for by
+  enum rather than by display name so this works on a Revit in any language.
+  Heights arrive and are used in internal feet with no units call.
+
+utterances:
+  - get the services level
+  - align the bottoms so the ceiling fits
+  - line up the soffits
+  - level the ducts with each other
+  - align the tops
+  - set them all to the same underside

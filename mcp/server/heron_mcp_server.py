@@ -61,6 +61,7 @@ from heron_failure import analyse, explain          # noqa: E402
 import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
+import heron_brain as brain                         # noqa: E402
 from mcp.server.fastmcp import FastMCP        # noqa: E402
 
 server = FastMCP("heron")
@@ -447,6 +448,35 @@ def revit_apply_move() -> str:
         lines.append("%s were skipped - pinned, or owned by another user."
                      % "{:,}".format(reply.get("skipped")))
 
+    # THE THREE THAT MUST NEVER BE FOLDED INTO "MOVED".
+    #
+    # Revit's move call returns normally and moves nothing when an element
+    # cannot be moved - a group member is the case that gets through, because
+    # it is not pinned and so passes the skip filter. The add-in now compares
+    # positions either side rather than trusting that no exception was thrown,
+    # and these are what that comparison found.
+    #
+    # Said plainly and without jargon: the user needs to know which elements to
+    # go and look at, not that a count was smaller than they expected.
+    if reply.get("blocked"):
+        lines.append(
+            "%s did NOT move at all, even though Revit reported no error - "
+            "they are almost certainly inside a group. Move the group itself, "
+            "or ungroup them first."
+            % "{:,}".format(reply.get("blocked")))
+
+    if reply.get("partly"):
+        lines.append(
+            "%s moved, but not the full distance - something they are attached "
+            "to is holding them back."
+            % "{:,}".format(reply.get("partly")))
+
+    if reply.get("unverified"):
+        lines.append(
+            "%s could not be checked afterwards, so Heron cannot say whether "
+            "they moved. Look at those before trusting this."
+            % "{:,}".format(reply.get("unverified")))
+
     if reply.get("warnings"):
         lines.append("Revit raised %s warning(s), which were allowed through."
                      % "{:,}".format(reply.get("warnings")))
@@ -483,6 +513,247 @@ def revit_use_this_model() -> str:
 
     return ("This chat is now working on %s. Anything pending from the previous model "
             "has been dropped." % title)
+
+
+# ---------------------------------------------------------------------------
+# The brain, reachable from a conversation
+#
+# Steps 7 to 14 built eight modules, seven fragments and ten skills that no tool
+# could reach. docs/27 states Phase 2's third definition-of-done clause as *the
+# Orchestrator resolves through capabilities rather than agent names*; the
+# Orchestrator is the host, and the host only has what is declared here.
+#
+# All three read what Heron KNOWS and none of them sends anything to Revit.
+# ---------------------------------------------------------------------------
+
+# NOTHING BELOW CAN RUN A FRAGMENT, AND EVERY ANSWER SAYS SO.
+#
+# A fragment carries C# in impl/, and there is no executor: the bridge speaks a
+# fixed set of operations and none of them compiles anything. D-28 chose Roslyn
+# in-process for this and it is not built. So resolving a request to a
+# capability tells the host WHAT WOULD DO THE JOB and nothing about whether it
+# can be done today - and a tool that let that be inferred would be worse than
+# no tool, because a plan built on it would fail at the last step.
+_CANNOT_RUN = (
+    "Heron can say what would do this. It cannot do it yet: a fragment's code "
+    "has no way to reach Revit - the bridge speaks a fixed set of operations "
+    "and none of them runs one.")
+
+_NOT_PROVEN = (
+    "Nothing here is proven. Every skill and every fragment is DRAFT, and "
+    "D-30 promotes on one recorded proof containing a negative case, which "
+    "needs a real model. See NEEDS-CHECKING.md.")
+
+
+def _revit_version():
+    """
+    (release, how it was decided) for the version wall, without ever asking.
+
+    LOOKING MUST NEVER BE THE ACT OF CLAIMING. revit_health learned that about
+    the lease one commit after building it; the same applies here for a
+    different reason. binding.resolve() can stop and ask which Revit the user
+    means - a fair question before touching a model, an absurd one before
+    reading a file that shipped with Heron. So this never calls it.
+
+    Returns (None, None) when nothing is connected, and the caller then says
+    the version filter did not run rather than quietly leaving it out.
+    """
+    try:
+        live, _starting, _mismatched = binding.sessions()
+    except Exception:
+        return None, None
+
+    try:
+        if binding.pid is not None:
+            for b in live:
+                if b.pid == binding.pid:
+                    return b.revit_version, ("chosen" if binding.was_chosen
+                                             else "assumed, not chosen")
+        if len(live) == 1:
+            # An assumption, and named as one. It decides only which fragments
+            # are OFFERED, never which model is touched - but rule 5 of the
+            # handover's own list is that an assumption is not a choice, and
+            # the cheapest place to keep that honest is where it is made.
+            return live[0].revit_version, "the only Revit connected"
+        return None, None
+    finally:
+        for b in live:
+            b.close()
+
+
+@server.tool()
+def heron_capabilities() -> str:
+    """
+    List what Heron knows how to do - the jobs it can be asked for, what each
+    one needs, and which of those needs nothing provides yet.
+
+    Use this before planning any Revit work, to find out whether Heron has a
+    way of doing it at all. Answers "what can you do?", "can you lay out
+    sprinklers?", "do you know how to trace a system?". Reads only files that
+    shipped with Heron; it never touches the model and needs no Revit.
+    """
+    try:
+        found = brain.catalogue()
+    except brain.BrainUnavailable as why:
+        return str(why)
+
+    ready = [s for s in found["skills"] if s["ready"]]
+    waiting = [s for s in found["skills"] if not s["ready"]]
+
+    lines = ["%d job(s) Heron knows by name. %d have every part they need, "
+             "%d are waiting on something nobody has built."
+             % (len(found["skills"]), len(ready), len(waiting)), ""]
+
+    if ready:
+        lines.append("Every part provided:")
+        for s in ready:
+            said = s["utterances"][0] if s["utterances"] else ""
+            lines.append('  %-34s e.g. "%s"' % (s["name"], said))
+
+    if waiting:
+        lines.append("")
+        lines.append("Waiting on a missing piece:")
+        for s in waiting:
+            lines.append("  %-34s needs %s"
+                         % (s["name"], ", ".join(s["missing"])))
+
+    lines.append("")
+    lines.append("%d capability(ies) with a provider; %d wanted and unprovided."
+                 % (len(found["capabilities"]), len(found["gaps"])))
+
+    if found["problems"]:
+        lines.append("")
+        for line in found["problems"]:
+            lines.append("  PROBLEM  %s" % line)
+
+    lines.append("")
+    lines.append('"Every part provided" means each piece has something on disk '
+                 "that claims to do it. It does not mean Heron can run it. "
+                 + _CANNOT_RUN)
+    lines.append(_NOT_PROVEN)
+    return "\n".join(lines)
+
+
+@server.tool()
+def heron_resolve(capability: str) -> str:
+    """
+    Ask who can do one named capability - for example FILTER_ELEMENTS_BY_CATEGORY.
+
+    Use after heron_capabilities or heron_lookup has named one, to see what
+    would carry it out, at what risk, and on which Revit releases. Ask for the
+    capability, never for a fragment id: which fragment serves it is Heron's
+    to decide and can change without any plan changing.
+    """
+    revit, how = _revit_version()
+
+    try:
+        found = brain.resolve(capability, revit=revit)
+    except brain.BrainUnavailable as why:
+        return str(why)
+
+    where = ("" if revit is None
+             else " on Revit %s (%s)" % (revit, how))
+
+    if not found["providers"]:
+        if found.get("blocked_by_version"):
+            # The distinction the whole wall exists for. "Nobody can do that"
+            # and "nobody can do that HERE" send a user in opposite directions.
+            return ("Heron knows %s, and nothing that provides it works%s.\n"
+                    "Those providers exist - they are declared for other Revit "
+                    "releases, and Heron will not offer one outside the "
+                    "releases it declares. A fragment applied to the wrong "
+                    "release does not announce itself: it runs, it half-works, "
+                    "and it is found later by somebody measuring something."
+                    % (capability, where))
+        return ("Nothing provides %s.\n"
+                "That absence IS the gap - Heron keeps no second list of "
+                "missing things, because one that had to be kept in step "
+                "would eventually disagree with this answer.\n"
+                "Run heron_capabilities to see which jobs are waiting on it."
+                % capability)
+
+    lines = ["%s%s" % (capability, where),
+             "  risk       %s   (the highest any provider carries, worked out "
+             "rather than declared)" % found["risk"],
+             "  area       %s" % found["domain"],
+             "  Revit      %s   (releases EVERY provider supports, not any)"
+             % (", ".join(found["revit"]) or "none in common"),
+             "  best state %s" % found["status"],
+             "",
+             "  %d provider(s), most trusted first:" % len(found["providers"])]
+    for p in found["providers"]:
+        lines.append("    %-14s %-11s %s" % (p["id"], p["status"], p["kind"]))
+
+    if revit is None:
+        lines.append("")
+        lines.append("No Revit is connected, so the version filter did not "
+                     "run and this is every provider rather than the ones "
+                     "that would work on your release.")
+
+    lines.append("")
+    lines.append(_CANNOT_RUN)
+    lines.append(_NOT_PROVEN)
+    return "\n".join(lines)
+
+
+@server.tool()
+def heron_lookup(request: str) -> str:
+    """
+    Work out which capability would serve a request written in the user's own
+    words - "select all the ducts", "how many air terminals".
+
+    Use when the user asks for Revit work and you need to know whether Heron
+    has a way of doing it. It answers with the capability, so a plan never
+    depends on which fragment happens to serve it today. Touches nothing.
+    """
+    revit, how = _revit_version()
+
+    try:
+        found = brain.lookup(request, revit=revit)
+    except brain.BrainUnavailable as why:
+        return str(why)
+
+    if not found["capability"]:
+        lines = ["Heron has no way of doing that."]
+        blocked = [e for e in found["excluded"] if "Revit" in e["reason"]]
+        if blocked:
+            lines.append("%d fragment(s) were excluded because they are not "
+                         "declared for Revit %s. They exist - they are just "
+                         "not for this release." % (len(blocked), revit))
+        lines.append("Run heron_capabilities to see what it does know.")
+        return "\n".join(lines)
+
+    # THE CAPABILITY IS THE ANSWER. The provider is underneath it as evidence,
+    # so a plan is built on the capability and stays true when the fragment
+    # behind it is replaced, split or retired.
+    lines = ['"%s"' % request,
+             "  would need   %s" % found["capability"],
+             "  matched by   %s" % found["route"],
+             "  provided by  %s" % found["provider"],
+             "",
+             "  %s" % found["note"]]
+
+    if len(found["candidates"]) > 1:
+        lines.append("")
+        lines.append("  Other capabilities that came close:")
+        seen = set()
+        for c in found["candidates"][1:]:
+            if c["capability"] in seen or c["capability"] == found["capability"]:
+                continue
+            seen.add(c["capability"])
+            lines.append("    %-30s %s" % (c["capability"], c["why"]))
+
+    if revit is None:
+        lines.append("")
+        lines.append("No Revit is connected, so the version filter did not run.")
+    else:
+        lines.append("")
+        lines.append("Filtered to Revit %s (%s)." % (revit, how))
+
+    lines.append("")
+    lines.append(_CANNOT_RUN)
+    lines.append(_NOT_PROVEN)
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
