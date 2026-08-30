@@ -22,11 +22,18 @@ so it is the one with history.
 | 2026-08-29 | 19 | 3rd | not in the top 5 | 5th | `lexical` |
 | 2026-08-30 | 25 | 3rd | not in the top 5 | 5th | `lexical` |
 | 2026-08-30 | 28 | **5th** | **not in the top 5** | **not in the top 5** | `lexical` |
+| 2026-08-30 | 30 | 5th | not in the top 5 (**15th of 30**) | not in the top 5 | `lexical` |
 
-**The words route is flat at 3rd across every size measured. The nearness route has collapsed and
-stayed collapsed.** At 17 it ranked a *move* fragment first for a question about ducts; at 19 the duct
-filter is still outside the shortlist, and `report-findings` has ranked first after fusion at every size
-since 14. No meaning-based encoder would do either.
+**The words route held 3rd from 7 to 25 fragments, then stepped to 5th at 28 and stayed there. The
+nearness route collapsed early and has stayed collapsed.** At 17 it ranked a *move* fragment first for a
+question about ducts; at 19 the duct filter is still outside the shortlist, and `report-findings` ranked
+first after fusion at every size from 14 to 25. No meaning-based encoder would do either.
+
+> This paragraph read *"flat at 3rd across every size measured"* until 2026-08-30, and it had been false
+> since the 28-fragment row was added directly above it. The correction is recorded rather than quietly
+> made because it is the exact failure this file was written to prevent, occurring **inside this file**:
+> a summary sentence ageing past the table it summarises. The two sections below explain the step; the
+> sentence a reader meets first must not contradict them.
 
 The rows at 17, 19 and 25 are worth reading together: **the library grew by nearly half and nothing
 moved.** Words 3rd, nearness absent, fused 5th, three times running. The degradation is not a slope that
@@ -94,15 +101,57 @@ independent.
 
 ---
 
+## 2026-08-30 — 30 fragments, and the collision prediction held
+
+Two more view fragments were added (`RESET_GRAPHIC_OVERRIDES`, `SET_CATEGORY_GRAPHICS`) and the words
+route **did not move**: 5th at 28, 5th at 30.
+
+That is worth more than another flat row, because the finding above made a claim that could be wrong.
+It said the drop from 3rd to 5th was **vocabulary collision** — `isolate-elements` claiming *"show me
+just these"* — and not the view area growing. Those two explanations predict different things. Dilution
+predicts that any further view fragment pushes the duct filter down again. Collision predicts that a view
+fragment which does **not** claim the query's words costs nothing.
+
+Neither new fragment says *"show me"*. The rank held. **The collision explanation predicted that and the
+dilution explanation did not**, so the earlier conclusion is now tested rather than merely reasoned.
+
+**The nearness route was measured precisely this time, and the number is worth having: 15th of 30.**
+Dead centre. Not "absent because the shortlist is short" — actually mid-pack out of the whole eligible
+library, which is what no signal looks like when you measure it rather than infer it. Every earlier row
+recorded only *"not in the top 5"*, which is compatible with 6th; this one is not.
+
+### Two defects in the measuring tool, found by measuring
+
+Neither changes a number above. Both would have corrupted a future line.
+
+- **An empty store printed `nothing matched`.** On a fresh machine `heron_retrieve.py` answered a
+  question against a store holding nothing, and said the same words it says for a genuine miss. A line
+  in this file recorded from that would be a measurement of an empty database, indistinguishable from a
+  measurement of the library. It now refuses, names the store as empty, and points at the rebuild.
+- **An unknown flag became part of the question.** `--rebuild` is not a flag this tool has, so it was
+  searched for as text, matched nothing, and printed the same `nothing matched`. It is now refused by
+  name.
+
+Both are the same shape as the failure this whole file exists to prevent: **a tool that answers when it
+should decline.** A wrong number gets caught eventually; a plausible number taken on a broken run gets
+quoted for months.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:
 
 ```bash
+python brain/heron_scope.py --rebuild                          # FIRST - the store is derived
 python brain/heron_retrieve.py "show me every duct in the model" --revit 2024
 python brain/heron_embed.py                                    # says which backend answered
 python brain/heron_fragment.py | tail -3                       # the library size
 ```
+
+The rebuild is first because the store is **derived** and a fresh machine has none. That line was
+missing until 2026-08-30, and following the recipe without it is what surfaced the two tool defects
+recorded above.
 
 Record the **date, the fragment count, and which backend answered**. A line missing any of the three is
 the drift this file exists to prevent.

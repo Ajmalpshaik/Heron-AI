@@ -20,6 +20,19 @@
 // once, including the template one, which is the case that actually happens in
 // real projects: the user asks for the grayout, the view has a template, and
 // nothing appears to happen.
+//
+// THIS REPLACES THE ELEMENT'S WHOLE OVERRIDE. IT DOES NOT MERGE.
+//
+// `SetElementOverrides` writes the settings object wholesale, so anything the
+// element already had that this object does not carry is GONE - a colour set
+// last week disappears when somebody sets halftone today. Nothing warns.
+//
+// It is the CALLER that has to know this, because the settings arrive already
+// built (see the compatibility note for why). To change one aspect and keep the
+// rest, read the element's current overrides with `view.GetElementOverrides(id)`,
+// modify that object, and pass it here. Building a fresh
+// OverrideGraphicSettings and setting one property on it is the mistake, and it
+// looks completely reasonable in the code that makes it.
 
 var overridden = 0;
 var skipped = new List<ElementId>();

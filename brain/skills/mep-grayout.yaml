@@ -20,6 +20,18 @@ purpose: >
   capability, which is why it was missing rather than forgotten. Added
   2026-08-30 once something provided it.
 
+  THE BACKGROUND IS DONE BY CATEGORY, NOT ELEMENT BY ELEMENT, and that changed
+  on 2026-08-30. Greying every wall individually gives the right drawing today
+  and a wrong one tomorrow: a wall drawn after the grayout ran keeps its normal
+  graphics, because nothing ever touched it. The drawing quietly stops matching
+  itself and the person who finds out is whoever prints it. A category override
+  covers what does not exist yet, and is one setting to undo instead of four
+  hundred.
+
+  The per-element route is still named below because the SERVICES half may be a
+  selection - "bring THESE ducts forward" is a real request, and it is not the
+  same shape as "grey all architecture".
+
 # The words Ajmal actually says, not the words the technique is named after.
 utterances:
   - do the grayout
@@ -32,6 +44,11 @@ utterances:
 # retired without this file changing - that is what the registry is for.
 needs:
   - FILTER_ELEMENTS_BY_CATEGORY
+  # The BACKGROUND half. Whole categories flattened to grey, so anything drawn
+  # into the view later is grey too. See the purpose - this is the difference
+  # between a grayout that stays true and one that rots as the model grows.
+  - SET_CATEGORY_GRAPHICS
+  # The SERVICES half, when it is a selection rather than whole categories.
   - OVERRIDE_GRAPHICS_IN_VIEW
   # Rebar off. Not an override on elements - the CATEGORY is switched off in
   # the view, which is why overriding graphics could never have done it.
@@ -49,3 +66,12 @@ note: >
   Changes a VIEW, not the geometry - but view overrides are still document
   changes inside a transaction, which is why the risk is MODIFY rather than
   EXECUTE. One Ctrl+Z must put the whole view back.
+
+  ONE THING HERE IS A DECISION AND NOT A FACT, and it is for Ajmal at the PC.
+  Whether the background should be greyed by CATEGORY (durable, covers what is
+  drawn later, all-or-nothing) or by SELECTED ELEMENTS (lets him grey some
+  walls and not others) is a modelling preference, not something the API
+  settles. It is written as category-first because that is what "grey the
+  background" means as a sentence, and because the element route silently rots.
+  If he wants it selection-scoped, this is the line to change - the capability
+  is already named.

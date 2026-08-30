@@ -1,10 +1,11 @@
 # Heron AI — Session Handover
 
-**Updated 2026-08-29, at the end of the sixth working session — the one that wired the brain to the
-host, which was the last thing in this repository that could be built without a machine.** The fifth
-session, earlier the same day, built Phase 2 end to end and then wrote the tool that looks for what is
-missing; that tool is what found this. For whoever picks this up next: a fresh Claude session, a person,
-or the owner on his phone.
+**Updated 2026-08-30, during the seventh working session — the one re-authoring the owner's earlier
+fragment library into this one.** The sixth wired the brain to the host, which was the last thing here
+that could be *built* without a machine; the seventh is doing the thing that can still be done without
+one — **writing fragments**, from 7 to **30** so far, each studied and rewritten rather than copied
+([D-44](docs/DECISIONS.md): none of them inherits the earlier library's proven status). For whoever picks
+this up next: a fresh Claude session, a person, or the owner on his phone.
 
 ---
 
@@ -22,10 +23,17 @@ every agent id against the registry, walks the fragment library, the capability 
 dependency graph, and reads the register. Then it sorts everything into **UNFINISHED** and **WAITING**,
 and its exit code follows only the first.
 
-**As of 2026-08-29, later the same day, it reports 0 unfinished and 55 waiting.** The one thing that was
-unfinished — **the brain was wired to nothing** — is now wired, and the section below that used to say so
-records what that did and did not buy. Everything waiting needs a machine or a conversation: 47 a real
-Revit, **3 Windows** (`A4`, `A6` and the new `A8`), 1 a network, 3 the owner.
+**As of 2026-08-30 it reports 0 unfinished and 54 waiting.** The one thing that was unfinished — **the
+brain was wired to nothing** — is now wired, and the section below that used to say so records what that
+did and did not buy. Everything waiting needs a machine or a conversation: **48 a real Revit**, plus the
+30 unproven fragments as one further item, **3 Windows** (`A4`, `A6` and `A8`), **1 a network** (`A7`),
+**1 the owner** (`R1b`).
+
+> Those figures were **read off the tool, not carried forward**, and the sentence they replace shows why
+> that matters: it said *55 waiting* and then listed parts summing to 54, and it still counted **3 owner
+> items** after `R1` and `R2` had been struck off in the same session. A total and its own breakdown
+> disagreeing is the cheapest possible drift to catch and it survived anyway. Re-derive rather than
+> edit the digits.
 
 **`A8` is new and it is the honest half of that work.** The three MCP tools were written on a machine
 with **no MCP SDK installed**, so `FastMCP` has never served them. The test underneath them passes and
@@ -465,7 +473,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | | |
 |---|---|
 | **The eight `brain/` modules** | Each has its own suite and each passes — the fragment store, the scope store, exact-word search, nearness, fusion, the capability registry, the graph, and skills. What they are proven to do is **behave as specified against fixtures**. Not one of them has been handed a real Revit's answer |
-| **28 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists **twenty-eight** items under *needs a real Revit*. **Since 2026-08-29 all twenty-eight at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)). That is not behaviour, but it does mean none of them will fail at the PC for a reason a compiler could have found |
+| **30 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists **thirty** items under *needs a real Revit*. **Since 2026-08-29 all of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)). That is not behaviour, but it does mean none of them will fail at the PC for a reason a compiler could have found |
 | **10 skills, all `DRAFT`** | Each names **capabilities and never fragments**, and each carries the words Ajmal actually says rather than the words the technique is named after. Whether any of them does what it says is unknown |
 | **The trained embedding backend** | **Now the highest-value item that needs no Revit** — [`brain/retrieval-history.md`](brain/retrieval-history.md) tracks one query across 7, 14 and 17 fragments: the words route is flat at 3rd, the nearness route has gone from top-3 to **not in the top 5**, and at 17 it ranks a *move* fragment first for a question about ducts. Never run — `huggingface.co` is refused by this container. The backend that *is* running is character n-grams, which measurably **does not do synonyms** (`diffuser`/`grille` scored −0.136). `A7` is that run and needs no Revit and no Windows |
 | **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py). The resolution beneath them is tested and passes; **`FastMCP` has never served them**, because the machine they were written on has no MCP SDK. `tests/test_brain_reachable.py` reads the server as *text* to confirm they are declared, which is the same technique `test_tool_registry.py` uses on the C# and has the same limit. `A8`, and it needs Windows rather than Revit |

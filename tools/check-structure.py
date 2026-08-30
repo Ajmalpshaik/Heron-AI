@@ -87,7 +87,14 @@ PATH_OWNERS = ("platform/Heron.Core/HeronPaths.cs",
                "mcp/client/heron_bridge_client.py")
 
 CODE_EXT = (".cs", ".py", ".ps1", ".csproj")
-SKIP_DIRS = {"bin", "obj", ".vs", "__pycache__", ".git", "node_modules"}
+# "build" is generated output owned by tools/check-fragments-compile.py, and it is
+# gitignored. It is listed here because leaving it out made THIS checker report a
+# problem that did not exist: run it while a fragment compile is mid-build and the
+# few seconds of generated .cs read as "stray code outside the declared parts".
+# A checker that fails on timing is worse than one that does not run - it teaches
+# the reader to skim past checker output, which is the one habit this repository
+# cannot afford. Caught 2026-08-30 by running the two concurrently.
+SKIP_DIRS = {"bin", "obj", "build", ".vs", "__pycache__", ".git", "node_modules"}
 
 
 def walk(root):

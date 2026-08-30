@@ -142,8 +142,8 @@ whether a contract name could be a variable. [`brain/heron_fragment.py`](../brai
 now refuses that whole class instantly, so the compiler is the authority and the validator is the fast
 half that stops the mistake being made.
 
-Needs the .NET SDK (`dotnet-sdk-10.0` on Ubuntu) and no Revit and no Windows. **All 28 fragments compile
-on all 8 releases, 2020 to 2027**, verified 2026-08-29. Errors point at the fragment's own file and line,
+Needs the .NET SDK (`dotnet-sdk-10.0` on Ubuntu) and no Revit and no Windows. **All 30 fragments compile
+on all 8 releases, 2020 to 2027**, verified 2026-08-30. Errors point at the fragment's own file and line,
 not at the generated wrapper.
 
 Same limit as every compiler: it says nothing about **behaviour**. That is [D-30](../docs/DECISIONS.md)'s
