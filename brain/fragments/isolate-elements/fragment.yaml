@@ -1,0 +1,62 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-002
+semantic-identity: "show only these elements in this view, temporarily"
+kind: action
+domain: revit.views
+capability: ISOLATE_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+purpose: >
+  Shows only the given elements in one view and hides everything else -
+  Revit's Temporary Isolate, done to a set somebody has just found.
+
+  **Temporary, always.** The user clears it with Revit's own *Reset Temporary
+  Hide/Isolate*, and closing the view or reopening the model clears it too.
+  Nothing here is saved into the view, which is why this is the safe half of
+  visibility work and why a permanent version is a different capability with a
+  different risk.
+
+  **It resets any isolation already running before applying its own.** Revit's
+  isolate is additive to whatever temporary state the view is already in, so
+  isolating twice without resetting shows the union of both - which reads as
+  the filter having found too much.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: isolated
+      type: int
+    - name: viewRefused
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `CanUseTemporaryVisibilityModes`,
+  `IsTemporaryHideIsolateActive`, `DisableTemporaryViewMode` and
+  `IsolateElementsTemporary` are unchanged 2020 to 2027. The view arrives as an
+  object rather than an id, so no `ElementId` is built from an integer - which
+  is the call that breaks across 2024's move to 64-bit ids.
+
+utterances:
+  - show me just these
+  - isolate them
+  - hide everything else
+  - only show the ducts
+  - let me see these on their own

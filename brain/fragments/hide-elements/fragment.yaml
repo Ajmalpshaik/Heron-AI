@@ -1,0 +1,65 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-003
+semantic-identity: "hide these elements in this view, temporarily or for good"
+kind: action
+domain: revit.views
+capability: HIDE_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Hides the given elements in one view - the opposite of isolating, in that
+  everything else stays visible and these disappear.
+
+  **Temporary unless somebody asked for permanent, and the two are genuinely
+  different things.** A temporary hide is a look-at-this-for-a-moment and Revit's
+  own Reset clears it. A permanent hide is **saved into the view**: it survives
+  closing the model, it appears on the printed sheet, and the next person to open
+  that view has no idea why something is missing. Nothing infers which one was
+  meant - the flag is an input.
+
+  The risk on this fragment is MODIFY because of that second mode. The temporary
+  path is far lighter, and a caller that only ever hides temporarily is welcome
+  to say so - but a capability's risk is the worst thing it can do.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: permanent
+      type: bool
+      source: request
+  provides:
+    - name: hidden
+      type: int
+    - name: cannotHide
+      type: IList<ElementId>
+    - name: viewRefused
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `HideElementsTemporary`,
+  `HideElements` and `Element.CanBeHidden` are unchanged 2020 to 2027, and the
+  view arrives as an object so no ElementId is built from an integer.
+
+utterances:
+  - hide these
+  - get rid of them in this view
+  - I do not want to see the ceilings here
+  - hide it on this drawing
+  - take them off the view

@@ -20,7 +20,8 @@ so it is the one with history.
 | 2026-08-29 | 14 | 3rd | 5th | 4th | `lexical` |
 | 2026-08-29 | 17 | 3rd | not in the top 5 | 5th | `lexical` |
 | 2026-08-29 | 19 | 3rd | not in the top 5 | 5th | `lexical` |
-| 2026-08-30 | 25 | **3rd** | **not in the top 5** | 5th | `lexical` |
+| 2026-08-30 | 25 | 3rd | not in the top 5 | 5th | `lexical` |
+| 2026-08-30 | 28 | **5th** | **not in the top 5** | **not in the top 5** | `lexical` |
 
 **The words route is flat at 3rd across every size measured. The nearness route has collapsed and
 stayed collapsed.** At 17 it ranked a *move* fragment first for a question about ducts; at 19 the duct
@@ -61,6 +62,35 @@ them is noise rather than ranking. A reader who takes the top hit as "the answer
   **absence** — the nearness route does *not* find the duct filter in its top 3 — which is stable as
   fragments are added and **will fail when `A7` lands**. That failure is the thing worth being told
   about.
+
+---
+
+## 2026-08-30 — the words route moved, and it was not corpus size
+
+The keyword route sat at **3rd across five measurements** — 7, 14, 17, 19 and 25 fragments. At 28 it is
+**5th**, and the duct filter has left the fused shortlist entirely.
+
+**The cause is vocabulary collision, not dilution.** Three visibility fragments were added, and
+`isolate-elements` declares *"show me just these"* among its phrasings. The query begins *"show me"*. It
+now ranks **first**, and `set-elements-selection` is second.
+
+**The retrieval is not wrong. The question is ambiguous.** *"Show me every duct in the model"* can
+reasonably mean *which* ducts (a filter), or *put them on the screen* (isolate, or select). Three
+fragments now fairly claim that sentence, and no ranking of fragments can settle it — because the
+sentence is filter-**then**-show, and a composition is what a **skill** names, not a fragment.
+
+[docs/27](../docs/27-build-order.md) reached that conclusion once already, at 7 fragments, and retired an
+assertion for it. This is the same finding arriving with much more force: the query has been measuring
+the wrong layer since, and at 28 fragments that is no longer arguable.
+
+**What to do about it, and what not to.** Do not rewrite `isolate-elements`' phrasings to protect this
+measurement — *"show me just these"* is exactly what somebody says when they want an isolate, and taking
+it away would make the isolate unfindable to buy a number. The answer is that this query belongs to the
+**skill** layer, and the measurement here should follow a query that genuinely names one fragment.
+
+**Two things this does NOT change.** The nearness route is still absent, still for the reason recorded
+above. And `A7` is still the fix for that half — this finding is about the OTHER route, and the two are
+independent.
 
 ---
 

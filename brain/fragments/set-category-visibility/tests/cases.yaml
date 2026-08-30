@@ -1,0 +1,35 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a floor plan and the Furniture category, visible false
+    expect: >
+      all furniture disappears from that view and NOTHING disappears from any
+      other view. Check a second view - a fragment that changed the wrong scope
+      would look identical in the first one
+
+  - given: the same category set back to visible true
+    expect: it all returns. The setting is a toggle, not a one-way door
+
+  - given: >
+      the category switched off, then a NEW element of that category drawn
+    expect: >
+      the new one is invisible too. That is the whole difference from hiding
+      elements, and it is the case that shows it
+
+negative:
+  - given: a view whose TEMPLATE controls visibility and graphics
+    expect: >
+      the category names in `refused`, nothing changed, and NO exception. "That
+      view has a template" is an answer somebody can act on
+
+  - given: a category Revit does not allow to be controlled in this view
+    expect: >
+      its NAME in `notControllable`. By name, not by count - "three could not be
+      changed" is not something anybody can do anything about
+
+  - given: an empty category list
+    expect: changed 0, both lists empty, reported as nothing to do
+
+second_route:
+  - open Visibility/Graphics on the view and read the checkbox by hand
+  - a second view of the same model, which must be unaffected

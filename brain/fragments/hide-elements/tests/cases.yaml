@@ -1,0 +1,38 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a floor plan, 4 ducts, permanent false
+    expect: >
+      those 4 disappear, everything else stays, and the temporary border shows.
+      Reset Temporary Hide/Isolate brings them back
+
+  - given: the same 4, permanent TRUE
+    expect: >
+      they disappear AND STAY GONE after closing and reopening the model. That
+      persistence is the whole difference between the two modes, and it is the
+      only way to prove the flag is actually being read
+
+negative:
+  - given: an element Revit will not allow to be hidden
+    expect: >
+      its id in `cannotHide`, the rest still hidden, no exception. A batch of
+      two hundred must not be abandoned at the eleventh
+
+  - given: an EMPTY element list
+    expect: >
+      nothing hidden, the view unchanged, and NOT reported as an error. Hiding
+      nothing is harmless - unlike isolating nothing, which blanks the view
+
+  - given: a SCHEDULE as the view, permanent false
+    expect: `viewRefused` true, nothing attempted, no exception
+
+  - given: a permanent hide that was NOT asked for
+    expect: >
+      this is the case no test can catch and the reason the flag is an input.
+      Confirm out loud that the user asked for a lasting change before ever
+      passing true - a permanent hide is a change to a drawing somebody else
+      will open
+
+second_route:
+  - close and reopen the model - a temporary hide is gone, a permanent one is not
+  - the view's own Visibility/Graphics, read by hand

@@ -13,18 +13,29 @@ purpose: >
   view. Ajmal's own standard, and the values are already settled - this skill does
   not re-ask them.
 
+  His standard has FOUR parts, and this skill was written with two of them:
+  the background flattened to grey, the services brought forward, insulation
+  left as a quiet wrapper, and REBAR SWITCHED OFF. The last one is a category
+  turned off in the view rather than an override on elements - a different
+  capability, which is why it was missing rather than forgotten. Added
+  2026-08-30 once something provided it.
+
 # The words Ajmal actually says, not the words the technique is named after.
 utterances:
   - do the grayout
   - do the grayout for MEP
   - grey out the background
   - make the architecture light and the services strong
+  - grey the background and turn the rebar off
 
 # CAPABILITIES, never fragment ids. A fragment can be replaced, split or
 # retired without this file changing - that is what the registry is for.
 needs:
   - FILTER_ELEMENTS_BY_CATEGORY
   - OVERRIDE_GRAPHICS_IN_VIEW
+  # Rebar off. Not an override on elements - the CATEGORY is switched off in
+  # the view, which is why overriding graphics could never have done it.
+  - SET_CATEGORY_VISIBILITY
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).
