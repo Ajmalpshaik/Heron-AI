@@ -8,7 +8,9 @@ positive:
     expect: >
       written = 4, and the number shown in Revit MATCHES WHAT WAS TYPED. This is
       the case the whole design rests on - if a length comes back 304.8 times too
-      small or too large, SetValueString is not doing what this fragment claims
+      small or too large, SetValueString is not doing what this fragment claims.
+      Since version 2 the FRAGMENT checks this too rather than leaving it to the
+      person running the proof: `written` now means written AND read back
 
   - given: the same numeric write, with the project's units set to something else
     expect: >
@@ -34,6 +36,29 @@ negative:
   - given: a parameter that stores an ElementId, such as a Level
     expect: refused, by name. Never resolved from text by guessing
 
+  # THE CASE VERSION 1 COULD NOT HAVE PASSED, and the reason for version 2.
+  - given: >
+      a pipe or duct Diameter set to a size the type does NOT carry - 77 when the
+      type's size table holds 80. The set returns TRUE and nothing throws
+    expect: >
+      written = 0 and the element in `snapped`. NOT counted as written. This is
+      the whole point: a true return value is not evidence, and the earlier
+      library measured this exact number - 77 asked, 80 stored, true returned
+
+  - given: the same snap case, but read back BEFORE any regeneration
+    expect: >
+      the parameter still reports 77 - which is why the check regenerates first.
+      This row exists so that anybody 'simplifying' the regeneration away has to
+      delete a proof case saying it is load-bearing
+
+  - given: a batch of 40 elements where 3 snap and 37 do not
+    expect: >
+      written = 37, `snapped` carries exactly the 3 ids, and ONE regeneration
+      ran - not 40. Verify the count by timing if nothing else exposes it
+
 second_route:
   - a Revit schedule of the same parameter, read after the write
+  - >
+    for a snap, read the size in Revit's own properties palette - it must show
+    the SNAPPED value, and `written` must not have counted it
   - one Ctrl+Z must put every element back in a single step (Golden Rule 16)

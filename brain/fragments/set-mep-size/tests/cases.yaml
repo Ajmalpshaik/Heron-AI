@@ -1,0 +1,63 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 4 rectangular ducts, width 400 mm and height 250 mm, both in the type's size table
+    expect: >
+      sized = 4, snapped empty. Read the size back in Revit's properties palette -
+      400 x 250, not a number 304.8 times out, which is what a unit mistake
+      upstream looks like
+
+  - given: 4 round pipes, diameter only, a size the type carries
+    expect: sized = 4, and width/height passed as 0 changed nothing
+
+  - given: a mixed list - 2 rectangular and 2 round - with width, height AND diameter given
+    expect: >
+      all 4 sized. Each element takes the sizes its shape has and ignores the
+      others, and notApplicable stays EMPTY, because every element took at least
+      one size
+
+negative:
+  # THE CASE THE WHOLE FRAGMENT EXISTS FOR.
+  - given: a diameter the type does NOT carry - 77 where the table holds 80
+    expect: >
+      sized = 0 and the element in `snapped`. The set returns TRUE and nothing
+      throws, so a fragment reading the return value alone would report success
+      over an 80 mm pipe. Read the real size in Revit and confirm it is 80
+
+  - given: the same case, read back BEFORE any regeneration
+    expect: >
+      the parameter still reports 77. This row exists so anybody removing the
+      regeneration has to delete a proof case saying it is load-bearing
+
+  - given: >
+      one element given a width that lands and a height that snaps
+    expect: >
+      the element is in `snapped` and NOT counted in sized. A half-correct size
+      is not a success, and this is the row that catches a fragment counting the
+      good half
+
+  - given: round duct given width and height only, no diameter
+    expect: >
+      notApplicable holds those elements, sized = 0, and NOTHING was refused.
+      This is a normal thing to be handed and must not read as a failure
+
+  - given: all three sizes passed as 0
+    expect: >
+      nothing written, no regeneration, all counters empty. Zero means "leave it
+      alone" and never "set it to zero"
+
+  - given: a size on an element whose parameter is read-only, such as one driven by a system
+    expect: notApplicable, not an exception
+
+  - given: 20 elements resized, then one Ctrl+Z
+    expect: >
+      all 20 back in a single undo step. Two steps means a transaction was
+      opened here, which Golden Rule 16 forbids
+
+second_route:
+  - >
+    a Revit schedule of Width/Height/Diameter over the same elements, read after
+    the write - it must agree with `sized` and `snapped`, not with what was asked
+  - >
+    for a snap, the properties palette shows the SNAPPED value while the request
+    said something else. That difference is the whole finding

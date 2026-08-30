@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-MEP-012
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-004
+semantic-identity: "set the width, height or diameter on these MEP runs"
+kind: action
+domain: revit.mep
+capability: SET_MEP_SIZE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets duct or pipe size - width and height for rectangular, diameter for round
+  - on elements that already exist, and reports what Revit actually stored.
+
+  **Revit changes the number and says yes.** A size that is not in the type's
+  size table is snapped to the nearest one that is: ask a run for 77 and it
+  comes out 80, the set returns true, and nothing is thrown. Reporting the
+  requested number as the result is how a schedule ends up disagreeing with the
+  model, and nobody finds out until somebody measures. `snapped` is that case,
+  carrying ids and what each one became.
+
+  **The wrong size for the shape is skipped, not forced.** Width on a round duct
+  and diameter on a rectangular one are simply not there, and that is reported
+  rather than treated as a failure - it is usually the caller having one list of
+  mixed shapes, which is a normal thing to have.
+
+  It is separate from CREATE_DUCT on purpose: resizing duct that already exists
+  is at least as common as sizing it at creation, and the snap check should have
+  one home.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # Internal units. Zero means "leave this one alone", so one call can set a
+    # diameter without also being asked what the width should be.
+    - name: width
+      type: double
+      source: request
+    - name: height
+      type: double
+      source: request
+    - name: diameter
+      type: double
+      source: request
+  provides:
+    - name: sized
+      type: int
+    - name: snapped
+      type: IList<ElementId>
+    - name: notApplicable
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The sizes are reached by
+  `BuiltInParameter` - `RBS_CURVE_WIDTH_PARAM`, `RBS_CURVE_HEIGHT_PARAM` and
+  `RBS_CURVE_DIAMETER_PARAM` - which are unchanged 2020 to 2027 and, unlike a
+  name lookup, do not depend on the language Revit is running in. A fragment
+  that looked up "Width" by name would work in English and silently find
+  nothing on a French install.
+
+utterances:
+  - change these ducts to 400 by 250
+  - make the pipe 100 diameter
+  - resize the duct
+  - set the duct size
+  - change the diameter on these

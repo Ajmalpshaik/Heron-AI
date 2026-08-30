@@ -23,6 +23,7 @@ so it is the one with history.
 | 2026-08-30 | 25 | 3rd | not in the top 5 | 5th | `lexical` |
 | 2026-08-30 | 28 | **5th** | **not in the top 5** | **not in the top 5** | `lexical` |
 | 2026-08-30 | 30 | 5th | not in the top 5 (**15th of 30**) | not in the top 5 | `lexical` |
+| 2026-08-30 | 32 | **7th of 32** | not in the top 5 (**17th of 32**) | not in the top 5 | `lexical` |
 
 **The words route held 3rd from 7 to 25 fragments, then stepped to 5th at 28 and stayed there. The
 nearness route collapsed early and has stayed collapsed.** At 17 it ranked a *move* fragment first for a
@@ -47,6 +48,11 @@ amount of tuning the retrieval around it will help. Only `A7` will.
 That is not a defect in the fragments and it is not retrieval "getting worse" in general — it is exactly
 what [`heron_embed.py`](heron_embed.py) measures the built-in backend to be: **character n-grams, not
 meaning**. More fragments means more of them score spuriously close.
+
+> **"Collapsed" is about THIS QUESTION, not about the route.** The 169-sentence sweep at the bottom of
+> this file measures the same backend putting the right fragment first 60% of the time and in the top
+> three 82% of the time, when the question names one fragment. Read the two together: the backend handles
+> vocabulary overlap and fails at disambiguation, and this query is a disambiguation question.
 
 **`A7` is the fix, and it has never run.** It needs a network that can reach a model host — no Revit and
 no Windows. On the evidence above it is no longer a nice-to-have: it is the difference between a search
@@ -135,6 +141,88 @@ Neither changes a number above. Both would have corrupted a future line.
 Both are the same shape as the failure this whole file exists to prevent: **a tool that answers when it
 should decline.** A wrong number gets caught eventually; a plausible number taken on a broken run gets
 quoted for months.
+
+---
+
+## 2026-08-30 — a second instrument, and it corrects the headline
+
+At 32 fragments the tracked query moved again: the duct filter is **7th by
+words**, pushed down by `CREATE_DUCT` and `SET_MEP_SIZE` declaring *"duct"* in
+phrasings of their own. That is the third time this one query has moved for a
+reason that is nothing to do with the backend, and it is the last time it will
+be asked to carry the measurement alone.
+
+### The instrument that replaced it
+
+[`tools/check-routing.py`](../tools/check-routing.py) asks **every fragment's own
+declared utterances** back to the search and checks the fragment that claimed the
+sentence comes back first. 169 sentences across 32 fragments, measured 2026-08-30:
+
+| | #1 | top 3 |
+|---|---|---|
+| by words | **156 of 169 (92%)** | **169 of 169 (100%)** |
+| by nearness | 102 of 169 (60%) | 138 of 169 (82%) |
+
+**Read this as a LOWER BOUND and nothing more.** A fragment's own phrasing shares
+vocabulary with its own indexed text, so a pass is close to circular — it shows
+lexical overlap working, never meaning. A **failure** is the real information:
+another fragment now outranks it for words it claimed, so a request phrased that
+way lands somewhere else, silently.
+
+### And it corrects something this file has been saying
+
+The rows above are summarised as the nearness route having **collapsed**, on the
+evidence of one query where it ranks the answer dead centre of the library. That
+reading is too strong, and the 169-sentence sweep is what shows it: the same
+backend puts the right fragment **first 60% of the time and in the top three 82%
+of the time** when the question names one fragment.
+
+So the accurate statement is narrower and more useful than "collapsed":
+
+> The built-in backend handles **vocabulary overlap**. It does not handle
+> **disambiguation**. Given words that appear in one fragment's phrasings it
+> finds that fragment; given a sentence several fragments fairly claim, it
+> returns noise.
+
+That sharpens what `A7` is for. It is not needed to look a fragment up — the
+built-in backend already does that acceptably. It is needed for the case where
+the words alone do not decide, which is exactly the case a character n-gram
+model cannot reach and a trained encoder can. The earlier framing would have had
+somebody expect `A7` to improve every lookup; it should be expected to change
+the contested ones.
+
+### What the sweep found, and what was done about it
+
+Sixteen sentences were claimed by one fragment and answered by another. **Three
+were genuine errors and were corrected; thirteen were left alone**, and the split
+is the point.
+
+Corrected, because the utterance was wrong rather than unlucky:
+
+- `FILTER_ELEMENTS_BY_ID` claimed *"what is connected to that duct"* and *"trace
+  from this element"*. Those are `TRACE_CONNECTIVITY`'s sentences. Turning ids
+  into elements is the **first step** of that job, and a fragment claiming the
+  whole sentence is the composition mistake this file keeps arriving at.
+- It also claimed *"check these elements"*, which is a QA sentence.
+- `OVERRIDE_GRAPHICS_IN_VIEW` claimed *"do the grayout"* and *"do the grayout for
+  MEP"* — the **skill's** sentences, which the skill declares. And it claimed
+  *"grey the background"*, which changed owner when the background became
+  category work: **the search had already moved that sentence to the category
+  fragment on its own**, which is retrieval agreeing with a design decision
+  rather than being corrected into it.
+
+That took the words route to **100% in the top three**: every fragment is now
+reachable for every sentence it claims. The remaining thirteen are all #2 or #3 —
+`copy` against `mirror` for *"copy them across"*, `hide` against
+`category visibility` for *"I do not want to see the ceilings here"*, `rotate`
+against `flip` for *"the diffuser is the wrong way round"*. Those are real
+ambiguities in English, not defects, and several want the owner's judgement about
+which he means.
+
+**What was NOT done, and the tool exits 0 to keep it that way:** no utterance was
+weakened to buy back a rank. Taking *"show me just these"* away from the isolate
+fragment would make the isolate unfindable in order to protect a number, and a
+checker that failed a build over a collision would teach exactly that habit.
 
 ---
 

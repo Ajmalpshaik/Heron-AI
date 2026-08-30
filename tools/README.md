@@ -1,10 +1,11 @@
 # tools
 
-**Nine scripts that keep this repository honest.** Plain Python 3; the two that compile also need the
-.NET SDK, and `check-fragments-compile.py` needs PyYAML. Run them from the repository root.
+**Ten scripts that keep this repository honest.** Plain Python 3; the two that compile also need the
+.NET SDK, and `check-fragments-compile.py` and `check-routing.py` need PyYAML. Run them from the
+repository root.
 
 It said *"three small scripts that keep the documentation honest"* until 2026-08-29, which had been
-wrong on both halves for a while: there are nine, and four of them check **code** rather than prose.
+wrong on both halves for a while: there are ten, and five of them check **code** rather than prose.
 Counting them is the same discipline the rest of this file is about.
 
 They exist because this repository already got its own numbers wrong twice — the agent registry
@@ -142,12 +143,45 @@ whether a contract name could be a variable. [`brain/heron_fragment.py`](../brai
 now refuses that whole class instantly, so the compiler is the authority and the validator is the fast
 half that stops the mistake being made.
 
-Needs the .NET SDK (`dotnet-sdk-10.0` on Ubuntu) and no Revit and no Windows. **All 30 fragments compile
+Needs the .NET SDK (`dotnet-sdk-10.0` on Ubuntu) and no Revit and no Windows. **All 32 fragments compile
 on all 8 releases, 2020 to 2027**, verified 2026-08-30. Errors point at the fragment's own file and line,
 not at the generated wrapper.
 
 Same limit as every compiler: it says nothing about **behaviour**. That is [D-30](../docs/DECISIONS.md)'s
 proof with a negative case, and it needs a real model.
+
+---
+
+## `check-routing.py` — did a new fragment make an old one unfindable
+
+```bash
+python tools/check-routing.py
+```
+
+Asks **every fragment's own declared utterances** back to the search, and checks the fragment that
+claimed the sentence comes back first.
+
+It exists because adding a fragment can make an existing one unreachable, silently, and nothing else
+here would notice. That happened twice while the library was being written, and neither was visible at
+the time: `isolate-elements` declared *"show me just these"*, and later `create-duct` declared *"duct"*
+phrasings — each time the duct **filter** slid down the tracked query in
+[`brain/retrieval-history.md`](../brain/retrieval-history.md), and each time the new fragment was
+perfectly entitled to its own words.
+
+**Read a pass as a lower bound.** A fragment's phrasing shares vocabulary with its own indexed text, so
+passing is close to circular. A **failure** is real information: a request phrased that way now lands
+somewhere else.
+
+**It never fails a build, on purpose.** A collision is a judgement, not a defect — the other fragment may
+genuinely be the better answer, or the sentence may name a **composition**, which no fragment can win
+and a skill should claim. A tool that failed here would teach people to weaken utterances to buy a rank,
+and that is the one response ruled out: taking *"show me just these"* away from the isolate fragment
+would make the isolate unfindable in order to protect a measurement.
+
+Its first run over 169 sentences found sixteen contested ones. **Three were genuine errors** — a filter
+claiming two of `TRACE_CONNECTIVITY`'s sentences, and an override fragment claiming the grayout
+**skill**'s — and correcting those took the words route to **100% in the top three**. The other thirteen
+were left alone and written down.
 
 ---
 

@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two points 3000 mm apart, a valid supply system type and duct type
+    expect: >
+      created holds 1 duct, drawn between exactly those two points, at the duct
+      type's own size. Measure the length in Revit - it must be 3000 mm, not a
+      number 304.8 times out, which is what a unit mistake upstream looks like
+
+  - given: five points along an L, so four segments
+    expect: created holds 4 ducts, in order, each between consecutive points
+
+  # THE CASE THAT MATTERS MOST, AND IT IS NOT ABOUT THIS FRAGMENT'S OUTPUT.
+  - given: the same five points, then TRACE_CONNECTIVITY run over the result
+    expect: >
+      whatever it reports is the ANSWER TO A QUESTION THIS FRAGMENT DOES NOT
+      CLAIM TO KNOW. Record it. If the segments arrive connected, say so here
+      and the purpose can stop warning. If they arrive with open ends at every
+      joint - which is what a bare create is expected to do - then the warning
+      is right and a duct run needs fittings adding by something else. Either
+      way this row turns an assumption into a measurement
+
+negative:
+  - given: two identical points, or two closer together than the short-curve tolerance
+    expect: >
+      tooShort = 1, created empty, and NO exception. Counted apart from refused
+      because it is a fault in the points, which the caller can fix
+
+  - given: a points list with fewer than two entries
+    expect: created empty, tooShort = 0, refused = 0. Not an error - there was nothing to draw
+
+  - given: a duct type whose routing preferences cannot make this duct
+    expect: >
+      refused counts it and the loop CONTINUES. Prove this with a run where
+      segment 2 of 4 fails: created must hold 3, not 1, and not throw
+
+  - given: >
+      the whole operation undone with one Ctrl+Z after drawing four segments
+    expect: >
+      all four gone in a single undo step. Two steps means the fragment opened a
+      transaction of its own, which Golden Rule 16 forbids
+
+second_route:
+  - >
+    select the new duct in Revit and read Length in the properties palette - it
+    must match the distance between the points that were asked for
+  - >
+    TRACE_CONNECTIVITY over the created run, which is the only way the open-end
+    question gets a real answer

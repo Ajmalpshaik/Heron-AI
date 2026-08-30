@@ -1,0 +1,78 @@
+heron-agent: HERON-REVIT-MEP-012
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-003
+semantic-identity: "draw straight duct segments along these points"
+kind: action
+domain: revit.mep
+capability: CREATE_DUCT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws straight duct between consecutive points - one segment per pair, so two
+  points give one duct and five points give four. The plain "draw a duct from
+  here to there", not a system build.
+
+  **It does NOT connect anything, and that is the sentence to read twice.**
+  Segments come out as bare duct. Whether two that share an endpoint arrive
+  joined is not claimed here and must be checked with TRACE_CONNECTIVITY - a run
+  that LOOKS right on screen and has open ends everywhere is the failure this
+  warning exists for. Fittings, taps and transitions are not this fragment's
+  job either.
+
+  It creates at the duct type's own size. Sizing is SET_MEP_SIZE, deliberately
+  kept separate: that capability also has to serve "change these ducts to
+  400x250" on duct that already exists, and Revit's habit of snapping a size to
+  the nearest one its type allows needs checking in exactly one place.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # RESOLVED OBJECTS, never ids. A fragment taking an integer id would have to
+    # build an ElementId from it, and that constructor is exactly what breaks in
+    # Revit 2024 (D-05). Taking the object makes the trap unreachable.
+    - name: systemType
+      type: MechanicalSystemType
+      source: request
+    - name: ductType
+      type: DuctType
+      source: request
+    - name: level
+      type: Level
+      source: request
+    # Internal units, like every other geometric fragment here. Millimetres are
+    # converted by whoever read the user's sentence, once, upstream.
+    - name: points
+      type: IList<XYZ>
+      source: request
+  provides:
+    - name: created
+      type: IList<Element>
+    - name: tooShort
+      type: int
+    - name: refused
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Duct.Create` taking a system type, a
+  duct type, a level and two points is unchanged 2020 to 2027, and this fragment
+  touches no units API and constructs no ElementId - the two things that moved.
+
+utterances:
+  - draw a duct from here to there
+  - run a duct across the room
+  - add a duct between these points
+  - draw the duct run
+  - put a supply duct in

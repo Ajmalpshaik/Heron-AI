@@ -175,16 +175,53 @@ def main():
             # what a SKILL names. The assertion has been measuring the wrong
             # layer since, and at 28 that is no longer arguable.
             #
-            # So what is asserted is that it is still FOUND, with the rank in
-            # the message so movement stays visible. Falling out of the words
-            # route entirely would be a real failure; being outranked by
-            # fragments that fairly claim the sentence is not.
-            found_at = (by_word.index("FRG-ELE-001") + 1
-                        if "FRG-ELE-001" in by_word else None)
-            check(found_at is not None,
-                  "the WORDS route still finds the duct filter - rank %s of %d, "
-                  "outranked by %s, which declare 'show me' phrasings of their "
-                  "own" % (found_at, len(by_word), ", ".join(by_word[:2])))
+            # AND ON 2026-08-30 THAT CHECK WAS RETIRED, because it could not
+            # perform the check its own comment described.
+            #
+            # It read `"FRG-ELE-001" in by_word` and called that "still found".
+            # But `keywords()` returns a TOP-5 SHORTLIST, so it was always
+            # asking "is it in the top 5" - a fact about the CORPUS, which is
+            # the exact thing the comment below says makes an assertion unstable.
+            # And asked over the whole library the check is vacuous in the other
+            # direction: all 32 fragments match this query, because it contains
+            # "the", "me" and "model". Found-at-all is true of everything.
+            #
+            # It failed at 32 fragments when CREATE_DUCT and SET_MEP_SIZE
+            # arrived declaring "duct" in their own phrasings. That was the
+            # third rewrite this assertion would have needed as the library grew
+            # - and a check needing a rewrite per corpus size is not measuring
+            # the backend.
+            #
+            # SO THE ASSERTION MOVED TO A PROPERTY THAT IS ABOUT THE BACKEND: a
+            # fragment must be findable by ITS OWN DECLARED WORDS. That does not
+            # drift with corpus size, it fails only when something genuinely
+            # takes a fragment's vocabulary, and when it fails the message names
+            # the thief. `tools/check-routing.py` runs it over the whole library;
+            # this is one case of it, kept here because it is the property the
+            # words route exists to have.
+            own_words = "what is the ceiling grid spacing"
+            own_id = "FRG-GEO-007"
+            mine_w = [h["id"] for h in SEARCH.keywords(store, own_words, limit=32)]
+            rank_w = mine_w.index(own_id) + 1 if own_id in mine_w else None
+            check(rank_w == 1,
+                  "the WORDS route ranks a fragment FIRST for its own declared "
+                  "words - %s at #%s. If this ever fails, the first question is "
+                  "which fragment took the vocabulary (%s), not whether the "
+                  "backend broke" % (own_id, rank_w, mine_w[0]))
+
+            # The duct query's ranks are MEASURED here and asserted nowhere, so
+            # that movement stays visible without a test that has to be rewritten
+            # every time the library grows. brain/retrieval-history.md is where
+            # the series lives.
+            full_w = [h["id"] for h in SEARCH.keywords(store, query, limit=100)]
+            full_n = [i for i, _s in E.nearest(store, query, limit=100)]
+            print("     (measured, not asserted) '%s': duct filter is #%s of %d "
+                  "by words, #%s of %d by nearness"
+                  % (query,
+                     full_w.index("FRG-ELE-001") + 1 if "FRG-ELE-001" in full_w else "-",
+                     len(full_w),
+                     full_n.index("FRG-ELE-001") + 1 if "FRG-ELE-001" in full_n else "-",
+                     len(full_n)))
 
             # ASSERTED AS AN ABSENCE ON PURPOSE, and it is the stable form.
             #

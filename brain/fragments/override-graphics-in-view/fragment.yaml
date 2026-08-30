@@ -53,11 +53,21 @@ compatibility-note: >
   settings as an input puts that churn at the caller, and leaves this fragment
   holding only `View.SetElementOverrides`, which is unchanged 2020 to 2027.
 
+# Three sentences were removed on 2026-08-30, found by tools/check-routing.py.
+#
+# "do the grayout" and "do the grayout for MEP" belong to the mep-grayout SKILL,
+# which declares them - a grayout is filter, then override, then a category
+# switched off, and no single fragment can answer it. A fragment claiming a
+# skill's sentence wins it sometimes, which is worse than never.
+#
+# "grey the background" went because the answer to it CHANGED: the background is
+# now category work (SET_CATEGORY_GRAPHICS), so that a wall drawn tomorrow is
+# grey too. The search had already moved that sentence to the category fragment
+# on its own, which is the retrieval agreeing with the decision rather than
+# being corrected into it.
 utterances:
-  - do the grayout
-  - do the grayout for MEP
-  - grey the background
   - bring the services forward
   - make the architecture faint
   - override the colour in this view
   - halftone the walls
+  - colour these elements in this view

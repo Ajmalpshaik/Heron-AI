@@ -48,10 +48,16 @@ compatibility-note: >
   and `new ElementId(int)` is the call that breaks across that boundary. Taking
   ids rather than integers is what makes this fragment version-proof.
 
+# Three sentences were removed on 2026-08-30, found by tools/check-routing.py:
+# "trace from this element" and "what is connected to that duct" are
+# TRACE_CONNECTIVITY's, and "check these elements" is a QA sentence. This
+# fragment turns ids into elements - it is the FIRST STEP of those jobs, and a
+# fragment claiming the whole sentence is the composition mistake that
+# brain/retrieval-history.md keeps arriving at: a composition is what a SKILL
+# names. The search was already routing all three elsewhere, correctly.
 utterances:
   - these ones
   - the ones I have selected
-  - trace from this element
-  - what is connected to that duct
   - use the ids from the last answer
-  - check these elements
+  - the elements with these ids
+  - get the elements for those ids
