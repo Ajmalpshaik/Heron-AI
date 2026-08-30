@@ -1,0 +1,33 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 6 diffusers and an axis down the middle of the room, asCopy true
+    expect: >
+      6 ids in `copies`, the originals untouched, and the copies a true
+      reflection - measure one from the axis on each side and the distances
+      match
+
+  - given: the same 6, asCopy false
+    expect: they move to the reflected side and there are still 6 in the model
+
+negative:
+  - given: >
+      A CONNECTED DUCT RUN mirrored IN PLACE, without its fittings
+    expect: >
+      RECORD WHAT COMES BACK. Revit keeps the connections and re-fits the
+      geometry, so this is a constrained shape rather than a reflection. It is
+      not a fault in the fragment and it must not be "fixed" by disconnecting
+      things - the answer is to include the fittings, or to mirror as a copy.
+      Prove it once so the behaviour is known rather than discovered on a job
+
+  - given: two identical points as the axis
+    expect: >
+      `degenerate` TRUE, nothing changed, and NO exception. "Your axis has no
+      length" is something a person can act on; a stack trace is not
+
+  - given: an empty element list
+    expect: nothing mirrored, no copies, reported as nothing to do
+
+second_route:
+  - measure one element's distance to the axis before and after - equal on both sides
+  - one Ctrl+Z puts it back in a single step (Golden Rule 16)

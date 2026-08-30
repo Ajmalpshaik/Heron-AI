@@ -1,0 +1,61 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-011
+semantic-identity: "shift each linear run sideways by a perpendicular distance"
+kind: action
+domain: revit.geometry
+capability: OFFSET_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves each linear run sideways by a perpendicular distance, in plan - a
+  parallel duct beside an existing one, a pipe moved clear of a wall. Unlike a
+  plain move it follows the run: an already-curved run stays parallel to itself
+  rather than being translated.
+
+  **Offsetting a connected MEP run breaks its connections.** The geometry moves
+  and the fittings do not follow, so the run comes apart at every joint. That is
+  Revit's behaviour rather than this fragment's, and the answer is to reconnect
+  afterwards or to offset the whole run including its fittings.
+
+  In place only. A parallel COPY is COPY_ELEMENTS followed by this - which is
+  the composition working, and is why there is no copy mode here.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: distance
+      type: double
+      source: request
+  provides:
+    - name: offset
+      type: int
+    - name: notLinear
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Curve.CreateOffset` and assigning a
+  `LocationCurve.Curve` are unchanged 2020 to 2027, and the distance arrives in
+  internal feet with no units call.
+
+utterances:
+  - run another duct parallel to this
+  - move the pipe over 300
+  - offset it sideways
+  - shift the run off the wall
+  - put it parallel

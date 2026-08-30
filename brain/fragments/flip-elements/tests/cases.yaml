@@ -1,0 +1,31 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 4 doors, flipHand true
+    expect: >
+      flipped = 4 and every door SWINGS the other way on the plan. Look at one -
+      a count is what the broken version returns too
+
+  - given: air terminals with a facing control, flipFacing true
+    expect: they point the other way, and their host relationship is unchanged
+
+negative:
+  - given: a family instance whose author gave it NO flip control
+    expect: >
+      its id in `cannotFlip`, nothing attempted, no exception. This is a family
+      that would have to be edited - not a failure of the request
+
+  - given: a wall or a duct in the list
+    expect: >
+      its id in `notFamilyInstance`. Kept apart from `cannotFlip` because one is
+      the wrong selection and the other is a family limitation, and they need
+      different answers
+
+  - given: both flipHand and flipFacing false
+    expect: >
+      flipped = 0 and everything in `cannotFlip` - asking for no flip at all
+      changes nothing, and must not report success
+
+second_route:
+  - the element's own flip arrows in Revit, clicked once by hand on one instance
+  - one Ctrl+Z puts the whole batch back (Golden Rule 16)

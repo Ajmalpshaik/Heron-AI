@@ -1,0 +1,68 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-009
+semantic-identity: "mirror these elements across a vertical plane"
+kind: action
+domain: revit.geometry
+capability: MIRROR_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Mirrors elements across a vertical plane drawn through two points in plan -
+  the usual job being a room laid out as the reflection of the one next door.
+
+  It can mirror in place or leave the originals and produce mirrored copies.
+  The copy mode is the safer one and the one that composes: it hands back the
+  new ids, so the next step can work on the reflection alone.
+
+  **Mirroring CONNECTED MEP in place does not do what it looks like.** Revit
+  keeps the connections and re-fits the geometry around them, so a duct run
+  mirrored without its fittings comes back as a constrained shape rather than a
+  reflection. Include the fittings, or mirror as a copy.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: planeFrom
+      type: XYZ
+      source: request
+    - name: planeTo
+      type: XYZ
+      source: request
+    - name: asCopy
+      type: bool
+      source: request
+  provides:
+    - name: copies
+      type: IList<ElementId>
+    - name: mirrored
+      type: int
+    - name: degenerate
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementTransformUtils.MirrorElements`
+  and `Plane.CreateByNormalAndOrigin` are unchanged 2020 to 2027, and the two
+  plan points arrive in internal feet with no units call.
+
+utterances:
+  - mirror these to the other room
+  - flip this layout across
+  - the next room is a mirror of this one
+  - reflect them about the centre line
+  - copy it mirrored
