@@ -206,11 +206,18 @@ def main():
         # Read the pipe name from the host itself rather than from the
         # discovery file - this test is about the transport, not discovery.
         pipe_name = None
+        # Keep what the host actually said. Without this the failure below
+        # reports the SYMPTOM - no pipe name - for every possible cause, and
+        # the commonest cause on a fresh machine is not a bridge fault at all
+        # (see the runtime note under the failure).
+        said = []
         deadline = time.time() + 20
         while time.time() < deadline:
             line = proc.stdout.readline()
             if not line:
                 break
+            if len(said) < 40:          # enough to diagnose, not a transcript
+                said.append(line.rstrip())
             m = re.search(r"Pipe\s+(heron\.\S+)", line)
             if m:
                 pipe_name = m.group(1)
@@ -221,6 +228,24 @@ def main():
                 break
         if not pipe_name:
             print("FAIL  host never reported a pipe name")
+            # The host is built for net8.0 on purpose. A machine carrying only
+            # the .NET 10 SDK - which is exactly what docs/30 tells you to
+            # install, because it is the one that compiles all eight releases -
+            # has no 8.0 runtime, so the host cannot start at all. That is the
+            # environment, not the bridge, and saying so here saves the reader
+            # debugging a transport that never ran.
+            blob = "\n".join(said)
+            if "must install or update .NET" in blob or "Microsoft.NETCore.App" in blob:
+                print("      The host could not START: no .NET 8 runtime on this machine.")
+                print("      It compiled fine - nothing here is evidence about the bridge.")
+                print("      Either:  apt-get install -y dotnet-runtime-8.0")
+                print("      or:      DOTNET_ROLL_FORWARD=Major python tests/test_bridge_roundtrip.py")
+            elif said:
+                print("      The host said, before giving up:")
+                for said_line in said[:8]:
+                    print("        | %s" % said_line)
+            else:
+                print("      The host said nothing at all.")
             return 1
         print("  pipe: %s" % pipe_name)
 

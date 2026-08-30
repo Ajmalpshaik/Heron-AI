@@ -80,7 +80,11 @@ out("  defined: %s\n" % sorted(q_def))
 out("  REFERENCED BUT NOT DEFINED: %s\n\n" % sorted(q_ref - q_def))
 
 # ---------- 5. count claims ----------
-out("=== 5. COUNT CLAIMS (verify by hand) ===\n")
+out("=== 5. COUNT CLAIMS - context for the eye. Section 7 is what ENFORCES ===\n")
+# The heading used to read "verify by hand", and section 7 exists because
+# nobody ever did. What prints here is now context around checks that
+# actually fail: question counts and the Constitution's status are
+# enforced below, so a line here is a prompt to read, not a duty to audit.
 for p in ['./README.md', './docs/README.md']:
     s = allsrc.get(p, '')
     for m in re.finditer(r'[^\n]*(?:answered|proposed|Articles|official rules)[^\n]*', s):

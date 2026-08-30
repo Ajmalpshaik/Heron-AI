@@ -226,6 +226,44 @@ network"* into *"a machine whose egress policy permits the model host"*, which i
 points squarely at the owner's own PC. Worth knowing before trying again: the `sentence_transformers`
 fallback fetches from **the same host**, so it is not a second route.
 
+### Then the C# was compiled and the bridge was actually run, in this container
+
+**The .NET SDK is not on a fresh box, and the distro packages it** — `apt-get update` (the index is
+stale and the first install 404s without it) then `apt-get install -y dotnet-sdk-10.0`, which is what
+[docs/30](docs/30-compiling-away-from-windows.md) already said. From there, two things that had been
+*described* here were *done*:
+
+| | |
+|---|---|
+| `check-compile.py` | **All eight releases, all four projects, zero warnings** — 2020 through 2027, reproduced independently in a fresh container rather than inherited from the sentence that claimed it |
+| `test_bridge_roundtrip.py` | **Built and run for the first time on this machine.** 30 checks, the whole lease among them. This is the 17th suite; with it the repository stands at **17 of 17 passing, 544 checks** |
+
+**Getting there cost two failures, and neither was a defect** — both are written up under §5 with the
+corrected commands. One was the shared `bin/x64/Debug` folder that `check-compile.py` fills first; the
+other was that the SDK this file tells you to install carries **no .NET 8 runtime**, so the net8.0 host
+cannot start.
+
+**That second one produced a real, small fix.** The test reported it as *"host never reported a pipe
+name"* — the symptom of every possible cause, including a genuinely broken bridge. It now keeps what the
+host actually said and names the runtime case outright, with both remedies. Validated in both
+directions: it still passes with the runtime present, and it prints the new diagnosis with it absent.
+That is the same class as the four tools the seventh session caught **answering when they should have
+declined**.
+
+### The checkers were then audited for the same defect this session started with
+
+If a checker that prints without failing let five drifts survive, the obvious question is how many other
+checkers do that. **Answer: none.** Every tool in `tools/` either fails on what it prints, or is a
+generator, or is `check-routing.py`, which never fails **on purpose and says so**. `check-metadata.py`
+goes further and guards the case that worries this repository most — a check that has quietly stopped
+guarding anything — by *raising a problem* when the claim it verifies has been reworded away, rather
+than passing an empty pass.
+
+**So the defect was real and isolated, and the audit is recorded as a negative result rather than
+inflated into findings.** One thing did change: section 5 of `check-docs.py` no longer calls itself
+*"verify by hand"*, because that heading is what the section 7 story is about — it now says which
+section actually enforces.
+
 ### What was deliberately NOT done
 
 - **No fragments were added.** [31 §4](docs/31-studying-the-existing-libraries.md) is explicit that this
@@ -762,9 +800,16 @@ python tools/check-routing.py             # every fragment, asked its own words 
 > stores are **derived** — deleting them is always a safe recovery, and `python brain/heron_scope.py
 > --rebuild` puts them back.
 
-**15 suites, 435 individual `ok`/`PASS` lines, all passing** — derived, not typed:
-`for f in tests/test_*.py; do python3 "$f"; done | grep -cE '^\s*(ok|PASS)\b'`. The sixteenth suite,
-`test_bridge_roundtrip.py`, runs here too but needs its host built first (below), which takes it to 465.
+**17 suites, 544 individual `ok`/`PASS` lines, all passing** — derived, not typed:
+`for f in tests/test_*.py; do python3 "$f"; done | grep -cE '^\s*(ok|PASS)\b'`. **That now includes
+`test_bridge_roundtrip.py`**, which needs its host built first (below) and, on 2026-08-30, was built and
+run here rather than described — 30 checks by the same count, including the whole lease.
+
+> Those figures replace *"15 suites, 435 lines… the sixteenth takes it to 465"*, and the gap is the
+> point: the counts were right when written and nothing recomputed them as the library grew. **A count
+> in prose is a claim, and only `check-docs.py` section 7 enforces any of them** — it covers question
+> counts and the Constitution's status, not these. Re-derive with the command above rather than trusting
+> the digits in this sentence.
 
 **And one command that runs all of the above and then looks for what is missing:**
 
@@ -785,13 +830,29 @@ that carried meaning.
 ```bash
 python tools/check-compile.py                  # Revit 2020-2027, all four projects, 0 warnings
 
-dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 -p:HeronTfm=net8.0
-python tests/test_bridge_roundtrip.py          # 32 checks, including the whole lease
+dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 -p:HeronTfm=net8.0 \
+    -p:OutputPath=bin/x64/Debug-net8.0/
+python tests/test_bridge_roundtrip.py          # 30 checks, including the whole lease
 ```
 
 The first needs the .NET SDK, which Linux distributions package — Microsoft's CDN is often blocked from a
 container and that is the wall earlier sessions hit. The second runs because `Heron.Bridge` has no Revit
 reference, so it compiles for `net8.0` and .NET implements named pipes on Unix as a socket.
+
+> **Both extra arguments above were added on 2026-08-30, after following this section verbatim failed
+> twice.** Neither failure was a defect, and neither announced itself as an environment problem:
+>
+> - **`-p:OutputPath` is not optional if `check-compile.py` ran first** — and this section tells you to
+>   run it first. That tool builds the same project once per Revit release into the shared
+>   `bin/x64/Debug`, so the POSIX host needs its own folder or the test finds the wrong artifact.
+>   `test_bridge_roundtrip.py` had already documented this interaction in its own header and printed the
+>   corrected command on failure; only this section was missing it.
+> - **`apt-get install -y dotnet-sdk-10.0` gives you a machine that cannot run this test.** The host
+>   targets `net8.0`, the .NET 10 SDK carries no 8.0 runtime, and the host then fails to start — which
+>   the test reported as *"host never reported a pipe name"*, the symptom of every possible cause. Fix
+>   with `apt-get install -y dotnet-runtime-8.0`, or `DOTNET_ROLL_FORWARD=Major`. **The test now names
+>   this case itself** rather than blaming the transport. Also worth knowing: the first
+>   `apt-get install` 404s on a stale index — run `apt-get update` first.
 
 **What that still does not cover is the Windows named pipe itself** — its naming, its security
 descriptor, and the `CreateNewInstance` flag in note 2 of [§4](#4-the-things-that-will-bite-you). `A4`
