@@ -137,7 +137,18 @@ def main():
             check(G.composes_into("FRG-ELE-001") == before,
                   "put it back and the graph returns to what it was - it is "
                   "reading the files, not remembering")
-            check(not G.orphans(store), "and the orphans go with it")
+
+            # Asserts THE BREAK'S orphans are gone, not that the library has
+            # none. It used to say `not G.orphans(store)` - a claim about the
+            # whole library, which held only while every fragment was a filter
+            # feeding an action. GET_ACTIVE_VIEW broke it by being legitimately
+            # standalone: it is consumed by the HOST, which the graph does not
+            # model (D-46). Testing the thing under test survives the library
+            # growing; testing a global property does not, and this is the
+            # second assertion in this file to learn that.
+            healed = [i for i, _w in G.orphans(store)]
+            check("FRG-ELE-001" not in healed and "FRG-SEL-001" not in healed,
+                  "and the orphans the break created go with it")
 
             print()
             print("2. What breaks if this changes")

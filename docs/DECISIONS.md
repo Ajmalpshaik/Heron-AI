@@ -92,6 +92,7 @@ an edit.
 | [D-43](#d-43--the-constitution-is-accepted-all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
 | [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted |
 | [D-45](#d-45--the-library-is-built-out-first-and-proved-in-one-pass-later) | The library is built out first, and proved in one pass later | ✅ Accepted |
+| [D-46](#d-46--a-context-fragment-is-consumed-by-the-host-not-by-another-fragment) | A context fragment is consumed by the host, not by another fragment | 🔶 Proposed — needs the owner |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -2314,4 +2315,70 @@ and a defect found in one is fixed in one place.
   rather than disappearing into a pass.
 - **A recipe is not a fragment.** The 44 multi-stage recipes read as **skills** in Heron's shape, which
   name capabilities rather than fragments; they are re-authored as skills or not at all.
+
+---
+
+## D-46 — A context fragment is consumed by the host, not by another fragment
+
+**Status:** Proposed · **Date:** 2026-08-31 · **Revisits:** [31 §1](31-studying-the-existing-libraries.md),
+**Touches:** [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer), Step 13's dependency graph
+
+### Context
+
+[31 §1](31-studying-the-existing-libraries.md) recorded that the earlier library has **context**
+fragments — what is open, which view, which document — and judged that they need no new `kind` in
+Heron, because context reads the session rather than elements, which is *"a filter whose `provides` is
+a document or a view."* It ended with an instruction: **revisit when a real one is written and the
+contract is in front of you.**
+
+It is now in front of us. `GET_ACTIVE_VIEW` (`FRG-DOC-003`) exists, and it was not written on a hunch —
+**the dependency graph asked for it.** `TAG_ELEMENTS_IN_VIEW` needs both `elements` and a `view`, and
+the graph reported it as an action nothing could feed, because every filter in the library provides
+elements and none provided a view.
+
+### What the contract turned out to say
+
+**Half the judgement holds and half of it does not.**
+
+**It holds as a `kind`.** `GET_ACTIVE_VIEW` declares `kind: filter`, provides a `View`, and nothing
+about the contract strained. No fourth kind is needed, exactly as 31 §1 predicted.
+
+**It does not hold in the graph.** `composable(producer, consumer)` requires **one producer to satisfy
+every fragment-sourced need of the consumer**. So two filters can never jointly feed one action, and a
+context fragment — whose output the HOST takes and passes on — has no fragment-level consumer at all.
+The graph therefore reports it as *"a filter nothing can consume"* forever, which is true of the model
+and false about the fragment.
+
+### What was actually done, and what was NOT
+
+**The right fix was to the contract, not to the graph.** `view` on an action is `source: request` —
+which view the user means is the host's to resolve from *"this view"*, exactly like `category` on a
+filter. Applied to `TAG_ELEMENTS_IN_VIEW`, that removed the orphan honestly, and the graph's report
+turns out to have been **correct about a mislabelled need** rather than a limitation being hit.
+
+**`GET_ACTIVE_VIEW` was written and then removed.** It was authored to feed the `view` need, and the
+contract fix made it unnecessary the same hour — nothing in the library consumes it, and there is no
+executor or host path that calls it yet. [31 §2](31-studying-the-existing-libraries.md) Rule 2 says
+*add nothing speculative*, and keeping it would also have left `check-gaps.py` permanently red on a
+condition already understood. **A checker that is always red stops meaning anything**, which is the
+exact failure the 2026-08-26 daily-check note records. It goes back when something needs it.
+
+Its `kind` was not the problem, and that half of 31 §1 stands confirmed: it declared `kind: filter`,
+provided a `View`, and nothing about the contract strained. **No fourth kind is needed.**
+
+### The open question, and why it waits
+
+**The graph cannot express an action fed by two filters.** `composable(producer, consumer)` requires
+ONE producer to satisfy EVERY fragment-sourced need. Nothing needs that today, because `view` was
+always a request input. But a genuine two-filter composition will exist eventually, and lifting the
+limit means letting several producers jointly satisfy one consumer — a real change to Step 13's design.
+
+That change is cheap to make and expensive to be wrong about: it decides what *"what breaks if this
+changes"* answers, which is the question Step 13 exists to answer. **The evidence should come from a
+real composition running at the PC, not from a library that has never executed.** So it is recorded
+here and left, rather than a graph quietly taught to stay quiet.
+
+`tests/test_graph.py` was narrowed accordingly: it asserts that **the break's** orphans heal, not that
+the library has none. That assertion was a claim about the whole library, and it held only while every
+fragment was a filter feeding an action.
 

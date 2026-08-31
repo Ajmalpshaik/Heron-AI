@@ -93,6 +93,19 @@ CSPROJ = """<Project Sdk="Microsoft.NET.Sdk">
     <!-- A fragment legitimately leaves names for a later fragment to use, so
          "assigned but never used" is not a defect here. Everything else is. -->
     <NoWarn>$(NoWarn);CS0219;CS0168</NoWarn>
+    <!-- The SAME compilation symbols the add-in is built with, mirrored from
+         Directory.Build.props. Without them a fragment cannot express a version
+         split that the add-in handles routinely - and some splits have no
+         single expression: IndependentTag.GetTaggedLocalElementIds does not
+         exist before 2022, and the singular property it replaced is deprecated
+         after. A fragment forced to pick one is simply wrong on half the range.
+         If Directory.Build.props gains a symbol, add it here too, or fragments
+         and the add-in stop being compiled the same way. -->
+    <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
+    <DefineConstants Condition="'$(RevitVersion)' &gt;= '2024'">$(DefineConstants);REVIT2024_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="'$(RevitVersion)' &gt;= '2025'">$(DefineConstants);REVIT2025_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="'$(RevitVersion)' &gt;= '2026'">$(DefineConstants);REVIT2026_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="'$(RevitVersion)' &gt;= '2027'">$(DefineConstants);REVIT2027_OR_GREATER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" ExcludeAssets="runtime" />
