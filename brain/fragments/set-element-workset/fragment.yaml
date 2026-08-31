@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-WRK-014
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-015
+semantic-identity: "move these elements onto a different workset"
+kind: action
+domain: revit.elements
+capability: SET_ELEMENT_WORKSET
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts elements on a named workset. On a shared job that is how services get
+  handed between disciplines and how a model stays openable — and elements
+  modelled on the wrong workset is one of the commonest things found at a
+  coordination review.
+
+  **It reports what CHANGED, and an element already on that workset is counted
+  separately.** "Moved 200" when 190 were already there is the failure this
+  project keeps meeting.
+
+  **An element owned by another user cannot be moved and it fails at the write.**
+  `READ_ELEMENT_OWNERSHIP` is the fragment that turns that into a sentence
+  beforehand rather than a batch that stops at the eleventh — this one reports
+  the refusal it hits.
+
+  **A workset is not a phase, a design option or a filter**, and all four get
+  described as "which one it belongs to". Only this one decides who can edit it
+  and whether it loads when the model opens.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: worksetId
+      type: int
+      source: request
+  provides:
+    - name: moved
+      type: int
+    - name: alreadyThere
+      type: int
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The workset is set through the
+  `ELEM_PARTITION_PARAM` built-in parameter, which is an INTEGER on every
+  release 2020 to 2027 — a WorksetId is not an ElementId and was not touched by
+  2024's move to 64-bit ids, so `worksetId` is an int here deliberately and not
+  by oversight.
+
+# ROUTING - repeated in READ_ELEMENT_OWNERSHIP.
+#
+#   "put them on a different workset"  -> here
+#   "what workset is this on"          -> READ_ELEMENT_PARAMETERS reads it, and
+#                                         DESCRIBE_ELEMENTS does not
+#   "who owns this"                    -> READ_ELEMENT_OWNERSHIP
+#   "why can I not change this"        -> READ_ELEMENT_OWNERSHIP first
+#
+# WORKSET AND OWNERSHIP ARE NOT THE SAME THING and both are said as "whose is
+# it". The workset is where an element lives; ownership is who holds it right
+# now. Moving worksets does not release an element somebody else has.
+
+utterances:
+  - put them on a different workset
+  - move these to the MEP workset
+  - change the workset
+  - they are on the wrong workset
+  - set the workset on these

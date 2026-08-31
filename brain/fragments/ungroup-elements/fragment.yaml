@@ -1,0 +1,77 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-013
+semantic-identity: "break these groups apart into their members"
+kind: action
+domain: revit.elements
+capability: UNGROUP_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Breaks groups apart and hands back the elements that were inside them.
+
+  **The commonest reason to reach for this is that something will not move.** A
+  group member silently refuses to move — Revit's move returns normally and
+  moves nothing — and ungrouping is one of the three fixes for "it will not
+  move", the other two being unpinning and getting ownership. They look
+  identical to the user and are not interchangeable.
+
+  **Ungrouping one instance changes only that instance.** The group TYPE stays
+  in the project and every other placed instance is untouched, which is what
+  somebody expects and is worth stating because deleting the type is a
+  different, much larger action.
+
+  **The members come back, which is what makes this composable.** Ungroup and
+  then move is a real two-step job, and the second step needs the elements the
+  first one released.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: ungrouped
+      type: int
+    - name: notGroups
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Group.UngroupMembers()` returns the
+  released member ids on every release 2020 to 2027 and no ElementId is built
+  from an integer.
+
+# ROUTING - repeated in GROUP_ELEMENTS and MOVE_ELEMENTS.
+#
+#   "ungroup them"                    -> here
+#   "group these"                     -> GROUP_ELEMENTS
+#   "why will these not move"         -> three different causes with three
+#                                        different fixes: a GROUP member
+#                                        (here), a PINNED element
+#                                        (SET_PIN_STATE), or one OWNED by
+#                                        somebody else (READ_ELEMENT_OWNERSHIP)
+#
+# ALL THREE PRESENT AS "IT WILL NOT MOVE". Ungrouping something pinned does
+# nothing; unpinning something owned does nothing. Guessing wastes the fix.
+
+utterances:
+  - ungroup them
+  - break the group apart
+  - explode this group
+  - take these out of the group
+  - it will not move because it is in a group

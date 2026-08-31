@@ -1,0 +1,24 @@
+positive:
+  - given: a duct created in "New Construction"
+    expect: createdPhase reads "New Construction", the element is absent from demolishedPhase, matching the Properties palette
+
+negative:
+  - given: a duct created in "Existing" AND demolished in "New Construction"
+    expect: >
+      it appears in BOTH dictionaries. Reading only createdPhase reports it as
+      existing services, identically to one that is staying - and those are
+      opposite instructions on site: leave it, or take it out
+
+  - given: an element that is not phased at all
+    expect: >
+      it is in noPhase, and it is NOT recorded as "none" in createdPhase. A word
+      invented here would be compared against by string somewhere later
+
+  - given: the same elements read while a view showing them has a different phase filter
+    expect: >
+      the answer does not change. A view's phase filter decides what is DRAWN,
+      not what an element IS - and "why is this not showing" is a question about
+      the view that this fragment does not answer
+
+second_route:
+  - The Properties palette, Phasing section, for one element - Phase Created and Phase Demolished

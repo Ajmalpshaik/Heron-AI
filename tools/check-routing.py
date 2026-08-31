@@ -99,6 +99,7 @@ def main(argv):
     import heron_scope as SCOPE
     import heron_search as SEARCH
     import heron_embed as EMBED
+    import heron_retrieve as RETRIEVE
 
     # The stores are DERIVED (Golden Rule 11), so an empty one is a fresh machine
     # rather than damage, and a checker should run on a fresh machine without a
@@ -171,39 +172,74 @@ def main(argv):
             print("library has no COLLISIONS, never that retrieval is good.")
             return 0
 
-        # THE DANGEROUS SUBSET, SEPARATED OUT - a question answered by a
+        # THE DANGEROUS SUBSET - a question the HOST would answer with a
         # fragment that CHANGES THE MODEL.
         #
         # Every collision above is a judgement, and most are harmless: two read
-        # fragments arguing over a sentence produce a slightly worse answer.
-        # This subset is different in kind. "What category is this" and "check
-        # the tagging on this drawing" are both questions, and both were
-        # answered by fragments that write - one that overrides category
-        # graphics, one that places tags. A caller acting on the top hit does
-        # not get a poor answer; it modifies the model in reply to a question.
+        # fragments arguing produce a slightly worse answer. This subset is
+        # different in kind - a caller acting on the answer does not get a poor
+        # reply to its question, it modifies the model in reply to one.
         #
-        # Measured 2026-08-31: three of the contested sentences had this shape,
-        # and the section above could not distinguish them from the other
-        # fifteen. Risk is already declared on every fragment, so this costs a
-        # lookup.
+        # IT CALLS `find`, WHICH IS WHAT THE HOST CALLS - AND IT TOOK TWO GOES
+        # TO GET THAT RIGHT, WHICH IS THE POINT WORTH KEEPING.
+        #
+        # Written 2026-08-31 against `taken`, the KEYWORD ranking. It reported
+        # sentences as answered by a writer when the host answered them
+        # correctly - a claim about a route no caller uses.
+        #
+        # Corrected to `retrieve`, the fused stage. Still wrong, and less
+        # obviously so: `retrieve` is fusion ALONE, while the host goes through
+        # `find`, which tries the identity and cache short circuits FIRST. A
+        # sentence that is a fragment's own declared utterance is answered by
+        # identity and never reaches fusion at all - so the fused ranking said
+        # "a writer wins" for a sentence the host resolves exactly right.
+        #
+        # THE RULE THIS LEAVES: a check that makes a claim about CONSEQUENCE
+        # must call the same entry point the system calls, not the stage that
+        # looks like it. The section above is a per-route diagnostic and says
+        # so; this one says what would actually happen, so it has to ask the
+        # thing that actually happens.
         risky = []
-        for said, fid, rank, winner in taken:
+        for said, fid, _rank, _winner in taken:
             if risk_of(store, fid) != "READ":
                 continue
-            if risk_of(store, winner) in ("READ", None):
-                continue
-            risky.append((said, fid, rank, winner))
 
-        if risky:
+            answer = RETRIEVE.find(store, said, limit=1)
+            served = getattr(answer, "fragment_id", None)
+            if not served or served == fid:
+                continue                    # the host answers correctly
+            if risk_of(store, served) in ("READ", None):
+                continue
+
+            risky.append((said, fid, "served", served))
+
+        print()
+        if not risky:
+            print("NO QUESTION IS ANSWERED BY SOMETHING THAT WRITES - and read")
+            print("what that green is worth before trusting it.")
             print()
+            print("  This checks each fragment's OWN DECLARED utterances, and")
+            print("  those are exactly the sentences `find` answers by IDENTITY -")
+            print("  an exact declared phrasing is resolved before any ranking")
+            print("  runs. So while the identity route holds, this section is")
+            print("  empty BY CONSTRUCTION, and its emptiness says the identity")
+            print("  route works - not that no question can reach a writer.")
+            print()
+            print("  THE REAL RISK SURFACE IS PARAPHRASE, which no fragment")
+            print("  declares and this corpus therefore does not contain. What")
+            print("  this does still catch: a declared question that stops being")
+            print("  matched by identity, or two fragments declaring one sentence")
+            print("  where the survivor writes.")
+        else:
             print("A QUESTION ANSWERED BY SOMETHING THAT WRITES (%d):" % len(risky))
             print()
-            for said, fid, rank, winner in risky:
-                print("  %-44s %s (READ) is #%-4s  %s answers instead"
-                      % ('"' + said + '"', fid, rank, winner))
+            for said, fid, _how, winner in risky:
+                print("  %-44s %s (READ) loses; %s is SERVED"
+                      % ('"' + said + '"', fid, winner))
             print()
-            print("  These are worse than a plain collision. A caller acting on")
-            print("  the top hit does not get a poor answer to its question - it")
+            print("  Measured through `find` - the same entry point the host")
+            print("  calls, identity and cache first. A caller acting on this")
+            print("  answer does not get a poor reply to its question; it")
             print("  CHANGES THE MODEL in reply to one. Fix the read fragment's")
             print("  reach or the writer's wording; never leave it because the")
             print("  rank looks close.")

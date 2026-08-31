@@ -1,0 +1,24 @@
+positive:
+  - given: 30 plan views and the office's MEP template
+    expect: applied is 30, alreadyOnIt 0, refused empty, and each view shows the template name in its Properties
+
+negative:
+  - given: 30 views of which 28 ALREADY have that template
+    expect: >
+      applied is 2 and alreadyOnIt is 28 - not applied 30. Revit accepts all
+      thirty and changes nothing for twenty-eight
+
+  - given: a view carrying hand-applied graphic overrides, then a template that controls V/G
+    expect: >
+      the template applies AND the overrides stop having any effect. They are
+      not deleted - they are overruled and become unreachable, which reads as
+      the work having been lost. Neither call reports the conflict, which is why
+      the routing table names it
+
+  - given: a batch containing a view TEMPLATE rather than a view
+    expect: >
+      its id is in refused and the rest still apply - a template cannot be
+      applied to a template, and an exception would abandon the remaining views
+
+second_route:
+  - The View Template row in each view's Properties palette, and the greyed-out settings it locks

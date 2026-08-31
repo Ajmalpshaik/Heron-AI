@@ -1,0 +1,76 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-012
+semantic-identity: "make a copy of this view"
+kind: action
+domain: revit.views
+capability: DUPLICATE_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Duplicates views. The first step of almost every drawing job — a coordination
+  view, a services-only plan, a view to mark something up on without touching
+  the issued one.
+
+  **The three duplicate options are different jobs and Revit's names for them
+  do not say so.**
+
+  - `Duplicate` — geometry only. No annotation, no tags, no dimensions.
+  - `WithDetailing` — geometry plus the annotation, copied and independent.
+  - `AsDependent` — a child that follows the parent. Crop and scope box are
+    its own; everything else stays tied, forever.
+
+  The third is not "a copy" in the sense anybody means when they say copy, and
+  choosing it by accident produces a view that mysteriously will not accept
+  changes. **So the option is a stated input with no default** — D-33.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: views
+      type: IList<View>
+      source: request
+    - name: option
+      type: ViewDuplicateOption
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.Duplicate(ViewDuplicateOption)`
+  and `View.CanViewBeDuplicated` are unchanged 2020 to 2027, and the returned
+  ElementId is used as an object rather than as a number.
+
+# ROUTING - repeated in APPLY_VIEW_TEMPLATE.
+#
+#   "duplicate this view"          -> here
+#   "make a copy of this plan"     -> here
+#   "make a new 3d view"           -> NOT here. Duplicating an existing view
+#                                     and creating one from scratch are
+#                                     different jobs and this does only the
+#                                     first
+#   "copy these to the other floors" -> COPY_ELEMENTS - elements, not views
+#
+# "COPY" MEANS ELEMENTS OR VIEWS DEPENDING ON THE SENTENCE, and the two
+# fragments do completely different things.
+
+utterances:
+  - duplicate this view
+  - make a copy of this view
+  - duplicate with detailing
+  - make a dependent view
+  - copy this plan for coordination

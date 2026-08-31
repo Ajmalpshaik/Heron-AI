@@ -1,0 +1,72 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-014
+semantic-identity: "what phase were these created in, and when are they demolished"
+kind: action
+domain: revit.reporting
+capability: READ_ELEMENT_PHASE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  The phase an element was created in, and the phase it is demolished in if it
+  is. On a refurbishment that is the difference between existing services and
+  new ones, and it is invisible in most views.
+
+  **An element has TWO phases, not one, and reading only the first is the
+  mistake.** Created and demolished together are what say whether something is
+  existing-to-remain, existing-to-be-demolished, or new. An element created in
+  "Existing" reads identically to one that is also demolished in "Phase 1"
+  until the second is read, and those are opposite instructions on site.
+
+  **A view's phase filter decides what is DRAWN, not what an element IS.** Two
+  views can show the same model completely differently, and neither changes
+  what this reports. Somebody asking "why is this not showing" is usually asking
+  about the view, which is a different question.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: createdPhase
+      type: IDictionary<ElementId, string>
+    - name: demolishedPhase
+      type: IDictionary<ElementId, string>
+    - name: noPhase
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The `PHASE_CREATED` and `PHASE_DEMOLISHED`
+  built-in parameters and `Element.Name` on a Phase are unchanged 2020 to 2027.
+  The phase is read through the PARAMETER rather than through `CreatedPhaseId`,
+  which is the property that does not exist on every element kind - the
+  parameter answers for anything that has a phase at all.
+
+# ROUTING - repeated in DESCRIBE_ELEMENTS.
+#
+#   "what phase is this on"        -> here
+#   "is this existing or new"      -> here - and it needs BOTH phases
+#   "what is this element"         -> DESCRIBE_ELEMENTS
+#   "why is this not showing"      -> usually the VIEW's phase filter, which is
+#                                     a property of the view and not of the
+#                                     element. Nothing here answers it
+#
+# THE ELEMENT'S PHASE AND THE VIEW'S PHASE FILTER ARE DIFFERENT THINGS and the
+# same sentence asks for both. This fragment answers only the first.
+
+utterances:
+  - what phase is this on
+  - which phase were these created in
+  - is this existing or new
+  - is this being demolished
+  - what phase are the services
