@@ -1,0 +1,42 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a model with several schedules, nameContains ""
+    expect: >
+      every real schedule and NOT one template or internal one. Compare against
+      the Schedules/Quantities branch of the Project Browser by eye - the count
+      must match what a person can see, not exceed it
+
+  - given: nameContains "door"
+    expect: only schedules whose name contains it, in any casing
+
+negative:
+  - given: a model containing a REVISION schedule or another angle-bracketed one
+    expect: >
+      it is NOT in elements and skippedInternal is at least 1. Revit creates
+      these for its own bookkeeping and an action pointed at one does something
+      nobody asked for
+
+  - given: >
+      a SCHEDULE TEMPLATE named like a real schedule, asked for by that name
+    expect: >
+      it is excluded and matchedButExcluded is at least 1 - the same trap
+      FIND_VIEWS has with view templates
+
+  - given: a name that matches nothing at all
+    expect: >
+      elements empty AND matchedButExcluded = 0. Together with the case above
+      this is the point: empty with a non-zero matchedButExcluded means "found
+      it and refused it", empty with zero means "there is no such schedule"
+
+  - given: >
+      a REAL user schedule that somebody named starting with an angle bracket
+    expect: >
+      it is excluded and counted in skippedInternal. This is the known cost of
+      recognising internal schedules by name - Revit exposes no property that
+      separates them - and the count is reported so the loss is visible rather
+      than silent
+
+second_route:
+  - count the schedules in the Project Browser by eye and compare
+  - open one returned schedule - it must open as a schedule with real rows

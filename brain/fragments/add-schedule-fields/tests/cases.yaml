@@ -1,0 +1,46 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one door schedule and fieldNames ["Comments"]
+    expect: >
+      added = 1, alreadyPresent = 0, unknownField empty. Then OPEN THE SCHEDULE
+      in Revit - a Comments column, with the real values in it. A count says
+      nothing about whether the column carries data
+
+  - given: the SAME call run a second time
+    expect: >
+      added = 0 and alreadyPresent = 1, and the schedule still has exactly ONE
+      Comments column. Two identical columns look plausible on screen and are
+      wrong on the sheet
+
+  - given: several schedules of different categories in one call
+    expect: >
+      each gets the field if its category has it, and availableFields holds the
+      union of what those categories offer
+
+negative:
+  - given: a field name misspelled, e.g. "Coments"
+    expect: >
+      it in unknownField, added = 0 for it, AND availableFields listing the real
+      names. This is the case the fragment exists for - the version it was
+      re-authored from put a spelling mistake, an already-present column and a
+      not-addable field into ONE counter, and its own comment said so
+
+  - given: >
+      a field name that is real for another category but not this one, e.g. a
+      duct-only field asked of a door schedule
+    expect: >
+      it in unknownField and the real names for THIS category in
+      availableFields. Schedulable fields are category-specific and are not free
+      text, which is exactly what this makes visible
+
+  - given: an element that is not a schedule, e.g. a floor plan
+    expect: it is skipped, no exception, the real schedules still processed
+
+  - given: an empty fieldNames list
+    expect: nothing added, reported as nothing to do
+
+second_route:
+  - open the schedule and look at the columns, not the count
+  - run twice and confirm no schedule gains a duplicate column
+  - one Ctrl+Z removes every added column in a single step (Golden Rule 16)

@@ -30,7 +30,18 @@ purpose: >
   set, while placing a viewport or exporting to PDF cannot use one at all.
 
   Silent omission is the worse failure of the two, so nothing is dropped here -
-  the ids are handed over and the action decides. An action that excludes them
+  the ids are handed over and the action decides.
+
+  **"THE DRAWING LIST" IS AMBIGUOUS AND BOTH ANSWERS ARE RIGHT.** In Revit a
+  sheet list IS a schedule, so that sentence can mean either the sheets
+  themselves or the schedule that lists them:
+
+  | What you meant | Use |
+  |---|---|
+  | The sheets — to place views on, renumber, export | **this fragment** |
+  | The schedule that lists them — to add a column, export to CSV | `FIND_SCHEDULES` |
+
+  `FIND_SCHEDULES` carries the same table, identically. An action that excludes them
   does so visibly; a filter that had already removed them would leave a
   renumbering job reporting success over an incomplete set, which is this
   repository's defining failure and the reason FIND_VIEWS counts what it skips.

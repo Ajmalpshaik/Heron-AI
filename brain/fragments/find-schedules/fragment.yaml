@@ -1,0 +1,86 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-014
+semantic-identity: "the real schedules in this model, not Revit's own internal ones"
+kind: filter
+domain: revit.views
+capability: FIND_SCHEDULES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers "which schedules" for everything that acts on one - adding columns,
+  exporting to CSV, placing on a sheet.
+
+  IT EXISTS BECAUSE `FIND_VIEWS` DELIBERATELY EXCLUDES SCHEDULES. A schedule is
+  a `View`, and returning it among the drawings would let an action that
+  duplicates or applies a template reach one. That exclusion left nothing able
+  to hand a schedule to anything - a gap created by a correct decision, and the
+  answer is this fragment rather than loosening the other one.
+
+  TWO KINDS OF SCHEDULE ARE NOT SCHEDULES A PERSON MEANS, and both come back
+  from a plain collector:
+
+  - **schedule templates** (`IsTemplate`), the same trap `FIND_VIEWS` has with
+    view templates
+  - **Revit's own internal ones**, which it creates for its bookkeeping and
+    names in angle brackets - a revision schedule being the common one
+
+  Both are EXCLUDED AND COUNTED, so a name that matched only an internal
+  schedule is distinguishable from a name that matched nothing. Those are
+  different situations and a bare zero cannot tell them apart.
+
+  **"THE DRAWING LIST" IS AMBIGUOUS AND BOTH ANSWERS ARE RIGHT.** In Revit a
+  sheet list IS a schedule, so that sentence can mean either the sheets
+  themselves or the schedule that lists them:
+
+  | What you meant | Use |
+  |---|---|
+  | The sheets — to place views on, renumber, export | `FIND_SHEETS` |
+  | The schedule that lists them — to add a column, export to CSV | **this fragment** |
+
+  `FIND_SHEETS` carries the same table. A cross-reference written one way only
+  routes whoever lands on the newer file, and which one a search returns is not
+  something either fragment chooses.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: skippedTemplates
+      type: int
+    - name: skippedInternal
+      type: int
+    - name: matchedButExcluded
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSchedule`, `View.IsTemplate` and
+  `View.Name` are unchanged 2020 to 2027 and no units call is made. The internal
+  schedules are recognised by their angle-bracket name rather than by a type
+  test, because Revit exposes no property that separates them - that is a fact
+  about the API rather than a shortcut, and it is why the count is reported so a
+  wrong exclusion would be visible rather than silent.
+
+utterances:
+  - which schedules are in this model
+  - list the schedules
+  - find the door schedule
+  - show me the schedules
+  - what schedules do we have
+  - the equipment schedule
