@@ -1,0 +1,24 @@
+positive:
+  - given: 60 air terminals on one floor, newTypeId a compatible terminal type
+    expect: changed is 60, alreadyThatType 0, refused empty, and the terminals read the new type in Revit
+
+negative:
+  - given: 60 terminals of which 58 are ALREADY the target type
+    expect: >
+      changed is 2 and alreadyThatType is 58 - not changed 60. Revit accepts all
+      sixty and does nothing for fifty-eight, so a count of the batch reads as a
+      full swap
+
+  - given: an element Revit accepts ChangeTypeId for and leaves on its old type
+    expect: >
+      it is in refused, NOT counted. No exception is thrown, which is exactly
+      why the read-back exists - the same silent no-op that made the move path
+      report elements moved that had not moved
+
+  - given: a batch containing one element whose category the new type does not suit
+    expect: >
+      that id is in refused and the rest of the batch still changes - not an
+      exception that abandons the remainder after some have already swapped
+
+second_route:
+  - Select one element in Revit and read the type in the Properties palette

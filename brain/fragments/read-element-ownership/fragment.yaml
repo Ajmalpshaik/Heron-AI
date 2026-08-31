@@ -1,0 +1,75 @@
+heron-agent: HERON-REVIT-WRK-014
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-010
+semantic-identity: "who owns these on a workshared model, and which can I edit"
+kind: action
+domain: revit.elements
+capability: READ_ELEMENT_OWNERSHIP
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  On a workshared model, which of these elements are free to edit and which
+  belong to somebody else right now.
+
+  **This is the check that stops a batch failing halfway.** An element owned by
+  another user cannot be changed, and Revit reports that at the moment of the
+  write - so a move of two hundred ducts stops at the eleventh with ten already
+  moved. Asked first, it becomes a sentence: *"189 can be moved, 11 are held by
+  someone else."*
+
+  **It is also the E8 case in the register**, written down there as something to
+  test at the PC and unbuildable until now for want of a fragment that reads
+  ownership at all.
+
+  **A model that is NOT workshared is a distinct answer, not "everything is
+  free".** Both allow the edit, and treating them the same means a caller cannot
+  tell "checked, all clear" from "there was nothing to check" - which is the
+  distinction that matters the day a single-user model gets workshared.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: editable
+      type: IList<ElementId>
+    - name: ownedByOthers
+      type: IDictionary<ElementId, string>
+    - name: workshared
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.IsWorkshared`,
+  `WorksharingUtils.GetCheckoutStatus` and `GetWorksharingTooltipInfo` are
+  unchanged 2020 to 2027, and no ElementId is built from an integer.
+
+# ROUTING - repeated in SET_PIN_STATE, because "locked" is said of both.
+#
+#   "who owns this"                      -> here
+#   "why can I not edit this"            -> here FIRST, then SET_PIN_STATE
+#   "pin these" / "unpin"                -> SET_PIN_STATE
+#   "is it pinned"                       -> SET_PIN_STATE
+#
+# PINNED AND OWNED LOOK IDENTICAL TO A USER and have opposite fixes. Unpinning
+# an element owned by somebody else does nothing at all; asking them to
+# relinquish does nothing to a pinned one. Reporting the wrong cause sends
+# somebody to the wrong person.
+
+utterances:
+  - who owns this
+  - is this owned by someone else
+  - can I edit these
+  - why can I not change this
+  - is anyone else working on these

@@ -1,0 +1,77 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-008
+semantic-identity: "swap these elements to a different type"
+kind: action
+domain: revit.elements
+capability: CHANGE_ELEMENT_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes which type an element is - swapping every 600x600 diffuser on a floor
+  for a different one, moving a run onto a different duct type, replacing a
+  discontinued fitting.
+
+  **The new type is an input and is never guessed.** Revit accepts a type change
+  it cannot really honour, and the result is not an error - it is geometry that
+  looks wrong on a drawing nobody re-checks.
+
+  **Revit will accept the call and leave the element on its old type.** This is
+  the case worth knowing: `ChangeTypeId` throws for some mismatches and, for
+  others, simply does not take. So the type is read back after the change and
+  only a real move is counted - the same read-back the parameter path needed
+  after Revit returned TRUE and stored something else.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: newTypeId
+      type: ElementId
+      source: request
+  provides:
+    - name: changed
+      type: int
+    - name: alreadyThatType
+      type: int
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.ChangeTypeId(ElementId)` and
+  `Element.GetTypeId()` are unchanged 2020 to 2027, and the new type arrives as
+  an ElementId object taken from a live element, so nothing here builds one
+  from an integer and 2024's 64-bit ids do not reach this code.
+
+# ROUTING - repeated in SET_MEP_SIZE, which is what is usually meant when the
+# words are about size.
+#
+#   "change the type"                  -> here
+#   "swap them for the other diffuser" -> here
+#   "make the duct 300 wide"           -> SET_MEP_SIZE - a dimension on the
+#                                         element, not a different type
+#   "rename the type"                  -> RENAME_ELEMENTS, and note it reaches
+#                                         every instance of that type
+#
+# SIZE AND TYPE ARE THE SAME SENTENCE IN A MODELLER'S MOUTH. "Change it to 600
+# by 600" can mean either, and on a family whose sizes are types it means this
+# one. Ask which before running on a batch.
+
+utterances:
+  - change the type
+  - swap them to a different type
+  - change these to the other family type
+  - replace this type with another one
+  - use a different diffuser type

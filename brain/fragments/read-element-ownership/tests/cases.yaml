@@ -1,0 +1,30 @@
+positive:
+  - given: 200 ducts on a workshared model, 11 held by another user
+    expect: editable has 189, ownedByOthers has 11 with names, workshared is true
+
+  - given: a single-user model
+    expect: >
+      workshared is FALSE, editable holds everything, ownedByOthers is empty -
+      and the caller can say "this model is not workshared" rather than claiming
+      to have checked 200 owners
+
+negative:
+  - given: the same 200 ducts handed straight to a move without this check
+    expect: >
+      the move stops at the eleventh with ten already moved and reports neither.
+      That is the failure this fragment exists to convert into a sentence before
+      anything is written - it is E8 in NEEDS-CHECKING.md
+
+  - given: an element whose checkout status cannot be read at all
+    expect: >
+      it is in ownedByOthers as "unknown", NOT in editable. Unreadable is not
+      free: putting it in editable promises an edit that fails at the moment it
+      is attempted, which is the direction that costs a half-finished batch
+
+  - given: running this fragment on a model where nothing has been checked out
+    expect: >
+      nothing becomes checked out by having looked. Reading ownership must not
+      claim it - the same rule the lease learned one commit after being built
+
+second_route:
+  - Revit's own Worksharing Display, or hovering an element to read its owner in the tooltip

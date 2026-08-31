@@ -1,0 +1,30 @@
+positive:
+  - given: 3 clashing elements in a 3D view, marginMm 500
+    expect: applied true, enclosed 3, and the 3D view shows a box around them with roughly 500 mm of context on every side
+
+  - given: a 3D view whose section box was previously OFF
+    expect: >
+      the box is set AND switched on. Setting it without activating leaves the
+      view looking untouched, which reads as the call having done nothing
+
+negative:
+  - given: the same request made on a PLAN view
+    expect: >
+      viewRefused is true and nothing changes - named, not a silent no-op. Only
+      a 3D view has a section box, and the user is watching for the view to
+      change
+
+  - given: a batch where one element has no bounding box at all
+    expect: >
+      that id is in noGeometry and the box is built from the REST. A null folded
+      into the min/max would stretch the box to the project origin and enclose
+      the whole building, which looks exactly like the request being ignored
+
+  - given: elements handed in that ALL have no geometry
+    expect: >
+      viewRefused is true and the existing section box is LEFT ALONE - not
+      replaced with a zero-sized box, which shows an empty view and reads as
+      though the model had been deleted
+
+second_route:
+  - Look at the 3D view. The box is visible and draggable, and its extent can be read against the elements

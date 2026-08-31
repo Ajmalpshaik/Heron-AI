@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-005
+semantic-identity: "find and replace part of these elements' names"
+kind: action
+domain: revit.parameters
+capability: RENAME_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Renames elements by replacing a piece of text inside the existing name, rather
+  than by writing a whole new one. That is the shape the job almost always
+  takes - *"change SUP to SUPPLY on all of them"* - and a fragment that only set
+  a whole name would rename forty elements to one identical string.
+
+  **A rename is not a parameter write.** `Element.Name` maps to different
+  underlying parameters for different kinds of element, and on a TYPE it renames
+  the type **everywhere it is used in the model**, not just on the instances
+  handed in. That is the one thing about this fragment that surprises people.
+
+  **Duplicate names are refused, not warned about.** Revit throws on a duplicate
+  type name and quietly accepts duplicate instance names; neither is what
+  somebody wants halfway through a batch, so intended names are checked against
+  each other first and a clash stops the whole batch.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: find
+      type: string
+      source: request
+    - name: replaceWith
+      type: string
+      source: request
+  provides:
+    - name: renamed
+      type: int
+    - name: notMatched
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+    - name: collisions
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.Name` is a get/set string on
+  every release 2020 to 2027 and nothing here touches a unit or builds an
+  ElementId from an integer.
+
+# ROUTING - repeated in WRITE_ELEMENT_PARAMETERS and RENUMBER_SEQUENTIAL.
+#
+#   "rename these"                     -> here
+#   "change SUP to SUPPLY"             -> here
+#   "set the comments on these"        -> WRITE_ELEMENT_PARAMETERS, a named
+#                                         parameter that is not the name
+#   "number them in order"             -> RENUMBER_SEQUENTIAL
+#
+# THE NAME IS NOT THE MARK AND NOT THE TYPE NAME, and a modeller says "name"
+# for all three. Ask which before running this on a type: renaming a type
+# reaches every instance in the model, including the ones nobody selected.
+
+utterances:
+  - rename these
+  - change the name of these
+  - find and replace in the names
+  - change SUP to SUPPLY on these
+  - fix the naming on these

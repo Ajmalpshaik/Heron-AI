@@ -57,6 +57,19 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 
 
+def risk_of(store, fragment_id):
+    """The declared risk of one fragment, or None if it is not in the store.
+
+    Read from the scope rather than from disk: the store is what retrieval
+    ranked, so a fragment edited but not re-indexed must be compared as the
+    search actually saw it, not as the file now reads.
+    """
+    for row in store.fragments():
+        if row["id"] == fragment_id:
+            return row.get("risk")
+    return None
+
+
 def utterances():
     """(fragment id, sentence) for every declared utterance."""
     try:
@@ -157,6 +170,43 @@ def main(argv):
             print("vocabulary with its own indexed text, so this proves the")
             print("library has no COLLISIONS, never that retrieval is good.")
             return 0
+
+        # THE DANGEROUS SUBSET, SEPARATED OUT - a question answered by a
+        # fragment that CHANGES THE MODEL.
+        #
+        # Every collision above is a judgement, and most are harmless: two read
+        # fragments arguing over a sentence produce a slightly worse answer.
+        # This subset is different in kind. "What category is this" and "check
+        # the tagging on this drawing" are both questions, and both were
+        # answered by fragments that write - one that overrides category
+        # graphics, one that places tags. A caller acting on the top hit does
+        # not get a poor answer; it modifies the model in reply to a question.
+        #
+        # Measured 2026-08-31: three of the contested sentences had this shape,
+        # and the section above could not distinguish them from the other
+        # fifteen. Risk is already declared on every fragment, so this costs a
+        # lookup.
+        risky = []
+        for said, fid, rank, winner in taken:
+            if risk_of(store, fid) != "READ":
+                continue
+            if risk_of(store, winner) in ("READ", None):
+                continue
+            risky.append((said, fid, rank, winner))
+
+        if risky:
+            print()
+            print("A QUESTION ANSWERED BY SOMETHING THAT WRITES (%d):" % len(risky))
+            print()
+            for said, fid, rank, winner in risky:
+                print("  %-44s %s (READ) is #%-4s  %s answers instead"
+                      % ('"' + said + '"', fid, rank, winner))
+            print()
+            print("  These are worse than a plain collision. A caller acting on")
+            print("  the top hit does not get a poor answer to its question - it")
+            print("  CHANGES THE MODEL in reply to one. Fix the read fragment's")
+            print("  reach or the writer's wording; never leave it because the")
+            print("  rank looks close.")
 
         print()
         print("SENTENCES TWO FRAGMENTS BOTH WANT (%d of %d):" % (len(taken), total))

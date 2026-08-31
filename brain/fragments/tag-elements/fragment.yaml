@@ -92,4 +92,14 @@ utterances:
   - tag all the ducts in this view
   - add the size tags
   - annotate these on the drawing
-  - tag the ones that are not tagged yet
+
+# "tag the ones that are not tagged yet" WAS HERE AND WAS MOVED to
+# FIND_UNTAGGED_ELEMENTS on 2026-08-31, and it is not a rank being bought back.
+# That sentence is find-THEN-tag: a composition, which is the layer Steps 10 and
+# 11 already established no single fragment can win. Held here, it pulled
+# FIND_UNTAGGED_ELEMENTS' own read sentence - "check the tagging on this
+# drawing" - to this fragment, which WRITES. A question about a drawing was
+# being answered by something that puts tags on it.
+#
+# It now lands on the first step of the composition, which hands `elements`
+# straight to this one.
