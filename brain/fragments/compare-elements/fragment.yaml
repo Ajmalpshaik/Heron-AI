@@ -1,0 +1,83 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-003
+semantic-identity: "what is actually different between these two elements"
+kind: action
+domain: revit.qa
+capability: COMPARE_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Given two or more elements, reports only the parameters whose values DIFFER
+  between them, and which value each one holds. The answer to "why is this duct
+  behaving differently from that one" - a question that a full parameter dump
+  cannot answer, because the difference is three rows hidden among fifty
+  identical ones.
+
+  **THE SUPPRESSION IS THE FEATURE.** A real element carries fifty to eighty
+  parameters and on two elements of the same type nearly all of them match.
+  Printing all of them and leaving a person to spot the difference is the same
+  work they came here to avoid. `differing` holds only what actually differs;
+  `identicalCount` says how many were checked and matched, so "they are the
+  same" is a stated finding rather than an empty result that might be a failure.
+
+  **VALUES ARE COMPARED AS REVIT DISPLAYS THEM, NOT AS DOUBLES.** Two ducts both
+  drawn at 2500 mm can hold internal feet that differ in the twelfth decimal
+  place. Compared as numbers they differ; compared as the text Revit shows,
+  they match - and matching is the true answer, because nothing in the model
+  behaves differently because of that noise. The cost is that a real difference
+  smaller than the project's display rounding is invisible here, which is
+  stated rather than hidden.
+
+  **A PARAMETER MISSING FROM ONE ELEMENT IS A DIFFERENCE, AND THE MOST USEFUL
+  ONE.** Comparing a wall against a duct, most parameters exist on only one
+  side. Those are reported as differences with the absent side marked, rather
+  than skipped for not being comparable - "this one has no System Name at all"
+  is usually the answer being looked for.
+
+  **TYPE PARAMETERS ARE INCLUDED AND MARKED.** If two elements differ only in
+  their type, every difference lives on the type, and a comparison of instance
+  parameters alone reports them as identical - a confident wrong answer to
+  exactly the question asked.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: differing
+      type: IDictionary<string, IList<string>>
+    - name: identicalCount
+      type: int
+    - name: comparedCount
+      type: int
+    - name: tooFewToCompare
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.Parameters`,
+  `Definition.Name`, `AsValueString` and `AsString` are unchanged 2020 to 2027.
+  Nothing here reads an ElementId as a number, which is what keeps it clear of
+  the 2024 64-bit change - a parameter pointing at another element is resolved
+  by name through the document instead, which is also what a person would want
+  to read.
+
+utterances:
+  - what is different between these two
+  - why is this one different
+  - compare these elements
+  - these two look the same but behave differently
+  - what changed between them

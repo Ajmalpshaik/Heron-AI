@@ -1,3 +1,5 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
 positive:
   - given: 4 ducts, all with a System Name filled in
     expect: 4 in values, 0 blank, 0 absent
@@ -7,11 +9,50 @@ positive:
       0 in values, 4 BLANK, 0 absent - the parameter exists and is empty, which
       is a different finding from not having it
 
+  - given: >
+      a set holding WALLS, DUCTS and AIR TERMINALS that are all on Level 1,
+      reading "Level"
+    expect: >
+      all of them in values with the level name, 0 absent, and resolvedFrom
+      "level" for each. THIS IS THE VERSION 2 CASE. Version 1 answered `absent`
+      for the walls and the ducts and got it right only for the terminals - a
+      wall has no level-named parameter at all and a duct calls it "Reference
+      Level". Check the count against the walls and ducts you can see on that
+      level, not against the fragment's own total
+
+  - given: >
+      several instances of one family whose SIZE is held on the TYPE, reading
+      that parameter name
+    expect: >
+      every one in values with the type's value, 0 absent, and resolvedFrom
+      "type" for each. Version 1 answered `absent` for all of them because it
+      only ever asked the instance
+
 negative:
   - given: the same 4 ducts, reading a parameter name that does not exist
     expect: >
       0 in values, 0 blank, 4 ABSENT - and it must not throw. This is the case
-      that proves blank and absent are genuinely separated rather than merged
+      that proves blank and absent are genuinely separated rather than merged,
+      and that the version 2 type fallback did not turn every miss into a hit
+
+  - given: >
+      an element carrying BOTH an instance and a type parameter of the same
+      name, with DIFFERENT values
+    expect: >
+      the INSTANCE value, and resolvedFrom "instance". The type must not win -
+      the instance value is the one the modeller edited, and returning the type's
+      would report the change as never made
+
+  - given: >
+      reading "Level" on something genuinely not on a level - a drafting view's
+      annotation, or a level itself
+    expect: >
+      ABSENT, not blank and not a throw. The level chain must be able to come
+      back empty; a fallback that always finds something is a fallback that has
+      started inventing
 
 second_route:
   - open one element's properties in Revit and read the value by eye
+  - >
+    for the Level case, compare against Revit's own Level column in a schedule
+    of that category - the schedule resolves it the same way a person would

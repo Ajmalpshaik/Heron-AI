@@ -18,6 +18,20 @@ purpose: >
   terminals, fixtures, equipment - along a chosen axis, so the spacing reads on
   the drawing.
 
+  **IT CANNOT DIMENSION A ROOM**, and "dimension the rooms" is a sentence that
+  reaches it:
+
+  | What you meant | What happens |
+  |---|---|
+  | "dimension the rooms", "put the room sizes on the plan" | **nothing here does that yet** - not this fragment |
+  | "how big is room 4", "what are the room sizes" - to know | `MEASURE_ROOM_DIMENSIONS`, read-only |
+
+  A room's boundary is not a family instance and offers none of the references
+  this works from. Dimensioning the nearest thing it CAN reach - the fixtures
+  inside the room - would put a real dimension string on a real drawing that
+  nobody asked for, which is worse than doing nothing. That fragment carries the
+  same table.
+
   DIMENSIONING NEEDS A GEOMETRY REFERENCE, NOT A POINT, and which reference is
   available depends entirely on what kind of thing is being dimensioned. That is
   why this is not one fragment but two, and why the wrong one returns nothing

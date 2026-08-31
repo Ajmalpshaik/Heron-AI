@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a TAGGED door hosted in a wall
+    expect: >
+      its tag among the dependents. Check it against what Revit warns when you
+      press Delete on that door by hand - the two lists must agree, because this
+      is Revit's own answer rather than one assembled here
+
+  - given: a wall joined to three others
+    expect: >
+      those three in `joined` and NOT in dependents. Revit does not delete them;
+      it re-cleans the geometry, and the wall changes shape in a drawing nobody
+      was looking at
+
+  - given: a floor drawn from a sketch, with an opening cut through it
+    expect: >
+      the sketch lines and the opening among the dependents. These are the ones
+      nothing could derive by hand, and are why Revit's own call is used
+
+negative:
+  - given: an element with nothing attached to it at all
+    expect: >
+      dependents empty for it, and its id in `standalone`. THE COUNT MUST BE 0
+      AND NOT 1 - the raw call always returns the element itself, and a fragment
+      that forgets that reports every free element as having one dependent
+
+  - given: a PINNED element with no dependents
+    expect: >
+      its id in `undeletable` and NOT in `standalone`. Zero dependents does not
+      mean deletable, and reporting only the attachments would say "safe to
+      remove" about something Revit will refuse
+
+  - given: a TAG or a VIEW in the set, which cannot be joined to anything
+    expect: >
+      no entry in `joined` and no throw. GetJoinedElements throws rather than
+      returning empty for those, so on a mixed selection an unguarded call loses
+      the whole report rather than one row
+
+  - given: an element referenced only from a LINKED model
+    expect: >
+      it reports as standalone, and that is the KNOWN LIMIT. This sees what
+      Revit knows inside this file; a clean report here does not prove nothing
+      downstream breaks
+
+second_route:
+  - >
+    press Delete on the element in Revit and read the warning dialog, then
+    press Escape - the dialog lists what this fragment should have reported

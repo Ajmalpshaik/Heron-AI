@@ -2331,7 +2331,10 @@ Heron, because context reads the session rather than elements, which is *"a filt
 a document or a view."* It ended with an instruction: **revisit when a real one is written and the
 contract is in front of you.**
 
-It is now in front of us. `GET_ACTIVE_VIEW` (`FRG-DOC-003`) exists, and it was not written on a hunch —
+It is now in front of us. `GET_ACTIVE_VIEW` (`FRG-DOC-003` **as it was then** — the fragment was
+removed later the same day, as recorded below, and that id has since been reissued to
+`REPORT_LEVEL_ELEVATIONS`; look it up expecting this one and you will find something else)
+exists, and it was not written on a hunch —
 **the dependency graph asked for it.** `TAG_ELEMENTS_IN_VIEW` needs both `elements` and a `view`, and
 the graph reported it as an action nothing could feed, because every filter in the library provides
 elements and none provided a view.
@@ -2382,3 +2385,93 @@ here and left, rather than a graph quietly taught to stay quiet.
 the library has none. That assertion was a claim about the whole library, and it held only while every
 fragment was a filter feeding an action.
 
+
+---
+
+## D-47 — Risk is part of routing, not only part of permission
+
+**Status:** Proposed · **Date:** 2026-08-31 · **Touches:**
+[D-30](#d-30--promotion-needs-a-proof-with-a-negative-case), the risk ladder in the Constitution,
+[`tools/check-routing.py`](../tools/check-routing.py)
+
+### Context
+
+Every fragment declares a `risk` on the ladder `READ, ANALYZE, SUGGEST, EXECUTE, MODIFY, PUBLISH,
+ADMIN`. Until today that declaration was used in exactly one place: deciding whether the caller is
+allowed to run the thing once it has already been chosen. **Nothing consulted it while choosing.**
+
+`check-routing.py` was blind to it in the same way. It reported every contested sentence in one flat
+list and said, correctly, that a contest is a judgement rather than a defect. That is true of two
+report fragments arguing over *"show me the sizes"*. It is not true of the case underneath, which the
+flat list was hiding.
+
+### What the split found, the first time it ran
+
+Adding the risk comparison to `check-routing.py` — the winner's rung against the claimant's — surfaced
+**six sentences that route up the ladder, four of them invisible until that moment**, and five of the
+six with the same shape:
+
+| The sentence | Claimed by | Answered instead by |
+|---|---|---|
+| *"why is this one different"* | `COMPARE_ELEMENTS` READ | `ISOLATE_ELEMENTS` EXECUTE |
+| *"diff these ducts"* | `COMPARE_ELEMENTS` READ | `DIMENSION_MEP_RUNS` MODIFY |
+| *"get the size parameter"* | `READ_ELEMENT_PARAMETERS` READ | `ALIGN_MEP_ELEVATION` MODIFY |
+| *"the ceiling height in here"* | `READ_ROOM_GEOMETRY` READ | `SNAP_TO_GRID` MODIFY |
+| *"follow the pipe"* | `TRACE_CONNECTIVITY` READ | `OFFSET_ELEMENTS` MODIFY |
+| *"these ones"* | `FILTER_ELEMENTS_BY_ID` READ | `DESCRIBE_BLANK_PARAMETERS` ANALYZE |
+
+Read one at a time these look like six small ranking accidents. Read together they are one finding:
+**ask a question, change the model.** *"Follow the pipe"* reaching `OFFSET_ELEMENTS` does not return a
+wrong route — it shifts the run sideways. *"The ceiling height in here"* reaching `SNAP_TO_GRID` moves
+elements. The user gets a plausible confirmation of work nobody asked for, which is this project's
+defining failure shape arriving through the retrieval layer rather than through a fragment.
+
+### Why it is not a defect in any of the twelve fragments
+
+Every one of those utterances is a real sentence a real modeller says, and each fragment is right to
+claim its own. `ALIGN_MEP_ELEVATION` is not wrong to answer to *"get the services level"*. The
+collision is lexical: **the search shares vocabulary between them and has no idea one sentence is a
+question and the other an instruction.** Weakening either side to buy back a rank is the one response
+`brain/retrieval-history.md` rules out.
+
+Nor is a better embedding the answer to rely on. The trained backend might separate them — it has
+never run here, and that is register item **A7**, blocked on an egress policy. *Might, once something
+unblocks* is not a safeguard.
+
+### The decision
+
+**Risk becomes an input to routing, in two places.**
+
+1. **Reporting, done today.** `check-routing.py` prints ladder-crossing contests as their own section,
+   above the flat list, naming both risk levels. Its wording removes the option of leaving one
+   unexamined: say which fragment should win, or say the sentence names a composition and belongs to a
+   skill. It still exits 0 — it is a judgement, and a gate here would teach people to weaken their own
+   utterances. But it is no longer a judgement made by whoever happens to read thirty rows carefully.
+
+2. **Resolution, proposed and not built.** When the host resolves a request that is a QUESTION, the
+   candidate set should exclude fragments above `READ`. A question cannot want a fragment that writes;
+   if the only match writes, the honest answer is *"nothing here reads that"* rather than the nearest
+   thing that acts.
+
+### Why the second half is proposed rather than done
+
+It needs a reliable test of *"is this a question"*, and that test is the whole problem in miniature.
+Punctuation is absent from dictated speech, and the owner dictates. Leading words — what, how, which,
+where, is, are — catch most of it and miss *"tell me the ceiling height"* while wrongly catching
+*"what I want is these aligned"*. Guessing wrong in the permissive direction rebuilds exactly the hole
+this decision names.
+
+**The evidence should come from real sentences, not from invented ones**, and there is a source: the
+utterances already declared across the library are real phrasings, and the PC session that proves the
+fragments will produce more. So the classifier waits for that, and the reporting half stands in the
+meantime — a person is told, every run, which questions currently reach something that writes.
+
+### What was NOT done, and why it would have been wrong
+
+Three of those six could have been "fixed" this hour by rewording an utterance, and the numbers would
+have improved. That is the measurement being protected instead of the user. The two utterances that
+WERE removed came out for a different reason and would have come out with no collision at all:
+*"diff these ducts"* is developer vocabulary in a repository whose standing rule is to write the
+owner's own words, and *"what size are these"* had been added the same day, speculatively, against
+[31 §2](31-studying-the-existing-libraries.md) Rule 2. Both were mine and both were wrong on their own
+terms.

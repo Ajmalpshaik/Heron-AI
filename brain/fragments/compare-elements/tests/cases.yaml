@@ -1,0 +1,52 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: three walls of the same type differing only in length
+    expect: >
+      differing holds Length, Area and Volume and little else, with
+      identicalCount in the dozens. If fifty rows come back, the suppression is
+      not working and the fragment has returned the dump it exists to replace
+
+  - given: two elements whose ONLY difference is their type
+    expect: >
+      the differences come back, marked [type]. An instance-only comparison
+      reports these two as identical, which is a confident wrong answer to
+      exactly the question being asked
+
+  - given: a wall and a duct
+    expect: >
+      most rows differ, with "(not on this element)" on one side. Those rows
+      are the useful ones - "that one has no System Name at all" is usually what
+      the question meant
+
+negative:
+  - given: two ducts drawn at the same size, whose internal feet differ in noise
+    expect: >
+      that parameter counted as IDENTICAL, not as a difference. Comparing raw
+      doubles reports a difference here that nothing in the model can act on,
+      and one false row in a short list is worse than one in a long one
+
+  - given: TWO GENUINELY IDENTICAL ELEMENTS
+    expect: >
+      differing EMPTY and identicalCount well above zero. This is the case that
+      separates "checked them and they match" from "did not manage to check
+      anything" - an empty result alone cannot tell those apart, which is why
+      identicalCount is returned
+
+  - given: ONE element only
+    expect: >
+      tooFewToCompare true, differing empty, and no throw. A comparison of one
+      thing must say so; returning an empty difference list reads as "no
+      differences found", which would be a lie about work never done
+
+  - given: >
+      an element carrying a parameter that points at another element which has
+      since been deleted
+    expect: >
+      "(empty)" for that side rather than a throw or a raw id number. Reading
+      an ElementId as a number is also what breaks on Revit 2024
+
+second_route:
+  - >
+    select both elements in Revit at once - the Properties palette shows
+    <varies> against exactly the parameters this reports as differing

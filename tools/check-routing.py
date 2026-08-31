@@ -38,6 +38,21 @@ list of defects, it is a list of PLACES TWO FRAGMENTS WANT THE SAME SENTENCE,
 and a human has to decide which should win - or whether the sentence names a
 composition, in which case it belongs to a SKILL and to neither fragment.
 
+ONE CLASS OF COLLISION IS NOT A JUDGEMENT CALL
+----------------------------------------------
+Everything above treats every contest alike, and for a long time this tool did
+too. It is wrong about one of them. When the sentence a READ fragment claims is
+answered by a fragment that WRITES, the failure mode is not "the user gets the
+wrong table" - it is "the user asked a question and the model changed". That is
+the risk ladder crossing in the one direction that cannot be undone by reading
+the answer again, and it deserves to be separated from two report fragments
+squabbling over "show me the sizes".
+
+So contests are now split. The plain list stays a judgement call and stays
+exit 0. The crossing list is printed on its own, above it, with the two risk
+levels named - because a person scanning thirty rows for a problem will not
+spot that one of them routes a question into a MODIFY.
+
 WHY IT IS NOT A GATE
 --------------------
 It exits 0 whatever it finds. A collision is a judgement, not a defect, and a
@@ -66,15 +81,28 @@ def utterances():
         raise SystemExit(2)
 
     out = []
+    risk = {}
     for name in sorted(os.listdir(FRAGMENTS)):
         path = os.path.join(FRAGMENTS, name, "fragment.yaml")
         if not os.path.exists(path):
             continue
         with open(path, encoding="utf-8") as fh:
             doc = yaml.safe_load(fh)
+        risk[doc["id"]] = doc.get("risk") or "?"
         for said in doc.get("utterances") or []:
             out.append((doc["id"], said))
-    return out
+    return out, risk
+
+
+# The ladder from the Constitution, lowest first. Position is what matters:
+# a contest MATTERS when the winner sits higher than the loser, and matters
+# most when the loser is READ - somebody asked a question.
+LADDER = ["READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY", "PUBLISH", "ADMIN"]
+
+
+def rung(level):
+    """Where a risk level sits on the ladder; -1 for anything unrecognised."""
+    return LADDER.index(level) if level in LADDER else -1
 
 
 def main(argv):
@@ -122,7 +150,7 @@ def main(argv):
         SEARCH.index(store)
         EMBED.index(store)
 
-        rows = utterances()
+        rows, risk = utterances()
         if not rows:
             print("  no fragment declares an utterance - nothing to check")
             return 0
@@ -163,6 +191,13 @@ def main(argv):
               % (near_first, total, 100.0 * near_first / total,
                  near_top3, 100.0 * near_top3 / total))
 
+        # A contest where the winner sits HIGHER on the risk ladder than the
+        # fragment that claimed the sentence. The loser being READ is the case
+        # that matters: a question routed into something that writes.
+        crossing = [row for row in taken
+                    if rung(risk.get(row[3], "?")) > rung(risk.get(row[1], "?"))
+                    and rung(risk.get(row[1], "?")) >= 0]
+
         if not taken:
             print()
             print("Every fragment is ranked first for every sentence it claims.")
@@ -170,6 +205,27 @@ def main(argv):
             print("vocabulary with its own indexed text, so this proves the")
             print("library has no COLLISIONS, never that retrieval is good.")
             return 0
+
+        if crossing:
+            print()
+            print("*** %d SENTENCE(S) ROUTE UP THE RISK LADDER ***" % len(crossing))
+            print()
+            print("The fragment that claimed each of these is LOWER risk than the")
+            print("one answering it. Where the claimant is READ, somebody asks a")
+            print("question and reaches something that changes the model - which")
+            print("is not the same kind of problem as two reports colliding, and")
+            print("is why these are listed apart rather than buried below.")
+            print()
+            for said, fid, rank, winner in crossing:
+                print("  %-40s %s %-7s is #%-4s  ->  %s %s answers"
+                      % ('"' + said + '"', fid, risk.get(fid, "?"), rank,
+                         winner, risk.get(winner, "?")))
+            print()
+            print("Neither fragment is necessarily wrong. What is NOT available")
+            print("here is leaving it alone unexamined: say which should win, or")
+            print("say that the sentence names a composition and belongs to a")
+            print("skill. Silence on one of these is the model changing on a")
+            print("question, which is this project's defining failure shape.")
 
         print()
         print("SENTENCES TWO FRAGMENTS BOTH WANT (%d of %d):" % (len(taken), total))

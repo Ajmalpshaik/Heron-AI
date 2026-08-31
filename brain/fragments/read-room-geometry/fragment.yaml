@@ -34,6 +34,20 @@ purpose: >
   either into a zero. An unbounded room returns an area of 0 from Revit, and a
   layout that trusts that number places nothing and reports success.
 
+  **IT DOES NOT MEASURE THE ROOM, AND IT USED TO CLAIM THE SENTENCES THAT ASK
+  IT TO.** This hands back an outline for something else to lay out inside:
+
+  | What you meant | Use |
+  |---|---|
+  | "how many fit in here", "lay them out in this space" | **this fragment** |
+  | "how big is this room", "what are the room sizes" | `MEASURE_ROOM_DIMENSIONS` |
+
+  It carried *"how big is this room"* and *"what is the room size"* until
+  `MEASURE_ROOM_DIMENSIONS` existed, and answering those with a list of curves
+  was never what they meant. They moved because the other fragment is genuinely
+  the better answer - not to buy back a rank, which is the one move
+  `brain/retrieval-history.md` rules out.
+
 contract:
   needs:
     - name: room
@@ -64,8 +78,6 @@ compatibility-note: >
   that conversion at the edge where the user is.
 
 utterances:
-  - how big is this room
-  - what is the room size
   - the ceiling height in here
   - how many fit in this room
   - lay them out in this space

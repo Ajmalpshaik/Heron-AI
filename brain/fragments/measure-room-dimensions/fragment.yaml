@@ -1,0 +1,107 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-013
+semantic-identity: "how big each room is, measured along the room's own walls"
+kind: action
+domain: revit.geometry
+capability: MEASURE_ROOM_DIMENSIONS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Length and width of each room measured on THE ROOM'S OWN AXES, plus how far
+  it is rotated and whether a single length x width honestly describes it.
+
+  **A ROTATED ROOM HAS NO USEFUL BOUNDING BOX, AND THAT IS THE WHOLE POINT.**
+  `get_BoundingBox` is aligned to project X and Y. Turn an 8000 x 4000 room
+  thirty degrees and its box becomes roughly 8900 x 7500 - half as big again,
+  in a shape the room does not have. On a site that is not square to true
+  north, which is most of them, that is every room in the model. Answer "how
+  big is this room" from the box and the number is wrong on a rectangle that a
+  tape measure would get right.
+
+  **HOW THE ROOM'S OWN AXIS IS FOUND:** the longest segment of the outer
+  boundary loop. That is the dominant wall, and on anything roughly rectangular
+  it is the axis a person would lay out along. The boundary points are then
+  rotated by minus that angle IN MEMORY and the extents taken. Nothing moves and
+  nothing is created - the rotation is arithmetic on a list of points.
+
+  **THE OUTER LOOP IS THE ONE WITH THE LARGEST AREA, NOT LOOP ZERO.** Revit
+  returns a room's boundary as several loops with the outer edge and the holes -
+  a core, a column, a shaft - mixed together. Loop zero is usually the outer
+  one, and "usually" is not something to measure a room with.
+
+  **LENGTH IS ALWAYS THE LONGER SIDE**, fixed rather than assigned to an axis.
+  Rotating past forty-five degrees swaps which project axis each lands on, and a
+  table that does not fix the order silently swaps its own columns halfway down.
+
+  **IT REPORTS WHEN A RECTANGLE IS A LIE.** An L-shaped or U-shaped room has no
+  honest length x width. `irregular` is the gap between the room's own rectangle
+  and its real area - large here means genuinely not rectangular, and that room
+  needs splitting rather than quoting.
+
+  **THIS ANSWERS A QUESTION AND DRAWS NOTHING**, and the sentence that reaches
+  it is ambiguous in a way that matters:
+
+  | What you meant | What happens |
+  |---|---|
+  | "how big is room 4", "what are the room sizes" - to know | **this fragment**, read-only |
+  | "dimension the rooms", "put the sizes on the plan" - to annotate | **nothing here does that yet** |
+
+  Asking a question must never place dimensions in the model, so if the request
+  was to annotate a drawing, this is the wrong fragment and the right one does
+  not exist. `DIMENSION_FAMILY_INSTANCES` draws a dimension string through
+  family instances - air terminals, fixtures - and cannot dimension a room; it
+  carries the same note so that a search landing there says so rather than
+  dimensioning the nearest thing it can reach.
+
+  **IT IS NOT THE ONE THAT FEEDS A LAYOUT.** `READ_ROOM_GEOMETRY` hands back the
+  outline itself, which is what "how many fit in here" needs; this returns
+  measurements, which is what a person asking the size needs. Both those
+  sentences used to reach that fragment, and it carries the same table.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: lengths
+      type: IDictionary<ElementId, double>
+    - name: widths
+      type: IDictionary<ElementId, double>
+    - name: rotations
+      type: IDictionary<ElementId, double>
+    - name: irregular
+      type: IDictionary<ElementId, double>
+    - name: unplaced
+      type: IList<ElementId>
+    - name: unmeasurable
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `SpatialElement` is the shared base of
+  Room and Space so one fragment serves both, and `GetBoundarySegments` with
+  `SpatialElementBoundaryOptions` is unchanged 2020 to 2027. Lengths are handed
+  on in Revit's internal feet and rotations in degrees; D-20 keeps the
+  millimetre conversion at the edge where the user is. No units API is touched,
+  which is what keeps this clear of the 2021 units move.
+
+utterances:
+  - how big is this room
+  - what are the room sizes
+  - what size is room 4
+  - give me the room dimensions
+  - how wide is that room
+  - length and width of each room

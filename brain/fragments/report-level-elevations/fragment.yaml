@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-003
+semantic-identity: "whether this model's level heights can be trusted in a calculation"
+kind: action
+domain: revit.document
+capability: REPORT_LEVEL_ELEVATIONS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports every level's TWO heights side by side and says, in one word, whether
+  they disagree on this model.
+
+  **A LEVEL HAS TWO HEIGHTS AND ONLY ONE OF THEM IS IN THE SAME SPACE AS THE
+  MODEL'S GEOMETRY.** `Elevation` is measured from whatever the level type's
+  "Elevation Base" says - Project or Shared. `ProjectElevation` is always
+  measured from the project origin. Every XYZ the API hands back - a location
+  point, a bounding box, a solid's vertices, a ray's origin - is in
+  project-internal coordinates. So the moment a level height meets a
+  coordinate, `ProjectElevation` is the only one that belongs there.
+
+  **WHY IT IS A FRAGMENT AND NOT A NOTE IN A DOCUMENT.** On a test model the two
+  numbers are identical and nothing shows. On a real site model with a survey
+  offset, every height answer is wrong by exactly that offset - silently, with a
+  plausible number. That is this project's defining failure shape, and a
+  document warning about it cannot tell you whether TODAY'S model is affected.
+  This can, and it prints the offset, which is exactly how wrong the answers
+  would be.
+
+  **THE VERDICT IS MEASURED, NEVER INFERRED FROM THE SETTING.** The "Elevation
+  Base" parameter is reported because a person will want to see it, but nothing
+  here branches on it: the API publishes no enum for its values, so "0 means
+  Project" is an assumption, and its display text is localised. The verdict
+  comes from subtracting the two elevations, which is true in any language.
+
+  **A DIFFERENCE OF ZERO DOES NOT PROVE THE BASE IS PROJECT.** It also happens
+  when the base is Shared and the shared origin simply sits on the project
+  origin - true until somebody relocates the model. So a third verdict exists
+  between the two obvious ones: NOT AFFECTED TODAY, BUT AT RISK, reported
+  whenever the survey point carries a vertical offset that a single setting
+  change would start applying.
+
+  **CHECKING ONE LEVEL PROVES NOTHING ABOUT THE REST.** "Elevation Base" lives
+  on the level TYPE, and two level types in one model may disagree - half on
+  Project and half on Shared is legal. `typesDisagree` is reported for that
+  case, because it is the version of this that survives a spot check.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: levels
+      type: IList<Element>
+    - name: elevations
+      type: IDictionary<ElementId, double>
+    - name: projectElevations
+      type: IDictionary<ElementId, double>
+    - name: worstDifference
+      type: double
+    - name: affected
+      type: bool
+    - name: atRisk
+      type: bool
+    - name: typesDisagree
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Level.Elevation`,
+  `Level.ProjectElevation`, `BasePoint.Position` and `BasePoint.SharedPosition`
+  are unchanged 2020 to 2027, and `LEVEL_RELATIVE_BASE_TYPE` is present on all
+  of them. Heights are handed on in Revit's internal feet, not millimetres -
+  D-20 keeps the conversion at the edge where the user is, and this fragment is
+  about which of two numbers to use rather than about units.
+
+utterances:
+  - can I trust the level heights on this model
+  - what elevation is each level at
+  - list the levels and their heights
+  - is this model on a survey offset
+  - why are my heights wrong
+  - check the project base point

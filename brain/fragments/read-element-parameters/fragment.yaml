@@ -9,7 +9,7 @@ semantic-identity: "reads one named parameter off every element"
 kind: action
 domain: revit.parameters
 capability: READ_ELEMENT_PARAMETERS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -17,6 +17,29 @@ purpose: >
   Reads one named parameter off every element, and says which of three things
   was true for each: it had a value, it had the parameter but blank, or it did not
   have the parameter at all.
+
+  **VERSION 2 FIXED TWO WAYS THIS SAID `absent` WHILE THE VALUE WAS RIGHT
+  THERE.** Version 1 asked `LookupParameter` and nothing else, which is correct
+  for an instance parameter and wrong for most of what gets asked:
+
+  | Asked for | v1 answered | Why it was wrong |
+  |---|---|---|
+  | A **type** parameter - size, fire rating, manufacturer | `absent`, every element | Most schedule columns live once on the type, not per instance |
+  | **"Level"** on walls or ducts | `absent` for both | A wall has no level-named parameter at all; a duct calls it "Reference Level" |
+
+  The second is the dangerous one. Across a mixed set, air terminals answered
+  and walls and ducts did not, so the report read *"most of this model has no
+  level"* - which is not a thing that can be true, and looks like a modelling
+  problem rather than a reading one.
+
+  The type is now asked **second**, never first, so an instance parameter of the
+  same name still wins - that is the one the modeller edited. `resolvedFrom`
+  records which answered, because *"they share one value"* and *"they each carry
+  the same value"* are different findings with different fixes.
+
+  **LEVEL IS THE ONLY SPECIAL CASE.** Category, Family and Type are how a table
+  is labelled rather than something read off an element, and D-20 keeps that at
+  the edge where the user is.
 
 contract:
   needs:
@@ -32,13 +55,25 @@ contract:
       type: IList<ElementId>
     - name: absent
       type: IList<ElementId>
+    - name: resolvedFrom
+      type: IDictionary<ElementId, string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `LookupParameter`, `Element.LevelId`
+  and the five level built-ins are unchanged 2020 to 2027, and no units call is
+  made - the value is read as Revit's own display text, which is already in the
+  project's units. `ElementId.InvalidElementId` is compared as an ElementId
+  rather than through its integer, which is what keeps this clear of the 2024
+  64-bit change.
 
 utterances:
   - what is the system name on these
   - read the mark values
   - get the size parameter
   - which ones have no value
+  - what level are they on
+  - which level is each duct on
