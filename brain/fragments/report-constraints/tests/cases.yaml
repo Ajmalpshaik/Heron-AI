@@ -1,0 +1,46 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two walls joined by a LOCKED dimension
+    expect: >
+      each naming the other in `lockedTo`, and the dimension in constrainedBy.
+      Try moving one in Revit - the other should follow, or Revit should refuse
+
+  - given: an element held by an ALIGNMENT with the padlock closed
+    expect: >
+      reported the same way. An alignment and a locked dimension are the same
+      kind of element underneath, and a report covering only one of them misses
+      most of what actually holds a model together
+
+negative:
+  - given: >
+      AN ELEMENT WITH NO DEPENDENTS AT ALL THAT IS LOCKED TO THREE OTHERS
+    expect: >
+      three entries in lockedTo. A dependency report calls this element free -
+      nothing gets deleted with it - and it still cannot be moved on its own.
+      That is why this fragment is separate
+
+  - given: a genuinely free element
+    expect: >
+      its id in `unconstrained`, with empty lists rather than absent ones.
+      "Nothing is holding it" is a real answer and must be distinguishable from
+      "not asked about"
+
+  - given: a model with NO constraints at all
+    expect: >
+      everything unconstrained AND constraintsScanned zero. Scanning nothing and
+      finding nothing look identical without that count
+
+  - given: a constraint referencing an element that has since been deleted
+    expect: >
+      the rest of the report intact. One stale reference must not lose the walk
+
+  - given: a model with several hundred constraints
+    expect: >
+      it completes. The model is walked ONCE and indexed - a walk per element is
+      quadratic and unusable on anything real
+
+second_route:
+  - >
+    select the element in Revit and try to move it - what follows, or what Revit
+    refuses to let go of, should match lockedTo

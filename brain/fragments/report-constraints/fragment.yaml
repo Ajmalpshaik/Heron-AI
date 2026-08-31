@@ -1,0 +1,84 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-007
+semantic-identity: "what is holding this element, and what moves with it"
+kind: action
+domain: revit.qa
+capability: REPORT_CONSTRAINTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  What is locking each element in place - the locked dimensions and alignments
+  holding it - and what is on the other end of each one.
+
+  **A CONSTRAINT IS INVISIBLE UNTIL YOU GO LOOKING, AND THAT IS AN API FACT
+  RATHER THAN AN OVERSIGHT.** It is not a property *of* the element. It is a
+  separate element that holds references to two or more things. There is no
+  `wall.Constraints` to read, so the only way to find what is holding something
+  is to walk **every** constraint in the model and check whether any of its
+  references points back. That is why this is slow, and why nothing surfaces it
+  by accident.
+
+  **IT ANSWERS "WHY WILL THIS NOT MOVE", WHICH `REPORT_ELEMENT_DEPENDENCIES`
+  DOES NOT.** That one answers *"what goes with it if I delete it"*. An element
+  can have no dependents at all and still be locked to three others - and
+  moving it then moves them, or refuses. The two are neighbours and neither
+  covers the other:
+
+  | The question | Use |
+  |---|---|
+  | "what disappears if I delete this" | `REPORT_ELEMENT_DEPENDENCIES` |
+  | "why will this not move", "what moves with it" | **this fragment** |
+
+  **THE FAR END IS THE USEFUL HALF.** Knowing an element is constrained tells
+  nobody anything. Knowing it is locked to *that column* is the whole answer, so
+  every other element on each constraint is reported.
+
+  **IT REPORTS AND NEVER UNLOCKS.** Removing a constraint is not cosmetic:
+  deleting a locked dimension deletes the **dimension**, so the annotation
+  disappears from the drawing along with the lock - which is almost never what
+  anybody means by *"unlock it"*. That decision needs a person, and a read
+  fragment must not make it.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: constrainedBy
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: lockedTo
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: unconstrained
+      type: IList<ElementId>
+    - name: constraintsScanned
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `OST_Constraints`,
+  `Dimension.References` and `Reference.ElementId` are unchanged 2020 to 2027,
+  and no units call is made. A constraint element is reached as a `Dimension` -
+  which is what both a locked dimension and an alignment are underneath - and
+  its references are compared by `ElementId` rather than through any integer, so
+  the 2024 64-bit change does not reach this.
+
+utterances:
+  - why will this not move
+  - what is holding this element
+  - what is locked to this
+  - what moves with it
+  - is this constrained to anything
+  - find the locked dimensions on these

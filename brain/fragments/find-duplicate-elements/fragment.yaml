@@ -1,0 +1,75 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-008
+semantic-identity: "two of the same thing standing in the same place"
+kind: action
+domain: revit.qa
+capability: FIND_DUPLICATE_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds elements of the same type standing in the same place - the second copy
+  that a stray paste, a failed undo or a repeated Copy/Paste Aligned left behind.
+
+  **A DUPLICATE IS INVISIBLE AND IT DOUBLES A SCHEDULE.** Two air terminals in
+  exactly the same spot draw as one, and count as two. Nobody sees it on the
+  drawing; everybody sees it in the quantity, and by then it is in a tender.
+
+  **SAME PLACE IS A TOLERANCE, NOT AN EQUALITY.** Two elements pasted at the
+  same point can differ in the tenth decimal, and an exact comparison finds
+  nothing at all. `tolerance` is a request input rather than a default, because
+  the right value depends on what is being checked - 50 mm is sensible for
+  terminals and far too loose for a run of small pipe fittings.
+
+  **SAME PLACE IS NOT ENOUGH ON ITS OWN.** A diffuser and a sprinkler at the same
+  point are coordinated, not duplicated. Only elements of the **same type** are
+  paired, so the report is about copies rather than about coincidence.
+
+  **THE LOCATION IS TAKEN THREE WAYS BECAUSE ELEMENTS DIFFER.** A point for
+  anything placed, the midpoint for a linear run, the bounding-box centre for
+  everything else. Without the last two, a duplicated duct - the most common
+  duplicate of all - reports nothing, because it has no insertion point.
+
+  **IT REPORTS AND DELETES NOTHING.** Which copy of two identical elements to
+  keep is not something geometry can settle: one of them may be the one that is
+  tagged, grouped or connected.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: tolerance
+      type: double
+      source: request
+  provides:
+    - name: duplicateOf
+      type: IDictionary<ElementId, ElementId>
+    - name: duplicateGroups
+      type: int
+    - name: unplaceable
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `LocationPoint`, `LocationCurve`,
+  `get_BoundingBox(null)` and `GetTypeId` are unchanged 2020 to 2027, and
+  `tolerance` arrives in Revit's internal feet with no units API touched. Types
+  are compared as `ElementId` values rather than through any integer, which
+  keeps this clear of the 2024 64-bit change.
+
+utterances:
+  - are there duplicate elements
+  - find the duplicates
+  - two things in the same place
+  - why is my count double
+  - did something get pasted twice
+  - check for copies on top of each other

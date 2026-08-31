@@ -1,0 +1,51 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one properly connected supply system with its AHU
+    expect: >
+      ONE island, sourceless empty. Check the count against what the Project
+      Browser's system list shows, not against the fragment run twice
+
+  - given: >
+      a supply and a return system passed together
+    expect: >
+      TWO islands, neither sourceless. Two networks is normal and must not be
+      reported as a fault - supply and return are two systems
+
+negative:
+  - given: >
+      a system with A BRANCH THAT WAS COPIED AND NEVER REJOINED
+    expect: >
+      TWO islands, the branch SOURCELESS. On the drawing both read as one
+      system, which is the whole reason this exists - nothing on screen shows
+      the break
+
+  - given: a sourceless island of two elements and another of ninety
+    expect: >
+      both listed with their sizes. The two-element one is a leftover to
+      delete; the ninety-element one is a main run that lost the plant, and
+      only the sizes tell them apart
+
+  - given: >
+      TWO DUCTS THAT TOUCH PERFECTLY BUT ARE JOINED TO NOTHING
+    expect: >
+      reported as TWO islands - and that is correct for this fragment and the
+      STATED LIMIT. Revit's connection data describes intent, and it has been
+      proven wrong on a real model. This answers "why is the flow not
+      calculating"; "is it physically joined" needs the geometry walked
+
+  - given: an element whose neighbour is NOT in the passed set
+    expect: >
+      the walk stops there. An island is a partition OF THE SET; wandering out
+      of it makes the count depend on the rest of the model and the same set
+      would report differently depending on what else was open
+
+  - given: elements with no connectors at all - a wall in the set
+    expect: >
+      each its own island of one, and no throw. Not a fault, and not a reason
+      to lose the rest of the report
+
+second_route:
+  - >
+    select one element in Revit and use Select Connected to highlight its
+    network - what lights up should be exactly one island

@@ -1,0 +1,53 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a duct with FOUR services inside its clearance zone, defaultClearance
+      100 mm
+    expect: >
+      FOUR pairs reported, not one. This is the whole difference from a nearest
+      search - a report naming the closest of four problems closes none of them
+
+  - given: a rules table naming a tighter clearance for one category
+    expect: >
+      pairs in that category judged by it, and judgedBy naming the rule. Check
+      one pair's gap against the Measure tool in Revit
+
+negative:
+  - given: >
+      TWO SERVICES 120 mm APART, EACH WITH A 50 mm JACKET, includeInsulation
+      true, clearance 100 mm
+    expect: >
+      reported TOO CLOSE at 20 mm. With includeInsulation false the same pair
+      passes at 120 mm. This is the case that decides whether the answer is
+      buildable - and both answers are correct for what they measured, which is
+      why the flag exists
+
+  - given: two elements whose insulation already OVERLAPS
+    expect: >
+      a gap of 0, not a negative number. "They are touching" is the finding; a
+      negative gap reads as a depth and would be sorted as though it were the
+      largest clearance in the report
+
+  - given: an element present in BOTH sets
+    expect: >
+      it is never paired with itself. A gap of zero against itself would be the
+      tightest pair in every report and is meaningless
+
+  - given: two sets with NOTHING closer than the clearance
+    expect: >
+      tooClose EMPTY and pairsChecked well above zero. An empty result alone
+      cannot separate "checked them and they are fine" from "checked nothing" -
+      which is why the count is returned
+
+  - given: >
+      a ROTATED pair whose boxes overlap while the elements do not
+    expect: >
+      reported too close, AND THAT IS THE STATED LIMIT. Boxes are axis-aligned,
+      so the error is toward over-reporting - the safe direction for a clearance
+      check, and still not a certified figure
+
+second_route:
+  - >
+    measure the pair in Revit with the Measure tool, then check the insulation
+    thickness in the type properties and subtract both jackets by hand

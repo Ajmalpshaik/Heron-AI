@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a correctly drawn supply run from an AHU to its terminals
+    expect: >
+      bothOut and bothIn EMPTY, jointsChecked matching the number of real joints
+      in the run. The count is what separates "checked and clean" from "checked
+      nothing"
+
+  - given: a run with one fitting inserted backwards
+    expect: >
+      that joint reported. Check it in Revit by selecting the fitting and
+      reading its connectors - the two arrows will be facing the same way
+
+negative:
+  - given: TWO PUMPS FACING EACH OTHER on one whole, connected system
+    expect: >
+      the joint reported, while a connectivity check calls this ONE HEALTHY
+      NETWORK. That is the entire reason this fragment is separate from
+      FIND_SYSTEM_ISLANDS
+
+  - given: a fitting carrying a BIDIRECTIONAL connector
+    expect: >
+      NOT reported, and counted in bidirectionalSkipped. Plenty of fittings
+      carry them legitimately; flagging them fills the report with pairs nobody
+      can act on, after which nobody reads it
+
+  - given: an ELECTRICAL connector, whose domain has no flow direction
+    expect: >
+      skipped without a throw, and the rest of the set still checked. Reading
+      Direction raises there, so a guard around the element rather than the
+      connector loses a whole mixed set over one cable tray
+
+  - given: one joint, walked from both of its elements
+    expect: >
+      jointsChecked increments ONCE. Every joint is visible from both sides,
+      and counting connector visits instead of joints doubles every number in
+      the report
+
+second_route:
+  - >
+    select the two elements in Revit and look at the flow arrows on their
+    connectors - a reported joint has both arrows pointing the same way

@@ -1,0 +1,46 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two identical air terminals pasted at the same point
+    expect: >
+      one entry in duplicateOf, duplicateGroups 1. Count the terminals in a
+      Revit schedule and count them on the drawing by eye - the schedule is the
+      one that says two
+
+  - given: A DUPLICATED DUCT, which has no insertion point
+    expect: >
+      found. This is the most common duplicate there is, and a fragment that
+      only reads LocationPoint reports nothing at all for it
+
+  - given: three copies of one element in the same place
+    expect: >
+      TWO duplicates against one original, duplicateGroups 1. That is the number
+      that would actually be removed - reporting three overstates the fix
+
+negative:
+  - given: A DIFFUSER AND A SPRINKLER AT THE SAME POINT
+    expect: >
+      NOT reported. They are coordinated, not duplicated. Same place alone
+      would call every properly coordinated ceiling a pile of duplicates
+
+  - given: >
+      two elements of the same type pasted at "the same" point, differing in
+      the tenth decimal
+    expect: >
+      found. An exact comparison finds NOTHING here, which is the quiet way this
+      check reports a clean model that is not clean
+
+  - given: two identical elements a metre apart, tolerance 50 mm
+    expect: >
+      NOT reported. A tolerance loose enough to catch everything catches a
+      properly spaced grid as well, and then the report is unusable
+
+  - given: an element with no location and no bounding box
+    expect: >
+      its id in `unplaceable`, no throw, the rest still checked. It was not
+      examined, and that must not read as examined and clean
+
+second_route:
+  - >
+    select the reported element in Revit and press Delete - the drawing should
+    look identical afterwards, which is the definition of the duplicate
