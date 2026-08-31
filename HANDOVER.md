@@ -23,11 +23,11 @@ every agent id against the registry, walks the fragment library, the capability 
 dependency graph, and reads the register. Then it sorts everything into **UNFINISHED** and **WAITING**,
 and its exit code follows only the first.
 
-**As of 2026-08-30 it reports 0 unfinished and 54 waiting.** The one thing that was unfinished — **the
-brain was wired to nothing** — is now wired, and the section below that used to say so records what that
-did and did not buy. Everything waiting needs a machine or a conversation: **48 a real Revit**, plus the
-30 unproven fragments as one further item, **3 Windows** (`A4`, `A6` and `A8`), **1 a network** (`A7`),
-**1 the owner** (`R1b`).
+**As of 2026-08-31 it reports 0 unfinished and 55 waiting.** Everything waiting needs a machine, a
+dependency or a conversation: **48 a real Revit**, plus the 32 unproven fragments as one further item,
+**3 Windows** (`A4`, `A6` and `A8`), **1 a network that can reach the weights host** (`A7`), **1 the
+owner** (`R1b`), and **1 an optional dependency this machine does not have** — that last one is new and
+it is `test_mcp_serves.py` reporting honestly that it was skipped, rather than being counted as a pass.
 
 > Those figures were **read off the tool, not carried forward**, and the sentence they replace shows why
 > that matters: it said *55 waiting* and then listed parts summing to 54, and it still counted **3 owner
@@ -35,10 +35,31 @@ did and did not buy. Everything waiting needs a machine or a conversation: **48 
 > disagreeing is the cheapest possible drift to catch and it survived anyway. Re-derive rather than
 > edit the digits.
 
-**`A8` is new and it is the honest half of that work.** The three MCP tools were written on a machine
-with **no MCP SDK installed**, so `FastMCP` has never served them. The test underneath them passes and
-then reads the server *as text* — which proves they are declared, never that they appear in a host. Two
-minutes at the PC clears it.
+**`A8` is mostly done, and doing it found the worst defect in this repository's history — read this
+one first.** It was written down as *needing Windows*. It did not: the blocker was a missing **pip
+package**, and the MCP SDK is pure Python. Installing it took ten minutes and produced two things.
+
+**A real SDK now serves all ten tools** — names, descriptions and argument schemas — and the three brain
+tools answer through its own dispatch with both refusals intact. That is the half `test_brain_reachable.py`
+could only ever read *as text*, and it is now [`tests/test_mcp_serves.py`](tests/test_mcp_serves.py).
+
+**And installing it revealed that Heron's MCP server would not start at all on a fresh machine.**
+`pip install --user mcp` — the exact line [`tools/HeronRevit.ps1`](tools/HeronRevit.ps1) hands the user —
+now resolves to SDK **2.x**, which **deleted `mcp.server.fastmcp`**: `FastMCP` was renamed `MCPServer`.
+The server's import was written against 1.x, so it raised `ImportError` before registering a single tool.
+**Every Heron tool absent from the host, on any machine installing today, with no Revit and no Windows
+involved.** Nothing in the repository could see it, because nothing here had ever imported the SDK — the
+entire suite reads that file as text, and text cannot fail an import.
+
+The fix is the import and nothing else: the class is looked up newest-first, because 2.x's `MCPServer`
+takes the same `@server.tool()` decorator and the same `run()`. **Proven on both SDK majors installed
+side by side**, and validated the way this repository requires — the old line was put back and watched
+to fail. `heron_version` now reports which SDK is serving, since *"Heron stopped working"* and *"the SDK
+moved underneath it"* look identical from the user's side.
+
+**What genuinely remains of `A8` needs the PC:** a real host over stdio — that Claude Code connects,
+renders the docstrings and picks a tool from them. In-process dispatch is a strong signal ahead of that,
+not a substitute for it.
 
 **If the tool and this file ever disagree, believe the tool.** It is computed from disk; this file is
 typed. That is not a hypothetical — for most of 2026-08-29 this tool reported `UNFINISHED - nothing`
@@ -58,13 +79,25 @@ existed and never asked whether anything called them. The check that catches it 
 Everything else in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) follows in the order written there. It is in
 dependency order on purpose: nothing in group D can be attempted before group A passes.
 
-### And two that need no Revit at all
+### And the ones that need no Revit at all
 
-- **`A7`** — the trained embedding backend has **never run**. One `pip install --user model2vec` on any
-  machine with a working network. No Revit, no Windows. Until it runs, search finds words and not
-  meaning, and [`tests/test_embed.py`](tests/test_embed.py) says so in measured numbers.
+- **`A7`** — the trained embedding backend has **never run**, and 2026-08-31 sharpened *why* on a second
+  and different container. `pip install model2vec` **works** — PyPI is reachable and the package is
+  fine. What fails is `StaticModel.from_pretrained("minishlab/potion-base-8M")`, with
+  `ProxyError: 403 Forbidden`. **So the precondition is not "a working network", it is reaching
+  huggingface.co**, and the register row now names the host instead of saying "a model host" — a
+  sentence anyone with a working network would reasonably read as already satisfied. Until it runs,
+  search finds words and not meaning, and [`tests/test_embed.py`](tests/test_embed.py) says so in
+  measured numbers. **One thing it did prove**: with the package actually installed, the fallback ran
+  against a *failed download* rather than a missing import — a branch that had never once executed —
+  and it degraded to `lexical` and said so on its first line.
 - **`A4` and `A6`** — both need Windows but not Revit. `A4` is the Windows named pipe itself; `A6` is
   thirty seconds confirming the SDK probe reads Windows correctly.
+- **`A8` was on this list and nobody knew it**, filed under *needs Windows* when what it needed was
+  `pip install mcp`. That is the fourth time something here turned out to be waiting on somebody trying
+  it rather than on a machine. **The count is now four, and the standing advice stands: assume the
+  fifth is out there.** The one that cost the most was believing an environment-specific wall was a
+  property of the project.
 
 ### The one thing that was buildable here — now built
 
@@ -129,6 +162,61 @@ writing one.
 them will fail at the PC for a reason a compiler could have found. Not one has met a model. The debt did
 not go away — it got **counted**, which is the whole point of `check-gaps` keeping *unfinished* and
 *waiting* in two lists that must never be one.
+
+---
+
+## The eighth session, 2026-08-31 — the server that would not have started
+
+**What it did:** installed the MCP SDK for the first time in this project's life, which took `A8` from
+*needs Windows* to *mostly done* and, in the same ten minutes, found that **Heron's MCP server would not
+start at all on a machine installing today.**
+
+**The defect, and why nothing here could see it.** `pip install --user mcp` — the line
+[`tools/HeronRevit.ps1`](tools/HeronRevit.ps1) hands the user, unpinned — resolved to 1.x when the server
+was written and resolves to **2.x** now. 2.x **deleted `mcp.server.fastmcp`**: `FastMCP` was renamed
+`MCPServer`. The import was written against 1.x, so the server raised `ImportError` before registering a
+single tool — **every Heron tool absent from the host**, with no Revit and no Windows anywhere in the
+failure. Every test in this repository reads that file **as text**, and text cannot fail an import. The
+one technique nobody had used was the obvious one: install the dependency and start the thing.
+
+| | |
+|---|---|
+| **The fix** | The import, and nothing else. The class is looked up **newest first**, because 2.x's `MCPServer` takes the same `@server.tool()` decorator and the same `run()` — measured, not assumed, with both SDKs installed side by side. This is [D-05](docs/DECISIONS.md)'s rule about Revit releases applied to a Python dependency: an unlisted version must fail **loudly**, so the last `except` re-raises naming the install line rather than leaving an `ImportError` about a module the user never typed |
+| **The check that would have caught it** | [`tests/test_mcp_serves.py`](tests/test_mcp_serves.py) — the SDK's own registry against the source text, every description, every argument schema, and the three brain tools called through the SDK's own dispatch. **Validated by putting the defect back** and watching it fail under 2.x, which is the standard this repository already holds `check-api-surface.py` to |
+| **`heron_version` now reports the SDK** | *"Heron stopped working"* and *"the SDK moved underneath it"* are indistinguishable from the user's side, and this tool's stated job is what to say when something is wrong |
+
+**A skipped suite is now WAITING, not `ok`.** The SDK is an optional dependency, so on a machine without
+it that test cannot run — and `check-gaps.py` sees **only exit codes**, since it sends stdout to
+`DEVNULL`. A suite that skipped would have been reported `ok`. So a skip exits **3**, and `check-gaps`
+reads it as WAITING: the same distinction the whole tool is built on, extended to the one place it could
+not reach. This is the *"a killed run prints a header with nothing under it, and a blank reads as a
+pass"* failure, caught before it happened rather than after.
+
+**Two register rows were wrong in a way that would have failed a correct Heron**, and both were found by
+running what they asked for rather than by reading them:
+
+- **`A8`'s PASS text was stale.** It required *ten jobs, **four** with every part provided, and the seven
+  missing capabilities named*. The truth is **10, 10 and none** — the row was written on 2026-08-29
+  *before* the seven capabilities were written later that same day, and never revisited. As worded, it
+  would have failed a Heron that was working correctly.
+- **`A8` also required `heron_lookup` to answer `FILTER_ELEMENTS_BY_CATEGORY`.** It answers
+  `SET_SELECTION`. That is **the assertion Steps 10 and 11 already retired**, copied into the register
+  and left behind when they retired it: *"select all the ducts"* is filter-**then**-select, a composition,
+  and a composition is what a **skill** names. It has been retired here too, **with its reasoning
+  written down**, because deleting it quietly would have looked identical and taught nobody anything.
+
+**`A7` is still blocked, and the row now names the right wall.** `pip install model2vec` **succeeds** —
+PyPI is reachable. `StaticModel.from_pretrained("minishlab/potion-base-8M")` fails with
+`ProxyError: 403 Forbidden`. The precondition was written as *"a machine that can reach a model host"*,
+which anyone with a working network would read as already satisfied; it now says **huggingface.co**. And
+the attempt proved one thing for free: with the package installed, the fallback ran against a **failed
+download** instead of a missing import — a branch that had never once executed — and degraded to
+`lexical`, saying so on its first line.
+
+> **The lesson, and it is the same one four times now.** *"It needs Windows"* was a guess that got
+> written down as a fact and inherited. It needed `pip install mcp`. The count of things believed to be
+> waiting on a machine that were waiting on somebody trying them is now **four** — the .NET SDK, the
+> WindowsDesktop targets, the bridge round trip, and this. **Assume the fifth exists.**
 
 ---
 
@@ -534,8 +622,8 @@ now that the next stretch of work happens where Revit cannot be reached.
 | **The eight `brain/` modules** | Each has its own suite and each passes — the fragment store, the scope store, exact-word search, nearness, fusion, the capability registry, the graph, and skills. What they are proven to do is **behave as specified against fixtures**. Not one of them has been handed a real Revit's answer |
 | **32 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists **thirty-two** items under *needs a real Revit*. **Since 2026-08-29 all of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)). That is not behaviour, but it does mean none of them will fail at the PC for a reason a compiler could have found |
 | **10 skills, all `DRAFT`** | Each names **capabilities and never fragments**, and each carries the words Ajmal actually says rather than the words the technique is named after. Whether any of them does what it says is unknown |
-| **The trained embedding backend** | **The highest-value item that needs no Revit, and 2026-08-30 sharpened what it buys.** [`brain/retrieval-history.md`](brain/retrieval-history.md) tracks one query across eight library sizes (7 → 32) *and* now measures a second way: every fragment's own declared words asked back to the search — 169 sentences, **words 92% first and 100% in the top three, nearness 60% and 82%**. That corrects the older headline in this file's own history: the nearness route has **not** collapsed in general. It handles **vocabulary overlap** and fails at **disambiguation**, which is why the tracked query — a sentence several fragments fairly claim — sits mid-library while a sentence naming one fragment comes back first. So `A7` should be expected to change the **contested** lookups, not every lookup. Never run — `huggingface.co` is refused by this container. The backend that *is* running is character n-grams, which measurably does not do synonyms (`diffuser`/`grille` scored −0.136). Needs no Revit and no Windows |
-| **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py). The resolution beneath them is tested and passes; **`FastMCP` has never served them**, because the machine they were written on has no MCP SDK. `tests/test_brain_reachable.py` reads the server as *text* to confirm they are declared, which is the same technique `test_tool_registry.py` uses on the C# and has the same limit. `A8`, and it needs Windows rather than Revit |
+| **The trained embedding backend** | **The highest-value item that needs no Revit, and 2026-08-30 sharpened what it buys.** [`brain/retrieval-history.md`](brain/retrieval-history.md) tracks one query across eight library sizes (7 → 32) *and* now measures a second way: every fragment's own declared words asked back to the search — 169 sentences, **words 92% first and 100% in the top three, nearness 60% and 82%**. That corrects the older headline in this file's own history: the nearness route has **not** collapsed in general. It handles **vocabulary overlap** and fails at **disambiguation**, which is why the tracked query — a sentence several fragments fairly claim — sits mid-library while a sentence naming one fragment comes back first. So `A7` should be expected to change the **contested** lookups, not every lookup. Never run — `huggingface.co` is refused by this container, and by a second one on 2026-08-31, where the package installed cleanly from PyPI and only the **weights** download was refused (`ProxyError: 403`). The backend that *is* running is character n-grams, which measurably does not do synonyms (`diffuser`/`grille` scored −0.136). Needs no Revit and no Windows |
+| **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py). **A real MCP SDK has now served them** (2026-08-31): all ten tools registered with their descriptions and argument schemas, and all three answering through the SDK's own dispatch with both refusals surviving the round trip — [`tests/test_mcp_serves.py`](tests/test_mcp_serves.py). That is no longer a text read. **It is still not a host**: nothing here shows Claude Code connecting over stdio, rendering a docstring or choosing a tool from it, and that is what is left of `A8`. **Doing it found that the server would not have started at all** on a machine installing today — see the eighth session below |
 
 ### Does not exist at all
 
@@ -637,6 +725,11 @@ python tests/test_skills.py            # a skill names capabilities, never fragm
 # The seam, added 2026-08-29. Also needs no Revit
 python tests/test_brain_reachable.py   # the host resolves through a capability, not a fragment id
 
+# Served by a REAL SDK, added 2026-08-31. Needs `pip install --user mcp`,
+# no Revit and no Windows. With no SDK it exits 3 and check-gaps reads that
+# as WAITING - a skip reported as `ok` is a green nobody earned
+python tests/test_mcp_serves.py        # every tool served, with its description and its arguments
+
 # The fragments, compiled for the first time - 2026-08-29. Needs the .NET SDK,
 # no Revit and no Windows. ~10 minutes for all eight releases
 python tools/check-fragments-compile.py   # every fragment, every release it claims
@@ -652,9 +745,10 @@ python tools/check-routing.py             # every fragment, asked its own words 
 > stores are **derived** — deleting them is always a safe recovery, and `python brain/heron_scope.py
 > --rebuild` puts them back.
 
-**15 suites, 435 individual `ok`/`PASS` lines, all passing** — derived, not typed:
-`for f in tests/test_*.py; do python3 "$f"; done | grep -cE '^\s*(ok|PASS)\b'`. The sixteenth suite,
-`test_bridge_roundtrip.py`, runs here too but needs its host built first (below), which takes it to 465.
+**18 suites; 16 pass here with nothing installed at all, 514 individual `ok`/`PASS` lines** — derived,
+not typed: `for f in tests/test_*.py; do python3 "$f"; done | grep -cE '^\s*(ok|PASS)\b'`. The other two
+each want one thing first, and **neither is a Revit**: `test_bridge_roundtrip.py` needs its host built
+(below), and `test_mcp_serves.py` needs `pip install --user mcp`, which takes it to **531**.
 
 **And one command that runs all of the above and then looks for what is missing:**
 
@@ -1030,15 +1124,16 @@ with the evidence, and in [§8](#8-what-is-waiting-on-the-owner) as the choice i
 
 *Phase 0 is finished and proven. Step 6 and the whole of Phase 2 are finished and proven of nothing —
 built carefully, obeying rules that are now binding, tested where testing was possible, and compiled on
-every release from 2020 to 2027. Seventeen fragments and skills sit at `DRAFT`, which is not a shortcut
+every release from 2020 to 2027. **Thirty-two fragments and ten skills** sit at `DRAFT`, which is not a shortcut
 but [D-30](docs/DECISIONS.md) being obeyed: promotion needs one proof containing a negative case, and a
 negative case needs a model. `python tools/check-gaps.py` is now the file that answers "what is left",
 because it is computed from disk and this one is not — and where they disagree, believe the tool. It
-currently says **nothing** here is unfinished and 55 are waiting: 47 on a Revit, 3 on Windows, 1 on a
-network, 3 on a conversation. The one thing that *was* unfinished — **the brain wired to nothing** — was
-invisible for a day because the tool had only ever been taught to ask whether the build order was
-followed; it is now wired, and the newest waiting row is the half of that work this machine could not
-prove.
-Almost nothing in this repository is waiting on another session; it is waiting on a machine — and three
-times now, something believed to be waiting on a machine was waiting on somebody trying it. `D3` is
+currently says **nothing** here is unfinished and **55 are waiting: 48 on a Revit, plus the 32 unproven
+fragments as one further item, 3 on Windows, 1 on a network that can reach the weights host, 1 on the
+owner, and 1 on an optional dependency this machine does not have.** That breakdown sums to its own
+total, which the sentence it replaces did not.
+Almost nothing in this repository is waiting on another session; it is waiting on a machine — and **four
+times now**, something believed to be waiting on a machine was waiting on somebody trying it. The
+newest was `A8`, filed under *needs Windows* when what it needed was `pip install mcp` — and trying it
+found that Heron's MCP server would not have started at all on a machine installing today. `D3` is
 still the line that matters most: move the ducts 200 mm, then measure one.*
