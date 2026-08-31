@@ -665,7 +665,7 @@ consumers, same tier, same failure mode. Those are marked as merge candidates
 ([08](08-agent-catalog.md)), not split further.
 
 > **The list grows from real gaps, not from grammar.** A new agent should be traceable to something that
-> was needed and had no owner — which is what the [Capability Gap Agent](#10-agent-lifecycle--hr--13)
+> was needed and had no owner — which is what the [Capability Gap Agent](#10-agent-lifecycle--hr--17)
 > exists to detect.
 
 ---
@@ -717,7 +717,7 @@ prevent. The Persona Agent decides the format; the Rendering Agent produces it.
 ## Maintaining this list
 
 This is a **document today and a generated artefact later**. Once the Agent Registry
-([`HERON-AHR-REG-008`](#10-agent-lifecycle--hr--12)) exists, this page should be produced from it by the
+([`HERON-AHR-REG-008`](#10-agent-lifecycle--hr--17)) exists, this page should be produced from it by the
 Agent Documentation Agent rather than hand-maintained — otherwise it drifts within weeks
 ([06 §12](06-heron-platform.md)).
 

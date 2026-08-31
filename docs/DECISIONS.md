@@ -47,19 +47,19 @@ an edit.
 | # | Decision | Status |
 |---|---|---|
 | [D-00](#d-00--documentation-first-no-implementation-yet) | Documentation first, no implementation yet | ✅ Accepted |
-| [D-01](#d-01--execution-host--claude-code-plugin) | Execution host — Claude Code plugin | ✅ Accepted |
+| [D-01](#d-01--execution-host-claude-code-plugin) | Execution host — Claude Code plugin | ✅ Accepted |
 | [D-02](#d-02--mcp--add-in-transport-named-pipes) | MCP ↔ add-in transport — named pipes | ✅ Accepted |
-| [D-03](#d-03--mcp-tool-granularity--thick-and-specific) | MCP tool granularity — thick and specific | ✅ Accepted |
-| [D-04](#d-04--generated-code-execution--hybrid) | Generated code execution — hybrid | ✅ Accepted |
+| [D-03](#d-03--mcp-tool-granularity-thick-and-specific) | MCP tool granularity — thick and specific | ✅ Accepted |
+| [D-04](#d-04--generated-code-execution-hybrid) | Generated code execution — hybrid | ✅ Accepted |
 | [D-05](#d-05--revit-version-support-2020-to-latest) | Revit version support — 2020 → latest | ✅ Accepted |
 | [D-06](#d-06--implementation-languages-c-for-revit-python-for-brain) | Languages — C# for Revit, Python for brain | ✅ Accepted |
 | [D-07](#d-07--free-open-source-on-public-github) | Free open source on public GitHub | ✅ Accepted |
-| [D-08](#d-08--licence--apache-20) | Licence — Apache 2.0 | ✅ Accepted |
-| [D-09](#d-09--revit-thread-marshalling--externalevent) | Revit thread marshalling — ExternalEvent | ✅ Accepted |
+| [D-08](#d-08--licence-apache-20) | Licence — Apache 2.0 | ✅ Accepted |
+| [D-09](#d-09--revit-thread-marshalling-externalevent) | Revit thread marshalling — ExternalEvent | ✅ Accepted |
 | [D-10](#d-10--repository-stays-private-until-working-code-exists) | Repo stays private until code exists | ✅ Accepted |
 | [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system) | Adopt Master Specification Part 2 (Agent OS) | ✅ Accepted |
 | [D-12](#d-12--adopt-the-master-handover-baseline-part-3-and-its-fifteen-golden-rules) | Adopt Baseline (Part 3) + 15 Golden Rules | ✅ Accepted |
-| [D-13](#d-13--adopt-additional-requirements-part-4--kernel-workflow-engine-constitution) | Adopt Part 4 — Kernel, Workflow Engine, Constitution | ✅ Accepted |
+| [D-13](#d-13--adopt-additional-requirements-part-4-kernel-workflow-engine-constitution) | Adopt Part 4 — Kernel, Workflow Engine, Constitution | ✅ Accepted |
 | [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes) | Unify six status vocabularies into two axes | ⏳ Proposed |
 | [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour) | Field notes authoritative on bridge behaviour | ✅ Accepted |
 | [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope) | Live session list; freeze out of scope | ✅ Accepted |
@@ -89,7 +89,7 @@ an edit.
 | [D-40](#d-40--the-dependency-graph-is-sqlite-and-an-edge-is-derived-before-it-is-stored) | The dependency graph is SQLite, and an edge is derived before it is stored | ✅ Accepted |
 | [D-41](#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer) | Single-user now; company knowledge is a git repo and the admin is the reviewer | ✅ Accepted |
 | [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is setup.ps1 | ✅ Accepted |
-| [D-43](#d-43--the-constitution-is-accepted-all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
+| [D-43](#d-43--the-constitution-is-accepted--all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
 | [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted |
 | [D-45](#d-45--the-library-is-built-out-first-and-proved-in-one-pass-later) | The library is built out first, and proved in one pass later | ✅ Accepted |
 | [D-46](#d-46--a-context-fragment-is-consumed-by-the-host-not-by-another-fragment) | A context fragment is consumed by the host, not by another fragment | 🔶 Proposed — needs the owner |
@@ -250,7 +250,7 @@ against a live project model without a preview or a detached copy.
 ### Consequences
 
 - Every tool has a clear risk level and a clear permission gate — this is what makes
-  [D-09](#d-09--revit-thread-marshalling--externalevent) and Golden Rule 9 enforceable.
+  [D-09](#d-09--revit-thread-marshalling-externalevent) and Golden Rule 9 enforceable.
 - Tools map one-to-one onto fragments, so the knowledge system accumulates naturally from use.
 - **Accepts:** the tool list grows large, and MCP tool schemas cost context on every request.
   Mitigated by capability discovery — a small stable core set plus `heron_find_capability`,
@@ -588,7 +588,7 @@ Since the Golden Rules are the constitution — referenced by number throughout 
 All three parts remain source of truth and are preserved verbatim; where they differ, Part 3 governs
 the rule set, and Parts 1 and 2 remain the detailed reference for everything else.
 
-*(Written when three parts existed. Part 4 followed — see [D-13](#d-13--adopt-additional-requirements-part-4--kernel-workflow-engine-constitution) — and field notes after that, see [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour). Part 3 remains authoritative on the rule set.)*
+*(Written when three parts existed. Part 4 followed — see [D-13](#d-13--adopt-additional-requirements-part-4-kernel-workflow-engine-constitution) — and field notes after that, see [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour). Part 3 remains authoritative on the rule set.)*
 
 **All cross-references in the repository were mechanically remapped** to the new numbering:
 
@@ -777,7 +777,7 @@ Observed behaviour outranks designed behaviour. The specifications are hypothese
 | Finding | Effect |
 |---|---|
 | **Per-process pipes work; one shared pipe does not** — before 2026-08-20 the second Revit simply refused to start | [D-02](#d-02--mcp--add-in-transport-named-pipes) confirmed by a real failure, not a hypothetical |
-| **The AI's script runs on the thread that draws the screen; Revit is genuinely frozen while it runs; no add-in can change that** | **Confirms the Revit API threading constraint from the field.** Absent from all four specifications, present in the working code. Validates [D-09](#d-09--revit-thread-marshalling--externalevent) |
+| **The AI's script runs on the thread that draws the screen; Revit is genuinely frozen while it runs; no add-in can change that** | **Confirms the Revit API threading constraint from the field.** Absent from all four specifications, present in the working code. Validates [D-09](#d-09--revit-thread-marshalling-externalevent) |
 | **If the user is mid-command the AI cannot interrupt — it waits** | "Revit is busy" is a normal state, not an error |
 | **The session list shows a stale document name** | Identity is the **PID**. Never the document name |
 | **One Revit can hold several projects open; commands land on whichever window is in front** | The most dangerous finding — see below |
@@ -1180,7 +1180,7 @@ once: the exact phrase, the keywords, and the meaning. The choice is between a d
 — a server to install, run and keep running — and SQLite with its extensions.
 
 **The installation constraint decides it, and it is already proven rather than assumed.** Heron installs
-per-user with no administrator rights ([D-01](#d-01--heron-runs-as-a-claude-code-plugin),
+per-user with no administrator rights ([D-01](#d-01--execution-host-claude-code-plugin),
 [07](07-installation-and-update.md)), and Phase 0 demonstrated that end to end on a real machine. A store
 that needs a service installed breaks that on exactly the machines Heron is for: locked-down corporate
 laptops where the user cannot install a service and will not be given permission to.
@@ -1431,7 +1431,7 @@ persona-like variation survives is the one place it is safe.
 - The recommendation in [01 §4](01-vision-and-principles.md) and the table in
   [22 §2](22-users-modes-and-extensibility.md) are superseded; both now point here.
 - **The method is worth more than the answer.** An hour reading two systems that already do the job
-  settled a question that designing had left open for weeks — [D-15](#d-15--where-the-field-notes-disagree-with-a-specification-the-field-notes-win)
+  settled a question that designing had left open for weeks — [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour)
   again, and this time the field note was somebody else's working habit rather than a Revit behaviour.
 
 ---
@@ -1439,7 +1439,7 @@ persona-like variation survives is the one place it is safe.
 ## D-28 — Generated code is C#, compiled at run time, in process
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-7a](OPEN-QUESTIONS.md)
-**Completes** [D-04](#d-04--generated-code-execution--hybrid), which settled *hybrid* and left the runtime open.
+**Completes** [D-04](#d-04--generated-code-execution-hybrid), which settled *hybrid* and left the runtime open.
 
 ### Context
 
@@ -1602,7 +1602,7 @@ The updater half was **verified rather than assumed**: `deploy-addin.ps1` writes
 add-ins folder and never into `%APPDATA%\Heron`.
 
 One placement looks wrong and is right: **the audit log is DATA, not DERIVED.** It is evidence, and
-evidence a cache-clear can delete is not evidence — [D-17](#d-17--state-lives-where-its-lifetime-says-it-should)
+evidence a cache-clear can delete is not evidence — [D-17](#d-17--runtime-state-is-machine-local-not-roaming)
 already.
 
 ### Decision
@@ -1779,7 +1779,7 @@ in other languages used on site?* Ajmal was asked the first and answered **Engli
 second half answers itself, and in his favour.
 
 **Heron does not interpret language at all.** It runs inside Claude Code
-([D-01](#d-01--heron-runs-as-a-claude-code-plugin)), and turning a sentence into an intent happens there,
+([D-01](#d-01--execution-host-claude-code-plugin)), and turning a sentence into an intent happens there,
 before Heron is called. So a request typed in Arabic, in mixed Arabic and English, or dictated roughly and
 half-corrected, already works — and has all day: this decision and the eight before it were settled
 through exactly that kind of conversation.
@@ -1947,7 +1947,7 @@ cleared.**
 ## D-38 — GitHub now, App Store kept possible, and nothing built for it
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-26](OPEN-QUESTIONS.md)
-**Narrows** [D-07](#d-07--distribution--github-first-app-store-later), which named the App Store as a later goal.
+**Narrows** [D-07](#d-07--free-open-source-on-public-github), which named the App Store as a later goal.
 
 ### Context
 
@@ -2398,7 +2398,7 @@ fragment was a filter feeding an action.
 ## D-47 — Risk is part of routing, not only part of permission
 
 **Status:** Proposed · **Date:** 2026-08-31 · **Touches:**
-[D-30](#d-30--promotion-needs-a-proof-with-a-negative-case), the risk ladder in the Constitution,
+[D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs), the risk ladder in the Constitution,
 [`tools/check-routing.py`](../tools/check-routing.py)
 
 ### Context
@@ -2594,7 +2594,7 @@ provide of a different type is refused as before. Three things are refused outri
 `binds` on the **provides** side, where a provide simply *is* the name others bind to; `binds` on an
 **ambient or request** need, which has no provide to bind to and where it would be a lie about where the
 value comes from; and a bound name that could not be a C# variable, since the same reasoning as
-[D-28](#d-28--the-contract-is-composed-into-the-generated-c) applies.
+[D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) applies.
 
 The failure message names **both** — *"needs `targets` (bound to `elements`)"* — because a message
 saying only *"nothing provides targets"* sends somebody searching for the wrong word.

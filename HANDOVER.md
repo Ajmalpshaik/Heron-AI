@@ -13,6 +13,11 @@ that day**:
 - **"Work only on Heron-AI and AJ-Tools"** — the standing scope. `AJ-AI-Brain` is the earlier project
   and is **read-only reference**.
 
+**To carry the library build on in a fresh session, say:** *"Read HANDOVER.md §9a in Heron-AI and carry
+on building fragments."* [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start)
+holds the whole recipe — where the sources are, the eight steps per fragment, the commands, and the
+rules that must not be broken. It is written so a session can start from it without asking anything.
+
 If a session ever tells you something that disagrees with `python tools/check-gaps.py`, **believe the
 tool.** It is computed from disk every time; this file is typed by hand.
 
@@ -217,6 +222,21 @@ model has no level"* — not a thing that can be true.
    longest intrudes on nothing. `tools/check-intrusion.py` now measures this repeatably. The assertion
    was **withdrawn rather than narrowed a third time**; `brain/retrieval-history.md` carries what
    happened.
+
+### A fourth, found while writing this handover
+
+**`check-docs.py` reported "0 broken links" while two links in this file pointed at headings that do
+not exist.** It validated the file half of a link and never the `#anchor` half, so every in-file
+cross-reference in the repository had gone unchecked since the checker was written. Teaching it to
+resolve anchors found **27 genuinely dead ones**, most of them in `DECISIONS.md` — a decision log whose
+cross-references quietly stopped working.
+
+**The fix went wrong first, and the way it went wrong is the lesson.** GitHub replaces each space with
+a hyphen and does **not** collapse runs, so `" — "` becomes `--` while `": "` becomes `-`. Collapsing
+the run instead made the checker condemn **125 links across a repository whose links were fine**. The
+number is what gave it away. That is [§4a](#4a-something-looks-wrong-mid-job--start-here)'s rule —
+*a checker that suddenly condemns most of the corpus is a broken checker, not a broken corpus* —
+arriving the same day it was written down.
 
 ### Three traps found by the gates, worth not re-learning
 
@@ -1241,6 +1261,11 @@ meanwhile.
 
 ## 9. Next — read the decisions back, then prove what is built
 
+> **This section is what to do WHEN REVIT IS OPEN.** If it is not, the live work is
+> [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start) — the fragment
+> library, which needs no Revit and no Windows.
+
+
 **Step 6 is built. Phase 2 is built. Do not build either again.** All seven items the build order asks
 of Step 6 are in the repository, and so is everything an audit turned up afterwards: the lease, the
 Failure Analysis Agent, the tool registry, the configuration and health agents. Steps 7 to 14 are all on
@@ -1347,6 +1372,117 @@ categories this repository has spent two sessions learning to keep apart.
 the rest of the register, **nothing external is stopping it.** One MCP tool that resolves a request
 through the capability registry is what the clause asks for. It is in [§1](#1-where-the-project-stands-in-one-paragraph)
 with the evidence, and in [§8](#8-what-is-waiting-on-the-owner) as the choice it creates.
+
+---
+
+## 9a. Continuing the library build — the recipe, so another session can just start
+
+**This is the work that needs no Revit, and it is where the project actually is.** §9 above is what to
+do when Revit is open. If it is not, everything below can be done from anywhere, and a fresh session
+should be able to start from this section alone without asking anything.
+
+### Say this to start
+
+> **"Read HANDOVER.md §9a in Heron-AI and carry on building fragments."**
+
+### Where the work comes from, and how much is left
+
+The source is the owner's earlier library at `AJ-AI-Brain/scripts/`. **It is REFERENCE ONLY — read it,
+never edit it, never commit to it.** His instruction on how to use it, in his own words:
+
+> *"Don't copy-paste from the old library. Check, study, and split if you want to split — or whatever
+> you want to do, do it as per our project specification."*
+
+| Source folder | Files | State |
+|---|---|---|
+| `actions/reporting/` | 43 | **started** — most of the high-value ones are done |
+| `actions/sheets-views/` | 54 | **started** — the spine is done |
+| `creators/` | 36 | not started |
+| `actions/structural-changes/` | 33 | not started |
+| `actions/qa-checks/` | 30 | not started |
+| `actions/color-graphics/` | 25 | barely started — 3 done |
+| `actions/parameters-naming/` | 21 | not started |
+| `actions/visibility/` | 17 | barely started — 3 done |
+| `actions/move-copy-rotate/` | 13 | mostly done |
+| `filters/` | 51 | a few done |
+| `context/` | 12 | see [D-46](docs/DECISIONS.md) — most are the host's job, not fragments |
+| `recipes/` | 44 | **these become SKILLS, not fragments** — a recipe is a whole job |
+
+**Check what already exists before writing anything**, because the names do not match one to one — this
+library is re-authored, not ported:
+
+```bash
+ls brain/fragments/                                    # by folder name
+grep -h '^capability:' brain/fragments/*/fragment.yaml # by capability
+```
+
+### The recipe, per fragment
+
+Same eight steps every time. Steps 2 and 6 are the ones that get skipped and are the reason for the
+rest.
+
+1. **Read the source file end to end**, including its comment header. That header is where the earlier
+   library recorded what it had already got wrong — it is the most valuable part of the file.
+2. **Decide what changes, and be able to say why.** A re-authored fragment is not a translation. Split
+   one source into two if it is doing two jobs; fold two into one if they share a mechanism; drop a
+   feature that belongs to the host. **Write the decision into the fragment's `purpose`**, because the
+   next person will otherwise assume the difference was an accident.
+3. **Write three files** under `brain/fragments/<kebab-name>/`:
+   - `fragment.yaml` — metadata, contract, `purpose`, `compatibility-note`, `utterances`
+   - `impl/any/fragment.cs` — the C#, **non-standalone**: it assumes its `needs` are in scope and
+     leaves its `provides` behind. No `using`, no class, no method wrapper.
+   - `tests/cases.yaml` — `positive`, `negative`, `second_route`. **[D-30](docs/DECISIONS.md): a proof
+     without a negative case does not count**, because the defect being guarded against is the fragment
+     that succeeds while doing nothing.
+4. **Compile it on all eight releases.** This is the gate that has caught every real mistake so far:
+   ```bash
+   python tools/check-fragments-compile.py
+   ```
+5. **Check routing**, and read the ladder-crossing list at the top first:
+   ```bash
+   python tools/check-routing.py
+   python tools/check-intrusion.py     # optional; the shortlist view
+   ```
+6. **Answer every ladder-crossing.** [D-47](docs/DECISIONS.md) removes the option of leaving one alone:
+   say which fragment should win, or say the sentence names a composition and belongs to a skill. Where
+   two fragments fairly claim one sentence, **put the same cross-reference table in BOTH** — written
+   one way it only routes whoever lands on the newer file.
+7. **Run the sweep**, all of it, before committing:
+   ```bash
+   python tools/check-metadata.py && python tools/check-structure.py      && python tools/check-docs.py && python tools/check-gaps.py
+   for t in tests/test_*.py; do python "$t" >/dev/null || echo "FAILED $t"; done
+   ```
+8. **Commit and push to the branch below.** Say in the message what was decided differently and why —
+   the commit is where the reasoning survives.
+
+### The rules that must not be quietly broken
+
+| Rule | What it means here |
+|---|---|
+| **Golden Rule 16** | A fragment **assumes an open transaction and never opens one**. A batch is one undo entry. This is why a read fragment may not change-and-roll-back to measure something — see `MEASURE_CEILING_HEIGHT` |
+| **[D-44](docs/DECISIONS.md)** | A re-authored fragment starts `DRAFT` whatever its status was in the earlier library. Nothing here inherits proven |
+| **[D-45](docs/DECISIONS.md)** | Build it all out now, prove it against Revit later in one pass. Do **not** stop to half-prove something |
+| **Units** | mm → internal feet by `/ 304.8`, plain arithmetic. **Never a units API** — that is what breaks at Revit 2021. Hand values on in feet; [D-20](docs/DECISIONS.md) keeps the conversion at the edge |
+| **ElementId** | Never read one as a number. Compare `ElementId` to `ElementId` — `IntegerValue` is gone by 2026 and the type went 64-bit at 2024 |
+| **Namespaces** | The wrapper imports the base DB namespace only. `Room`, `Space`, `Ceiling` and friends are **not** available as types — tell them apart by **category** |
+| **No outside sources** | Never name another person's repo, tool, product, website or name — anywhere. His instruction, 2026-08-20. A re-authored technique is written in our own words as this project's own knowledge |
+| **Areas** | `ELE, SEL, VIEW, SHT, PAR, MEP, GEO, QA, DOC` — a fixed list. Take the next free number in the area |
+| **Risk** | `READ, ANALYZE, SUGGEST, EXECUTE, MODIFY, PUBLISH, ADMIN`. An export is **PUBLISH**, higher than MODIFY |
+| **Read-backs** | Every fragment that writes reports what **happened**, never what was asked for. That is the defect this whole project exists around |
+
+### The branch
+
+```bash
+git push -u origin claude/ai-aj-tools-handover-af4pow
+```
+
+**Heron-AI and AJ-Tools only.** `AJ-AI-Brain` is read-only reference.
+
+### When something behaves oddly while doing this
+
+[§4a](#4a-something-looks-wrong-mid-job--start-here). Do not fix past it quietly — the compile gate and
+the checkers have caught four real defects during this build, and each one was worth more than the
+fragment being written at the time.
 
 ---
 

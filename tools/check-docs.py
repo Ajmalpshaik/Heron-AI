@@ -27,19 +27,72 @@ out("=== FILES ===\n")
 out("markdown files: %d\n\n" % len(md))
 
 # ---------- 1. link integrity ----------
+#
+# A LINK TO A FILE THAT EXISTS CAN STILL BE DEAD, and this check used to say
+# nothing about it. `[the recipe](#9a-continuing-...)` points at a HEADING, not
+# a file, and the file-existence test above skipped every one of those - so two
+# in-file links written on 2026-08-31 were dead on arrival while this printed
+# "BROKEN LOCAL LINKS: 0". They were found by a hand-written probe minutes
+# later, which is precisely the reading this checker exists to make unnecessary.
+#
+# The anchor is derived the way GitHub derives it, and ONE DETAIL DECIDES
+# EVERYTHING: each space becomes a hyphen and RUNS ARE NOT COLLAPSED. So a
+# heading containing " - " loses the dash and keeps both spaces, giving TWO
+# hyphens in the anchor.
+#
+# That detail was got wrong first, with `\s+` collapsing the run, and the check
+# then reported 125 broken links across a repository whose links were fine. The
+# number is what gave it away: a checker that suddenly condemns most of the
+# corpus is a broken checker, not a broken corpus - which is the rule
+# HANDOVER.md 4a states, arriving here the same day it was written.
 link = re.compile(r'\[([^\]]*)\]\(([^)]+)\)')
+heading = re.compile(r'^#{1,6} (.+)$', re.M)
+
+
+def anchor_of(text):
+    """The GitHub anchor for a heading.
+
+    Each space becomes one hyphen. Runs are NOT collapsed - that is what makes
+    " - " produce two hyphens, and getting it wrong condemns every link in the
+    repository that points at a heading with a dash in it.
+    """
+    slug = re.sub(r'[^\w\s-]', '', text.lower())
+    return slug.strip().replace(' ', '-')
+
+
+def anchors_in(path):
+    try:
+        body = io.open(path, encoding='utf-8').read()
+    except (IOError, OSError):
+        return set()
+    return set(anchor_of(h) for h in heading.findall(body))
+
+
 bad = []
+_anchor_cache = {}
 for p in md:
     s = io.open(p, encoding='utf-8').read()
     base = os.path.dirname(p)
     for text, href in link.findall(s):
-        if href.startswith(('http://', 'https://', '#', 'mailto:')):
+        if href.startswith(('http://', 'https://', 'mailto:')):
             continue
-        tgt = href.split('#')[0]
+
+        tgt, _, fragment = href.partition('#')
+
         if not tgt:
+            # An in-file link: the heading has to exist in THIS file.
+            target_file = p
+        else:
+            target_file = os.path.normpath(os.path.join(base, tgt)).replace(os.sep, '/')
+            if not os.path.exists(target_file):
+                bad.append((p, href, text[:35]))
+                continue
+
+        if not fragment:
             continue
-        full = os.path.normpath(os.path.join(base, tgt)).replace(os.sep, '/')
-        if not os.path.exists(full):
+        if target_file not in _anchor_cache:
+            _anchor_cache[target_file] = anchors_in(target_file)
+        if _anchor_cache[target_file] and fragment not in _anchor_cache[target_file]:
             bad.append((p, href, text[:35]))
 
 out("=== 1. BROKEN LOCAL LINKS: %d ===\n" % len(bad))
