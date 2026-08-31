@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 3 sheets and a writable empty folder
+    expect: >
+      exported holds 3 paths, notExported empty. Then OPEN THE FOLDER - three
+      .dwg files, named "<number> - <title>.dwg". Open one in a CAD viewer and
+      confirm it is the right drawing, not an empty file with the right name
+
+  - given: a fileNamePrefix such as "PRJ01_"
+    expect: every filename starts with it, and the files are on disk
+
+  - given: a folder that does not exist yet
+    expect: >
+      it is created, the files land in it, and folderProblem stays empty. A
+      created folder is expected for an export and is not an error
+
+negative:
+  - given: >
+      a folder that cannot be written to - read-only, or a path that is not
+      valid on this machine
+    expect: >
+      folderProblem names the folder AND the reason, every id in notExported,
+      and NO files anywhere. The failure must not read as "Revit could not
+      export these views", because the views were never the problem
+
+  - given: a VIEW TEMPLATE among the elements
+    expect: its id in notExported, no file for it, the real views still exported
+
+  - given: a view whose CanBePrinted is false
+    expect: >
+      its id in notExported. Asking Revit first is cheaper than catching the
+      exception, and it keeps the answer specific
+
+  - given: >
+      a view named with characters Windows forbids, e.g. a colon or a slash
+    expect: >
+      a file IS produced with those characters replaced, and its real path is
+      in exported. The point is that the path reported is the path that exists -
+      never the name that was asked for
+
+  - given: an element that is not a view at all
+    expect: its id in notExported, no exception
+
+second_route:
+  - open the export folder and count the files - it must equal exported.Count
+  - open one file in a CAD viewer; a right-named empty file is the failure this catches
+  - delete one file after export and re-run - it must reappear, and be reported again

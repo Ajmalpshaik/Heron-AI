@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-003
+semantic-identity: "write these sheets out as PDF, and check the file is really there"
+kind: action
+domain: revit.sheets
+capability: EXPORT_SHEETS_TO_PDF
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Exports sheets to PDF - one combined file or one per sheet - and reports the
+  paths that ACTUALLY EXIST ON DISK afterwards, the same read-back
+  EXPORT_VIEWS_TO_DWG uses and for the same reason.
+
+  ASKING A PRINTER WAS DELIBERATELY NOT RE-AUTHORED, and that is the most
+  important line here. The older way to reach a PDF is to drive a virtual
+  printer through PrintManager. That route submits a real print job, and on a
+  real office machine the installed printer list contains real physical
+  copiers next to the PDF drivers. A wrong driver spends somebody else's paper
+  on a shared device - an outward, unrecoverable side effect nobody asked for.
+
+  So this fragment uses the export API and nothing else, and its declared
+  release range is narrowed to the releases that carry it rather than widened
+  by a printer fallback. A fragment that refuses an old release is honest;
+  one that quietly prints on a copier is not.
+
+  RISK IS **PUBLISH**. Nothing in the model changes. Files are written that get
+  issued to other people, and one Ctrl+Z does not un-send a drawing.
+
+  NO TRANSACTION, AND NONE IS NEEDED - export is document I/O, not a model edit.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: exportFolder
+      type: string
+      source: request
+    - name: combinedFileName
+      type: string
+      source: request
+  provides:
+    - name: exported
+      type: IList<string>
+    - name: notExported
+      type: IList<ElementId>
+    - name: folderProblem
+      type: string
+
+revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  **2022 AND LATER ONLY, AND THE RANGE WAS MEASURED RATHER THAN ASSUMED.** The
+  compile gate was run with all eight releases declared, and the two failures
+  are not the same failure:
+
+    Revit 2020   CS0246 - `PDFExportOptions` does not exist at all
+    Revit 2021   CS0122 - it EXISTS AND IS INACCESSIBLE, protection level
+
+  **That 2021 result is the trap.** Checking whether a type is present - by
+  reflection, or by reading a members list - answers YES for 2021 and the code
+  still cannot compile. Presence is not usability, and a range widened on a
+  presence check would claim a release that fails at build time. Only a real
+  compile separates the two, which is why `check-fragments-compile.py` reads
+  every release a fragment claims rather than one.
+
+  Everything else here is unchanged 2022 to 2027: `Document.Export` with
+  `PDFExportOptions`, `PDFExportOptions.Combine` and `.FileName`,
+  `ViewSheet.IsPlaceholder`. No units call is made. `System.IO` is written out
+  in full because it is not among the harness usings.
+
+  **A 2020 or 2021 caller gets NOTHING from this fragment rather than a
+  fallback**, and that is a decision rather than a gap - see the purpose. The
+  fallback would be a print job, and the printer list on a real machine holds
+  physical copiers.
+
+utterances:
+  - export these sheets to pdf
+  - make a pdf of the drawings
+  - i need a pdf set
+  - print these sheets to pdf
+  - export the drawing set as pdf
+  - give me one pdf of all the sheets

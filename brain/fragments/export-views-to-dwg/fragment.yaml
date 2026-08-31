@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-010
+semantic-identity: "write these views out as DWG files, and check the files are really there"
+kind: action
+domain: revit.views
+capability: EXPORT_VIEWS_TO_DWG
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Exports each view or sheet to its own DWG file and reports THE PATHS THAT
+  ACTUALLY EXIST ON DISK afterwards.
+
+  THE READ-BACK IS THE FILESYSTEM, and that is the strongest one available
+  anywhere in this library. Revit's export returns a bool, and a bool is a claim
+  about the call rather than about the drive: a full disk, a path too long for
+  Windows, a folder that vanished, a name that collided - none of those
+  necessarily come back as false. So every expected file is checked with
+  File.Exists after the call, and only the ones really there are reported.
+
+  RISK IS **PUBLISH**, not MODIFY, and the distinction is deliberate. This
+  changes nothing in the model. It writes files that get issued to other people,
+  which is an outward effect and harder to take back than an edit - one Ctrl+Z
+  does not un-send a drawing. The host should hold it to a higher bar than a
+  model change, not a lower one because "it is only an export".
+
+  NO TRANSACTION, AND NONE IS NEEDED. Export is document I/O rather than a model
+  edit. Opening one here would be a transaction that never changes anything,
+  which is worse than none: it teaches the next reader that exports are edits.
+
+  ONE VIEW PER CALL. Revit's multi-view export builds its own combined names
+  that cannot be fully controlled, and a drawing issued under a name nobody
+  chose is a coordination problem. One call each costs a little speed and buys
+  every filename.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: exportFolder
+      type: string
+      source: request
+    - name: fileNamePrefix
+      type: string
+      source: request
+  provides:
+    - name: exported
+      type: IList<string>
+    - name: notExported
+      type: IList<ElementId>
+    - name: folderProblem
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.Export` with
+  `DWGExportOptions`, `View.CanBePrinted` and `View.IsTemplate` are unchanged
+  2020 to 2027, and no units call is made. `System.IO` is NOT among the usings
+  the fragment harness provides, so every filesystem call here is written out in
+  full - which also keeps the one place this fragment reaches outside Revit
+  visible on the page rather than hidden behind a using.
+
+utterances:
+  - export these views to dwg
+  - export the sheets to cad
+  - give me dwg files of these
+  - send these out as autocad files
+  - export to dwg
+  - i need cad files of these drawings
