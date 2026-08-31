@@ -49,8 +49,10 @@ foreach (var element in elements)
     var spatial = element as SpatialElement;
     if (spatial == null) continue;
 
-    // By CATEGORY: the `Space` class lives in the Mechanical namespace, which
-    // the wrapper does not import, so a type test would not compile here.
+    // By CATEGORY. `element is Space` WOULD compile - Mechanical is imported,
+    // measured rather than assumed - but the sibling fragment separating Rooms
+    // from Spaces cannot name `Room` at all, and one idiom across the pair is
+    // worth more than one saved line.
     bool isSpace = spatial.Category != null
                    && spatial.Category.Id == new ElementId(BuiltInCategory.OST_MEPSpaces);
     if (!isSpace) continue;

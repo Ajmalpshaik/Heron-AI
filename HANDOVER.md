@@ -243,8 +243,15 @@ arriving the same day it was written down.
 - **`LinkedFileStatus.NotLoaded` does not exist.** The enum has seven members and **three** mean
   *deliberately not loaded* — `Unloaded`, `LocallyUnloaded`, `InClosedWorkset`. A two-way split on
   *"is it Loaded"* puts three false alarms on a handover checklist.
-- **`Room` and `Space` live in namespaces the fragment wrapper does not import.** Tell them apart by
-  **category**, not by a type test.
+- **The fragment wrapper imports Mechanical, Plumbing, Electrical and Structure — only Architecture is
+  missing.** So `Space`, `Ceiling`, `Duct` and `Pipe` can all be named as types; **`Room` cannot.**
+  This line said something broader and wrong until it was measured with a throwaway probe fragment on
+  2026-08-31, and four compatibility notes had been written on the wrong version. The list is in
+  `tools/check-fragments-compile.py` — **read it rather than inferring it from one compile failure**,
+  which is exactly how the wrong version got written. Comparing **categories** is still the right idiom
+  where Room is one of the possibilities, and where "a source" or "a ceiling" spans several categories
+  or families — but that is now a choice with a stated reason rather than a workaround for a wall that
+  was not there.
 - **`check-structure.py` fires on `Autodesk.Revit` written in a COMMENT.** It is right to: a substring
   match cannot tell comment from code. Reword the comment; do not weaken the checker.
 

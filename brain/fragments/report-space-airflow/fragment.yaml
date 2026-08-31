@@ -73,8 +73,13 @@ compatibility-note: >
   with `AsDouble()` - Revit's internal cubic feet per second - rather than
   through any units API, which is what keeps this clear of the 2021 units move.
   D-20 keeps the conversion to litres per second at the edge where the user is.
-  Spaces are recognised by CATEGORY rather than by the `Space` class, which
-  lives in the Mechanical namespace - one the wrapper does not import.
+  Spaces are recognised by CATEGORY rather than by the `Space` class. **Not
+  because the class is out of reach** - the wrapper imports Mechanical,
+  Plumbing, Electrical and Structure, so `element is Space` compiles, measured
+  on 2026-08-31 rather than assumed. It is by category because the sibling
+  fragment that separates Rooms from Spaces genuinely cannot name `Room`
+  (Architecture is not imported), and one idiom across the pair is worth more
+  than one saved line.
 
 utterances:
   - list the spaces and their airflow

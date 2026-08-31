@@ -77,11 +77,13 @@ foreach (var element in elements)
     // Rooms only. A Space computing zero would be a real finding about THAT
     // space, and counting it here would blame the project setting for it.
     //
-    // Asked by CATEGORY rather than by type. `Room` lives in the Architecture
-    // namespace and `Space` in the Mechanical one, neither of which the wrapper
-    // imports - a type test needs a using this fragment does not control.
-    // Comparing category ids works on every release and never reads an id as a
-    // number, so it is also clear of the 2024 change.
+    // Asked by CATEGORY rather than by type. `Room` cannot be named here at all -
+    // it lives in the Architecture namespace, which the wrapper does not import,
+    // and the compile gate refused `element is Room` on all eight releases.
+    // `Space` CAN be named (Mechanical, Plumbing, Electrical and Structure are
+    // imported - measured, not assumed), but one idiom for the pair is worth
+    // more than one saved line. Comparing category ids also never reads an id as
+    // a number, so it is clear of the 2024 change.
     bool isRoom = spatial.Category != null
                   && spatial.Category.Id == new ElementId(BuiltInCategory.OST_Rooms);
     if (isRoom) roomsSeen++;

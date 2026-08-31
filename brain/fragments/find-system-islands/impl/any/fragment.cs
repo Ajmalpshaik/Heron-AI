@@ -51,9 +51,10 @@ Func<Element, ConnectorSet> connectorsOf = element =>
     return null;
 };
 
-// Equipment is what makes an island fed. Recognised by CATEGORY so one path
-// covers mechanical, electrical and plumbing without naming a class from a
-// namespace the wrapper does not import.
+// Equipment is what makes an island fed. Recognised by CATEGORY because "a
+// source" is THREE different categories and no single class covers them - not
+// because the classes are out of reach. Mechanical, Plumbing, Electrical and
+// Structure are all imported here; only Architecture is not.
 var sourceCategories = new List<BuiltInCategory>
 {
     BuiltInCategory.OST_MechanicalEquipment,

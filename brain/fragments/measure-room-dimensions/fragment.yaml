@@ -113,10 +113,13 @@ compatibility-note: >
   through `ROOM_VOLUME` rather than a `Volume` property, because
   `SpatialElement` has no such property - that was found by a compile failure on
   a real release, not from documentation. Room and Space are told apart by
-  CATEGORY rather than by type test, because `Room` lives in the Architecture
-  namespace and `Space` in the Mechanical one, and a type test would need a
-  using this fragment does not control - the compile gate refused it on all
-  eight releases before this was found. Lengths are handed
+  CATEGORY rather than by type test. **`Room` is the only one of the two that
+  cannot be named here** - it lives in the Architecture namespace, which the
+  wrapper does not import, and the compile gate refused `element is Room` on all
+  eight releases. `Space` CAN be named: Mechanical, Plumbing, Electrical and
+  Structure are all imported, measured by compiling a throwaway probe on
+  2026-08-31 rather than assumed. The category test is used for both anyway, so
+  one idiom covers the pair. Lengths are handed
   on in Revit's internal feet and rotations in degrees; D-20 keeps the
   millimetre conversion at the edge where the user is. No units API is touched,
   which is what keeps this clear of the 2021 units move.

@@ -71,8 +71,10 @@ compatibility-note: >
   One implementation for every release. `ConnectorManager`,
   `Connector.AllRefs` and `Connector.IsConnected` are unchanged 2020 to 2027,
   and no units call is made. Equipment is recognised by CATEGORY rather than by
-  a type test, so one code path covers mechanical, electrical and plumbing
-  equipment without naming a class from a namespace the wrapper does not import.
+  a type test, because "a source" is three different categories and no single
+  class covers them - not because the classes are out of reach. Mechanical,
+  Plumbing, Electrical and Structure are all imported by the wrapper, measured
+  on 2026-08-31 rather than assumed; only Architecture is not.
 
 utterances:
   - is this system all connected

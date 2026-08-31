@@ -101,9 +101,11 @@ compatibility-note: >
   `Level.ProjectElevation` and `get_BoundingBox(null)` are unchanged 2020 to
   2027, and no units API is touched - heights are handed on in Revit's internal
   feet, with D-20 keeping the millimetre conversion at the edge. Ceilings are
-  collected by category rather than by the `Ceiling` class, which lives in a
-  namespace the wrapper does not import; that also means a ceiling from any
-  family works without a type test.
+  collected by category rather than by the `Ceiling` class. **The class is
+  reachable** - it is in the base DB namespace, measured on 2026-08-31 rather
+  than assumed - so this is a choice, not a workaround: a category collector
+  catches a ceiling from any family or subclass without a cast, which is what a
+  real model contains.
 
 utterances:
   - what is the ceiling height in this room

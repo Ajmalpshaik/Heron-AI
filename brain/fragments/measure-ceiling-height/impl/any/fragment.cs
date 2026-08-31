@@ -51,9 +51,10 @@ var heights = new Dictionary<ElementId, double>();
 var coverage = new Dictionary<ElementId, double>();
 var noCeiling = new List<ElementId>();
 
-// Collected by CATEGORY, not by the `Ceiling` class - that type lives in a
-// namespace the wrapper does not import, and a category collector also picks up
-// a ceiling from any family without a type test.
+// Collected by CATEGORY, not by the `Ceiling` class. The class IS reachable
+// here - measured, not assumed - so this is a choice: a category collector
+// catches a ceiling from any family or subclass without a cast, which is what a
+// real model contains.
 var allCeilings = new FilteredElementCollector(doc)
     .OfCategory(BuiltInCategory.OST_Ceilings)
     .WhereElementIsNotElementType()
