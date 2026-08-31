@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-MEP-025
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-007
+semantic-identity: "design versus actual airflow per space, and which spaces have no design figure"
+kind: action
+domain: revit.mep
+capability: REPORT_SPACE_AIRFLOW
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Design and actual supply, return and exhaust airflow for each MEP Space - and,
+  more useful than either, which spaces have **no design figure at all** to
+  check the actual against.
+
+  **A SPACE WITH NO DESIGN FLOW LOOKS BALANCED.** Design and actual both read
+  zero, the difference is zero, and a balance check passes. That space simply
+  was never given a target, and a report that treats zero-versus-zero as
+  agreement declares the very rooms nobody has designed yet to be the ones with
+  no problem. `noDesignFigure` names them, and it is the list a coordinator
+  actually acts on.
+
+  **DESIGN AND ACTUAL ARE DIFFERENT KINDS OF NUMBER.** The design figure is what
+  somebody typed or what Revit computed from the space's load. The actual is the
+  sum of what the terminals connected to that space are carrying. They answer
+  "what should it be" and "what is it", and folding them into one difference
+  loses which side is wrong - an under-served space and an un-designed one need
+  different people.
+
+  **AN UNPLACED SPACE IS REPORTED, NOT HIDDEN.** Revit gives it an area of zero
+  and it carries no meaningful flow. It is usually worth seeing: a space in the
+  schedule that is not in the model is a real finding, and dropping it makes the
+  count disagree with the schedule for no visible reason.
+
+  **THIS READS AND NEVER SETS.** Nothing here writes a design flow, and the
+  numbers are Revit's own rather than recomputed - a second opinion on airflow
+  that disagrees with the model's own schedule is worse than no opinion.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: designSupply
+      type: IDictionary<ElementId, double>
+    - name: actualSupply
+      type: IDictionary<ElementId, double>
+    - name: designReturn
+      type: IDictionary<ElementId, double>
+    - name: actualReturn
+      type: IDictionary<ElementId, double>
+    - name: designExhaust
+      type: IDictionary<ElementId, double>
+    - name: actualExhaust
+      type: IDictionary<ElementId, double>
+    - name: noDesignFigure
+      type: IList<ElementId>
+    - name: unplaced
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The six airflow built-in parameters and
+  `SpatialElement.Area` are unchanged 2020 to 2027, and the values are taken
+  with `AsDouble()` - Revit's internal cubic feet per second - rather than
+  through any units API, which is what keeps this clear of the 2021 units move.
+  D-20 keeps the conversion to litres per second at the edge where the user is.
+  Spaces are recognised by CATEGORY rather than by the `Space` class, which
+  lives in the Mechanical namespace - one the wrapper does not import.
+
+utterances:
+  - list the spaces and their airflow
+  - which spaces have no design airflow
+  - is the supply air balanced
+  - design versus actual flow
+  - how much air is going into each space
+  - check the space airflows

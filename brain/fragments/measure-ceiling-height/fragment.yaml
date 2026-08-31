@@ -1,0 +1,114 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-014
+semantic-identity: "how much clear height there is under the ceiling in each room"
+kind: action
+domain: revit.geometry
+capability: MEASURE_CEILING_HEIGHT
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Which ceilings sit over each room, how high the underside of each one is above
+  the floor, and which of them is the one a person means by "the ceiling
+  height". The number every service above the ceiling depends on - duct depth,
+  sprinkler drop, FCU space, the light fitting recess.
+
+  **A ROOM USUALLY HAS MORE THAN ONE CEILING, AND "THE CEILING HEIGHT" MEANS THE
+  MAIN ONE.** A bulkhead, a soffit over the joinery and the main grid are three
+  ceilings over one room at three heights. Taking the first one found is how a
+  report quotes a 400 mm bulkhead as the room's ceiling height. The main ceiling
+  here is the one covering the most of the room in plan, and **every ceiling
+  found is returned with its own height** so the drop and the bulkhead are both
+  visible rather than averaged away.
+
+  **THE HEIGHT IS READ FROM THE CEILING'S OWN PARAMETER, NOT FROM GEOMETRY.**
+  Height-above-level plus the level's elevation is exact, cheap, and is the
+  number Revit itself shows. Deriving it from a solid would give a second figure
+  that disagrees with the Properties palette in the last decimal, and two
+  numbers that both look right is worse than one that is plainly wrong.
+
+  **IT USES `ProjectElevation`, WHICH IS THE HALF OF THIS THAT GOES WRONG
+  SILENTLY.** A level has two heights and only one is in the same space as the
+  model's coordinates. On a site model with a survey offset the other one is
+  wrong by exactly that offset, with a plausible number.
+  `REPORT_LEVEL_ELEVATIONS` says whether this model is affected.
+
+  **WHAT IT DOES NOT DO, AND WHY THAT IS DELIBERATE.** The obvious alternative
+  is to intersect the room's solid with the ceilings. A room's solid stops at
+  its Upper Limit, which on a great many real models is left just above the
+  room's own level - so the solid stops BELOW the ceiling and intersects
+  nothing, and the report says "no ceiling" for a room that plainly has one.
+  The known workaround is to raise the upper limit, measure, and roll it back.
+  **A fragment here may not do that.** Golden Rule 16 means a fragment runs
+  inside a transaction it did not open and must not open one, so a change and a
+  rollback would land inside somebody else's batch and take its undo entry with
+  it. A read that quietly writes is worse than a read that returns less. The
+  plan-overlap test below needs no room solid and so never meets the trap at
+  all.
+
+
+  **"SOFFIT" MEANS TWO DIFFERENT JOBS AND ONE OF THEM CHANGES THE MODEL:**
+
+  | What you meant | Use |
+  |---|---|
+  | "the soffit height in here", "how high is the ceiling" - to know | `MEASURE_CEILING_HEIGHT`, read-only |
+  | "line up the soffits", "align the undersides" - to change | `ALIGN_MEP_ELEVATION`, which MOVES services |
+
+  Asking a height must never move a duct. Both fragments carry this table: a
+  cross-reference written one way only routes whoever lands on the newer file,
+  and which one a search returns is not something either of them chooses.
+
+  **THE COST OF THAT CHOICE, STATED:** the overlap is measured on
+  axis-aligned bounding boxes, so a rotated room over-reports how much of it a
+  ceiling covers, and ranking by plan area rather than by intersected volume can
+  pick differently from a solid test where a large thin soffit competes with a
+  smaller main grid. `coverage` is returned per ceiling so a close call is
+  visible instead of decided in silence.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: mainCeiling
+      type: IDictionary<ElementId, ElementId>
+    - name: mainHeight
+      type: IDictionary<ElementId, double>
+    - name: ceilingsOver
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: heights
+      type: IDictionary<ElementId, double>
+    - name: coverage
+      type: IDictionary<ElementId, double>
+    - name: noCeiling
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `CEILING_HEIGHTABOVELEVEL_PARAM`,
+  `Level.ProjectElevation` and `get_BoundingBox(null)` are unchanged 2020 to
+  2027, and no units API is touched - heights are handed on in Revit's internal
+  feet, with D-20 keeping the millimetre conversion at the edge. Ceilings are
+  collected by category rather than by the `Ceiling` class, which lives in a
+  namespace the wrapper does not import; that also means a ceiling from any
+  family works without a type test.
+
+utterances:
+  - what is the ceiling height in this room
+  - how high is the ceiling
+  - clear height under the ceiling
+  - how much space is there above the ceiling
+  - which rooms have a bulkhead
+  - the soffit height in here

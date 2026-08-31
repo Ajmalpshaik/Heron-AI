@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-006
+semantic-identity: "what a Revit file is, without opening it"
+kind: action
+domain: revit.document
+capability: READ_MODEL_FILE_INFO
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  What a `.rvt` file actually is - which Revit saved it, whether it is a central
+  or somebody's local, whose local, and whether their work ever reached the
+  central - read from the file's header **without opening it**.
+
+  **OPENING A MODEL TO ANSWER "WHAT VERSION IS THIS" COSTS MINUTES AND LOCKS THE
+  FILE WHILE IT HAPPENS.** Revit writes a small header at the front of every
+  `.rvt`, and reading it comes back in milliseconds. A folder of fifty models is
+  a few seconds rather than an afternoon. That difference is the whole fragment.
+
+  **THE ONE THAT PREVENTS REAL DAMAGE IS CENTRAL-VERSUS-LOCAL.** Opening
+  somebody's local by mistake - or worse, detaching and saving over it - is the
+  classic way to break a workshared job, and the file name never reliably says
+  which it is. `isCentral` and `owner` answer before anything is opened.
+
+  **AND THE ONE THAT PREVENTS A WASTED DAY IS `savedToCentral`.** False means
+  the model somebody sent is missing work that still only exists on their
+  machine. Nothing inside the file looks wrong; it is simply not all there, and
+  the discovery normally happens days later.
+
+  **`isNewerThanThisRevit` ANSWERS "WHY WON'T THIS OPEN" BEFORE THE FAILED
+  ATTEMPT**, not after it.
+
+  **THE VERSION VERDICT DEPENDS ON WHICH REVIT IS ASKING, AND THAT IS CORRECT.**
+  The saved format is a fixed fact about the file; whether it counts as current
+  is a comparison against the Revit running right now, so the same file answers
+  differently in 2020 and in 2027. `savedFormat` is returned alongside so the
+  verdict can be read rather than just believed.
+
+
+  **"CHECK THE FILES" MEANS TWO DIFFERENT JOBS AND ONE OF THEM WRITES TO DISK:**
+
+  | What you meant | Use |
+  |---|---|
+  | "check these files before I open them", "what version is this" | `READ_MODEL_FILE_INFO`, which opens nothing and writes nothing |
+  | "check the exported files are really there" | `EXPORT_VIEWS_TO_DWG`, which EXPORTS and then verifies what it wrote |
+
+  Both fragments talk about checking files, and only one of them produces any.
+  A request to inspect what somebody sent must not start an export. Both carry
+  this table, for the same reason as any other pair here.
+
+  **IT READS FILES, IT DOES NOT READ THE OPEN MODEL.** Nothing here touches the
+  document in front of the user, and a path that is missing or not a Revit file
+  is reported per file rather than ending the run - a folder check that stops at
+  the first bad file is a folder check nobody can use.
+
+contract:
+  needs:
+    - name: paths
+      type: IList<string>
+      source: request
+  provides:
+    - name: savedFormat
+      type: IDictionary<string, string>
+    - name: isCentral
+      type: IDictionary<string, bool>
+    - name: owner
+      type: IDictionary<string, string>
+    - name: savedToCentral
+      type: IDictionary<string, bool>
+    - name: isNewerThanThisRevit
+      type: IList<string>
+    - name: unreadable
+      type: IDictionary<string, string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `BasicFileInfo.Extract`, `Format`,
+  `IsCentral`, `IsLocal`, `Username`, `AllLocalChangesSavedToCentral` and
+  `IsSavedInCurrentVersion` are unchanged 2020 to 2027, and no units call is
+  made. Every file is read inside its own guard so one unreadable path costs one
+  row rather than the run - the same reason the paths are keyed as strings
+  rather than as elements, since nothing here is an element in the open model.
+
+utterances:
+  - what version is this Revit file
+  - is this a central or a local
+  - did their changes reach the central
+  - why will this model not open
+  - check these files before I open them
+  - what did they actually send me

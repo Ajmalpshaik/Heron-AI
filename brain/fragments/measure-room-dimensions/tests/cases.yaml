@@ -19,7 +19,34 @@ positive:
       the room's own outside dimensions, not the column's. If the numbers come
       back at column size, the outer loop was picked by index instead of by area
 
+  - given: rooms in a project WITH volume computation switched on
+    expect: >
+      a real non-zero volume each, and volumeComputationOff false. Check one
+      against Revit's own Volume in the Properties palette
+
 negative:
+  - given: >
+      rooms in a project with *Area and Volume Computations* set to areas only,
+      so EVERY room reports zero volume
+    expect: >
+      volumeComputationOff TRUE. A column of zeros is otherwise a plausible
+      number that says nothing about why - and it is the same zero an unbounded
+      room gives, so without this flag the two are indistinguishable
+
+  - given: >
+      one badly-bounded room reporting zero volume in a project where the
+      others compute fine
+    expect: >
+      volumeComputationOff FALSE. That is a problem with that room, and
+      reporting it as a project setting sends somebody to change a setting that
+      is already correct
+
+  - given: SPACES rather than Rooms, in a project with room volumes switched off
+    expect: >
+      real volumes, and volumeComputationOff false. Spaces compute volume
+      regardless of that setting, so a model can show good Space volumes and
+      zero Room volumes at the same time
+
   - given: an L-shaped room
     expect: >
       irregular clearly above zero - a length x width is returned but the number

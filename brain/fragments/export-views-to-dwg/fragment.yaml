@@ -39,6 +39,18 @@ purpose: >
   chose is a coordination problem. One call each costs a little speed and buys
   every filename.
 
+
+  **"CHECK THE FILES" MEANS TWO DIFFERENT JOBS AND ONE OF THEM WRITES TO DISK:**
+
+  | What you meant | Use |
+  |---|---|
+  | "check these files before I open them", "what version is this" | `READ_MODEL_FILE_INFO`, which opens nothing and writes nothing |
+  | "check the exported files are really there" | `EXPORT_VIEWS_TO_DWG`, which EXPORTS and then verifies what it wrote |
+
+  Both fragments talk about checking files, and only one of them produces any.
+  A request to inspect what somebody sent must not start an export. Both carry
+  this table, for the same reason as any other pair here.
+
 contract:
   needs:
     - name: doc

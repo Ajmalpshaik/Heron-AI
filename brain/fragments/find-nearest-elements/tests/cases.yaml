@@ -1,0 +1,57 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: air terminals and FCUs, metric "gap"
+    expect: >
+      each terminal paired with the FCU nearest it. Check two by eye on the
+      plan - and remember this says NEAREST, not SERVED BY, which is a
+      different question
+
+  - given: >
+      the SAME pair of elements measured with metric "centre" and with "gap"
+    expect: >
+      different distances, and possibly a different nearest. If the two agree
+      on everything, one metric is not implemented and the choice is decorative
+
+  - given: two points 3 m apart in X and 4 m in Y, metric "manhattan"
+    expect: >
+      7 m, not 5. A straight line is 5; cable does not fly diagonally through a
+      building, and that gap is the whole reason the metric exists
+
+negative:
+  - given: >
+      a LONG WALL running right past a source element, with its centre far
+      away, measured with "centre"
+    expect: >
+      a large distance - and that is the metric being honest about its own
+      limit, not a defect. Measured with "gap" the same pair is close. This is
+      why the metric is a request input and not a default
+
+  - given: two candidates at exactly the same distance
+    expect: >
+      the source id in `tied`. Picking one silently makes the answer depend on
+      the order Revit handed the elements back in, which changes between runs
+      for no reason anybody can see
+
+  - given: an element that is in BOTH sets
+    expect: >
+      it is not its own nearest, at distance 0. That answer is true and useless,
+      and it would silently replace the real one
+
+  - given: an EMPTY target set
+    expect: >
+      every source in `unmeasurable`, nothing in `nearest`, and no throw.
+      "Nothing to compare against" must not come back as "nothing is near"
+
+  - given: >
+      two ROTATED elements measured with "gap", whose boxes overlap while the
+      elements do not
+    expect: >
+      a gap of 0, AND THAT IS THE STATED LIMIT. Boxes are axis-aligned so a
+      rotated element's box is bigger than the element. Good for ranking, never
+      to be quoted as a clearance
+
+second_route:
+  - >
+    measure the pair in Revit with the Measure tool and compare - it will
+    disagree with "gap" on a rotated element, which is the documented limit

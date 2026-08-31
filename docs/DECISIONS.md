@@ -2542,3 +2542,67 @@ resolved by making the producer publish the generic name, which works because th
 the user's. Where it is not — two producers of the same shape under different names, bound per call —
 this returns. It is recorded rather than fixed, on the same reasoning D-46 used: the next real case
 should decide the design, not this paragraph.
+
+> **CLOSED the same day.** `FIND_NEAREST_ELEMENTS` needs two sets of elements — what to measure from
+> and what to measure to — and only one of them can be called `elements`. Nothing about that is a
+> measurement or a user preference, so the fragment-side answer above does not reach it. See
+> [D-49](#d-49--a-need-may-bind-to-a-provided-name-that-is-not-its-own). The condition held: the case
+> arrived on its own and decided the design.
+
+---
+
+## D-49 — A need may bind to a provided name that is not its own
+
+**Status:** Accepted · **Date:** 2026-08-31 · **Closes:** the remainder left open by
+[D-48](#d-48--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) ·
+**Touches:** [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer), the contract validator
+
+### Context
+
+[D-48](#d-48--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) let several
+fragments jointly feed one, and said plainly what it had *not* solved: **a need satisfied by a
+differently-named provide**. It resolved that day's instance inside the fragment rather than in the
+model, because the choice there was genuinely the user's, and left the general case with a condition —
+*the next real case should decide the design, not this paragraph*.
+
+### The next real case, and it is a different shape
+
+`FIND_NEAREST_ELEMENTS` needs **two sets of elements**: the things to measure *from* and the things to
+measure *to*. Both are what a filter provides. Only one of them can be called `elements`.
+
+That is not the previous shape wearing new clothes. There, one producer published several measurements
+and the user picked; the fix was a request input, and it was right. Here nothing is a measurement and
+nothing is a preference — **which set is the source is a binding the host makes** when it runs the same
+filter twice for two roles.
+
+The three ways out without a model change are all worse:
+
+| Instead of `binds` | Why not |
+|---|---|
+| Call it `elements` too | The two sets stop being distinguishable on paper while the answer depends entirely on which is which |
+| Mark it `source: request` | False. It comes from a filter, and saying otherwise makes the orphan check blind to a real gap |
+| Fold the second filter into the fragment | A filter inside an action, which is what [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer) exists to prevent |
+
+### The decision
+
+A need may declare `binds: <provided name>`, meaning *fill me from a provide called that*.
+`composable()` and `feeders()` look up the bound name; the fragment keeps a name that says what the set
+is **for**, which is the whole reason it is not called `elements`.
+
+**`binds` renames and never converts.** The type must still match exactly, and a need bound to a
+provide of a different type is refused as before. Three things are refused outright by the validator:
+`binds` on the **provides** side, where a provide simply *is* the name others bind to; `binds` on an
+**ambient or request** need, which has no provide to bind to and where it would be a lie about where the
+value comes from; and a bound name that could not be a C# variable, since the same reasoning as
+[D-28](#d-28--the-contract-is-composed-into-the-generated-c) applies.
+
+The failure message names **both** — *"needs `targets` (bound to `elements`)"* — because a message
+saying only *"nothing provides targets"* sends somebody searching for the wrong word.
+
+### What this is not
+
+It is not aliasing for convenience, and it must not become a way to make two fragments fit that were
+not designed to. The test is whether the two names mean **different roles for the same kind of thing**.
+`targets` versus `elements` passes it. Renaming `elements` to `items` because a fragment reads better
+that way does not, and would leave the library with two words for one idea and a graph that hides the
+duplication instead of showing it.

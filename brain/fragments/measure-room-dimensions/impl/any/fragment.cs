@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `elements` (Rooms and/or Spaces) and `doc` are in
-// scope, and leaves `lengths`, `widths`, `rotations`, `irregular`, `unplaced`
-// and `unmeasurable` behind.
+// scope, and leaves `lengths`, `widths`, `rotations`, `irregular`, `areas`,
+// `volumes`, `volumeComputationOff`, `unplaced` and `unmeasurable` behind.
 //
 // READ ONLY. Opens no transaction, creates nothing, moves nothing.
 //
@@ -35,6 +35,24 @@
 // separately from a room that could not be measured, because they are different
 // jobs for different people.
 
+// VOLUME IS A TRAP AND ZERO IS THE SHAPE IT TAKES.
+//
+// A Room's volume is computed only when the project has *Area and Volume
+// Computations* set to compute volumes. When it is not, EVERY Room reports
+// zero - a plausible number, the same number an unbounded room gives, and one
+// that says nothing about why. Reported once for the run so a column of zeros
+// is explained rather than believed. Spaces compute volume regardless, so a
+// model can show sensible Space volumes and zero Room volumes at once.
+//
+// It is read through the ROOM_VOLUME parameter, not a `Volume` property:
+// SpatialElement has no such property, which is a compile failure on a real
+// release rather than something the documentation warns about.
+bool volumeComputationOff = false;
+int roomsSeen = 0;
+int roomsWithZeroVolume = 0;
+
+var areas = new Dictionary<ElementId, double>();
+var volumes = new Dictionary<ElementId, double>();
 var lengths = new Dictionary<ElementId, double>();
 var widths = new Dictionary<ElementId, double>();
 var rotations = new Dictionary<ElementId, double>();
@@ -53,6 +71,30 @@ foreach (var element in elements)
     double area = 0.0;
     try { area = spatial.Area; } catch { }
     if (area <= 0.0) { unplaced.Add(spatial.Id); continue; }
+
+    areas[spatial.Id] = area;
+
+    // Rooms only. A Space computing zero would be a real finding about THAT
+    // space, and counting it here would blame the project setting for it.
+    //
+    // Asked by CATEGORY rather than by type. `Room` lives in the Architecture
+    // namespace and `Space` in the Mechanical one, neither of which the wrapper
+    // imports - a type test needs a using this fragment does not control.
+    // Comparing category ids works on every release and never reads an id as a
+    // number, so it is also clear of the 2024 change.
+    bool isRoom = spatial.Category != null
+                  && spatial.Category.Id == new ElementId(BuiltInCategory.OST_Rooms);
+    if (isRoom) roomsSeen++;
+
+    Parameter volumeParameter = null;
+    try { volumeParameter = spatial.get_Parameter(BuiltInParameter.ROOM_VOLUME); } catch { }
+    if (volumeParameter != null && volumeParameter.HasValue)
+    {
+        double volume = volumeParameter.AsDouble();
+        volumes[spatial.Id] = volume;
+        if (isRoom && volume <= 0.0) roomsWithZeroVolume++;
+    }
+    else if (isRoom) roomsWithZeroVolume++;
 
     IList<IList<BoundarySegment>> loops = null;
     try { loops = spatial.GetBoundarySegments(boundaryOptions); } catch { }
@@ -151,3 +193,8 @@ foreach (var element in elements)
         ? (ownRectangle - area) / ownRectangle * 100.0
         : 0.0;
 }
+
+// Every placed Room reporting zero is the setting, not the model. One room
+// doing it is a bounding problem in that room, which is a different finding
+// and must not be reported as a project setting.
+volumeComputationOff = roomsSeen > 0 && roomsWithZeroVolume == roomsSeen;
