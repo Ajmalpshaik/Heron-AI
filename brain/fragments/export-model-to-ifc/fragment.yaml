@@ -1,0 +1,78 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-001
+semantic-identity: "write the model out as an IFC file for coordination, and check the file is really there"
+kind: action
+domain: revit.document
+capability: EXPORT_MODEL_TO_IFC
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Exports the model to IFC - the whole document, or only what is visible in one
+  3D view, which is the usual coordination scope - and reports the path only if
+  the file is ACTUALLY ON DISK afterwards.
+
+  IT DOES NOT CONSUME `elements`, and that is the honest shape of the job. IFC
+  scope is a document or a view, never a set of elements picked one by one.
+  Taking an element list and quietly ignoring it would be worse than not taking
+  it: the caller would believe it had narrowed the export when it had not.
+
+  ONE UNCERTAINTY IN THE ORIGINAL IS RESOLVED BY HERON'S OWN RULE. The version
+  this was re-authored from wrapped the export in its own transaction, because
+  the IFC exporter can write export-setup data back into the document and Revit
+  refuses that outside one - and it carried a warning that the behaviour varies
+  by Revit build, with instructions to delete the wrapper if it threw the other
+  way.
+
+  Under Golden Rule 16 the caller already holds an open transaction, so the
+  requirement is met without this fragment opening anything, and the
+  environment-dependent branch simply does not arise. If the exporter does write
+  setup data, it lands inside the caller's single undo entry where it belongs.
+
+  RISK IS **PUBLISH**. An IFC goes to other trades, and one Ctrl+Z does not
+  un-send it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: exportFolder
+      type: string
+      source: request
+    - name: fileName
+      type: string
+      source: request
+    - name: scopeViewId
+      type: ElementId
+      source: request
+  provides:
+    - name: exportedPath
+      type: string
+    - name: problem
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `IFCExportOptions`, its `FileVersion`
+  and `FilterViewId`, the `IFCVersion` members used, and `Document.Export` are
+  unchanged 2020 to 2027, and no units call is made. `scopeViewId` is an
+  `ElementId` in and out and is never converted to or from an integer, which is
+  what keeps this clear of the 2024 change to the width behind it - pass
+  `ElementId.InvalidElementId` for the whole model rather than a zero.
+
+utterances:
+  - export the model to ifc
+  - give me an ifc for coordination
+  - export ifc from this view
+  - i need an ifc file
+  - export to ifc for the other trades
+  - make the ifc export

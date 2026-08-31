@@ -1,0 +1,39 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a writable folder, a file name, scopeViewId = ElementId.InvalidElementId
+    expect: >
+      exportedPath names a real .ifc, problem empty. Then OPEN IT in a viewer
+      and confirm the model is in there - a right-named file of the wrong size
+      is the failure a path alone cannot show
+
+  - given: scopeViewId set to a real 3D view that hides most of the model
+    expect: >
+      the IFC contains only what that view shows. Compare its file size against
+      the whole-model export - visibly smaller. This is the whole reason to
+      scope an export, and only the file can prove it happened
+
+negative:
+  - given: scopeViewId pointing at a FLOOR PLAN rather than a 3D view
+    expect: >
+      problem says so and NO file is written. It must NOT fall back to the whole
+      model: a coordination file holding far more than was asked for reaches
+      other trades before anybody notices, which is worse than an error
+
+  - given: a read-only folder, or a path invalid on this machine
+    expect: problem names the folder and the reason, exportedPath empty, no file
+
+  - given: an empty file name
+    expect: problem says so, nothing written
+
+  - given: >
+      an export that returns without throwing and writes nothing - simulate by
+      exporting to a path the process cannot finally write
+    expect: >
+      exportedPath EMPTY and problem saying no file was produced. This is the
+      case the read-back exists for: the call was clean and the drive is empty
+
+second_route:
+  - open the .ifc in a free IFC viewer and look at the model, not the filename
+  - compare file size between a whole-model export and a view-scoped one
+  - one Ctrl+Z after the export - any setup data the exporter wrote goes with it
