@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 10 rooms, parameterName "Number", startAt 101, sortBy "x"
+    expect: >
+      101 to 110 running left to right across the plan. Look at the plan - the
+      numbers must read in order across it, which is the entire point and is
+      not something the count can show
+
+  - given: padding 3 and prefix "MEP-"
+    expect: >
+      MEP-001, MEP-002. Check one in the Properties palette
+
+negative:
+  - given: >
+      renumbering rooms from 101 while ANOTHER room already holds 105
+    expect: >
+      that element in `refused` WITH the number it was refused. Revit rejects a
+      duplicate room number, and a count of attempts reports it as done - this
+      is the normal way this job fails
+
+  - given: the same case again
+    expect: >
+      the number 105 is CONSUMED, not retried on the next element. Reusing it
+      makes the final sequence depend on which elements happened to clash, so
+      two runs of the same job give different drawings
+
+  - given: sortBy "none"
+    expect: >
+      the order handed in, unchanged. That is a real answer for a caller who
+      sorted them deliberately, not a fallback
+
+  - given: >
+      a set on a site ROTATED to true north, sorted by "x"
+    expect: >
+      a diagonal walk across the rooms - AND THAT IS THE STATED LIMIT. x and y
+      are project axes, not the building's. Sort by name or hand them over
+      already ordered
+
+  - given: an element with no position at all, sorted by "x"
+    expect: >
+      it sorts last and is still numbered. Losing it would be worse than
+      numbering it at the end
+
+second_route:
+  - >
+    open the plan in Revit and read the numbers around the floor - a schedule
+    sorted by number should walk the plan in order

@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-PAR-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-006
+semantic-identity: "put what is in one parameter into another one"
+kind: action
+domain: revit.parameters
+capability: COPY_PARAMETER_VALUE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies one parameter's value into another, on every element - stamp Type Mark
+  into Comments, mirror a shared parameter into the one a client's schedule
+  actually reads.
+
+  **IT COPIES THE STORED VALUE, NEVER THE DISPLAYED ONE**, and that is the
+  decision the whole fragment turns on. Reading a length as text gives *"2500"*,
+  which is a rounded rendering of a number that is not exactly 2500. Writing
+  that text into another length parameter stores the rounded value **as the
+  truth** - and the two parameters then disagree by an amount too small to see
+  and too real to ignore once something adds them up.
+
+  **SO STORAGE TYPES MUST MATCH, AND A MISMATCH IS REFUSED RATHER THAN
+  CONVERTED.** Text into text, number into number, id into id. A number copied
+  into a text parameter is the one case that looks harmless and is not: it is a
+  one-way door, and the value that comes back is the rounded one.
+
+  **THE SOURCE MAY LIVE ON THE TYPE AND THE TARGET ON THE INSTANCE.** That is
+  the common shape of this job - Type Mark is a type parameter, Comments is an
+  instance one - so each side is resolved independently, and `resolvedFrom` says
+  where the value was read so *"they all share one value"* stays
+  distinguishable from *"they each carry the same value"*.
+
+  **IT READS BACK.** Every element reported as copied was re-read afterwards.
+
+  **AN EMPTY SOURCE IS NOT COPIED.** Copying a blank over a filled target
+  destroys data to no purpose, and it is the kind of loss nobody notices until
+  the schedule is issued.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: fromParameter
+      type: string
+      source: request
+    - name: toParameter
+      type: string
+      source: request
+  provides:
+    - name: copied
+      type: IList<ElementId>
+    - name: sourceBlank
+      type: IList<ElementId>
+    - name: typeMismatch
+      type: IList<ElementId>
+    - name: readOnly
+      type: IList<ElementId>
+    - name: absent
+      type: IList<ElementId>
+    - name: unverified
+      type: IList<ElementId>
+    - name: resolvedFrom
+      type: IDictionary<ElementId, string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `LookupParameter`, `StorageType` and the
+  typed `Set` overloads are unchanged 2020 to 2027. No units API is touched and
+  no value is ever rendered to text - the stored value moves across untouched,
+  which is what keeps this clear of the 2021 units move and of every rounding
+  question at once. An ElementId value is moved as an `ElementId`, never through
+  an integer, so the 2024 64-bit change cannot reach it.
+
+utterances:
+  - copy the type mark into comments
+  - put that parameter into this one
+  - mirror one parameter to another
+  - stamp the mark into the other field
+  - move the value across to the client parameter

@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-PAR-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-007
+semantic-identity: "number these in order - rooms, sheets, marks"
+kind: action
+domain: revit.parameters
+capability: RENUMBER_SEQUENTIAL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Writes a running number into one parameter across a set - rooms 101, 102, 103;
+  sheets restamped; marks put back in order after a layout change.
+
+  **THE ORDER IS THE WHOLE JOB AND IT IS A REQUEST INPUT.** Numbering in
+  whatever order a collector happened to return is the one outcome nobody wants:
+  it looks like work was done and produces a drawing where 104 is next to 118.
+  `sortBy` takes `x`, `y`, `name` or `none` - and `none` means *the order I
+  handed you*, which is the right answer when the caller has already sorted them
+  deliberately.
+
+  **`x` AND `y` ARE PROJECT AXES, NOT THE BUILDING'S.** On a site rotated to
+  true north, sorting by X walks diagonally across the rooms. That is a real
+  limit rather than a bug, it is stated here, and the answer when it bites is to
+  sort by name or to hand the elements over already ordered.
+
+  **A DUPLICATE NUMBER IS REFUSED BY REVIT, NOT BY THIS FRAGMENT**, and it is
+  the normal way this job fails: renumbering rooms 101 upward while a room
+  already holds 105 fails on that one element. Every refusal is reported with
+  its number, so the clash can be seen rather than inferred from a short count.
+  Nothing is renumbered twice to work around it - a silent second pass would
+  make the final numbers depend on collision order.
+
+  **IT READS BACK.** Every element reported as numbered was re-read.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: parameterName
+      type: string
+      source: request
+    - name: startAt
+      type: int
+      source: request
+    - name: prefix
+      type: string
+      source: request
+    - name: padding
+      type: int
+      source: request
+    - name: sortBy
+      type: string
+      source: request
+  provides:
+    - name: numbered
+      type: IDictionary<ElementId, string>
+    - name: refused
+      type: IDictionary<ElementId, string>
+    - name: readOnly
+      type: IList<ElementId>
+    - name: absent
+      type: IList<ElementId>
+    - name: unverified
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `LookupParameter`, `LocationPoint`,
+  `get_BoundingBox(null)` and `Parameter.Set(string)` are unchanged 2020 to
+  2027, and no units call is made - the number is written as text, which is what
+  a Mark, a room number and a sheet number all are. Sorting reads coordinates in
+  Revit's internal feet and never converts them, since only their order matters.
+
+utterances:
+  - renumber the rooms
+  - number these in order
+  - restamp the marks
+  - give them sequential numbers
+  - renumber the sheets
+  - number them left to right

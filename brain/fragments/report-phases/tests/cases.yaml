@@ -1,0 +1,32 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a project with Existing, Demolition and New Construction
+    expect: >
+      all three, IN THAT ORDER. Compare against Manage > Phases in Revit - the
+      order on that dialog is the order this must return
+
+  - given: the names returned fed straight into a phase-setting job
+    expect: >
+      it matches. That is the whole purpose - an exact name, not a near-miss
+      like "Existing" against "Existing Construction"
+
+negative:
+  - given: a project with phases named "Phase 1", "Phase 2" and "Phase 10"
+    expect: >
+      Revit's own order, NOT alphabetical. Sorting by name puts Phase 10
+      between Phase 1 and Phase 2, and "the last phase" then means the wrong one
+
+  - given: a project that never left the default single phase
+    expect: >
+      ONE phase, reported plainly and NOT as a finding. Most projects are this,
+      and flagging it spends the reader's attention on the majority of models
+
+  - given: the fragment run twice with nothing changed
+    expect: >
+      identical output including the order. If the order moves between runs it
+      is being derived rather than read, and every "previous phase" answer built
+      on it is unreliable
+
+second_route:
+  - open Manage > Phases in Revit and read the list by eye

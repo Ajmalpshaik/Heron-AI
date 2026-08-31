@@ -1,0 +1,65 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-007
+semantic-identity: "the project's phases, in order, with the exact names to use"
+kind: action
+domain: revit.document
+capability: REPORT_PHASES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Every phase in the project, in the order Revit holds them, with the exact
+  name and id of each.
+
+  **IT IS THE DISCOVERY STEP FOR EVERY PHASE JOB**, and without it those jobs
+  are guesses. `SET_ELEMENT_PHASE` needs an exact existing phase name; so does
+  anything that renames or deletes one. A near-miss - *"Existing"* against
+  *"Existing Construction"* - fails or, worse, matches something else. Nothing
+  in Revit's own UI hands over that list in a form anything can use.
+
+  **THE ORDER IS INFORMATION, NOT PRESENTATION.** Phases are sequential and
+  Revit keeps them so: *"the phase before this one"* and *"the last phase"* are
+  real ideas that only the order can answer. It is returned as Revit holds it
+  and never sorted by name, which would put *"Phase 10"* between *"Phase 1"* and
+  *"Phase 2"*.
+
+  **A MODEL WITH ONE PHASE IS THE COMMON CASE AND IS NOT A FINDING.** Most
+  projects never leave the default, and reporting that as something to look at
+  wastes the reader's attention on the majority of models.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: phaseNames
+      type: IList<string>
+    - name: phaseIds
+      type: IDictionary<string, ElementId>
+    - name: phaseCount
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.Phases` and `Phase.Name` are
+  unchanged 2020 to 2027, and no units call is made. `Phases` is a `PhaseArray`
+  rather than a generic collection, so it is walked with a plain index - which
+  is also what preserves the order, since converting it to a set would lose the
+  one thing the fragment exists to report.
+
+utterances:
+  - what phases are in this project
+  - list the phases
+  - what is the phase called
+  - which phase is the last one
+  - show me the phase names

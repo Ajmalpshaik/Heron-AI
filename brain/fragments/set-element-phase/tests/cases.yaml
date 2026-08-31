@@ -1,0 +1,40 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: elements and createdPhase "New Construction"
+    expect: >
+      all in `created`, and their Phase Created reading that in the Properties
+      palette. Check one by eye
+
+  - given: demolishedPhase set on elements already created on an earlier phase
+    expect: >
+      all in `demolished`, and those elements drawing as demolished in a view
+      set to that phase - which is the real second route
+
+negative:
+  - given: createdPhase set and demolishedPhase LEFT EMPTY
+    expect: >
+      Phase Demolished UNCHANGED. Empty means leave it alone, which is a
+      different instruction from clear it - and clearing it would silently
+      un-demolish everything in the set
+
+  - given: A PHASE NAME THAT DOES NOT EXIST
+    expect: >
+      the name in `phaseNotFound` and NOTHING WRITTEN AT ALL. Half a set moved
+      and half untouched is worse than nothing done: the model looks partly
+      correct and the failure is invisible in a plan
+
+  - given: >
+      demolishing on a phase EARLIER than the one the element was created on
+    expect: >
+      in `refused`. Revit rejects the write, and it is a real modelling error
+      worth seeing rather than a count that quietly comes up short
+
+  - given: an element with no phase parameters at all - a view, a datum
+    expect: >
+      in absent, the rest still set, and no throw
+
+second_route:
+  - >
+    set a view's Phase Filter to show demolished, switch its phase, and look -
+    the elements should appear and disappear as expected

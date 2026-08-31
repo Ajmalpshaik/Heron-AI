@@ -1,0 +1,50 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: elements with a Type Mark, copying it into Comments
+    expect: >
+      all copied, resolvedFrom "type" for each. Read one in the Properties
+      palette - and note that resolvedFrom "type" means they SHARE one value
+      rather than each carrying the same one, which is a different fix in the
+      model
+
+  - given: copying one numeric parameter into another numeric one
+    expect: >
+      the two agreeing exactly, not to the displayed number of decimals. The
+      stored value moves untouched
+
+negative:
+  - given: >
+      A LENGTH COPIED INTO A TEXT PARAMETER
+    expect: >
+      REFUSED, in typeMismatch. This is the case that looks harmless: it would
+      "work", storing "2500" - the ROUNDED rendering of a number that is not
+      exactly 2500 - and the two parameters would then disagree by an amount
+      too small to see and too real to ignore once something totals them
+
+  - given: an element whose SOURCE parameter is empty
+    expect: >
+      in sourceBlank, and THE TARGET UNCHANGED. Copying a blank over a filled
+      target destroys data to no purpose, and nobody notices until the schedule
+      is issued
+
+  - given: a target that is read-only
+    expect: >
+      in readOnly, the rest still copied, no throw
+
+  - given: an element missing either parameter
+    expect: >
+      in absent - distinguishable from a blank source, because one is a family
+      problem and the other is a modelling one
+
+  - given: >
+      a target parameter that exists only on the TYPE
+    expect: >
+      in absent rather than written. Writing to a type parameter changes every
+      element of that type at once - a far larger edit than the one asked for,
+      and invisible in a per-element count
+
+second_route:
+  - >
+    schedule both parameters side by side in Revit and compare the columns row
+    by row
