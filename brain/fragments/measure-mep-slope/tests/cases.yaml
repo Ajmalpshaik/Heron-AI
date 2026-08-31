@@ -1,0 +1,36 @@
+positive:
+  - given: a drain 10000 mm long falling 100 mm, minimumSlopePercent 1.0
+    expect: >
+      slopePercent has magnitude about 1.0 (sign depending on which end it was
+      drawn from) and belowMinimum is EMPTY - measured against two spot
+      elevations in Revit, not against what the slope parameter claims
+
+  - given: 20 pipes on a run, minimumSlopePercent 1.0
+    expect: every pipe appears in exactly one of slopePercent, vertical or noGeometry - nothing is silently dropped
+
+negative:
+  - given: a pipe whose SLOPE PARAMETER reads 1.0% but whose two endpoints are at the same elevation
+    expect: >
+      slopePercent is 0.0 and it is in belowMinimum. This is the case the
+      fragment exists for. Reading the parameter would report it compliant, the
+      drawing would pass, and it would be found on site when the drain did not
+      run. The geometry is the half that is true
+
+  - given: a vertical riser, minimumSlopePercent 1.0
+    expect: >
+      it is in vertical and NOT in belowMinimum, and no infinity or
+      divide-by-zero appears anywhere. A riser reported as a flat drain sends
+      somebody to fix something that is already correct
+
+  - given: two IDENTICAL drains, each falling 100 mm over 10000 mm, one drawn
+      left-to-right and the other right-to-left, minimumSlopePercent 1.0
+    expect: >
+      one reports about +1.0 and the other about -1.0, and NEITHER is in
+      belowMinimum. This is the case that corrected the fragment while its
+      tests were being written: comparing the signed value against a positive
+      minimum failed the second drain for the direction somebody dragged the
+      mouse. The verdict is on the magnitude; the sign is reported as the fact
+      it is, and which end is downstream is TRACE_CONNECTIVITY's question
+
+second_route:
+  - Two spot elevations in Revit, one at each end of the pipe, and the length between them

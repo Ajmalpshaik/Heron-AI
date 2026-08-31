@@ -1,0 +1,76 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-006
+semantic-identity: "how long is each of these, and how much is there altogether"
+kind: action
+domain: revit.reporting
+capability: MEASURE_ELEMENT_LENGTHS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  The length of every element handed in, in millimetres, and the total. This is
+  the takeoff question - "how many metres of duct is there" - and before this
+  fragment the search answered it with CREATE_DUCT, which is not a near miss but
+  the opposite of the job.
+
+  **It reports lengths, not a breakdown, and that is deliberate.** "How much
+  300x300 duct" is this fragment composed with READ_ELEMENT_PARAMETERS and
+  GROUP_AND_COUNT, per D-29 - one fragment reading geometry, one reading a size,
+  one grouping. A single fragment that did all three would be the one that has
+  to be rewritten the first time somebody wants it grouped by level instead.
+
+  **Anything without a length is named, never counted as zero.** A fitting, a
+  piece of equipment and an accessory all have no length, and quietly scoring
+  them 0 mm produces a total that looks complete and is short. `noLength` is what
+  lets the answer say "and 34 fittings, which have no length" - which is also
+  the true statement a quantity surveyor needs.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: lengthsMm
+      type: IDictionary<ElementId, double>
+    - name: totalMm
+      type: double
+    - name: noLength
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `LocationCurve`, `Curve.Length` and
+  `BuiltInParameter.CURVE_ELEM_LENGTH` are unchanged 2020 to 2027, and the
+  feet-to-millimetres conversion is arithmetic rather than `UnitUtils`
+  (D-20) - so 2021's unit API rewrite does not reach this code and there is
+  nothing here for Autodesk to move under it.
+
+# ROUTING - the counting and measuring questions sit very close together and
+# this table is repeated in COUNT_ELEMENTS and GROUP_AND_COUNT.
+#
+#   "how many ducts"                        -> COUNT_ELEMENTS
+#   "how many metres of duct" / "how long"  -> here
+#   "what sizes are the ducts"              -> READ_ELEMENT_PARAMETERS, grouped
+#   "how much 300x300 duct is there"        -> here + READ_ELEMENT_PARAMETERS
+#                                              + GROUP_AND_COUNT, composed
+#
+# A COUNT AND A LENGTH ARE DIFFERENT ANSWERS TO SENTENCES THAT SOUND THE SAME.
+# "How many" wants a number of elements; "how much" wants a quantity. Getting
+# this wrong gives a confident answer to a question nobody asked.
+
+utterances:
+  - how many metres of duct is there
+  - what is the total length
+  - how long are these
+  - measure these
+  - total length of pipe
+  - how much ductwork is in this

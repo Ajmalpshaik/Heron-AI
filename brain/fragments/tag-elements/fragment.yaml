@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-008
+semantic-identity: "put a tag on each of these elements in this view"
+kind: action
+domain: revit.views
+capability: TAG_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places one tag per element in one view. Tagging is most of what turns a
+  coordinated model into an issued drawing, and nothing here could do it.
+
+  **The tag type is an input and is never guessed.** A duct tag placed on a pipe
+  is not an error Revit reports - it places, it is empty, and it prints blank.
+  Choosing "the right tag" means knowing the office's title block standard, and
+  that is a question for whoever is drawing, not a default (D-33).
+
+  **One tag per element, and elements that already carry one are left alone.**
+  Running a tagging pass twice is the normal way to catch what was added since
+  the last one, and a fragment that stacked a second tag on every already-tagged
+  element would turn a routine re-run into a cleanup job - on a drawing where
+  the duplicates sit exactly on top of each other and are invisible until
+  somebody moves one.
+
+  **It places tags AT the element and does not lay them out.** Where a tag should
+  sit so it is readable, does not cover a duct and does not collide with the next
+  tag is a drafting judgement worth its own capability. Placing them all at their
+  host's own location is the honest, predictable starting point.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: tagTypeId
+      type: ElementId
+      source: request
+    - name: addLeader
+      type: bool
+      source: request
+    - name: alreadyTagged
+      type: ICollection<ElementId>
+  provides:
+    - name: tagged
+      type: int
+    - name: skipped
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The `IndependentTag.Create(Document,
+  ElementId, ElementId, Reference, bool, TagOrientation, XYZ)` overload exists
+  from 2018 through 2027 - later releases ADD multi-reference overloads without
+  removing this one. The tag type and view arrive as ElementId objects taken
+  from live elements, so nothing here builds an ElementId from an integer and
+  2024's move to 64-bit ids does not reach this code.
+
+# ROUTING - tagging is asked for in the same words as selecting and reporting,
+# and this table is repeated in SET_SELECTION.
+#
+#   "tag all the ducts"          -> FILTER_ELEMENTS_BY_CATEGORY then here
+#   "put tags on these"          -> here
+#   "show me the ducts"          -> SET_SELECTION - on screen, not on paper
+#   "which ones are not tagged"  -> a QA read; `alreadyTagged` is its input
+#
+# "SHOW" IS THE AMBIGUOUS WORD. "Show me the sizes" wants an answer in the chat,
+# "show the sizes on the drawing" wants tags. Landing on the wrong one produces
+# a confident answer to a question nobody asked, and one of the two writes to
+# the model.
+
+utterances:
+  - tag these
+  - put tags on the ducts
+  - tag all the ducts in this view
+  - add the size tags
+  - annotate these on the drawing
+  - tag the ones that are not tagged yet

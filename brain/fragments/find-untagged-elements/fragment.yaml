@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-009
+semantic-identity: "which of these already have a tag in this view, and which do not"
+kind: filter
+domain: revit.views
+capability: FIND_UNTAGGED_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Splits a set of elements into the ones already tagged in one view and the ones
+  not. It answers a real question on its own - *"which ducts have not been
+  tagged"* is a drawing check somebody does before issuing - and it is the piece
+  TAG_ELEMENTS needs in front of it.
+
+  **It exists because the dependency graph said it had to.** TAG_ELEMENTS was
+  written taking `alreadyTagged` as an input and nothing on disk could produce
+  one, so `tests/test_graph.py` reported it as an action nothing can feed: a
+  composition that cannot be assembled, however well each half compiles. The
+  alternative was to mark that input as coming from the request, which would
+  have made the graph quiet and the problem permanent - nobody can type a list
+  of already-tagged element ids.
+
+  **Tags are counted PER VIEW, because that is what a tag is.** The same duct is
+  routinely tagged on the coordination plan and untagged on the section, and
+  both are correct. A model-wide answer would report it tagged and the section
+  would be issued bare.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+  provides:
+    # THE UNTAGGED SET IS HANDED ON AS `elements`, WHICH IS THE PIPELINE'S
+    # CURRENCY - the name every action consumes and every filter provides. It
+    # is not a vaguer name than `untagged`: it is what the NEXT step acts on,
+    # and this fragment's whole job is to narrow which elements those are.
+    #
+    # Both outputs are needed together, and that is not tidiness. `composable`
+    # requires ONE producer to satisfy ALL of a consumer's fragment-sourced
+    # needs, and TAG_ELEMENTS needs `elements` AND `alreadyTagged`. Providing
+    # only the second left it an orphan with a feeder sitting right next to it.
+    - name: elements
+      type: IList<Element>
+    - name: alreadyTagged
+      type: ICollection<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  **The only fragment in the library that needs a compile symbol, and the first
+  case where NO single API spans the supported releases.**
+  `IndependentTag.TaggedElementId` exists 2020 to 2026 and was **removed in
+  2027**; `GetTaggedLocalElementIds()` **arrived in 2022**. The overlap is
+  2022-2026 and neither covers the span, so the implementation splits on
+  `REVIT2020 || REVIT2021`.
+
+  This was established by the compile gate, not from memory: the first version
+  used `TaggedElementId` throughout, passed on 2020 and 2022, and failed on
+  2027 - the "worked in 2020, errors on the new one" failure the owner named as
+  his own recurring problem, caught here instead of mid-job.
+
+  It puts a REQUIREMENT ON UNBUILT WORK: D-28's in-process Roslyn executor must
+  define the same `REVIT20xx` symbol MSBuild does. A host defining none takes
+  the `#else` branch and breaks on 2020 and 2021 only - which is the release
+  the owner actually runs.
+
+# ROUTING - repeated in TAG_ELEMENTS.
+#
+#   "which ducts are not tagged"     -> here
+#   "tag the ones that are missing"  -> here, then TAG_ELEMENTS
+#   "tag these"                      -> TAG_ELEMENTS
+#   "how many ducts are there"       -> COUNT_ELEMENTS - a count of elements,
+#                                       not a count of what is annotated
+
+utterances:
+  - which ones are not tagged
+  - what is missing a tag
+  - which ducts have no tag
+  - find the untagged elements
+  - check the tagging on this drawing
+  - are they all tagged

@@ -1,0 +1,33 @@
+positive:
+  - given: 12 untagged ducts in a plan view, a duct tag type, addLeader false
+    expect: 12 tags visible on the drawing, tagged is 12, skipped and refused empty
+
+  - given: the same view re-run after 3 more ducts are modelled, with the 12 in alreadyTagged
+    expect: >
+      tagged is 3 and skipped holds the 12 - the routine re-run that picks up
+      new work, which is the reason to have this guard at all
+
+negative:
+  - given: a second run with alreadyTagged EMPTY on a view whose 12 ducts are all tagged
+    expect: >
+      12 duplicate tags, each landing exactly on top of the existing one. This
+      is the failure the input exists to prevent and it is INVISIBLE on screen -
+      the drawing looks right until somebody drags a tag and finds another
+      underneath. The case is recorded to show what the guard is worth, not
+      because the behaviour is wanted
+
+  - given: a batch containing an element with no location point and no location curve
+    expect: >
+      that id is in refused and the rest of the batch still tags - not a tag
+      placed at the project origin, which would put every such tag on top of
+      each other far from the model and read as a Revit fault
+
+  - given: a PIPE tag type handed in for a batch of ducts
+    expect: >
+      tagged counts them all and every tag prints BLANK. The fragment cannot
+      see this and does not claim to - Revit throws nothing and reports
+      nothing. Recorded so nobody reads `tagged: 12` as "12 readable tags",
+      and so the reason the type is an input and not a default stays visible
+
+second_route:
+  - Look at the sheet. A tag that placed but shows nothing is only visible by reading the drawing

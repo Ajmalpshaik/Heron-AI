@@ -32,12 +32,55 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 FAILURES = []
-# EVERY provider of `elements`, not just the first. The library grew a second
-# one (FRG-ELE-003) on 2026-08-29, and breaking one of two stopped orphaning the
-# consumer - which is the capability registry working exactly as designed, and
-# this test being written when there was only ever one way to do the job.
-FRAGMENT = os.path.join(ROOT, "brain", "fragments",
-                        "filter-elements-by-category", "fragment.yaml")
+
+PROVIDES_ELEMENTS = ("    - name: elements\n"
+                     "      type: IList<Element>")
+
+
+def break_elements(text):
+    """Rename `elements` where a fragment PROVIDES it, and nowhere else.
+
+    The same two lines appear under `needs:` on most of the library, and
+    renaming those breaks the composition from the CONSUMER's side - which
+    orphans everything, passes for the wrong reason, and hides whatever this
+    test was actually asking. Only the tail after `provides:` is touched.
+
+    Returns the new text, or None if this fragment does not provide it.
+    """
+    at = text.find("  provides:")
+    if at < 0:
+        return None
+    head, tail = text[:at], text[at:]
+    if PROVIDES_ELEMENTS not in tail:
+        return None
+    return head + tail.replace(PROVIDES_ELEMENTS,
+                               "    - name: somethingElse\n"
+                               "      type: IList<Element>", 1)
+
+
+def providers_of_elements():
+    """EVERY fragment on disk that provides `elements`, found rather than named.
+
+    This list was hardcoded twice and was wrong both times. It named one
+    fragment until 2026-08-29, when the library grew a second and breaking one
+    of two stopped orphaning the consumer; it named two until 2026-08-31, when
+    a third arrived and did it again. Each time the test failed for a library
+    that was perfectly correct, and each time the fix was to type one more
+    path.
+
+    So it is derived. A test whose fixture is a list of filenames is a test
+    that expires quietly the next time somebody does the thing this repository
+    is for - adding a fragment.
+    """
+    root = os.path.join(ROOT, "brain", "fragments")
+    found = []
+    for name in sorted(os.listdir(root)):
+        path = os.path.join(root, name, "fragment.yaml")
+        if not os.path.isfile(path):
+            continue
+        if break_elements(io.open(path, encoding="utf-8").read()) is not None:
+            found.append(path)
+    return found
 
 
 def check(condition, what):
@@ -49,23 +92,22 @@ def check(condition, what):
 def main():
     home = tempfile.mkdtemp(prefix="heron-graph-")
     os.environ["HERON_KNOWLEDGE"] = home
-    second = os.path.join(ROOT, "brain", "fragments",
-                          "filter-elements-by-id", "fragment.yaml")
-    original = io.open(FRAGMENT, encoding="utf-8").read()
-    original_second = io.open(second, encoding="utf-8").read()
+    providers = providers_of_elements()
+    originals = dict((path, io.open(path, encoding="utf-8").read())
+                     for path in providers)
 
     def break_providers():
-        """Rename what BOTH providers of `elements` leave behind."""
-        for path, text in ((FRAGMENT, original), (second, original_second)):
-            io.open(path, "w", encoding="utf-8").write(
-                text.replace("    - name: elements\n"
-                             "      type: IList<Element>",
-                             "    - name: somethingElse\n"
-                             "      type: IList<Element>"))
+        """Rename what EVERY provider of `elements` leaves behind.
+
+        All of them, or the consumer keeps a feeder and never orphans - which
+        looks like this test failing and is actually the library being fine.
+        """
+        for path, text in originals.items():
+            io.open(path, "w", encoding="utf-8").write(break_elements(text))
 
     def restore_providers():
-        io.open(FRAGMENT, "w", encoding="utf-8").write(original)
-        io.open(second, "w", encoding="utf-8").write(original_second)
+        for path, text in originals.items():
+            io.open(path, "w", encoding="utf-8").write(text)
 
     import heron_scope as SCOPE
     import heron_graph as G

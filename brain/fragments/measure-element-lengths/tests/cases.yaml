@@ -1,0 +1,26 @@
+positive:
+  - given: one duct drawn exactly 2000 mm long
+    expect: >
+      lengthsMm holds 2000.0 for it and totalMm is 2000.0 - MEASURED against
+      the dimension in Revit, not against what the create call was told. This
+      is D3's lesson applied to reading: a unit error looks perfectly fine
+      until somebody measures one
+
+  - given: 12 ducts on a run
+    expect: totalMm equals the sum of the 12 entries, and matches a Revit schedule totalling Length for the same 12
+
+negative:
+  - given: a selection of 20 ducts and 34 duct FITTINGS
+    expect: >
+      lengthsMm has 20 entries, noLength carries the 34 fitting ids, and
+      totalMm is the duct total alone - NOT a 54-element total in which 34
+      elements silently contributed zero. A short total that looks complete is
+      the failure here, and it is invisible without this list
+
+  - given: the same element passed in twice
+    expect: >
+      it is measured once. totalMm and lengthsMm must agree, and a double-count
+      would show only in the total, which is the number nobody re-checks
+
+second_route:
+  - A Revit schedule of the same category with a Length column and Grand Total switched on
