@@ -684,6 +684,57 @@ def composable(producer, consumer):
     return True, "%s -> %s composes" % (producer.slug, consumer.slug)
 
 
+def feeders(consumer, fragments):
+    """Which fragment could supply each thing `consumer` needs.
+
+    Returns (by_need, unmet). `by_need` maps each fragment-sourced need to the
+    ids that provide it at the right type; `unmet` names the ones NOTHING in the
+    library provides.
+
+    WHY THIS EXISTS ALONGSIDE composable().
+    ---------------------------------------
+    `composable(producer, consumer)` asks whether ONE fragment can supply
+    EVERYTHING the consumer needs. That is the right question for "if I change
+    what this provides, what stops fitting?" and it stays exactly as it was.
+
+    It is the WRONG question for "can this fragment be fed at all", and the
+    difference only became visible when a consumer needed two different things.
+    `SUM_BY_GROUP` needs a group key and a quantity - the key from a parameter
+    read, the quantity from a measurement. Both providers exist. No single one
+    supplies both, so every pairwise test failed and the fragment was reported
+    as an orphan nothing could feed, which was false.
+
+    D-46 recorded that limitation and said to lift it when a real composition
+    needed it rather than on the strength of an invented one. A takeoff - how
+    many metres of each size - is that composition, and it is a question a
+    modeller asks rather than one designed to justify a change.
+
+    THE STRICTER HALF IS THE POINT. Splitting the check per need makes the
+    failure MORE precise, not less: today's message lists everything the
+    fragment needs and leaves a reader to work out which part has no producer.
+    `unmet` names it.
+    """
+    wanted = [n for n in consumer.needs() if need_source(n) == "fragment"]
+    by_need = {}
+    unmet = []
+
+    for need in wanted:
+        name, want = need.get("name"), need.get("type")
+        supplying = []
+        for other_id, other in fragments.items():
+            if other is consumer:
+                continue
+            for provided in other.provides():
+                if provided.get("name") == name and provided.get("type") == want:
+                    supplying.append(other_id)
+                    break
+        by_need[name] = sorted(supplying)
+        if not supplying:
+            unmet.append(name)
+
+    return by_need, unmet
+
+
 # ---------------------------------------------------------------------------
 # Command line
 # ---------------------------------------------------------------------------

@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a workshared model, elements the current user has borrowed
+    expect: >
+      those in `editable`, with the owner naming the current user. Compare
+      against Revit's own Worksharing Display for one element by eye
+
+  - given: elements borrowed by a colleague
+    expect: >
+      those in `ownedByOthers` with that person's name. This is the list that
+      decides whether a bulk edit can run at all - Golden Rule 16 means a batch
+      is one transaction, so one owned element takes the whole batch down
+
+  - given: an element created by one person and last changed by another
+    expect: >
+      the two names DIFFERENT and in their own dictionaries. The owner is who
+      to ask for a relinquish and the last changer is who to ask about the
+      modelling; collapsing them sends the question to the wrong desk
+
+negative:
+  - given: A MODEL THAT IS NOT WORKSHARED AT ALL
+    expect: >
+      notWorkshared TRUE and EVERY element in `editable`. Empty lists would read
+      as "nothing is editable" - the exact opposite of the truth, on the more
+      common kind of model, and a caller would act on it
+
+  - given: >
+      an element another user DELETED since the last sync, still in the passed
+      list
+    expect: >
+      the rest of the report intact. The tooltip call throws on that id alone,
+      and a guard around the loop rather than around the call would lose the
+      whole report over one stale element
+
+  - given: an element reported as not owned, which a colleague borrows a moment later
+    expect: >
+      it appears editable, AND THAT IS THE STATED LIMIT rather than a defect.
+      Checkout status reflects the last sync; nothing local can see a borrow
+      since. This must never be presented as a guarantee, because a guarantee
+      is what gets acted on
+
+second_route:
+  - >
+    turn on Worksharing Display > Owners in the Revit view and compare the
+    colours against this list
+  - >
+    try the edit on one element Revit says belongs to somebody else and read
+    the dialog it raises

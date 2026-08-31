@@ -1,0 +1,89 @@
+heron-agent: HERON-REVIT-MEP-025
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-005
+semantic-identity: "how long each duct or pipe is, and how much metal is in it"
+kind: action
+domain: revit.mep
+capability: MEASURE_RUN_QUANTITIES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the two numbers a takeoff of MEP runs is built from - each element's
+  length, and its surface area - and says which elements had neither.
+
+  **THE SURFACE AREA IS REVIT'S OWN, NOT ONE DERIVED HERE.** Revit already
+  computes perimeter times length for a duct or pipe and keeps it on the
+  element. For ductwork that number IS the sheet-metal area of the straight
+  runs, so a takeoff does not have to be rebuilt from the size band - and where
+  it is rebuilt anyway, the two are a free check on each other.
+
+  **A MISSING AREA IS REPORTED AS MISSING, NEVER AS ZERO.** Cable tray and
+  conduit carry no such parameter. Zero there reads as "no metal in it", which
+  is a plausible number and a false one - the exact shape of failure this
+  project is built around. `areaUnknown` names them instead.
+
+  **IT MEASURES AND DOES NOT GROUP.** The question always arrives as "how many
+  metres of each size", which sounds like one job and is two: read the numbers,
+  then total them per group. `SUM_BY_GROUP` does the second half for any
+  quantity and any key, so the same totalling serves insulation, tray weight and
+  concrete without being rewritten per material. Composed with
+  `READ_ELEMENT_PARAMETERS` for the size, those three answer the takeoff
+  question between them.
+
+  **WHICH MEASURE TO TOTAL IS A REQUEST INPUT, NOT A GUESS.** "How much
+  ductwork is there" means metres to one person and square metres to another,
+  and picking a default would answer a question nobody asked. `measure` says
+  which, and the chosen one is also handed back as `quantities` so
+  `SUM_BY_GROUP` can total it without knowing what it is - which is what lets
+  the same totalling serve insulation, tray weight and concrete. Both
+  measurements are still returned separately for a caller that wants both.
+
+  **LENGTH COMES FROM THE PARAMETER, NOT FROM THE LOCATION CURVE.** They are not
+  always the same number: a duct's curve is its centreline, and what Revit
+  schedules is what a quantity surveyor is billed against. Reading the curve
+  instead would produce a defensible figure that disagrees with the model's own
+  schedule, which is worse than a wrong one because both sides look right.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: measure
+      type: string
+      source: request
+  provides:
+    - name: quantities
+      type: IDictionary<ElementId, double>
+    - name: lengths
+      type: IDictionary<ElementId, double>
+    - name: areas
+      type: IDictionary<ElementId, double>
+    - name: areaUnknown
+      type: IList<ElementId>
+    - name: lengthUnknown
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `CURVE_ELEM_LENGTH` and
+  `RBS_CURVE_SURFACE_AREA` are present 2020 to 2027, and the values are taken
+  with `AsDouble()` - Revit's internal feet and square feet - rather than
+  through any units API, which is what keeps this clear of the 2021 units move.
+  D-20 keeps the millimetre conversion at the edge where the user is.
+
+utterances:
+  - how long are the ducts
+  - how much duct is there
+  - the total length of pipe
+  - how many square metres of ductwork
+  - measure the runs
+  - sheet metal area

@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-MEP-025
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-006
+semantic-identity: "the engineering values Revit's system calculation actually runs on"
+kind: action
+domain: revit.mep
+capability: REPORT_CONNECTOR_LOADS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads what each element's connectors are CARRYING - assigned flow, demand,
+  K-factor, fixture units, loss coefficient, pressure drop - and separates the
+  zeros that are normal from the zeros that are a hole in the model.
+
+  **THIS IS THE INPUT SIDE OF A CALCULATION EVERYONE READS THE OUTPUT OF.**
+  Revit sizes systems and reports pressure loss from what is set on the
+  connectors. A fixture with no demand, a sprinkler with no K-factor, an air
+  terminal whose flow was never assigned - each contributes ZERO, and the
+  system report then comes back clean, fast and completely wrong. The numbers
+  look right because they ARE real numbers; they are the wrong ones. Nothing can
+  tell from the output that an input was never filled in.
+
+  **A ZERO IS NOT ALWAYS A FAULT, AND THAT IS WHY THEY ARE SPLIT.** A duct or
+  pipe's own connectors carry no demand - the demand belongs to the fixture at
+  the end of the run. So a zero on a curve is normal and a zero on a terminal,
+  fixture or equipment connector is the thing to look at. Counting every zero as
+  a problem produces a report nobody reads, which is the same outcome as not
+  writing one.
+
+  **READING A PROPERTY THE DOMAIN DOES NOT HAVE THROWS, IT DOES NOT RETURN
+  ZERO.** A duct connector has no K-factor; an electrical connector has no flow.
+  Revit raises. So every value is guarded on its own, and a value that is absent
+  means "not applicable to this domain" - never "set to nothing". Guarding the
+  whole connector in one block instead would lose the readable values alongside
+  the inapplicable one, and report a filled-in fixture as empty.
+
+  **WHAT IT DOES NOT ANSWER:** whether the values are RIGHT. It reports what is
+  set. A flow of 50 l/s on a terminal that should carry 120 reads exactly like a
+  correct one here.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: loads
+      type: IDictionary<ElementId, IDictionary<string, double>>
+    - name: unset
+      type: IList<ElementId>
+    - name: noConnectors
+      type: IList<ElementId>
+    - name: expectedEmpty
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ConnectorManager`, `Connector.Domain`
+  and the assigned-value properties are unchanged 2020 to 2027. Values are
+  handed on in Revit's internal units without touching a units API, which is
+  what keeps this clear of the 2021 units move - and `MEPModel.ConnectorManager`
+  is reached through the family instance rather than through any of the
+  domain-specific model classes, so one code path serves ducts, pipes and
+  electrical alike.
+
+utterances:
+  - what flow is set on these
+  - is the airflow filled in
+  - check the K factor on the sprinklers
+  - which terminals have no flow assigned
+  - are the demands set
+  - why is the system flow zero

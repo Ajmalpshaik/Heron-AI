@@ -1,0 +1,54 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: air terminals with flows assigned
+    expect: >
+      a flow per terminal matching Revit's own properties palette for that
+      element. Check one by eye before trusting the set - a wrong reading here
+      is invisible downstream, because the system report will happily total it
+
+  - given: sprinkler heads with K-factors set
+    expect: >
+      a KCoefficient per head. This is the value that sizes the run, so a head
+      reading zero is the finding the fragment exists for
+
+negative:
+  - given: >
+      a straight DUCT, whose own connectors carry no demand - the demand belongs
+      to the fixture at the end of the run
+    expect: >
+      its id in `expectedEmpty`, NOT in `unset`. Counting every zero as a
+      problem produces a report listing most of the model, which nobody reads -
+      and an unread report is the same outcome as no report
+
+  - given: >
+      an AIR TERMINAL whose flow was never assigned - the actual defect this
+      looks for
+    expect: >
+      its id in `unset`. Revit's system report will show a clean, plausible,
+      wrong total for this model, and nothing on the output side can reveal it
+
+  - given: >
+      a DUCT connector, which has NO K-factor - Revit throws rather than
+      returning zero
+    expect: >
+      the flow and the other readable values still present, with the
+      KCoefficient key simply ABSENT. If one inapplicable property empties the
+      whole element, a properly filled-in fixture gets reported as empty
+
+  - given: a WALL or another element with no connectors at all
+    expect: >
+      its id in `noConnectors`, and not in `unset`. "Has nothing assigned" and
+      "cannot have anything assigned" are different findings for different
+      people
+
+  - given: a terminal whose flow is set to a WRONG but non-zero value
+    expect: >
+      it reports as assigned. THIS IS THE STATED LIMIT: the fragment reports
+      what is set, never whether it is right, and 50 l/s on a terminal needing
+      120 reads exactly like a correct one here
+
+second_route:
+  - >
+    select one connector in Revit and read its properties by eye, then check
+    the system's own flow total against the sum of the assigned flows
