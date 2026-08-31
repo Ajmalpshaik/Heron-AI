@@ -1,0 +1,89 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-013
+semantic-identity: "put a dimension between these ducts or pipes, showing how far apart the services are"
+kind: action
+domain: revit.views
+capability: DIMENSION_MEP_RUNS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws one dimension string between MEP runs - ducts, pipes, conduit, cable
+  tray - so the spacing between services reads on the drawing.
+
+  IT EXISTS BECAUSE THE FAMILY-INSTANCE ROUTE RETURNS NOTHING FOR A RUN, and
+  that fact was measured before it was understood. Duct fittings and accessories
+  publish no built-in references at all, and the first conclusion was *"MEP
+  cannot be dimensioned"*. That was too broad. A run's CENTRELINE is a
+  **non-visible object**, so it is reachable - but only if the geometry is asked
+  for with non-visible objects INCLUDED and references computed. Ask for
+  geometry the ordinary way and a duct genuinely offers nothing to dimension to.
+
+  | What you are dimensioning | Use |
+  |---|---|
+  | Ducts, pipes, conduit, cable tray | **this fragment** |
+  | Air terminals, fixtures, equipment — any family instance | `DIMENSION_FAMILY_INSTANCES` — built-in centre references, which a run does not have |
+
+  BOTH FRAGMENTS CARRY THIS TABLE, deliberately and identically. A
+  cross-reference written one way only routes whoever happens to land on the
+  newer file, and which one a search returns is not something either can choose.
+
+  FEWER THAN TWO REFERENCES CREATES NOTHING, and elements that yielded none are
+  reported by id. A one-reference dimension is degenerate: Revit may accept it
+  and drop it at commit, which looks like success until the sheet is opened.
+
+  THE READ-BACK MUST NOT USE `Dimension.Curve` - it throws *"The input curve is
+  not bound"* on a dimension just created. `NumberOfSegments` and `References`
+  are read instead.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: view
+      type: View
+      source: request
+    - name: axis
+      type: string
+      source: request
+    - name: offsetMm
+      type: double
+      source: request
+  provides:
+    - name: dimensionId
+      type: ElementId
+    - name: dimensionedCount
+      type: int
+    - name: noReference
+      type: IList<ElementId>
+    - name: problem
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Options.IncludeNonVisibleObjects`,
+  `Options.ComputeReferences`, `Element.get_Geometry`, `Curve.Reference`,
+  `Document.Create.NewDimension` and `ReferenceArray` are unchanged 2020 to
+  2027. Millimetres become internal feet by dividing by 304.8 - plain
+  arithmetic, exact on every release, and deliberately not a units API call.
+
+utterances:
+  - dimension between the ducts
+  - how far apart are these pipes on the drawing
+  - put a dimension between the services
+  - dimension the duct spacing
+  - show the gap between the services
+  - dimension between the pipes

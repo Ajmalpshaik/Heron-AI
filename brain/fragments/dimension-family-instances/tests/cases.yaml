@@ -1,0 +1,51 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      3 supply diffusers in a plan view at a known spacing, axis "x",
+      offsetMm 1000
+    expect: >
+      dimensionId is a real dimension, dimensionedCount = 3, noReference empty.
+      Then READ THE DIMENSION IN REVIT: the segments must show the real spacing
+      in millimetres. A created dimension proves nothing about the numbers on it
+
+  - given: the same run, then MOVE one diffuser in Revit
+    expect: >
+      the dimension FOLLOWS it. That is why centre references are asked for
+      first - a dimension that does not hold is worse than none, and only the
+      model can show this
+
+  - given: axis "y" on the same set
+    expect: the string runs the other way, and the segments read the other spacing
+
+negative:
+  - given: >
+      DUCT FITTINGS or duct accessories - content that publishes no references
+    expect: >
+      every id in noReference, NO dimension created, and problem POINTING AT
+      DIMENSION_MEP_RUNS. This is the case whose first reading was too broad:
+      the zero is true of this route, not of MEP, and the answer must say so
+      rather than implying it cannot be done
+
+  - given: exactly ONE element with a usable reference
+    expect: >
+      nothing created and problem saying fewer than two. A one-reference
+      dimension is degenerate - Revit may accept it and DROP IT AT COMMIT, which
+      looks like success until somebody opens the sheet
+
+  - given: axis given as something other than "x" or "y"
+    expect: >
+      problem says so and nothing is drawn. Guessing an axis silently measures
+      the wrong direction, and the drawing looks plausible
+
+  - given: an element that is not a family instance, e.g. a wall
+    expect: its id in noReference, no exception
+
+  - given: an empty element list
+    expect: nothing created, reported as nothing to do
+
+second_route:
+  - read the dimension's segment values in Revit against a tape on the model
+  - move one element and confirm the dimension follows
+  - one Ctrl+Z removes the dimension in a single step (Golden Rule 16)
+  - do NOT verify with Dimension.Curve - it throws on a dimension this new
