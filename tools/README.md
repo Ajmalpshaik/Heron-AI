@@ -183,6 +183,43 @@ claiming two of `TRACE_CONNECTIVITY`'s sentences, and an override fragment claim
 **skill**'s — and correcting those took the words route to **100% in the top three**. The other thirteen
 were left alone and written down.
 
+**Since 2026-08-31 it separates one class of contest from the rest.** Every contested sentence used to
+print in one flat list, which is right for two reports arguing over *"show me the sizes"* and wrong for
+the case underneath: a sentence claimed by a **READ** fragment and answered by one that **writes**.
+There the failure is not a wrong table, it is *the model changed on a question*. Those print above the
+flat list with both risk levels named. The first run found **six, four of them invisible until that
+moment** — *"follow the pipe"* was reaching `OFFSET_ELEMENTS`, which does not return a wrong route, it
+shifts the run sideways. See [D-47](../docs/DECISIONS.md).
+
+---
+
+## `check-intrusion.py` — who turns up in shortlists they have no claim on
+
+```bash
+python tools/check-intrusion.py
+python tools/check-intrusion.py --top 20
+```
+
+The question `check-routing.py` **cannot** ask. That one asks whether each fragment still wins its own
+sentences — a per-fragment question that says nothing about the shortlist a user actually sees. A
+fragment can win every sentence it declares and still appear in the top five for forty sentences
+belonging to other people, and five slots holding three plausible answers and two irrelevant ones is a
+worse answer than three.
+
+**An intrusion is not a defect.** A shortlist is meant to hold more than one candidate, and two
+fragments can fairly answer one sentence. It exits 0 — a gate here would be a gate on how ordinary
+somebody's phrasing is.
+
+It was written to test a specific suspicion, and **the suspicion was wrong**. Purposes here run 21 to
+523 words and the whole purpose is indexed, so length looked like the cause. It is not: the correlation
+is weak, `set-selection` has the shortest purpose in the library and one of the highest intrusion
+counts, and `group-by-assembly` has one of the longest and intrudes on nothing. **Shortening prose would
+not have fixed it**, which is worth having measured before spending a day on it. What the top of the
+list shares is generic phrasing — *"show me…"*, *"which … are in this model"* — every one a real
+sentence nobody may take away. The finding is about the retrieval layer, and **A7** is what would
+separate them. Numbers in
+[`brain/retrieval-history.md`](../brain/retrieval-history.md); run the tool rather than quoting them.
+
 ---
 
 ## `check-api-surface.py` — the releases the compiler cannot reach

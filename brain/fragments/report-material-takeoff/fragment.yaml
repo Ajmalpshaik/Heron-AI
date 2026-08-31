@@ -1,0 +1,78 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-005
+semantic-identity: "how much of each material is in these elements"
+kind: action
+domain: revit.document
+capability: REPORT_MATERIAL_TAKEOFF
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Area and volume of each material across a set of elements, taken from Revit's
+  own takeoff engine rather than recomputed from geometry - so the numbers agree
+  with a Material Takeoff schedule instead of being a second opinion nobody can
+  reconcile.
+
+  **PAINT AND GEOMETRY ARE TWO SEPARATE MATERIAL SETS AND ASKING FOR ONE MISSES
+  THE OTHER ENTIRELY.** An element's geometric and compound-structure materials
+  are one set. Materials applied face by face with Paint are a different set,
+  reached by a different flag - and the area call must be given the SAME flag it
+  was listed with. Read only the geometry set and a painted finish reports as
+  ZERO, which on a finishes schedule reads as *"that material is not in this
+  model"* rather than *"I did not ask for it"*. Both sets are read, and
+  `paintedMaterials` says which came from where.
+
+  **PAINT HAS AREA AND NEVER VOLUME.** Paint is a surface, not a body, so there
+  is no volume to ask for. A painted material therefore has an area and NO
+  volume entry, and that absence is the correct answer rather than missing data.
+  It is also why the result is not sorted by volume anywhere - doing so buries
+  every painted finish at the bottom of a finishes schedule.
+
+  **THE NUMBERS ARE REVIT'S, NOT THIS FRAGMENT'S.** Nothing is derived from
+  solids here. That is deliberate: a takeoff computed independently produces a
+  defensible figure that disagrees with the model's own schedule, and two
+  numbers that both look right is worse than one that is plainly wrong.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: areas
+      type: IDictionary<string, double>
+    - name: volumes
+      type: IDictionary<string, double>
+    - name: paintedMaterials
+      type: IList<string>
+    - name: elementsWithNoMaterial
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.GetMaterialIds`,
+  `GetMaterialArea` and `GetMaterialVolume` are unchanged 2020 to 2027. Areas
+  and volumes are handed on in Revit's internal square feet and cubic feet
+  without touching a units API - D-20 keeps the conversion at the edge where the
+  user is, and avoiding the units API is what keeps this clear of the 2021 move.
+  Materials are keyed by NAME rather than by id, because a takeoff is read and
+  priced by name and an id would have to be resolved again by every caller.
+
+utterances:
+  - how much of each material is there
+  - give me a material takeoff
+  - how much concrete is in this
+  - what is the painted area
+  - quantities by material
+  - a finishes schedule for these

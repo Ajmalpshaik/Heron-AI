@@ -1,0 +1,46 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      one AHU family containing a nested fan, coil and filter, filtered as
+      Mechanical Equipment - four family instances
+    expect: >
+      ONE root, with the other three in its partsOf. Compare against what is
+      standing on site, not against a Revit schedule - the schedule says four,
+      which is the whole reason this exists
+
+  - given: a duct with insulation on it
+    expect: >
+      ONE root, the duct, with the insulation as a part. Insulation is a
+      separate element belonging to a host, so a count of insulated ductwork is
+      double the ductwork without this
+
+  - given: three separate unnested pumps
+    expect: >
+      three roots and no parts. The correction must not fire where there is
+      nothing to correct
+
+negative:
+  - given: a set holding a nested part but NOT its parent
+    expect: >
+      the parent is still the root, even though it was never passed in. The
+      answer is about the model, not about what the filter happened to catch,
+      and a part counted as its own unit is the original error again
+
+  - given: A FAMILY THAT IS ITS OWN ANCESTOR - a corrupt or half-copied family
+    expect: >
+      its id in `cyclic`, the rest of the report intact, AND NO HANG. An
+      unguarded climb loops forever and takes Revit with it, which is worse
+      than a wrong number because it costs the whole session
+
+  - given: elements with no nesting anywhere in the set
+    expect: >
+      roots equal in number to elements, partsOf all empty. If the roll-up
+      quietly merges unrelated elements the corrected count is lower than the
+      schedule and MORE wrong, in the direction nobody re-checks
+
+second_route:
+  - >
+    select the outermost family in Revit and use Edit > Select Nested - the
+    parts it highlights must match partsOf for that root
+  - count the units on the drawing by eye and compare against roots

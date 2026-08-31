@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: an element you already know appears on two sheets
+    expect: >
+      both sheets in onSheets. Check against a view you can open and see the
+      element in - this is the case to run FIRST, because everything below
+      rests on the collector answering the way Revit draws
+
+  - given: an element visible in several views placed on one sheet
+    expect: >
+      the sheet listed ONCE. Two viewports of the same sheet must not make a
+      reissue list say the sheet twice
+
+negative:
+  - given: an element CROPPED OUT of a view it is geometrically inside
+    expect: >
+      that view NOT listed. This is why the view-scoped collector is used
+      rather than a bounding-box test - a geometric answer says the element is
+      in that view and the drawing does not show it
+
+  - given: an element whose category is switched OFF in a view
+    expect: >
+      that view not listed. Same reason, different rule, and no code here knows
+      about either - Revit applies them
+
+  - given: an element TEMPORARILY hidden in an open view
+    expect: >
+      that view STILL listed, and that is correct rather than a miss. Temporary
+      hide is per-session and is not saved, so a reissue list built on it would
+      change depending on who ran it and what they had open
+
+  - given: an element that appears in NO sheeted view at all
+    expect: >
+      its id in `shownNowhere` and empty lists - not absent from the
+      dictionaries. "Not drawn anywhere" is a real and useful answer and must
+      be distinguishable from "not asked about"
+
+  - given: a model whose views are mostly NOT on sheets
+    expect: >
+      viewsSearched clearly lower than the model's view count. The number must
+      be reported, because a fast answer that searched a tenth of the views
+      must not read as a complete one
+
+second_route:
+  - >
+    open one of the returned views in Revit and select the element - if it does
+    not highlight, the collector is answering a different question

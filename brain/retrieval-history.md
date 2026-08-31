@@ -24,6 +24,59 @@ so it is the one with history.
 | 2026-08-30 | 28 | **5th** | **not in the top 5** | **not in the top 5** | `lexical` |
 | 2026-08-30 | 30 | 5th | not in the top 5 (**15th of 30**) | not in the top 5 | `lexical` |
 | 2026-08-30 | 32 | **7th of 32** | not in the top 5 (**17th of 32**) | not in the top 5 | `lexical` |
+| 2026-08-31 | 47 | 12th of 47 | not in the top 5 | not in the top 5 | `lexical` |
+| 2026-08-31 | 59 | **17th of 59** | **36th of 59** | **20th of 59** | `lexical` |
+
+**At 59 the decline is no longer just the duct filter sinking - the shortlist itself has stopped being
+made of fragments that fairly claim the sentence.** The top five are now `dimension-mep-runs`,
+`find-views`, `set-selection`, `find-sheets`, `dimension-family-instances`. `set-selection` has a real
+claim on *"show me"*. **`find-sheets` and the two dimensioning fragments have no claim on this sentence
+at all**, and two of them WRITE to the model.
+
+That is a different and worse finding than the earlier rows, which recorded one fragment ranking badly
+while the shortlist stayed sensible. It is recorded here rather than asserted away: `test_retrieve.py`
+had a check that at least two fragments with a real claim came back, and at 59 that check FAILS. It was
+narrowed once at 7 fragments and again at 28. **Narrowing it a third time would be the measurement
+protecting itself**, so the claim was withdrawn instead and this paragraph carries what actually
+happened.
+
+The spread across those five is **0.0023** - one rank of fusion is 0.00026 - so they are close but no
+longer the flat tie the 28-fragment row described. Ordering among them is still not ranking in any
+meaningful sense.
+
+---
+
+## Intrusion: who turns up in shortlists they have no claim on
+
+Measured 2026-08-31, 59 fragments, 330 utterances, `lexical` backend, by
+[`tools/check-intrusion.py`](../tools/check-intrusion.py) - **run the tool, do not quote these
+numbers.** `check-routing.py` asks whether each fragment wins its OWN sentences; that is a per-fragment
+question and says nothing about the shortlist a user sees. This asks the opposite.
+
+| Fragment | In shortlists it does not own | Purpose length |
+|---|---|---|
+| `find-sheets` | 58 of 330 | 291 words |
+| `align-mep-elevation` | 52 of 330 | 182 words |
+| `dimension-family-instances` | 42 of 330 | 438 words |
+| `move-to-ray-hit` | 42 of 330 | 122 words |
+| `snap-to-grid` | 41 of 330 | 146 words |
+
+**The obvious explanation was tested and is wrong.** Purposes here run 21 to 523 words and the whole
+purpose is indexed, so length looked like the cause:
+
+    correlation(purpose words, intrusions) = 0.313
+
+Weak, and the counter-examples are decisive rather than marginal: `set-selection` has the SHORTEST
+purpose in the library and one of the highest intrusion counts, while `group-by-assembly` has one of the
+longest and intrudes on nothing. **Shortening prose would not have fixed this**, and that is worth
+having measured before somebody spends a day doing it.
+
+What the top of the list shares is generic phrasing - *"show me..."*, *"which ... are in this model"*,
+*"what ... do we have"*. Every one is a real sentence a modeller says and none may be taken away to buy
+a number. So the finding is about the retrieval layer rather than any fragment, which is where
+[D-47](../docs/DECISIONS.md) arrived from the other direction, and **A7** - the trained embedding
+backend, never yet run here - is the thing that would separate *"show me the drawing list"* from
+*"show me every duct"*.
 
 **The words route held 3rd from 7 to 25 fragments, then stepped to 5th at 28 and stayed there. The
 nearness route collapsed early and has stayed collapsed.** At 17 it ranked a *move* fragment first for a

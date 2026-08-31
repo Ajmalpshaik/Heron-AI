@@ -1,0 +1,84 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-016
+semantic-identity: "which drawings actually show this element"
+kind: action
+domain: revit.views
+capability: FIND_VIEWS_SHOWING_ELEMENT
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  For each element, which views it appears in and which sheets those views are
+  on. The lookup that turns a model change into a list of drawings to reissue.
+
+  **THERE IS NO "WHICH VIEWS SHOW THIS" PROPERTY, AND THERE CANNOT BE.**
+  Visibility is not something an element carries - it is the result of a view's
+  crop, its view range, its filters, its category settings, its phase and its
+  discipline, all applied together. The only truthful way to ask is to run a
+  collector SCOPED TO EACH VIEW and see whether the element comes back. That is
+  Revit answering with the same machinery it uses to draw, so it accounts for
+  every one of those rules at once, and it is why this is slow.
+
+  **WHAT "SHOWN" HONESTLY MEANS, SAID PLAINLY.** In that view's element set. An
+  element hidden by a temporary hide or isolate still counts, because that state
+  is per-session and is not saved. One drawn behind another object counts,
+  because it is drawn. Everything permanent - cropped out, filtered out,
+  category switched off, wrong phase, missed by the view range - is correctly
+  excluded.
+
+  **SHEETED VIEWS FIRST, BECAUSE THE QUESTION IS USUALLY ABOUT DRAWINGS.** A
+  model with eight hundred views is a real wait, and a view nobody has placed on
+  a sheet is rarely the answer to "which drawings have to be reissued".
+  `sheetedOnly` limits it; `viewsSearched` says how many were actually looked
+  at, so a fast answer cannot be mistaken for a complete one.
+
+  **SCHEDULES CANNOT ANSWER THIS AND ARE COUNTED SEPARATELY.** A schedule has no
+  geometric element set, so an element scheduled but not drawn will not appear.
+  `schedulesSkipped` makes that absence visible instead of misleading.
+
+  **VIEWS IN A LINKED MODEL ARE NOT SEARCHED** - a different document, and a
+  clean answer here says nothing about them.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: shownIn
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: onSheets
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: shownNowhere
+      type: IList<ElementId>
+    - name: viewsSearched
+      type: int
+    - name: schedulesSkipped
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The view-scoped `FilteredElementCollector`
+  constructor, `View.IsTemplate` and `Viewport` are unchanged 2020 to 2027, and
+  no units call is made. The sheet for a view is found through `Viewport` rather
+  than through any per-version helper, because a viewport is the thing that
+  actually places a view on a sheet on every release in the range.
+
+utterances:
+  - which drawings show this
+  - what views is this on
+  - where is this drawn
+  - which sheets do I need to reissue
+  - is this element on any sheet
+  - what has to be re-checked if I move this
