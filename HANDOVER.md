@@ -16,6 +16,11 @@ that day**:
 If a session ever tells you something that disagrees with `python tools/check-gaps.py`, **believe the
 tool.** It is computed from disk every time; this file is typed by hand.
 
+**If something looks wrong while you are working — a number that feels off, a job that says it did
+something you cannot see, anything odd — go to [§4a](#4a-something-looks-wrong-mid-job--start-here).** It is
+indexed by what you actually see rather than by what the cause turns out to be, and it says what to do
+when the thing you hit is on no list at all.
+
 ---
 
 **Updated 2026-08-31, during the ninth working session — the library went from 32 fragments to 63, and
@@ -807,6 +812,10 @@ now that the next stretch of work happens where Revit cannot be reached.
 
 Each of these cost real time. They are in the order they were learned.
 
+> **Looking something up while a job is going wrong? Use [§4a](#4a-something-looks-wrong-mid-job--start-here)
+> instead.** This list is ordered by CAUSE, which is only searchable once you already know the answer.
+> §4a enters the same knowledge from the symptom.
+
 1. **The Revit API can only be called from Revit's own thread, inside an API context.** An MCP server is
    a separate process and cannot call it at all. Everything marshals through one `ExternalEvent`.
    [docs/03 §4](docs/03-heron-revit.md)
@@ -859,6 +868,93 @@ Each of these cost real time. They are in the order they were learned.
     and reports four outcomes — moved, partly, blocked, unverified — instead of the count it asked
     for. **Found by studying the owner's earlier library rather than by reading Heron's own code**,
     which had been read several times. `E10` is the check.
+
+---
+
+## 4a. Something looks wrong mid-job — start here
+
+**§4 above is indexed by CAUSE. This one is indexed by what you actually SEE**, because mid-job you
+have a symptom and not a diagnosis, and nobody can search a list of causes with a symptom. Same
+knowledge, entered from the other end.
+
+### The rule that comes before the table
+
+**Write down exactly what you saw, word for word, BEFORE you touch anything.** The first instinct is to
+run it again. In Revit that destroys the evidence: the model has moved on, the selection is gone, the
+transaction closed. A re-run that succeeds tells you nothing about the run that did not, and now
+nobody can ever look at the one that mattered.
+
+Copy the message. Note which element, which view, which document. Then investigate.
+
+### Symptom → check this first
+
+| What you see | Check this first |
+|---|---|
+| *"Done — 5 elements"* and you are not certain | **Go and measure one, by hand, in Revit.** Revit's move returns normally and moves nothing for a group member — no exception, no warning. §4 note 13 |
+| A height or level that is plausible but feels off | `REPORT_LEVEL_ELEVATIONS`. A level has **two** heights and only `ProjectElevation` is in the same space as the model's coordinates. On a survey-offset site model every height answer is wrong by exactly that offset |
+| **Every** room's volume reads zero | *Area and Volume Computations* is set to areas only. `MEASURE_ROOM_DIMENSIONS` reports `volumeComputationOff`. **One** room at zero is that room's bounding, which is a different problem |
+| Every space looks balanced | Which spaces have **no design figure at all**. Design zero against actual zero passes a balance check, so the rooms nobody has designed report as the ones with no problem |
+| A count higher than what is standing on site | Nested families and insulation. An AHU with a nested fan, coil and filter is four instances and one unit — `GROUP_BY_ASSEMBLY` |
+| A painted finish reports zero area | Paint and geometry are two separate material sets and the area call needs the same flag it was listed with — `REPORT_MATERIAL_TAKEOFF` |
+| A ceiling-height answer says *"no ceiling"* for a room that plainly has one | The room's **Upper Limit**. A room's solid stops there, so a solid test intersects nothing. `MEASURE_CEILING_HEIGHT` avoids it by design |
+| You asked a **question** and the model **changed** | `python tools/check-routing.py` — the ladder-crossing list at the top. A read sentence can rank below a fragment that writes. [D-47](docs/DECISIONS.md) |
+| A fragment "does not exist", or ranks nowhere | The store is **stale**, not the library broken. `check-routing.py` rebuilds when its count disagrees with disk and says so |
+| It hangs, with no error | **Two waits, not one.** *"Did Revit pick it up?"* and *"having started, did it finish?"* are different questions. §4 note 7 |
+| *"Access denied"* opening the bridge | `CreateNewInstance` on the pipe. §4 note 2 |
+| It went to the **wrong Revit** | An assumption is not a choice, and two sessions can both have `Project1` open. §4 notes 5 and 6 |
+| It compiles clean and Revit rejects it anyway | **A green check is only as wide as what the checker reads.** `check-fragments-compile.py` reads fragment implementations; anything generated elsewhere is unchecked until something reads it too |
+| A checker went green and you did not fix anything | Suspect the checker, not your luck. Find the line that changed |
+
+### The anomaly that does not look like an anomaly
+
+This is the one worth reading twice, because **the failure this whole project is built around is
+reporting the number that was ASKED FOR as the number that HAPPENED.** It arrives looking like success.
+
+Treat these as suspicious even when nothing is obviously wrong:
+
+- **A clean round result with zero failures** — *"Moved 5, skipped 0"*. Ask what it would have printed
+  if it had moved nothing.
+- **It came back faster than the work should take.**
+- **A zero where you expected a small number.** Nobody double-checks a big wrong number; everybody
+  believes a zero.
+- **Totals that match what you asked for rather than what was found.** A report that can only agree
+  with its own input is not a check.
+- **Everything passing right after a change somewhere unrelated.**
+
+The test in every case is the same one written into every fragment's proof spec: **a second route.**
+Ask Revit the same question a different way — a schedule, the Properties palette, a dimension placed by
+hand, a spot elevation. If the two disagree, the second route is right until proven otherwise, because
+it is the one a person can see.
+
+### It is on no list — then what
+
+Four steps, in order, and step 1 is the one that gets skipped.
+
+1. **Record it verbatim, before re-running.** See the rule above.
+2. **Ask three questions.** *Does it happen again?* *Does a second route agree?* *Would it change what
+   somebody does?* An anomaly that is not reproducible, or that changes nothing, is still worth writing
+   down — but it is not worth stopping the job for.
+3. **Route it to exactly one place**, and do it in the same session:
+
+   | What it turned out to be | Where it goes |
+   |---|---|
+   | Needs a real Revit, or Windows, to settle | A new row in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — the single register |
+   | A Revit behaviour worth never re-learning | §4 above, numbered, in the order learned |
+   | A choice that could reasonably have gone the other way | [`docs/DECISIONS.md`](docs/DECISIONS.md), with what was rejected and why |
+   | Something a tool could have caught and did not | A checker in `tools/` — that is how §4 note 11 and the risk ladder both became permanent |
+   | A defect in one fragment | That fragment, plus a **negative case** in its `tests/cases.yaml` |
+
+4. **If it needs Revit and Revit is not in front of you, it becomes a register row — not a half-fix.**
+   That is [D-45](docs/DECISIONS.md): build it all out now, prove it in one concentrated pass later. A
+   speculative fix to something nobody has watched fail is a change with no evidence behind it, and it
+   costs more to unpick than to write.
+
+### Why this is worth the minute it takes
+
+**A finding that only exists in the chat is gone when the session closes.** Every one of the thirteen
+lessons in §4 cost real time, and each is there because somebody wrote it down instead of fixing it
+quietly and moving on. The register is not bureaucracy — it is the only reason the next session does not
+pay for the same discovery twice.
 
 ---
 
@@ -1018,6 +1114,11 @@ validation that was done before the eight greens were believed.
 Every item is unproven, every item has an ID (`A1`, `D3`) so it can be named in a message without
 being described again, and they are in dependency order — nothing in group D can be attempted before
 group A passes.
+
+**When a check behaves oddly rather than simply passing or failing, stop and read
+[§4a](#4a-something-looks-wrong-mid-job--start-here) before deciding what it meant.** This is the pass where
+most anomalies will surface, because it is the first time any of this meets a real model — and the
+dangerous ones arrive looking like a pass.
 
 It is kept as ONE register rather than a copy in each file, because two lists of the same thing drift
 and this repository has been bitten by that more than once. Add to it every time something is built
