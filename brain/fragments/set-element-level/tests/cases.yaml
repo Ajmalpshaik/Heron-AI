@@ -1,0 +1,30 @@
+positive:
+  - given: a duct 2800 above Level 1, reassigned to Level 2 which is 3500 higher
+    expect: >
+      the level reads Level 2, the offset reads -700, and the duct HAS NOT
+      MOVED - MEASURED with a spot elevation before and after, not inferred
+      from the parameters
+
+  - given: 40 services modelled against the wrong level
+    expect: moved is 40, heightChanged empty, and a schedule by level now reports them correctly
+
+negative:
+  - given: the same duct with the offset left at 2800 instead of recomputed
+    expect: >
+      it ends up THREE METRES HIGHER, silently. Nothing is reported, nothing on
+      the plan draws the eye, and it is found when somebody sections through
+      it. This is the entire reason the fragment recomputes and then verifies
+
+  - given: an element with a level parameter but no writable offset parameter
+    expect: >
+      it is REFUSED rather than reassigned. Changing the level with no way to
+      hold the height is the failure above, done deliberately
+
+  - given: an element whose new offset Revit clamps rather than accepts
+    expect: >
+      it appears in heightChanged. The write threw nothing and the element
+      moved anyway - which is why the absolute height is verified rather than
+      assumed from a successful Set
+
+second_route:
+  - A spot elevation on the element before and after; and a schedule grouped by Level for the data side

@@ -1,0 +1,25 @@
+positive:
+  - given: 12 plans at 1:100, scale 50, apply true
+    expect: changed is 12, wasScale reads 100 for each, and the tags on each view double in apparent size
+
+  - given: the same 12 with apply false
+    expect: wasScale is filled, changed is 0, nothing altered - the read case
+
+negative:
+  - given: 12 views of which 9 have a TEMPLATE that locks scale
+    expect: >
+      those 9 are in refused and the other 3 change. The fix is in the template,
+      not the views, and a batch reporting "changed 3" without naming why is
+      indistinguishable from a broken tool
+
+  - given: 12 views already at 1:50, scale 50
+    expect: alreadyThatScale is 12 and changed is 0 - not changed 12
+
+  - given: a view already placed on an ISSUED sheet
+    expect: >
+      the drawing changes. Annotation is sized in paper units, so every tag and
+      dimension changes apparent size on the sheet - this is not a display
+      setting
+
+second_route:
+  - The Scale row in the view's Properties palette, and the sheet itself

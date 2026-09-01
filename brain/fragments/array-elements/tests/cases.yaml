@@ -1,0 +1,30 @@
+positive:
+  - given: one diffuser, direction along the corridor, spacingMm 3000, count 8
+    expect: >
+      created holds 7 ids and copiesEach is 7 - eight diffusers in total
+      including the original. MEASURED between two of them in Revit at 3000 mm,
+      not assumed from what the call was told
+
+negative:
+  - given: a direction handed in as the vector between two points 12 m apart, spacingMm 3000
+    expect: >
+      the spacing is still 3000, because the direction is NORMALISED. Without
+      that the pitch would be 36 m - a plausible-looking run at twelve times
+      the spacing, and nothing in the answer would say so
+
+  - given: count 1
+    expect: >
+      every element in refused and nothing created. A count of one is an array
+      of nothing, and doing it silently reads as a tool that ran and achieved
+      nothing
+
+  - given: an element Revit copies nothing for, returning an empty collection
+    expect: it is in refused, NOT counted - an empty return is not a copy
+
+  - given: somebody who wanted a linked Revit Array that renumbers itself
+    expect: >
+      this is the WRONG fragment - these copies are independent. Which kind was
+      meant changes what every later edit does
+
+second_route:
+  - Dimension between two adjacent copies in Revit - the pitch is the number that was asked for, or it is not

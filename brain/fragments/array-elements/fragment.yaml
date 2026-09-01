@@ -1,0 +1,84 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-013
+semantic-identity: "space copies of these out evenly along a direction"
+kind: action
+domain: revit.geometry
+capability: ARRAY_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies elements at an even spacing along a direction — diffusers down a
+  corridor, sprinklers along a branch, lights on a grid line.
+
+  **The count and the spacing are both stated, and neither is derived from the
+  other.** "Every 3 metres" and "eight of them" are different instructions that
+  give different answers in the same corridor, and a fragment that computed one
+  from a length would be choosing which the user meant.
+
+  **The originals are not moved.** An array of eight means the original plus
+  seven copies, which is what Revit's own array does and what a modeller
+  expects when they count what appeared.
+
+  **It is a plain copy, not a Revit Array element.** A real Array is a
+  constrained group that stays linked and renumbers itself; independent copies
+  are what somebody wants when they intend to adjust them individually
+  afterwards. Nothing here creates the linked kind — that is a different
+  capability and it changes what every later edit does.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: direction
+      type: XYZ
+      source: request
+    - name: spacingMm
+      type: double
+      source: request
+    - name: count
+      type: int
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: copiesEach
+      type: int
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementTransformUtils.CopyElement` and
+  `XYZ.Normalize` are unchanged 2020 to 2027. Millimetres to feet is
+  arithmetic (D-20).
+
+# ROUTING - repeated in COPY_ELEMENTS and SNAP_TO_GRID.
+#
+#   "array them along the corridor"  -> here
+#   "space these out evenly"         -> here
+#   "copy these to the other floors" -> COPY_ELEMENTS - one offset, not a run
+#   "line them up on the grid"       -> SNAP_TO_GRID
+#
+# ARRAYING AND COPYING ARE THE SAME WORD HALF THE TIME. One offset repeated N
+# times is this; one offset once is COPY_ELEMENTS.
+
+utterances:
+  - array them along the corridor
+  - space these out evenly
+  - repeat this every 3 metres
+  - put eight of them along here
+  - copy this along the branch

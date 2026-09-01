@@ -1,0 +1,29 @@
+positive:
+  - given: 40 ducts on a plan, all showing
+    expect: all 40 in visible, reasons empty - and the collector, not a checklist, is what says so
+
+  - given: a duct hidden element-by-element in this view
+    expect: reasons reads "hidden in this view", and SHOW_ELEMENTS fixes it
+
+negative:
+  - given: a duct BOTH hidden individually AND with its category switched off by the view template
+    expect: >
+      BOTH causes are reported, and the category one NAMES THE TEMPLATE. This is
+      the case the fragment exists for: unhiding it leaves it invisible, and the
+      second hour goes on discovering why. Reporting only the first cause is
+      worse than reporting none, because it looks like an answer
+
+  - given: an element absent from the view for a reason this does not check - outside the view range
+    expect: >
+      it says so PLAINLY, listing what was not read. An invented likeliest cause
+      reads exactly like a found one, and sends somebody to change a setting
+      that was never the problem
+
+  - given: a view with a crop active where the element is well inside it
+    expect: >
+      "the crop is on and may exclude it" - stated as POSSIBLE, not certain.
+      The region is not evaluated here, and claiming certainty would be a guess
+      wearing a fact's clothes
+
+second_route:
+  - Revit's own Reveal Hidden Elements mode, and the Visibility/Graphics dialog for the category
