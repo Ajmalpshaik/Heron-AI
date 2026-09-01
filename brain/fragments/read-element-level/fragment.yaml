@@ -70,3 +70,12 @@ utterances:
   - how far above the level is it
   - what is the offset from the level
   - are these on the right level
+  - what is the elevation of this
+  - how high is this above the floor
+
+# THE LAST TWO WERE ADDED 2026-09-01 RATHER THAN BUILDING A FRAGMENT.
+# "What is the elevation of this" was answered by READ_ROOM_GEOMETRY and looked
+# like a missing capability. It is not: the level plus the offset this fragment
+# already returns IS the elevation, and a second fragment computing it would
+# have been a duplicate that could disagree. The gap was in the words, not in
+# the library - which is the check worth making before writing anything.

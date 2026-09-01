@@ -1,0 +1,29 @@
+positive:
+  - given: 12 air terminals across a floor, one room containing 4 of them
+    expect: elements is narrowed to those 4, outside holds the other 8, noPoint empty
+
+  - given: a duct above the ceiling of the room
+    expect: >
+      it IS inside. A room is a volume with a height, and filtering by level
+      would drop exactly the services somebody is asking about
+
+negative:
+  - given: an L-SHAPED room and a diffuser in the neighbouring room that falls inside the L's bounding box
+    expect: >
+      it is OUTSIDE. A bounding-box test would include it, quietly, and the
+      schedule would look right until somebody counted on site. Revit's own
+      point-in-room test follows the real boundary
+
+  - given: a duct running through three rooms
+    expect: >
+      it belongs to whichever room contains its MIDPOINT - and that is a limit,
+      not an answer. A takeoff wanting length per room needs a different
+      question, and this fragment does not pretend to answer it
+
+  - given: an element with neither a location point nor a location curve
+    expect: >
+      it is in noPoint, NOT silently treated as outside. Assuming outside drops
+      it from the schedule with nothing to show it was ever considered
+
+second_route:
+  - Revit's own room-aware schedule, or tagging the elements by room and reading the tags

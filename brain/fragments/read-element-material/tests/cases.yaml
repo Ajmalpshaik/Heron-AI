@@ -1,0 +1,24 @@
+positive:
+  - given: 40 walls of one compound type
+    expect: materials lists every layer for each, and volumeM3 totals per material name - matching a Revit material takeoff schedule
+
+negative:
+  - given: a compound wall - concrete, insulation and board
+    expect: >
+      ALL THREE are reported, not the first. Reporting one is right about a
+      diffuser and wrong about everything compound, which is most of what gets
+      taken off
+
+  - given: an element with a painted finish that has no thickness
+    expect: >
+      the finish IS named and contributes no volume. Dropping zero-volume
+      materials loses precisely the ones a finishes schedule is about
+
+  - given: GetMaterialIds called with true instead of false
+    expect: >
+      only painted materials, which on most elements is NOTHING - an empty
+      answer for a wall plainly made of something, which reads as a broken tool
+      rather than a wrong argument
+
+second_route:
+  - A Revit Material Takeoff schedule for the same category, totalled by material

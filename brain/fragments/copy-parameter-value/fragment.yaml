@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-006
+semantic-identity: "copy one parameter's value into another parameter on the same elements"
+kind: action
+domain: revit.parameters
+capability: COPY_PARAMETER_VALUE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies the value of one parameter into another, on each element. Getting a
+  system name into a shared parameter a schedule can use, filling a client's
+  required field from one Revit already holds, populating a COBie field before
+  handover.
+
+  **Both parameters must hold the same KIND of value.** A number into a text
+  field is a silent reformat; text into a number is a refusal. The storage
+  types are compared before anything is written and a mismatch stops the whole
+  batch — one wrong-typed pair discovered halfway leaves a set that is half
+  converted with no record of where.
+
+  **It copies what is STORED, not what is displayed.** A length displayed as
+  "2400 mm" is stored as feet, and copying the displayed string into a text
+  field puts a unit-suffixed string somewhere that a later calculation cannot
+  use. Same storage type means the same internal value moves.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: fromName
+      type: string
+      source: request
+    - name: toName
+      type: string
+      source: request
+  provides:
+    - name: copied
+      type: int
+    - name: sourceEmpty
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+    - name: typeMismatch
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.LookupParameter`,
+  `Parameter.StorageType` and the typed `Set` overloads are unchanged 2020 to
+  2027. Nothing here converts a unit - the internal value is moved as it is,
+  which is what makes the copy exact.
+
+# ROUTING - repeated in WRITE_ELEMENT_PARAMETERS.
+#
+#   "copy the parameter across"     -> here
+#   "put the system name into Mark" -> here
+#   "set the comments to X"         -> WRITE_ELEMENT_PARAMETERS - one stated
+#                                      value, not a value taken from elsewhere
+#   "renumber them"                 -> RENUMBER_SEQUENTIAL
+#
+# WRITING A VALUE AND COPYING ONE ARE DIFFERENT JOBS. This one never invents a
+# value; it only moves one that already exists.
+
+utterances:
+  - copy the parameter from one to the other
+  - put the system name into the mark
+  - copy this parameter across
+  - fill the shared parameter from the built-in one
+  - move the value into another field
