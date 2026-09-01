@@ -85,9 +85,16 @@ compatibility-note: >
 #                                       here anyway, which is what a crowded
 #                                       area does to retrieval
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - draw a duct from here to there
   - run a duct across the room
   - add a duct between these points
   - draw the duct run
   - put a supply duct in
+  - add a duct

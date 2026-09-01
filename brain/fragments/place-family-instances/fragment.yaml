@@ -54,6 +54,22 @@ compatibility-note: >
   2020 to 2027. Points arrive in Revit's internal feet - this fragment does no
   unit arithmetic at all, which is what keeps it clear of the 2021 units move.
 
+# ROUTING - repeated in LOAD_FAMILY and CHANGE_ELEMENT_TYPE.
+#
+#   "place a diffuser"           -> here
+#   "put a damper here"          -> here
+#   "load a family"              -> LOAD_FAMILY. The family has to be IN the
+#                                   project before anything can be placed from
+#                                   it, and this fragment does not load one
+#   "change these to the 300"    -> CHANGE_ELEMENT_TYPE - swaps the type on
+#                                   elements that already exist
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - place the air terminals
   - put the sprinklers in
@@ -61,3 +77,5 @@ utterances:
   - place them on the grid
   - drop a detector at each point
   - insert the family at these locations
+  - place a diffuser
+  - put a damper here

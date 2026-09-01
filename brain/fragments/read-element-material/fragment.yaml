@@ -58,9 +58,16 @@ compatibility-note: >
 # THE WHOLE VOLUME AND THE VOLUME PER MATERIAL ARE DIFFERENT TAKEOFFS. A wall's
 # total volume is one number; its concrete, insulation and board are three.
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - what material is this
   - what is it made of
   - how much concrete is there
   - what are these made of
   - material takeoff for these
+  - how much concrete

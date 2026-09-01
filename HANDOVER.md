@@ -24,7 +24,7 @@ dependency graph, and reads the register. Then it sorts everything into **UNFINI
 and its exit code follows only the first.
 
 **As of 2026-08-31 it reports 0 unfinished and 55 waiting.** Everything waiting needs a machine, a
-dependency or a conversation: **48 a real Revit**, plus the 86 unproven fragments as one further item,
+dependency or a conversation: **48 a real Revit**, plus the 94 unproven fragments as one further item,
 **3 Windows** (`A4`, `A6` and `A8`), **1 a network that can reach the weights host** (`A7`), **1 the
 owner** (`R1b`), and **1 an optional dependency this machine does not have** — that last one is new and
 it is `test_mcp_serves.py` reporting honestly that it was skipped, rather than being counted as a pass.
@@ -143,7 +143,7 @@ work: build the fragments now, re-authored from his earlier library, and check e
 later — *"checking in revit we will do after because that is a big work... mark as not verified and when
 pc came we will check."*
 
-**So the library is 86 fragments and every skill has every capability provided.** The seven were written
+**So the library is 94 fragments and every skill has every capability provided.** The seven were written
 on 2026-08-29; twenty-five more followed on 2026-08-30, and seven more on 2026-08-31 — those last chosen
 by asking the brain the owner's own sentences and reading what came back, rather than by working through
 the earlier library in order. `python brain/heron_skill.py` shows no gaps.
@@ -160,11 +160,87 @@ match the implementation in front of it. The gate had existed and nothing stood 
 declaring `PROVEN` on another model's proof passed every check in this repository, which was measured by
 writing one.
 
-**What that buys, and what it does not.** All eighty-six fragments compile on all eight releases and
+**What that buys, and what it does not.** All ninety-four fragments compile on all eight releases and
 none of them will fail at the PC for a reason a compiler could have found — which on 2026-08-31 stopped
 being a figure of speech, when the gate caught a tag accessor that Revit 2027 has removed. Not one has met a model. The debt did
 not go away — it got **counted**, which is the whole point of `check-gaps` keeping *unfinished* and
 *waiting* in two lists that must never be one.
+
+---
+
+## The seventeenth session, 2026-09-01 — eight fragments, and a comment nobody could hear
+
+**What it did:** took the library from **86 to 94**. All 94 compile on all eight releases; all 94 are
+`DRAFT`. The batch closed a hole the previous one opened, and then found a defect class running through
+half the library.
+
+| | |
+|---|---|
+| `CREATE_PLAN_VIEW` | **Closes the hole `CREATE_LEVEL` opened.** A level made through the API has no views — Revit's *tool* makes them, the level does not — so *"add 4 more floors"* means levels **and** plans, and only the first half existed |
+| `LIST_GRIDS` | **Grid names cannot be sorted as text.** 1 to 12 sorts to 1, 10, 11, 12, 2, 3 — somebody looking for grid 3 finds it sixth. Split into letters and trailing digits, compared as a number. Every row says which way the grid runs, because the name never does and both conventions exist in one building |
+| `CREATE_GRID` | A grid is a **vertical plane**, so its defining line must be level — checked here, where the message can say why, rather than surfacing as an exception naming a curve |
+| `PLACE_ROOMS` | Rooms **or** spaces, in one pass per level. MEP loads run on Spaces and the two are indistinguishable to look at. An unbounded result is the useful half: the gap in the walls is also why the area next door came out enormous |
+| `LOAD_FAMILY` | **Will not overwrite, and that is a limit of the fragment format itself.** Revit needs an `IFamilyLoadOptions` object to decide about differing parameter values; that needs a **class**, and a fragment is a body of statements. The behaviour lands on the safe side by accident and is kept on purpose |
+| `CREATE_VIEW_FILTER` | A filter **matches**; an override **remembers**. Work modelled next week comes out the right colour with nobody touching the view — on a reissued drawing that is the whole job |
+| `EXPORT_VIEWS_TO_DWG` | The first fragment that writes **outside the model**, so it cannot be undone. Files that would be overwritten are reported, and the run still exports — refusing everything over one collision means somebody empties the folder and re-runs |
+| `EXPORT_MODEL_TO_IFC` | The schema version is required, never defaulted: hand a recipient expecting 2x3 an IFC 4 and it **opens**, shows geometry, and reads as a bad model rather than a wrong format |
+
+### The compile gate caught two API guesses, and reflection caught a third thing it could not
+
+Two fragments failed on **all eight releases** — not a version break, just wrong signatures written from
+memory. Both were settled by reflecting over the reference assemblies rather than guessing again:
+
+- `ExportDWGSettings.GetByName` does not exist. It is **`FindByName`**.
+- `NewSpaces2(Level)` does not exist. It is **`NewSpaces2(Level, Phase, View)`**, while `NewRooms2(Level)`
+  needs neither. Identical on 2020 and 2026, so **not a version difference — a real asymmetry between
+  the two elements.** A space belongs to a phase and is placed from a view; a room does not.
+
+**And then the thing a green build cannot catch.** `CREATE_VIEW_FILTER` needs a compile symbol, and its
+note said the old `CreateEqualsRule` overload was *"gone after 2022"*. Reflection over all eight
+assemblies says it survived to **2025 and was removed in 2026**, with the replacement arriving in 2023 —
+a three-release overlap. **The code was right, so all eight compiled green and nothing complained.**
+
+> **A compile gate checks the call. It does not read the sentence beside it.** Every version claim in
+> this repository is a prose claim, and prose is exactly what the gate cannot see. Read the assemblies.
+
+### A routing table is a comment, and comments are not indexed
+
+`OVERRIDE_GRAPHICS_IN_VIEW` claimed *"make these red"* in its routing table and never declared it as an
+utterance — so the sentence resolved to `GROUP_ELEMENTS`. `heron_search` indexes **semantic-identity,
+the utterances, the capability, the domain and the purpose**, and nothing else. A table saying `-> here`
+records a decision retrieval cannot act on.
+
+Audited across all 94: **69 such claims, 23 of them reaching the wrong fragment.** Among them
+*"zoom to these"* building an **MEP fitting**, *"write that up"* reaching a bulk parameter **write**, and
+*"place a diffuser"* reaching the duplicate finder. All 23 fixed; two of the 69 turned out to be **one
+sentence claimed by two tables**, which is two comments disagreeing and invisible to every other check
+here. Both resolved by deciding an owner.
+
+`check-routing.py` now audits this every run — measured through `find`, and **proven by planting an
+unreachable claim and watching it fire.** 159 claims, 0 wrong.
+
+### `heron_scope.py --rebuild` did not do what its own help said
+
+It promised *"re-index every scope from disk"* and rebuilt **only the fragments table** — leaving the
+identity table and the embeddings holding whatever the last run put there. Measured: after adding an
+utterance and running only that command, the new sentence resolved to a **different fragment**,
+confidently, by the hybrid route, while the identity route that should have matched it exactly had never
+heard of it.
+
+It went unseen because every tool that reads the index calls `SEARCH.index` itself first — `check-routing`
+does, the brain does. **The only person who could hit it was somebody rebuilding by hand and then asking
+a question, which is exactly what the command is for and exactly what its help told them to do.** Fixed
+in the command, not in `rebuild()`, which stays cheap for callers that only want the metadata.
+
+### One fragment was not written, on purpose
+
+*"What is the area of this"* was on the list of gaps. It is not one: `MEASURE_ELEMENT_VOLUME` already
+provides `areaM2` from the same solids. A second fragment would compute the same number from the same
+input and could one day disagree, with nothing to say which was right. **The gap was in the words** —
+two utterances were added instead. Same finding as *"what is the elevation of this"* two sessions ago.
+
+**What none of this is.** Not one fragment has met a model. `check-gaps` reports **0 unfinished, 55
+waiting**, and counts **94** below `PROVEN`.
 
 ---
 
@@ -1068,7 +1144,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | | |
 |---|---|
 | **The eight `brain/` modules** | Each has its own suite and each passes — the fragment store, the scope store, exact-word search, nearness, fusion, the capability registry, the graph, and skills. What they are proven to do is **behave as specified against fixtures**. Not one of them has been handed a real Revit's answer |
-| **86 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists **eighty-six** items under *needs a real Revit*. **Since 2026-08-29 all of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)). That is not behaviour, but it does mean none of them will fail at the PC for a reason a compiler could have found |
+| **94 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists **ninety-four** items under *needs a real Revit*. **Since 2026-08-29 all of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)). That is not behaviour, but it does mean none of them will fail at the PC for a reason a compiler could have found |
 | **10 skills, all `DRAFT`** | Each names **capabilities and never fragments**, and each carries the words Ajmal actually says rather than the words the technique is named after. Whether any of them does what it says is unknown |
 | **The trained embedding backend** | **The highest-value item that needs no Revit, and 2026-08-30 sharpened what it buys.** [`brain/retrieval-history.md`](brain/retrieval-history.md) tracks one query across eight library sizes (7 → 32) *and* now measures a second way: every fragment's own declared words asked back to the search — 169 sentences, **words 92% first and 100% in the top three, nearness 60% and 82%**. That corrects the older headline in this file's own history: the nearness route has **not** collapsed in general. It handles **vocabulary overlap** and fails at **disambiguation**, which is why the tracked query — a sentence several fragments fairly claim — sits mid-library while a sentence naming one fragment comes back first. So `A7` should be expected to change the **contested** lookups, not every lookup. Never run — `huggingface.co` is refused by this container, and by a second one on 2026-08-31, where the package installed cleanly from PyPI and only the **weights** download was refused (`ProxyError: 403`). The backend that *is* running is character n-grams, which measurably does not do synonyms (`diffuser`/`grille` scored −0.136). Needs no Revit and no Windows |
 | **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py). **A real MCP SDK has now served them** (2026-08-31): all ten tools registered with their descriptions and argument schemas, and all three answering through the SDK's own dispatch with both refusals surviving the round trip — [`tests/test_mcp_serves.py`](tests/test_mcp_serves.py). That is no longer a text read. **It is still not a host**: nothing here shows Claude Code connecting over stdio, rendering a docstring or choosing a tool from it, and that is what is left of `A8`. **Doing it found that the server would not have started at all** on a machine installing today — see the eighth session below |
@@ -1576,7 +1652,7 @@ every release from 2020 to 2027. **Seventy fragments and ten skills** sit at `DR
 but [D-30](docs/DECISIONS.md) being obeyed: promotion needs one proof containing a negative case, and a
 negative case needs a model. `python tools/check-gaps.py` is now the file that answers "what is left",
 because it is computed from disk and this one is not — and where they disagree, believe the tool. It
-currently says **nothing** here is unfinished and **55 are waiting: 48 on a Revit, plus the 86 unproven
+currently says **nothing** here is unfinished and **55 are waiting: 48 on a Revit, plus the 94 unproven
 fragments as one further item, 3 on Windows, 1 on a network that can reach the weights host, 1 on the
 owner, and 1 on an optional dependency this machine does not have.** That breakdown sums to its own
 total, which the sentence it replaces did not.

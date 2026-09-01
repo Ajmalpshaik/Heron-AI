@@ -59,9 +59,25 @@ compatibility-note: >
   not this fragment's. `View.SetCategoryOverrides` and
   `Category.get_AllowsVisibilityControl` are unchanged 2020 to 2027.
 
+# ROUTING - repeated in CREATE_VIEW_FILTER and OVERRIDE_GRAPHICS_IN_VIEW.
+#
+#   "grey the architecture back" -> here - a whole CATEGORY, no test involved
+#   "turn the ceilings off"      -> SET_CATEGORY_VISIBILITY
+#   "colour by system"           -> CREATE_VIEW_FILTER - it tests a PARAMETER,
+#                                   so work drawn next week is coloured too
+#   "make these red"             -> OVERRIDE_GRAPHICS_IN_VIEW - stuck to the ids
+#                                   you found, blind to anything added after
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - grey the whole background
   - make all the architecture faint
   - halftone the structure
   - override the category colour
   - flatten everything except the services
+  - grey the architecture back

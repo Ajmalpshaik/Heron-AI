@@ -1,0 +1,30 @@
+positive:
+  - given: grids 1 to 12 and A to N
+    expect: >
+      1, 2, 3 … 12 then A … N - the order the drawing reads. Sorted as text it
+      would be 1, 10, 11, 12, 2, 3, and somebody looking for grid 3 finds it
+      sixth
+
+  - given: mixed names like A1, B10, CG-2
+    expect: grouped by their letters, then numerically within each - which is how a real project numbers them
+
+  - given: "which grid is nearest"
+    expect: >
+      every row carries which way the grid runs. The name never says, and both
+      conventions - numbers north-south and numbers east-west - exist in the
+      same building
+
+negative:
+  - given: a radial grid in a curved facade
+    expect: >
+      it is LISTED and reported as curved, with no direction. A curve's
+      direction is only true at one point on it, and printing one would be a
+      confident wrong answer
+
+  - given: a grid two degrees off true north
+    expect: >
+      still reported north-south. The threshold is generous on purpose - it is
+      a north-south grid to everybody who works on the drawing
+
+second_route:
+  - Revit's own Project Browser or a grid schedule, compared for the names and the order

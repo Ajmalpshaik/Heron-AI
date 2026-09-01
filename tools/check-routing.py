@@ -49,6 +49,7 @@ unfindable in order to protect a measurement.
 """
 
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -243,6 +244,90 @@ def main(argv):
             print("  CHANGES THE MODEL in reply to one. Fix the read fragment's")
             print("  reach or the writer's wording; never leave it because the")
             print("  rank looks close.")
+
+        # ------------------------------------------------------------------
+        # A ROUTING TABLE IS A COMMENT, AND COMMENTS ARE NOT INDEXED.
+        #
+        # Added 2026-09-01, after OVERRIDE_GRAPHICS_IN_VIEW was found claiming
+        # "make these red" in its routing table and never declaring it - so the
+        # sentence resolved to GROUP_ELEMENTS. heron_search indexes
+        # semantic-identity, the utterances, the capability, the domain and the
+        # purpose. A table saying "-> here" records a DECISION that retrieval
+        # cannot act on.
+        #
+        # The audit found 69 such claims across half the library, 23 of them
+        # reaching the wrong fragment - including "zoom to these" building an
+        # MEP fitting and "write that up" reaching a bulk parameter WRITE.
+        #
+        # Measured through `find`, the entry point the host calls, for the same
+        # reason the risk section is: a claim about consequence must ask the
+        # thing that actually happens.
+        #
+        # A claim on TWO tables is a different fault and is reported as one: two
+        # comments disagreeing is invisible to every other check here.
+        claimed = re.compile(r'^#\s+"([^"]+)"\s*->\s*here\b', re.M)
+        unheard = []
+        claims = {}
+
+        for name in sorted(os.listdir(FRAGMENTS)):
+            path = os.path.join(FRAGMENTS, name, "fragment.yaml")
+            if not os.path.exists(path):
+                continue
+            with open(path, encoding="utf-8") as fh:
+                text = fh.read()
+
+            import yaml
+            doc = yaml.safe_load(text)
+            fid = doc.get("id")
+            spoken = set((u or "").strip().lower() for u in (doc.get("utterances") or []))
+
+            for match in claimed.finditer(text):
+                sentence = match.group(1).strip()
+                claims.setdefault(sentence.lower(), set()).add(fid)
+
+                if sentence.lower() in spoken:
+                    continue
+
+                answer = RETRIEVE.find(store, sentence, limit=1)
+                served = getattr(answer, "fragment_id", None)
+                if served == fid:
+                    continue
+
+                unheard.append((sentence, fid, served or "-"))
+
+        contested = sorted((s, ids) for s, ids in claims.items() if len(ids) > 1)
+
+        print()
+        if not unheard and not contested:
+            print("EVERY SENTENCE A ROUTING TABLE CLAIMS ACTUALLY REACHES IT.")
+            print()
+            print("  A routing table is a COMMENT and the index does not read")
+            print("  one - it reads semantic-identity, the utterances, the")
+            print("  capability, the domain and the purpose. So a table saying")
+            print("  \"-> here\" is a decision retrieval cannot act on unless the")
+            print("  sentence is ALSO an utterance, or something else carries it")
+            print("  there. This says one of those is true for all of them.")
+        else:
+            if unheard:
+                print("CLAIMED IN A ROUTING TABLE AND NOT REACHED (%d):" % len(unheard))
+                print()
+                for sentence, fid, served in unheard:
+                    print("  %-44s %s claims it; %s is SERVED"
+                          % ('"' + sentence + '"', fid, served))
+                print()
+                print("  The table records a decision; the index never saw it.")
+                print("  Either declare the sentence as an utterance, or change")
+                print("  the table - but do not leave the two disagreeing.")
+            if contested:
+                print()
+                print("ONE SENTENCE CLAIMED BY TWO TABLES (%d):" % len(contested))
+                print()
+                for sentence, ids in contested:
+                    print("  %-44s %s" % ('"' + sentence + '"', ", ".join(sorted(set(ids)))))
+                print()
+                print("  Two comments disagreeing, which no other check here can")
+                print("  see. Decide which fragment owns it and drop the claim")
+                print("  from the other.")
 
         print()
         print("SENTENCES TWO FRAGMENTS BOTH WANT (%d of %d):" % (len(taken), total))

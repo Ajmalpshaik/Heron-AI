@@ -1,0 +1,43 @@
+positive:
+  - given: categories Ducts and Duct Fittings, parameter System Type, value "Supply Air", blue
+    expect: >
+      every supply duct in that view comes out blue - AND so does one drawn next
+      week, because a filter matches rather than remembering ids
+
+  - given: the same job done with OVERRIDE_GRAPHICS_IN_VIEW instead
+    expect: >
+      it looks identical today and is wrong at the next issue. That is the
+      difference the two fragments exist to keep apart
+
+negative:
+  - given: a filter name already in the project
+    expect: >
+      refused before anything is touched. Filters are project-wide, so another
+      view may be relying on that name, and Revit throws on the duplicate AFTER
+      the view has been modified
+
+  - given: value "supply air" against a system type named "Supply Air"
+    expect: >
+      NO match on Revit 2020 to 2022, where the case-sensitivity flag is passed
+      as true on purpose - a project with both "SUPPLY" and "Supply" has two
+      different system types and a loose match colours the wrong one.
+
+      ON 2023 AND LATER THIS IS UNVERIFIED. The overload has nowhere to say, and
+      reflection shows a signature rather than a behaviour. **Check this case
+      first when the fragment meets a real model**: if the two branches disagree,
+      the same filter colours different elements on different Revit versions,
+      which is the worst place for a difference to hide
+
+  - given: no parameter given
+    expect: >
+      refused, pointing at SET_CATEGORY_GRAPHICS. A filter with no test matches
+      the whole category, which is a different fragment's job
+
+  - given: compiled with no REVIT20xx symbol defined
+    expect: >
+      the 2023-onward branch is taken and it fails on 2020 to 2022 - which
+      includes the release the owner runs. That is a requirement on D-28's
+      unbuilt executor, not a defect here
+
+second_route:
+  - Revit's own View > Filters dialog with the same categories and rule, compared for which elements change colour

@@ -69,9 +69,16 @@ compatibility-note: >
 # by 600" can mean either, and on a family whose sizes are types it means this
 # one. Ask which before running on a batch.
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - change the type
   - swap them to a different type
   - change these to the other family type
   - replace this type with another one
   - use a different diffuser type
+  - swap them for the other diffuser

@@ -16,14 +16,9 @@ risk: MODIFY
 purpose: >
   Creates one level at a given height and names it.
 
-  **A new level comes with no views, and that is the thing people get caught
-  by.** Revit's own Level tool makes a floor plan and a ceiling plan alongside
-  the level because the *tool* does that, not because the level does. Created
-  through the API the level exists, appears in every elevation, is available on
-  every Level parameter - and has no plan view at all. The modeller looks in the
-  Project Browser, sees nothing, and concludes it did not work. It did. Making
-  the views is a separate job and this fragment says so rather than pretending
-  otherwise.
+  **What it makes is the datum and nothing else** - see the note below the
+  contract, which is the thing people get caught by and is deliberately not
+  repeated here in the words CREATE_PLAN_VIEW needs to be found by.
 
   **The height is measured the way the level heads read**, from the project's
   elevation base, so a level asked for at 4500 shows 4500 on the drawing. The
@@ -60,6 +55,18 @@ compatibility-note: >
   No ElementId is built from an int, so 2024's 64-bit ids do not reach this
   code.
 
+# WHAT IT MAKES, AND WHAT IT DOES NOT. Revit's Level TOOL creates a floor plan
+# and a ceiling plan alongside the level, because the tool does that - not
+# because the level does. Created here the level exists, appears in every
+# elevation, and is offered on every Level parameter, with NO PLAN VIEW AT ALL.
+# The modeller looks in the Project Browser, finds nothing, and reports that it
+# failed. It did not. `noViewsMade` is always true and exists to be said out
+# loud, and CREATE_PLAN_VIEW is the other half of the job.
+#
+# This paragraph sat in `purpose` until 2026-09-01, where it is INDEXED - and it
+# took "the new level has no plan" off CREATE_PLAN_VIEW, which is the fragment
+# that fixes exactly that complaint.
+
 # ROUTING - repeated in LIST_LEVELS and SET_ELEMENT_LEVEL.
 #
 #   "add a level"                -> here
@@ -67,9 +74,16 @@ compatibility-note: >
 #   "list the levels"            -> LIST_LEVELS
 #   "move these to level 3"      -> SET_ELEMENT_LEVEL - reassigns EXISTING
 #                                   elements; it creates nothing
-#   "make the plan for it"       -> NOT here. A level created through the API
-#                                   has no views, and making them is a separate
-#                                   job nothing in the library does yet
+#   "make the plan for it"       -> CREATE_PLAN_VIEW. A level created through
+#                                   the API has no views; that fragment is what
+#                                   makes them, and the two together are what
+#                                   "add 4 more floors" actually means
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
 
 utterances:
   - add a level
@@ -77,3 +91,4 @@ utterances:
   - add another floor level
   - I need a level at this height
   - make a new level
+  - add 4 more floors

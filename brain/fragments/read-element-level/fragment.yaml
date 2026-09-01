@@ -74,6 +74,12 @@ compatibility-note: >
 #   "move these to level 3"     -> SET_ELEMENT_LEVEL
 #   "add a level"               -> CREATE_LEVEL
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - what level is this on
   - which level are these
@@ -89,3 +95,5 @@ utterances:
 # already returns IS the elevation, and a second fragment computing it would
 # have been a duplicate that could disagree. The gap was in the words, not in
 # the library - which is the check worth making before writing anything.
+  - how high is it
+  - how high is this

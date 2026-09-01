@@ -49,8 +49,15 @@ tests: tests/
 #                                   compose; neither replaces the other
 #   "list the linked models"     -> LIST_LINKED_MODELS, same relationship
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - report what you found
   - tell me what is wrong
   - give me the results
   - what did the check say
+  - write that up

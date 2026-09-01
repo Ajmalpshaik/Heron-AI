@@ -63,9 +63,16 @@ compatibility-note: >
 # "ALL THE SAME ONES" MEANS TYPE, CATEGORY OR FAMILY depending on who is
 # speaking, and the three return wildly different counts.
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - select everything like this one
   - find all the same type
   - select all instances of this
   - all the ones like this
   - every one of these in the model
+  - swap them to another type

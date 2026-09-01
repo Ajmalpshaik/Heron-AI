@@ -1,0 +1,74 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 16
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-025
+semantic-identity: "load this family file into the project"
+kind: action
+domain: revit.families
+capability: LOAD_FAMILY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Loads one `.rfa` family file into the open project and reports what arrived.
+
+  **It will not overwrite a family already in the project, and that is a
+  deliberate limit rather than a missing feature.** Revit only overwrites when
+  it is handed a load-options object saying what to do about parameter values
+  that differ - and the fragment format cannot supply one, because a fragment is
+  a body of statements and that object needs a class. So a family already
+  loaded is REFUSED with its name, and reloading it stays a job for Revit's own
+  Load Family button.
+
+  **That refusal is the safe direction.** Overwriting silently is how a
+  colleague's edited type gets replaced by the office standard mid-job, and the
+  parameter values go with it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: familyPath
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+    - name: typeNames
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.LoadFamily(string, out Family)` and `Family.GetFamilySymbolIds()`
+  are unchanged 2020 to 2027. No ElementId is built from an int, so 2024's
+  64-bit ids do not reach this code.
+
+  **A family saved by a NEWER Revit will not load into an older one**, and no
+  version of this fragment can change that - Revit refuses the file itself. The
+  refusal below reports it as an unloadable file rather than claiming a defect
+  here.
+
+# ROUTING - repeated in PLACE_FAMILY_INSTANCES and CHANGE_ELEMENT_TYPE.
+#
+#   "load a family"              -> here
+#   "load this rfa"              -> here
+#   "place a diffuser"           -> PLACE_FAMILY_INSTANCES - it needs the family
+#                                   to be loaded ALREADY, which is what this does
+#   "change these to the 300 type" -> CHANGE_ELEMENT_TYPE
+#   "which families are loaded"  -> nothing here lists them yet
+
+utterances:
+  - load a family
+  - load this rfa
+  - bring in the family file
+  - load the family into the project
+  - import this family

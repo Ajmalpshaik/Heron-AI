@@ -103,6 +103,12 @@ compatibility-note: >
 #   "they have duplicate numbers"    -> here reports collisions; finding them
 #                                       without renumbering is a QA read
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - renumber these
   - number them in order
@@ -110,3 +116,4 @@ utterances:
   - give them running numbers
   - number the sprinklers along the branch
   - they have duplicate numbers
+  - renumber the rooms

@@ -71,9 +71,16 @@ compatibility-note: >
 # SCALE IS OFTEN OWNED BY THE TEMPLATE. When this refuses on a batch, that is
 # almost always why, and the fix is in the template rather than in the view.
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - set the scale of this view
   - what scale is this view
   - change these to 1 to 50
   - the text is too small on this drawing
   - make all these views the same scale
+  - the text is too small

@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 16
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-014
+semantic-identity: "fill every enclosed area on this level with rooms, or with spaces"
+kind: action
+domain: revit.rooms
+capability: PLACE_ROOMS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a room - or an MEP space - in every enclosed area on one level, in one
+  pass.
+
+  **Spaces are the MEP half and they are not rooms.** An architectural model
+  carries Rooms; an MEP model needs Spaces, and heating and cooling loads,
+  airflow and every space-based schedule depend on them existing and being
+  bounded. The two are indistinguishable to look at and are different elements,
+  so which one is wanted is asked for, never guessed.
+
+  **A space can be placed where a room already is**, and normally is - the room
+  belongs to the architect's model, the space to yours, and they occupy the same
+  air. So finding rooms already there is not a reason to refuse.
+
+  **Anything not enclosed gets nothing**, and that list is the useful half of
+  the answer - see the note below the contract for what it actually tells you.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: levelId
+      type: ElementId
+      source: request
+    - name: placeKind
+      type: string
+      source: request
+    - name: phaseId
+      type: ElementId
+      source: request
+    # SPACES ONLY. Revit needs a plan view to place spaces from and rooms
+    # needs none - see the compatibility note. Ignored when rooms are asked
+    # for, rather than made a separate capability: it is the same job.
+    - name: planViewId
+      type: ElementId
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: refused
+      type: string
+    - name: unbounded
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  **Rooms and spaces are NOT placed by the same shape of call, and the compile
+  gate is what established that rather than any documentation.** The first
+  version of this fragment assumed a matching pair and failed on all eight
+  releases:
+
+    NewRooms2(Level)                      rooms need only the level
+    NewSpaces2(Level, Phase, View)        spaces need a PHASE and a PLAN VIEW
+
+  Both are identical on 2020 and on 2026, so this is not a version difference -
+  it is a real asymmetry between the two elements, and it is the modelling fact
+  worth taking away: a space belongs to a phase and is placed from a view; a
+  room can be placed without either being named.
+
+  `Room` lives in `Autodesk.Revit.DB.Architecture` and `Space` in
+  `Autodesk.Revit.DB.Mechanical`, both of which the wrapper already carries. No
+  ElementId is built from an int, so 2024's 64-bit ids do not reach this code.
+
+# WHAT AN UNBOUNDED RESULT IS TELLING YOU. A gap in the bounding walls is why
+# one area got nothing - and it is the same reason the area next door came out
+# enormous, because Revit ran the boundary through the gap and swallowed the
+# corridor. So `unbounded` is a snag list, not a failure report.
+#
+# Kept here rather than in `purpose`, which is indexed: the words "missing" and
+# "plan" together took "it is missing from the plan" off DIAGNOSE_VISIBILITY,
+# whose question that is.
+
+# ROUTING - repeated in FILTER_ELEMENTS_IN_ROOM and READ_ROOM_GEOMETRY.
+#
+#   "place the rooms"            -> here
+#   "add spaces to this level"   -> here, with space asked for
+#   "the spaces are missing"     -> here
+#   "which ducts are in room 5"  -> FILTER_ELEMENTS_IN_ROOM - it needs the
+#                                   rooms to EXIST, which is what this does
+#   "how big is this room"       -> READ_ROOM_GEOMETRY
+#   "which rooms are unbounded"  -> this reports them as it places; a standing
+#                                   check on rooms already there is a different
+#                                   job and nothing does it yet
+
+utterances:
+  - place the rooms
+  - add spaces to this level
+  - place spaces
+  - fill this level with rooms
+  - the spaces are missing
+  - create the rooms on this floor

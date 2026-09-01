@@ -95,6 +95,12 @@ compatibility-note: >
 # If somebody really does say one of them, that belongs in a glossary as a
 # site-word mapping, not as an utterance that quietly loses.
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - add a text note
   - put a note here
@@ -102,3 +108,4 @@ utterances:
   - add some text to this view
   - note this on the plan
   - annotate this with some text
+  - write on the drawing

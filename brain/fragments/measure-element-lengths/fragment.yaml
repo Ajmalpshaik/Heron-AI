@@ -72,6 +72,12 @@ compatibility-note: >
 # "How many" wants a number of elements; "how much" wants a quantity. Getting
 # this wrong gives a confident answer to a question nobody asked.
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - how many metres of duct is there
   - what is the total length
@@ -79,3 +85,4 @@ utterances:
   - measure these
   - total length of pipe
   - how much ductwork is in this
+  - how far apart are they

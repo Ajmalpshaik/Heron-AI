@@ -63,15 +63,38 @@ compatibility-note: >
 #   "how many metres of duct"        -> MEASURE_ELEMENT_LENGTHS - a length
 #   "how many square metres"         -> here - for insulation, paint, lagging
 #   "what is the volume"             -> here
-#   "how much concrete"              -> here, volume
+#   "how much concrete"      -> READ_ELEMENT_MATERIAL. The question names a
+#                              MATERIAL and this fragment measures a shape
+#                              regardless of what it is made of. BOTH tables
+#                              claimed it until 2026-09-01, which is a
+#                              disagreement between two comments and
+#                              therefore invisible
+#   (was) "how much concrete"              -> here, volume
 #
 # LENGTH AND AREA ARE DIFFERENT TAKEOFFS OF THE SAME RUN and both are said as
 # "how much duct is there". Lagging is priced by area and ductwork by length,
 # so landing on the wrong one gives a confident number in the wrong unit.
 
+# NO SEPARATE AREA FRAGMENT WAS WRITTEN, and the reason belongs here rather
+# than being rediscovered. On 2026-09-01 "what is the area of this" was on a
+# list of gaps to fill - it is not one. This fragment already provides `areaM2`
+# and `totalAreaM2` from the same solids the volume comes from, so a second
+# fragment would compute the same number from the same input and could one day
+# disagree with this one, with nothing to say which was right.
+#
+# The gap was in the WORDS. Two utterances were added instead.
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - what is the volume of this
   - how many square metres is this
   - what is the surface area
+  - what is the area of this
+  - how much sheet metal is in this duct
   - how much lagging do I need
   - what volume of concrete is this

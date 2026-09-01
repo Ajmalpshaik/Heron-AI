@@ -67,9 +67,16 @@ compatibility-note: >
 # THE ROOM'S SHAPE AND THE ROOM'S CONTENTS ARE DIFFERENT QUESTIONS asked with
 # the same words. One measures the space; this one narrows a set to it.
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - which elements are in this room
   - what is inside this room
   - the ducts in this room
   - what is serving this space
   - find everything in here
+  - how many diffusers in here

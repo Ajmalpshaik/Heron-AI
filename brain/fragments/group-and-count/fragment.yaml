@@ -40,8 +40,15 @@ tests: tests/
 #                                  different sentences
 #   "how many ducts are there"  -> COUNT_ELEMENTS
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - what sizes are they
   - break it down by size
   - group them and count
   - give me a schedule of the types
+  - break it down by type

@@ -86,6 +86,12 @@ compatibility-note: >
 #                                   reads and either is usable - not every
 #                                   contested sentence has a wrong side
 
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - list the worksets
   - what worksets are there
@@ -93,3 +99,4 @@ utterances:
   - which worksets are closed
   - is this model workshared
   - show me the worksets
+  - why is the model empty
