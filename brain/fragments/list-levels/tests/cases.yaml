@@ -1,0 +1,23 @@
+positive:
+  - given: a building with levels named Basement, Ground, Level 1 … Level 10
+    expect: >
+      eleven rows bottom to top by HEIGHT - so Level 2 comes before Level 10,
+      which text sorting reverses, and a level list is read as a section
+
+  - given: the result handed into COUNT_ELEMENTS
+    expect: the number of levels, because the levels are handed on as `elements`
+
+negative:
+  - given: a project whose base point has been moved, so Elevation and ProjectElevation disagree
+    expect: >
+      the row reports the number the LEVEL HEAD shows and says the internal one
+      differs. Reporting only Elevation gives heights that disagree with the
+      drawing and carry no sign that they do
+
+  - given: a project whose base point has never moved
+    expect: >
+      no caveat on any row. The two agree in most projects, which is exactly why
+      the difference goes unnoticed until the one where it matters
+
+second_route:
+  - Revit's own elevation view with the level heads read off, or a Level schedule, compared row for row

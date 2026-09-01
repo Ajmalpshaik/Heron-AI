@@ -76,6 +76,14 @@ compatibility-note: >
 # THE SENTENCE DOES NOT SAY WHICH, and the two produce models that differ by a
 # whole storey.
 
+# ROUTING - repeated in LIST_LEVELS, READ_ELEMENT_LEVEL and CREATE_LEVEL.
+#
+#   "move these to level 3"     -> here - reassigns EXISTING elements
+#   "it is on the wrong level"  -> here
+#   "add a level"               -> CREATE_LEVEL - this fragment creates none
+#   "list the levels"           -> LIST_LEVELS
+#   "what level is this on"     -> READ_ELEMENT_LEVEL
+
 utterances:
   - change the level to the one above
   - move them to another level

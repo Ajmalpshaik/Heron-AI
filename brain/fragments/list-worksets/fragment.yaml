@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-WRK-014
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-002
+semantic-identity: "which worksets this model has, and which of them are actually open"
+kind: filter
+domain: revit.document
+capability: LIST_WORKSETS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports the model's user worksets, whether each is open, and who has it.
+
+  **A closed workset is why a count comes back low, and nothing else says so.**
+  Elements on one are not loaded at all: no view draws them, no collector
+  returns them, nothing tallies them. Every total this library produces is a
+  total of what is OPEN, and this fragment is what states the exclusion.
+
+  **Not workshared is a third answer, not an empty one.** A single-user file has
+  no worksets to have, which is a different condition from having none open.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: worksetCount
+      type: int
+    - name: closedCount
+      type: int
+    - name: workshared
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.IsWorkshared`, `FilteredWorksetCollector`, `WorksetKind.UserWorkset`
+  and `Workset.IsOpen` / `IsEditable` / `Owner` are unchanged 2020 to 2027.
+
+  **It provides no `elements`, and that is not an oversight.** A `Workset` is
+  not an `Element` - it has no id in the element space and cannot be selected,
+  isolated or tagged. Handing back an empty `elements` to look composable would
+  be a lie the dependency graph believes.
+
+# WHY THE EXAMPLES BELOW ARE IN A COMMENT AND NOT IN `purpose`. Measured
+# 2026-09-01: the first draft of this fragment explained itself by QUOTING the
+# sentences other fragments answer - "how many ducts are there", "is the model
+# clean", "a clash check comes back clean". `purpose` IS INDEXED, so every one
+# of those quotes handed this fragment somebody else's words, and it took FOUR
+# sentences off the fragments that own them, including READ_MODEL_WARNINGS's own
+# declared "is the model clean" and SET_ELEMENT_WORKSET's "they are on the wrong
+# workset" - a request to CHANGE, answered by a read.
+#
+# So: illustrate a fragment with the sentences it OWNS. Another fragment's
+# example belongs in a comment, where it is there for a reader and invisible to
+# retrieval.
+#
+# What a closed workset actually costs, kept here for that reason:
+#   a duct count answers honestly and low
+#   a clash check finds nothing and reports success
+#   a schedule prints short
+# none of them warns, and this fragment is the only place that says so.
+
+# ROUTING - repeated in SET_ELEMENT_WORKSET and READ_ELEMENT_OWNERSHIP.
+#
+#   "list the worksets"          -> here
+#   "are all the worksets open"  -> here
+#   "why is the model empty"     -> here is the first thing to check
+#   "which workset is this on"   -> READ_ELEMENT_OWNERSHIP / the element's own
+#                                   workset - a question about an ELEMENT
+#   "put these on the MEP workset" -> SET_ELEMENT_WORKSET
+#   "who owns this"              -> READ_ELEMENT_OWNERSHIP
+#   "is this model workshared"   -> declared HERE and answered by
+#                                   READ_ELEMENT_OWNERSHIP, which is left alone
+#                                   deliberately: it PROVIDES `workshared`, so
+#                                   it genuinely answers the question. Both are
+#                                   reads and either is usable - not every
+#                                   contested sentence has a wrong side
+
+utterances:
+  - list the worksets
+  - what worksets are there
+  - are all the worksets open
+  - which worksets are closed
+  - is this model workshared
+  - show me the worksets

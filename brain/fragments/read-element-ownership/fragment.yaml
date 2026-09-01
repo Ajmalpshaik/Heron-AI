@@ -67,6 +67,15 @@ compatibility-note: >
 # relinquish does nothing to a pinned one. Reporting the wrong cause sends
 # somebody to the wrong person.
 
+# ROUTING - repeated in LIST_WORKSETS and SET_ELEMENT_WORKSET.
+#
+#   "who owns this"                -> here
+#   "can I edit this"              -> here
+#   "list the worksets"            -> LIST_WORKSETS - the model's worksets
+#                                     and which are open, rather than one
+#                                     element's owner
+#   "put these on the MEP workset" -> SET_ELEMENT_WORKSET
+
 utterances:
   - who owns this
   - is this owned by someone else

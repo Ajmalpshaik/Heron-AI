@@ -1,0 +1,79 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-022
+semantic-identity: "add a new level at this height"
+kind: action
+domain: revit.levels
+capability: CREATE_LEVEL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates one level at a given height and names it.
+
+  **A new level comes with no views, and that is the thing people get caught
+  by.** Revit's own Level tool makes a floor plan and a ceiling plan alongside
+  the level because the *tool* does that, not because the level does. Created
+  through the API the level exists, appears in every elevation, is available on
+  every Level parameter - and has no plan view at all. The modeller looks in the
+  Project Browser, sees nothing, and concludes it did not work. It did. Making
+  the views is a separate job and this fragment says so rather than pretending
+  otherwise.
+
+  **The height is measured the way the level heads read**, from the project's
+  elevation base, so a level asked for at 4500 shows 4500 on the drawing. The
+  API's own property is measured from the internal origin instead, and the two
+  differ the moment somebody moves the base point - see LIST_LEVELS, which
+  reports both.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elevationMm
+      type: double
+      source: request
+    - name: levelName
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+    - name: noViewsMade
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Level.Create(Document, double)` and `Level.ProjectElevation` are unchanged
+  2020 to 2027. Millimetres to feet is arithmetic - divide by 304.8, per D-20.
+
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# ROUTING - repeated in LIST_LEVELS and SET_ELEMENT_LEVEL.
+#
+#   "add a level"                -> here
+#   "add 4 more floors"          -> here, once per level
+#   "list the levels"            -> LIST_LEVELS
+#   "move these to level 3"      -> SET_ELEMENT_LEVEL - reassigns EXISTING
+#                                   elements; it creates nothing
+#   "make the plan for it"       -> NOT here. A level created through the API
+#                                   has no views, and making them is a separate
+#                                   job nothing in the library does yet
+
+utterances:
+  - add a level
+  - create a new level
+  - add another floor level
+  - I need a level at this height
+  - make a new level

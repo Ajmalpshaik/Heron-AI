@@ -61,6 +61,16 @@ compatibility-note: >
   release, which sidesteps 2024's widening of ElementId to 64 bits entirely
   rather than relying on it hashing the same way before and after.
 
+# ROUTING - repeated in PLACE_MEP_FITTING and MEP_CONNECTIVITY checks.
+#
+#   "is this duct connected"     -> here - a READ
+#   "what does this connect to"  -> here
+#   "connect these two ducts"    -> PLACE_MEP_FITTING. A request to CHANGE
+#                                   the model, and it used to resolve here -
+#                                   a read-only report answering an
+#                                   instruction to build something
+#   "join these two"             -> PLACE_MEP_FITTING
+
 utterances:
   - what connects to what
   - trace this system

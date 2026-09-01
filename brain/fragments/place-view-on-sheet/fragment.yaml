@@ -66,9 +66,10 @@ compatibility-note: >
 # ROUTING - repeated in DUPLICATE_VIEW and CREATE_3D_VIEW.
 #
 #   "put this view on a sheet"      -> here
-#   "make a new sheet"              -> NOT here. Creating the sheet and placing
-#                                      on it are different jobs and only the
-#                                      second is built
+#   "make a new sheet"              -> CREATE_SHEET. Creating the sheet and
+#                                      placing on it stay different jobs; both
+#                                      are built now, and the chain is
+#                                      CREATE_SHEET then here
 #   "list the sheets"               -> LIST_SHEETS. A QUESTION about what
 #                                      sheets exist, and it must not be
 #                                      answered by the fragment that puts

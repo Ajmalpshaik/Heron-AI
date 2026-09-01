@@ -58,7 +58,7 @@ compatibility-note: >
 #   "which sheet is this view on"-> FIND_VIEWS_SHOWING_ELEMENT is the wrong way
 #                                   round; this fragment's `onSheets` count is
 #                                   the sheet side of the same question
-#   "make a new sheet"           -> nothing here does that yet
+#   "make a new sheet"           -> CREATE_SHEET
 
 utterances:
   - list the sheets

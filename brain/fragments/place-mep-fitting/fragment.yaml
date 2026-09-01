@@ -1,0 +1,84 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-010
+semantic-identity: "join these duct or pipe ends with the fitting the geometry calls for"
+kind: action
+domain: revit.mep
+capability: PLACE_MEP_FITTING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Joins the open ends of two, three or four ducts or pipes with a fitting -
+  elbow, transition, union, tee or cross - chosen from what the geometry
+  actually is.
+
+  **The fitting is not a choice the user should have to make.** Somebody says
+  *"join these two"*; whether that is an elbow, a union or a transition is
+  decided by whether the runs turn and whether they change size, and Revit's own
+  behaviour when you drag one duct onto another is exactly this. Asking the
+  modeller to name the fitting is asking them to do the API's job.
+
+  **Before this, "join these two" resolved to CREATE_DUCT and "connect these two
+  ducts" to TRACE_CONNECTIVITY** - one drawing a new duct nobody asked for, the
+  other a read-only report answering a request to change the model.
+
+  **It does not move anything to make the join work.** Revit requires the two
+  ends to be at the same point already; ends that are apart are reported with
+  the distance, not dragged together. Moving a run to close a gap changes where
+  services are, which is a decision, not a detail.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: toleranceMm
+      type: double
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+    - name: notMepCurve
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Create.NewElbowFitting`, `NewTransitionFitting`, `NewUnionFitting`,
+  `NewTeeFitting` and `NewCrossFitting` all take `Connector` arguments and are
+  unchanged 2020 to 2027, as are `MEPCurve.ConnectorManager`,
+  `Connector.Origin`, `Connector.IsConnected` and `Connector.Radius` /
+  `Connector.Width`.
+
+  Millimetres to feet is arithmetic - divide by 304.8, per D-20.
+
+# ROUTING - repeated in CREATE_DUCT, TRACE_CONNECTIVITY and SPLIT_MEP_RUN.
+#
+#   "join these two"             -> here
+#   "connect these two ducts"    -> here
+#   "put an elbow here"          -> here - the elbow is CHOSEN, not named
+#   "add a duct fitting"         -> here
+#   "is this duct connected"     -> TRACE_CONNECTIVITY - a READ, and it must
+#                                   not answer a request to change the model
+#   "draw a duct from here"      -> CREATE_DUCT - makes a new run
+#   "split this duct"            -> SPLIT_MEP_RUN - the opposite job
+
+utterances:
+  - join these two
+  - connect these two ducts
+  - put an elbow here
+  - add a duct fitting
+  - join the pipes up
+  - connect them together
+  - add a tee here

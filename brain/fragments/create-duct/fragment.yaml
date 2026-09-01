@@ -75,9 +75,11 @@ compatibility-note: >
 #   "draw a duct from here to there" -> here
 #   "add a duct"                     -> here
 #   "split this duct"                -> SPLIT_MEP_RUN - the run already exists
-#   "join these two"                 -> NOT here. Connecting two existing runs
-#                                       is not drawing a new one, and nothing
-#                                       in the library does it yet
+#   "join these two"                 -> PLACE_MEP_FITTING. Connecting two
+#                                       existing runs is not drawing a new one
+#   "connect these two ducts"        -> PLACE_MEP_FITTING
+#   "put an elbow here"              -> PLACE_MEP_FITTING - the fitting is
+#                                       CHOSEN from the geometry, not named
 #   "add a dimension between these"  -> CREATE_DIMENSION. It shares no words
 #                                       with this fragment and used to resolve
 #                                       here anyway, which is what a crowded

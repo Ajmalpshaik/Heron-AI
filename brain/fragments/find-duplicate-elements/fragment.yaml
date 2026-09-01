@@ -1,0 +1,87 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-005
+semantic-identity: "which of these are the same thing placed twice in the same spot"
+kind: filter
+domain: revit.quality
+capability: FIND_DUPLICATE_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds elements of the same type sitting at the same place, and hands back the
+  EXTRA ones - every member of each cluster except one.
+
+  **A double-placed element is invisible and counts twice.** Two diffusers in
+  the same spot look like one on every drawing and in every view, and appear as
+  two in the schedule, in the count and in the quantity take-off. Nobody sees it
+  by looking; it is found by counting, or by somebody on site.
+
+  **It is a READ, and before this fragment that sentence got a WRITE.** *"Find
+  duplicate elements"* resolved to RENAME_ELEMENTS. This one deletes nothing -
+  it narrows `elements` to the extras so the next step can select them, isolate
+  them, or delete them **as a separate decision somebody makes**.
+
+  **Same TYPE and same PLACE, both required.** Two different diffuser types at
+  one point is a design clash, not a duplicate, and reporting it here would put
+  a real coordination problem in a list people bulk-delete from.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: toleranceMm
+      type: double
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+    - name: noPoint
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Element.GetTypeId()`, `LocationPoint` and `LocationCurve` are unchanged 2020
+  to 2027. Millimetres to feet is arithmetic - divide by 304.8, per D-20.
+
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# THE TOLERANCE IS A REQUEST INPUT AND HAS NO DEFAULT, deliberately. A hand-
+# placed duplicate is usually within a millimetre or two; a copied-and-nudged
+# one can be 50 mm out and is still a duplicate; two legitimately close
+# sprinklers on a tight grid can be 100 mm apart and are not. There is no value
+# that is right without knowing the job, and picking one silently decides
+# whether real elements end up in a list somebody deletes from.
+
+# ROUTING - repeated in FIND_CLASHES and DELETE_ELEMENTS.
+#
+#   "find duplicate elements"    -> here
+#   "are there any duplicates"   -> here
+#   "why does the count look high" -> here
+#   "does anything clash"        -> FIND_CLASHES - two DIFFERENT things
+#                                   overlapping, which is a coordination
+#                                   problem; a duplicate is one thing twice
+#   "delete the duplicates"      -> here, then DELETE_ELEMENTS. This fragment
+#                                   deletes nothing on its own, and that split
+#                                   is deliberate
+
+utterances:
+  - find duplicate elements
+  - are there any duplicates
+  - is anything placed twice
+  - check for double placed elements
+  - find the duplicates
+  - why is the count higher than it should be

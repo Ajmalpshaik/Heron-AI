@@ -1,0 +1,47 @@
+positive:
+  - given: 200 diffusers on a floor, two of them placed twice at the same point, tolerance 5 mm
+    expect: >
+      2 extras returned, 2 clusters reported, and the 198 singles left out. The
+      count that looked like 202 is explained
+
+  - given: a cluster of three identical elements at one point
+    expect: >
+      TWO extras, not three. One of each cluster is kept, which is what makes
+      the result safe to hand to DELETE_ELEMENTS - taking all three removes the
+      element that was supposed to be there
+
+  - given: two identical ducts lying on top of each other
+    expect: >
+      caught. A curve-based element is placed by its midpoint, and two
+      coincident ducts share one
+
+negative:
+  - given: two DIFFERENT diffuser types at the same point
+    expect: >
+      NOT reported. That is a design clash - a real coordination problem - and
+      putting it here files it under things people bulk-delete from
+
+  - given: two ducts meeting end to end
+    expect: >
+      NOT reported. Their midpoints are half a duct apart, which is right: they
+      are a run, not a duplicate
+
+  - given: two identical elements 1 mm apart, tolerance 5 mm, falling either side of a rounding boundary
+    expect: >
+      still caught. The rounding is only a way of avoiding an all-against-all
+      comparison; the neighbouring cells are searched too and the real test is
+      the distance
+
+  - given: a tolerance of 0
+    expect: >
+      it is floored to something tiny rather than used. Zero collapses every
+      coordinate into one cell and reports the whole input as duplicates of
+      each other
+
+  - given: an element with no location - a group, a datum
+    expect: >
+      its id goes to `noPoint`. It cannot be in the same place as anything, and
+      dropping it silently makes the input and output counts irreconcilable
+
+second_route:
+  - A schedule of the category with a count column, compared against the number physically visible on the plan

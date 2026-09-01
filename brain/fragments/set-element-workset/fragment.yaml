@@ -72,6 +72,15 @@ compatibility-note: >
 # it". The workset is where an element lives; ownership is who holds it right
 # now. Moving worksets does not release an element somebody else has.
 
+# ROUTING - repeated in LIST_WORKSETS and READ_ELEMENT_OWNERSHIP.
+#
+#   "put these on the MEP workset" -> here
+#   "list the worksets"            -> LIST_WORKSETS - and worth running
+#                                     FIRST, because anything on a CLOSED
+#                                     workset is not loaded, so it is not in
+#                                     `elements` and cannot be moved
+#   "who owns this"                -> READ_ELEMENT_OWNERSHIP
+
 utterances:
   - put them on a different workset
   - move these to the MEP workset
