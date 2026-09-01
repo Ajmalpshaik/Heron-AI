@@ -1,0 +1,38 @@
+positive:
+  - given: three FCUs changed on a plan view, revision "R3", padding 200 mm
+    expect: >
+      three clouds, one tightly around each, all carrying R3 - so all three
+      appear against R3 on the titleblock's revision schedule
+
+  - given: a section view cut at 30 degrees to the world axes
+    expect: >
+      the clouds are square to the DRAWING, not to the world. The corners are
+      projected onto the view's own right and up directions, which is the whole
+      reason the box's own X and Y are not used
+
+negative:
+  - given: the same three FCUs, but scattered across a floor plate
+    expect: >
+      three separate clouds and NOT one around all of them. One cloud spanning
+      them would state that everything in between was revised, on a drawing
+      somebody signs. An untidy true drawing beats a tidy false one
+
+  - given: asked on a SHEET rather than on a view
+    expect: >
+      everything is refused and `viewRefused` is true. Clouding straight onto a
+      sheet is normal practice and this cannot do it: a sheet's coordinates are
+      paper, the bounding boxes are model, and drawing one from the other puts
+      the cloud kilometres away
+
+  - given: an element that is hidden in the target view
+    expect: >
+      it is refused. get_BoundingBox(view) returns null, and a cloud around
+      something the drawing does not show marks a change nobody can see
+
+  - given: a revisionId that is not a Revision
+    expect: >
+      nothing is drawn and `viewRefused` is true. A cloud with no revision
+      behind it is a shape on a drawing that no register mentions
+
+second_route:
+  - Revit's own Revision Cloud tool drawn by hand, and the titleblock's revision schedule checked for the same revision appearing

@@ -69,6 +69,11 @@ compatibility-note: >
 #   "make a new sheet"              -> NOT here. Creating the sheet and placing
 #                                      on it are different jobs and only the
 #                                      second is built
+#   "list the sheets"               -> LIST_SHEETS. A QUESTION about what
+#                                      sheets exist, and it must not be
+#                                      answered by the fragment that puts
+#                                      things on them
+#   "which sheets are empty"        -> LIST_SHEETS
 #   "duplicate this view"           -> DUPLICATE_VIEW - and note a duplicate is
 #                                      how you get a view that CAN go on a
 #                                      second sheet, since the original cannot

@@ -40,6 +40,15 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
+# ROUTING - repeated in READ_MODEL_WARNINGS.
+#
+#   "write that up"              -> here - it formats findings already made
+#   "give me the report"         -> here
+#   "list the warnings"          -> READ_MODEL_WARNINGS, which PRODUCES the
+#                                   findings this fragment formats. The two
+#                                   compose; neither replaces the other
+#   "list the linked models"     -> LIST_LINKED_MODELS, same relationship
+
 utterances:
   - report what you found
   - tell me what is wrong

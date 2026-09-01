@@ -80,6 +80,11 @@ compatibility-note: >
 #   "put tags on these"          -> here
 #   "show me the ducts"          -> SET_SELECTION - on screen, not on paper
 #   "which ones are not tagged"  -> a QA read; `alreadyTagged` is its input
+#   "cloud this change"          -> ADD_REVISION_CLOUD - a tag reads a
+#                                   PARAMETER, a cloud marks a CHANGE
+#   "dimension these"            -> CREATE_DIMENSION - a tag reads a
+#                                   parameter, a dimension measures a
+#                                   distance
 #
 # "SHOW" IS THE AMBIGUOUS WORD. "Show me the sizes" wants an answer in the chat,
 # "show the sizes on the drawing" wants tags. Landing on the wrong one produces

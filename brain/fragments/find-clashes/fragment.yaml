@@ -69,6 +69,11 @@ compatibility-note: >
 #   "which ducts clash with the beams"  -> here - two sets of real elements
 #   "find the clashes"                  -> here
 #   "is anything blocking these"        -> CHECK_OBSTRUCTIONS
+#   "list the linked models"            -> LIST_LINKED_MODELS - worth
+#                                          running FIRST, because a clash
+#                                          check can only see what is
+#                                          LOADED and an unloaded link
+#                                          comes back clean
 #
 # THE DIFFERENCE IS WHETHER THE THING EXISTS YET. Checking a proposed layout
 # against the model is a ray cast; checking built work against built work is

@@ -1,4 +1,4 @@
-heron-agent: HERON-REVIT-MEP-012
+heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
 heron-status: DRAFT
 heron-since: 0.1.0
@@ -69,6 +69,19 @@ compatibility-note: >
   One implementation for every release. `Duct.Create` taking a system type, a
   duct type, a level and two points is unchanged 2020 to 2027, and this fragment
   touches no units API and constructs no ElementId - the two things that moved.
+
+# ROUTING - repeated in SPLIT_MEP_RUN.
+#
+#   "draw a duct from here to there" -> here
+#   "add a duct"                     -> here
+#   "split this duct"                -> SPLIT_MEP_RUN - the run already exists
+#   "join these two"                 -> NOT here. Connecting two existing runs
+#                                       is not drawing a new one, and nothing
+#                                       in the library does it yet
+#   "add a dimension between these"  -> CREATE_DIMENSION. It shares no words
+#                                       with this fragment and used to resolve
+#                                       here anyway, which is what a crowded
+#                                       area does to retrieval
 
 utterances:
   - draw a duct from here to there

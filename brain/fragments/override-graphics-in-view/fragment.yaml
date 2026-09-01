@@ -65,6 +65,17 @@ compatibility-note: >
 # grey too. The search had already moved that sentence to the category fragment
 # on its own, which is the retrieval agreeing with the decision rather than
 # being corrected into it.
+# ROUTING - repeated in ADD_REVISION_CLOUD.
+#
+#   "make these red"                   -> here - a graphic override, view only
+#   "grey everything else back"        -> here
+#   "circle these in red"              -> here is the closest thing
+#   "put a revision cloud around this" -> ADD_REVISION_CLOUD. An override is a
+#                                         COLOUR and nothing outside this view
+#                                         knows about it; a cloud is an
+#                                         ANNOTATION that puts the change on
+#                                         the titleblock's revision schedule
+
 utterances:
   - bring the services forward
   - make the architecture faint

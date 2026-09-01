@@ -1,0 +1,24 @@
+positive:
+  - given: a project with 14 sheets numbered M-101 to M-114
+    expect: >
+      14 rows in sheet-number order, each carrying the number, the name and how
+      many views are on it - the drawing list, in the order it gets printed in
+
+  - given: a sheet created for a section that was never drawn
+    expect: its row says EMPTY, which is the row somebody scanning before an issue is looking for
+
+negative:
+  - given: a project holding a view template for sheets
+    expect: >
+      it does NOT appear. It comes back from the same collector carrying a
+      number and a name, so it looks exactly like a sheet, and listing it puts
+      a row in the register that can never be issued
+
+  - given: a placeholder sheet carrying a number for a drawing not yet modelled
+    expect: >
+      it IS listed and it is FLAGGED, and its id is in `placeholders`. Counting
+      it as an ordinary sheet overstates what the project can issue; hiding it
+      loses a row the register deliberately contains
+
+second_route:
+  - Revit's own Sheets branch in the Project Browser, or a Sheet List schedule, counted against the same project

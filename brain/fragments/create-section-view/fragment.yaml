@@ -1,0 +1,98 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-020
+semantic-identity: "cut a real section view through these elements"
+kind: action
+domain: revit.views
+capability: CREATE_SECTION_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a new section view cut through a set of elements, sized to contain
+  them plus a margin the request supplies.
+
+  **It exists because "create a section through this" resolved to
+  SET_VIEW_SECTION_BOX**, which crops a 3D view to a box. Both have the word
+  *section* in them and they are not the same job in any respect: one makes a
+  new drawing that can go on a sheet, the other hides part of a view that
+  already exists. A modeller asking for a section wants the drawing.
+
+  **It goes ACROSS a run, not along it.** Given one element with a location
+  curve, the view looks ALONG that curve, so what you see is the
+  cross-section. That is what somebody means by *"a section through this"*. The
+  other orientation gives a long elevation, which is a legitimate drawing and
+  never the one that sentence asks for.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: marginMm
+      type: double
+      source: request
+  provides:
+    - name: created
+      type: View
+      # A View rather than an ElementId, because the useful next thing to do
+      # with a new section is put it on a sheet and PLACE_VIEW_ON_SHEET works
+      # in Views.
+      #
+      # BUT IT DOES NOT FLOW THERE BY ITSELF, and the graph says it composes
+      # anyway, which is worth knowing before trusting that answer.
+      # PLACE_VIEW_ON_SHEET declares `views` as `source: request` - correctly,
+      # since usually somebody names a view that already exists - so it has NO
+      # fragment-sourced needs and `composable()` returns true for every
+      # producer, this one included. That is a vacuous yes: the host still has
+      # to carry `created` across into the next call's request. "Section it and
+      # put it on the sheet" is two steps the host sequences, not one chain the
+      # names join up.
+    - name: noGeometry
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ViewSection.CreateSection(Document, ElementId, BoundingBoxXYZ)` is unchanged
+  2020 to 2027, as is `BoundingBoxXYZ.Transform`. No ElementId is built from an
+  int, so 2024's 64-bit ids do not reach this code.
+
+  The margin arrives in millimetres and is divided by 304.8 - arithmetic, per
+  D-20, because `UnitUtils` was rewritten in 2021 and the call that worked on
+  2020 does not exist on 2022.
+
+# ROUTING - repeated in SET_VIEW_SECTION_BOX.
+#
+#   "create a section through this"  -> here. A NEW DRAWING
+#   "make a section here"            -> here
+#   "cut a section through this"     -> here
+#   "section it and put it on a sheet" -> here, then PLACE_VIEW_ON_SHEET
+#   "cut the pipe here"              -> SPLIT_MEP_RUN. Both sentences say
+#                                       CUT and they are opposite jobs: one
+#                                       makes a drawing, the other divides
+#                                       an element. Measured 2026-09-01 -
+#                                       this fragment took "cut the pipe
+#                                       here" off SPLIT_MEP_RUN until its
+#                                       prose stopped naming pipes
+#   "crop the 3D view to this area"  -> SET_VIEW_SECTION_BOX. Hides part of a
+#                                       view that already exists; makes nothing
+#   "just show this bit in 3D"       -> SET_VIEW_SECTION_BOX
+#   "crop the plan"                  -> SET_VIEW_CROP
+
+utterances:
+  - create a section through this
+  - make a section here
+  - cut a section through this
+  - I need a section of this
+  - give me a cross section
+  - section this run
+  - add a section view

@@ -55,9 +55,16 @@ compatibility-note: >
 # fragment claiming the whole sentence is the composition mistake that
 # brain/retrieval-history.md keeps arriving at: a composition is what a SKILL
 # names. The search was already routing all three elsewhere, correctly.
+# "the ones I have selected" WAS DECLARED HERE AND WAS MOVED, 2026-09-01,
+# when READ_SELECTION was written. It is not a rank that was given away: this
+# fragment resolves ids somebody already has - from a previous answer, from a
+# schedule - and it has no way to ask Revit what is highlighted on screen.
+# READ_SELECTION does exactly that, so the sentence was never this fragment's
+# to answer and answering it meant acting on the wrong set with no sign
+# anything had gone wrong.
+
 utterances:
   - these ones
-  - the ones I have selected
   - use the ids from the last answer
   - the elements with these ids
   - get the elements for those ids

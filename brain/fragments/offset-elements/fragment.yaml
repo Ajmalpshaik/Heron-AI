@@ -53,6 +53,17 @@ compatibility-note: >
   `LocationCurve.Curve` are unchanged 2020 to 2027, and the distance arrives in
   internal feet with no units call.
 
+# ROUTING - repeated in SPLIT_MEP_RUN and MOVE_ELEMENTS.
+#
+#   "move it 200 across"        -> here - a shift perpendicular to the run
+#   "offset these ducts"        -> here
+#   "split this duct"           -> SPLIT_MEP_RUN. Cutting a run in two, not
+#                                  shifting it sideways. Before SPLIT_MEP_RUN
+#                                  existed, "split this duct at the wall"
+#                                  resolved HERE - a confident answer that
+#                                  moves the duct instead of cutting it
+#   "move these up 200"         -> MOVE_ELEMENTS - a named direction
+
 utterances:
   - run another duct parallel to this
   - move the pipe over 300

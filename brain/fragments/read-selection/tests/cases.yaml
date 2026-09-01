@@ -1,0 +1,24 @@
+positive:
+  - given: the user has picked 4 ducts on screen and asks "move these up 200"
+    expect: >
+      elements holds those 4, selectionCount is 4, and MOVE_ELEMENTS acts on
+      exactly them - the composition that has no other way to start, because
+      "these" cannot be described in words
+
+  - given: the user asks "how many did I select" with 12 elements picked
+    expect: selectionCount is 12, and nothing about the selection changed
+
+negative:
+  - given: nothing is selected and the user says "do it to what I selected"
+    expect: >
+      elements comes back EMPTY and the action downstream does nothing. It does
+      NOT fall back to the whole model or the active view. A missed click must
+      not become a building-wide edit
+
+  - given: an element was selected and then deleted, and the id is still in the selection
+    expect: >
+      it appears in `vanished` and NOT in `elements`. Dropping it silently
+      would act on 4 of the 5 things the user pointed at and report success
+
+second_route:
+  - Revit's own status bar, which shows the selection count at the bottom right, read against the same pick

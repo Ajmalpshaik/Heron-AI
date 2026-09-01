@@ -1,0 +1,70 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-001
+semantic-identity: "every drawing sheet in this project, with its number and name"
+kind: filter
+domain: revit.sheets
+capability: LIST_SHEETS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Collects the project's sheets and reports each one's number, name and how
+  many views are on it.
+
+  **The first fragment in the SHT area.** Sheets had an agent in the registry
+  and nothing on disk, so *"list the sheets"* resolved to FILTER_ELEMENTS_BY_ID
+  and *"which sheet is this on"* to PLACE_VIEW_ON_SHEET - a read answered by
+  the fragment that puts things on sheets.
+
+  **A sheet with no views on it is still a sheet, and it is worth knowing
+  about.** An empty sheet in the list is usually one that was created for a
+  drawing nobody has produced yet, which is exactly the thing somebody is
+  looking for when they ask what sheets exist before an issue.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+    - name: placeholders
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ViewSheet`, `SheetNumber`, `IsPlaceholder` and `GetAllPlacedViews()` are
+  unchanged 2020 to 2027. `GetAllPlacedViews()` returns view ids, which are
+  only ever counted here and never converted to or from an int, so 2024's
+  64-bit ids do not reach this code.
+
+# ROUTING - repeated in PLACE_VIEW_ON_SHEET.
+#
+#   "list the sheets"            -> here. A QUESTION
+#   "how many sheets are there"  -> here
+#   "which sheets are empty"     -> here - the view count is on every row
+#   "put this view on a sheet"   -> PLACE_VIEW_ON_SHEET. A CHANGE
+#   "which sheet is this view on"-> FIND_VIEWS_SHOWING_ELEMENT is the wrong way
+#                                   round; this fragment's `onSheets` count is
+#                                   the sheet side of the same question
+#   "make a new sheet"           -> nothing here does that yet
+
+utterances:
+  - list the sheets
+  - how many sheets are there
+  - what sheets do we have
+  - show me the drawing list
+  - which sheets are empty
+  - what is on the sheets
+  - give me the sheet numbers

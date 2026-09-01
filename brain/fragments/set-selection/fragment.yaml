@@ -38,6 +38,18 @@ compatibility-note: >
   2020 to 2027. No ElementId is built from an int, so 2024's move to 64-bit ids
   does not reach this code.
 
+# ROUTING - repeated in READ_SELECTION.
+#
+#   "select these"             -> here. A CHANGE to the selection
+#   "highlight what you found" -> here
+#   "what did I select"        -> READ_SELECTION. A QUESTION about the
+#                                 selection, and it must not be answered by the
+#                                 fragment that overwrites it
+#   "how many did I select"    -> READ_SELECTION
+#   "move what I picked up 200"-> READ_SELECTION, then MOVE_ELEMENTS
+#   "how many ducts are there" -> COUNT_ELEMENTS. Nothing to do with what is
+#                                 picked on screen
+
 # risk is EXECUTE and not MODIFY on purpose: changing what is highlighted is
 # not a change to the model, survives no transaction and needs no undo. The
 # gate that matters for this fragment is the one that lets it run at all with

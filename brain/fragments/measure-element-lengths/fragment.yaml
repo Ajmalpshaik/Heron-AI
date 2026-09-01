@@ -62,6 +62,11 @@ compatibility-note: >
 #   "what sizes are the ducts"              -> READ_ELEMENT_PARAMETERS, grouped
 #   "how much 300x300 duct is there"        -> here + READ_ELEMENT_PARAMETERS
 #                                              + GROUP_AND_COUNT, composed
+#   "how far apart are they"                -> here. A NUMBER in the reply
+#   "dimension these ducts"                 -> CREATE_DIMENSION - the same
+#                                              distance, put ON THE DRAWING.
+#                                              Asking a question must not
+#                                              annotate the model
 #
 # A COUNT AND A LENGTH ARE DIFFERENT ANSWERS TO SENTENCES THAT SOUND THE SAME.
 # "How many" wants a number of elements; "how much" wants a quantity. Getting

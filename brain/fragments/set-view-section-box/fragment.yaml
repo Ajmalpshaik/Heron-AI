@@ -66,6 +66,11 @@ compatibility-note: >
 #
 #   "show me just these"              -> ISOLATE_ELEMENTS - hides the rest
 #   "box these up" / "section box"    -> here - cuts the view around them
+#   "create a section through this"   -> CREATE_SECTION_VIEW. A NEW
+#                                        DRAWING that can go on a sheet.
+#                                        Same word, entirely different
+#                                        job: this fragment makes nothing
+#   "make a section here"             -> CREATE_SECTION_VIEW
 #   "zoom to these"                   -> here is the closest thing; a true zoom
 #                                        moves the camera and changes no view
 #                                        setting, which nothing here does yet

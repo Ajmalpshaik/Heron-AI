@@ -1,0 +1,84 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-002
+semantic-identity: "draw a revision cloud around these elements on this view"
+kind: action
+domain: revit.sheets
+capability: ADD_REVISION_CLOUD
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws a revision cloud around a set of elements in one view, tagged to a
+  revision the project already has.
+
+  **It belongs to the revision, not to the drawing.** A cloud carries a
+  revision id, and that id is what puts the change on the revision schedule in
+  the titleblock. A cloud on a view with no revision behind it is a shape on a
+  drawing that no register mentions - which is the failure mode this job has
+  when it is done by hand in a hurry.
+
+  **The revision comes from the request, and is not invented.** Picking "the
+  latest revision" automatically is wrong often enough to matter: the newest
+  revision in the sequence is frequently the one being prepared for next time,
+  and clouding this week's change onto it issues nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: revisionId
+      type: ElementId
+      source: request
+    - name: paddingMm
+      type: double
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+    - name: viewRefused
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `RevisionCloud.Create(Document, View, ElementId, IList<Curve>)` is unchanged
+  2020 to 2027, as are `View.Origin`, `RightDirection` and `UpDirection`. No
+  ElementId is built from an int, so 2024's 64-bit ids do not reach this code.
+
+  Padding arrives in millimetres and is divided by 304.8 - arithmetic, per
+  D-20.
+
+# ROUTING - repeated in TAG_ELEMENTS and OVERRIDE_GRAPHICS_IN_VIEW.
+#
+#   "put a revision cloud around this" -> here
+#   "cloud this change"                -> here
+#   "mark this as revised"             -> here
+#   "tag these"                        -> TAG_ELEMENTS - a tag reads a
+#                                        parameter; a cloud marks a CHANGE
+#   "circle these in red"              -> OVERRIDE_GRAPHICS_IN_VIEW is the
+#                                        closest thing, and it is a different
+#                                        job: an override is a colour, a cloud
+#                                        is an annotation on the register
+
+utterances:
+  - put a revision cloud around this
+  - cloud this change
+  - add a revision cloud
+  - mark this as revised
+  - cloud these on the drawing
+  - draw a cloud round it
