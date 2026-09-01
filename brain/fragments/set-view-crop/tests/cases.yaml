@@ -1,0 +1,26 @@
+positive:
+  - given: a plan view and 6 elements in one room, marginMm 500
+    expect: applied true, enclosed 6, and the drawing shows that room with about 500 mm of context around it
+
+negative:
+  - given: a view whose crop was previously OFF
+    expect: >
+      the region is set AND the crop switched on. Setting without activating
+      leaves the view looking identical, which reads as the call having done
+      nothing
+
+  - given: a batch where 2 elements are hidden or outside the view range
+    expect: >
+      those 2 are in noGeometry and the region is built from the rest. A null
+      folded into the min/max stretches the crop to the project origin and
+      encloses the whole drawing - which looks exactly like the request being
+      ignored
+
+  - given: this view already placed on an ISSUED sheet
+    expect: >
+      whatever falls outside the new crop is GONE from that sheet, and nobody
+      reviewing it can tell it was ever there. This is the risk that separates
+      a crop from an isolate, and it is why the two must not be confused
+
+second_route:
+  - Look at the sheet, not the view. The crop is what the drawing shows

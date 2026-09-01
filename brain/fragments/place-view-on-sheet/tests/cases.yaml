@@ -1,0 +1,23 @@
+positive:
+  - given: 4 unplaced views and an empty sheet
+    expect: placed holds 4 viewport ids, refused empty, and all four appear on the sheet stacked at the given point
+
+negative:
+  - given: a batch of 30 views where 19 are ALREADY on other sheets
+    expect: >
+      those 19 are in refused, asked via CanAddViewToSheet BEFORE attempting,
+      and the other 11 still place. A view can be on only one sheet - the fix
+      is to duplicate it, which is a different fragment, and a reader of
+      "placed 11 of 30" needs to know that is why
+
+  - given: a schedule handed in with the views
+    expect: >
+      it is in refused rather than throwing. A schedule goes on a sheet through
+      a different call, and an exception here would abandon whatever came after
+      it in the list
+
+  - given: Viewport.Create returning null without throwing
+    expect: it is in refused, NOT counted as placed - a returned null is not a placement
+
+second_route:
+  - Open the sheet. The viewports are there and can be dragged apart

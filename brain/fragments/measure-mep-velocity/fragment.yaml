@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-MEP-012
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-006
+semantic-identity: "how fast is the air moving in these ducts"
+kind: action
+domain: revit.mep
+capability: MEASURE_MEP_VELOCITY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Air velocity in each duct, in metres per second, and which ones exceed a
+  stated limit. The check behind *"is this duct too small for the flow"* —
+  and before this fragment the search answered that with `CREATE_DUCT`.
+
+  **It computes the velocity from flow and area AND reads Revit's own, then
+  reports both.** Not belt and braces: Revit's velocity parameter is derived
+  from the size and the flow it currently believes, and both can be stale — a
+  duct resized after the system was last calculated reports the old figure and
+  looks fine. Two numbers that disagree is the finding, not a nuisance.
+
+  **The limit is a per-request input with no default.** 5 m/s in an occupied
+  space, 8 or more in a riser, different again for a plant room and for a
+  different authority. A number invented here would be a number quietly relied
+  on across every project.
+
+  **A round duct is not a rectangular one and the area is not the same
+  arithmetic.** Both are handled; anything that is neither is named rather
+  than guessed at.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: maximumVelocity
+      type: double
+      source: request
+  provides:
+    - name: velocity
+      type: IDictionary<ElementId, double>
+    - name: revitSays
+      type: IDictionary<ElementId, double>
+    - name: overLimit
+      type: IList<ElementId>
+    - name: disagrees
+      type: IList<ElementId>
+    - name: noFlow
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The `RBS_DUCT_FLOW_PARAM`,
+  `RBS_VELOCITY`, `RBS_CURVE_WIDTH_PARAM`, `RBS_CURVE_HEIGHT_PARAM` and
+  `RBS_CURVE_DIAMETER_PARAM` built-in parameters are unchanged 2020 to 2027.
+  Every conversion here is arithmetic rather than `UnitUtils` (D-20), so
+  2021's unit API rewrite does not reach this code.
+
+# ROUTING - repeated in SET_MEP_SIZE.
+#
+#   "how fast is the air moving"        -> here
+#   "is this duct too small"            -> here, with the limit stated
+#   "make the duct 400 wide"            -> SET_MEP_SIZE
+#   "what size are these"               -> READ_ELEMENT_PARAMETERS
+#
+# THE VELOCITY QUESTION AND THE SIZE QUESTION ARE THE SAME SENTENCE HALF THE
+# TIME. "This duct is too small" is a velocity finding and a size instruction
+# in one breath; this fragment answers the first and never acts on the second.
+
+utterances:
+  - how fast is the air moving
+  - check the duct velocity
+  - is the duct too small for the flow
+  - what is the velocity in these
+  - are any of these over the velocity limit

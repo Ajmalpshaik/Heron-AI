@@ -1,0 +1,25 @@
+positive:
+  - given: 40 ducts on supply system "SA 1"
+    expect: systemName reads "SA 1" for all 40 and systemType reads the supply classification, matching the Properties palette
+
+negative:
+  - given: two ducts sharing the type "Supply Air" but on separate systems "SA 1" and "SA 2"
+    expect: >
+      the TYPE is identical and the NAME differs. Reading only the type would
+      answer "yes, same system" to the question somebody actually asked, which
+      is the reason both are read
+
+  - given: a duct that is drawn but not connected to anything
+    expect: >
+      it is in noSystem, NOT recorded with an empty name. An empty string sorts
+      alongside real system names in any report built on this and disappears
+
+  - given: a run whose system NAMES suggest one pairing while the pipework physically runs to another
+    expect: >
+      this fragment reports the NAMES, and it is not wrong to do so - but it is
+      not evidence of what is joined. That is TRACE_CONNECTIVITY's job, and
+      this repository has already been caught believing the data over the
+      geometry
+
+second_route:
+  - The Properties palette, System Name and System Type - and TRACE_CONNECTIVITY where the question is what is physically joined

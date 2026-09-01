@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-014
+semantic-identity: "crop this view around these elements"
+kind: action
+domain: revit.views
+capability: SET_VIEW_CROP
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets a view's crop region to enclose the given elements, with a margin, and
+  switches the crop on.
+
+  **A crop is not a section box and not an isolate, and all three are asked for
+  with "just show me this part".**
+
+  - **Crop** — trims what the drawing shows, in the view's own plane. This.
+  - **Section box** — cuts the model in 3D. `SET_VIEW_SECTION_BOX`.
+  - **Isolate** — hides other elements, whole view. `ISOLATE_ELEMENTS`.
+
+  A crop changes what prints. That is its point and its risk: a view on a sheet
+  cropped tighter loses whatever fell outside, and nobody reviewing the sheet
+  can tell it was ever there.
+
+  **Setting the crop without switching it on leaves the view looking identical**,
+  which reads as the call having done nothing — so both happen here.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: marginMm
+      type: double
+      source: request
+  provides:
+    - name: applied
+      type: bool
+    - name: enclosed
+      type: int
+    - name: noGeometry
+      type: IList<ElementId>
+    - name: viewRefused
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.CropBox`, `View.CropBoxActive`,
+  `View.CropBoxVisible` and `Element.get_BoundingBox(View)` are unchanged 2020
+  to 2027. Millimetres to feet is arithmetic (D-20).
+
+# ROUTING - repeated in SET_VIEW_SECTION_BOX and ISOLATE_ELEMENTS.
+#
+#   "crop the view to this"        -> here
+#   "just show me this bit"        -> ASK WHICH of the three. It is genuinely
+#                                     ambiguous and they do different things
+#   "section box around this"      -> SET_VIEW_SECTION_BOX
+#   "show me only these"           -> ISOLATE_ELEMENTS
+#
+# ONLY THE CROP CHANGES WHAT PRINTS. Isolating is temporary by default and a
+# section box is a 3D cut; a crop on a view that is on a sheet silently
+# removes work from an issued drawing.
+
+utterances:
+  - crop the view to this
+  - crop the view around these
+  - set the crop region
+  - trim the view to this area
+  - tighten the crop

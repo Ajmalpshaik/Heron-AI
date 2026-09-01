@@ -1,0 +1,84 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-015
+semantic-identity: "put these views onto a sheet"
+kind: action
+domain: revit.views
+capability: PLACE_VIEW_ON_SHEET
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places views onto a sheet as viewports. The last step of drawing production,
+  and the one that turns a model into something that gets issued.
+
+  **A view can be on only ONE sheet, and Revit refuses the second attempt.**
+  That is not a quirk to work around — it is why the refusal is reported by
+  name rather than allowed to abandon a batch of thirty. The usual cause is a
+  view already placed on a sheet somebody else made.
+
+  **Asked before attempted.** `Viewport.CanAddViewToSheet` is Revit's own
+  answer and it covers the cases that are otherwise exceptions: a view already
+  placed, a schedule that needs a different call, a view template.
+
+  **Position is a stated input and is not laid out.** Where a viewport sits, at
+  what scale, aligned with what on the sheet beside it, is drafting judgement
+  worth its own capability. Placing at a given point is the honest, predictable
+  starting point — a viewport that exists can be dragged; one never placed
+  cannot.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: sheetId
+      type: ElementId
+      source: request
+    - name: views
+      type: IList<View>
+      source: request
+    - name: at
+      type: XYZ
+      source: request
+  provides:
+    - name: placed
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Viewport.Create` and
+  `Viewport.CanAddViewToSheet` are unchanged 2020 to 2027, and both the sheet
+  and the views arrive as objects so nothing here builds an ElementId from an
+  integer.
+
+# ROUTING - repeated in DUPLICATE_VIEW and CREATE_3D_VIEW.
+#
+#   "put this view on a sheet"      -> here
+#   "make a new sheet"              -> NOT here. Creating the sheet and placing
+#                                      on it are different jobs and only the
+#                                      second is built
+#   "duplicate this view"           -> DUPLICATE_VIEW - and note a duplicate is
+#                                      how you get a view that CAN go on a
+#                                      second sheet, since the original cannot
+#
+# "A VIEW CAN ONLY BE ON ONE SHEET" IS THE RULE BEHIND HALF THE REFUSALS HERE,
+# and duplicating is the answer to it.
+
+utterances:
+  - put this view on a sheet
+  - place these views on the sheet
+  - add the view to the drawing sheet
+  - drop this plan on a sheet
+  - put them on the sheet
