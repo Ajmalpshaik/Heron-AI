@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: three free sheet numbers and a title block that exists
+    expect: >
+      three sheets in the Project Browser under exactly those numbers, each
+      with the title block drawn on it. Look at one - a sheet with no border is
+      the failure this fragment guards against
+
+negative:
+  - given: A NUMBER THAT IS ALREADY IN THE REGISTER
+    expect: >
+      that number in `numberTaken` and NO SHEET CREATED for it. The check runs
+      BEFORE creation, so nothing is left behind - the earlier version of this
+      job reported "Duplicated 0 of 1" while the sheet count went 2 to 3 and an
+      orphan stayed in the model
+
+  - given: THE SAME JOB RUN TWICE
+    expect: >
+      the second run creates nothing. Without the pre-check a re-run produces a
+      second set of sheets carrying whatever numbers Revit picked
+
+  - given: a title block name that does not exist in the project
+    expect: >
+      titleBlockNotFound true and NOTHING created. Revit will happily make a
+      sheet with no title block, and a register full of blank-bordered sheets is
+      discovered at issue
+
+  - given: a number refused for any other reason
+    expect: >
+      the sheet id in `refused`, with numberedAs carrying what Revit actually
+      called it. The sheet exists either way and the register must show the
+      truth
+
+  - given: fewer names than numbers
+    expect: >
+      the extra sheets created and named by Revit, reported in namedAs. Number
+      and name are read back separately because they fail independently
+
+second_route:
+  - >
+    open the Sheets branch of the Project Browser and read the numbers - that
+    list is the drawing register, and it is what gets issued

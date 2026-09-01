@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-009
+semantic-identity: "bring a family file into this project"
+kind: action
+domain: revit.document
+capability: LOAD_FAMILY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Loads family files from disk into the project, and hands back the types they
+  brought with them - the step before anything can be placed.
+
+  **A FAMILY ALREADY IN THE PROJECT IS REPORTED, NEVER SILENTLY OVERWRITTEN.**
+  The plain load simply refuses, and that refusal is kept as the default: an
+  office family is somebody's work, and replacing it without asking is how a
+  model's content gets quietly changed underneath the people using it.
+
+  **REVIT SHIPS THE OVERWRITE DECISION AS A DIALOG, AND THAT IS THE ONLY HONEST
+  WAY TO OFFER IT.** `UIDocument.GetRevitUIFamilyLoadOptions()` returns Revit's
+  own implementation - the one File > Load Family uses. Handing it over makes
+  Revit **ask**, in its own dialog, exactly as if the family had been loaded by
+  hand. So `askOnConflict` gives a real reload path with nobody's work
+  overwritten behind their back.
+
+  **THE WIDER LESSON, WORTH MORE THAN THE FRAGMENT:** a technique that needs an
+  interface is not automatically out of reach for a fragment, which cannot
+  declare a class. **Check whether Revit already ships an implementation.**
+
+  **A FRESHLY LOADED TYPE IS NOT ACTIVE UNTIL IT IS FIRST PLACED**, and an
+  inactive type makes placement fail with an error that names neither the family
+  nor the reason. `PLACE_FAMILY_INSTANCES` activates what it is given; this
+  reports `types` so the caller can see what arrived rather than guessing at
+  names.
+
+  **IT NEEDS `uidoc`, WHICH IS WHY IT CANNOT RUN HEADLESS.** The dialog needs a
+  UI session. With `askOnConflict` false it does not touch `uidoc` at all, and
+  that path works anywhere.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    - name: paths
+      type: IList<string>
+      source: request
+    - name: askOnConflict
+      type: bool
+      source: request
+  provides:
+    - name: loaded
+      type: IList<string>
+    - name: types
+      type: IList<ElementId>
+    - name: alreadyPresent
+      type: IList<string>
+    - name: unreadable
+      type: IDictionary<string, string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.LoadFamily`,
+  `Family.GetFamilySymbolIds` and `UIDocument.GetRevitUIFamilyLoadOptions` are
+  unchanged 2020 to 2027, and no units call is made. The load options method is
+  named DIRECTLY rather than reached through reflection - the compile gate
+  confirms it exists on all eight releases, which is the check that turns a
+  defensive workaround into a plain call.
+
+utterances:
+  - load this family into the project
+  - bring in the family file
+  - the family is not in the model
+  - load the rfa
+  - add these families

@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-008
+semantic-identity: "add storeys to the project"
+kind: action
+domain: revit.document
+capability: CREATE_LEVELS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates levels at the elevations given, and reports what each one ended up at
+  and what it ended up called.
+
+  **A LEVEL NAME THAT ALREADY EXISTS IS REFUSED BY REVIT, AND THE REFUSAL IS THE
+  INTERESTING PART.** The level is created first and named second, so a name
+  clash leaves a real level in the model carrying whatever Revit called it -
+  `Level 7` when `Level 3` was asked for. Reporting only a count hides that
+  completely: the number is right and the browser is wrong. `namedAs` returns
+  the name each level actually has.
+
+  **THE ELEVATION IS READ BACK AS `ProjectElevation`.** That is the one in the
+  same space as everything else in the model. `Elevation` is measured from
+  whatever the level type's base says, so reading it back would confirm a number
+  that was never in question and miss a survey offset entirely.
+  `REPORT_LEVEL_ELEVATIONS` is the fragment that says whether the two differ on
+  this model.
+
+  **AN ELEVATION THAT ALREADY HAS A LEVEL IS SKIPPED, NOT STACKED.** Two levels
+  at the same height is legal in Revit and is almost never wanted - it makes
+  every view range and every "which level is this on" answer ambiguous, and it
+  is the shape a re-run of this job takes if nothing guards it.
+
+  **IT DOES NOT SPACE THEM.** *"Four more floors at 3.5 m"* is arithmetic, and
+  arithmetic between two Revit calls belongs to the host (D-01). Handing this
+  fragment a count and a spacing would put a second idea of what a storey height
+  is inside the library.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elevations
+      type: IList<double>
+      source: request
+    - name: names
+      type: IList<string>
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: namedAs
+      type: IDictionary<ElementId, string>
+    - name: elevationOf
+      type: IDictionary<ElementId, double>
+    - name: nameRefused
+      type: IList<ElementId>
+    - name: alreadyThere
+      type: IList<double>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Level.Create`, `Level.Name` and
+  `Level.ProjectElevation` are unchanged 2020 to 2027. Elevations arrive and are
+  returned in Revit's internal feet with no units API touched - D-20 keeps the
+  millimetre conversion at the edge where the user is, which is also what keeps
+  this clear of the 2021 units move.
+
+utterances:
+  - add more levels
+  - create the floor levels
+  - add four more floors
+  - make a level at 12 metres
+  - set up the storeys

@@ -1,0 +1,87 @@
+heron-agent: HERON-REVIT-SHT-020
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-005
+semantic-identity: "add new sheets to the drawing register"
+kind: action
+domain: revit.sheets
+capability: CREATE_SHEETS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates sheets with the numbers and names given, on a chosen title block.
+
+  **A SHEET NUMBER MUST BE UNIQUE AND REVIT ENFORCES IT AFTER THE SHEET
+  EXISTS.** `ViewSheet.Create` makes the sheet with a number Revit picks;
+  setting the wanted number is a second step that can be refused. So a clash
+  leaves a **real sheet in the register under the wrong number** - and a count
+  reports the job as done. This is the same shape as `DUPLICATE_SHEETS`, where
+  the fragment being re-authored reported *"Duplicated 0 of 1"* while the sheet
+  count went 2 to 3.
+
+  **SO THE NUMBER IS CHECKED BEFORE ANYTHING IS CREATED.** A number already in
+  the register is reported in `numberTaken` and no sheet is made for it. That
+  removes the failure rather than cleaning up after it, and it means a re-run of
+  the same job creates nothing instead of a second set of misnumbered sheets.
+
+  **THE TITLE BLOCK IS A REQUEST INPUT WITH NO DEFAULT.** Revit will happily
+  create a sheet with no title block at all, and a drawing register full of
+  blank-bordered sheets is discovered at issue. Which title block a project uses
+  is a project decision, not something this fragment may guess.
+
+  **IT READS BACK BOTH THE NUMBER AND THE NAME**, because they fail
+  independently: the number can be refused for a clash while the name is
+  accepted, and the result looks correct in a list that shows only one of them.
+
+  **IT DOES NOT PLACE ANYTHING ON THEM.** `PLACE_VIEWS_ON_SHEET` does that, and
+  keeping them apart is what lets a register be built before the drawings exist.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: numbers
+      type: IList<string>
+      source: request
+    - name: names
+      type: IList<string>
+      source: request
+    - name: titleBlockName
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: numberedAs
+      type: IDictionary<ElementId, string>
+    - name: namedAs
+      type: IDictionary<ElementId, string>
+    - name: numberTaken
+      type: IList<string>
+    - name: refused
+      type: IList<ElementId>
+    - name: titleBlockNotFound
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSheet.Create`,
+  `ViewSheet.SheetNumber` and `ViewSheet.Name` are unchanged 2020 to 2027, and
+  no units call is made. The title block is found by name among
+  `OST_TitleBlocks` element types rather than by id, because a name is what a
+  project standard is written in and an id is not portable between models.
+
+utterances:
+  - create some sheets
+  - add new sheets
+  - make a sheet for each level
+  - set up the drawing register
+  - add sheet A-201

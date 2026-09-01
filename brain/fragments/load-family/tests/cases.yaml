@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: an .rfa not yet in the project, askOnConflict false
+    expect: >
+      the path in `loaded` and its types in `types`. Check the Project Browser's
+      Families branch by eye - and note the types are NOT active yet, which is
+      why they are handed back rather than assumed placeable
+
+  - given: a family carrying several types
+    expect: >
+      every type returned, not just the first. Placement needs the one the
+      caller wants, and a family with one type returned out of six looks loaded
+      and is not usable
+
+negative:
+  - given: A FAMILY ALREADY IN THE PROJECT, askOnConflict FALSE
+    expect: >
+      the path in `alreadyPresent` and NOTHING overwritten. An office family is
+      somebody's work; replacing it silently is how a model's content changes
+      underneath the people using it. This is the default and it must stay the
+      default
+
+  - given: the same family with askOnConflict TRUE
+    expect: >
+      REVIT'S OWN DIALOG appears and the user answers it. Nothing is decided on
+      their behalf - the point is that this is the same question File > Load
+      Family asks, not a decision made in code
+
+  - given: a path that does not exist, or a file that is not an .rfa
+    expect: >
+      that path in `unreadable` WITH A REASON, every other file still loaded,
+      and no throw. One bad path must cost one row, not the run
+
+  - given: askOnConflict false in a session with no UI
+    expect: >
+      it works. That path never touches uidoc, and the fragment is only
+      UI-bound when the dialog is actually wanted
+
+second_route:
+  - >
+    open the Families branch of the Project Browser and find the family by name
+    - that is what "loaded" means to a person
