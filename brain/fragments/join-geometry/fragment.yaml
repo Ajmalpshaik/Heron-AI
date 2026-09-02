@@ -93,6 +93,7 @@ compatibility-note: >
 #   "what is clashing"               -> FIND_CLASHES - it REPORTS an overlap.
 #                                       Joining is what makes two elements
 #                                       agree about which one cuts the other
+#   "build a wall between these points" -> CREATE_WALL - it joins nothing
 
 utterances:
   - join these walls together

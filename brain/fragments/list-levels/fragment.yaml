@@ -71,6 +71,7 @@ compatibility-note: >
 # better failure than a write giving one, so the risk direction improved even
 # though the rank did not. Fixing it properly means strengthening
 # READ_ELEMENT_LEVEL, not weakening this one.
+#   "turn the level heads on"        -> SET_DATUM_BUBBLES
 
 utterances:
   - list the levels

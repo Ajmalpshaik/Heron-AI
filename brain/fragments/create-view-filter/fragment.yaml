@@ -124,6 +124,8 @@ compatibility-note: >
 #                                       rule. This is the rule
 #   "put that filter on this view"   -> APPLY_VIEW_FILTER. This makes the
 #                                       rule and puts it on no view at all
+#   "what filters already exist"     -> REPORT_VIEW_FILTERS, before making a
+#                                       near-duplicate of one that works
 
 utterances:
   - colour by system

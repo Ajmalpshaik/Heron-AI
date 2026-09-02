@@ -82,6 +82,10 @@ compatibility-note: >
 #   "how much concrete is in this"     -> REPORT_MATERIAL_TAKEOFF
 #   "cut a hole for the duct"          -> NOTHING HERE DOES THAT. An opening is
 #                                         its own job and nothing covers it yet
+#   "build a wall between these points" -> CREATE_WALL
+#   "hatch this area on the drawing" -> CREATE_FILLED_REGION. It LOOKS like a
+#                                       slab on a plan and is in no other
+#                                       view, no schedule and not the model
 
 utterances:
   - make a floor slab over this area

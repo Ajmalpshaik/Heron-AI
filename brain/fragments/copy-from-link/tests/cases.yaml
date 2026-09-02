@@ -1,0 +1,36 @@
+positive:
+  - given: the architect's grids copied out of a link placed away from the origin
+    expect: >
+      the copies ON TOP of the link's grids on screen - MEASURED, not assumed.
+      That is the whole test: right place means the transform was applied
+
+  - given: the returned ids used to pin the copies straight afterwards
+    expect: >
+      exactly those elements pinned. Revit returns the ids it made, which is why
+      they come back
+
+negative:
+  - given: the same copy WITHOUT the link's transform applied
+    expect: >
+      everything in the wrong place, and usually somewhere plausible. THIS IS THE
+      FIRST CASE TO RUN and the reason the fragment exists - a copy that lands
+      2 m out looks like a modelling error for weeks
+
+  - given: the link moved by the other team and reloaded afterwards
+    expect: >
+      the copies STAYING WHERE THEY WERE. They are ours and stop tracking the
+      link - right for grids somebody is working to, a trap for anything still
+      changing, and it must be said before somebody relies on it
+
+  - given: a link that is not loaded
+    expect: >
+      a plain sentence saying so and naming RELOAD_LINKS, not an exception
+
+  - given: element kinds Revit refuses to copy across documents
+    expect: >
+      FEWER ids back than were asked for, and the difference named. Revit refuses
+      quietly by returning a shorter list, and a count that only reports what
+      came back would read as a complete success
+
+second_route:
+  - Revit's own Copy/Paste from the link with Aligned to Same Place, and the two results compared

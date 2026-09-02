@@ -82,6 +82,9 @@ compatibility-note: >
 #   "add a grid"                -> CREATE_GRID - a datum
 #   "align these to grid 5"     -> CREATE_GRID / LIST_GRIDS territory; nothing
 #                                  here aligns elements to a named column grid
+#   "the grid bubbles are on the wrong side" -> SET_DATUM_BUBBLES. This one
+#                                       MOVES elements, and used to answer
+#                                       that sentence
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

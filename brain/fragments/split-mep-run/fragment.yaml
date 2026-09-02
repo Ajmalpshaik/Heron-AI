@@ -78,6 +78,7 @@ compatibility-note: >
 #                                   CREATE_DUCT until its prose stopped
 #                                   using three forms of the word "draw" to
 #                                   explain which END the distance is from
+#   "build a wall between these points" -> CREATE_WALL
 
 utterances:
   - split this duct

@@ -81,6 +81,9 @@ compatibility-note: >
 #                                       a different defect from two elements
 #                                       stacked in one place
 #   "are any room numbers repeated"  -> FIND_DUPLICATE_VALUES
+#   "find the lines drawn on top of each other" -> FIND_OVERLAPPING_LINES -
+#                                       stacked LINES, which need collinear
+#                                       grouping rather than a position test
 
 utterances:
   - find duplicate elements

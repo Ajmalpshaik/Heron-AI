@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-042
+semantic-identity: "the grid bubbles are on the wrong side in this view"
+kind: action
+domain: revit.datums
+capability: SET_DATUM_BUBBLES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Shows, hides or flips the bubble - the head carrying the grid or level name -
+  on grids and levels, in one view. The sheet job: bubbles on the wrong side of
+  a plan, or missing from the end somebody reads from.
+
+  **Bubbles are per END and per VIEW, and this changes one view.** That is
+  correct for bubbles and it is NOT how datum extents behave, where the model
+  type is shared across views. Confusing the two is how somebody "fixes" one
+  plan and finds they have changed twenty.
+
+  **Flip is not one call.** Revit offers only show, hide and ask, per end - so a
+  flip is read both ends, then hide one and show the other. Two cases have no
+  obvious flip and are decided explicitly rather than silently doing nothing:
+  with NEITHER end visible one is shown, because something has to appear or the
+  flip looks broken; with BOTH visible one is hidden, which is what flipped
+  should mean.
+
+  **End 0 and End 1 are the datum's own two ends, not left and right.** Which
+  looks left depends on the direction the grid was drawn and on the view. If a
+  batch flips half of them the way you wanted and half the other way, the grids
+  were drawn in opposite directions - that is the model, not this fragment, and
+  the fix is to name the end rather than to flip.
+
+  **Bubbles mean nothing in a 3D view.** Those are skipped and counted rather
+  than passed over silently.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    # "flip", "end0", "end1", "both" or "none". No default: showing and hiding
+    # are opposite instructions.
+    - name: mode
+      type: string
+      source: request
+  provides:
+    - name: changed
+      type: int
+    - name: findings
+      type: IList<string>
+    - name: notDatums
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `DatumPlane.ShowBubbleInView`,
+  `HideBubbleInView` and `IsBubbleVisibleInView`, and `DatumEnds.End0` /
+  `End1`, are present 2020 through 2027 - read off the reference assemblies at
+  both ends rather than remembered. Grid and Level both derive from
+  `DatumPlane`, so one code path serves both.
+
+# ROUTING - repeated in LIST_GRIDS and LIST_LEVELS.
+#
+#   "the grid bubbles are on the wrong side" -> here
+#   "flip the bubbles"                       -> here
+#   "turn the level heads on"                -> here
+#   "what grids are there"                   -> LIST_GRIDS - a READ
+#   "snap these to the grid"                 -> SNAP_TO_GRID - it MOVES
+#                                               elements, and used to answer
+#                                               this sentence
+
+utterances:
+  - the grid bubbles are on the wrong side
+  - flip the bubbles
+  - turn the level heads on
+  - show the grid bubbles at this end
+  - hide the bubbles in this view

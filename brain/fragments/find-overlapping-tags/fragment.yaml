@@ -100,6 +100,7 @@ compatibility-note: >
 #                                          in the library does yet. This says
 #                                          which ones clash; moving them is a
 #                                          job somebody still has to build
+#   "find the lines drawn on top of each other" -> FIND_OVERLAPPING_LINES
 
 utterances:
   - the tags are on top of each other

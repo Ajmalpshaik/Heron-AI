@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-034
+semantic-identity: "make a new material with this colour"
+kind: action
+domain: revit.elements
+capability: CREATE_MATERIAL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates materials with a name, a colour and a transparency. The thing
+  REPLACE_MATERIAL needs to exist before it can swap anything onto it, and the
+  thing a takeoff counts by.
+
+  **A name already in use is reported, never duplicated.** Revit refuses a
+  second material of one name, and a batch that threw on the third of five would
+  leave two made and three not, with nothing saying which.
+
+  **It sets the shading colour, and nothing else.** A real material has an
+  appearance asset, a physical asset, a cut pattern and a surface pattern, and
+  none of those are touched. What comes out is a working material for
+  scheduling, colouring and takeoffs - not a rendering-ready one, and saying so
+  is better than letting somebody discover it in a render.
+
+  **Transparency is a percentage, 0 to 100**, and is clamped rather than
+  refused: Revit rejects anything outside that and a clamp is what the caller
+  meant.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: materialNames
+      type: IList<string>
+      source: request
+    - name: colours
+      type: IList<Color>
+      source: request
+    - name: transparencies
+      type: IList<int>
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: alreadyThere
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Material.Create(Document, string)` and
+  the `Color` and `Transparency` setters are present 2020 through 2027 - read off
+  the reference assemblies at both ends rather than remembered.
+
+# ROUTING - repeated in REPLACE_MATERIAL and READ_ELEMENT_MATERIAL.
+#
+#   "make a new material"            -> here
+#   "add a material for the ductwork" -> here
+#   "change the material on these"   -> REPLACE_MATERIAL - the swap, and it
+#                                       needs both materials to exist first
+#   "what material is this"          -> READ_ELEMENT_MATERIAL
+#   "how much concrete is in this"   -> REPORT_MATERIAL_TAKEOFF
+
+utterances:
+  - make a new material
+  - create a material
+  - add a material for the ductwork
+  - i need a material in this colour
+  - set up the materials for this model

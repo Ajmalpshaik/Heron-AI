@@ -75,6 +75,8 @@ compatibility-note: >
 #                                   a note is typed once and never updates
 #   "dimension these"            -> CREATE_DIMENSION
 #   "cloud this change"          -> ADD_REVISION_CLOUD
+#   "hatch this area on the drawing" -> CREATE_FILLED_REGION - the other
+#                                       markup that lives in one view only
 
 # TWO PHRASINGS WERE DROPPED HERE ON 2026-09-01, AND THE REASON IS NOT A RANK.
 # "write this on the drawing" and "type this on the plan" are ordinary English

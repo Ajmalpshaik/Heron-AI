@@ -1,0 +1,38 @@
+positive:
+  - given: five points around a room, one level, 3000 mm height
+    expect: >
+      FOUR walls, not five - one per consecutive pair. Read the endpoints back
+      and check they are the points handed in
+
+  - given: two points 4 m apart
+    expect: one wall of that length, standing 3000 mm above the level
+
+negative:
+  - given: a model set out to a survey datum, where Elevation and ProjectElevation differ
+    expect: >
+      the walls at the height Revit shows for that level, NOT off by the survey
+      offset. THIS IS THE FIRST CASE TO RUN - no error, no warning, walls metres
+      from where they belong, and only a section reveals it
+
+  - given: the walls built, then looked at in a corner
+    expect: >
+      whatever Revit really did about joining, recorded as fact. This fragment
+      claims no join, and two walls that LOOK joined and are not will show a line
+      through the corner on the printed plan
+
+  - given: two points at the same coordinates
+    expect: "`tooShort` counts it and no wall is created"
+
+  - given: a wall type Revit refuses for this level
+    expect: >
+      counted in `refused`, the rest of the run still built. Not an exception
+      that loses the walls that worked
+
+  - given: the wall's top asked to reach the level above
+    expect: >
+      NOT what this does. The height is unconnected, and attaching it is a
+      separate parameter change - a wall that looks right in plan and stops short
+      in section is the failure this note exists for
+
+second_route:
+  - Revit's own Architecture then Wall between the same two points, and the two compared in a section

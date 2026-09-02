@@ -81,6 +81,7 @@ compatibility-note: >
 #   "put that filter on this view"   -> APPLY_VIEW_FILTER - the step that
 #                                       makes a saved set do something to a
 #                                       drawing
+#   "what filters already exist"     -> REPORT_VIEW_FILTERS
 
 utterances:
   - save these as a set

@@ -83,6 +83,8 @@ compatibility-note: >
 #   "delete this link"               -> NOTHING HERE DOES THAT. Removing a link
 #                                       deletes anything hosted on it and is a
 #                                       deliberate delete, not an unload
+#   "copy these out of the link"     -> COPY_FROM_LINK - and the copies it
+#                                       makes do NOT update when this reloads
 
 utterances:
   - reload the links

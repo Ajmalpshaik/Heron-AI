@@ -62,6 +62,7 @@ compatibility-note: >
 #                                  diffusers. SNAP_TO_GRID means the second and
 #                                  every fragment here means the first
 #   "list the levels"           -> LIST_LEVELS
+#   "the grid bubbles are on the wrong side" -> SET_DATUM_BUBBLES
 
 utterances:
   - list the grids

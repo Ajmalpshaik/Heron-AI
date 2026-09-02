@@ -72,6 +72,7 @@ compatibility-note: >
 #   "reload the links"               -> RELOAD_LINKS - a write, and this one
 #                                       only reads
 #   "unload this link"               -> RELOAD_LINKS
+#   "copy these out of the link"     -> COPY_FROM_LINK
 
 utterances:
   - list the linked models

@@ -76,6 +76,9 @@ compatibility-note: >
 #   "export the schedule to excel" -> NOT here. Nothing in the library exports
 #                                     anything yet, and this makes the schedule
 #                                     that would be exported
+#   "make a key schedule"            -> CREATE_KEY_SCHEDULE - a table of
+#                                       DEFINITIONS elements point at, not a
+#                                       list of what is in the model
 
 utterances:
   - make a schedule

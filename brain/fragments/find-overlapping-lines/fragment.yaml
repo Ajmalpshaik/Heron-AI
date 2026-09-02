@@ -1,0 +1,102 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-015
+semantic-identity: "find the lines drawn on top of each other"
+kind: filter
+domain: revit.quality
+capability: FIND_OVERLAPPING_LINES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds lines drawn on top of each other - exact duplicates and partly
+  overlapping collinear segments. The cleanup for a view that prints heavy for
+  no visible reason, and for imported CAD exploded into hundreds of stacked
+  lines. Read-only: it reports, and deletes nothing.
+
+  **"Are these two lines the same" is not a comparison you can do directly**,
+  and that is the whole content of this fragment. Two lines that look identical
+  almost never have equal endpoints: they were drawn in opposite directions,
+  they overlap only partly, or floating point puts them a millionth of a foot
+  apart. Comparing endpoints finds nearly nothing.
+
+  What works is to give each line the identity of the INFINITE LINE IT SITS ON
+  and group by that - direction, then perpendicular distance from the origin.
+  Three things make that work and each one is a defect if skipped:
+
+  1. **Normalise the direction.** Drawn left-to-right and right-to-left give
+     opposite vectors. Flip every direction into one half-plane first, or the
+     two never match - the commonest reason an overlap check "finds nothing".
+  2. **Round both the direction and the offset before they become the key.**
+     Unrounded floats put genuinely collinear lines in different groups.
+  3. **Only then compare along the line.** Within a group everything is
+     collinear, so each line is a one-dimensional interval and overlapping is
+     interval arithmetic.
+
+  **Line style is part of the identity.** Two lines on one alignment in
+  different styles are usually deliberate - a grid line and a hidden line - and
+  calling them duplicates would have somebody delete a drawing convention.
+
+  **Only straight lines.** Arcs and splines are counted and reported as skipped;
+  collinearity has no meaning for them and pretending otherwise would put real
+  geometry on a delete list.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # How close two lines must be to count as the same alignment.
+    - name: toleranceMm
+      type: double
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: overlapping
+      type: IList<ElementId>
+    - name: notStraight
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `CurveElement`, `LocationCurve`,
+  `Line.Direction`, `Line.Origin` and `GraphicsStyle` are unchanged 2020 through
+  2027. The whole method is arithmetic on XYZ, so nothing here can move with a
+  units API.
+
+# IT IS PLAN-BASED. Detail lines are 2D by nature; MODEL lines at different
+# heights on the same plan alignment group together, so the height is reported
+# per row and has to be read before anything is deleted.
+
+# ROUTING - repeated in FIND_DUPLICATE_ELEMENTS and FIND_OVERLAPPING_TAGS.
+#
+#   "find the lines drawn on top of each other" -> here
+#   "the drawing prints heavy"                  -> here, often
+#   "clean up the exploded cad"                 -> here
+#   "there are two elements on top of each
+#    other"                                     -> FIND_DUPLICATE_ELEMENTS -
+#                                                  stacked MODEL elements, not
+#                                                  lines
+#   "the tags are on top of each other"         -> FIND_OVERLAPPING_TAGS -
+#                                                  annotation, measured in paper
+#                                                  millimetres
+#   "delete the duplicates"                     -> NOTHING HERE DELETES. This
+#                                                  reports; DELETE_ELEMENTS is a
+#                                                  separate and deliberate step
+
+utterances:
+  - find the lines drawn on top of each other
+  - the drawing prints heavy for no reason
+  - clean up the exploded cad
+  - find duplicate lines
+  - are there lines stacked on each other

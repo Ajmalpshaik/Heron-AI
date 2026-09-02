@@ -1,0 +1,37 @@
+positive:
+  - given: a detail view with two identical lines drawn one over the other
+    expect: >
+      that pair reported. Then delete one BY HAND and print the view - it should
+      look the same and print lighter, which is the whole reason anybody asks
+
+  - given: two collinear lines overlapping over half their length
+    expect: >
+      reported with the shared length. Partial overlap is as much a duplicate as
+      an exact one and is what an endpoint comparison never sees
+
+negative:
+  - given: the SAME line drawn left-to-right and right-to-left
+    expect: >
+      found. THIS IS THE FIRST CASE TO RUN. Their direction vectors are
+      opposites, and without normalising the direction into one half-plane they
+      never group together - which is why a check like this most often "finds
+      nothing" on a drawing full of duplicates
+
+  - given: two lines on the same alignment in DIFFERENT line styles
+    expect: >
+      NOT reported. A grid line and a hidden line on one alignment are a drawing
+      convention, and calling them duplicates would have somebody delete it
+
+  - given: two MODEL lines on the same plan alignment at different heights
+    expect: >
+      reported WITH the height difference named. They stack on a plan and are not
+      duplicates in the model, and deleting one on the strength of a plan view is
+      exactly the mistake this row exists to prevent
+
+  - given: arcs and splines in the set
+    expect: >
+      counted in `notStraight`, not compared. Collinearity means nothing for
+      them, and guessing would put real geometry on a delete list
+
+second_route:
+  - the same view printed before and after one duplicate is removed by hand, compared for weight

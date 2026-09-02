@@ -1,0 +1,39 @@
+positive:
+  - given: a plan with grid bubbles at the left, flipped
+    expect: >
+      them at the right - LOOKED AT on the sheet. And the OTHER plans in the
+      project unchanged, which is the half nobody checks
+
+  - given: mode "end0" over a batch of grids drawn in mixed directions
+    expect: >
+      every bubble on the same end of its own grid, which may still look mixed on
+      screen. That is the model, and it is why naming the end is the fix rather
+      than flipping again
+
+negative:
+  - given: a grid with NEITHER bubble visible, flipped
+    expect: >
+      one bubble appears. THIS IS THE FIRST CASE TO RUN. A flip with nothing to
+      flip that quietly does nothing reads as a broken tool, so the ambiguous
+      case is decided rather than skipped
+
+  - given: a grid with BOTH bubbles visible, flipped
+    expect: one left, not both, and not neither
+
+  - given: a 3D view handed in
+    expect: >
+      refused with the reason. A bubble means nothing there and silently doing
+      nothing would read as a failure
+
+  - given: a view whose template controls the datums
+    expect: >
+      reported as not having changed, and NOT counted. The read-back is what
+      catches it - the show and hide calls return quite happily
+
+  - given: the same plan checked against another plan afterwards
+    expect: >
+      only the one view changed. This is where bubbles and datum EXTENTS differ,
+      and treating them alike is how one fix quietly becomes twenty
+
+second_route:
+  - the same grid in Revit, its bubble checkbox toggled by hand at each end

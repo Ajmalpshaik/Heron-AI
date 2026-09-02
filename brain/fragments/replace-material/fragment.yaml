@@ -103,7 +103,7 @@ compatibility-note: >
 #
 #   "change the material on these"   -> here
 #   "swap this finish for that one"  -> here
-#   "the client changed the spec"    -> here
+#   "the client changed the material" -> here
 #   "what material is this"          -> READ_ELEMENT_MATERIAL - a READ, and it
 #                                       must not answer a request to change one
 #   "how much concrete is in this"   -> REPORT_MATERIAL_TAKEOFF
@@ -111,6 +111,9 @@ compatibility-note: >
 #    purge"                          -> here is usually the answer: it is still
 #                                       in a layer or a type parameter nobody
 #                                       looked at
+#   "make a new material"            -> CREATE_MATERIAL - both materials have
+#                                       to exist before one can replace the
+#                                       other
 
 utterances:
   - change the material on these

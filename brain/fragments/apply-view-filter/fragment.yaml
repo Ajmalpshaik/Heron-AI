@@ -92,6 +92,8 @@ compatibility-note: >
 #   "apply the view template"        -> APPLY_VIEW_TEMPLATE - a whole template,
 #                                       which is a much bigger change than one
 #                                       filter and is easy to ask for by mistake
+#   "what filters are on this view"  -> REPORT_VIEW_FILTERS - a READ, and it
+#                                       used to be answered by this WRITE
 
 utterances:
   - put that filter on this view
