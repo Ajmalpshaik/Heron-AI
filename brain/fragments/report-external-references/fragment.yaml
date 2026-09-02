@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-011
+semantic-identity: "every file this model needs, and whether Revit can find it right now"
+kind: action
+domain: revit.document
+capability: REPORT_EXTERNAL_REFERENCES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Every file this model depends on in one list - Revit links, CAD links and
+  imports, point clouds, keynote tables, IFC links - what kind each is, where it
+  points, and whether Revit can currently resolve it.
+
+  **IT IS DELIBERATELY NOT A LIST OF REVIT LINKS.** Collecting
+  `RevitLinkInstance` is the obvious implementation and it reports a model whose
+  real risk is three unresolved DWGs and a point cloud as CLEAN. Revit keeps one
+  list of all of them and that is what is read here, so a handover checklist
+  built from this cannot be short by a category nobody thought to ask about.
+
+  **THERE ARE TWO PATHS PER REFERENCE AND THEY ANSWER DIFFERENT QUESTIONS.**
+  One is what the file SAVED, which may be relative. The other is what it
+  currently RESOLVES TO on this machine. When a link goes missing after a move,
+  the saved path is usually still correct and the resolved one has gone stale -
+  so reporting only one of them names the wrong thing as broken. Both are
+  returned.
+
+  **"NOT LOADED" IS NOT "BROKEN", AND THERE ARE THREE WAYS TO BE NOT LOADED.**
+  The status enum carries seven values and the useful split is not the obvious
+  two-way one:
+
+  | Status | Meaning | Where it goes |
+  |---|---|---|
+  | `Unloaded` | unloaded for everyone | `unloaded` |
+  | `LocallyUnloaded` | unloaded by this user only | `unloaded` |
+  | `InClosedWorkset` | its workset is closed this session | `unloaded` |
+  | `NotFound` | the file is not where the model expects | `unresolved` |
+  | `Invalid` | the reference itself is broken | `unresolved` |
+  | `CanBeUpgraded` | loaded, from an older Revit | neither |
+
+  Treating everything that is not `Loaded` as broken puts three false alarms on
+  a handover checklist, and a checklist with false alarms stops being read -
+  the same outcome as not writing one.
+
+  **AN IMPORT IS NOT A LINK, AND IT APPEARS HERE ANYWAY.** A CAD file brought in
+  with Import rather than Link is embedded: there is no external file left to
+  lose, so it can never go missing, and it bloats the model instead. It is
+  reported with its kind so the two problems stay apart - one travels, the other
+  weighs.
+
+  **A CLOUD-HOSTED REFERENCE HAS NO LOCAL PATH**, and reports its cloud identity
+  instead. That is the correct answer for it, not a failure to resolve, and
+  treating an empty path as missing would report every cloud-hosted project as
+  broken.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: references
+      type: IList<Element>
+    - name: kinds
+      type: IDictionary<ElementId, string>
+    - name: savedPaths
+      type: IDictionary<ElementId, string>
+    - name: resolvedPaths
+      type: IDictionary<ElementId, string>
+    - name: unresolved
+      type: IList<ElementId>
+    - name: unloaded
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ExternalFileUtils`,
+  `ExternalFileReference` and `ModelPathUtils.ConvertModelPathToUserVisiblePath`
+  are unchanged 2020 to 2027, and `LinkedFileStatus` carries the same seven
+  values across all of them - read off the shipped assembly rather than
+  assumed, after a first attempt guessed at a `NotLoaded` member that does not
+  exist and the compile gate refused it on every release. A `ModelPath` is not a
+  string and must go through
+  that conversion before anybody can read it - which is also why the conversion
+  is guarded per reference, since a cloud path has no user-visible form and
+  throwing there would lose the whole list rather than one row.
+
+utterances:
+  - what links does this model have
+  - are any links missing
+  - what files travel with this model
+  - is there a CAD link in here
+  - which links are not loaded
+  - what does this model depend on

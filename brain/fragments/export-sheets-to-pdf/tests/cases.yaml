@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 4 real sheets, a writable folder, a combinedFileName
+    expect: >
+      exported holds ONE path, notExported empty. Then OPEN THE PDF and count
+      the pages - four. A one-page PDF with the right filename is the failure
+      this fragment exists to catch, and the path alone cannot show it
+
+  - given: a folder that does not exist yet
+    expect: it is created, the PDF lands in it, folderProblem stays empty
+
+negative:
+  - given: >
+      the same call on **Revit 2020 or 2021**
+    expect: >
+      THIS FRAGMENT IS NOT OFFERED AT ALL - its declared range starts at 2022,
+      so retrieval filters it out before anything runs. Confirm that by asking
+      for a PDF export on a 2020 session and getting "nothing provides this"
+      rather than an error. That is the version filter working as a wall
+
+  - given: a PLACEHOLDER sheet among the elements
+    expect: >
+      its id in notExported and it is NOT in the PDF. A placeholder has no
+      titleblock and prints nothing; including it silently would produce a set
+      whose page count nobody can reconcile against the drawing list
+
+  - given: a read-only folder, or a path invalid on this machine
+    expect: >
+      folderProblem names the folder and the reason, every id in notExported,
+      and NO file. The failure must not read as "these sheets could not be
+      exported" - the sheets were never the problem
+
+  - given: an element that is not a sheet, e.g. a floor plan view
+    expect: its id in notExported, no exception, the real sheets still exported
+
+  - given: an empty element list
+    expect: all outputs empty, reported as nothing to do
+
+second_route:
+  - open the PDF and count pages against the number of sheets asked for
+  - check the page ORDER matches the sheet numbers, which the path cannot show
+  - delete the PDF and re-run - it must reappear and be reported again

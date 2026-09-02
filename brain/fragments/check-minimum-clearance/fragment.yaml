@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-011
+semantic-identity: "every pair of things closer together than they are allowed to be"
+kind: action
+domain: revit.qa
+capability: CHECK_MINIMUM_CLEARANCE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Measures the real gap between two sets of elements and reports **every pair**
+  closer than the clearance required - not the nearest one, all of them.
+
+  **IT IS NOT `FIND_NEAREST_ELEMENTS` WITH A THRESHOLD.** That answers *"which
+  one is closest to each"* and returns one per element. This answers *"what is
+  too close"* and returns every offending pair, because a duct with four
+  services inside its clearance zone has four problems and a report naming one
+  of them closes none of them.
+
+  **INSULATION IS OPTIONAL AND IT CHANGES THE ANSWER ON EVERY REAL MEP JOB.** A
+  50 mm jacket on both services eats 100 mm of the gap, so a pair reading 120 mm
+  clear on the bare geometry has 20 mm in reality and cannot be built. The
+  earlier library kept this as a **second fragment**; here it is a flag, because
+  it is the same sweep with each element's box grown by its own insulation, and
+  two fragments that differ by one measurement drift apart the moment one is
+  fixed.
+
+  **A DIFFERENT CLEARANCE PER CATEGORY IS THE NORMAL CASE**, not the advanced
+  one - 50 mm to structure, 150 mm to electrical, 300 mm to a flue is one rule
+  set, not three runs. `rules` carries it; `defaultClearance` catches whatever
+  the table does not name, and every pair reports which rule judged it so a
+  wrong threshold is visible rather than buried.
+
+  **THE GAP IS MEASURED BETWEEN BOUNDING BOXES AND IS THEREFORE OPTIMISTIC ON A
+  ROTATED ELEMENT** - the box is bigger than the element, so two of them read
+  closer than they are. That direction is the safe one for a clearance check: it
+  over-reports rather than missing a clash. It still must not be quoted as a
+  certified figure.
+
+  **IT REPORTS AND CHANGES NOTHING.** Deciding what to move is a person's job,
+  and a clearance sweep that also moved things would make the report unreadable
+  by changing what it was reporting on.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: targets
+      type: IList<Element>
+      binds: elements
+    - name: defaultClearance
+      type: double
+      source: request
+    - name: rules
+      type: IDictionary<string, double>
+      source: request
+    - name: includeInsulation
+      type: bool
+      source: request
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: tooClose
+      type: IList<string>
+    - name: gaps
+      type: IDictionary<string, double>
+    - name: judgedBy
+      type: IDictionary<string, string>
+    - name: pairsChecked
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `get_BoundingBox(null)`,
+  `InsulationLiningBase.GetInsulationIds` and `Category.Name` are unchanged 2020
+  to 2027. Clearances are in Revit's internal feet, and D-20 keeps the
+  millimetre conversion at the edge - no units API is touched, which is what
+  keeps this clear of the 2021 move. A pair is keyed by the two ids rendered as
+  text rather than by any numeric id, so the 2024 64-bit change cannot reach it.
+
+utterances:
+  - is anything too close to the ducts
+  - check the clearance between services
+  - what is within 100 mm of these
+  - clearance check
+  - are the services too close together
+  - check the gap to the structure

@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-034
+semantic-identity: "add columns to these schedules, and say which ones could not be added and why"
+kind: action
+domain: revit.views
+capability: ADD_SCHEDULE_FIELDS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds named columns to every schedule handed in, and separates THREE OUTCOMES
+  the version this was re-authored from ran together under one counter.
+
+  Its own comment admitted the conflation - *"already present, or not addable to
+  this schedule type"* - both landing in the same `notFound` tally as a genuine
+  spelling mistake. Those are three different situations needing three different
+  responses:
+
+  | Outcome | What it means | What you do |
+  |---|---|---|
+  | `added` | the column is now there | nothing |
+  | `alreadyPresent` | it was there before | nothing — **and this is not a failure** |
+  | `notSchedulable` | that field cannot go on this schedule | pick a different field |
+  | `unknownField` | no field of that name exists for this category | check the spelling — the real names come back |
+
+  WHEN A NAME IS NOT FOUND, THE REAL NAMES ARE HANDED BACK. Schedulable fields
+  are **category-specific and are not free text** - a name that works on a door
+  schedule may not exist on a duct one. Nearly every miss is a spelling or a
+  wrong-category assumption, and the list of what IS available is the answer to
+  the question the caller is about to ask.
+
+  A COLUMN IS NEVER ADDED TWICE. Two identical columns in a schedule is the
+  same failure as two tags on one element: it looks plausible on screen and is
+  wrong on the sheet.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a batch
+  of columns across several schedules is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: fieldNames
+      type: IList<string>
+      source: request
+  provides:
+    - name: added
+      type: int
+    - name: alreadyPresent
+      type: int
+    - name: unknownField
+      type: IList<string>
+    - name: availableFields
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSchedule.Definition`,
+  `GetSchedulableFields`, `SchedulableField.GetName(Document)`,
+  `ScheduleDefinition.AddField`, `GetFieldOrder` and `GetField` are unchanged
+  2020 to 2027 and no units call is made.
+
+utterances:
+  - add a column to the schedule
+  - put comments in the schedule
+  - add these fields to the schedule
+  - i need another column
+  - add a column for the mark
+  - show that parameter in the schedule

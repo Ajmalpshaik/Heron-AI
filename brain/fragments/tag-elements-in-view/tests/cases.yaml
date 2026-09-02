@@ -1,0 +1,50 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a mixed set - ducts, pipes and air terminals, none tagged - in one plan
+      view, tagTypeHintId = ElementId.InvalidElementId
+    expect: >
+      tagged equals the count, alreadyTagged 0. Then LOOK AT THE VIEW and check
+      the tag FAMILIES: ducts carry a duct tag, pipes a pipe tag. A count cannot
+      show that, and the wrong family everywhere still counts as fully tagged
+
+  - given: the same call run a SECOND time on the same view
+    expect: >
+      tagged = 0 and alreadyTagged equals the count, and NO second tag appears
+      on any element. Stacked tags look right on screen and print wrong
+
+  - given: a tagTypeHintId naming a real tag type of the right category
+    expect: that family is used, and the read-back confirms it on every tag
+
+negative:
+  - given: >
+      any successful run - check typeCorrections whatever the result
+    expect: >
+      IT MAY BE NON-ZERO, AND THAT IS THE FINDING, not a fault. `Create` is
+      given a type id and does not reliably use it: 38 tags created with an
+      explicit id all came out as the document's default where this was
+      re-authored from. A non-zero count means the API ignored the type and this
+      fragment put it back. A version that fixed it silently would hide that
+
+  - given: an element of a category with NO tag family loaded in the project
+    expect: >
+      its id in notTagged and nothing created for it. Nothing this fragment can
+      do, and saying which elements is the useful answer
+
+  - given: an element whose category has no tag category at all, e.g. a room separation line
+    expect: its id in notTagged, no exception, the taggable elements still tagged
+
+  - given: an empty element list
+    expect: all counts zero, notTagged empty, reported as nothing to do
+
+  - given: the same elements in a DIFFERENT view
+    expect: >
+      they tag again, and that is correct. Tags are view-specific; an element
+      tagged in the ceiling plan is untagged in the section and this is not a
+      double-tag
+
+second_route:
+  - look at the view and read the tag families, not the count
+  - run twice and confirm no element gains a second tag
+  - one Ctrl+Z removes every tag in a single step (Golden Rule 16)

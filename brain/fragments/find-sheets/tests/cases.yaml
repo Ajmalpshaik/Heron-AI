@@ -1,0 +1,44 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a model with sheets, numberOrNameContains ""
+    expect: >
+      every sheet returned, ordered by sheet number. Compare the count against
+      the Sheets branch of the Project Browser by eye - it must match exactly,
+      placeholders included
+
+  - given: numberOrNameContains matching part of a sheet NUMBER, e.g. "M-"
+    expect: only the sheets whose number contains it, and matchedOnName = 0
+
+  - given: numberOrNameContains matching only a sheet NAME, e.g. "ground floor"
+    expect: >
+      those sheets returned and matchedOnName equal to their count. This is the
+      half a number-only filter answers with a confident zero
+
+negative:
+  - given: >
+      a model containing PLACEHOLDER sheets, asked for with no filter
+    expect: >
+      they ARE in elements, and their ids ARE in placeholders. This is the case
+      the fragment exists for: dropping them makes a renumbering job report
+      success over an incomplete drawing register, and nobody sees it until the
+      list is printed
+
+  - given: the placeholder ids handed to an action that places a viewport
+    expect: >
+      that action refuses them BY ID and says so. The filter must not have made
+      that decision on the action's behalf - proving it did not is the point
+
+  - given: a string matching no sheet number and no sheet name
+    expect: >
+      elements empty, placeholders empty, matchedOnName 0 - and no exception.
+      An empty result here genuinely means no such sheet, because nothing was
+      excluded on the way
+
+  - given: a model with no sheets at all
+    expect: all three outputs empty, reported as nothing to do rather than as a fault
+
+second_route:
+  - count the sheets in the Project Browser by eye and compare
+  - open one returned id that is listed as a placeholder - Revit shows no titleblock
+  - search by a word that appears only in a sheet TITLE and confirm it is found

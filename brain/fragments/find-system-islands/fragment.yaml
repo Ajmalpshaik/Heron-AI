@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-015
+semantic-identity: "how many separate pieces this system is really in, and which pieces feed from nothing"
+kind: action
+domain: revit.mep
+capability: FIND_SYSTEM_ISLANDS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Walks a whole set through its connectors and reports how many **separate**
+  networks it is actually in - and, the part that matters, which of those
+  networks contain no source.
+
+  **A SYSTEM THAT LOOKS LIKE ONE NETWORK ON SCREEN IS VERY OFTEN THREE:** the
+  main run, a branch that was copied and never rejoined, and a spur that lost
+  its fitting. On the drawing all three read as one system. The air only arrives
+  in one of them.
+
+  **IT IS NOT `TRACE_CONNECTIVITY`.** That walks outward from **one** element
+  and answers *"what does this reach"*. This partitions the **whole set** and
+  answers *"how many pieces is this in"* - a question no single walk can answer,
+  because a walk that starts inside the main run never learns the orphaned
+  branch exists.
+
+  **AN ISLAND WITH NO SOURCE IS THE FINDING, NOT THE ISLAND COUNT.** Two
+  networks is perfectly normal - supply and return are two. A network containing
+  no piece of equipment at all is a run connected to nothing that can feed it,
+  and that is a defect every time. `sourceless` names them.
+
+  **SIZE IS REPORTED PER ISLAND BECAUSE IT SORTS THE PROBLEM.** A sourceless
+  island of two elements is a leftover to delete. A sourceless island of ninety
+  is a main run that lost its connection to the plant, and it is the more urgent
+  of the two by a wide margin.
+
+  **CONNECTOR JOINS ARE TRUSTED HERE, AND THAT IS A STATED LIMIT.** Revit's own
+  `IsConnected` describes intent and has been proven wrong on a real model - two
+  ducts can touch perfectly and be joined to nothing. This reports the network
+  as Revit believes it, which is exactly right for *"why is the flow not
+  calculating"* and wrong for *"is it physically joined"*. For the second
+  question the geometry has to be walked instead.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: islandOf
+      type: IDictionary<ElementId, int>
+    - name: islandSizes
+      type: IDictionary<int, int>
+    - name: sourceless
+      type: IList<int>
+    - name: islandCount
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ConnectorManager`,
+  `Connector.AllRefs` and `Connector.IsConnected` are unchanged 2020 to 2027,
+  and no units call is made. Equipment is recognised by CATEGORY rather than by
+  a type test, because "a source" is three different categories and no single
+  class covers them - not because the classes are out of reach. Mechanical,
+  Plumbing, Electrical and Structure are all imported by the wrapper, measured
+  on 2026-08-31 rather than assumed; only Architecture is not.
+
+utterances:
+  - is this system all connected
+  - how many separate pieces is this in
+  - which branch is not connected to anything
+  - why is the flow not calculating
+  - find the disconnected run
+  - is there a break in this system

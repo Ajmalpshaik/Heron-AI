@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-006
+semantic-identity: "the sheets in this model, optionally narrowed by sheet number or by title"
+kind: filter
+domain: revit.sheets
+capability: FIND_SHEETS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers "which sheets" for everything that acts on sheets - renumbering,
+  revisions, placing views, batch export to PDF or DWG. The sheet half of the
+  spine FIND_VIEWS is the view half of (D-45).
+
+  Matches on EITHER the sheet number or the sheet name, because both are what
+  people say. "The M-series" is a number; "the ground floor sheets" is a name.
+  A filter that only reads the number answers half the requests and returns a
+  confident zero for the other half.
+
+  PLACEHOLDER SHEETS ARE RETURNED, AND REPORTED SEPARATELY BY ID. A placeholder
+  is a real sheet with a number and a name, carrying no titleblock, that cannot
+  hold a view. The two things that act on sheets want opposite treatment: a
+  renumbering or revision job MUST see them or it silently renumbers some of the
+  set, while placing a viewport or exporting to PDF cannot use one at all.
+
+  Silent omission is the worse failure of the two, so nothing is dropped here -
+  the ids are handed over and the action decides.
+
+  **"THE DRAWING LIST" IS AMBIGUOUS AND BOTH ANSWERS ARE RIGHT.** In Revit a
+  sheet list IS a schedule, so that sentence can mean either the sheets
+  themselves or the schedule that lists them:
+
+  | What you meant | Use |
+  |---|---|
+  | The sheets — to place views on, renumber, export | **this fragment** |
+  | The schedule that lists them — to add a column, export to CSV | `FIND_SCHEDULES` |
+
+  `FIND_SCHEDULES` carries the same table, identically. An action that excludes them
+  does so visibly; a filter that had already removed them would leave a
+  renumbering job reporting success over an incomplete set, which is this
+  repository's defining failure and the reason FIND_VIEWS counts what it skips.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: numberOrNameContains
+      type: string
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: placeholders
+      type: IList<ElementId>
+    - name: matchedOnName
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSheet`, `SheetNumber`, `Name` and
+  `IsPlaceholder` are unchanged 2020 to 2027 and no units call is made.
+  `placeholders` carries `ElementId`, whose backing width changed at 2024 - it is
+  only collected and returned here, never converted to or from an integer, which
+  is what keeps this clear of that break.
+
+utterances:
+  - which sheets are in this model
+  - list all the sheets
+  - the m series sheets
+  - find the ground floor sheets
+  - show me the drawing list
+  - what sheets do we have

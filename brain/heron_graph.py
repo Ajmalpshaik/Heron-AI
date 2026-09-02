@@ -185,16 +185,28 @@ def orphans(store):
             found.append((fragment_id, "a filter nothing can consume - check "
                                        "what it provides against what the "
                                        "actions need"))
-        if frag.kind == "action" and not composes_from(fragment_id, fragments):
-            # Only names another FRAGMENT could supply. A need the request
-            # carries - a category, a parameter name - will never have a
-            # producer and must not make the fragment look orphaned.
-            needs = [n.get("name") for n in frag.needs()
-                     if FRAG.need_source(n) == "fragment"]
-            if needs:
+        if frag.kind == "action":
+            # Asked PER NEED, not per producer. Only names another FRAGMENT
+            # could supply - a need the request carries, a category or a
+            # parameter name, will never have a producer and must not make the
+            # fragment look orphaned.
+            #
+            # This used to ask composes_from(), which is whether some SINGLE
+            # fragment supplies EVERYTHING. That is the wrong question here and
+            # it produced a false orphan the moment a consumer needed two
+            # different things from two different places - a takeoff needs a
+            # group key from a parameter read and a quantity from a
+            # measurement, and both providers existed. D-46 recorded the
+            # limitation and said to lift it when a real composition needed it.
+            #
+            # It is also STRICTER, not looser: the message now names the need
+            # that has no producer instead of listing every need the fragment
+            # has and leaving a reader to work out which one is the problem.
+            _by_need, unmet = FRAG.feeders(frag, fragments)
+            if unmet:
                 found.append((fragment_id,
-                              "an action nothing can feed - it needs %s and no "
-                              "fragment provides that" % ", ".join(needs)))
+                              "an action nothing can feed - nothing provides %s"
+                              % ", ".join(unmet)))
     return found
 
 

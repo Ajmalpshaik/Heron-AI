@@ -1,0 +1,55 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a straight run of ducts
+    expect: >
+      each length matching Revit's own Length column for that element, to the
+      millimetre. Compare against a Revit schedule, not against a tape on the
+      drawing - the schedule is what gets billed
+
+  - given: rectangular ductwork
+    expect: >
+      an area for every element. Multiply one duct's perimeter by its length by
+      hand and check the figure - if it disagrees, the parameter being read is
+      not the one Revit computes
+
+  - given: measure "area" on rectangular ductwork
+    expect: >
+      `quantities` carries the AREAS, and `lengths` is still populated
+      separately. Whichever measure was asked for is what SUM_BY_GROUP totals,
+      and it must not have to know which one it received
+
+negative:
+  - given: measure "length" on cable tray, which has no area parameter
+    expect: >
+      `quantities` still carries the lengths - the missing AREA must not empty
+      the quantity that was actually asked for. A takeoff of tray lengths is a
+      real request and it must not fail on a parameter it never needed
+
+  - given: CABLE TRAY or CONDUIT, which has no surface area parameter
+    expect: >
+      its id in `areaUnknown` and NOT in `areas` with a 0. A zero here reads as
+      "no metal in it" - a plausible number and a false one, and a total built
+      on it would be short by exactly the trays
+
+  - given: a FITTING or an air terminal, which is not a linear run
+    expect: >
+      its id in `lengthUnknown`. It is not a failure, it is a fact about the
+      element, and a takeoff that silently counted fittings as zero length
+      would report the run as complete
+
+  - given: a mixed set of ducts, pipes, trays and fittings
+    expect: >
+      the ducts and pipes measured, the rest named in the unknown lists, and no
+      throw. One element that cannot be measured must not lose the rest
+
+  - given: the same elements measured twice with nothing changed between
+    expect: >
+      identical numbers. If they drift, the length is coming from the location
+      curve or from a recomputation rather than from the parameter Revit
+      schedules
+
+second_route:
+  - >
+    build a Revit schedule of the same category with Length and Area columns
+    and a total, and compare - Revit is the second route, not another script

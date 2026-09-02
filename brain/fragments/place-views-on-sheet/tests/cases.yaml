@@ -1,0 +1,42 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 4 floor plans not yet on any sheet, and a real sheet number
+    expect: >
+      placed = 4 AND distinctPositions = 4. Then LOOK AT THE SHEET - four
+      viewports spread across it, none on top of another. placed = 4 with
+      distinctPositions = 1 is the failure this fragment was built to make
+      visible, and it looks identical in the count alone
+
+  - given: 1 view and a real sheet
+    expect: placed = 1, distinctPositions = 1, laid out on the sheet
+
+  - given: an empty element list
+    expect: placed 0, distinctPositions 0, notPlaced empty, sheetProblem empty
+
+negative:
+  - given: a view ALREADY placed on another sheet
+    expect: >
+      its id in notPlaced, and it is STILL on its original sheet - go and look.
+      A normal view lives on one sheet, and moving it silently would take a
+      drawing off a sheet somebody had already issued
+
+  - given: a sheet number that does not exist
+    expect: >
+      placed = 0, every id in notPlaced, and sheetProblem naming the number.
+      Nothing created anywhere
+
+  - given: a PLACEHOLDER sheet, by its number
+    expect: >
+      placed = 0, sheetProblem saying it is a placeholder. This is the other
+      half of FIND_SHEETS returning placeholders rather than hiding them - the
+      filter handed it over, and the action refuses it by name instead of
+      failing obscurely
+
+  - given: an element that is not a view, e.g. a duct
+    expect: its id in notPlaced, no exception, the real views still placed
+
+second_route:
+  - open the sheet and count the viewports by eye - it must equal placed
+  - and confirm they are in different places, which is what distinctPositions claims
+  - one Ctrl+Z clears the whole sheet in a single step (Golden Rule 16)

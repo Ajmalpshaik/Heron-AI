@@ -1,0 +1,45 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a central file and a local made from it
+    expect: >
+      isCentral true for one and false for the other, and the local's owner
+      naming the person. Check against what Revit says when the file is opened -
+      but the point is that this answered WITHOUT opening it, in milliseconds
+
+  - given: a folder of models saved by different Revit versions
+    expect: >
+      a savedFormat per file. Time it: a folder of fifty should be seconds. If
+      it takes minutes, something is opening the models rather than reading
+      their headers, and the whole reason for the fragment is gone
+
+negative:
+  - given: >
+      a LOCAL whose owner has unsaved work that never reached the central
+    expect: >
+      savedToCentral FALSE. This is the finding nothing inside the file reveals
+      - the model looks complete and is missing work that exists only on their
+      machine, and it is normally discovered days later
+
+  - given: a file saved by a NEWER Revit than the one running
+    expect: >
+      its path in isNewerThanThisRevit - and the raw savedFormat still
+      returned. The verdict is a comparison against the running Revit, so the
+      same file answers differently in 2020 and 2027 and the reader needs the
+      fixed fact beside the verdict
+
+  - given: a path that does not exist, or a PDF renamed to .rvt
+    expect: >
+      that path in `unreadable` WITH A REASON, every other file still read, and
+      no throw. A folder check that stops at the first bad file is one nobody
+      can use - and a skipped file must never read as a checked one
+
+  - given: a file that is NOT workshared at all
+    expect: >
+      isCentral false and no owner, without that being reported as a fault.
+      Most models are not workshared and it is not a finding
+
+second_route:
+  - >
+    open one file in Revit and check the version in Help > About, and its
+    workshared state in the Collaborate tab

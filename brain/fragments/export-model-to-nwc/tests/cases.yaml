@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a Revit WITH the Navisworks exporter, a writable folder, scopeViewId =
+      ElementId.InvalidElementId
+    expect: >
+      exportedPath names a real .nwc, exporterMissing false, problem empty. Then
+      OPEN IT in Navisworks - a right-named file that will not open is the
+      failure a path cannot show
+
+  - given: scopeViewId set to a real 3D view showing only part of the model
+    expect: >
+      the NWC holds only that view's content. Compare file size against the
+      whole-model export - visibly smaller
+
+negative:
+  - given: >
+      a Revit WITHOUT the Navisworks exporter add-in - the case this fragment
+      exists for
+    expect: >
+      exporterMissing TRUE, problem saying so in words, exportedPath empty, and
+      NOTHING attempted or created. It must not read as a failed export: one
+      needs a retry, the other needs an installer and an administrator, and the
+      answer must say which
+
+  - given: scopeViewId pointing at a floor plan rather than a 3D view
+    expect: >
+      problem says so, no file written, and NO fallback to the whole model
+
+  - given: a read-only folder, or a path invalid on this machine
+    expect: problem names the folder and the reason, exportedPath empty, no file
+
+  - given: >
+      an export that returns without throwing and writes nothing
+    expect: >
+      exportedPath EMPTY and problem saying no file was produced - the call was
+      clean and the drive is empty
+
+second_route:
+  - open the .nwc in Navisworks rather than trusting the filename
+  - on a machine without the exporter, confirm exporterMissing is what comes back
+  - compare file size between whole-model and view-scoped exports

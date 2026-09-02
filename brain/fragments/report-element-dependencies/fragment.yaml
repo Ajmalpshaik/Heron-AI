@@ -1,0 +1,84 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-009
+semantic-identity: "what else goes if this element goes"
+kind: action
+domain: revit.qa
+capability: REPORT_ELEMENT_DEPENDENCIES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  For each element, what Revit would take away with it - the tags, dimensions,
+  hosted families, sketch lines and openings - and, separately, whether Revit
+  would allow the deletion at all. Asked BEFORE the change rather than
+  discovered after it.
+
+  **THE LIST IS REVIT'S OWN, NOT ONE ASSEMBLED HERE.**
+  `GetDependentElements(null)` returns what Revit itself considers attached -
+  the same set it removes on delete. It reaches things nothing could reasonably
+  derive: a tag that references the element, a dimension witnessed on it, a
+  family hosted in it, the sketch a floor is drawn from, an opening cut through
+  it.
+
+  **THE LIST ALWAYS CONTAINS THE ELEMENT ITSELF.** That is not a defect and it
+  must not be stripped blindly - it is why a count reads one higher than
+  expected. It is excluded from `dependents` and reported as its own fact, so
+  the number is never quietly wrong in either direction.
+
+  **"CAN I DELETE IT" IS A SECOND QUESTION AND REVIT ANSWERS IT DIRECTLY.** An
+  element can have zero dependents and still be undeletable - pinned, the last
+  level, owned by another user in a workshared model. Both are asked, because
+  either one alone gives a confident wrong answer to "is this safe to remove".
+
+  **JOINED AND CUT ARE REPORTED SEPARATELY AND ON PURPOSE.** Revit does not
+  delete a joined neighbour; it re-cleans the geometry. A wall joined to three
+  others changes shape when one goes, and that change appears in a drawing
+  nobody was looking at. Folding it in with the dependents would say the wrong
+  thing about it in both directions.
+
+  **WHAT IT CANNOT SEE, SAID OUT LOUD:** a reference from a linked model, and
+  which sheets show the element. A clean report here does not mean nothing
+  downstream breaks.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: dependents
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: joined
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: undeletable
+      type: IList<ElementId>
+    - name: standalone
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.GetDependentElements`,
+  `DocumentValidation.CanDeleteElement` and `JoinGeometryUtils` are unchanged
+  2020 to 2027. `JoinGeometryUtils.GetJoinedElements` throws rather than
+  returning empty for an element that cannot be joined at all - a tag, a view -
+  so it is guarded per element rather than assumed to be answerable, which is
+  the difference between a report and a crash on a mixed selection.
+
+utterances:
+  - can I delete this
+  - what breaks if I move this
+  - what is attached to this element
+  - what goes with it
+  - is anything tagging this
+  - why can I not delete that

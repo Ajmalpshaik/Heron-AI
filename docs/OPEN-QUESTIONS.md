@@ -84,7 +84,7 @@ local-only guarantee for a configuration promise. And one language means **one c
 fragments go through `check-compile.py` and `check-api-surface.py`; Python fragments would go through
 neither.
 
-**This closes [Q-37](#-q-37--can-pyrevit-routes-bind-a-per-process-port-new-from-research) as not
+**This closes [Q-37](#q-37--can-pyrevit-routes-bind-a-per-process-port-new-from-research) as not
 applicable** — Heron does not use Routes.
 
 ---
@@ -163,7 +163,7 @@ machine. Cloud as opt-in.
 re-indexing: a per-call cost makes rebuilding the index something to avoid, and an index nobody rebuilds
 quietly stops matching what is on disk.
 
-**This does not answer [Q-12](#-q-12--what-is-the-data-confidentiality-position) and must not be read as
+**This does not answer [Q-12](#q-12--what-is-the-data-confidentiality-position) and must not be read as
 answering it.** Asked directly on 2026-08-28, Ajmal's reply — *"now we are in Claude, am I right, so make
 it in this; when we are on the PC I will pull that there and we will test everything"* — was about where
 the **work** happens, not about what **project content** may leave a machine. That is a contractual
@@ -380,7 +380,7 @@ Also: how many shadow runs before `SHADOW MODE → APPROVED`, and does a human s
 **Answer: the table stands as proposed; promotion needs an analysed DISAGREEMENT plus a signature, not a
 count of runs. See [D-39](DECISIONS.md).**
 
-Not a count, for the same reason [D-30](#-q-9--what-promotes-a-fragment-to-production) is not one.
+Not a count, for the same reason [D-30](#q-9--what-promotes-a-fragment-to-production) is not one.
 **Agreement is weak evidence**: two implementations are often wrong the same way, because the second was
 written by somebody who read the first — and an agent that silently does nothing agrees with everything. A
 hundred agreements prove less than one disagreement somebody sat down and explained.
@@ -646,7 +646,7 @@ answers, which is what Golden Rule 20 wants anyway, and no redaction layer is bu
 
 **What replaces it is a rule about tools rather than about wording:** a tool answers a question and never
 returns the model — see [D-26](DECISIONS.md). That is cheaper to build than redaction, easier to explain
-to a client, and it happens to be the same thing [Q-5](#-q-5--mcp-tool-granularity--thick-and-specific)
+to a client, and it happens to be the same thing [Q-5](#q-5--mcp-tool-granularity--thick-and-specific)
 already asked for.
 
 **Revisit if that ever stops being true** — the first tool that wants to return thousands of rows is the
@@ -668,7 +668,7 @@ software, stands unexamined. Recorded plainly so that a later session reading *"
 conclude otherwise.
 
 A legitimate choice for a free tool with no branding to defend. The **technical** window to rename stays
-open until the repository goes public ([Q-28](#-q-28--when-does-the-repo-go-public--when-licence--safety-files-exist-and-there-is-working-code)):
+open until the repository goes public ([Q-28](#q-28--when-does-the-repo-go-public--when-licence--safety-files-exist-and-there-is-working-code)):
 today it is a mechanical change across 53 code files; afterwards it breaks installed add-ins and user
 folder paths. If a check is ever wanted, before publication is the moment it is cheap — and the last
 one.
@@ -710,7 +710,7 @@ the last.
 
 Four things are already true and may or may not help — stated as facts, not as compliance claims: per-user
 install with no admin rights (proven), **no network code in the add-in** (verified against the source), a
-standard `.addin` manifest, and Apache 2.0. [Q-38](#-q-38--what-is-the-exact-install-command-new) is the
+standard `.addin` manifest, and Apache 2.0. [Q-38](#q-38--what-is-the-exact-install-command-new) is the
 live piece and belongs to the GitHub route.
 
 ---
@@ -756,7 +756,7 @@ instead of one, and put a language boundary where no process boundary exists.
 Both can be bundled into a single executable later, so bundling does not favour either.
 
 → **Python.** [D-06](DECISIONS.md) stands, and installation lists Python as a prerequisite rather than
-discovering it on someone else's machine. Bundling stays open under [Q-38](#-q-38--what-is-the-exact-install-command-new).
+discovering it on someone else's machine. Bundling stays open under [Q-38](#q-38--what-is-the-exact-install-command-new).
 
 **And it does not need administrator rights**, which was the real worry. Verified on the development
 machine: its Python is a Microsoft Store build living in `AppData\Local`, and the `mcp` package sits in

@@ -1,0 +1,59 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a model with a Revit link, a DWG link and a point cloud
+    expect: >
+      ALL THREE in references, with their kinds. Compare against Revit's own
+      Manage Links dialog tab by tab - a fragment that collected
+      RevitLinkInstance reports this model as having one dependency when it has
+      three, and the checklist built from it loses the other two
+
+  - given: a link whose file has been moved away
+    expect: >
+      its id in `unresolved`, and BOTH paths returned. After a move the saved
+      path is usually still right and the resolved one has gone stale, so a
+      report showing only one names the wrong thing as broken
+
+negative:
+  - given: a link somebody has deliberately UNLOADED
+    expect: >
+      its id in `unloaded` and NOT in `unresolved`. It is a choice, not a
+      fault, and a checklist that flags it has a false alarm on it - after
+      which the whole checklist stops being read
+
+  - given: >
+      a link the CURRENT USER has unloaded for themselves only, and another
+      whose WORKSET IS CLOSED in this session
+    expect: >
+      both in `unloaded`, neither in `unresolved`. There are THREE not-loaded
+      states, not one - Unloaded, LocallyUnloaded and InClosedWorkset - and a
+      two-way split on "is it Loaded" reports all three as broken files that
+      are sitting exactly where they should be
+
+  - given: a link loaded from an OLDER Revit version, reporting CanBeUpgraded
+    expect: >
+      in neither list. It is loaded and working; the upgrade is a separate
+      decision and does not belong on a missing-files checklist
+
+  - given: a CAD file brought in with IMPORT rather than Link
+    expect: >
+      present, with its kind saying so, and NOT in unresolved. It is embedded:
+      there is no external file left to lose. It is a file-size problem rather
+      than a missing-file one, and the two need different action
+
+  - given: a CLOUD-HOSTED reference, which has no local path at all
+    expect: >
+      it appears with an empty or cloud-identity path and is NOT reported as
+      unresolved. Treating an empty path as missing would report every
+      cloud-hosted project as broken
+
+  - given: a model with NO external references at all
+    expect: >
+      every list empty and no throw. "Nothing depends on this model" is a real
+      and useful answer, and it must not arrive by way of a swallowed exception
+      that would look identical
+
+second_route:
+  - >
+    open Manage > Manage Links in Revit and compare tab by tab - Revit Links,
+    IFC, CAD Formats, Point Clouds. Every tab's contents must appear here

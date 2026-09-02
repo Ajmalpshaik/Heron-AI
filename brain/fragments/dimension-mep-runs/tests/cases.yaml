@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 3 parallel ducts at a known spacing in a plan view, axis "x", offsetMm 1000
+    expect: >
+      dimensionedCount = 3, noReference empty. Then READ THE SEGMENTS in Revit
+      against the real spacing in millimetres. A created dimension says nothing
+      about the numbers printed on it
+
+  - given: pipes instead of ducts, then conduit, then cable tray
+    expect: >
+      all four work by the same route. If one of them does not, the geometry
+      flag is doing less than this fragment claims and that is worth knowing
+      before it is trusted on a sheet
+
+negative:
+  - given: >
+      the SAME call with IncludeNonVisibleObjects removed - a deliberate
+      experiment, not a normal run
+    expect: >
+      every id in noReference and nothing drawn. This is the whole finding: the
+      centreline is non-visible, so the ordinary geometry request returns
+      nothing usable, and that is how the earlier conclusion "MEP cannot be
+      dimensioned" was reached. Prove the flag is what makes it work
+
+  - given: AIR TERMINALS passed to this fragment instead of runs
+    expect: >
+      they have no location curve, so their ids are in noReference and problem
+      POINTS AT DIMENSION_FAMILY_INSTANCES. The wrong fragment must say which is
+      the right one, not just fail
+
+  - given: exactly ONE duct
+    expect: >
+      nothing created, problem saying fewer than two. Revit may accept a
+      one-reference dimension and DROP IT AT COMMIT - success that is not there
+      when the sheet is opened
+
+  - given: axis given as something other than "x" or "y"
+    expect: problem says so, nothing drawn
+
+  - given: an empty element list
+    expect: nothing created, reported as nothing to do
+
+second_route:
+  - read the segment values against a tape measure on the model
+  - move one duct and confirm the dimension follows
+  - one Ctrl+Z removes it in a single step (Golden Rule 16)
+  - do NOT verify with Dimension.Curve - it throws on a dimension this new

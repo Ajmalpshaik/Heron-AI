@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-017
+semantic-identity: "the runs that stop and serve nothing - the accidents, not the deliberate ends"
+kind: action
+domain: revit.mep
+capability: FIND_DEAD_ENDS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds runs that end at nothing - a duct stopping in mid-air, a branch left
+  behind when the layout changed, a spur drawn to a terminal that was later
+  deleted.
+
+  **MOST OPEN ENDS ARE MEANT TO BE THERE, AND THAT IS WHY A RAW OPEN-END LIST
+  GETS IGNORED.** A run ending at an air terminal, a fixture, a piece of
+  equipment or a cap is finished, not broken. Report all of those as faults and
+  the sweep gets switched off within a week. Every open end is classified first
+  and only the unexplained ones are the finding:
+
+  | Class | Meaning |
+  |---|---|
+  | `served` | the end sits at a terminal, fixture or equipment — fine |
+  | `capped` | a cap fitting closes it — fine |
+  | `stub` | very short and open — usually a deliberate future connection, reported quietly |
+  | `deadEnd` | a real run ending at nothing — **this is the finding** |
+
+  **"SERVES NOTHING" IS DECIDED BY WALKING, NOT BY LOOKING AT THE LAST
+  ELEMENT.** A branch can end at a fitting that ends at another fitting that
+  ends at nothing. Judging the last element alone calls that chain served,
+  because a fitting is something. The walk follows the chain from each open end
+  until it finds something served or runs out.
+
+  **A STUB IS REPORTED SEPARATELY RATHER THAN SUPPRESSED.** A short open spur is
+  usually deliberate and occasionally the whole problem. Folding it into
+  `deadEnd` produces false alarms; dropping it hides a real one. It gets its own
+  list and `stubLength` says what counted as short.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: stubLength
+      type: double
+      source: request
+  provides:
+    - name: deadEnds
+      type: IList<ElementId>
+    - name: stubs
+      type: IList<ElementId>
+    - name: served
+      type: IList<ElementId>
+    - name: capped
+      type: IList<ElementId>
+    - name: openEndsFound
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ConnectorManager`,
+  `Connector.IsConnected` and `Connector.AllRefs` are unchanged 2020 to 2027.
+  `stubLength` arrives in Revit's internal feet, and no units API is touched -
+  D-20 keeps the millimetre conversion at the edge where the user is. What
+  counts as served is decided by CATEGORY rather than by a type test, so one
+  code path covers terminals, fixtures and equipment.
+
+utterances:
+  - which runs end in nothing
+  - find the dead ends
+  - is there a duct going nowhere
+  - which branch was left behind
+  - find the open ends that matter
+  - is anything not terminated

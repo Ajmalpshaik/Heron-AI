@@ -1,5 +1,41 @@
 # Heron AI — Session Handover
 
+## If you are the owner, starting your PC — say this and nothing else
+
+> **"Read HANDOVER.md in Heron-AI and carry on."**
+
+That is enough. This file is the memory; nothing else has to be remembered or repeated. It names the
+branch, the numbers, the decisions, and what comes next. Two things worth adding **only if they apply
+that day**:
+
+- **"Revit is open"** — that unlocks the whole proving pass, which is the one thing months of work here
+  have been waiting on. Without it a session will correctly keep building instead.
+- **"Work only on Heron-AI and AJ-Tools"** — the standing scope. `AJ-AI-Brain` is the earlier project
+  and is **read-only reference**.
+
+**To carry the library build on in a fresh session, say:** *"Read HANDOVER.md §9a in Heron-AI and carry
+on building fragments."* [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start)
+holds the whole recipe — where the sources are, the eight steps per fragment, the commands, and the
+rules that must not be broken. It is written so a session can start from it without asking anything.
+
+If a session ever tells you something that disagrees with `python tools/check-gaps.py`, **believe the
+tool.** It is computed from disk every time; this file is typed by hand.
+
+**If something looks wrong while you are working — a number that feels off, a job that says it did
+something you cannot see, anything odd — go to [§4a](#4a-something-looks-wrong-mid-job--start-here).** It is
+indexed by what you actually see rather than by what the cause turns out to be, and it says what to do
+when the thing you hit is on no list at all.
+
+---
+
+**Updated 2026-08-31, during the ninth working session — the library went from 32 fragments to 63, and
+four things turned up on the way that matter more than the count.** The section for it is below the
+eighth.
+
+**Updated 2026-08-30, during the eighth working session — the one that went looking for work the
+checker could not see, and found the front door telling a new reader things that stopped being true
+weeks ago.** The seventh re-authored the fragment library; the eighth is below.
+
 **Updated 2026-08-30, during the seventh working session — the one re-authoring the owner's earlier
 fragment library into this one.** The sixth wired the brain to the host, which was the last thing here
 that could be *built* without a machine; the seventh is doing the thing that can still be done without
@@ -1306,6 +1342,10 @@ now that the next stretch of work happens where Revit cannot be reached.
 
 Each of these cost real time. They are in the order they were learned.
 
+> **Looking something up while a job is going wrong? Use [§4a](#4a-something-looks-wrong-mid-job--start-here)
+> instead.** This list is ordered by CAUSE, which is only searchable once you already know the answer.
+> §4a enters the same knowledge from the symptom.
+
 1. **The Revit API can only be called from Revit's own thread, inside an API context.** An MCP server is
    a separate process and cannot call it at all. Everything marshals through one `ExternalEvent`.
    [docs/03 §4](docs/03-heron-revit.md)
@@ -1358,6 +1398,93 @@ Each of these cost real time. They are in the order they were learned.
     and reports four outcomes — moved, partly, blocked, unverified — instead of the count it asked
     for. **Found by studying the owner's earlier library rather than by reading Heron's own code**,
     which had been read several times. `E10` is the check.
+
+---
+
+## 4a. Something looks wrong mid-job — start here
+
+**§4 above is indexed by CAUSE. This one is indexed by what you actually SEE**, because mid-job you
+have a symptom and not a diagnosis, and nobody can search a list of causes with a symptom. Same
+knowledge, entered from the other end.
+
+### The rule that comes before the table
+
+**Write down exactly what you saw, word for word, BEFORE you touch anything.** The first instinct is to
+run it again. In Revit that destroys the evidence: the model has moved on, the selection is gone, the
+transaction closed. A re-run that succeeds tells you nothing about the run that did not, and now
+nobody can ever look at the one that mattered.
+
+Copy the message. Note which element, which view, which document. Then investigate.
+
+### Symptom → check this first
+
+| What you see | Check this first |
+|---|---|
+| *"Done — 5 elements"* and you are not certain | **Go and measure one, by hand, in Revit.** Revit's move returns normally and moves nothing for a group member — no exception, no warning. §4 note 13 |
+| A height or level that is plausible but feels off | `REPORT_LEVEL_ELEVATIONS`. A level has **two** heights and only `ProjectElevation` is in the same space as the model's coordinates. On a survey-offset site model every height answer is wrong by exactly that offset |
+| **Every** room's volume reads zero | *Area and Volume Computations* is set to areas only. `MEASURE_ROOM_DIMENSIONS` reports `volumeComputationOff`. **One** room at zero is that room's bounding, which is a different problem |
+| Every space looks balanced | Which spaces have **no design figure at all**. Design zero against actual zero passes a balance check, so the rooms nobody has designed report as the ones with no problem |
+| A count higher than what is standing on site | Nested families and insulation. An AHU with a nested fan, coil and filter is four instances and one unit — `GROUP_BY_ASSEMBLY` |
+| A painted finish reports zero area | Paint and geometry are two separate material sets and the area call needs the same flag it was listed with — `REPORT_MATERIAL_TAKEOFF` |
+| A ceiling-height answer says *"no ceiling"* for a room that plainly has one | The room's **Upper Limit**. A room's solid stops there, so a solid test intersects nothing. `MEASURE_CEILING_HEIGHT` avoids it by design |
+| You asked a **question** and the model **changed** | `python tools/check-routing.py` — the ladder-crossing list at the top. A read sentence can rank below a fragment that writes. [D-47](docs/DECISIONS.md) |
+| A fragment "does not exist", or ranks nowhere | The store is **stale**, not the library broken. `check-routing.py` rebuilds when its count disagrees with disk and says so |
+| It hangs, with no error | **Two waits, not one.** *"Did Revit pick it up?"* and *"having started, did it finish?"* are different questions. §4 note 7 |
+| *"Access denied"* opening the bridge | `CreateNewInstance` on the pipe. §4 note 2 |
+| It went to the **wrong Revit** | An assumption is not a choice, and two sessions can both have `Project1` open. §4 notes 5 and 6 |
+| It compiles clean and Revit rejects it anyway | **A green check is only as wide as what the checker reads.** `check-fragments-compile.py` reads fragment implementations; anything generated elsewhere is unchecked until something reads it too |
+| A checker went green and you did not fix anything | Suspect the checker, not your luck. Find the line that changed |
+
+### The anomaly that does not look like an anomaly
+
+This is the one worth reading twice, because **the failure this whole project is built around is
+reporting the number that was ASKED FOR as the number that HAPPENED.** It arrives looking like success.
+
+Treat these as suspicious even when nothing is obviously wrong:
+
+- **A clean round result with zero failures** — *"Moved 5, skipped 0"*. Ask what it would have printed
+  if it had moved nothing.
+- **It came back faster than the work should take.**
+- **A zero where you expected a small number.** Nobody double-checks a big wrong number; everybody
+  believes a zero.
+- **Totals that match what you asked for rather than what was found.** A report that can only agree
+  with its own input is not a check.
+- **Everything passing right after a change somewhere unrelated.**
+
+The test in every case is the same one written into every fragment's proof spec: **a second route.**
+Ask Revit the same question a different way — a schedule, the Properties palette, a dimension placed by
+hand, a spot elevation. If the two disagree, the second route is right until proven otherwise, because
+it is the one a person can see.
+
+### It is on no list — then what
+
+Four steps, in order, and step 1 is the one that gets skipped.
+
+1. **Record it verbatim, before re-running.** See the rule above.
+2. **Ask three questions.** *Does it happen again?* *Does a second route agree?* *Would it change what
+   somebody does?* An anomaly that is not reproducible, or that changes nothing, is still worth writing
+   down — but it is not worth stopping the job for.
+3. **Route it to exactly one place**, and do it in the same session:
+
+   | What it turned out to be | Where it goes |
+   |---|---|
+   | Needs a real Revit, or Windows, to settle | A new row in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — the single register |
+   | A Revit behaviour worth never re-learning | §4 above, numbered, in the order learned |
+   | A choice that could reasonably have gone the other way | [`docs/DECISIONS.md`](docs/DECISIONS.md), with what was rejected and why |
+   | Something a tool could have caught and did not | A checker in `tools/` — that is how §4 note 11 and the risk ladder both became permanent |
+   | A defect in one fragment | That fragment, plus a **negative case** in its `tests/cases.yaml` |
+
+4. **If it needs Revit and Revit is not in front of you, it becomes a register row — not a half-fix.**
+   That is [D-45](docs/DECISIONS.md): build it all out now, prove it in one concentrated pass later. A
+   speculative fix to something nobody has watched fail is a change with no evidence behind it, and it
+   costs more to unpick than to write.
+
+### Why this is worth the minute it takes
+
+**A finding that only exists in the chat is gone when the session closes.** Every one of the thirteen
+lessons in §4 cost real time, and each is there because somebody wrote it down instead of fixing it
+quietly and moving on. The register is not bureaucracy — it is the only reason the next session does not
+pay for the same discovery twice.
 
 ---
 
@@ -1434,13 +1561,29 @@ that carried meaning.
 ```bash
 python tools/check-compile.py                  # Revit 2020-2027, all four projects, 0 warnings
 
-dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 -p:HeronTfm=net8.0
-python tests/test_bridge_roundtrip.py          # 32 checks, including the whole lease
+dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 -p:HeronTfm=net8.0 \
+    -p:OutputPath=bin/x64/Debug-net8.0/
+python tests/test_bridge_roundtrip.py          # 30 checks, including the whole lease
 ```
 
 The first needs the .NET SDK, which Linux distributions package — Microsoft's CDN is often blocked from a
 container and that is the wall earlier sessions hit. The second runs because `Heron.Bridge` has no Revit
 reference, so it compiles for `net8.0` and .NET implements named pipes on Unix as a socket.
+
+> **Both extra arguments above were added on 2026-08-30, after following this section verbatim failed
+> twice.** Neither failure was a defect, and neither announced itself as an environment problem:
+>
+> - **`-p:OutputPath` is not optional if `check-compile.py` ran first** — and this section tells you to
+>   run it first. That tool builds the same project once per Revit release into the shared
+>   `bin/x64/Debug`, so the POSIX host needs its own folder or the test finds the wrong artifact.
+>   `test_bridge_roundtrip.py` had already documented this interaction in its own header and printed the
+>   corrected command on failure; only this section was missing it.
+> - **`apt-get install -y dotnet-sdk-10.0` gives you a machine that cannot run this test.** The host
+>   targets `net8.0`, the .NET 10 SDK carries no 8.0 runtime, and the host then fails to start — which
+>   the test reported as *"host never reported a pipe name"*, the symptom of every possible cause. Fix
+>   with `apt-get install -y dotnet-runtime-8.0`, or `DOTNET_ROLL_FORWARD=Major`. **The test now names
+>   this case itself** rather than blaming the transport. Also worth knowing: the first
+>   `apt-get install` 404s on a stale index — run `apt-get update` first.
 
 **What that still does not cover is the Windows named pipe itself** — its naming, its security
 descriptor, and the `CreateNewInstance` flag in note 2 of [§4](#4-the-things-that-will-bite-you). `A4`
@@ -1500,6 +1643,11 @@ validation that was done before the eight greens were believed.
 Every item is unproven, every item has an ID (`A1`, `D3`) so it can be named in a message without
 being described again, and they are in dependency order — nothing in group D can be attempted before
 group A passes.
+
+**When a check behaves oddly rather than simply passing or failing, stop and read
+[§4a](#4a-something-looks-wrong-mid-job--start-here) before deciding what it meant.** This is the pass where
+most anomalies will surface, because it is the first time any of this meets a real model — and the
+dangerous ones arrive looking like a pass.
 
 It is kept as ONE register rather than a copy in each file, because two lists of the same thing drift
 and this repository has been bitten by that more than once. Add to it every time something is built
@@ -1622,6 +1770,11 @@ meanwhile.
 
 ## 9. Next — read the decisions back, then prove what is built
 
+> **This section is what to do WHEN REVIT IS OPEN.** If it is not, the live work is
+> [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start) — the fragment
+> library, which needs no Revit and no Windows.
+
+
 **Step 6 is built. Phase 2 is built. Do not build either again.** All seven items the build order asks
 of Step 6 are in the repository, and so is everything an audit turned up afterwards: the lease, the
 Failure Analysis Agent, the tool registry, the configuration and health agents. Steps 7 to 14 are all on
@@ -1728,6 +1881,117 @@ categories this repository has spent two sessions learning to keep apart.
 the rest of the register, **nothing external is stopping it.** One MCP tool that resolves a request
 through the capability registry is what the clause asks for. It is in [§1](#1-where-the-project-stands-in-one-paragraph)
 with the evidence, and in [§8](#8-what-is-waiting-on-the-owner) as the choice it creates.
+
+---
+
+## 9a. Continuing the library build — the recipe, so another session can just start
+
+**This is the work that needs no Revit, and it is where the project actually is.** §9 above is what to
+do when Revit is open. If it is not, everything below can be done from anywhere, and a fresh session
+should be able to start from this section alone without asking anything.
+
+### Say this to start
+
+> **"Read HANDOVER.md §9a in Heron-AI and carry on building fragments."**
+
+### Where the work comes from, and how much is left
+
+The source is the owner's earlier library at `AJ-AI-Brain/scripts/`. **It is REFERENCE ONLY — read it,
+never edit it, never commit to it.** His instruction on how to use it, in his own words:
+
+> *"Don't copy-paste from the old library. Check, study, and split if you want to split — or whatever
+> you want to do, do it as per our project specification."*
+
+| Source folder | Files | State |
+|---|---|---|
+| `actions/reporting/` | 43 | **started** — most of the high-value ones are done |
+| `actions/sheets-views/` | 54 | **started** — the spine is done |
+| `creators/` | 36 | not started |
+| `actions/structural-changes/` | 33 | not started |
+| `actions/qa-checks/` | 30 | not started |
+| `actions/color-graphics/` | 25 | barely started — 3 done |
+| `actions/parameters-naming/` | 21 | not started |
+| `actions/visibility/` | 17 | barely started — 3 done |
+| `actions/move-copy-rotate/` | 13 | mostly done |
+| `filters/` | 51 | a few done |
+| `context/` | 12 | see [D-46](docs/DECISIONS.md) — most are the host's job, not fragments |
+| `recipes/` | 44 | **these become SKILLS, not fragments** — a recipe is a whole job |
+
+**Check what already exists before writing anything**, because the names do not match one to one — this
+library is re-authored, not ported:
+
+```bash
+ls brain/fragments/                                    # by folder name
+grep -h '^capability:' brain/fragments/*/fragment.yaml # by capability
+```
+
+### The recipe, per fragment
+
+Same eight steps every time. Steps 2 and 6 are the ones that get skipped and are the reason for the
+rest.
+
+1. **Read the source file end to end**, including its comment header. That header is where the earlier
+   library recorded what it had already got wrong — it is the most valuable part of the file.
+2. **Decide what changes, and be able to say why.** A re-authored fragment is not a translation. Split
+   one source into two if it is doing two jobs; fold two into one if they share a mechanism; drop a
+   feature that belongs to the host. **Write the decision into the fragment's `purpose`**, because the
+   next person will otherwise assume the difference was an accident.
+3. **Write three files** under `brain/fragments/<kebab-name>/`:
+   - `fragment.yaml` — metadata, contract, `purpose`, `compatibility-note`, `utterances`
+   - `impl/any/fragment.cs` — the C#, **non-standalone**: it assumes its `needs` are in scope and
+     leaves its `provides` behind. No `using`, no class, no method wrapper.
+   - `tests/cases.yaml` — `positive`, `negative`, `second_route`. **[D-30](docs/DECISIONS.md): a proof
+     without a negative case does not count**, because the defect being guarded against is the fragment
+     that succeeds while doing nothing.
+4. **Compile it on all eight releases.** This is the gate that has caught every real mistake so far:
+   ```bash
+   python tools/check-fragments-compile.py
+   ```
+5. **Check routing**, and read the ladder-crossing list at the top first:
+   ```bash
+   python tools/check-routing.py
+   python tools/check-intrusion.py     # optional; the shortlist view
+   ```
+6. **Answer every ladder-crossing.** [D-47](docs/DECISIONS.md) removes the option of leaving one alone:
+   say which fragment should win, or say the sentence names a composition and belongs to a skill. Where
+   two fragments fairly claim one sentence, **put the same cross-reference table in BOTH** — written
+   one way it only routes whoever lands on the newer file.
+7. **Run the sweep**, all of it, before committing:
+   ```bash
+   python tools/check-metadata.py && python tools/check-structure.py      && python tools/check-docs.py && python tools/check-gaps.py
+   for t in tests/test_*.py; do python "$t" >/dev/null || echo "FAILED $t"; done
+   ```
+8. **Commit and push to the branch below.** Say in the message what was decided differently and why —
+   the commit is where the reasoning survives.
+
+### The rules that must not be quietly broken
+
+| Rule | What it means here |
+|---|---|
+| **Golden Rule 16** | A fragment **assumes an open transaction and never opens one**. A batch is one undo entry. This is why a read fragment may not change-and-roll-back to measure something — see `MEASURE_CEILING_HEIGHT` |
+| **[D-44](docs/DECISIONS.md)** | A re-authored fragment starts `DRAFT` whatever its status was in the earlier library. Nothing here inherits proven |
+| **[D-45](docs/DECISIONS.md)** | Build it all out now, prove it against Revit later in one pass. Do **not** stop to half-prove something |
+| **Units** | mm → internal feet by `/ 304.8`, plain arithmetic. **Never a units API** — that is what breaks at Revit 2021. Hand values on in feet; [D-20](docs/DECISIONS.md) keeps the conversion at the edge |
+| **ElementId** | Never read one as a number. Compare `ElementId` to `ElementId` — `IntegerValue` is gone by 2026 and the type went 64-bit at 2024 |
+| **Namespaces** | The wrapper imports the base DB namespace only. `Room`, `Space`, `Ceiling` and friends are **not** available as types — tell them apart by **category** |
+| **No outside sources** | Never name another person's repo, tool, product, website or name — anywhere. His instruction, 2026-08-20. A re-authored technique is written in our own words as this project's own knowledge |
+| **Areas** | `ELE, SEL, VIEW, SHT, PAR, MEP, GEO, QA, DOC` — a fixed list. Take the next free number in the area |
+| **Risk** | `READ, ANALYZE, SUGGEST, EXECUTE, MODIFY, PUBLISH, ADMIN`. An export is **PUBLISH**, higher than MODIFY |
+| **Read-backs** | Every fragment that writes reports what **happened**, never what was asked for. That is the defect this whole project exists around |
+
+### The branch
+
+```bash
+git push -u origin claude/ai-aj-tools-handover-af4pow
+```
+
+**Heron-AI and AJ-Tools only.** `AJ-AI-Brain` is read-only reference.
+
+### When something behaves oddly while doing this
+
+[§4a](#4a-something-looks-wrong-mid-job--start-here). Do not fix past it quietly — the compile gate and
+the checkers have caught four real defects during this build, and each one was worth more than the
+fragment being written at the time.
 
 ---
 

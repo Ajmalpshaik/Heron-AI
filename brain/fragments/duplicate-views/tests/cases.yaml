@@ -1,0 +1,46 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 3 floor plans, duplicateOption "WithDetailing"
+    expect: >
+      duplicated = 3, newViewIds holds 3 ids, notDuplicated empty. OPEN ONE in
+      Revit and confirm the annotation and detail items came across - that is
+      what separates WithDetailing from Duplicate, and a count cannot show it
+
+  - given: the same 3 views, duplicateOption "Duplicate"
+    expect: >
+      3 made, and the copies carry NO annotation. Compare one against its
+      WithDetailing twin from the case above
+
+  - given: a view that supports it, duplicateOption "AsDependent"
+    expect: >
+      the new view appears in the Project Browser INDENTED under its parent.
+      Change the parent's crop and the dependent follows - that is the whole
+      difference and it is only visible in the model
+
+negative:
+  - given: >
+      a view Revit will not duplicate the requested way - a legend or a schedule
+      asked for AsDependent
+    expect: >
+      its id in notDuplicated, nothing made for it, AND THE OTHER VIEWS IN THE
+      SAME CALL STILL DUPLICATED. This is the case the fragment exists for: the
+      version it was re-authored from rolled back the whole batch, so one
+      awkward view cost thirty-nine good copies
+
+  - given: duplicateOption set to a word that is not one of the three
+    expect: >
+      duplicated = 0, newViewIds empty, and EVERY id in notDuplicated. Nothing
+      may be created. A version that fell back to a default would duplicate
+      forty views the wrong way and report success
+
+  - given: an element that is not a view at all, e.g. a duct
+    expect: its id in notDuplicated, no exception, other views unaffected
+
+  - given: an empty element list
+    expect: all outputs empty or zero, reported as nothing to do
+
+second_route:
+  - count the views in the Project Browser before and after - the rise must equal duplicated
+  - one Ctrl+Z removes every new view in a single step (Golden Rule 16)
+  - select the ids in notDuplicated and look at what they actually are

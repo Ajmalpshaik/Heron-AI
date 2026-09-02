@@ -1,0 +1,46 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a branch that was left behind when the layout changed
+    expect: >
+      its id in `deadEnds`. Select it in Revit and follow the run by eye - it
+      should stop at nothing
+
+  - given: a run ending properly at an air terminal
+    expect: >
+      in `served`, NOT in deadEnds. Reporting a finished run as a fault is how
+      a QA sweep gets switched off, and then the real dead ends go unfound too
+
+negative:
+  - given: >
+      A DUCT ENDING AT A FITTING, WHICH ENDS AT ANOTHER FITTING, WHICH ENDS AT
+      NOTHING
+    expect: >
+      reported as a dead end. Judging the LAST ELEMENT alone calls this served,
+      because a fitting is something - the chain has to be walked, and this is
+      the case that proves it was
+
+  - given: a run ending at a CAP fitting
+    expect: >
+      in `capped`, not in deadEnds. A capped end is finished
+
+  - given: a short open spur, shorter than stubLength
+    expect: >
+      in `stubs`, NOT in deadEnds and NOT dropped. Folded into deadEnds it is a
+      false alarm on a deliberate future connection; dropped it hides a real
+      one - which is why it gets its own list
+
+  - given: a system with NO open ends anywhere
+    expect: >
+      every list empty AND openEndsFound zero. The count is what separates
+      "swept it and it is clean" from "swept nothing"
+
+  - given: a cap family that somebody named something unexpected
+    expect: >
+      still recognised, because a cap is found by having ONE connector rather
+      than by its name. Names are localised and set by whoever built the family
+
+second_route:
+  - >
+    select the reported element in Revit and use Select Connected - what
+    highlights should contain no terminal, fixture or equipment at all

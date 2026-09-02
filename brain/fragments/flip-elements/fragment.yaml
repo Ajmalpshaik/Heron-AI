@@ -29,6 +29,18 @@ purpose: >
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
+
+  **"THE ARROWS ARE WRONG" MEANS TWO DIFFERENT JOBS AND ONE OF THEM CHANGES THE
+  MODEL:**
+
+  | What you meant | Use |
+  |---|---|
+  | "is the flow going the right way", "are the arrows pointing the right way" - to check | `CHECK_FLOW_DIRECTION`, read-only |
+  | "the diffuser is the wrong way round", "turn it around" - to change | `FLIP_ELEMENTS`, which flips real elements |
+
+  A question about direction must never flip anything. Both fragments carry this
+  table - written one way it only routes whoever lands on the newer file.
+
 contract:
   needs:
     - name: elements

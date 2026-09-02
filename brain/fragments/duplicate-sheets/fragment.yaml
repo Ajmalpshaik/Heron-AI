@@ -1,0 +1,88 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-009
+semantic-identity: "make new sheets copying these ones, with the same title block and a new number"
+kind: action
+domain: revit.sheets
+capability: DUPLICATE_SHEETS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a new sheet for each one handed in - same title block, number made by
+  adding a suffix, name optionally prefixed - and hands back the new ids.
+
+  THE NUMBER IS CHECKED BEFORE ANYTHING IS CREATED, and that is the whole
+  design. Revit requires sheet numbers to be unique, and a sheet is created
+  BEFORE its number can be assigned. So the obvious order - create, then
+  number, then catch the collision - leaves a sheet already committed carrying
+  Revit's own auto-number, while the code reports a failure.
+
+  That is worse than the usual failure in this library. Everywhere else the
+  danger is claiming something happened when it did not. Here the report says
+  NOTHING HAPPENED while a stray sheet is left in the drawing register under a
+  number nobody chose - measured in the library this was re-authored from:
+  "Duplicated 0 of 1 sheet(s), 1 failed" while the sheet count went 2 to 3 and
+  an orphan remained.
+
+  So every existing sheet number is gathered first, and a colliding number is
+  refused BEFORE a sheet exists. Nothing is created that then has to be cleaned
+  up, which also means this fragment never needs to delete anything - the
+  original's fix was to delete its own half-built sheet, and deleting is a
+  permission and a risk this design simply does not need.
+
+  Numbers created earlier IN THE SAME BATCH are added to that set as they go, so
+  two source sheets cannot both claim one new number.
+
+  IT MAKES EMPTY SHEETS, ON PURPOSE. The version this came from also duplicated
+  every placed view and re-placed it at the same spot. That is two jobs, and
+  Heron already has both halves - DUPLICATE_VIEWS and PLACE_VIEWS_ON_SHEET. A
+  skill composes the three; welding them together here would make the sheet job
+  impossible to use on its own and would hide two read-backs inside a third.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a set
+  of new sheets is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: numberSuffix
+      type: string
+      source: request
+    - name: namePrefix
+      type: string
+      source: request
+  provides:
+    - name: newSheetIds
+      type: IList<ElementId>
+    - name: notDuplicated
+      type: IList<ElementId>
+    - name: collidedNumbers
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSheet.Create`, `SheetNumber`,
+  `Name`, `IsPlaceholder` and collecting `OST_TitleBlocks` on a sheet are
+  unchanged 2020 to 2027, and no units call is made. `ElementId` values are
+  collected and resolved only, never converted to or from an integer, which
+  keeps this clear of the 2024 width change.
+
+utterances:
+  - duplicate these sheets
+  - make a copy of this sheet
+  - i need another sheet like this one
+  - copy the sheet with a new number
+  - duplicate the drawing sheet
+  - create sheets based on these

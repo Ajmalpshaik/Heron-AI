@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 5 elements with marks, mode "prefix", text "AJ-"
+    expect: >
+      all 5 in changed, and their marks reading AJ- in front of what was there
+      before. Read one in the Properties palette by eye - the fragment's own
+      count is not the check
+
+  - given: field "Name" on a set of views, mode "replace"
+    expect: >
+      the views renamed. The element's Name is just another field here, which
+      is why one mechanism serves both and a fix to the replace rule cannot
+      reach one and miss the other
+
+negative:
+  - given: a mixed set where only HALF the elements contain the search text
+    expect: >
+      the other half in `untouched`, NOT in changed and NOT reported as errors.
+      This is the normal case for a replace, and calling it a failure makes the
+      report unusable while calling it a success reports work that never
+      happened
+
+  - given: mode "prefix" on elements whose parameter is BLANK
+    expect: >
+      those in `blank` and NOT changed. A prefix on an empty parameter creates
+      a value where the modeller had none - it would look like data afterwards
+      and nobody would know where it came from
+
+  - given: A NUMERIC parameter, such as a length
+    expect: >
+      REFUSED, in readOnly. Editing it through its display text is lossy - a
+      length shown as 2500 is not exactly 2500 internally, and writing the
+      display back rewrites a rounded value as the truth
+
+  - given: an element whose Name Revit will not let you set
+    expect: >
+      in readOnly, the rest still edited, and no throw
+
+  - given: >
+      an element where Revit ACCEPTS the write and stores something different
+    expect: >
+      in `unverified`, NOT in changed. Everything reported as changed was
+      re-read after the write
+
+second_route:
+  - >
+    open a schedule of that parameter in Revit before and after - the column is
+    the second route, and it is what a person would actually check

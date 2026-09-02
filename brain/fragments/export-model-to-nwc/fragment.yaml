@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-009
+semantic-identity: "write the model out as a Navisworks NWC file, and check the file is really there"
+kind: action
+domain: revit.document
+capability: EXPORT_MODEL_TO_NWC
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Exports the model to NWC - whole document or scoped to one 3D view - and
+  reports the path only if the file is ACTUALLY ON DISK afterwards.
+
+  IT CARRIES A FACT THE OTHER EXPORTS DO NOT: THE EXPORTER MAY NOT BE THERE.
+  NWC export comes from a separate Autodesk add-in, so a perfectly healthy Revit
+  can simply not have it. Revit is asked FIRST, by name, and a missing exporter
+  is reported as its own outcome rather than caught as a failure.
+
+  That distinction is the fragment's reason for existing. "The export failed" and
+  "this Revit cannot export NWC at all" lead to completely different next
+  actions - one is worth retrying, the other needs an installer and an
+  administrator - and an exception message buried in a log is not where somebody
+  should have to work that out.
+
+  IT DOES NOT CONSUME `elements`. NWC scope is a document or a view, never a set
+  of elements, and taking a list only to ignore it would let a caller believe it
+  had narrowed the export when it had not.
+
+  NO TRANSACTION AND NONE IS NEEDED - unlike the IFC exporter, this one writes
+  nothing back into the document.
+
+  RISK IS **PUBLISH**. An NWC is the coordination handover; one Ctrl+Z does not
+  un-send it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: exportFolder
+      type: string
+      source: request
+    - name: fileName
+      type: string
+      source: request
+    - name: scopeViewId
+      type: ElementId
+      source: request
+  provides:
+    - name: exportedPath
+      type: string
+    - name: exporterMissing
+      type: bool
+    - name: problem
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `OptionalFunctionalityUtils`,
+  `NavisworksExportOptions`, its `ExportScope` and `ViewId`, and
+  `Document.Export` are unchanged 2020 to 2027, and no units call is made.
+  `scopeViewId` is an `ElementId` throughout and never becomes an integer, which
+  keeps this clear of the 2024 width change - pass
+  `ElementId.InvalidElementId` for the whole model rather than a zero.
+
+utterances:
+  - export the model to nwc
+  - give me a navisworks file
+  - export for navisworks coordination
+  - i need an nwc
+  - export nwc from this view
+  - make the navisworks export

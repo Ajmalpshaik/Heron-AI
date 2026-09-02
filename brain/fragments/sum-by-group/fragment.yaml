@@ -1,0 +1,73 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-008
+semantic-identity: "totals a measured quantity per group, the way a bill of quantities reads"
+kind: action
+domain: revit.reporting
+capability: SUM_BY_GROUP
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Adds a measured quantity up per group: total per distinct value, how many
+  elements were in each, and how many of those had no quantity to add.
+
+  **`GROUP_AND_COUNT` COUNTS; THIS SUMS, AND A BILL OF QUANTITIES NEEDS BOTH.**
+  "Forty lengths of 300x150" is a count. "Forty lengths of 300x150 totalling
+  212 metres" is the line a quantity surveyor can price. Counting was already
+  here and summing was not, so every takeoff question stopped one step short of
+  an answer.
+
+  **IT IS DELIBERATELY NOT ABOUT DUCTS.** The obvious fragment to write was
+  "length by size for ductwork", which is how the question always arrives. But
+  the mechanism underneath - group by a key, add up a number, say what was
+  missing - is the same for sheet metal area, pipe insulation, cable tray
+  weight, concrete volume and anything priced per unit. Written once here, it
+  serves all of them; written into a duct fragment, the next one re-derives it
+  and the two drift. `MEASURE_RUN_QUANTITIES` supplies the numbers for MEP runs.
+
+  **AN ELEMENT WITH NO QUANTITY IS COUNTED, NOT SKIPPED, AND NOT TREATED AS
+  ZERO.** Those are three different totals and only one of them is honest. A
+  cable tray has no surface area parameter at all - adding zero for it makes
+  the total look complete, and dropping it makes the count disagree with the
+  count from the same set. `missing` carries them per group, so a total that
+  rests on partial data says so on the same line as the number.
+
+contract:
+  needs:
+    - name: values
+      type: IDictionary<ElementId, string>
+    - name: quantities
+      type: IDictionary<ElementId, double>
+  provides:
+    - name: totals
+      type: IDictionary<string, double>
+    - name: counts
+      type: IDictionary<string, int>
+    - name: missing
+      type: IDictionary<string, int>
+    - name: incomplete
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, and it touches no Revit API at all
+  beyond `ElementId` as a dictionary key - it is arithmetic over what two other
+  fragments already read. Nothing here can break on a version change, which is
+  most of the reason for separating it from the fragment that does the reading.
+
+utterances:
+  - total the lengths by size
+  - how many metres of each size
+  - give me a takeoff
+  - add up the areas per system
+  - what is the total per type
+  - a bill of quantities for these

@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-009
+semantic-identity: "change the text that is already there, rather than replacing it"
+kind: action
+domain: revit.parameters
+capability: EDIT_TEXT_VALUES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Transforms text that is already on each element - add a prefix, add a suffix,
+  or replace part of it - instead of overwriting it with one flat value.
+
+  **`WRITE_ELEMENT_PARAMETERS` SETS A LITERAL AND THAT IS A DIFFERENT JOB.**
+  *"Put AJ- in front of every mark"* cannot be done by setting a value, because
+  the value is different on every element. This one reads first, transforms, and
+  writes back.
+
+  **THE ELEMENT'S OWN NAME IS JUST ANOTHER FIELD**, and treating it as one is
+  the decision this fragment makes. The earlier library had a rename fragment
+  and a prefix/suffix fragment carrying the same four transformations twice.
+  `field: "Name"` edits `Element.Name`; anything else is a parameter. One
+  mechanism, so a fix to the replace rule cannot reach one of them and miss the
+  other.
+
+  **AN ELEMENT WHOSE TEXT DOES NOT CONTAIN THE SEARCH TERM IS `untouched`, NOT
+  A FAILURE.** Running a replace across a mixed set and having half of it not
+  match is the normal case. Counting those as errors makes the report unusable;
+  counting them as successes reports work that did not happen.
+
+  **IT READS BACK.** Every element it says it changed was re-read after the
+  write, and anything Revit accepted and then altered is reported separately.
+  A count of attempts is not a count of changes.
+
+  **NOTHING IS DONE TO AN EMPTY VALUE.** A prefix on a blank parameter would
+  create a value where the modeller had none, which is a different edit from the
+  one asked for and would look like data.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: field
+      type: string
+      source: request
+    - name: mode
+      type: string
+      source: request
+    - name: text
+      type: string
+      source: request
+    - name: replacement
+      type: string
+      source: request
+  provides:
+    - name: changed
+      type: IList<ElementId>
+    - name: untouched
+      type: IList<ElementId>
+    - name: blank
+      type: IList<ElementId>
+    - name: readOnly
+      type: IList<ElementId>
+    - name: absent
+      type: IList<ElementId>
+    - name: unverified
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.Name`, `LookupParameter`,
+  `Parameter.AsString` and `Parameter.Set(string)` are unchanged 2020 to 2027,
+  and no units call is made - this only ever touches text, which is what keeps
+  it clear of the 2021 units move entirely. Only string-storage parameters are
+  edited; a number is refused rather than converted through its display text,
+  because that round trip is lossy and would rewrite a rounded value back as
+  the truth.
+
+utterances:
+  - put a prefix on the mark
+  - add AJ to the front of these names
+  - find and replace in the comments
+  - rename these with a suffix
+  - change part of the name
+  - swap that word in the parameter

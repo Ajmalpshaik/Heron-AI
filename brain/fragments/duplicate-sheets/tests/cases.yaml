@@ -1,0 +1,45 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 3 sheets, numberSuffix "-COPY", namePrefix ""
+    expect: >
+      newSheetIds holds 3 ids, notDuplicated and collidedNumbers empty. Then
+      LOOK IN THE PROJECT BROWSER - three new sheets, each with its parent's
+      title block, numbered "<original>-COPY"
+
+  - given: namePrefix "DRAFT "
+    expect: every new sheet's NAME starts with it, numbers unchanged in form
+
+negative:
+  - given: >
+      a sheet whose "-COPY" number ALREADY EXISTS in the model - the case this
+      fragment is built around
+    expect: >
+      that number in collidedNumbers, the source id in notDuplicated, and - the
+      part that matters - **THE SHEET COUNT IS UNCHANGED.** Count the sheets in
+      the Project Browser before and after. The version this was re-authored
+      from reported the failure correctly AND left an orphan sheet behind under
+      Revit's own auto-number; nothing may be created here
+
+  - given: TWO source sheets whose suffixed numbers would be identical
+    expect: >
+      the first is made, the second is reported in collidedNumbers. The clash is
+      between two sheets neither of which existed when the batch started, so
+      only tracking numbers as they are created can catch it
+
+  - given: a PLACEHOLDER sheet among the elements
+    expect: >
+      its id in notDuplicated and nothing created. It has no title block, and
+      picking an arbitrary one would produce a sheet that does not match the set
+      it belongs to
+
+  - given: an element that is not a sheet, e.g. a floor plan
+    expect: its id in notDuplicated, no exception, the real sheets still done
+
+  - given: an empty element list
+    expect: all outputs empty, reported as nothing to do
+
+second_route:
+  - COUNT THE SHEETS in the Project Browser before and after - the rise must equal newSheetIds.Count
+  - open one new sheet and confirm the title block matches its parent's
+  - one Ctrl+Z removes every new sheet in a single step (Golden Rule 16)

@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-016
+semantic-identity: "joints where the flow contradicts itself - two outs meeting, or two ins"
+kind: action
+domain: revit.mep
+capability: CHECK_FLOW_DIRECTION
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks that the flow through a system agrees with itself. Every joined pair of
+  connectors should be one **out** meeting one **in**. Two connectors both
+  pushing out at the same joint, or both pulling in, is a system that cannot
+  work as drawn.
+
+  **IT IS INVISIBLE ON SCREEN AND THAT IS WHY IT NEEDS A CHECK.** The ducts
+  touch, the fittings look right, the run reads as finished. Nothing about a
+  contradictory joint draws differently, and Revit does not refuse it - it
+  simply stops calculating sensible flow past that point, which is then blamed
+  on the equipment.
+
+  **IT IS THE OTHER HALF OF `FIND_SYSTEM_ISLANDS`.** That one asks whether the
+  pieces are joined at all. This asks whether the joins make sense. A system can
+  be perfectly whole and still have two pumps facing each other, and a
+  connectivity check reports it as one healthy network.
+
+  **BIDIRECTIONAL CONNECTORS ARE NOT A FAULT AND ARE NOT COUNTED.** Plenty of
+  fittings and accessories carry them legitimately, and flagging them would fill
+  the report with pairs nobody can act on - after which nobody reads it.
+
+
+  **"THE ARROWS ARE WRONG" MEANS TWO DIFFERENT JOBS AND ONE OF THEM CHANGES THE
+  MODEL:**
+
+  | What you meant | Use |
+  |---|---|
+  | "is the flow going the right way", "are the arrows pointing the right way" - to check | `CHECK_FLOW_DIRECTION`, read-only |
+  | "the diffuser is the wrong way round", "turn it around" - to change | `FLIP_ELEMENTS`, which flips real elements |
+
+  A question about direction must never flip anything. Both fragments carry this
+  table - written one way it only routes whoever lands on the newer file.
+
+  **IT REPORTS THE JOINT, NOT A VERDICT ON THE SYSTEM.** Which end is wrong is
+  not something the geometry can settle: a reversed pump and a reversed branch
+  produce the same contradictory joint. The pair is named and the fix is the
+  modeller's call.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: bothOut
+      type: IList<string>
+    - name: bothIn
+      type: IList<string>
+    - name: jointsChecked
+      type: int
+    - name: bidirectionalSkipped
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Connector.Direction`,
+  `FlowDirectionType` and `Connector.AllRefs` are unchanged 2020 to 2027 and no
+  units call is made. Reading `Direction` throws on a connector whose domain has
+  no flow - an electrical one - so it is guarded per connector rather than per
+  element, which is the difference between a report and a crash on a mixed set.
+
+utterances:
+  - is the flow going the right way
+  - check the flow direction
+  - why is the system not calculating flow
+  - are the arrows pointing the right way
+  - two pumps facing each other
+  - the direction is wrong somewhere

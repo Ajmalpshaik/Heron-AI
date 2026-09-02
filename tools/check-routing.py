@@ -38,6 +38,21 @@ list of defects, it is a list of PLACES TWO FRAGMENTS WANT THE SAME SENTENCE,
 and a human has to decide which should win - or whether the sentence names a
 composition, in which case it belongs to a SKILL and to neither fragment.
 
+ONE CLASS OF COLLISION IS NOT A JUDGEMENT CALL
+----------------------------------------------
+Everything above treats every contest alike, and for a long time this tool did
+too. It is wrong about one of them. When the sentence a READ fragment claims is
+answered by a fragment that WRITES, the failure mode is not "the user gets the
+wrong table" - it is "the user asked a question and the model changed". That is
+the risk ladder crossing in the one direction that cannot be undone by reading
+the answer again, and it deserves to be separated from two report fragments
+squabbling over "show me the sizes".
+
+So contests are now split. The plain list stays a judgement call and stays
+exit 0. The crossing list is printed on its own, above it, with the two risk
+levels named - because a person scanning thirty rows for a problem will not
+spot that one of them routes a question into a MODIFY.
+
 WHY IT IS NOT A GATE
 --------------------
 It exits 0 whatever it finds. A collision is a judgement, not a defect, and a
@@ -80,15 +95,28 @@ def utterances():
         raise SystemExit(2)
 
     out = []
+    risk = {}
     for name in sorted(os.listdir(FRAGMENTS)):
         path = os.path.join(FRAGMENTS, name, "fragment.yaml")
         if not os.path.exists(path):
             continue
         with open(path, encoding="utf-8") as fh:
             doc = yaml.safe_load(fh)
+        risk[doc["id"]] = doc.get("risk") or "?"
         for said in doc.get("utterances") or []:
             out.append((doc["id"], said))
-    return out
+    return out, risk
+
+
+# The ladder from the Constitution, lowest first. Position is what matters:
+# a contest MATTERS when the winner sits higher than the loser, and matters
+# most when the loser is READ - somebody asked a question.
+LADDER = ["READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY", "PUBLISH", "ADMIN"]
+
+
+def rung(level):
+    """Where a risk level sits on the ladder; -1 for anything unrecognised."""
+    return LADDER.index(level) if level in LADDER else -1
 
 
 def main(argv):
@@ -107,13 +135,26 @@ def main(argv):
     # setup step. Rebuild rather than refuse - but rebuild EXPLICITLY, because
     # the one thing this must never do is print a routing result computed over
     # an empty library.
+    # STALE counts as empty here, and that distinction cost a real run. A store
+    # that simply has not seen the fragments added since it was last built
+    # reports every one of them as rank #None - not "ranked badly", ABSENT - and
+    # that reads as a routing catastrophe when nothing is wrong at all. It is
+    # the same failure the empty case guards against, one step milder, and the
+    # comment above already states the principle: never print a routing result
+    # computed over a library this store does not actually hold.
+    on_disk = len([
+        name for name in os.listdir(FRAGMENTS)
+        if os.path.exists(os.path.join(FRAGMENTS, name, "fragment.yaml"))
+    ])
     store = SCOPE.open_scope(SCOPE.GLOBAL)
-    if store.count() == 0:
+    if store.count() != on_disk:
+        was = store.count()
         store.close()
         built, problems = SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
-        print("  (store was empty - rebuilt %d fragment(s)%s)"
-              % (built, "; %d problem(s)" % len(problems) if problems else ""))
+        print("  (store held %d of %d fragment(s) on disk - rebuilt %d%s)"
+              % (was, on_disk, built,
+                 "; %d problem(s)" % len(problems) if problems else ""))
         if store.count() == 0:
             store.close()
             print("  the store is STILL empty after a rebuild - nothing to route")
@@ -124,7 +165,7 @@ def main(argv):
         SEARCH.index(store)
         EMBED.index(store)
 
-        rows = utterances()
+        rows, risk = utterances()
         if not rows:
             print("  no fragment declares an utterance - nothing to check")
             return 0
@@ -164,6 +205,13 @@ def main(argv):
         print("  by nearness  #1  %3d of %d  (%.0f%%)      top 3  %3d  (%.0f%%)"
               % (near_first, total, 100.0 * near_first / total,
                  near_top3, 100.0 * near_top3 / total))
+
+        # A contest where the winner sits HIGHER on the risk ladder than the
+        # fragment that claimed the sentence. The loser being READ is the case
+        # that matters: a question routed into something that writes.
+        crossing = [row for row in taken
+                    if rung(risk.get(row[3], "?")) > rung(risk.get(row[1], "?"))
+                    and rung(risk.get(row[1], "?")) >= 0]
 
         if not taken:
             print()

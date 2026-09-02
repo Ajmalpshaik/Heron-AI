@@ -76,7 +76,7 @@ Full proposal: **[24 — The Unified Trust Model](24-trust-model.md)**. Needs co
 
 §46 requests `HERON_CONSTITUTION.md` — rules agents must never violate, injected into every agent.
 
-**[Written: [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) — 30 Articles, pending confirmation ([Q-35](OPEN-QUESTIONS.md)).]**
+**[Written and ACCEPTED 2026-08-28: [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) — all 30 Articles, after Ajmal asked for every one to be read out rather than tapping yes ([Q-35](OPEN-QUESTIONS.md), closed).]**
 
 It is reconciled with the Golden Rules rather than duplicating them. The distinction is real and worth
 keeping: **Golden Rules are design principles for people; the Constitution is the runtime-enforceable

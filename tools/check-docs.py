@@ -27,19 +27,72 @@ out("=== FILES ===\n")
 out("markdown files: %d\n\n" % len(md))
 
 # ---------- 1. link integrity ----------
+#
+# A LINK TO A FILE THAT EXISTS CAN STILL BE DEAD, and this check used to say
+# nothing about it. `[the recipe](#9a-continuing-...)` points at a HEADING, not
+# a file, and the file-existence test above skipped every one of those - so two
+# in-file links written on 2026-08-31 were dead on arrival while this printed
+# "BROKEN LOCAL LINKS: 0". They were found by a hand-written probe minutes
+# later, which is precisely the reading this checker exists to make unnecessary.
+#
+# The anchor is derived the way GitHub derives it, and ONE DETAIL DECIDES
+# EVERYTHING: each space becomes a hyphen and RUNS ARE NOT COLLAPSED. So a
+# heading containing " - " loses the dash and keeps both spaces, giving TWO
+# hyphens in the anchor.
+#
+# That detail was got wrong first, with `\s+` collapsing the run, and the check
+# then reported 125 broken links across a repository whose links were fine. The
+# number is what gave it away: a checker that suddenly condemns most of the
+# corpus is a broken checker, not a broken corpus - which is the rule
+# HANDOVER.md 4a states, arriving here the same day it was written.
 link = re.compile(r'\[([^\]]*)\]\(([^)]+)\)')
+heading = re.compile(r'^#{1,6} (.+)$', re.M)
+
+
+def anchor_of(text):
+    """The GitHub anchor for a heading.
+
+    Each space becomes one hyphen. Runs are NOT collapsed - that is what makes
+    " - " produce two hyphens, and getting it wrong condemns every link in the
+    repository that points at a heading with a dash in it.
+    """
+    slug = re.sub(r'[^\w\s-]', '', text.lower())
+    return slug.strip().replace(' ', '-')
+
+
+def anchors_in(path):
+    try:
+        body = io.open(path, encoding='utf-8').read()
+    except (IOError, OSError):
+        return set()
+    return set(anchor_of(h) for h in heading.findall(body))
+
+
 bad = []
+_anchor_cache = {}
 for p in md:
     s = io.open(p, encoding='utf-8').read()
     base = os.path.dirname(p)
     for text, href in link.findall(s):
-        if href.startswith(('http://', 'https://', '#', 'mailto:')):
+        if href.startswith(('http://', 'https://', 'mailto:')):
             continue
-        tgt = href.split('#')[0]
+
+        tgt, _, fragment = href.partition('#')
+
         if not tgt:
+            # An in-file link: the heading has to exist in THIS file.
+            target_file = p
+        else:
+            target_file = os.path.normpath(os.path.join(base, tgt)).replace(os.sep, '/')
+            if not os.path.exists(target_file):
+                bad.append((p, href, text[:35]))
+                continue
+
+        if not fragment:
             continue
-        full = os.path.normpath(os.path.join(base, tgt)).replace(os.sep, '/')
-        if not os.path.exists(full):
+        if target_file not in _anchor_cache:
+            _anchor_cache[target_file] = anchors_in(target_file)
+        if _anchor_cache[target_file] and fragment not in _anchor_cache[target_file]:
             bad.append((p, href, text[:35]))
 
 out("=== 1. BROKEN LOCAL LINKS: %d ===\n" % len(bad))
@@ -80,7 +133,11 @@ out("  defined: %s\n" % sorted(q_def))
 out("  REFERENCED BUT NOT DEFINED: %s\n\n" % sorted(q_ref - q_def))
 
 # ---------- 5. count claims ----------
-out("=== 5. COUNT CLAIMS (verify by hand) ===\n")
+out("=== 5. COUNT CLAIMS - context for the eye. Section 7 is what ENFORCES ===\n")
+# The heading used to read "verify by hand", and section 7 exists because
+# nobody ever did. What prints here is now context around checks that
+# actually fail: question counts and the Constitution's status are
+# enforced below, so a line here is a prompt to read, not a duty to audit.
 for p in ['./README.md', './docs/README.md']:
     s = allsrc.get(p, '')
     for m in re.finditer(r'[^\n]*(?:answered|proposed|Articles|official rules)[^\n]*', s):
@@ -151,5 +208,88 @@ else:
         failed = True
     else:
         out("  agrees with the stated Progress line\n")
+
+# ---------- 7. the same claim, everywhere it is made ----------
+#
+# Section 6 derives the truth and enforces it against ONE sentence in ONE file.
+# That is where "14 answered - 26 open" was caught and corrected on 2026-08-28.
+# The identical sentence sat in README.md for two more days, printed by section
+# 5 on every run under "verify by hand". Nobody verified it by hand - which is
+# the whole finding, because section 5's own comment had already predicted it
+# about a different file and the prediction was not acted on.
+#
+# A claim is not safer for being made somewhere else. So the truth section 6
+# derives is now enforced against EVERY markdown file in the repository, and
+# this section can fail.
+#
+# Two false positives, both found by running it rather than by reasoning:
+#
+#   * "Q-24 answered" is a question id, not a count of twenty-four. Hence the
+#     lookbehind; and \b stops the pattern re-entering the number at its
+#     second digit and reading "4 answered".
+#   * "N open" alone is not a question claim - "Revit 2023 and Revit 2025 open
+#     at the same time" is two release numbers. So the open count is only ever
+#     read from a line that already carries an "answered" claim, which is the
+#     shape a progress sentence actually has.
+#
+# And one deliberate exemption. A superseded figure QUOTED AS HISTORY is
+# correct writing, not drift: OPEN-QUESTIONS.md records what its line used to
+# say, and DECISIONS.md records what the Constitution's status used to be.
+# Lines carrying a history marker are skipped - which makes the marker
+# load-bearing. Write "it said 14 answered" and this stays quiet; write
+# "14 answered" and it fails. That is the intended bargain, and it is cheaper
+# than the alternative, which is a checker nobody can leave green.
+HISTORY = re.compile(r'(used to|it said|until 20\d\d|no longer|superseded'
+                     r'|was wrong|had stood|had been|stopped saying)', re.I)
+
+out("\n=== 7. THE SAME CLAIM, EVERYWHERE IT IS MADE ===\n")
+drift = []
+if answered is None:
+    out("  OPEN-QUESTIONS.md not found - nothing to enforce against\n")
+else:
+    n_open = len(open_ids)
+    n_total = len(q_def)
+    for p in md:
+        for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
+            if HISTORY.search(line):
+                continue
+
+            for m in re.finditer(r'(?<!Q-)\b(\d+)\s+of\s+(\d+)\s+questions?\s+answered', line):
+                if int(m.group(1)) != answered or int(m.group(2)) != n_total:
+                    drift.append((p, i, '%s of %s questions answered' % m.group(1, 2),
+                                  '%d of %d' % (answered, n_total)))
+
+            if not re.search(r'(?<!Q-)\b\d+\s+answered', line):
+                continue
+            for m in re.finditer(r'(?<!Q-)\b(\d+)\s+answered', line):
+                if int(m.group(1)) != answered:
+                    drift.append((p, i, '%s answered' % m.group(1), '%d answered' % answered))
+            for m in re.finditer(r'(?<!Q-)\b(\d+)\s+open\b', line):
+                if int(m.group(1)) != n_open:
+                    drift.append((p, i, '%s open' % m.group(1), '%d open' % n_open))
+
+    # The Constitution's own status line is the only thing entitled to say what
+    # it is. Anything else describing it as unconfirmed is repeating a claim
+    # that the document itself has already moved past.
+    con = allsrc.get('./HERON_CONSTITUTION.md', '')
+    if re.search(r'Status:\s*\*\*ACCEPTED', con):
+        pend = re.compile(r'pending (?:confirmation|acceptance)|not yet accepted'
+                          r'|awaiting confirmation', re.I)
+        for p in md:
+            for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
+                if HISTORY.search(line) or not pend.search(line):
+                    continue
+                if 'onstitution' in line or 'HERON_CONSTITUTION' in line:
+                    drift.append((p, i, 'the Constitution is pending confirmation',
+                                  'ACCEPTED - the Constitution says so itself'))
+
+    if drift:
+        for p, i, said, real in drift:
+            out("  DRIFT: %s:%d says '%s'; the source says %s\n" % (p, i, said, real))
+        out("  A stated count is a claim; a derived count is a fact. Fix the claim.\n")
+        failed = True
+    else:
+        out("  %d markdown file(s): every question count and every Constitution\n" % len(md))
+        out("  status claim agrees with the document that owns it\n")
 
 sys.exit(1 if failed else 0)

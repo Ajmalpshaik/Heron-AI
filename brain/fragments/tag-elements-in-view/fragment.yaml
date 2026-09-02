@@ -1,0 +1,129 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-030
+semantic-identity: "tag a mixed set of elements in one view, each with the right tag family, without double-tagging"
+kind: action
+domain: revit.views
+capability: TAG_ELEMENTS_IN_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Tags a MIXED set of elements in one view - ducts get a duct tag, pipes a pipe
+  tag, terminals a terminal tag - and reports what it tagged, what was already
+  tagged, and what it could not tag.
+
+  THREE THINGS IT KNOWS THAT THE API WILL NOT TELL YOU, all of them the reason
+  this is a fragment rather than three lines:
+
+  **1. The category-to-tag-category map is a fixed fact, not a lookup.** Nothing
+  in the API derives "a duct is tagged by a duct tag". `ElementTypeGroup` has no
+  per-MEP-category tag entries at all, so the map is carried here.
+
+  **2. The tag family must come from the project's own default, never from the
+  first one loaded.** `GetDefaultFamilyTypeId` on the tag category returns what
+  Revit's own "Tag by Category" would use - the family this project
+  standardised on. Taking the first loaded symbol instead silently produces the
+  wrong tag family on every element, and the drawing looks tagged. The order
+  here is: the caller's hint, then the project default, then first loaded - and
+  the answer SAYS which of the three it used, so a guess is never invisible.
+
+  **3. `IndependentTag.Create` DOES NOT RELIABLY HONOUR THE TYPE PASSED TO IT,
+  and it throws nothing.** Measured where this was re-authored from: 38 tags
+  created with an explicit type id all came out as the document's default type
+  instead. So every tag's type is read back after creation and corrected, and
+  the number of corrections is REPORTED rather than quietly fixed - a silent
+  correction hides an API that is not doing what it was told.
+
+  IT NEVER DOUBLE-TAGS. Existing tags in the view are read first and their
+  targets recorded, so running twice is safe and the second run says "already
+  tagged" instead of stacking a second tag - the failure that makes a drawing
+  look right on screen and print wrong.
+
+  NO DRY-RUN INPUT, DELIBERATELY. Previewing a write is the HOST's job through
+  the Step 6 preview and approval path. A second preview inside the fragment
+  would be a second mechanism that can disagree with the first about what is
+  going to happen, and the one the user approved must be the one that runs.
+
+  TAGS ARE VIEW-SPECIFIC. An element tagged in the ceiling plan is untagged in
+  the section, and that is correct Revit behaviour rather than a miss.
+
+  WHICH VIEW COMES FROM THE REQUEST, NOT FROM A FRAGMENT. The user says "tag
+  everything in THIS view", and turning that into a `View` is the host's job -
+  the same shape as `category` on a filter or the template name on
+  APPLY_VIEW_TEMPLATE. Declaring it fragment-sourced instead made the dependency
+  graph report this action as one nothing could feed, because the graph requires
+  a SINGLE producer to satisfy every fragment-sourced need and no filter
+  provides both `elements` and a `view`. That report was right about the
+  contract and is fixed here by naming the source correctly, not by working
+  around the graph.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
+  tagging a whole view is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: view
+      type: View
+      source: request
+    - name: tagTypeHintId
+      type: ElementId
+      source: request
+  provides:
+    - name: tagged
+      type: int
+    - name: alreadyTagged
+      type: int
+    - name: typeCorrections
+      type: int
+    - name: notTagged
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `IndependentTag.Create`,
+  `IndependentTag.GetTaggedLocalElementIds`, `Element.ChangeTypeId`,
+  `Document.GetDefaultFamilyTypeId` and `Category.GetCategory` are unchanged
+  2020 to 2027, and no units call is made.
+
+  **TWO REAL VERSION BREAKS, BOTH FOUND BY THE COMPILE GATE AND NEITHER BY
+  READING.** This note said something confidently wrong before it was run, which
+  is exactly why the gate reads every release a fragment claims:
+
+  **1. Reading what a tag points at splits at 2022, with no single expression.**
+  `GetTaggedLocalElementIds` was added when one tag became able to carry several
+  hosts, and DOES NOT EXIST on 2020 or 2021; the singular `TaggedLocalElementId`
+  it replaced is deprecated after. This note previously claimed the plural
+  "works on every release in this range" - it does not, and the compiler said so
+  on 2020 and 2021. The split is written out with `#if`, and it is the only
+  place in this fragment where the release matters.
+
+  **2. `ElementId.IntegerValue` is GONE by 2026** - the 2024 change finishing
+  rather than a new one. So categories are matched by comparing `ElementId`
+  values against `new ElementId(BuiltInCategory)` instead of unwrapping one to
+  an integer, which needs no version branch at all.
+
+  The `#if` needs the same compilation symbols the add-in is built with, and the
+  fragment harness did not define any until this fragment needed one - see
+  `tools/check-fragments-compile.py`, which now mirrors
+  `Directory.Build.props`.
+
+utterances:
+  - tag these elements
+  - tag everything in this view
+  - put tags on the ducts and pipes
+  - add tags to these
+  - tag by category
+  - i need these tagged in this view

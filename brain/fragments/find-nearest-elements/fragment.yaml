@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-015
+semantic-identity: "which one of those is closest to each of these"
+kind: action
+domain: revit.geometry
+capability: FIND_NEAREST_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  For each element, the nearest one from a second set. "Which FCU serves this
+  terminal", "which exit is closest to this room", "what is the nearest light to
+  each switch".
+
+  **THREE WAYS TO MEASURE DISTANCE, AND THE CHOICE CHANGES THE ANSWER**, so it
+  is a request input rather than a default:
+
+  | `metric` | What it measures | When it is right |
+  |---|---|---|
+  | `centre` | straight line between centres | point-like equipment; **misleading for long elements** - a 30 m wall's centre can be far away while the wall runs right past you |
+  | `gap` | closest approach between the two boxes, 0 if they overlap | real clearance, and the honest answer to "how close is that to this" |
+  | `manhattan` | the three axis distances added | cable, conduit and duct do not fly diagonally through a building - for "how much cable will this take" this is far closer to reality than a straight line |
+
+  Picking one silently would answer a different question from the one asked, and
+  all three are defensible.
+
+  **IT MEASURES PROXIMITY, NOT DIRECTION OR CONNECTION.** The nearest FCU to a
+  terminal is not necessarily the one serving it, and the nearest exit may be
+  through a wall. This narrows a search; it does not establish a relationship,
+  and `TRACE_CONNECTIVITY` is what answers what is actually joined to what.
+
+  **THE GAP FIGURE IS OPTIMISTIC ON A ROTATED ELEMENT AND MUST NOT BE QUOTED AS
+  A CLEARANCE.** Bounding boxes are axis-aligned, so a rotated element's box is
+  bigger than the element and two of them appear closer than they are. That is
+  fine for ranking - the ordering is what this is for - and wrong for a
+  certified figure.
+
+  **IT NEEDS TWO SETS OF ELEMENTS AND ONLY ONE OF THEM CAN BE CALLED
+  `elements`.** The things to measure FROM and the things to measure TO are both
+  what a filter provides, so `targets` declares `binds: elements` - fill me from
+  a provide called `elements`. The host runs the filter twice, once per role.
+  Naming it `targets` rather than reusing `elements` is the point: which set is
+  which decides the whole answer, and a contract that could not say so would
+  make the two interchangeable on paper while they are not.
+
+  **A TIE IS RETURNED AS A TIE.** Two candidates at the same distance is a real
+  situation, and picking one on id order would make the answer depend on the
+  order Revit happens to hand them back.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: targets
+      type: IList<Element>
+      binds: elements
+    - name: metric
+      type: string
+      source: request
+  provides:
+    - name: nearest
+      type: IDictionary<ElementId, ElementId>
+    - name: distances
+      type: IDictionary<ElementId, double>
+    - name: tied
+      type: IList<ElementId>
+    - name: unmeasurable
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `get_BoundingBox(null)` and `XYZ` are
+  unchanged 2020 to 2027, and distances are handed on in Revit's internal feet
+  without touching a units API - D-20 keeps the millimetre conversion at the
+  edge. Nothing reads an ElementId as a number, so the 2024 64-bit change does
+  not reach it.
+
+utterances:
+  - which FCU is nearest to this terminal
+  - what is the closest one to each
+  - find the nearest exit
+  - which is the nearest light to each switch
+  - how close is the nearest one
+  - pair each of these with the closest

@@ -1,0 +1,44 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: three elevations with three free names
+    expect: >
+      three levels, each at the elevation asked for and carrying the name asked
+      for. Check the Project Browser by eye - the names are what a person sees,
+      and they are what this fragment exists to report honestly
+
+  - given: an elevation on a model with a survey offset
+    expect: >
+      elevationOf matching what was asked for. It is read back as
+      ProjectElevation, which is the one every coordinate in the model uses
+
+negative:
+  - given: A NAME THAT ANOTHER LEVEL ALREADY HAS
+    expect: >
+      the level IS created, its id in `nameRefused`, and namedAs carrying the
+      name Revit actually gave it. This is the case a count cannot show: the
+      number comes back right and the Project Browser shows "Level 7" where
+      "Level 3" was asked for
+
+  - given: an elevation where a level ALREADY EXISTS
+    expect: >
+      that elevation in `alreadyThere` and NO second level created. Two levels
+      at one height is legal and almost never wanted - it makes every view range
+      and every "which level is this on" ambiguous
+
+  - given: THE SAME JOB RUN TWICE
+    expect: >
+      the second run creates nothing and reports every elevation as already
+      there. Without the guard a re-run silently doubles the storeys, and that
+      is the commonest way this job goes wrong
+
+  - given: fewer names than elevations
+    expect: >
+      the extra levels created with Revit's own default name, reported in
+      namedAs. Not a failure - it is what Revit does, and the report says what
+      they ended up called
+
+second_route:
+  - >
+    open an elevation or section view in Revit and look at the level heads -
+    the names and heights there are the answer, not the fragment's count

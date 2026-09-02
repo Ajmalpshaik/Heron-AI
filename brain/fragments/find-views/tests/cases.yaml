@@ -1,0 +1,47 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a model with floor plans, sections and 3D views, viewType "" and nameContains ""
+    expect: >
+      elements holds every real drawing view and NOT one template, schedule or
+      sheet. Check by comparing against the Project Browser count by eye - the
+      number should match the drawings a person can see, not exceed it
+
+  - given: viewType "FloorPlan"
+    expect: only floor plans returned, and every one of them
+
+  - given: nameContains "level"
+    expect: >
+      every view whose name contains level in any casing. Confirm the casing
+      really is ignored by asking for "LEVEL" and getting the same count
+
+negative:
+  - given: >
+      a model containing a VIEW TEMPLATE named exactly like a real view, asked
+      for by that name
+    expect: >
+      the template is NOT in elements, and matchedButExcluded is at least 1.
+      This is the case the fragment exists for: a plain collector returns the
+      template, and an action then applies a template to a template
+
+  - given: a name that matches NOTHING at all
+    expect: >
+      elements empty AND matchedButExcluded = 0. Together with the case above
+      this is the whole point - an empty result with a non-zero
+      matchedButExcluded means "found it and refused it", and an empty result
+      with zero means "there is no such view". A bare count cannot say which
+
+  - given: viewType set to a string that is not a Revit view type at all
+    expect: >
+      elements empty rather than an exception, and the caller can tell it asked
+      for something that does not exist because skipped counts are unchanged
+
+  - given: a model where the only views are schedules and sheets
+    expect: >
+      elements empty, skippedNonDrawing equal to their number. A zero here must
+      never read as "this model has no views"
+
+second_route:
+  - count the drawing views in the Project Browser by eye and compare
+  - make a view template, name it after a real view, and confirm which one comes back
+  - open one returned view - it must open as a drawing, never as a schedule or a sheet

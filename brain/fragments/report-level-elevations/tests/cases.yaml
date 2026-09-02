@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a model whose levels are all on a Project elevation base
+    expect: >
+      affected false, worstDifference 0, and every level's two heights equal.
+      Compare one level's Elevation against Revit's own Properties palette by
+      eye - if the fragment and the palette disagree, the fragment is reading
+      the wrong property, which is the whole thing it exists to get right
+
+  - given: >
+      a real site model whose levels are on a SHARED base with a survey offset
+    expect: >
+      affected true, and worstDifference equal to that offset. Subtract two
+      levels' Elevation from their ProjectElevation in Revit by hand and check
+      the number matches - this is the figure that says how wrong every height
+      answer on this model would be
+
+  - given: a model with two level types on DIFFERENT elevation bases
+    expect: >
+      typesDisagree true. This is the case that survives a spot check: half the
+      levels read correctly and half do not, so checking one proves nothing
+
+negative:
+  - given: >
+      a model where the two heights AGREE but the survey point sits above the
+      project origin
+    expect: >
+      affected FALSE and atRisk TRUE - not folded into "not affected". The
+      model is one relocate or one level-type setting away from every height
+      answer being wrong by that offset, with no other warning anywhere
+
+  - given: a model that has been localised to a non-English Revit
+    expect: >
+      the verdict is unchanged. Nothing may branch on the Elevation Base text -
+      it is localised and the API publishes no enum for its values, so a verdict
+      that reads the words is a verdict that is wrong in another language
+
+  - given: an empty model with no levels
+    expect: >
+      levels empty, affected false, and no throw. "Nothing to check" must not
+      come back as "checked and fine" through an exception being swallowed
+
+second_route:
+  - >
+    place a spot elevation on a floor in Revit and compare it against the level
+    height this reports - they agree only when the model is not affected
+  - open Manage > Project Location and read the survey point's Z by eye

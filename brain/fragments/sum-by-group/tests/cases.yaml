@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      12 ducts across three sizes, each with a length, grouped by the size
+      string
+    expect: >
+      three groups, counts adding to 12, and each total matching the sum of
+      those lengths taken from a Revit schedule of the same elements. Check
+      against the schedule, not against this fragment run twice
+
+  - given: the same set grouped by System Name instead of size
+    expect: >
+      the same grand total across different groups. If the grand total moves
+      when only the grouping changed, elements are being dropped or
+      double-counted by the grouping itself
+
+negative:
+  - given: >
+      a set where three elements have a group key but NO quantity - a cable
+      tray has no surface area parameter at all
+    expect: >
+      those three counted in `counts` AND in `missing`, contributing 0 to the
+      total, and `incomplete` true. THE THREE WRONG ANSWERS ARE ALL AVAILABLE
+      HERE: adding zero silently makes a partial total look complete, dropping
+      them makes the count disagree with a count of the same set, and both look
+      right on the page
+
+  - given: a set where EVERY element has a quantity
+    expect: >
+      incomplete FALSE and every entry in `missing` zero. If incomplete is true
+      whenever the dictionary merely exists, it stops meaning anything and gets
+      ignored, which is worse than not reporting it
+
+  - given: an element in `quantities` that is NOT in `values`
+    expect: >
+      it is NOT added to any group. The grouping decides the population; a
+      quantity with no group would land somewhere arbitrary and inflate one
+      total by an amount nobody can trace
+
+  - given: elements whose group key is the empty string
+    expect: >
+      they form their own group and are totalled, not discarded. An unfilled
+      parameter is a real finding about the model and its quantity is real too
+
+second_route:
+  - >
+    build the same schedule in Revit with grouping and a total, and compare the
+    figures line by line - Revit is the second route here, not another script

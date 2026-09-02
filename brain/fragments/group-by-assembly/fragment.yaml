@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-026
+semantic-identity: "how many actual units, not how many family instances"
+kind: action
+domain: revit.elements
+capability: GROUP_BY_ASSEMBLY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Rolls elements up to the whole piece of kit they belong to, and says how far a
+  plain count was from the number of real units.
+
+  **A COUNT OF NESTED EQUIPMENT IS NOT A COUNT OF EQUIPMENT.** An air handling
+  unit with a nested fan, coil and filter is FOUR family instances in one
+  category. Every schedule that counts instances returns four. There is one unit
+  on site. The same happens to any assembled kit - a pump set, a packaged unit,
+  a valve set, a light fitting with a nested emergency module - and the answer
+  is wrong in the direction that looks plausible, which is the direction nobody
+  checks.
+
+  **THE LIBRARY COULD ALREADY WALK DOWN AND NOT UP.** Reaching an assembly's
+  parts is easy and several jobs do it. Asking a part which unit it belongs to
+  is the other direction, and without it nothing can say which of four instances
+  is the real one.
+
+  **INSULATION AND LINING ARE THE SAME PROBLEM IN DIFFERENT CLOTHES.** Duct
+  insulation, duct lining and pipe insulation are separate ELEMENTS belonging to
+  a host, and they inflate a count in exactly the same way. Their host is their
+  parent, so the walk follows that relationship too - otherwise a count of
+  insulated ductwork is double the ductwork.
+
+  **THE WALK IS GUARDED AGAINST A CYCLE.** Nothing should ever be its own
+  ancestor. A corrupt or half-copied family has produced one, and an unguarded
+  climb hangs Revit rather than failing - which is worse than a wrong number,
+  because it costs the session. Every id visited is remembered, and an element
+  that repeats is reported in `cyclic` rather than silently attached to the
+  wrong root.
+
+  **IT REPORTS BOTH NUMBERS ON PURPOSE.** `roots` is the honest count and
+  `elements.Count` is what a schedule says. Returning only the corrected figure
+  would leave nobody able to see why the schedule disagrees, and the schedule is
+  what gets issued.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: roots
+      type: IList<ElementId>
+    - name: partsOf
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: rootOf
+      type: IDictionary<ElementId, ElementId>
+    - name: cyclic
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FamilyInstance.SuperComponent` and
+  `InsulationLiningBase.HostElementId` are unchanged 2020 to 2027, and no units
+  call is made. `SuperComponent` returns an `Element` rather than an id, so the
+  climb compares elements by their `Id` as an ElementId and never as a number -
+  which is what keeps it clear of the 2024 64-bit change.
+
+utterances:
+  - how many air handling units are there
+  - how many actual units not instances
+  - the schedule count is too high
+  - count the whole pieces of kit
+  - roll the nested families up
+  - why does it count four when there is one

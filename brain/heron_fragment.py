@@ -144,6 +144,41 @@ def need_source(entry):
         return "ambient"
     return "fragment"
 
+
+def need_binds(entry):
+    """The PROVIDED name that fills this need, which is not always its own.
+
+    WHY A NEED MAY BE CALLED SOMETHING ELSE
+    ---------------------------------------
+    Most needs are filled by a provide of the same name: an action needs
+    `elements` and a filter provides `elements`. Two fragments have now wanted
+    something that model could not say, and both were real jobs rather than
+    designed examples:
+
+      FIND_NEAREST_ELEMENTS  needs TWO sets of elements - the things to measure
+                             FROM and the things to measure TO. Both are
+                             `elements`, and only one of them can be called
+                             that.
+      SUM_BY_GROUP           needs a `quantities` number that a measuring
+                             fragment publishes under its own name.
+
+    The second was solved inside the fragment - which measure to total is
+    genuinely the user's choice, so the producer publishes the chosen one under
+    a generic name. That answer does not work here. Nothing about "which set is
+    the source" is a measurement or a user preference: it is a BINDING the host
+    makes when it runs the same filter twice for two roles, and D-48 named that
+    as the case still unsolved.
+
+    So a need may declare `binds: elements`, meaning "fill me from a provide
+    called elements". Composition then reads the bound name, and the fragment
+    keeps a name that says what the set is FOR - which is the whole reason it
+    is not called `elements` in the first place.
+
+    THE TYPE STILL HAS TO MATCH. `binds` renames, it does not convert, and a
+    need bound to a provide of a different type is refused exactly as before.
+    """
+    return entry.get("binds") or entry.get("name")
+
 # ---------------------------------------------------------------------------
 # Naming
 # ---------------------------------------------------------------------------
@@ -494,6 +529,25 @@ def _check_contract_side(side, entries, problems, where):
                 "%s: contract.%s[%d] source %r is not one of %s"
                 % (where, side, i, entry["source"], ", ".join(SOURCES)))
 
+        # `binds` names the PROVIDED name that fills a need - see need_binds.
+        # It is meaningless on the provides side: a provide IS the name.
+        if entry.get("binds"):
+            if side != "needs":
+                problems.append(
+                    "%s: contract.%s[%d] has `binds`, which only means something "
+                    "on a NEED - a provide is the name other fragments bind to"
+                    % (where, side, i))
+            elif need_source(entry) != "fragment":
+                problems.append(
+                    "%s: contract.%s[%d] has `binds` but its source is %r. Only "
+                    "a need filled BY ANOTHER FRAGMENT can bind to a provided "
+                    "name; an ambient or request input has nothing to bind to"
+                    % (where, side, i, need_source(entry)))
+            elif not IDENTIFIER_PATTERN.match(str(entry["binds"])):
+                problems.append(
+                    "%s: contract.%s[%d] binds to %r, which cannot be a C# "
+                    "variable" % (where, side, i, entry["binds"]))
+
         # A CONTRACT NAME BECOMES A C# VARIABLE, so it has to be able to be one.
         #
         # Found on 2026-08-29 by compiling the fragments for the first time:
@@ -725,14 +779,74 @@ def composable(producer, consumer):
 
     supply = dict((p.get("name"), p.get("type")) for p in producer.provides())
     for need in wanted:
+        # The name looked for is the BOUND one, which is not always the need's
+        # own - see need_binds. The message still says both, because "needs
+        # targets and nothing provides it" sends somebody looking for the wrong
+        # word.
         name, want = need.get("name"), need.get("type")
-        if name not in supply:
+        looked_for = need_binds(need)
+        shown = name if looked_for == name else "%s (bound to %r)" % (name, looked_for)
+        if looked_for not in supply:
             return False, ("%s needs %r and %s does not provide it"
-                           % (consumer.slug, name, producer.slug))
-        if supply[name] != want:
+                           % (consumer.slug, shown, producer.slug))
+        if supply[looked_for] != want:
             return False, ("%s needs %r as %s but %s provides %s"
-                           % (consumer.slug, name, want, producer.slug, supply[name]))
+                           % (consumer.slug, shown, want, producer.slug,
+                              supply[looked_for]))
     return True, "%s -> %s composes" % (producer.slug, consumer.slug)
+
+
+def feeders(consumer, fragments):
+    """Which fragment could supply each thing `consumer` needs.
+
+    Returns (by_need, unmet). `by_need` maps each fragment-sourced need to the
+    ids that provide it at the right type; `unmet` names the ones NOTHING in the
+    library provides.
+
+    WHY THIS EXISTS ALONGSIDE composable().
+    ---------------------------------------
+    `composable(producer, consumer)` asks whether ONE fragment can supply
+    EVERYTHING the consumer needs. That is the right question for "if I change
+    what this provides, what stops fitting?" and it stays exactly as it was.
+
+    It is the WRONG question for "can this fragment be fed at all", and the
+    difference only became visible when a consumer needed two different things.
+    `SUM_BY_GROUP` needs a group key and a quantity - the key from a parameter
+    read, the quantity from a measurement. Both providers exist. No single one
+    supplies both, so every pairwise test failed and the fragment was reported
+    as an orphan nothing could feed, which was false.
+
+    D-46 recorded that limitation and said to lift it when a real composition
+    needed it rather than on the strength of an invented one. A takeoff - how
+    many metres of each size - is that composition, and it is a question a
+    modeller asks rather than one designed to justify a change.
+
+    THE STRICTER HALF IS THE POINT. Splitting the check per need makes the
+    failure MORE precise, not less: today's message lists everything the
+    fragment needs and leaves a reader to work out which part has no producer.
+    `unmet` names it.
+    """
+    wanted = [n for n in consumer.needs() if need_source(n) == "fragment"]
+    by_need = {}
+    unmet = []
+
+    for need in wanted:
+        name, want = need.get("name"), need.get("type")
+        looked_for = need_binds(need)
+        supplying = []
+        for other_id, other in fragments.items():
+            if other is consumer:
+                continue
+            for provided in other.provides():
+                if provided.get("name") == looked_for and provided.get("type") == want:
+                    supplying.append(other_id)
+                    break
+        by_need[name] = sorted(supplying)
+        if not supplying:
+            unmet.append(name if looked_for == name
+                         else "%s (bound to %r)" % (name, looked_for))
+
+    return by_need, unmet
 
 
 # ---------------------------------------------------------------------------

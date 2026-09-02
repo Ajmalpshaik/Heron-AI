@@ -1,0 +1,78 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a plain rectangular room square to project north, 8000 x 4000 mm
+    expect: >
+      length 8000 and width 4000 within a millimetre, rotation about 0,
+      irregular near 0. Check against a dimension placed by hand in Revit, not
+      against the room's area
+
+  - given: THE SAME ROOM ROTATED 30 DEGREES
+    expect: >
+      STILL 8000 x 4000, rotation about 30, irregular still near 0. This is the
+      case the fragment exists for. A bounding-box answer gives roughly
+      8900 x 7500 here and calls the room irregular when it is a clean
+      rectangle that simply is not square to north
+
+  - given: a room containing a structural column, so its boundary has a hole
+    expect: >
+      the room's own outside dimensions, not the column's. If the numbers come
+      back at column size, the outer loop was picked by index instead of by area
+
+  - given: rooms in a project WITH volume computation switched on
+    expect: >
+      a real non-zero volume each, and volumeComputationOff false. Check one
+      against Revit's own Volume in the Properties palette
+
+negative:
+  - given: >
+      rooms in a project with *Area and Volume Computations* set to areas only,
+      so EVERY room reports zero volume
+    expect: >
+      volumeComputationOff TRUE. A column of zeros is otherwise a plausible
+      number that says nothing about why - and it is the same zero an unbounded
+      room gives, so without this flag the two are indistinguishable
+
+  - given: >
+      one badly-bounded room reporting zero volume in a project where the
+      others compute fine
+    expect: >
+      volumeComputationOff FALSE. That is a problem with that room, and
+      reporting it as a project setting sends somebody to change a setting that
+      is already correct
+
+  - given: SPACES rather than Rooms, in a project with room volumes switched off
+    expect: >
+      real volumes, and volumeComputationOff false. Spaces compute volume
+      regardless of that setting, so a model can show good Space volumes and
+      zero Room volumes at the same time
+
+  - given: an L-shaped room
+    expect: >
+      irregular clearly above zero - a length x width is returned but the number
+      beside it says the rectangle is a lie. A fragment that reported the same
+      confidence for an L as for a rectangle would be worse than one that
+      refused, because the number looks usable
+
+  - given: an UNPLACED room, scheduled but not placed, so Revit reports area 0
+    expect: >
+      its id in `unplaced` and NOT in lengths - and no throw. It must not come
+      back as a room measuring zero by zero, which reads as a real measurement
+      of a very small room
+
+  - given: an element in `elements` that is not a Room or Space at all
+    expect: >
+      its id in `unmeasurable`, everything else still measured. One wrong
+      element in the set must not lose the rest of the answer
+
+  - given: a room whose longer side runs NORTH-SOUTH rather than east-west
+    expect: >
+      length is still the longer number. If length and width swap when the room
+      turns past 45 degrees, the columns are swapping silently and half a table
+      is unreadable
+
+second_route:
+  - place a dimension across the room by hand in Revit and compare
+  - >
+    for the rotated case, compare against the room's own bounding box too - the
+    gap between the two is the error this fragment removes

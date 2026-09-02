@@ -1,0 +1,52 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a room with one flat ceiling at 2700 mm
+    expect: >
+      mainHeight 2700 within a millimetre. Check against the ceiling's own
+      Height Offset From Level in the Properties palette plus the level - not
+      against a section, which measures to the finish
+
+  - given: >
+      a room with a MAIN GRID at 2700 and a 400 mm BULKHEAD over one corner
+    expect: >
+      the main grid as mainCeiling, and BOTH in ceilingsOver with their own
+      heights. Taking the first ceiling found is how a report quotes the
+      bulkhead as the room's ceiling height, and the whole point is that both
+      numbers survive
+
+negative:
+  - given: A ROOM WHOSE UPPER LIMIT IS LEFT AT ITS OWN LEVEL, the common case
+    expect: >
+      the ceiling still found. This is the trap that makes ceiling-height
+      scripts look broken: a room's SOLID stops at its upper limit, so a
+      solid-intersection method finds nothing and reports "no ceiling" for a
+      room that plainly has one. Nothing here uses the room solid
+
+  - given: a room directly above another room that has its own ceiling
+    expect: >
+      only this room's ceiling. The one below overlaps perfectly in plan, so a
+      plan-only test with no height check picks it and reports the wrong storey
+
+  - given: a room with genuinely NO ceiling - a double-height space, a shaft
+    expect: >
+      its id in `noCeiling` and no entry in mainHeight. "No ceiling" is a real
+      answer and must be distinguishable from a room the fragment failed on
+
+  - given: >
+      a ROTATED room whose ceiling is the same shape and rotation
+    expect: >
+      the right ceiling still chosen, AND the coverage figure read as
+      approximate. Bounding boxes are axis-aligned, so coverage over-reports
+      here - it is a ranking aid and not a certified area
+
+  - given: two ceilings covering nearly equal parts of one room
+    expect: >
+      `coverage` close for both. This is the case where ranking by plan area
+      could differ from ranking by intersected volume, and it must be visible
+      in the numbers rather than settled silently
+
+second_route:
+  - >
+    cut a section through the room in Revit and dimension floor to ceiling -
+    that is the number a person would quote

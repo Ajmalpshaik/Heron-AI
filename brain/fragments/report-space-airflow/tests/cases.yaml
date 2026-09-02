@@ -1,0 +1,42 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: spaces with design supply airflows entered
+    expect: >
+      a design figure each, matching Revit's own Specified Supply Airflow in the
+      Properties palette for one space checked by eye
+
+  - given: spaces served by air terminals with flows assigned
+    expect: >
+      an actual supply matching Revit's own Actual Supply Airflow. If the two
+      disagree, this is recomputing rather than reading, which produces a second
+      opinion that disagrees with the model's own schedule
+
+negative:
+  - given: A SPACE WITH NO DESIGN AIRFLOW AT ALL, and no terminals in it
+    expect: >
+      its id in `noDesignFigure`. Design zero and actual zero make the
+      difference zero, so a balance check PASSES - the report would declare the
+      rooms nobody has designed yet to be the ones with no problem. This is the
+      case the fragment exists for
+
+  - given: a RETURN-ONLY space with a design return but no design supply
+    expect: >
+      NOT in noDesignFigure. A zero supply is correct for it, and flagging it
+      puts a false alarm in the one list a coordinator is meant to act on
+
+  - given: an UNPLACED space, in the schedule but not in the model
+    expect: >
+      its id in `unplaced` and no flow entries. Hiding it makes the count
+      disagree with the schedule with nothing to explain why
+
+  - given: ROOMS rather than Spaces in the passed set
+    expect: >
+      skipped entirely, no throw, and no zero rows for them. A Room carries no
+      airflow, and rows of zeros for every room would bury the spaces that
+      matter
+
+second_route:
+  - >
+    build a Space schedule in Revit with Specified and Actual Supply Airflow
+    columns and compare line by line

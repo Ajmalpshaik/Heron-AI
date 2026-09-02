@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-031
+semantic-identity: "put one dimension string through these air terminals or equipment, along an axis"
+kind: action
+domain: revit.views
+capability: DIMENSION_FAMILY_INSTANCES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws ONE aligned dimension string through a set of family instances - air
+  terminals, fixtures, equipment - along a chosen axis, so the spacing reads on
+  the drawing.
+
+  **IT CANNOT DIMENSION A ROOM**, and "dimension the rooms" is a sentence that
+  reaches it:
+
+  | What you meant | What happens |
+  |---|---|
+  | "dimension the rooms", "put the room sizes on the plan" | **nothing here does that yet** - not this fragment |
+  | "how big is room 4", "what are the room sizes" - to know | `MEASURE_ROOM_DIMENSIONS`, read-only |
+
+  A room's boundary is not a family instance and offers none of the references
+  this works from. Dimensioning the nearest thing it CAN reach - the fixtures
+  inside the room - would put a real dimension string on a real drawing that
+  nobody asked for, which is worse than doing nothing. That fragment carries the
+  same table.
+
+  DIMENSIONING NEEDS A GEOMETRY REFERENCE, NOT A POINT, and which reference is
+  available depends entirely on what kind of thing is being dimensioned. That is
+  why this is not one fragment but two, and why the wrong one returns nothing
+  rather than a worse dimension:
+
+  | What you are dimensioning | Use |
+  |---|---|
+  | Air terminals, fixtures, equipment — any family instance | **this fragment** |
+  | Ducts, pipes, conduit, cable tray | `DIMENSION_MEP_RUNS` — it walks the geometry, which is the only route that works for a run |
+
+  **MEASURED, AND THE MEASUREMENT'S FIRST CONCLUSION WAS TOO BROAD.** A family
+  instance exposes built-in centre references, and stock content really does
+  carry them - a supply diffuser reports one CenterLeftRight and one
+  CenterFrontBack. Duct fittings and accessories report **all four zero**, and
+  the conclusion drawn from that was *"MEP cannot be dimensioned"*. It was
+  wrong: that is true of THIS ROUTE, not of MEP as a subject. Ducts and pipes
+  are dimensionable by walking their geometry, which is what the other fragment
+  does. So a zero here means *"use the other one"*, never *"it cannot be done"*.
+
+  ELEMENTS WITH NO USABLE REFERENCE ARE REPORTED BY ID, and if fewer than two
+  survive, NO dimension is created. A one-reference dimension is degenerate:
+  Revit may accept it and drop it at commit, which is a change that appears to
+  work and is not there afterwards.
+
+  THE READ-BACK MUST NOT USE `Dimension.Curve`. It throws *"The input curve is
+  not bound"* on a dimension that was just created - the obvious way to check
+  the result is the one way that cannot be used. `NumberOfSegments` and
+  `References` are read instead.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: view
+      type: View
+      source: request
+    - name: axis
+      type: string
+      source: request
+    - name: offsetMm
+      type: double
+      source: request
+  provides:
+    - name: dimensionId
+      type: ElementId
+    - name: dimensionedCount
+      type: int
+    - name: noReference
+      type: IList<ElementId>
+    - name: problem
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FamilyInstance.GetReferences`, the
+  `FamilyInstanceReferenceType` members used, `Document.Create.NewDimension` and
+  `ReferenceArray` are unchanged 2020 to 2027. Millimetres become Revit's
+  internal feet by dividing by 304.8 - plain arithmetic, exact on every release,
+  and deliberately NOT a units API call, which is what keeps this clear of the
+  2021 units move.
+
+utterances:
+  - dimension between the terminals
+  - put a dimension through these diffusers
+  - how far apart are these on the drawing
+  - add a dimension string to the equipment
+  - dimension the spacing of these
+  - show the spacing on the drawing

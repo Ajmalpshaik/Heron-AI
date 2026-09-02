@@ -1,8 +1,12 @@
 # Heron AI — Documentation Index
 
-> **Status:** Implementation has started. **Step 1 of 6** — the bridge — is built and proven in
-> real Revit 2024, and the owner has said it is **not closed yet**. Steps 2–6 have not begun: no
-> Revit API call exists anywhere in the repository. Pick up from [**../HANDOVER.md**](../HANDOVER.md).
+> **Status:** **Phase 0 is complete** — Steps 1 to 5, proven in real Revit 2020 and 2024. **Step 6 (the
+> first write) and the whole of Phase 2 (Steps 7 to 14) are built, compile on all eight releases, and
+> have never loaded into Revit.** Every fragment and every skill is `DRAFT`.
+>
+> **Do not trust this paragraph over the tool.** `python tools/check-gaps.py` is computed from disk on
+> every run and sorts everything into *unfinished* and *waiting*; this sentence is typed. Where they
+> disagree, the tool is right. Then pick up from [**../HANDOVER.md**](../HANDOVER.md).
 
 ## Decided so far
 
@@ -20,16 +24,16 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**17 of 40 questions answered — none of the remaining 23 block Phase 0 or Phase 1.**
+**All 41 questions are answered — 41 answered · 0 open — and nothing gates any phase.**
 
-**Phase 1, assessed 2026-08-28** (it had not been, and the line above had quietly stopped covering the
-work in progress). Three of the open questions touch Step 6, and one of them matters:
+**Phase 1, assessed 2026-08-28** (it had not been, and the count above had quietly stopped covering the
+work in progress). Three questions touched Step 6 at the time, and one of them mattered:
 
 | | |
 |---|---|
 | **Q-36** — lease or takeover | **Answered.** Built as `HeronLease` in Step 6 ([D-22](DECISIONS.md)) |
 | **Q-19** — accept Golden Rules 16–21? | **Answered 2026-08-28 — accepted.** They are the rules Step 6 was built to obey (16, 17, 20, 21), and they are now binding rather than proposed |
-| **Q-14** — how is testing against real Revit done? | **Answered 2026-08-28** — [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md), 52 items in dependency order, with what needs Revit separated from what does not. `A1`–`A3` passed the same day: the compile gate turned out not to need Windows ([30](30-compiling-away-from-windows.md)) |
+| **Q-14** — how is testing against real Revit done? | **Answered 2026-08-28** — [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md), **52 items in dependency order as it stood that day** — it has grown since, and `python tools/check-gaps.py` is what knows the current figure — with what needs Revit separated from what does not. `A1`–`A3` passed the same day: the compile gate turned out not to need Windows ([30](30-compiling-away-from-windows.md)) |
 
 **Nothing now blocks Phase 1 except Revit itself.**
 

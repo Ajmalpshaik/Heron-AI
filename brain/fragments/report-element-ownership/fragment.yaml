@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-010
+semantic-identity: "whether these elements can be edited, or belong to somebody else right now"
+kind: action
+domain: revit.qa
+capability: REPORT_ELEMENT_OWNERSHIP
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  On a workshared model, who owns each element right now, who created it and who
+  changed it last - asked before a bulk edit rather than discovered halfway
+  through one.
+
+  **A BATCH IS ONE UNDO ENTRY, WHICH IS WHY THIS IS ASKED FIRST.** Golden Rule
+  16 means every fragment in a batch runs inside one transaction. Hitting an
+  element owned by somebody else partway through does not stop at that element -
+  it takes the whole batch with it. Knowing beforehand which elements are not
+  editable turns that into a decision rather than a failure.
+
+  **"NOT OWNED" MEANS "PROBABLY FREE", NEVER "GUARANTEED FREE", AND THIS IS
+  STATED RATHER THAN IMPLIED.** Checkout status reflects the last sync.
+  Somebody may have borrowed an element since, and nothing local can see that.
+  The fresh-reads rule applies to people as well as to geometry, and a report
+  that reads as a guarantee here would be believed.
+
+  **A MODEL THAT IS NOT WORKSHARED IS ANSWERED, NOT REFUSED.** `notWorkshared`
+  says so plainly, because "everything is editable" is the correct answer to
+  the question and an empty result would read as "nothing is editable" - the
+  opposite of the truth, on the more common kind of model.
+
+  **CREATOR, OWNER AND LAST CHANGED BY ARE THREE DIFFERENT PEOPLE** and are
+  returned separately. Who to ask for a relinquish is the owner. Who to ask
+  about an odd piece of modelling is the last person to change it. Collapsing
+  them sends the question to the wrong desk.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: doc
+      type: Document
+      source: ambient
+  provides:
+    - name: owners
+      type: IDictionary<ElementId, string>
+    - name: creators
+      type: IDictionary<ElementId, string>
+    - name: lastChangedBy
+      type: IDictionary<ElementId, string>
+    - name: ownedByOthers
+      type: IList<ElementId>
+    - name: editable
+      type: IList<ElementId>
+    - name: notWorkshared
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `WorksharingUtils.GetCheckoutStatus`,
+  `GetWorksharingTooltipInfo` and `Document.IsWorkshared` are unchanged 2020 to
+  2027 and were confirmed clean on 2020 and 2024 during the earlier
+  cross-version pass. The tooltip call is guarded per element rather than once
+  around the loop, because an element deleted by another user since the last
+  sync throws on that call alone and would otherwise lose the whole report.
+
+utterances:
+  - who owns these elements
+  - can I edit these
+  - is anyone else working on this
+  - who last changed this
+  - who created these
+  - will Revit ask me to relinquish

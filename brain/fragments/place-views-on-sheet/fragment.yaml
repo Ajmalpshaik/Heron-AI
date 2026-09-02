@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-007
+semantic-identity: "put these views onto a sheet, laid out so they do not land on top of each other"
+kind: action
+domain: revit.sheets
+capability: PLACE_VIEWS_ON_SHEET
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places every view handed in onto one sheet, arranged on a grid across the
+  sheet, and reports how many landed in DISTINCT positions.
+
+  THAT LAST NUMBER IS THE WHOLE FRAGMENT, and it exists because of a measured
+  failure. A version of this job computed the sheet centre inside the per-view
+  loop with no offset, so every viewport was created at the same point. Three
+  views produced three viewports stacked on one spot, and it reported "placed
+  3". The count was true. The sheet was unusable, and nothing in the answer
+  said so.
+
+  A count of placements cannot distinguish a populated sheet from a pile. So
+  the position of each viewport is read back after creation and the DISTINCT
+  ones are counted. When placed is 3 and distinctPositions is 1, the answer
+  says out loud what the drawing would otherwise have to.
+
+  A NORMAL VIEW LIVES ON ONE SHEET ONLY. Revit refuses a view already placed
+  elsewhere, and this fragment asks before it acts rather than catching the
+  refusal - an already-placed view is skipped by id and never moved off the
+  sheet it is on. Schedules and legends do not share that limit and are not
+  this fragment's job.
+
+  A PLACEHOLDER SHEET IS REFUSED BY NAME. FIND_SHEETS hands placeholders back
+  deliberately rather than filtering them, on the promise that the action would
+  decide visibly. This is that promise being kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  sheet full of views is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: sheetNumber
+      type: string
+      source: request
+  provides:
+    - name: placed
+      type: int
+    - name: distinctPositions
+      type: int
+    - name: notPlaced
+      type: IList<ElementId>
+    - name: sheetProblem
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Viewport.Create`,
+  `Viewport.CanAddViewToSheet`, `Viewport.GetBoxCenter`, `ViewSheet.Outline` and
+  `ViewSheet.IsPlaceholder` are unchanged 2020 to 2027. Positions are Revit's
+  internal FEET throughout and are only ever compared with each other, so no
+  units API is called and the 2021 units move cannot reach this.
+
+utterances:
+  - put these views on a sheet
+  - place the plans on sheet a-101
+  - add these to the sheet
+  - lay these views out on a sheet
+  - put the drawings on the sheet
+  - place these on the drawing sheet

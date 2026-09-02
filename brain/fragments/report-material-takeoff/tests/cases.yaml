@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: several walls with a compound structure
+    expect: >
+      an area and a volume per layer material, matching a Revit Material
+      Takeoff schedule of the same elements line for line. Revit's own schedule
+      is the check - a figure derived here that disagreed with it would be a
+      second opinion nobody can reconcile
+
+  - given: a wall with a PAINTED face
+    expect: >
+      the painted material present WITH AN AREA. Reading only the geometry set
+      reports it as zero, which on a finishes schedule reads as "that material
+      is not in this model" rather than "I did not ask for it"
+
+negative:
+  - given: a material applied ONLY as paint, nowhere in any geometry
+    expect: >
+      an area and NO volume entry. Paint is a surface, not a body - the missing
+      volume is the correct answer, and a 0 there would price as "no material"
+
+  - given: >
+      the same material used BOTH in a wall's structure and as paint on another
+      element
+    expect: >
+      one row, areas added, and the volume covering only the structural use.
+      The two flags must not double-count the same face, and must not silently
+      drop one use for having the name already
+
+  - given: an element with no materials at all - a generic family, a line
+    expect: >
+      its id in `elementsWithNoMaterial` and no throw. Nothing to take off is a
+      real answer, and it must be distinguishable from an element skipped by an
+      exception
+
+  - given: >
+      a material whose area comes back 0 because the element is a symbol or has
+      no geometry in this phase
+    expect: >
+      no row for it, rather than a 0 row. A zero line in a takeoff is priced as
+      a real material that is present in no quantity, which is a different claim
+      from not being there
+
+second_route:
+  - >
+    build a Material Takeoff schedule in Revit for the same category and compare
+    line by line - it is the same engine, so a disagreement means this is
+    reading the wrong flag
