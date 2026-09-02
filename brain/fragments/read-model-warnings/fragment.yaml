@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-WRN-016
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-004
+semantic-identity: "what warnings is this model carrying, and which elements cause them"
+kind: filter
+domain: revit.quality
+capability: READ_MODEL_WARNINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the model's warning list, groups it by what the warning actually says,
+  and hands on the elements causing them.
+
+  **The elements are the point, not the count.** *"How many warnings"* got
+  answered by COUNT_ELEMENTS before this existed - a number about something
+  else entirely. But a warning count on its own is a number nobody can act on;
+  what a modeller needs next is to SEE the elements, and because this fragment
+  provides `elements`, *"show me what is causing the warnings"* composes
+  straight into ISOLATE_ELEMENTS or SET_SELECTION.
+
+  **Grouped by message, because that is how warnings actually arrive.** A model
+  with 800 warnings usually has six kinds of problem, and one of them is 600
+  rows of the same duplicate-instance message. A flat list of 800 is unreadable
+  and hides the five that matter.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+    - name: warningCount
+      type: int
+    - name: notInThisModel
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.GetWarnings()`, `FailureMessage.GetDescriptionText()`,
+  `GetFailingElements()` and `GetSeverity()` are unchanged 2020 to 2027. No
+  ElementId is built from an int, so 2024's 64-bit ids do not reach this code.
+
+# WHAT THIS CANNOT SEE, and it matters more than what it can.
+#
+# GetWarnings() reports what Revit recorded at the last regeneration. It does
+# not re-audit the model, so it is a record rather than a fresh check - and it
+# is still the same list the Review Warnings dialog shows, which is what
+# anybody means by "the warnings".
+#
+# It reports THIS document only. Warnings inside a linked model belong to that
+# model and are invisible here, so a clean result never means the federated
+# model is clean.
+
+# ROUTING - repeated in REPORT_FINDINGS.
+#
+#   "how many warnings"          -> here
+#   "list the warnings"          -> here
+#   "show me what is causing the warnings" -> here, then ISOLATE_ELEMENTS
+#   "is the model healthy"       -> here is the first half of that
+#   "how many ducts are there"   -> COUNT_ELEMENTS. A count of elements, not of
+#                                   complaints about them
+#   "which parameters are blank" -> DESCRIBE_BLANK_PARAMETERS - a different
+#                                   audit, and one Revit raises no warning for
+
+utterances:
+  - how many warnings
+  - list the warnings
+  - what warnings does the model have
+  - show me the warnings
+  - is the model clean
+  - review the warnings
+  - what is causing the warnings
+  - are there any errors in the model

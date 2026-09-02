@@ -1,0 +1,78 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 16
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-024
+semantic-identity: "make the floor or ceiling plan for this level"
+kind: action
+domain: revit.views
+capability: CREATE_PLAN_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a floor plan or a reflected ceiling plan for one level.
+
+  **It closes a hole CREATE_LEVEL opened.** A level made through the API comes
+  with no views - Revit's Level *tool* makes them, the level itself does not -
+  so the modeller adds a level, looks in the Project Browser, sees nothing and
+  concludes it failed. CREATE_LEVEL says so; this is the fragment that fixes it,
+  and the pair is the whole job: *"add 4 more floors"* means levels **and** the
+  plans to draw on.
+
+  **Floor or ceiling is asked for, not assumed.** An MEP modeller adding a level
+  usually wants both, and which one is wanted first is not something to guess:
+  a reflected ceiling plan looks upward and shows different things, and handing
+  somebody the wrong one wastes the trip.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: levelId
+      type: ElementId
+      source: request
+    - name: planKind
+      type: string
+      source: request
+    - name: viewName
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ViewPlan.Create(Document, ElementId, ElementId)` and the `ViewFamily`
+  enumeration are unchanged 2020 to 2027. The level arrives as an `ElementId`
+  from a live element, so nothing here builds one from an int and 2024's
+  64-bit ids do not reach this code.
+
+# ROUTING - repeated in CREATE_LEVEL, DUPLICATE_VIEW and CREATE_3D_VIEW.
+#
+#   "make the plan for this level"  -> here
+#   "add the ceiling plan"          -> here, with ceiling asked for
+#   "add 4 more floors"             -> CREATE_LEVEL then here, once per level.
+#                                      Levels alone give nothing to draw on
+#   "duplicate this view"           -> DUPLICATE_VIEW - copies a view that
+#                                      already exists
+#   "make a 3D view"                -> CREATE_3D_VIEW
+#   "make a section"                -> CREATE_SECTION_VIEW
+#   "make a drafting view"          -> CREATE_DRAFTING_VIEW
+
+utterances:
+  - make the plan for this level
+  - create the floor plan
+  - add the ceiling plan
+  - the new level has no plan
+  - make a plan view
+  - I need the RCP for this level

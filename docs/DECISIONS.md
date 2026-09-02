@@ -91,8 +91,7 @@ an edit.
 | [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is setup.ps1 | ✅ Accepted |
 | [D-43](#d-43--the-constitution-is-accepted--all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
 | [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted |
-| [D-45](#d-45--the-library-is-built-out-first-and-proved-in-one-pass-later) | The library is built out first, and proved in one pass later | ✅ Accepted |
-| [D-46](#d-46--a-context-fragment-is-consumed-by-the-host-not-by-another-fragment) | A context fragment is consumed by the host, not by another fragment | 🔶 Proposed — needs the owner |
+| [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases) | Heron tracks the MCP SDK across major versions, the way it tracks Revit releases | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -2251,358 +2250,59 @@ inherited rather than re-taken is a claim nobody has watched.
 
 ---
 
-## D-45 — The library is built out first, and proved in one pass later
+## D-45 — Heron tracks the MCP SDK across major versions, the way it tracks Revit releases
 
-**Status:** Accepted · **Date:** 2026-08-30 · **Revises:** [31 §4](31-studying-the-existing-libraries.md),
-**Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported), [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere)
+**Status:** Accepted · **Date:** 2026-08-31 · **Extends:** [D-05](#d-05--revit-2020--latest), [D-06](#d-06--c-for-revit-python-for-everything-outside-it)
 
 ### Context
 
-[31 §4](31-studying-the-existing-libraries.md) said the opposite of this, and said it for reasons that
-were good at the time: *"not a race to a number"*, *"most of the 398 will correctly never be made"*,
-*"take the jobs that are done; let the rest wait for a request."* The argument was that a library does
-not know which of its own entries matter, and that re-authoring everything imports that guesswork.
+Heron's MCP server was written against MCP SDK 1.x and imported `FastMCP` from `mcp.server.fastmcp`.
+The install line Heron itself hands the user — `pip install --user mcp`, in
+[`tools/HeronRevit.ps1`](../tools/HeronRevit.ps1) — is **unpinned**, and on 2026-08-31 it resolved to
+**2.x**, which renamed `FastMCP` to `MCPServer` and deleted the old module path.
 
-**The owner has decided otherwise, and his argument is about sequencing rather than about volume.** In
-his words, 2026-08-30:
+The result was not a degraded feature. The import is at module scope, so the server raised `ImportError`
+before registering a single tool: **every Heron tool absent from the host**, on any machine installing
+that day, with no Revit and no Windows involved in the failure.
 
-> *"If we build everything now, checking for any small or even big errors later will take much less time
-> compared to trying to generate and make everything as we go… Doing a real review and checking might
-> take two to three days, but this way we can get everything completed first."*
+It went unseen because **every test in this repository reads that file as text.** Text cannot fail an
+import. The technique that found it in ten minutes was installing the dependency and starting the thing.
 
 ### Decision
 
-**Re-author the library out in full, then prove it in one concentrated Revit pass.** Building is not
-gated on proving. [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported)'s
-method is unchanged — studied and re-authored, never copied — and
-[D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) is unchanged:
-every one arrives `DRAFT`.
+**A dependency Heron does not control is treated the way [D-05](#d-05--revit-2020--latest) treats a
+Revit release: the version in front of it is discovered, never assumed, and an unrecognised one fails
+loudly rather than silently.**
 
-### Why this is right, stated in full rather than deferred to
+In practice, three obligations:
 
-- **Checking has a large fixed cost per sitting and a small one per fragment.** One Revit session with
-  one model open, worked down a list, is far cheaper than the same fragments checked in three hundred
-  separate sittings. The saving is real and it is the owner's to claim.
-- **Building is not blind.** The compile gate reads every fragment against every release it claims, so
-  the entire *worked-in-2020-broke-in-2024* class is caught before Revit is opened at all.
-- **There is no Revit for the moment**, so the alternative to building is not "build less, prove more".
-  It is idling.
+1. **Look the class up, newest first.** `mcp.server.mcpserver.MCPServer`, then `mcp.server.fastmcp.FastMCP`.
+   Both take the same `@server.tool()` decorator and the same `run()` — measured with both installed
+   side by side, not assumed from the migration notes.
+2. **An unknown version is a named failure.** The final `except` re-raises naming Heron, both module
+   paths tried, and the install line — never a bare `ImportError` about a module the user never typed.
+3. **Something must actually import it.** [`tests/test_mcp_serves.py`](../tests/test_mcp_serves.py) is
+   that obligation made mechanical; without it this decision is a paragraph nobody executes.
 
-### The condition this decision carries, because without it the arithmetic fails
+### Why not simply pin `mcp<2`
 
-**A repeated mistake is the one thing that breaks the plan.** The risk is not the number of unproven
-fragments; it is one misunderstood mechanism copied across many of them. A wrong level lookup, a wrong
-unit conversion, a parameter that snaps — found on the first day at the PC — is not one fix, it is
-eighty, and 2–3 days becomes two weeks. This is not hypothetical here: the system these fragments come
-from carried one removed Revit call in **eight** places behind a green compile, and the two bugs found
-while re-authoring were the same bug wearing different clothes.
+A pin is the smaller change and it was considered. It was rejected because it converts a loud failure
+today into a quiet staleness later: the user's host, Claude Code, ships and updates its own SDK, and
+Heron pinning against it would eventually fail in the direction that produces no error at all — the far
+worse half of this project's one recurring failure. Pinning also freezes Heron on a version that will
+stop receiving fixes, and does nothing for the machine that already has 2.x installed for another tool.
 
-**So a mechanism that more than one fragment needs is written ONCE, as its own fragment, and composed.**
-That is [31 §3](31-studying-the-existing-libraries.md)'s split rule applied deliberately rather than
-opportunistically: with the whole library in view, the shared mechanisms are visible up front instead of
-emerging after the tenth copy. Proving those few mechanisms then validates most of what stands on them,
-and a defect found in one is fixed in one place.
+**Supporting both costs one `try`/`except` and is proven on both.** A pin costs nothing today and is
+unproven on the version everyone will be running tomorrow.
 
 ### Consequences
 
-- **[31 §4](31-studying-the-existing-libraries.md) no longer governs scope** and now points here. Its
-  method sections (Rules 0–3) are untouched and still binding — this changes *how many*, never *how*.
-- Rule 0's *"does it earn a place"* narrows rather than disappears: it stops asking *is this job one the
-  owner does* and asks only **does Heron already cover it**. Duplication is still the thing to avoid;
-  scarcity no longer is.
-- **The DRAFT count will rise steeply and that is the plan, not a fault.** `check-gaps.py` keeps
-  *unfinished* and *waiting* apart precisely so a growing pile of unproven work stays visible as a debt
-  rather than disappearing into a pass.
-- **A recipe is not a fragment.** The 44 multi-stage recipes read as **skills** in Heron's shape, which
-  name capabilities rather than fragments; they are re-authored as skills or not at all.
-
----
-
-## D-46 — A context fragment is consumed by the host, not by another fragment
-
-**Status:** Proposed · **Date:** 2026-08-31 · **Revisits:** [31 §1](31-studying-the-existing-libraries.md),
-**Touches:** [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer), Step 13's dependency graph
-
-### Context
-
-[31 §1](31-studying-the-existing-libraries.md) recorded that the earlier library has **context**
-fragments — what is open, which view, which document — and judged that they need no new `kind` in
-Heron, because context reads the session rather than elements, which is *"a filter whose `provides` is
-a document or a view."* It ended with an instruction: **revisit when a real one is written and the
-contract is in front of you.**
-
-It is now in front of us. `GET_ACTIVE_VIEW` (`FRG-DOC-003` **as it was then** — the fragment was
-removed later the same day, as recorded below, and that id has since been reissued to
-`REPORT_LEVEL_ELEVATIONS`; look it up expecting this one and you will find something else)
-exists, and it was not written on a hunch —
-**the dependency graph asked for it.** `TAG_ELEMENTS_IN_VIEW` needs both `elements` and a `view`, and
-the graph reported it as an action nothing could feed, because every filter in the library provides
-elements and none provided a view.
-
-### What the contract turned out to say
-
-**Half the judgement holds and half of it does not.**
-
-**It holds as a `kind`.** `GET_ACTIVE_VIEW` declares `kind: filter`, provides a `View`, and nothing
-about the contract strained. No fourth kind is needed, exactly as 31 §1 predicted.
-
-**It does not hold in the graph.** `composable(producer, consumer)` requires **one producer to satisfy
-every fragment-sourced need of the consumer**. So two filters can never jointly feed one action, and a
-context fragment — whose output the HOST takes and passes on — has no fragment-level consumer at all.
-The graph therefore reports it as *"a filter nothing can consume"* forever, which is true of the model
-and false about the fragment.
-
-### What was actually done, and what was NOT
-
-**The right fix was to the contract, not to the graph.** `view` on an action is `source: request` —
-which view the user means is the host's to resolve from *"this view"*, exactly like `category` on a
-filter. Applied to `TAG_ELEMENTS_IN_VIEW`, that removed the orphan honestly, and the graph's report
-turns out to have been **correct about a mislabelled need** rather than a limitation being hit.
-
-**`GET_ACTIVE_VIEW` was written and then removed.** It was authored to feed the `view` need, and the
-contract fix made it unnecessary the same hour — nothing in the library consumes it, and there is no
-executor or host path that calls it yet. [31 §2](31-studying-the-existing-libraries.md) Rule 2 says
-*add nothing speculative*, and keeping it would also have left `check-gaps.py` permanently red on a
-condition already understood. **A checker that is always red stops meaning anything**, which is the
-exact failure the 2026-08-26 daily-check note records. It goes back when something needs it.
-
-Its `kind` was not the problem, and that half of 31 §1 stands confirmed: it declared `kind: filter`,
-provided a `View`, and nothing about the contract strained. **No fourth kind is needed.**
-
-### The open question, and why it waits
-
-**The graph cannot express an action fed by two filters.** `composable(producer, consumer)` requires
-ONE producer to satisfy EVERY fragment-sourced need. Nothing needs that today, because `view` was
-always a request input. But a genuine two-filter composition will exist eventually, and lifting the
-limit means letting several producers jointly satisfy one consumer — a real change to Step 13's design.
-
-That change is cheap to make and expensive to be wrong about: it decides what *"what breaks if this
-changes"* answers, which is the question Step 13 exists to answer. **The evidence should come from a
-real composition running at the PC, not from a library that has never executed.** So it is recorded
-here and left, rather than a graph quietly taught to stay quiet.
-
-> **CLOSED the same day, by a composition that arrived on its own.** A takeoff needs a group key from
-> a parameter read and a quantity from a measurement, and `SUM_BY_GROUP` reported as an orphan nothing
-> could feed while both its producers sat in the library. See
-> [D-48](#d-48--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) — the fix
-> made the check stricter rather than quieter, and it then found a second defect in the fragment's own
-> contract. The paragraph above stands as written: the case was real and it decided the design.
-
-`tests/test_graph.py` was narrowed accordingly: it asserts that **the break's** orphans heal, not that
-the library has none. That assertion was a claim about the whole library, and it held only while every
-fragment was a filter feeding an action.
-
-
----
-
-## D-47 — Risk is part of routing, not only part of permission
-
-**Status:** Proposed · **Date:** 2026-08-31 · **Touches:**
-[D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs), the risk ladder in the Constitution,
-[`tools/check-routing.py`](../tools/check-routing.py)
-
-### Context
-
-Every fragment declares a `risk` on the ladder `READ, ANALYZE, SUGGEST, EXECUTE, MODIFY, PUBLISH,
-ADMIN`. Until today that declaration was used in exactly one place: deciding whether the caller is
-allowed to run the thing once it has already been chosen. **Nothing consulted it while choosing.**
-
-`check-routing.py` was blind to it in the same way. It reported every contested sentence in one flat
-list and said, correctly, that a contest is a judgement rather than a defect. That is true of two
-report fragments arguing over *"show me the sizes"*. It is not true of the case underneath, which the
-flat list was hiding.
-
-### What the split found, the first time it ran
-
-Adding the risk comparison to `check-routing.py` — the winner's rung against the claimant's — surfaced
-**six sentences that route up the ladder, four of them invisible until that moment**, and five of the
-six with the same shape:
-
-| The sentence | Claimed by | Answered instead by |
-|---|---|---|
-| *"why is this one different"* | `COMPARE_ELEMENTS` READ | `ISOLATE_ELEMENTS` EXECUTE |
-| *"diff these ducts"* | `COMPARE_ELEMENTS` READ | `DIMENSION_MEP_RUNS` MODIFY |
-| *"get the size parameter"* | `READ_ELEMENT_PARAMETERS` READ | `ALIGN_MEP_ELEVATION` MODIFY |
-| *"the ceiling height in here"* | `READ_ROOM_GEOMETRY` READ | `SNAP_TO_GRID` MODIFY |
-| *"follow the pipe"* | `TRACE_CONNECTIVITY` READ | `OFFSET_ELEMENTS` MODIFY |
-| *"these ones"* | `FILTER_ELEMENTS_BY_ID` READ | `DESCRIBE_BLANK_PARAMETERS` ANALYZE |
-
-Read one at a time these look like six small ranking accidents. Read together they are one finding:
-**ask a question, change the model.** *"Follow the pipe"* reaching `OFFSET_ELEMENTS` does not return a
-wrong route — it shifts the run sideways. *"The ceiling height in here"* reaching `SNAP_TO_GRID` moves
-elements. The user gets a plausible confirmation of work nobody asked for, which is this project's
-defining failure shape arriving through the retrieval layer rather than through a fragment.
-
-### Why it is not a defect in any of the twelve fragments
-
-Every one of those utterances is a real sentence a real modeller says, and each fragment is right to
-claim its own. `ALIGN_MEP_ELEVATION` is not wrong to answer to *"get the services level"*. The
-collision is lexical: **the search shares vocabulary between them and has no idea one sentence is a
-question and the other an instruction.** Weakening either side to buy back a rank is the one response
-`brain/retrieval-history.md` rules out.
-
-Nor is a better embedding the answer to rely on. The trained backend might separate them — it has
-never run here, and that is register item **A7**, blocked on an egress policy. *Might, once something
-unblocks* is not a safeguard.
-
-### The decision
-
-**Risk becomes an input to routing, in two places.**
-
-1. **Reporting, done today.** `check-routing.py` prints ladder-crossing contests as their own section,
-   above the flat list, naming both risk levels. Its wording removes the option of leaving one
-   unexamined: say which fragment should win, or say the sentence names a composition and belongs to a
-   skill. It still exits 0 — it is a judgement, and a gate here would teach people to weaken their own
-   utterances. But it is no longer a judgement made by whoever happens to read thirty rows carefully.
-
-2. **Resolution, proposed and not built.** When the host resolves a request that is a QUESTION, the
-   candidate set should exclude fragments above `READ`. A question cannot want a fragment that writes;
-   if the only match writes, the honest answer is *"nothing here reads that"* rather than the nearest
-   thing that acts.
-
-### Why the second half is proposed rather than done
-
-It needs a reliable test of *"is this a question"*, and that test is the whole problem in miniature.
-Punctuation is absent from dictated speech, and the owner dictates. Leading words — what, how, which,
-where, is, are — catch most of it and miss *"tell me the ceiling height"* while wrongly catching
-*"what I want is these aligned"*. Guessing wrong in the permissive direction rebuilds exactly the hole
-this decision names.
-
-**The evidence should come from real sentences, not from invented ones**, and there is a source: the
-utterances already declared across the library are real phrasings, and the PC session that proves the
-fragments will produce more. So the classifier waits for that, and the reporting half stands in the
-meantime — a person is told, every run, which questions currently reach something that writes.
-
-### What was NOT done, and why it would have been wrong
-
-Three of those six could have been "fixed" this hour by rewording an utterance, and the numbers would
-have improved. That is the measurement being protected instead of the user. The two utterances that
-WERE removed came out for a different reason and would have come out with no collision at all:
-*"diff these ducts"* is developer vocabulary in a repository whose standing rule is to write the
-owner's own words, and *"what size are these"* had been added the same day, speculatively, against
-[31 §2](31-studying-the-existing-libraries.md) Rule 2. Both were mine and both were wrong on their own
-terms.
-
----
-
-## D-48 — Several fragments may jointly feed one, and the orphan check asks per need
-
-**Status:** Accepted · **Date:** 2026-08-31 · **Closes:** the open question in
-[D-46](#d-46--a-context-fragment-is-consumed-by-the-host-not-by-another-fragment) ·
-**Touches:** [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer), Step 13's graph
-
-### Context
-
-[D-46](#d-46--a-context-fragment-is-consumed-by-the-host-not-by-another-fragment) recorded a limitation
-and deliberately left it: `composable(producer, consumer)` requires **one** producer to satisfy **every**
-fragment-sourced need, so an action fed by two different fragments cannot be expressed. It said the
-change was *"cheap to make and expensive to be wrong about"*, that nothing needed it yet, and that the
-evidence should come from a real composition rather than an invented one.
-
-### The real composition arrived
-
-A takeoff — *"how many metres of each size"* — is one question and two mechanisms: read a group key,
-measure a quantity, total the second by the first. Written as one duct-shaped fragment it would have
-composed fine and been re-derived for insulation, tray weight and concrete. Written as
-`READ_ELEMENT_PARAMETERS` + `MEASURE_RUN_QUANTITIES` + `SUM_BY_GROUP`, the totalling is written once
-and serves all of them — and `SUM_BY_GROUP` immediately reported as **an orphan nothing could feed**,
-which was false. Both its producers existed. No single one supplied both.
-
-That is D-46's case, and it was not designed to justify the change: it came out of a question a
-modeller asks.
-
-### The decision
-
-`FRAG.feeders(consumer, fragments)` asks the question **per need** — which fragments provide each one,
-and which needs nothing provides — and `orphans()` uses it. `composable(producer, consumer)` is
-**unchanged**, because it answers a different and still-correct question: *if I change what this
-provides, what stops fitting?* That is pairwise by nature, and `impact()` and `composes_into()` keep
-using it.
-
-**The new check is stricter, not looser.** The old message listed everything a fragment needed and left
-a reader to work out which part had no producer. The new one names it: *"nothing provides quantities"*.
-
-### It immediately found a second, different defect — in the fragment, not the graph
-
-With the per-need message in place, `SUM_BY_GROUP` still reported as an orphan, and the message said
-exactly why: it needed `quantities`, and `MEASURE_RUN_QUANTITIES` provided `lengths` and `areas`. The
-graph was right and the contract was sloppy. **A generic consumer and a specific producer do not meet
-by accident**, and the fix was not to loosen the type check but to decide who chooses.
-
-Which measure to total is a **request** input, the same kind as `parameterName` — *"how much ductwork
-is there"* means metres to one person and square metres to another, and defaulting answers a question
-nobody asked. `MEASURE_RUN_QUANTITIES` now takes `measure` and hands the chosen one back as
-`quantities`, so the totalling never learns what it is totalling. Both measurements are still returned
-separately.
-
-### What remains unsolved, and is not pretended otherwise
-
-The graph still cannot express **a need satisfied by a differently-named provide**. Here that was
-resolved by making the producer publish the generic name, which works because the choice was genuinely
-the user's. Where it is not — two producers of the same shape under different names, bound per call —
-this returns. It is recorded rather than fixed, on the same reasoning D-46 used: the next real case
-should decide the design, not this paragraph.
-
-> **CLOSED the same day.** `FIND_NEAREST_ELEMENTS` needs two sets of elements — what to measure from
-> and what to measure to — and only one of them can be called `elements`. Nothing about that is a
-> measurement or a user preference, so the fragment-side answer above does not reach it. See
-> [D-49](#d-49--a-need-may-bind-to-a-provided-name-that-is-not-its-own). The condition held: the case
-> arrived on its own and decided the design.
-
----
-
-## D-49 — A need may bind to a provided name that is not its own
-
-**Status:** Accepted · **Date:** 2026-08-31 · **Closes:** the remainder left open by
-[D-48](#d-48--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) ·
-**Touches:** [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer), the contract validator
-
-### Context
-
-[D-48](#d-48--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) let several
-fragments jointly feed one, and said plainly what it had *not* solved: **a need satisfied by a
-differently-named provide**. It resolved that day's instance inside the fragment rather than in the
-model, because the choice there was genuinely the user's, and left the general case with a condition —
-*the next real case should decide the design, not this paragraph*.
-
-### The next real case, and it is a different shape
-
-`FIND_NEAREST_ELEMENTS` needs **two sets of elements**: the things to measure *from* and the things to
-measure *to*. Both are what a filter provides. Only one of them can be called `elements`.
-
-That is not the previous shape wearing new clothes. There, one producer published several measurements
-and the user picked; the fix was a request input, and it was right. Here nothing is a measurement and
-nothing is a preference — **which set is the source is a binding the host makes** when it runs the same
-filter twice for two roles.
-
-The three ways out without a model change are all worse:
-
-| Instead of `binds` | Why not |
-|---|---|
-| Call it `elements` too | The two sets stop being distinguishable on paper while the answer depends entirely on which is which |
-| Mark it `source: request` | False. It comes from a filter, and saying otherwise makes the orphan check blind to a real gap |
-| Fold the second filter into the fragment | A filter inside an action, which is what [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer) exists to prevent |
-
-### The decision
-
-A need may declare `binds: <provided name>`, meaning *fill me from a provide called that*.
-`composable()` and `feeders()` look up the bound name; the fragment keeps a name that says what the set
-is **for**, which is the whole reason it is not called `elements`.
-
-**`binds` renames and never converts.** The type must still match exactly, and a need bound to a
-provide of a different type is refused as before. Three things are refused outright by the validator:
-`binds` on the **provides** side, where a provide simply *is* the name others bind to; `binds` on an
-**ambient or request** need, which has no provide to bind to and where it would be a lie about where the
-value comes from; and a bound name that could not be a C# variable, since the same reasoning as
-[D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) applies.
-
-The failure message names **both** — *"needs `targets` (bound to `elements`)"* — because a message
-saying only *"nothing provides targets"* sends somebody searching for the wrong word.
-
-### What this is not
-
-It is not aliasing for convenience, and it must not become a way to make two fragments fit that were
-not designed to. The test is whether the two names mean **different roles for the same kind of thing**.
-`targets` versus `elements` passes it. Renaming `elements` to `items` because a fragment reads better
-that way does not, and would leave the library with two words for one idea and a graph that hides the
-duplication instead of showing it.
+- The version-tolerant import lives in
+  [`mcp/server/heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) and nowhere else. It is the only
+  place the SDK is named.
+- `heron_version` reports the SDK version and the class serving, because *"Heron stopped working"* and
+  *"the SDK moved underneath it"* are indistinguishable from the user's side.
+- The install line stays **unpinned**, which is now a supported configuration rather than an accident.
+- **This generalises past the MCP SDK.** Heron's other outside dependencies — `pyyaml`, the optional
+  `model2vec` — get the same treatment: absent is a normal condition, present-but-different is
+  discovered, and neither may take the whole system down without saying which one it was.

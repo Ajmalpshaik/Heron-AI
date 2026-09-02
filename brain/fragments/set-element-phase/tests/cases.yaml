@@ -1,40 +1,35 @@
-# D-30: the negative case is what catches "succeeded and did nothing".
-
 positive:
-  - given: elements and createdPhase "New Construction"
+  - given: 40 ducts modelled on Existing, moved to New Construction
     expect: >
-      all in `created`, and their Phase Created reading that in the Properties
-      palette. Check one by eye
+      40 changed, and they now appear in the new-work views and schedules and
+      leave the existing ones - which is the whole point of phases
 
-  - given: demolishedPhase set on elements already created on an earlier phase
+  - given: elements already on the target phase
     expect: >
-      all in `demolished`, and those elements drawing as demolished in a view
-      set to that phase - which is the real second route
+      counted in `alreadySet` and NOT written. Writing the same value back marks
+      them modified for worksharing, giving somebody else a change to reconcile
+      for nothing
 
 negative:
-  - given: createdPhase set and demolishedPhase LEFT EMPTY
+  - given: the request naming a phase but not saying created or demolished
     expect: >
-      Phase Demolished UNCHANGED. Empty means leave it alone, which is a
-      different instruction from clear it - and clearing it would silently
-      un-demolish everything in the set
+      everything refused. A phase called "Existing" says nothing about which
+      field was meant - putting an element ON the existing phase and DEMOLISHING
+      it in the existing phase are opposite instructions, and one of them makes
+      work disappear
 
-  - given: A PHASE NAME THAT DOES NOT EXIST
+  - given: elements inside a group
     expect: >
-      the name in `phaseNotFound` and NOTHING WRITTEN AT ALL. Half a set moved
-      and half untouched is worse than nothing done: the model looks partly
-      correct and the failure is invisible in a plan
+      they land in `readOnly`, kept apart from `refused`. They take their phase
+      from the group and there is nothing to fix on the element itself
 
-  - given: >
-      demolishing on a phase EARLIER than the one the element was created on
-    expect: >
-      in `refused`. Revit rejects the write, and it is a real modelling error
-      worth seeing rather than a count that quietly comes up short
+  - given: a grid or a text note in the set
+    expect: refused - phases do not apply to it, which is not the same as being unable to change it
 
-  - given: an element with no phase parameters at all - a view, a datum
+  - given: the same sentence run before this fragment existed
     expect: >
-      in absent, the rest still set, and no throw
+      it reached SET_ELEMENT_WORKSET - a write, to the wrong property, that
+      reports success. That is the failure this fragment exists to end
 
 second_route:
-  - >
-    set a view's Phase Filter to show demolished, switch its phase, and look -
-    the elements should appear and disappear as expected
+  - Revit's own Properties palette with the Phase Created and Phase Demolished fields read back on the same elements

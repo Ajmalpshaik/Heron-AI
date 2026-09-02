@@ -1,0 +1,41 @@
+positive:
+  - given: two 300 mm round ducts meeting at a right angle, ends coincident, tolerance 1 mm
+    expect: an ELBOW, and both runs trimmed back into it
+
+  - given: two ducts in line, both 300 round
+    expect: a UNION - in line and the same size, so nothing changes section
+
+  - given: two ducts in line, 300 round meeting 250 round
+    expect: a TRANSITION. Same geometry as the union case; only the size decides
+
+  - given: three ducts meeting at a point, two of them in line
+    expect: >
+      a TEE whose MAIN is the in-line pair and whose branch is the third,
+      whatever order they were given in. Taking the first two as the main run
+      builds the tee sideways when the caller listed them differently, and that
+      is a delete rather than an adjust
+
+  - given: a round end meeting a rectangular end, in line
+    expect: >
+      a TRANSITION. The shape is checked before the size, because reading Radius
+      off a rectangular connector throws
+
+negative:
+  - given: two duct ends 40 mm apart, tolerance 1 mm
+    expect: >
+      REFUSED, naming the 40 mm. Nothing is moved to close it - where the
+      services run is a decision somebody makes, not a detail this tidies away
+
+  - given: two runs whose every connector is already carrying something
+    expect: refused - there is no open end to join
+
+  - given: a cable tray, which is an MEPCurve but has no fitting API here
+    expect: it reaches the fitting call and Revit declines; the refusal says so rather than reporting success
+
+  - given: five runs
+    expect: >
+      refused, naming what the counts mean. There is no five-way fitting and
+      guessing which four to use would build a joint nobody asked for
+
+second_route:
+  - Dragging one duct end onto the other in Revit and seeing which fitting it inserts by itself

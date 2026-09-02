@@ -1,0 +1,30 @@
+positive:
+  - given: 40 bare ducts, a duct insulation type, thicknessMm 50
+    expect: insulated is 40, replaced 0, refused empty, and the ducts draw 50 mm larger all round in section
+
+  - given: the same 40 re-run at 25 mm
+    expect: >
+      insulated is 40 and replaced is 40 - the old layer removed first. Revit
+      would otherwise carry both, and the run would occupy a size nobody drew
+
+negative:
+  - given: a selection of 40 ducts AND their 34 fittings
+    expect: >
+      the 34 fitting ids are in refused, named rather than skipped. Fittings
+      between insulated ducts are exactly what gets missed, and it shows on
+      site rather than on the drawing
+
+  - given: a clash check run BEFORE this fragment, on a run that then gets 50 mm insulation
+    expect: >
+      the earlier clash result is now WRONG - the run needs 100 mm more space
+      than it was checked with. FIND_CLASHES has to be re-run after insulating,
+      and this is why the routing table names it
+
+  - given: a duct where Create returns without throwing but no insulation exists afterwards
+    expect: >
+      it is in refused, NOT counted. The read-back exists because a returned
+      object is not evidence, which is the standing lesson from the parameter
+      path
+
+second_route:
+  - Look at the duct in section - insulation draws as a visible layer, and its thickness can be dimensioned

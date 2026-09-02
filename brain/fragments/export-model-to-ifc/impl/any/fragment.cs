@@ -1,92 +1,96 @@
-// NOT STANDALONE. Assumes `doc`, `exportFolder`, `fileName` and `scopeViewId`
-// are in scope, and leaves `exportedPath` and `problem` behind.
+// NOT STANDALONE. Assumes `doc`, `folder`, `fileName`, `schema`, `scopeViewId`
+// and `withQuantities` are in scope; leaves `created`, `refused` and
+// `overwrote` behind.
 //
-// ASSUMES AN OPEN TRANSACTION (Golden Rule 16) AND DOES NOT OPEN ONE, and here
-// that is the answer to a question the original could not settle.
+// ASSUMES AN OPEN TRANSACTION (Golden Rule 16). It does not need one to write a
+// file, and it does not open one.
 //
-// The IFC exporter can write export-setup data back into the document, and
-// Revit refuses that outside a transaction - so the version this was
-// re-authored from opened its own, and carried a warning that the behaviour
-// varies by Revit build with instructions to delete the wrapper if it threw the
-// other way. That is an environment-dependent branch nobody could test from one
-// machine.
+// WRITES OUTSIDE THE MODEL, so it cannot be undone in Revit - same class as
+// EXPORT_VIEWS_TO_DWG. A file of the same name is OVERWRITTEN silently, so the
+// collision is detected and REPORTED. It is not refused: re-exporting over
+// yesterday's IFC is the normal way this job is done, and refusing would make
+// the fragment useless for its actual use.
 //
-// Under Heron's rule the caller already holds a transaction. The exporter's
-// requirement is therefore already met, this fragment opens nothing, and the
-// branch does not arise. If setup data is written it lands inside the caller's
-// single undo entry, which is where a document change belongs.
+// THE SCHEMA IS AN IFCVersion VALUE, NOT A STRING. The enumeration has gained
+// members across releases - the IFC4 variants are not all on 2020 - so mapping
+// a name like "IFC4" onto a member here would compile on every release and
+// throw at run time on the old ones. Taking the value makes the caller resolve
+// it against the Revit that is actually running.
 //
-// The read-back is the filesystem, as in every export here: the call returns a
-// bool and a bool is a claim about the call, not about the drive.
+// A WRONG SCHEMA IS THE SILENT FAILURE THIS FRAGMENT EXISTS TO PREVENT. Hand a
+// recipient expecting 2x3 an IFC 4 file and it OPENS, shows geometry, and has
+// properties missing or renamed. It reads as a bad model rather than a wrong
+// format, and the argument that follows is about the modelling.
+//
+// THE VIEW IS THE SCOPE, AND OMITTING IT IS A REAL CHOICE. With no view the
+// whole model goes - every workset, every design option. Most submissions want
+// one discipline or one level, which is a 3D view, and that is why the id is
+// asked for rather than assumed absent.
 
-string exportedPath = "";
-string problem = "";
+string created = null;
+string refused = null;
+var overwrote = false;
 
-var folder = (exportFolder ?? "").Trim();
-var name = (fileName ?? "").Trim();
+var target = (folder ?? "").Trim();
+var stem = (fileName ?? "").Trim();
 
-if (folder.Length == 0) problem = "no export folder was given";
-else if (name.Length == 0) problem = "no file name was given";
-
-if (problem.Length == 0)
+if (target.Length == 0)
 {
-    try
-    {
-        if (!System.IO.Directory.Exists(folder))
-            System.IO.Directory.CreateDirectory(folder);
-    }
-    catch (Exception ex)
-    {
-        problem = "cannot use folder '" + folder + "': " + ex.Message;
-    }
+    refused = "no folder was given to export into";
 }
-
-if (problem.Length == 0)
+else if (!System.IO.Directory.Exists(target))
 {
-    var options = new IFCExportOptions();
+    // Not created here, for the same reason EXPORT_VIEWS_TO_DWG does not: a
+    // mistyped path is likelier than a missing one, and inventing it puts the
+    // submission somewhere nobody looks.
+    refused = string.Format("there is no folder at \"{0}\"", target);
+}
+else if (stem.Length == 0)
+{
+    refused = "no file name was given";
+}
+else
+{
+    // Revit appends the extension itself, so a name carrying one would produce
+    // "model.ifc.ifc".
+    if (stem.ToLowerInvariant().EndsWith(".ifc")) stem = stem.Substring(0, stem.Length - 4);
 
-    // Scoping to a 3D view is the standard coordination export - it carries
-    // exactly what that view shows. An invalid id means the whole model, and
-    // that is expressed as InvalidElementId rather than a zero so no integer
-    // ever stands in for an ElementId (the 2024 width change).
+    var full = System.IO.Path.Combine(target, stem + ".ifc");
+    overwrote = System.IO.File.Exists(full);
+
+    var options = new IFCExportOptions();
+    options.FileVersion = schema;
+
+    // Off by default in Revit, and an IFC without them looks complete and
+    // carries no volumes or areas - so a quantity take-off downstream has
+    // nothing to work from and nobody finds out until it is opened.
+    options.ExportBaseQuantities = withQuantities;
+
+    // InvalidElementId is how the API is told "the whole model". Passing a
+    // view id limits the export to what that view shows, which is how a
+    // discipline-only or level-only IFC is produced.
     if (scopeViewId != null && scopeViewId != ElementId.InvalidElementId)
     {
-        var scopeView = doc.GetElement(scopeViewId) as View3D;
-        if (scopeView == null)
+        var scope = doc.GetElement(scopeViewId) as View3D;
+
+        // A plan view cannot scope an IFC - the export is of a 3D model, and
+        // handing it a plan silently exports everything, which is the wrong
+        // deliverable with no sign anything went wrong.
+        if (scope == null)
         {
-            // Asked to scope to something that is not a 3D view. Refused rather
-            // than silently exporting the WHOLE MODEL - a coordination file
-            // containing far more than was asked for is the kind of mistake
-            // that reaches other trades before anybody notices.
-            problem = "scopeViewId is not a 3D view, and exporting the whole "
-                    + "model instead was not what was asked for";
+            refused = "the scope view must be a 3D view. A plan cannot limit an IFC, and "
+                    + "passing one exports the WHOLE model with nothing to show it did";
         }
         else
         {
-            options.FilterViewId = scopeView.Id;
+            options.FilterViewId = scope.Id;
         }
     }
 
-    if (problem.Length == 0)
+    if (refused == null)
     {
-        var expected = System.IO.Path.Combine(folder, name + ".ifc");
-        bool threw = false;
-        try
-        {
-            doc.Export(folder, name, options);
-        }
-        catch (Exception ex)
-        {
-            threw = true;
-            problem = "the IFC export failed: " + ex.Message;
-        }
-
-        // THE READ-BACK.
-        if (!threw)
-        {
-            if (System.IO.File.Exists(expected)) exportedPath = expected;
-            else problem = "the export reported no error and produced no file at "
-                         + expected;
-        }
+        if (doc.Export(target, stem, options)) created = full;
+        else refused = "Revit declined the export - the commonest cause is the IFC "
+                     + "exporter add-in not being installed on this machine";
     }
 }

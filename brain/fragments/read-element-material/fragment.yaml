@@ -1,0 +1,73 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-020
+semantic-identity: "what are these made of, and how much of each material"
+kind: action
+domain: revit.reporting
+capability: READ_ELEMENT_MATERIAL
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  The materials each element is made of, with the volume of each. The basis of
+  a material takeoff, and the answer to *"what is this pipe actually made of"*
+  when the type name says PPR and the material says something else.
+
+  **An element usually has more than one material** — a duct has its own and
+  its lining, a wall has every layer of its build-up. Reporting the first would
+  be right about a diffuser and wrong about everything compound.
+
+  **A material with no volume is still reported.** Paint and surface finishes
+  are applied materials with no thickness, and dropping them loses exactly the
+  ones a finishes schedule is about.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: materials
+      type: IDictionary<ElementId, ICollection<string>>
+    - name: volumeM3
+      type: IDictionary<string, double>
+    - name: noMaterial
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.GetMaterialIds(bool)` and
+  `Element.GetMaterialVolume(ElementId)` are unchanged 2020 to 2027. Cubic feet
+  to cubic metres is arithmetic (D-20).
+
+# ROUTING - repeated in DESCRIBE_ELEMENTS and MEASURE_ELEMENT_VOLUME.
+#
+#   "what material is this"        -> here
+#   "what is this element"         -> DESCRIBE_ELEMENTS - category and type
+#   "what is the volume"           -> MEASURE_ELEMENT_VOLUME - the whole solid,
+#                                     regardless of what it is made of
+#   "how much concrete"            -> here, which splits it BY MATERIAL
+#
+# THE WHOLE VOLUME AND THE VOLUME PER MATERIAL ARE DIFFERENT TAKEOFFS. A wall's
+# total volume is one number; its concrete, insulation and board are three.
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
+utterances:
+  - what material is this
+  - what is it made of
+  - how much concrete is there
+  - what are these made of
+  - material takeoff for these
+  - how much concrete

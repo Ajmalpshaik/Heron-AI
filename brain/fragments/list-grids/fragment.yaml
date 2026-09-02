@@ -1,0 +1,72 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 16
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-023
+semantic-identity: "every column grid line in the project, in the order a drawing reads them"
+kind: filter
+domain: revit.datums
+capability: LIST_GRIDS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Collects the project's column grids and reports each one's name and which way
+  it runs.
+
+  **Grid names are not sortable as text, and this is the case that proves it.**
+  A normal grid runs 1 to 12 one way and A to N the other. Sorted as strings,
+  "10" comes before "2" - so the list reads 1, 10, 11, 12, 2, 3, and a modeller
+  scanning for grid 3 finds it in the wrong half. The numbers are compared as
+  numbers and the letters as letters, which is how the drawing reads.
+
+  **Which way each grid runs is on the row**, because that is what somebody
+  actually wants: *"which grid is nearest"* and *"is this on grid 5"* both
+  depend on knowing whether 5 is a north-south line or an east-west one, and no
+  name says.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+    - name: notLinear
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Grid`, `Grid.Curve` and `Grid.Name` are unchanged 2020 to 2027. No ElementId
+  is built from an int, so 2024's 64-bit ids do not reach this code.
+
+# ROUTING - repeated in CREATE_GRID and SNAP_TO_GRID.
+#
+#   "list the grids"            -> here
+#   "how many grids"            -> here
+#   "which grids do we have"    -> here
+#   "add a grid"                -> CREATE_GRID
+#   "space these out on a grid" -> SNAP_TO_GRID. THE WORD "GRID" MEANS TWO
+#                                  DIFFERENT THINGS and this is the collision
+#                                  worth knowing: a COLUMN grid is the
+#                                  building's setting-out datum; a LAYOUT grid
+#                                  is an imaginary spacing for placing
+#                                  diffusers. SNAP_TO_GRID means the second and
+#                                  every fragment here means the first
+#   "list the levels"           -> LIST_LEVELS
+
+utterances:
+  - list the grids
+  - how many grids
+  - what grids do we have
+  - show me the grid lines
+  - which column grids are there
+  - grid names

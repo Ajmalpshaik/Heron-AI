@@ -1,0 +1,29 @@
+positive:
+  - given: 14 elements of a typical toilet block
+    expect: groupId is a real group, grouped is 14, refused false, and one group appears in the Project Browser
+
+negative:
+  - given: a set Revit will not group - elements on different design options
+    expect: >
+      refused is true, groupId stays invalid and NOTHING is grouped. There is no
+      partial group in Revit, so there is no partial success to report and the
+      bool is the honest shape
+
+  - given: a set where Revit absorbs or drops one element on grouping
+    expect: >
+      grouped reports the GROUP'S member count, not the input count. The two can
+      differ, and the input count is the one that reads as a success
+
+  - given: a single element, or none
+    expect: >
+      refused is true rather than an exception. A group of one is something
+      Revit will make and nobody wants
+
+  - given: 14 elements grouped, then a move requested on two of them
+    expect: >
+      MOVE_ELEMENTS reports them BLOCKED, not moved. This fragment creates that
+      condition, and it is the defect already found in this repository - Revit's
+      move returns normally and moves nothing for a group member
+
+second_route:
+  - The Project Browser's Groups node, and selecting the group in the model to read its member count

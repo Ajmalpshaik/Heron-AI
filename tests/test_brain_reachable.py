@@ -31,12 +31,18 @@ WHAT IT PROVES
      send a user in opposite directions.
 
 WHAT IT CANNOT DO
-  It does not import the MCP server: the MCP SDK is not installed on a machine
-  with no Revit, and no test here imports it. So clause 6 reads the server as
-  TEXT, the same technique test_tool_registry.py uses on the C# and for the
-  same reason - something has to look at both sides when they cannot import
-  each other. It proves the tools are declared and worded, never that FastMCP
-  serves them. That takes the PC.
+  It does not import the MCP server. So clause 6 reads the server as TEXT, the
+  same technique test_tool_registry.py uses on the C# and for the same reason -
+  something has to look at both sides when they cannot import each other. It
+  proves the tools are declared and worded, never that an SDK serves them.
+
+  THAT LIMIT IS NOW COVERED ELSEWHERE, and the gap it left was not theoretical.
+  tests/test_mcp_serves.py installs the missing half: it imports the server
+  against a real SDK and reads the SDK's own registry. Written 2026-08-31,
+  it immediately found that the server could not be imported at all under the
+  current SDK major - a defect this file's text read could not have seen, and
+  by construction never could. A test that names its own limit is doing its
+  job; a limit nobody ever covers is where the next defect lives.
 
   And none of it says a fragment WORKS. Resolution returning a capability and
   that capability doing the job are separate claims, and only the first is

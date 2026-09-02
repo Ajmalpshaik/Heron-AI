@@ -1,0 +1,30 @@
+positive:
+  - given: a model carrying 800 warnings of six different kinds, one of them 612 duplicate-instance rows
+    expect: >
+      six rows, commonest first, each with its own count - the six problems a
+      modeller can act on, instead of 800 lines nobody reads
+
+  - given: one Error among several hundred warnings
+    expect: >
+      the Error row is FIRST, above the 600-row warning. Sorting by count alone
+      buries the one thing that has to be looked at
+
+  - given: "show me what is causing the warnings", handed into ISOLATE_ELEMENTS
+    expect: the offending elements alone are left visible - the whole reason this provides `elements` and not just a count
+
+negative:
+  - given: a warning naming an element that was deleted, whose id no longer resolves
+    expect: >
+      the id goes to `notInThisModel` and nothing is added to `elements`. The
+      warning still counts, so the totals reconcile - dropping it silently
+      makes the element count and the warning count disagree with no
+      explanation
+
+  - given: a model whose only warnings live inside a linked file
+    expect: >
+      NOTHING is reported. GetWarnings() reads this document only, so a clean
+      result here never means the federated model is clean, and reporting it
+      as clean would be the wrong answer with full confidence
+
+second_route:
+  - Revit's own Manage > Review Warnings dialog, and its exported HTML report, counted against the same model

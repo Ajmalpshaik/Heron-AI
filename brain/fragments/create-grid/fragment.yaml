@@ -1,0 +1,75 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 16
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-024
+semantic-identity: "add a column grid line between these two points"
+kind: action
+domain: revit.datums
+capability: CREATE_GRID
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates one straight column grid between two points and names it.
+
+  **A grid is a vertical plane, so the line that defines it must be
+  horizontal.** Give it two points at different heights and Revit refuses the
+  whole call - there is no such thing as a sloping grid. That is checked here,
+  where the message can say why, rather than surfacing as an exception a
+  modeller cannot read.
+
+  **The name is checked for a clash first**, for the same reason CREATE_SHEET
+  and CREATE_LEVEL check theirs: Revit refuses a duplicate by throwing, and a
+  throw after creation leaves a grid in the model carrying whatever default name
+  Revit picked, in the middle of a setting-out somebody is relying on.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: from
+      type: XYZ
+      source: request
+    - name: to
+      type: XYZ
+      source: request
+    - name: gridName
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Grid.Create(Document, Line)` is unchanged 2020 to 2027. The points arrive as
+  `XYZ` in feet, already converted by whoever supplied them, so there is no
+  millimetre input here and no D-20 arithmetic - adding a conversion "for
+  consistency" would move every grid by a factor of 304.8.
+
+# ROUTING - repeated in LIST_GRIDS and SNAP_TO_GRID.
+#
+#   "add a grid"                -> here
+#   "put a grid line here"      -> here
+#   "list the grids"            -> LIST_GRIDS
+#   "space these out on a grid" -> SNAP_TO_GRID, which means a LAYOUT grid -
+#                                  an imaginary spacing for placing diffusers -
+#                                  and not the building's setting-out datum.
+#                                  One word, two jobs
+#   "add a level"               -> CREATE_LEVEL
+
+utterances:
+  - add a grid
+  - create a grid line
+  - put a grid here
+  - add another column grid
+  - I need a new grid line

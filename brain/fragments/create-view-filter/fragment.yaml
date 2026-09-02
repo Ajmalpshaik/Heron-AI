@@ -1,0 +1,123 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 16
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-025
+semantic-identity: "a rule that finds elements by a parameter value and colours whatever matches"
+kind: action
+domain: revit.views
+capability: CREATE_VIEW_FILTER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a filter that tests one parameter, applies it to a view, and colours
+  whatever the rule matches.
+
+  **A filter matches; it does not remember.** Whatever satisfies the rule is
+  caught, including work modelled next week - so a reissued drawing stays
+  correct with nobody touching it. That is the whole reason to set one up.
+
+  **The rule is a project-wide object.** Creating it puts it in the project's
+  filter list, available everywhere and applicable to the whole set later. It
+  outlives the view it was made for.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: filterName
+      type: string
+      source: request
+    - name: categoryIds
+      type: ICollection<ElementId>
+      source: request
+    - name: parameterId
+      type: ElementId
+      source: request
+    - name: matchValue
+      type: string
+      source: request
+    - name: colour
+      type: Color
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  **The second fragment in the library needing a compile symbol.** Neither form
+  of `ParameterFilterRuleFactory.CreateEqualsRule` for a string spans 2020 to
+  2027:
+
+    (ElementId, string, bool)   2020 to 2025. REMOVED IN 2026
+    (ElementId, string)         ADDED IN 2023
+
+  The overlap is 2023 to 2025. The split is at 2023 rather than at 2026 - both
+  work - so that the newer form is used from the first release that has it,
+  which is the shorter-lived branch to maintain.
+
+  **THIS NOTE WAS WRONG WHEN FIRST WRITTEN AND THE CODE WAS NOT.** It said the
+  three-argument form was "gone after 2022"; it survived to 2025. The
+  implementation happened to be right, so the compile gate passed on all eight
+  releases and had nothing to complain about - a green build does not check the
+  sentence next to it. The figures above were read off the reference assemblies
+  for each release; do the same before changing them.
+
+  `ParameterFilterElement.Create(Document, string, ICollection<ElementId>,
+  ElementFilter)`, `View.AddFilter` and `View.SetFilterOverrides` are unchanged
+  across the whole span.
+
+  It puts the same REQUIREMENT ON UNBUILT WORK that FIND_UNTAGGED_ELEMENTS
+  does: D-28's Roslyn executor must define the `REVIT20xx` symbol MSBuild
+  defines, or the `#else` branch is taken and this breaks on 2020 to 2022 only.
+
+# WHY THE CONTRAST BELOW IS IN A COMMENT. `purpose` is indexed, and the first
+# draft explained this fragment by describing what OVERRIDE_GRAPHICS_IN_VIEW
+# does - in that fragment's own words. Measured 2026-09-01: it took THREE
+# sentences off its neighbours, including "colour these elements in this view"
+# and "remove the colours", which belong to the two override fragments.
+#
+# The contrast is real and worth a reader's time, so it is kept - here, where
+# retrieval cannot see it:
+#
+#   an OVERRIDE is stuck to the element ids it was given. Correct today, blind
+#   to anything modelled afterwards
+#   a FILTER tests a parameter. It catches work that does not exist yet
+#
+# On a drawing issued once, either will do. On one that gets reissued, only the
+# second keeps being right.
+
+# ROUTING - repeated in OVERRIDE_GRAPHICS_IN_VIEW and SET_CATEGORY_GRAPHICS.
+#
+#   "colour by system"             -> here - it colours whatever MATCHES, so
+#                                     work drawn next week comes out right
+#   "add a filter to the view"     -> here
+#   "make the supply ducts blue"   -> here if it should keep working as the
+#                                     model grows; OVERRIDE_GRAPHICS_IN_VIEW if
+#                                     it is these elements, once
+#   "make these red"               -> OVERRIDE_GRAPHICS_IN_VIEW - stuck to the
+#                                     ids you found, and blind to anything added
+#                                     afterwards
+#   "grey the architecture back"   -> SET_CATEGORY_GRAPHICS - a whole category,
+#                                     no parameter involved
+
+utterances:
+  - colour by system
+  - add a filter to the view
+  - make the supply ducts blue
+  - filter the view by system
+  - colour the extract differently
+  - set up a view filter

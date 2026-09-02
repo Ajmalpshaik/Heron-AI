@@ -1,0 +1,31 @@
+positive:
+  - given: elevation 4500 mm, name "Level 2", in a project whose base point has not moved
+    expect: a level whose head reads 4500, named Level 2, and its id in `created`
+
+  - given: the same call in a project whose base point HAS been moved
+    expect: >
+      the head still reads 4500. The shift between the two elevation systems is
+      measured off an existing level and applied, because Level.Create takes the
+      internal number and the request is in the drawing's terms
+
+negative:
+  - given: name "Level 2" when a level of that name exists
+    expect: >
+      REFUSED before anything is created. Creating first and renaming after is
+      what leaves a wrongly-named level at the right height when Revit throws
+
+  - given: any successful creation, then the Project Browser is checked
+    expect: >
+      NO floor plan and NO ceiling plan. Revit's Level TOOL makes those; the
+      level does not, and the API is the level. `noViewsMade` is true so it can
+      be said rather than discovered - the modeller sees an empty browser and
+      concludes it failed when it did not
+
+  - given: a project with no levels at all
+    expect: >
+      the height is used as given. There is no existing level to measure the
+      base-point shift against, and a project with no levels has not had one
+      moved relative to anything
+
+second_route:
+  - Revit's own Level tool at the same height, with the two level heads compared in an elevation view

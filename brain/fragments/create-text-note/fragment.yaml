@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-022
+semantic-identity: "put a text note on this view at this point"
+kind: action
+domain: revit.annotation
+capability: CREATE_TEXT_NOTE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a text note in one view, at a point, in a text style the project
+  already has.
+
+  **It is view-only annotation, and that is the fact people forget.** A text
+  note lives on ONE view. Writing *"provide 300 mm clearance"* on the
+  coordination plan puts nothing on the section, the ceiling plan or the sheet,
+  and the note is not part of the model. That is not a limitation to work
+  around - it is what a note IS - but it decides whether the person who needs
+  to read it ever does.
+
+  **The style comes from the project, never from a size.** Text height, font
+  and arrowhead belong to a TextNoteType the project's template already
+  carries, and a note created with the wrong one is a drawing that fails its
+  own standard while reading correctly on screen.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: at
+      type: XYZ
+      source: request
+    - name: noteText
+      type: string
+      source: request
+    - name: textTypeId
+      type: ElementId
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `TextNote.Create(Document, ElementId, XYZ, string, ElementId)` is unchanged
+  2020 to 2027. The text type arrives as an `ElementId` from a live element, so
+  nothing here builds one from an int and 2024's 64-bit ids do not reach this
+  code.
+
+  The point arrives as an `XYZ` in feet, already converted by whoever supplied
+  it - there is no millimetre input to convert here, which is why this fragment
+  has no D-20 arithmetic in it.
+
+# ROUTING - repeated in TAG_ELEMENTS and CREATE_DIMENSION.
+#
+#   "add a text note"            -> here
+#   "put a note here"            -> here
+#   "write on the drawing"       -> here
+#   "tag these"                  -> TAG_ELEMENTS - a tag READS a parameter off
+#                                   the element and follows it when it changes;
+#                                   a note is typed once and never updates
+#   "dimension these"            -> CREATE_DIMENSION
+#   "cloud this change"          -> ADD_REVISION_CLOUD
+
+# TWO PHRASINGS WERE DROPPED HERE ON 2026-09-01, AND THE REASON IS NOT A RANK.
+# "write this on the drawing" and "type this on the plan" are ordinary English
+# and both lost to other fragments - the first to WRITE_ELEMENT_PARAMETERS,
+# which is a MODIFY, so an annotation request was being answered by a bulk
+# parameter write.
+#
+# The cause is that WRITE and TYPE are both Revit nouns. "Type" is what a
+# family instance has; "write" is what a parameter does. A sentence whose
+# strongest word means something else in this domain will keep losing to the
+# fragment that owns that meaning, and no amount of rewording this file changes
+# that. So the phrasings here avoid both words, and the ambiguity is recorded
+# rather than fought:
+#
+#   "write this on the drawing"  reads as WRITE_ELEMENT_PARAMETERS
+#   "type this on the plan"      reads as FILTER_ELEMENTS_BY_TYPE
+#
+# If somebody really does say one of them, that belongs in a glossary as a
+# site-word mapping, not as an utterance that quietly loses.
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
+utterances:
+  - add a text note
+  - put a note here
+  - add a note to the view
+  - add some text to this view
+  - note this on the plan
+  - annotate this with some text
+  - write on the drawing

@@ -1,94 +1,71 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `createdPhase` and
-// `demolishedPhase` are in scope, and leaves `created`, `demolished`,
-// `refused`, `absent`, `unverified` and `phaseNotFound` behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `phaseId` and `whichPhase` are in
+// scope; leaves `changed`, `refused`, `readOnly` and `alreadySet` behind.
 //
-// ASSUMES AN OPEN TRANSACTION. It does not start one - Golden Rule 16.
+// ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
-// WRITE_ELEMENT_PARAMETERS CANNOT DO THIS.
+// CREATED OR DEMOLISHED IS ASKED FOR, NEVER INFERRED. The two live in different
+// parameters and setting the wrong one is how existing work disappears from
+// every view at once. A phase named "Existing" tells you nothing about which
+// field the user meant - putting an element ON the existing phase and
+// demolishing it IN the existing phase are opposite instructions.
 //
-// Both phase parameters store an ElementId, not text. A fragment that writes a
-// value cannot set one, and the phase NAME is not the thing being stored - it
-// has to be resolved to the phase element first, which is why REPORT_PHASES is
-// the step before this.
+// PHASE_CREATED AND PHASE_DEMOLISHED ARE ElementId PARAMETERS, not strings.
+// Setting them from a phase's NAME would fail on any project whose phases are
+// named in another language, or renamed - which is most of them.
 //
-// CREATED AND DEMOLISHED ARE INDEPENDENT AND BOTH OPTIONAL.
+// A READ-ONLY PHASE PARAMETER IS NORMAL AND IS NOT A FAILURE. Elements inside a
+// group, elements hosted by something else, and elements in a linked model all
+// take their phase from what owns them. They are recorded separately from
+// `refused` because there is nothing to fix on them - fixing means changing the
+// group or the host.
 //
-// "Put these on New Construction" touches Created and must NOT clear
-// Demolished. An empty name means LEAVE IT ALONE - a different instruction from
-// "clear it".
-//
-// AN UNKNOWN PHASE NAME STOPS THE JOB BEFORE ANYTHING IS WRITTEN.
-//
-// Half a set on one phase and half untouched is worse than nothing done: the
-// model looks partly correct and the failure is invisible in a plan.
+// AN ELEMENT ALREADY ON THE PHASE IS COUNTED, NOT WRITTEN. Writing the same
+// value back marks the element as modified for worksharing, which shows up as
+// a change somebody else has to reconcile for no reason.
 
-var created = new List<ElementId>();
-var demolished = new List<ElementId>();
+var changed = new List<ElementId>();
 var refused = new List<ElementId>();
-var absent = new List<ElementId>();
-var unverified = new List<ElementId>();
-var phaseNotFound = new List<string>();
+var readOnly = new List<ElementId>();
+var alreadySet = new List<ElementId>();
 
-var byName = new Dictionary<string, ElementId>();
-var phases = doc.Phases;
-int phaseTotal = phases == null ? 0 : phases.Size;
-for (int i = 0; i < phaseTotal; i++)
+var field = (whichPhase ?? "").Trim().ToLowerInvariant();
+
+var wantDemolished = field.Contains("demolish") || field.Contains("demo");
+var wantCreated = field.Contains("creat") || field.Contains("new") || field.Contains("built");
+
+var phase = doc.GetElement(phaseId) as Phase;
+
+if (phase == null || (!wantCreated && !wantDemolished) || (wantCreated && wantDemolished))
 {
-    var phase = phases.get_Item(i);
-    if (phase == null) continue;
-    string name = null;
-    try { name = phase.Name; } catch { }
-    if (!string.IsNullOrEmpty(name) && !byName.ContainsKey(name)) byName[name] = phase.Id;
+    // All of them together: the fault is in the request, not in any element,
+    // and reporting each element individually sends somebody to look at the
+    // elements.
+    foreach (var element in elements)
+    {
+        if (element != null) refused.Add(element.Id);
+    }
 }
-
-bool wantCreated = !string.IsNullOrWhiteSpace(createdPhase);
-bool wantDemolished = !string.IsNullOrWhiteSpace(demolishedPhase);
-
-ElementId createdId = ElementId.InvalidElementId;
-ElementId demolishedId = ElementId.InvalidElementId;
-
-if (wantCreated && !byName.TryGetValue(createdPhase, out createdId)) phaseNotFound.Add(createdPhase);
-if (wantDemolished && !byName.TryGetValue(demolishedPhase, out demolishedId)) phaseNotFound.Add(demolishedPhase);
-
-// Resolved BEFORE the loop, and nothing is written if a name is unknown.
-if (phaseNotFound.Count == 0 && (wantCreated || wantDemolished))
+else
 {
+    var which = wantDemolished
+        ? BuiltInParameter.PHASE_DEMOLISHED
+        : BuiltInParameter.PHASE_CREATED;
+
     foreach (var element in elements)
     {
         if (element == null) continue;
 
-        if (wantCreated)
-        {
-            var parameter = element.get_Parameter(BuiltInParameter.PHASE_CREATED);
-            if (parameter == null || parameter.IsReadOnly) absent.Add(element.Id);
-            else
-            {
-                bool accepted = false;
-                try { accepted = parameter.Set(createdId); } catch { }
+        var parameter = element.get_Parameter(which);
 
-                // READ BACK. Revit refuses a demolition earlier than the
-                // creation, and a count of attempts reports that as done.
-                ElementId now = ElementId.InvalidElementId;
-                try { now = parameter.AsElementId(); } catch { unverified.Add(element.Id); continue; }
+        // No such parameter at all - a datum, an annotation, a view. Phases do
+        // not apply to it, which is different from being unable to change it.
+        if (parameter == null) { refused.Add(element.Id); continue; }
 
-                if (!accepted || now != createdId) refused.Add(element.Id);
-                else created.Add(element.Id);
-            }
-        }
+        if (parameter.IsReadOnly) { readOnly.Add(element.Id); continue; }
 
-        if (wantDemolished)
-        {
-            var parameter = element.get_Parameter(BuiltInParameter.PHASE_DEMOLISHED);
-            if (parameter == null || parameter.IsReadOnly) { absent.Add(element.Id); continue; }
+        if (parameter.AsElementId() == phaseId) { alreadySet.Add(element.Id); continue; }
 
-            bool accepted = false;
-            try { accepted = parameter.Set(demolishedId); } catch { }
-
-            ElementId now = ElementId.InvalidElementId;
-            try { now = parameter.AsElementId(); } catch { unverified.Add(element.Id); continue; }
-
-            if (!accepted || now != demolishedId) refused.Add(element.Id);
-            else demolished.Add(element.Id);
-        }
+        if (parameter.Set(phaseId)) changed.Add(element.Id);
+        else refused.Add(element.Id);
     }
 }

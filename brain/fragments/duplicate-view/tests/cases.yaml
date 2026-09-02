@@ -1,0 +1,28 @@
+positive:
+  - given: one plan view, option WithDetailing
+    expect: created holds one new view id, it appears in the Project Browser, and its tags and dimensions came across
+
+  - given: the same view with option Duplicate
+    expect: the copy has the geometry and NO annotation - which is the difference the option names and Revit's naming does not explain
+
+negative:
+  - given: option AsDependent
+    expect: >
+      the result is a CHILD view, not a copy. Its crop and scope box are its own
+      and everything else stays tied to the parent forever. It is the option
+      picked by accident that produces a view which mysteriously refuses changes
+      later, and it is the reason there is no default
+
+  - given: a batch containing a schedule or legend that cannot be duplicated with the given option
+    expect: >
+      its id is in refused, asked via CanViewBeDuplicated BEFORE attempting, and
+      the rest of the batch still duplicates - not an exception that abandons
+      the remainder
+
+  - given: a duplicate call that returns InvalidElementId without throwing
+    expect: >
+      it is in refused, NOT counted as created. A returned invalid id is the
+      silent no-op shape this repository has met on the move and parameter paths
+
+second_route:
+  - The Project Browser - the new view is there, named "... Copy 1", and can be opened

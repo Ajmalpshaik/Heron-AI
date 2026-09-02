@@ -1,0 +1,24 @@
+positive:
+  - given: an architectural link, a structural link and a site link, all loaded
+    expect: three rows, each naming the file and saying it is loaded
+
+  - given: one link file placed twice for a repeated wing
+    expect: >
+      ONE row saying "placed 2 times", not two rows. Counting instances would
+      report a project with four linked models as having nine
+
+negative:
+  - given: a link that has been unloaded
+    expect: >
+      its row says NOT LOADED and its type id is in `notLoaded`. This is the
+      row that explains why a clash check found nothing - the geometry is not
+      there to clash with
+
+  - given: a link whose recorded status still says loaded but whose file has moved, so GetLinkDocument() returns null
+    expect: >
+      it is reported NOT LOADED. The recorded status describes what Revit last
+      wrote down; the missing document describes what can actually be read, and
+      every question after this one depends on the second
+
+second_route:
+  - Revit's own Manage > Manage Links dialog, read against the same project for the file list and the loaded state

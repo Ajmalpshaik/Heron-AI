@@ -1,0 +1,88 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-009
+semantic-identity: "cut this duct or pipe in two at a measured distance along it"
+kind: action
+domain: revit.mep
+capability: SPLIT_MEP_RUN
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Breaks a duct or a pipe into two at a distance measured from the start of the
+  run, leaving both halves in place and connected to whatever they were
+  connected to.
+
+  **Named for what it can actually do.** *"Split this at the wall"* is asked of
+  walls, floors and ducts alike, and only the MEP case has an API behind it -
+  Revit exposes a break for ducts and for pipes and for nothing else. Calling
+  this SPLIT_ELEMENT would promise a wall split that no release can perform, so
+  a modeller would ask for it, get a refusal, and have no idea why.
+
+  **The distance is measured from the element's own start, which is not always
+  the end a person is looking at.** A duct's start is whichever end it was
+  modelled from, and right-to-left is as normal as left-to-right. So a distance
+  that lands outside the length is refused with the length reported, giving the
+  number needed to correct it rather than just "no".
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: distanceMm
+      type: double
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+    - name: notMepCurve
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `MechanicalUtils.BreakCurve` and `PlumbingUtils.BreakCurve` both take
+  `(Document, ElementId, XYZ)` and return an `ElementId`, unchanged 2020 to
+  2027. They live in `Autodesk.Revit.DB.Mechanical` and
+  `Autodesk.Revit.DB.Plumbing`, both of which the wrapper already carries.
+
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code. The distance arrives in millimetres and is divided by 304.8 -
+  arithmetic, per D-20.
+
+# ROUTING - repeated in CREATE_DUCT and OFFSET_ELEMENTS.
+#
+#   "split this duct"            -> here
+#   "cut the pipe here"          -> here
+#   "break it at the wall"       -> here, with the distance measured first
+#   "split this wall"            -> NOT here and nowhere. Revit exposes no wall
+#                                   split, and the name says MEP so the refusal
+#                                   is understandable when it comes
+#   "move it 200 across"         -> OFFSET_ELEMENTS. That is what "split this
+#                                   duct at the wall" resolved to before this
+#                                   fragment existed
+#   "draw a new duct"            -> CREATE_DUCT
+#   "draw the duct run"          -> CREATE_DUCT. Measured 2026-09-01 - this
+#                                   fragment took that sentence off
+#                                   CREATE_DUCT until its prose stopped
+#                                   using three forms of the word "draw" to
+#                                   explain which END the distance is from
+
+utterances:
+  - split this duct
+  - cut the pipe here
+  - break this duct in two
+  - split it at the wall
+  - divide this run
+  - break the pipe

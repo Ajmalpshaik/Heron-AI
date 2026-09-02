@@ -1,0 +1,33 @@
+positive:
+  - given: a 400x400 duct carrying 1000 l/s, maximumVelocity 5.0
+    expect: >
+      velocity reads about 6.25 m/s and the duct is in overLimit - CHECKED
+      against the same figure worked by hand from the flow and the free area,
+      not against what the schedule prints
+
+  - given: a 400 diameter round duct with the same flow
+    expect: >
+      a HIGHER velocity than the 400x400, because the round free area is
+      smaller. Using the rectangular arithmetic on a round duct is the silent
+      error this case exists to catch
+
+negative:
+  - given: a duct resized from 300x300 to 500x500 without the system being recalculated
+    expect: >
+      it appears in `disagrees` - velocity computed from the real geometry, and
+      revitSays still reporting the figure for the old size. That stale number
+      looks entirely correct on a schedule, which is the whole reason both are
+      read
+
+  - given: a duct not connected into any calculated system
+    expect: >
+      it is in noFlow and NOT given a velocity of 0.0. Zero reads as "well
+      within limits" on precisely the duct nobody has connected yet
+
+  - given: a duct whose size parameters are blank
+    expect: >
+      it is in noFlow, not given an invented area. An area guessed here comes
+      out as a confident velocity number that nobody can tell from a real one
+
+second_route:
+  - Revit's own Velocity column in a duct schedule - and where it disagrees, the hand calculation decides

@@ -1,0 +1,89 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-017
+semantic-identity: "read or set the view range on this plan"
+kind: action
+domain: revit.views
+capability: SET_VIEW_RANGE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Reads a plan's view range and sets its cut plane, top and bottom offsets.
+
+  **The view range is the commonest reason MEP does not appear on a plan.** A
+  duct at 3200 above a level whose top offset is 2300 is simply outside the
+  view, and nothing about the element is wrong — which is why people spend an
+  hour on the element.
+
+  **It reports the range BEFORE changing it, always.** Setting a view range
+  blind is how a coordinated drawing quietly starts showing the floor above.
+  The previous offsets come back so a caller can say what it was and put it
+  back.
+
+  **A plan only.** A section, an elevation and a 3D view have no view range,
+  and are refused by name rather than silently doing nothing.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: view
+      type: View
+      source: request
+    - name: topMm
+      type: double
+      source: request
+    - name: cutMm
+      type: double
+      source: request
+    - name: bottomMm
+      type: double
+      source: request
+    - name: apply
+      type: bool
+      source: request
+  provides:
+    - name: wasTopMm
+      type: double
+    - name: wasCutMm
+      type: double
+    - name: wasBottomMm
+      type: double
+    - name: applied
+      type: bool
+    - name: viewRefused
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewPlan.GetViewRange`,
+  `ViewPlan.SetViewRange`, `PlanViewRange.GetOffset`, `SetOffset` and the
+  `PlanViewPlane` enum are unchanged 2020 to 2027. Millimetres to feet is
+  arithmetic (D-20).
+
+# ROUTING - repeated in DIAGNOSE_VISIBILITY and SET_VIEW_CROP.
+#
+#   "why can I not see my ducts"     -> DIAGNOSE_VISIBILITY first
+#   "set the view range"             -> here
+#   "the plan is cutting too low"    -> here
+#   "crop the view"                  -> SET_VIEW_CROP - a different limit, in
+#                                       the view's plane rather than in height
+#
+# THE VIEW RANGE AND THE CROP BOTH "CUT THE VIEW" and are said the same way.
+# One is a height band, the other a rectangle on the sheet.
+
+utterances:
+  - set the view range
+  - what is the view range
+  - the plan is cutting too low
+  - raise the cut plane
+  - I cannot see the high level ducts

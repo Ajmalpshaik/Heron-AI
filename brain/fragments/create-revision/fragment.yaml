@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-004
+semantic-identity: "add a new revision to the project's revision schedule"
+kind: action
+domain: revit.sheets
+capability: CREATE_REVISION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a revision in the project and fills in its description, date and
+  issued-by.
+
+  **It is the input ADD_REVISION_CLOUD could not get.** That fragment needs a
+  `revisionId` and deliberately refuses to invent one - picking "the latest"
+  automatically is wrong often enough to matter. Nothing in the library could
+  produce one, so the whole revision job stopped at the first step.
+
+  **A new revision is NOT issued, and that is deliberate.** `Issued` is a
+  one-way gate in Revit: once set, the revision's description and date are
+  locked and clouds can no longer be added to it. Creating one already issued
+  would produce a revision nobody can cloud, which is the exact opposite of why
+  it was made.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: description
+      type: string
+      source: request
+    - name: revisionDate
+      type: string
+      source: request
+    - name: issuedBy
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+    - name: sequence
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Revision.Create(Document)`, `Revision.GetAllRevisionIds(Document)` and the
+  `Description`, `RevisionDate`, `IssuedBy` and `Issued` properties are
+  unchanged 2020 to 2027 - read off the reference assemblies for both ends of
+  the span rather than remembered.
+
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# THE DATE IS A STRING, AND THAT IS REVIT'S CHOICE RATHER THAN A SHORTCUT HERE.
+# `RevisionDate` is free text, so "02/09/26", "2 Sep 2026" and "Sept 26" are all
+# accepted and none is parsed. It is whatever goes in the titleblock, so the
+# project's own convention wins and this fragment must not reformat it.
+
+# ROUTING - repeated in ADD_REVISION_CLOUD and LIST_REVISIONS.
+#
+#   "add a revision"                   -> here - the REVISION itself
+#   "add a revision to the project"    -> here
+#   "start revision B"                 -> here
+#   "put a revision cloud around this" -> ADD_REVISION_CLOUD, which needs a
+#                                         revision to exist first. This is what
+#                                         makes one
+#   "which sheets have this revision"  -> LIST_REVISIONS
+
+utterances:
+  - add a revision
+  - add a revision to the project
+  - create a new revision
+  - start revision B
+  - I need a new revision for this issue

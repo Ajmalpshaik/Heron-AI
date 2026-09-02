@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-021
+semantic-identity: "dimension the spacing between these parallel runs, on this view"
+kind: action
+domain: revit.annotation
+capability: CREATE_DIMENSION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws one linear dimension across a set of parallel linear elements in a
+  view, measuring centre to centre.
+
+  **This is the duct-spacing dimension, and that is the whole of its scope.**
+  It dimensions between the CENTRELINES of linear elements - ducts, pipes,
+  conduit, cable tray - which is how MEP spacing is dimensioned and checked. It
+  does not dimension to wall faces, to grids, to levels, or between two points
+  the user names. Those are real jobs and each needs a different kind of
+  reference; a fragment claiming all of them would be right about one.
+
+  **A reference has to be asked for before it exists.** Revit only hands back
+  referenceable geometry when the geometry is read with `ComputeReferences`
+  turned on, and an MEP centreline additionally only appears when non-visible
+  objects are included. Read the geometry the ordinary way and every element
+  yields nothing, with no error - the dimension simply never gets made.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: offsetMm
+      type: double
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: IList<ElementId>
+    - name: notLinear
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Create.NewDimension(View, Line, ReferenceArray)`,
+  `Options.ComputeReferences`, `Options.IncludeNonVisibleObjects` and
+  `GeometryObject.Reference` are unchanged 2020 to 2027. No ElementId is built
+  from an int, so 2024's 64-bit ids do not reach this code.
+
+  The offset arrives in millimetres and is divided by 304.8 - arithmetic, per
+  D-20.
+
+# WHAT WOULD DISPROVE THIS FRAGMENT, since nothing here has met a real model.
+# The centreline-reference technique is the part to distrust: if
+# `IncludeNonVisibleObjects` does not surface a referenceable centreline for a
+# duct on some release, every element lands in `refused` and NOTHING IS DRAWN.
+# That is the designed failure - a refusal that says so, rather than a
+# dimension attached to the wrong thing - but it is a failure, and the first
+# run against a real model is what settles it.
+
+# ROUTING - repeated in MEASURE_ELEMENT_LENGTHS and TAG_ELEMENTS.
+#
+#   "add a dimension between these"  -> here
+#   "dimension the duct spacing"     -> here
+#   "how far apart are they"         -> MEASURE_ELEMENT_LENGTHS reports it as a
+#                                       NUMBER and draws nothing. This fragment
+#                                       puts it on the drawing. Asking a
+#                                       question must not annotate the model
+#   "how long is this duct"          -> MEASURE_ELEMENT_LENGTHS
+#   "tag these"                      -> TAG_ELEMENTS - a tag reads a parameter,
+#                                       a dimension measures a distance
+
+utterances:
+  - add a dimension between these
+  - dimension these ducts
+  - dimension the spacing
+  - put a dimension between the two runs
+  - dimension centre to centre
+  - add dimensions to the drawing

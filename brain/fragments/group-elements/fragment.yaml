@@ -1,0 +1,73 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-012
+semantic-identity: "put these elements into one Revit group"
+kind: action
+domain: revit.elements
+capability: GROUP_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes one Revit group from the given elements — a repeated toilet block, a
+  typical plant arrangement, a riser that recurs on every floor.
+
+  **Grouping changes how every later operation behaves on these elements, and
+  that is the reason to read this before using it.** A group member silently
+  refuses to move: Revit's move call returns normally and moves nothing. That
+  is the defect this repository already found and fixed in `MOVE_ELEMENTS`, and
+  this fragment is the thing that creates the condition. Grouping a set makes
+  every subsequent edit to its members a different problem.
+
+  **Revit decides what can be grouped, and it is not obvious.** Elements on
+  different design options, a group inside itself, some hosted elements — the
+  call throws rather than reporting, so a failure here is reported by name
+  rather than allowed to abandon the operation.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: groupId
+      type: ElementId
+    - name: grouped
+      type: int
+    - name: refused
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.Create.NewGroup(ICollection<ElementId>)`
+  is unchanged 2020 to 2027 and no ElementId is built from an integer.
+
+# ROUTING - repeated in UNGROUP_ELEMENTS and MOVE_ELEMENTS.
+#
+#   "group these"                     -> here
+#   "ungroup them"                    -> UNGROUP_ELEMENTS
+#   "why will these not move"         -> MOVE_ELEMENTS reports blocked; a GROUP
+#                                        MEMBER is a common cause and is not
+#                                        the same as pinned
+#   "select the group"                -> FILTER_ELEMENTS_BY_ID
+#
+# GROUPED, PINNED AND OWNED ALL PRESENT AS "IT WILL NOT MOVE" and have three
+# different fixes. Reporting the wrong one sends somebody to the wrong place.
+
+utterances:
+  - group these
+  - put them in a group
+  - make a group out of these
+  - group the toilet block
+  - turn these into a group

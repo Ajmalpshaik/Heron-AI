@@ -1,0 +1,22 @@
+positive:
+  - given: 10 unpinned ducts, pinned true
+    expect: changed is 10, alreadySet is 0, refused empty, and the pin icon shows on each in Revit
+
+  - given: 10 pinned ducts, pinned false
+    expect: changed is 10 and each can then be dragged in Revit - the read-back, not the absence of an exception, is what says so
+
+negative:
+  - given: 40 elements of which 38 are ALREADY pinned, pinned true
+    expect: >
+      changed is 2 and alreadySet is 38 - NOT changed 40. This is the case the
+      fragment exists for: Revit accepts all forty and 38 of them do nothing,
+      so a count of what was asked for reads as a full success
+
+  - given: a batch containing one element Revit refuses to pin, in the middle
+    expect: >
+      the batch RUNS TO THE END, that id appears in refused, and the elements
+      after it are still processed - not an exception that abandons the
+      remaining elements and reports nothing at all
+
+second_route:
+  - The pin icon in Revit, and dragging one element to see whether it moves

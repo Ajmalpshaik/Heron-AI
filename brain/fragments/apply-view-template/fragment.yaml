@@ -4,8 +4,8 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-VIEW-008
-semantic-identity: "put a named view template on these views, and check it actually took"
+id: FRG-VIEW-011
+semantic-identity: "put a view template on these views"
 kind: action
 domain: revit.views
 capability: APPLY_VIEW_TEMPLATE
@@ -14,66 +14,74 @@ source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Applies one named view template to every view handed in, and reports FOUR
-  outcomes, because "the assignment did not throw" is not the same as "the view
-  now has that template".
+  Applies one view template to a set of views. The office's standard, applied
+  the way it is meant to be applied — once, from a template — rather than by
+  overriding each view by hand.
 
-  Assigning a template is a property set. It can leave the view unchanged - a
-  template of the wrong kind for that view, or a view whose template is not
-  free to change - and a property set that does not take is silent. Counting the
-  line after the assignment as a success is the same failure MOVE_ELEMENTS was
-  rewritten to catch and the same one the parameter path was: reporting the
-  number that was ASKED FOR as the number that HAPPENED.
+  **A view template LOCKS whatever it controls, and that is the whole point and
+  the whole hazard.** Every setting the template includes stops being editable
+  on the view. Graphic overrides somebody applied by hand are not deleted — they
+  are overruled and become invisible and unreachable, which reads exactly like
+  the work having been lost.
 
-  So the template id is read back off each view and compared. That comparison is
-  the fragment; the assignment is one line.
+  **That makes this the fragment the grayout job has to route around.** Greying
+  a background by category and then applying a template that controls
+  V/G overrides silently discards the greyout. The order matters and neither
+  call reports the conflict.
 
-  ALREADY-HAD IS COUNTED SEPARATELY. "Applied to 12 views" when 8 of them
-  already carried that template is true and useless - it hides that the request
-  changed 4 things, which is what a person needs to know before deciding whether
-  to undo.
-
-  WHEN THE TEMPLATE IS NOT FOUND, the names that DO exist are handed back rather
-  than a bare failure. Nearly every miss here is a spelling or a stale name, and
-  the list is the answer to the question the user is about to ask.
-
-  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
-  applying a template to forty views is one undo entry.
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
   needs:
-    - name: doc
-      type: Document
-    - name: elements
-      type: IList<Element>
-    - name: templateName
-      type: string
+    - name: views
+      type: IList<View>
+      source: request
+    - name: templateId
+      type: ElementId
       source: request
   provides:
     - name: applied
       type: int
-    - name: alreadyHad
+    - name: alreadyOnIt
       type: int
-    - name: notApplied
+    - name: refused
       type: IList<ElementId>
-    - name: availableTemplates
-      type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  One implementation for every release. `View.IsTemplate`, `View.ViewTemplateId`
-  and `ElementId.InvalidElementId` are unchanged 2020 to 2027 and no units call
-  is made. Template ids are compared with `==` on `ElementId` rather than by
-  converting to an integer, which is what keeps this clear of the 2024 change to
-  the width behind `ElementId`.
+  One implementation for every release. `View.ViewTemplateId` is a settable
+  ElementId property on every release 2020 to 2027, and the template arrives as
+  an ElementId object taken from a live view, so nothing here builds one from
+  an integer.
+
+# ROUTING - repeated in FIND_VIEWS_WITHOUT_TEMPLATE.
+#
+#   "apply the template to these"   -> here - the FIX
+#   "which views have no template"  -> FIND_VIEWS_WITHOUT_TEMPLATE, which
+#                                      finds what needs fixing and separates
+#                                      the views that are ON SHEETS - those are
+#                                      being issued
+
+# ROUTING - repeated in SET_CATEGORY_GRAPHICS and OVERRIDE_GRAPHICS_IN_VIEW.
+#
+#   "apply the view template"          -> here
+#   "do the grayout"                   -> SET_CATEGORY_GRAPHICS - and CHECK
+#                                         whether a template controls V/G on
+#                                         that view first, or the grayout is
+#                                         overruled the moment it is applied
+#   "make all the architecture faint"  -> SET_CATEGORY_GRAPHICS
+#   "put it back how it was"           -> RESET_GRAPHIC_OVERRIDES
+#
+# A TEMPLATE BEATS A HAND OVERRIDE, SILENTLY. Neither call reports the
+# conflict, and the override is not deleted - it is overruled and becomes
+# unreachable, which reads as the work having been lost.
 
 utterances:
   - apply the view template
-  - put the coordination template on these views
-  - set the template for these plans
-  - use the mechanical template here
-  - give these views the same settings
-  - apply my standard view template
+  - put the standard template on these views
+  - set the view template
+  - use the office template on this view
+  - apply the template to all these views

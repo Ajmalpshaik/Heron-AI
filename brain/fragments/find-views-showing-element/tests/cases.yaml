@@ -1,48 +1,24 @@
-# D-30: the negative case is what catches "succeeded and did nothing".
-
 positive:
-  - given: an element you already know appears on two sheets
-    expect: >
-      both sheets in onSheets. Check against a view you can open and see the
-      element in - this is the case to run FIRST, because everything below
-      rests on the collector answering the way Revit draws
-
-  - given: an element visible in several views placed on one sheet
-    expect: >
-      the sheet listed ONCE. Two viewports of the same sheet must not make a
-      reissue list say the sheet twice
+  - given: a duct shown on 6 views, 2 of which are on sheets
+    expect: inViews holds 6 view ids, onSheets holds the 2 sheet ids, nowhere empty
 
 negative:
-  - given: an element CROPPED OUT of a view it is geometrically inside
+  - given: an element about to be deleted that appears on 4 ISSUED sheets
     expect: >
-      that view NOT listed. This is why the view-scoped collector is used
-      rather than a bounding-box test - a geometric answer says the element is
-      in that view and the drawing does not show it
+      onSheets names all 4 BEFORE the deletion. Revit gives no warning, and the
+      four drawings are found later by whoever checks the set. This is the
+      whole reason to run it first
 
-  - given: an element whose category is switched OFF in a view
+  - given: an element in the model but in no printable view
     expect: >
-      that view not listed. Same reason, different rule, and no code here knows
-      about either - Revit applies them
+      it is in nowhere - which is the safe-to-change answer, and is different
+      from being absent from the model
 
-  - given: an element TEMPORARILY hidden in an open view
+  - given: a project with 800 views
     expect: >
-      that view STILL listed, and that is correct rather than a miss. Temporary
-      hide is per-session and is not saved, so a reissue list built on it would
-      change depending on who ran it and what they had open
-
-  - given: an element that appears in NO sheeted view at all
-    expect: >
-      its id in `shownNowhere` and empty lists - not absent from the
-      dictionaries. "Not drawn anywhere" is a real and useful answer and must
-      be distinguishable from "not asked about"
-
-  - given: a model whose views are mostly NOT on sheets
-    expect: >
-      viewsSearched clearly lower than the model's view count. The number must
-      be reported, because a fast answer that searched a tenth of the views
-      must not read as a complete one
+      800 collector passes, and it is SLOW. Revit keeps no reverse index, so
+      there is no cheaper true answer - which is why this is a deliberate check
+      and not something to call in a loop
 
 second_route:
-  - >
-    open one of the returned views in Revit and select the element - if it does
-    not highlight, the collector is answering a different question
+  - Try deleting the element in Revit - it warns about elements on sheets, though only sometimes and only for some categories

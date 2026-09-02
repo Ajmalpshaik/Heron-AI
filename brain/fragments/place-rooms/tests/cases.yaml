@@ -1,0 +1,43 @@
+positive:
+  - given: a level with 24 enclosed areas, placeKind "space"
+    expect: >
+      24 spaces in one pass, and the MEP load calculation now has something to
+      run on. Rooms would look identical on the plan and give it nothing
+
+  - given: a level whose rooms are already placed by the architect, placeKind "space"
+    expect: >
+      the spaces are placed anyway. The room belongs to their model and the
+      space to yours; they occupy the same air and finding rooms there is not a
+      reason to refuse
+
+negative:
+  - given: a level where three areas have a gap in the bounding walls
+    expect: >
+      those three come back in `unbounded`, and that list is a SNAG LIST - the
+      same gap is why the area next door came out enormous, because Revit ran
+      the boundary through the gap and into the corridor
+
+  - given: placeKind left empty
+    expect: >
+      refused, asking which. Rooms and spaces look the same on a plan, and the
+      wrong one gives a drawing that looks finished with nothing to calculate on
+
+  - given: placeKind "space" with no plan view given
+    expect: >
+      refused, and the message says this is NOT true of rooms. Spaces are placed
+      from a view and rooms are not - a real difference between the two
+      elements, found by the compile gate refusing the first version of this
+      fragment on all eight releases
+
+  - given: no phase named
+    expect: >
+      refused. The shorter overload would take the document's current phase
+      silently, which on a refurbishment job puts every room in Existing while
+      the work is New Construction - and every room-based schedule then reports
+      on the wrong half of the building
+
+  - given: a level with no enclosed area at all
+    expect: refused, saying rooms need bounding elements, rather than reporting a successful placement of nothing
+
+second_route:
+  - Revit's own Architecture > Room > Place Rooms Automatically, or Analyze > Space, on the same level, with the counts compared

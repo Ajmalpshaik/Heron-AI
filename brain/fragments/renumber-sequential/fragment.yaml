@@ -1,11 +1,11 @@
-heron-agent: HERON-REVIT-PAR-030
+heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
 heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-PAR-007
-semantic-identity: "number these in order - rooms, sheets, marks"
+id: FRG-PAR-004
+semantic-identity: "number these elements one after another, in the order given"
 kind: action
 domain: revit.parameters
 capability: RENUMBER_SEQUENTIAL
@@ -14,78 +14,106 @@ source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Writes a running number into one parameter across a set - rooms 101, 102, 103;
-  sheets restamped; marks put back in order after a layout change.
+  Writes a RUNNING SEQUENCE into one parameter, across a batch, in the order the
+  elements arrive - D-1, D-2, D-3 along a corridor.
 
-  **THE ORDER IS THE WHOLE JOB AND IT IS A REQUEST INPUT.** Numbering in
-  whatever order a collector happened to return is the one outcome nobody wants:
-  it looks like work was done and produces a drawing where 104 is next to 118.
-  `sortBy` takes `x`, `y`, `name` or `none` - and `none` means *the order I
-  handed you*, which is the right answer when the caller has already sorted them
-  deliberately.
+  **Writing ONE value onto one element is WRITE_ELEMENT_PARAMETERS, not this.**
+  The sequence is what makes this a separate job. See the routing table below,
+  which is kept in a comment for a reason worth knowing before editing it.
 
-  **`x` AND `y` ARE PROJECT AXES, NOT THE BUILDING'S.** On a site rotated to
-  true north, sorting by X walks diagonally across the rooms. That is a real
-  limit rather than a bug, it is stated here, and the answer when it bites is to
-  sort by name or to hand the elements over already ordered.
+  **It does not decide the ORDER, and that is the most important thing about
+  it.** Numbering left to right, along a corridor, clockwise round a core or
+  simply in selection order are different jobs with different right answers, and
+  a fragment that picked one would be silently wrong for the rest. The caller
+  hands the elements in the order it wants them numbered - D-33: never assume an
+  input.
 
-  **A DUPLICATE NUMBER IS REFUSED BY REVIT, NOT BY THIS FRAGMENT**, and it is
-  the normal way this job fails: renumbering rooms 101 upward while a room
-  already holds 105 fails on that one element. Every refusal is reported with
-  its number, so the clash can be seen rather than inferred from a short count.
-  Nothing is renumbered twice to work around it - a silent second pass would
-  make the final numbers depend on collision order.
+  **It checks for collisions BEFORE writing anything.** Revit will happily give
+  two doors the same number and say nothing; the drawing then looks finished and
+  is wrong. Every intended value is compared against what the rest of the model
+  already holds, and a clash stops the whole batch rather than producing a
+  half-renumbered set nobody can unpick.
 
-  **IT READS BACK.** Every element reported as numbered was re-read.
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
   needs:
-    - name: doc
-      type: Document
     - name: elements
       type: IList<Element>
     - name: parameterName
       type: string
       source: request
-    - name: startAt
-      type: int
-      source: request
     - name: prefix
       type: string
       source: request
-    - name: padding
+    - name: startAt
       type: int
       source: request
-    - name: sortBy
-      type: string
+    - name: existingValues
+      type: ICollection<string>
       source: request
   provides:
-    - name: numbered
-      type: IDictionary<ElementId, string>
+    - name: renumbered
+      type: int
     - name: refused
-      type: IDictionary<ElementId, string>
-    - name: readOnly
       type: IList<ElementId>
-    - name: absent
-      type: IList<ElementId>
-    - name: unverified
-      type: IList<ElementId>
+    - name: collisions
+      type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  One implementation for every release. `LookupParameter`, `LocationPoint`,
-  `get_BoundingBox(null)` and `Parameter.Set(string)` are unchanged 2020 to
-  2027, and no units call is made - the number is written as text, which is what
-  a Mark, a room number and a sheet number all are. Sorting reads coordinates in
-  Revit's internal feet and never converts them, since only their order matters.
+  One implementation for every release. Parameters are looked up BY NAME
+  through `Element.LookupParameter`, and `Parameter.Set(string)` and
+  `Parameter.IsReadOnly` are unchanged 2020 to 2027. Nothing here touches a
+  unit or builds an ElementId from an integer, so neither 2021's unit rewrite
+  nor 2024's 64-bit ids reach this code.
+
+# WHY THE ROUTING TABLE BELOW IS A COMMENT AND NOT PART OF `purpose`.
+# `purpose` IS INDEXED - heron_search.py puts it into the searchable text
+# alongside the semantic identity and the utterances. So a disclaimer written
+# there quoting the sentence it disclaims makes this fragment match that
+# sentence BETTER, which is the exact opposite of what the sentence is doing.
+#
+# Measured here, 2026-08-31: check-routing caught this fragment answering
+# WRITE_ELEMENT_PARAMETERS' own utterance about setting one value. The first
+# attempt at a fix wrote that sentence into `purpose` to point it elsewhere -
+# and it did not move, because the fix had handed this fragment one more
+# copy of the words it was losing on. A routing table belongs where a human
+# reads it and the index does not.
+
+# A NAME LOOKUP IS THE WEAK POINT AND IT IS DELIBERATE HERE.
+# WRITE_ELEMENT_PARAMETERS carries a BuiltInParameter route for exactly this
+# reason - a lookup for "Mark" finds nothing on a French install. Numbering is
+# done against whatever parameter the user names, including a shared or project
+# parameter that HAS no BuiltInParameter, so the name is the only route that
+# covers the job. A parameter that cannot be found is refused BY NAME, never
+# skipped quietly.
+
+# ROUTING - repeated in WRITE_ELEMENT_PARAMETERS.
+#
+#   "set the system name on these"   -> WRITE_ELEMENT_PARAMETERS
+#   "set the room number"            -> WRITE_ELEMENT_PARAMETERS - ONE value on
+#                                       one element, not a sequence
+#   "renumber the rooms"             -> here
+#   "number these in order"          -> here
+#   "renumber the doors"             -> here
+#   "they have duplicate numbers"    -> here reports collisions; finding them
+#                                       without renumbering is a QA read
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
 
 utterances:
+  - renumber these
+  - number them in order
+  - renumber the doors
+  - give them running numbers
+  - number the sprinklers along the branch
+  - they have duplicate numbers
   - renumber the rooms
-  - number these in order
-  - restamp the marks
-  - give them sequential numbers
-  - renumber the sheets
-  - number them left to right

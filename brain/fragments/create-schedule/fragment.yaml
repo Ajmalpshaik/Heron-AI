@@ -1,0 +1,86 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-023
+semantic-identity: "make a real schedule view of this category with these fields"
+kind: action
+domain: revit.schedules
+capability: CREATE_SCHEDULE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a schedule view of one category, with the fields asked for, that lives
+  in the project and can go on a sheet.
+
+  **A schedule and a count are different deliverables, and both are right
+  answers to different sentences.** GROUP_AND_COUNT reads the model and puts
+  numbers in the reply - which is what somebody wants when they ask *"how many
+  of each size"*. This makes a view in the Project Browser that updates itself
+  as the model changes and prints on a drawing. *"Make a schedule"* is the
+  second one, and it was resolving to the first.
+
+  **A field that the category does not have is reported, not skipped.** Ask for
+  Size on a category with no Size parameter and a silently short schedule looks
+  finished and is missing a column - and the person reading the drawing has no
+  way to know a column was ever asked for.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: categoryId
+      type: ElementId
+      source: request
+    - name: fieldNames
+      type: IList<string>
+      source: request
+    - name: scheduleName
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+    - name: missingFields
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ViewSchedule.CreateSchedule(Document, ElementId)`, `ScheduleDefinition`,
+  `GetSchedulableFields()` and `AddField(SchedulableField)` are unchanged 2020
+  to 2027. The category arrives as an `ElementId` from a live category, so
+  nothing here builds one from an int and 2024's 64-bit ids do not reach this
+  code.
+
+  Fields are matched by the name `SchedulableField.GetName(doc)` returns, which
+  is the name shown in Revit's own field list - so a field asked for in the
+  words on screen is found, and one asked for by an internal parameter name is
+  not.
+
+# ROUTING - repeated in GROUP_AND_COUNT and COUNT_ELEMENTS.
+#
+#   "make a schedule"              -> here - a VIEW that goes on a sheet
+#   "create a duct schedule"       -> here
+#   "how many of each size"        -> GROUP_AND_COUNT - numbers in the REPLY,
+#                                     and it makes nothing in the model
+#   "how many ducts are there"     -> COUNT_ELEMENTS
+#   "export the schedule to excel" -> NOT here. Nothing in the library exports
+#                                     anything yet, and this makes the schedule
+#                                     that would be exported
+
+utterances:
+  - make a schedule
+  - create a schedule of the ducts
+  - I need a schedule view
+  - add a schedule to the project
+  - make a quantity schedule
+  - schedule these on a drawing

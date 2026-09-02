@@ -1,48 +1,26 @@
-# D-30: the negative case is what catches "succeeded and did nothing".
-
 positive:
-  - given: 10 rooms, parameterName "Number", startAt 101, sortBy "x"
-    expect: >
-      101 to 110 running left to right across the plan. Look at the plan - the
-      numbers must read in order across it, which is the entire point and is
-      not something the count can show
+  - given: 8 doors in corridor order, parameterName "Mark", prefix "D-", startAt 1
+    expect: D-1 to D-8 in that order, renumbered is 8, collisions empty, and the door tags on the sheet read the same
 
-  - given: padding 3 and prefix "MEP-"
+  - given: the same 8 doors renumbered a second time with the same inputs
     expect: >
-      MEP-001, MEP-002. Check one in the Properties palette
+      renumbered is 8 and collisions is EMPTY - an element is not a clash with
+      the number it already holds, and refusing here would block the commonest
+      batch of all, re-running a numbering that is already right
 
 negative:
-  - given: >
-      renumbering rooms from 101 while ANOTHER room already holds 105
+  - given: 8 doors, prefix "D-", startAt 1, and the model already has a door D-3 elsewhere that is NOT in the batch
     expect: >
-      that element in `refused` WITH the number it was refused. Revit rejects a
-      duplicate room number, and a count of attempts reports it as done - this
-      is the normal way this job fails
+      collisions carries "D-3", renumbered is 0, and NOTHING IS WRITTEN. Not
+      three doors renumbered and then a stop - a half-renumbered corridor has
+      two schemes in it and no record of where it stopped. Revit would have
+      accepted the duplicate silently, which is why this cannot be left to it
 
-  - given: the same case again
+  - given: a batch where "Mark" is read-only on 2 of the 8
     expect: >
-      the number 105 is CONSUMED, not retried on the next element. Reusing it
-      makes the final sequence depend on which elements happened to clash, so
-      two runs of the same job give different drawings
-
-  - given: sortBy "none"
-    expect: >
-      the order handed in, unchanged. That is a real answer for a caller who
-      sorted them deliberately, not a fallback
-
-  - given: >
-      a set on a site ROTATED to true north, sorted by "x"
-    expect: >
-      a diagonal walk across the rooms - AND THAT IS THE STATED LIMIT. x and y
-      are project axes, not the building's. Sort by name or hand them over
-      already ordered
-
-  - given: an element with no position at all, sorted by "x"
-    expect: >
-      it sorts last and is still numbered. Losing it would be worse than
-      numbering it at the end
+      those 2 ids are in refused, named rather than skipped - a renumber that
+      "did nothing" to two doors is invisible otherwise, and the tags on the
+      sheet will show it long after
 
 second_route:
-  - >
-    open the plan in Revit and read the numbers around the floor - a schedule
-    sorted by number should walk the plan in order
+  - A Revit schedule of the category showing the parameter, sorted - duplicates and gaps both show at a glance

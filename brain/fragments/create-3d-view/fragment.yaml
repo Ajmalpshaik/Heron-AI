@@ -1,0 +1,79 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-013
+semantic-identity: "make a new 3D view"
+kind: action
+domain: revit.views
+capability: CREATE_3D_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a fresh 3D view. The coordination view somebody makes to look at one
+  problem, rather than disturbing a view that is on a sheet.
+
+  **Creating and duplicating are different jobs and the words are the same.**
+  `DUPLICATE_VIEW` copies an existing view with its settings; this makes a new
+  one from the template type, carrying none. Somebody who says *"make me a 3D
+  view like that one"* wants the first.
+
+  **The view family type is an input.** A project can carry several 3D view
+  types with different templates and defaults attached, and which one is
+  correct is an office convention, not something to infer (D-33).
+
+  **It is a plain isometric and nothing more.** No section box, no isolation,
+  no camera position. Those are separate capabilities on purpose — the view
+  this makes is the thing they act on, and a fragment that did all four could
+  not be re-used for any one of them.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: viewFamilyTypeId
+      type: ElementId
+      source: request
+    - name: name
+      type: string
+      source: request
+  provides:
+    - name: viewId
+      type: ElementId
+    - name: named
+      type: bool
+    - name: refused
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View3D.CreateIsometric` and
+  `View.Name` are unchanged 2020 to 2027, and the view family type arrives as
+  an ElementId object taken from a live element.
+
+# ROUTING - repeated in DUPLICATE_VIEW and SET_VIEW_SECTION_BOX.
+#
+#   "make a new 3d view"          -> here
+#   "duplicate this view"         -> DUPLICATE_VIEW - keeps the settings
+#   "make one like that one"      -> DUPLICATE_VIEW, not here
+#   "box it round the clash"      -> SET_VIEW_SECTION_BOX, on the view this made
+#
+# CREATE AND DUPLICATE ARE ASKED FOR IN ONE SENTENCE. A new view carries the
+# type's defaults and nothing of the view somebody was looking at, which is a
+# surprise if they meant "like that one".
+
+utterances:
+  - make a new 3d view
+  - create a 3d view
+  - I need a fresh 3d view
+  - give me a coordination view
+  - new isometric view

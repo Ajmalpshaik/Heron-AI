@@ -1,0 +1,34 @@
+positive:
+  - given: a project carrying 40 diffuser types with 6 placed
+    expect: >
+      34 named, grouped by family, and the families where nothing at all is
+      placed flagged separately - those are whole files that could go
+
+  - given: "purge unused"
+    expect: >
+      a REPORT and nothing deleted. Purging is hard to reverse, Revit already
+      has the command, and doing it to a shared model from here would be the
+      most damaging thing in this library
+
+negative:
+  - given: a family placed only INSIDE another family, never in the project
+    expect: >
+      it is reported as unused AND THAT IS WRONG - deleting it would break the
+      parent. It has no instance of its own, so this cannot see the difference;
+      Revit's Purge Unused can. The summary line says so rather than being
+      quietly wrong
+
+  - given: wall types, duct types and pipe types
+    expect: >
+      counted correctly as used. GetTypeId is read off EVERY placed element, not
+      just FamilyInstances - counting only those would report every wall type in
+      the project as unused
+
+  - given: a template that ships with types nobody has placed yet
+    expect: >
+      they are listed as unused, which is true and is not advice. A project
+      keeps types for work not yet modelled, and what should GO is a judgement
+      that stays with the modeller
+
+second_route:
+  - Revit's own Manage > Purge Unused dialog, with its list compared against this one

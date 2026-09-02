@@ -1,0 +1,30 @@
+positive:
+  - given: 4 standalone ducts, none hosted, nothing depending on them
+    expect: deleted has exactly those 4 ids, askedFor is 4, alsoWent is 0, refused empty
+
+  - given: the whole call made inside a transaction that is then rolled back
+    expect: >
+      `deleted` still reports the full blast radius and the model is unchanged -
+      which is how a deletion preview is built, and what Golden Rule 17 needs
+
+negative:
+  - given: 1 wall carrying 3 doors and 2 windows
+    expect: >
+      deleted holds SIX ids and alsoWent is 5, not "deleted 1". This is the case
+      the fragment exists for: Revit removes the hosted elements without asking,
+      and a count taken from the input reads as a tidy little change while five
+      other elements have gone from the model
+
+  - given: a batch of 200 where element 11 is pinned and cannot be deleted
+    expect: >
+      the batch runs to the END, that id is in refused, and the remaining 189
+      are still processed - not an exception that abandons the rest after ten
+      have already gone, reporting nothing at all
+
+  - given: an element Revit accepts and removes nothing for - Delete returns an empty set
+    expect: >
+      it is in refused, NOT counted as deleted. An empty return is a silent
+      no-op, the same shape as the move that returned normally and moved nothing
+
+second_route:
+  - Revit's own undo stack: one Ctrl+Z must put back exactly what `deleted` listed

@@ -1,83 +1,84 @@
-// NOT STANDALONE. Assumes `doc`, `uidoc`, `paths` and `askOnConflict` are in
-// scope, and leaves `loaded`, `types`, `alreadyPresent` and `unreadable`
-// behind.
+// NOT STANDALONE. Assumes `doc` and `familyPath` are in scope; leaves
+// `created`, `refused` and `typeNames` behind.
 //
-// ASSUMES AN OPEN TRANSACTION. It does not start one - Golden Rule 16.
+// ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
-// AN EXISTING FAMILY IS REPORTED, NEVER SILENTLY OVERWRITTEN.
+// IT DOES NOT OVERWRITE, AND THAT IS A LIMIT OF THE FRAGMENT FORMAT ITSELF -
+// worth writing down rather than leaving as an apparent oversight. Revit
+// overwrites a loaded family only when handed an IFamilyLoadOptions object
+// deciding what to do with parameter values that differ. That object needs a
+// CLASS, and a fragment is a body of statements: C# has no local classes, so
+// there is nowhere here to define one.
 //
-// The plain load simply refuses, and that refusal is the DEFAULT here on
-// purpose: an office family is somebody's work, and replacing it without asking
-// is how a model's content gets changed underneath the people using it.
+// The overload without it returns FALSE for a family already loaded rather than
+// replacing it. So the behaviour lands on the safe side by accident and is kept
+// on purpose: silently overwriting is how a colleague's edited type is replaced
+// by the office standard mid-job, taking its parameter values with it.
 //
-// REVIT SHIPS THE OVERWRITE DECISION AS A DIALOG.
+// >> IF RELOADING IS EVER WANTED, it belongs in the executor (D-28) as a
+// >> supplied helper, not in a fragment - the same way `doc` and `uidoc` are
+// >> supplied. Do not solve it by making fragments able to declare types; that
+// >> changes what a fragment IS.
 //
-// GetRevitUIFamilyLoadOptions() returns Revit's OWN implementation - the one
-// File > Load Family uses. Handing it to LoadFamily makes Revit ASK, in its own
-// dialog, exactly as if the family had been loaded by hand. That is a real
-// reload path with nobody's work overwritten behind their back.
-//
-// It is named DIRECTLY here. The version this was re-authored from reached it
-// through reflection, which reads as "this might not exist" - the compile gate
-// says it exists on all eight releases, and a measured call is worth more than
-// a defensive one.
-//
-// THE WIDER LESSON: a technique needing an interface is not automatically out
-// of reach for a fragment, which cannot declare a class. Check whether Revit
-// already ships an implementation.
-//
-// A FRESHLY LOADED TYPE IS NOT ACTIVE until first placed, and an inactive type
-// makes placement fail with an error naming neither the family nor the reason.
-// The types are returned so the caller can see what arrived.
+// THE FILE IS CHECKED BEFORE THE CALL, because LoadFamily's own failure for a
+// missing path is indistinguishable from its failure for an already-loaded
+// family - both are a bare `false` - and those two need completely different
+// things done about them.
 
-var loaded = new List<string>();
-var types = new List<ElementId>();
-var alreadyPresent = new List<string>();
-var unreadable = new Dictionary<string, string>();
+ElementId created = null;
+string refused = null;
+var typeNames = new List<string>();
 
-foreach (var path in paths)
+var path = (familyPath ?? "").Trim();
+
+if (path.Length == 0)
 {
-    if (string.IsNullOrWhiteSpace(path)) continue;
+    refused = "no family file was given";
+}
+else if (!path.ToLowerInvariant().EndsWith(".rfa"))
+{
+    refused = string.Format(
+        "\"{0}\" is not a .rfa file. A project (.rvt) is linked, not loaded, and a "
+        + "template (.rft) is what a family is built FROM", path);
+}
+else if (!System.IO.File.Exists(path))
+{
+    // Checked separately because LoadFamily returns a bare `false` for both a
+    // missing file and an already-loaded family, and those need opposite
+    // responses.
+    refused = string.Format("there is no file at \"{0}\"", path);
+}
+else
+{
+    Family family;
+    var loaded = doc.LoadFamily(path, out family);
 
-    Family family = null;
-    bool ok = false;
-
-    try
+    if (!loaded || family == null)
     {
-        if (askOnConflict)
+        refused = string.Format(
+            "Revit did not load \"{0}\". The usual reason is that a family of that name "
+            + "is ALREADY in the project - this cannot overwrite one, deliberately, "
+            + "because replacing a colleague's edited type takes its parameter values "
+            + "with it. Use Revit's own Load Family to reload. The other reason is a "
+            + "family saved by a NEWER Revit than this one, which Revit itself refuses",
+            path);
+    }
+    else
+    {
+        created = family.Id;
+
+        // The types are what somebody actually needs next - a family with one
+        // type and a family with forty are placed very differently, and the
+        // names are what PLACE_FAMILY_INSTANCES gets asked for.
+        foreach (var typeId in family.GetFamilySymbolIds())
         {
-            // Revit's own dialog. The user answers, exactly as they would by
-            // hand - nothing is decided here on their behalf.
-            var options = UIDocument.GetRevitUIFamilyLoadOptions();
-            ok = doc.LoadFamily(path, options, out family);
+            var symbol = doc.GetElement(typeId);
+            if (symbol != null) typeNames.Add(symbol.Name);
         }
-        else
+
+        typeNames.Sort(delegate (string a, string b)
         {
-            ok = doc.LoadFamily(path, out family);
-        }
+            return string.Compare(a, b, StringComparison.OrdinalIgnoreCase);
+        });
     }
-    catch (Exception ex)
-    {
-        unreadable[path] = ex.Message;
-        continue;
-    }
-
-    if (!ok || family == null)
-    {
-        // The commonest reason by far, and it is not an error: the family is
-        // already here and the plain load declines to replace it.
-        alreadyPresent.Add(path);
-        continue;
-    }
-
-    loaded.Add(path);
-
-    try
-    {
-        foreach (var symbolId in family.GetFamilySymbolIds())
-        {
-            types.Add(symbolId);
-        }
-    }
-    catch { }
 }

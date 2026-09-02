@@ -1,95 +1,96 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `fromParameter` and `toParameter`
-// are in scope, and leaves `copied`, `sourceBlank`, `typeMismatch`,
-// `readOnly`, `absent`, `unverified` and `resolvedFrom` behind.
+// NOT STANDALONE. Assumes `elements`, `fromName` and `toName` are in scope;
+// leaves `copied`, `sourceEmpty`, `refused` and `typeMismatch` behind.
 //
-// ASSUMES AN OPEN TRANSACTION. It does not start one - Golden Rule 16.
+// ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
-// THE STORED VALUE MOVES, NEVER THE DISPLAYED ONE.
+// THE STORAGE TYPES ARE COMPARED BEFORE ANYTHING IS WRITTEN, and a mismatch
+// stops the WHOLE batch. One wrong-typed pair found halfway leaves a set that
+// is half converted with no record of where it stopped - the same reason
+// RENUMBER_SEQUENTIAL checks its collisions up front.
 //
-// Reading a length as text gives "2500" - a ROUNDED rendering of a number that
-// is not exactly 2500. Writing that text into another length parameter stores
-// the rounded value AS THE TRUTH, and the two parameters then disagree by an
-// amount too small to see and too real to ignore once something totals them.
+// WHAT IS STORED, NOT WHAT IS DISPLAYED. A length shown as "2400 mm" is stored
+// as feet. Copying the display string into a text field writes a unit-suffixed
+// string that no later calculation can use, and it looks perfectly right on a
+// schedule. Matching storage types and moving the internal value is what makes
+// the copy exact - and it is why no unit conversion appears in this fragment.
 //
-// So storage types must MATCH, and a mismatch is REFUSED rather than converted.
-// A number copied into a text parameter is the case that looks harmless and is
-// not: it is a one-way door, and what comes back is the rounded value.
-//
-// EACH SIDE IS RESOLVED INDEPENDENTLY. The source often lives on the TYPE and
-// the target on the INSTANCE - Type Mark into Comments is exactly that shape.
-//
-// AN EMPTY SOURCE IS NOT COPIED. Writing a blank over a filled target destroys
-// data to no purpose, and nobody notices until the schedule is issued.
+// AN EMPTY SOURCE IS NOT COPIED. Writing a blank over a filled destination
+// destroys data to no purpose, and it is indistinguishable afterwards from the
+// destination never having been filled.
 
-var copied = new List<ElementId>();
-var sourceBlank = new List<ElementId>();
-var typeMismatch = new List<ElementId>();
-var readOnly = new List<ElementId>();
-var absent = new List<ElementId>();
-var unverified = new List<ElementId>();
-var resolvedFrom = new Dictionary<ElementId, string>();
+var copied = 0;
+var sourceEmpty = new List<ElementId>();
+var refused = new List<ElementId>();
+var typeMismatch = false;
+
+// Pass one: prove every pair agrees before a single write.
+var pairs = new List<KeyValuePair<Parameter, Parameter>>();
 
 foreach (var element in elements)
 {
     if (element == null) continue;
 
-    Element elementType = null;
-    try { elementType = doc.GetElement(element.GetTypeId()); } catch { }
+    var from = element.LookupParameter(fromName);
+    var to = element.LookupParameter(toName);
 
-    var source = element.LookupParameter(fromParameter);
-    string from = "instance";
-    if (source == null && elementType != null)
+    if (from == null || to == null || to.IsReadOnly)
     {
-        source = elementType.LookupParameter(fromParameter);
-        from = "type";
+        refused.Add(element.Id);
+        continue;
     }
 
-    // The TARGET is only ever taken on the instance. Writing to a type
-    // parameter changes every element of that type at once, which is a far
-    // larger edit than the one asked for and would be invisible in the count.
-    var target = element.LookupParameter(toParameter);
-
-    if (source == null || target == null) { absent.Add(element.Id); continue; }
-    if (target.IsReadOnly) { readOnly.Add(element.Id); continue; }
-    if (source.StorageType != target.StorageType) { typeMismatch.Add(element.Id); continue; }
-    if (!source.HasValue) { sourceBlank.Add(element.Id); continue; }
-
-    bool accepted = false;
-    try
+    if (from.StorageType != to.StorageType)
     {
-        if (source.StorageType == StorageType.String)
+        typeMismatch = true;
+        break;
+    }
+
+    if (!from.HasValue)
+    {
+        sourceEmpty.Add(element.Id);
+        continue;
+    }
+
+    pairs.Add(new KeyValuePair<Parameter, Parameter>(from, to));
+}
+
+if (!typeMismatch)
+{
+    foreach (var pair in pairs)
+    {
+        var from = pair.Key;
+        var to = pair.Value;
+
+        try
         {
-            var value = source.AsString();
-            if (string.IsNullOrEmpty(value)) { sourceBlank.Add(element.Id); continue; }
-            accepted = target.Set(value);
+            if (from.StorageType == StorageType.String) to.Set(from.AsString());
+            else if (from.StorageType == StorageType.Double) to.Set(from.AsDouble());
+            else if (from.StorageType == StorageType.Integer) to.Set(from.AsInteger());
+            else if (from.StorageType == StorageType.ElementId) to.Set(from.AsElementId());
+            else
+            {
+                refused.Add(to.Element.Id);
+                continue;
+            }
         }
-        else if (source.StorageType == StorageType.Double) accepted = target.Set(source.AsDouble());
-        else if (source.StorageType == StorageType.Integer) accepted = target.Set(source.AsInteger());
-        else if (source.StorageType == StorageType.ElementId) accepted = target.Set(source.AsElementId());
-    }
-    catch { readOnly.Add(element.Id); continue; }
+        catch (Exception)
+        {
+            refused.Add(to.Element.Id);
+            continue;
+        }
 
-    if (!accepted) { readOnly.Add(element.Id); continue; }
+        // READ BACK. Set returning without throwing is not evidence the value
+        // stored - this repository has already been caught by a parameter that
+        // returned TRUE and snapped the value to something else.
+        var ok = from.StorageType == StorageType.String
+            ? to.AsString() == from.AsString()
+            : from.StorageType == StorageType.Integer
+                ? to.AsInteger() == from.AsInteger()
+                : from.StorageType == StorageType.ElementId
+                    ? to.AsElementId() == from.AsElementId()
+                    : Math.Abs(to.AsDouble() - from.AsDouble()) < 0.0000001;
 
-    // READ BACK, comparing like with like rather than through text.
-    bool matches = false;
-    try
-    {
-        if (source.StorageType == StorageType.String)
-            matches = target.AsString() == source.AsString();
-        else if (source.StorageType == StorageType.Double)
-            matches = Math.Abs(target.AsDouble() - source.AsDouble()) < 1e-9;
-        else if (source.StorageType == StorageType.Integer)
-            matches = target.AsInteger() == source.AsInteger();
-        else if (source.StorageType == StorageType.ElementId)
-            matches = target.AsElementId() == source.AsElementId();
+        if (ok) copied++;
+        else refused.Add(to.Element.Id);
     }
-    catch { }
-
-    if (matches)
-    {
-        copied.Add(element.Id);
-        resolvedFrom[element.Id] = from;
-    }
-    else unverified.Add(element.Id);
 }

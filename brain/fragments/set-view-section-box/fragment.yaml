@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-010
+semantic-identity: "put a section box around these elements in the 3D view"
+kind: action
+domain: revit.views
+capability: SET_VIEW_SECTION_BOX
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets a 3D view's section box to enclose the given elements, with a margin.
+  The habit every coordinator has - find the clash, box it, look at it - and
+  nothing here could do it.
+
+  **A section box is not a filter and does not hide anything.** It cuts the view
+  geometrically: everything inside the box is shown, including elements nobody
+  asked about. ISOLATE_ELEMENTS is the fragment for "show only these"; the two
+  get asked for in the same words and do different things.
+
+  **The margin is a per-request input with no default.** How much context to keep
+  around a clash is a judgement about the job, and a number invented here would
+  become a number quietly relied on.
+
+  **Only a 3D view has a section box.** Asked of a plan or a section, this
+  refuses by name rather than doing nothing - a silent no-op reads as a broken
+  tool while the user waits for the view to change.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: marginMm
+      type: double
+      source: request
+  provides:
+    - name: applied
+      type: bool
+    - name: enclosed
+      type: int
+    - name: noGeometry
+      type: IList<ElementId>
+    - name: viewRefused
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View3D.SetSectionBox`,
+  `View3D.IsSectionBoxActive` and `Element.get_BoundingBox(null)` are unchanged
+  2020 to 2027. Millimetres to feet is arithmetic, not `UnitUtils` (D-20).
+
+# ROUTING - repeated in ISOLATE_ELEMENTS, which is the usual meaning.
+#
+#   "show me just these"              -> ISOLATE_ELEMENTS - hides the rest
+#   "box these up" / "section box"    -> here - cuts the view around them
+#   "create a section through this"   -> CREATE_SECTION_VIEW. A NEW
+#                                        DRAWING that can go on a sheet.
+#                                        Same word, entirely different
+#                                        job: this fragment makes nothing
+#   "make a section here"             -> CREATE_SECTION_VIEW
+#   "zoom to these"                   -> here is the closest thing; a true zoom
+#                                        moves the camera and changes no view
+#                                        setting, which nothing here does yet
+#
+# ISOLATING AND BOXING ARE ASKED FOR IN THE SAME WORDS AND ARE NOT THE SAME.
+# Isolating hides everything else and leaves the camera alone; a section box
+# keeps whatever else is inside it and cuts everything outside, including the
+# building. Landing on the wrong one gives a view that looks broken.
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
+utterances:
+  - put a section box around this
+  - box these up so I can see them
+  - section box around the clash
+  - crop the 3d view to these
+  - zoom the 3d view to these
+  - zoom to these

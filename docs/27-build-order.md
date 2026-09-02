@@ -356,8 +356,12 @@ cheaper than discovering it in week two.
 > A fragment carries C# in `impl/` and there is no executor — the bridge speaks a fixed set of
 > operations and none of them compiles one, because [D-28](DECISIONS.md)'s in-process Roslyn is not
 > built. So the host can now learn *what would do the job* and still cannot have it done.
-> `A8` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) carries the other half: the tools were written
-> where no MCP SDK is installed, so **`FastMCP` has never actually served them.**
+> `A8` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) carried the other half: the tools were written
+> where no MCP SDK is installed, so an SDK had never actually served them. **That half was closed on
+> 2026-08-31 by installing the SDK** — a missing pip package, not the missing Windows machine the row
+> claimed — and doing so found that the server would not have started at all against the current SDK
+> major. What is left of `A8` is a real host over stdio. See
+> [`tests/test_mcp_serves.py`](../tests/test_mcp_serves.py).
 >
 > `tools/check-gaps.py` passed the whole phase while the brain was unreachable, because it checked that
 > each step's module and test were on disk and never asked whether anything called them. It now has a

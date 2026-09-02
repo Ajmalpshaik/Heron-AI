@@ -74,8 +74,50 @@ HOST_PROJECT = os.path.join("tests", "Heron.Bridge.TestHost")
 # first time the two were run in one sitting, and this file went from 32 passes
 # to "not found". The POSIX host therefore gets its own folder and the two
 # never meet.
+# THE POSIX TARGET FRAMEWORK IS DETECTED, NOT HARDWIRED - fixed 2026-09-02.
+#
+# It said net8.0. That was true of the machine it was written on and false of
+# the next one: this container ships the .NET 10 SDK and NO .NET 8 runtime, so
+# the project BUILT and the host would not START -
+#
+#   You must install or update .NET to run this application.
+#   Framework: 'Microsoft.NETCore.App', version '8.0.0'
+#
+# and the suite reported "not found" for four sessions running, which reads as a
+# missing build rather than a missing runtime. A pinned framework in a test that
+# exists to run on whatever machine is in front of it is a machine-specific
+# assumption written down as a constant.
+#
+# `dotnet --list-runtimes` is the only thing that knows, so it is asked.
+def _posix_tfm():
+    """The newest Microsoft.NETCore.App the machine can actually run.
+
+    Returns e.g. "net10.0". Falls back to net8.0 - the previous hardcoded
+    value - when the question cannot be answered, so a machine where dotnet
+    behaves unexpectedly is no worse off than before this was written.
+    """
+    try:
+        out = subprocess.check_output(["dotnet", "--list-runtimes"],
+                                      stderr=subprocess.STDOUT).decode("utf-8", "replace")
+    except Exception:                                   # noqa: BLE001
+        return "net8.0"
+
+    majors = []
+    for line in out.splitlines():
+        if not line.startswith("Microsoft.NETCore.App "):
+            continue
+        version = line.split()[1]
+        head = version.split(".")[0]
+        if head.isdigit():
+            majors.append(int(head))
+
+    return "net%d.0" % max(majors) if majors else "net8.0"
+
+
+POSIX_TFM = _posix_tfm()
+
 _WIN_DIR = os.path.join(HOST_PROJECT, "bin", "x64", "Debug")
-_POSIX_DIR = os.path.join(HOST_PROJECT, "bin", "x64", "Debug-net8.0")
+_POSIX_DIR = os.path.join(HOST_PROJECT, "bin", "x64", "Debug-%s" % POSIX_TFM)
 
 HOST_EXE = os.path.join(_WIN_DIR, "Heron.Bridge.TestHost.exe")
 HOST_DLL = os.path.join(_POSIX_DIR, "Heron.Bridge.TestHost.dll")
@@ -85,8 +127,8 @@ HOST_DLL = os.path.join(_POSIX_DIR, "Heron.Bridge.TestHost.dll")
 BUILD_HINT = (
     "dotnet build %s -p:RevitVersion=%s" % (HOST_PROJECT, REVIT_VERSION)
     if WINDOWS else
-    "dotnet build %s -p:RevitVersion=%s -p:HeronTfm=net8.0 -p:OutputPath=bin/x64/Debug-net8.0/"
-    % (HOST_PROJECT, REVIT_VERSION))
+    "dotnet build %s -p:RevitVersion=%s -p:HeronTfm=%s -p:OutputPath=bin/x64/Debug-%s/"
+    % (HOST_PROJECT, REVIT_VERSION, POSIX_TFM, POSIX_TFM))
 
 
 def host_binary():

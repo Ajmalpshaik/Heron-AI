@@ -1,117 +1,101 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `exportFolder` and
-// `fileNamePrefix` are in scope, and leaves `exported`, `notExported` and
-// `folderProblem` behind.
+// NOT STANDALONE. Assumes `doc`, `views`, `folder` and `setupName` are in
+// scope; leaves `created`, `refused` and `wouldOverwrite` behind.
 //
-// NO TRANSACTION, and none is needed - export is document I/O, not a model
-// edit. Opening one here would never change anything, and would teach the next
-// reader that exports are edits.
+// ASSUMES AN OPEN TRANSACTION (Golden Rule 16). It does not need one to write
+// files, and it does not open one.
 //
-// WHY THE READ-BACK IS THE FILESYSTEM.
+// THE ONLY FRAGMENT HERE THAT WRITES OUTSIDE THE MODEL, AND THE RISK IS A
+// DIFFERENT SHAPE. Everything else in this library can be undone in Revit.
+// Export cannot: a file with a matching name is OVERWRITTEN, with no undo, no
+// warning and no record of what was there. So the names are worked out first
+// and anything already on disk is reported.
 //
-// `Document.Export` returns a bool, and a bool is a claim about the CALL, not
-// about the drive. A full disk, a path longer than Windows accepts, a folder
-// removed while the loop ran, a name that collided with a locked file - none of
-// those reliably come back as false. The only honest evidence that a drawing
-// was exported is that the file is on disk, so every expected path is checked
-// with File.Exists afterwards and only the ones really there are reported.
+// IT STILL EXPORTS THE REST. A run that refuses everything because one file
+// exists means somebody deletes the folder and re-runs, which is worse: the
+// point is to say WHICH ones collided, and let that be a decision.
 //
-// This is the strongest read-back anywhere in this library, and it is available
-// here for free. Where MOVE_ELEMENTS has to compare positions and
-// APPLY_VIEW_TEMPLATE has to re-read a property, an export can simply be
-// asked of the operating system.
+// THE EXPORT SETUP IS THE JOB. Layer mapping, line weights, text and how solids
+// are written all come from a named setup the office agreed. Exporting with
+// Revit's defaults gives a file that OPENS PERFECTLY and fails the recipient's
+// CAD standard - the worst kind of wrong, because nothing looks broken. So a
+// missing setup is a refusal, never a fallback to the defaults.
 //
-// System.IO is deliberately written out in full: it is not among the usings the
-// fragment harness provides, and spelling it out keeps the one place this
-// fragment reaches outside Revit visible rather than hidden behind a using.
+// ONE VIEW PER FILE. Revit will merge a set into one DWG, and nobody wants
+// that: a drawing is a drawing.
 
-var exported = new List<string>();
-var notExported = new List<ElementId>();
-string folderProblem = "";
+var created = new List<string>();
+var wouldOverwrite = new List<string>();
+string refused = null;
 
-var folder = (exportFolder ?? "").Trim();
-var prefix = (fileNamePrefix ?? "").Trim();
+var target = (folder ?? "").Trim();
+var setup = (setupName ?? "").Trim();
 
-if (folder.Length == 0)
+if (views == null || views.Count == 0)
 {
-    folderProblem = "no export folder was given";
-    foreach (var element in elements) notExported.Add(element.Id);
+    refused = "no views were given to export";
+}
+else if (target.Length == 0)
+{
+    refused = "no folder was given to export into";
+}
+else if (!System.IO.Directory.Exists(target))
+{
+    // Not created here. Making a folder somebody mistyped scatters drawings
+    // into a path nobody looks in, and the mistyped path is far more likely
+    // than a genuinely missing one.
+    refused = string.Format(
+        "there is no folder at \"{0}\". It is not created here on purpose - a mistyped "
+        + "path is more likely than a missing one, and inventing it scatters drawings "
+        + "somewhere nobody looks", target);
+}
+else if (setup.Length == 0)
+{
+    refused = "name the DWG export setup. Revit's defaults produce a file that opens "
+            + "perfectly and fails the recipient's CAD standard, which is the worst "
+            + "kind of wrong because nothing looks broken";
 }
 else
 {
-    // Creating the folder is the one filesystem change made before any export,
-    // and it is reported if it fails rather than left to surface as every view
-    // failing for a reason that looks like Revit's fault.
-    try
-    {
-        if (!System.IO.Directory.Exists(folder))
-            System.IO.Directory.CreateDirectory(folder);
-    }
-    catch (Exception ex)
-    {
-        folderProblem = "cannot use folder '" + folder + "': " + ex.Message;
-    }
+    var settings = ExportDWGSettings.FindByName(doc, setup);
 
-    if (folderProblem.Length > 0)
+    if (settings == null)
     {
-        foreach (var element in elements) notExported.Add(element.Id);
+        refused = string.Format(
+            "this project has no DWG export setup called \"{0}\". That is a refusal "
+            + "rather than a fall back to the defaults, deliberately", setup);
     }
     else
     {
-        var options = new DWGExportOptions();
-        var forbidden = new HashSet<char>(
-            new char[] { '\\', '/', ':', '*', '?', '"', '<', '>', '|' });
+        var options = settings.GetDWGExportOptions();
 
-        foreach (var element in elements)
+        foreach (var view in views)
         {
-            var view = element as View;
+            if (view == null) continue;
 
-            // A template is not a drawing, and a view Revit will not print is a
-            // view it will not export either. Both are reported by id.
-            if (view == null || view.IsTemplate || !view.CanBePrinted)
-            {
-                notExported.Add(element.Id);
-                continue;
-            }
+            // Revit builds the file name from the view; this mirrors the
+            // commonest form so the overwrite check is looking at the right
+            // names. It is a prediction, not a guarantee - which is why the
+            // report says "would overwrite" rather than "overwrote".
+            var stem = view.Name ?? "view";
 
-            // A sheet is named by its number and title, because that is what
-            // the receiving office files it under. Everything Windows forbids
-            // is replaced rather than dropped, so two views cannot silently
-            // collapse onto one filename.
-            var sheet = view as ViewSheet;
-            var baseName = sheet != null
-                ? sheet.SheetNumber + " - " + sheet.Name
-                : view.Name;
+            foreach (var bad in System.IO.Path.GetInvalidFileNameChars())
+                stem = stem.Replace(bad, '-');
 
-            var safe = new System.Text.StringBuilder();
-            foreach (var c in prefix + baseName)
-                safe.Append(forbidden.Contains(c) ? '_' : c);
+            var full = System.IO.Path.Combine(target, stem + ".dwg");
+            if (System.IO.File.Exists(full)) wouldOverwrite.Add(full);
 
-            var fileName = safe.ToString().Trim();
-            if (fileName.Length == 0)
-            {
-                notExported.Add(view.Id);
-                continue;
-            }
+            // One view per call, so one file per drawing. Handing Revit the
+            // whole set merges them into a single DWG, which nobody wants.
+            var one = new List<ElementId>();
+            one.Add(view.Id);
 
-            var expected = System.IO.Path.Combine(folder, fileName + ".dwg");
+            if (doc.Export(target, stem, one, options)) created.Add(full);
+        }
 
-            try
-            {
-                doc.Export(folder, fileName, new List<ElementId> { view.Id }, options);
-            }
-            catch (Exception)
-            {
-                // One view's problem. The rest of the set must still export -
-                // a batch that abandons twenty drawings because the
-                // twenty-first has an awkward name is not useful.
-                notExported.Add(view.Id);
-                continue;
-            }
-
-            // THE READ-BACK. Everything above is the request; this is the
-            // only evidence a drawing exists.
-            if (System.IO.File.Exists(expected)) exported.Add(expected);
-            else notExported.Add(view.Id);
+        if (created.Count == 0)
+        {
+            refused = "Revit exported nothing. A schedule and a template cannot go to "
+                    + "DWG, and neither can a view that is not on a sheet in some setups";
         }
     }
 }

@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-011
+semantic-identity: "what level are these on, and how far above it"
+kind: action
+domain: revit.reporting
+capability: READ_ELEMENT_LEVEL
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Which level each element belongs to, and its offset from that level in
+  millimetres.
+
+  **The level an element is ON and the level it is NEAR are different answers,
+  and the model only knows the first.** A duct hosted on Level 1 with a 3800 mm
+  offset sits above Level 2's floor and still reports Level 1. That is correct
+  and it is the answer that surprises people, so the offset is reported beside
+  the level rather than left out - a level name on its own invites the wrong
+  conclusion in exactly the case somebody is asking about.
+
+  **Elements have more than one way of carrying a level, and they are not
+  interchangeable.** `LevelId` is empty on plenty of MEP elements that carry
+  their level in a parameter instead, so both are read, in a fixed order, and
+  the answer says nothing at all rather than guessing when neither is present.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: levelName
+      type: IDictionary<ElementId, string>
+    - name: offsetMm
+      type: IDictionary<ElementId, double>
+    - name: noLevel
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.LevelId`, the
+  `RBS_START_LEVEL_PARAM` / `FAMILY_LEVEL_PARAM` / `SCHEDULE_LEVEL_PARAM`
+  built-in parameters and `Level.Name` are unchanged 2020 to 2027. Feet to
+  millimetres is arithmetic, not `UnitUtils` (D-20), so 2021's unit API rewrite
+  does not reach this code.
+
+# ROUTING - repeated in MOVE_ELEMENTS.
+#
+#   "what level is this on"          -> here
+#   "how high is it"                 -> here - the offset, in mm
+#   "move them up 200"               -> MOVE_ELEMENTS, a distance
+#   "put them at 2800"               -> ALIGN_MEP_ELEVATION, an absolute height
+#
+# CHANGING an element's level is NOT here and is not a move. Reassigning the
+# level while holding the same absolute height is a different job with its own
+# hazards - the offset has to be recomputed or the element jumps a storey - and
+# writing it as a by-product of a read would hide that.
+
+# ROUTING - repeated in LIST_LEVELS, SET_ELEMENT_LEVEL and CREATE_LEVEL.
+#
+#   "what level is this on"     -> here - the level of an ELEMENT
+#   "how high is this"          -> here - level plus offset IS the elevation
+#   "list the levels"           -> LIST_LEVELS - the levels THEMSELVES, which
+#                                  is a different question with the same
+#                                  words in it
+#   "move these to level 3"     -> SET_ELEMENT_LEVEL
+#   "add a level"               -> CREATE_LEVEL
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
+utterances:
+  - what level is this on
+  - which level are these
+  - how far above the level is it
+  - what is the offset from the level
+  - are these on the right level
+  - what is the elevation of this
+  - how high is this above the floor
+
+# THE LAST TWO WERE ADDED 2026-09-01 RATHER THAN BUILDING A FRAGMENT.
+# "What is the elevation of this" was answered by READ_ROOM_GEOMETRY and looked
+# like a missing capability. It is not: the level plus the offset this fragment
+# already returns IS the elevation, and a second fragment computing it would
+# have been a duplicate that could disagree. The gap was in the words, not in
+# the library - which is the check worth making before writing anything.
+  - how high is it
+  - how high is this

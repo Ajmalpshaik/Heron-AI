@@ -1,0 +1,27 @@
+positive:
+  - given: a plan with top 2300, cut 1200, bottom 0, apply false
+    expect: wasTopMm 2300, wasCutMm 1200, wasBottomMm 0, applied false, nothing changed - the read case
+
+  - given: the same plan, top 4000, cut 3500, bottom 0, apply true
+    expect: applied true, the high-level ducts appear, and the was* values report 2300/1200/0 so it can be put back
+
+negative:
+  - given: an incoherent range - cut plane ABOVE the top clip
+    expect: >
+      applied is FALSE. Revit rejects it and does not always throw, so the
+      read-back is what catches it. Reporting success from the absence of an
+      exception is the silent no-op shape this repository keeps meeting
+
+  - given: a SECTION view
+    expect: >
+      viewRefused is true, named rather than a silent no-op. A section has no
+      view range, and doing nothing quietly reads as the tool being broken
+
+  - given: a duct at 3200 invisible on a plan whose top offset is 2300
+    expect: >
+      NOTHING IS WRONG WITH THE DUCT. This is the commonest cause of "why can I
+      not see my ducts", and it is why DIAGNOSE_VISIBILITY names the view range
+      among the things it does not read
+
+second_route:
+  - Revit's own View Range dialog on the plan, read before and after

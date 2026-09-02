@@ -32,42 +32,55 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 FAILURES = []
-FRAGMENTS_DIR = os.path.join(ROOT, "brain", "fragments")
+
+PROVIDES_ELEMENTS = ("    - name: elements\n"
+                     "      type: IList<Element>")
+
+
+def break_elements(text):
+    """Rename `elements` where a fragment PROVIDES it, and nowhere else.
+
+    The same two lines appear under `needs:` on most of the library, and
+    renaming those breaks the composition from the CONSUMER's side - which
+    orphans everything, passes for the wrong reason, and hides whatever this
+    test was actually asking. Only the tail after `provides:` is touched.
+
+    Returns the new text, or None if this fragment does not provide it.
+    """
+    at = text.find("  provides:")
+    if at < 0:
+        return None
+    head, tail = text[:at], text[at:]
+    if PROVIDES_ELEMENTS not in tail:
+        return None
+    return head + tail.replace(PROVIDES_ELEMENTS,
+                               "    - name: somethingElse\n"
+                               "      type: IList<Element>", 1)
 
 
 def providers_of_elements():
-    """Every fragment.yaml that PROVIDES `elements`, found on disk.
+    """EVERY fragment on disk that provides `elements`, found rather than named.
 
-    This list is discovered rather than written down, and the history is the
-    argument. The test originally named one file. The library grew a second
-    provider on 2026-08-29 and the test broke - breaking one of two leaves the
-    consumer feedable, which is the capability registry working exactly as
-    designed. The fix then was to name the second file too, and the comment
-    above it said "EVERY provider" while the code named exactly two.
+    This list was hardcoded twice and was wrong both times. It named one
+    fragment until 2026-08-29, when the library grew a second and breaking one
+    of two stopped orphaning the consumer; it named two until 2026-08-31, when
+    a third arrived and did it again. Each time the test failed for a library
+    that was perfectly correct, and each time the fix was to type one more
+    path.
 
-    It broke again on 2026-08-30 at the third, which is the same bug one growth
-    later, and under D-45 the library is about to grow by hundreds. A test that
-    encodes how many ways there are to do a job stops testing anything the
-    moment somebody adds another way.
-
-    Only the PROVIDES side is renamed. Several fragments NEED `elements` at the
-    same type, and renaming those would break the composition from the other
-    end - the test would still fail, for a reason it was not asking about.
+    So it is derived. A test whose fixture is a list of filenames is a test
+    that expires quietly the next time somebody does the thing this repository
+    is for - adding a fragment.
     """
+    root = os.path.join(ROOT, "brain", "fragments")
     found = []
-    for name in sorted(os.listdir(FRAGMENTS_DIR)):
-        path = os.path.join(FRAGMENTS_DIR, name, "fragment.yaml")
-        if not os.path.exists(path):
+    for name in sorted(os.listdir(root)):
+        path = os.path.join(root, name, "fragment.yaml")
+        if not os.path.isfile(path):
             continue
-        text = io.open(path, encoding="utf-8").read()
-        head, sep, tail = text.partition("  provides:")
-        if sep and PROVIDED in tail:
+        if break_elements(io.open(path, encoding="utf-8").read()) is not None:
             found.append(path)
     return found
-
-
-PROVIDED = "    - name: elements\n      type: IList<Element>"
-RENAMED = "    - name: somethingElse\n      type: IList<Element>"
 
 
 def check(condition, what):
@@ -79,25 +92,18 @@ def check(condition, what):
 def main():
     home = tempfile.mkdtemp(prefix="heron-graph-")
     os.environ["HERON_KNOWLEDGE"] = home
-    provider_paths = providers_of_elements()
+    providers = providers_of_elements()
     originals = dict((path, io.open(path, encoding="utf-8").read())
-                     for path in provider_paths)
-    if not originals:
-        print("  FAIL  nothing on disk provides `elements` - this test has "
-              "nothing to break, which is itself the finding")
-        FAILURES.append("no providers of elements found on disk")
+                     for path in providers)
 
     def break_providers():
         """Rename what EVERY provider of `elements` leaves behind.
 
-        Every one, discovered from disk - see providers_of_elements(). Leaving
-        a single provider intact leaves the consumer feedable and the orphan
-        check silently stops asserting anything.
+        All of them, or the consumer keeps a feeder and never orphans - which
+        looks like this test failing and is actually the library being fine.
         """
         for path, text in originals.items():
-            head, sep, tail = text.partition("  provides:")
-            io.open(path, "w", encoding="utf-8").write(
-                head + sep + tail.replace(PROVIDED, RENAMED))
+            io.open(path, "w", encoding="utf-8").write(break_elements(text))
 
     def restore_providers():
         for path, text in originals.items():

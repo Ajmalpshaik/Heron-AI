@@ -1,0 +1,24 @@
+positive:
+  - given: 3 group instances holding 14 elements each
+    expect: ungrouped is 3, elements holds the 42 released members, notGroups empty
+
+  - given: the released elements handed straight into MOVE_ELEMENTS
+    expect: >
+      they MOVE - where the same request before ungrouping reported them
+      blocked. That is the whole reason this fragment is usually reached for
+
+negative:
+  - given: a mixed selection of 3 groups and 20 loose ducts
+    expect: >
+      the 20 duct ids are in notGroups, named rather than dropped. A silently
+      shorter answer than the selection asked about is only visible to whoever
+      counts rows, and nobody counts rows
+
+  - given: one group instance ungrouped where several instances of the same group type are placed
+    expect: >
+      only THAT instance comes apart; the group type and every other instance
+      are untouched. "Get rid of this group" sometimes means the type, which is
+      a much larger action and is not this one
+
+second_route:
+  - Select one released element in Revit - it is no longer reported as part of a group, and can be dragged

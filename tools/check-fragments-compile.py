@@ -76,6 +76,17 @@ USINGS = [
     "System.Linq",
     "Autodesk.Revit.ApplicationServices",
     "Autodesk.Revit.DB",
+    # Rooms live here. Added 2026-09-01 for FILTER_ELEMENTS_IN_ROOM, which
+    # needs Room.IsPointInRoom - the API designed for exactly that question.
+    # The alternative was hand-rolling point-in-polygon over the boundary
+    # segments, which is precisely how an L-shaped room gets answered wrongly,
+    # and that is the case the fragment exists to get right.
+    #
+    # THIS LIST IS A CONTRACT WITH UNBUILT WORK. It declares what a fragment
+    # may assume is in scope, so D-28's in-process Roslyn executor must supply
+    # the same set. A namespace added here and not there compiles green and
+    # fails at the PC.
+    "Autodesk.Revit.DB.Architecture",
     "Autodesk.Revit.DB.Mechanical",
     "Autodesk.Revit.DB.Plumbing",
     "Autodesk.Revit.DB.Electrical",

@@ -395,7 +395,45 @@ def main(argv):
         count, problems = rebuild()
         for line in problems:
             print("  skipped: %s" % line)
+
+        # THE SEARCH INDEX AND THE EMBEDDINGS ARE REBUILT HERE TOO, AND WERE NOT
+        # UNTIL 2026-09-01. `rebuild()` above refills the fragments table and
+        # nothing else, so this command left the identity table and the vectors
+        # holding whatever the last run put there. Measured: after adding an
+        # utterance and running ONLY this command, the new sentence resolved to
+        # a DIFFERENT fragment - the stale index answered, confidently, by the
+        # hybrid route, while the identity route that should have caught it
+        # exactly had never heard of it.
+        #
+        # It went unseen because every tool that reads the index calls
+        # SEARCH.index itself first - check-routing does, the brain does - so
+        # the only person who could hit it was somebody rebuilding BY HAND and
+        # then asking a question, which is exactly what this command is for and
+        # exactly what its own help text told them to do.
+        #
+        # `rebuild()` is left cheap on purpose: it is a library function and a
+        # caller that only wants the metadata should not pay for embeddings.
+        # The command promises a re-index, so the command does one.
+        indexed = None
+        try:
+            import heron_search as SEARCH
+            import heron_embed as EMBED
+
+            store = open_scope(GLOBAL)
+            try:
+                indexed = SEARCH.index(store)
+                EMBED.index(store)
+                store.db.commit()
+            finally:
+                store.close()
+        except Exception as exc:                        # noqa: BLE001
+            print("  the fragments were rebuilt, but the search index was NOT:")
+            print("  %s: %s" % (type(exc).__name__, exc))
+            print("  Queries will answer from the OLD index until that is fixed.")
+
         print("Re-indexed %d fragment(s) into the global scope." % count)
+        if indexed is not None:
+            print("Searchable text and embeddings rebuilt for %d." % indexed)
         print()
         print("That is the whole recovery story: these files are DERIVED.")
         print("Delete every one of them and this command puts them back.")

@@ -1,47 +1,24 @@
-# D-30: the negative case is what catches "succeeded and did nothing".
-
 positive:
-  - given: 3 floor plans with no template, and the name of a real view template
-    expect: >
-      applied = 3, alreadyHad = 0, notApplied empty. Then OPEN ONE IN REVIT and
-      look at its Properties - View Template must read that name. A count of 3
-      is what the version without a read-back returns too
-
-  - given: the same 3 views, the same template, run a second time
-    expect: >
-      applied = 0 and alreadyHad = 3. Nothing was changed and the numbers say
-      so. A version that counted the assignment would report 3 applied again
-      and imply a change that did not happen
-
-  - given: an empty element list
-    expect: all outputs empty or zero, reported as nothing to do
+  - given: 30 plan views and the office's MEP template
+    expect: applied is 30, alreadyOnIt 0, refused empty, and each view shows the template name in its Properties
 
 negative:
-  - given: a template name that does not exist, e.g. one letter wrong
+  - given: 30 views of which 28 ALREADY have that template
     expect: >
-      applied = 0, notApplied EMPTY, and availableTemplates listing the real
-      template names. Nothing must be modified. notApplied staying empty is the
-      point - no view failed, the request never named a real template
+      applied is 2 and alreadyOnIt is 28 - not applied 30. Revit accepts all
+      thirty and changes nothing for twenty-eight
 
-  - given: >
-      a VIEW TEMPLATE passed in among the views, with a valid template name
+  - given: a view carrying hand-applied graphic overrides, then a template that controls V/G
     expect: >
-      its id in notApplied and it is unchanged. Applying a template to a
-      template is the mistake FIND_VIEWS exists to prevent upstream; this is the
-      second line of defence for a caller that built its list some other way
+      the template applies AND the overrides stop having any effect. They are
+      not deleted - they are overruled and become unreachable, which reads as
+      the work having been lost. Neither call reports the conflict, which is why
+      the routing table names it
 
-  - given: an element that is not a view at all, e.g. a duct
-    expect: its id in notApplied, and no exception
-
-  - given: >
-      a view Revit will not accept this template on - a template of the wrong
-      view type
+  - given: a batch containing a view TEMPLATE rather than a view
     expect: >
-      its id in notApplied and NOT counted in applied. This is the case the
-      read-back exists for: whether Revit refuses by throwing or by quietly
-      doing nothing, the answer to the caller is the same and it is honest
+      its id is in refused and the rest still apply - a template cannot be
+      applied to a template, and an exception would abandon the remaining views
 
 second_route:
-  - open one changed view and read View Template in the Properties palette
-  - one Ctrl+Z puts every view back in a single step (Golden Rule 16)
-  - select the ids in notApplied and look at what they actually are
+  - The View Template row in each view's Properties palette, and the greyed-out settings it locks

@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-017
+semantic-identity: "reassign these to a different level without moving them"
+kind: action
+domain: revit.elements
+capability: SET_ELEMENT_LEVEL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves elements onto a different level **while keeping them physically where
+  they are** — the coordination fix for services modelled against the wrong
+  level, which is common and invisible until somebody schedules by level.
+
+  **This is the fragment with the trap in it, and the trap is the whole
+  point.** An element's height is stored as an OFFSET from its level. Change
+  the level and leave the offset, and the element JUMPS by the difference
+  between the two levels — a duct at 2800 above Level 1 becomes a duct 2800
+  above Level 2, three metres higher, silently. So the offset is recomputed so
+  the absolute height is unchanged.
+
+  **The absolute height is read before and verified after**, because a
+  recomputation that is merely written is not one that took.
+
+  **Reassigning and moving are opposite intentions said the same way.** *"Put
+  these on Level 2"* can mean re-label them or physically raise them.
+  `MOVE_ELEMENTS` and `ALIGN_MEP_ELEVATION` are the ones that move; this one
+  deliberately does not.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: newLevel
+      type: Level
+      source: request
+  provides:
+    - name: moved
+      type: int
+    - name: alreadyThere
+      type: int
+    - name: heightChanged
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The `RBS_START_LEVEL_PARAM`,
+  `FAMILY_LEVEL_PARAM`, `SCHEDULE_LEVEL_PARAM`, `RBS_OFFSET_PARAM` and
+  `INSTANCE_FREE_HOST_OFFSET_PARAM` built-in parameters and `Level.Elevation`
+  are unchanged 2020 to 2027. Everything here is a ratio or a difference of two
+  internal lengths, so no unit conversion is involved at all.
+
+# ROUTING - repeated in READ_ELEMENT_LEVEL and MOVE_ELEMENTS.
+#
+#   "what level is this on"          -> READ_ELEMENT_LEVEL
+#   "put these on Level 2"           -> ASK WHICH. Re-label without moving is
+#                                       here; physically raise them is
+#                                       MOVE_ELEMENTS or ALIGN_MEP_ELEVATION
+#   "move them up 200"               -> MOVE_ELEMENTS
+#   "they are on the wrong level"    -> here, almost always - the geometry is
+#                                       right and the data is wrong
+#
+# THE SENTENCE DOES NOT SAY WHICH, and the two produce models that differ by a
+# whole storey.
+
+# ROUTING - repeated in LIST_LEVELS, READ_ELEMENT_LEVEL and CREATE_LEVEL.
+#
+#   "move these to level 3"     -> here - reassigns EXISTING elements
+#   "it is on the wrong level"  -> here
+#   "add a level"               -> CREATE_LEVEL - this fragment creates none
+#   "list the levels"           -> LIST_LEVELS
+#   "what level is this on"     -> READ_ELEMENT_LEVEL
+
+utterances:
+  - change the level to the one above
+  - move them to another level
+  - they are on the wrong level
+  - reassign these to level 2
+  - fix the level without moving them

@@ -1,43 +1,34 @@
-# D-30: the negative case is what catches "succeeded and did nothing".
-
 positive:
-  - given: an .rfa not yet in the project, askOnConflict false
+  - given: a .rfa file not yet in the project
     expect: >
-      the path in `loaded` and its types in `types`. Check the Project Browser's
-      Families branch by eye - and note the types are NOT active yet, which is
-      why they are handed back rather than assumed placeable
-
-  - given: a family carrying several types
-    expect: >
-      every type returned, not just the first. Placement needs the one the
-      caller wants, and a family with one type returned out of six looks loaded
-      and is not usable
+      the family is loaded, its id in `created`, and every type name listed -
+      which is what gets asked for next, since a family with one type and one
+      with forty are placed very differently
 
 negative:
-  - given: A FAMILY ALREADY IN THE PROJECT, askOnConflict FALSE
+  - given: a family of the same name already in the project
     expect: >
-      the path in `alreadyPresent` and NOTHING overwritten. An office family is
-      somebody's work; replacing it silently is how a model's content changes
-      underneath the people using it. This is the default and it must stay the
-      default
+      REFUSED, saying so and pointing at Revit's own Load Family. This cannot
+      overwrite: Revit needs a load-options object to decide about differing
+      parameter values, that object needs a class, and a fragment is a body of
+      statements with nowhere to define one. The refusal is also the safe
+      direction - overwriting replaces a colleague's edited type and takes its
+      values with it
 
-  - given: the same family with askOnConflict TRUE
+  - given: a path that does not exist
     expect: >
-      REVIT'S OWN DIALOG appears and the user answers it. Nothing is decided on
-      their behalf - the point is that this is the same question File > Load
-      Family asks, not a decision made in code
+      refused, naming the path. LoadFamily returns a bare `false` for a missing
+      file AND for an already-loaded family, and those two need opposite
+      responses - so the file is checked separately
 
-  - given: a path that does not exist, or a file that is not an .rfa
-    expect: >
-      that path in `unreadable` WITH A REASON, every other file still loaded,
-      and no throw. One bad path must cost one row, not the run
+  - given: a .rvt or a .rft path
+    expect: refused, saying what each of those actually is - a project is linked, a template is what a family is built from
 
-  - given: askOnConflict false in a session with no UI
+  - given: a family saved by a newer Revit
     expect: >
-      it works. That path never touches uidoc, and the fragment is only
-      UI-bound when the dialog is actually wanted
+      refused. Revit itself rejects the file and no version of this fragment can
+      change that, so it is reported as an unloadable file rather than as a
+      defect here
 
 second_route:
-  - >
-    open the Families branch of the Project Browser and find the family by name
-    - that is what "loaded" means to a person
+  - Revit's own Insert > Load Family with the same file, and the Project Browser's Families branch checked

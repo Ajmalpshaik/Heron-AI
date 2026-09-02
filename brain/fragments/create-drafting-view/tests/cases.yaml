@@ -1,0 +1,23 @@
+positive:
+  - given: name "DET-01 Duct Hanger", scale 5
+    expect: an empty drafting view at 1:5, ready to draw the detail in and to place on a sheet
+
+negative:
+  - given: no scale given
+    expect: >
+      refused. A plan takes its scale from what it shows; a drafting view is
+      empty and has nothing to take one from, so Revit's default is whatever it
+      happens to be - and a detail drawn at 1:100 and issued at 1:5 is a redraw
+
+  - given: a view of that name already existing
+    expect: >
+      refused before creation. Revit creates the view and then refuses the name,
+      leaving an unnamed view in the browser
+
+  - given: somebody expecting it to show the model
+    expect: >
+      it shows NOTHING, and that is what a drafting view is. It never updates
+      when the model changes - a section is what they wanted
+
+second_route:
+  - Revit's own View > Drafting View at the same scale, compared in the Project Browser

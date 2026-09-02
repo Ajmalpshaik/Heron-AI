@@ -1,0 +1,69 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-009
+semantic-identity: "what are these - category, family, type and id"
+kind: action
+domain: revit.reporting
+capability: DESCRIBE_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Says what an element actually IS: its category, its family, its type name and
+  its id. The plainest question in the model — *"what is this thing"* — and
+  before this fragment the library answered it with FLIP_ELEMENTS.
+
+  **It reads the family and type from the element's TYPE, not from its name.**
+  An instance's name is frequently the type name, frequently not, and on a
+  system family it is neither. Reading the type is the answer that survives
+  somebody having renamed things.
+
+  **An element with no type is reported, not skipped.** Walls, ducts and pipes
+  are system families and have one; a line, a group or a view does not. Leaving
+  those out of the answer would report fewer things than were asked about, and
+  nobody counts the rows.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: described
+      type: IDictionary<ElementId, string>
+    - name: noType
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.Category`, `Element.GetTypeId`
+  and `ElementType.FamilyName` are unchanged 2020 to 2027. The id is printed
+  with `ToString()` rather than read as a number, which is what keeps this
+  fragment clear of 2024's change of ElementId from 32-bit to 64-bit - a
+  fragment that formatted `IntegerValue` would compile on 2020 and warn or
+  break later.
+
+# ROUTING - repeated in READ_ELEMENT_PARAMETERS.
+#
+#   "what is this"                     -> here
+#   "what family and type is this"     -> here
+#   "what size is it"                  -> READ_ELEMENT_PARAMETERS
+#   "what system is it on"             -> READ_ELEMENT_PARAMETERS
+#
+# IDENTITY AND PROPERTIES ARE DIFFERENT QUESTIONS. This one answers what a thing
+# is; the parameter read answers what is filled in on it.
+
+utterances:
+  - what is this element
+  - what family and type is this
+  - what are these
+  - tell me what I have selected
+  - what category is this
+  - what is this

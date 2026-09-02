@@ -65,9 +65,39 @@ compatibility-note: >
 # grey too. The search had already moved that sentence to the category fragment
 # on its own, which is the retrieval agreeing with the decision rather than
 # being corrected into it.
+# ROUTING - repeated in ADD_REVISION_CLOUD.
+#
+#   "make these red"                   -> here - a graphic override, view only
+#   "grey everything else back"        -> here
+#   "circle these in red"              -> here is the closest thing
+#   "put a revision cloud around this" -> ADD_REVISION_CLOUD. An override is a
+#                                         COLOUR and nothing outside this view
+#                                         knows about it; a cloud is an
+#                                         ANNOTATION that puts the change on
+#                                         the titleblock's revision schedule
+
+# "make these red" AND "circle these in red" ARE CLAIMED IN THE ROUTING TABLE
+# ABOVE AND WERE NEVER DECLARED HERE - found 2026-09-01. A routing table is a
+# COMMENT, and comments are not indexed: heron_search reads semantic-identity,
+# the utterances, the capability, the domain and the purpose, and nothing else.
+# So this fragment was claiming a sentence in a place retrieval cannot hear,
+# and "make these red" resolved to GROUP_ELEMENTS.
+#
+# The general rule: a routing table records a DECISION for a reader. If the
+# sentence should actually reach this fragment, it also has to be an utterance.
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - bring the services forward
   - make the architecture faint
   - override the colour in this view
   - halftone the walls
   - colour these elements in this view
+  - make these red
+  - circle these in red
+  - grey everything else back

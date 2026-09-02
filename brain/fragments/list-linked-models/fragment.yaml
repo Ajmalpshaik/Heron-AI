@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-001
+semantic-identity: "which models are linked into this one, and are they actually loaded"
+kind: filter
+domain: revit.document
+capability: LIST_LINKED_MODELS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports the Revit models linked into this project - one row per linked FILE,
+  how many times each is placed, and whether it is loaded right now.
+
+  **Loaded is established by asking for the document, not by reading a status.**
+  A link's stored status says what Revit last recorded; `GetLinkDocument()`
+  returning null says the geometry is not there to read. Those two disagree
+  after an unload, and the second one is the one that decides whether a clash
+  check finds anything. This is the same discipline that produced
+  TRACE_CONNECTIVITY: the flag describes intent, the geometry describes reality.
+
+  **One file, several placements.** A link placed twice - a repeated wing, a
+  mirrored block - is two instances of one file, and a list that counts
+  instances says a project has nine linked models when it has four. The row is
+  the file; the placement count sits on it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+    - name: notLoaded
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `RevitLinkInstance`, `GetLinkDocument()` and `GetTypeId()` are unchanged 2020
+  to 2027. `GetLinkedFileStatus()` is deliberately NOT used - not for a version
+  reason but for a truthfulness one, set out in the implementation.
+
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# THIS IS READ-ONLY BY DESIGN, and the agent that owns it says so: the Revit
+# Link Agent "never modifies a link's source". Loading, unloading and reloading
+# a link are not here, and adding them to this fragment would put a change to
+# another project's file behind a question about this one.
+
+# ROUTING - repeated in FIND_CLASHES.
+#
+#   "list the linked models"     -> here
+#   "is the link loaded"         -> here
+#   "which links do we have"     -> here
+#   "reload the links"           -> nothing here does that, and it is
+#                                   deliberate: this agent never modifies a
+#                                   link's source
+#   "does anything clash"        -> FIND_CLASHES - and note it can only see
+#                                   what is LOADED, which is what makes this
+#                                   fragment worth running first
+
+utterances:
+  - list the linked models
+  - which links do we have
+  - is the link loaded
+  - what models are linked in
+  - show me the links
+  - are all the links loaded
+  - which link is this from

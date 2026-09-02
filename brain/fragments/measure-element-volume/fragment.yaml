@@ -1,0 +1,100 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-016
+semantic-identity: "how much volume and surface area do these have"
+kind: action
+domain: revit.reporting
+capability: MEASURE_ELEMENT_VOLUME
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  The solid volume and surface area of each element, in cubic and square
+  metres, plus the totals.
+
+  **Surface area is the one that gets used on an MEP job.** Duct insulation,
+  painting and lagging are all bought by the square metre, and nothing in this
+  library could produce that number — `MEASURE_ELEMENT_LENGTHS` answers a
+  different takeoff question and was what the search offered.
+
+  **It measures the GEOMETRY, not a parameter.** Revit publishes a volume
+  parameter on some categories and not others, and where it exists it can be
+  stale or excluded by a setting. The solids are what the element actually is.
+
+  **Insulation is NOT included, and that matters for exactly the job this is
+  for.** Insulation is a separate element wrapped around the duct, so a duct's
+  own surface area is the bare duct. To price the lagging, measure the
+  insulation elements — which is a different selection, not a different number.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: volumeM3
+      type: IDictionary<ElementId, double>
+    - name: areaM2
+      type: IDictionary<ElementId, double>
+    - name: totalVolumeM3
+      type: double
+    - name: totalAreaM2
+      type: double
+    - name: noSolid
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.get_Geometry(Options)`,
+  `Solid.Volume` and `Solid.SurfaceArea` are unchanged 2020 to 2027. Cubic feet
+  to cubic metres and square feet to square metres are arithmetic, not
+  `UnitUtils` (D-20) - the cube and square of an exact definition, so nothing
+  here can drift and 2021's unit rewrite does not reach it.
+
+# ROUTING - repeated in MEASURE_ELEMENT_LENGTHS.
+#
+#   "how many metres of duct"        -> MEASURE_ELEMENT_LENGTHS - a length
+#   "how many square metres"         -> here - for insulation, paint, lagging
+#   "what is the volume"             -> here
+#   "how much concrete"      -> READ_ELEMENT_MATERIAL. The question names a
+#                              MATERIAL and this fragment measures a shape
+#                              regardless of what it is made of. BOTH tables
+#                              claimed it until 2026-09-01, which is a
+#                              disagreement between two comments and
+#                              therefore invisible
+#   (was) "how much concrete"              -> here, volume
+#
+# LENGTH AND AREA ARE DIFFERENT TAKEOFFS OF THE SAME RUN and both are said as
+# "how much duct is there". Lagging is priced by area and ductwork by length,
+# so landing on the wrong one gives a confident number in the wrong unit.
+
+# NO SEPARATE AREA FRAGMENT WAS WRITTEN, and the reason belongs here rather
+# than being rediscovered. On 2026-09-01 "what is the area of this" was on a
+# list of gaps to fill - it is not one. This fragment already provides `areaM2`
+# and `totalAreaM2` from the same solids the volume comes from, so a second
+# fragment would compute the same number from the same input and could one day
+# disagree with this one, with nothing to say which was right.
+#
+# The gap was in the WORDS. Two utterances were added instead.
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
+utterances:
+  - what is the volume of this
+  - how many square metres is this
+  - what is the surface area
+  - what is the area of this
+  - how much sheet metal is in this duct
+  - how much lagging do I need
+  - what volume of concrete is this

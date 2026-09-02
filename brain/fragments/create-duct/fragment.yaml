@@ -1,4 +1,4 @@
-heron-agent: HERON-REVIT-MEP-012
+heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
 heron-status: DRAFT
 heron-since: 0.1.0
@@ -70,9 +70,31 @@ compatibility-note: >
   duct type, a level and two points is unchanged 2020 to 2027, and this fragment
   touches no units API and constructs no ElementId - the two things that moved.
 
+# ROUTING - repeated in SPLIT_MEP_RUN.
+#
+#   "draw a duct from here to there" -> here
+#   "add a duct"                     -> here
+#   "split this duct"                -> SPLIT_MEP_RUN - the run already exists
+#   "join these two"                 -> PLACE_MEP_FITTING. Connecting two
+#                                       existing runs is not drawing a new one
+#   "connect these two ducts"        -> PLACE_MEP_FITTING
+#   "put an elbow here"              -> PLACE_MEP_FITTING - the fitting is
+#                                       CHOSEN from the geometry, not named
+#   "add a dimension between these"  -> CREATE_DIMENSION. It shares no words
+#                                       with this fragment and used to resolve
+#                                       here anyway, which is what a crowded
+#                                       area does to retrieval
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - draw a duct from here to there
   - run a duct across the room
   - add a duct between these points
   - draw the duct run
   - put a supply duct in
+  - add a duct

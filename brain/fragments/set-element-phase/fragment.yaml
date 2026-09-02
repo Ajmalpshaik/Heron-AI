@@ -1,43 +1,37 @@
-heron-agent: HERON-REVIT-PAR-030
-heron-step: 14
+heron-agent: HERON-REVIT-PHS-032
+heron-step: 17
 heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-PAR-008
-semantic-identity: "put these elements on a phase, or mark them demolished on one"
+id: FRG-PAR-007
+semantic-identity: "put these elements on a different phase"
 kind: action
-domain: revit.parameters
+domain: revit.phases
 capability: SET_ELEMENT_PHASE
 version: 1
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Sets an element's **Phase Created**, its **Phase Demolished**, or both.
+  Moves elements onto a different created-phase, or sets when they are
+  demolished.
 
-  **`WRITE_ELEMENT_PARAMETERS` CANNOT DO THIS AT ALL.** Both phase parameters
-  store an `ElementId`, not text - so a fragment that writes a value cannot set
-  one, and the phase name is not the thing being stored. The name has to be
-  resolved to the phase element first, which is why `REPORT_PHASES` is the step
-  before this one.
+  **Before this, *"set the phase"* resolved to SET_ELEMENT_WORKSET** - a write,
+  to the wrong property, that looks like it worked. A workset and a phase are
+  both invisible groupings that decide what a view shows, and confusing them
+  silently moves work into another team's ownership while leaving it in the
+  wrong phase.
 
-  **CREATED AND DEMOLISHED ARE INDEPENDENT AND BOTH ARE OPTIONAL.** Setting only
-  one is the normal case - *"put these on New Construction"* touches Created and
-  must not clear Demolished. An empty name for either means *leave it alone*,
-  which is a different instruction from *clear it*.
+  **Changing a phase changes what every view shows, not just this one.** A
+  view has a phase and a phase filter; an element on the wrong phase vanishes
+  from some views, appears as demolished in others, and comes out of the wrong
+  schedule. That is the whole point of phases and it is why this is a bulk
+  change worth confirming before running.
 
-  **A PHASE NAME THAT DOES NOT EXIST STOPS THE JOB BEFORE ANYTHING IS
-  WRITTEN.** Half a set on one phase and half untouched is worse than nothing
-  done, because the model then looks partly correct and the failure is invisible
-  in a plan. `phaseNotFound` says which name, and nothing is written.
-
-  **DEMOLISHING BEFORE CREATING IS REFUSED BY REVIT AND IS REPORTED, NOT
-  SWALLOWED.** An element demolished on a phase earlier than the one it was
-  created on is not a thing, and Revit rejects the write. That is a real
-  modelling error worth seeing rather than a count that quietly comes up short.
-
-  **IT READS BACK.** Every element reported as set was re-read afterwards.
+  **Demolishing is a separate field from creating**, and setting the wrong one
+  is how existing work disappears. Which one is being set is required, never
+  inferred from the phase's name.
 
 contract:
   needs:
@@ -45,39 +39,50 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
-    - name: createdPhase
-      type: string
+    - name: phaseId
+      type: ElementId
       source: request
-    - name: demolishedPhase
+    - name: whichPhase
       type: string
       source: request
   provides:
-    - name: created
-      type: IList<ElementId>
-    - name: demolished
+    - name: changed
       type: IList<ElementId>
     - name: refused
       type: IList<ElementId>
-    - name: absent
+    - name: readOnly
       type: IList<ElementId>
-    - name: unverified
+    - name: alreadySet
       type: IList<ElementId>
-    - name: phaseNotFound
-      type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  One implementation for every release. `PHASE_CREATED`, `PHASE_DEMOLISHED`,
-  `Document.Phases` and `Parameter.Set(ElementId)` are unchanged 2020 to 2027.
-  The phase is carried as an `ElementId` throughout and never as a number, which
-  keeps this clear of the 2024 64-bit change, and no units API is touched.
+  `BuiltInParameter.PHASE_CREATED` and `PHASE_DEMOLISHED` are unchanged 2020 to
+  2027, and both are `ElementId` parameters set with `Parameter.Set(ElementId)`.
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# ROUTING - repeated in READ_ELEMENT_PHASE and SET_ELEMENT_WORKSET.
+#
+#   "set the phase"              -> here
+#   "move these to New Construction" -> here
+#   "mark these as demolished"   -> here, with the demolished field asked for
+#   "which phase is this on"     -> READ_ELEMENT_PHASE - a QUESTION
+#   "put these on the MEP workset" -> SET_ELEMENT_WORKSET. A WORKSET is who
+#                                     owns the work; a PHASE is when it exists.
+#                                     Both are invisible groupings that change
+#                                     what a view shows, and "set the phase"
+#                                     resolved to the workset fragment until
+#                                     2026-09-02 - a write, to the wrong
+#                                     property, that looks like it worked
 
 utterances:
-  - put these on the new construction phase
-  - set the phase on these elements
+  - set the phase
+  - move these to New Construction
+  - change the phase on these
   - mark these as demolished
-  - which phase are these on - change it
-  - move these to the existing phase
+  - these are on the wrong phase
+  - put these in the existing phase

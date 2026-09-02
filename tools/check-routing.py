@@ -64,12 +64,26 @@ unfindable in order to protect a measurement.
 """
 
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
+
+
+def risk_of(store, fragment_id):
+    """The declared risk of one fragment, or None if it is not in the store.
+
+    Read from the scope rather than from disk: the store is what retrieval
+    ranked, so a fragment edited but not re-indexed must be compared as the
+    search actually saw it, not as the file now reads.
+    """
+    for row in store.fragments():
+        if row["id"] == fragment_id:
+            return row.get("risk")
+    return None
 
 
 def utterances():
@@ -114,6 +128,7 @@ def main(argv):
     import heron_scope as SCOPE
     import heron_search as SEARCH
     import heron_embed as EMBED
+    import heron_retrieve as RETRIEVE
 
     # The stores are DERIVED (Golden Rule 11), so an empty one is a fresh machine
     # rather than damage, and a checker should run on a fresh machine without a
@@ -206,26 +221,161 @@ def main(argv):
             print("library has no COLLISIONS, never that retrieval is good.")
             return 0
 
-        if crossing:
+        # THE DANGEROUS SUBSET - a question the HOST would answer with a
+        # fragment that CHANGES THE MODEL.
+        #
+        # Every collision above is a judgement, and most are harmless: two read
+        # fragments arguing produce a slightly worse answer. This subset is
+        # different in kind - a caller acting on the answer does not get a poor
+        # reply to its question, it modifies the model in reply to one.
+        #
+        # IT CALLS `find`, WHICH IS WHAT THE HOST CALLS - AND IT TOOK TWO GOES
+        # TO GET THAT RIGHT, WHICH IS THE POINT WORTH KEEPING.
+        #
+        # Written 2026-08-31 against `taken`, the KEYWORD ranking. It reported
+        # sentences as answered by a writer when the host answered them
+        # correctly - a claim about a route no caller uses.
+        #
+        # Corrected to `retrieve`, the fused stage. Still wrong, and less
+        # obviously so: `retrieve` is fusion ALONE, while the host goes through
+        # `find`, which tries the identity and cache short circuits FIRST. A
+        # sentence that is a fragment's own declared utterance is answered by
+        # identity and never reaches fusion at all - so the fused ranking said
+        # "a writer wins" for a sentence the host resolves exactly right.
+        #
+        # THE RULE THIS LEAVES: a check that makes a claim about CONSEQUENCE
+        # must call the same entry point the system calls, not the stage that
+        # looks like it. The section above is a per-route diagnostic and says
+        # so; this one says what would actually happen, so it has to ask the
+        # thing that actually happens.
+        risky = []
+        for said, fid, _rank, _winner in taken:
+            if risk_of(store, fid) != "READ":
+                continue
+
+            answer = RETRIEVE.find(store, said, limit=1)
+            served = getattr(answer, "fragment_id", None)
+            if not served or served == fid:
+                continue                    # the host answers correctly
+            if risk_of(store, served) in ("READ", None):
+                continue
+
+            risky.append((said, fid, "served", served))
+
+        print()
+        if not risky:
+            print("NO QUESTION IS ANSWERED BY SOMETHING THAT WRITES - and read")
+            print("what that green is worth before trusting it.")
             print()
-            print("*** %d SENTENCE(S) ROUTE UP THE RISK LADDER ***" % len(crossing))
+            print("  This checks each fragment's OWN DECLARED utterances, and")
+            print("  those are exactly the sentences `find` answers by IDENTITY -")
+            print("  an exact declared phrasing is resolved before any ranking")
+            print("  runs. So while the identity route holds, this section is")
+            print("  empty BY CONSTRUCTION, and its emptiness says the identity")
+            print("  route works - not that no question can reach a writer.")
             print()
-            print("The fragment that claimed each of these is LOWER risk than the")
-            print("one answering it. Where the claimant is READ, somebody asks a")
-            print("question and reaches something that changes the model - which")
-            print("is not the same kind of problem as two reports colliding, and")
-            print("is why these are listed apart rather than buried below.")
+            print("  THE REAL RISK SURFACE IS PARAPHRASE, which no fragment")
+            print("  declares and this corpus therefore does not contain. What")
+            print("  this does still catch: a declared question that stops being")
+            print("  matched by identity, or two fragments declaring one sentence")
+            print("  where the survivor writes.")
+        else:
+            print("A QUESTION ANSWERED BY SOMETHING THAT WRITES (%d):" % len(risky))
             print()
-            for said, fid, rank, winner in crossing:
-                print("  %-40s %s %-7s is #%-4s  ->  %s %s answers"
-                      % ('"' + said + '"', fid, risk.get(fid, "?"), rank,
-                         winner, risk.get(winner, "?")))
+            for said, fid, _how, winner in risky:
+                print("  %-44s %s (READ) loses; %s is SERVED"
+                      % ('"' + said + '"', fid, winner))
             print()
-            print("Neither fragment is necessarily wrong. What is NOT available")
-            print("here is leaving it alone unexamined: say which should win, or")
-            print("say that the sentence names a composition and belongs to a")
-            print("skill. Silence on one of these is the model changing on a")
-            print("question, which is this project's defining failure shape.")
+            print("  Measured through `find` - the same entry point the host")
+            print("  calls, identity and cache first. A caller acting on this")
+            print("  answer does not get a poor reply to its question; it")
+            print("  CHANGES THE MODEL in reply to one. Fix the read fragment's")
+            print("  reach or the writer's wording; never leave it because the")
+            print("  rank looks close.")
+
+        # ------------------------------------------------------------------
+        # A ROUTING TABLE IS A COMMENT, AND COMMENTS ARE NOT INDEXED.
+        #
+        # Added 2026-09-01, after OVERRIDE_GRAPHICS_IN_VIEW was found claiming
+        # "make these red" in its routing table and never declaring it - so the
+        # sentence resolved to GROUP_ELEMENTS. heron_search indexes
+        # semantic-identity, the utterances, the capability, the domain and the
+        # purpose. A table saying "-> here" records a DECISION that retrieval
+        # cannot act on.
+        #
+        # The audit found 69 such claims across half the library, 23 of them
+        # reaching the wrong fragment - including "zoom to these" building an
+        # MEP fitting and "write that up" reaching a bulk parameter WRITE.
+        #
+        # Measured through `find`, the entry point the host calls, for the same
+        # reason the risk section is: a claim about consequence must ask the
+        # thing that actually happens.
+        #
+        # A claim on TWO tables is a different fault and is reported as one: two
+        # comments disagreeing is invisible to every other check here.
+        claimed = re.compile(r'^#\s+"([^"]+)"\s*->\s*here\b', re.M)
+        unheard = []
+        claims = {}
+
+        for name in sorted(os.listdir(FRAGMENTS)):
+            path = os.path.join(FRAGMENTS, name, "fragment.yaml")
+            if not os.path.exists(path):
+                continue
+            with open(path, encoding="utf-8") as fh:
+                text = fh.read()
+
+            import yaml
+            doc = yaml.safe_load(text)
+            fid = doc.get("id")
+            spoken = set((u or "").strip().lower() for u in (doc.get("utterances") or []))
+
+            for match in claimed.finditer(text):
+                sentence = match.group(1).strip()
+                claims.setdefault(sentence.lower(), set()).add(fid)
+
+                if sentence.lower() in spoken:
+                    continue
+
+                answer = RETRIEVE.find(store, sentence, limit=1)
+                served = getattr(answer, "fragment_id", None)
+                if served == fid:
+                    continue
+
+                unheard.append((sentence, fid, served or "-"))
+
+        contested = sorted((s, ids) for s, ids in claims.items() if len(ids) > 1)
+
+        print()
+        if not unheard and not contested:
+            print("EVERY SENTENCE A ROUTING TABLE CLAIMS ACTUALLY REACHES IT.")
+            print()
+            print("  A routing table is a COMMENT and the index does not read")
+            print("  one - it reads semantic-identity, the utterances, the")
+            print("  capability, the domain and the purpose. So a table saying")
+            print("  \"-> here\" is a decision retrieval cannot act on unless the")
+            print("  sentence is ALSO an utterance, or something else carries it")
+            print("  there. This says one of those is true for all of them.")
+        else:
+            if unheard:
+                print("CLAIMED IN A ROUTING TABLE AND NOT REACHED (%d):" % len(unheard))
+                print()
+                for sentence, fid, served in unheard:
+                    print("  %-44s %s claims it; %s is SERVED"
+                          % ('"' + sentence + '"', fid, served))
+                print()
+                print("  The table records a decision; the index never saw it.")
+                print("  Either declare the sentence as an utterance, or change")
+                print("  the table - but do not leave the two disagreeing.")
+            if contested:
+                print()
+                print("ONE SENTENCE CLAIMED BY TWO TABLES (%d):" % len(contested))
+                print()
+                for sentence, ids in contested:
+                    print("  %-44s %s" % ('"' + sentence + '"', ", ".join(sorted(set(ids)))))
+                print()
+                print("  Two comments disagreeing, which no other check here can")
+                print("  see. Decide which fragment owns it and drop the claim")
+                print("  from the other.")
 
         print()
         print("SENTENCES TWO FRAGMENTS BOTH WANT (%d of %d):" % (len(taken), total))
@@ -233,6 +383,21 @@ def main(argv):
         for said, fid, rank, winner in taken:
             print("  %-44s %s is #%-4s  %s answers instead"
                   % ('"' + said + '"', fid, rank, winner))
+        print()
+        print("MEASURED ON THE KEYWORD ROUTE ALONE - read that before acting.")
+        print("`taken` is built from SEARCH.keywords, which is ONE HALF of the")
+        print("fusion and is not what the host calls. `find` resolves an exact")
+        print("declared phrasing by IDENTITY before any ranking runs, so a line")
+        print("here can be a sentence the host already answers correctly.")
+        print()
+        print("  Check one before fixing it:")
+        print("    heron_brain.lookup(\"the sentence\")  -> what the host does")
+        print()
+        print("  Written 2026-09-02, after this section misled two consecutive")
+        print("  sessions into editing fragments to chase ranks that `find` was")
+        print("  already getting right. The section above about writers says it")
+        print("  measures through `find` and says so loudly; this one did not")
+        print("  say anything, and looked like a defect list.")
         print()
         print("None of these is automatically a defect, and the exit code says so.")
         print("Three things one can be, and they need different answers:")

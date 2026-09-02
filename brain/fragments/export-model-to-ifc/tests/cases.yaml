@@ -1,39 +1,32 @@
-# D-30: the negative case is what catches "succeeded and did nothing".
-
 positive:
-  - given: a writable folder, a file name, scopeViewId = ElementId.InvalidElementId
+  - given: a folder, a name, IFC 2x3 Coordination View, a 3D view showing MEP only, quantities on
     expect: >
-      exportedPath names a real .ifc, problem empty. Then OPEN IT in a viewer
-      and confirm the model is in there - a right-named file of the wrong size
-      is the failure a path alone cannot show
+      one .ifc containing the MEP model with base quantities - which is what a
+      discipline submission actually asks for
 
-  - given: scopeViewId set to a real 3D view that hides most of the model
+  - given: re-exporting over yesterday's file
     expect: >
-      the IFC contains only what that view shows. Compare its file size against
-      the whole-model export - visibly smaller. This is the whole reason to
-      scope an export, and only the file can prove it happened
+      it exports and `overwrote` is true. This is NOT refused - re-exporting is
+      how the job is normally done, and refusing would make the fragment useless
+      for its real use. It is reported because the file cannot be got back
 
 negative:
-  - given: scopeViewId pointing at a FLOOR PLAN rather than a 3D view
+  - given: a plan view passed as the scope
     expect: >
-      problem says so and NO file is written. It must NOT fall back to the whole
-      model: a coordination file holding far more than was asked for reaches
-      other trades before anybody notices, which is worse than an error
+      REFUSED. A plan cannot limit an IFC, and Revit would export the WHOLE
+      model with nothing to show that it did - the wrong deliverable, silently
 
-  - given: a read-only folder, or a path invalid on this machine
-    expect: problem names the folder and the reason, exportedPath empty, no file
-
-  - given: an empty file name
-    expect: problem says so, nothing written
-
-  - given: >
-      an export that returns without throwing and writes nothing - simulate by
-      exporting to a path the process cannot finally write
+  - given: quantities left off
     expect: >
-      exportedPath EMPTY and problem saying no file was produced. This is the
-      case the read-back exists for: the call was clean and the drive is empty
+      the IFC exports and carries no volumes or areas. It looks complete, and
+      the take-off downstream has nothing to work from - which is why the flag
+      is asked for rather than defaulted
+
+  - given: a file name already ending in .ifc
+    expect: the extension is not doubled - Revit appends it itself
+
+  - given: a machine where the IFC exporter add-in is not installed
+    expect: refused, naming that as the likely cause rather than reporting a file that was never written
 
 second_route:
-  - open the .ifc in a free IFC viewer and look at the model, not the filename
-  - compare file size between a whole-model export and a view-scoped one
-  - one Ctrl+Z after the export - any setup data the exporter wrote goes with it
+  - Revit's own File > Export > IFC with the same setup, and the two files compared in an IFC viewer for schema and property sets

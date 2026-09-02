@@ -1,0 +1,79 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-005
+semantic-identity: "pin these elements so they cannot be moved, or unpin them"
+kind: action
+domain: revit.elements
+capability: SET_PIN_STATE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Pins or unpins elements. Pinning is how a modeller says "this is coordinated,
+  leave it alone" - grids, levels, linked models and anything set out against
+  another trade.
+
+  **This fragment is the other half of a defect this repository already found.**
+  Revit's move call returns normally and moves NOTHING for a pinned element, so
+  MOVE_ELEMENTS has to probe positions before and after to tell moved from
+  blocked. Pinning is the state that causes it, which makes reading and setting
+  it the natural companion: "it did not move" and "it is pinned" are the same
+  sentence from two ends.
+
+  **It reports what CHANGED, never what was asked for.** An element already in
+  the requested state is counted separately rather than added to the total,
+  because "pinned 40" when 38 were already pinned is the exact failure shape
+  this project keeps meeting.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: pinned
+      type: bool
+      source: request
+  provides:
+    - name: changed
+      type: int
+    - name: alreadySet
+      type: int
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.Pinned` is a plain get/set
+  bool from 2020 to 2027 and no ElementId is built from an integer, so 2024's
+  move to 64-bit ids does not reach this code.
+
+# ROUTING - pinning and moving are asked about in the same breath, and the
+# table is repeated in MOVE_ELEMENTS rather than written here alone.
+#
+#   "pin these" / "lock them"              -> here, pinned true
+#   "unpin" / "unlock so I can move it"    -> here, pinned false
+#   "move them up 200"                     -> MOVE_ELEMENTS
+#   "why did they not move"                -> MOVE_ELEMENTS reports blocked;
+#                                             a pinned element is the commonest
+#                                             cause and this is the fix
+#
+# NOT the same as a workset or a group. "Locked" is also said of an element
+# owned by another user, which is WRK-014's business and not this fragment's -
+# unpinning will not free it and reporting success would be wrong.
+
+utterances:
+  - pin these
+  - pin them so nobody moves them
+  - lock these in place
+  - unpin them
+  - unlock it so I can move it
+  - are these pinned

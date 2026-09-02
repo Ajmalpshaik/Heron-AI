@@ -1,0 +1,79 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-007
+semantic-identity: "delete these elements from the model"
+kind: action
+domain: revit.elements
+capability: DELETE_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Deletes elements. The most destructive thing in this library, and the one
+  whose honest reporting matters most.
+
+  **Deleting one element can delete others, and Revit will not warn first.**
+  A wall takes its hosted doors and windows. A duct run takes its fittings and
+  its insulation. A level can take everything on it. `Document.Delete` hands
+  back **what actually went** — which is routinely a longer list than what was
+  asked for — and that returned set, never the input count, is what this
+  fragment reports.
+
+  **So the caller can tell the user what will really happen before it happens.**
+  This is what makes Golden Rule 17's preview possible for deletion: run the
+  same call inside a transaction that is rolled back, and the returned set is
+  the true blast radius.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: deleted
+      type: ICollection<ElementId>
+    - name: askedFor
+      type: int
+    - name: alsoWent
+      type: int
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.Delete(ICollection<ElementId>)`
+  returns the ids actually removed on every release 2020 to 2027, and no
+  ElementId is built from an integer, so 2024's move to 64-bit ids does not
+  reach this code.
+
+# ROUTING - repeated in HIDE_ELEMENTS, which is what is usually meant.
+#
+#   "get rid of them"                -> ASK WHICH. On a view it is HIDE_ELEMENTS
+#                                       and reversible; in the model it is here
+#                                       and it is not. The sentence does not say
+#   "hide these"                     -> HIDE_ELEMENTS
+#   "delete these" / "remove these"  -> here
+#   "undo that"                      -> Revit's own Undo, never a delete written
+#                                       to reverse a create
+#
+# "GET RID OF THEM" IS THE DANGEROUS SENTENCE and it is genuinely ambiguous.
+# Hiding and deleting are one word apart in English and a world apart in the
+# model. D-33 says ask, and this is the clearest case in the library.
+
+utterances:
+  - delete these
+  - remove these elements
+  - delete them from the model
+  - take these out of the model
+  - delete the ones I selected

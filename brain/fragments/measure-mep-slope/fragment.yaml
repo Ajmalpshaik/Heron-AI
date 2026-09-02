@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-005
+semantic-identity: "what fall do these pipes have, and which are flatter than they should be"
+kind: action
+domain: revit.mep
+capability: MEASURE_MEP_SLOPE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  The fall on each pipe or duct, as a percentage, measured from the geometry -
+  and which of them are flatter than a minimum the caller states.
+
+  Drainage that does not fall does not drain. It is one of the few MEP mistakes
+  that looks completely correct in every view, passes every clash check, and is
+  only found on site.
+
+  **The slope is COMPUTED FROM THE ENDPOINTS, not read from the slope
+  parameter,** and that is this repository's standing rule rather than a
+  preference: Revit's own reported values describe intent and are not always the
+  physical fact. A pipe whose slope parameter says 1% and whose two ends are at
+  the same level is flat, and the geometry is the half that is true. The same
+  reasoning found the real refrigerant pairing when the tags and the connector
+  flags both said otherwise.
+
+  **It answers "is there enough fall", NOT "does it fall the right way".** The
+  sign it reports runs from the curve's start to its end, and Revit's curve
+  direction is whichever way the modeller drew - two identical drains drawn from
+  opposite ends report +1% and -1%. So the verdict is taken on the magnitude,
+  and which end is downstream is TRACE_CONNECTIVITY's question. This limit was
+  found by writing the negative case: the first version compared the signed
+  value against a positive minimum, which would have failed a correct drain for
+  the direction somebody dragged the mouse.
+
+  **The minimum is a per-request input and has no default.** 1:100, 1:40 and 1%
+  are different site answers to different pipe sizes and different authorities,
+  and a number invented here would be a number quietly relied on. Nothing in
+  this fragment knows what the job requires.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: minimumSlopePercent
+      type: double
+      source: request
+  provides:
+    - name: slopePercent
+      type: IDictionary<ElementId, double>
+    - name: belowMinimum
+      type: IList<ElementId>
+    - name: vertical
+      type: IList<ElementId>
+    - name: noGeometry
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `LocationCurve`, `Curve.GetEndPoint`
+  and `XYZ` are unchanged 2020 to 2027. The slope is a RATIO of two internal
+  lengths, so it needs no unit conversion at all and 2021's unit API rewrite
+  cannot reach it - the one number that is the same in feet and in millimetres.
+
+# ROUTING - repeated in ALIGN_MEP_ELEVATION, which is the fragment that gets
+# asked for when this one is meant.
+#
+#   "what fall is on this drain"        -> here
+#   "which pipes are too flat"          -> here, with the minimum stated
+#   "set them all to the same level"    -> ALIGN_MEP_ELEVATION
+#   "put the ducts at 2800"             -> ALIGN_MEP_ELEVATION
+#
+# ALIGNING AND SLOPING ARE OPPOSITE JOBS ON THE SAME ELEMENTS. Aligning makes a
+# run flat on purpose; a drain being flat is the defect. Landing on the wrong
+# one of these does not give a poor answer, it gives a confident wrong one.
+
+utterances:
+  - what slope is on these pipes
+  - which pipes are too flat
+  - check the fall on the drainage
+  - what is the gradient
+  - are these sloped enough
+  - the drain is not running
+  - what fall is on this drain
