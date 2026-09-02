@@ -89,6 +89,8 @@ compatibility-note: >
 #                                   shape; a load is an analysis result, and
 #                                   only a Space carries one
 
+#   "make elevations inside each room"   -> CREATE_ROOM_ELEVATIONS - and this
+#                                        one gives it the centre point
 utterances:
   - the ceiling height in here
   - how many fit in this room

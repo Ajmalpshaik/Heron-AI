@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-020
+semantic-identity: "which of the openings already cut are now wrong"
+kind: filter
+domain: revit.qa
+capability: AUDIT_MEP_OPENINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Audits the openings already in the model against the MEP that is in it now.
+  Answers the question a revision actually asks - *"the ducts moved, which of my
+  openings are wrong?"* - with a status per opening: STALE (nothing runs through
+  it any more), COMBINED (more than one service through one hole), UNHOSTED (not
+  inside anything), or OK. Read-only.
+
+  **THE TWO KINDS OF "OPENING" ARE NOT THE SAME KIND OF ELEMENT, AND THAT IS THE
+  TRAP THIS FRAGMENT IS BUILT AROUND.** A cut void is a Revit `Opening`, which
+  has NO SOLID at all - only a boundary and a host. A placed sleeve is a family
+  instance, which does. The obvious way to gather openings returns mostly the
+  first kind, so an audit written for the second reports "no geometry" for every
+  one of them: no crash, no error, and an audit that audited nothing. Both kinds
+  are handled, and each row SAYS WHICH ROUTE was used.
+
+  **AN OPENING'S EXTENT IS TAKEN FROM ITS BOUNDARY AND ITS BOUNDING BOX, AND THE
+  TWO ARE CROSS-CHECKED.** Where they disagree badly the row reads SUSPECT rather
+  than being audited on geometry that may be in the wrong place. The
+  documentation for the boundary does not state its coordinate space, so it is
+  verified rather than assumed.
+
+  **IT IS NOT CHECK_SLEEVE_SIZE.** That asks whether a hole is the right SIZE for
+  what goes through it. This asks whether the hole is still in the right PLACE
+  and still needed at all - the two questions a revision separates, and the
+  reason creation and checking are different jobs.
+
+  **STRUCTURE IN A LINK IS NOT SCANNED**, so the hosting question is answered
+  against the host model only and says so. On a normal coordination job the walls
+  and slabs are a link, which means a clean UNHOSTED count there has checked
+  nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: openings
+      type: IList<Element>
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: stale
+      type: IList<ElementId>
+    - name: combined
+      type: IList<ElementId>
+    - name: unhosted
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Opening.BoundaryRect`,
+  `Opening.BoundaryCurves`, `Opening.Host` and `Element.get_BoundingBox` are
+  present 2020 through 2027 - read off the reference assemblies at both ends.
+  `Opening.SketchId` is NOT used: it arrives at 2024 and naming it would break
+  the 2020 build for something this audit does not need.
+
+# ROUTING - repeated in CHECK_SLEEVE_SIZE and FIND_CLASHES.
+#
+#   "which of my openings are wrong now the ducts have moved" -> here
+#   "check the openings against the services" -> here
+#   "are any of the holes not needed any more" -> here
+#   "are the sleeves big enough for the pipes going through" -> CHECK_SLEEVE_SIZE
+#                                        - that asks about SIZE; this asks
+#                                          whether the hole is still in the
+#                                          right place and still needed
+#   "what is clashing"                   -> FIND_CLASHES - services against each
+#                                          other, not openings against services
+
+utterances:
+  - which of my openings are wrong now the ducts have moved
+  - check the openings against the services
+  - are any of the holes not needed any more
+  - audit the mep openings
+  - which openings have nothing going through them

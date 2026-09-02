@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-049
+semantic-identity: "read the graphic overrides already on these elements in a view"
+kind: filter
+domain: revit.views
+capability: READ_GRAPHIC_OVERRIDES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads back the graphic overrides ALREADY on elements in one view - line
+  colour, surface pattern and its colour, transparency, halftone, detail level -
+  and hands the settings object on. Read-only.
+
+  **IT IS THE HALF THAT WAS MISSING, AND ITS ABSENCE HAD A MEASURED COST.**
+  `OVERRIDE_GRAPHICS_IN_VIEW` takes settings ALREADY BUILT, which is what makes
+  one implementation work on eight releases. Nothing could produce those
+  settings from an element that already looked right, so *"make this pipe look
+  the same as that one"* - a normal sentence on any drawing - had no answer in
+  this library at all and was resolving to `CREATE_PIPE`.
+
+  **MATCHING IS THIS FRAGMENT PLUS THE WRITER, and that is the point of the
+  split.** Read the source element's look here, hand the object to
+  `OVERRIDE_GRAPHICS_IN_VIEW`, and every element handed to it matches. Neither
+  half has to know what colour anything is.
+
+  **AN ELEMENT WITH NO OVERRIDE STILL RETURNS A SETTINGS OBJECT**, and it is the
+  empty one. That is not a failure and it is not nothing: applying it to
+  something else CLEARS that thing's override, which is a real use. The report
+  says which elements carried an override and which did not, because "matched to
+  something with no override" and "the call did nothing" look identical
+  afterwards.
+
+  **What it reads is the PER-ELEMENT override only.** A category override or a
+  filter override in the same view is a different setting, is not read here, and
+  survives untouched - which is why an element can be grey in the view and come
+  back with nothing on it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: overrides
+      type: OverrideGraphicSettings
+    - name: findings
+      type: IList<string>
+    - name: withOverride
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, and this is the half of
+  `OverrideGraphicSettings` that did NOT move. The SETTERS were renamed - the
+  fill-pattern calls became surface-pattern calls, foreground and background
+  split - which is why `OVERRIDE_GRAPHICS_IN_VIEW` refuses to build the object.
+  The GETTERS carry the surface names on 2020 as well as on 2027:
+  `SurfaceForegroundPatternColor`, `SurfaceBackgroundPatternColor`,
+  `ProjectionLineColor`, `CutLineColor`, `Transparency`, `Halftone` and
+  `DetailLevel` were all read off the reference assemblies at both ends and are
+  present on each. So the reader needs no branch where the writer would.
+
+# ROUTING - repeated in OVERRIDE_GRAPHICS_IN_VIEW and RESET_GRAPHIC_OVERRIDES.
+#
+#   "make this pipe look the same as that one" -> here FIRST, then
+#                                        OVERRIDE_GRAPHICS_IN_VIEW with what it
+#                                        returns. Matching is a read and a
+#                                        write, and this is the read
+#   "what colour is this one overridden to"   -> here
+#   "why does this look different in this view" -> here - and if it comes back
+#                                        empty, the cause is a CATEGORY or a
+#                                        FILTER override, which this does not
+#                                        read
+#   "make these red"                     -> OVERRIDE_GRAPHICS_IN_VIEW
+#   "put it back how it was"             -> RESET_GRAPHIC_OVERRIDES
+
+utterances:
+  - make this pipe look the same as that one
+  - copy the graphics from this element to those
+  - what colour is this one overridden to
+  - why does this look different in this view
+  - read the overrides on these elements

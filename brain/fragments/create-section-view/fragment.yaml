@@ -93,6 +93,9 @@ compatibility-note: >
 #   "create a callout"               -> CREATE_CALLOUT - enlarges part of a
 #                                       view that already exists
 
+#   "make elevations inside each room"   -> CREATE_ROOM_ELEVATIONS - a marker
+#                                        with four slots looking outward. A
+#                                        section cannot make that symbol
 utterances:
   - create a section through this
   - make a section here

@@ -88,6 +88,25 @@ compatibility-note: >
   keeps this clear of the 2021 move. A pair is keyed by the two ids rendered as
   text rather than by any numeric id, so the 2024 64-bit change cannot reach it.
 
+# ROUTING - repeated in CHECK_VERTICAL_CLEARANCE, CHECK_EQUIPMENT_CLEARANCE and
+# CHECK_SLEEVE_SIZE.
+#
+#   "what is too close to what"          -> here - every offending pair, in
+#                                          any direction
+#   "how much room is there between the duct and the pipe above it" ->
+#                                        CHECK_VERTICAL_CLEARANCE - the Z gap
+#                                        only. Two services 200 mm apart
+#                                        diagonally pass HERE and may have
+#                                        40 mm of vertical room, which is what
+#                                        a hanger and a jacket need
+#   "is there enough space in front of the panel to open the door" ->
+#                                        CHECK_EQUIPMENT_CLEARANCE - a zone
+#                                        with a front and a back, off the
+#                                        family facing direction
+#   "are the sleeves big enough for the pipes going through" ->
+#                                        CHECK_SLEEVE_SIZE - a sleeve and its
+#                                        pipe MUST touch; this measures things
+#                                        that must not
 utterances:
   - is anything too close to the ducts
   - check the clearance between services
@@ -95,3 +114,4 @@ utterances:
   - clearance check
   - are the services too close together
   - check the gap to the structure
+  - what is too close to what

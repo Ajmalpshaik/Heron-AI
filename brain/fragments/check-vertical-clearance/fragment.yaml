@@ -1,0 +1,98 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-019
+semantic-identity: "how much clear vertical room is there between stacked services"
+kind: filter
+domain: revit.qa
+capability: CHECK_VERTICAL_CLEARANCE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  For every pair of services that sit above one another, how much clear VERTICAL
+  space is between the bottom of the upper one and the top of the lower one, and
+  which pairs are tighter than the rule. The *"keep 150 mm between the duct and
+  the sprinkler main so the hangers and the insulation fit"* check - and the one
+  that decides whether a ceiling void actually works. Read-only.
+
+  **IT IS NOT CHECK_MINIMUM_CLEARANCE WITH A SMALLER NUMBER, AND THE DIFFERENCE
+  IS THE POINT.** A straight-line gap does not answer the coordination question.
+  Two services 200 mm apart diagonally have 200 mm of straight-line clearance
+  and may have only 40 mm of VERTICAL room - which is what a flange, a hanger
+  and an insulation jacket actually need. This measures the Z gap only.
+
+  **AND ONLY FOR PAIRS ACTUALLY ABOVE ONE ANOTHER.** Services passing at
+  different plan positions are not a stacking problem and are correctly silent
+  here. A report that lists them buries the real ones.
+
+  **IT SAYS WHICH ONE IS ON TOP, because that is half the answer.** *"A is above
+  B by 90 mm"* makes a service in the wrong order - drainage above the duct it
+  has to cross under - visible as a fact rather than inferred from two
+  elevations.
+
+  **A NEGATIVE GAP IS AN OVERLAP, NOT A SMALL GAP**, and is flagged as a clash
+  so it can never be read as *"just tight"*.
+
+  **MEASURED ON BOUNDING BOXES, WHICH IS RIGHT FOR A HORIZONTAL RUN AND
+  PESSIMISTIC FOR A SLOPED ONE.** A box hugs a level duct. For a sloped or
+  vertical run the box is the whole rise, so the gap reported is smaller than
+  the truth - it over-reports, never misses. Those runs are counted separately
+  so that is visible rather than silently wrong.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: services
+      type: IList<Element>
+    - name: requiredGap
+      type: double
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: tooClose
+      type: int
+    - name: clashing
+      type: int
+    - name: slopedOrVertical
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release - it reads bounding boxes and nothing
+  else, and `Element.get_BoundingBox` is unchanged 2020 through 2027. Element
+  identity is compared as `ElementId` to `ElementId`, never as a number, which
+  is what keeps it working across the release where the type went 64-bit and the
+  one where reading it as an integer was removed. `requiredGap` arrives in
+  internal FEET.
+
+# ROUTING - repeated in CHECK_MINIMUM_CLEARANCE, ALIGN_MEP_ELEVATION and
+# MEASURE_CEILING_HEIGHT.
+#
+#   "how much room is there between the duct and the pipe above it" -> here
+#   "which services are stacked too close together" -> here
+#   "is there enough vertical space between the services" -> here
+#   "what is too close to what"          -> CHECK_MINIMUM_CLEARANCE - a
+#                                          straight-line gap in ANY direction.
+#                                          Two services 200 mm apart diagonally
+#                                          pass there and may have 40 mm here
+#   "put all these at the same height"   -> ALIGN_MEP_ELEVATION - the FIX once
+#                                          this has found the problem
+#   "how high is the ceiling"            -> MEASURE_CEILING_HEIGHT - how much
+#                                          void there is to work in at all
+
+utterances:
+  - how much room is there between the duct and the pipe above it
+  - which services are stacked too close together
+  - is there enough vertical space between the services
+  - check the vertical clearance between the services
+  - will the hangers fit between these two

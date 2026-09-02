@@ -1,0 +1,43 @@
+positive:
+  - given: a 200 mm sleeve round a 150 mm pipe, 25 mm annular clearance asked for
+    expect: >
+      ok with 0 mm spare exactly - CHECKED by hand against a section, because the
+      arithmetic is the fragment and a wrong term shows up nowhere else
+
+  - given: the same pipe with a 25 mm insulation jacket
+    expect: >
+      UNDERSIZED by 50 mm. The jacket is read from the real insulation element,
+      not assumed, and it is what turns a comfortable sleeve into a tight one
+
+  - given: a 400 mm sleeve round the same 150 mm pipe, maxOversize 50 mm
+    expect: >
+      OVERSIZED, with the figure. A generous hole costs fire-stopping and gets
+      queried on site, so it is a finding rather than a pass
+
+negative:
+  - given: a sleeve with no service passing through it
+    expect: >
+      named in orphaned as a FINDING. THIS IS THE FIRST CASE TO RUN. It is
+      either a leftover from a run that moved, or a run moved and the hole did
+      not - and a report that omits the row makes both invisible while looking
+      complete
+
+  - given: a sleeve family whose size parameter is called something unusual
+    expect: >
+      counted in unreadable WITH the names that were tried. A version that
+      returns zero and moves on reports a wrong sleeve as checked
+
+  - given: a service that carries no insulation at all
+    expect: >
+      "no insulation" said in the row and the check completing. Asking for
+      insulation ids on such an element throws, and that exception IS the
+      filter - it must not end the sleeve's row
+
+  - given: a sleeve with no readable geometry
+    expect: counted in unreadable, not silently passed
+
+  - given: an empty sleeves list
+    expect: a plain zero, not silence
+
+second_route:
+  - Cut a section through one sleeve and dimension the annular gap by hand

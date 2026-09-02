@@ -82,6 +82,10 @@ compatibility-note: >
 #                                       overlap; joining is what makes two
 #                                       elements agree which one cuts
 
+#   "which of my openings are wrong now the ducts have moved" ->
+#                                        AUDIT_MEP_OPENINGS - openings against
+#                                        services, not services against each
+#                                        other
 utterances:
   - which ducts clash with the beams
   - find the clashes

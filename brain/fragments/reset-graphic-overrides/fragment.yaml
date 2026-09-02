@@ -59,6 +59,8 @@ compatibility-note: >
 #   "make these red"                 -> OVERRIDE_GRAPHICS_IN_VIEW
 #   "do the grayout"                 -> HIGHLIGHT_VS_REST - what this undoes
 
+#   "what colour is this one overridden to" -> READ_GRAPHIC_OVERRIDES - this
+#                                        one only clears
 utterances:
   - put it back how it was
   - clear the overrides

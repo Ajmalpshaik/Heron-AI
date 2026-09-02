@@ -68,6 +68,15 @@ compatibility-note: >
   feet throughout and no unit call is made, so the 2021 units move does not
   reach this fragment.
 
+# ROUTING - repeated in CHECK_VALVE_ACCESSIBILITY and
+# CHECK_EQUIPMENT_CLEARANCE.
+#
+#   "is anything above this point"       -> here - one ray from one point
+#   "can we reach the valve to operate it" -> CHECK_VALVE_ACCESSIBILITY - it
+#                                        asks about room, an access panel and
+#                                        reach height; this casts one ray
+#   "is there enough space in front of the panel to open the door" ->
+#                                        CHECK_EQUIPMENT_CLEARANCE
 utterances:
   - is there a beam in the way
   - there is a beam in the room

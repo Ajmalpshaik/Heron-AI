@@ -1,0 +1,42 @@
+positive:
+  - given: Revit 2020 through 2026, a level, a phase and three unzoned spaces
+    expect: >
+      a zone holding all three - CHECKED by reading the zone's own space list
+      back in a SEPARATE call, not from this fragment's count
+
+  - given: a zone name already used
+    expect: the zone still created under Revit's own name, and the clash reported
+
+negative:
+  - given: Revit 2027
+    expect: >
+      refused with the reason - the API has removed zone creation and the job has
+      to be done in Revit's own interface. THIS IS THE FIRST CASE TO RUN, and it
+      must not be a compile failure or an exception: the calls are reached by
+      name precisely so one source still builds and still explains itself there
+
+  - given: a space already belonging to another zone
+    expect: >
+      named in movedFromAnotherZone with the old zone's name. Revit allows one
+      zone per space and moves it WITHOUT ASKING, so the damage is to a zone
+      nobody was looking at - reading the old zone before the move is the only
+      moment that fact exists
+
+  - given: a Room passed in among the spaces
+    expect: >
+      refused per element, saying a room is not a space. They look identical in
+      a plan and are different elements
+
+  - given: a space on a different phase from the zone
+    expect: >
+      rejected with the phase named as the usual cause - otherwise it reads as
+      the space being wrong
+
+  - given: the zone read immediately after creation
+    expect: >
+      the count of what was ADDED, never the zone's area. A new zone reports zero
+      area while the space inside already knows its own, and passing that zero on
+      is reporting a number that is not yet true
+
+second_route:
+  - Analyze tab, Spaces and Zones, Zone - then select the zone and read its space list

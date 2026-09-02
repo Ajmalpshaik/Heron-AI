@@ -81,6 +81,10 @@ compatibility-note: >
   (Architecture is not imported), and one idiom across the pair is worth more
   than one saved line.
 
+# ROUTING - repeated in CREATE_HVAC_ZONE.
+#
+#   "what airflow does this space need"  -> here
+#   "create an HVAC zone for these spaces" -> CREATE_HVAC_ZONE
 utterances:
   - list the spaces and their airflow
   - which spaces have no design airflow

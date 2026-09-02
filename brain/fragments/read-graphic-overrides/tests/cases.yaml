@@ -1,0 +1,42 @@
+positive:
+  - given: a pipe overridden red, and the same view
+    expect: >
+      the red reported AND the settings object handed on - CHECKED by feeding it
+      straight to OVERRIDE_GRAPHICS_IN_VIEW on a second pipe and looking at the
+      view, because reporting the colour is not the same as reproducing it
+
+  - given: an element with halftone and 60% transparency
+    expect: both named, not just the colour
+
+  - given: several elements, the first of them overridden
+    expect: >
+      that first one's settings handed on, and every element's state listed. One
+      source is taken deliberately - choosing between several silently is how
+      the wrong element's look gets copied
+
+negative:
+  - given: an element with NO override in that view
+    expect: >
+      an EMPTY settings object still handed back, and the row saying so. THIS IS
+      THE FIRST CASE TO RUN. The empty object is not a failure - applying it
+      CLEARS another element's override, which is a real use - and a version
+      that returns null instead makes the matching job crash on the ordinary case
+
+  - given: an element that is grey because its whole CATEGORY is overridden
+    expect: >
+      no per-element override reported, AND the row naming the category and
+      filter overrides as the place to look. Reading nothing and saying nothing
+      is what sends somebody hunting the wrong setting
+
+  - given: a schedule or a sheet as the view
+    expect: >
+      said plainly - that view type accepts no overrides, so nothing can be
+      carrying one
+
+  - given: an element deleted between the query and this call
+    expect: >
+      named as unreadable and the rest of the list COMPLETES - the user edits
+      between messages, and one stale id must not end the report
+
+second_route:
+  - Select the element, open Visibility/Graphics for the view, or use Revit's own Match Type Properties eyedropper and compare

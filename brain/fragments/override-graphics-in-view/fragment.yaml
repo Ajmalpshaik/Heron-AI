@@ -107,6 +107,10 @@ compatibility-note: >
 #                                        link not at all, which is why a
 #                                        grayout on a linked job appears to do
 #                                        nothing
+#   "make this pipe look the same as that one" -> READ_GRAPHIC_OVERRIDES
+#                                        FIRST, then here with what it
+#                                        returns. Matching is a read and a
+#                                        write, and this half only writes
 utterances:
   - bring the services forward
   - make the architecture faint

@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-050
+semantic-identity: "make interior elevations looking out from inside a room"
+kind: action
+domain: revit.views
+capability: CREATE_ROOM_ELEVATIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts an elevation marker inside a room and creates up to four interior
+  elevations from it - the toilet, the kitchen, the plant room walls, drawn
+  looking outward from a point in the middle.
+
+  **IT IS A DIFFERENT MECHANISM FROM CREATE_SECTION_VIEW, NOT A SPECIAL CASE OF
+  IT.** A section is a line and a depth, cutting through the model. An interior
+  elevation is a MARKER with up to four slots, each slot producing a view that
+  looks at one wall from inside. Nothing about a section produces the little
+  four-arrow symbol a drawing set expects, and asking for room elevations and
+  getting sections is the mis-route this closes.
+
+  **THE FOUR SLOTS POINT IN THE MARKER'S DEFAULT DIRECTIONS AND ARE NOT ROTATED
+  TO FACE THE WALLS.** In a room square to the project axes that is right. In a
+  rotated room the four views look at corners. The marker is an ordinary element
+  and rotating it afterwards turns the views with it - said here because it is
+  invisible until somebody puts the sheet together.
+
+  **THE PLAN IT GOES IN IS PART OF THE REQUEST, NOT A GUESS.** The marker is
+  visible in that plan and the elevations inherit its phase, so putting it in
+  the wrong plan produces four views of the wrong phase's walls - which looks
+  like a modelling problem and is not one.
+
+  **The point is given in internal FEET.** A room's centre is arithmetic on its
+  geometry and belongs to the caller (D-01) - READ_ROOM_GEOMETRY provides it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: planView
+      type: View
+      source: request
+    - name: origin
+      type: XYZ
+      source: request
+    - name: slotCount
+      type: int
+      source: request
+    - name: scale
+      type: int
+      source: request
+  provides:
+    - name: marker
+      type: Element
+    - name: created
+      type: IList<Element>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElevationMarker.CreateElevationMarker`,
+  `CreateElevation`, `IsAvailableIndex` and `MaximumViewCount` are unchanged 2020
+  through 2027 - read off the reference assemblies at both ends. The elevation
+  view family type is found by walking `ViewFamilyType` and comparing
+  `ViewFamily`, never by an id typed in, because that id differs per template.
+
+# ROUTING - repeated in CREATE_SECTION_VIEW and READ_ROOM_GEOMETRY.
+#
+#   "make elevations inside each room"   -> here
+#   "I need interior elevations of this toilet" -> here
+#   "put an elevation marker in this room" -> here
+#   "cut a section through here"         -> CREATE_SECTION_VIEW - a line and a
+#                                          depth through the model. It cannot
+#                                          make the four-arrow interior
+#                                          elevation symbol a drawing set wants
+#   "how big is this room"               -> READ_ROOM_GEOMETRY - and it is what
+#                                          gives the centre point this needs
+
+utterances:
+  - make elevations inside each room
+  - I need interior elevations of this toilet
+  - put an elevation marker in this room
+  - create the room elevations
+  - make four elevations looking at the walls

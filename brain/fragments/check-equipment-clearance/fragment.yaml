@@ -1,0 +1,108 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-017
+semantic-identity: "is the maintenance space round this equipment clear"
+kind: filter
+domain: revit.qa
+capability: CHECK_EQUIPMENT_CLEARANCE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks the maintenance and access zone around each piece of equipment - the
+  space in front for pulling a coil or opening a panel door, at the sides, above
+  for the valves - and reports everything modelled inside it. *"Can this be
+  serviced once the building is up"*, answered from the model instead of on
+  site. Read-only.
+
+  **THE ZONE IS DIRECTIONAL, AND THAT IS THE WHOLE POINT.** A plain *"keep a
+  metre clear all round"* is not how equipment is serviced: an air handling unit
+  needs a metre and a half in FRONT for coil withdrawal and 200 mm behind. A
+  check that cannot tell those apart either passes real obstructions or fails on
+  the wall the unit is meant to stand against - and both make it useless. Each
+  face carries its own figure.
+
+  **"FRONT" IS THE FAMILY'S OWN FACING DIRECTION, AND IT IS WORTH CHECKING
+  ONCE.** The zone is built on the instance's transform, so it rotates with the
+  unit. If a family was authored facing the wrong way its front zone points into
+  the wall and the check is confidently wrong, which is why every unit's facing
+  direction is REPORTED rather than assumed correct.
+
+  **THE EQUIPMENT'S OWN SERVICES ARE NOT OBSTRUCTIONS.** The duct plugged into
+  the unit necessarily fills the space at its connector. Anything connected to
+  it, and its own sub-components, are excluded - otherwise every unit reports
+  its own pipework as blocking it and the check gets switched off.
+
+  **LINKED MODELS ARE NOT SCANNED, AND A CLEAN RESULT MAY THEREFORE HAVE
+  CHECKED NOTHING.** Structure and architecture usually arrive as links and are
+  exactly what blocks access. The count of host-model candidates is reported for
+  that reason.
+
+  **EVERY FIGURE IS A PER-REQUEST INPUT (D-33).** Manufacturers' clearances
+  differ per unit; there is no default here, because a number nobody chose
+  applied to a plant room is the failure this rule exists for.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: equipment
+      type: IList<Element>
+    - name: frontClearance
+      type: double
+      source: request
+    - name: sideClearance
+      type: double
+      source: request
+    - name: backClearance
+      type: double
+      source: request
+    - name: topClearance
+      type: double
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: blocked
+      type: IList<ElementId>
+    - name: unreadable
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementIntersectsSolidFilter`,
+  `GeometryCreationUtilities.CreateExtrusionGeometry`, `CurveLoop.Create` and
+  `FamilyInstance.GetTransform` are unchanged 2020 through 2027 - read off the
+  reference assemblies at both ends. All four clearances arrive in internal
+  FEET; the millimetres the person spoke are converted at the edge, before this.
+
+# ROUTING - repeated in CHECK_MINIMUM_CLEARANCE, CHECK_VALVE_ACCESSIBILITY and
+# CHECK_OBSTRUCTIONS.
+#
+#   "is there enough space in front of the panel to open the door" -> here
+#   "can this unit be serviced"          -> here
+#   "check the maintenance space round the plant" -> here
+#   "can we reach the valve to operate it" -> CHECK_VALVE_ACCESSIBILITY - that
+#                                        asks three questions this does not:
+#                                        room, an access panel above a ceiling,
+#                                        and whether it is within reach
+#   "what is too close to what"          -> CHECK_MINIMUM_CLEARANCE - a gap in
+#                                        ANY direction between two sets. This
+#                                        one is a zone with a front and a back
+#   "is anything above this point"       -> CHECK_OBSTRUCTIONS - one ray from
+#                                        one point
+
+utterances:
+  - is there enough space in front of the panel to open the door
+  - can this unit be serviced
+  - check the maintenance space round the plant
+  - is the access clear round this equipment
+  - what is blocking the front of this unit

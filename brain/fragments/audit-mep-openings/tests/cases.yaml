@@ -1,0 +1,45 @@
+positive:
+  - given: fifty openings cut for ducts, after the ducts were re-routed
+    expect: >
+      the moved ones listed STALE and the rest OK - CHECKED by opening one
+      reported STALE in a section and confirming the hole is empty, because a
+      whole-model verdict is only as good as one row you looked at
+
+  - given: two pipes running through one opening
+    expect: >
+      COMBINED, naming both. Sometimes intended, so it is a row to confirm with
+      the structural engineer rather than a failure
+
+  - given: a mix of cut voids and placed sleeve families
+    expect: both audited, each row saying which route was used
+
+negative:
+  - given: openings gathered by the usual route, which returns mostly cut VOIDS
+    expect: >
+      every one of them audited. THIS IS THE FIRST CASE TO RUN. A cut void has
+      no solid at all, so a version written for family instances reports "no
+      geometry" for the whole set - no crash, no error, and an audit that
+      audited nothing while looking complete
+
+  - given: a project where the walls and slabs are all in a LINK
+    expect: >
+      the summary saying structure in links was not scanned, and each unhosted
+      row saying the question was not really asked. Otherwise every opening
+      reads UNHOSTED and the report is noise
+
+  - given: an opening whose boundary and bounding box disagree by an order of magnitude
+    expect: >
+      SUSPECT GEOMETRY, and the rest of its row marked untrustworthy. The
+      boundary's coordinate space is not documented, so it is verified rather
+      than assumed
+
+  - given: an opening with no readable extent at all
+    expect: named and skipped, with the rest of the audit completing
+
+  - given: a model with no services at all
+    expect: >
+      every opening STALE and the service count of zero on the summary line, so
+      the cause is visible rather than looking like fifty real faults
+
+second_route:
+  - Open a 3D view, isolate the openings and the services, and look at one reported STALE hole
