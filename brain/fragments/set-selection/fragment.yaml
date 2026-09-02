@@ -49,6 +49,10 @@ compatibility-note: >
 #   "move what I picked up 200"-> READ_SELECTION, then MOVE_ELEMENTS
 #   "how many ducts are there" -> COUNT_ELEMENTS. Nothing to do with what is
 #                                 picked on screen
+#   "make a selection set"           -> CREATE_SELECTION_FILTER - a SAVED
+#                                       set that survives the model closing.
+#                                       This highlight is gone at the next
+#                                       click
 
 # risk is EXECUTE and not MODIFY on purpose: changing what is highlighted is
 # not a change to the model, survives no transaction and needs no undo. The

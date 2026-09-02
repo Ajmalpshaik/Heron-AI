@@ -71,6 +71,8 @@ compatibility-note: >
 # WORKSET AND OWNERSHIP ARE NOT THE SAME THING and both are said as "whose is
 # it". The workset is where an element lives; ownership is who holds it right
 # now. Moving worksets does not release an element somebody else has.
+#   "add a new workset"              -> CREATE_WORKSET - the workset has to
+#                                       exist before anything goes on it
 
 # ROUTING - repeated in LIST_WORKSETS and READ_ELEMENT_OWNERSHIP.
 #

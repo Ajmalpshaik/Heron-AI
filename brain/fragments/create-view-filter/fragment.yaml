@@ -119,6 +119,9 @@ compatibility-note: >
 #                                       this one when the drawing has to stay
 #                                       right without being re-run
 #   "colour by system"               -> either; say which behaviour is wanted
+#   "save these as a set"            -> CREATE_SELECTION_FILTER - a LIST,
+#                                       right when the elements share no
+#                                       rule. This is the rule
 
 utterances:
   - colour by system

@@ -1,0 +1,35 @@
+positive:
+  - given: twelve hand-picked elements saved as "Plant Room MEP"
+    expect: >
+      the set visible in Revit's own Filters tab under that name - LOOKED AT
+      there, not read off the count - and re-openable after closing and
+      reopening the model, which is the difference from a selection
+
+  - given: the set used in a view's Filters afterwards
+    expect: >
+      those twelve controllable as a group in that view. Making the set and
+      applying it are two jobs, and this does only the first
+
+negative:
+  - given: the same name saved again with a DIFFERENT set of elements
+    expect: >
+      one filter, its contents replaced, and the report saying it already
+      existed. THIS IS THE FIRST CASE TO RUN. Revit allows no second filter of
+      one name, and a run that quietly made "Plant Room MEP 2" would leave two
+      sets and a drawing built on the wrong one
+
+  - given: a deleted element id among those handed in
+    expect: >
+      the saved count LOWER than the count handed in, and the difference named.
+      SetElementIds returning is not proof of what the filter holds
+
+  - given: an empty name
+    expect: refused, with the reason - a saved set with no name cannot be found again
+
+  - given: an empty element list with a valid name
+    expect: >
+      an empty saved set, reported as holding 0. That is a legitimate thing to
+      make and it must not read as a failure
+
+second_route:
+  - Revit's own Manage then Filters dialog, opened after the run and read

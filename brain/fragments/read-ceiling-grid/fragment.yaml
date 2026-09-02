@@ -60,6 +60,11 @@ compatibility-note: >
   a SECOND provider of this capability declared only for the releases that have
   it - which is exactly what the capability registry is for.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make a ceiling over this area" -> CREATE_CEILING - there has to be one
+#                                      before there is a grid to read
+
 utterances:
   - what size are the ceiling tiles
   - read the ceiling grid

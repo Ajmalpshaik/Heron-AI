@@ -1,0 +1,39 @@
+positive:
+  - given: an architecture link that somebody else has just saved a change to, reloaded
+    expect: >
+      the change VISIBLE in the host model - looked at, not read off the result
+      code. That is the whole reason anybody runs this
+
+  - given: three instances of one linked file
+    expect: >
+      ONE reload and a report saying one. Three would mean the same file came
+      off disk three times and the count was of instances rather than of work
+
+negative:
+  - given: this fragment run inside the host's open transaction
+    expect: >
+      whatever Revit really does, recorded. THIS IS THE FIRST CASE TO RUN.
+      Reloading is document management, not a model edit, and it is NOT proven
+      that Revit permits it inside a transaction. If it refuses, the fix is
+      where the transaction is opened, not here
+
+  - given: a link that is already up to date, reloaded
+    expect: >
+      the raw result code recorded as fact. Which code Revit returns for this is
+      NOT established - `UsedExisting` is counted as success on the strength of
+      its name alone, and this case is what replaces that guess with a
+      measurement
+
+  - given: unload asked for, then the drawing looked at
+    expect: >
+      the link gone from every view and NOTHING deleted - one click in Manage
+      Links brings it back. If anything hosted on the link disappeared
+      permanently, this fragment did something it must never do
+
+  - given: ducts and walls handed in with the links
+    expect: >
+      named in `notLinks`, the links still reloaded. Not an exception that loses
+      the reload because the selection was untidy
+
+second_route:
+  - Revit's own Manage then Manage Links dialog, its Status column read before and after

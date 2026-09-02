@@ -105,6 +105,7 @@ compatibility-note: >
 #                                       fragment paints what is there NOW and
 #                                       does not follow new elements
 #   "put the colours back"           -> RESET_GRAPHIC_OVERRIDES
+#   "save these as a set"            -> CREATE_SELECTION_FILTER
 
 utterances:
   - colour code by system

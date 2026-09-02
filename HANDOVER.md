@@ -45,7 +45,7 @@ this up next: a fresh Claude session, a person, or the owner on his phone.
 
 ---
 
-## WHERE THIS STANDS, 2026-09-02 — 146 fragments, and eight of them have never seen a compiler
+## WHERE THIS STANDS, 2026-09-02 — 154 fragments, and sixteen have never seen a compiler
 
 The library is still growing away from the PC. What is left to *prove* still needs a machine this
 container does not have — and as of the twentieth session there is one more thing on that list that
@@ -53,7 +53,7 @@ needs only the **.NET SDK**, not Revit and not Windows.
 
 | | |
 |---|---|
-| Fragments | **146**, every one `DRAFT`. 138 compiled on all eight Revit releases; **the newest 8 have not been compiled at all** — see `A9` |
+| Fragments | **154**, every one `DRAFT`. 138 compiled on all eight Revit releases; **the newest 16 have not been compiled at all** — see `A9` |
 | Skills | 10, none naming a fragment |
 | Tools the host sees | 10, served by a real MCP SDK |
 | Test suites | 18 — 17 pass, 1 skipped (needs the MCP SDK installed) |
@@ -64,10 +64,12 @@ needs only the **.NET SDK**, not Revit and not Windows.
 buildable thing is built, and not one fragment has touched a real model.
 
 > **The compile gate is the first thing to run on a machine that has the SDK** — `python
-> tools/check-fragments-compile.py`. It is now `A9` in the register. Eight fragments were written on
+> tools/check-fragments-compile.py`. It is now `A9` in the register. Sixteen fragments were written on
 > 2026-09-02 in a container where the SDK could not be installed, because the download host is refused
 > by that network's policy. Every API member they use was checked against the real Revit reference
-> assemblies for 2020, 2024 and 2027 instead, which is not the same thing and is not a substitute.
+> assemblies for 2020, 2024 and 2027 instead, which is not the same thing and is not a substitute —
+> though it has now caught three errors a compiler would have caught, and one it would not have needed
+> to.
 
 ### The one thing that matters next, and it needs the PC
 
@@ -255,6 +257,88 @@ not go away — it got **counted**, which is the whole point of `check-gaps` kee
 
 ---
 
+## The twenty-first session, 2026-09-02 — eight more, and the metadata check earned its keep
+
+**What it did:** took the library from **146 to 154**, in the same container and with the same
+limitation - no .NET SDK, so **these eight have not been compiled either**. `A9` now names sixteen.
+
+The batch was chosen the same way as the last one: the owner's sentences put through
+`heron_brain.lookup`, and the wrong answers written down first.
+
+| | |
+|---|---|
+| `CREATE_CEILING` | *"create a ceiling in this room"* was answering `MEASURE_CEILING_HEIGHT` - a read, to a request to build. **The earlier library had recorded this job as IMPOSSIBLE and it was not**: `Ceiling.Create` arrived in 2022, the note left the version off, and it read as "ceilings cannot be made" while two of three installed Revits could. Reached by name at run time, so one source spans the range and 2020 gets an answer rather than an error |
+| `CREATE_ELECTRICAL_RUN` | *"draw a cable tray"* was answering `DIMENSION_MEP_RUNS` - a write, of dimensions. **Tray and conduit are ONE fragment**: separate classes, the same creation shape, and two near-identical fragments in a crowded area cost more than they buy. Which one is wanted is asked for, as `PLACE_ROOMS` asks about rooms and spaces |
+| `JOIN_GEOMETRY` | *"join these walls together"* was answering `PLACE_MEP_FITTING`, and after last session also `CONNECT_OPEN_ENDS` - two MEP writes for a question about walls. Both would have found nothing to do and said so, which is the quiet kind of wrong |
+| `CREATE_WORKSET` | *"add a new workset"* was answering `LIST_WORKSETS`. **ADMIN risk**: a workset is project structure the whole team works inside. A workset is also **not an element** - no id - so what comes back is names |
+| `REPLACE_MATERIAL` | *"change the material on these"* was answering `READ_ELEMENT_MATERIAL`. A material hides in the compound-structure LAYERS and in material PARAMETERS, and a swap that misses one leaves the old material half in use, where it refuses to purge and nobody can see why. **The layers that come back are COPIES** - editing them in place changes nothing |
+| `RELOAD_LINKS` | *"reload the links"* was answering `LIST_LINKED_MODELS`. It reloads or unloads and **never removes** - removing deletes what is hosted on the link. Revit's own result code is printed raw, because which code comes back for an already-current link is still not established |
+| `CREATE_SELECTION_FILTER` | *"make a selection set"* was answering `SET_SELECTION` - a highlight gone at the next click. A saved set survives the model closing; a view filter is a RULE. Three different things, one sentence |
+| `SET_VIEW_UNDERLAY` | *"set the underlay on this plan"* was answering `CREATE_TEXT_NOTE`. Base and top are set TOGETHER - writing the base alone leaves the old top and shows a range nobody asked for, which reads as a corrupted view |
+
+### One capability was refused, and the refusal is the finding
+
+`CREATE_SCOPE_BOX` was in the batch and was dropped. **Revit exposes no way to create a scope box on
+any supported release** — checked against the shipped assemblies for **2020 AND 2027**, where the only
+matches for the word are print and export flags and a few parameter ids. The earlier library had
+established this on 2020 alone; this confirms it at the far end, which is what the `CREATE_CEILING`
+lesson demands of every "impossible".
+
+So there is no fragment. The sentence *"put a scope box round this area"* is answered instead by a row
+in `SET_VIEW_SECTION_BOX`'s routing table saying plainly that nothing can, and that one drawn by hand
+works with everything else here. **A fragment whose only behaviour is to refuse would be a capability
+that does nothing**, and the library counts capabilities.
+
+### The metadata check caught three things a compiler would have
+
+It is not a compiler and it is not a substitute for one, and it still paid for itself twice more this
+session:
+
+- **`VariesAcrossGroups` is on `InternalDefinition`, not on `Definition`.** The obvious line —
+  `parameter.Definition.VariesAcrossGroups` — compiles on **no release at all**. Caught before it was
+  written, and the definition is cast first.
+- **`Ceiling.Create` is absent from the 2020 assembly and present on 2024.** That confirmed the run-time
+  lookup was necessary rather than defensive.
+
+> **And a warning about the tool itself: walk the BASE types.** `Space` declares neither `Number` nor
+> `Area`; `HostObjAttributes` does not declare `FamilyName`. Both inherit them. A member check that
+> stops at the declared type reports a false absence, and a session that trusts it will rewrite working
+> code to avoid a member that was there all along.
+
+### An `mcp` name collision that cost twenty minutes, and does not affect the repo
+
+Last session installed the MCP SDK to run `test_mcp_serves.py`. **The pip package is called `mcp` and so
+is this repository's own top-level directory** — and `mcp/` has no `__init__.py`, so it is a namespace
+package, which a regular installed package **outbeats regardless of `sys.path` order**. After that,
+`from mcp.server import heron_brain` reaches the SDK and fails.
+
+**The repository is not affected**: it imports `heron_brain` as a top-level module after putting
+`mcp/server` on the path, which is immune. What broke was an ad-hoc call written the natural way. The
+SDK was uninstalled — it was broken in this container anyway, its `cryptography` bindings panicking on
+import — and `test_mcp_serves.py` is back to its honest skip.
+
+> To ask the brain a question from the repo root: `sys.path.insert(0, "mcp/server")` then
+> `import heron_brain`. Not `from mcp.server import ...`.
+
+### The routing, measured against the 146 that were there before
+
+| | before | after |
+|---|---|---|
+| Utterances | 860 | 906 |
+| Claimed in a routing table and not reached | 3 | **3** — the same three, all near-synonym pairs |
+| Shortlist collisions | 122 (14.2%) | 129 (14.2%) |
+
+**No new unreached claims this time**, because every quoted sentence was kept on one line and matched to
+a declared utterance — the two mistakes of the previous batch. Reciprocal rows went into twenty
+counterpart fragments, and all six new collisions resolve correctly through `heron_brain.lookup`,
+checked one at a time.
+
+**One row written last session had already gone stale and was corrected**: `PLACE_MEP_FITTING`'s table
+said *"join these walls together"* was covered by nothing in the library. True when it was written, and
+false one session later. A cross-reference that names an absence dates the moment the absence is filled.
+
+---
+
 ## The twentieth session, 2026-09-02 — eight fragments, and the first batch no compiler has read
 
 **What it did:** took the library from **138 to 146**, and it is the first batch in this repository's
@@ -324,6 +408,10 @@ own:
 `REPLACE_MATERIAL`, `CREATE_CABLE_TRAY`, `RELOAD_LINKS`, `CREATE_SCOPE_BOX`. `JOIN_GEOMETRY` belongs on
 that list too: *"join these walls together"* now lands on `CONNECT_OPEN_ENDS`, which joins MEP
 connectors and cannot do it, so `PLACE_MEP_FITTING`'s table says so out loud until something can.
+
+> **All of that was done by the twenty-first session, below, except one**: `CREATE_SCOPE_BOX` cannot be
+> built at all — Revit exposes no way to create one on any supported release. Read that section before
+> reaching for it again.
 
 ### The routing was measured against a baseline, not just run
 

@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-029
+semantic-identity: "join these walls and floors together so they cut each other"
+kind: action
+domain: revit.elements
+capability: JOIN_GEOMETRY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Joins - or unjoins - the geometry of many elements with one target, so they
+  cut each other properly instead of overlapping. The wall-meets-slab,
+  column-in-wall, beam-into-column job, and the fix for a section that shows a
+  double line where two elements share the same space.
+
+  **Until this existed, "join these walls together" resolved to the MEP
+  fitting fragment**, and after that to the one joining open MEP connectors -
+  two writes on ducts and pipes answering a question about walls. Both would
+  have found nothing to do and reported it, which is the quiet kind of wrong.
+
+  **Joining is not touching, and it is not a clash.** Two elements can overlap
+  in space and be unjoined - Revit then draws both, and the section shows the
+  line through the middle. FIND_CLASHES reports the overlap; this makes them
+  agree about which one wins.
+
+  **Many to one, because that is the shape the job takes.** Twelve beams into
+  one column, a batch of walls into one slab. Joining pairs within a set is a
+  different question and this does not guess at it.
+
+  **A pair Revit will not join is counted, not thrown.** Elements that do not
+  actually touch, and categories Revit refuses to join, are normal outcomes
+  rather than errors - and a batch must not lose the eleven that worked because
+  the twelfth would not.
+
+  **Order matters in Revit and is not silently chosen here.** Which element cuts
+  which is decided by the join order, and this fragment does not reverse it.
+  What it does report is which pairs were ALREADY joined, because re-joining
+  them would do nothing and counting them as work would be a lie.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: target
+      type: Element
+      source: request
+    # true joins, false unjoins. Asked for, because they are opposite
+    # instructions and a default would be a guess about intent.
+    - name: join
+      type: bool
+      source: request
+  provides:
+    - name: changed
+      type: int
+    - name: alreadyRight
+      type: IList<ElementId>
+    - name: wouldNot
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `JoinGeometryUtils.AreElementsJoined`,
+  `JoinGeometry` and `UnjoinGeometry` are present 2020 through 2027 - read off
+  the reference assemblies at both ends rather than remembered. ElementIds are
+  compared as ElementIds and never read as numbers.
+
+# ROUTING - repeated in FIND_CLASHES and CONNECT_OPEN_ENDS.
+#
+#   "join these walls together"      -> here
+#   "the wall and the slab are not
+#    joining"                        -> here
+#   "unjoin these"                   -> here, with join = false
+#   "they are touching but not
+#    connected"                      -> CONNECT_OPEN_ENDS - that is MEP
+#                                       CONNECTORS on ducts and pipes, and it
+#                                       can do nothing for a wall
+#   "join these two ducts"           -> PLACE_MEP_FITTING
+#   "what is clashing"               -> FIND_CLASHES - it REPORTS an overlap.
+#                                       Joining is what makes two elements
+#                                       agree about which one cuts the other
+
+utterances:
+  - join these walls together
+  - the wall and the slab are not joining
+  - join the geometry
+  - unjoin these
+  - join these to the column
+  - there is a double line where these meet

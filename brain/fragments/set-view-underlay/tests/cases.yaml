@@ -1,0 +1,36 @@
+positive:
+  - given: a Level 2 floor plan, base and top both Level 1, looking down
+    expect: >
+      the level below showing as a ghost - LOOKED AT on screen. Then Revit's own
+      Properties palette for that view, to see Underlay reading Level 1 and the
+      orientation Look down
+
+  - given: a ceiling plan with base and top set above it and looking up
+    expect: what is ABOVE the range showing, not what is below
+
+negative:
+  - given: base Level 2 asked for with the top left as it was
+    expect: >
+      REFUSED, with the reason. THIS IS THE FIRST CASE TO RUN. Writing the base
+      alone is the defect this fragment exists to prevent - base at Level 2 with
+      an old top at Level 5 gives three storeys of ghost, and it reads as a
+      corrupted view rather than a wrong setting
+
+  - given: a section, a 3D view and a schedule handed in with three plans
+    expect: >
+      the three plans changed and the other three NAMED in `notPlanViews`. A
+      silent skip on half a list is how somebody concludes the tool did nothing
+
+  - given: both levels null
+    expect: >
+      the underlay cleared, using the same call. Revit's own underlay of None
+      is exactly this, and a separate code path for clearing would be a second
+      thing to get wrong
+
+  - given: a view whose template controls the underlay
+    expect: >
+      reported as not having changed, and NOT counted in `changed`. The
+      read-back is what catches it; the call itself returns quite happily
+
+second_route:
+  - the view's own Properties palette in Revit, read after the run

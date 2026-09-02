@@ -1,0 +1,50 @@
+positive:
+  - given: twenty walls of one type whose core layer is "Concrete", swapped for "Blockwork"
+    expect: >
+      the core layer reading Blockwork in Revit's own type dialog - LOOKED AT
+      there - and all twenty walls changed, because they are one type
+
+  - given: a door family whose Frame Material parameter holds the old material
+    expect: >
+      the parameter changed too. A swap that did only the layers would leave the
+      old material half in use, where it then refuses to purge and nobody can
+      see why
+
+negative:
+  - given: the material still failing to purge after a run
+    expect: >
+      that is the FIRST CASE TO RUN, and it is the real test of this fragment.
+      Purge is the only thing that knows whether every last use was found. If it
+      still will not purge, something holds the old material that this did not
+      reach, and what that is belongs in the fragment
+
+  - given: a parameter reading "<By Category>"
+    expect: >
+      recognised as a material parameter and NOT read as empty. It is an invalid
+      element id, not "no material", and treating it as empty is how a swap
+      quietly misses everything set by category
+
+  - given: an element inside a model group whose parameter does not vary across groups
+    expect: >
+      named in `skippedInGroup` and NOT written. The write is either refused or
+      applied to every instance of that group in the model, and neither
+      announces itself
+
+  - given: a curtain wall type in the selection
+    expect: >
+      skipped by name and reported. Its compound structure is not a real layer
+      stack and writing to it misbehaves
+
+  - given: a material locked by a family formula
+    expect: >
+      counted as accepted-and-did-nothing, not as changed. Revit returns quite
+      happily from that write
+
+  - given: the layer copies edited without setting the structure back
+    expect: >
+      NOTHING changed - which is what happens if the SetLayers and
+      SetCompoundStructure calls are ever removed as redundant. The layers that
+      come back are copies, and that is the trap this fragment is built around
+
+second_route:
+  - Revit's own type dialog for one changed type, and Manage then Purge Unused to see whether the old material is finally gone

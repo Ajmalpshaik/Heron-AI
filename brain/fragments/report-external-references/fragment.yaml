@@ -94,6 +94,13 @@ compatibility-note: >
   is guarded per reference, since a cloud path has no user-visible form and
   throwing there would lose the whole list rather than one row.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "reload the links"               -> RELOAD_LINKS
+#   "unload this link"               -> RELOAD_LINKS - and NOTHING removes a
+#                                       link: that deletes what is hosted on
+#                                       it and is a deliberate delete
+
 utterances:
   - what links does this model have
   - are any links missing

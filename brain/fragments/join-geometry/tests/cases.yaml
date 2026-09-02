@@ -1,0 +1,34 @@
+positive:
+  - given: twelve beams and one column as the target, join true
+    expect: >
+      the double lines gone in a section through the column - LOOKED AT, not
+      read off the count. Revit's own Join tool on one of the same pairs should
+      look identical
+
+  - given: the same set run a second time
+    expect: >
+      `changed` is 0 and all twelve are in `alreadyRight`. A second run
+      reporting twelve joins again would be counting work it did not do
+
+negative:
+  - given: join false on a set that is joined
+    expect: >
+      them unjoined, and the double line back. Join and unjoin are opposite
+      instructions, which is why neither is a default
+
+  - given: two elements that overlap in space but Revit refuses to join
+    expect: >
+      named in `wouldNot` with the reason, and the rest of the batch still done.
+      Refusing to join is a normal outcome here, not an error
+
+  - given: the target element also present inside `elements`
+    expect: nothing joined to itself, and no complaint about it
+
+  - given: a wall and a duct handed in together
+    expect: >
+      whatever Revit really does, reported. This fragment joins GEOMETRY - it is
+      not the MEP connector job, and the sentence "they are touching but not
+      connected" belongs to CONNECT_OPEN_ENDS
+
+second_route:
+  - Revit's own Modify then Join Geometry on one of the same pairs, compared in the same section

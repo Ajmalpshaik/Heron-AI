@@ -80,6 +80,10 @@ compatibility-note: >
 #
 # THE VIEW RANGE AND THE CROP BOTH "CUT THE VIEW" and are said the same way.
 # One is a height band, the other a rectangle on the sheet.
+#   "show me the floor below"        -> SET_VIEW_UNDERLAY - the GHOSTED
+#                                       level behind this one, constantly
+#                                       confused with the view range and a
+#                                       different setting entirely
 
 utterances:
   - set the view range

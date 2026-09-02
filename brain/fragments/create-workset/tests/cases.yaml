@@ -1,0 +1,29 @@
+positive:
+  - given: three names on a workshared model, none of them in use
+    expect: >
+      three worksets in Revit's own Worksets dialog - LOOKED AT there, not read
+      off the count. Then LIST_WORKSETS and see the same three
+
+  - given: the same three names run again
+    expect: >
+      nothing created, all three in `alreadyThere`. A second run reporting three
+      more would be claiming work Revit refused
+
+negative:
+  - given: a model that is NOT workshared
+    expect: >
+      nothing created and a sentence explaining why, including what enabling
+      worksharing actually costs. THIS IS THE FIRST CASE TO RUN - it is the
+      common state of a small job, and an exception here would read as a broken
+      tool rather than a model that does not work that way
+
+  - given: a list where the second name already exists and the third does not
+    expect: >
+      the first and third created, the second named as already there. Not a
+      throw on the second that leaves the third unmade with nothing saying so
+
+  - given: a blank name in the list
+    expect: skipped and named, the rest still created
+
+second_route:
+  - Revit's own Collaborate then Worksets dialog, read after the run

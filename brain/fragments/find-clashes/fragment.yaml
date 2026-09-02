@@ -78,6 +78,9 @@ compatibility-note: >
 # THE DIFFERENCE IS WHETHER THE THING EXISTS YET. Checking a proposed layout
 # against the model is a ray cast; checking built work against built work is
 # this. Landing on the wrong one answers a question nobody asked, confidently.
+#   "join these walls together"      -> JOIN_GEOMETRY. This one REPORTS an
+#                                       overlap; joining is what makes two
+#                                       elements agree which one cuts
 
 utterances:
   - which ducts clash with the beams

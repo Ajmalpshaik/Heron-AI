@@ -79,6 +79,15 @@ compatibility-note: >
 # Isolating hides everything else and leaves the camera alone; a section box
 # keeps whatever else is inside it and cuts everything outside, including the
 # building. Landing on the wrong one gives a view that looks broken.
+#   "put a scope box round this area" -> NOTHING IN THIS LIBRARY, and it is
+#                                       not an omission. Revit exposes NO way
+#                                       to create a scope box - checked
+#                                       against the shipped assemblies for
+#                                       2020 AND 2027, where the only matches
+#                                       are print and export flags. Draw one
+#                                       by hand once (View, Scope Box); every
+#                                       other job here works on one that
+#                                       exists
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

@@ -57,6 +57,8 @@ compatibility-note: >
 #
 # THE WHOLE VOLUME AND THE VOLUME PER MATERIAL ARE DIFFERENT TAKEOFFS. A wall's
 # total volume is one number; its concrete, insulation and board are three.
+#   "change the material on these"   -> REPLACE_MATERIAL - a write, and this
+#                                       one only reads
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

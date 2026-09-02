@@ -94,6 +94,8 @@ compatibility-note: >
 #                                      runs is not a new run
 #   "they are touching but not
 #    connected"                     -> CONNECT_OPEN_ENDS
+#   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN
+#   "draw a conduit"                 -> CREATE_ELECTRICAL_RUN
 
 utterances:
   - run a pipe from here to there

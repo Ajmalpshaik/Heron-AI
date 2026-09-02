@@ -81,6 +81,9 @@ compatibility-note: >
 #                                       allows while reporting success
 #   "run a pipe from here to there"  -> CREATE_PIPE - it sets no size at all
 #   "draw a duct from here to there" -> CREATE_DUCT
+#   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN - it sets no
+#                                       size either; this is where every
+#                                       kind of run gets one
 
 utterances:
   - change these ducts to 400 by 250

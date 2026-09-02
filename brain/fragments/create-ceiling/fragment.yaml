@@ -1,0 +1,106 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-028
+semantic-identity: "make a ceiling over this area"
+kind: action
+domain: revit.elements
+capability: CREATE_CEILING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a ceiling from a closed boundary on one level, at a height above it.
+  The element every MEP coordination question is asked against - what clears
+  it, what sits above it, what the room's finished height really is.
+
+  **`Ceiling.Create` arrived in Revit 2022 and this fragment still runs on
+  2020**, because the method is reached by name at run time rather than
+  written down. On 2020 it says plainly that the release cannot make a ceiling
+  and what to do instead - draw one by hand, Architecture then Ceiling - which
+  is a different thing from failing.
+
+  **The earlier library recorded this job as impossible and it was not.** The
+  API fact was right; the sentence left the version off, so "Ceiling.Create
+  only exists from 2022" was read as "ceilings cannot be made" and the
+  capability sat unbuilt while two of the three installed Revits could do it.
+  **An impossibility with no version on it becomes a lie the day another
+  release is installed**, which is worth more than this fragment.
+
+  **The base height comes from the level's PROJECT elevation, not its
+  elevation.** Every XYZ the API takes is project-internal, while `Elevation`
+  is measured from whatever the level type's Elevation Base says. On a model
+  set out to a survey datum the two differ, and using the wrong one puts the
+  ceiling at the wrong height with no error at all.
+
+  **The boundary closes itself** - the last point joins back to the first -
+  and it must not cross itself. A self-crossing loop is refused by Revit, and
+  that refusal is reported rather than swallowed.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: level
+      type: Level
+      source: request
+    - name: ceilingType
+      type: Element
+      source: request
+    # Internal units. The loop closes itself, so the last point is not repeated.
+    - name: boundary
+      type: IList<XYZ>
+      source: request
+    - name: heightAboveLevel
+      type: double
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE implementation across a range where the method does not exist at one end.
+  `Ceiling.Create(Document, IList<CurveLoop>, ElementId, ElementId)` is present
+  from Revit 2022; the reference assemblies show no `Ceiling.Create` at all on
+  2020 - checked, not remembered. Naming it in source would fail to compile on
+  2020, so it is looked up by name at run time and its absence is reported as an
+  answer. `Level.ProjectElevation`, `CurveLoop.Create`, `Line.CreateBound` and
+  `BuiltInParameter.CEILING_HEIGHTABOVELEVEL_PARAM` are present 2020 through
+  2027.
+
+# THE CEILING TYPE IS TAKEN AS AN Element, NOT A CeilingType. `CeilingType` is a
+# real class on every release, but the reflection call wants only its id, and
+# accepting the base type keeps the caller free to resolve it however it likes.
+# The category is checked instead, so a wall type handed in by mistake is
+# refused rather than producing something strange.
+
+# ROUTING - repeated in MEASURE_CEILING_HEIGHT and READ_CEILING_GRID.
+#
+#   "make a ceiling over this area"  -> here
+#   "add a ceiling to this room"     -> here
+#   "how high is the ceiling"        -> MEASURE_CEILING_HEIGHT - a READ, and it
+#                                       must not answer a request to build one
+#   "where is the ceiling grid"      -> READ_CEILING_GRID
+#   "will this duct clear the
+#    ceiling"                        -> CHECK_MINIMUM_CLEARANCE, once a ceiling
+#                                       exists for it to clear
+
+utterances:
+  - make a ceiling over this area
+  - add a ceiling to this room
+  - create a ceiling
+  - draw the ceiling in here
+  - put a ceiling at 2700
+  - model the ceiling for this room

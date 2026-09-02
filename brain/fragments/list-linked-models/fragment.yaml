@@ -69,6 +69,9 @@ compatibility-note: >
 #   "does anything clash"        -> FIND_CLASHES - and note it can only see
 #                                   what is LOADED, which is what makes this
 #                                   fragment worth running first
+#   "reload the links"               -> RELOAD_LINKS - a write, and this one
+#                                       only reads
+#   "unload this link"               -> RELOAD_LINKS
 
 utterances:
   - list the linked models

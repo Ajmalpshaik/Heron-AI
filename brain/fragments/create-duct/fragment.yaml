@@ -89,6 +89,10 @@ compatibility-note: >
 #   "put a drain line in"            -> CREATE_PIPE
 #   "give it a fall of 1 in 100"     -> SET_MEP_SLOPE - drawn flat, then sloped
 #   "they are touching but not connected" -> CONNECT_OPEN_ENDS
+#   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN
+#   "draw a conduit"                 -> CREATE_ELECTRICAL_RUN - one fragment
+#                                       serves both, and which is wanted is
+#                                       asked for rather than guessed
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

@@ -104,6 +104,9 @@ compatibility-note: >
 #   "close the gap between these runs"    -> NOTHING HERE DOES THAT. Nothing
 #                                            moves. A real gap wants the runs
 #                                            moved or a segment drawn
+#   "join these walls together"      -> JOIN_GEOMETRY. This one joins MEP
+#                                       CONNECTORS and can do nothing for a
+#                                       wall
 
 utterances:
   - they are touching but not connected

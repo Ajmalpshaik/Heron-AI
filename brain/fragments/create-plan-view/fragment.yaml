@@ -68,6 +68,7 @@ compatibility-note: >
 #   "make a 3D view"                -> CREATE_3D_VIEW
 #   "make a section"                -> CREATE_SECTION_VIEW
 #   "make a drafting view"          -> CREATE_DRAFTING_VIEW
+#   "show me the floor below"        -> SET_VIEW_UNDERLAY
 
 utterances:
   - make the plan for this level
