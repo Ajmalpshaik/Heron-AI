@@ -4,7 +4,7 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-PAR-004
+id: FRG-PAR-008
 semantic-identity: "totals a measured quantity per group, the way a bill of quantities reads"
 kind: action
 domain: revit.reporting

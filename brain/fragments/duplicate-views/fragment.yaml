@@ -4,7 +4,7 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-VIEW-009
+id: FRG-VIEW-029
 semantic-identity: "make copies of these views, plain or with the detailing, or as dependents"
 kind: action
 domain: revit.views

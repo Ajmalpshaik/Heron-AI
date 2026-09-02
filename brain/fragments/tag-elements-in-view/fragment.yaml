@@ -4,7 +4,7 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-VIEW-011
+id: FRG-VIEW-030
 semantic-identity: "tag a mixed set of elements in one view, each with the right tag family, without double-tagging"
 kind: action
 domain: revit.views

@@ -4,7 +4,7 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-VIEW-007
+id: FRG-VIEW-028
 semantic-identity: "the real views in this model, optionally narrowed by type and by name"
 kind: filter
 domain: revit.views

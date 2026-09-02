@@ -4,7 +4,7 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-QA-005
+id: FRG-QA-010
 semantic-identity: "whether these elements can be edited, or belong to somebody else right now"
 kind: action
 domain: revit.qa
