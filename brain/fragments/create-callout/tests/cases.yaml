@@ -1,0 +1,28 @@
+positive:
+  - given: a plant room corner on a 1:100 plan, callout at 1:20
+    expect: >
+      a callout boundary on the plan AND an enlarged view linked to it. Move the
+      callout and the detail follows; the reference updates itself when the
+      detail lands on a sheet
+
+  - given: a callout of a section
+    expect: >
+      the new view is a SECTION, not a plan. The type is taken from what the
+      parent is, because CreateCallout rejects one that does not match
+
+negative:
+  - given: a 3D view as the parent
+    expect: refused, naming plan, section or elevation - rather than an exception about view family types
+
+  - given: two corners on the same vertical line
+    expect: >
+      refused. Revit would make it, and a callout with no width is invisible on
+      the drawing and cannot be picked to fix
+
+  - given: no scale given
+    expect: >
+      refused. A callout at the parent's scale shows nothing new, and enlarging
+      is the entire reason to draw one
+
+second_route:
+  - Revit's own View > Callout over the same rectangle, with the two enlarged views compared for scale and content

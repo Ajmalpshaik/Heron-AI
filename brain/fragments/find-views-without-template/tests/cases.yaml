@@ -1,0 +1,26 @@
+positive:
+  - given: a project with 300 views, 40 on sheets, 3 of those with no template
+    expect: >
+      the 3 named with their sheet numbers, and the rest reported as a count.
+      Those 3 are drawings being issued that nothing holds to the standard
+
+  - given: the result handed to APPLY_VIEW_TEMPLATE
+    expect: the fix applied to exactly the views that needed it
+
+negative:
+  - given: 200 working views with no template
+    expect: >
+      COUNTED, not listed. They need no template and never will, and naming them
+      all buries the three rows somebody has to act on
+
+  - given: schedules and legends on the sheets
+    expect: >
+      NOT reported. Neither takes a view template, and both are routinely on
+      sheets - they would be the loudest rows in a report about something they
+      cannot have
+
+  - given: the sheets themselves
+    expect: not reported - a sheet is a View and takes no template, so listing them puts a row against every drawing
+
+second_route:
+  - A view list schedule with a View Template column, sorted by whether the view is on a sheet

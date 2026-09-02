@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-027
+semantic-identity: "draw a callout around this part of a view, enlarged"
+kind: action
+domain: revit.views
+capability: CREATE_CALLOUT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws a callout over a rectangle of a parent view and makes the enlarged view
+  it points at.
+
+  **A callout is two things at once and that is what makes it useful.** It puts
+  a marked boundary on the parent drawing AND creates a linked view at a bigger
+  scale. Move the callout on the plan and the detail follows; the reference on
+  the plan updates itself when the detail lands on a sheet. Drawing the two
+  separately gets a detail that says nothing about where it came from.
+
+  **The scale is separate from the boundary.** A callout drawn at the parent's
+  scale shows nothing new - the whole point is to enlarge, and Revit does not
+  choose that for you.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: parentView
+      type: View
+      source: request
+    - name: corner
+      type: XYZ
+      source: request
+    - name: opposite
+      type: XYZ
+      source: request
+    - name: viewScale
+      type: int
+      source: request
+    - name: viewName
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ViewSection.CreateCallout(Document, ElementId, ElementId, XYZ, XYZ)` returns
+  a `View` and is unchanged 2020 to 2027 - read off the reference assemblies at
+  both ends rather than remembered.
+
+  The two points arrive as `XYZ` in feet, already converted by whoever supplied
+  them, so there is no millimetre input here and no D-20 arithmetic.
+
+# ROUTING - repeated in CREATE_SECTION_VIEW and CREATE_DRAFTING_VIEW.
+#
+#   "create a callout"           -> here
+#   "enlarge this bit"           -> here
+#   "I need a detail of this corner" -> here, when the detail should show the
+#                                       MODEL and follow it
+#   "make a drafting view"       -> CREATE_DRAFTING_VIEW, when the detail is
+#                                   drawn by hand and should never change
+#   "create a section through this" -> CREATE_SECTION_VIEW
+
+utterances:
+  - create a callout
+  - enlarge this bit
+  - I need a detail of this corner
+  - add a callout here
+  - blow this area up

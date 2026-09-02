@@ -1,0 +1,70 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-007
+semantic-identity: "which loaded family types have no instances placed anywhere"
+kind: filter
+domain: revit.quality
+capability: FIND_UNUSED_FAMILIES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports family types that are loaded and placed nowhere - the list Revit's
+  Purge Unused would act on.
+
+  **It reports and deletes nothing, deliberately.** *"Purge unused"* is a real
+  request and the honest half of it is this: show what would go. Purging is
+  hard to reverse, it is done in one Revit command that already exists, and a
+  fragment that deleted a hundred types on a shared model would be the most
+  damaging thing in this library. So the report is the deliverable.
+
+  **A type with no instances is not always waste.** A project keeps loaded types
+  for work not yet modelled, and a template ships with types on purpose. So this
+  answers *"what is unused"*, never *"what should go"* - the second is a
+  judgement, and it is the modeller's.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+    - name: wholeFamilyUnused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Family.GetFamilySymbolIds()`, `FamilySymbol` and
+  `FilteredElementCollector.WhereElementIsNotElementType()` are unchanged 2020
+  to 2027 - read off the reference assemblies at both ends. No ElementId is
+  built from an int, so 2024's 64-bit ids do not reach this code.
+
+# ROUTING - repeated in LOAD_FAMILY and CHANGE_ELEMENT_TYPE.
+#
+#   "which families are unused"  -> here
+#   "purge unused"               -> here reports what WOULD go, and stops
+#                                   there. The deleting is Revit's own Purge
+#                                   Unused command and stays there: it is hard
+#                                   to reverse and this library must not do it
+#                                   to a shared model
+#   "load a family"              -> LOAD_FAMILY
+#   "change these to the 300"    -> CHANGE_ELEMENT_TYPE
+
+utterances:
+  - which families are unused
+  - purge unused
+  - what can be purged
+  - find the families nobody is using
+  - which types are not placed
+  - clean up the unused families

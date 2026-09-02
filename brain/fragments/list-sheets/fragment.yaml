@@ -59,6 +59,7 @@ compatibility-note: >
 #                                   round; this fragment's `onSheets` count is
 #                                   the sheet side of the same question
 #   "make a new sheet"           -> CREATE_SHEET
+#   "which sheets have this revision" -> LIST_REVISIONS
 
 utterances:
   - list the sheets

@@ -1,0 +1,88 @@
+heron-agent: HERON-REVIT-PHS-032
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-007
+semantic-identity: "put these elements on a different phase"
+kind: action
+domain: revit.phases
+capability: SET_ELEMENT_PHASE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves elements onto a different created-phase, or sets when they are
+  demolished.
+
+  **Before this, *"set the phase"* resolved to SET_ELEMENT_WORKSET** - a write,
+  to the wrong property, that looks like it worked. A workset and a phase are
+  both invisible groupings that decide what a view shows, and confusing them
+  silently moves work into another team's ownership while leaving it in the
+  wrong phase.
+
+  **Changing a phase changes what every view shows, not just this one.** A
+  view has a phase and a phase filter; an element on the wrong phase vanishes
+  from some views, appears as demolished in others, and comes out of the wrong
+  schedule. That is the whole point of phases and it is why this is a bulk
+  change worth confirming before running.
+
+  **Demolishing is a separate field from creating**, and setting the wrong one
+  is how existing work disappears. Which one is being set is required, never
+  inferred from the phase's name.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: phaseId
+      type: ElementId
+      source: request
+    - name: whichPhase
+      type: string
+      source: request
+  provides:
+    - name: changed
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+    - name: readOnly
+      type: IList<ElementId>
+    - name: alreadySet
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `BuiltInParameter.PHASE_CREATED` and `PHASE_DEMOLISHED` are unchanged 2020 to
+  2027, and both are `ElementId` parameters set with `Parameter.Set(ElementId)`.
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# ROUTING - repeated in READ_ELEMENT_PHASE and SET_ELEMENT_WORKSET.
+#
+#   "set the phase"              -> here
+#   "move these to New Construction" -> here
+#   "mark these as demolished"   -> here, with the demolished field asked for
+#   "which phase is this on"     -> READ_ELEMENT_PHASE - a QUESTION
+#   "put these on the MEP workset" -> SET_ELEMENT_WORKSET. A WORKSET is who
+#                                     owns the work; a PHASE is when it exists.
+#                                     Both are invisible groupings that change
+#                                     what a view shows, and "set the phase"
+#                                     resolved to the workset fragment until
+#                                     2026-09-02 - a write, to the wrong
+#                                     property, that looks like it worked
+
+utterances:
+  - set the phase
+  - move these to New Construction
+  - change the phase on these
+  - mark these as demolished
+  - these are on the wrong phase
+  - put these in the existing phase

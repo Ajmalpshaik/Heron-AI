@@ -70,6 +70,10 @@ compatibility-note: >
 #   "mark this as revised"             -> here
 #   "tag these"                        -> TAG_ELEMENTS - a tag reads a
 #                                        parameter; a cloud marks a CHANGE
+#   "add a revision"                   -> CREATE_REVISION. This fragment needs
+#                                        a revision to EXIST and refuses to
+#                                        invent one; that is what makes one
+#   "which sheets have this revision"  -> LIST_REVISIONS
 #   "circle these in red"              -> OVERRIDE_GRAPHICS_IN_VIEW is the
 #                                        closest thing, and it is a different
 #                                        job: an override is a colour, a cloud

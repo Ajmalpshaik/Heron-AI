@@ -1,0 +1,35 @@
+positive:
+  - given: 12 spaces with the heating and cooling analysis run
+    expect: >
+      12 rows, each naming the load and the airflow AND whether Revit calculated
+      the figure or somebody typed it. A design figure that disagrees with the
+      calculated one is either a decision or a stale analysis, and the row has to
+      let somebody tell which
+
+  - given: a space where the design airflow was entered by hand at 250 L/s
+    expect: 250 L/s reported and marked "entered", not the calculated figure it overrides
+
+negative:
+  - given: ANY space with a known load, checked against what Revit shows on screen
+    expect: >
+      THE SAME NUMBER - and this is the FIRST case to run against a real model.
+      The airflow conversion is exact arithmetic and provable on paper. THE LOAD
+      CONVERSION IS ASSUMED: Revit's internal HVAC power unit is taken to be
+      BTU/s and converted at 1055.05585262 W, and reflection over the assembly
+      shows a property type, never a unit. If that is wrong every load is out by
+      a constant factor - each number looks plausible, every comparison between
+      spaces still works, and only somebody sizing a real chiller finds out
+
+  - given: a space with nothing run against it
+    expect: >
+      reported as NO LOAD, not as "0 W". A zero here means the analysis has
+      never run or the space is unbounded, and a number-shaped non-answer in
+      front of somebody sizing equipment is worse than no answer
+
+  - given: Rooms handed in instead of Spaces
+    expect: >
+      they go to `notSpaces` and nothing is reported. A Room carries no load;
+      PLACE_ROOMS is what puts Spaces in the model
+
+second_route:
+  - Revit's own Space properties, or a Space schedule with load and airflow columns, read for the same space

@@ -52,6 +52,15 @@ compatibility-note: >
   which is the property that does not exist on every element kind - the
   parameter answers for anything that has a phase at all.
 
+# ROUTING - repeated in SET_ELEMENT_PHASE.
+#
+#   "which phase is this on"     -> here - a QUESTION
+#   "set the phase"              -> SET_ELEMENT_PHASE. Until 2026-09-02 that
+#                                   sentence reached SET_ELEMENT_WORKSET - a
+#                                   write, to the wrong property, that reports
+#                                   success
+#   "mark these as demolished"   -> SET_ELEMENT_PHASE
+
 # ROUTING - repeated in DESCRIBE_ELEMENTS.
 #
 #   "what phase is this on"        -> here
@@ -64,8 +73,15 @@ compatibility-note: >
 # THE ELEMENT'S PHASE AND THE VIEW'S PHASE FILTER ARE DIFFERENT THINGS and the
 # same sentence asks for both. This fragment answers only the first.
 
+# "which phase is this on" WAS ADDED 2026-09-02 because the routing table
+# claims it and SET_ELEMENT_PHASE - a WRITE - was being served instead. The
+# table said WHICH and the utterance said WHAT, and the index only hears the
+# utterance. A one-word difference put a read question on a fragment that
+# changes the model.
+
 utterances:
   - what phase is this on
+  - which phase is this on
   - which phase were these created in
   - is this existing or new
   - is this being demolished

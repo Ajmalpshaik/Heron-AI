@@ -67,6 +67,7 @@ compatibility-note: >
 #                                      already exists
 #   "make a 3D view"                -> CREATE_3D_VIEW
 #   "make a section"                -> CREATE_SECTION_VIEW
+#   "make a drafting view"          -> CREATE_DRAFTING_VIEW
 
 utterances:
   - make the plan for this level

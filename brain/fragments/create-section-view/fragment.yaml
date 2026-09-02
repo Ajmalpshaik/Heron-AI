@@ -87,6 +87,11 @@ compatibility-note: >
 #                                       view that already exists; makes nothing
 #   "just show this bit in 3D"       -> SET_VIEW_SECTION_BOX
 #   "crop the plan"                  -> SET_VIEW_CROP
+#   "make a drafting view"           -> CREATE_DRAFTING_VIEW - shows NO model
+#                                       and never changes; this follows the
+#                                       model
+#   "create a callout"               -> CREATE_CALLOUT - enlarges part of a
+#                                       view that already exists
 
 utterances:
   - create a section through this

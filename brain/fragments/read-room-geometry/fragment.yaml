@@ -71,6 +71,9 @@ compatibility-note: >
 #                                   and this reads rooms that already do
 #   "add spaces to this level"   -> PLACE_ROOMS, with spaces asked for
 #   "which ducts are in room 5"  -> FILTER_ELEMENTS_IN_ROOM
+#   "what is the heating load"   -> READ_SPACE_LOADS. Area and volume are a
+#                                   shape; a load is an analysis result, and
+#                                   only a Space carries one
 
 utterances:
   - how big is this room

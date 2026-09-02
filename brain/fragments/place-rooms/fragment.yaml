@@ -96,6 +96,9 @@ compatibility-note: >
 #   "which ducts are in room 5"  -> FILTER_ELEMENTS_IN_ROOM - it needs the
 #                                   rooms to EXIST, which is what this does
 #   "how big is this room"       -> READ_ROOM_GEOMETRY
+#   "what is the heating load"   -> READ_SPACE_LOADS - and it can report
+#                                   nothing until the spaces exist, which is
+#                                   what this fragment is for
 #   "which rooms are unbounded"  -> this reports them as it places; a standing
 #                                   check on rooms already there is a different
 #                                   job and nothing does it yet

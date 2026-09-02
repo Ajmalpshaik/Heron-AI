@@ -64,7 +64,9 @@ compatibility-note: >
 #   "place a diffuser"           -> PLACE_FAMILY_INSTANCES - it needs the family
 #                                   to be loaded ALREADY, which is what this does
 #   "change these to the 300 type" -> CHANGE_ELEMENT_TYPE
-#   "which families are loaded"  -> nothing here lists them yet
+#   "which families are unused"  -> FIND_UNUSED_FAMILIES, which reports what
+#                                   Revit's Purge Unused would look at and
+#                                   deletes nothing
 
 utterances:
   - load a family

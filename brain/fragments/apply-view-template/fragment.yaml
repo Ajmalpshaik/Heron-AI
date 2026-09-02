@@ -57,6 +57,14 @@ compatibility-note: >
   an ElementId object taken from a live view, so nothing here builds one from
   an integer.
 
+# ROUTING - repeated in FIND_VIEWS_WITHOUT_TEMPLATE.
+#
+#   "apply the template to these"   -> here - the FIX
+#   "which views have no template"  -> FIND_VIEWS_WITHOUT_TEMPLATE, which
+#                                      finds what needs fixing and separates
+#                                      the views that are ON SHEETS - those are
+#                                      being issued
+
 # ROUTING - repeated in SET_CATEGORY_GRAPHICS and OVERRIDE_GRAPHICS_IN_VIEW.
 #
 #   "apply the view template"          -> here
