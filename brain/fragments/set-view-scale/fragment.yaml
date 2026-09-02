@@ -1,0 +1,86 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-018
+semantic-identity: "read or set the scale of these views"
+kind: action
+domain: revit.views
+capability: SET_VIEW_SCALE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Reads and sets view scale, across a batch of views.
+
+  **Changing scale changes every piece of text and every symbol on the
+  drawing.** Tags, dimensions and annotation are sized in paper units, so a
+  view taken from 1:100 to 1:50 keeps its geometry and halves the apparent size
+  of everything annotated on it. On a view already on a sheet that is a visible
+  change to an issued drawing, not a display setting.
+
+  **A view controlled by a template refuses.** Scale is one of the properties a
+  template commonly locks, and the setter throws. Reported by name so the fix —
+  change the template, or detach the view — is obvious rather than a mystery.
+
+  **The old scale comes back**, so a batch can be undone by a caller that
+  recorded it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: views
+      type: IList<View>
+      source: request
+    - name: scale
+      type: int
+      source: request
+    - name: apply
+      type: bool
+      source: request
+  provides:
+    - name: wasScale
+      type: IDictionary<ElementId, int>
+    - name: changed
+      type: int
+    - name: alreadyThatScale
+      type: int
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.Scale` is a settable int on every
+  release 2020 to 2027 - a denominator, so 1:50 is the number 50 - and nothing
+  here touches a unit or builds an ElementId from an integer.
+
+# ROUTING - repeated in APPLY_VIEW_TEMPLATE.
+#
+#   "set the scale"                 -> here
+#   "apply the template"            -> APPLY_VIEW_TEMPLATE - and note it may
+#                                      LOCK the scale, after which this refuses
+#   "the text is too small"         -> here, usually. Scale is what sizes it
+#
+# SCALE IS OFTEN OWNED BY THE TEMPLATE. When this refuses on a batch, that is
+# almost always why, and the fix is in the template rather than in the view.
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
+utterances:
+  - set the scale of this view
+  - what scale is this view
+  - change these to 1 to 50
+  - the text is too small on this drawing
+  - make all these views the same scale
+  - the text is too small

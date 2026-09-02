@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-007
+semantic-identity: "put insulation on these ducts or pipes, at a stated thickness"
+kind: action
+domain: revit.mep
+capability: SET_MEP_INSULATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds insulation to ducts and pipes at a stated thickness, replacing whatever
+  is there.
+
+  **Insulation is the difference between a run that fits and one that does
+  not.** A 400 mm duct with 50 mm insulation needs 500 mm of clear space, and
+  the clash check that was run before the insulation went on is the one that
+  said the ceiling void was fine. That is why this belongs beside
+  `FIND_CLASHES` rather than in a corner of its own.
+
+  **Duct and pipe insulation are different API types and this handles both**,
+  because a modeller selects a run and does not sort it first.
+
+  **Existing insulation is REPLACED, not added to.** Revit will happily carry
+  two layers, and a duct wrapped twice reports a size nobody drew. The old is
+  removed first, and the count reports what ended up on the element.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: insulationTypeId
+      type: ElementId
+      source: request
+    - name: thicknessMm
+      type: double
+      source: request
+  provides:
+    - name: insulated
+      type: int
+    - name: replaced
+      type: int
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `DuctInsulation.Create`,
+  `PipeInsulation.Create` and `InsulationLiningBase.GetInsulationIds` are
+  unchanged 2020 to 2027. Millimetres to feet is arithmetic, not `UnitUtils`
+  (D-20), and the insulation type arrives as an ElementId object so nothing
+  here builds one from an integer.
+
+# ROUTING - repeated in FIND_CLASHES and SET_MEP_SIZE.
+#
+#   "insulate these"                  -> here
+#   "add 50 insulation"               -> here
+#   "make the duct bigger"            -> SET_MEP_SIZE - the duct itself
+#   "will it fit in the ceiling"      -> FIND_CLASHES, and RUN IT AFTER this:
+#                                        insulation is what makes a run that
+#                                        cleared the void stop clearing it
+#
+# A CLASH CHECK RUN BEFORE THE INSULATION IS A CLASH CHECK OF THE WRONG MODEL.
+
+utterances:
+  - insulate these ducts
+  - add insulation
+  - put 50 mm insulation on these
+  - insulate the pipework
+  - change the insulation thickness

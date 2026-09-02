@@ -1,0 +1,31 @@
+positive:
+  - given: one 400x400 duct exactly 2000 mm long
+    expect: >
+      areaM2 reads about 3.2 m2 for the four sides - CHECKED by hand against
+      4 x 0.4 x 2.0, not against what a schedule prints. This is D3's lesson
+      applied to area: a unit error here is invisible until somebody prices it
+
+  - given: a piece of mechanical equipment whose geometry is a nested family
+    expect: >
+      it has a real volume, NOT no-solid. Reading only the top geometry level
+      finds nothing for most equipment, and it would be reported as having no
+      solid while sitting plainly in the model
+
+negative:
+  - given: a selection of 20 ducts and 15 detail lines
+    expect: >
+      the 15 line ids are in noSolid and the totals cover the 20. A zero
+      recorded for a line sits in a takeoff total looking like a measured
+      nothing
+
+  - given: an insulated duct
+    expect: >
+      the area is the BARE duct. Insulation is a separate element, so pricing
+      lagging means measuring the insulation elements - a different selection,
+      and reading this number for it under-measures every run on the job
+
+  - given: the same element passed in twice
+    expect: it is measured once - totals and the dictionaries must agree, and a double count shows only in the total
+
+second_route:
+  - A Revit schedule with a Volume or Area column for the same category, Grand Total on

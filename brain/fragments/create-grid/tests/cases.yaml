@@ -1,0 +1,27 @@
+positive:
+  - given: two level points 30 m apart and the name "13"
+    expect: one grid line named 13, and it appears on every plan at that location
+
+  - given: two points differing by half a millimetre in height
+    expect: >
+      still created, with both ends forced onto one height. Points from a snap
+      or a calculation are rarely exactly level, and refusing over a millionth
+      of a foot would be correct and useless
+
+negative:
+  - given: two points 500 mm apart in height
+    expect: >
+      REFUSED, naming the 500 mm and saying a grid is a vertical plane. Revit's
+      own exception names a curve, not a height, and a modeller cannot read that
+
+  - given: the name "5" when a grid 5 exists
+    expect: >
+      refused before creation. A throw after Grid.Create leaves a grid in the
+      setting-out under whatever default name Revit chose, and other people are
+      working to that setting-out
+
+  - given: two identical points
+    expect: refused - there is no direction for the grid to run in
+
+second_route:
+  - Revit's own Grid tool drawn between the same two points, with the name checked in the Project Browser

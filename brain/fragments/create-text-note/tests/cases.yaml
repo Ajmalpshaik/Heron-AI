@@ -1,0 +1,28 @@
+positive:
+  - given: a plan view, a point, "PROVIDE 300 CLEARANCE ABOVE", and the project's standard text type
+    expect: one note at that point, in that style, and its id in `created`
+
+negative:
+  - given: the same call on a 3D view
+    expect: >
+      refused, with the reason. A text note is 2D annotation and a 3D view has
+      no plane for it - and the refusal names the plan or the section, because
+      "it did not work" leaves nothing to try
+
+  - given: an empty note text
+    expect: refused. Revit rejects it outright, so it is caught where the message can explain it
+
+  - given: a textTypeId that is not a TextNoteType
+    expect: >
+      refused. A wrong style makes a note that reads correctly on screen and
+      fails the project's own drawing standard - an error that survives every
+      check until somebody prints
+
+  - given: a note placed on the coordination plan, then the section is checked
+    expect: >
+      NOTHING on the section. A note lives on one view and is not part of the
+      model. That is what a note is, and it decides whether the person who needs
+      to read it ever does
+
+second_route:
+  - Revit's own Text tool at the same point, with the note's Type Selector compared against the project's standard

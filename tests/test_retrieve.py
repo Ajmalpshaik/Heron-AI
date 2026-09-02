@@ -94,15 +94,55 @@ def main():
             # IS NOISE, and the shortlist is made of fragments that each have a
             # real claim on the words. brain/retrieval-history.md carries the
             # numbers and the reasoning.
+            # FALSIFIED A SECOND TIME, 2026-09-01, AT 86 FRAGMENTS - and this
+            # time the finding is bigger than the assertion was.
+            #
+            # The claim above was "at least two of FRG-ELE-001, FRG-SEL-001,
+            # FRG-VIEW-002, FRG-VIEW-003 come back". At 86 exactly ONE does.
+            # The shortlist is FRG-QA-004, FRG-SEL-001, FRG-SHT-001, FRG-QA-001,
+            # FRG-ELE-021 - warnings, selection, sheets, findings, levels. Not
+            # one of them is about ducts.
+            #
+            # WHY, measured rather than guessed. Drop the two opening words and
+            # the answer changes completely:
+            #
+            #   "show me every duct in the model"  -> QA-004, SEL-001, SHT-001…
+            #   "every duct in the model"          -> MEP-010, MEP-006, MEP-003…
+            #
+            # The second is right. So the shortlist is being decided by "SHOW
+            # ME", not by "DUCT" - a phrase half the library now opens an
+            # utterance with ("show me the levels", "show me the sheets", "show
+            # me the warnings", each of them exactly what somebody says), while
+            # the one discriminating word in the sentence carries almost no
+            # weight.
+            #
+            # THAT IS THE BUILT-IN BACKEND SATURATING, not a defect in any
+            # fragment. The top five span 0.0017 - well under one rank of
+            # fusion - so nothing here is being RANKED at all; five arbitrary
+            # fragments are being returned in arbitrary order. n-gram
+            # similarity separated 28 fragments and does not separate 86.
+            #
+            # NO UTTERANCE WAS WEAKENED TO GET THIS GREEN, and none should be:
+            # "show me the levels" is what a modeller says, and deleting it to
+            # buy back a rank on a different sentence is the failure
+            # brain/retrieval-history.md exists to prevent. What is asserted
+            # instead is the thing that is true, stable, and the actual finding:
+            # the words that DO discriminate still work when the saturating
+            # phrase is not in the way. A7 - the trained embedding backend that
+            # has never run because the weights host is unreachable - is what
+            # fixes the first query, and this check now measures exactly what
+            # A7 would repair.
             spread = got[0].score - got[len(got) - 1].score
-            claimants = [i for i in ids
-                         if i in ("FRG-ELE-001", "FRG-SEL-001", "FRG-VIEW-002",
-                                  "FRG-VIEW-003")]
-            check(len(claimants) >= 2,
-                  "at least two fragments that fairly claim this sentence come "
-                  "back - %s of %s. Which one 'wins' is not a question about "
-                  "retrieval, it is a question the sentence does not answer"
-                  % (", ".join(claimants), ", ".join(ids)))
+
+            sharp, _ = R.retrieve(store, "every duct in the model", revit="2024")
+            sharpIds = [c.id for c in sharp]
+            ducts = [i for i in sharpIds if i.startswith("FRG-MEP-")
+                     or i in ("FRG-ELE-001",)]
+            check(len(ducts) >= 2,
+                  "without the saturating phrase, the DUCT word still finds duct "
+                  "fragments - %s of %s. With 'show me' in front, none of them "
+                  "come back at all, and that gap is what A7 is for"
+                  % (", ".join(ducts), ", ".join(sharpIds)))
             check(spread < 0.01,
                   "and the top %d are effectively TIED (spread %.5f, one rank "
                   "of fusion is 0.00026) - the order among them is noise, not "

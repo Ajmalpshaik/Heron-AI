@@ -1,0 +1,72 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-008
+semantic-identity: "what system are these on - name, type and abbreviation"
+kind: action
+domain: revit.mep
+capability: READ_MEP_SYSTEM
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  The system each element belongs to: the system name, the system type, and the
+  abbreviation that ends up on the tag.
+
+  **The system NAME and the system TYPE are different things and a modeller
+  says "system" for both.** The type is Supply Air or Domestic Cold Water — the
+  classification. The name is `SA 1` — the particular run. Two ducts can share
+  a type and be on entirely separate systems, which is exactly the case
+  somebody is checking when they ask.
+
+  **An element with no system is a finding, not a blank.** A duct on no system
+  is usually a duct that is not actually connected — which is the same defect
+  `TRACE_CONNECTIVITY` exists for, arrived at from the data side rather than
+  the geometry side. It is named, never left out.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: systemName
+      type: IDictionary<ElementId, string>
+    - name: systemType
+      type: IDictionary<ElementId, string>
+    - name: noSystem
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `RBS_SYSTEM_NAME_PARAM`,
+  `RBS_SYSTEM_CLASSIFICATION_PARAM` and `RBS_DUCT_SYSTEM_TYPE_PARAM` are
+  unchanged 2020 to 2027, and the values are read as STRINGS through
+  `AsValueString` where they are not stored as text - which avoids reaching
+  for an ElementId and keeps this clear of 2024's 64-bit change.
+
+# ROUTING - repeated in TRACE_CONNECTIVITY and READ_ELEMENT_PARAMETERS.
+#
+#   "what system is this on"          -> here
+#   "what connects to what"           -> TRACE_CONNECTIVITY - the geometry
+#   "is the ductwork still connected" -> TRACE_CONNECTIVITY
+#   "what size is it"                 -> READ_ELEMENT_PARAMETERS
+#
+# THE SYSTEM DATA AND THE PHYSICAL CONNECTION ARE TWO DIFFERENT ANSWERS TO
+# "IS THIS CONNECTED", and this repository has already been caught out by
+# trusting the first: the CRAC pairing was wrong in the names and in the
+# connector flags, and only the geometry told the truth. Read this one as
+# what the model SAYS, not as what is physically joined.
+
+utterances:
+  - what system is this on
+  - which system are these
+  - what is the system name
+  - are these all on the same system
+  - what system type is this

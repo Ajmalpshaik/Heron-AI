@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-016
+semantic-identity: "why is this element not showing in this view"
+kind: action
+domain: revit.views
+capability: DIAGNOSE_VISIBILITY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Says whether an element is actually shown in a view, and when it is not,
+  **which of the reasons applies**.
+
+  *"Why can I not see my ducts"* is one of the most expensive questions in
+  Revit, because there are at least eight unrelated answers and no single place
+  to look: the element is hidden, its category is off, a view filter excludes
+  it, it is outside the view range, outside the crop, wrong phase, wrong design
+  option, or on an unloaded workset. A modeller checks them one at a time and
+  usually in the wrong order.
+
+  **The ground truth is asked FIRST, and it is not a guess.** A collector
+  scoped to the view returns what the view actually contains. Everything after
+  that is explaining a fact rather than predicting one — which is the
+  difference between this and a checklist.
+
+  **It reports EVERY cause it finds, not the first.** Two causes at once is
+  routine — a category switched off in a template *and* the element hidden by
+  somebody — and fixing one leaves it still invisible, which is how the second
+  hour goes.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: visible
+      type: IList<ElementId>
+    - name: reasons
+      type: IDictionary<ElementId, string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FilteredElementCollector(Document,
+  ElementId)`, `Element.IsHidden`, `View.GetCategoryHidden`,
+  `View.ViewTemplateId`, `View.CropBoxActive` and `View.GetFilters` are
+  unchanged 2020 to 2027, and no ElementId is built from an integer.
+
+# ROUTING - repeated in SHOW_ELEMENTS, SET_CATEGORY_VISIBILITY and
+# SET_VIEW_RANGE.
+#
+#   "why can I not see this"        -> here FIRST. It says WHICH fix applies
+#   "unhide it"                     -> SHOW_ELEMENTS, if that is the reason
+#   "turn the category back on"     -> SET_CATEGORY_VISIBILITY, if that is it
+#   "fix the view range"            -> SET_VIEW_RANGE, if that is it
+#
+# GUESSING WHICH FIX TO APPLY IS THE WHOLE PROBLEM. Every one of those three
+# looks like the answer, only one is, and applying the wrong one changes a view
+# for no reason and leaves the element still invisible.
+
+utterances:
+  - why is this element not visible
+  - why can I not see my ducts
+  - it is not showing on this view
+  - where did my elements go
+  - why is nothing appearing
+  - it is missing from the plan

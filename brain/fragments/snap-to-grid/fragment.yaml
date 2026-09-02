@@ -62,6 +62,33 @@ compatibility-note: >
   neither has changed 2020 to 2027. All distances are internal feet with no
   units call.
 
+# ROUTING - repeated in LIST_GRIDS and CREATE_GRID.
+#
+# THE WORD "GRID" MEANS TWO DIFFERENT THINGS AND THIS IS THE COLLISION. A
+# LAYOUT grid is an imaginary spacing used to place diffusers evenly - that is
+# what this fragment means. A COLUMN grid is the building's setting-out datum,
+# drawn on every plan, and that is what LIST_GRIDS and CREATE_GRID mean. One
+# word, two jobs, and nothing in the sentence usually says which.
+#
+#   "space these out evenly"    -> ARRAY_ELEMENTS. Even spacing along a
+#                                  direction is what an array IS; this
+#                                  fragment moves things onto the cells of a
+#                                  spacing that is already decided. BOTH
+#                                  tables claimed it until 2026-09-01
+#   "snap these onto the cells" -> here
+#   "put them on a 3 m grid"    -> here - a spacing
+#   "snap these to the grid"    -> here
+#   "list the grids"            -> LIST_GRIDS - the datums
+#   "add a grid"                -> CREATE_GRID - a datum
+#   "align these to grid 5"     -> CREATE_GRID / LIST_GRIDS territory; nothing
+#                                  here aligns elements to a named column grid
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - put them on the ceiling grid
   - line the diffusers up with the tiles
@@ -69,3 +96,4 @@ utterances:
   - centre them in the tiles
   - they are not on the grid
   - tidy up the sprinkler positions
+  - put them on a 3 m grid

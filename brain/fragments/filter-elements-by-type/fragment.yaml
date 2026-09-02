@@ -1,0 +1,78 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-019
+semantic-identity: "find everything of the same type as this one"
+kind: filter
+domain: revit.elements
+capability: FILTER_ELEMENTS_BY_TYPE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Everything in the model, or in one view, that is the same type as a given
+  element. Revit's *Select All Instances*, available to a request.
+
+  **Whole model or this view are different answers and the difference is the
+  whole point.** *"Change all of these"* almost always means every instance in
+  the project; *"the ones I can see"* means this view. Choosing silently is how
+  a change intended for one floor reaches nine.
+
+  **Same TYPE, not same family and not same category.** Two 600x600 diffusers of
+  different types look identical on a plan and are different products. Matching
+  by category would sweep up everything; matching by family would mix sizes.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: exemplar
+      type: Element
+      source: request
+    - name: inViewOnly
+      type: View
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: found
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.GetTypeId`,
+  `FilteredElementCollector(Document)` and `FilteredElementCollector(Document,
+  ElementId)` are unchanged 2020 to 2027, and no ElementId is built from an
+  integer - the exemplar's type id is compared as an object.
+
+# ROUTING - repeated in FILTER_ELEMENTS_BY_CATEGORY and CHANGE_ELEMENT_TYPE.
+#
+#   "select everything like this one"  -> here
+#   "find all the same type"           -> here
+#   "select all the ducts"             -> FILTER_ELEMENTS_BY_CATEGORY - a
+#                                         category, far wider than a type
+#   "swap them to another type"        -> here, then CHANGE_ELEMENT_TYPE
+#
+# "ALL THE SAME ONES" MEANS TYPE, CATEGORY OR FAMILY depending on who is
+# speaking, and the three return wildly different counts.
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
+utterances:
+  - select everything like this one
+  - find all the same type
+  - select all instances of this
+  - all the ones like this
+  - every one of these in the model
+  - swap them to another type

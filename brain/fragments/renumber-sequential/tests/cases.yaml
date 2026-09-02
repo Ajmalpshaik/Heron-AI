@@ -1,0 +1,26 @@
+positive:
+  - given: 8 doors in corridor order, parameterName "Mark", prefix "D-", startAt 1
+    expect: D-1 to D-8 in that order, renumbered is 8, collisions empty, and the door tags on the sheet read the same
+
+  - given: the same 8 doors renumbered a second time with the same inputs
+    expect: >
+      renumbered is 8 and collisions is EMPTY - an element is not a clash with
+      the number it already holds, and refusing here would block the commonest
+      batch of all, re-running a numbering that is already right
+
+negative:
+  - given: 8 doors, prefix "D-", startAt 1, and the model already has a door D-3 elsewhere that is NOT in the batch
+    expect: >
+      collisions carries "D-3", renumbered is 0, and NOTHING IS WRITTEN. Not
+      three doors renumbered and then a stop - a half-renumbered corridor has
+      two schemes in it and no record of where it stopped. Revit would have
+      accepted the duplicate silently, which is why this cannot be left to it
+
+  - given: a batch where "Mark" is read-only on 2 of the 8
+    expect: >
+      those 2 ids are in refused, named rather than skipped - a renumber that
+      "did nothing" to two doors is invisible otherwise, and the tags on the
+      sheet will show it long after
+
+second_route:
+  - A Revit schedule of the category showing the parameter, sorted - duplicates and gaps both show at a glance

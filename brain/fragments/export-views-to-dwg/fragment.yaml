@@ -1,0 +1,78 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 16
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-003
+semantic-identity: "export these views or sheets to DWG files in this folder"
+kind: action
+domain: revit.export
+capability: EXPORT_VIEWS_TO_DWG
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Exports a set of views or sheets to DWG, one file each, into a folder.
+
+  **The first fragment that writes outside the model, and the risk is a
+  different shape.** Every other write here is undoable in Revit. This one puts
+  files on a disk, and a name that matches an existing file OVERWRITES it with
+  no undo and no warning. So the folder is checked, and files that would be
+  overwritten are reported rather than quietly replaced.
+
+  **The export setup comes from the project, not from defaults.** Layer mapping,
+  line weights and text handling live in a named DWG export setup that the
+  office has agreed; exporting with Revit's out-of-the-box options produces a
+  file that opens fine and fails the recipient's CAD standard. The setup is
+  asked for by name and its absence is a refusal, not a fallback.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: views
+      type: IList<View>
+      source: request
+    - name: folder
+      type: string
+      source: request
+    - name: setupName
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: IList<string>
+    - name: refused
+      type: string
+    - name: wouldOverwrite
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Export(string, string, ICollection<ElementId>, DWGExportOptions)`,
+  `ExportDWGSettings.FindByName` and `DWGExportOptions` are unchanged 2020 to
+  2027. No ElementId is built from an int, so 2024's 64-bit ids do not reach
+  this code.
+
+# ROUTING - repeated in PLACE_VIEW_ON_SHEET and CREATE_SHEET.
+#
+#   "export the views to dwg"    -> here
+#   "send these to CAD"          -> here
+#   "export to IFC"              -> NOT here. A different options object and a
+#                                   different deliverable, and nothing in the
+#                                   library does it yet
+#   "print this to pdf"          -> NOT here, same reason
+#   "put this view on a sheet"   -> PLACE_VIEW_ON_SHEET
+#   "list the sheets"            -> LIST_SHEETS - useful FIRST, to pick which
+
+utterances:
+  - export the views to dwg
+  - export these sheets to cad
+  - send these to dwg
+  - export to autocad
+  - make dwg files of these

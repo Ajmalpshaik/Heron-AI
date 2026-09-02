@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-007
+semantic-identity: "bring back elements that were hidden in this view"
+kind: action
+domain: revit.views
+capability: SHOW_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Undoes a hide. HIDE_ELEMENTS and ISOLATE_ELEMENTS could both take things off
+  a view and nothing here could put them back, which made every hide a one-way
+  door - the user says "show them again" and Heron has nothing to offer.
+
+  **The two modes are NOT mirror images of hiding, and that asymmetry is the
+  whole reason to read this fragment before using it.** A permanent hide is
+  undone element by element. A temporary one CANNOT BE: Revit's only way out of
+  temporary hide/isolate is to leave the mode entirely, which brings back
+  everything anybody hid temporarily, not just the elements named here. So the
+  temporary path ignores its own element list, and says so in
+  `temporaryModeCleared` rather than reporting a count that would imply a
+  precision it does not have.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: permanent
+      type: bool
+      source: request
+  provides:
+    - name: shown
+      type: int
+    - name: notHidden
+      type: IList<ElementId>
+    - name: temporaryModeCleared
+      type: bool
+    - name: viewRefused
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.UnhideElements`,
+  `Element.IsHidden`, `View.DisableTemporaryViewMode` and the
+  `TemporaryViewMode` enum are unchanged 2020 to 2027, and the view arrives as
+  an object so no ElementId is built from an integer.
+
+# ROUTING - these four all answer sentences about things not being visible, and
+# the table is repeated in each of them rather than written here once. A
+# cross-reference in one direction only routes whoever happens to land on the
+# newer file.
+#
+#   "hide these"                        -> HIDE_ELEMENTS
+#   "show me only these"                -> ISOLATE_ELEMENTS
+#   "show them again" / "unhide"        -> here
+#   "reset the view" / "put it back"    -> here, permanent false
+#   "the ducts are not showing at all"  -> SET_CATEGORY_VISIBILITY, which is a
+#                                          different cause with the same symptom:
+#                                          a whole category switched off, not
+#                                          these elements hidden
+
+utterances:
+  - unhide these
+  - show them again
+  - bring back what I hid
+  - put them back on the view
+  - reset the temporary hide
+  - I hid them by mistake

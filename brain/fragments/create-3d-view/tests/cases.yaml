@@ -1,0 +1,23 @@
+positive:
+  - given: a 3D view family type and the name "MEP Coordination 01"
+    expect: viewId is a real view, named is true, refused false, and it appears in the Project Browser under 3D Views
+
+negative:
+  - given: a name ALREADY used by another view
+    expect: >
+      the view is still CREATED, viewId is valid, refused is false, and named is
+      FALSE. Revit throws on a duplicate view name, and letting that escape
+      would abandon a view that already exists - leaving an unnamed orphan in
+      the browser and an exception that reads as total failure
+
+  - given: a view family type id that is not a 3D view type
+    expect: refused is true and viewId stays invalid - no half-made view left behind
+
+  - given: somebody who said "make me a 3D view like the one I am in"
+    expect: >
+      this is the WRONG fragment - it carries none of that view's settings.
+      DUPLICATE_VIEW is the one that means "like that one", and the sentence
+      does not distinguish them
+
+second_route:
+  - The Project Browser, 3D Views node - the view is there and opens

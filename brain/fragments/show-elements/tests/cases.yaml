@@ -1,0 +1,27 @@
+positive:
+  - given: 4 elements permanently hidden in a view, permanent true
+    expect: >
+      all 4 visible again, shown is 4, notHidden is empty, and
+      temporaryModeCleared is false - nothing about the temporary mode moved
+
+  - given: a view in temporary hide/isolate, permanent false
+    expect: >
+      the view leaves temporary hide/isolate, temporaryModeCleared is true and
+      shown is 0. Zero is CORRECT here and not a failure: the mode was left,
+      which is the only granularity Revit has, so no per-element count is true
+
+negative:
+  - given: 5 elements handed in, of which only 2 are actually hidden, permanent true
+    expect: >
+      shown is 2 and notHidden carries the other 3 ids - NOT shown 5. This is
+      the case the fragment exists to get right: Revit accepts all five and
+      changes nothing for three of them, so a count of what was ASKED FOR reads
+      as a success while the user watches three elements not come back
+
+  - given: permanent false on a view that cannot use temporary visibility modes
+    expect: >
+      viewRefused is true, temporaryModeCleared is false, and nothing is
+      reported as shown - a refusal by name, never a silent no-op
+
+second_route:
+  - Revit's own Reveal Hidden Elements mode, which draws hidden elements in magenta - anything still magenta was not brought back

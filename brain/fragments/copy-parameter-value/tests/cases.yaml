@@ -1,0 +1,28 @@
+positive:
+  - given: 200 ducts, from "System Name" to a shared text parameter
+    expect: copied is 200, the shared parameter reads the system name on each, and a schedule can now group by it
+
+negative:
+  - given: a from-parameter that is a LENGTH and a to-parameter that is TEXT
+    expect: >
+      typeMismatch is true and NOTHING is written. A length is stored as feet
+      and displayed as "2400 mm" - copying the display into text writes a
+      unit-suffixed string no calculation can use, and it looks right on a
+      schedule
+
+  - given: a batch where the source is blank on 30 of 200
+    expect: >
+      those 30 are in sourceEmpty and are NOT copied. Writing a blank over a
+      filled destination destroys data to no purpose and is indistinguishable
+      afterwards from never having been filled
+
+  - given: a mismatch discovered at element 100 of 200
+    expect: >
+      the WHOLE batch stops with nothing written - not 99 converted and 101 not.
+      A half-converted set has no record of where it stopped
+
+  - given: a parameter that Revit accepts and stores something different
+    expect: it is in refused, caught by the read-back rather than by the absence of an exception
+
+second_route:
+  - A schedule showing both parameters side by side, before and after

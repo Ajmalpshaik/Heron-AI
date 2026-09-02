@@ -53,9 +53,27 @@ compatibility-note: >
   `LocationCurve.Curve` are unchanged 2020 to 2027, and the distance arrives in
   internal feet with no units call.
 
+# ROUTING - repeated in SPLIT_MEP_RUN and MOVE_ELEMENTS.
+#
+#   "move it 200 across"        -> here - a shift perpendicular to the run
+#   "offset these ducts"        -> here
+#   "split this duct"           -> SPLIT_MEP_RUN. Cutting a run in two, not
+#                                  shifting it sideways. Before SPLIT_MEP_RUN
+#                                  existed, "split this duct at the wall"
+#                                  resolved HERE - a confident answer that
+#                                  moves the duct instead of cutting it
+#   "move these up 200"         -> MOVE_ELEMENTS - a named direction
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
 utterances:
   - run another duct parallel to this
   - move the pipe over 300
   - offset it sideways
   - shift the run off the wall
   - put it parallel
+  - move it 200 across

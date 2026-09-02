@@ -1,0 +1,29 @@
+positive:
+  - given: a duct hosted on Level 1 with a 2800 mm offset
+    expect: levelName reads "Level 1" and offsetMm reads about 2800 - MEASURED against the Properties palette, not against what the create call was told
+
+  - given: 40 mixed MEP elements across three levels
+    expect: every element appears in exactly one of levelName or noLevel, and the level names match a Revit schedule grouped by level
+
+negative:
+  - given: a duct on Level 1 with a 3800 mm offset, where Level 2 is at 3500
+    expect: >
+      it reports LEVEL 1, not Level 2, and the offset says why. The element is
+      physically above Level 2's floor and belongs to Level 1 - correct, and the
+      opposite of what "what level is this on" usually means. The level name on
+      its own would be read as a mistake
+
+  - given: an MEP element whose LevelId is invalid but which carries a level parameter
+    expect: >
+      the level is found from the parameter. Reading LevelId alone would report
+      it as having no level, which is a confident wrong answer about an element
+      that is plainly on a level in the model
+
+  - given: an element with neither a LevelId nor any level parameter
+    expect: >
+      it is in noLevel - NOT assigned the nearest level. A guessed level reads
+      exactly like a read one, and there is nothing in the answer to show which
+      it was
+
+second_route:
+  - The Properties palette for one element, or a Revit schedule grouped by Level

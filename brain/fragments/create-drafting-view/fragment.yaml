@@ -1,0 +1,67 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-026
+semantic-identity: "make an empty drafting view to draw a detail in"
+kind: action
+domain: revit.views
+capability: CREATE_DRAFTING_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a drafting view - a sheet-ready view with no model in it, for a
+  standard detail, a schematic or an imported CAD detail.
+
+  **It shows no model at all, and that is what it is for.** A drafting view is
+  drawn by hand: it does not update when the model changes, and nothing in it is
+  ever wrong because the ductwork moved. Every standard detail in a set is one.
+  Somebody expecting it to show the model has asked for a section instead.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: viewName
+      type: string
+      source: request
+    - name: viewScale
+      type: int
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ViewDrafting.Create(Document, ElementId)` and the `ViewFamily` enumeration
+  are unchanged 2020 to 2027 - read off the reference assemblies at both ends.
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# ROUTING - repeated in CREATE_SECTION_VIEW and CREATE_PLAN_VIEW.
+#
+#   "make a drafting view"       -> here
+#   "I need a detail view"       -> here - for a hand-drawn standard detail
+#   "create a section through this" -> CREATE_SECTION_VIEW. Shows the MODEL and
+#                                      follows it; a drafting view shows nothing
+#                                      and never changes
+#   "make the plan for this level"  -> CREATE_PLAN_VIEW
+#   "create a callout"           -> CREATE_CALLOUT - an enlarged part of a view
+#                                   that already exists
+
+utterances:
+  - make a drafting view
+  - I need a detail view
+  - create an empty view for a detail
+  - add a drafting view for this detail
+  - make a view to draw the detail in

@@ -1,0 +1,28 @@
+positive:
+  - given: one 600x600 supply diffuser, inViewOnly null, 300 of that type in the project
+    expect: found is 300 and the exemplar is among them - "everything like this one" includes this one
+
+  - given: the same exemplar with inViewOnly set to the current plan, 18 of them on it
+    expect: found is 18 - and that is a different answer to the same sentence, which is why the scope is an input
+
+negative:
+  - given: a project with two DIFFERENT diffuser types that both read 600x600 on the plan
+    expect: >
+      only the exemplar's type comes back. They are different products, they
+      look identical on the drawing, and matching by family would mix them into
+      one order
+
+  - given: somebody who meant "all the ducts" and got "all of this exact type"
+    expect: >
+      a far smaller count. Category, family and type are three different
+      answers to "all the same ones", and FILTER_ELEMENTS_BY_CATEGORY is the
+      wide one
+
+  - given: inViewOnly left null on a request that meant "the ones I can see"
+    expect: >
+      the WHOLE MODEL comes back. This is the failure the input exists to
+      prevent - a change meant for one floor reaching nine, with the count as
+      the only clue and nobody reading it
+
+second_route:
+  - Revit's own Select All Instances - In Entire Project, and In Active View, which are the same two answers

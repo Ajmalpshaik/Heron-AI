@@ -1,0 +1,24 @@
+positive:
+  - given: a duct shown on 6 views, 2 of which are on sheets
+    expect: inViews holds 6 view ids, onSheets holds the 2 sheet ids, nowhere empty
+
+negative:
+  - given: an element about to be deleted that appears on 4 ISSUED sheets
+    expect: >
+      onSheets names all 4 BEFORE the deletion. Revit gives no warning, and the
+      four drawings are found later by whoever checks the set. This is the
+      whole reason to run it first
+
+  - given: an element in the model but in no printable view
+    expect: >
+      it is in nowhere - which is the safe-to-change answer, and is different
+      from being absent from the model
+
+  - given: a project with 800 views
+    expect: >
+      800 collector passes, and it is SLOW. Revit keeps no reverse index, so
+      there is no cheaper true answer - which is why this is a deliberate check
+      and not something to call in a loop
+
+second_route:
+  - Try deleting the element in Revit - it warns about elements on sheets, though only sometimes and only for some categories

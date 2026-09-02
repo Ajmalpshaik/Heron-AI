@@ -1,0 +1,30 @@
+positive:
+  - given: category Ducts, fields ["Family and Type", "Size", "Length"], name "M - Duct Schedule"
+    expect: >
+      a schedule view in the Project Browser with those three columns, updating
+      itself as the model changes, and placeable on a sheet
+
+  - given: the new schedule handed to PLACE_VIEW_ON_SHEET
+    expect: it lands on the sheet - a schedule is a view, and that is the point of making one
+
+negative:
+  - given: a field name the category does not have
+    expect: >
+      it appears in `missingFields` and the schedule is STILL made with the
+      rest. A silently short schedule looks finished and prints with a column
+      missing, and nobody reading it can tell one was asked for
+
+  - given: two schedulable fields sharing a display name - an instance and a type parameter
+    expect: >
+      one column, not two. Two identical headings over different numbers is
+      worse than picking one, and nothing on the drawing would say which was
+      which
+
+  - given: no category
+    expect: refused - a schedule is a schedule OF something
+
+  - given: a category Revit cannot schedule
+    expect: refused, saying so, rather than an empty view left in the browser
+
+second_route:
+  - Revit's own View > Schedules > Schedule/Quantities with the same category and fields, compared column for column

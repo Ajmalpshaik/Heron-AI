@@ -1,0 +1,38 @@
+positive:
+  - given: three parallel ducts running east-west on a plan view, offset 500 mm
+    expect: >
+      one dimension string across all three, measuring centre to centre, sitting
+      500 mm along the run clear of the ducts
+
+  - given: two parallel pipes at 45 degrees to the world axes
+    expect: >
+      the string is still square to the RUNS. The measuring axis is the view's
+      normal crossed with the run direction, which is across the pipes whatever
+      angle they sit at in the world
+
+negative:
+  - given: two ducts crossing at right angles
+    expect: >
+      the second is REFUSED and no string joins them. The distance between two
+      non-parallel runs depends on where along them you look - a number that
+      changes with nothing changing, and it must not be put on a drawing
+
+  - given: ducts seen end-on in a section, so the run points at the viewer
+    expect: >
+      everything is refused and nothing is drawn. There is no direction across
+      the runs that can be drawn on that view, and picking an arbitrary one
+      would produce a dimension that measures something else
+
+  - given: an air terminal, which has no location curve
+    expect: >
+      it goes to `notLinear`, kept separate from `refused`. It is a different
+      job needing a face reference, not a failure of this one
+
+  - given: geometry read without ComputeReferences and IncludeNonVisibleObjects
+    expect: >
+      every element yields a null Reference and NOTHING is drawn, with no error
+      raised. That is why the refusals are counted and returned - this exact
+      silence is what would otherwise read as success
+
+second_route:
+  - Revit's own Aligned Dimension tool snapped to the same two centrelines, compared for the value it reports

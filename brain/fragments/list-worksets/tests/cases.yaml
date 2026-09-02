@@ -1,0 +1,25 @@
+positive:
+  - given: a workshared model with Shared Levels and Grids, Architecture, MEP and Structure, all open
+    expect: four rows, by name, each saying open
+
+  - given: the same model with MEP closed
+    expect: >
+      the MEP row says CLOSED and a summary line says every count in the session
+      excludes it. That line is the point of the fragment - a duct count on this
+      model is honest, low, and carries no other warning
+
+negative:
+  - given: a single-user file
+    expect: >
+      `workshared` is false and it SAYS the model has no worksets. Reporting
+      "0 worksets" would read as a workshared model somebody has emptied, which
+      is a different and much worse situation
+
+  - given: a workshared model whose family and view worksets outnumber the user ones ten to one
+    expect: >
+      only the user worksets are listed. The rest is Revit's own bookkeeping and
+      burying four recognisable names under dozens nobody assigns anything to
+      makes the list useless
+
+second_route:
+  - Revit's own Collaborate > Worksets dialog, read against the same model for the names and the open state

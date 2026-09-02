@@ -1,0 +1,29 @@
+positive:
+  - given: description "Coordination comments", date "02/09/26", issued by "AP"
+    expect: a revision in the project, third in the sequence say, with `sequence` reporting 3
+
+  - given: the new revision handed straight to ADD_REVISION_CLOUD
+    expect: >
+      the clouds are drawn against it and appear on the titleblock's revision
+      schedule. That composition had no first step before this fragment existed
+
+negative:
+  - given: an empty description
+    expect: >
+      refused. Revit allows an unlabelled revision; a drawing office does not,
+      and it appears as a blank row in the schedule on a signed drawing
+
+  - given: a date written "2 Sep 2026" rather than "02/09/26"
+    expect: >
+      stored exactly as given. RevisionDate is free text and goes straight onto
+      the titleblock, so the project's convention wins - reformatting it would
+      change what a signed drawing says
+
+  - given: the revision checked for its Issued flag
+    expect: >
+      NOT issued. Issuing is one-way: it locks the description and the date and
+      refuses any new cloud, so a revision created already issued is one nobody
+      can cloud
+
+second_route:
+  - Revit's own View > Revisions dialog, and a sheet's revision schedule, read for the same row

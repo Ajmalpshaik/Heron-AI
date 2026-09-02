@@ -1,0 +1,71 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-005
+semantic-identity: "every revision in the project and which sheets carry each one"
+kind: filter
+domain: revit.sheets
+capability: LIST_REVISIONS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the project's revisions in sequence, and for each one the sheets that
+  show it.
+
+  **The sheet list is the answer, not the revision list.** *"Which sheets go out
+  with this issue"* is the question somebody is actually asking, and it decides
+  what gets printed. A revision with no sheets against it is either not yet
+  clouded or was clouded on a view that is on no sheet - both are worth finding
+  before an issue rather than after.
+
+  **A sheet shows a revision two different ways.** A cloud on it puts the
+  revision there; so does ticking the revision on the sheet by hand, with no
+  cloud anywhere. Revit reports both together and so does this - because both
+  print, and a sheet that shows a revision is issued whichever way it got there.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+    - name: onNoSheets
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Revision.GetAllRevisionIds(Document)`, `ViewSheet.GetAllRevisionIds()` and
+  `GetRevisionNumberOnSheet(ElementId)` are unchanged 2020 to 2027 - read off
+  the reference assemblies at both ends rather than remembered.
+
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# ROUTING - repeated in CREATE_REVISION, ADD_REVISION_CLOUD and LIST_SHEETS.
+#
+#   "which sheets have this revision"  -> here
+#   "list the revisions"               -> here
+#   "what goes out with this issue"    -> here
+#   "add a revision"                   -> CREATE_REVISION
+#   "put a revision cloud around this" -> ADD_REVISION_CLOUD
+#   "list the sheets"                  -> LIST_SHEETS - all of them, with no
+#                                         revision involved
+
+utterances:
+  - which sheets have this revision
+  - list the revisions
+  - what revisions are there
+  - what goes out with this issue
+  - show me the revision history
+  - which sheets are in this revision

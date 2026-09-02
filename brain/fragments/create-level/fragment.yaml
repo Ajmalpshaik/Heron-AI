@@ -1,0 +1,94 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-022
+semantic-identity: "add a new level at this height"
+kind: action
+domain: revit.levels
+capability: CREATE_LEVEL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates one level at a given height and names it.
+
+  **What it makes is the datum and nothing else** - see the note below the
+  contract, which is the thing people get caught by and is deliberately not
+  repeated here in the words CREATE_PLAN_VIEW needs to be found by.
+
+  **The height is measured the way the level heads read**, from the project's
+  elevation base, so a level asked for at 4500 shows 4500 on the drawing. The
+  API's own property is measured from the internal origin instead, and the two
+  differ the moment somebody moves the base point - see LIST_LEVELS, which
+  reports both.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elevationMm
+      type: double
+      source: request
+    - name: levelName
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+    - name: noViewsMade
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Level.Create(Document, double)` and `Level.ProjectElevation` are unchanged
+  2020 to 2027. Millimetres to feet is arithmetic - divide by 304.8, per D-20.
+
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# WHAT IT MAKES, AND WHAT IT DOES NOT. Revit's Level TOOL creates a floor plan
+# and a ceiling plan alongside the level, because the tool does that - not
+# because the level does. Created here the level exists, appears in every
+# elevation, and is offered on every Level parameter, with NO PLAN VIEW AT ALL.
+# The modeller looks in the Project Browser, finds nothing, and reports that it
+# failed. It did not. `noViewsMade` is always true and exists to be said out
+# loud, and CREATE_PLAN_VIEW is the other half of the job.
+#
+# This paragraph sat in `purpose` until 2026-09-01, where it is INDEXED - and it
+# took "the new level has no plan" off CREATE_PLAN_VIEW, which is the fragment
+# that fixes exactly that complaint.
+
+# ROUTING - repeated in LIST_LEVELS and SET_ELEMENT_LEVEL.
+#
+#   "add a level"                -> here
+#   "add 4 more floors"          -> here, once per level
+#   "list the levels"            -> LIST_LEVELS
+#   "move these to level 3"      -> SET_ELEMENT_LEVEL - reassigns EXISTING
+#                                   elements; it creates nothing
+#   "make the plan for it"       -> CREATE_PLAN_VIEW. A level created through
+#                                   the API has no views; that fragment is what
+#                                   makes them, and the two together are what
+#                                   "add 4 more floors" actually means
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
+utterances:
+  - add a level
+  - create a new level
+  - add another floor level
+  - I need a level at this height
+  - make a new level
+  - add 4 more floors

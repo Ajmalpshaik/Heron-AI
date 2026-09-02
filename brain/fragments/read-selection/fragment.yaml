@@ -1,0 +1,78 @@
+heron-agent: HERON-REVIT-SEL-008
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-002
+semantic-identity: "what has the user already picked on screen, right now"
+kind: filter
+domain: revit.selection
+capability: READ_SELECTION
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads what the user has selected in Revit and hands it on as `elements`.
+
+  **It is the other half of the library.** Every filter here starts from a
+  described set - a category, a type, a room, an id. This one starts from the
+  set a human already pointed at, which is how a modeller works most of the
+  time: pick the four ducts on screen, then say what to do to them. Without it,
+  *"move these up 200"* has no "these", and the whole library can only act on
+  what it can describe in words.
+
+  **It is a READ, and that is the point of it existing separately.** SET_SELECTION
+  writes the selection; this one only looks at it. Before this fragment,
+  *"what did I select"* resolved to SET_SELECTION - a question answered by the
+  fragment that CHANGES the thing being asked about, which is the worst kind of
+  wrong answer because it looks plausible and is destructive.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: selectionCount
+      type: int
+    - name: vanished
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Selection.GetElementIds()` returns `ICollection<ElementId>` on every release
+  2020 to 2027, and no ElementId here is built from or compared to an int, so
+  2024's move to 64-bit ids does not reach this code.
+
+  It needs a UIDocument. An operation running with no UI document - a batch
+  process, a background session - has no selection to read, which is a real
+  condition and not a defect: the fragment is asking about the screen and there
+  is no screen.
+
+# ROUTING - repeated in SET_SELECTION.
+#
+#   "what did I select"        -> here. A QUESTION about the selection
+#   "how many did I select"    -> here
+#   "move what I picked up 200"-> here, then MOVE_ELEMENTS
+#   "select these"             -> SET_SELECTION. A CHANGE to the selection
+#   "highlight what you found" -> SET_SELECTION
+#   "how many ducts are there" -> COUNT_ELEMENTS. Nothing to do with what is
+#                                 picked on screen
+
+utterances:
+  - what did I select
+  - how many did I select
+  - what have I got selected
+  - what is selected right now
+  - use the ones I picked
+  - do it to what I selected
+  - these ones I highlighted
+  - work on my selection

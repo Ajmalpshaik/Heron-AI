@@ -1,0 +1,35 @@
+positive:
+  - given: 40 ducts modelled on Existing, moved to New Construction
+    expect: >
+      40 changed, and they now appear in the new-work views and schedules and
+      leave the existing ones - which is the whole point of phases
+
+  - given: elements already on the target phase
+    expect: >
+      counted in `alreadySet` and NOT written. Writing the same value back marks
+      them modified for worksharing, giving somebody else a change to reconcile
+      for nothing
+
+negative:
+  - given: the request naming a phase but not saying created or demolished
+    expect: >
+      everything refused. A phase called "Existing" says nothing about which
+      field was meant - putting an element ON the existing phase and DEMOLISHING
+      it in the existing phase are opposite instructions, and one of them makes
+      work disappear
+
+  - given: elements inside a group
+    expect: >
+      they land in `readOnly`, kept apart from `refused`. They take their phase
+      from the group and there is nothing to fix on the element itself
+
+  - given: a grid or a text note in the set
+    expect: refused - phases do not apply to it, which is not the same as being unable to change it
+
+  - given: the same sentence run before this fragment existed
+    expect: >
+      it reached SET_ELEMENT_WORKSET - a write, to the wrong property, that
+      reports success. That is the failure this fragment exists to end
+
+second_route:
+  - Revit's own Properties palette with the Phase Created and Phase Demolished fields read back on the same elements

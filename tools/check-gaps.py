@@ -42,6 +42,10 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+# A suite exits 3 when it could not run for want of an optional
+# dependency. Kept as a name in both files rather than as a bare 3.
+SKIPPED = 3
+
 UNFINISHED = []      # could be done here, today
 WAITING = []         # genuinely needs a machine this is not
 
@@ -124,6 +128,19 @@ def check_tests():
                               stderr=subprocess.DEVNULL, cwd=ROOT)
         if proc.returncode == 0:
             print("  ok    %s" % name)
+        elif proc.returncode == SKIPPED:
+            # A suite that could not run for want of an OPTIONAL dependency,
+            # not one that failed. It is neither: reporting it `ok` would be a
+            # green nobody earned, and reporting it UNFINISHED would put a
+            # missing pip package in the same list as unwritten code.
+            #
+            # This exists because only the exit code crosses this boundary -
+            # stdout goes to DEVNULL - so a suite has no other way to say
+            # "I skipped". test_mcp_serves.py is the first to need it: the MCP
+            # SDK is not installed on a machine with no Revit.
+            print("  wait  %s - skipped, see its own output for why" % name)
+            waiting("%s could not run here" % name,
+                    "an optional dependency this machine does not have")
         else:
             unfinished("%s FAILS" % name)
 

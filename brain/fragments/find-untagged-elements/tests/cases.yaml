@@ -1,0 +1,24 @@
+positive:
+  - given: 12 ducts in a plan view, 5 of them tagged
+    expect: alreadyTagged holds those 5 ids, elements is narrowed to the other 7, and the counts add to 12
+
+  - given: the result handed straight into TAG_ELEMENTS
+    expect: >
+      the 7 are tagged and the 5 are skipped - the composition the dependency
+      graph said could not be assembled before this fragment existed
+
+negative:
+  - given: a duct tagged on the coordination plan, asked about the SECTION view
+    expect: >
+      it comes back UNTAGGED. A model-wide answer would call it tagged, the
+      section would be issued bare, and nobody would find out until it was
+      printed. Per-view is what a tag actually is
+
+  - given: a view containing a tag on a duct in a LINKED model, whose linked element id happens to equal a real duct's id in this model
+    expect: >
+      that host duct is NOT reported as tagged. The two id spaces are unrelated,
+      and crediting the link's tag would mark an element tagged that nothing in
+      this model points at
+
+second_route:
+  - Revit's own "Untagged" check, or a schedule of the category with a tag-count column, read against the same view

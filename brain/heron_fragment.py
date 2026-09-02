@@ -167,6 +167,46 @@ def need_source(entry):
 # a fragment is knowledge and an agent is code.
 ID_PATTERN = re.compile(r"^FRG-[A-Z]{2,5}-[0-9]{3}$")
 
+# THE AGENT REGISTRY, read from docs rather than copied here.
+#
+# Every fragment names the agent that owns it, and until 2026-09-01 nothing
+# checked that the agent EXISTS. Six MEP fragments claimed
+# `HERON-REVIT-MEP-012`, which is not in the registry and never was - the real
+# owner is `HERON-REVIT-SYS-030`, the MEP System Agent, and -012 is the Family
+# Agent. Both checkers reported clean the whole time, for a reason worth
+# keeping: tools/check-metadata.py DOES audit agent ids against the registry
+# and deliberately skips brain/fragments (its own comment says so - a fragment's
+# metadata standard is its fragment.yaml, and duplicating it into a header
+# would give two places to update and one that would go stale). So fragments
+# were outside the only check that looks, and this file - the one that DOES
+# read them - was not looking.
+#
+# The registry is parsed here rather than duplicated, so adding an agent there
+# is enough and there is no second list to forget.
+REGISTRY_PATH = os.path.join(ROOT, "docs", "28-agent-registry.md")
+AGENT_ROW = re.compile(r"^\|\s*`(HERON-[A-Z0-9]+-[A-Z0-9]+-[0-9]+)`")
+
+_registry_cache = None
+
+
+def registry_agents():
+    """Every agent id the registry declares. Empty set when it cannot be read,
+    which SUPPRESSES the check rather than failing every fragment: a missing
+    docs file is a different problem and should not be reported 78 times."""
+    global _registry_cache
+    if _registry_cache is None:
+        found = set()
+        try:
+            for line in io.open(REGISTRY_PATH, encoding="utf-8"):
+                match = AGENT_ROW.match(line.strip())
+                if match:
+                    found.add(match.group(1))
+        except IOError:
+            found = set()
+        _registry_cache = found
+    return _registry_cache
+
+
 # Fixed on purpose. An unlisted area is an error rather than a guess - the same
 # rule D-05 applies to Revit releases, for the same reason: the moment this is
 # open, one fragment says MEP and the next says MECH and neither search finds
@@ -236,6 +276,17 @@ def naming_problems(frag):
                 "%s: id area %r is not one Heron knows. Known: %s. Adding one is "
                 "a deliberate edit to AREAS, never a guess"
                 % (where, area, ", ".join(sorted(AREAS))))
+
+    # The owning agent has to be one that exists. See registry_agents() for why
+    # this lived unchecked in the one gap between two checkers that both look
+    # clean.
+    agent = (frag.data.get("heron-agent") or "").strip()
+    known = registry_agents()
+    if agent and known and agent not in known:
+        problems.append(
+            "%s: heron-agent %r is not in docs/28-agent-registry.md. An agent id "
+            "that names nothing makes the fragment look owned when nobody owns "
+            "it, and the ownership audit cannot see the gap" % (where, agent))
 
     cap = frag.data.get("capability")
     if cap and not CAPABILITY_PATTERN.match(cap):

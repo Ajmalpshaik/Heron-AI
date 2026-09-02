@@ -1,0 +1,32 @@
+positive:
+  - given: a 6000 mm duct, split at 2000 mm
+    expect: >
+      two ducts of 2000 and 4000, both still connected to what the original was
+      connected to, and the new one's id in `created`
+
+  - given: a pipe rather than a duct
+    expect: >
+      the same result through PlumbingUtils. The two utilities have identical
+      signatures and no shared ancestor, which is the only reason the type test
+      is there
+
+negative:
+  - given: a 6000 mm duct, split at 6000 mm
+    expect: >
+      REFUSED. A break at an end produces a zero-length segment - an element
+      that passes every check and cannot be selected on screen
+
+  - given: a cable tray
+    expect: >
+      it goes to `notMepCurve`. It derives from MEPCurve like a duct does and
+      Revit exposes no break for it, so attempting one and reporting a failure
+      would suggest the split was possible
+
+  - given: a duct inside a group
+    expect: >
+      Revit declines and it lands in `refused`. The call returns
+      InvalidElementId rather than throwing, so an unchecked result would be
+      recorded as a successful split of nothing
+
+second_route:
+  - Revit's own Split Element tool used at the same point, with both halves' Length parameters read back

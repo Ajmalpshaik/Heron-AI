@@ -1,0 +1,35 @@
+positive:
+  - given: one duct running east-west, margin 300 mm
+    expect: >
+      a section view looking ALONG the duct - the cross-section, showing the
+      duct's width and height - sized to the duct plus 300 mm on every side
+
+  - given: four fittings in a cluster, no location curve among them, margin 500 mm
+    expect: >
+      a section looking along the shorter horizontal side of the cluster, so
+      the wider face is across the paper rather than seen end-on
+
+  - given: the result handed straight to PLACE_VIEW_ON_SHEET
+    expect: the new section lands on the sheet - "section it and put it on the sheet" as one composition
+
+negative:
+  - given: a vertical riser
+    expect: >
+      a section is still produced. World up cannot be both the view direction
+      and the drawing's up, and using it as both gives three axes that are not
+      a frame - Revit refuses the box outright, so the vertical case takes
+      world X as up instead
+
+  - given: a project whose template contains no Section view family type
+    expect: >
+      `created` is null and nothing is thrown. A bare template genuinely has
+      none, and reporting it beats a stack trace the modeller cannot read
+
+  - given: an element with no bounding box - an unplaced or empty family instance
+    expect: >
+      its id appears in `noGeometry` and it contributes nothing to the extent.
+      Treating a missing box as a point at the origin would drag the section
+      out to the project base point
+
+second_route:
+  - Revit's own Section tool drawn by hand over the same elements, compared for what the view cuts and which way it looks

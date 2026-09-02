@@ -91,6 +91,7 @@ an edit.
 | [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is setup.ps1 | ✅ Accepted |
 | [D-43](#d-43--the-constitution-is-accepted-all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
 | [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted |
+| [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases) | Heron tracks the MCP SDK across major versions, the way it tracks Revit releases | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -2246,3 +2247,62 @@ inherited rather than re-taken is a claim nobody has watched.
 - **Expect the DRAFT count to rise as re-authoring goes on**, and expect that to look like a growing
   debt. It is: a debt of Revit-checking, which is the only kind the owner's standing instruction wants
   left.
+
+---
+
+## D-45 — Heron tracks the MCP SDK across major versions, the way it tracks Revit releases
+
+**Status:** Accepted · **Date:** 2026-08-31 · **Extends:** [D-05](#d-05--revit-2020--latest), [D-06](#d-06--c-for-revit-python-for-everything-outside-it)
+
+### Context
+
+Heron's MCP server was written against MCP SDK 1.x and imported `FastMCP` from `mcp.server.fastmcp`.
+The install line Heron itself hands the user — `pip install --user mcp`, in
+[`tools/HeronRevit.ps1`](../tools/HeronRevit.ps1) — is **unpinned**, and on 2026-08-31 it resolved to
+**2.x**, which renamed `FastMCP` to `MCPServer` and deleted the old module path.
+
+The result was not a degraded feature. The import is at module scope, so the server raised `ImportError`
+before registering a single tool: **every Heron tool absent from the host**, on any machine installing
+that day, with no Revit and no Windows involved in the failure.
+
+It went unseen because **every test in this repository reads that file as text.** Text cannot fail an
+import. The technique that found it in ten minutes was installing the dependency and starting the thing.
+
+### Decision
+
+**A dependency Heron does not control is treated the way [D-05](#d-05--revit-2020--latest) treats a
+Revit release: the version in front of it is discovered, never assumed, and an unrecognised one fails
+loudly rather than silently.**
+
+In practice, three obligations:
+
+1. **Look the class up, newest first.** `mcp.server.mcpserver.MCPServer`, then `mcp.server.fastmcp.FastMCP`.
+   Both take the same `@server.tool()` decorator and the same `run()` — measured with both installed
+   side by side, not assumed from the migration notes.
+2. **An unknown version is a named failure.** The final `except` re-raises naming Heron, both module
+   paths tried, and the install line — never a bare `ImportError` about a module the user never typed.
+3. **Something must actually import it.** [`tests/test_mcp_serves.py`](../tests/test_mcp_serves.py) is
+   that obligation made mechanical; without it this decision is a paragraph nobody executes.
+
+### Why not simply pin `mcp<2`
+
+A pin is the smaller change and it was considered. It was rejected because it converts a loud failure
+today into a quiet staleness later: the user's host, Claude Code, ships and updates its own SDK, and
+Heron pinning against it would eventually fail in the direction that produces no error at all — the far
+worse half of this project's one recurring failure. Pinning also freezes Heron on a version that will
+stop receiving fixes, and does nothing for the machine that already has 2.x installed for another tool.
+
+**Supporting both costs one `try`/`except` and is proven on both.** A pin costs nothing today and is
+unproven on the version everyone will be running tomorrow.
+
+### Consequences
+
+- The version-tolerant import lives in
+  [`mcp/server/heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) and nowhere else. It is the only
+  place the SDK is named.
+- `heron_version` reports the SDK version and the class serving, because *"Heron stopped working"* and
+  *"the SDK moved underneath it"* are indistinguishable from the user's side.
+- The install line stays **unpinned**, which is now a supported configuration rather than an accident.
+- **This generalises past the MCP SDK.** Heron's other outside dependencies — `pyyaml`, the optional
+  `model2vec` — get the same treatment: absent is a normal condition, present-but-different is
+  discovered, and neither may take the whole system down without saying which one it was.

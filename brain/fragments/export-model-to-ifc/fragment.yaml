@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 16
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-004
+semantic-identity: "export this model to an IFC file for issue"
+kind: action
+domain: revit.export
+capability: EXPORT_MODEL_TO_IFC
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Exports the model to a single IFC file, at a named schema version, optionally
+  narrowed to one discipline or one storey.
+
+  **The schema version is the deliverable, and getting it wrong is silent.** A
+  recipient expecting IFC 2x3 and handed IFC 4 opens the file, sees geometry,
+  and finds properties missing or renamed - it looks like a bad model rather
+  than a wrong format. So the version is required from the request and never
+  defaulted.
+
+  **Scope is a choice and it is not defaulted** - the whole model, or one
+  slice of it. See the note below the contract for how that is expressed and
+  why it matters to a submission.
+
+  **Base quantities are asked for explicitly** because a quantity take-off
+  downstream needs them and they are off by default, so an IFC that looks
+  complete arrives with no volumes or areas in it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: folder
+      type: string
+      source: request
+    - name: fileName
+      type: string
+      source: request
+    - name: schema
+      type: IFCVersion
+      source: request
+    - name: scopeViewId
+      type: ElementId
+      source: request
+    - name: withQuantities
+      type: bool
+      source: request
+  provides:
+    - name: created
+      type: string
+    - name: refused
+      type: string
+    - name: overwrote
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Export(string, string, IFCExportOptions)`, `IFCExportOptions`,
+  `FileVersion`, `FilterViewId` and `ExportBaseQuantities` are unchanged 2020 to
+  2027.
+
+  **The schema is taken as an `IFCVersion` value, not as a string, on purpose.**
+  The enumeration has GAINED members across releases - the IFC4 variants are not
+  all present on 2020 - so a fragment mapping "IFC4" to a member by name would
+  compile everywhere and fail at run time on the older releases. Taking the
+  value means the caller resolves it against the Revit actually running.
+
+# SCOPE, kept out of `purpose` because `purpose` is indexed and the repeated
+# word "view" took "take them off the view" off HIDE_ELEMENTS. With no view
+# named the WHOLE model goes - every workset, every design option, every
+# linked-in element. Naming a 3D view exports what that view shows, which is how
+# a single discipline or a single level is issued.
+
+# ROUTING - repeated in EXPORT_VIEWS_TO_DWG.
+#
+#   "export to IFC"              -> here
+#   "make the IFC for submission"-> here
+#   "export the views to dwg"    -> EXPORT_VIEWS_TO_DWG - one file per drawing,
+#                                   a different options object, a different
+#                                   deliverable
+#   "print this to pdf"          -> nothing here does that yet
+#   "export the schedule to excel" -> nothing here does that yet
+
+utterances:
+  - export to IFC
+  - make the IFC file
+  - export the model for submission
+  - I need an ifc
+  - export ifc for the coordination

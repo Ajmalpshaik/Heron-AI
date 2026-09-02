@@ -1,0 +1,73 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-019
+semantic-identity: "which views and sheets show this element"
+kind: action
+domain: revit.reporting
+capability: FIND_VIEWS_SHOWING_ELEMENT
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Which views show a given element, and which of those views are on sheets.
+
+  **This is the question to ask BEFORE changing or deleting something.** An
+  element that appears on four issued sheets is a different decision from one
+  that appears nowhere. Revit will not warn, and the drawings are found later
+  by whoever is checking the set.
+
+  **The sheet answer is the one that matters.** A view nobody has placed can be
+  changed freely; a view on a sheet is a drawing somebody will receive.
+
+  **It is genuinely expensive and says so.** One collector pass per view, over
+  every view in the project. That is the honest cost of a true answer — Revit
+  keeps no reverse index — and it is why this is a deliberate check rather than
+  something to run in a loop.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: inViews
+      type: IDictionary<ElementId, ICollection<ElementId>>
+    - name: onSheets
+      type: IDictionary<ElementId, ICollection<ElementId>>
+    - name: nowhere
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FilteredElementCollector(Document,
+  ElementId)`, `View.IsTemplate`, `View.CanBePrinted` and `Viewport.SheetId`
+  are unchanged 2020 to 2027, and no ElementId is built from an integer.
+
+# ROUTING - repeated in DELETE_ELEMENTS and DIAGNOSE_VISIBILITY.
+#
+#   "where is this used"            -> here
+#   "what views show this"          -> here
+#   "delete these"                  -> DELETE_ELEMENTS - and this is what to
+#                                      run first if any of them might be on a
+#                                      sheet
+#   "why can I NOT see it"          -> DIAGNOSE_VISIBILITY, the opposite
+#                                      question about one view
+#
+# THIS AND DIAGNOSE_VISIBILITY ARE THE SAME READ ASKED TWO WAYS: one view many
+# causes, or one element many views.
+
+utterances:
+  - what views is this element shown in
+  - where is this used
+  - which sheets show this
+  - is this on any drawing
+  - will deleting this change a sheet

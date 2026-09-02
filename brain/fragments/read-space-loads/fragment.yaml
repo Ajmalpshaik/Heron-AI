@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-011
+semantic-identity: "the heating and cooling load and the airflow on these spaces"
+kind: filter
+domain: revit.mep
+capability: READ_SPACE_LOADS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports each MEP Space's heating load, cooling load and supply airflow, and
+  says for each figure whether Revit CALCULATED it or somebody typed it in.
+
+  **Design and calculated are different numbers and Revit keeps both.** The
+  calculated one comes from the heating and cooling analysis; the design one is
+  what a person entered, and it overrides. A space where they disagree is
+  either a deliberate design decision or an analysis nobody re-ran, and telling
+  them apart is the whole value of reading this rather than reading one
+  parameter.
+
+  **A zero is not an answer, it is a question.** A space with no load usually
+  means the analysis has never been run, or the space is unbounded and has no
+  volume to load. Reporting `0 W` as a result would put a real number-shaped
+  answer in front of somebody sizing equipment from it.
+
+  **It reads Spaces, not Rooms.** A Room carries no load - loads are the MEP
+  half, and a model with rooms and no spaces answers nothing here. PLACE_ROOMS
+  is what fixes that.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: heatingW
+      type: IDictionary<ElementId, double>
+    - name: coolingW
+      type: IDictionary<ElementId, double>
+    - name: airflowLs
+      type: IDictionary<ElementId, double>
+    - name: notSpaces
+      type: IList<ElementId>
+    - name: noLoad
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Space.DesignHeatingLoad`, `CalculatedHeatingLoad`, `DesignCoolingLoad`,
+  `CalculatedCoolingLoad`, `DesignSupplyAirflow` and `CalculatedSupplyAirflow`
+  are unchanged 2020 to 2027 - read off the reference assemblies at both ends
+  rather than remembered. `Space` lives in `Autodesk.Revit.DB.Mechanical`, which
+  the wrapper already carries.
+
+# THE UNITS ARE NOT THE SAME KIND OF CERTAIN, AND THE DIFFERENCE MATTERS.
+#
+#   AIRFLOW  is exact arithmetic and provable on paper. Revit stores cubic feet
+#            per second; 1 ft = 0.3048 m EXACTLY by the definition of the
+#            international inch, so 1 ft3 = 28.316846592 L exactly. That is the
+#            same class of conversion as D-20's 304.8 and needs no model.
+#
+#   LOAD     is NOT. Revit's internal unit for an HVAC load is a power, and
+#            which power unit it is has to be established against a real Revit -
+#            the factor used here assumes British thermal units per second and
+#            converts at 1055.05585262 W, which is the IT definition. If that
+#            assumption is wrong every load is out by a constant factor, which
+#            is the most dangerous shape of error: every number looks plausible
+#            and every comparison between them still works.
+#
+# SO THE FIRST THING TO CHECK AGAINST A REAL MODEL IS ONE KNOWN LOAD, against
+# what Revit shows on screen for the same space. It is written into the test
+# cases as the first negative, not asserted here as if it were settled.
+
+# ROUTING - repeated in PLACE_ROOMS and READ_ROOM_GEOMETRY.
+#
+#   "what is the heating load"       -> here
+#   "what is the cooling load"       -> here
+#   "how much air does this space need" -> here
+#   "what is the total airflow"      -> here
+#   "how big is this room"           -> READ_ROOM_GEOMETRY - area and volume,
+#                                       no load involved
+#   "the spaces are missing"         -> PLACE_ROOMS. Nothing here can report a
+#                                       load on a space that does not exist
+
+utterances:
+  - what is the heating load
+  - what is the cooling load
+  - how much air does this space need
+  - what is the total airflow in this space
+  - what is the total airflow
+  - what are the loads on these spaces
+  - show me the design airflow

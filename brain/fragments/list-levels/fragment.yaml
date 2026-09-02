@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-021
+semantic-identity: "every level in the project, in height order, with its elevation"
+kind: filter
+domain: revit.levels
+capability: LIST_LEVELS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Collects the project's levels bottom to top and reports each one's elevation
+  in millimetres.
+
+  **Two elevations, and they are not always the same number.** A level carries
+  `Elevation`, measured from the project's internal origin, and
+  `ProjectElevation`, measured from the elevation base the project was set up
+  with. They agree until somebody moves the base point, and then the number on
+  the level head in Revit is the second one while the API's obvious property is
+  the first. Reporting only `Elevation` gives a set of heights that disagree
+  with the drawing and look authoritative. **Both are reported when they
+  differ**, and that difference is exactly the thing worth being told about.
+
+  **Sorted by height, not by name.** "Level 10" sorts before "Level 2" as text
+  and above it in the building, and a level list in the wrong order is read as
+  the building's section.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+    - name: elevationsMm
+      type: IDictionary<ElementId, double>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Level`, `Level.Elevation` and `Level.ProjectElevation` are unchanged 2020 to
+  2027. Feet to millimetres is arithmetic - multiply by 304.8, per D-20 -
+  because `UnitUtils` was rewritten in 2021 and the 2020 call does not exist on
+  2022.
+
+# ROUTING - repeated in READ_ELEMENT_LEVEL, SET_ELEMENT_LEVEL and CREATE_LEVEL.
+#
+#   "list the levels"           -> here - the levels THEMSELVES
+#   "how many levels"           -> here
+#   "what levels do we have"    -> here
+#   "what level is this duct on"-> READ_ELEMENT_LEVEL - the level of an
+#                                  ELEMENT, which is a different question with
+#                                  the same words in it
+#   "move these to level 3"     -> SET_ELEMENT_LEVEL
+#   "add a level"               -> CREATE_LEVEL
+#
+# "WHAT IS THE ELEVATION OF THIS" LANDS HERE AND SHOULD LAND ON
+# READ_ELEMENT_LEVEL, whose sentence it is - "of this" means an element, and
+# this fragment lists the project's levels. It is left as it is on measured
+# grounds rather than by shrugging: before this fragment existed that sentence
+# was answered by SET_VIEW_RANGE, which WRITES. A read giving a near-miss is a
+# better failure than a write giving one, so the risk direction improved even
+# though the rank did not. Fixing it properly means strengthening
+# READ_ELEMENT_LEVEL, not weakening this one.
+
+utterances:
+  - list the levels
+  - how many levels
+  - what levels do we have
+  - show me the levels
+  - what are the floor levels
+  - level heights

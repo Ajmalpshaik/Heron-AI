@@ -1,0 +1,25 @@
+positive:
+  - given: 200 ducts on the wrong workset, worksetId of "MEP - HVAC"
+    expect: moved is 200, alreadyThere 0, refused empty, and the Properties palette shows the new workset
+
+negative:
+  - given: 200 elements of which 190 are ALREADY on that workset
+    expect: >
+      moved is 10 and alreadyThere is 190 - not moved 200. Revit accepts all two
+      hundred and does nothing for a hundred and ninety, so a count of the batch
+      reads as a full success
+
+  - given: a batch containing 11 elements owned by another user
+    expect: >
+      those 11 are in refused and the other 189 still move - the batch is not
+      abandoned. READ_ELEMENT_OWNERSHIP is what turns this into a sentence
+      BEFORE the write rather than a list of casualties after it
+
+  - given: a model that is NOT workshared
+    expect: >
+      every element is in refused, named rather than silently skipped. There is
+      no workset to set, and reporting zero moved with no reason reads as the
+      tool having failed
+
+second_route:
+  - Revit's Worksets dialog, or the Workset row in the Properties palette for one element

@@ -62,9 +62,33 @@ import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
-from mcp.server.fastmcp import FastMCP        # noqa: E402
+# THE SDK RENAMED THIS CLASS, AND AN UNPINNED INSTALL GETS THE NEW ONE.
+# `pip install --user mcp` - which is what tools/HeronRevit.ps1 tells a user to
+# run - resolved to 1.x when this server was written and resolves to 2.x now.
+# In 2.x `mcp.server.fastmcp` does not exist: FastMCP was renamed MCPServer.
+# The import is the ONLY thing that changed for this file. Measured 2026-08-31
+# against both SDKs installed side by side: `MCPServer("heron")`, the
+# `@server.tool()` decorator and `server.run()` behave identically, and all ten
+# tools are served with the same names, descriptions and argument schemas.
+#
+# So the class is looked up rather than assumed, newest first. This is D-05's
+# rule about Revit releases applied to a Python dependency: an unlisted version
+# must be a loud failure, never a silent one - which is why the final except
+# re-raises with the install line rather than leaving an ImportError that names
+# a module the user never typed.
+try:                                                       # noqa: E402
+    from mcp.server.mcpserver import MCPServer as _Server   # SDK 2.x
+except ImportError:
+    try:
+        from mcp.server.fastmcp import FastMCP as _Server   # SDK 1.x
+    except ImportError as exc:
+        raise ImportError(
+            "Heron's MCP server needs the MCP SDK, and this one has neither "
+            "mcp.server.mcpserver (2.x) nor mcp.server.fastmcp (1.x): %s\n"
+            "Install it with:  pip install --user mcp" % exc
+        )
 
-server = FastMCP("heron")
+server = _Server("heron")
 
 # One chat, one Revit. Lives as long as this server does, which is as long as
 # the chat does - the correct scope for a binding (docs/25).
@@ -254,6 +278,19 @@ def heron_version() -> str:
     versions might explain it.
     """
     lines = ["Heron %s, bridge protocol %s." % (bridge.HERON_VERSION, bridge.PROTOCOL_VERSION)]
+
+    # WHICH SDK IS SERVING THIS, because on 2026-08-31 that turned out to be
+    # outage-class information. The SDK renamed FastMCP to MCPServer in 2.x and
+    # an unpinned `pip install --user mcp` gets the newest one, so "Heron has
+    # stopped working" and "the SDK moved underneath it" look identical from
+    # the user's side. Reported here rather than left to be worked out, since
+    # this tool's whole job is what to say when something is wrong.
+    try:
+        import importlib.metadata as _meta
+        lines.append("MCP SDK %s, serving as %s."
+                     % (_meta.version("mcp"), type(server).__name__))
+    except Exception:
+        lines.append("MCP SDK version unknown, serving as %s." % type(server).__name__)
 
     try:
         live, starting, stale, mismatched = bridge.discover()

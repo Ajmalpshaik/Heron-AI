@@ -1,0 +1,32 @@
+positive:
+  - given: number "M-201", name "Level 2 HVAC Layout", a valid titleblock type
+    expect: one sheet, numbered and named, with the titleblock on it, and its id in `created`
+
+  - given: the new sheet handed to PLACE_VIEW_ON_SHEET
+    expect: >
+      the view lands on it - the chain CREATE_SECTION_VIEW, CREATE_SHEET,
+      PLACE_VIEW_ON_SHEET, LIST_SHEETS, which was missing this link
+
+negative:
+  - given: number "M-101" when a sheet already carries that number
+    expect: >
+      REFUSED before anything is created, naming the sheet that holds it.
+      Creating first and numbering after is what leaves an unnumbered sheet in
+      the register when Revit throws
+
+  - given: number "m-101" against an existing "M-101"
+    expect: >
+      still refused. They are the same drawing to everybody except a
+      case-sensitive comparison, and Revit refuses the pair too
+
+  - given: an empty sheet number
+    expect: refused - Revit has no unnumbered sheets, so there is nothing to create
+
+  - given: titleblockTypeId of InvalidElementId
+    expect: >
+      the sheet IS created and `noTitleblock` is true. It is legal, occasionally
+      wanted and usually a mistake, so it is flagged rather than refused - and
+      not silent, because the sheet looks finished and prints bare
+
+second_route:
+  - Revit's own View > Sheet command with the same number, and the Project Browser's Sheets branch read back

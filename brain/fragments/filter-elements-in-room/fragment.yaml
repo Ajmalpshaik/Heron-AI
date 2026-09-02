@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-018
+semantic-identity: "which of these elements are inside this room"
+kind: filter
+domain: revit.elements
+capability: FILTER_ELEMENTS_IN_ROOM
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows a set of elements to the ones inside a given room. The filter every
+  room-based MEP job needs — terminals in this room, sprinklers in this room,
+  what is served by this space — and nothing here could do it.
+
+  **A room is a VOLUME, not a rectangle.** An L-shaped room's bounding box
+  covers ground that is not in the room, and a bounding-box test puts the
+  neighbour's diffuser in your schedule. Revit's own point-in-room test is used
+  instead, which follows the real boundary.
+
+  **It tests ONE point per element, and says so.** A duct crossing three rooms
+  belongs to whichever room contains the point tested. That is the honest limit:
+  deciding how much of a duct must be inside to count is a question about the
+  job — a takeoff wants length per room, a terminal count wants the point — and
+  a fragment that chose would be silently wrong for the other.
+
+  **The room's own level is not a filter.** A room is a volume with a height,
+  so an element above the ceiling can be genuinely inside it, and excluding by
+  level would drop exactly the services somebody is asking about.
+
+contract:
+  needs:
+    - name: room
+      type: SpatialElement
+      source: request
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: outside
+      type: IList<ElementId>
+    - name: noPoint
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Room.IsPointInRoom`, `LocationPoint`
+  and `LocationCurve` are unchanged 2020 to 2027, and no ElementId is built
+  from an integer.
+
+# ROUTING - repeated in READ_ROOM_GEOMETRY and COUNT_ELEMENTS.
+#
+#   "which elements are in this room"  -> here
+#   "what is inside this room"         -> here
+#   "how big is this room"             -> READ_ROOM_GEOMETRY
+#   "how many diffusers in here"       -> here, then COUNT_ELEMENTS
+#
+# THE ROOM'S SHAPE AND THE ROOM'S CONTENTS ARE DIFFERENT QUESTIONS asked with
+# the same words. One measures the space; this one narrows a set to it.
+
+# SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
+# THEM. A routing table is a COMMENT and comments are not indexed - the search
+# reads semantic-identity, the utterances, the capability, the domain and the
+# purpose, and nothing else. So a table saying "-> here" recorded a decision
+# that retrieval could not act on, and these resolved elsewhere.
+
+utterances:
+  - which elements are in this room
+  - what is inside this room
+  - the ducts in this room
+  - what is serving this space
+  - find everything in here
+  - how many diffusers in here

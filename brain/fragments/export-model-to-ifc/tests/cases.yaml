@@ -1,0 +1,32 @@
+positive:
+  - given: a folder, a name, IFC 2x3 Coordination View, a 3D view showing MEP only, quantities on
+    expect: >
+      one .ifc containing the MEP model with base quantities - which is what a
+      discipline submission actually asks for
+
+  - given: re-exporting over yesterday's file
+    expect: >
+      it exports and `overwrote` is true. This is NOT refused - re-exporting is
+      how the job is normally done, and refusing would make the fragment useless
+      for its real use. It is reported because the file cannot be got back
+
+negative:
+  - given: a plan view passed as the scope
+    expect: >
+      REFUSED. A plan cannot limit an IFC, and Revit would export the WHOLE
+      model with nothing to show that it did - the wrong deliverable, silently
+
+  - given: quantities left off
+    expect: >
+      the IFC exports and carries no volumes or areas. It looks complete, and
+      the take-off downstream has nothing to work from - which is why the flag
+      is asked for rather than defaulted
+
+  - given: a file name already ending in .ifc
+    expect: the extension is not doubled - Revit appends it itself
+
+  - given: a machine where the IFC exporter add-in is not installed
+    expect: refused, naming that as the likely cause rather than reporting a file that was never written
+
+second_route:
+  - Revit's own File > Export > IFC with the same setup, and the two files compared in an IFC viewer for schema and property sets

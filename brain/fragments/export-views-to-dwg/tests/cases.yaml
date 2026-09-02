@@ -1,0 +1,27 @@
+positive:
+  - given: 12 sheets, an existing folder, and the office's named DWG setup
+    expect: 12 DWG files, one per sheet, with the agreed layer mapping
+
+negative:
+  - given: three of the twelve names already exist in the folder
+    expect: >
+      those three are listed in `wouldOverwrite` AND the run still exports.
+      Refusing everything over one collision means somebody empties the folder
+      and re-runs, which is worse than being told which three collided
+
+  - given: no setup named
+    expect: >
+      refused. Revit's defaults give a file that OPENS PERFECTLY and fails the
+      recipient's CAD standard - nothing looks broken, so nobody finds out until
+      it is rejected
+
+  - given: a folder that does not exist
+    expect: >
+      refused, and NOT created. A mistyped path is more likely than a genuinely
+      missing one, and inventing it scatters drawings somewhere nobody looks
+
+  - given: a schedule view in the set
+    expect: it exports nothing and the refusal says so, rather than reporting a file that was never written
+
+second_route:
+  - Revit's own File > Export > CAD Formats > DWG with the same setup, and the two output folders compared file for file

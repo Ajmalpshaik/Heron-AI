@@ -1,0 +1,88 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-003
+semantic-identity: "which of these actually intersect those"
+kind: action
+domain: revit.qa
+capability: FIND_CLASHES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Element-against-element clash: which members of one set physically intersect
+  members of another. Ducts against beams, pipes against structure, services
+  against each other.
+
+  **This is NOT `CHECK_OBSTRUCTIONS`, and the two get asked for in the same
+  words.** That one casts a ray from a POINT and asks what is within a distance
+  of it — the sprinkler-under-a-beam question, answered before anything is
+  modelled. This one takes two sets of REAL ELEMENTS and asks whose solids
+  overlap. A layout check and a coordination check.
+
+  **Solids, not bounding boxes.** A bounding box says a diagonal duct clashes
+  with everything in the rectangle around it, which is how a clash report grows
+  to four hundred rows nobody reads. Revit's own intersection filter tests the
+  real geometry.
+
+  **Touching is not clashing, and Revit does not draw that line for you.** A
+  duct sitting exactly on a beam soffit reports as intersecting. That is correct
+  geometrically and is not a defect on site, so it is reported like any other
+  hit and the caller decides — this fragment does not invent a tolerance,
+  because a tolerance invented here is one quietly relied on.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: against
+      type: ICollection<ElementId>
+      source: request
+  provides:
+    - name: clashes
+      type: IDictionary<ElementId, ICollection<ElementId>>
+    - name: clashing
+      type: int
+    - name: clear
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementIntersectsElementFilter` and
+  the `FilteredElementCollector(Document, ICollection<ElementId>)` constructor
+  are unchanged 2020 to 2027, and no ElementId is built from an integer.
+
+# ROUTING - repeated in CHECK_OBSTRUCTIONS, and this pair is the sharpest
+# collision in the library because both are the word "clash".
+#
+#   "is there a beam above this head"   -> CHECK_OBSTRUCTIONS - a ray from a
+#                                          POINT, before anything is modelled
+#   "which ducts clash with the beams"  -> here - two sets of real elements
+#   "find the clashes"                  -> here
+#   "is anything blocking these"        -> CHECK_OBSTRUCTIONS
+#   "list the linked models"            -> LIST_LINKED_MODELS - worth
+#                                          running FIRST, because a clash
+#                                          check can only see what is
+#                                          LOADED and an unloaded link
+#                                          comes back clean
+#
+# THE DIFFERENCE IS WHETHER THE THING EXISTS YET. Checking a proposed layout
+# against the model is a ray cast; checking built work against built work is
+# this. Landing on the wrong one answers a question nobody asked, confidently.
+
+utterances:
+  - which ducts clash with the beams
+  - find the clashes
+  - is there a clash here
+  - do these hit anything
+  - check these against the structure
+  - what is clashing

@@ -1,0 +1,31 @@
+positive:
+  - given: a level and planKind "floor"
+    expect: a floor plan for that level, named as asked, in the Project Browser
+
+  - given: CREATE_LEVEL followed by this, for four new levels
+    expect: >
+      four levels AND four plans - which is what "add 4 more floors" means.
+      Levels on their own give nothing to draw on, and that gap is exactly what
+      CREATE_LEVEL reports and this fixes
+
+  - given: planKind "rcp"
+    expect: a reflected ceiling plan. The word is matched as well as "ceiling", because that is what gets said
+
+negative:
+  - given: planKind left empty
+    expect: >
+      refused, asking which. Defaulting to a floor plan would hand an MEP
+      modeller the wrong drawing half the time, and an RCP looks upward - the
+      difference is not cosmetic
+
+  - given: a project template with no ceiling plan view type
+    expect: refused, saying so, rather than a stack trace
+
+  - given: a level that already has a floor plan
+    expect: >
+      a SECOND plan is created. Revit's own dialog hides levels that have one,
+      which reads like a rule and is not - a second plan on a level is normal to
+      want, and refusing would block a real job on a misreading of the UI
+
+second_route:
+  - Revit's own View > Plan Views > Floor Plan for the same level, compared in the Project Browser

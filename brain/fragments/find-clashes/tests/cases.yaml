@@ -1,0 +1,29 @@
+positive:
+  - given: 40 ducts checked against the structural beams, 3 genuinely passing through a beam
+    expect: clashes has those 3 with the beam ids they hit, clashing is 3, clear is 37
+
+  - given: the same run against Revit's own Interference Check on the same two categories
+    expect: the same element pairs - the second route, and the one that says whether this fragment is right at all
+
+negative:
+  - given: a DIAGONAL duct running past a beam without touching it
+    expect: >
+      it is CLEAR. A bounding-box check would report it as clashing, because the
+      box around a diagonal element overlaps everything in the rectangle it
+      spans - which is how a clash report grows to hundreds of rows nobody reads
+
+  - given: the same element present in BOTH sets
+    expect: >
+      it does not clash with itself. An overlapping request is normal - checking
+      services against services - and self-hits would put an unactionable row in
+      every report
+
+  - given: a batch containing an element whose geometry cannot be read
+    expect: >
+      the batch runs to the END, that element is counted in clear, and
+      clashing + clear equals the number of elements handed in - not an
+      exception that abandons the rest, and not a silent drop that makes the
+      counts disagree with the input
+
+second_route:
+  - Revit's own Interference Check, run on the same two selections

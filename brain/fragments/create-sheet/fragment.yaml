@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-003
+semantic-identity: "make a new drawing sheet with this number and this name"
+kind: action
+domain: revit.sheets
+capability: CREATE_SHEET
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates one sheet, numbered and named, with a titleblock.
+
+  **The sheet number is checked for a clash BEFORE anything is created.** Revit
+  refuses a duplicate number by throwing, and a throw part-way through leaves
+  the sheet made and unnumbered - a blank row in the register that somebody has
+  to find. So the number is looked up first and the whole thing is
+  refused if it is taken.
+
+  **It was the missing link in producing a set.** Before it, *"make a new
+  sheet"* resolved to a fragment that creates something else entirely.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: sheetNumber
+      type: string
+      source: request
+    - name: sheetName
+      type: string
+      source: request
+    - name: titleblockTypeId
+      type: ElementId
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: string
+    - name: noTitleblock
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ViewSheet.Create(Document, ElementId)` is unchanged 2020 to 2027, and so are
+  `SheetNumber` and `Name`. The titleblock type arrives as an `ElementId` taken
+  from a live element, so nothing here builds an ElementId from an int and
+  2024's move to 64-bit ids does not reach this code.
+
+# THE CHAIN THIS COMPLETES, in a comment rather than in `purpose` because
+# `purpose` is indexed and naming the neighbouring capabilities there took
+# "add the view to the drawing sheet" off PLACE_VIEW_ON_SHEET, whose sentence
+# it is:
+#
+#   CREATE_SECTION_VIEW  makes the drawing
+#   CREATE_SHEET         makes the sheet          <- here
+#   PLACE_VIEW_ON_SHEET  puts one on the other
+#   LIST_SHEETS          reads the result back
+
+# ROUTING - repeated in LIST_SHEETS and PLACE_VIEW_ON_SHEET.
+#
+#   "make a new sheet"          -> here
+#   "create a sheet"            -> here
+#   "list the sheets"           -> LIST_SHEETS - a QUESTION
+#   "put this view on a sheet"  -> PLACE_VIEW_ON_SHEET, which needs a sheet to
+#                                  exist first and does not make one
+#   "renumber the sheets"       -> RENAME_ELEMENTS on the number parameter;
+#                                  nothing here changes an existing sheet
+
+utterances:
+  - make a new sheet
+  - create a sheet
+  - add a sheet to the project
+  - I need a new sheet
+  - set up a sheet for this
+  - open up a new sheet

@@ -1,0 +1,66 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-006
+semantic-identity: "which views on sheets have no view template holding them to the standard"
+kind: filter
+domain: revit.quality
+capability: FIND_VIEWS_WITHOUT_TEMPLATE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds views with no view template, and says which of them are on a sheet.
+
+  **A view with no template is one nobody is holding to the standard.** Its
+  scale, its visibility settings and its graphics are whatever somebody last
+  set by hand, and it will not follow when the template changes. On a view that
+  is on a sheet, that is a drawing that quietly stops matching the rest of the
+  set.
+
+  **On a sheet or not is the whole difference.** A working view somebody made to
+  check something needs no template and never will. The same view placed on a
+  sheet is being issued. So both are reported and the ones on sheets are named
+  separately - a flat list of every untemplated view in a project is hundreds of
+  rows and nobody reads it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+    - name: onSheets
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `View.ViewTemplateId`, `View.IsTemplate` and `ViewSheet.GetAllPlacedViews()`
+  are unchanged 2020 to 2027 - read off the reference assemblies at both ends.
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# ROUTING - repeated in APPLY_VIEW_TEMPLATE and LIST_SHEETS.
+#
+#   "which views have no template"  -> here
+#   "check the views before issue"  -> here
+#   "apply the template to these"   -> APPLY_VIEW_TEMPLATE - it is the fix, and
+#                                      this finds what needs fixing
+#   "list the sheets"               -> LIST_SHEETS
+
+utterances:
+  - which views have no template
+  - check the views before issue
+  - are all the views templated
+  - find the views missing a template
+  - which drawings are not on the standard

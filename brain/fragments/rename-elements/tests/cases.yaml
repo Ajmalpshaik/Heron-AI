@@ -1,0 +1,26 @@
+positive:
+  - given: 12 elements named "SUP-01".."SUP-12", find "SUP", replaceWith "SUPPLY"
+    expect: renamed is 12, names read SUPPLY-01..SUPPLY-12, notMatched and collisions empty
+
+negative:
+  - given: 40 elements of which only 4 contain the search text
+    expect: >
+      renamed is 4 and notMatched holds the other 36 - NOT renamed 40. Replacing
+      nothing leaves a name identical, so a count of the batch reads as a full
+      success while thirty-six names never moved. It is also the honest clue
+      that the search text was wrong
+
+  - given: elements named "AHU-1-SUP" and "AHU-1-RET", find "-SUP" and "-RET" run so both become "AHU-1"
+    expect: >
+      collisions carries "AHU-1", renamed is 0 and NOTHING is written. Revit
+      throws on a duplicate TYPE name and silently accepts a duplicate instance
+      name - the second is worse, because the model stays valid and two elements
+      answer to one name
+
+  - given: find is an empty string
+    expect: >
+      every id is in refused and nothing is renamed. An empty search matches
+      everywhere and .NET's Replace on it is not a rename anybody asked for
+
+second_route:
+  - A Revit schedule showing the Name column for the same category, before and after

@@ -1,0 +1,34 @@
+positive:
+  - given: a .rfa file not yet in the project
+    expect: >
+      the family is loaded, its id in `created`, and every type name listed -
+      which is what gets asked for next, since a family with one type and one
+      with forty are placed very differently
+
+negative:
+  - given: a family of the same name already in the project
+    expect: >
+      REFUSED, saying so and pointing at Revit's own Load Family. This cannot
+      overwrite: Revit needs a load-options object to decide about differing
+      parameter values, that object needs a class, and a fragment is a body of
+      statements with nowhere to define one. The refusal is also the safe
+      direction - overwriting replaces a colleague's edited type and takes its
+      values with it
+
+  - given: a path that does not exist
+    expect: >
+      refused, naming the path. LoadFamily returns a bare `false` for a missing
+      file AND for an already-loaded family, and those two need opposite
+      responses - so the file is checked separately
+
+  - given: a .rvt or a .rft path
+    expect: refused, saying what each of those actually is - a project is linked, a template is what a family is built from
+
+  - given: a family saved by a newer Revit
+    expect: >
+      refused. Revit itself rejects the file and no version of this fragment can
+      change that, so it is reported as an unloadable file rather than as a
+      defect here
+
+second_route:
+  - Revit's own Insert > Load Family with the same file, and the Project Browser's Families branch checked
