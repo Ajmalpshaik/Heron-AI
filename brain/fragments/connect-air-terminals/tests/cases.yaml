@@ -1,0 +1,36 @@
+positive:
+  - given: twelve ceiling diffusers laid out under one supply branch, 600 mm allowed
+    expect: >
+      twelve taps cut into the duct, LOOKED AT in a section - and then the duct's
+      flow read back. Before this the branch carries zero; after it, the air the
+      terminals ask for. That flow appearing is the real proof
+
+  - given: TRACE_CONNECTIVITY run over the branch afterwards
+    expect: one system, not thirteen loose pieces
+
+negative:
+  - given: a supply diffuser under a RETURN duct
+    expect: >
+      Revit declines, the false is reported by id, and NOTHING is counted as
+      done. THIS IS THE FIRST CASE TO RUN - the call returns a bool rather than
+      throwing, so a fragment that ignores the return value reports success over
+      a model where nothing happened
+
+  - given: a diffuser 2 m from the nearest duct with maxDistanceMm at 600
+    expect: >
+      in `noDuctNear`, untouched. Nothing is moved here, and a tap stretched 2 m
+      across a ceiling is not a connection anybody wants
+
+  - given: two ducts running side by side above a row of diffusers
+    expect: >
+      each diffuser tapping the duct nearest ITS CONNECTOR, which is on top of
+      it. Measuring from the middle of the diffuser body picks the wrong one, and
+      the report names the duct so a wrong pick is visible before the section is
+
+  - given: a terminal already tapped in, run again
+    expect: >
+      skipped, not reconnected. A second tap would leave the first behind as an
+      orphan fitting that nobody sees and every takeoff counts
+
+second_route:
+  - Revit's own Connect Into on one of the same terminals, and the two taps compared

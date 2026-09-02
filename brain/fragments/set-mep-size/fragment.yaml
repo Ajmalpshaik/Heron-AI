@@ -84,6 +84,9 @@ compatibility-note: >
 #   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN - it sets no
 #                                       size either; this is where every
 #                                       kind of run gets one
+#   "size the ducts from the flow"   -> AUTO_SIZE_MEP - it works the size
+#                                       out from the air. This one applies a
+#                                       size you have already decided
 
 utterances:
   - change these ducts to 400 by 250

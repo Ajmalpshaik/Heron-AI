@@ -1,0 +1,87 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-040
+semantic-identity: "make another legend like this one"
+kind: action
+domain: revit.views
+capability: CREATE_LEGEND_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a new legend by duplicating one that already exists. That is the only
+  route the API offers, and saying so is half of what this fragment is for.
+
+  **Revit exposes no way to create the FIRST legend.** There is no legend
+  creation method on any supported release - checked against the shipped
+  assemblies at both ends, not remembered. A project with no legends cannot get
+  one from a script, and this says that plainly instead of failing obscurely.
+  One drawn by hand unblocks every later copy.
+
+  **Duplicating carries the source's contents**, which is what makes the pattern
+  work: keep one office legend in the project, copy it here, then edit the copy's
+  text. There is no way to place a NEW legend component, so building a legend's
+  contents from nothing stays a manual job.
+
+  **A legend is the one view that can sit on many sheets at once.** So a legend
+  per sheet is usually the wrong instinct - place the same one repeatedly instead
+  of copying it, and this fragment is for when the CONTENT genuinely differs.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The legend to copy. Resolved, so a project with several does not get one
+    # picked for it.
+    - name: sourceLegend
+      type: View
+      source: request
+    - name: newName
+      type: string
+      source: request
+    - name: withContents
+      type: bool
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.Duplicate`,
+  `View.CanViewBeDuplicated`, `ViewDuplicateOption.Duplicate` and
+  `WithDetailing`, and `ViewType.Legend` are present 2020 through 2027 - read
+  off the reference assemblies at both ends rather than remembered. There is no
+  legend creation method on any of them, which was checked the same way.
+
+# ROUTING - repeated in DUPLICATE_VIEW and CREATE_DRAFTING_VIEW.
+#
+#   "make another legend like this one" -> here
+#   "copy the legend"                   -> here
+#   "make a legend"                     -> here IF one exists to copy. If the
+#                                          project has none, nothing in Revit's
+#                                          API can make the first - draw one by
+#                                          hand once
+#   "duplicate this view"               -> DUPLICATE_VIEW - any view, and it
+#                                          knows nothing about legends
+#   "make a detail view"                -> CREATE_DRAFTING_VIEW - the other view
+#                                          that shows no model
+
+utterances:
+  - make another legend like this one
+  - copy the legend
+  - duplicate this legend
+  - i need a second legend
+  - make a legend

@@ -80,6 +80,7 @@ compatibility-note: >
 #                                       the library covered it, which was true
 #                                       for one batch and is not now
 #   "join these two ducts"           -> here. A FITTING between two runs
+#   "connect the diffusers to the duct" -> CONNECT_AIR_TERMINALS
 
 utterances:
   - join these two

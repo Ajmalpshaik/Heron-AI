@@ -57,6 +57,7 @@ compatibility-note: >
 #   "put the colours back"           -> here
 #   "colour code by system"          -> COLOR_BY_PARAMETER - what this undoes
 #   "make these red"                 -> OVERRIDE_GRAPHICS_IN_VIEW
+#   "do the grayout"                 -> HIGHLIGHT_VS_REST - what this undoes
 
 utterances:
   - put it back how it was

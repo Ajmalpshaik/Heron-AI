@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-038
+semantic-identity: "grey everything back and bring these forward"
+kind: action
+domain: revit.views
+capability: HIGHLIGHT_VS_REST
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Greys everything else in the view and gives the elements handed in a colour of
+  their own - the grayout. One subset standing out against a dimmed model,
+  which is what a coordination drawing is for.
+
+  **Insulation and lining travel with their host, both ways, and this is not
+  optional.** Highlight an insulated duct without them and the duct you asked to
+  see is still wrapped in grey material - it reads as half-applied on screen.
+  So picking a wrap pulls in the run underneath it, and picking a run pulls in
+  its insulation and its lining. Recorded as a standing rule by the owner: if
+  you colour a duct and it has insulation, colour the insulation too, or you
+  cannot see it.
+
+  **Only what is already in the view is touched.** A wrap outside the view has
+  nothing to override, and adding it would pad the count with elements nobody
+  can see.
+
+  **It differs from the two fragments nearest it.** OVERRIDE_GRAPHICS_IN_VIEW
+  applies one prepared look to a set and leaves everything else alone;
+  COLOR_BY_PARAMETER splits the set itself into a colour per value. This one is
+  about the REST: it dims the whole view so that one thing reads.
+
+  **The grey and the highlight colour are asked for**, because a drawing has a
+  house standard for both and this fragment does not own it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+  RESET_GRAPHIC_OVERRIDES is how it is undone.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: highlight
+      type: Color
+      source: request
+    - name: grey
+      type: Color
+      source: request
+  provides:
+    - name: highlighted
+      type: int
+    - name: greyed
+      type: int
+    - name: wrapsFollowed
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `InsulationLiningBase.GetInsulationIds`,
+  `GetLiningIds` and `HostElementId`, and `View.GetElementOverrides` /
+  `SetElementOverrides`, are present 2020 through 2027 - read off the reference
+  assemblies at both ends rather than remembered. `DuctInsulation`, `DuctLining`
+  and `PipeInsulation` all derive from `InsulationLiningBase`, and there is no
+  pipe lining class on any release, so those three are the whole set.
+
+# GetInsulationIds AND GetLiningIds THROW for an id that cannot host a wrap, and
+# catching per element IS the category test. Pre-filtering by category would be
+# a second list to keep in step with Revit's own idea of what can be wrapped, and
+# letting one throw escape would lose the whole view.
+
+# ROUTING - repeated in OVERRIDE_GRAPHICS_IN_VIEW, COLOR_BY_PARAMETER and
+# RESET_GRAPHIC_OVERRIDES.
+#
+#   "grey everything except the ducts" -> here
+#   "do the grayout"                   -> here
+#   "bring these forward and dim the rest" -> here
+#   "make these red"                   -> OVERRIDE_GRAPHICS_IN_VIEW - one look
+#                                         on a set, everything else untouched
+#   "colour code by system"            -> COLOR_BY_PARAMETER - a colour PER
+#                                         VALUE within the set
+#   "put the colours back"             -> RESET_GRAPHIC_OVERRIDES
+
+utterances:
+  - grey everything except the ducts
+  - do the grayout
+  - bring these forward and dim the rest
+  - highlight these against the rest
+  - grey the background and show these

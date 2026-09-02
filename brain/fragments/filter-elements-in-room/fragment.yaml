@@ -66,6 +66,9 @@ compatibility-note: >
 #
 # THE ROOM'S SHAPE AND THE ROOM'S CONTENTS ARE DIFFERENT QUESTIONS asked with
 # the same words. One measures the space; this one narrows a set to it.
+#   "which rooms have no mep in them" -> CHECK_ROOM_MEP_COMPLETENESS - it
+#                                       checks against a RULE. This one hands
+#                                       back the elements to act on
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

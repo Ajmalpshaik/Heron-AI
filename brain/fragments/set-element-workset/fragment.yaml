@@ -73,6 +73,14 @@ compatibility-note: >
 # now. Moving worksets does not release an element somebody else has.
 #   "add a new workset"              -> CREATE_WORKSET - the workset has to
 #                                       exist before anything goes on it
+#   "set the design option"          -> NOTHING IN THIS LIBRARY, and it is not
+#                                       an omission. No design option can be
+#                                       made ACTIVE from a script - checked
+#                                       against 2020 AND 2027, where the only
+#                                       member anywhere is the read-only
+#                                       GetActiveDesignOptionId - and an
+#                                       element only lands in an option while
+#                                       that option is active
 
 # ROUTING - repeated in LIST_WORKSETS and READ_ELEMENT_OWNERSHIP.
 #

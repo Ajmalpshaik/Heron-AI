@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-032
+semantic-identity: "rename the family these are made from"
+kind: action
+domain: revit.elements
+capability: RENAME_FAMILY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Renames the FAMILY behind the elements handed in - the loaded component
+  itself, not one of its types and not an instance. The naming-standard job:
+  a family loaded under a manufacturer's filename that has to read as the
+  project's own.
+
+  **It renames the family EVERYWHERE, and that is the whole point.** Every type
+  in it and every instance of those types follow, across the model, whether or
+  not they were in the selection. Nobody should be surprised by that, so the
+  report says how many types and instances went with it.
+
+  **It is not RENAME_ELEMENTS.** That one edits the name of the elements handed
+  in - which on a type means the TYPE name. This changes the family, one level
+  up. The two read almost identically in a sentence and do different things,
+  which is why both carry this table.
+
+  **A name already in use is refused by Revit and reported as that.** Two
+  families cannot share a name, and inventing a suffix would leave a family
+  nobody can find by the name they asked for.
+
+  **An in-place family is refused before anything is attempted.** It is tied to
+  the element that made it and renaming it does not mean what people expect.
+
+  **Nothing about the file on disk changes.** The family in the project is
+  renamed; the .rfa it came from keeps its own name, and reloading from that
+  file will bring the old name back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: newName
+      type: string
+      source: request
+  provides:
+    - name: renamed
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+    - name: notFamilies
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. A family is renamed through
+  `Element.Name`, whose setter is present 2020 through 2027 - read off the
+  reference assemblies at both ends rather than remembered. `Family.IsInPlace`
+  and `GetFamilySymbolIds` are present throughout too.
+
+# MORE THAN ONE SOURCE FAMILY IS A REFUSAL, for the same reason DUPLICATE_TYPE
+# refuses more than one source type: family names must be unique, so one literal
+# name over three families succeeds on the first and quietly does not on the
+# rest - a batch that reports success and half happened.
+
+# ROUTING - repeated in RENAME_ELEMENTS and DUPLICATE_TYPE.
+#
+#   "rename the family"              -> here - the loaded component itself
+#   "rename this component"          -> here
+#   "rename these"                   -> RENAME_ELEMENTS - it edits the name of
+#                                       what is handed in, which on a type means
+#                                       the TYPE name, one level below this
+#   "duplicate this type"            -> DUPLICATE_TYPE
+#   "change SUP to SUPPLY on these"  -> RENAME_ELEMENTS
+
+utterances:
+  - rename the family
+  - rename this component
+  - change the family name
+  - the family name does not match our standard
+  - rename the family these came from

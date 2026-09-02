@@ -78,6 +78,9 @@ compatibility-note: >
 #                                       when the elements share one; use this
 #                                       when they share nothing but your choice
 #   "colour code by system"          -> COLOR_BY_PARAMETER
+#   "put that filter on this view"   -> APPLY_VIEW_FILTER - the step that
+#                                       makes a saved set do something to a
+#                                       drawing
 
 utterances:
   - save these as a set

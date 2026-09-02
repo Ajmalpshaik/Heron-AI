@@ -81,6 +81,7 @@ compatibility-note: >
 #                                      is the opposite of duplicating it
 #   "make the new type 300 wide"     -> WRITE_ELEMENT_PARAMETERS on the type
 #                                      this creates. Nothing here sets a size
+#   "rename the family"              -> RENAME_FAMILY
 
 utterances:
   - make a new duct type

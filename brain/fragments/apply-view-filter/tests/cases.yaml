@@ -1,0 +1,36 @@
+positive:
+  - given: a rule filter for supply air, applied red to a floor plan
+    expect: >
+      the supply ducts red in that view - LOOKED AT - and the filter listed in
+      the view's own Visibility/Graphics, Filters tab
+
+  - given: a SELECTION filter applied the same way
+    expect: >
+      identical behaviour. The view does not care which kind of filter it was
+      given, which is why one fragment serves both
+
+negative:
+  - given: an override carrying a projection colour and no cut colour
+    expect: >
+      applied, AND the warning printed. THIS IS THE FIRST CASE TO RUN - it was
+      found on a real model where twenty-six filters had exactly this, and the
+      symptom is a drawing that looks right in plan and goes wrong wherever
+      something is cut
+
+  - given: the same filter applied again with a different colour
+    expect: >
+      updated, not refused. Adding a filter twice throws, and somebody adjusting
+      a colour expects the second call to take
+
+  - given: visible false
+    expect: >
+      everything the filter matches HIDDEN in that view and still present in the
+      model. If anything was deleted, this fragment did something it must never do
+
+  - given: a view whose template controls its filters
+    expect: >
+      `applied` false and the reason named. The read-back off the view is what
+      catches it; AddFilter itself returns quite happily
+
+second_route:
+  - the view's own Visibility/Graphics dialog, Filters tab, opened after the run

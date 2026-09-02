@@ -1,0 +1,39 @@
+positive:
+  - given: one air terminal instance selected, its family renamed to the project standard
+    expect: >
+      the new name in the project browser under Families, with the same types
+      beneath it - LOOKED AT there. And every instance in the model following,
+      not only the one selected
+
+  - given: the type count in the report
+    expect: matching what the browser shows beneath that family
+
+negative:
+  - given: a selection covering THREE different families, one new name
+    expect: >
+      NOTHING renamed and the three named. Family names must be unique, so one
+      name over three takes on the first and quietly does not on the rest - which
+      is a report of success over a job half done
+
+  - given: a name already used by another family
+    expect: >
+      a plain failure naming the clash. Not a family quietly created as
+      "Name (2)", which nobody will find by the name they asked for
+
+  - given: an IN-PLACE family
+    expect: >
+      refused before anything is attempted, with the reason. It is tied to the
+      element that made it and renaming it does not mean what people expect
+
+  - given: walls or ducts handed in
+    expect: >
+      reported as belonging to no loadable family. System families have none, and
+      their TYPE names are RENAME_ELEMENTS' job - the two sentences sound alike
+
+  - given: the family reloaded from its .rfa afterwards
+    expect: >
+      the OLD name back. Nothing here touches the file on disk, and a session
+      that does not know this will rename the same family twice
+
+second_route:
+  - the project browser in Revit, Families, renamed by right-click, compared with the result here

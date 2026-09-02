@@ -96,6 +96,8 @@ compatibility-note: >
 #   "will this duct clear the
 #    ceiling"                        -> CHECK_MINIMUM_CLEARANCE, once a ceiling
 #                                       exists for it to clear
+#   "make a floor slab over this area" -> CREATE_FLOOR - the other flat thing,
+#                                       and the one the ceiling hangs under
 
 utterances:
   - make a ceiling over this area

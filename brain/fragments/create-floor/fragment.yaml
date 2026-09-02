@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-031
+semantic-identity: "make a floor slab over this area"
+kind: action
+domain: revit.elements
+capability: CREATE_FLOOR
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a floor from a closed boundary on one level. The slab everything else
+  sits on, and the thing MEP has to penetrate.
+
+  **The creation call changed at Revit 2022 and this fragment still runs on
+  2020.** The old one took a curve array through the document's creation
+  object; the new one is a static taking curve loops. Neither name can appear in
+  source that compiles at both ends, so whichever exists is found at run time -
+  the same shape as CREATE_CEILING, for the same reason.
+
+  **The base height is the level's PROJECT elevation.** Every XYZ the API takes
+  is project-internal, while `Elevation` is measured from whatever the level
+  type's Elevation Base says. On a model set out to a survey datum the two
+  differ, and the wrong one puts the slab at the wrong height with no error at
+  all.
+
+  **The boundary closes itself** and must not cross itself. A self-crossing loop
+  is refused by Revit, and that refusal is reported rather than swallowed.
+
+  **It makes one floor, not a storey.** Openings, shafts and penetrations are
+  separate jobs; nothing here cuts a hole in anything.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: level
+      type: Level
+      source: request
+    - name: floorType
+      type: Element
+      source: request
+    - name: boundary
+      type: IList<XYZ>
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  THE CREATION CALL IS DIFFERENT AT EACH END OF THE RANGE, checked against the
+  reference assemblies rather than remembered: `Floor.Create` does NOT exist on
+  2020 and does on 2024 and 2027, while `Document.Create.NewFloor` exists on
+  2020 and is gone by 2024. Naming either in source breaks the other build, so
+  both are looked up at run time and whichever this release has is used.
+  `Level.ProjectElevation`, `CurveLoop.Create` and `Line.CreateBound` are
+  present throughout.
+
+# THE OLD CALL WANTS A CurveArray AND THE NEW ONE WANTS CurveLoops, so the
+# boundary is built into both shapes and the one the found method needs is
+# passed. That is the only real difference between the two paths.
+
+# ROUTING - repeated in CREATE_CEILING and MEASURE_ELEMENT_VOLUME.
+#
+#   "make a floor slab over this area" -> here
+#   "add a slab here"                  -> here
+#   "make a ceiling over this area"    -> CREATE_CEILING - the other flat thing,
+#                                         and the one MEP actually hides above
+#   "how much concrete is in this"     -> REPORT_MATERIAL_TAKEOFF
+#   "cut a hole for the duct"          -> NOTHING HERE DOES THAT. An opening is
+#                                         its own job and nothing covers it yet
+
+utterances:
+  - make a floor slab over this area
+  - add a slab here
+  - create the floor
+  - draw the slab for this area
+  - model the floor

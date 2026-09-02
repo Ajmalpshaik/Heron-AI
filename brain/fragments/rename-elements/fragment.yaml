@@ -75,6 +75,9 @@ compatibility-note: >
 #                                       Renaming a type here changes it EVERYWHERE
 #                                       it is used, which is the opposite
 #   "make a new duct type"           -> DUPLICATE_TYPE
+#   "rename the family"              -> RENAME_FAMILY - the loaded component
+#                                       itself, one level above the type name
+#                                       this fragment edits
 
 utterances:
   - rename these

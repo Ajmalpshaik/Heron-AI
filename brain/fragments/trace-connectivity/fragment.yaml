@@ -74,6 +74,9 @@ compatibility-note: >
 #                                       one reads and must not answer a request
 #                                       to change the model
 #   "connect the open ends"          -> CONNECT_OPEN_ENDS
+#   "connect the diffusers to the duct" -> CONNECT_AIR_TERMINALS - a TAP cut
+#                                       into the duct side, and often what a
+#                                       zero-flow run is really missing
 
 utterances:
   - what connects to what

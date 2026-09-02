@@ -102,6 +102,8 @@ compatibility-note: >
 #   "which rooms are unbounded"  -> this reports them as it places; a standing
 #                                   check on rooms already there is a different
 #                                   job and nothing does it yet
+#   "which rooms have no mep in them" -> CHECK_ROOM_MEP_COMPLETENESS, once the
+#                                       rooms exist for it to check
 
 utterances:
   - place the rooms

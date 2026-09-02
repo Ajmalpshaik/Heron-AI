@@ -1,0 +1,39 @@
+positive:
+  - given: 41 volume control dampers highlighted red in a view of about 2000 elements
+    expect: >
+      the dampers red and everything else grey, LOOKED AT on screen. The counts
+      should add up to the view's own element count - anything missing is
+      something the view refused
+
+  - given: the same run over INSULATED ducts
+    expect: >
+      the insulation sleeves coloured with their ducts, not left grey. Expect the
+      wrap count to be a little LOWER than the duct count, because not every duct
+      carries insulation - an unequal count is normal, not a miss
+
+negative:
+  - given: an insulated duct highlighted with the wrap left out
+    expect: >
+      it looks HALF APPLIED on screen - the duct you asked to see still wrapped
+      in dimmed material. THIS IS THE FIRST CASE TO RUN, and it is the owner's
+      standing rule: colour a duct and you colour its insulation, or you cannot
+      see it
+
+  - given: an insulation sleeve picked instead of its duct
+    expect: the duct underneath pulled in too - the rule works both ways
+
+  - given: a wrap that exists but is NOT in this view
+    expect: >
+      not added. It has nothing to override, and counting it would pad the report
+      with elements nobody can see
+
+  - given: elements handed in that are the whole view
+    expect: >
+      nothing greyed, and the report saying so plainly. There is no rest to dim,
+      and a silent zero reads as a failure
+
+  - given: a view whose overrides are controlled by its template
+    expect: refusals counted in neither total, so the numbers stay honest
+
+second_route:
+  - the same view before and after, printed, and the two compared by eye

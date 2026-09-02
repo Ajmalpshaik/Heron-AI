@@ -1,0 +1,122 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-022
+semantic-identity: "size these ducts from the air they actually carry"
+kind: action
+domain: revit.mep
+capability: AUTO_SIZE_MEP
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sizes duct from the airflow it already carries, by the velocity method:
+  required area is flow divided by the target velocity, snapped UP to the next
+  real size. Reports the velocity that results and the aspect ratio, so an
+  undersized run or a silly 6:1 flat duct is visible before anybody builds it.
+
+  **The velocity is yours and no default is worth trusting.** A main at 7 m/s
+  and a branch at 4 m/s are both normal and give completely different ducts for
+  the same flow. Size one system at a time at the velocity that system is
+  designed to. This fragment does not know which duct is a main and does not
+  pretend to.
+
+  **It reads the flow Revit already has, and does not calculate load.** Revit
+  fills that in from the terminals downstream once the system is connected. A
+  duct connected to nothing carries zero, and zero sizes to nothing - so
+  zero-flow runs are reported as NO FLOW, never quietly sized to the smallest
+  size in the list. A whole run with no flow is a CONNECTIVITY problem, and
+  TRACE_CONNECTIVITY is where that goes.
+
+  **It always rounds UP, never to nearest.** Rounding down to the nearer
+  standard size pushes the velocity above the design figure, which is the one
+  direction that causes noise complaints and rework.
+
+  **Round or rectangular is a property of the duct, not a choice made here.**
+  Setting a diameter on a rectangular type is refused by Revit. The shape is
+  read per duct from the size parameters it actually has, and a duct whose
+  shape cannot be read is reported rather than guessed at.
+
+  **It sizes SEGMENTS, not a system.** It does not step a trunk down as
+  branches take air off it - each duct is sized to its own flow. A trunk that
+  should reduce at each takeoff has to be split first.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). There is
+  no dry-run switch: previewing is the host's approval gate.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # No default. See the purpose - this is the number the whole result turns on.
+    - name: targetVelocity
+      type: double
+      source: request
+    # Real manufactured sizes, in millimetres, ascending. Supplied rather than
+    # built in: a size table is a project standard, not a constant.
+    - name: roundSizesMm
+      type: IList<double>
+      source: request
+    - name: rectSizesMm
+      type: IList<double>
+      source: request
+    # true holds the width and grows the height, false the other way round.
+    - name: holdWidth
+      type: bool
+      source: request
+  provides:
+    - name: sized
+      type: int
+    - name: findings
+      type: IList<string>
+    - name: noFlow
+      type: IList<ElementId>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `BuiltInParameter.RBS_DUCT_FLOW_PARAM`,
+  `RBS_CURVE_DIAMETER_PARAM`, `RBS_CURVE_WIDTH_PARAM` and
+  `RBS_CURVE_HEIGHT_PARAM` are present 2020 through 2027 - read off the
+  reference assemblies at both ends rather than remembered. No units API is
+  touched: every conversion here is plain arithmetic, which is what keeps it
+  working across the 2021 units change.
+
+# THE UNIT ASSUMPTION IS PRINTED, SO A WRONG ONE CANNOT HIDE.
+#
+# Revit's internal airflow unit is taken to be CUBIC FEET PER SECOND, converted
+# at 0.028316846592 m3 per ft3 - which is exact arithmetic (1 ft = 0.3048 m by
+# definition) IF the internal unit is what it is assumed to be. Reflection over
+# an assembly shows a property type, never a unit.
+#
+# So the first row of the report prints the RAW internal value beside Revit's
+# own display string for the same duct. If the assumption were wrong those two
+# would disagree obviously, on the very first run, before a single size is
+# written. Read that line before trusting anything below it.
+
+# ROUTING - repeated in SET_MEP_SIZE, MEASURE_MEP_VELOCITY and TRACE_CONNECTIVITY.
+#
+#   "size the ducts from the flow"   -> here
+#   "auto size these ducts"          -> here
+#   "make it 400x250"                -> SET_MEP_SIZE - a size you have decided;
+#                                       this one works it out from the air
+#   "what velocity is in this duct"  -> MEASURE_MEP_VELOCITY - a READ
+#   "the flow is zero everywhere"    -> TRACE_CONNECTIVITY. Nothing here can
+#                                       size a run Revit thinks carries no air
+
+utterances:
+  - size the ducts from the flow
+  - auto size these ducts
+  - size this system for 5 m/s
+  - work out the duct sizes from the airflow
+  - size the ductwork

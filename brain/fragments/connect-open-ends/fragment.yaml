@@ -107,6 +107,9 @@ compatibility-note: >
 #   "join these walls together"      -> JOIN_GEOMETRY. This one joins MEP
 #                                       CONNECTORS and can do nothing for a
 #                                       wall
+#   "connect the diffusers to the duct" -> CONNECT_AIR_TERMINALS. That is a
+#                                       TAP into the side of a duct; this one
+#                                       joins two ends already at one point
 
 utterances:
   - they are touching but not connected

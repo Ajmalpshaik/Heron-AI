@@ -106,6 +106,7 @@ compatibility-note: >
 #                                       does not follow new elements
 #   "put the colours back"           -> RESET_GRAPHIC_OVERRIDES
 #   "save these as a set"            -> CREATE_SELECTION_FILTER
+#   "do the grayout"                 -> HIGHLIGHT_VS_REST
 
 utterances:
   - colour code by system
