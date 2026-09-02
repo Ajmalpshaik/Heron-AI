@@ -1,0 +1,37 @@
+positive:
+  - given: a workshared model, a 3D view, and "MEP - Mechanical" asked for
+    expect: >
+      that workset Visible and every other user workset Hidden - CHECKED in the
+      view's Visibility/Graphics, Worksets tab, not from the counts
+
+  - given: two workset names asked for
+    expect: both Visible, the rest Hidden, shown = 2
+
+  - given: hideAllOthers false
+    expect: >
+      the named ones turned on and the rest left alone, with the warning that
+      they are on Use Global Setting
+
+negative:
+  - given: a model that is NOT workshared
+    expect: >
+      refused saying so, and NOTHING changed. THIS IS THE FIRST CASE TO RUN. A
+      version that just loops an empty collection reports success with zero
+      counts, which reads identically to a view that was already correct
+
+  - given: hideAllOthers false, on a view where everything is on global
+    expect: >
+      the view still showing everything, AND that said in refused. It is the
+      failure that looks most like success: the wanted workset really is on, and
+      so is everything else
+
+  - given: a workset name that does not exist
+    expect: >
+      named in notFound with every real workset listed - a typo must not silently
+      hide the whole model by turning nothing on and everything off
+
+  - given: a view template as the target
+    expect: refused, naming it as a template
+
+second_route:
+  - The view's Visibility/Graphics, Worksets tab - each row reads Visible, Hidden or Use Global Setting

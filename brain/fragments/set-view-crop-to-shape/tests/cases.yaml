@@ -1,0 +1,43 @@
+positive:
+  - given: six detail lines drawn as an L round a wing, on that plan
+    expect: >
+      the view cropping to the L, and the crop VISIBLE - CHECKED by looking at
+      the view, because a shape written to a view with cropping off is
+      indistinguishable from nothing happening
+
+  - given: the curves handed in out of drawing order
+    expect: >
+      the same L. They are chained head to tail here rather than trusted in
+      order, and loop order is not drawing order
+
+  - given: a room's boundary curves as the loop
+    expect: the crop following the room, with worstGap effectively zero
+
+negative:
+  - given: an L whose corner lines miss each other by half a millimetre
+    expect: >
+      the crop APPLIED and the bridged gap REPORTED in mm. THIS IS THE FIRST
+      CASE TO RUN. Lines drawn by eye almost never close; silently repairing
+      without saying so is how a crop that follows a shape nobody drew reaches a
+      sheet
+
+  - given: a boundary with one line left far from the rest
+    expect: >
+      refused with the distance in mm, and NOTHING written. Revit's own error
+      for this says only "invalid curve loop", which names none of the three
+      possible causes
+
+  - given: a loop taken from a plan and applied to a section
+    expect: >
+      refused as rejected by Revit, with the two remaining causes named - out of
+      plane, or self-crossing. This is the one the fragment cannot test itself
+      and must not pretend to
+
+  - given: a schedule or a legend as the view
+    expect: refused, naming the view type - those cannot take a shaped crop
+
+  - given: two curves only
+    expect: refused before any work - two curves cannot close a shape
+
+second_route:
+  - Open the view, turn the crop region on, and drag its Edit Crop, Edit Sketch to see the shape Revit holds

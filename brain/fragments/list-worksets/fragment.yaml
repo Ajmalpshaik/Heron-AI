@@ -94,6 +94,8 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+#   "turn off this workset in this view" -> SET_VIEW_WORKSET_VISIBILITY - a
+#                                        VIEW setting. This one is a READ
 utterances:
   - list the worksets
   - what worksets are there

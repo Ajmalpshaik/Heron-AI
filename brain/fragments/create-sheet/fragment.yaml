@@ -76,6 +76,8 @@ compatibility-note: >
 #   "renumber the sheets"       -> RENAME_ELEMENTS on the number parameter;
 #                                  nothing here changes an existing sheet
 
+#   "make a sheet list schedule"       -> CREATE_SHEET_LIST - the index OF the
+#                                        sheets, including placeholders
 utterances:
   - make a new sheet
   - create a sheet

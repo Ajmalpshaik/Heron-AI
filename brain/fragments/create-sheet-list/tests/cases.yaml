@@ -1,0 +1,40 @@
+positive:
+  - given: a project with forty sheets, fields Sheet Number and Sheet Name, sorted by number
+    expect: >
+      a schedule view in the browser listing all forty in number order - CHECKED
+      by opening it, because a sheet list with the right row count and the wrong
+      order still prints wrong
+
+  - given: Current Revision asked for as a third column
+    expect: that column present and filled from each sheet's own revision
+
+  - given: the project contains placeholder sheets
+    expect: >
+      they appear like any other row. That is what placeholders are for - a
+      register set up before the drawings exist
+
+negative:
+  - given: "Level" asked for as a field
+    expect: >
+      named in refused WITH the list of fields a sheet list can carry. THIS IS
+      THE FIRST CASE TO RUN. A version that skips an unavailable field produces
+      an index that looks complete and is missing a column, and nobody reading
+      the printed cover can tell
+
+  - given: sortByField naming a field that was not added as a column
+    expect: >
+      refused saying so, not silently unsorted - a drawing index in creation
+      order is the usual reason one looks wrong
+
+  - given: scheduleName already used by another view
+    expect: >
+      the sheet list still created, under Revit's generated name, and the clash
+      reported. Losing the index over a name would be the worse outcome
+
+  - given: an empty fieldNames list
+    expect: >
+      the empty-columns warning. A sheet list with no fields prints as a blank
+      box on the cover sheet
+
+second_route:
+  - View tab, Schedules, Sheet List - and compare the row count against the Sheets branch of the Project Browser

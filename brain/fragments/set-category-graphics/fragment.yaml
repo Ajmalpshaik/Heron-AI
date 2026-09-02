@@ -74,6 +74,9 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+#   "change all the old line styles to the new ones" -> REMAP_LINE_STYLES - a
+#                                        line style is what a line IS. This is a
+#                                        view override and changes no line
 utterances:
   - grey the whole background
   - make all the architecture faint

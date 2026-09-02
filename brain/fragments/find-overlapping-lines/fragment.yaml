@@ -94,6 +94,11 @@ compatibility-note: >
 #                                                  reports; DELETE_ELEMENTS is a
 #                                                  separate and deliberate step
 
+#   "change all the old line styles to the new ones" -> REMAP_LINE_STYLES - it
+#                                        re-points a STYLE across the whole
+#                                        model, sketch lines included. This one
+#                                        finds lines drawn twice
+#   "draw a detail line here"          -> CREATE_LINE - this one only reads
 utterances:
   - find the lines drawn on top of each other
   - the drawing prints heavy for no reason

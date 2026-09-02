@@ -54,6 +54,13 @@ compatibility-note: >
   object rather than an id, so no `ElementId` is built from an integer - which
   is the call that breaks across 2024's move to 64-bit ids.
 
+# ROUTING - repeated in SET_VIEW_CROP and SET_VIEW_CROP_TO_SHAPE.
+#
+#   "hide everything else"                -> here - other ELEMENTS hidden,
+#                                           whole view
+#   "just show me this part of the plan"  -> SET_VIEW_CROP - trims what the
+#                                           drawing SHOWS, in the view's plane
+#   "crop the view to follow the room shape" -> SET_VIEW_CROP_TO_SHAPE
 utterances:
   - show me just these
   - isolate them

@@ -80,6 +80,9 @@ compatibility-note: >
 #                                       DEFINITIONS elements point at, not a
 #                                       list of what is in the model
 
+#   "make a sheet list schedule"       -> CREATE_SHEET_LIST - sheets are not
+#                                        model elements, so the category route
+#                                        here cannot produce a drawing index
 utterances:
   - make a schedule
   - create a schedule of the ducts

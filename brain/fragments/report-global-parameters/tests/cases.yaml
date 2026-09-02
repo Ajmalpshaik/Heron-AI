@@ -1,0 +1,38 @@
+positive:
+  - given: an architectural model with "Corridor Width" driving eight dimensions
+    expect: >
+      that parameter named, its value in mm as well as feet, and the count of
+      eight - CHECKED against Manage, Global Parameters, because the count is the
+      part that matters and the value is the part that is easy
+
+  - given: a global parameter driven by a formula
+    expect: the formula shown in place of a typed value
+
+  - given: a reporting global parameter
+    expect: >
+      marked as reporting - it reads the model and cannot be set, which is the
+      difference between an input and an output
+
+negative:
+  - given: a FAMILY document, or a project template that disallows them
+    expect: >
+      allowed false and the reason said plainly. THIS IS THE FIRST CASE TO RUN.
+      An empty list is the same output as a project that simply has none, and the
+      two answers lead somewhere completely different - one means look elsewhere,
+      the other means this document cannot
+
+  - given: a project with no global parameters
+    expect: a plain zero saying nothing here is driven by one, not silence
+
+  - given: a global parameter attached to no dimension
+    expect: >
+      said as such. A global that drives nothing is the one somebody made and
+      never labelled, and it looks identical to one that is working
+
+  - given: a global parameter holding an element id or text
+    expect: >
+      read without error. A version that assumes every global is a length throws
+      on the first text one and reports whatever it had reached
+
+second_route:
+  - Manage tab, Global Parameters - and select one, then Highlight in Model, to see what it drives

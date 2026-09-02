@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-047
+semantic-identity: "put a named scope box on views, or take it off"
+kind: action
+domain: revit.views
+capability: ASSIGN_SCOPE_BOX_TO_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts a named Scope Box onto views - the view's own Scope Box property - or
+  clears it. One scope box across a set of plans is how a drawing series keeps
+  the same extent on every sheet without anybody dragging crop regions.
+
+  **A SCOPE BOX CANNOT BE CREATED FROM CODE ON ANY RELEASE HERE**, and that is
+  the honest half of this fragment. Revit exposes no create call for one. The
+  box is drawn once by hand - View tab, Scope Box - and from then on this can
+  put it on as many views as the drawing set needs, which is where the repeated
+  work actually is.
+
+  **CLEARING IS THE SAME OPERATION**, not a second one: an empty name writes the
+  invalid id, which is what "None" in the properties palette holds. That matters
+  because a view stuck on the wrong scope box crops wrong on the sheet and the
+  fix is not obvious.
+
+  **A SCOPE BOX IS NOT A CROP AND NOT A SECTION BOX**, and all three answer
+  *"only show this part"*. A scope box is a NAMED, SHARED extent that many views
+  obey at once and that also controls how far grids and levels reach. A crop
+  belongs to one view. A section box cuts the 3D. Choosing the wrong one gives a
+  drawing that looks right today and drifts the moment somebody edits one view.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: views
+      type: IList<View>
+      source: request
+    - name: scopeBoxName
+      type: string
+      source: request
+  provides:
+    - name: assigned
+      type: int
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The scope box sits behind
+  `BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP`, present 2020 through 2027 -
+  read off the reference assemblies at both ends. It is written as an
+  `ElementId`, never as a number, which is what keeps this working across the
+  release where the type went 64-bit and the one where reading it as an integer
+  was removed.
+
+# ROUTING - repeated in SET_VIEW_CROP and SET_VIEW_SECTION_BOX.
+#
+#   "set the scope box on these views"   -> here
+#   "put all these plans on the same scope box" -> here
+#   "take the scope box off this view"   -> here, with an empty name
+#   "make me a scope box"                -> NOTHING HERE CAN. Revit exposes no
+#                                           create call for one on any release.
+#                                           Draw it once by hand - View tab,
+#                                           Scope Box - then use this
+#   "just show me this part of the plan" -> SET_VIEW_CROP - one view only
+#   "cut the 3D down to this area"       -> SET_VIEW_SECTION_BOX
+
+utterances:
+  - set the scope box on these views
+  - put all these plans on the same scope box
+  - take the scope box off this view
+  - assign the scope box to these plans
+  - clear the scope box from these views

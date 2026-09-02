@@ -100,6 +100,13 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+#   "grey out the linked model"        -> here. A link is ONE element in the
+#                                        host, so one override on it covers
+#                                        everything inside - and a CATEGORY
+#                                        override in the host reaches into a
+#                                        link not at all, which is why a
+#                                        grayout on a linked job appears to do
+#                                        nothing
 utterances:
   - bring the services forward
   - make the architecture faint
@@ -109,3 +116,5 @@ utterances:
   - make these red
   - circle these in red
   - grey everything else back
+  - grey out the linked model
+  - grey out the link

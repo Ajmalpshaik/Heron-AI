@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-048
+semantic-identity: "give a view a non-rectangular crop from a closed loop"
+kind: action
+domain: revit.views
+capability: SET_VIEW_CROP_TO_SHAPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Gives one view a NON-RECTANGULAR crop - an L round a wing, a stepped boundary
+  along a match line, the outline of a room or a zone - from a closed loop of
+  curves.
+
+  **SET_VIEW_CROP CANNOT DO THIS, AND NOT BECAUSE IT IS SIMPLER.** That fragment
+  sets the crop BOX: two corners and a transform, so it can only ever be a
+  rectangle, correctly rotated but still a rectangle. A shaped crop is a
+  different mechanism entirely - the view's crop-region shape manager - and it
+  is the only way to get the stepped boundary a real drawing set needs.
+
+  **REVIT SILENTLY REQUIRES THREE THINGS OF THE LOOP AND GIVES THE SAME
+  UNHELPFUL ERROR FOR ALL THREE.** It must be CLOSED end to end; lines drawn by
+  eye almost never are, missing by a fraction of a millimetre. It must be FLAT
+  and in the view's own plane; a loop taken from a plan and pushed at a section
+  is rejected. It must not SELF-INTERSECT. The first is repaired here inside a
+  stated tolerance and the size of the worst gap bridged is REPORTED, so a shape
+  that was never really closed does not pass as one that was.
+
+  **A CROP THAT IS OFF LOOKS EXACTLY LIKE A CROP THAT DID NOT APPLY.** Both the
+  crop and its visibility are switched on here, and said in the report, because
+  a shaped crop written to a view with cropping off changes nothing anybody can
+  see.
+
+  **It changes ONE view.** A shape that fits one view rarely fits another, so
+  there is deliberately no batch.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: boundary
+      type: IList<Curve>
+    - name: joinTolerance
+      type: double
+      source: request
+  provides:
+    - name: applied
+      type: bool
+    - name: worstGap
+      type: double
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.GetCropRegionShapeManager`,
+  `ViewCropRegionShapeManager.SetCropShape`, `CanHaveShape` and
+  `IsCropRegionShapeValid` are present 2020 through 2027, as are
+  `VIEWER_CROP_REGION` and `VIEWER_CROP_REGION_VISIBLE` - read off the reference
+  assemblies at both ends. `joinTolerance` and `worstGap` are in internal FEET;
+  the millimetres the person spoke are converted at the edge, before this.
+
+# ROUTING - repeated in SET_VIEW_CROP and SET_VIEW_SECTION_BOX.
+#
+#   "crop the view to follow the room shape" -> here
+#   "make an L-shaped crop on this plan"     -> here
+#   "crop along the match line"              -> here
+#   "just show me this part of the plan"     -> SET_VIEW_CROP - a rectangle
+#                                               round some elements, which is
+#                                               the ordinary case and does not
+#                                               need a drawn boundary
+#   "cut the 3D down to this area"           -> SET_VIEW_SECTION_BOX
+#   "hide everything else"                   -> ISOLATE_ELEMENTS - a crop trims
+#                                               the drawing, an isolate hides
+#                                               elements
+
+utterances:
+  - crop the view to follow the room shape
+  - make an L-shaped crop on this plan
+  - crop along the match line
+  - give this view a shaped crop region
+  - crop this view to the lines I drew

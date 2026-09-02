@@ -67,6 +67,8 @@ compatibility-note: >
 #                                  One word, two jobs
 #   "add a level"               -> CREATE_LEVEL
 
+#   "draw a detail line here"          -> CREATE_LINE - a line is not a datum:
+#                                        no bubble, no name, no view extents
 utterances:
   - add a grid
   - create a grid line

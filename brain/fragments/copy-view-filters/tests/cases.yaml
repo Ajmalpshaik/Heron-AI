@@ -1,0 +1,43 @@
+positive:
+  - given: a plan carrying twelve MEP colour filters, and eleven other plans
+    expect: >
+      all twelve on each of the eleven, AND each one showing the same colour -
+      CHECKED by opening one target view's Visibility/Graphics, Filters tab, and
+      reading the override, not by trusting the count
+
+  - given: onlyFilterNamed set to one of the twelve
+    expect: that one filter copied, the other eleven left where they are
+
+  - given: a target that already has the filter, with a different override
+    expect: >
+      the override REWRITTEN to match the source. Re-running is how somebody
+      pushes a colour change out, so an existing filter is updated rather than
+      skipped
+
+negative:
+  - given: any source view at all
+    expect: >
+      the target views show the SOURCE'S COLOURS, not empty overrides. THIS IS
+      THE FIRST CASE TO RUN. AddFilter alone puts the filter on with nothing
+      set - a version of this that copies only the filter id reports twelve
+      views changed and changes how none of them look
+
+  - given: a target view driven by a view template
+    expect: >
+      named in blockedByTemplate with its template's name, and NOT counted in
+      viewsChanged. It is the case a batch loses silently, because AddFilter on
+      such a view neither works nor complains usefully
+
+  - given: a schedule or a legend among the targets
+    expect: >
+      named in refused and the rest of the batch COMPLETES. GetFilters throws on
+      those view types, and one of them must not end the run
+
+  - given: a source view with no filters on it
+    expect: said plainly in refused, and nothing written to any target
+
+  - given: the source view also present in targetViews
+    expect: skipped, not copied onto itself
+
+second_route:
+  - Right-click the source view in the Project Browser, Apply Template Properties, and compare the Filters tab of a target afterwards

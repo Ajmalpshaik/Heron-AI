@@ -95,6 +95,11 @@ compatibility-note: >
 #   "what filters are on this view"  -> REPORT_VIEW_FILTERS - a READ, and it
 #                                       used to be answered by this WRITE
 
+#   "copy the view filters from this view to the other views" -> COPY_VIEW_FILTERS
+#                                        - the WHOLE set, with the overrides
+#                                          and the on/off state. This one puts
+#                                          ONE filter on with an override the
+#                                          caller built
 utterances:
   - put that filter on this view
   - apply the filter to this view

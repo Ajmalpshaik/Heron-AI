@@ -1,0 +1,34 @@
+positive:
+  - given: a scope box drawn by hand, and eight floor plans
+    expect: >
+      all eight showing that scope box in Properties, and all eight cropping to
+      the same extent - CHECKED on the sheets, because matching extents is the
+      outcome and the property is only the means
+
+  - given: an empty scopeBoxName on a view that has one
+    expect: the property reading None afterwards, on a fresh read
+
+negative:
+  - given: a model with NO scope boxes at all
+    expect: >
+      refused saying so AND saying one cannot be created from code. THIS IS THE
+      FIRST CASE TO RUN. Revit exposes no create call on any release here, so a
+      session that does not know that goes looking for one and burns the job
+
+  - given: a scope box name that is misspelled
+    expect: >
+      refused with every real scope box listed. Silently assigning nothing looks
+      identical to a view that already had the right box
+
+  - given: a schedule or a legend among the views
+    expect: >
+      named in refused and the rest of the batch COMPLETES - those view types
+      have no scope box property at all
+
+  - given: a view whose scope box is driven by a view template
+    expect: >
+      refused as read-only, naming the template as the place to change it. A
+      write that silently fails leaves the plan cropping wrong on the sheet
+
+second_route:
+  - Select the view in the Project Browser and read Scope Box in Properties - and compare two plans on their sheets

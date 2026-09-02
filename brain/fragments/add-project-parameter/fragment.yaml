@@ -107,6 +107,10 @@ compatibility-note: >
 #    mark"                           -> COPY_PARAMETER_VALUE
 #   "which ones are blank"           -> DESCRIBE_BLANK_PARAMETERS
 
+#   "show me the global parameters in this model" -> REPORT_GLOBAL_PARAMETERS -
+#                                        a global is ONE value for the whole
+#                                        model that drives geometry; a project
+#                                        parameter is a COLUMN, one value each
 utterances:
   - add a project parameter
   - create a shared parameter

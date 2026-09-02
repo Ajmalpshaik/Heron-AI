@@ -74,6 +74,7 @@ compatibility-note: >
 #                                       like a slab on a plan and is not one -
 #                                       it is in no schedule and no other view
 
+#   "draw a detail line here"          -> CREATE_LINE - a line has no fill
 utterances:
   - hatch this area on the drawing
   - shade this bit

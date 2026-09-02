@@ -70,6 +70,14 @@ compatibility-note: >
   rather than through its integer, which is what keeps this clear of the 2024
   64-bit change.
 
+# ROUTING - repeated in REPORT_GLOBAL_PARAMETERS and ADD_PROJECT_PARAMETER.
+#
+#   "what parameters does this duct have" -> here
+#   "show me the global parameters in this model" -> REPORT_GLOBAL_PARAMETERS -
+#                                           a global belongs to the MODEL, not
+#                                           to any element, so nothing here can
+#                                           see one
+#   "add a parameter to all the doors"    -> ADD_PROJECT_PARAMETER
 utterances:
   - what is the system name on these
   - read the mark values
@@ -77,3 +85,4 @@ utterances:
   - which ones have no value
   - what level are they on
   - which level is each duct on
+  - what parameters does this duct have

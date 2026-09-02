@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-011
+semantic-identity: "create the drawing index schedule that lists every sheet"
+kind: action
+domain: revit.sheets
+capability: CREATE_SHEET_LIST
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a Sheet List - the drawing index that goes on the cover sheet, listing
+  every sheet in the project with its number and name.
+
+  **IT IS A DIFFERENT API CALL FROM CREATE_SCHEDULE, NOT AN OPTION ON IT.** An
+  ordinary schedule schedules a CATEGORY of model elements - doors, ducts,
+  rooms. A sheet list schedules SHEETS, which are not model elements, so the
+  category route cannot produce one at all. Asking for a drawing index and being
+  given the schedule maker is the mis-route this fragment closes.
+
+  **THE FIELDS ARE SHEET PARAMETERS, NOT MODEL ONES.** Sheet Number, Sheet Name,
+  Current Revision, Sheet Issue Date. Ask for Size or Level and there is nothing
+  to give. A field the sheet list cannot carry is REPORTED with the schedulable
+  names listed, never quietly dropped - a silently short index looks finished
+  and is missing a column, and the person reading the printed sheet has no way
+  to know a column was ever asked for.
+
+  **A SHEET THAT DOES NOT EXIST YET CAN STILL BE ON THE INDEX.** Revit calls it
+  a placeholder sheet - a number and a name with no titleblock and no views -
+  and it appears on a sheet list like any other. That is how a drawing register
+  is set up before the drawings are. CREATE_SHEET makes them; this lists them.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: scheduleName
+      type: string
+      source: request
+    - name: fieldNames
+      type: IList<string>
+      source: request
+    - name: sortByField
+      type: string
+      source: request
+      optional: true
+  provides:
+    - name: sheetList
+      type: Element
+    - name: fieldsAdded
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSchedule.CreateSheetList`,
+  `ScheduleDefinition.GetSchedulableFields` and `ScheduleSortGroupField` are
+  present 2020 through 2027 - read off the reference assemblies at both ends. A
+  schedulable field is matched by the NAME Revit gives it rather than by any
+  parameter id, which is what keeps one implementation working across the
+  release where parameter identity changed.
+
+# ROUTING - repeated in CREATE_SCHEDULE, CREATE_KEY_SCHEDULE, LIST_SHEETS and
+# CREATE_SHEET.
+#
+#   "make a sheet list schedule"      -> here
+#   "I need a drawing index"          -> here
+#   "put a list of all the sheets on the cover" -> here
+#   "make a duct schedule"            -> CREATE_SCHEDULE - a CATEGORY of model
+#                                        elements; sheets are not model elements
+#                                        and the category route cannot make this
+#   "make a room finish schedule I can type into" -> CREATE_KEY_SCHEDULE
+#   "what sheets are in this model"   -> LIST_SHEETS - a READ, no view made
+#   "make me a new sheet"             -> CREATE_SHEET
+
+utterances:
+  - make a sheet list schedule
+  - I need a drawing index
+  - put a list of all the sheets on the cover
+  - create the drawing register schedule
+  - schedule every sheet in this project

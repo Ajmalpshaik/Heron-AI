@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-045
+semantic-identity: "put this view's whole filter set onto other views"
+kind: action
+domain: revit.views
+capability: COPY_VIEW_FILTERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies the filters from one view onto other views - each filter WITH the
+  override that makes it look like something and WITH its on/off state. The
+  answer to *"I set the colours up on this plan, now put the same on the other
+  twelve"*.
+
+  **ADDING THE FILTER IS NOT COPYING IT, AND THIS IS THE WHOLE REASON THE
+  FRAGMENT EXISTS.** `AddFilter` puts the filter on the view with EMPTY
+  overrides - no colour, no line weight, nothing. The look lives in a separate
+  object, and the on/off state in a third. Copy the filter alone and you get
+  twelve views carrying the right filters and showing no change at all, which
+  reads as the job not having run. All three are copied here, and the report
+  says which of the three moved.
+
+  **A VIEW GOVERNED BY A TEMPLATE WILL NOT TAKE ITS OWN FILTERS**, and that is
+  the case a batch quietly loses. The template owns Visibility/Graphics. Such
+  views are NAMED with their template, because the fix - copy onto the template
+  instead - changes every view using it at once and is usually what was wanted.
+
+  **It is not APPLY_VIEW_FILTER in a loop.** That one puts ONE filter on a view
+  with an override the caller built. This reads a working view and replicates
+  it, which is a different question: nobody copying a set knows what the twenty
+  overrides on it are, and having to describe them would be the reason not to
+  do it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: sourceView
+      type: View
+      source: request
+    - name: targetViews
+      type: IList<View>
+      source: request
+    - name: onlyFilterNamed
+      type: string
+      source: request
+      optional: true
+  provides:
+    - name: viewsChanged
+      type: int
+    - name: filtersApplied
+      type: int
+    - name: blockedByTemplate
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `GetFilters`, `AddFilter`,
+  `GetFilterOverrides`, `SetFilterOverrides`, `GetFilterVisibility` and
+  `SetFilterVisibility` are all present on `View` from 2020 through 2027 - read
+  off the reference assemblies at both ends. `GetOrderedFilters` and
+  `SetIsFilterEnabled` are deliberately NOT used: both arrived at 2024, and
+  naming either would break the 2020 build for an ordering and an enable flag
+  this copy does not need.
+
+# ROUTING - repeated in APPLY_VIEW_FILTER and REPORT_VIEW_FILTERS.
+#
+#   "copy the view filters from this view to the other views" -> here
+#   "put the same filters on the rest of the plans"           -> here
+#   "match the filter settings on these views"                -> here
+#   "put that filter on this view"       -> APPLY_VIEW_FILTER - ONE filter,
+#                                           with an override the caller built
+#   "what filters are on this view"      -> REPORT_VIEW_FILTERS - a READ
+#   "make a filter for supply air"       -> CREATE_VIEW_FILTER
+
+utterances:
+  - copy the view filters from this view to the other views
+  - put the same filters on the rest of the plans
+  - match the filter settings on these views
+  - copy the filter overrides to these views
+  - give these views the same filters as this one

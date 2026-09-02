@@ -77,6 +77,7 @@ compatibility-note: >
 #                                       key schedule's own columns get added
 #                                       after this makes the table
 
+#   "make a sheet list schedule"       -> CREATE_SHEET_LIST - a drawing index
 utterances:
   - make a key schedule
   - set up a finish key

@@ -91,6 +91,9 @@ compatibility-note: >
 #                                     `elements` and cannot be moved
 #   "who owns this"                -> READ_ELEMENT_OWNERSHIP
 
+#   "turn off this workset in this view" -> SET_VIEW_WORKSET_VISIBILITY - that
+#                                        changes one DRAWING. This changes the
+#                                        MODEL, in every view at once
 utterances:
   - put them on a different workset
   - move these to the MEP workset

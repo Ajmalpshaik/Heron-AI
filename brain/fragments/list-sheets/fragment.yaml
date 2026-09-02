@@ -61,6 +61,9 @@ compatibility-note: >
 #   "make a new sheet"           -> CREATE_SHEET
 #   "which sheets have this revision" -> LIST_REVISIONS
 
+#   "make a sheet list schedule"       -> CREATE_SHEET_LIST - a schedule VIEW
+#                                        that prints on the cover. This is a
+#                                        READ that makes nothing
 utterances:
   - list the sheets
   - how many sheets are there

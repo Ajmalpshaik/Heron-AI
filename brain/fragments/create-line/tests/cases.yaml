@@ -1,0 +1,36 @@
+positive:
+  - given: three point pairs and asDetail true, on a floor plan
+    expect: >
+      three detail lines in THAT view and in no other - CHECKED by opening a
+      second plan and confirming they are absent, which is the whole difference
+      between the two kinds
+
+  - given: the same three pairs with asDetail false
+    expect: >
+      three model lines, visible in every view that sees that height, including
+      the 3D
+
+  - given: a line drawn at a height above zero, as a model line
+    expect: the line at that height, on its own horizontal plane
+
+negative:
+  - given: a pair whose two points are identical
+    expect: >
+      counted in tooShort and the OTHER lines still drawn. THIS IS THE FIRST
+      CASE TO RUN. Revit refuses a curve below its short-curve tolerance, and a
+      version that lets that throw loses every line after it while reporting the
+      ones before as a success
+
+  - given: asDetail true with no view given
+    expect: refused before anything is drawn, not a null reference partway through
+
+  - given: asDetail true on a 3D view
+    expect: >
+      refused with the reason - detail lines are drawing and a 3D view holds
+      none. It is the mistake somebody makes once and cannot explain
+
+  - given: an empty pointPairs list
+    expect: nothing created, nothing refused, and no error
+
+second_route:
+  - Annotate tab, Detail Line, or Architecture tab, Model Line - then check a second view to see which kind was made

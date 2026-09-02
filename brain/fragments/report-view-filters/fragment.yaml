@@ -71,6 +71,9 @@ compatibility-note: >
 #   "make a filter for supply air"   -> CREATE_VIEW_FILTER
 #   "save these as a set"            -> CREATE_SELECTION_FILTER
 
+#   "copy the view filters from this view to the other views" -> COPY_VIEW_FILTERS
+#                                        - a WRITE. This one only says what is
+#                                          where
 utterances:
   - what filters are on this view
   - which views use this filter

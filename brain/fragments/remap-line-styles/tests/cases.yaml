@@ -1,0 +1,45 @@
+positive:
+  - given: forty detail lines on an imported style, and the office style as the target
+    expect: >
+      forty moved, and the old style then PURGES - checked in Manage, Purge
+      Unused, because that is the outcome somebody actually wanted
+
+  - given: a floor whose sketch boundary uses the old style, includeSketchLines true
+    expect: >
+      counted in sketchFound and moved. It is selectable in no view, so a
+      report that omits it looks complete and is not
+
+  - given: includeSketchLines false with sketch lines present
+    expect: >
+      the count said plainly in refused, naming it as the likely reason the
+      style will not purge - not silently left out
+
+negative:
+  - given: a project whose only remaining use of the old style is a filled region border
+    expect: >
+      the region count REPORTED under the default mode, not treated as nothing
+      left to do. THIS IS THE FIRST CASE TO RUN. Revit exposes no getter for a
+      region's border style, so a version of this that walks curve elements
+      alone says "nothing to move" while the style still will not purge - the
+      exact false-clean the fragment exists to prevent
+
+  - given: filledRegionMode "all" and a target style Revit will not accept on a region
+    expect: >
+      said once with the style named, and NO region touched - rather than one
+      exception per region
+
+  - given: a line style name that does not exist
+    expect: >
+      refused, with every line style in the project listed so the next attempt
+      is exact
+
+  - given: the same style named as both from and to
+    expect: refused, not a no-op reported as a success
+
+  - given: the old style used only inside a loaded family
+    expect: >
+      zero found, and refused saying where it must be - a family this document
+      cannot reach - rather than an unexplained zero
+
+second_route:
+  - Manage, Purge Unused after the run - if the style is still listed, something still holds it
