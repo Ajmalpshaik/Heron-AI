@@ -9,6 +9,48 @@ this up next: a fresh Claude session, a person, or the owner on his phone.
 
 ---
 
+## WHERE THIS STANDS, 2026-09-02 — the branch is finished and merged
+
+**The cloud work is done.** Everything that could be built or checked away from the PC has been, the
+branch `claude/heron-ai-handover-r1b56c` is merged into `main`, and what is left needs a machine this
+container does not have.
+
+| | |
+|---|---|
+| Fragments | **102**, every one compiling on all eight Revit releases, every one `DRAFT` |
+| Skills | 10, none naming a fragment |
+| Tools the host sees | 10, served by a real MCP SDK |
+| Test suites | 18 — **17 pass, 1 skipped** (needs the MCP SDK installed) |
+| Checkers | 8, all green |
+| `check-gaps` | **0 unfinished, 55 waiting** |
+
+**Nothing is unfinished. Nothing is proven.** Those are different sentences and both are true: every
+buildable thing is built, and not one fragment has touched a real model.
+
+### The one thing that matters next, and it needs the PC
+
+`D3` and the fragment library. **102 fragments are `DRAFT` and stay there until each is run against a
+real model with a case that comes back EMPTY** ([D-30](docs/DECISIONS.md)). That is the owner's job and
+it is the largest remaining piece of work in the project. Everything else waiting is smaller:
+
+- **`A7`** — the trained embedding backend has never run: the weights host is unreachable from here.
+  It has moved from the least urgent item to **the most urgent one**, because the built-in n-gram
+  backend has measurably saturated at this library size (see the seventeenth session below).
+- **`A4`, `A6`** — need Windows.
+- **`A8`** — needs the MCP SDK installed on the PC; everything else about it is done.
+- **`R1b`** — a conversation.
+
+### Two numbers to distrust until a model has been in front of them
+
+- **`READ_SPACE_LOADS`'s load unit.** Airflow is exact arithmetic and provable on paper; the HVAC power
+  unit is *assumed* to be BTU/s. If that is wrong every load is out by a constant factor — each figure
+  looks plausible, comparisons between spaces still work, and only somebody sizing real equipment finds
+  out. It is the fragment's first negative test case.
+- **`CREATE_DIMENSION`'s reference technique.** If Revit does not surface a referenceable centreline the
+  way it is assumed to, the fragment draws nothing and says so — a designed failure, but a failure.
+
+---
+
 ## The first five minutes of the next session
 
 **Run this before reading anything else. It is computed from disk, so it wins over every sentence
@@ -23,11 +65,11 @@ every agent id against the registry, walks the fragment library, the capability 
 dependency graph, and reads the register. Then it sorts everything into **UNFINISHED** and **WAITING**,
 and its exit code follows only the first.
 
-**As of 2026-08-31 it reports 0 unfinished and 55 waiting.** Everything waiting needs a machine, a
+**As of 2026-09-02 it reports 0 unfinished and 55 waiting.** Everything waiting needs a machine, a
 dependency or a conversation: **48 a real Revit**, plus the 102 unproven fragments as one further item,
-**3 Windows** (`A4`, `A6` and `A8`), **1 a network that can reach the weights host** (`A7`), **1 the
-owner** (`R1b`), and **1 an optional dependency this machine does not have** — that last one is new and
-it is `test_mcp_serves.py` reporting honestly that it was skipped, rather than being counted as a pass.
+**Windows** (`A4`, `A6`), **1 a network that can reach the weights host** (`A7`), **1 the owner**
+(`R1b`), and **1 an optional dependency this machine does not have** — `test_mcp_serves.py` reporting
+honestly that it was skipped, rather than being counted as a pass.
 
 > Those figures were **read off the tool, not carried forward**, and the sentence they replace shows why
 > that matters: it said *55 waiting* and then listed parts summing to 54, and it still counted **3 owner
@@ -165,6 +207,43 @@ none of them will fail at the PC for a reason a compiler could have found — wh
 being a figure of speech, when the gate caught a tag accessor that Revit 2027 has removed. Not one has met a model. The debt did
 not go away — it got **counted**, which is the whole point of `check-gaps` keeping *unfinished* and
 *waiting* in two lists that must never be one.
+
+---
+
+## The nineteenth session, 2026-09-02 — the test that had been blocked for four sessions
+
+**What it did:** no new fragments. It closed the one thing this container had been carrying as
+permanently blocked, and it turned out not to be blocked at all.
+
+`tests/test_bridge_roundtrip.py` had reported *not found* for four sessions running, and was written up
+each time as "the test host targets `net8.0` and only the .NET 10 runtime is installed here". True, and
+the wrong conclusion: **the framework was hardcoded in the test.**
+
+```python
+_POSIX_DIR = os.path.join(HOST_PROJECT, "bin", "x64", "Debug-net8.0")
+```
+
+That was true of the machine the file was written on and false of the next one. The project **built**
+and the host **refused to start** — *"You must install or update .NET"* — which reads like a missing
+build rather than a missing runtime, so four sessions in a row recorded it as an environment limit.
+
+It now asks `dotnet --list-runtimes` and builds for the newest `Microsoft.NETCore.App` the machine can
+actually run, falling back to the old value when the question cannot be answered. **All 32 checks pass**
+— framing, the JSON parser, the token, newest-connection-wins, the whole lease, and the toggle cycle.
+
+> **A pinned framework in a test meant to run on whatever machine is in front of it is a
+> machine-specific assumption written down as a constant.** The register row `A4` had even recorded the
+> workaround — *"`-p:HeronTfm=net10.0` runs it"* — so the knowledge existed and only a human applying it
+> by hand could use it. Knowing a workaround and not automating it is how something stays broken while
+> being fully documented.
+
+**The register said Windows and meant it for less than it looked.** `A4` is now down to the one thing a
+Linux run genuinely cannot touch: the Windows named pipe itself — its naming, its security descriptor
+and the `CreateNewInstance` flag. Everything else on that row is proven here.
+
+**17 of 18 suites now pass**; the one that does not is `test_mcp_serves.py` reporting honestly that it
+was skipped for a missing optional dependency, which `check-gaps` reads as WAITING rather than as a
+pass.
 
 ---
 
