@@ -1,0 +1,114 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-020
+semantic-identity: "these are touching but Revit does not think they are connected"
+kind: action
+domain: revit.mep
+capability: CONNECT_OPEN_ENDS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Joins pairs of OPEN connectors that are already at the same place - the
+  cleanup for a run that looks continuous on screen and behaves as two separate
+  systems. After a copy and paste, after a route drawn leg by leg, after
+  binding a link.
+
+  **It pairs on four tests and all four have to pass.** Distance alone produces
+  nonsense: two pipes crossing at the same height have connectors near each
+  other and must never be joined. A pair is offered only when both connectors
+  are open, both are in the same domain (no duct joined to pipe), the sizes
+  agree, and THEY FACE EACH OTHER. That last one is what separates a real
+  end-to-end joint from a crossing, and it is the test the other three cannot
+  stand in for.
+
+  **It moves nothing.** Joining two connectors where they already are is the
+  whole operation; nothing is dragged to close a gap. So the gap allowed is
+  small on purpose - what it closes is a rounding-level gap, not a modelling
+  error. Raising it to swallow a 200 mm hole produces a model that REPORTS as
+  connected while the geometry still has a hole in it, which is worse than the
+  problem it was hiding.
+
+  **Each connector is used once.** Candidates are taken smallest-gap first and
+  both ends struck off as a pair is taken - otherwise one open end where three
+  pieces meet gets claimed twice and the second join throws.
+
+  **This is not the tap job and not the stretch job.** An air terminal under a
+  duct needs a tap cut into the duct's side, and two runs that genuinely end
+  apart need moving or a new segment between them. Neither is this. A terminal
+  sitting below a duct correctly does not pair here, and that is not a miss.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Joining
+  raises Revit warnings on a real model - the transaction's owner decides how
+  those are handled, which is why no failure-handling option is set here.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: maxGapMm
+      type: double
+      source: request
+    - name: sizeToleranceMm
+      type: double
+      source: request
+  provides:
+    - name: connected
+      type: int
+    - name: findings
+      type: IList<string>
+    - name: openEnds
+      type: int
+    - name: notPaired
+      type: IList<string>
+    - name: noConnectors
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Connector.ConnectTo`, `IsConnected`,
+  `Origin`, `Domain`, `Shape`, `Radius`, `Width`, `Height`, `CoordinateSystem`
+  and `MEPCurve.ConnectorManager` are all present 2020 through 2027 - read off
+  the reference assemblies at both ends rather than remembered. There is no
+  generic system-type BuiltInParameter in any release, which is why the system
+  name is read through the duct one, then the pipe one, then the system name.
+
+# `Connector.IsConnected` DESCRIBES INTENT, NOT ALWAYS PHYSICAL REALITY. A
+# connector Revit believes is joined is skipped here, so a pair that LOOKS
+# missing and is not offered may be a case where the flag and the geometry
+# disagree. That is TRACE_CONNECTIVITY's ground, not this fragment's.
+
+# ROUTING - repeated in PLACE_MEP_FITTING, TRACE_CONNECTIVITY and FIND_DEAD_ENDS.
+#
+#   "they are touching but not connected" -> here
+#   "connect the open ends"               -> here
+#   "the system is split in two"          -> here, AFTER FIND_SYSTEM_ISLANDS
+#                                            says where the break is
+#   "join these two"                      -> PLACE_MEP_FITTING - it puts a
+#                                            FITTING between two runs; this one
+#                                            joins ends already at one point
+#   "put an elbow here"                   -> PLACE_MEP_FITTING
+#   "is this duct connected"              -> TRACE_CONNECTIVITY - a READ
+#   "where are the open ends"             -> FIND_DEAD_ENDS - sorts the
+#                                            deliberate ends from the mistakes
+#   "close the gap between these runs"    -> NOTHING HERE DOES THAT. Nothing
+#                                            moves. A real gap wants the runs
+#                                            moved or a segment drawn
+
+utterances:
+  - they are touching but not connected
+  - connect the open ends
+  - join up the open connectors
+  - revit says these are not connected
+  - the system is split in two
+  - fix the connections on this run

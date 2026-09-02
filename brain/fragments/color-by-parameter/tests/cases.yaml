@@ -1,0 +1,45 @@
+positive:
+  - given: 300 ducts across 4 system names, coloured on "System Name", band "vivid"
+    expect: >
+      4 colours, a legend naming each system with its RGB and its count, and the
+      view showing four clearly different colours. Read the legend against the
+      screen - a legend that does not match what is drawn is worse than none
+
+  - given: the same request run a second time
+    expect: >
+      THE SAME COLOURS. Same system, same RGB. This is what makes today's
+      drawing comparable with the one issued last week, and it is why the start
+      hue is fixed rather than random
+
+negative:
+  - given: TWELVE distinct system names in one view
+    expect: >
+      twelve visibly different colours, none repeating. This is the FIRST case
+      to run: a fixed palette of six would give system 7 the same colour as
+      system 1, and two systems reading as one on a co-ordination drawing is the
+      defect this fragment exists to avoid
+
+  - given: elements with the parameter empty
+    expect: >
+      grouped as "(no value)", COLOURED, and listed in `noValue`. Left plain
+      they read as "not part of this set" instead of "nobody filled it in"
+
+  - given: a project with no solid fill pattern
+    expect: >
+      lines coloured, surfaces untouched, AND a note saying exactly that. A
+      drawing that comes out fainter than expected must say why rather than
+      leave somebody wondering whether it worked
+
+  - given: a view whose overrides are controlled by its view template
+    expect: >
+      the refusals in `skipped` and not counted in `coloured`. A count that
+      includes elements the view never painted is the report this library must
+      never produce
+
+  - given: the parameter named does not exist on any of the elements
+    expect: >
+      one group, "(no value)", every element in `noValue`, and the note saying
+      so. NOT a colourful drawing that looks like it worked
+
+second_route:
+  - a view filter per system with a colour set by hand, compared against what this produced

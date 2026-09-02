@@ -70,6 +70,10 @@ compatibility-note: >
 #                                   a read-only report answering an
 #                                   instruction to build something
 #   "join these two"             -> PLACE_MEP_FITTING
+#   "they are touching but not connected" -> CONNECT_OPEN_ENDS - the FIX. This
+#                                       one reads and must not answer a request
+#                                       to change the model
+#   "connect the open ends"          -> CONNECT_OPEN_ENDS
 
 utterances:
   - what connects to what

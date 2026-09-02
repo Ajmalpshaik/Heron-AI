@@ -1,0 +1,126 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-019
+semantic-identity: "put a fall on these pipes so they drain"
+kind: action
+domain: revit.mep
+capability: SET_MEP_SLOPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts a required fall onto pipe or duct runs - holds one end still and lifts or
+  drops the other until the run sits at 1 in X. The fix for what
+  MEASURE_MEP_SLOPE reports: a drainage line drawn flat, or at whatever fall the
+  mouse happened to give it.
+
+  **Which end stays put is a design decision and there is no safe default**, so
+  it is asked for. On a drainage branch the end that stays is the one already
+  set to a fixed invert - usually downstream at the manhole or the stack.
+  `anchorEnd` takes "start", "end", "low" or "high"; "low" holds whichever end
+  is currently lower, which is the one that usually matters on a drain.
+
+  **It writes the LOCATION CURVE, not the Slope parameter.** On a plain pipe
+  Revit's Slope is its own report of what the geometry is doing rather than a
+  handle that drives it. So the curve is set, and the parameter is READ BACK
+  and reported. The earlier library also wrote the parameter "so a schedule
+  agrees with the model"; that is the wrong way round - a parameter written to
+  disagree with the geometry is a lie a schedule then repeats.
+
+  **A riser is never sloped.** The earlier library guarded this with a 300 mm
+  minimum run, an arbitrary number that a near-vertical pipe walks straight
+  past: a 2 m drop with 10 mm of horizontal run would be re-drawn 10 mm long
+  and the pipe destroyed. The test here is geometric instead - a run that rises
+  more than it runs is steeper than 45 degrees, is a riser or a drop, and is
+  reported rather than touched.
+
+  **Both ends connected usually means it cannot move**, and Revit will either
+  refuse or drag the neighbour. Those runs are named and left alone; the caller
+  deals with the fittings first.
+
+  **Group members are refused before anything is attempted.** A move on a group
+  member is silently ignored by Revit - no exception, no return value, no
+  change - so counting that call as success is how a report says "sloped 12"
+  over a model where nothing moved.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). There is
+  no dry-run switch: previewing is the host's approval gate, not a flag inside a
+  fragment.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # The X in 1:X. A ratio rather than an angle or a percent because that is
+    # the number written on a drainage drawing.
+    - name: slopeRatio
+      type: double
+      source: request
+    - name: anchorEnd
+      type: string
+      source: request
+    - name: fallAwayFromAnchor
+      type: bool
+      source: request
+    # A guard against a typo in the ratio, in the units the user speaks. The
+    # near-vertical case above is what makes it worth having.
+    - name: maxEndMoveMm
+      type: double
+      source: request
+  provides:
+    - name: sloped
+      type: int
+    - name: findings
+      type: IList<string>
+    - name: risers
+      type: IList<ElementId>
+    - name: bothEndsConnected
+      type: IList<ElementId>
+    - name: inGroup
+      type: IList<ElementId>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `LocationCurve.Curve`, `Line.CreateBound`,
+  `MEPCurve.ConnectorManager`, `Connector.IsConnected` and
+  `BuiltInParameter.RBS_PIPE_SLOPE` are all present 2020 through 2027 - read off
+  the reference assemblies at both ends rather than remembered. No units API is
+  touched and no ElementId is constructed.
+
+# THE SLOPE PARAMETER IS READ, NOT WRITTEN, AND ITS UNIT IS NOT ASSUMED.
+# The value is reported exactly as Revit renders it (AsValueString), so the
+# figure in the report is the figure on screen. Nothing here converts it, and
+# nothing here claims to know whether Revit stores that slope as a ratio or as
+# an angle - reflection over an assembly shows a property type, never a unit.
+
+# ROUTING - repeated in MEASURE_MEP_SLOPE and ALIGN_MEP_ELEVATION.
+#
+#   "give it a fall of 1 in 100"     -> here
+#   "slope these drains"             -> here
+#   "the drain is running flat"      -> here - the fix
+#   "what fall is on this drain"     -> MEASURE_MEP_SLOPE - a READ, and it must
+#                                       not answer a request to change the model
+#   "check the slopes"               -> MEASURE_MEP_SLOPE
+#   "level these up"                 -> ALIGN_MEP_ELEVATION - one flat height,
+#                                       the opposite instruction to a fall
+#   "raise the ducts 200"            -> MOVE_ELEMENTS - moves both ends together
+
+utterances:
+  - give it a fall of 1 in 100
+  - slope these drains
+  - set the slope on these pipes
+  - put a fall on the drainage
+  - the drain is running flat
+  - re-slope this branch

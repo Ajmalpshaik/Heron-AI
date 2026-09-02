@@ -1,0 +1,40 @@
+positive:
+  - given: five points along a corridor, one piping system type, one pipe type, one level
+    expect: >
+      FOUR pipes, not five - one segment per consecutive pair. Then read each
+      one's endpoints back: they must be the points handed in, in feet, not
+      approximately near them
+
+  - given: two points 3 m apart
+    expect: >
+      ONE pipe of that length. The single-segment case is the general form with
+      two points, which is why this fragment draws a run rather than one pipe
+
+negative:
+  - given: the same run drawn, then TRACE_CONNECTIVITY run over the result
+    expect: >
+      whatever it really reports, recorded as fact. This fragment does NOT claim
+      the segments come out joined, and a run that reads right on screen with an
+      open end at every joint is the failure it warns about. If they are open,
+      CONNECT_OPEN_ENDS is the fix and that is the composition to prove next
+
+  - given: two points closer together than the document's short-curve tolerance
+    expect: >
+      `tooShort` counts it and NOTHING is created. A zero-length pipe is not a
+      thing Revit will make, and an exception in the middle of a run would lose
+      the segments that worked
+
+  - given: a pipe type with no segment that suits, so the create throws
+    expect: >
+      `refused` counts it, the rest of the run is still drawn, and `created`
+      holds only what actually exists. A count that includes a pipe nobody made
+      is the report this library must never produce
+
+  - given: the pipe's diameter read back straight after creating it
+    expect: >
+      the PIPE TYPE's own size, not a size this fragment chose - it sets none.
+      SET_MEP_SIZE is where a diameter is applied and where Revit's snap to the
+      nearest allowed size is caught
+
+second_route:
+  - Revit's own Pipe tool drawn between the same two points, then both pipes' lengths and endpoints compared in a section

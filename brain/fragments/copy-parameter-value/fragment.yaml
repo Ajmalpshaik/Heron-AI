@@ -72,6 +72,9 @@ compatibility-note: >
 #
 # WRITING A VALUE AND COPYING ONE ARE DIFFERENT JOBS. This one never invents a
 # value; it only moves one that already exists.
+#   "add a project parameter"        -> ADD_PROJECT_PARAMETER - a different
+#                                       write: it creates the parameter itself
+#   "create a shared parameter"      -> ADD_PROJECT_PARAMETER
 
 utterances:
   - copy the parameter from one to the other

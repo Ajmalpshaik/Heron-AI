@@ -52,9 +52,16 @@ compatibility-note: >
   the cleared state - there is no separate clear call - and both it and
   `GetElementOverrides` are unchanged 2020 to 2027.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "put the colours back"           -> here
+#   "colour code by system"          -> COLOR_BY_PARAMETER - what this undoes
+#   "make these red"                 -> OVERRIDE_GRAPHICS_IN_VIEW
+
 utterances:
   - put it back how it was
   - clear the overrides
   - undo the grayout
   - remove the colours
   - reset the graphics on these
+  - put the colours back

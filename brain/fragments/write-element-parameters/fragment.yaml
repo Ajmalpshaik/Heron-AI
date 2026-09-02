@@ -85,6 +85,13 @@ compatibility-note: >
   the thousands separator and the project's decimal-places setting into a check
   that needs none of them.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "fill in the mark"               -> here - the parameter already exists
+#   "add a project parameter"        -> ADD_PROJECT_PARAMETER - it MAKES the
+#                                       parameter and writes no values
+#   "make the new type 300 wide"     -> here, on the type DUPLICATE_TYPE made
+
 utterances:
   - set the comments on these
   - write the airflow back
@@ -92,3 +99,5 @@ utterances:
   - update the mark on all of them
   - put 500 in the flow parameter
   - set the room number
+  - fill in the mark
+  - make the new type 300 wide

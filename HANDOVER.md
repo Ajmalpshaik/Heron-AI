@@ -45,28 +45,36 @@ this up next: a fresh Claude session, a person, or the owner on his phone.
 
 ---
 
-## WHERE THIS STANDS, 2026-09-02 — the branch is finished and merged
+## WHERE THIS STANDS, 2026-09-02 — 146 fragments, and eight of them have never seen a compiler
 
-**The cloud work is done.** Everything that could be built or checked away from the PC has been, the
-branch `claude/heron-ai-handover-r1b56c` is merged into `main`, and what is left needs a machine this
-container does not have.
+The library is still growing away from the PC. What is left to *prove* still needs a machine this
+container does not have — and as of the twentieth session there is one more thing on that list that
+needs only the **.NET SDK**, not Revit and not Windows.
 
 | | |
 |---|---|
-| Fragments | **102**, every one compiling on all eight Revit releases, every one `DRAFT` |
+| Fragments | **146**, every one `DRAFT`. 138 compiled on all eight Revit releases; **the newest 8 have not been compiled at all** — see `A9` |
 | Skills | 10, none naming a fragment |
 | Tools the host sees | 10, served by a real MCP SDK |
-| Test suites | 18 — **17 pass, 1 skipped** (needs the MCP SDK installed) |
+| Test suites | 18 — 17 pass, 1 skipped (needs the MCP SDK installed) |
 | Checkers | 8, all green |
-| `check-gaps` | **0 unfinished, 55 waiting** |
+| `check-gaps` | **0 unfinished, 56 waiting** |
 
 **Nothing is unfinished. Nothing is proven.** Those are different sentences and both are true: every
 buildable thing is built, and not one fragment has touched a real model.
 
+> **The compile gate is the first thing to run on a machine that has the SDK** — `python
+> tools/check-fragments-compile.py`. It is now `A9` in the register. Eight fragments were written on
+> 2026-09-02 in a container where the SDK could not be installed, because the download host is refused
+> by that network's policy. Every API member they use was checked against the real Revit reference
+> assemblies for 2020, 2024 and 2027 instead, which is not the same thing and is not a substitute.
+
 ### The one thing that matters next, and it needs the PC
 
-`D3` and the fragment library. **102 fragments are `DRAFT` and stay there until each is run against a
-real model with a case that comes back EMPTY** ([D-30](docs/DECISIONS.md)). That is the owner's job and
+`D3` and the fragment library. **Every fragment is `DRAFT` and stays there until it is run against a
+real model with a case that comes back EMPTY** ([D-30](docs/DECISIONS.md)) — `python
+tools/check-gaps.py` counts them, and no number is typed here for the reason the rest of this file
+keeps re-learning. That is the owner's job and
 it is the largest remaining piece of work in the project. Everything else waiting is smaller:
 
 - **`A7`** — the trained embedding backend has never run: the weights host is unreachable from here.
@@ -101,11 +109,12 @@ every agent id against the registry, walks the fragment library, the capability 
 dependency graph, and reads the register. Then it sorts everything into **UNFINISHED** and **WAITING**,
 and its exit code follows only the first.
 
-**As of 2026-09-02 it reports 0 unfinished and 55 waiting.** Everything waiting needs a machine, a
-dependency or a conversation: **48 a real Revit**, plus the 102 unproven fragments as one further item,
-**Windows** (`A4`, `A6`), **1 a network that can reach the weights host** (`A7`), **1 the owner**
-(`R1b`), and **1 an optional dependency this machine does not have** — `test_mcp_serves.py` reporting
-honestly that it was skipped, rather than being counted as a pass.
+**As of the twentieth session, 2026-09-02, it reports 0 unfinished and 56 waiting.** Everything waiting
+needs a machine, a dependency or a conversation: **48 a real Revit**, plus the unproven fragments as one
+further item, **Windows** (`A4`, `A6`, `A8`), **1 the .NET SDK** (`A9` — the eight fragments no compiler
+has read), **1 a network that can reach the weights host** (`A7`), **1 the owner** (`R1b`), and **1 an
+optional dependency this machine does not have** — `test_mcp_serves.py` reporting honestly that it was
+skipped, rather than being counted as a pass.
 
 > Those figures were **read off the tool, not carried forward**, and the sentence they replace shows why
 > that matters: it said *55 waiting* and then listed parts summing to 54, and it still counted **3 owner
@@ -221,7 +230,7 @@ work: build the fragments now, re-authored from his earlier library, and check e
 later — *"checking in revit we will do after because that is a big work... mark as not verified and when
 pc came we will check."*
 
-**So the library is 102 fragments and every skill has every capability provided.** The seven were written
+**So the library is 146 fragments and every skill has every capability provided.** The seven were written
 on 2026-08-29; twenty-five more followed on 2026-08-30, and seven more on 2026-08-31 — those last chosen
 by asking the brain the owner's own sentences and reading what came back, rather than by working through
 the earlier library in order. `python brain/heron_skill.py` shows no gaps.
@@ -243,6 +252,119 @@ none of them will fail at the PC for a reason a compiler could have found — wh
 being a figure of speech, when the gate caught a tag accessor that Revit 2027 has removed. Not one has met a model. The debt did
 not go away — it got **counted**, which is the whole point of `check-gaps` keeping *unfinished* and
 *waiting* in two lists that must never be one.
+
+---
+
+## The twentieth session, 2026-09-02 — eight fragments, and the first batch no compiler has read
+
+**What it did:** took the library from **138 to 146**, and it is the first batch in this repository's
+history that has **never been compiled**. That is written at the top of this file and in the register as
+`A9`, because a session that quietly skipped the gate and said nothing would be indistinguishable from
+one that ran it.
+
+**Why it could not run.** There is no .NET SDK in this container and none can be installed: the SDK
+download host answers **403 to the CONNECT itself** — the network's policy, not a transient failure.
+Checked, not assumed: `curl "$HTTPS_PROXY/__agentproxy/status"` names the host and the refusal.
+
+**What was done instead, and exactly what it is worth.** nuget.org IS reachable from here, so the Revit
+API reference assemblies for **2020, 2024 and 2027** were downloaded and read directly — every type and
+every member each new fragment calls was looked up in the assemblies' own metadata, with the argument
+COUNT where there were overloads.
+
+That answers *"does this member exist in this release"*, which is the failure this repository has
+actually had — `Document.CreationGUID` compiled on 2024 and does not exist on 2020, and it had survived
+several readings. **It answers nothing about argument TYPES and nothing about syntax.** A metadata read
+is not a compile and must not be recorded as one.
+
+> It did earn its keep twice. `ExternalDefinitionCreationOptions.Type` is **present on 2020 and gone by
+> 2024**, which is what makes `ADD_PROJECT_PARAMETER` a reflection job rather than a written-down call;
+> and `Space` carries neither `Number` nor `Area` of its own — both come from `SpatialElement`, so a
+> member check that does not walk the base type reports a false absence. Worth knowing before trusting
+> any tool of that shape.
+
+### The eight
+
+| | |
+|---|---|
+| `CREATE_PIPE` | The plumbing twin of `CREATE_DUCT`, and deliberately the SAME SHAPE - a run of points, one segment per pair. The earlier library drew one pipe between two points and drew duct as a run; one job in two shapes is how a composition that works for duct fails for pipe. **It sets no size**: Revit snaps a diameter to the nearest its type allows and returns TRUE while doing it - 77 mm asked for, 80 mm delivered - so that check stays in `SET_MEP_SIZE`, in one place |
+| `SET_MEP_SLOPE` | Puts a fall on a drainage run by moving one end. **A riser is never sloped, and the test is geometric rather than a millimetre threshold**: the earlier library used a 300 mm minimum run, which a 2 m drop with 10 mm of horizontal run walks straight past - it would be re-drawn 10 mm long and the pipe destroyed. A run that rises more than it runs is a riser. It also **reads** Revit's Slope parameter rather than writing it: a parameter written to disagree with the geometry is a lie every schedule then repeats |
+| `CONNECT_OPEN_ENDS` | Joins open connectors already at one point - the "touching but Revit says not connected" cleanup. Four tests and all four must pass, and the one that matters is **facing**: two pipes crossing at the same height pass distance, domain and size, and are not a joint. **Nothing moves**, so a wide gap tolerance buys a model that REPORTS connected while the hole is still there |
+| `FIND_DUPLICATE_VALUES` | Two doors marked D-101. Duplicate DATA, where `FIND_DUPLICATE_ELEMENTS` is duplicate GEOMETRY - the two share the word and nothing else. **A blank is not a duplicate**, and "180 of these have no mark" is reported as its own finding, as is "these do not carry that parameter at all" - folding those together lets a question nobody asked come back as a clean bill of health |
+| `FIND_OVERLAPPING_TAGS` | Annotation printing on top of annotation, measured in **paper millimetres** - the same two tags are clear at 1:50 and merged at 1:200. **It projects onto the view's own right and up directions**, where the earlier library compared model X against model Y: right in a plan, and in a section it reports nearly every pair, because a view looking along X has all its annotation at one X |
+| `COLOR_BY_PARAMETER` | A colour per value - colour by system, by level, by type. **No palette**: a list of six colours gives the seventh system the first system's colour, which is the defect the hue stepping was written to fix. **And the start hue is fixed, not random** - the earlier library re-rolled it each run "for variety", which makes today's drawing incomparable with the one issued last week |
+| `ADD_PROJECT_PARAMETER` | Creates a shared parameter and binds it. **ADMIN, not MODIFY**: a binding changes the project's data structure for everyone, and un-binding discards every value anybody typed. **The shared parameter file path is asked for, never invented** - the earlier library fell back to a temp folder, which produces a shared parameter nobody can find again. **And an existing binding is extended, not replaced**: ReInsert with today's categories alone strips the parameter off every category it had |
+| `DUPLICATE_TYPE` | *"Make a new duct type at 300 wide"* - which resolved to `CREATE_3D_VIEW` before this. **More than one source type is a refusal, not a loop**: Revit needs type names unique, so one literal name over five types succeeds on the first and quietly does not on the rest - a batch that reports success and half happened |
+
+### One was not written, on purpose
+
+`PLACE_SPACES` was in the plan and was dropped after reading `PLACE_ROOMS`, which already places spaces —
+it takes a `placeKind` and calls `NewSpaces2`. A second fragment for it would have been a near-duplicate
+in the most crowded kind of area, and the cost of that is not tidiness: it is retrieval order, which is
+not ours to choose.
+
+### The gaps were found by asking the brain, not by working down a list
+
+Before writing anything, twelve of the owner's own sentences were put through `heron_brain.lookup` and
+the answers read. That is what chose the batch, and some of the answers were worth the exercise on their
+own:
+
+```
+"make a new duct type at 300 wide"    -> CREATE_3D_VIEW
+"the tags are on top of each other"   -> ALIGN_MEP_ELEVATION   (a WRITE, on MEP)
+"add a project parameter"             -> COPY_PARAMETER_VALUE  (a different write)
+"create a ceiling in this room"       -> MEASURE_CEILING_HEIGHT (a read answering a create)
+"add a new workset"                   -> LIST_WORKSETS
+"change the material on these"        -> READ_ELEMENT_MATERIAL
+"draw a cable tray"                   -> DIMENSION_MEP_RUNS
+"reload the links"                    -> LIST_LINKED_MODELS
+"put a scope box round this area"     -> SET_VIEW_SECTION_BOX
+```
+
+**The last six are still true and are the obvious next batch** — `CREATE_CEILING`, `CREATE_WORKSET`,
+`REPLACE_MATERIAL`, `CREATE_CABLE_TRAY`, `RELOAD_LINKS`, `CREATE_SCOPE_BOX`. `JOIN_GEOMETRY` belongs on
+that list too: *"join these walls together"* now lands on `CONNECT_OPEN_ENDS`, which joins MEP
+connectors and cannot do it, so `PLACE_MEP_FITTING`'s table says so out loud until something can.
+
+### The routing was measured against a baseline, not just run
+
+The new fragments were moved aside and `check-routing.py` run on the 138 that were there before, so
+every number below is a difference rather than an impression.
+
+| | before | after |
+|---|---|---|
+| Utterances | 802 | 860 |
+| Claimed in a routing table and NOT reached | 5 | **3** |
+| Shortlist collisions | 107 (13.3%) | 122 (14.2%) |
+
+**Every one of the new fragments' own sentences resolves correctly through `heron_brain.lookup`** —
+checked one at a time, because the collision list measures the keyword route alone and the eighteenth
+session recorded two consecutive sessions being misled by exactly that.
+
+**The unreached-claim count went DOWN while eight fragments were added**, and that is where the real
+work was:
+
+- Three of the new fragments claimed a sentence in a table and declared it nowhere. `"add a drain line"`
+  was resolving to **`CREATE_GRID`**. A routing table is a comment; comments are not indexed.
+- Two of them wrapped a quoted sentence across two lines, and the checker read the fragment. **Keep each
+  sentence on one line** — nothing says so anywhere else, so it is said here.
+- The reciprocal tables went into **eighteen** counterpart fragments, per the rule that a cross-reference
+  written one way only routes whoever lands on the newer file. Seven sentences those tables claimed were
+  then declared as utterances, which is the same defect the seventeenth session named and it reappears
+  every time a table is written.
+- **Two of the five pre-existing claims were not harmless and were fixed**: `"is the model healthy"` was
+  being served by `EXPORT_MODEL_TO_NWC` — a PUBLISH answering a read — and `"move these to level 3"` by
+  `CREATE_LEVELS`, which makes levels. The other three are near-synonym pairs where both sides do the
+  same kind of work, and they are left alone rather than decided blind.
+
+### Two checkers earned their place again
+
+- **`check-structure.py` refused `ADD_PROJECT_PARAMETER`**: its reflection named
+  `Autodesk.Revit.DB.SpecTypeId` in a string, and the adapter boundary says that name belongs inside
+  `revit/`. The fix is better code, not an exemption — the namespace is taken from `typeof(Document)`,
+  so it follows the API instead of being written down beside it.
+- **`tools/README.md` was claiming "all 32 fragments compile on all 8 releases"** while the library was
+  past four times that. The line is gone rather than corrected: a count typed into prose goes stale the
+  day after it is true, and a stale green is believed. The tool's own output is the count.
 
 ---
 
@@ -1321,7 +1443,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | | |
 |---|---|
 | **The eight `brain/` modules** | Each has its own suite and each passes — the fragment store, the scope store, exact-word search, nearness, fusion, the capability registry, the graph, and skills. What they are proven to do is **behave as specified against fixtures**. Not one of them has been handed a real Revit's answer |
-| **102 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists **one hundred and two** items under *needs a real Revit*. **Since 2026-08-29 all of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)). That is not behaviour, but it does mean none of them will fail at the PC for a reason a compiler could have found |
+| **The whole fragment library, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are why `check-gaps` carries them under *needs a real Revit*; read the count off the tool rather than from here. **Most of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)) — which means those will not fail at the PC for a reason a compiler could have found. **The eight written on 2026-09-02 are the exception and have never been compiled at all**, because that container could not install the .NET SDK. That is `A9`, and it is the first thing to run on a machine that has one |
 | **10 skills, all `DRAFT`** | Each names **capabilities and never fragments**, and each carries the words Ajmal actually says rather than the words the technique is named after. Whether any of them does what it says is unknown |
 | **The trained embedding backend** | **The highest-value item that needs no Revit, and 2026-08-30 sharpened what it buys.** [`brain/retrieval-history.md`](brain/retrieval-history.md) tracks one query across eight library sizes (7 → 32) *and* now measures a second way: every fragment's own declared words asked back to the search — 169 sentences, **words 92% first and 100% in the top three, nearness 60% and 82%**. That corrects the older headline in this file's own history: the nearness route has **not** collapsed in general. It handles **vocabulary overlap** and fails at **disambiguation**, which is why the tracked query — a sentence several fragments fairly claim — sits mid-library while a sentence naming one fragment comes back first. So `A7` should be expected to change the **contested** lookups, not every lookup. Never run — `huggingface.co` is refused by this container, and by a second one on 2026-08-31, where the package installed cleanly from PyPI and only the **weights** download was refused (`ProxyError: 403`). The backend that *is* running is character n-grams, which measurably does not do synonyms (`diffuser`/`grille` scored −0.136). Needs no Revit and no Windows |
 | **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py). **A real MCP SDK has now served them** (2026-08-31): all ten tools registered with their descriptions and argument schemas, and all three answering through the SDK's own dispatch with both refusals surviving the round trip — [`tests/test_mcp_serves.py`](tests/test_mcp_serves.py). That is no longer a text read. **It is still not a host**: nothing here shows Claude Code connecting over stdio, rendering a docstring or choosing a tool from it, and that is what is left of `A8`. **Doing it found that the server would not have started at all** on a machine installing today — see the eighth session below |
@@ -1906,11 +2028,11 @@ never edit it, never commit to it.** His instruction on how to use it, in his ow
 |---|---|---|
 | `actions/reporting/` | 43 | **started** — most of the high-value ones are done |
 | `actions/sheets-views/` | 54 | **started** — the spine is done |
-| `creators/` | 36 | not started |
-| `actions/structural-changes/` | 33 | not started |
-| `actions/qa-checks/` | 30 | not started |
-| `actions/color-graphics/` | 25 | barely started — 3 done |
-| `actions/parameters-naming/` | 21 | not started |
+| `creators/` | 36 | started — the duct and pipe spine is done |
+| `actions/structural-changes/` | 33 | started — slope, connect and duplicate-type are done |
+| `actions/qa-checks/` | 30 | started — duplicate values and annotation overlap are done |
+| `actions/color-graphics/` | 25 | barely started — 4 done |
+| `actions/parameters-naming/` | 21 | started — 2 done |
 | `actions/visibility/` | 17 | barely started — 3 done |
 | `actions/move-copy-rotate/` | 13 | mostly done |
 | `filters/` | 51 | a few done |
@@ -1981,11 +2103,27 @@ rest.
 
 ### The branch
 
-```bash
-git push -u origin claude/ai-aj-tools-handover-af4pow
-```
+The branch name is given per session and is not fixed here — the twentieth used
+`claude/heron-ai-fragments-6d5xtp`. Push with `git push -u origin <the branch you were given>`, and open
+a draft pull request against `main`.
 
 **Heron-AI and AJ-Tools only.** `AJ-AI-Brain` is read-only reference.
+
+### Before the C# — one step this recipe did not have
+
+**Step 4 is the compile gate and it is not optional; when it cannot run, say so and do the next best
+thing.** On a container with no .NET SDK:
+
+```bash
+# nuget.org is reachable where the SDK download host is not
+curl -o api.nupkg https://api.nuget.org/v3-flatcontainer/nice3point.revit.api.revitapi/<version>/<file>.nupkg
+```
+
+Unzip it, and read `ref/*/RevitAPI.dll`'s metadata with Python's `dnfile` — every type and member the
+fragment calls, on 2020 and on 2027, plus argument counts where there are overloads. **Check base types
+as well**: `Space` declares neither `Number` nor `Area`; both come from `SpatialElement`, and a check
+that stops at the declared type reports a false absence. This catches a member a release does not ship
+and NOTHING ELSE — argument types and syntax stay unchecked, and the batch still owes a real compile.
 
 ### When something behaves oddly while doing this
 
@@ -2053,14 +2191,15 @@ fragment being written at the time.
 
 *Phase 0 is finished and proven. Step 6 and the whole of Phase 2 are finished and proven of nothing —
 built carefully, obeying rules that are now binding, tested where testing was possible, and compiled on
-every release from 2020 to 2027. **Seventy fragments and ten skills** sit at `DRAFT`, which is not a shortcut
+every release from 2020 to 2027. **Every fragment and all ten skills** sit at `DRAFT`, which is not a shortcut
 but [D-30](docs/DECISIONS.md) being obeyed: promotion needs one proof containing a negative case, and a
 negative case needs a model. `python tools/check-gaps.py` is now the file that answers "what is left",
 because it is computed from disk and this one is not — and where they disagree, believe the tool. It
-currently says **nothing** here is unfinished and **55 are waiting: 48 on a Revit, plus the 102 unproven
-fragments as one further item, 3 on Windows, 1 on a network that can reach the weights host, 1 on the
-owner, and 1 on an optional dependency this machine does not have.** That breakdown sums to its own
-total, which the sentence it replaces did not.
+currently says **nothing** here is unfinished and **56 are waiting: 48 on a Revit, plus the unproven
+fragments as one further item, 3 on Windows, 1 on the .NET SDK (`A9`, the uncompiled batch), 1 on a
+network that can reach the weights host, 1 on the owner, and 1 on an optional dependency this machine
+does not have.** Re-derive that from the tool rather than editing the digits — a total that disagrees
+with its own breakdown is the cheapest drift there is to catch, and it has survived here before.
 Almost nothing in this repository is waiting on another session; it is waiting on a machine — and **four
 times now**, something believed to be waiting on a machine was waiting on somebody trying it. The
 newest was `A8`, filed under *needs Windows* when what it needed was `pip install mcp` — and trying it

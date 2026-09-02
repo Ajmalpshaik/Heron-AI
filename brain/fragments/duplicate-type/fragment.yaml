@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-027
+semantic-identity: "make a new type from the type these are using"
+kind: action
+domain: revit.elements
+capability: DUPLICATE_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Duplicates the TYPE behind the elements handed in, under a new name -
+  *"make a new duct type at 300 wide"*, *"I need a copy of this wall type"*.
+  The new type is created and nothing else happens: no instance is moved onto
+  it and no size is set on it.
+
+  **It refuses when the selection sits on more than one type**, and that refusal
+  is the fragment's main decision. The earlier library let one literal name be
+  applied to every distinct type found; Revit requires type names to be unique,
+  so the first duplicate succeeded and the rest quietly did not - a batch that
+  reports success and half-happened. So the distinct types are counted first,
+  and if there is more than one they are NAMED and nothing is created. The user
+  then narrows the selection, which is the answer they wanted anyway.
+
+  **Forty instances of one type give ONE new type, not forty.** The types are
+  de-duplicated before anything is created.
+
+  **Two steps have to follow it and neither is guessed.** A duplicated type is
+  an exact copy - same size, same everything - so WRITE_ELEMENT_PARAMETERS sets
+  what makes it different, and CHANGE_ELEMENT_TYPE moves instances onto it if
+  that is wanted. Doing either from here would mean deciding, on somebody's
+  behalf, that their existing elements should change.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: newTypeName
+      type: string
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: createdTypeId
+      type: ElementId
+    - name: sourceTypeName
+      type: string
+    - name: noType
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementType.Duplicate(string)` is
+  present 2020 through 2027 - read off the reference assemblies at both ends
+  rather than remembered - and it is a base `ElementType` method, so it covers
+  both loadable family types and system types like duct, pipe and wall types.
+  ElementIds are compared as ElementIds and never read as numbers.
+
+# ROUTING - repeated in CHANGE_ELEMENT_TYPE and RENAME_ELEMENTS.
+#
+#   "make a new duct type"           -> here
+#   "duplicate this type"            -> here
+#   "make a 300 wide version of this type" -> here FIRST, then
+#                                      WRITE_ELEMENT_PARAMETERS for the 300
+#   "change these to the 300 type"   -> CHANGE_ELEMENT_TYPE - the type already
+#                                      exists and the instances move onto it
+#   "rename this type"               -> RENAME_ELEMENTS - and note it renames
+#                                      the type EVERYWHERE it is used, which
+#                                      is the opposite of duplicating it
+#   "make the new type 300 wide"     -> WRITE_ELEMENT_PARAMETERS on the type
+#                                      this creates. Nothing here sets a size
+
+utterances:
+  - make a new duct type
+  - duplicate this type
+  - i need a copy of this type
+  - create a new type from this one
+  - make a 300 wide version of this type
+  - duplicate the wall type

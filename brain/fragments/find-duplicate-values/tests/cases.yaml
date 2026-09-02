@@ -1,0 +1,34 @@
+positive:
+  - given: 40 doors, two of them both marked D-101, checked on "Mark"
+    expect: >
+      ONE row naming D-101 and both element ids, and both ids in `duplicated`.
+      Not 40 rows, and not a row per element
+
+  - given: rooms on one level checked on "Number", three numbered 05
+    expect: one row, three ids, all three in `duplicated`
+
+negative:
+  - given: 200 elements of which 180 have no Mark typed in
+    expect: >
+      the 180 in `blank` and NOT reported as one duplicate group. This is the
+      FIRST case to run - grouping the empties reports the whole model as one
+      clash and buries the rows that matter
+
+  - given: a category that carries no parameter of that name at all
+    expect: >
+      every element in `noSuchParameter` and a finding that says so plainly.
+      NOT "every Mark is unique" - nothing was checked, and a clean bill of
+      health for a question never asked is the worst answer this could give
+
+  - given: a length parameter where two elements read 150 mm and differ in the ninth decimal
+    expect: >
+      reported as the SAME value. They print the same on the schedule, so they
+      are the same to whoever reads the drawing
+
+  - given: elements handed in with genuinely unique marks
+    expect: >
+      a plain sentence saying every value is unique, and empty lists - never
+      silence, which reads as the check not having run
+
+second_route:
+  - a schedule of the same category with the parameter as a column, sorted on it, read down for repeats

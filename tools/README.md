@@ -143,9 +143,14 @@ whether a contract name could be a variable. [`brain/heron_fragment.py`](../brai
 now refuses that whole class instantly, so the compiler is the authority and the validator is the fast
 half that stops the mistake being made.
 
-Needs the .NET SDK (`dotnet-sdk-10.0` on Ubuntu) and no Revit and no Windows. **All 32 fragments compile
-on all 8 releases, 2020 to 2027**, verified 2026-08-30. Errors point at the fragment's own file and line,
-not at the generated wrapper.
+Needs the .NET SDK (`dotnet-sdk-10.0` on Ubuntu) and no Revit and no Windows. Errors point at the
+fragment's own file and line, not at the generated wrapper.
+
+**How many fragments last passed it is not written here on purpose.** This line said *"all 32 fragments
+compile on all 8 releases"* until 2026-09-02, by which point the library was well past four times that -
+a number typed into prose goes stale the day after it is true, and a stale green is worse than no
+claim, because it is believed. **Run the tool; its own output is the count.** What each session records
+instead is in [`../HANDOVER.md`](../HANDOVER.md): which releases were compiled, when, and by what.
 
 Same limit as every compiler: it says nothing about **behaviour**. That is [D-30](../docs/DECISIONS.md)'s
 proof with a negative case, and it needs a real model.

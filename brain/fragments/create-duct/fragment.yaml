@@ -84,6 +84,11 @@ compatibility-note: >
 #                                       with this fragment and used to resolve
 #                                       here anyway, which is what a crowded
 #                                       area does to retrieval
+#   "run a pipe from here to there" -> CREATE_PIPE - the same job, other
+#                                      domain, and written to the same shape
+#   "put a drain line in"            -> CREATE_PIPE
+#   "give it a fall of 1 in 100"     -> SET_MEP_SLOPE - drawn flat, then sloped
+#   "they are touching but not connected" -> CONNECT_OPEN_ENDS
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

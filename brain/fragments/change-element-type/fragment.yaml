@@ -68,6 +68,10 @@ compatibility-note: >
 # SIZE AND TYPE ARE THE SAME SENTENCE IN A MODELLER'S MOUTH. "Change it to 600
 # by 600" can mean either, and on a family whose sizes are types it means this
 # one. Ask which before running on a batch.
+#   "make a new duct type"           -> DUPLICATE_TYPE - the type does not exist
+#                                       yet. This one moves instances onto a type
+#                                       that already does
+#   "duplicate this type"            -> DUPLICATE_TYPE
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

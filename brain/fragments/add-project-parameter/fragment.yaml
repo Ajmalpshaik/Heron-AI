@@ -1,0 +1,116 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-010
+semantic-identity: "add a new project parameter to these categories"
+kind: action
+domain: revit.parameters
+capability: ADD_PROJECT_PARAMETER
+version: 1
+source: OFFICIAL
+risk: ADMIN
+
+purpose: >
+  Creates a shared parameter and binds it to one or more categories as a
+  project parameter - "add a parameter called AJ_Status to duct accessories".
+  Every other parameter fragment here writes VALUES into a parameter that
+  already exists; this one makes the parameter.
+
+  **It is ADMIN risk, not MODIFY, and the reason is worth stating.** A binding
+  changes the project's data structure for everybody who opens the file, it is
+  the thing a client's BIM execution plan governs, and un-binding a parameter
+  discards every value anybody typed into it. That is a different class of
+  change from moving a duct.
+
+  **The shared parameter file is asked for and never invented.** The earlier
+  library fell back to creating one under a temporary folder when the
+  application had none set. A shared parameter written to a path nobody knows
+  about is a parameter that cannot be re-used on the next project or matched by
+  a colleague - which defeats the whole point of it being SHARED. So the path
+  comes from the request; the file is created if it is not there yet, and the
+  application is pointed at it.
+
+  **Re-running it does not make a second parameter.** An existing definition of
+  that name in that group is reused, and an existing binding is extended rather
+  than replaced. Replacing a binding is how a category quietly loses a
+  parameter it had.
+
+  **The parameter is filed under Data.** The group only decides where it appears
+  in the properties palette, it can be changed in Revit's own Project Parameters
+  dialog afterwards, and asking a modeller for an internal group name buys
+  nothing.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    - name: sharedParameterFile
+      type: string
+      source: request
+    - name: groupName
+      type: string
+      source: request
+    - name: parameterName
+      type: string
+      source: request
+    # RESOLVED categories, never BuiltInCategory names in a string. Resolving a
+    # BIM word to a category is its own job and belongs upstream.
+    - name: categories
+      type: IList<Category>
+      source: request
+    - name: instanceBinding
+      type: bool
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: bound
+      type: bool
+    - name: boundCategories
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  THIS IS THE FRAGMENT THE VERSION RANGE ACTUALLY BITES, and it is why the two
+  moving calls are resolved at run time instead of being written down.
+
+  `ExternalDefinitionCreationOptions` took a spec ENUM until Revit 2021 and a
+  `ForgeTypeId` from 2022; the reference assemblies show its `Type` property
+  present on 2020 and GONE by 2024, replaced by `GetDataType`/`SetDataType`.
+  `BindingMap.Insert`'s group argument moved the same way, and Revit 2027
+  removed the old group enum for `GroupTypeId`. Neither name can appear in
+  source that must compile on 2020 AND on 2027, so the constructor is chosen by
+  its own second parameter type and the group is looked up by name. Note the
+  trap: 2021 SHIPS `ForgeTypeId` while this constructor there still takes the
+  old enum, so testing whether the type exists gives the wrong answer - the
+  constructor's own signature is the only reliable question.
+
+# ROUTING - repeated in WRITE_ELEMENT_PARAMETERS and COPY_PARAMETER_VALUE.
+#
+#   "add a project parameter"        -> here
+#   "create a shared parameter"      -> here
+#   "the client wants an extra field on every element" -> here
+#   "fill in the mark"               -> WRITE_ELEMENT_PARAMETERS - the
+#                                       parameter already exists; this one
+#                                       makes one and writes no values at all
+#   "copy the comments into the
+#    mark"                           -> COPY_PARAMETER_VALUE
+#   "which ones are blank"           -> DESCRIBE_BLANK_PARAMETERS
+
+utterances:
+  - add a project parameter
+  - create a shared parameter
+  - add a new parameter to this category
+  - bind this parameter to these categories
+  - the client wants an extra field on every element
+  - set up a project parameter for the model

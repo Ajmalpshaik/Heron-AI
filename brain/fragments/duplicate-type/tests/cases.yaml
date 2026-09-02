@@ -1,0 +1,35 @@
+positive:
+  - given: forty ducts all on one duct type, newTypeName "Supply - 300x200"
+    expect: >
+      ONE new type in the project browser, the forty ducts STILL on the old one,
+      and nothing about the new type different from the old one yet. Checked in
+      Revit's type list, not from the report
+
+  - given: a wall type duplicated
+    expect: >
+      the same behaviour as the duct type. Duplicate is a base ElementType
+      method, so a system type and a loadable family type go the same way
+
+negative:
+  - given: a selection sitting on THREE different duct types, one newTypeName
+    expect: >
+      NOTHING created, and the three type names listed. THIS IS THE FIRST CASE
+      TO RUN. The earlier library applied the one name to all three: Revit took
+      the first and refused the rest, and the report still read as success
+
+  - given: newTypeName already used by another type of that family
+    expect: >
+      a plain failure naming the clash. Not a type quietly created under an
+      invented name like "Supply - 300x200 (2)", which nobody asked for and
+      nobody will find
+
+  - given: the new type's size read straight after
+    expect: >
+      the SAME as the source type. A duplicate is an exact copy - if it already
+      differs, something other than this fragment changed it
+
+  - given: an element handed in with no resolvable type, mixed with ducts
+    expect: reported in `noType`, and the duct type still duplicated
+
+second_route:
+  - Revit's own right-click, Duplicate on the type in the project browser, and the two results compared

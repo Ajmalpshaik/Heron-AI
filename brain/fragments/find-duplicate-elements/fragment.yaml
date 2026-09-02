@@ -77,6 +77,10 @@ compatibility-note: >
 #   "delete the duplicates"      -> here, then DELETE_ELEMENTS. This fragment
 #                                   deletes nothing on its own, and that split
 #                                   is deliberate
+#   "two doors have the same mark"   -> FIND_DUPLICATE_VALUES - duplicate DATA,
+#                                       a different defect from two elements
+#                                       stacked in one place
+#   "are any room numbers repeated"  -> FIND_DUPLICATE_VALUES
 
 utterances:
   - find duplicate elements

@@ -113,6 +113,12 @@ compatibility-note: >
 #                                     afterwards
 #   "grey the architecture back"   -> SET_CATEGORY_GRAPHICS - a whole category,
 #                                     no parameter involved
+#   "colour code by system"          -> COLOR_BY_PARAMETER paints what is there
+#                                       NOW, in one step. A FILTER is a RULE that
+#                                       keeps working as the model changes - use
+#                                       this one when the drawing has to stay
+#                                       right without being re-run
+#   "colour by system"               -> either; say which behaviour is wanted
 
 utterances:
   - colour by system
