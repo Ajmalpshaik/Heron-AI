@@ -45,6 +45,59 @@ this up next: a fresh Claude session, a person, or the owner on his phone.
 
 ---
 
+## HANDOVER — the session that ran 2026-09-02 into 2026-09-03
+
+**What happened, in one line: the library went from 138 fragments to 202, in eight batches of eight, and
+was merged to `main`.**
+
+**The method, which is the part worth keeping.** Every batch started the same way: ask
+`heron_brain.lookup` the owner's own sentences against the library as it then stood, and write down which
+ones came back wrong. That is the whole selection rule — **nothing was built because it seemed useful; it
+was built because a real sentence was measurably going somewhere else.** Then read the top three to five
+candidates' `purpose` before writing anything, verify every API member against the Revit reference
+assemblies for 2020, 2024 and 2027, write the three files, measure routing again, check every new
+collision through `lookup`, add the cross-reference tables BOTH ways, run every checker, commit.
+
+**Reading the neighbours before building is what earned the most.** It stopped seven fragments from being
+written that already existed under another name — cable tray and conduit are one fragment, spaces are
+`PLACE_ROOMS`, clearing a category override is `SET_CATEGORY_GRAPHICS` with an empty settings object, and
+so on. The batch that skipped that step built a duplicate and had to withdraw it the same hour. **A
+lookup can show what is missing; only reading the candidates shows what already exists under a different
+name.**
+
+**The metadata substitute for the compile gate paid for itself seven times**, and the shapes it caught
+are worth knowing because a compiler on the PC will not teach them again:
+
+| # | Shape | Example |
+|---|---|---|
+| 1–3 | A member the OLD release never had | `Ceiling.Create` is absent on 2020 |
+| 4 | A member the NEW release removed | `GlobalParameter.IsValidDataType` is gone by 2024 |
+| 5 | A whole CAPABILITY removed | Revit 2027 has no HVAC zone creation at all |
+| 6 | Reflection that still names a missing TYPE | the delete-workset lookup named a 2020-absent type |
+| 7 | An OVERLOAD whose ARITY changed | the filter rule takes 3 arguments on 2020, 2 by 2027 |
+
+**Five impossibilities are now recorded rather than re-derived** — a scope box cannot be created, a design
+option cannot be made active, the first legend cannot be created, a wall cannot be split, and a phase
+cannot be created. Each is a routing row that says so and names the Revit route instead.
+
+### What the next session should do, in order
+
+1. **`python tools/check-gaps.py` first.** It is computed from disk and wins over every sentence here.
+2. **On any machine with the .NET SDK: `python tools/check-fragments-compile.py`.** Sixty-four fragments
+   owe a real compile. This is `A9`, and it is the largest thing that needs no Revit.
+3. **With Revit open: start proving.** Every one of the 202 is `DRAFT`. [D-30](docs/DECISIONS.md) means a
+   proof needs a case that comes back EMPTY, not just one that works.
+4. **To carry the library build on instead:** [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start),
+   and run the lookup sweep first — the un-mined source areas left are `actions/sheets-views/`,
+   `actions/reporting/` and the rest of `filters/`.
+
+**One gap measured and deliberately left:** *"What changed between this model and the old one"* still
+routes to `SET_ELEMENT_WORKSET`. `COMPARE_ELEMENTS` compares elements inside one document and cannot be
+it. A real model-to-model compare needs a second document opened or linked, and that API deserves
+checking properly rather than guessing.
+
+---
+
 ## WHERE THIS STANDS, 2026-09-03 — 202 fragments, and sixty-four have never seen a compiler
 
 The library is still growing away from the PC. What is left to *prove* still needs a machine this
@@ -56,7 +109,7 @@ needs only the **.NET SDK**, not Revit and not Windows.
 | Fragments | **202**, every one `DRAFT`. 138 compiled on all eight Revit releases; **the newest 64 have not been compiled at all** — see `A9` |
 | Skills | 10, none naming a fragment |
 | Tools the host sees | 10, served by a real MCP SDK |
-| Test suites | 18 — 17 pass, 1 skipped (needs the MCP SDK installed) |
+| Test suites | 18 — **16 pass, 2 blocked**: `test_bridge_roundtrip` needs the .NET SDK, `test_mcp_serves` needs the MCP SDK. Measured 2026-09-03, not remembered |
 | Checkers | 8, all green |
 | `check-gaps` | **0 unfinished, 56 waiting** |
 
@@ -65,11 +118,11 @@ buildable thing is built, and not one fragment has touched a real model.
 
 > **The compile gate is the first thing to run on a machine that has the SDK** — `python
 > tools/check-fragments-compile.py`. It is now `A9` in the register. Sixty-four fragments were written on
-> 2026-09-02 in a container where the SDK could not be installed, because the download host is refused
-> by that network's policy. Every API member they use was checked against the real Revit reference
-> assemblies for 2020, 2024 and 2027 instead, which is not the same thing and is not a substitute —
-> though it has now caught three errors a compiler would have caught, and one it would not have needed
-> to.
+> 2026-09-02 and 2026-09-03 in a container where the SDK could not be installed, because the download
+> host is refused by that network's policy. Every API member they use was checked against the real
+> Revit reference assemblies for 2020, 2024 and 2027 instead, which is not the same thing and is not a
+> substitute — though it has now caught **seven** real errors before they were compiled, across four
+> distinct shapes. `A9` lists them.
 
 ### The one thing that matters next, and it needs the PC
 
