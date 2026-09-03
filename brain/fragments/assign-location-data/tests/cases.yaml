@@ -1,0 +1,41 @@
+positive:
+  - given: forty pieces of equipment in placed rooms, with a bound Room Name parameter
+    expect: >
+      each carrying its own room's name - CHECKED in a schedule against a plan,
+      because the value differs per element and a count says nothing about
+      whether any of them is right
+
+  - given: useSpaces true on an MEP model carrying spaces
+    expect: >
+      the SPACE names written, and the report saying spaces were used. A model
+      can hold rooms and spaces in the same place with different names
+
+  - given: a level parameter given
+    expect: each element's own level name written alongside
+
+negative:
+  - given: a ceiling-mounted diffuser sitting above the room's upper limit
+    expect: >
+      its room STILL found. THIS IS THE FIRST CASE TO RUN. The room test needs a
+      point inside the room's volume, and from the diffuser's own height it tests
+      false - so the obvious version leaves every air terminal in the building
+      blank, which is exactly the set somebody built the register for
+
+  - given: a model whose rooms are in a LINKED architectural file
+    expect: >
+      the no-rooms warning on the summary. Everything comes back blank and it
+      looks identical to elements genuinely outside any room
+
+  - given: a target parameter that is not bound to those categories
+    expect: >
+      counted and named, with the reminder that this fills parameters and does
+      not create them. "0 written" must never be mysterious
+
+  - given: an element in a corridor with no room placed
+    expect: named in noRoomFound rather than written with a wrong name
+
+  - given: an element with no position at all
+    expect: skipped, with the rest completing
+
+second_route:
+  - Schedule the equipment with the room parameter as a column and compare against a plan

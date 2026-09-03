@@ -73,6 +73,10 @@ compatibility-note: >
 
 #   "what category overrides are on this view" -> REPORT_CATEGORY_OVERRIDES -
 #                                        an override is not visibility
+#   "which categories are turned off in this view" ->
+#                                        REPORT_CATEGORY_VISIBILITY - the whole
+#                                        view at once; this asks about ONE
+#                                        element
 utterances:
   - why is this element not visible
   - why can I not see my ducts

@@ -100,6 +100,8 @@ compatibility-note: >
 #                                          and the on/off state. This one puts
 #                                          ONE filter on with an override the
 #                                          caller built
+#   "take that filter off the view"      -> REMOVE_VIEW_FILTER - the other end
+#                                        of this one
 utterances:
   - put that filter on this view
   - apply the filter to this view

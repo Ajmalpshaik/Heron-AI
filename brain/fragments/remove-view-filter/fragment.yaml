@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-053
+semantic-identity: "take filters off a view, or delete them from the project"
+kind: action
+domain: revit.views
+capability: REMOVE_VIEW_FILTER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Takes a filter off a view - or, when asked, deletes it from the project
+  entirely. The other end of `APPLY_VIEW_FILTER` and of
+  `CREATE_VIEW_FILTERS_BY_VALUE`, both of which only ever add.
+
+  **THE TWO ARE COMPLETELY DIFFERENT IN REACH AND THE FRAGMENT WILL NOT BLUR
+  THEM.** Taking a filter off ONE view leaves it in the project and on every
+  other view using it. Deleting it removes it from EVERY view at once, and there
+  is no undo short of Revit's own. So deleting is a separate flag, off by
+  default, and the report says which happened.
+
+  **BEFORE DELETING, IT SAYS HOW MANY OTHER VIEWS USE IT.** That count is the
+  whole decision: a filter on one view is a leftover, and a filter on twenty is
+  somebody's standard. Deleting the second by accident is a bad afternoon.
+
+  **A FILTER NOT ON THE VIEW IS NOT AN ERROR**, it is the state somebody wanted.
+  Reported as already absent rather than as a failure, so re-running a tidy-up
+  is safe.
+
+  **A VIEW GOVERNED BY A TEMPLATE OWNS NO FILTERS OF ITS OWN.** Removing one
+  from such a view does nothing whatever - the template holds them - so those
+  views are NAMED with their template rather than counted as done.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: filterNames
+      type: IList<string>
+      source: request
+    - name: deleteFromProject
+      type: bool
+      source: request
+  provides:
+    - name: removed
+      type: int
+    - name: deleted
+      type: int
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.RemoveFilter`, `View.GetFilters`,
+  `View.IsFilterApplied` and `Document.Delete` are unchanged 2020 through 2027 -
+  read off the reference assemblies at both ends. `GetOrderedFilters` is NOT
+  used: it arrives at 2024 and naming it would break the 2020 build for an
+  ordering this does not need.
+
+# ROUTING - repeated in APPLY_VIEW_FILTER, REPORT_VIEW_FILTERS and
+# CREATE_VIEW_FILTERS_BY_VALUE.
+#
+#   "take that filter off the view"      -> here
+#   "remove the filters from this plan"  -> here
+#   "delete this filter from the project" -> here, with the delete flag - and it
+#                                           says how many other views use it
+#                                           first
+#   "put that filter on this view"       -> APPLY_VIEW_FILTER - the other end
+#   "what filters are on this view"      -> REPORT_VIEW_FILTERS - a READ, and
+#                                           the one to run BEFORE deleting
+#                                           anything
+
+utterances:
+  - take that filter off the view
+  - remove the filters from this plan
+  - delete this filter from the project
+  - clear the filters off this view
+  - get rid of that filter

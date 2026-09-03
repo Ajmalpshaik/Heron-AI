@@ -63,6 +63,14 @@ compatibility-note: >
   `ReferenceWithContext.Proximity` are unchanged 2020 to 2027. Distances arrive
   and are used in Revit's internal feet with no units call.
 
+# ROUTING - repeated in CHECK_SURFACE_FIT and SNAP_TO_GRID.
+#
+#   "drop these down onto the slab"      -> here - the MOVE
+#   "is the equipment sitting flat on the floor" -> CHECK_SURFACE_FIT - run it
+#                                        FIRST and leave the straddling ones
+#                                        out of the move. A centre ray is right
+#                                        in the middle of a surface and lies at
+#                                        the edges
 utterances:
   - snap the terminals up to the ceiling
   - move the sprinklers up to the soffit

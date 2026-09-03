@@ -127,6 +127,12 @@ compatibility-note: >
 #   "what filters already exist"     -> REPORT_VIEW_FILTERS, before making a
 #                                       near-duplicate of one that works
 
+#   "make a filter for every different system type" ->
+#                                        CREATE_VIEW_FILTERS_BY_VALUE - one
+#                                        filter PER VALUE, worked out from the
+#                                        model. This makes ONE, from a rule
+#                                        you already know
+#   "take that filter off the view"      -> REMOVE_VIEW_FILTER
 utterances:
   - colour by system
   - add a filter to the view

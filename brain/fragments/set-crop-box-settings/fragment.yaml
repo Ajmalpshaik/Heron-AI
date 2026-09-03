@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-055
+semantic-identity: "switch crop, crop line and annotation crop on or off across views"
+kind: action
+domain: revit.views
+capability: SET_CROP_BOX_SETTINGS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Switches three crop flags across many views at once - cropping on or off, the
+  crop boundary LINE shown or hidden, and the ANNOTATION crop on or off. Flags
+  only; it never resizes anything.
+
+  **THE ANNOTATION CROP IS THE HALF NOTHING ELSE HERE COVERS, AND IT IS THE ONE
+  THAT SPOILS SHEETS.** The model crop trims geometry. Tags, dimensions and text
+  keep printing outside it until the annotation crop is on too - which is why a
+  neatly cropped plan still arrives on the sheet with a tag hanging over the
+  title block.
+
+  **IT IS NOT `SET_VIEW_CROP`, and the two compose rather than compete.** That
+  one SIZES a crop around a set of elements, in one view. This one flips flags,
+  across a whole drawing set. Turn cropping on here, size it there.
+
+  **THE ANNOTATION CROP DOES NOTHING WHILE CROPPING IS OFF.** Revit ignores it.
+  It is still set if asked - refusing would be worse - but the report says so,
+  because otherwise it reads as the call having failed.
+
+  **EACH FLAG IS OPTIONAL AND UNSET MEANS LEAVE ALONE.** A batch that forces
+  three settings when somebody asked about one is how a drawing set loses its
+  crop boundaries overnight.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: views
+      type: IList<View>
+      source: request
+    - name: cropActive
+      type: string
+      source: request
+    - name: cropVisible
+      type: string
+      source: request
+    - name: annotationCrop
+      type: string
+      source: request
+  provides:
+    - name: changed
+      type: int
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.CropBoxActive`,
+  `View.CropBoxVisible` and `BuiltInParameter.VIEWER_ANNOTATION_CROP_ACTIVE` are
+  present 2020 through 2027 - read off the reference assemblies at both ends.
+  Each flag arrives as TEXT - "on", "off" or empty for leave-alone - rather than
+  as a nullable boolean, because a tri-state that a caller can omit is exactly
+  what a batch of this shape needs and text says what it means at the edge.
+
+# ROUTING - repeated in SET_VIEW_CROP and SET_VIEW_CROP_TO_SHAPE.
+#
+#   "turn the crop on for all these views" -> here
+#   "the tags are printing outside the crop" -> here - the ANNOTATION crop, which
+#                                           is a separate flag and is the usual
+#                                           cause
+#   "hide the crop boundary lines"       -> here
+#   "just show me this part of the plan" -> SET_VIEW_CROP - it SIZES the crop
+#                                           round some elements, one view
+#   "crop the view to follow the room shape" -> SET_VIEW_CROP_TO_SHAPE
+
+utterances:
+  - turn the crop on for all these views
+  - the tags are printing outside the crop
+  - hide the crop boundary lines
+  - switch the annotation crop on
+  - turn cropping off on these views

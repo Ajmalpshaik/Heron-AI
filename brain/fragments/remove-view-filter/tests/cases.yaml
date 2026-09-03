@@ -1,0 +1,35 @@
+positive:
+  - given: a plan carrying four filters, two named for removal
+    expect: >
+      those two off the view and the other two untouched - CHECKED in the view's
+      Visibility/Graphics, Filters tab
+
+  - given: deleteFromProject true on a filter used by no other view
+    expect: it gone from the project's filter list entirely
+
+  - given: a filter already absent from the view
+    expect: >
+      said as already absent, not counted as a failure. Re-running a tidy-up has
+      to be safe
+
+negative:
+  - given: deleteFromProject true on a filter used by twenty other views
+    expect: >
+      NOT deleted, with the count of twenty stated. THIS IS THE FIRST CASE TO
+      RUN. A filter on one view is a leftover and a filter on twenty is
+      somebody's standard, and the two are indistinguishable without that count
+
+  - given: a view driven by a view template
+    expect: >
+      refused, naming the template. Removing a filter from such a view does
+      NOTHING at all, and reporting it as removed is a lie the sheet later
+      contradicts
+
+  - given: a filter name that does not exist in the project
+    expect: named plainly, with the rest of the list still processed
+
+  - given: a schedule or a legend as the view
+    expect: said plainly - it cannot carry filters at all
+
+second_route:
+  - Visibility/Graphics, Filters tab for the view; Manage then Filters for the project list

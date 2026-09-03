@@ -1,0 +1,35 @@
+positive:
+  - given: forty elements with a Mark value, cleared
+    expect: >
+      forty blanks - CHECKED in a schedule, because a blank cell and a "0" cell
+      look different there and that is the whole difference being made
+
+  - given: a LENGTH parameter with a value
+    expect: >
+      cleared. Writing an empty string to it does nothing at all, which is why
+      this fragment exists beside the text writer
+
+  - given: an element whose parameter is already empty
+    expect: counted as already empty, not as cleared
+
+negative:
+  - given: Area or Volume named as the parameter
+    expect: >
+      counted as READ-ONLY and reported. THIS IS THE FIRST CASE TO RUN. Revit
+      computes them, and skipping them silently produces "40 cleared" when none
+      was and nobody looks again
+
+  - given: a parameter that lives on the TYPE, with instances handed in
+    expect: >
+      REFUSED with the count and the reason. Clearing it would change every other
+      instance in the project using that type - a much larger act than the one
+      asked for
+
+  - given: a parameter no element carries
+    expect: counted and named, not silently zero
+
+  - given: an element deleted between the query and the call
+    expect: named, with the rest of the batch completing
+
+second_route:
+  - Put the parameter in a schedule and look for blank cells rather than zeros

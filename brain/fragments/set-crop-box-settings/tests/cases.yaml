@@ -1,0 +1,39 @@
+positive:
+  - given: twelve plans, cropActive "on" and annotationCrop "on"
+    expect: >
+      all twelve cropping model AND annotation - CHECKED on a sheet, because the
+      point is that the tags stop hanging over the title block and only the sheet
+      shows that
+
+  - given: cropVisible "off" across a set
+    expect: the crop boundary line hidden, cropping itself untouched
+
+  - given: cropActive left empty and only annotationCrop set
+    expect: >
+      cropping left exactly as it was on each view. Empty means leave alone, and
+      a batch that forces all three is how a drawing set loses its crops
+      overnight
+
+negative:
+  - given: annotationCrop "on" on a view where cropping is OFF
+    expect: >
+      the flag set AND a line saying Revit ignores it until cropping is on. THIS
+      IS THE FIRST CASE TO RUN. Silence here reads as the call having failed,
+      and somebody then sets it again and again
+
+  - given: a flag spelled something other than on, off or empty
+    expect: >
+      refused before anything is touched. Guessing between "off" and "leave
+      alone" changes drawings nobody asked about
+
+  - given: a view template in the list
+    expect: refused by name, with the real views still done
+
+  - given: a view type with no annotation crop
+    expect: named, and its other two flags still set
+
+  - given: all three flags empty
+    expect: refused as nothing to do, rather than reporting a batch of no-ops as success
+
+second_route:
+  - Select the view, and read Crop Region / Crop Region Visible / Annotation Crop in Properties

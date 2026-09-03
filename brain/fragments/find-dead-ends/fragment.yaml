@@ -86,6 +86,9 @@ compatibility-note: >
 #                                        starts at the FIXTURE. A fixture
 #                                        nobody piped produces no open end, so
 #                                        this one structurally cannot see it
+#   "which pipes are still open at the end" -> here - a READ. It classifies
+#                                        every open end and only the
+#                                        unexplained ones are the finding
 utterances:
   - which runs end in nothing
   - find the dead ends
@@ -94,3 +97,4 @@ utterances:
   - find the open ends that matter
   - is anything not terminated
   - where are the open ends
+  - which pipes are still open at the end

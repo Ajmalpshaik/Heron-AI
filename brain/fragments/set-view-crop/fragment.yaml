@@ -81,6 +81,10 @@ compatibility-note: >
 #                                        is a different mechanism
 #   "set the scope box on these views" -> ASSIGN_SCOPE_BOX_TO_VIEW - a NAMED,
 #                                        shared extent many views obey at once
+#   "the tags are printing outside the crop" -> SET_CROP_BOX_SETTINGS - the
+#                                        ANNOTATION crop is a separate flag,
+#                                        and it is the usual cause. This one
+#                                        SIZES a crop and does not touch it
 utterances:
   - crop the view to this
   - crop the view around these

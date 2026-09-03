@@ -1,0 +1,41 @@
+positive:
+  - given: a diffuser well inside a large flat ceiling
+    expect: >
+      clean, counted and not listed - CHECKED against a section, and it is the
+      case where one centre ray would also have been right
+
+  - given: a unit spanning the edge between two ceilings at different heights
+    expect: >
+      STRADDLING, naming that the corners land on different elements. This is the
+      case a centre ray passes and a batch move then gets wrong
+
+  - given: a unit half over the edge of a slab
+    expect: OVERHANGING, with how many sample points found nothing
+
+negative:
+  - given: a fitting on a sloping soffit
+    expect: >
+      SLOPED or UNEVEN with the spread in mm. THIS IS THE FIRST CASE TO RUN. A
+      centre ray returns one clean distance and reports it as fine; nothing can
+      sit flush against it, and the batch move puts it at one corner's height
+
+  - given: a project where the ceilings are in a LINKED model
+    expect: >
+      the summary saying links were not hit. Everything will read as finding
+      nothing, which is indistinguishable from a real finding on every element
+
+  - given: a model with no 3D view at all
+    expect: >
+      "NOTHING was checked" said plainly. A ray needs a real 3D view, and an
+      empty findings list would read as a clean sweep
+
+  - given: five thousand clean elements
+    expect: >
+      a summary line and no table. Rays are cheap; output is what makes a check
+      unreadable and then unused
+
+  - given: an element with no readable extent
+    expect: named and skipped, with the rest completing
+
+second_route:
+  - Cut a section through a reported element and look at whether its underside meets the surface

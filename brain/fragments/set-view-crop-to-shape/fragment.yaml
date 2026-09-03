@@ -88,6 +88,7 @@ compatibility-note: >
 #                                               the drawing, an isolate hides
 #                                               elements
 
+#   "the tags are printing outside the crop" -> SET_CROP_BOX_SETTINGS
 utterances:
   - crop the view to follow the room shape
   - make an L-shaped crop on this plan

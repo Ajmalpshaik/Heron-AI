@@ -83,6 +83,11 @@ compatibility-note: >
 #                                      this creates. Nothing here sets a size
 #   "rename the family"              -> RENAME_FAMILY
 
+#   "make a duct system type"            -> CREATE_MEP_SYSTEM_TYPE - a SYSTEM
+#                                        type is colour, abbreviation and which
+#                                        system a run belongs to. This one
+#                                        duplicates the type behind ELEMENTS -
+#                                        a duct type, its size and shape
 utterances:
   - make a new duct type
   - duplicate this type

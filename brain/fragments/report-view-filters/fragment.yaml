@@ -74,6 +74,8 @@ compatibility-note: >
 #   "copy the view filters from this view to the other views" -> COPY_VIEW_FILTERS
 #                                        - a WRITE. This one only says what is
 #                                          where
+#   "take that filter off the view"      -> REMOVE_VIEW_FILTER - and run this
+#                                        READ first, to see what else uses it
 utterances:
   - what filters are on this view
   - which views use this filter

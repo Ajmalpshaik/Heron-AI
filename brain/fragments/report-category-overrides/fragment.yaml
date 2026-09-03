@@ -76,6 +76,12 @@ compatibility-note: >
 #   "why is this element not visible" -> DIAGNOSE_VISIBILITY - visibility is a
 #                                        different setting from an override
 
+#   "which categories are turned off in this view" ->
+#                                        REPORT_CATEGORY_VISIBILITY - OFF is
+#                                        not the same as OVERRIDDEN, and that
+#                                        one deliberately does NOT scope to the
+#                                        view: a hidden category has nothing in
+#                                        a view-scoped collector to find
 utterances:
   - what category overrides are on this view
   - why is this whole category grey

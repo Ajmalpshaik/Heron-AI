@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-052
+semantic-identity: "one persistent view filter per distinct value"
+kind: action
+domain: revit.views
+capability: CREATE_VIEW_FILTERS_BY_VALUE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Reads every distinct value of one parameter across a set of elements and
+  builds ONE PERSISTENT VIEW FILTER PER VALUE, applying each to a view - *"a
+  filter per system"*, *"one for each fire zone"*. The standards job: a scheme
+  that lives in the project, applies itself to work modelled later, and can be
+  copied to every other view.
+
+  **THIS IS NOT `COLOR_BY_PARAMETER`, AND THE DIFFERENCE IS WHAT IT LEAVES
+  BEHIND.** That one writes per-element graphic overrides: right for LOOKING at
+  something now, and an element drawn tomorrow gets nothing, because nothing
+  ever touched it. This writes real filters - the rows in Visibility/Graphics -
+  which re-evaluate themselves forever. Use the other to investigate; use this to
+  establish a standard.
+
+  **THE FILTER'S CATEGORY SET IS TAKEN FROM THE ELEMENTS, NEVER GUESSED.** A
+  filter is only valid for categories that actually carry the parameter - hand it
+  one that does not and Revit rejects the WHOLE filter. The distinct categories
+  present are collected, only those where the parameter genuinely resolves are
+  kept, and the dropped ones are named with the reason.
+
+  **A BLANK VALUE IS ITS OWN GROUP AND IS NAMED AS ONE.** Elements with nothing
+  in that parameter are caught by their own filter rather than left plain -
+  plain, in a coloured drawing, reads as *"not part of this"*.
+
+  **The colours are stepped evenly around the hue wheel**, for the reason
+  `COLOR_BY_PARAMETER` records: a fixed palette of six repeats on the seventh
+  system, and two runs then look like one.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: parameterName
+      type: string
+      source: request
+    - name: namePrefix
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: IList<Element>
+    - name: valuesFound
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE implementation, and the rule factory is reached BY REFLECTION for a reason
+  found in the assemblies rather than guessed. `CreateEqualsRule` for a TEXT
+  value is `(ElementId, string, bool)` on Revit 2020 and `(ElementId, string)`
+  by 2027 - the case-sensitivity argument was dropped. **Each spelling compiles
+  on exactly one end and breaks the other**, so the overload is chosen at run
+  time by its argument count. `ParameterFilterElement.Create`,
+  `SetElementFilter` and `ElementParameterFilter` are themselves unchanged 2020
+  through 2027.
+
+# ROUTING - repeated in COLOR_BY_PARAMETER, CREATE_VIEW_FILTER and
+# APPLY_VIEW_FILTER.
+#
+#   "make a filter for every different system type" -> here
+#   "one filter for each fire zone"      -> here
+#   "set up the colour standard for this project" -> here - it PERSISTS and
+#                                           catches work modelled later
+#   "colour code by system"              -> COLOR_BY_PARAMETER - per-element
+#                                           overrides, right for looking at
+#                                           something NOW. An element drawn
+#                                           tomorrow gets nothing
+#   "make a filter for supply air"       -> CREATE_VIEW_FILTER - ONE rule, one
+#                                           filter, when the value is known
+#   "put that filter on this view"       -> APPLY_VIEW_FILTER
+
+utterances:
+  - make a filter for every different system type
+  - one filter for each fire zone
+  - set up the colour standard for this project
+  - a filter per value of this parameter
+  - make filters for each different value

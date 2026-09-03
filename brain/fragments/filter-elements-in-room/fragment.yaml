@@ -76,6 +76,9 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+#   "put the room name on all the equipment" -> ASSIGN_LOCATION_DATA - the same
+#                                        question from the ELEMENT'S end, and
+#                                        it writes the answer down
 utterances:
   - which elements are in this room
   - what is inside this room

@@ -64,6 +64,10 @@ compatibility-note: >
 #                                        and options BOTH change what "all the
 #                                        ducts" means, and they are different
 #                                        settings with different fixes
+#   "create a new phase"                 -> NOTHING HERE CAN. Revit exposes no
+#                                        create call for a phase on any release
+#                                        - checked at both ends. Add it under
+#                                        Manage, Phases
 utterances:
   - what phases are in this project
   - list the phases

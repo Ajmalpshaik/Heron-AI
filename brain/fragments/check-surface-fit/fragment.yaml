@@ -1,0 +1,102 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-023
+semantic-identity: "can this element actually sit flat against what is behind it"
+kind: filter
+domain: revit.qa
+capability: CHECK_SURFACE_FIT
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  For each element, fires rays from its whole FOOTPRINT rather than from its
+  centre alone, and reports whether it can actually sit flat against what it
+  finds. Read-only.
+
+  **A SINGLE CENTRE RAY IS RIGHT IN THE MIDDLE OF A LARGE FLAT SURFACE AND LIES
+  AT THE EDGES - AND EDGES ARE WHERE THE MISTAKES ARE.** This is the same
+  intersection arithmetic with more sample points, and it names the four ways
+  one ray gets it wrong:
+
+  | Verdict | What it means |
+  |---|---|
+  | `STRADDLING` | corners hit DIFFERENT elements - it spans a ceiling edge or a level change |
+  | `OVERHANGING` | some corners hit nothing - it hangs off the edge |
+  | `UNEVEN` | corners hit the same element at different heights |
+  | `SLOPED` | the surface is not square to the ray, so nothing can sit flush |
+
+  **IT IS THE CHECK BEFORE `MOVE_TO_RAY_HIT`, not a replacement for it.** Its
+  real use is deciding which elements are safe to move automatically and which
+  need somebody to look. A batch move that includes a straddling unit puts it in
+  the wrong place confidently.
+
+  **BEFORE THIS, THE QUESTION RESOLVED TO `SNAP_TO_GRID` - which MOVES things.**
+  A question about whether the model is right, answered by something that changes
+  it.
+
+  **IT REPORTS BY EXCEPTION.** Ray count is not the cost here; output is. A clean
+  run over five thousand elements should print a summary line and nothing else.
+
+  **LINKED MODELS ARE NOT HIT.** If the ceilings and slabs are a link, every
+  element reports as finding nothing - which looks exactly like a real finding.
+  Said on the summary line.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: direction
+      type: XYZ
+      source: request
+    - name: maxDistance
+      type: double
+      source: request
+    - name: evenness
+      type: double
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: unsafeToMove
+      type: IList<ElementId>
+    - name: clean
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ReferenceIntersector`,
+  `ReferenceWithContext.Proximity`, `Reference.ElementId` and `View3D` are
+  unchanged 2020 through 2027 - read off the reference assemblies at both ends.
+  Elements are compared by `ElementId`, never by a number. `maxDistance` and
+  `evenness` arrive in internal FEET.
+
+# ROUTING - repeated in MOVE_TO_RAY_HIT, SNAP_TO_GRID and CHECK_OBSTRUCTIONS.
+#
+#   "is the equipment sitting flat on the floor" -> here
+#   "will these sit properly against the ceiling" -> here
+#   "which of these are safe to move automatically" -> here - that IS the
+#                                           question it was built for
+#   "drop these down onto the slab"      -> MOVE_TO_RAY_HIT - the MOVE. Run this
+#                                           first and leave the straddling ones
+#                                           out of it
+#   "line these up with the ceiling grid" -> SNAP_TO_GRID - also a move
+#   "is anything above this point"       -> CHECK_OBSTRUCTIONS - ONE ray from one
+#                                           point, which is the thing this exists
+#                                           because it is not enough
+
+utterances:
+  - is the equipment sitting flat on the floor
+  - will these sit properly against the ceiling
+  - which of these are safe to move automatically
+  - check these sit flush
+  - are any of these hanging off the edge

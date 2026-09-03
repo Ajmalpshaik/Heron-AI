@@ -1,0 +1,37 @@
+positive:
+  - given: copying "Supply Air" to "Supply Air - Kitchen" with abbreviation SAK
+    expect: >
+      the new type in the browser, classified Supply Air - CHECKED by drawing one
+      duct on it and reading its system, because the classification is what
+      actually decides behaviour
+
+  - given: an abbreviation given
+    expect: it set, and appearing in system names and tags
+
+negative:
+  - given: copying a RETURN type to make a supply
+    expect: >
+      created, AND the classification reported with the warning that it cannot be
+      changed. THIS IS THE FIRST CASE TO RUN. It will behave as a return forever
+      while reading correctly on every drawing, and nothing else in Revit says so
+
+  - given: an abbreviation already used by another system type
+    expect: >
+      set, and the clash REPORTED. Revit accepts a duplicate abbreviation without
+      complaint and the two systems then tag identically
+
+  - given: a parent name that does not exist
+    expect: >
+      refused, with every system type listed AND its classification, so the next
+      attempt picks a parent of the right kind
+
+  - given: a new name already in use
+    expect: >
+      refused before anything is created. Revit throws on a duplicate, and a
+      throw partway leaves a type carrying the wrong name
+
+  - given: an empty new name
+    expect: refused
+
+second_route:
+  - Project Browser, Families, Duct Systems - or select a duct and read its System Type in Properties

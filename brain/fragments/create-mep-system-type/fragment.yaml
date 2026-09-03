@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-027
+semantic-identity: "make a new duct or pipe system type"
+kind: action
+domain: revit.mep
+capability: CREATE_MEP_SYSTEM_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a new duct or pipe SYSTEM type - Supply Air, Chilled Water Return,
+  Sanitary - by duplicating one that already exists and setting its abbreviation
+  and its colour.
+
+  **THERE IS NO CREATE CALL FOR A SYSTEM TYPE ON ANY RELEASE, AND THAT IS THE
+  WHOLE SHAPE OF THIS FRAGMENT.** One is made by duplicating an existing one,
+  checked against the reference assemblies at both ends. So the fragment's real
+  job is choosing a sensible parent: the new type inherits its
+  classification - supply, return, sanitary - from whatever it was copied from,
+  and that classification cannot be changed afterwards. Copy a Return to make a
+  Supply and it behaves as a Return forever, while reading correctly on every
+  drawing.
+
+  **IT IS NOT `DUPLICATE_TYPE`.** That duplicates the type behind the ELEMENTS
+  handed to it - a duct's Duct Type, its size and shape. A system type is a
+  different object: the thing that decides colour, abbreviation and which system
+  a run belongs to. Asking for one and getting the other is the mis-route this
+  closes.
+
+  **THE ABBREVIATION IS WHAT APPEARS ON THE DRAWING**, in system names and tags,
+  and Revit will accept a duplicate one without complaint - two systems then tag
+  identically. Existing abbreviations are checked and a clash is reported.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: copyFromName
+      type: string
+      source: request
+    - name: newName
+      type: string
+      source: request
+    - name: abbreviation
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: Element
+    - name: classification
+      type: string
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `MEPSystemType`, its `Abbreviation` and
+  `SystemClassification`, and `ElementType.Duplicate` are unchanged 2020 through
+  2027 - read off the reference assemblies at both ends, which is also where the
+  ABSENCE of any create call was confirmed. `SystemClassification` is turned into
+  text with `ToString()` rather than compared against named members, so a release
+  adding a new classification cannot break the build.
+
+# ROUTING - repeated in DUPLICATE_TYPE, READ_MEP_SYSTEM and CREATE_DUCT.
+#
+#   "make a duct system type"            -> here
+#   "I need a new system for the chilled water return" -> here
+#   "set up the system types for this project" -> here
+#   "make a new duct type at 300 wide"   -> DUPLICATE_TYPE - a DUCT type is size
+#                                           and shape. A SYSTEM type is colour,
+#                                           abbreviation and which system a run
+#                                           belongs to
+#   "what system is this on"             -> READ_MEP_SYSTEM
+#   "draw a duct here"                   -> CREATE_DUCT
+
+utterances:
+  - make a duct system type
+  - I need a new system for the chilled water return
+  - set up the system types for this project
+  - create a pipe system type
+  - add a new mep system type

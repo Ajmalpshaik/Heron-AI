@@ -1,0 +1,34 @@
+positive:
+  - given: a plan with Ceilings and Furniture switched off
+    expect: >
+      both named - CHECKED in Visibility/Graphics, Model Categories tab, where
+      the tick boxes are
+
+  - given: a view with nothing switched off
+    expect: >
+      a plain zero AND the closing line naming the other five reasons something
+      can be missing. "Nothing is off" is only half an answer to "I can't see it"
+
+negative:
+  - given: a category switched off in the view
+    expect: >
+      it IS reported. THIS IS THE FIRST CASE TO RUN. A hidden category's
+      elements do not appear in a view-scoped collector at all, so a version
+      that scopes to the view - the way REPORT_CATEGORY_OVERRIDES correctly
+      does - finds nothing and reports every view as clean
+
+  - given: hundreds of categories with nothing modelled in them
+    expect: >
+      none of them listed, and the asked-count stated. They are off by default
+      everywhere, and listing them buries the few that matter
+
+  - given: a category Revit will not let a view hide
+    expect: skipped without error, and not counted in the total asked
+
+  - given: a schedule as the view
+    expect: >
+      no crash - each category is asked inside its own guard, because view types
+      differ in what they will answer
+
+second_route:
+  - Type VG in the view and read down the Model Categories tab for an unticked row

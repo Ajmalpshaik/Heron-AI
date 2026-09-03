@@ -77,6 +77,9 @@ compatibility-note: >
 #                                        reach height; this casts one ray
 #   "is there enough space in front of the panel to open the door" ->
 #                                        CHECK_EQUIPMENT_CLEARANCE
+#   "is the equipment sitting flat on the floor" -> CHECK_SURFACE_FIT - it
+#                                        fires from the whole FOOTPRINT,
+#                                        because one ray cannot see an edge
 utterances:
   - is there a beam in the way
   - there is a beam in the room

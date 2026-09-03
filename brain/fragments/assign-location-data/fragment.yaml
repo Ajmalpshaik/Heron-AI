@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-013
+semantic-identity: "write where each element is onto its own parameters"
+kind: action
+domain: revit.parameters
+capability: ASSIGN_LOCATION_DATA
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Writes where each element actually IS onto its own parameters - the room or
+  space it sits in, and its level. The *"fill in the location columns"* job that
+  a handover register or a client's asset list needs, and that nothing in Revit
+  fills for you.
+
+  **IT IS NOT `WRITE_ELEMENT_PARAMETERS`, because the value is not given - it is
+  WORKED OUT.** That fragment writes a value somebody supplies. This one reads
+  each element's position from geometry and derives what to write, per element.
+  Nobody can hand in four hundred different room names.
+
+  **ROOM AND SPACE ARE NOT THE SAME THING, AND THIS IS THE SINGLE MOST COMMON WAY
+  A LOCATION REGISTER COMES OUT WRONG.** Architecture puts people in ROOMS; MEP
+  calculates in SPACES. A model can hold both, in the same place, with different
+  names and different numbers. Which one is used is asked for, and the report
+  says which was used.
+
+  **THE PROBE POINT IS NUDGED TO THE ROOM'S OWN MID-HEIGHT, and without that the
+  answer is wrong for exactly the elements most often asked about.** The room
+  test needs a point inside the room's VOLUME. A ceiling-mounted diffuser sits
+  above the room's upper limit and tests false from its own position - so a
+  register built the obvious way has every terminal blank.
+
+  **THE TARGET PARAMETERS MUST ALREADY EXIST.** This fills them; it does not
+  create them. Anything missing is counted and named per parameter, so
+  *"0 written"* is never mysterious.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: roomParameter
+      type: string
+      source: request
+    - name: levelParameter
+      type: string
+      source: request
+    - name: useSpaces
+      type: bool
+      source: request
+  provides:
+    - name: written
+      type: int
+    - name: noRoomFound
+      type: IList<ElementId>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Room.IsPointInRoom`,
+  `SpatialElement.Location`, `Level.ProjectElevation` and `Element.LevelId` are
+  unchanged 2020 through 2027 - read off the reference assemblies at both ends.
+  Rooms and spaces are told apart by CATEGORY rather than by type, because the
+  wrapper imports the base namespace and the architecture and mechanical types
+  are not both available as names.
+
+# ROUTING - repeated in WRITE_ELEMENT_PARAMETERS, FILTER_ELEMENTS_IN_ROOM and
+# READ_ELEMENT_LEVEL.
+#
+#   "put the room name on all the equipment" -> here - it WORKS OUT the value
+#                                           per element
+#   "fill in the location columns"       -> here
+#   "which room is each device in"       -> here, and it writes the answer down
+#   "set the mark on these"              -> WRITE_ELEMENT_PARAMETERS - one value
+#                                           somebody supplies, on many elements
+#   "which elements are in this room"    -> FILTER_ELEMENTS_IN_ROOM - the
+#                                           question from the room's end
+#   "what level is this on"              -> READ_ELEMENT_LEVEL - a READ that
+#                                           writes nothing
+
+utterances:
+  - put the room name on all the equipment
+  - fill in the location columns
+  - which room is each device in
+  - write the room and level onto these
+  - fill in the space name for the asset register
