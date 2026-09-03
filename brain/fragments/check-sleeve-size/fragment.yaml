@@ -1,0 +1,102 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-016
+semantic-identity: "are the sleeves the right size for what passes through them"
+kind: filter
+domain: revit.qa
+capability: CHECK_SLEEVE_SIZE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks every sleeve against the service that actually passes through it - is
+  the hole big enough for the pipe plus its insulation plus the annular gap the
+  specification asks for, and is it not so oversized that fire-stopping becomes
+  the problem instead. Read-only.
+
+  **IT CHECKS SLEEVES THAT ALREADY EXIST. IT PLACES NOTHING AND CUTS NOTHING.**
+  *"Put the sleeves in"* and *"cut the holes for the ducts"* are a different job
+  with nothing yet in the model for this to read.
+
+  **THE SERVICE IS FOUND BY GEOMETRY, NOT BY A PARAMETER.** A sleeve family
+  almost never records what goes through it - that link is stored nowhere. So
+  the pairing is made by asking which service actually occupies the same space.
+
+  **A SLEEVE WITH NOTHING THROUGH IT IS A FINDING, NOT A BLANK ROW.** It is
+  either an orphan left behind when a run moved, or the run moved and the hole
+  did not. Both are real and both look like "no data" in a report that omits
+  them.
+
+  **THE REQUIRED SIZE IS ARITHMETIC AND EVERY TERM IS EXPLICIT**: the service's
+  outside size, plus twice its insulation, plus twice the annular clearance -
+  which is a per-request number and never a default (D-33). Insulation is read
+  from the real insulation element rather than assumed, because a 50 mm jacket
+  turns a comfortable sleeve into a tight one.
+
+  **OVERSIZE IS REPORTED AS WELL AS UNDERSIZE**, and that is not fussiness. A
+  hole far bigger than the service costs fire-stopping, weakens what it is cut
+  through, and gets queried on site.
+
+  **SLEEVE SIZE IS READ BY PARAMETER NAME AND FAMILIES DO NOT AGREE ON NAMES.**
+  A list of the usual ones is tried and the one that answered is REPORTED per
+  row, so a sleeve whose family calls it something else shows up as unreadable
+  rather than as passing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: sleeves
+      type: IList<Element>
+    - name: annularClearance
+      type: double
+      source: request
+    - name: maxOversize
+      type: double
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: undersized
+      type: IList<ElementId>
+    - name: orphaned
+      type: IList<ElementId>
+    - name: unreadable
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `InsulationLiningBase.GetInsulationIds`,
+  `BoundingBoxXYZ` and the geometry options are unchanged 2020 through 2027 -
+  read off the reference assemblies at both ends. `annularClearance` and
+  `maxOversize` arrive in internal FEET; the millimetres the person spoke are
+  converted at the edge, before this (D-20).
+
+# ROUTING - repeated in CHECK_MINIMUM_CLEARANCE and AUDIT_MEP_OPENINGS.
+#
+#   "are the sleeves big enough for the pipes going through" -> here
+#   "check the sleeves against what goes through them"       -> here
+#   "is the hole the right size for that duct"               -> here
+#   "which of my openings are wrong now the ducts have moved" -> AUDIT_MEP_OPENINGS
+#                                        - that asks whether each opening is
+#                                          still in the right PLACE and still
+#                                          needed; this asks whether it is the
+#                                          right SIZE
+#   "what is too close to what"          -> CHECK_MINIMUM_CLEARANCE - a gap
+#                                          between two things that must NOT
+#                                          touch; a sleeve and its pipe must
+
+utterances:
+  - are the sleeves big enough for the pipes going through
+  - check the sleeves against what goes through them
+  - is the hole the right size for that duct
+  - check the sleeve sizes
+  - are my sleeves oversized

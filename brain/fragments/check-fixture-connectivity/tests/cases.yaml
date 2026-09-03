@@ -1,0 +1,40 @@
+positive:
+  - given: a toilet block where nine WCs have no vent connector run
+    expect: >
+      "nine WCs, Vent: NOT CONNECTED" as nine rows naming the service - CHECKED
+      against one WC in a section, because the service name is the whole value
+      of the report
+
+  - given: a basin with cold connected and hot left open
+    expect: hot named as NOT CONNECTED, cold not reported
+
+  - given: requiredServices naming a vent that the family has no connector for
+    expect: >
+      "NO CONNECTOR for this service" - a different sentence from NOT CONNECTED,
+      because one is a modelling gap and the other is a family gap
+
+negative:
+  - given: a fixture family with no plumbing connectors at all
+    expect: >
+      counted in noConnectors with the reason. THIS IS THE FIRST CASE TO RUN. It
+      is a FAMILY defect, not a modelling one, and filing it with the unconnected
+      services sends somebody to draw pipework that can never attach
+
+  - given: a fixture nobody has piped at all
+    expect: >
+      found HERE. FIND_DEAD_ENDS structurally cannot see it - there is no open
+      pipe end to find - which is the reason this fragment exists beside it
+
+  - given: a sanitary system somebody renamed to a project code
+    expect: >
+      still reported as sanitary. The classification comes from Revit, not from
+      the system's name, and that is what makes the report comparable between
+      projects
+
+  - given: an empty requiredServices list
+    expect: >
+      only genuinely unconnected connectors reported, and nothing invented. What
+      a fixture needs depends on the project
+
+second_route:
+  - Select one fixture, open the System Browser, and look at which services it appears under

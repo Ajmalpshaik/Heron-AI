@@ -85,6 +85,9 @@ compatibility-note: >
 #   "tag these"                      -> TAG_ELEMENTS
 #   "how many ducts are there"       -> COUNT_ELEMENTS - a count of elements,
 #                                       not a count of what is annotated
+#   "the tags are on top of each other" -> FIND_OVERLAPPING_TAGS - the opposite
+#                                       problem: annotation that is there and
+#                                       unreadable, not annotation missing
 
 utterances:
   - which ones are not tagged

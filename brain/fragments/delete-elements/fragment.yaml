@@ -70,6 +70,10 @@ compatibility-note: >
 # "GET RID OF THEM" IS THE DANGEROUS SENTENCE and it is genuinely ambiguous.
 # Hiding and deleting are one word apart in English and a world apart in the
 # model. D-33 says ask, and this is the clearest case in the library.
+#   "find the lines drawn on top of each other" -> FIND_OVERLAPPING_LINES
+#                                       first. It deletes nothing, and the
+#                                       heights have to be read before a
+#                                       model line is removed
 
 utterances:
   - delete these

@@ -75,6 +75,14 @@ compatibility-note: >
 #                                         knows about it; a cloud is an
 #                                         ANNOTATION that puts the change on
 #                                         the titleblock's revision schedule
+#   "colour code by system"          -> COLOR_BY_PARAMETER - a colour PER VALUE,
+#                                       worked out from the model. This one
+#                                       applies ONE prepared look to a set
+#   "give every system its own colour" -> COLOR_BY_PARAMETER
+#   "do the grayout"                 -> HIGHLIGHT_VS_REST - it dims the WHOLE
+#                                       view so one subset reads. This one
+#                                       leaves everything else alone
+#   "grey everything except the ducts" -> HIGHLIGHT_VS_REST
 
 # "make these red" AND "circle these in red" ARE CLAIMED IN THE ROUTING TABLE
 # ABOVE AND WERE NEVER DECLARED HERE - found 2026-09-01. A routing table is a
@@ -92,6 +100,17 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+#   "grey out the linked model"        -> here. A link is ONE element in the
+#                                        host, so one override on it covers
+#                                        everything inside - and a CATEGORY
+#                                        override in the host reaches into a
+#                                        link not at all, which is why a
+#                                        grayout on a linked job appears to do
+#                                        nothing
+#   "make this pipe look the same as that one" -> READ_GRAPHIC_OVERRIDES
+#                                        FIRST, then here with what it
+#                                        returns. Matching is a read and a
+#                                        write, and this half only writes
 utterances:
   - bring the services forward
   - make the architecture faint
@@ -101,3 +120,5 @@ utterances:
   - make these red
   - circle these in red
   - grey everything else back
+  - grey out the linked model
+  - grey out the link

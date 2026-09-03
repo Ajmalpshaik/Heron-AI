@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-025
+semantic-identity: "does what is plugged into the equipment match its spigots"
+kind: filter
+domain: revit.mep
+capability: CHECK_EQUIPMENT_CONNECTORS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks every connector on a piece of equipment against what is actually
+  plugged into it - size, shape and domain - and reports the mismatches. The
+  *"the AHU has a 600x400 supply spigot and somebody ran 400x300 off it"*
+  defect, which Revit will happily build with a transition and nobody sees until
+  the airflow does not arrive. Read-only.
+
+  **IT REPORTS THE UNCONNECTED SPIGOTS TOO, AND THOSE ARE USUALLY THE BIGGER
+  FINDING.** An AHU with four connectors and two joined to nothing is a
+  coordination gap that no clash test and no connectivity walk will flag - the
+  system that IS connected traces perfectly. Every connector is listed with its
+  state, so a missing service shows up as an absence.
+
+  **SIZE COMPARISON IS SHAPE-AWARE, and this is where a check like this produces
+  confident nonsense if it is not.** A round connector reports a diameter and a
+  rectangular one reports width and height; comparing them as one number is
+  wrong. Round to round compares diameters, rectangular to rectangular compares
+  both, and a round-to-rectangular joint is reported as a SHAPE CHANGE rather
+  than measured - a transition there may be right, but it should be a decision
+  rather than an accident.
+
+  **DOMAIN MISMATCH IS ITS OWN CLASS because it is a different kind of wrong.** A
+  pipe joined to a duct connector is not a tolerance problem; it usually means
+  the wrong family was placed.
+
+  **IT READS WHAT THE FAMILY DECLARES.** If the equipment family's connectors
+  were drawn at the wrong size, everything here agrees with itself and is wrong
+  together. Check the first unit of each type against its datasheet once; after
+  that the check is worth trusting for the rest of that type.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: equipment
+      type: IList<Element>
+    - name: sizeTolerance
+      type: double
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: mismatched
+      type: IList<ElementId>
+    - name: unconnectedSpigots
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Connector.Shape`, `Radius`, `Width`,
+  `Height`, `Domain`, `IsConnected`, `AllRefs` and `ConnectorProfileType` are
+  unchanged 2020 through 2027 - read off the reference assemblies at both ends.
+  `Domain.DomainStructuralAnalytical` is deliberately NOT named: it arrives at a
+  later release and naming it would break the 2020 build for a domain no duct or
+  pipe ever carries. `sizeTolerance` arrives in internal FEET.
+
+# ROUTING - repeated in TRACE_CONNECTIVITY, CONNECT_OPEN_ENDS and
+# REPORT_CONNECTOR_LOADS.
+#
+#   "are the equipment connectors the right size for the duct" -> here
+#   "check the spigots on this AHU"      -> here
+#   "which connectors on this unit are not used" -> here
+#   "what connects to what"              -> TRACE_CONNECTIVITY - it walks the
+#                                           network; this compares one joint
+#   "join these open ends up"            -> CONNECT_OPEN_ENDS - a WRITE
+#   "what flow does this connector carry" -> REPORT_CONNECTOR_LOADS - the
+#                                           number on it, not whether it matches
+
+utterances:
+  - are the equipment connectors the right size for the duct
+  - check the spigots on this AHU
+  - which connectors on this unit are not used
+  - does the duct match the equipment connection
+  - check the equipment connectors

@@ -1,0 +1,123 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-030
+semantic-identity: "swap this material for that one everywhere these elements use it"
+kind: action
+domain: revit.elements
+capability: REPLACE_MATERIAL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Swaps one material for another everywhere the elements handed in use it -
+  inside the layers of walls, floors and roofs, and on the material parameters
+  of instances and their types. The "this finish was wrong" or "the client
+  changed the spec" job, without opening every type dialog by hand.
+
+  **A material hides in more than one place, and a swap that misses one leaves
+  the old material half in use** - which then refuses to purge, and nobody can
+  see why. Two places are covered here: the LAYERS of a type's compound
+  structure, and every material-valued PARAMETER on an instance or its type.
+
+  **"<By Category>" is not "no material".** It is an invalid element id, and
+  reading it as empty is how a swap quietly misses everything that was set by
+  category. That trap is why this reports what it examined and not only what it
+  changed.
+
+  **Editing a type changes every element of that type, not just the ones
+  selected.** Two walls of one type are ONE type: change it through either and
+  both change. That is Revit working correctly and it still surprises people,
+  so types touched are counted separately from elements handed in.
+
+  **An element inside a group is left alone for instance parameters.** Unless
+  the parameter is flagged as varying across groups, the write is either
+  refused or - worse - applied to every instance of that group in the model.
+  Neither announces itself, so grouped elements are skipped and the count is
+  reported rather than hidden. Layers are unaffected: they live on the type,
+  which a group does not own.
+
+  **Three type families are skipped by name** - curtain walls, sloped glazing
+  and basic ceilings. They report a compound structure that is not a real layer
+  stack, and writing to it misbehaves.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). There is
+  no dry-run switch: previewing is the host's approval gate.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # RESOLVED Material objects, never names. Finding a material by name is its
+    # own job, and doing it here would hide a near-miss behind a swap.
+    - name: findMaterial
+      type: Material
+      source: request
+    - name: replaceMaterial
+      type: Material
+      source: request
+  provides:
+    - name: layersChanged
+      type: int
+    - name: parametersChanged
+      type: int
+    - name: typesTouched
+      type: IList<ElementId>
+    - name: skippedInGroup
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `HostObjAttributes.GetCompoundStructure` / `SetCompoundStructure`,
+  `CompoundStructure.GetLayers` / `SetLayers` and `CompoundStructureLayer.MaterialId`
+  are present 2020 through 2027 - read off the reference assemblies at both ends
+  rather than remembered.
+
+  TWO OF THOSE READS CORRECTED SOMETHING BEFORE IT WAS WRITTEN.
+  `VariesAcrossGroups` is on **`InternalDefinition`**, NOT on `Definition`, so
+  reading it off `parameter.Definition` compiles on no release at all; the
+  definition is cast first. And `FamilyName` is not declared on
+  `HostObjAttributes` either - it is inherited from `ElementType`, which is why
+  a member check that stops at the declared type reports a false absence.
+
+  ONE THING IS REACHED BY NAME. Telling a material parameter from any other
+  ElementId parameter needs the definition's data type, and that moved: 2020 has
+  `Definition.ParameterType`, and by 2024 it is `GetDataType()` returning a
+  ForgeTypeId. Neither name can appear in source that must compile on both, so
+  whichever exists is used, and if neither can be read the parameter's current
+  value decides - which is why "<By Category>" is handled explicitly, since a
+  parameter holding nothing cannot be recognised that way.
+
+# ROUTING - repeated in READ_ELEMENT_MATERIAL and REPORT_MATERIAL_TAKEOFF.
+#
+#   "change the material on these"   -> here
+#   "swap this finish for that one"  -> here
+#   "the client changed the material" -> here
+#   "what material is this"          -> READ_ELEMENT_MATERIAL - a READ, and it
+#                                       must not answer a request to change one
+#   "how much concrete is in this"   -> REPORT_MATERIAL_TAKEOFF
+#   "why will this material not
+#    purge"                          -> here is usually the answer: it is still
+#                                       in a layer or a type parameter nobody
+#                                       looked at
+#   "make a new material"            -> CREATE_MATERIAL - both materials have
+#                                       to exist before one can replace the
+#                                       other
+
+utterances:
+  - change the material on these
+  - swap this material for that one
+  - replace the finish on these walls
+  - the client changed the material
+  - change the material everywhere it is used

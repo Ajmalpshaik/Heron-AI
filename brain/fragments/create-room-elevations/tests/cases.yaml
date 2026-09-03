@@ -1,0 +1,40 @@
+positive:
+  - given: a toilet square to the project axes, four slots asked for at 1:50
+    expect: >
+      four elevation views in the browser, each looking at one wall - CHECKED by
+      opening one and confirming it shows a wall rather than a corner, and by
+      counting the project's elevation views from a SEPARATE read rather than
+      from this fragment's own report
+
+  - given: two slots asked for
+    expect: slots 0 and 1 filled, the other two left free for later
+
+  - given: a marker placed in a ceiling plan
+    expect: accepted - a ceiling plan is a plan, and the elevations take its phase
+
+negative:
+  - given: a ROTATED room
+    expect: >
+      four views made, AND the report saying they point in the marker's default
+      directions. THIS IS THE FIRST CASE TO RUN. They will look at corners, and
+      nothing about the result says so until somebody lays out the sheet - which
+      is far too late
+
+  - given: a project with no Elevation view family type
+    expect: >
+      refused with the reason named as a template setting. Otherwise it reads as
+      a modelling fault and somebody goes looking at the room
+
+  - given: a section or a 3D view given as the plan
+    expect: refused before anything is placed
+
+  - given: more slots asked for than the marker holds
+    expect: >
+      the maximum made and the shortfall said. Silently making four when six
+      were asked for leaves two walls undrawn
+
+  - given: a view template given as the plan
+    expect: refused, naming it as a template
+
+second_route:
+  - View tab, Elevation, drop the marker in the room and tick the boxes on it

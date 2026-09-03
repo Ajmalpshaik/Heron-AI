@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-CAT-009
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-035
+semantic-identity: "move every line off one line style and onto another"
+kind: action
+domain: revit.elements
+capability: REMAP_LINE_STYLES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves every line in the model off one line style and onto another - the
+  cleanup after an imported drawing, after inheriting somebody else's template,
+  or after the office standard was renamed. It is also the step that has to
+  happen before the old style will purge.
+
+  **THE REASON A STYLE STILL WILL NOT PURGE AFTER SOMEBODY "MOVED EVERYTHING":
+  LINES LIVE IN PLACES A SELECTION CANNOT REACH.** Model and detail lines placed
+  in views are the ones a rubber band finds. Lines inside SKETCHES - a floor's
+  boundary, a ceiling's edge, a stair riser - are curve elements owned by a
+  sketch, selectable in no view, and are the usual reason. Both are walked here,
+  and counted separately so the difference is visible.
+
+  **FILLED REGION BORDERS ARE THE THIRD PLACE, AND REVIT WILL NOT TELL US WHICH
+  ONES USE THE OLD STYLE.** There is a setter for a region's border style and no
+  getter, on every release here. So there is no honest way to change only the
+  offending regions, and `filledRegionMode` says so instead of pretending: count
+  them, set them ALL, or leave them. Setting all is blunt and is the only route
+  that actually lets the old style purge.
+
+  **A LINE INSIDE A LOADED FAMILY CANNOT BE REACHED FROM THIS DOCUMENT AT ALL.**
+  It belongs to the family, not the project. Nothing here can move it, so
+  nothing here pretends to - if the style still refuses to purge with every
+  count at zero, that is where it is, and the report says so.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: fromStyleName
+      type: string
+      source: request
+    - name: toStyleName
+      type: string
+      source: request
+    - name: includeSketchLines
+      type: bool
+      source: request
+    - name: filledRegionMode
+      type: string
+      source: request
+  provides:
+    - name: moved
+      type: int
+    - name: placedFound
+      type: int
+    - name: sketchFound
+      type: int
+    - name: regionsSet
+      type: int
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `CurveElement.LineStyle`,
+  `FilledRegion.SetLineStyleId` and
+  `FilledRegion.GetValidLineStyleIdsForFilledRegion` are present 2020 through
+  2027, and there is NO getter for a region's border style on any of them - read
+  off the reference assemblies at both ends, which is what turned that limit
+  from a guess into a stated one. The Lines category is reached with
+  `Category.GetCategory`, never by building an ElementId from a number.
+
+# ROUTING - repeated in FIND_OVERLAPPING_LINES and SET_CATEGORY_GRAPHICS.
+#
+#   "change all the old line styles to the new ones"  -> here
+#   "move everything off this line style"             -> here
+#   "the line style will not purge"                   -> here - and read the
+#                                                        sketch-line count first
+#   "the lines are drawn twice on top of each other"  -> FIND_OVERLAPPING_LINES
+#                                                        - a READ that finds
+#                                                        duplicates; this one
+#                                                        re-points a style
+#   "make the duct lines thicker in this view"        -> SET_CATEGORY_GRAPHICS -
+#                                                        a view override, which
+#                                                        changes nothing about
+#                                                        which style a line IS
+
+utterances:
+  - change all the old line styles to the new ones
+  - move everything off this line style
+  - the line style will not purge
+  - swap this line style for that one
+  - re-point the lines to the new standard style

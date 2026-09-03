@@ -1,0 +1,83 @@
+heron-agent: HERON-REVIT-PHS-032
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-015
+semantic-identity: "what design options exist and what is inside them"
+kind: filter
+domain: revit.document
+capability: REPORT_DESIGN_OPTIONS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists every design option set and every option in it, which option is primary,
+  which is currently active, and how many elements sit inside each one.
+  Read-only.
+
+  **A DESIGN OPTION CHANGES WHAT "ALL THE DUCTS" EVEN MEANS, and that is why
+  this exists.** Elements inside a non-active option are excluded from most
+  views and from schedules. A count that disagrees with what somebody sees on
+  screen, a schedule that is short, an element that will not delete - all three
+  have the same cause and none of them says so.
+
+  **THE ACTIVE OPTION CANNOT BE CHANGED FROM CODE ON ANY RELEASE HERE**, and
+  that is worth knowing before a job is planned around it. There is a getter for
+  the active option and no setter, checked against the reference assemblies at
+  both ends. `Element.DesignOption` is read-only too, so an element cannot be
+  moved into an option from here either - the Revit interface is the only route,
+  and this fragment says so rather than leaving somebody to discover it.
+
+  **AN EMPTY MODEL AND A MODEL WITH NO OPTIONS ARE THE SAME OUTPUT unless it is
+  said.** So a project with none reports that in words rather than as an empty
+  list.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: optionCount
+      type: int
+    - name: activeOption
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `DesignOption`,
+  `DesignOption.GetActiveDesignOptionId`, `DesignOption.IsPrimary` and
+  `Element.DesignOption` are present 2020 through 2027 - read off the reference
+  assemblies at both ends, which is also where the absence of any SETTER was
+  confirmed. The option set is read from the option's own parameter rather than
+  from a typed property, because that parameter is stable across the release
+  where parameter identity changed.
+
+# ROUTING - repeated in REPORT_PHASES and COUNT_ELEMENTS.
+#
+#   "which design option am I working in" -> here
+#   "what design options are in this model" -> here
+#   "why is my schedule missing things"  -> here is one of the two causes; the
+#                                           other is REPORT_PHASES
+#   "what phase is this"                 -> REPORT_PHASES - phases and options
+#                                           both change what "all the ducts"
+#                                           means, and they are different
+#                                           settings
+#   "make this option active"            -> NOTHING HERE CAN. There is a getter
+#                                           for the active option and no setter,
+#                                           on every release. Use the status bar
+#                                           in Revit
+
+utterances:
+  - which design option am I working in
+  - what design options are in this model
+  - why is my schedule missing things
+  - list the design options
+  - what is inside each design option

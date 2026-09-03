@@ -73,6 +73,14 @@ compatibility-note: >
 #                                   not answer a request to change the model
 #   "draw a duct from here"      -> CREATE_DUCT - makes a new run
 #   "split this duct"            -> SPLIT_MEP_RUN - the opposite job
+#   "they are touching but not connected" -> CONNECT_OPEN_ENDS - it joins ends
+#                                       ALREADY at one point and adds no fitting
+#   "connect the open ends"          -> CONNECT_OPEN_ENDS
+#   "join these walls together"      -> JOIN_GEOMETRY. This row said nothing in
+#                                       the library covered it, which was true
+#                                       for one batch and is not now
+#   "join these two ducts"           -> here. A FITTING between two runs
+#   "connect the diffusers to the duct" -> CONNECT_AIR_TERMINALS
 
 utterances:
   - join these two
@@ -82,3 +90,4 @@ utterances:
   - join the pipes up
   - connect them together
   - add a tee here
+  - join these two ducts

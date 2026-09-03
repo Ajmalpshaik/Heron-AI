@@ -1,0 +1,110 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-039
+semantic-identity: "put that filter on this view and make it do something"
+kind: action
+domain: revit.views
+capability: APPLY_VIEW_FILTER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds a filter to a view, gives it an override and sets whether what it matches
+  is visible. The step after making a filter - without which the filter exists
+  in the project and does nothing to any drawing.
+
+  **It works with either kind of filter.** A rule-based view filter and a saved
+  selection filter are both looked up through the class they share, and a view
+  does not care which it was handed. That is why one fragment serves both
+  CREATE_VIEW_FILTER and CREATE_SELECTION_FILTER.
+
+  **Projection and cut are BOTH set, always.** Revit does not derive one from
+  the other, and setting only the projection is why a filter looks right in plan
+  and shows the wrong colour the moment anything is cut. Found on a real model
+  where twenty-six filters carried a projection colour and no cut colour.
+
+  **Re-running it updates rather than fails.** A filter already on the view has
+  its override and visibility rewritten, which is what somebody adjusting a
+  colour actually wants.
+
+  **Hiding is done here too, and it is the same operation.** A filter set
+  invisible hides everything it matches in that view - the ordinary way to take
+  a discipline out of a drawing without deleting anything.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    # The filter itself, resolved. Looking it up by name here would hide a
+    # near-miss behind a silent no-op.
+    - name: filter
+      type: Element
+      source: request
+    - name: overrides
+      type: OverrideGraphicSettings
+      source: request
+    - name: visible
+      type: bool
+      source: request
+  provides:
+    - name: applied
+      type: bool
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.AddFilter`, `GetFilters`,
+  `SetFilterOverrides`, `GetFilterOverrides` and `SetFilterVisibility` are
+  present 2020 through 2027 - read off the reference assemblies at both ends
+  rather than remembered. `SetIsFilterEnabled` is NOT used: it arrived at 2024
+  and naming it would break the 2020 build for a switch this fragment does not
+  need.
+
+# THE OVERRIDE COMES IN ALREADY BUILT, exactly as OVERRIDE_GRAPHICS_IN_VIEW
+# takes it. Building it here from colours and weights would be a second place
+# where the eight-release compatibility of OverrideGraphicSettings has to be got
+# right, and one of the two would drift.
+
+# ROUTING - repeated in CREATE_VIEW_FILTER, CREATE_SELECTION_FILTER and
+# APPLY_VIEW_TEMPLATE.
+#
+#   "put that filter on this view"   -> here
+#   "apply the filter"               -> here
+#   "hide everything that filter
+#    matches"                        -> here, with visible false
+#   "make a filter for supply air"   -> CREATE_VIEW_FILTER - it MAKES the rule
+#                                       and puts it on no view
+#   "save these as a set"            -> CREATE_SELECTION_FILTER
+#   "apply the view template"        -> APPLY_VIEW_TEMPLATE - a whole template,
+#                                       which is a much bigger change than one
+#                                       filter and is easy to ask for by mistake
+#   "what filters are on this view"  -> REPORT_VIEW_FILTERS - a READ, and it
+#                                       used to be answered by this WRITE
+
+#   "copy the view filters from this view to the other views" -> COPY_VIEW_FILTERS
+#                                        - the WHOLE set, with the overrides
+#                                          and the on/off state. This one puts
+#                                          ONE filter on with an override the
+#                                          caller built
+#   "take that filter off the view"      -> REMOVE_VIEW_FILTER - the other end
+#                                        of this one
+utterances:
+  - put that filter on this view
+  - apply the filter to this view
+  - hide everything that filter matches
+  - add the filter and colour it
+  - use that filter here

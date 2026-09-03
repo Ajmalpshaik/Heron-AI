@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-018
+semantic-identity: "can these valves and dampers actually be reached and operated"
+kind: filter
+domain: revit.qa
+capability: CHECK_VALVE_ACCESSIBILITY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks that valves, dampers and other in-line accessories can actually be
+  reached and turned - room round the handle, an access panel where one is
+  needed, and within reach from the floor. The commissioning question, asked
+  while it is still cheap to move things. Read-only.
+
+  **IT ASKS THREE QUESTIONS AND ANSWERS EACH SEPARATELY, BECAUSE EACH HAS A
+  DIFFERENT FIX.** *Room* - something modelled inside the operating envelope,
+  fixed by moving the obstruction. *Above a ceiling* - fixed with an access
+  panel, which is a drawing item and the thing most often forgotten. *Height* -
+  fixed with a platform, a chain wheel, or relocating. A valve can pass one and
+  fail another, so all three are reported per valve rather than one pass or fail
+  that hides which problem it is.
+
+  **ABOVE A CEILING IS NOT A FAULT, AND THIS DOES NOT PRETEND IT IS.** Most
+  valves live in the ceiling void. The finding is that each one NEEDS AN ACCESS
+  PANEL, and the list is what goes to the architect. A check that cries wolf
+  about every valve in the building gets switched off by lunchtime.
+
+  **THIS IS NOT CHECK_EQUIPMENT_CLEARANCE WITH SMALLER NUMBERS.** That builds a
+  directional zone from a family's facing direction, which is right for plant
+  and meaningless for a valve in a pipe. This asks the two questions plant does
+  not have - is there a ceiling over it, and can a person reach it.
+
+  **THE OPERATING ENVELOPE IS A PLAIN BOX, AND THAT IS STATED RATHER THAN
+  DRESSED UP.** It is not a swept volume of a hand and a lever. It is an
+  indication, and the figure should be the space a fitter actually needs -
+  roughly the lever length plus a fist.
+
+  **CEILINGS AND STRUCTURE IN LINKS ARE NOT SEEN.** If the architecture is
+  linked, the ceiling question returns nothing and the room question misses the
+  walls. That is reported on the summary line, because it looks exactly like a
+  clean result.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: accessories
+      type: IList<Element>
+    - name: envelope
+      type: double
+      source: request
+    - name: maxReachHeight
+      type: double
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: obstructed
+      type: IList<ElementId>
+    - name: needAccessPanel
+      type: IList<ElementId>
+    - name: outOfReach
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ReferenceIntersector`, `View3D`,
+  `ElementIntersectsSolidFilter` and
+  `GeometryCreationUtilities.CreateExtrusionGeometry` are unchanged 2020 through
+  2027 - read off the reference assemblies at both ends. `envelope` and
+  `maxReachHeight` arrive in internal FEET. The height is measured above the
+  accessory's own level using `ProjectElevation`, never `Elevation`: a level has
+  two heights and only one is in the same space as a point in the model.
+
+# ROUTING - repeated in CHECK_EQUIPMENT_CLEARANCE and CHECK_OBSTRUCTIONS.
+#
+#   "can we reach the valve to operate it" -> here
+#   "are the dampers accessible"         -> here
+#   "which valves need an access panel"  -> here
+#   "is there enough space in front of the panel to open the door" ->
+#                                        CHECK_EQUIPMENT_CLEARANCE - a
+#                                        DIRECTIONAL zone off a family's facing
+#                                        direction, which plant has and a valve
+#                                        in a pipe does not
+#   "is anything above this point"       -> CHECK_OBSTRUCTIONS - one ray, one
+#                                        point, no ceiling or reach question
+
+utterances:
+  - can we reach the valve to operate it
+  - are the dampers accessible
+  - which valves need an access panel
+  - check the valves can be operated
+  - are the valves too high to reach

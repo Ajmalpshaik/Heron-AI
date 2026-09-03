@@ -73,6 +73,8 @@ compatibility-note: >
 # THE VELOCITY QUESTION AND THE SIZE QUESTION ARE THE SAME SENTENCE HALF THE
 # TIME. "This duct is too small" is a velocity finding and a size instruction
 # in one breath; this fragment answers the first and never acts on the second.
+#   "size the ducts from the flow"   -> AUTO_SIZE_MEP - the write. This one
+#                                       only measures what is there
 
 utterances:
   - how fast is the air moving

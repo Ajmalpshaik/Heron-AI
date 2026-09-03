@@ -85,6 +85,8 @@ compatibility-note: >
 #                                   it genuinely answers the question. Both are
 #                                   reads and either is usable - not every
 #                                   contested sentence has a wrong side
+#   "add a new workset"              -> CREATE_WORKSET - a write, and this
+#                                       one only reads
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search
@@ -92,6 +94,9 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+#   "turn off this workset in this view" -> SET_VIEW_WORKSET_VISIBILITY - a
+#                                        VIEW setting. This one is a READ
+#   "rename this workset"                -> RENAME_WORKSET - a WRITE
 utterances:
   - list the worksets
   - what worksets are there

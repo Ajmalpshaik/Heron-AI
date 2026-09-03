@@ -1,0 +1,41 @@
+positive:
+  - given: two duct segments drawn end to end, ends at the same point, Revit showing them unconnected
+    expect: >
+      one join, and BOTH connectors reading connected afterwards on a fresh read
+      - not on this fragment's own count. Then TRACE_CONNECTIVITY over the pair
+      to see one run instead of two
+
+  - given: a run of six segments drawn leg by leg with every joint open
+    expect: >
+      five joins and no connector used twice. Where three pieces meet, the
+      smallest gap wins and the third end stays open and is reported
+
+negative:
+  - given: two pipes CROSSING at the same height, connectors within the gap allowed
+    expect: >
+      NOT joined, and named in `notPaired` as not facing each other. This is the
+      case distance alone gets wrong, and it is the FIRST case to run - a wrong
+      join here is a system that reads continuous through a crossing that was
+      never a joint
+
+  - given: a duct end and a pipe end at the same point
+    expect: not joined - different domain, named as such
+
+  - given: a 100 mm pipe end meeting a 150 mm pipe end, sizeToleranceMm 5
+    expect: >
+      not joined. A size change wants a reducer, and joining them silently is
+      how a model ends up reporting a size nobody drew
+
+  - given: two ends 200 mm apart with maxGapMm raised to 250 to "make it work"
+    expect: >
+      they join, AND the geometry still has a 200 mm hole in it. Written down as
+      the failure this fragment can be made to produce: nothing moves here, so a
+      wide gap buys a model that reports connected and is not
+
+  - given: an air terminal sitting under a duct
+    expect: >
+      no pair offered. Tapping into a duct's side is a different operation, and
+      not finding it here is correct rather than a miss
+
+second_route:
+  - the same joints checked in Revit's own System Browser, or by selecting one segment and using Select Connected

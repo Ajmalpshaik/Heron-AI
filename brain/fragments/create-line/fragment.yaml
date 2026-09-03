@@ -1,0 +1,98 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-036
+semantic-identity: "draw plain model or detail lines between points"
+kind: action
+domain: revit.elements
+capability: CREATE_LINE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws plain straight lines between pairs of points - either DETAIL lines,
+  which live in one view and print with it, or MODEL lines, which exist in the
+  model and appear in every view that sees them.
+
+  **WHICH OF THE TWO IS THE DECISION, AND IT IS NOT A DETAIL.** A detail line is
+  drawing, not building: it shows on that one sheet and nowhere else. A model
+  line is a real object in space that turns up in every plan, section and the
+  3D. Somebody who wanted a setting-out line on one plan and got model lines
+  finds them on twenty other drawings, and somebody who wanted a reference line
+  in the model and got detail lines cannot see it anywhere else. There is no
+  safe default, so the caller says which.
+
+  **A MODEL LINE NEEDS A PLANE TO LIVE ON, AND A DETAIL LINE NEEDS A VIEW.**
+  That is the asymmetry that makes one call fail where the other works. Model
+  lines here are drawn on a horizontal plane through their own height, which
+  covers a setting-out or reference line and is not meant for an arbitrary line
+  leaning through space.
+
+  **A LINE SHORTER THAN REVIT'S OWN TOLERANCE CANNOT EXIST**, and two points
+  typed the same by accident is the common way to ask for one. Those pairs are
+  counted and reported rather than throwing partway through a batch that has
+  already drawn twenty.
+
+  Points arrive in internal FEET. The mm the person spoke is converted at the
+  edge, before this.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: pointPairs
+      type: IList<IList<XYZ>>
+      source: request
+    - name: asDetail
+      type: bool
+      source: request
+    - name: view
+      type: View
+      source: request
+      optional: true
+  provides:
+    - name: created
+      type: IList<Element>
+    - name: tooShort
+      type: int
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `NewDetailCurve` and `NewModelCurve` sit
+  on the creation factory reached through `Document.Create` and are unchanged
+  2020 through 2027, as are `Plane.CreateByNormalAndOrigin`, `SketchPlane.Create`
+  and `Line.CreateBound` - read off the reference assemblies at both ends. The
+  short-curve limit is taken from the application itself rather than typed as a
+  number, because it is a property of the installation and not a constant.
+
+# ROUTING - repeated in FIND_OVERLAPPING_LINES, CREATE_GRID and
+# CREATE_FILLED_REGION.
+#
+#   "draw a detail line here"            -> here
+#   "draw a line between these points"   -> here
+#   "put a setting out line on this plan" -> here, asDetail true
+#   "the lines are drawn twice on top of each other" -> FIND_OVERLAPPING_LINES -
+#                                          a READ over lines that already exist
+#   "draw a grid line"                   -> CREATE_GRID - a grid is a DATUM with
+#                                           a bubble and a name, on every view;
+#                                           a line is not
+#   "hatch this area"                    -> CREATE_FILLED_REGION - a filled
+#                                           region has a boundary AND a fill
+
+utterances:
+  - draw a detail line here
+  - draw a line between these points
+  - put a setting out line on this plan
+  - add a model line
+  - draw some reference lines

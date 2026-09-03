@@ -1,0 +1,43 @@
+positive:
+  - given: a duct with a sprinkler main 90 mm below it, 150 mm asked for
+    expect: >
+      TIGHT, naming which is on top and how far short - CHECKED against a
+      section, because the direction is half the answer and a bare number does
+      not carry it
+
+  - given: two services 200 mm apart diagonally, one 40 mm above the other in Z
+    expect: >
+      reported TIGHT. This is the case the straight-line check passes, and it is
+      the reason this fragment exists
+
+  - given: drainage modelled above the duct it must cross under
+    expect: >
+      "drainage is above duct", so the wrong order reads as a fact rather than
+      being inferred from two elevations
+
+negative:
+  - given: two services that overlap in Z but pass at different plan positions
+    expect: >
+      NOT reported. THIS IS THE FIRST CASE TO RUN. They are not stacked and are
+      not a coordination problem, and a version that lists every Z-overlapping
+      pair buries the real ones in a report nobody reads
+
+  - given: two services that interpenetrate
+    expect: >
+      flagged CLASH with a positive overlap figure, never as a small gap. A
+      negative number in a clearance column reads as tight to anyone skimming
+
+  - given: a vertical riser among the services
+    expect: >
+      counted in slopedOrVertical and the warning printed. Its box is the whole
+      rise, so any gap involving it is pessimistic - the fragment must say that
+      rather than let a false TIGHT stand unexplained
+
+  - given: a clean set with room everywhere
+    expect: the counts and NO table. Reporting by exception is what makes it readable
+
+  - given: an element with no readable geometry
+    expect: counted and named on its own line, not silently dropped
+
+second_route:
+  - Cut a section across the run and dimension between the two services by hand

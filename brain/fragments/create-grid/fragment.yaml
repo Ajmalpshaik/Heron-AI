@@ -67,6 +67,12 @@ compatibility-note: >
 #                                  One word, two jobs
 #   "add a level"               -> CREATE_LEVEL
 
+#   "draw a detail line here"          -> CREATE_LINE - a line is not a datum:
+#                                        no bubble, no name, no view extents
+#   "make a grid series across the building" -> CREATE_GRIDS - the SPACINGS
+#                                        are the input there, which is how a
+#                                        drawing dimensions a grid. This one
+#                                        needs the coordinates worked out
 utterances:
   - add a grid
   - create a grid line

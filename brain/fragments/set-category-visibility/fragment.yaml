@@ -57,6 +57,21 @@ compatibility-note: >
   objects rather than as ids or integers, so nothing here builds an `ElementId`
   from an int.
 
+# ROUTING - repeated in SET_VIEW_WORKSET_VISIBILITY and HIDE_ELEMENTS.
+#
+#   "turn off the ceilings in this view"  -> here - a CATEGORY, which is what
+#                                           a thing IS
+#   "turn off this workset in this view"  -> SET_VIEW_WORKSET_VISIBILITY - a
+#                                           workset is who OWNS it: everything
+#                                           one team modelled, whatever
+#                                           category it happens to be
+#   "hide these three ducts"              -> HIDE_ELEMENTS - the ones handed
+#                                           in, and nothing modelled tomorrow
+#   "which categories are turned off in this view" ->
+#                                        REPORT_CATEGORY_VISIBILITY - a READ.
+#                                        A question about a drawing must not
+#                                        be answered by the fragment that
+#                                        switches things off
 utterances:
   - turn off the rebar in this view
   - switch the ceilings off

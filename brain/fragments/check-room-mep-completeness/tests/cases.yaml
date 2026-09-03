@@ -1,0 +1,42 @@
+positive:
+  - given: a floor of rooms, a rule that every "Toilet" needs 1 Air Terminal, devices handed in
+    expect: >
+      only the toilets without a terminal listed - and one of them CHECKED BY EYE
+      in the model before the rest of the list is believed
+
+  - given: rules for both "every room needs a detector" and "every toilet needs extract"
+    expect: >
+      a toilet checked against BOTH. A first-match-wins rule table would silently
+      drop the second, and the room would read as complete
+
+negative:
+  - given: sprinklers that live in a separate fire model, not in this one
+    expect: >
+      the header line saying ZERO found anywhere for that category, before any
+      room is listed. THIS IS THE FIRST CASE TO RUN - without that line every
+      room reads as missing a sprinkler and the report looks like a catastrophe
+      instead of a link that was never loaded
+
+  - given: an unplaced or unenclosed room in the set
+    expect: >
+      counted in `unbounded` and NOT listed as missing everything. It has no
+      boundary, so every test against it returns false, and dozens of those bury
+      the real failures
+
+  - given: a room called "WC 1" with a rule written for "Toilet"
+    expect: >
+      counted in `noRule` and named. A naming mismatch reading as a clean result
+      is the quietest way this check can lie
+
+  - given: an L-shaped room with a device standing in the notch OUTSIDE it
+    expect: >
+      not counted for that room. A bounding-box test would count it, and the
+      L-shaped room is exactly the one somebody is checking
+
+  - given: a diffuser whose insertion point is in the ceiling void above the room
+    expect: >
+      counted. That is what is wanted for a diffuser - and it is written down so
+      nobody reads the result as a boundary error
+
+second_route:
+  - a schedule of the device category with a Room column, sorted by room, read against the same rules

@@ -1,0 +1,98 @@
+heron-agent: HERON-REVIT-WRK-014
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-046
+semantic-identity: "turn worksets on or off in one view"
+kind: action
+domain: revit.views
+capability: SET_VIEW_WORKSET_VISIBILITY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Turns worksets on and off in ONE view - the Worksets tab of
+  Visibility/Graphics, reached from code. The usual job is *"show me only the
+  mechanical workset in this 3D view"*: the named worksets on, every other user
+  workset off.
+
+  **REVIT HAS NO SINGLE "WHICH WORKSETS DOES THIS VIEW SHOW" PROPERTY.** A phase
+  is one settable property on the view; workset visibility is one setting PER
+  WORKSET per view, which is why this loops rather than assigns. Somebody
+  expecting one call and finding none often concludes it cannot be done.
+
+  **A WORKSET HAS THREE STATES IN A VIEW, NOT TWO**, and the third is why a
+  workset "turned on" can still be invisible. Visible, Hidden, and Use Global
+  Setting - which defers to the workset's own default. Setting the ones wanted
+  to Visible without pushing the others to Hidden leaves them on global, and
+  global is usually visible: the view then shows everything and looks as if
+  nothing happened. `hideAllOthers` is what closes that, and it is on by default.
+
+  **ON A MODEL THAT IS NOT WORKSHARED THERE ARE NO USER WORKSETS AT ALL.** It
+  reports that and changes nothing, rather than throwing. An empty result there
+  means the question does not apply, not that the view is wrong.
+
+  **This is not SET_CATEGORY_VISIBILITY.** A category is what a thing IS - all
+  ducts. A workset is who OWNS it - everything the mechanical team modelled,
+  ducts and equipment and lines together. Asking for one and getting the other
+  is the mis-route this pair guards against.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: visibleWorksetNames
+      type: IList<string>
+      source: request
+    - name: hideAllOthers
+      type: bool
+      source: request
+  provides:
+    - name: shown
+      type: int
+    - name: hidden
+      type: int
+    - name: notFound
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.SetWorksetVisibility`,
+  `WorksetVisibility` and `FilteredWorksetCollector.OfKind` are unchanged 2020
+  through 2027. A workset's `Name` is declared on its BASE type, not on
+  `Workset` itself - a check that stops at the declared type reports it missing,
+  which is a false absence and not a version break.
+
+# ROUTING - repeated in SET_CATEGORY_VISIBILITY, LIST_WORKSETS and
+# SET_ELEMENT_WORKSET.
+#
+#   "turn off this workset in this view"        -> here - a VIEW setting
+#   "show only the mechanical workset here"     -> here
+#   "hide the architect's workset on this plan"  -> here
+#   "turn off the ceilings in this view"        -> SET_CATEGORY_VISIBILITY - a
+#                                                  CATEGORY is what a thing is;
+#                                                  a workset is who owns it
+#   "what worksets are in this model"           -> LIST_WORKSETS - a READ
+#   "move these onto the mechanical workset"    -> SET_ELEMENT_WORKSET - that
+#                                                  changes the MODEL; this
+#                                                  changes one drawing
+
+utterances:
+  - turn off this workset in this view
+  - show only the mechanical workset here
+  - hide the architect workset on this plan
+  - set the workset visibility for this view
+  - make a view that shows one workset only

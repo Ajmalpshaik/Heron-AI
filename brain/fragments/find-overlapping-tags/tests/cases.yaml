@@ -1,0 +1,40 @@
+positive:
+  - given: a busy plan at 1:100 with two duct tags sitting over each other, minOverlapMm 1
+    expect: >
+      that pair reported with a paper-millimetre figure, and both ids in
+      `overlapping`. Then LOOK at the sheet - the figure has to match what the
+      print shows, because paper mm is the whole point of the fragment
+
+  - given: the same view duplicated and set to 1:200
+    expect: >
+      MORE clashes than at 1:100, from the same model with nothing moved. That
+      difference is the fragment working: the tags did not change, the paper did
+
+negative:
+  - given: a SECTION view with plenty of annotation and none of it overlapping
+    expect: >
+      few or no clashes. This is the FIRST case to run. Comparing model X
+      against model Y - what the earlier library did - reports nearly every pair
+      in a section, because a view looking along X has all its annotation at one
+      X. If this comes back with everything clashing, the projection onto the
+      view's own axes is not working
+
+  - given: two tags whose boxes just touch at an edge, minOverlapMm 1
+    expect: >
+      NOT reported. Touching is legible; a report that lists every near-miss is
+      one nobody reads
+
+  - given: a view template handed in, and a perspective 3D view handed in
+    expect: >
+      each says plainly what it is - a template holds no annotation, and a view
+      with no print scale cannot be measured in paper millimetres. Never an
+      empty result, which reads as a clean drawing
+
+  - given: a dimension string running through six tags
+    expect: >
+      nothing reported for it. Dimensions are deliberately not collected - a
+      dimension's box is the whole string and it would report a clash against
+      everything inside its own extent
+
+second_route:
+  - print the sheet to PDF and look at it, which is the only test that actually matters

@@ -1,0 +1,48 @@
+positive:
+  - given: an AHU with 1500 mm asked for in front and a wall 900 mm away in front
+    expect: >
+      the wall reported as inside the zone - CHECKED against a plan, because the
+      whole value of this over a plain gap check is that it knows which side is
+      the front
+
+  - given: the same AHU with a wall 100 mm BEHIND it and 200 mm asked for behind
+    expect: >
+      that wall reported too, but under the back figure. A unit standing against
+      a wall is normal; a unit whose coil cannot come out is not
+
+  - given: a unit rotated 30 degrees off the project axes
+    expect: >
+      the zone rotated with it, and the reported facing direction matching what
+      the plan shows. A zone built on the world bounding box starts outside the
+      unit and misses close obstructions
+
+negative:
+  - given: an AHU with its own supply duct plugged into the front connector
+    expect: >
+      the zone reported CLEAR. THIS IS THE FIRST CASE TO RUN. The unit's own
+      services necessarily fill the space at its connectors, and a version that
+      counts them makes every unit in the building report a blockage, which is
+      how a check gets switched off by lunchtime
+
+  - given: a project where the architecture and structure are LINKED
+    expect: >
+      the report saying links were not scanned, on the summary line. A clean
+      result there has checked nothing, and it looks exactly like a clean result
+      that checked everything
+
+  - given: a family authored facing the wrong way
+    expect: >
+      its facing direction printed, so the first run shows it. Nothing here can
+      detect it, and saying so is the honest half - the alternative is a
+      confidently wrong pass
+
+  - given: an element in the list that is not a placed family instance
+    expect: >
+      counted in unreadable with the reason - it has no facing direction, so no
+      directional zone exists for it
+
+  - given: a unit with no readable geometry
+    expect: counted in unreadable, not silently passed
+
+second_route:
+  - Draw the clearance as a generic model box in the plant room and run Revit's own Interference Check against it

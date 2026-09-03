@@ -71,6 +71,16 @@ compatibility-note: >
 # WORKSET AND OWNERSHIP ARE NOT THE SAME THING and both are said as "whose is
 # it". The workset is where an element lives; ownership is who holds it right
 # now. Moving worksets does not release an element somebody else has.
+#   "add a new workset"              -> CREATE_WORKSET - the workset has to
+#                                       exist before anything goes on it
+#   "set the design option"          -> NOTHING IN THIS LIBRARY, and it is not
+#                                       an omission. No design option can be
+#                                       made ACTIVE from a script - checked
+#                                       against 2020 AND 2027, where the only
+#                                       member anywhere is the read-only
+#                                       GetActiveDesignOptionId - and an
+#                                       element only lands in an option while
+#                                       that option is active
 
 # ROUTING - repeated in LIST_WORKSETS and READ_ELEMENT_OWNERSHIP.
 #
@@ -81,6 +91,9 @@ compatibility-note: >
 #                                     `elements` and cannot be moved
 #   "who owns this"                -> READ_ELEMENT_OWNERSHIP
 
+#   "turn off this workset in this view" -> SET_VIEW_WORKSET_VISIBILITY - that
+#                                        changes one DRAWING. This changes the
+#                                        MODEL, in every view at once
 utterances:
   - put them on a different workset
   - move these to the MEP workset

@@ -1,0 +1,46 @@
+positive:
+  - given: ducts carrying five distinct System Type values
+    expect: >
+      five filters in the project's filter list, each on the view in its own
+      colour - CHECKED in Visibility/Graphics, Filters tab, because a filter that
+      exists and is not on the view looks identical to nothing having happened
+
+  - given: a duct drawn AFTER the run, matching one of the values
+    expect: >
+      it picks up that colour with nobody touching anything. That is the whole
+      difference from COLOR_BY_PARAMETER and the reason to use this one
+
+  - given: elements with the parameter blank
+    expect: >
+      their own "(no value)" filter, named as such. Left plain in a coloured
+      drawing they read as "not part of this"
+
+negative:
+  - given: a mixed selection where one category does NOT carry the parameter
+    expect: >
+      that category left OUT of the filter's category set, and said so. THIS IS
+      THE FIRST CASE TO RUN. Revit rejects the WHOLE filter if it names a
+      category lacking the parameter - so including them helpfully destroys
+      every filter in the run
+
+  - given: Revit 2020 and Revit 2027
+    expect: >
+      the same source working on both. The text rule takes a case-sensitivity
+      argument on 2020 and does not by 2027 - each spelling compiles on exactly
+      one end, so the overload is chosen at run time by argument count
+
+  - given: a filter name that already exists
+    expect: >
+      skipped and reported, never overwritten. Somebody's existing standard is
+      not this fragment's to replace
+
+  - given: a parameter no element carries
+    expect: refused plainly, with nothing created
+
+  - given: twelve distinct values
+    expect: >
+      twelve visibly different colours. A fixed palette of six repeats on the
+      seventh and two systems then look like one
+
+second_route:
+  - Visibility/Graphics, Filters tab - each filter should be listed with its override colour

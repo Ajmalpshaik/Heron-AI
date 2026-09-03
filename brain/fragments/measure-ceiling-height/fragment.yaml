@@ -107,6 +107,14 @@ compatibility-note: >
   catches a ceiling from any family or subclass without a cast, which is what a
   real model contains.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make a ceiling over this area" -> CREATE_CEILING - this one only
+#                                      MEASURES a ceiling that exists
+
+#   "how much room is there between the duct and the pipe above it" ->
+#                                        CHECK_VERTICAL_CLEARANCE - service to
+#                                        service. This one is floor to ceiling
 utterances:
   - what is the ceiling height in this room
   - how high is the ceiling

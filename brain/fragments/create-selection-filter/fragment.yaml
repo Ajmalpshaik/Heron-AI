@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-SEL-008
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-003
+semantic-identity: "save these elements as a named set i can use again"
+kind: action
+domain: revit.selection
+capability: CREATE_SELECTION_FILTER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Saves a set of elements under a name, as a Revit selection filter - the
+  hand-picked list that appears in the Filters tab beside the rule-based ones,
+  and that a view can then colour or hide by name.
+
+  **A saved set is not the current selection, and the difference is the whole
+  point.** SET_SELECTION highlights things on screen and is gone the moment
+  somebody clicks elsewhere. This survives closing the model, and can be used
+  in a view template a year later.
+
+  **And it is not a view filter either.** CREATE_VIEW_FILTER writes a RULE -
+  everything whose System Type contains CHW - and keeps working as the model
+  grows. This is a LIST, and it is exactly right when the twelve things being
+  coloured share no rule at all. A list does not follow new elements, and that
+  is stated rather than discovered.
+
+  **An existing filter of that name is UPDATED, not duplicated.** Revit allows
+  no second filter of the same name, and the honest behaviour is to replace its
+  contents and say so - a run that silently made "Plant Room 2" because
+  "Plant Room" existed would leave two sets and one wrong drawing.
+
+  **It is not applied to any view.** Making the set and deciding where it shows
+  are two jobs, and the second one belongs to whoever knows the view.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: filterName
+      type: string
+      source: request
+  provides:
+    - name: filterId
+      type: ElementId
+    - name: saved
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `SelectionFilterElement.Create`,
+  `SetElementIds` and `GetElementIds` are present 2020 through 2027 - read off
+  the reference assemblies at both ends rather than remembered.
+
+# ROUTING - repeated in SET_SELECTION, CREATE_VIEW_FILTER and COLOR_BY_PARAMETER.
+#
+#   "save these as a set"            -> here
+#   "make a selection set"           -> here
+#   "i want to find these again
+#    later"                          -> here
+#   "select these"                   -> SET_SELECTION - the CURRENT selection,
+#                                       gone at the next click
+#   "make a filter for supply air"   -> CREATE_VIEW_FILTER - a RULE that keeps
+#                                       working as the model changes. Use that
+#                                       when the elements share one; use this
+#                                       when they share nothing but your choice
+#   "colour code by system"          -> COLOR_BY_PARAMETER
+#   "put that filter on this view"   -> APPLY_VIEW_FILTER - the step that
+#                                       makes a saved set do something to a
+#                                       drawing
+#   "what filters already exist"     -> REPORT_VIEW_FILTERS
+
+utterances:
+  - save these as a set
+  - make a selection set
+  - save this selection with a name
+  - i want to find these again later
+  - put these in a named filter

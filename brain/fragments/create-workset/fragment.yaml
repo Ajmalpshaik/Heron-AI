@@ -1,0 +1,84 @@
+heron-agent: HERON-REVIT-WRK-014
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-012
+semantic-identity: "add a new workset to this model"
+kind: action
+domain: revit.document
+capability: CREATE_WORKSET
+version: 1
+source: OFFICIAL
+risk: ADMIN
+
+purpose: >
+  Creates user worksets on a workshared model - the thing SET_ELEMENT_WORKSET
+  needs to exist before it can put anything on one.
+
+  **ADMIN risk, not MODIFY, and the reason is worth stating.** A workset is
+  project structure that everybody on the job sees and works inside. It is
+  named in the client's BIM execution plan, it decides what people can check
+  out, and a stray one called "New Workset" is visible to the whole team until
+  somebody notices.
+
+  **A workset is not an element**, and this fragment is the reason to say so:
+  it has no ElementId, so nothing downstream can be handed "the worksets that
+  were made". What comes back is the names and whether each was created or
+  already there.
+
+  **A name that already exists is reported, never duplicated.** Revit refuses a
+  duplicate workset name, and a batch that threw on the third of five would
+  leave two made and three not, with nothing saying which.
+
+  **On a model that is not workshared it does nothing and says so.** That is
+  the common case for a small job, and enabling worksharing is a decision with
+  consequences - a central file, local copies, a different way of working - so
+  it is never done as a side effect of asking for a workset.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: worksetNames
+      type: IList<string>
+      source: request
+  provides:
+    - name: createdNames
+      type: IList<string>
+    - name: alreadyThere
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Workset.Create`,
+  `FilteredWorksetCollector`, `WorksetKind.UserWorkset` and
+  `Document.IsWorkshared` are present 2020 through 2027 - read off the reference
+  assemblies at both ends rather than remembered.
+
+# ROUTING - repeated in LIST_WORKSETS and SET_ELEMENT_WORKSET.
+#
+#   "add a new workset"              -> here
+#   "make a workset for the ducts"   -> here, then SET_ELEMENT_WORKSET to put
+#                                       them on it
+#   "what worksets are there"        -> LIST_WORKSETS - a READ, and it must not
+#                                       answer a request to make one
+#   "put these on the MEP workset"   -> SET_ELEMENT_WORKSET - the workset
+#                                       already exists
+#   "who owns this element"          -> READ_ELEMENT_OWNERSHIP
+
+#   "rename this workset"                -> RENAME_WORKSET
+utterances:
+  - add a new workset
+  - create a workset
+  - make a workset for the ducts
+  - set up the worksets for this model
+  - i need another workset

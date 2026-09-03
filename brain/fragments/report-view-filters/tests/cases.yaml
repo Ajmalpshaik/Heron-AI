@@ -1,0 +1,34 @@
+positive:
+  - given: a project with a dozen MEP colour filters
+    expect: >
+      each named with its kind and the views using it - CHECKED against one
+      view's own Visibility/Graphics, Filters tab, before the list is believed
+
+  - given: a filter known to be on three views
+    expect: those three named, and no others
+
+negative:
+  - given: any project at all
+    expect: >
+      the report COMPLETES. THIS IS THE FIRST CASE TO RUN. The project browser
+      and system browser come back from the same collector as real views and
+      THROW when asked about filters - a version of this without a guard per view
+      dies partway through and reports whatever it had reached, which reads as a
+      short list rather than as a crash
+
+  - given: a filter applied to no view
+    expect: >
+      named as such, not omitted. That row is the point of the report: a leftover
+      filter and a tidy project look identical without it
+
+  - given: a filter used only inside a view TEMPLATE
+    expect: >
+      reported as on no view. Templates are excluded deliberately - a template is
+      not where a drawing is - and this is the one case where "unused" needs a
+      second look before anybody deletes anything
+
+  - given: a project with no filters
+    expect: a plain zero, not silence
+
+second_route:
+  - Revit's own Manage then Filters for the list, and one view's Visibility/Graphics for the usage

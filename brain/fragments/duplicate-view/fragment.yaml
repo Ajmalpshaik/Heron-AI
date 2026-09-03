@@ -67,6 +67,9 @@ compatibility-note: >
 #
 # "COPY" MEANS ELEMENTS OR VIEWS DEPENDING ON THE SENTENCE, and the two
 # fragments do completely different things.
+#   "make another legend like this one" -> CREATE_LEGEND_VIEW. Revit can make
+#                                       no legend from nothing on any release,
+#                                       so copying one is the only route
 
 utterances:
   - duplicate this view

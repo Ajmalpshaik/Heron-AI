@@ -113,7 +113,26 @@ compatibility-note: >
 #                                     afterwards
 #   "grey the architecture back"   -> SET_CATEGORY_GRAPHICS - a whole category,
 #                                     no parameter involved
+#   "colour code by system"          -> COLOR_BY_PARAMETER paints what is there
+#                                       NOW, in one step. A FILTER is a RULE that
+#                                       keeps working as the model changes - use
+#                                       this one when the drawing has to stay
+#                                       right without being re-run
+#   "colour by system"               -> either; say which behaviour is wanted
+#   "save these as a set"            -> CREATE_SELECTION_FILTER - a LIST,
+#                                       right when the elements share no
+#                                       rule. This is the rule
+#   "put that filter on this view"   -> APPLY_VIEW_FILTER. This makes the
+#                                       rule and puts it on no view at all
+#   "what filters already exist"     -> REPORT_VIEW_FILTERS, before making a
+#                                       near-duplicate of one that works
 
+#   "make a filter for every different system type" ->
+#                                        CREATE_VIEW_FILTERS_BY_VALUE - one
+#                                        filter PER VALUE, worked out from the
+#                                        model. This makes ONE, from a rule
+#                                        you already know
+#   "take that filter off the view"      -> REMOVE_VIEW_FILTER
 utterances:
   - colour by system
   - add a filter to the view

@@ -1,0 +1,86 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-011
+semantic-identity: "list the global parameters and what each one drives"
+kind: filter
+domain: revit.parameters
+capability: REPORT_GLOBAL_PARAMETERS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists every GLOBAL parameter in the project - its value, whether a formula
+  drives it, whether it only reports, and WHICH DIMENSIONS IT DRIVES. Read-only.
+
+  **A GLOBAL PARAMETER IS NOT A PROJECT PARAMETER, AND MIXING THEM UP WASTES A
+  SESSION.** A project parameter is a COLUMN: every door carries its own value.
+  A global parameter is ONE VALUE for the whole model, attachable to dimensions
+  and to element parameters, so changing it MOVES GEOMETRY. *"Corridor width =
+  1800"* as one number that eight dimensions obey is a global parameter.
+
+  **THE INTERESTING PART IS WHAT IT DRIVES, NOT ITS VALUE.** The value is one
+  number. The list of DIMENSIONS labelled by it is the list of things that move
+  when somebody edits that number - and it is the only answer to *"why did that
+  wall shift when I changed a figure in a dialog"*. Without this fragment a
+  model driven by globals looks, from here, like a model where things move for
+  no reason.
+
+  **NOT EVERY DOCUMENT ALLOWS THEM.** A family document does not, and neither do
+  some template states. That is asked first and said plainly, because an empty
+  list otherwise reads as *"this model has none"* when the truth is *"this kind
+  of document cannot have any"* - two different answers that look identical.
+
+  **Creating or setting one is deliberately not here.** Setting a global
+  parameter moves geometry, which makes it a MODIFY job and not a report, and
+  the create call changed shape at Revit 2022.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: globalCount
+      type: int
+    - name: allowed
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `GlobalParametersManager`,
+  `GetAllGlobalParameters`, `AreGlobalParametersAllowed`, `GetValue`,
+  `GetFormula`, `GetLabeledDimensions`, `IsDrivenByFormula` and `IsReporting`
+  are all present 2020 through 2027 - read off the reference assemblies at both
+  ends. `GlobalParameter.Create` is NOT used: its signature changed at 2022, and
+  `IsValidDataType` is NOT used either - it exists on 2020 and is gone by 2024,
+  which is exactly the shape of member that turns one build red.
+
+# ROUTING - repeated in ADD_PROJECT_PARAMETER and READ_ELEMENT_PARAMETERS.
+#
+#   "show me the global parameters in this model" -> here
+#   "why did that wall move when I changed a number" -> here - a global
+#                                                       parameter drives
+#                                                       dimensions, and this
+#                                                       lists which
+#   "what is driving these dimensions"            -> here
+#   "add a parameter to all the doors"            -> ADD_PROJECT_PARAMETER - a
+#                                                    COLUMN, one value per
+#                                                    element. A global is ONE
+#                                                    value for the whole model
+#   "what parameters does this duct have"         -> READ_ELEMENT_PARAMETERS
+
+utterances:
+  - show me the global parameters in this model
+  - why did that wall move when I changed a number
+  - what is driving these dimensions
+  - list the global parameters
+  - what global parameters does this project use

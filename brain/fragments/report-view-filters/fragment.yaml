@@ -1,0 +1,84 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-041
+semantic-identity: "what filters exist and which views use them"
+kind: filter
+domain: revit.views
+capability: REPORT_VIEW_FILTERS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists every filter in the project - rule-based and saved-set alike - and which
+  views actually use each one. Read-only.
+
+  **Before this, asking what filters a view has resolved to APPLY_VIEW_FILTER**,
+  which is a write. A question about a drawing answered by something that
+  changes it is the worst shape of mis-routing in this library, and it is why
+  this fragment exists at all.
+
+  **It answers two questions that get asked before two different mistakes.**
+  *What already exists* stops a near-duplicate filter being created beside one
+  that does the job. *Where is this used* stops one being edited or deleted
+  without knowing which drawings change.
+
+  **A filter applied to NO view is the row worth finding.** It is either a
+  leftover from a standard nobody follows any more, or one somebody made and
+  never applied - and both look identical to a project that is simply tidy.
+
+  **Not every "view" Revit returns can answer the question.** The project
+  browser and the system browser come back from the same collector and throw
+  when asked about filters, so each is asked inside its own guard - one
+  pseudo-view must not take the whole report down. That was found on a real
+  model, not reasoned about.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: unusedFilters
+      type: IList<ElementId>
+    - name: filterCount
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FilterElement` and its two subclasses,
+  and `View.IsFilterApplied`, are present 2020 through 2027 - read off the
+  reference assemblies at both ends rather than remembered. `GetOrderedFilters`
+  is NOT used: it arrived at 2024 and naming it would break the 2020 build for
+  ordering this report does not need.
+
+# ROUTING - repeated in APPLY_VIEW_FILTER, CREATE_VIEW_FILTER and
+# CREATE_SELECTION_FILTER.
+#
+#   "what filters are on this view"  -> here - a READ
+#   "which views use this filter"    -> here
+#   "what filters already exist"     -> here, before making a near-duplicate
+#   "put that filter on this view"   -> APPLY_VIEW_FILTER - a WRITE, and it must
+#                                       not answer a question about a drawing
+#   "make a filter for supply air"   -> CREATE_VIEW_FILTER
+#   "save these as a set"            -> CREATE_SELECTION_FILTER
+
+#   "copy the view filters from this view to the other views" -> COPY_VIEW_FILTERS
+#                                        - a WRITE. This one only says what is
+#                                          where
+#   "take that filter off the view"      -> REMOVE_VIEW_FILTER - and run this
+#                                        READ first, to see what else uses it
+utterances:
+  - what filters are on this view
+  - which views use this filter
+  - what filters already exist
+  - report the filters in this model
+  - list the view filters

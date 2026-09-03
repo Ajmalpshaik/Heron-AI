@@ -45,28 +45,91 @@ this up next: a fresh Claude session, a person, or the owner on his phone.
 
 ---
 
-## WHERE THIS STANDS, 2026-09-02 — the branch is finished and merged
+## HANDOVER — the session that ran 2026-09-02 into 2026-09-03
 
-**The cloud work is done.** Everything that could be built or checked away from the PC has been, the
-branch `claude/heron-ai-handover-r1b56c` is merged into `main`, and what is left needs a machine this
-container does not have.
+**What happened, in one line: the library went from 138 fragments to 202, in eight batches of eight, and
+was merged to `main`.**
+
+**The method, which is the part worth keeping.** Every batch started the same way: ask
+`heron_brain.lookup` the owner's own sentences against the library as it then stood, and write down which
+ones came back wrong. That is the whole selection rule — **nothing was built because it seemed useful; it
+was built because a real sentence was measurably going somewhere else.** Then read the top three to five
+candidates' `purpose` before writing anything, verify every API member against the Revit reference
+assemblies for 2020, 2024 and 2027, write the three files, measure routing again, check every new
+collision through `lookup`, add the cross-reference tables BOTH ways, run every checker, commit.
+
+**Reading the neighbours before building is what earned the most.** It stopped seven fragments from being
+written that already existed under another name — cable tray and conduit are one fragment, spaces are
+`PLACE_ROOMS`, clearing a category override is `SET_CATEGORY_GRAPHICS` with an empty settings object, and
+so on. The batch that skipped that step built a duplicate and had to withdraw it the same hour. **A
+lookup can show what is missing; only reading the candidates shows what already exists under a different
+name.**
+
+**The metadata substitute for the compile gate paid for itself seven times**, and the shapes it caught
+are worth knowing because a compiler on the PC will not teach them again:
+
+| # | Shape | Example |
+|---|---|---|
+| 1–3 | A member the OLD release never had | `Ceiling.Create` is absent on 2020 |
+| 4 | A member the NEW release removed | `GlobalParameter.IsValidDataType` is gone by 2024 |
+| 5 | A whole CAPABILITY removed | Revit 2027 has no HVAC zone creation at all |
+| 6 | Reflection that still names a missing TYPE | the delete-workset lookup named a 2020-absent type |
+| 7 | An OVERLOAD whose ARITY changed | the filter rule takes 3 arguments on 2020, 2 by 2027 |
+
+**Five impossibilities are now recorded rather than re-derived** — a scope box cannot be created, a design
+option cannot be made active, the first legend cannot be created, a wall cannot be split, and a phase
+cannot be created. Each is a routing row that says so and names the Revit route instead.
+
+### What the next session should do, in order
+
+1. **`python tools/check-gaps.py` first.** It is computed from disk and wins over every sentence here.
+2. **On any machine with the .NET SDK: `python tools/check-fragments-compile.py`.** Sixty-four fragments
+   owe a real compile. This is `A9`, and it is the largest thing that needs no Revit.
+3. **With Revit open: start proving.** Every one of the 202 is `DRAFT`. [D-30](docs/DECISIONS.md) means a
+   proof needs a case that comes back EMPTY, not just one that works.
+4. **To carry the library build on instead:** [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start),
+   and run the lookup sweep first — the un-mined source areas left are `actions/sheets-views/`,
+   `actions/reporting/` and the rest of `filters/`.
+
+**One gap measured and deliberately left:** *"What changed between this model and the old one"* still
+routes to `SET_ELEMENT_WORKSET`. `COMPARE_ELEMENTS` compares elements inside one document and cannot be
+it. A real model-to-model compare needs a second document opened or linked, and that API deserves
+checking properly rather than guessing.
+
+---
+
+## WHERE THIS STANDS, 2026-09-03 — 202 fragments, and sixty-four have never seen a compiler
+
+The library is still growing away from the PC. What is left to *prove* still needs a machine this
+container does not have — and as of the twentieth session there is one more thing on that list that
+needs only the **.NET SDK**, not Revit and not Windows.
 
 | | |
 |---|---|
-| Fragments | **102**, every one compiling on all eight Revit releases, every one `DRAFT` |
+| Fragments | **202**, every one `DRAFT`. 138 compiled on all eight Revit releases; **the newest 64 have not been compiled at all** — see `A9` |
 | Skills | 10, none naming a fragment |
 | Tools the host sees | 10, served by a real MCP SDK |
-| Test suites | 18 — **17 pass, 1 skipped** (needs the MCP SDK installed) |
+| Test suites | 18 — **16 pass, 2 blocked**: `test_bridge_roundtrip` needs the .NET SDK, `test_mcp_serves` needs the MCP SDK. Measured 2026-09-03, not remembered |
 | Checkers | 8, all green |
-| `check-gaps` | **0 unfinished, 55 waiting** |
+| `check-gaps` | **0 unfinished, 56 waiting** |
 
 **Nothing is unfinished. Nothing is proven.** Those are different sentences and both are true: every
 buildable thing is built, and not one fragment has touched a real model.
 
+> **The compile gate is the first thing to run on a machine that has the SDK** — `python
+> tools/check-fragments-compile.py`. It is now `A9` in the register. Sixty-four fragments were written on
+> 2026-09-02 and 2026-09-03 in a container where the SDK could not be installed, because the download
+> host is refused by that network's policy. Every API member they use was checked against the real
+> Revit reference assemblies for 2020, 2024 and 2027 instead, which is not the same thing and is not a
+> substitute — though it has now caught **seven** real errors before they were compiled, across four
+> distinct shapes. `A9` lists them.
+
 ### The one thing that matters next, and it needs the PC
 
-`D3` and the fragment library. **102 fragments are `DRAFT` and stay there until each is run against a
-real model with a case that comes back EMPTY** ([D-30](docs/DECISIONS.md)). That is the owner's job and
+`D3` and the fragment library. **Every fragment is `DRAFT` and stays there until it is run against a
+real model with a case that comes back EMPTY** ([D-30](docs/DECISIONS.md)) — `python
+tools/check-gaps.py` counts them, and no number is typed here for the reason the rest of this file
+keeps re-learning. That is the owner's job and
 it is the largest remaining piece of work in the project. Everything else waiting is smaller:
 
 - **`A7`** — the trained embedding backend has never run: the weights host is unreachable from here.
@@ -101,11 +164,12 @@ every agent id against the registry, walks the fragment library, the capability 
 dependency graph, and reads the register. Then it sorts everything into **UNFINISHED** and **WAITING**,
 and its exit code follows only the first.
 
-**As of 2026-09-02 it reports 0 unfinished and 55 waiting.** Everything waiting needs a machine, a
-dependency or a conversation: **48 a real Revit**, plus the 102 unproven fragments as one further item,
-**Windows** (`A4`, `A6`), **1 a network that can reach the weights host** (`A7`), **1 the owner**
-(`R1b`), and **1 an optional dependency this machine does not have** — `test_mcp_serves.py` reporting
-honestly that it was skipped, rather than being counted as a pass.
+**As of the twentieth session, 2026-09-02, it reports 0 unfinished and 56 waiting.** Everything waiting
+needs a machine, a dependency or a conversation: **48 a real Revit**, plus the unproven fragments as one
+further item, **Windows** (`A4`, `A6`, `A8`), **1 the .NET SDK** (`A9` — the eight fragments no compiler
+has read), **1 a network that can reach the weights host** (`A7`), **1 the owner** (`R1b`), and **1 an
+optional dependency this machine does not have** — `test_mcp_serves.py` reporting honestly that it was
+skipped, rather than being counted as a pass.
 
 > Those figures were **read off the tool, not carried forward**, and the sentence they replace shows why
 > that matters: it said *55 waiting* and then listed parts summing to 54, and it still counted **3 owner
@@ -221,7 +285,7 @@ work: build the fragments now, re-authored from his earlier library, and check e
 later — *"checking in revit we will do after because that is a big work... mark as not verified and when
 pc came we will check."*
 
-**So the library is 102 fragments and every skill has every capability provided.** The seven were written
+**So the library is 146 fragments and every skill has every capability provided.** The seven were written
 on 2026-08-29; twenty-five more followed on 2026-08-30, and seven more on 2026-08-31 — those last chosen
 by asking the brain the owner's own sentences and reading what came back, rather than by working through
 the earlier library in order. `python brain/heron_skill.py` shows no gaps.
@@ -243,6 +307,523 @@ none of them will fail at the PC for a reason a compiler could have found — wh
 being a figure of speech, when the gate caught a tag accessor that Revit 2027 has removed. Not one has met a model. The debt did
 not go away — it got **counted**, which is the whole point of `check-gaps` keeping *unfinished* and
 *waiting* in two lists that must never be one.
+
+---
+
+## The twenty-seventh session, 2026-09-03 — eight more, and the API check found a third shape of version break
+
+**What it did:** took the library from **194 to 202**. Same container, same limitation. `A9` now names
+**sixty-four**.
+
+| | |
+|---|---|
+| `CREATE_VIEW_FILTERS_BY_VALUE` | *"Make a filter for every different system type"* was answering `CREATE_VIEW_FILTER`, which makes ONE. **Deferred twice as too close to `COLOR_BY_PARAMETER` and built on the third asking**, because reading both purposes settled it: that one writes per-element OVERRIDES and an element drawn tomorrow gets nothing; this writes real FILTERS that re-evaluate forever. Investigate with one, set a standard with the other. **The category set comes from the elements, never guessed** — a filter naming a category that lacks the parameter is rejected by Revit *entirely*, so being helpful about it destroys the whole run |
+| `REMOVE_VIEW_FILTER` | *"Take that filter off the view"* was answering `COPY_VIEW_FILTERS`. **Off one view and deleted from the project are completely different in reach**, so deleting is a separate flag and the fragment reports how many OTHER views use it first — a filter on one view is a leftover, one on twenty is somebody's standard |
+| `REPORT_CATEGORY_VISIBILITY` | *"Which categories are turned off in this view"* was answering `SET_CATEGORY_VISIBILITY` — the fragment that turns things off. **It deliberately does NOT scope to the view, which is the opposite decision from `REPORT_CATEGORY_OVERRIDES` built two sessions ago**: a hidden category's elements do not appear in a view-scoped collector at all, so scoping would hide exactly what it exists to find. The two look alike and the difference is not a style choice |
+| `SET_CROP_BOX_SETTINGS` | *"The tags are printing outside the crop"* had no answer. **The annotation crop is the half nothing else covers and the one that spoils sheets** — the model crop trims geometry while tags and dimensions keep printing outside it. Each flag is optional and empty means LEAVE ALONE, because a batch that forces three settings is how a drawing set loses its crop boundaries overnight |
+| `CHECK_SURFACE_FIT` | *"Is the equipment sitting flat on the floor"* was answering `SNAP_TO_GRID` — which moves things. **A single centre ray is right in the middle of a surface and lies at the edges, and edges are where the mistakes are.** Five sample points, four named verdicts: STRADDLING, OVERHANGING, UNEVEN, SLOPED. Its real use is deciding which elements are safe to move automatically |
+| `CREATE_MEP_SYSTEM_TYPE` | *"Make a duct system type"* was answering `READ_MEP_SYSTEM`. **There is no create call on any release** — one is made by duplicating — so the fragment's real job is the parent: the new type inherits its classification and **that cannot be changed afterwards**. Copy a Return to make a Supply and it behaves as a Return forever while reading correctly on every drawing |
+| `REMOVE_PARAMETER_VALUE` | *"Clear the value out of this parameter"* was answering `COPY_PARAMETER_VALUE`. **`WRITE_ELEMENT_PARAMETERS` cannot do this, and the reason is its own best decision** — it takes the value as TEXT on purpose, and an empty string clears a text field but not a length, a number or an element reference. A blank and a zero are different things in a schedule |
+| `ASSIGN_LOCATION_DATA` | *"Put the room name on all the equipment"* was answering `FIND_DUPLICATE_ELEMENTS`. Not the parameter writer, because **the value is not given — it is worked out per element**. The probe point is nudged to the room's own mid-height, and without that a ceiling diffuser tests false from its own position: the obvious version leaves every air terminal blank, which is exactly the set somebody built the register for |
+
+**The API check earned its keep a seventh time, and on a third distinct shape of version break.** The
+first three were members a release does not ship. The fourth was a member present on the OLD end and gone
+by the new. The fifth was a whole capability removed. The sixth was reflection that still named a missing
+TYPE in its own lookup. **This one is an OVERLOAD whose ARITY changed**:
+`ParameterFilterRuleFactory.CreateEqualsRule` for a text value is `(ElementId, string, bool)` on Revit
+2020 and `(ElementId, string)` by 2027 — the case-sensitivity argument was dropped. Both releases HAVE
+the member; the member's name gives nothing away; **each spelling compiles on exactly one end and breaks
+the other**, and only reading the two signatures byte for byte shows it. `CREATE_VIEW_FILTERS_BY_VALUE`
+chooses the overload at run time by argument count. **A member being present at both ends does not mean
+the call is.**
+
+**Four sentences were already answered and are recorded rather than rebuilt.** *"Put the categories back
+to normal in this view"* → `SET_CATEGORY_GRAPHICS` with an EMPTY settings object, which its own purpose
+already names as the reason there is no separate clear. *"Which pipes are still open at the end"* →
+`FIND_DEAD_ENDS`. *"Make a named set I can pick again later"* → `CREATE_SELECTION_FILTER`. *"Create
+spaces in every enclosed area"* → `PLACE_ROOMS`, which places rooms **or** spaces. All four were declared
+as utterances so the routing now matches the decision.
+
+**A fifth impossibility joins the list:** **a phase cannot be CREATED from the API on any release** —
+`Document.Phases` is a read-only collection and no factory offers one, checked at both ends. That is now
+a routing row on `REPORT_PHASES`, alongside the scope box, the design-option activation, the first legend
+and splitting a wall.
+
+**And a small thing worth the sentence.** A routing row I wrote this session claimed *"which ones have no
+value"* for `DESCRIBE_BLANK_PARAMETERS` — a sentence `READ_ELEMENT_PARAMETERS` already declares. The
+checker caught it, and the fix was to correct **my table** to a sentence that fragment really declares,
+not to move the sentence. A routing table is a claim about the index, and the index is the authority.
+
+---
+
+## The twenty-sixth session, 2026-09-03 — eight more, and two checks caught the session's own mistakes
+
+**What it did:** took the library from **186 to 194**. Same container, same limitation. `A9` now names
+**fifty-six**. Four of the eight close a mis-route where a QUESTION was being answered by a fragment that
+WRITES — the shape this library treats as the worst.
+
+| | |
+|---|---|
+| `CHECK_FAMILY_STANDARDS` | *"Check the families are named to our standard"* was answering `RENAME_FAMILY` — a write, to a question. **It audits TYPES, not instances**: one badly built type placed two hundred times is ONE thing to fix, and an instance report buries everything else in it. **Connectors are read through a placed instance**, because a type does not expose them — so a type placed nowhere is NOT CHECKED rather than passed, and that distinction is what separates an audit from a guess |
+| `CHECK_CEILING_COORDINATION` | *"Are the light fittings sitting properly in the ceiling tiles"* was answering `SNAP_TO_GRID` — which MOVES things. **The fault it catches is invisible in plan**: a diffuser 40 mm above the ceiling and one exactly in it look identical from above. NO CEILING ABOVE is a finding, not an error — an open soffit is fine |
+| `CHECK_EQUIPMENT_CONNECTORS` | *"Are the equipment connectors the right size for the duct"* was answering `CHECK_FLOW_DIRECTION`. **The unconnected spigots are usually the bigger finding** — no clash test and no connectivity walk flags them, because the services that ARE connected trace perfectly. **Size comparison is shape-aware**: round reports a radius and rectangular reports width and height, and comparing them as one number is how this kind of check produces confident nonsense |
+| `CHECK_FIXTURE_CONNECTIVITY` | *"Are all the sinks and toilets connected to the drainage"* was answering `MEASURE_MEP_SLOPE`. **It reports PER SERVICE**, which is the only actionable form — *"nine WCs have no vent"*, not *"twelve fixtures have an unconnected connector"*. And it is not `FIND_DEAD_ENDS` from the other end: **a fixture nobody piped produces no open pipe end at all**, so that fragment structurally cannot see it |
+| `REPORT_CATEGORY_OVERRIDES` | *"What category overrides are on this view"* was answering `READ_GRAPHIC_OVERRIDES` — **whose own purpose says in writing that it reads the per-element override only**. A question answered by a fragment that structurally cannot answer it, coming back empty and reading as *"nothing is overridden"*. **The visibility flag is not the signal**: a pattern's own "is visible" reads TRUE with nothing set, so a check built on it reports the whole model as overridden |
+| `REPORT_DESIGN_OPTIONS` | *"Which design option am I working in"* was answering `REPORT_SPACE_AIRFLOW`. A design option changes what *"all the ducts"* means — a count that disagrees with the screen, a short schedule and an element that will not delete all have this one cause. **The active option cannot be changed from code on any release**, checked at both ends, and `Element.DesignOption` is read-only too |
+| `RENAME_WORKSET` | *"Rename this workset"* was answering `SET_VIEW_WORKSET_VISIBILITY` — which changes a drawing. **A workset is not an element**; it lives in the workset table, which `RENAME_ELEMENTS` cannot reach. Deleting one is absent from 2020 and present from 2024 — read at both ends, not inherited |
+| `CREATE_GRIDS` | *"Make a grid series across the building"* was answering `SNAP_TO_GRID`. Bay dimensions are the input, which is how a drawing states a grid. **They are GAPS, not positions** — four of them make FIVE grids, and both readings look sensible to somebody checking the code |
+
+**The API check earned its keep a sixth time, and this time on code this session had already written.**
+`RENAME_WORKSET` reaches `DeleteWorkset` **by name** because that call is absent from Revit 2020 — and
+the lookup then named `DeleteWorksetSettings` in its argument list, **a type that does not exist on 2020
+either**. The reflection was protecting the build from one missing member while breaking it on another,
+on the very line meant to protect it. Nothing in the fragment's own logic would have shown this; the
+metadata read printed `TYPE NOT FOUND` and it was fixed before it was ever compiled. **Reaching a call by
+name is not enough — every TYPE named in the lookup has to exist on the oldest release too.**
+
+**And `test_embed.py` caught the other one, in a way worth copying.** `CREATE_GRIDS` took
+`READ_CEILING_GRID`'s own declared words: *"what is the ceiling grid spacing"* ranked the new fragment
+first. The test's failure message **names the thief** rather than just failing, so the diagnosis was one
+line long. The fix is the interesting part: the repository's rule is that weakening an utterance somebody
+actually says, to buy back a rank, is never the answer — so nothing on `READ_CEILING_GRID` was touched.
+What changed was **my own prose**: an invented utterance in developer-speak, and a `purpose` that said
+*"spacings"* five times because the gaps-not-positions point was repeated. The keyword index reads the
+purpose as well as the utterances, which is what made repetition a ranking act rather than a stylistic
+one. Both were tightened; every point the fragment made survives.
+
+**Three sentences were already answered and are recorded rather than rebuilt.** *"Turn the whole category
+to halftone"* → `SET_CATEGORY_GRAPHICS`, which takes a prepared settings object and therefore already does
+halftone and transparency. *"Put the elements back that I hid"* → `SHOW_ELEMENTS`. *"Which filters are set
+up but never used"* → `REPORT_VIEW_FILTERS`, whose purpose already names the unused row as the one worth
+finding. And *"is there room for the insulation on these pipes"* → `CHECK_MINIMUM_CLEARANCE`, which folded
+insulation in as a flag on purpose rather than keeping it as a second fragment.
+
+**A gap this batch measured and deliberately left:** *"What changed between this model and the old one"*
+still answers `SET_ELEMENT_WORKSET`. `COMPARE_ELEMENTS` compares elements inside one document and cannot
+be it. A real model-to-model compare needs a second document opened or linked, and designing that
+honestly needs the open-document API checked properly rather than guessed at — it belongs to a batch that
+can give it the room.
+
+---
+
+## The twenty-fifth session, 2026-09-02 — eight more, six of them MEP coordination
+
+**What it did:** took the library from **178 to 186**. Same container, same limitation. `A9` now names
+**forty-eight**. This batch went deliberately at the owner's own trade: six of the eight are the checks a
+BIM modeller runs before a coordination issue.
+
+| | |
+|---|---|
+| `READ_GRAPHIC_OVERRIDES` | *"Make this pipe look the same as that one"* was answering `CREATE_PIPE`. **This is the gap the twenty-fourth session measured and left on purpose**, and closing it took one small read. `OVERRIDE_GRAPHICS_IN_VIEW` takes settings ALREADY BUILT — nothing could produce them from an element that already looked right, so matching had no answer at all. An element with NO override still returns the empty settings object, because applying that CLEARS another element's override, which is a real use |
+| `CHECK_SLEEVE_SIZE` | *"Are the sleeves big enough"* was answering `MEASURE_MEP_SLOPE`. The service is found by GEOMETRY — a sleeve family records nothing about what goes through it. **A sleeve with nothing through it is the finding**, not a blank row: either an orphan, or the run moved and the hole did not. Required size is arithmetic with every term explicit, and the insulation is read from the real element because a 50 mm jacket turns a comfortable sleeve into a tight one |
+| `CHECK_EQUIPMENT_CLEARANCE` | *"Is there enough space in front of the panel"* was answering `MEASURE_MEP_SLOPE` too. **The zone is DIRECTIONAL and that is the whole point** — an AHU needs 1500 mm in front and 200 mm behind, and a sphere either passes real obstructions or fails on the wall the unit is meant to stand against. Built on the family's own facing direction, which is REPORTED per unit, because a family authored facing the wrong way makes this confidently wrong and nothing else would say so |
+| `CHECK_VALVE_ACCESSIBILITY` | *"Can we reach the valve to operate it"* was answering `LIST_GRIDS`. **Three questions, answered separately, because each has a different fix**: room, an access panel where it sits above a ceiling, and reach height. Above a ceiling is NOT a fault — most valves are — so it is a list for the architect rather than a failure. A check that cries wolf about every valve gets switched off by lunchtime |
+| `CHECK_VERTICAL_CLEARANCE` | *"How much room between the duct and the pipe above it"* was answering `MEASURE_ELEMENT_LENGTHS`. **Not `CHECK_MINIMUM_CLEARANCE` with a smaller number**: two services 200 mm apart diagonally have 200 mm of straight-line clearance and may have 40 mm of vertical room, which is what a hanger and a flange need. It says which one is ON TOP, so drainage above the duct it must cross under reads as a fact |
+| `AUDIT_MEP_OPENINGS` | *"Which of my openings are wrong now the ducts moved"* was answering `READ_ELEMENT_OWNERSHIP`. **The trap it is built around**: a cut void is a Revit `Opening` with NO SOLID, a placed sleeve is a family instance that has one, and the obvious way to gather openings returns mostly the first — so an audit written for the second reports "no geometry" for all of them, with no crash and no error, and audits nothing |
+| `CREATE_ROOM_ELEVATIONS` | *"Make elevations inside each room"* was answering `FILTER_ELEMENTS_IN_ROOM`. A marker with four slots, not a section — nothing about a section makes the four-arrow symbol a drawing set expects. **The slots are NOT rotated to face the walls**, so in a rotated room the views look at corners, and that is said in the report because it is invisible until somebody lays out the sheet |
+| `CREATE_HVAC_ZONE` | *"Create an HVAC zone"* was answering `PLACE_ROOMS`. See below — this one is a first for the library |
+
+**The first fragment here whose capability a Revit release REMOVES.** Read off 2027's own reference
+assembly rather than taken from a note: the creation factory has **no zone method left**, and
+`Zone.AddSpaces` and `RemoveSpaces` are **gone from the `Zone` class** — while `Zone` itself, `Zone.Spaces`
+and `Zone.Area` remain, so the type still existing proves nothing. Both vanished calls are therefore
+reached BY NAME, which keeps one source compiling on all eight releases, working on 2020 through 2026, and
+**reporting a plain reason on 2027** instead of failing. Naming either directly would break the 2027
+build, and a try/catch does not help — it never gets to run.
+
+**Three sentences turned out to be already answered, and reading the neighbours is what showed it.**
+*"Draw a cable tray here"* and *"draw the conduit"* → `CREATE_ELECTRICAL_RUN`, which already covers both
+and says in its own purpose why they are one fragment. *"Place spaces in all the rooms"* → `PLACE_ROOMS`,
+which already places rooms **or** spaces. *"Save these as a named selection set"* → `CREATE_SELECTION_FILTER`.
+All three were routing correctly at #1 already; the batch just confirmed it rather than building beside them.
+**Two more were dropped for being too close to something that exists**: a filter-per-value fragment sits
+too near `COLOR_BY_PARAMETER` to be worth the crowding, and it waits for evidence rather than a guess.
+
+**The orphan check earned its keep again, and the fix was better than last time's.** `CREATE_HVAC_ZONE`
+named its input `spaces`, which nothing provides. Last batch the same report was answered by marking the
+input `source: request`; here the honest answer was different — `FILTER_ELEMENTS_BY_CATEGORY` **does**
+provide it, under the library's own name `elements`. Renaming the need made the composition real instead
+of declaring it unfeedable. **Worth remembering: an orphan report is a question about the NAME first and
+about the source second.**
+
+**And a mis-route the batch found in passing, in a fragment it did not write.** *"What is too close to
+what"* was answering `FIND_NEAREST_ELEMENTS` — while `CHECK_MINIMUM_CLEARANCE`'s own purpose says, in
+capitals, that it is NOT that fragment with a threshold. The routing table said one thing and the index
+had never seen the sentence. Declared, and it now routes by identity.
+
+---
+
+## The twenty-fourth session, 2026-09-02 — eight more, and two capabilities that already existed
+
+**What it did:** took the library from **170 to 178**. Same container, same limitation. `A9` now names
+**forty**.
+
+| | |
+|---|---|
+| `COPY_VIEW_FILTERS` | *"copy the view filters from this view to the other views"* was answering `REPORT_VIEW_FILTERS` — a read, to a request to change twelve drawings. **Adding a filter is not copying it**: `AddFilter` carries EMPTY overrides, the look is a second object and the on/off state a third. Copy one of the three and twelve views hold the right filters and look identical, which reads as the job not having run |
+| `REMAP_LINE_STYLES` | *"change all the old line styles to the new ones"* was answering `CREATE_FLOOR`. **Lines live where a selection cannot reach** — inside sketches, and inside filled region borders, which are not curve elements at all. And Revit gives a setter for a region's border style and **no getter**, so there is no honest way to change only the offending ones; the fragment says which of the three choices that leaves rather than pretending |
+| `SET_VIEW_WORKSET_VISIBILITY` | *"turn off this workset in this view"* was answering `SET_CATEGORY_VISIBILITY` — a category is what a thing IS, a workset is who OWNS it. **A workset has three states in a view, not two.** Turning the wanted one on without pushing the rest to Hidden leaves them on Use Global Setting, which is usually visible: the view shows everything and the call looks like a no-op |
+| `CREATE_SHEET_LIST` | *"make a sheet list schedule"* was answering `FIND_SCHEDULES`. **A different API call, not an option on the schedule maker** — sheets are not model elements, so the category route cannot produce a drawing index at all. A field the list cannot carry is named with the real ones, because a silently short index prints on the cover and nobody reading it can tell a column was asked for |
+| `REPORT_GLOBAL_PARAMETERS` | *"show me the global parameters"* was answering `READ_MODEL_WARNINGS`. **A global is not a project parameter**: one value for the whole model that drives geometry, against a column with one value each. The interesting part is which DIMENSIONS it drives — that is the only answer to *"why did that wall shift when I changed a number"*. And a document that CANNOT hold them is a different answer from one that has none, which is why that is asked first |
+| `CREATE_LINE` | *"draw a detail line here"* was answering `CREATE_DRAFTING_VIEW`. **Detail or model is the decision, not a detail** — one lives in a single view, the other turns up on every drawing — so there is no default and the caller says which. The short-curve limit is read from the application rather than typed, because it belongs to the installation |
+| `ASSIGN_SCOPE_BOX_TO_VIEW` | *"set the scope box on these views"* was answering `SET_VIEW_SECTION_BOX`. Pairs with the impossibility already recorded here: **a scope box cannot be CREATED from code on any release** — but assigning one that exists is a parameter write, and that is where the repeated work is. A model with none says so, and says why |
+| `SET_VIEW_CROP_TO_SHAPE` | *"crop the view to follow the room shape"* was answering `SET_VIEW_CROP`, which sets a BOX and can only ever be a rectangle. Revit demands three things of the loop and **gives the same unhelpful error for all three**; the curves are chained here rather than trusted in arrival order, and the worst gap bridged is reported so a shape that never closed does not pass as one that did |
+
+**Two sentences were answered by a routing row instead of a fragment, and that is the batch's real
+finding.** *"Grey out the linked model"* was routing to `COPY_FROM_LINK`. The instinct was to build a
+link-override fragment — and reading `OVERRIDE_GRAPHICS_IN_VIEW` first showed it already does the job:
+**a link is ONE element in the host document**, so a single override on it covers everything inside. It
+needed the sentence declared, not a new fragment. *"Make a new duct system type"* is the same shape:
+`DUPLICATE_TYPE` is how a system type is made in Revit.
+
+**What that is worth remembering as:** the twenty-third session built a duplicate because it read the
+brain's #1 answer and stopped. This one read the top five for every sentence **and then opened the
+purpose of each near neighbour**, and that second step is what caught these two — the ranking had them
+at #1 and #2 both times. Reading the list is not the same as reading the fragments.
+
+**A gap this batch measured and deliberately did not fill:** *"make this pipe look the same as that
+one"* still answers `CREATE_PIPE`. `OVERRIDE_GRAPHICS_IN_VIEW` takes the settings already built, and
+nothing in the library READS an element's existing overrides — `View.GetElementOverrides` exists on all
+three releases checked. That is one small fragment, and it belongs to the next batch rather than to a
+sentence declared on something that half-answers it.
+
+**The checker caught two orphans in this batch's own work.** `COPY_VIEW_FILTERS` and
+`ASSIGN_SCOPE_BOX_TO_VIEW` both named a list of views as a need without marking it `source: request`, so
+`check-gaps` correctly reported two actions nothing could feed. Worth noting because both were written
+by hand from a template that had it right — the error was mine and the tool found it in seconds.
+
+**And the API check earned its keep a fourth time, in a new shape.** `GlobalParameter.IsValidDataType`
+is present on 2020 and **gone by 2024**. The three it caught before were members missing from the OLD
+end; this one is missing from the NEW end, which is the reverse and is worse, because a guard written
+against the release in front of you looks careful and turns every newer build red.
+
+---
+
+## The twenty-third session, 2026-09-02 — eight more, and one written then withdrawn
+
+**What it did:** took the library from **162 to 170**. Same container, same limitation. `A9` now names
+**thirty-two**.
+
+| | |
+|---|---|
+| `CREATE_WALL` | *"make a wall here"* was answering `SPLIT_MEP_RUN`. A run of points like the duct and the pipe; project elevation again; **nothing is joined**, and the height is unconnected |
+| `CREATE_MATERIAL` | *"make a material"* was answering `READ_ELEMENT_MATERIAL`. **Shading colour only** — no appearance asset — so it schedules and colours correctly and renders as flat plastic, which is said rather than discovered |
+| `REPORT_VIEW_FILTERS` | *"report what filters are on this view"* was answering `APPLY_VIEW_FILTER` — **a write, to a question about a drawing**, the worst shape of mis-route here. A filter on NO view is the row worth finding. Every probe sits in its own guard, because the project browser comes back from the same collector and throws |
+| `SET_DATUM_BUBBLES` | *"the grid bubbles are on the wrong side"* was answering `SNAP_TO_GRID` — which MOVES elements. **Flip is not one call**: read both ends, hide one, show the other, and the two ambiguous cases are decided rather than silently skipped. Bubbles are per view; extents are not, and confusing them is how one fix becomes twenty |
+| `CREATE_FILLED_REGION` | *"make a filled region here"* was answering `CREATE_CALLOUT`. **It is annotation**: in one view, in no schedule, not in the model — right for a markup, and a hole in the coordination model for anybody who thinks they modelled something |
+| `CREATE_KEY_SCHEDULE` | *"make a key schedule"* was answering `CREATE_SCHEDULE`. A table of DEFINITIONS, not a list of things. Revit is ASKED whether the category allows one, because the create call throws rather than explaining |
+| `FIND_OVERLAPPING_LINES` | *"find the overlapping lines"* was answering `FIND_OVERLAPPING_TAGS`. **"Are these two lines the same" is not a direct comparison** — normalise the direction into one half-plane, round both parts of the key, then compare as 1-D intervals. Skip the first step and the check "finds nothing" on a drawing full of duplicates |
+| `COPY_FROM_LINK` | *"take the elements out of the link"* was answering `RELOAD_LINKS`. **The link's transform is the whole job** — without it everything lands somewhere plausible, which is worse than obviously wrong. And the copies stop tracking the link, which is right for grids and a trap for anything still changing |
+
+### One fragment was written and then withdrawn the same hour
+
+**`ADD_NAME_AFFIX` was built, validated, and deleted** — because `EDIT_TEXT_VALUES` already does prefix,
+suffix and replace, on any parameter *or* on the element's own name. Its purpose even records that the
+earlier library carried a rename fragment and a prefix/suffix fragment with the same four
+transformations, and that this one deliberately merged them. **The duplicate re-created exactly the
+duplication a previous session had removed on purpose.**
+
+> **How it happened, because the mechanism matters more than the fragment.** The brain was asked
+> *"add a prefix to all the names"* and answered `ADD_SCHEDULE_FIELDS`, `EDIT_TEXT_VALUES`,
+> `RENAME_ELEMENTS`. **`EDIT_TEXT_VALUES` was at #2 and was not read.** This repository's own standing
+> rule is *read the top three to five, never just #1* — written for exactly this, and the wrong answer
+> at #1 made the list look like a gap when the answer was one line below it.
+>
+> **A lookup can show what is missing. It cannot show what already exists under a different name** —
+> only reading the candidates does that.
+
+And it took the sentence with it while it existed: declaring an utterance HANDS that sentence to the
+new fragment by identity, ahead of whatever answered it before. Withdrawn, *"add a prefix to all the
+names"* returns to `EDIT_TEXT_VALUES`, where it belongs. A row there now records the whole episode.
+
+### The routing checker's store went stale, and reported a good fragment as unrankable
+
+After the withdrawal, `check-routing.py` reported the replacement fragment as `#None` on **its own
+declared utterances** — not ranked anywhere. Nothing was wrong with it: the store still held the
+deleted fragment and had not indexed the new one.
+
+> **Delete a fragment, then rebuild the index from scratch before believing any routing number.** A
+> session that trusted that output would have rewritten a fragment that was already correct — the same
+> shape as the collision list misleading two sessions in a row, and worth the same warning.
+
+### The routing, measured against the 162 that were there before
+
+| | before | after |
+|---|---|---|
+| Utterances | 946 | 986 |
+| Claimed in a routing table and not reached | 3 | **3** — the same three |
+| Shortlist collisions | 148 (15.6%) | 152 (15.4%) |
+
+The rate went slightly DOWN this time, having risen last session. Every new fragment's sentences
+resolve correctly through `heron_brain.lookup`. Two stale claims were fixed on the way: one of my own
+wrapped across two lines *again* — the third time that mistake has appeared, and it is now the first
+thing to check in a new table — and `REPLACE_MATERIAL`'s table claimed *"the client changed the spec"*
+while declaring *"the client changed the material"*, which only broke once the ranking shifted.
+
+Reciprocal rows went into twenty-three counterpart fragments.
+
+---
+
+## The twenty-second session, 2026-09-02 — eight more, and two capabilities that cannot be built
+
+**What it did:** took the library from **154 to 162**, same container, same limitation. `A9` now names
+**twenty-four** fragments no compiler has read.
+
+Chosen the same way: the owner's sentences through `heron_brain.lookup`, wrong answers first.
+
+| | |
+|---|---|
+| `AUTO_SIZE_MEP` | *"auto size the ducts from the flow"* was answering `MEASURE_MEP_VELOCITY` — a read. Sizes from the flow Revit already has, **always rounding UP**: rounding to the nearer size pushes velocity above the design figure, which is the direction that causes noise and rework. **The unit assumption is printed before anything is written** — the raw internal value beside Revit's own display string, so a wrong constant shows itself on the first run rather than through a mis-sized system |
+| `CONNECT_AIR_TERMINALS` | *"connect the air terminals to the duct"* was answering `REPORT_CONNECTOR_LOADS`. This is the **TAP**, cut into the duct's side — not `CONNECT_OPEN_ENDS`, which butt-joins two ends already at one point. Nearest is measured to the terminal's **connector**, which on a ceiling diffuser is on top of it; measuring from the diffuser body picks the wrong duct where two run side by side. **The call returns a bool, and false is not an exception** |
+| `HIGHLIGHT_VS_REST` | *"grey everything except the ducts"* was answering `SET_CATEGORY_GRAPHICS`. **This is the owner's own grayout**, and *"do the grayout"* now lands on it. Insulation and lining travel with their host **both ways** — his standing rule: colour a duct and you colour its insulation, or you cannot see it |
+| `APPLY_VIEW_FILTER` | *"apply this filter to the view"* was answering `APPLY_VIEW_TEMPLATE` — a far bigger change than the one asked for. The missing link after `CREATE_VIEW_FILTER`: without it a filter exists in the project and does nothing to any drawing. **Projection and cut are both the caller's job**, and a half-built override is warned about, because Revit derives neither from the other |
+| `CREATE_FLOOR` | *"make a floor here"* was answering `CREATE_PLAN_VIEW`. Same version split as the ceiling and confirmed the same way: **`Floor.Create` is absent on 2020 and `Document.Create.NewFloor` is gone by 2024**, so both are looked up at run time. Project elevation again, not elevation |
+| `RENAME_FAMILY` | *"rename the family"* was answering `LOAD_FAMILY` — a write of the wrong kind. It renames the family EVERYWHERE, and says how many types and instances went with it. **The .rfa on disk keeps its own name**, so reloading brings the old one back — worth knowing before somebody renames the same family twice |
+| `CREATE_LEGEND_VIEW` | *"make a legend"* was answering `CREATE_SCHEDULE`. Duplicating is the only route: **Revit exposes no legend creation method on any release**, so a project with none cannot get its first from a script, and this says so plainly rather than failing obscurely |
+| `CHECK_ROOM_MEP_COMPLETENESS` | *"which rooms have no mep in them"* was answering `PLACE_ROOMS`. Checks rooms against a rule and reports what is short. **The total found per category is printed first** — a category with zero anywhere means the devices are in a linked model, and without that line every room reads as missing them |
+
+### Two capabilities cannot be built, and both refusals are the finding
+
+- **`SET_DESIGN_OPTION`.** An element only lands in a design option while that option is ACTIVE, and
+  **no option can be made active from a script** — checked against 2020 AND 2027, where the only member
+  anywhere is the read-only `GetActiveDesignOptionId`. There is no setter on `Document`, on
+  `DesignOption`, or anywhere else. A row in `SET_ELEMENT_WORKSET`'s table says so.
+- **`PURGE_UNUSED`.** This one is *possible* and is deliberately not built. `FIND_UNUSED_FAMILIES`
+  reports and deletes nothing, which the eighteenth session decided on purpose: purging is hard to
+  reverse, Revit has the command, and doing it to a shared model from here would be the most damaging
+  thing in the library. **Building it now would quietly undo that decision**, so the row in that
+  fragment's table records why instead.
+
+> That is three impossibilities established at both ends of the range in two sessions — scope box,
+> design option, and the legend's first instance. **The pattern is worth the sentence: check the far
+> end before writing "cannot".** The `CREATE_CEILING` lesson exists because somebody did not.
+
+### A third false absence, and this one was in the checking tool
+
+The metadata reader matches a type by its SHORT name and returns the first hit — and for several types
+that first hit is an **internal marshalling struct**, not the real class. `OverrideGraphicSettings` reads
+as having **no constructors at all** that way; it has two, including the copy constructor this session
+needed. Match the full name.
+
+That is now three ways the same tool can report a member that exists as missing: a base-type member, an
+inherited one, and a short-name collision. All three are in `A9` where the method is described.
+
+### The routing, measured against the 154 that were there before
+
+| | before | after |
+|---|---|---|
+| Utterances | 906 | 946 |
+| Claimed in a routing table and not reached | 3 | **3** — the same three |
+| Shortlist collisions | 129 (14.2%) | 148 (15.6%) |
+
+**The collision rate rose more than in the previous two batches**, which is what adding into the two
+most crowded areas — views and MEP — does. Every one of the twenty new collisions was checked through
+`heron_brain.lookup` and resolves correctly; the keyword route is not what the host calls. One new
+unreached claim appeared and was fixed: `HIGHLIGHT_VS_REST`'s table claimed *"bring these forward"*,
+which `OVERRIDE_GRAPHICS_IN_VIEW` already owns as *"bring the services forward"* — the table row was
+changed rather than the sentence declared, because declaring it would have been a real fight over a
+sentence another fragment answers correctly.
+
+Reciprocal rows went into twenty-one counterpart fragments.
+
+---
+
+## The twenty-first session, 2026-09-02 — eight more, and the metadata check earned its keep
+
+**What it did:** took the library from **146 to 154**, in the same container and with the same
+limitation - no .NET SDK, so **these eight have not been compiled either**. `A9` now names sixteen.
+
+The batch was chosen the same way as the last one: the owner's sentences put through
+`heron_brain.lookup`, and the wrong answers written down first.
+
+| | |
+|---|---|
+| `CREATE_CEILING` | *"create a ceiling in this room"* was answering `MEASURE_CEILING_HEIGHT` - a read, to a request to build. **The earlier library had recorded this job as IMPOSSIBLE and it was not**: `Ceiling.Create` arrived in 2022, the note left the version off, and it read as "ceilings cannot be made" while two of three installed Revits could. Reached by name at run time, so one source spans the range and 2020 gets an answer rather than an error |
+| `CREATE_ELECTRICAL_RUN` | *"draw a cable tray"* was answering `DIMENSION_MEP_RUNS` - a write, of dimensions. **Tray and conduit are ONE fragment**: separate classes, the same creation shape, and two near-identical fragments in a crowded area cost more than they buy. Which one is wanted is asked for, as `PLACE_ROOMS` asks about rooms and spaces |
+| `JOIN_GEOMETRY` | *"join these walls together"* was answering `PLACE_MEP_FITTING`, and after last session also `CONNECT_OPEN_ENDS` - two MEP writes for a question about walls. Both would have found nothing to do and said so, which is the quiet kind of wrong |
+| `CREATE_WORKSET` | *"add a new workset"* was answering `LIST_WORKSETS`. **ADMIN risk**: a workset is project structure the whole team works inside. A workset is also **not an element** - no id - so what comes back is names |
+| `REPLACE_MATERIAL` | *"change the material on these"* was answering `READ_ELEMENT_MATERIAL`. A material hides in the compound-structure LAYERS and in material PARAMETERS, and a swap that misses one leaves the old material half in use, where it refuses to purge and nobody can see why. **The layers that come back are COPIES** - editing them in place changes nothing |
+| `RELOAD_LINKS` | *"reload the links"* was answering `LIST_LINKED_MODELS`. It reloads or unloads and **never removes** - removing deletes what is hosted on the link. Revit's own result code is printed raw, because which code comes back for an already-current link is still not established |
+| `CREATE_SELECTION_FILTER` | *"make a selection set"* was answering `SET_SELECTION` - a highlight gone at the next click. A saved set survives the model closing; a view filter is a RULE. Three different things, one sentence |
+| `SET_VIEW_UNDERLAY` | *"set the underlay on this plan"* was answering `CREATE_TEXT_NOTE`. Base and top are set TOGETHER - writing the base alone leaves the old top and shows a range nobody asked for, which reads as a corrupted view |
+
+### One capability was refused, and the refusal is the finding
+
+`CREATE_SCOPE_BOX` was in the batch and was dropped. **Revit exposes no way to create a scope box on
+any supported release** — checked against the shipped assemblies for **2020 AND 2027**, where the only
+matches for the word are print and export flags and a few parameter ids. The earlier library had
+established this on 2020 alone; this confirms it at the far end, which is what the `CREATE_CEILING`
+lesson demands of every "impossible".
+
+So there is no fragment. The sentence *"put a scope box round this area"* is answered instead by a row
+in `SET_VIEW_SECTION_BOX`'s routing table saying plainly that nothing can, and that one drawn by hand
+works with everything else here. **A fragment whose only behaviour is to refuse would be a capability
+that does nothing**, and the library counts capabilities.
+
+### The metadata check caught three things a compiler would have
+
+It is not a compiler and it is not a substitute for one, and it still paid for itself twice more this
+session:
+
+- **`VariesAcrossGroups` is on `InternalDefinition`, not on `Definition`.** The obvious line —
+  `parameter.Definition.VariesAcrossGroups` — compiles on **no release at all**. Caught before it was
+  written, and the definition is cast first.
+- **`Ceiling.Create` is absent from the 2020 assembly and present on 2024.** That confirmed the run-time
+  lookup was necessary rather than defensive.
+
+> **And a warning about the tool itself: walk the BASE types.** `Space` declares neither `Number` nor
+> `Area`; `HostObjAttributes` does not declare `FamilyName`. Both inherit them. A member check that
+> stops at the declared type reports a false absence, and a session that trusts it will rewrite working
+> code to avoid a member that was there all along.
+
+### An `mcp` name collision that cost twenty minutes, and does not affect the repo
+
+Last session installed the MCP SDK to run `test_mcp_serves.py`. **The pip package is called `mcp` and so
+is this repository's own top-level directory** — and `mcp/` has no `__init__.py`, so it is a namespace
+package, which a regular installed package **outbeats regardless of `sys.path` order**. After that,
+`from mcp.server import heron_brain` reaches the SDK and fails.
+
+**The repository is not affected**: it imports `heron_brain` as a top-level module after putting
+`mcp/server` on the path, which is immune. What broke was an ad-hoc call written the natural way. The
+SDK was uninstalled — it was broken in this container anyway, its `cryptography` bindings panicking on
+import — and `test_mcp_serves.py` is back to its honest skip.
+
+> To ask the brain a question from the repo root: `sys.path.insert(0, "mcp/server")` then
+> `import heron_brain`. Not `from mcp.server import ...`.
+
+### The routing, measured against the 146 that were there before
+
+| | before | after |
+|---|---|---|
+| Utterances | 860 | 906 |
+| Claimed in a routing table and not reached | 3 | **3** — the same three, all near-synonym pairs |
+| Shortlist collisions | 122 (14.2%) | 129 (14.2%) |
+
+**No new unreached claims this time**, because every quoted sentence was kept on one line and matched to
+a declared utterance — the two mistakes of the previous batch. Reciprocal rows went into twenty
+counterpart fragments, and all six new collisions resolve correctly through `heron_brain.lookup`,
+checked one at a time.
+
+**One row written last session had already gone stale and was corrected**: `PLACE_MEP_FITTING`'s table
+said *"join these walls together"* was covered by nothing in the library. True when it was written, and
+false one session later. A cross-reference that names an absence dates the moment the absence is filled.
+
+---
+
+## The twentieth session, 2026-09-02 — eight fragments, and the first batch no compiler has read
+
+**What it did:** took the library from **138 to 146**, and it is the first batch in this repository's
+history that has **never been compiled**. That is written at the top of this file and in the register as
+`A9`, because a session that quietly skipped the gate and said nothing would be indistinguishable from
+one that ran it.
+
+**Why it could not run.** There is no .NET SDK in this container and none can be installed: the SDK
+download host answers **403 to the CONNECT itself** — the network's policy, not a transient failure.
+Checked, not assumed: `curl "$HTTPS_PROXY/__agentproxy/status"` names the host and the refusal.
+
+**What was done instead, and exactly what it is worth.** nuget.org IS reachable from here, so the Revit
+API reference assemblies for **2020, 2024 and 2027** were downloaded and read directly — every type and
+every member each new fragment calls was looked up in the assemblies' own metadata, with the argument
+COUNT where there were overloads.
+
+That answers *"does this member exist in this release"*, which is the failure this repository has
+actually had — `Document.CreationGUID` compiled on 2024 and does not exist on 2020, and it had survived
+several readings. **It answers nothing about argument TYPES and nothing about syntax.** A metadata read
+is not a compile and must not be recorded as one.
+
+> It did earn its keep twice. `ExternalDefinitionCreationOptions.Type` is **present on 2020 and gone by
+> 2024**, which is what makes `ADD_PROJECT_PARAMETER` a reflection job rather than a written-down call;
+> and `Space` carries neither `Number` nor `Area` of its own — both come from `SpatialElement`, so a
+> member check that does not walk the base type reports a false absence. Worth knowing before trusting
+> any tool of that shape.
+
+### The eight
+
+| | |
+|---|---|
+| `CREATE_PIPE` | The plumbing twin of `CREATE_DUCT`, and deliberately the SAME SHAPE - a run of points, one segment per pair. The earlier library drew one pipe between two points and drew duct as a run; one job in two shapes is how a composition that works for duct fails for pipe. **It sets no size**: Revit snaps a diameter to the nearest its type allows and returns TRUE while doing it - 77 mm asked for, 80 mm delivered - so that check stays in `SET_MEP_SIZE`, in one place |
+| `SET_MEP_SLOPE` | Puts a fall on a drainage run by moving one end. **A riser is never sloped, and the test is geometric rather than a millimetre threshold**: the earlier library used a 300 mm minimum run, which a 2 m drop with 10 mm of horizontal run walks straight past - it would be re-drawn 10 mm long and the pipe destroyed. A run that rises more than it runs is a riser. It also **reads** Revit's Slope parameter rather than writing it: a parameter written to disagree with the geometry is a lie every schedule then repeats |
+| `CONNECT_OPEN_ENDS` | Joins open connectors already at one point - the "touching but Revit says not connected" cleanup. Four tests and all four must pass, and the one that matters is **facing**: two pipes crossing at the same height pass distance, domain and size, and are not a joint. **Nothing moves**, so a wide gap tolerance buys a model that REPORTS connected while the hole is still there |
+| `FIND_DUPLICATE_VALUES` | Two doors marked D-101. Duplicate DATA, where `FIND_DUPLICATE_ELEMENTS` is duplicate GEOMETRY - the two share the word and nothing else. **A blank is not a duplicate**, and "180 of these have no mark" is reported as its own finding, as is "these do not carry that parameter at all" - folding those together lets a question nobody asked come back as a clean bill of health |
+| `FIND_OVERLAPPING_TAGS` | Annotation printing on top of annotation, measured in **paper millimetres** - the same two tags are clear at 1:50 and merged at 1:200. **It projects onto the view's own right and up directions**, where the earlier library compared model X against model Y: right in a plan, and in a section it reports nearly every pair, because a view looking along X has all its annotation at one X |
+| `COLOR_BY_PARAMETER` | A colour per value - colour by system, by level, by type. **No palette**: a list of six colours gives the seventh system the first system's colour, which is the defect the hue stepping was written to fix. **And the start hue is fixed, not random** - the earlier library re-rolled it each run "for variety", which makes today's drawing incomparable with the one issued last week |
+| `ADD_PROJECT_PARAMETER` | Creates a shared parameter and binds it. **ADMIN, not MODIFY**: a binding changes the project's data structure for everyone, and un-binding discards every value anybody typed. **The shared parameter file path is asked for, never invented** - the earlier library fell back to a temp folder, which produces a shared parameter nobody can find again. **And an existing binding is extended, not replaced**: ReInsert with today's categories alone strips the parameter off every category it had |
+| `DUPLICATE_TYPE` | *"Make a new duct type at 300 wide"* - which resolved to `CREATE_3D_VIEW` before this. **More than one source type is a refusal, not a loop**: Revit needs type names unique, so one literal name over five types succeeds on the first and quietly does not on the rest - a batch that reports success and half happened |
+
+### One was not written, on purpose
+
+`PLACE_SPACES` was in the plan and was dropped after reading `PLACE_ROOMS`, which already places spaces —
+it takes a `placeKind` and calls `NewSpaces2`. A second fragment for it would have been a near-duplicate
+in the most crowded kind of area, and the cost of that is not tidiness: it is retrieval order, which is
+not ours to choose.
+
+### The gaps were found by asking the brain, not by working down a list
+
+Before writing anything, twelve of the owner's own sentences were put through `heron_brain.lookup` and
+the answers read. That is what chose the batch, and some of the answers were worth the exercise on their
+own:
+
+```
+"make a new duct type at 300 wide"    -> CREATE_3D_VIEW
+"the tags are on top of each other"   -> ALIGN_MEP_ELEVATION   (a WRITE, on MEP)
+"add a project parameter"             -> COPY_PARAMETER_VALUE  (a different write)
+"create a ceiling in this room"       -> MEASURE_CEILING_HEIGHT (a read answering a create)
+"add a new workset"                   -> LIST_WORKSETS
+"change the material on these"        -> READ_ELEMENT_MATERIAL
+"draw a cable tray"                   -> DIMENSION_MEP_RUNS
+"reload the links"                    -> LIST_LINKED_MODELS
+"put a scope box round this area"     -> SET_VIEW_SECTION_BOX
+```
+
+**The last six are still true and are the obvious next batch** — `CREATE_CEILING`, `CREATE_WORKSET`,
+`REPLACE_MATERIAL`, `CREATE_CABLE_TRAY`, `RELOAD_LINKS`, `CREATE_SCOPE_BOX`. `JOIN_GEOMETRY` belongs on
+that list too: *"join these walls together"* now lands on `CONNECT_OPEN_ENDS`, which joins MEP
+connectors and cannot do it, so `PLACE_MEP_FITTING`'s table says so out loud until something can.
+
+> **All of that was done by the twenty-first session, below, except one**: `CREATE_SCOPE_BOX` cannot be
+> built at all — Revit exposes no way to create one on any supported release. Read that section before
+> reaching for it again.
+
+### The routing was measured against a baseline, not just run
+
+The new fragments were moved aside and `check-routing.py` run on the 138 that were there before, so
+every number below is a difference rather than an impression.
+
+| | before | after |
+|---|---|---|
+| Utterances | 802 | 860 |
+| Claimed in a routing table and NOT reached | 5 | **3** |
+| Shortlist collisions | 107 (13.3%) | 122 (14.2%) |
+
+**Every one of the new fragments' own sentences resolves correctly through `heron_brain.lookup`** —
+checked one at a time, because the collision list measures the keyword route alone and the eighteenth
+session recorded two consecutive sessions being misled by exactly that.
+
+**The unreached-claim count went DOWN while eight fragments were added**, and that is where the real
+work was:
+
+- Three of the new fragments claimed a sentence in a table and declared it nowhere. `"add a drain line"`
+  was resolving to **`CREATE_GRID`**. A routing table is a comment; comments are not indexed.
+- Two of them wrapped a quoted sentence across two lines, and the checker read the fragment. **Keep each
+  sentence on one line** — nothing says so anywhere else, so it is said here.
+- The reciprocal tables went into **eighteen** counterpart fragments, per the rule that a cross-reference
+  written one way only routes whoever lands on the newer file. Seven sentences those tables claimed were
+  then declared as utterances, which is the same defect the seventeenth session named and it reappears
+  every time a table is written.
+- **Two of the five pre-existing claims were not harmless and were fixed**: `"is the model healthy"` was
+  being served by `EXPORT_MODEL_TO_NWC` — a PUBLISH answering a read — and `"move these to level 3"` by
+  `CREATE_LEVELS`, which makes levels. The other three are near-synonym pairs where both sides do the
+  same kind of work, and they are left alone rather than decided blind.
+
+### Two checkers earned their place again
+
+- **`check-structure.py` refused `ADD_PROJECT_PARAMETER`**: its reflection named
+  `Autodesk.Revit.DB.SpecTypeId` in a string, and the adapter boundary says that name belongs inside
+  `revit/`. The fix is better code, not an exemption — the namespace is taken from `typeof(Document)`,
+  so it follows the API instead of being written down beside it.
+- **`tools/README.md` was claiming "all 32 fragments compile on all 8 releases"** while the library was
+  past four times that. The line is gone rather than corrected: a count typed into prose goes stale the
+  day after it is true, and a stale green is believed. The tool's own output is the count.
 
 ---
 
@@ -1321,7 +1902,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | | |
 |---|---|
 | **The eight `brain/` modules** | Each has its own suite and each passes — the fragment store, the scope store, exact-word search, nearness, fusion, the capability registry, the graph, and skills. What they are proven to do is **behave as specified against fixtures**. Not one of them has been handed a real Revit's answer |
-| **102 fragments, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are the reason `check-gaps` lists **one hundred and two** items under *needs a real Revit*. **Since 2026-08-29 all of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)). That is not behaviour, but it does mean none of them will fail at the PC for a reason a compiler could have found |
+| **The whole fragment library, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are why `check-gaps` carries them under *needs a real Revit*; read the count off the tool rather than from here. **Most of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)) — which means those will not fail at the PC for a reason a compiler could have found. **The eight written on 2026-09-02 are the exception and have never been compiled at all**, because that container could not install the .NET SDK. That is `A9`, and it is the first thing to run on a machine that has one |
 | **10 skills, all `DRAFT`** | Each names **capabilities and never fragments**, and each carries the words Ajmal actually says rather than the words the technique is named after. Whether any of them does what it says is unknown |
 | **The trained embedding backend** | **The highest-value item that needs no Revit, and 2026-08-30 sharpened what it buys.** [`brain/retrieval-history.md`](brain/retrieval-history.md) tracks one query across eight library sizes (7 → 32) *and* now measures a second way: every fragment's own declared words asked back to the search — 169 sentences, **words 92% first and 100% in the top three, nearness 60% and 82%**. That corrects the older headline in this file's own history: the nearness route has **not** collapsed in general. It handles **vocabulary overlap** and fails at **disambiguation**, which is why the tracked query — a sentence several fragments fairly claim — sits mid-library while a sentence naming one fragment comes back first. So `A7` should be expected to change the **contested** lookups, not every lookup. Never run — `huggingface.co` is refused by this container, and by a second one on 2026-08-31, where the package installed cleanly from PyPI and only the **weights** download was refused (`ProxyError: 403`). The backend that *is* running is character n-grams, which measurably does not do synonyms (`diffuser`/`grille` scored −0.136). Needs no Revit and no Windows |
 | **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py). **A real MCP SDK has now served them** (2026-08-31): all ten tools registered with their descriptions and argument schemas, and all three answering through the SDK's own dispatch with both refusals surviving the round trip — [`tests/test_mcp_serves.py`](tests/test_mcp_serves.py). That is no longer a text read. **It is still not a host**: nothing here shows Claude Code connecting over stdio, rendering a docstring or choosing a tool from it, and that is what is left of `A8`. **Doing it found that the server would not have started at all** on a machine installing today — see the eighth session below |
@@ -1906,11 +2487,11 @@ never edit it, never commit to it.** His instruction on how to use it, in his ow
 |---|---|---|
 | `actions/reporting/` | 43 | **started** — most of the high-value ones are done |
 | `actions/sheets-views/` | 54 | **started** — the spine is done |
-| `creators/` | 36 | not started |
-| `actions/structural-changes/` | 33 | not started |
-| `actions/qa-checks/` | 30 | not started |
-| `actions/color-graphics/` | 25 | barely started — 3 done |
-| `actions/parameters-naming/` | 21 | not started |
+| `creators/` | 36 | started — the duct and pipe spine is done |
+| `actions/structural-changes/` | 33 | started — slope, connect and duplicate-type are done |
+| `actions/qa-checks/` | 30 | started — duplicate values and annotation overlap are done |
+| `actions/color-graphics/` | 25 | barely started — 4 done |
+| `actions/parameters-naming/` | 21 | started — 2 done |
 | `actions/visibility/` | 17 | barely started — 3 done |
 | `actions/move-copy-rotate/` | 13 | mostly done |
 | `filters/` | 51 | a few done |
@@ -1981,11 +2562,27 @@ rest.
 
 ### The branch
 
-```bash
-git push -u origin claude/ai-aj-tools-handover-af4pow
-```
+The branch name is given per session and is not fixed here — the twentieth used
+`claude/heron-ai-fragments-6d5xtp`. Push with `git push -u origin <the branch you were given>`, and open
+a draft pull request against `main`.
 
 **Heron-AI and AJ-Tools only.** `AJ-AI-Brain` is read-only reference.
+
+### Before the C# — one step this recipe did not have
+
+**Step 4 is the compile gate and it is not optional; when it cannot run, say so and do the next best
+thing.** On a container with no .NET SDK:
+
+```bash
+# nuget.org is reachable where the SDK download host is not
+curl -o api.nupkg https://api.nuget.org/v3-flatcontainer/nice3point.revit.api.revitapi/<version>/<file>.nupkg
+```
+
+Unzip it, and read `ref/*/RevitAPI.dll`'s metadata with Python's `dnfile` — every type and member the
+fragment calls, on 2020 and on 2027, plus argument counts where there are overloads. **Check base types
+as well**: `Space` declares neither `Number` nor `Area`; both come from `SpatialElement`, and a check
+that stops at the declared type reports a false absence. This catches a member a release does not ship
+and NOTHING ELSE — argument types and syntax stay unchecked, and the batch still owes a real compile.
 
 ### When something behaves oddly while doing this
 
@@ -2053,14 +2650,15 @@ fragment being written at the time.
 
 *Phase 0 is finished and proven. Step 6 and the whole of Phase 2 are finished and proven of nothing —
 built carefully, obeying rules that are now binding, tested where testing was possible, and compiled on
-every release from 2020 to 2027. **Seventy fragments and ten skills** sit at `DRAFT`, which is not a shortcut
+every release from 2020 to 2027. **Every fragment and all ten skills** sit at `DRAFT`, which is not a shortcut
 but [D-30](docs/DECISIONS.md) being obeyed: promotion needs one proof containing a negative case, and a
 negative case needs a model. `python tools/check-gaps.py` is now the file that answers "what is left",
 because it is computed from disk and this one is not — and where they disagree, believe the tool. It
-currently says **nothing** here is unfinished and **55 are waiting: 48 on a Revit, plus the 102 unproven
-fragments as one further item, 3 on Windows, 1 on a network that can reach the weights host, 1 on the
-owner, and 1 on an optional dependency this machine does not have.** That breakdown sums to its own
-total, which the sentence it replaces did not.
+currently says **nothing** here is unfinished and **56 are waiting: 48 on a Revit, plus the unproven
+fragments as one further item, 3 on Windows, 1 on the .NET SDK (`A9`, the uncompiled batch), 1 on a
+network that can reach the weights host, 1 on the owner, and 1 on an optional dependency this machine
+does not have.** Re-derive that from the tool rather than editing the digits — a total that disagrees
+with its own breakdown is the cheapest drift there is to catch, and it has survived here before.
 Almost nothing in this repository is waiting on another session; it is waiting on a machine — and **four
 times now**, something believed to be waiting on a machine was waiting on somebody trying it. The
 newest was `A8`, filed under *needs Windows* when what it needed was `pip install mcp` — and trying it

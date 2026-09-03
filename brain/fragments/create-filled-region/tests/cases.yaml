@@ -1,0 +1,31 @@
+positive:
+  - given: a rectangular boundary in a floor plan with a solid region type
+    expect: >
+      the patch visible in THAT view - looked at - and the plan printing with it
+
+  - given: another view of the same area opened
+    expect: >
+      NOTHING there. That is the fragment working, and it is the thing most
+      likely to be misread as a failure
+
+negative:
+  - given: somebody expecting the region to show in a section or a schedule
+    expect: >
+      it does not, anywhere. THIS IS THE FIRST THING TO UNDERSTAND: a filled
+      region looks like a slab on a plan and is not one, and a coordination model
+      built on that belief has a hole where somebody drew a hatch
+
+  - given: a 3D view handed in
+    expect: refused with the reason, not an obscure throw from inside Revit
+
+  - given: a boundary that crosses itself
+    expect: refused and reported
+
+  - given: boundary points that are not flat in the view's plane
+    expect: >
+      whatever Revit really does, reported. A filled region is 2D in the view,
+      and points out of that plane are a real cause of a refusal that otherwise
+      reads as nonsense
+
+second_route:
+  - Revit's own Annotate then Region on the same boundary, and the two compared

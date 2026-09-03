@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-026
+semantic-identity: "is every plumbing fixture actually plumbed, per service"
+kind: filter
+domain: revit.mep
+capability: CHECK_FIXTURE_CONNECTIVITY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks that every plumbing fixture is actually plumbed - each of its
+  connectors, cold, hot, sanitary and vent, either joined to the right kind of
+  system or reported as missing. Covers the SUPPLY side and the DRAINAGE side
+  together, because a fixture has both and checking one without the other passes
+  half a defect. Read-only.
+
+  **IT REPORTS BY SERVICE, WHICH IS THE ONLY USEFUL FORM.** *"Twelve fixtures
+  have an unconnected connector"* is not actionable. *"Nine WCs have no vent and
+  three basins have no hot water"* is. Every connector is classified by its own
+  pipe system type and the table is one row per service per fixture.
+
+  **A FIXTURE WITH NO CONNECTORS AT ALL IS A DIFFERENT DEFECT** from one with an
+  unconnected service, and it is usually a family problem rather than a
+  modelling one - the family was never built to be plumbed. Counted separately,
+  because the fix is different and it is the row that keeps coming back until
+  somebody looks at the family.
+
+  **IT IS NOT `FIND_DEAD_ENDS` FROM THE OTHER END.** That one starts at open
+  pipe ends and asks which are unexplained; a run ending AT a fixture counts as
+  finished there and is correctly silent. This starts at the FIXTURE and asks
+  which of its services were never run at all - a fixture nobody piped produces
+  no open end to find, so the other fragment cannot see it.
+
+  **THE SERVICE NAMES COME FROM REVIT'S OWN CLASSIFICATION**, not from the pipe
+  system's name. A system somebody renamed still reports as sanitary or as
+  domestic cold water, which is what makes the report comparable across projects.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: fixtures
+      type: IList<Element>
+    - name: requiredServices
+      type: IList<string>
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: missingService
+      type: IList<ElementId>
+    - name: noConnectors
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Connector.PipeSystemType`,
+  `Connector.IsConnected`, `Connector.Domain` and `ConnectorManager` are
+  unchanged 2020 through 2027 - read off the reference assemblies at both ends.
+  The system type is turned into text with `ToString()` and compared
+  case-insensitively, so a release that adds a new member to that enumeration
+  cannot break the build - naming members individually is what would.
+
+# ROUTING - repeated in FIND_DEAD_ENDS, TRACE_CONNECTIVITY and
+# CHECK_ROOM_MEP_COMPLETENESS.
+#
+#   "are all the sinks and toilets connected to the drainage" -> here
+#   "which fixtures have no vent"        -> here
+#   "check the plumbing fixtures are plumbed" -> here
+#   "which runs stop at nothing"         -> FIND_DEAD_ENDS - it starts at open
+#                                           PIPE ends. A fixture nobody piped
+#                                           produces no open end, so that
+#                                           fragment structurally cannot see it
+#   "what connects to what"              -> TRACE_CONNECTIVITY
+#   "does every toilet have an extract"  -> CHECK_ROOM_MEP_COMPLETENESS - about
+#                                           what is PRESENT in a room, not about
+#                                           whether it is connected
+
+utterances:
+  - are all the sinks and toilets connected to the drainage
+  - which fixtures have no vent
+  - check the plumbing fixtures are plumbed
+  - is every fixture connected to hot and cold
+  - which fixtures are not connected

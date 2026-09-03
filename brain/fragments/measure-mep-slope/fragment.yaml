@@ -81,6 +81,10 @@ compatibility-note: >
 # ALIGNING AND SLOPING ARE OPPOSITE JOBS ON THE SAME ELEMENTS. Aligning makes a
 # run flat on purpose; a drain being flat is the defect. Landing on the wrong
 # one of these does not give a poor answer, it gives a confident wrong one.
+#   "give it a fall of 1 in 100"     -> SET_MEP_SLOPE - the FIX. This one only
+#                                       measures, and must not answer a request
+#                                       to change the model
+#   "the drain is running flat"      -> SET_MEP_SLOPE
 
 utterances:
   - what slope is on these pipes

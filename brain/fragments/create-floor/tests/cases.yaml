@@ -1,0 +1,34 @@
+positive:
+  - given: a rectangular boundary on Level 1 with a 200 mm slab type, on Revit 2024
+    expect: >
+      a floor at that level - checked in a SECTION against the level, not read
+      off the report. Its area should match the boundary handed in
+
+  - given: the same request on Revit 2020
+    expect: >
+      the same floor, made through the older call, and the report saying which
+      path it took. THIS IS THE FIRST CASE TO RUN: Floor.Create does not exist on
+      2020 and NewFloor is gone by 2024, so a run that throws a missing-method
+      error means the run-time lookup is not working
+
+negative:
+  - given: a model set out to a survey datum, where Elevation and ProjectElevation differ
+    expect: >
+      the slab at the height Revit shows for that level, NOT off by the survey
+      offset. No error, no warning, a slab metres from where it belongs - only a
+      section reveals it
+
+  - given: a boundary that crosses itself
+    expect: refused and reported, not a silently strange floor
+
+  - given: two boundary points at the same coordinates
+    expect: named as a repeated point, nothing created
+
+  - given: the floor created, then asked to take a duct penetration
+    expect: >
+      NOTHING here does that. This makes a slab; cutting an opening through it is
+      a separate job that nothing in the library covers yet, and expecting it
+      from here is how a coordination model ends up solid
+
+second_route:
+  - Revit's own Architecture then Floor on the same boundary, and the two compared in a section

@@ -64,6 +64,9 @@ compatibility-note: >
 #                                      finds what needs fixing and separates
 #                                      the views that are ON SHEETS - those are
 #                                      being issued
+#   "put that filter on this view"   -> APPLY_VIEW_FILTER - ONE filter. A
+#                                       template is a far bigger change and
+#                                       is easy to ask for by mistake
 
 # ROUTING - repeated in SET_CATEGORY_GRAPHICS and OVERRIDE_GRAPHICS_IN_VIEW.
 #

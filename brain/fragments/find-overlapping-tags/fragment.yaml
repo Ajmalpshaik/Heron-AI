@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-035
+semantic-identity: "the tags are printing on top of each other in this view"
+kind: filter
+domain: revit.views
+capability: FIND_OVERLAPPING_TAGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds annotation that PRINTS ON TOP OF other annotation in one view - tag over
+  tag, text over a symbol, a keynote buried under a room tag. The drawing check
+  that catches what nobody sees on screen at 200% and everybody sees on the
+  printed A1. Read-only; it moves nothing.
+
+  **It measures in paper millimetres, which is the only unit this question has.**
+  Whether two tags clash depends entirely on the scale the view prints at - the
+  same two tags are clear at 1:50 and merged at 1:200. Every figure here is
+  converted through the view's own scale, so the answer is what comes out of the
+  plotter rather than what the model happens to look like.
+
+  **It projects onto the view's own paper axes, not onto world X and Y.** The
+  earlier library compared model X against model Y, which is right in a plan and
+  wrong in every section and elevation - a view looking along X has all its
+  annotation at one X, so every box overlaps every other and the report is
+  worthless exactly where a section is busiest. The boxes are projected onto the
+  view's right and up directions instead, which is the same test in a plan and
+  the correct one everywhere else.
+
+  **Touching is not overlapping**, and how much counts is asked for. Two boxes
+  sharing an edge are legible; two sharing half their area are not.
+
+  **A bounding box is bigger than the ink**, so this over-reports slightly and
+  says so. Two boxes can overlap while the visible characters do not touch. The
+  opposite error costs a reissued drawing; this one costs thirty seconds of
+  looking.
+
+  **Dimensions are not compared, on purpose.** A dimension's box is the whole
+  string, witness lines and all, so it appears to overlap almost everything
+  inside its own extent - included, it produces hundreds of rows that are all
+  the same non-finding. A dimension genuinely clashing with a tag is found by
+  eye on the sheet, not here.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: minOverlapMm
+      type: double
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: overlapping
+      type: IList<ElementId>
+    - name: pairs
+      type: int
+    - name: noBox
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.get_BoundingBox(View)`,
+  `View.Scale`, `View.IsTemplate`, `View.RightDirection`, `View.UpDirection`,
+  `IndependentTag` and `TextElement.Text` are all present 2020 through 2027 -
+  read off the reference assemblies at both ends rather than remembered. Room,
+  space and area tags are collected BY CATEGORY rather than by class, because
+  which of them is an `IndependentTag` subclass has moved between releases and
+  a category sweep is the same on all of them.
+
+# WHAT IT CANNOT SEE. Annotation overlapping a MODEL line, a hatch or a linked
+# view's graphics is not found - this compares annotation against annotation.
+# And a view placed on two sheets prints at whatever each viewport carries; the
+# VIEW's own scale is used here, which is the usual case and not always the one.
+
+# ROUTING - repeated in TAG_ELEMENTS_IN_VIEW and FIND_UNTAGGED_ELEMENTS.
+#
+#   "the tags are on top of each other" -> here
+#   "check the drawing for clashing
+#    annotation"                        -> here
+#   "the text is overlapping"           -> here
+#   "tag these ducts"                   -> TAG_ELEMENTS_IN_VIEW - it PLACES
+#                                          tags, and must not answer a request
+#                                          to check ones already there
+#   "what is untagged"                  -> FIND_UNTAGGED_ELEMENTS - the
+#                                          opposite problem, missing annotation
+#   "move the tags apart"               -> NOTHING HERE DOES THAT, and nothing
+#                                          in the library does yet. This says
+#                                          which ones clash; moving them is a
+#                                          job somebody still has to build
+#   "find the lines drawn on top of each other" -> FIND_OVERLAPPING_LINES
+
+utterances:
+  - the tags are on top of each other
+  - the text is overlapping
+  - check this view for clashing annotation
+  - the annotation is all on top of itself
+  - tags overlapping on this sheet
+  - check the tags before i issue this

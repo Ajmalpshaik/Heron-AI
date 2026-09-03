@@ -102,6 +102,10 @@ compatibility-note: >
 #   "renumber the doors"             -> here
 #   "they have duplicate numbers"    -> here reports collisions; finding them
 #                                       without renumbering is a QA read
+#   "two doors have the same mark"   -> FIND_DUPLICATE_VALUES first - find out
+#                                       WHICH ones clash before renumbering
+#                                       anything
+#   "check for duplicate marks"      -> FIND_DUPLICATE_VALUES
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

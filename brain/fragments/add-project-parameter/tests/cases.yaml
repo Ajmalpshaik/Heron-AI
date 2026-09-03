@@ -1,0 +1,41 @@
+positive:
+  - given: a new parameter AJ_Status bound to Duct Accessories as an instance parameter
+    expect: >
+      the parameter visible on a duct accessory in Revit's own properties palette,
+      under Data - checked IN REVIT, not from this fragment's report. Then Manage,
+      Project Parameters, and see it listed against that category
+
+  - given: the same request run a second time
+    expect: >
+      the SAME parameter, not a second one, and the report saying the definition
+      was reused. Two definitions of one name mean two GUIDs, and a colleague's
+      model then carries a parameter that looks identical and is not
+
+negative:
+  - given: the parameter already bound to Ducts, now asked for on Pipe Fittings only
+    expect: >
+      bound to BOTH afterwards, and the report naming Ducts as kept. THIS IS THE
+      FIRST CASE TO RUN. ReInsert replaces: called with today's list alone it
+      strips the parameter off every category it had, and every value anybody
+      typed goes with it
+
+  - given: run on Revit 2020, then on 2024, then on 2027
+    expect: >
+      the same parameter created on all three. This is the fragment the version
+      range actually bites - the spec argument and the group argument both moved,
+      and the old enum is gone by 2024 and 2027. If one release throws about a
+      missing type, the run-time resolution is not doing its job
+
+  - given: a shared parameter file path in a folder that does not exist
+    expect: >
+      a plain failure naming the path, and NOTHING created anywhere else. The
+      earlier library fell back to a temporary folder, which produces a shared
+      parameter nobody can find again
+
+  - given: an empty category list
+    expect: >
+      nothing done, and a finding saying so. A parameter bound to no category is
+      invisible in the model and looks like a silent failure
+
+second_route:
+  - Manage, Shared Parameters in Revit to see the definition, and Manage, Project Parameters to see the binding and its categories

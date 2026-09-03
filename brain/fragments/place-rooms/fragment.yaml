@@ -102,7 +102,11 @@ compatibility-note: >
 #   "which rooms are unbounded"  -> this reports them as it places; a standing
 #                                   check on rooms already there is a different
 #                                   job and nothing does it yet
+#   "which rooms have no mep in them" -> CHECK_ROOM_MEP_COMPLETENESS, once the
+#                                       rooms exist for it to check
 
+#   "create an HVAC zone for these spaces" -> CREATE_HVAC_ZONE - the spaces
+#                                        have to exist first, which is this
 utterances:
   - place the rooms
   - add spaces to this level

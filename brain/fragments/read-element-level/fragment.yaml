@@ -80,6 +80,7 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+#   "put the room name on all the equipment" -> ASSIGN_LOCATION_DATA - a WRITE
 utterances:
   - what level is this on
   - which level are these

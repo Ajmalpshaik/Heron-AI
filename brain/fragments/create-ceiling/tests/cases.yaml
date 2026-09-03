@@ -1,0 +1,44 @@
+positive:
+  - given: a rectangular boundary in a room on Level 1, height 2700 mm, on Revit 2024
+    expect: >
+      a ceiling at 2700 mm above that level - MEASURED in a section against the
+      level, not read off this fragment's own report. Then MEASURE_CEILING_HEIGHT
+      over the same room and see the two agree
+
+  - given: an L-shaped boundary of six points
+    expect: >
+      one ceiling of that shape, the last point joined back to the first without
+      the caller repeating it
+
+negative:
+  - given: the same request on Revit 2020
+    expect: >
+      NOTHING created, and a plain sentence saying this release cannot make a
+      ceiling and that one drawn by hand works with everything else here. THIS IS
+      THE FIRST CASE TO RUN. Ceiling.Create is absent from the 2020 reference
+      assembly and present on 2024 - so the source must not name it, and a run
+      that throws a missing-method error means the run-time lookup is not working
+
+  - given: a model set out to a survey datum, where the level's Elevation and ProjectElevation differ
+    expect: >
+      the ceiling at the height Revit shows for that level, NOT off by the survey
+      offset. This is the defect that leaves no trace: no error, no warning, a
+      ceiling metres from where it belongs, and only a section reveals it
+
+  - given: a boundary that crosses itself
+    expect: >
+      refused and reported. Not a silently strange ceiling, and not an
+      exception that loses the rest of a batch
+
+  - given: two boundary points at the same coordinates
+    expect: >
+      named as a repeated point, nothing created. That is something the caller
+      can fix; a rolled-back transaction is not
+
+  - given: a WALL type handed in as the ceiling type
+    expect: >
+      refused by category. Checked as ElementId against ElementId - reading an
+      id as a number is what broke at 2024 and vanished at 2027
+
+second_route:
+  - Revit's own Architecture then Ceiling on the same room, and the two ceilings compared in a section

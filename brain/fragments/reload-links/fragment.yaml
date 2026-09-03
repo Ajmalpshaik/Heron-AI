@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-013
+semantic-identity: "reload the links so i have the latest from the other team"
+kind: action
+domain: revit.document
+capability: RELOAD_LINKS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Reloads - or unloads - the linked models behind the link instances handed in.
+  Reloading pulls in whatever the other discipline last saved, which is the
+  first thing anybody does before coordinating.
+
+  **It never REMOVES a link.** Unload drops it from memory and from every view,
+  and it comes back with one click. Removing deletes it from the project along
+  with anything hosted on it, and that belongs behind a deliberate delete, not
+  behind a word that sounds similar.
+
+  **One file shared by three instances reloads once.** The work is on the link
+  TYPE, so the instances are reduced to their distinct types first - otherwise
+  the same file is read from disk three times and the report says three.
+
+  **It reads from the path Revit already has**, which is what makes it safe: it
+  cannot point a link at a different file. Repathing a link is a different job
+  and a bigger decision.
+
+  **Revit's own result code is reported for every link, raw.** Which code comes
+  back for a link that was already current is NOT settled here - the earlier
+  library recorded that honestly and it stays honest. Printing what Revit
+  actually returns is how the first real run answers it, instead of a guess
+  hardening into a fact.
+
+  **This is document management, not a model edit**, and whether Revit permits
+  it inside an open transaction is UNPROVEN. It opens none itself (Golden Rule
+  16). If the host's write path wraps it in one and Revit refuses, that is the
+  finding, and it is the first thing to check against a real model.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # false reloads, true unloads. Asked for, because they are opposite
+    # intentions and one of them makes the drawing go blank.
+    - name: unload
+      type: bool
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: done
+      type: int
+    - name: notLinks
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `RevitLinkType.Reload()` takes no
+  arguments and `Unload()` takes one - a monitor, which may be null - on 2020 and
+  on 2027 alike, read off the reference assemblies at both ends rather than
+  remembered. `LinkLoadResultType` carries the same thirteen values across the
+  range; `LinkNotNeeded` is NOT one of them and never was, which is what stopped
+  the earlier library's version compiling at all.
+
+# ROUTING - repeated in LIST_LINKED_MODELS and REPORT_EXTERNAL_REFERENCES.
+#
+#   "reload the links"               -> here
+#   "get the latest architecture"    -> here
+#   "unload this link"               -> here, with unload asked for
+#   "what links are in this model"   -> LIST_LINKED_MODELS - a READ
+#   "what does this model depend on" -> REPORT_EXTERNAL_REFERENCES
+#   "delete this link"               -> NOTHING HERE DOES THAT. Removing a link
+#                                       deletes anything hosted on it and is a
+#                                       deliberate delete, not an unload
+#   "copy these out of the link"     -> COPY_FROM_LINK - and the copies it
+#                                       makes do NOT update when this reloads
+
+utterances:
+  - reload the links
+  - get the latest architecture model
+  - unload this link
+  - refresh the linked models
+  - reload the structural link
+  - pull in the latest from the other team

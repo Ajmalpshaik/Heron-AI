@@ -1,0 +1,107 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-018
+semantic-identity: "draw straight pipe between these points"
+kind: action
+domain: revit.mep
+capability: CREATE_PIPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws straight pipe between consecutive points - one segment per pair, so two
+  points give one pipe and five points give four. The plain "run a pipe from
+  here to there", not a system build.
+
+  **Written to the same shape as CREATE_DUCT on purpose.** The earlier library
+  drew ONE pipe between two points and drew duct as a run; the same job in two
+  different shapes is how a composition that works for duct fails for pipe. Two
+  points is the single-segment case, so nothing is lost by making the run the
+  general form.
+
+  **It does NOT connect anything.** Segments come out as bare pipe. Whether two
+  that share an endpoint arrive joined is not claimed here - TRACE_CONNECTIVITY
+  is how that is found out, and CONNECT_OPEN_ENDS is what fixes it. A run that
+  looks right on screen and has an open end at every joint is the failure this
+  warning exists for.
+
+  **Size is NOT set here, and that split cost the earlier library a lesson.**
+  The pipe comes out at its type's own size and SET_MEP_SIZE applies a diameter
+  afterwards. Revit SNAPS a requested diameter to the nearest size the pipe
+  type's segment table allows AND RETURNS SUCCESS WHILE DOING IT - 77 mm asked
+  for, 80 mm delivered, `Set()` reporting true. The check for that belongs in
+  one place, and that place also has to serve resizing pipe that already exists.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # RESOLVED OBJECTS, never ids - same reason as CREATE_DUCT. A fragment
+    # taking an integer id would have to build an ElementId from it, and that
+    # constructor is what breaks at Revit 2024 (D-05). Taking the object makes
+    # the trap unreachable.
+    - name: systemType
+      type: PipingSystemType
+      source: request
+    - name: pipeType
+      type: PipeType
+      source: request
+    - name: level
+      type: Level
+      source: request
+    # Internal units, like every other geometric fragment here. Millimetres are
+    # converted by whoever read the user's sentence, once, upstream (D-20).
+    - name: points
+      type: IList<XYZ>
+      source: request
+  provides:
+    - name: created
+      type: IList<Element>
+    - name: tooShort
+      type: int
+    - name: refused
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Pipe.Create` taking a piping system
+  type, a pipe type, a level and two points is present 2020 through 2027 - read
+  off the reference assemblies at both ends rather than remembered. This
+  fragment touches no units API and constructs no ElementId, which are the two
+  things that moved across the range.
+
+# ROUTING - repeated in CREATE_DUCT, SET_MEP_SIZE and CONNECT_OPEN_ENDS.
+#
+#   "run a pipe from here to there" -> here
+#   "draw the pipe"                 -> here
+#   "add a drain line"              -> here - it is still a pipe
+#   "draw a duct from here"         -> CREATE_DUCT. Same job, other domain
+#   "make it 100 mm"                -> SET_MEP_SIZE - the pipe already exists,
+#                                      and that is where Revit's SNAP to the
+#                                      nearest allowed size is caught
+#   "give it a fall of 1 in 100"    -> SET_MEP_SLOPE - drawn flat, then sloped
+#   "join these two"                -> PLACE_MEP_FITTING - a fitting between two
+#                                      runs is not a new run
+#   "they are touching but not
+#    connected"                     -> CONNECT_OPEN_ENDS
+#   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN
+#   "draw a conduit"                 -> CREATE_ELECTRICAL_RUN
+
+utterances:
+  - run a pipe from here to there
+  - draw a pipe between these points
+  - draw the pipe run
+  - add a pipe
+  - put a drain line in
+  - add a drain line
+  - draw the chilled water pipe

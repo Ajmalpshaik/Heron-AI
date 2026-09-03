@@ -1,0 +1,122 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-036
+semantic-identity: "give every system its own colour in this view"
+kind: action
+domain: revit.views
+capability: COLOR_BY_PARAMETER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Gives every distinct value of one parameter its own colour in one view -
+  colour by System Name, by Level, by Type, by anything the elements carry. The
+  co-ordination picture: supply one colour, return another, chilled water a
+  third, and which is which readable at a glance.
+
+  **The colours are stepped evenly around the hue wheel, and there is no fixed
+  palette.** The earlier library offered one and it carried the exact defect
+  the hue stepping was written to fix: six colours repeating means the seventh
+  system gets the first system's colour, and two runs on one drawing then look
+  like one system. Even hue steps guarantee every group is visually distinct
+  from every other however many groups there are, which a list of colours
+  cannot.
+
+  **The same request gives the same colours every time.** The earlier library
+  re-rolled a random starting hue on each run "for variety". A drawing whose
+  colours change every time it is produced cannot be compared to the one issued
+  last week, and the person reading it has to re-learn the legend. Groups are
+  sorted by their value and the hue runs from a fixed start, so the mapping is
+  stable no matter what order the elements arrived in.
+
+  **It is an override in ONE view and it changes nothing about the elements.**
+  The model is untouched; another view is unaffected. RESET_GRAPHIC_OVERRIDES is
+  how it is undone.
+
+  **A blank value is its own group and is named as one.** Elements with nothing
+  in that parameter are coloured together and reported as "no value" rather
+  than left plain, because plain in a coloured drawing reads as "not part of
+  this" instead of "nobody filled it in".
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: parameterName
+      type: string
+      source: request
+    # "vivid", "pastel" or "neon" - the saturation and brightness band. The HUES
+    # are stepped the same way in all three; the band only decides how loud.
+    - name: colourBand
+      type: string
+      source: request
+  provides:
+    - name: coloured
+      type: int
+    - name: legend
+      type: IList<string>
+    - name: noValue
+      type: IList<ElementId>
+    - name: skipped
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.GetElementOverrides`,
+  `SetElementOverrides`, `OverrideGraphicSettings.SetProjectionLineColor`,
+  `SetSurfaceForegroundPatternColor`, `SetSurfaceForegroundPatternId`,
+  `SetSurfaceForegroundPatternVisible`, `SetCutForegroundPattern*` and
+  `FillPattern.IsSolidFill` are all present 2020 through 2027 - read off the
+  reference assemblies at both ends rather than remembered. The hue-to-RGB
+  arithmetic is plain maths and depends on no drawing library, which is the
+  reason it is written out rather than called.
+
+# THE LEGEND IS PART OF THE ANSWER, NOT A COURTESY. A coloured drawing with no
+# statement of which colour is which system is a picture, not information - and
+# the fragment that assigned the colours is the only thing that knows.
+
+# ROUTING - repeated in OVERRIDE_GRAPHICS_IN_VIEW, CREATE_VIEW_FILTER and
+# RESET_GRAPHIC_OVERRIDES.
+#
+#   "colour code by system"          -> here
+#   "give every system its own
+#    colour"                         -> here
+#   "colour these by level"          -> here
+#   "make these red"                 -> OVERRIDE_GRAPHICS_IN_VIEW - ONE look
+#                                       applied to a set, no grouping involved
+#   "grey everything else back"      -> OVERRIDE_GRAPHICS_IN_VIEW - the grayout
+#   "make a filter for supply air"   -> CREATE_VIEW_FILTER - a RULE that keeps
+#                                       working as the model changes. This
+#                                       fragment paints what is there NOW and
+#                                       does not follow new elements
+#   "put the colours back"           -> RESET_GRAPHIC_OVERRIDES
+#   "save these as a set"            -> CREATE_SELECTION_FILTER
+#   "do the grayout"                 -> HIGHLIGHT_VS_REST
+
+#   "make a filter for every different system type" ->
+#                                        CREATE_VIEW_FILTERS_BY_VALUE - real
+#                                        filters that catch work modelled
+#                                        tomorrow. These are OVERRIDES, and an
+#                                        element drawn later gets nothing
+utterances:
+  - colour code by system
+  - give every system its own colour
+  - colour these by level
+  - color code the ducts by system type
+  - colour by type
+  - show each system in a different colour

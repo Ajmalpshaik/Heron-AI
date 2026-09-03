@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-014
+semantic-identity: "bring these elements out of the linked model into ours"
+kind: action
+domain: revit.document
+capability: COPY_FROM_LINK
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies elements out of a linked model into this one, landing them where the
+  link puts them. The coordination job: the architect's grids, the structural
+  slab edges, an equipment layout somebody else owns and you need a real copy
+  of.
+
+  **The link's transform is applied, and getting that wrong is the whole
+  failure.** A link is placed with a position and a rotation, and an element's
+  coordinates inside it are in the LINK's world, not yours. Copying without the
+  transform lands everything in the wrong place - usually somewhere plausible,
+  which is worse than obviously wrong.
+
+  **It is not COPY_ELEMENTS.** That one duplicates elements inside this model at
+  an offset. This one crosses documents, and the two are asked for in almost the
+  same words.
+
+  **The copies are OURS from then on, and stop tracking the link.** Reload the
+  link after the other team moves something and the copies stay where they
+  were. That is what somebody wants for grids they are about to work to, and it
+  is a trap for anything that will keep changing - so it is said out loud rather
+  than discovered at the next issue.
+
+  **What comes back is the new elements**, so the next step can act on them
+  alone - pin them, put them on a workset, set a parameter.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The link instance the elements live in - it carries both the source
+    # document and the transform, so neither has to be guessed.
+    - name: linkInstance
+      type: RevitLinkInstance
+      source: request
+    # Ids INSIDE the linked document.
+    - name: linkedElementIds
+      type: IList<ElementId>
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release.
+  `ElementTransformUtils.CopyElements(Document, ICollection<ElementId>, Document,
+  Transform, CopyPasteOptions)`, `CopyPasteOptions` and `Instance.GetTotalTransform`
+  are present 2020 through 2027 - read off the reference assemblies at both ends
+  rather than remembered. `GetTotalTransform` is on `Instance`, NOT on
+  `RevitLinkInstance`, which declares only its constructor - a member check that
+  stops at the declared type reports it missing.
+
+# ROUTING - repeated in COPY_ELEMENTS, LIST_LINKED_MODELS and RELOAD_LINKS.
+#
+#   "copy these out of the link"     -> here
+#   "bring the grids in from the architect" -> here
+#   "copy them across"               -> COPY_ELEMENTS - inside THIS model, at an
+#                                       offset. No link and no transform
+#   "what links are in this model"   -> LIST_LINKED_MODELS
+#   "reload the links"               -> RELOAD_LINKS - and note the copies this
+#                                       makes do NOT update when it does
+
+utterances:
+  - copy these out of the link
+  - bring the grids in from the architect
+  - take the elements out of the linked model
+  - copy from the link into our model
+  - i need a real copy of what is in the link

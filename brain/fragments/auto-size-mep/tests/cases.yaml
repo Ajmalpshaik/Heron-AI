@@ -1,0 +1,43 @@
+positive:
+  - given: a branch carrying 500 L/s, target 4 m/s, round sizes 100..800 in 50s
+    expect: >
+      required area 0.125 m2, so 400 mm diameter (0.126 m2) - CHECKED ON PAPER
+      before the model is believed. The reported velocity should come back just
+      under 4 m/s, never over
+
+  - given: a rectangular duct 400 wide carrying 900 L/s at 5 m/s, holding the width
+    expect: >
+      the height grown to the next standard size and the width untouched, with
+      the resulting velocity at or below 5 m/s
+
+negative:
+  - given: the UNIT CHECK line in the report
+    expect: >
+      the L/s figure agreeing with what Revit shows for the same duct. THIS IS
+      THE FIRST THING TO READ. The internal airflow unit is ASSUMED to be cubic
+      feet per second; if that is wrong every size is out by the same factor,
+      each one looks plausible, and only somebody measuring a real duct finds out
+
+  - given: a run of duct connected to nothing
+    expect: >
+      every segment in `noFlow` and NOT sized. Zero flow sizes to nothing, and a
+      run quietly set to the smallest size in the list would look finished and be
+      wrong. If most of a system comes back this way it is a connectivity problem
+
+  - given: a duct needing 900 mm when the largest size given is 800
+    expect: >
+      refused and named with the size it needed. Not silently capped at 800,
+      which would leave a duct over its design velocity and looking sized
+
+  - given: a size Revit snaps to something else
+    expect: >
+      the report naming both what was asked and what the type gave. Revit returns
+      success from a write it then changes
+
+  - given: a rectangular duct sized so it comes out 8:1
+    expect: >
+      flagged as FLAT in the row. It fits the arithmetic and it is not buildable
+      in a ceiling void, and a report that stays silent about it has done half a job
+
+second_route:
+  - the same duct sized by hand from a duct sizer or a ductulator, at the same velocity

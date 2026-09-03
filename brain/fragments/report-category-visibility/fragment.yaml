@@ -1,0 +1,83 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-054
+semantic-identity: "which categories are switched off in this view"
+kind: filter
+domain: revit.views
+capability: REPORT_CATEGORY_VISIBILITY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists which CATEGORIES are switched off in one view - the read half of
+  `SET_CATEGORY_VISIBILITY`, which only ever sets. Read-only.
+
+  **BEFORE THIS, ASKING WHAT WAS TURNED OFF RESOLVED TO THE FRAGMENT THAT TURNS
+  THINGS OFF.** A question about a drawing answered by something that changes it.
+
+  **IT DELIBERATELY DOES NOT SCOPE TO THE VIEW, AND THAT IS THE OPPOSITE
+  DECISION FROM `REPORT_CATEGORY_OVERRIDES`.** A hidden category's elements do
+  not appear in a view-scoped collector AT ALL - so scoping this to what the view
+  shows would hide exactly the categories it exists to find. It looks at every
+  category with something in the MODEL instead. The two fragments look alike and
+  the difference is not a style choice.
+
+  **VISIBILITY IS NOT AN OVERRIDE**, and confusing them costs an afternoon.
+  A category switched off shows nothing; a category overridden shows differently.
+  Something missing from a drawing is this fragment's question;
+  something the wrong colour is the other one's.
+
+  **A CATEGORY WITH NOTHING IN THE MODEL IS NOT REPORTED.** It is switched off in
+  every view by default and listing hundreds of them buries the few that matter.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: hiddenCategories
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.GetCategoryHidden`,
+  `View.CanCategoryBeHidden` and `Document.Settings.Categories` are unchanged
+  2020 through 2027 - read off the reference assemblies at both ends. Categories
+  are compared by `ElementId`, never by a number.
+
+# ROUTING - repeated in SET_CATEGORY_VISIBILITY, REPORT_CATEGORY_OVERRIDES and
+# DIAGNOSE_VISIBILITY.
+#
+#   "which categories are turned off in this view" -> here - a READ
+#   "why can't I see the ceilings on this plan" -> here is the first thing to
+#                                           check
+#   "what did somebody switch off"       -> here
+#   "turn off the ceilings in this view" -> SET_CATEGORY_VISIBILITY - the WRITE,
+#                                           and it must not answer a question
+#                                           about a drawing
+#   "what category overrides are on this view" -> REPORT_CATEGORY_OVERRIDES - an
+#                                           override changes how something LOOKS;
+#                                           visibility decides whether it is
+#                                           there at all
+#   "why is this element not visible"    -> DIAGNOSE_VISIBILITY - one element,
+#                                           every possible cause
+
+utterances:
+  - which categories are turned off in this view
+  - why can't I see the ceilings on this plan
+  - what did somebody switch off
+  - list the hidden categories
+  - what is switched off in this view

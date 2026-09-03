@@ -74,6 +74,14 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+#   "change all the old line styles to the new ones" -> REMAP_LINE_STYLES - a
+#                                        line style is what a line IS. This is a
+#                                        view override and changes no line
+#   "what category overrides are on this view" -> REPORT_CATEGORY_OVERRIDES -
+#                                        the READ half; this one only sets
+#   "put the categories back to normal in this view" -> here, with an EMPTY
+#                                        settings object. There is no separate
+#                                        clear because that IS the clear
 utterances:
   - grey the whole background
   - make all the architecture faint
@@ -81,3 +89,4 @@ utterances:
   - override the category colour
   - flatten everything except the services
   - grey the architecture back
+  - put the categories back to normal in this view

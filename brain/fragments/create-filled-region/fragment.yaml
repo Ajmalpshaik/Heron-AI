@@ -1,0 +1,83 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-043
+semantic-identity: "hatch this area on the drawing"
+kind: action
+domain: revit.views
+capability: CREATE_FILLED_REGION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws a filled region - a hatched or solid patch - inside one view, from a
+  closed boundary. The drafting patch: a shaft marked up, an area shaded on a
+  key plan, a zone coloured on a coordination drawing.
+
+  **It exists in ONE view and nowhere else.** A filled region is annotation, not
+  model. It does not appear on any other drawing, it is not in the model, and it
+  schedules as nothing. That is exactly right for a markup and exactly wrong for
+  anybody who thinks they have modelled something.
+
+  **The boundary closes itself** - the last point joins back to the first - and
+  must not cross itself.
+
+  **The view has to be one that takes annotation.** A 3D view does not, and is
+  refused with the reason rather than throwing something obscure.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: regionType
+      type: Element
+      source: request
+    # Internal units, in the view's own plane.
+    - name: boundary
+      type: IList<XYZ>
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release.
+  `FilledRegion.Create(Document, ElementId, ElementId, IList<CurveLoop>)`,
+  `CurveLoop.Create` and `Line.CreateBound` are present 2020 through 2027 - read
+  off the reference assemblies at both ends rather than remembered.
+  `CreateMaskingRegion` exists only from a later release and is not used.
+
+# ROUTING - repeated in CREATE_TEXT_NOTE and CREATE_DRAFTING_VIEW.
+#
+#   "hatch this area on the drawing" -> here
+#   "shade this bit"                 -> here
+#   "put a filled region here"       -> here
+#   "write on the drawing"           -> CREATE_TEXT_NOTE - the other markup that
+#                                       lives in one view only
+#   "make a detail view"             -> CREATE_DRAFTING_VIEW
+#   "make a floor slab over this area" -> CREATE_FLOOR. A filled region LOOKS
+#                                       like a slab on a plan and is not one -
+#                                       it is in no schedule and no other view
+
+#   "draw a detail line here"          -> CREATE_LINE - a line has no fill
+utterances:
+  - hatch this area on the drawing
+  - shade this bit
+  - put a filled region here
+  - mark this area up on the plan
+  - hatch the shaft on this plan

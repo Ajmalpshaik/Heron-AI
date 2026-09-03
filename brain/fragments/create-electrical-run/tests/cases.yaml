@@ -1,0 +1,35 @@
+positive:
+  - given: five points along a corridor, runKind "tray", one cable tray type, one level
+    expect: >
+      FOUR trays, not five - one per consecutive pair. Read the endpoints back
+      and check they are the points handed in, not approximately near them
+
+  - given: the same points with runKind "conduit"
+    expect: >
+      four conduits, and a schedule that counts them as conduit rather than
+      tray. The element kind is what a schedule reads, and it is the reason this
+      is asked for rather than guessed
+
+negative:
+  - given: runKind left empty, or given as "cable"
+    expect: >
+      NOTHING created and a sentence naming the two it accepts. Guessing here
+      makes a drawing that looks right and a schedule that is wrong, which is
+      the worst pair of outcomes
+
+  - given: a CONDUIT type handed in with runKind "tray"
+    expect: >
+      counted in `refused`, the rest of the run still drawn. Not an exception
+      that loses the segments that worked
+
+  - given: the run drawn, then TRACE_CONNECTIVITY over it
+    expect: >
+      whatever it really reports, recorded as fact. This fragment claims no
+      connection between segments, and a run that looks continuous with an open
+      end at every joint is the failure it warns about
+
+  - given: two points closer together than the document's short-curve tolerance
+    expect: "`tooShort` counts it and nothing is created"
+
+second_route:
+  - Revit's own Cable Tray tool drawn between the same two points, and the two runs compared

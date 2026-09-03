@@ -69,6 +69,12 @@ compatibility-note: >
   Materials are keyed by NAME rather than by id, because a takeoff is read and
   priced by name and an id would have to be resolved again by every caller.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "change the material on these"   -> REPLACE_MATERIAL
+#   "make a floor slab over this area" -> CREATE_FLOOR
+#   "make a new material"            -> CREATE_MATERIAL
+
 utterances:
   - how much of each material is there
   - give me a material takeoff

@@ -74,9 +74,24 @@ compatibility-note: >
   that looked up "Width" by name would work in English and silently find
   nothing on a French install.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make it 100 mm"                 -> here - and this is where Revit SNAPS
+#                                       a size to the nearest one the type
+#                                       allows while reporting success
+#   "run a pipe from here to there"  -> CREATE_PIPE - it sets no size at all
+#   "draw a duct from here to there" -> CREATE_DUCT
+#   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN - it sets no
+#                                       size either; this is where every
+#                                       kind of run gets one
+#   "size the ducts from the flow"   -> AUTO_SIZE_MEP - it works the size
+#                                       out from the air. This one applies a
+#                                       size you have already decided
+
 utterances:
   - change these ducts to 400 by 250
   - make the pipe 100 diameter
   - resize the duct
   - set the duct size
   - change the diameter on these
+  - make it 100 mm

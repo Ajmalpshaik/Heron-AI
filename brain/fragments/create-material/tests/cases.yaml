@@ -1,0 +1,34 @@
+positive:
+  - given: three materials with colours, none of the names in use
+    expect: >
+      three in Revit's own Materials browser with those colours - LOOKED AT
+      there. Then REPLACE_MATERIAL can swap something onto one of them, which is
+      what they were made for
+
+  - given: the same three asked for again
+    expect: >
+      nothing created, all three in `alreadyThere`. A second run reporting three
+      more would be claiming work Revit refused
+
+negative:
+  - given: the new material used in a rendered view
+    expect: >
+      it renders as a flat shaded colour, NOT as a real surface. THIS IS THE
+      FIRST THING TO KNOW: no appearance asset is set, and a material that
+      schedules perfectly and renders as grey plastic is exactly what this makes
+
+  - given: transparency asked for as 150
+    expect: >
+      clamped to 100 and the change REPORTED. Revit refuses the value outright,
+      and a silent clamp would leave the caller believing 150 meant something
+
+  - given: a list where the second name already exists
+    expect: >
+      the first and third created, the second named. Not a throw on the second
+      that leaves the third unmade with nothing saying so
+
+  - given: a blank name
+    expect: skipped and named, the rest still created
+
+second_route:
+  - Revit's own Manage then Materials, read after the run

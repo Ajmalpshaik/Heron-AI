@@ -71,6 +71,11 @@ compatibility-note: >
   `ScheduleDefinition.AddField`, `GetFieldOrder` and `GetField` are unchanged
   2020 to 2027 and no units call is made.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make a key schedule"            -> CREATE_KEY_SCHEDULE - and this is how
+#                                       its columns get added afterwards
+
 utterances:
   - add a column to the schedule
   - put comments in the schedule

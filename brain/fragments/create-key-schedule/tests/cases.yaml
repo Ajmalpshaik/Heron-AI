@@ -1,0 +1,32 @@
+positive:
+  - given: a key schedule for Rooms named "Room Finish Key", key parameter "Finish Key"
+    expect: >
+      the schedule in the project browser under Schedules, and a "Finish Key"
+      dropdown appearing on a room's properties - LOOKED AT there, because that
+      dropdown is the whole point
+
+  - given: a row typed into it and picked on a room
+    expect: the other fields following from that one choice
+
+negative:
+  - given: a category Revit will not allow a key schedule on
+    expect: >
+      a sentence naming the category, not an exception. THIS IS THE FIRST CASE TO
+      RUN - the create call throws rather than explaining, and "an exception
+      occurred" is not something anybody can act on
+
+  - given: the schedule created and looked at straight away
+    expect: >
+      NO ROWS, and the report saying so. An empty key schedule offers an empty
+      dropdown, which reads as broken and is simply new
+
+  - given: a second key schedule created without naming its key parameter
+    expect: >
+      both called "Key Name" and indistinguishable in a dropdown. That is why the
+      key parameter is named here, and this case is what happens when it is not
+
+  - given: a schedule name already in use
+    expect: the refusal REPORTED, not swallowed - the schedule exists under another name
+
+second_route:
+  - Revit's own View then Schedules then Schedule/Quantities, with Schedule keys chosen

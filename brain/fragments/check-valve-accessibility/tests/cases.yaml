@@ -1,0 +1,41 @@
+positive:
+  - given: a valve in a ceiling void, clear all round, 2200 mm above the level
+    expect: >
+      ROOM clear, CEILING needing a panel, HEIGHT reachable - all three on one
+      row. CHECKED against a section, because the value here is that one valve
+      can pass two questions and fail the third
+
+  - given: a valve at 3400 mm with maxReachHeight 2000 mm
+    expect: OUT OF REACH, with the height and the level named
+
+  - given: a damper with a cable tray running 100 mm from its handle
+    expect: ROOM BLOCKED, naming the tray
+
+negative:
+  - given: a valve sitting in its own pipe, nothing else near it
+    expect: >
+      ROOM clear. THIS IS THE FIRST CASE TO RUN. The pipe the valve sits in
+      necessarily occupies the space at its connectors, and a version that counts
+      it reports every valve in the building as blocked - which is how a check
+      gets ignored
+
+  - given: a model where the ceilings are all in a LINK
+    expect: >
+      the summary saying so, and the no-ceilings-in-host warning. Every valve
+      will read as not needing a panel, and that is indistinguishable from a
+      building with no ceilings
+
+  - given: a model with no 3D view at all
+    expect: >
+      the ceiling question reported as NOT ASKED, per valve and on the summary.
+      A ray cast needs a real 3D view, and returning zero findings instead would
+      read as every valve being in the open
+
+  - given: a valve with no level associated
+    expect: HEIGHT not measured, said as such, and the other two questions still answered
+
+  - given: an accessory with no readable geometry
+    expect: named and skipped, and the rest of the list completing
+
+second_route:
+  - Cut a section at one valve and measure to the ceiling and the floor by hand

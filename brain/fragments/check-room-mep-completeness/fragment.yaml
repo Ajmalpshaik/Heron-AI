@@ -1,0 +1,112 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-014
+semantic-identity: "which rooms are missing the mep they should have"
+kind: filter
+domain: revit.quality
+capability: CHECK_ROOM_MEP_COMPLETENESS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks each room against a rule of what it should contain - a diffuser and an
+  extract in every toilet, a sprinkler in every enclosed space, a detector per
+  room - and reports per room what is missing. Read-only.
+
+  **The rules are the input and there is no sensible default set.** What a room
+  needs depends on the project, the discipline and the authority. A toilet needs
+  extract in every specification; a store room needs it in some. So the rules
+  come from the request and this fragment supplies none.
+
+  **A device is IN a room by Revit's own boundary test, not by a bounding box.**
+  An L-shaped room does not claim a device standing in the notch outside it -
+  which a box would, and that is the whole reason a purpose-built test is used.
+
+  **A device is placed by its insertion point, so one in the ceiling void above
+  the room still counts.** That is what anybody wants for a diffuser and it is
+  said out loud rather than left to be discovered.
+
+  **Rooms with no area are excluded and counted, never failed.** An unplaced or
+  unenclosed room has no boundary, so every test against it comes back false and
+  it would report as missing everything - dozens of false failures burying the
+  real ones. That is a different defect and it is reported as a count.
+
+  **A room matching no rule is counted and listed, not passed.** Rules match on
+  the room's NAME, so "WC 1" and "Toilet 3" need rules that catch both. A
+  naming mismatch must never read as a clean result.
+
+  **Devices in LINKED models are not counted.** If the sprinklers live in a
+  separate fire model this reports every room as missing them, so the total
+  found per category is printed first - a category with zero found anywhere is
+  a link problem, not a modelling one.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The rooms or spaces to check.
+    - name: elements
+      type: IList<Element>
+    # The devices to look for, already collected. Handing them in keeps the
+    # question of which model they come from with whoever knows the answer.
+    - name: devices
+      type: IList<Element>
+      source: request
+    # One rule per line: a room-name fragment, a category name to count, and the
+    # minimum required. An empty name fragment matches every room.
+    - name: ruleRoomNames
+      type: IList<string>
+      source: request
+    - name: ruleCategories
+      type: IList<string>
+      source: request
+    - name: ruleMinimums
+      type: IList<int>
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: shortRooms
+      type: IList<ElementId>
+    - name: unbounded
+      type: IList<ElementId>
+    - name: noRule
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Room.IsPointInRoom`, `SpatialElement.Area`
+  and `LocationPoint` are present 2020 through 2027 - read off the reference
+  assemblies at both ends rather than remembered. `Room` lives in the
+  architecture namespace, which the wrapper already carries. Categories are
+  compared by NAME because a rule written by a person names a category the way
+  Revit shows it, not by an enum.
+
+# A ROOM CAN MATCH SEVERAL RULES AND ALL OF THEM APPLY. "Every room needs a
+# detector" and "every toilet needs extract" are both true of a toilet, and a
+# first-match-wins rule table would silently drop the second.
+
+# ROUTING - repeated in FILTER_ELEMENTS_IN_ROOM and PLACE_ROOMS.
+#
+#   "which rooms have no mep in them" -> here
+#   "check every toilet has extract"  -> here
+#   "what is missing from these rooms" -> here
+#   "which ducts are in room 5"       -> FILTER_ELEMENTS_IN_ROOM - the elements
+#                                        as a set to act on, with no rule
+#   "the rooms are missing"           -> PLACE_ROOMS. Nothing here can check a
+#                                        room that does not exist
+
+utterances:
+  - which rooms have no mep in them
+  - check every toilet has an extract
+  - what is missing from these rooms
+  - check the rooms have their devices
+  - which rooms are missing a sprinkler

@@ -1,0 +1,102 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-021
+semantic-identity: "audit the family library against the office standard"
+kind: filter
+domain: revit.qa
+capability: CHECK_FAMILY_STANDARDS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Audits the families a project is using - are they named to the convention, do
+  they carry the parameters the job needs, and do the MEP ones have connectors
+  at all. The library check before a family set goes onto a job, and the
+  explanation for *"why does nothing schedule properly"*. Read-only.
+
+  **BEFORE THIS, ASKING WHETHER THE FAMILIES FOLLOW THE STANDARD RESOLVED TO
+  `RENAME_FAMILY`** - a write, to a question about the model. That is the worst
+  shape of mis-route in this library and it is the same one `REPORT_VIEW_FILTERS`
+  was built to close.
+
+  **IT AUDITS TYPES, NOT INSTANCES, AND THAT IS THE POINT.** One badly built
+  family type placed two hundred times is ONE thing to fix. An instance-based
+  report shows it as two hundred findings and buries everything else. Every row
+  is a type; the instance count beside it is what makes it urgent.
+
+  **NO CONNECTOR IS THE HEADLINE FINDING FOR MEP.** A terminal, a valve or a
+  piece of equipment with no connector cannot join a system, cannot carry flow,
+  and never appears in a system browser - but it looks perfectly normal in a
+  plan and clashes like anything else. It is the most common reason a model
+  looks finished and behaves as though nothing is connected.
+
+  **CONNECTORS ARE READ THROUGH A PLACED INSTANCE, BECAUSE A TYPE DOES NOT
+  EXPOSE THEM.** So a type with no instance placed cannot be checked this way
+  and is reported as NOT CHECKED rather than as passing. That distinction is the
+  difference between an audit and a guess.
+
+  **SYSTEM FAMILIES HAVE NO FAMILY FILE** - duct types, wall types, pipe types.
+  They are counted and excluded, never silently skipped.
+
+  **THE NAMING PATTERN AND THE REQUIRED PARAMETERS ARE INPUTS (D-33).** There is
+  no universal family standard, and a default here would be one office's
+  convention applied to another's model.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: namePattern
+      type: string
+      source: request
+    - name: requiredParameters
+      type: IList<string>
+      source: request
+    - name: mustHaveConnectors
+      type: bool
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: offStandard
+      type: int
+    - name: notChecked
+      type: int
+      
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Family`, `FamilySymbol`,
+  `Family.IsInPlace`, `FamilyInstance.MEPModel` and `ConnectorManager` are
+  unchanged 2020 through 2027 - read off the reference assemblies at both ends.
+  The name test is a plain substring match rather than a regular expression, so
+  it behaves the same on .NET Framework and .NET 10 and needs no escaping of
+  whatever the office convention contains.
+
+# ROUTING - repeated in RENAME_FAMILY, FIND_UNUSED_FAMILIES and
+# READ_ELEMENT_PARAMETERS.
+#
+#   "check the families are named to our standard" -> here - a READ
+#   "audit the family library"           -> here
+#   "why does nothing schedule properly" -> here - a missing parameter on the
+#                                           TYPE is the usual cause
+#   "rename this family"                 -> RENAME_FAMILY - a WRITE, and it must
+#                                           not answer a question about whether
+#                                           the names are right
+#   "which families are not used"        -> FIND_UNUSED_FAMILIES - about USAGE,
+#                                           not about whether they are built
+#                                           correctly
+
+utterances:
+  - check the families are named to our standard
+  - audit the family library
+  - why does nothing schedule properly
+  - do these families have connectors
+  - check the families against our convention

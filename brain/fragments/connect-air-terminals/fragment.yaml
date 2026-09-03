@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-023
+semantic-identity: "tap these diffusers into the duct running past them"
+kind: action
+domain: revit.mep
+capability: CONNECT_AIR_TERMINALS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Connects air terminals to the duct running past them. Revit cuts the tap into
+  the duct, positions it under the terminal's connector and joins both ends -
+  one call does the whole job.
+
+  **This is the step after a terminal layout, and without it a layout ends as
+  loose components.** Diffusers get placed in the right places and nothing has
+  joined them to the ductwork; the drawing looks finished and the system carries
+  no air.
+
+  **It is a TAP, not a butt joint, and that is why it is not CONNECT_OPEN_ENDS.**
+  That one joins two ends already at the same point and adds no fitting. This
+  cuts a fitting INTO the side of a duct. A terminal sitting under a duct
+  correctly does not pair in the other fragment, and correctly does tap here.
+
+  **It connects and moves nothing.** Revit taps the duct at the point nearest
+  the terminal's connector, so a terminal nowhere near the duct gives either a
+  refusal or an absurdly long tap. The distance allowed is asked for, and it is
+  the guard against both.
+
+  **Nearest is measured to the terminal's CONNECTOR, not to its insertion
+  point.** A ceiling diffuser's connector is on top of it, and that is the end
+  that has to reach the duct. Measuring from the middle of the diffuser picks
+  the wrong duct in a ceiling with two running side by side.
+
+  **A refusal is a bool, not an exception.** Revit returns false when it
+  declines - a supply diffuser will not tap a return duct - and the model is
+  unchanged for that terminal. Every false is reported by id and never counted
+  as done.
+
+  **A terminal already connected is skipped, not reconnected**, because
+  reconnecting leaves the old tap behind as an orphan fitting.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Joining
+  raises Revit warnings on a real model; how those are handled belongs to
+  whoever owns the transaction.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The air terminals.
+    - name: elements
+      type: IList<Element>
+    # The ducts to tap into. Handing them in rather than searching the model
+    # keeps the choice with whoever knows which system is which.
+    - name: ducts
+      type: IList<Element>
+      source: request
+    - name: maxDistanceMm
+      type: double
+      source: request
+  provides:
+    - name: connected
+      type: int
+    - name: findings
+      type: IList<string>
+    - name: alreadyConnected
+      type: IList<ElementId>
+    - name: noDuctNear
+      type: IList<ElementId>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release.
+  `MechanicalUtils.ConnectAirTerminalOnDuct(Document, ElementId, ElementId)` is
+  present 2020 through 2027 - read off the reference assemblies at both ends
+  rather than remembered. It lives in the mechanical namespace, which the
+  wrapper already carries.
+
+# ROUTING - repeated in CONNECT_OPEN_ENDS and PLACE_MEP_FITTING.
+#
+#   "connect the diffusers to the duct" -> here - a TAP cut into the duct's side
+#   "tap these terminals in"            -> here
+#   "the diffusers are not connected"   -> here
+#   "they are touching but not
+#    connected"                         -> CONNECT_OPEN_ENDS - two ends already
+#                                          at one point, and no fitting added
+#   "join these two ducts"              -> PLACE_MEP_FITTING
+#   "the flow is zero everywhere"       -> often this: nothing is tapped in, so
+#                                          Revit has no terminals to draw air
+#                                          through the run
+
+utterances:
+  - connect the diffusers to the duct
+  - tap these terminals into the duct
+  - the diffusers are not connected
+  - connect the air terminals
+  - join the grilles to the ductwork

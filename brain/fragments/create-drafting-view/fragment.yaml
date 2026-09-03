@@ -58,6 +58,8 @@ compatibility-note: >
 #   "make the plan for this level"  -> CREATE_PLAN_VIEW
 #   "create a callout"           -> CREATE_CALLOUT - an enlarged part of a view
 #                                   that already exists
+#   "make another legend like this one" -> CREATE_LEGEND_VIEW
+#   "hatch this area on the drawing" -> CREATE_FILLED_REGION
 
 utterances:
   - make a drafting view

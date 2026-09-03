@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-021
+semantic-identity: "draw cable tray or conduit along these points"
+kind: action
+domain: revit.mep
+capability: CREATE_ELECTRICAL_RUN
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws electrical containment between consecutive points - cable tray or
+  conduit, one segment per pair. The electrical half of the same job
+  CREATE_DUCT and CREATE_PIPE do for air and water.
+
+  **Tray and conduit are ONE fragment, and that is a decision worth the
+  sentence.** They are separate Revit classes with the same creation shape, and
+  the earlier library had one file each. Two near-identical fragments in an
+  already crowded area cost more than they buy: retrieval order is not ours to
+  choose, and the pair that differs only in a noun is exactly what makes a
+  library unsearchable. Which one is wanted is ASKED FOR, never guessed - the
+  same decision PLACE_ROOMS makes about rooms and spaces.
+
+  **It does NOT connect anything.** Segments come out as bare tray or conduit.
+  Whether two that share an endpoint arrive joined is not claimed here -
+  TRACE_CONNECTIVITY finds out and CONNECT_OPEN_ENDS is the fix.
+
+  **Size is not set here.** The run comes out at its type's size, and
+  SET_MEP_SIZE applies width, height or diameter afterwards - where Revit's
+  habit of snapping to the nearest size its type allows is caught in one place.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "tray" or "conduit". No default: they are different elements, they carry
+    # different sizes and they schedule separately.
+    - name: runKind
+      type: string
+      source: request
+    # RESOLVED type object, never an id. Building an ElementId from an integer
+    # is what breaks at Revit 2024 (D-05).
+    - name: runType
+      type: Element
+      source: request
+    - name: level
+      type: Level
+      source: request
+    - name: points
+      type: IList<XYZ>
+      source: request
+  provides:
+    - name: created
+      type: IList<Element>
+    - name: tooShort
+      type: int
+    - name: refused
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `CableTray.Create` and `Conduit.Create`,
+  both taking a type, two points and a level, are present 2020 through 2027 -
+  read off the reference assemblies at both ends rather than remembered. Both
+  live in the electrical namespace, which the wrapper already carries. No units
+  API is touched and no ElementId is constructed.
+
+# ROUTING - repeated in CREATE_DUCT, CREATE_PIPE and SET_MEP_SIZE.
+#
+#   "draw a cable tray"              -> here, with tray asked for
+#   "draw a conduit"                 -> here, with conduit asked for
+#   "run the containment across"     -> here
+#   "draw a duct from here to there" -> CREATE_DUCT
+#   "run a pipe from here to there"  -> CREATE_PIPE
+#   "make it 300 wide"               -> SET_MEP_SIZE - the run already exists
+#   "they are touching but not
+#    connected"                      -> CONNECT_OPEN_ENDS
+
+utterances:
+  - draw a cable tray
+  - draw a conduit
+  - run the cable tray across the corridor
+  - add a conduit between these points
+  - draw the containment
+  - put a cable tray in here

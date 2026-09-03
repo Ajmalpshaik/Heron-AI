@@ -75,6 +75,16 @@ compatibility-note: >
   enum rather than by display name so this works on a Revit in any language.
   Heights arrive and are used in internal feet with no units call.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "level these up"                 -> here - ONE flat height
+#   "give it a fall of 1 in 100"     -> SET_MEP_SLOPE - the opposite
+#                                       instruction: a graded run, not a level one
+#   "raise the ducts 200"            -> MOVE_ELEMENTS - both ends together
+
+#   "which services are stacked too close together" ->
+#                                        CHECK_VERTICAL_CLEARANCE - it FINDS
+#                                        the problem this one fixes
 utterances:
   - get the services level
   - align the bottoms so the ceiling fits
@@ -82,3 +92,4 @@ utterances:
   - level the ducts with each other
   - align the tops
   - set them all to the same underside
+  - level these up

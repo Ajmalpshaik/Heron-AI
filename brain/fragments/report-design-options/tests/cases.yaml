@@ -1,0 +1,35 @@
+positive:
+  - given: a project with two option sets and six options
+    expect: >
+      each named under its set, the primary marked and the active one marked -
+      CHECKED against Manage, Design Options, because the active one is what
+      decides what everything else in the session sees
+
+  - given: an option holding 40 elements while a different option is active
+    expect: >
+      the 40 counted AND the sentence saying they are hidden from most views and
+      every schedule. The count alone does not explain the short schedule
+
+negative:
+  - given: a project with NO design options
+    expect: >
+      said in words, not an empty list. THIS IS THE FIRST CASE TO RUN. An empty
+      result is identical to a failure, and the two send somebody in opposite
+      directions
+
+  - given: somebody asking to make an option active
+    expect: >
+      the closing line saying it cannot be done from code on any release, with
+      the Revit route named. There is a getter and no setter, and discovering
+      that halfway through a job wastes the job
+
+  - given: the Main Model being active
+    expect: >
+      "Main Model" reported as the active option, not a blank. Nothing being
+      active is itself the answer
+
+  - given: an element that throws when asked for its design option
+    expect: skipped, with the rest of the count completing
+
+second_route:
+  - Manage tab, Design Options - and the status bar, which shows the active one

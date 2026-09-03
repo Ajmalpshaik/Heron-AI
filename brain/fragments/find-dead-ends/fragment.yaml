@@ -73,6 +73,22 @@ compatibility-note: >
   counts as served is decided by CATEGORY rather than by a type test, so one
   code path covers terminals, fixtures and equipment.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "where are the open ends"        -> here - it sorts the DELIBERATE ends
+#                                       from the mistakes
+#   "connect the open ends"          -> CONNECT_OPEN_ENDS - the fix, and it
+#                                       joins only ends already at one point
+#   "is this duct connected"         -> TRACE_CONNECTIVITY
+
+#   "are all the sinks and toilets connected to the drainage" ->
+#                                        CHECK_FIXTURE_CONNECTIVITY - it
+#                                        starts at the FIXTURE. A fixture
+#                                        nobody piped produces no open end, so
+#                                        this one structurally cannot see it
+#   "which pipes are still open at the end" -> here - a READ. It classifies
+#                                        every open end and only the
+#                                        unexplained ones are the finding
 utterances:
   - which runs end in nothing
   - find the dead ends
@@ -80,3 +96,5 @@ utterances:
   - which branch was left behind
   - find the open ends that matter
   - is anything not terminated
+  - where are the open ends
+  - which pipes are still open at the end

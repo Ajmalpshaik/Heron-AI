@@ -87,6 +87,14 @@ compatibility-note: >
   because that round trip is lossy and would rewrite a rounded value back as
   the truth.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "add a prefix to all the names"  -> here. A separate ADD_NAME_AFFIX was
+#                                       written on 2026-09-02 and WITHDRAWN
+#                                       the same day: this fragment already
+#                                       does prefix, suffix and replace, on a
+#                                       parameter or on the name itself
+
 utterances:
   - put a prefix on the mark
   - add AJ to the front of these names

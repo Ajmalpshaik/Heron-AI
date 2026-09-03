@@ -1,0 +1,86 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-044
+semantic-identity: "make a key schedule so one choice fills several fields"
+kind: action
+domain: revit.schedules
+capability: CREATE_KEY_SCHEDULE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a key schedule - the lookup table where picking one value on an
+  element fills in several others. Choose a room's Finish Key and its floor,
+  wall and ceiling finishes all follow.
+
+  **A key schedule is not a schedule of things.** CREATE_SCHEDULE lists what is
+  in the model; a key schedule is a table of DEFINITIONS that elements point at.
+  The two are asked for in nearly the same words and do completely different
+  jobs, which is why both carry this table.
+
+  **Not every category can have one, and Revit is asked rather than guessed.**
+  The create call throws instead of explaining, so the category is checked first
+  and a refusal comes back as a sentence naming the category.
+
+  **The key parameter's name is set here**, because the default is "Key Name"
+  on every key schedule in the project and three of them called that is how
+  nobody can tell which is which in a dropdown.
+
+  **It creates the table and no rows.** The rows are the definitions somebody
+  has to type or import, and a key schedule with no rows offers an empty
+  dropdown - which looks broken and is simply new.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Resolved, never a name: resolving a BIM word to a category is its own job.
+    - name: category
+      type: Category
+      source: request
+    - name: scheduleName
+      type: string
+      source: request
+    - name: keyParameterName
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSchedule.CreateKeySchedule`,
+  `ViewSchedule.IsValidCategoryForKeySchedule` and the
+  `KeyScheduleParameterName` setter are present 2020 through 2027 - read off the
+  reference assemblies at both ends rather than remembered.
+
+# ROUTING - repeated in CREATE_SCHEDULE and ADD_SCHEDULE_FIELDS.
+#
+#   "make a key schedule"            -> here - a table of DEFINITIONS
+#   "set up a finish key"            -> here
+#   "make a schedule of the ducts"   -> CREATE_SCHEDULE - a list of what is in
+#                                       the model, which is the opposite thing
+#   "add a column to the schedule"   -> ADD_SCHEDULE_FIELDS - and it is how the
+#                                       key schedule's own columns get added
+#                                       after this makes the table
+
+#   "make a sheet list schedule"       -> CREATE_SHEET_LIST - a drawing index
+utterances:
+  - make a key schedule
+  - set up a finish key
+  - create a key schedule for the rooms
+  - i want one choice to fill several fields
+  - make a lookup table for the finishes

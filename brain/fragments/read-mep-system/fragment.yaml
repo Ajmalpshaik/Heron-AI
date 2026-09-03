@@ -64,6 +64,7 @@ compatibility-note: >
 # connector flags, and only the geometry told the truth. Read this one as
 # what the model SAYS, not as what is physically joined.
 
+#   "make a duct system type"            -> CREATE_MEP_SYSTEM_TYPE - a WRITE
 utterances:
   - what system is this on
   - which system are these

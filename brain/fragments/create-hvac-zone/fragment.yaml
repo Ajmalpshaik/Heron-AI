@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-024
+semantic-identity: "make an HVAC zone and put spaces in it"
+kind: action
+domain: revit.mep
+capability: CREATE_HVAC_ZONE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates an HVAC Zone on a level and adds existing MEP Spaces to it - the
+  grouping layer above Spaces that the load and airflow work depends on.
+
+  **REVIT 2027 REMOVES THIS FROM THE API ALTOGETHER, AND THE FRAGMENT SAYS SO
+  RATHER THAN FAILING TO COMPILE.** Both the zone-creation call and
+  `Zone.AddSpaces` are gone from 2027's own assembly - checked there, not
+  assumed. So both are reached BY NAME, which keeps ONE source compiling on all
+  eight releases, working on 2020 through 2026, and reporting a plain reason on
+  2027 where the only route left is the Revit interface. Naming either call
+  directly would break the 2027 build, and a try/catch does not help: it never
+  gets to run.
+
+  **A SPACE CAN BELONG TO ONLY ONE ZONE, AND REVIT MOVES IT WITHOUT ASKING.** A
+  space already in another zone silently LEAVES that zone when added here. That
+  is reported per space, because the damage is to a zone nobody was looking at.
+
+  **THE ZONE AND ITS SPACES MUST SHARE A PHASE.** A mismatch is the usual reason
+  a space is rejected, and it reads as the space being wrong rather than the
+  phase.
+
+  **A NEW ZONE REPORTS ZERO AREA, AND THAT NUMBER MUST NOT BE PASSED ON.** Revit
+  computes it later. The space inside already knows its own area while the zone
+  still says nothing - so the read-back here reports what was ADDED, never the
+  zone's area, and anything wanting the area must ask again in a later call.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: zoneName
+      type: string
+      source: request
+    - name: level
+      type: Level
+      source: request
+    - name: phase
+      type: Element
+      source: request
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: zone
+      type: Element
+    - name: added
+      type: int
+    - name: movedFromAnotherZone
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE implementation, and the only fragment here whose capability a release
+  REMOVES. Read off 2027's own reference assembly: the creation factory has no
+  zone method left, and `Zone.AddSpaces` and `RemoveSpaces` are gone from the
+  `Zone` class - while `Zone` itself, `Zone.Spaces` and `Zone.Area` remain. Both
+  vanished calls are therefore invoked by name through reflection, resolved once
+  at the top. On 2027 the lookup returns nothing and the fragment reports that
+  an HVAC zone must be made through the Revit interface, which is a true
+  statement rather than a failure. `Zone` lives in the mechanical namespace,
+  which the wrapper imports.
+
+# ROUTING - repeated in PLACE_ROOMS and REPORT_SPACE_AIRFLOW.
+#
+#   "create an HVAC zone for these spaces" -> here
+#   "group these spaces into a zone"     -> here
+#   "make the zones for this floor"      -> here
+#   "place spaces in all the rooms"      -> PLACE_ROOMS - it places rooms OR
+#                                          spaces, and the spaces have to exist
+#                                          before any zone can hold them
+#   "what airflow does this space need"  -> REPORT_SPACE_AIRFLOW
+
+utterances:
+  - create an HVAC zone for these spaces
+  - group these spaces into a zone
+  - make the zones for this floor
+  - put these spaces in one zone
+  - add a new hvac zone

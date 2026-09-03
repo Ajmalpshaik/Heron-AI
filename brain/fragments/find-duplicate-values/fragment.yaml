@@ -1,0 +1,95 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-013
+semantic-identity: "two of these carry the same mark or number"
+kind: filter
+domain: revit.quality
+capability: FIND_DUPLICATE_VALUES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds elements that share the SAME value in one named parameter - two doors
+  both marked D-101, two rooms numbered 05, two pieces of equipment with the
+  same tag. Read-only; it moves nothing and renumbers nothing.
+
+  **This is duplicate DATA, and FIND_DUPLICATE_ELEMENTS is duplicate GEOMETRY.**
+  Two elements stacked in the same place is a modelling accident. Two elements
+  in different rooms with the same mark is a scheduling error that survives
+  every visual check and comes out on the drawing. The two questions share the
+  word "duplicate" and nothing else, so both fragments carry the same routing
+  table.
+
+  **A blank is not a duplicate**, and that decision is the difference between a
+  usable report and 400 rows. On a real model most elements have no Mark at all;
+  grouping them together would report the whole model as one enormous clash.
+  Blanks are counted and named as a separate figure, because "180 of these have
+  no mark" is its own finding and often the more useful one.
+
+  **Values are compared as Revit renders them.** A number parameter reading
+  "150 mm" is compared as "150 mm", because that is what a schedule prints and
+  what somebody reads on a drawing. Comparing the raw internal double would
+  report two elements as different over a rounding difference nobody can see.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: parameterName
+      type: string
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: duplicated
+      type: IList<ElementId>
+    - name: blank
+      type: IList<ElementId>
+    - name: noSuchParameter
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.LookupParameter`,
+  `Parameter.StorageType`, `AsString`, `AsValueString`, `AsInteger` and
+  `AsElementId` are unchanged 2020 through 2027. Nothing here constructs an
+  ElementId or touches a units API.
+
+# THE PARAMETER IS LOOKED UP BY THE NAME ON SCREEN, which is what the user says.
+# An element that simply does not carry that parameter is NOT a blank - it is a
+# different answer, and it is reported separately. Mixing the two would let
+# "none of these have a Mark parameter at all" read as "none of them are
+# duplicated", which is a clean bill of health for a question never asked.
+
+# ROUTING - repeated in FIND_DUPLICATE_ELEMENTS and RENUMBER_SEQUENTIAL.
+#
+#   "two doors have the same mark"    -> here
+#   "check for duplicate numbers"     -> here
+#   "are any room numbers repeated"   -> here
+#   "duplicate marks"                 -> here
+#   "there are two elements on top of
+#    each other"                      -> FIND_DUPLICATE_ELEMENTS - duplicate
+#                                       GEOMETRY, a different defect entirely
+#   "delete the duplicates"           -> FIND_DUPLICATE_ELEMENTS finds them;
+#                                       DELETE_ELEMENTS removes them. NOTHING
+#                                       here deletes anything
+#   "renumber them in order"          -> RENUMBER_SEQUENTIAL - the fix, once
+#                                       this has said which ones clash
+
+utterances:
+  - two doors have the same mark
+  - check for duplicate marks
+  - are any room numbers repeated
+  - find duplicate numbers
+  - the same tag is used twice
+  - check the marks are unique

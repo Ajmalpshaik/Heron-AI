@@ -85,6 +85,19 @@ compatibility-note: >
   the thousands separator and the project's decimal-places setting into a check
   that needs none of them.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "fill in the mark"               -> here - the parameter already exists
+#   "add a project parameter"        -> ADD_PROJECT_PARAMETER - it MAKES the
+#                                       parameter and writes no values
+#   "make the new type 300 wide"     -> here, on the type DUPLICATE_TYPE made
+
+#   "clear the value out of this parameter" -> REMOVE_PARAMETER_VALUE - this
+#                                        one takes TEXT, and an empty string
+#                                        clears a text field but NOT a length,
+#                                        a number or an element reference
+#   "put the room name on all the equipment" -> ASSIGN_LOCATION_DATA - it WORKS
+#                                        OUT a different value per element
 utterances:
   - set the comments on these
   - write the airflow back
@@ -92,3 +105,5 @@ utterances:
   - update the mark on all of them
   - put 500 in the flow parameter
   - set the room number
+  - fill in the mark
+  - make the new type 300 wide

@@ -60,7 +60,15 @@ compatibility-note: >
 #                                   to a shared model
 #   "load a family"              -> LOAD_FAMILY
 #   "change these to the 300"    -> CHANGE_ELEMENT_TYPE
+#   "purge the unused stuff"         -> here, AS A REPORT. Nothing in this
+#                                       library purges, on purpose: it is hard
+#                                       to reverse, Revit has the command, and
+#                                       doing it to a shared model from here
+#                                       would be the most damaging thing here
 
+#   "check the families are named to our standard" -> CHECK_FAMILY_STANDARDS
+#                                        - about how they are BUILT; this one
+#                                          is about whether they are used
 utterances:
   - which families are unused
   - purge unused

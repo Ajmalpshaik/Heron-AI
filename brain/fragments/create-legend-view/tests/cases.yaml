@@ -1,0 +1,36 @@
+positive:
+  - given: an office template legend, copied with its contents under a new name
+    expect: >
+      a second legend in the project browser carrying the same components and
+      text - LOOKED AT there - and free to be placed on a sheet
+
+  - given: the copy placed on a sheet
+    expect: it behaves as a legend, including being placeable on more sheets
+
+negative:
+  - given: a project with NO legends at all
+    expect: >
+      a plain sentence saying Revit's API cannot make the first one, and that one
+      drawn by hand unblocks every copy after it. THIS IS THE FIRST CASE TO RUN.
+      An obscure failure here reads as a broken tool rather than as a limit of
+      the API, and this fragment exists largely to say which it is
+
+  - given: a floor plan handed in as the source
+    expect: >
+      refused by view type, and DUPLICATE_VIEW named. This one is only about
+      legends
+
+  - given: a new name already used by another view
+    expect: >
+      the copy made and the name refusal REPORTED, not swallowed. A legend under
+      Revit's generated name that the report claims is called something else is
+      worse than either outcome alone
+
+  - given: withContents false
+    expect: >
+      an empty legend frame. There is no API to place a NEW legend component, so
+      filling it stays a manual job - and expecting otherwise is how somebody
+      waits for a legend that never gets built
+
+second_route:
+  - the project browser in Revit, Legends, right-click and Duplicate on the same source

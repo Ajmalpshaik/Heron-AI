@@ -1,0 +1,101 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-033
+semantic-identity: "build a straight wall between these two points"
+kind: action
+domain: revit.elements
+capability: CREATE_WALL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates straight walls between consecutive points on one level, at a given
+  height. The plain "put a wall here" - the thing rooms are bounded by and MEP
+  has to pass through.
+
+  **Written as a run of points, like CREATE_DUCT and CREATE_PIPE.** Two points
+  is the single-wall case. A room needs four walls and a corridor needs two, so
+  making the run the general form saves the caller a loop and keeps the whole
+  library one shape.
+
+  **The base height is the level's PROJECT elevation.** Every XYZ the API takes
+  is project-internal, while `Elevation` is measured from whatever the level
+  type's Elevation Base says. On a model set out to a survey datum the two
+  differ, and the wrong one builds the wall at the wrong height with no error.
+
+  **The height is unconnected.** The wall stands at the height given and is not
+  attached to the level above. Attaching it is a separate parameter change and
+  is not done here, because "up to the slab" and "3 m tall" are different
+  instructions.
+
+  **Nothing is joined.** Walls meeting at a corner are not joined to each other
+  by this, and whether Revit joins them itself is not claimed. JOIN_GEOMETRY is
+  what makes two elements agree about which cuts which.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: level
+      type: Level
+      source: request
+    - name: wallType
+      type: Element
+      source: request
+    # Internal units. Plan points; the Z is taken from the level.
+    - name: points
+      type: IList<XYZ>
+      source: request
+    - name: height
+      type: double
+      source: request
+    - name: structural
+      type: bool
+      source: request
+  provides:
+    - name: created
+      type: IList<Element>
+    - name: tooShort
+      type: int
+    - name: refused
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Wall.Create` taking a curve, a type, a
+  level, a height, an offset, a flip and a structural flag is present 2020
+  through 2027 - read off the reference assemblies at both ends rather than
+  remembered, where the same eight-argument overload appears on both. Unlike
+  the floor and the ceiling, the wall creation call did NOT move at 2022, so no
+  run-time lookup is needed here.
+
+# ROUTING - repeated in CREATE_FLOOR, JOIN_GEOMETRY and SPLIT_MEP_RUN.
+#
+#   "build a wall between these points" -> here
+#   "put a wall here"                   -> here
+#   "make a floor slab over this area"  -> CREATE_FLOOR
+#   "join these walls together"         -> JOIN_GEOMETRY - nothing here joins
+#                                          anything
+#   "split this wall"                   -> NOTHING CAN. Revit exposes a break
+#                                          for ducts and pipes and for nothing
+#                                          else - SPLIT_MEP_RUN is named for
+#                                          what it can actually do, and says so
+
+utterances:
+  - build a wall between these points
+  - put a wall here
+  - draw the walls for this room
+  - make a wall
+  - add a partition here

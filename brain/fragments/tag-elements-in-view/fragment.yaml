@@ -120,6 +120,14 @@ compatibility-note: >
   `tools/check-fragments-compile.py`, which now mirrors
   `Directory.Build.props`.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "tag these ducts"                -> here - it PLACES tags
+#   "the tags are on top of each other" -> FIND_OVERLAPPING_TAGS - a READ over
+#                                       tags already there, and it must not
+#                                       answer by placing more
+#   "what is untagged"               -> FIND_UNTAGGED_ELEMENTS
+
 utterances:
   - tag these elements
   - tag everything in this view
@@ -127,3 +135,4 @@ utterances:
   - add tags to these
   - tag by category
   - i need these tagged in this view
+  - tag these ducts

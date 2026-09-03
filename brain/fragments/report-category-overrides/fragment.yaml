@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-051
+semantic-identity: "which categories are overridden in this view"
+kind: filter
+domain: revit.views
+capability: REPORT_CATEGORY_OVERRIDES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists which CATEGORIES carry a graphic override in one view - the reverse
+  lookup for `SET_CATEGORY_GRAPHICS`, which only ever sets. Read-only.
+
+  **`READ_GRAPHIC_OVERRIDES` CANNOT ANSWER THIS, AND SAYS SO IN ITS OWN
+  PURPOSE** - it reads the PER-ELEMENT override only. Yet *"what category
+  overrides are on this view"* was resolving to it, which is a question answered
+  by a fragment that structurally cannot answer it: the worst kind of near-miss,
+  because the reply comes back empty and reads as *"nothing is overridden"*.
+
+  **THE VISIBILITY FLAG IS NOT THE SIGNAL, AND THIS IS THE TRAP.** A pattern's
+  own "is visible" property reads TRUE on a category with nothing overridden at
+  all, so a check built on it reports every category in the model as overridden.
+  The real signal is a VALID COLOUR or a REAL PATTERN ID - something that was
+  actually set.
+
+  **IT LOOKS AT THE CATEGORIES PRESENT IN THE VIEW, not at every category in the
+  document.** A model has hundreds; a drawing shows a few dozen. Scanning them
+  all produces a report nobody reads, and the ones absent from the view cannot
+  be why it looks wrong.
+
+  **THIS IS THE OTHER HALF OF THE GRAYOUT QUESTION.** An element that is grey
+  with no per-element override is grey because its CATEGORY is - and until this
+  existed, nothing in the library could say that.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: overriddenCategories
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.GetCategoryOverrides`,
+  `Document.Settings.Categories` and the `OverrideGraphicSettings` GETTERS are
+  present 2020 through 2027 - read off the reference assemblies at both ends.
+  The getters are the half of that class that did NOT move; its setters were
+  renamed, which is why `OVERRIDE_GRAPHICS_IN_VIEW` refuses to build the object
+  and this can freely read one.
+
+# ROUTING - repeated in READ_GRAPHIC_OVERRIDES, SET_CATEGORY_GRAPHICS and
+# DIAGNOSE_VISIBILITY.
+#
+#   "what category overrides are on this view" -> here
+#   "why is this whole category grey" -> here
+#   "which categories are overridden" -> here
+#   "what colour is this one overridden to" -> READ_GRAPHIC_OVERRIDES - the
+#                                        PER-ELEMENT override. It cannot see a
+#                                        category override and says so
+#   "grey the background"            -> SET_CATEGORY_GRAPHICS - the WRITE
+#   "why is this element not visible" -> DIAGNOSE_VISIBILITY - visibility is a
+#                                        different setting from an override
+
+#   "which categories are turned off in this view" ->
+#                                        REPORT_CATEGORY_VISIBILITY - OFF is
+#                                        not the same as OVERRIDDEN, and that
+#                                        one deliberately does NOT scope to the
+#                                        view: a hidden category has nothing in
+#                                        a view-scoped collector to find
+utterances:
+  - what category overrides are on this view
+  - why is this whole category grey
+  - which categories are overridden
+  - read the category overrides
+  - what has been overridden in this view

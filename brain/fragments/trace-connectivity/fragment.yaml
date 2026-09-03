@@ -70,7 +70,19 @@ compatibility-note: >
 #                                   a read-only report answering an
 #                                   instruction to build something
 #   "join these two"             -> PLACE_MEP_FITTING
+#   "they are touching but not connected" -> CONNECT_OPEN_ENDS - the FIX. This
+#                                       one reads and must not answer a request
+#                                       to change the model
+#   "connect the open ends"          -> CONNECT_OPEN_ENDS
+#   "connect the diffusers to the duct" -> CONNECT_AIR_TERMINALS - a TAP cut
+#                                       into the duct side, and often what a
+#                                       zero-flow run is really missing
 
+#   "are the equipment connectors the right size for the duct" ->
+#                                        CHECK_EQUIPMENT_CONNECTORS - one
+#                                        joint compared, not a network walked
+#   "are all the sinks and toilets connected to the drainage" ->
+#                                        CHECK_FIXTURE_CONNECTIVITY
 utterances:
   - what connects to what
   - trace this system

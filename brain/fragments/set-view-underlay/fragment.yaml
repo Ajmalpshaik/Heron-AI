@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-037
+semantic-identity: "show me the floor below while i work on this plan"
+kind: action
+domain: revit.views
+capability: SET_VIEW_UNDERLAY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets - or clears - the underlay on plan views: the ghosted level shown behind
+  the one being worked on. The MEP habit of *"show me the floor below while I
+  route"*, and the reflected-ceiling habit of showing what is above, done
+  across many views in one pass instead of one properties palette at a time.
+
+  **The underlay is three settings that have to agree, which is why it is a
+  fragment and not a parameter write.** A base level, a top level and an
+  orientation. Writing the base alone leaves the old top in place and the view
+  then shows a RANGE nobody asked for - base set to Level 2 with the top still
+  at Level 5 gives three storeys of ghost, which reads as a corrupted view
+  rather than a wrong setting. Base and top are set together, in one call, for
+  that reason.
+
+  **The orientation is not cosmetic.** Looking down shows what is BELOW the
+  range - the floor you are tracing. Looking up shows what is ABOVE it - the
+  ceiling habit. The wrong one gives an underlay that looks empty, and an empty
+  underlay reads as broken rather than as pointed the wrong way.
+
+  **Only plan views have one.** Floor plans, ceiling plans, structural and area
+  plans. A section, an elevation, a 3D view or a schedule has no such setting,
+  and anything handed in that is not a plan is NAMED rather than passed over -
+  a silent skip on half a list is how somebody concludes the tool did nothing.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: views
+      type: IList<View>
+      source: request
+    # Both null clears the underlay. Passed as objects, never ids, so no
+    # ElementId has to be constructed (D-05).
+    - name: baseLevel
+      type: Level
+      source: request
+    - name: topLevel
+      type: Level
+      source: request
+    # true looks down at what is below, false looks up at what is above.
+    - name: lookingDown
+      type: bool
+      source: request
+  provides:
+    - name: changed
+      type: int
+    - name: notPlanViews
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewPlan.SetUnderlayRange`,
+  `SetUnderlayOrientation`, `GetUnderlayBaseLevel` and
+  `UnderlayOrientation.LookingDown` / `LookingUp` are present 2020 through 2027 -
+  read off the reference assemblies at both ends rather than remembered.
+
+# CLEARING IS BOTH LEVELS NULL, not a separate mode. `SetUnderlayRange` with two
+# invalid ids is what Revit itself does when the underlay is set to None, so one
+# call covers both jobs and there is no second path to get wrong.
+
+# ROUTING - repeated in SET_VIEW_RANGE and CREATE_PLAN_VIEW.
+#
+#   "show me the floor below"        -> here
+#   "turn the underlay off"          -> here, with no levels
+#   "set the underlay"               -> here
+#   "change the view range"          -> SET_VIEW_RANGE - the view's OWN cut and
+#                                       depth, constantly confused with this
+#                                       and a different setting entirely
+#   "make a plan of level 3"         -> CREATE_PLAN_VIEW
+
+utterances:
+  - show me the floor below
+  - set the underlay on this plan
+  - turn the underlay off
+  - show the level below while i route
+  - put an underlay on these plans
+  - show what is above this ceiling plan

@@ -71,7 +71,17 @@ compatibility-note: >
 # THE NAME IS NOT THE MARK AND NOT THE TYPE NAME, and a modeller says "name"
 # for all three. Ask which before running this on a type: renaming a type
 # reaches every instance in the model, including the ones nobody selected.
+#   "duplicate this type"            -> DUPLICATE_TYPE - a COPY under a new name.
+#                                       Renaming a type here changes it EVERYWHERE
+#                                       it is used, which is the opposite
+#   "make a new duct type"           -> DUPLICATE_TYPE
+#   "rename the family"              -> RENAME_FAMILY - the loaded component
+#                                       itself, one level above the type name
+#                                       this fragment edits
 
+#   "rename this workset"                -> RENAME_WORKSET - a workset is NOT
+#                                        an element. It lives in the workset
+#                                        table, which nothing here reaches
 utterances:
   - rename these
   - change the name of these

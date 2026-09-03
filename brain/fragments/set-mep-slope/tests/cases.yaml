@@ -1,0 +1,49 @@
+positive:
+  - given: one free-ended horizontal drain 6 m long, slopeRatio 100, anchorEnd "low", fallAwayFromAnchor true
+    expect: >
+      the anchored end untouched and the other end 60 mm lower - MEASURED in a
+      section, not read off this fragment's own report. 6000 / 100 = 60 mm, which
+      is arithmetic anybody can check on paper before believing the model
+
+  - given: the same run, then MEASURE_MEP_SLOPE over it
+    expect: >
+      1:100 back. Two different fragments agreeing is worth more than one
+      reporting its own success
+
+negative:
+  - given: a vertical stack, and a near-vertical pipe rising 2 m over 10 mm of horizontal run
+    expect: >
+      BOTH in `risers`, neither touched. The near-vertical one is the case a
+      minimum-run threshold in millimetres lets through: it would be re-drawn
+      10 mm long and the pipe destroyed. This is the FIRST case to run
+
+  - given: a pipe inside a model group
+    expect: >
+      it goes to `inGroup` and is not attempted. Revit accepts a move on a group
+      member, changes nothing, and reports nothing - so an attempt would be
+      counted as done over a model where nothing moved
+
+  - given: a run with a fitting on both ends
+    expect: >
+      it goes to `bothEndsConnected` and is left alone. Moving it would either
+      be refused or would drag the neighbour, and neither is silently acceptable
+
+  - given: slopeRatio typed as 10 instead of 100 on a 6 m run, maxEndMoveMm 200
+    expect: >
+      REFUSED with the 600 mm it wanted to move named. The guard exists because
+      a mistyped ratio is a plausible sentence, not an unlikely one
+
+  - given: a run held by a constraint, so the write is accepted and nothing moves
+    expect: >
+      reported in `refused` with the distance the end still is from where it was
+      sent, and NOT counted in `sloped`. Revit returns normally from a write it
+      then ignores, and this is the read-back that catches it
+
+  - given: the Slope parameter checked after a successful re-slope
+    expect: >
+      whatever Revit reports, reported as Revit renders it. This fragment never
+      writes that parameter - a schedule reading a slope the geometry does not
+      have is worse than a schedule reading nothing
+
+second_route:
+  - a section through the run with a dimension from each end down to a level, checked against the fall the ratio asks for

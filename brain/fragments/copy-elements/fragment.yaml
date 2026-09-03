@@ -51,6 +51,12 @@ compatibility-note: >
   returning an `ICollection<ElementId>` is unchanged 2020 to 2027, and the
   offset arrives in internal feet with no units call.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "copy these out of the link"     -> COPY_FROM_LINK - across documents,
+#                                       through the link's own transform.
+#                                       This one copies inside THIS model
+
 utterances:
   - copy the terminals to the next room
   - duplicate these
