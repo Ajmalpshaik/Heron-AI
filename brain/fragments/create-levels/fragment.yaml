@@ -74,6 +74,11 @@ compatibility-note: >
   millimetre conversion at the edge where the user is, which is also what keeps
   this clear of the 2021 units move.
 
+# ROUTING - repeated in CREATE_GRIDS and CREATE_LEVEL.
+#
+#   "add four more floor levels"         -> here - many at once
+#   "make a grid series across the building" -> CREATE_GRIDS - the same
+#                                        one-versus-many pair, for grids
 utterances:
   - add more levels
   - create the floor levels

@@ -1,0 +1,101 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-022
+semantic-identity: "are the ceiling devices actually sitting in the ceiling"
+kind: filter
+domain: revit.qa
+capability: CHECK_CEILING_COORDINATION
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks ceiling-mounted devices against the ceiling they are supposed to be in
+  - is there a ceiling above each one at all, and is the device sitting AT it or
+  floating above or hanging below. The sweep before a reflected ceiling plan is
+  issued. Read-only.
+
+  **THE FAULT THIS CATCHES IS INVISIBLE IN PLAN.** A diffuser 40 mm above the
+  ceiling and a diffuser exactly in it look identical from above and both look
+  fine in the browser. It shows up as a site query, or on a section nobody cut.
+  Every device's own height is compared against the ceiling actually over it and
+  the difference is reported in millimetres.
+
+  **BEFORE THIS, THE QUESTION RESOLVED TO `SNAP_TO_GRID` - which MOVES things.**
+  A question about whether the model is right, answered by something that
+  changes it.
+
+  **THE CEILING IS FOUND BY CASTING A RAY UPWARD, and that is the technique that
+  works.** A device placed unhosted is not "hosted by" the ceiling in any
+  readable way, and a room cannot tell you its own ceiling. The ray needs a real
+  3D view; if the project has none, that is REPORTED rather than returned as
+  zero findings.
+
+  **"NO CEILING ABOVE" IS A FINDING, NOT AN ERROR.** A device in an open-soffit
+  area is fine; a device that should be in a ceiling and has none is either in
+  the wrong place or the ceiling is missing from the model. Counted separately,
+  because those two cases look identical in every other check.
+
+  **THE RAY GOES UP FROM THE INSERTION POINT**, and for a family whose insertion
+  point is off its own centre - some linear diffusers, some light fittings - it
+  can miss the ceiling beside it. A large NO CEILING count in an area known to
+  have one is usually that, and the report says so rather than letting it read
+  as a hundred real faults.
+
+  **CEILINGS IN LINKS ARE NOT HIT.** Architecture is normally linked, so a host
+  model with no ceilings reports everything as uncovered - said on the summary
+  line, because it looks exactly like a real finding.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: devices
+      type: IList<Element>
+    - name: tolerance
+      type: double
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: outOfPlane
+      type: IList<ElementId>
+    - name: noCeilingAbove
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ReferenceIntersector`,
+  `FindReferenceTarget`, `ReferenceWithContext.Proximity` and `View3D` are
+  unchanged 2020 through 2027 - read off the reference assemblies at both ends.
+  `tolerance` arrives in internal FEET; the millimetres the person spoke are
+  converted at the edge, before this.
+
+# ROUTING - repeated in READ_CEILING_GRID, SNAP_TO_GRID and
+# MEASURE_CEILING_HEIGHT.
+#
+#   "are the light fittings sitting properly in the ceiling tiles" -> here
+#   "are the diffusers in the ceiling"   -> here
+#   "check the devices before the RCP goes out" -> here
+#   "line these up with the ceiling grid" -> SNAP_TO_GRID - it MOVES things.
+#                                           This one only measures, and a
+#                                           question about the model must not be
+#                                           answered by something that changes it
+#   "where are the ceiling tile lines"   -> READ_CEILING_GRID
+#   "how high is the ceiling"            -> MEASURE_CEILING_HEIGHT - floor to
+#                                           ceiling, per room, not device to
+#                                           ceiling
+
+utterances:
+  - are the light fittings sitting properly in the ceiling tiles
+  - are the diffusers in the ceiling
+  - check the devices before the RCP goes out
+  - is anything floating above the ceiling
+  - check the ceiling devices

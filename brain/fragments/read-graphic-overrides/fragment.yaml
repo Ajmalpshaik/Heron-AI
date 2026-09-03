@@ -88,6 +88,10 @@ compatibility-note: >
 #   "make these red"                     -> OVERRIDE_GRAPHICS_IN_VIEW
 #   "put it back how it was"             -> RESET_GRAPHIC_OVERRIDES
 
+#   "what category overrides are on this view" -> REPORT_CATEGORY_OVERRIDES -
+#                                        this one reads the PER-ELEMENT
+#                                        override only and cannot see a
+#                                        category one
 utterances:
   - make this pipe look the same as that one
   - copy the graphics from this element to those

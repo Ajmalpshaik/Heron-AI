@@ -77,6 +77,8 @@ compatibility-note: >
 #   "change all the old line styles to the new ones" -> REMAP_LINE_STYLES - a
 #                                        line style is what a line IS. This is a
 #                                        view override and changes no line
+#   "what category overrides are on this view" -> REPORT_CATEGORY_OVERRIDES -
+#                                        the READ half; this one only sets
 utterances:
   - grey the whole background
   - make all the architecture faint

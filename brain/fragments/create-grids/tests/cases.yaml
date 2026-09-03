@@ -1,0 +1,38 @@
+positive:
+  - given: spacings 6000, 6000, 7500, 6000 across and 8000, 8000 up
+    expect: >
+      FIVE lettered grids A to E and THREE numbered 1 to 3 - CHECKED by
+      dimensioning between two of them in the model, because the count being
+      right and the positions being wrong is the failure this fragment guards
+
+  - given: firstLetter "A" and firstNumber 1
+    expect: A, B, C, D, E and 1, 2, 3 - the sequence a drawing uses
+
+  - given: a run long enough to pass Z
+    expect: >
+      AA, AB after Z - not a stop, and not A1. Letters increment the way a
+      drawing does
+
+negative:
+  - given: four spacings across
+    expect: >
+      FIVE grids, not four. THIS IS THE FIRST CASE TO RUN. Spacings are GAPS,
+      and reading them as positions gives one grid too few and every line in the
+      wrong place - and both readings look sensible to somebody checking the code
+
+  - given: a project that already has a grid called "B"
+    expect: >
+      that one grid left with Revit's own name and REPORTED, with the rest of
+      the run completing. Revit refuses a duplicate by throwing, and losing a
+      whole setting-out to one clash in the middle is the worse outcome
+
+  - given: empty spacings in both directions
+    expect: refused before anything is created
+
+  - given: spacings in one direction only
+    expect: >
+      that direction set out, the other left alone, and the overhang still
+      sensible rather than zero-length lines
+
+second_route:
+  - Dimension between two adjacent grids in the model and compare against the spacing that was asked for

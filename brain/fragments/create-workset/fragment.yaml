@@ -75,6 +75,7 @@ compatibility-note: >
 #                                       already exists
 #   "who owns this element"          -> READ_ELEMENT_OWNERSHIP
 
+#   "rename this workset"                -> RENAME_WORKSET
 utterances:
   - add a new workset
   - create a workset

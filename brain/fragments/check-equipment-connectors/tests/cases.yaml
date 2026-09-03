@@ -1,0 +1,45 @@
+positive:
+  - given: an AHU with a 600x400 supply spigot and a 400x300 duct on it
+    expect: >
+      SIZE MISMATCH with both dimensions out - CHECKED by selecting the duct and
+      reading its size, because Revit builds the joint with a transition and
+      nothing looks wrong
+
+  - given: an AHU with four connectors, two joined to nothing
+    expect: >
+      both listed with NOTHING PLUGGED IN. No clash test flags this, and the
+      services that ARE connected trace perfectly
+
+  - given: a round 300 mm spigot onto a round 300 mm duct
+    expect: nothing reported for that joint
+
+negative:
+  - given: a round spigot joined to a rectangular duct
+    expect: >
+      SHAPE CHANGE, NOT a size comparison. THIS IS THE FIRST CASE TO RUN. A
+      round connector reports a radius and a rectangular one reports width and
+      height; comparing them as one number is how this kind of check produces
+      confident nonsense
+
+  - given: a pipe joined to a duct connector
+    expect: >
+      DOMAIN MISMATCH, reported as its own class. It is not a tolerance problem
+      and it should not be filed with the size findings
+
+  - given: a Generic Model being used as equipment
+    expect: >
+      "no MEP model at all" said plainly - it can never join a system, which is a
+      different finding from a size being wrong
+
+  - given: an equipment family whose connectors were authored at the wrong size
+    expect: >
+      everything reported as matching, AND the summary warning that sizes are
+      what the family declares. The fragment cannot detect this and must say so
+
+  - given: a joint through a transition fitting
+    expect: >
+      compared against the FITTING, which is what is physically bolted to the
+      spigot. The transition's far side is a separate joint
+
+second_route:
+  - Select the equipment, hover a connector, and read its size against the duct joined to it

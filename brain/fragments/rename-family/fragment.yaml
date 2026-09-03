@@ -84,6 +84,10 @@ compatibility-note: >
 #   "duplicate this type"            -> DUPLICATE_TYPE
 #   "change SUP to SUPPLY on these"  -> RENAME_ELEMENTS
 
+#   "check the families are named to our standard" -> CHECK_FAMILY_STANDARDS
+#                                        - a READ. A question about whether
+#                                          the names are right must not be
+#                                          answered by something that renames
 utterances:
   - rename the family
   - rename this component

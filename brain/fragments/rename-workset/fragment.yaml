@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-WRK-014
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-016
+semantic-identity: "rename a user workset"
+kind: action
+domain: revit.document
+capability: RENAME_WORKSET
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Renames a user workset - the tidy-up when a project's workset names stop
+  matching the standard, or when a team name changes mid-job.
+
+  **A WORKSET IS NOT AN ELEMENT, WHICH IS WHY `RENAME_ELEMENTS` CANNOT DO
+  THIS.** It lives in the workset table, not in the model, and it is reached
+  through a different object entirely. Before this fragment, asking to rename one
+  resolved to `SET_VIEW_WORKSET_VISIBILITY` - which changes a drawing.
+
+  **DELETING A WORKSET IS NOT POSSIBLE ON EVERY RELEASE THIS LIBRARY SUPPORTS,
+  and that is checked rather than assumed.** The delete call is absent from
+  Revit 2020's assembly and present from 2024 - read at both ends. So it is
+  reached BY NAME, which keeps one source compiling everywhere and lets the
+  older release report a plain reason instead of failing to build.
+
+  **A NAME ALREADY IN USE IS REFUSED BY REVIT.** It is checked first, because a
+  throw mid-rename on a workshared model is a confusing place to end up.
+
+  **ON A MODEL THAT IS NOT WORKSHARED THERE ARE NO USER WORKSETS**, and that is
+  reported rather than thrown. An empty result there means the question does not
+  apply.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: worksetName
+      type: string
+      source: request
+    - name: newName
+      type: string
+      source: request
+    - name: deleteInstead
+      type: bool
+      source: request
+  provides:
+    - name: renamed
+      type: bool
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `WorksetTable.RenameWorkset` and `IsWorksetNameUnique` are present 2020
+  through 2027. `DeleteWorkset` and `CanDeleteWorkset` are NOT on 2020 and ARE
+  on 2024 - read off the reference assemblies at both ends, which is the whole
+  reason the delete path is reached by name through reflection. Naming it
+  directly would break the 2020 build, and a try/catch does not help because it
+  never gets to run. This is the same shape as `CREATE_HVAC_ZONE`, in the
+  opposite direction: there a release TOOK a capability away, here an older
+  release never had one.
+
+# ROUTING - repeated in CREATE_WORKSET, LIST_WORKSETS and RENAME_ELEMENTS.
+#
+#   "rename this workset"                -> here
+#   "the workset names are wrong"        -> here
+#   "delete this workset"                -> here, and it reports plainly on the
+#                                           releases that cannot
+#   "make a workset for the ducts"       -> CREATE_WORKSET
+#   "what worksets are in this model"    -> LIST_WORKSETS - a READ
+#   "rename these elements"              -> RENAME_ELEMENTS - a workset is NOT
+#                                           an element and lives in a different
+#                                           table entirely
+
+utterances:
+  - rename this workset
+  - the workset names are wrong
+  - delete this workset
+  - change the workset name
+  - tidy up the workset names

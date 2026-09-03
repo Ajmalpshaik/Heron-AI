@@ -92,6 +92,11 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+#   "are the light fittings sitting properly in the ceiling tiles" ->
+#                                        CHECK_CEILING_COORDINATION - a READ.
+#                                        This one MOVES things, and a question
+#                                        about the model must not be answered
+#                                        by something that changes it
 utterances:
   - put them on the ceiling grid
   - line the diffusers up with the tiles

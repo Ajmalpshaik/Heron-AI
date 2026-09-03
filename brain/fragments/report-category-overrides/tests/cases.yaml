@@ -1,0 +1,33 @@
+positive:
+  - given: a view where Walls and Floors are set to halftone grey
+    expect: >
+      those two named with their colour and halftone - CHECKED against the
+      view's Visibility/Graphics, Model Categories tab, because that is where a
+      person would look
+
+  - given: a category with a surface pattern set
+    expect: the pattern named, not just "overridden"
+
+negative:
+  - given: a view with NOTHING overridden at category level
+    expect: >
+      a plain zero, NOT every category in the view. THIS IS THE FIRST CASE TO
+      RUN. A pattern's own visibility flag reads TRUE with nothing set, so a
+      version built on that flag reports the entire model as overridden and the
+      report is worthless
+
+  - given: an element that is grey because of a per-element override
+    expect: >
+      its category NOT listed, and the closing line naming the per-element
+      override, the view filter and the template as the places to look instead
+
+  - given: a category that exists in the model but has nothing in this view
+    expect: >
+      not scanned, and the summary saying so. A model has hundreds of categories
+      and a drawing shows a few dozen
+
+  - given: a schedule or a sheet as the view
+    expect: said plainly - that view type accepts no overrides at all
+
+second_route:
+  - Open the view's Visibility/Graphics and look down the Model Categories tab for a non-default row

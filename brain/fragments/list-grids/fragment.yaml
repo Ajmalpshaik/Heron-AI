@@ -64,6 +64,7 @@ compatibility-note: >
 #   "list the levels"           -> LIST_LEVELS
 #   "the grid bubbles are on the wrong side" -> SET_DATUM_BUBBLES
 
+#   "make a grid series across the building" -> CREATE_GRIDS - a WRITE
 utterances:
   - list the grids
   - how many grids

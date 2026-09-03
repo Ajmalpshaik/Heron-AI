@@ -65,6 +65,9 @@ compatibility-note: >
 #   "make a ceiling over this area" -> CREATE_CEILING - there has to be one
 #                                      before there is a grid to read
 
+#   "are the diffusers in the ceiling"   -> CHECK_CEILING_COORDINATION - it
+#                                        measures each device against the
+#                                        ceiling actually above it
 utterances:
   - what size are the ceiling tiles
   - read the ceiling grid

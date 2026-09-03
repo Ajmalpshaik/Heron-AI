@@ -1,0 +1,35 @@
+positive:
+  - given: a diffuser 40 mm above the ceiling, tolerance 5 mm
+    expect: >
+      out of plane, with 40 mm named - CHECKED against a section, because that
+      is the only place a person can see it and the whole point is that plan
+      cannot
+
+  - given: a diffuser flush in the ceiling
+    expect: AT the ceiling, and not in outOfPlane
+
+  - given: a device in an open-soffit area
+    expect: NO CEILING above, listed separately rather than as a fault
+
+negative:
+  - given: a project where every ceiling is in a LINKED architectural model
+    expect: >
+      the no-ceilings-in-host warning on the summary. THIS IS THE FIRST CASE TO
+      RUN. Every device will read as uncovered, and that output is
+      indistinguishable from a real finding on every one of them
+
+  - given: a model with no 3D view at all
+    expect: >
+      "NOTHING was checked" said plainly, not an empty findings list. A ray needs
+      a real 3D view, and zero findings would read as a clean sweep
+
+  - given: a linear diffuser whose insertion point sits at one end
+    expect: >
+      possibly NO CEILING, AND the summary warning that this is what a large
+      count usually means. The fragment cannot detect it and must not pretend to
+
+  - given: a device with no readable position
+    expect: named and skipped, with the rest of the sweep completing
+
+second_route:
+  - Cut a section through one reported device and dimension from it to the ceiling

@@ -1,0 +1,41 @@
+positive:
+  - given: a library where six air terminal types are missing the office prefix
+    expect: >
+      those six named, each with its placed count - CHECKED against the Project
+      Browser's Families branch, because a count alone does not say which
+
+  - given: an MEP equipment type with no connectors, placed forty times
+    expect: >
+      ONE row, not forty, with "40 placed" beside it. That count is what makes it
+      urgent; the row is what makes it fixable
+
+  - given: a type missing a required project parameter
+    expect: the parameter named, so the fix is exact
+
+negative:
+  - given: a family type that exists in the project but is placed NOWHERE
+    expect: >
+      counted in notChecked, with the reason. THIS IS THE FIRST CASE TO RUN. A
+      type does not expose its connectors - only a placed instance does - so a
+      version that reports it as having none is guessing, and it is guessing in
+      the direction that generates false work
+
+  - given: duct types, pipe types and wall types in the project
+    expect: >
+      counted as system families and EXCLUDED, with the count said. They have no
+      family file and cannot be audited this way; silently skipping them makes
+      the total meaningless
+
+  - given: an in-place family
+    expect: >
+      audited but marked IN-PLACE. It belongs to one model and can never be a
+      library standard, so the label changes what the reader does about it
+
+  - given: an empty namePattern and no required parameters
+    expect: >
+      only the connector question asked, and nothing reported off standard for
+      naming. There is no default convention here and inventing one would apply
+      one office's rules to another's model
+
+second_route:
+  - Project Browser, Families branch - and Manage, Purge Unused to see which are placed at all

@@ -66,6 +66,9 @@ compatibility-note: >
 #                                       doing it to a shared model from here
 #                                       would be the most damaging thing here
 
+#   "check the families are named to our standard" -> CHECK_FAMILY_STANDARDS
+#                                        - about how they are BUILT; this one
+#                                          is about whether they are used
 utterances:
   - which families are unused
   - purge unused

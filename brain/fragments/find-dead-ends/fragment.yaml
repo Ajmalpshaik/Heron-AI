@@ -81,6 +81,11 @@ compatibility-note: >
 #                                       joins only ends already at one point
 #   "is this duct connected"         -> TRACE_CONNECTIVITY
 
+#   "are all the sinks and toilets connected to the drainage" ->
+#                                        CHECK_FIXTURE_CONNECTIVITY - it
+#                                        starts at the FIXTURE. A fixture
+#                                        nobody piped produces no open end, so
+#                                        this one structurally cannot see it
 utterances:
   - which runs end in nothing
   - find the dead ends

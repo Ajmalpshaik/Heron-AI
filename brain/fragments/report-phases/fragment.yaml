@@ -57,6 +57,13 @@ compatibility-note: >
   is also what preserves the order, since converting it to a set would lose the
   one thing the fragment exists to report.
 
+# ROUTING - repeated in REPORT_DESIGN_OPTIONS.
+#
+#   "what phases are in this model"      -> here
+#   "which design option am I working in" -> REPORT_DESIGN_OPTIONS - phases
+#                                        and options BOTH change what "all the
+#                                        ducts" means, and they are different
+#                                        settings with different fixes
 utterances:
   - what phases are in this project
   - list the phases

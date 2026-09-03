@@ -1,0 +1,100 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 15
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-037
+semantic-identity: "set out a whole grid from bay spacings"
+kind: action
+domain: revit.elements
+capability: CREATE_GRIDS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets out a whole column grid from a start point and a list of bay dimensions -
+  both directions, named the way a drawing names them, in one pass. The
+  setting-out job as it is actually described: *"6000, 6000, 7500, 6000 across;
+  8000, 8000 up"*.
+
+  **IT EXISTS BESIDE `CREATE_GRID` FOR THE SAME REASON `CREATE_LEVELS` EXISTS
+  BESIDE `CREATE_LEVEL`.** That one takes two explicit points, which is right
+  when the line is already known. For a bay layout it means working out every
+  coordinate by hand first, and for twelve grids in two directions that is where
+  the mistakes come from. Here the bay dimensions are the input, which is how a
+  drawing states one.
+
+  **THEY ARE GAPS, NOT POSITIONS**, and both readings look sensible. Four of them
+  make FIVE grids: the first sits at the start point and each gap steps to the
+  next. Read as positions they give one grid too few and every line in the wrong
+  place.
+
+  **THE NAME HAS TO INCREMENT THE WAY A DRAWING DOES.** Letters run A to Z then
+  AA, AB - not A to Z and stop, and not A1. Numbers run from whatever the start
+  is. **A name Revit already holds is refused by Revit itself**, so each grid is
+  created and then named, and a clash leaves that one grid carrying Revit's own
+  name rather than losing the whole run - which is reported per grid.
+
+  **The start point and the bay dimensions are internal FEET.** The millimetres
+  on the drawing are converted at the edge, before this (D-20).
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: origin
+      type: XYZ
+      source: request
+    - name: spacingsAcross
+      type: IList<double>
+      source: request
+    - name: spacingsUp
+      type: IList<double>
+      source: request
+    - name: firstLetter
+      type: string
+      source: request
+    - name: firstNumber
+      type: int
+      source: request
+  provides:
+    - name: created
+      type: IList<Element>
+    - name: namedAs
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Grid.Create` and `Line.CreateBound` are
+  unchanged 2020 through 2027 - read off the reference assemblies at both ends.
+  Every distance arrives in internal FEET; the millimetres a drawing carries are
+  converted at the edge, before this. Names are compared as text against the
+  grids already in the document rather than trusted to Revit's own refusal,
+  which throws.
+
+# ROUTING - repeated in CREATE_GRID, LIST_GRIDS and CREATE_LEVELS.
+#
+#   "make a grid series across the building" -> here
+#   "set out the grid at 6000 bays"      -> here
+#   "put in the whole column grid"       -> here
+#   "draw a grid line here"              -> CREATE_GRID - ONE line between two
+#                                           known points, which is right when
+#                                           the position is already worked out
+#   "what grids are in this model"       -> LIST_GRIDS - a READ
+#   "add four more floor levels"         -> CREATE_LEVELS - the same
+#                                           one-versus-many pair, for levels
+
+utterances:
+  - make a grid series across the building
+  - set out the grid at 6000 bays
+  - put in the whole column grid
+  - set out the structural grid

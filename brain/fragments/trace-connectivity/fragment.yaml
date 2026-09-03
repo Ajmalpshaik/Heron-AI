@@ -78,6 +78,11 @@ compatibility-note: >
 #                                       into the duct side, and often what a
 #                                       zero-flow run is really missing
 
+#   "are the equipment connectors the right size for the duct" ->
+#                                        CHECK_EQUIPMENT_CONNECTORS - one
+#                                        joint compared, not a network walked
+#   "are all the sinks and toilets connected to the drainage" ->
+#                                        CHECK_FIXTURE_CONNECTIVITY
 utterances:
   - what connects to what
   - trace this system

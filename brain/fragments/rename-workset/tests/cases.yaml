@@ -1,0 +1,35 @@
+positive:
+  - given: a workshared model and "Workset1" renamed to "MEP - Mechanical"
+    expect: >
+      the new name, CHECKED by re-reading the workset table in a SEPARATE call -
+      not from this fragment's own return value
+
+  - given: a name that differs only in case
+    expect: accepted as a real rename, because Revit treats them as different names
+
+negative:
+  - given: Revit 2020 with deleteInstead true
+    expect: >
+      refused with the reason and the manual steps. THIS IS THE FIRST CASE TO
+      RUN. The delete call is absent from 2020's assembly, and so is the settings
+      TYPE it takes - so the reflection lookup must name NEITHER, or the 2020
+      build breaks on the very line meant to protect it
+
+  - given: a new name already used by another workset
+    expect: >
+      refused BEFORE the rename is attempted. Revit throws on a duplicate, and
+      finding out mid-rename on a workshared model is a confusing place to end up
+
+  - given: a model that is NOT workshared
+    expect: >
+      said plainly, nothing changed. There are no user worksets to rename, and
+      that is different from the rename failing
+
+  - given: a workset name that does not exist
+    expect: refused with every real workset listed, so the next attempt is exact
+
+  - given: an empty new name
+    expect: refused - a workset cannot be renamed to nothing
+
+second_route:
+  - Collaborate tab, Worksets - the table shows every name

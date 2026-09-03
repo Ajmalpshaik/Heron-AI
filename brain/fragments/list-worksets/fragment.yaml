@@ -96,6 +96,7 @@ compatibility-note: >
 
 #   "turn off this workset in this view" -> SET_VIEW_WORKSET_VISIBILITY - a
 #                                        VIEW setting. This one is a READ
+#   "rename this workset"                -> RENAME_WORKSET - a WRITE
 utterances:
   - list the worksets
   - what worksets are there
