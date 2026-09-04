@@ -1,0 +1,142 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-061
+semantic-identity: "how this schedule's columns read on the sheet - heading text, width, alignment"
+kind: action
+domain: revit.schedules
+capability: SET_SCHEDULE_APPEARANCE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes how a schedule's columns PRINT - the heading text, the column width,
+  the alignment of the values, and whether the heading runs sideways. It changes
+  no data and no element.
+
+  IT EXISTS BECAUSE *"rename the column heading"*, *"make the schedule column
+  wider"* and *"turn the schedule heading sideways"* all resolved to
+  `ADD_SCHEDULE_FIELDS` or `CREATE_SCHEDULE` before this batch - a fragment that
+  adds a column, and one that makes a second schedule.
+
+  **THE HEADING AND THE FIELD NAME ARE DIFFERENT THINGS, AND ONLY ONE OF THEM
+  PRINTS.** Renaming a heading to "Duct Size" leaves the field still called
+  Size - so a later request to sort or filter *by Size* still works, and a
+  request phrased *by Duct Size* has to find it by heading. That is why every
+  fragment in this cluster matches on **either** name, and why this one reports
+  both after the change.
+
+  **WIDTH IS IN FEET BECAUSE IT IS A DISTANCE ON PAPER, AND IT ARRIVES IN mm.**
+  `GridColumnWidth` is a Revit internal length like any other, so millimetres
+  are divided by 304.8 as plain arithmetic at the edge - no units API, which is
+  the call that breaks at 2021. A column width is one of the few numbers on a
+  drawing that a modeller genuinely thinks about in millimetres.
+
+  **NOTHING HERE MAKES TEXT BOLD, AND THAT IS DELIBERATE.** Bold, font and size
+  on a schedule belong to its **text type**, not to the field - changing them
+  means editing a type that other schedules share, which would silently restyle
+  drawings nobody asked about. The Revit route is named in the routing table
+  instead. A fragment that quietly edits a shared type to satisfy one sentence
+  is the more dangerous of the two options.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: fieldName
+      type: string
+      source: request
+    - name: newHeading
+      type: string
+      source: request
+    - name: columnWidthMm
+      type: double
+      source: request
+    - name: alignment
+      type: string
+      source: request
+    - name: headingSideways
+      type: bool
+      source: request
+  provides:
+    - name: changed
+      type: int
+    - name: notPresent
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+    - name: appliedAppearance
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ScheduleField.ColumnHeading`,
+  `GridColumnWidth`, `HorizontalAlignment`, `HeadingOrientation` and `GetName`
+  are present and unchanged 2020 through 2027.
+
+  **The two enums are `ScheduleHorizontalAlignment` (`Left`, `Center`, `Right`)
+  and `ScheduleHeadingOrientation` (`Horizontal`, `Vertical`)** - read out of the
+  property signatures on 2020 and on 2027, not assumed from the property names.
+  `HorizontalAlignmentStyle` also exists on every release, is the one a table
+  CELL uses, and would not compile here; an existence check alone cannot tell the
+  two apart, so the signature was decoded.
+
+  **`ScheduleField.VerticalAlignment` is NOT used**: it arrives at 2027 and
+  Revit 2020 has never had it, so naming it would split this fragment in two.
+
+  **No units API is called.** The width converts mm to feet by dividing by
+  304.8, plain arithmetic at the edge, which is what D-20 requires and what
+  keeps this working across the 2021 units break.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "rename the column heading"        -> here. The FIELD keeps its own name;
+#                                         only the printed heading changes
+#   "make the schedule column wider"   -> here, in mm
+#   "turn the heading sideways"        -> here
+#   "make the schedule text bold"      -> NOT here and NOT anywhere in this
+#                                         library. Bold, font and size live on
+#                                         the schedule's TEXT TYPE, which other
+#                                         schedules share - changing it would
+#                                         restyle drawings nobody asked about.
+#                                         Revit's route: select the schedule,
+#                                         Properties, Appearance, edit the
+#                                         Header/Body text type
+#   "show units as mm in that column"  -> NOT HERE AND NOWHERE IN THIS LIBRARY.
+#                                         A column's UNIT is read and written
+#                                         through `ScheduleField.UnitType` on
+#                                         Revit 2020 and through `GetSpecTypeId`
+#                                         from 2022 - the first is GONE by 2027
+#                                         and the second has never existed on
+#                                         2020, checked against the reference
+#                                         assemblies. There is no single
+#                                         expression, and every fragment here is
+#                                         one implementation for all eight
+#                                         releases. Revit's route: the
+#                                         schedule's Formatting tab, Field
+#                                         Format
+#   "hide that column"                 -> REMOVE_SCHEDULE_FIELDS with hideOnly
+#   "add a column"                     -> ADD_SCHEDULE_FIELDS
+#   "what are the headings now"        -> REPORT_SCHEDULE_DEFINITION, which
+#                                         reports the name AND the printed
+#                                         heading when they differ
+
+utterances:
+  - rename the column heading in the schedule
+  - change the schedule column heading
+  - make the schedule column wider
+  - change the column width in the schedule
+  - turn the schedule heading sideways
+  - centre the values in that column
+  - the heading text should say something else

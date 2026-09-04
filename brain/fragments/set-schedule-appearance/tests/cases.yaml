@@ -1,0 +1,55 @@
+positive:
+  - given: a duct schedule, field "Size", newHeading "Duct Size"
+    expect: >
+      "Duct Size" printed at the top of that column in Revit, and the FIELD still
+      reported as "Size" - both in appliedAppearance, because only one of the two
+      appears on the drawing
+
+  - given: columnWidthMm 25
+    expect: >
+      the column 25 mm wide ON THE SHEET - measured in Revit, not taken from the
+      return value. THIS IS THE UNIT CASE: 25 must become 25/304.8 feet
+      internally, and a version that hands 25 straight to Revit produces a column
+      over seven metres wide
+
+  - given: alignment "centre"
+    expect: values centred in that column, spelled either centre or center
+
+  - given: headingSideways true
+    expect: the heading running vertically, which is how a narrow column keeps a long title
+
+negative:
+  - given: an empty newHeading and columnWidthMm of 0
+    expect: >
+      NOTHING CHANGED and nothing claimed - not a blanked heading and not a
+      collapsed column. THIS IS THE FIRST CASE TO RUN. Both mistakes look exactly
+      like the fragment working, and both reach an issued sheet
+
+  - given: a field name not in the schedule
+    expect: named in notPresent, other schedules in the batch still acted on
+
+  - given: an alignment of "middle" or any word not on the list
+    expect: >
+      refused with the accepted words, and the OTHER properties in the same call
+      still applied. One bad input must not discard a good heading change
+
+  - given: a schedule where Revit refuses the width
+    expect: >
+      that refusal named with Revit's own message, and the count reflecting what
+      a READ BACK found rather than what was attempted
+
+  - given: a request to make the schedule text bold
+    expect: >
+      NOT DONE BY THIS FRAGMENT AT ALL, and the Revit route named. Bold lives on
+      the schedule's text type, which other schedules share - a fragment that
+      edits it to satisfy one sentence restyles drawings nobody asked about
+
+second_route:
+  - >
+    Revit's own schedule Properties - Formatting tab for heading, alignment and
+    orientation; and dragging the column edge on the sheet for width. Those are
+    what the result is checked against
+
+  - >
+    For bold, font or text size: select the schedule, Properties, Appearance, and
+    edit the Header or Body text - a shared type, changed deliberately

@@ -1,0 +1,52 @@
+positive:
+  - given: a duct schedule with a Comments column nothing sorts or filters on
+    expect: >
+      removed 1, and the column GONE when the schedule is opened in Revit -
+      checked on screen, not inferred from the count
+
+  - given: the same schedule and hideOnly
+    expect: >
+      hidden 1, the field still in the definition, and the schedule still
+      sorting correctly if it sorted on that field
+
+  - given: a field asked for by its PRINTED HEADING rather than its field name
+    expect: >
+      found and acted on. Somebody reading a sheet says the heading, and after a
+      rename the two differ
+
+  - given: a field used by a filter, with removeDependentRules
+    expect: >
+      the field removed, rulesRemoved 1, and the removed rule NAMED - not a
+      count on its own
+
+negative:
+  - given: a field used by a sort rule, WITHOUT removeDependentRules
+    expect: >
+      refused, the rule named, and NOTHING CHANGED on that schedule. THIS IS THE
+      FIRST CASE TO RUN. A version that cascades quietly passes every other case
+      here and sends out a drawing whose filter has gone
+
+  - given: a column name that is not in the schedule at all
+    expect: >
+      listed in notPresent, and the other named columns still acted on. A
+      spelling mistake must not abandon the batch
+
+  - given: a schedule where every named column is missing
+    expect: >
+      removed 0 and every name in notPresent - a plain zero with reasons, not
+      silence. Zero removed and zero attempted look identical otherwise
+
+  - given: a list containing a floor plan among the schedules
+    expect: skipped without error, the real schedules still acted on
+
+  - given: a field Revit refuses to remove for a reason of its own
+    expect: >
+      that refusal reported BY NAME with Revit's own message, the rest of the
+      batch continuing, and the count reflecting what a READ BACK found rather
+      than what was attempted
+
+second_route:
+  - >
+    Revit's own schedule Properties - Fields tab, Remove; and the Formatting tab
+    for Hidden field. Those two tabs are the two modes this fragment has, and
+    are what the result is checked against

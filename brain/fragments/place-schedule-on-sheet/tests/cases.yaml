@@ -1,0 +1,51 @@
+positive:
+  - given: a duct schedule and sheet A101, at 50 mm / 250 mm
+    expect: >
+      the schedule visible on that sheet in Revit, its TOP-LEFT corner at that
+      point - measured on the sheet, not taken from the return value
+
+  - given: the read-back
+    expect: >
+      placedAt reporting roughly 50 mm and 250 mm. THIS IS THE UNIT CASE: a
+      version that hands 50 straight to Revit places the schedule 15 metres
+      across the sheet, which is off it entirely
+
+  - given: three schedules and one sheet
+    expect: three instances, each named with its schedule and its sheet
+
+  - given: a schedule already on another sheet
+    expect: >
+      PLACED AGAIN, with no refusal. A schedule is not a view - it can be on many
+      sheets, and refusing here would be carrying the viewport rule across
+
+negative:
+  - given: a sheetId that is a floor plan rather than a sheet
+    expect: >
+      refused with that reason, and NOTHING PLACED anywhere. THIS IS THE FIRST
+      CASE TO RUN - a wrong id must not produce a partly-populated drawing set
+
+  - given: a drafting view handed in among the schedules
+    expect: >
+      refused by name with PLACE_VIEW_ON_SHEET named as its route, and the real
+      schedules still placed
+
+  - given: a schedule TEMPLATE handed in
+    expect: >
+      refused as a template with nothing to print, rather than Revit's own error
+      which reads as a general failure
+
+  - given: a placement Revit accepts while creating nothing
+    expect: >
+      named as "reported no error and placed nothing" and NOT counted in placed.
+      A count that includes it is the exact defect this project exists around
+
+  - given: an empty list of schedules
+    expect: >
+      nothing placed, nothing refused, and nothing claimed - distinguishable from
+      a run that placed something
+
+second_route:
+  - >
+    Revit's own way: drag the schedule from the Project Browser onto an open
+    sheet. That is what the result is checked against, and it is also how the
+    top-left anchoring is confirmed

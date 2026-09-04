@@ -1,0 +1,61 @@
+positive:
+  - given: a duct schedule with a Level column, filtered to "Level 2" with equals
+    expect: >
+      only Level 2 rows showing when the schedule is opened in Revit - read on
+      screen, and the row count compared against the unfiltered schedule
+
+  - given: a filter of "contains" on "Supply"
+    expect: >
+      supply systems showing and return systems gone, with appliedRules read back
+      from the schedule rather than echoed from the request
+
+  - given: a "has no value" filter on Mark
+    expect: >
+      only unmarked elements listed, and NO value written - this is the branch
+      that must not pass a string to a rule that takes none
+
+negative:
+  - given: any of the above, then a count of the model's ducts before and after
+    expect: >
+      THE MODEL UNCHANGED. Same count, same levels, same elements. THIS IS THE
+      FIRST CASE TO RUN AND THE REASON THIS FRAGMENT EXISTS - the sentence it
+      answers used to resolve to SET_ELEMENT_LEVEL, which would have moved the
+      ducts instead of hiding rows, and the schedule would have looked right
+      afterwards
+
+  - given: a filter value of "Level 2" with matchType "begins with"
+    expect: >
+      Level 2 AND Level 20 both showing - and that being the correct result for
+      what was asked. It is the case that shows why the match type is a stated
+      input and never inferred from the value
+
+  - given: a matchType of "roughly" or any word not on the list
+    expect: >
+      REFUSED with the list of accepted match types, and NO schedule changed. A
+      default here is invisible on screen and silently wrong
+
+  - given: a schedule with no Level column, filtered on Level
+    expect: >
+      named in notPresent with the reason - a schedule cannot filter on a field
+      it does not carry - and nothing cleared. Clearing then failing leaves the
+      schedule showing every row, which reads as a filter that matched everything
+
+  - given: a schedule already carrying two filters
+    expect: >
+      exactly ONE filter afterwards and both old ones named in replacedRules. A
+      version that appends shows fewer and fewer rows and each addition looks
+      correct on its own
+
+  - given: a filter value matching no element in the model
+    expect: >
+      the filter applied and the schedule EMPTY - which is a correct outcome, not
+      a failure, and must be distinguishable from the filter never being written
+
+second_route:
+  - >
+    Revit's own schedule Properties - Filter tab. That tab is exactly this
+    fragment's inputs and is what the result is checked against
+
+  - >
+    For hiding things in a DRAWING rather than a table, Visibility/Graphics or a
+    view filter - a schedule filter affects neither

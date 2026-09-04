@@ -1,0 +1,48 @@
+positive:
+  - given: a duct schedule showing twenty ducts
+    expect: >
+      twenty rows, each cell's text MATCHING what the schedule shows on screen
+      character for character - opened side by side and compared, not assumed
+
+  - given: a schedule whose Size column reads "450x250" on the sheet
+    expect: >
+      "450x250" in the row, NOT a decimal number of feet. This is the case that
+      proves the printed-text route was taken; a version reading parameters
+      instead returns 1.4763779527 and looks like it worked
+
+  - given: a schedule with a grand total row
+    expect: >
+      the total row read like any other body row, with its own text as printed
+
+negative:
+  - given: a schedule whose filters exclude every element in the model
+    expect: >
+      "EMPTY - the schedule prints no rows at all" IN WORDS, with the reason
+      named as either category or filters. THIS IS THE FIRST CASE TO RUN. A
+      schedule that prints nothing and a read that never ran produce the same
+      silence, and only one of them is a working fragment
+
+  - given: a schedule of 800 rows with maxRows at 50
+    expect: >
+      50 rows, `truncated` true, and the FULL 800 reported in the summary. A
+      cap that hides the total turns a truncation into a wrong answer
+
+  - given: a list handed in containing a floor plan and a sheet
+    expect: >
+      those counted in skippedNotSchedules and named, the real schedules still
+      read
+
+  - given: a schedule with one cell Revit refuses to render
+    expect: >
+      that cell "(unreadable)" and the row still returned, and every other row
+      still read. A guard around the whole schedule loses four hundred good rows
+      to one bad cell
+
+second_route:
+  - >
+    Open the schedule in Revit and read it. That is the check this fragment is
+    measured against, and any disagreement means this fragment is wrong
+
+  - >
+    Revit's own Export - Reports - Schedule writes the same text to a file, which
+    is EXPORT_SCHEDULE_TO_CSV here

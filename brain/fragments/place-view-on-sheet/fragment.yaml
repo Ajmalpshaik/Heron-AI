@@ -78,6 +78,15 @@ compatibility-note: >
 #   "duplicate this view"           -> DUPLICATE_VIEW - and note a duplicate is
 #                                      how you get a view that CAN go on a
 #                                      second sheet, since the original cannot
+#   "put the SCHEDULE on a sheet"   -> PLACE_SCHEDULE_ON_SHEET. A schedule goes
+#                                      on as a ScheduleSheetInstance, not a
+#                                      viewport - which is the "schedule that
+#                                      needs a different call" named above.
+#                                      This fragment refused them correctly
+#                                      with nothing to hand them to until
+#                                      2026-09-04. Note a schedule CAN be on
+#                                      many sheets, so the one-sheet rule above
+#                                      does not carry across
 #
 # "A VIEW CAN ONLY BE ON ONE SHEET" IS THE RULE BEHIND HALF THE REFUSALS HERE,
 # and duplicating is the answer to it.

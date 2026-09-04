@@ -1,0 +1,56 @@
+positive:
+  - given: a duct schedule and "sort by Level"
+    expect: >
+      sorted 1, and the rows in level order when the schedule is opened in Revit
+      - read on screen, not inferred from the count
+
+  - given: the same request with showHeader
+    expect: >
+      each level's name appearing as a band across the schedule. That band IS
+      the grouping - it is what somebody means by "group it by level"
+
+  - given: sort by Level then by Mark
+    expect: >
+      appliedOrder reading "Level ascending, then Mark ascending", read back from
+      the schedule rather than echoed from the request
+
+  - given: itemized off on a duct schedule with forty identical 450x250 ducts
+    expect: >
+      ONE row for that size, not forty. This is the flag that changes the row
+      count and the only one whose effect is countable
+
+  - given: showGrandTotal on
+    expect: a total row at the bottom, with its title and its count
+
+negative:
+  - given: a schedule already sorted by Mark, now asked to sort by Level
+    expect: >
+      sorted BY LEVEL ONLY, with the Mark rule named in replacedRules. THIS IS
+      THE FIRST CASE TO RUN. A version that appends passes every positive case
+      above and leaves schedules with sort levels nobody chose
+
+  - given: a field name that is not a column in the schedule
+    expect: >
+      named in notPresent, and NOTHING CHANGED on that schedule - not cleared and
+      left unsorted. Clearing then failing is worse than refusing
+
+  - given: a field Revit will not sort by
+    expect: >
+      named in cannotSortBy from CanSortByField, asked BEFORE anything is
+      cleared, and the schedule untouched
+
+  - given: an empty sortFieldNames list
+    expect: >
+      nothing changed and nothing claimed. Zero sorted with no rules touched must
+      be distinguishable from a run that cleared the sorting
+
+  - given: a schedule with no sorting at all before the call
+    expect: >
+      replacedRules EMPTY rather than absent, and the new sort applied. An empty
+      "what was replaced" is information, not a missing section
+
+second_route:
+  - >
+    Revit's own schedule Properties - Sorting/Grouping tab, plus the Itemize
+    every instance tick at its foot. That tab is exactly this fragment's inputs
+    and is what the result is checked against

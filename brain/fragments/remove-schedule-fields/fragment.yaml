@@ -1,0 +1,118 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-058
+semantic-identity: "take these columns out of the schedule, or hide them and keep the field"
+kind: action
+domain: revit.schedules
+capability: REMOVE_SCHEDULE_FIELDS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Takes named columns out of a schedule - or HIDES them and keeps the field -
+  and reports which of the two actually happened to each one.
+
+  **IT EXISTS BECAUSE "REMOVE A COLUMN" WAS RESOLVING TO THE FRAGMENT THAT ADDS
+  ONE.** Measured before this batch, *"remove a column from the schedule"* and
+  *"take the level column out"* both returned `ADD_SCHEDULE_FIELDS`, which is
+  not a near miss - it is the opposite operation, and it would have quietly put
+  the column back that somebody asked to have taken away.
+
+  **HIDING AND REMOVING ARE DIFFERENT JOBS AND BOTH ARE RIGHT ANSWERS.**
+
+  | What you want | What to use |
+  |---|---|
+  | The column off the drawing, the data still available to sort and filter on | `hideOnly` - the field stays |
+  | The field out of the schedule altogether | the default - it is gone |
+
+  Somebody who sorts by Level but does not want a Level column wants the first
+  one, and a fragment offering only the second breaks their schedule while doing
+  exactly what they asked.
+
+  **A FIELD USED BY A SORT OR A FILTER IS REFUSED, NOT SILENTLY CASCADED.**
+  Revit will not let go of a field a rule still points at. Removing that rule
+  too is often the right thing - but it is a SECOND change to the schedule that
+  nobody asked for, and a schedule quietly losing its filter is exactly how a
+  drawing goes out listing every level. So the rules are named, the removal is
+  refused, and `removeDependentRules` is the caller saying yes to it.
+
+  **THE FIELD ORDER IS RE-READ AFTERWARDS.** An absence of exception is not
+  evidence that a field went - the standing lesson from the move and parameter
+  paths. What is reported is what a second read found.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
+  clearing four columns off three schedules is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: fieldNames
+      type: IList<string>
+      source: request
+    - name: hideOnly
+      type: bool
+      source: request
+    - name: removeDependentRules
+      type: bool
+      source: request
+  provides:
+    - name: removed
+      type: int
+    - name: hidden
+      type: int
+    - name: notPresent
+      type: IList<string>
+    - name: refusedInUse
+      type: IList<string>
+    - name: rulesRemoved
+      type: int
+    - name: presentFields
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ScheduleDefinition.GetFieldOrder`,
+  `GetField(ScheduleFieldId)`, `RemoveField(ScheduleFieldId)`, `GetFilters`,
+  `RemoveFilter(int)`, `GetSortGroupFields`, `RemoveSortGroupField(int)` and
+  `ScheduleField.IsHidden`, `GetName` and `ColumnHeading` are present and
+  unchanged 2020 through 2027, with the same argument counts.
+
+  Field identity is `ScheduleFieldId`, not an `ElementId`, so nothing here reads
+  an id as a number and 2024's 64-bit change does not reach it. No units call is
+  made.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "remove a column from the schedule"   -> here
+#   "take the level column out"           -> here
+#   "hide a column but keep the field"    -> here, with hideOnly
+#   "add a column to the schedule"        -> ADD_SCHEDULE_FIELDS - the opposite,
+#                                            and what these sentences used to
+#                                            resolve to
+#   "what columns are there"              -> REPORT_SCHEDULE_DEFINITION, which
+#                                            lists hidden columns too and is
+#                                            how you find the name to pass here
+#   "stop sorting by level"               -> SET_SCHEDULE_SORT_GROUP. Removing
+#                                            the COLUMN is not how you remove
+#                                            the SORT, and this fragment
+#                                            refuses rather than assume so
+
+utterances:
+  - remove a column from the schedule
+  - take the level column out of the schedule
+  - delete this field from the schedule
+  - i do not want that column any more
+  - hide a column in the schedule but keep the field
+  - hide that column on the sheet
+  - take these fields off the schedule

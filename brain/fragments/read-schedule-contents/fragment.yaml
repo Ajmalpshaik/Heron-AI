@@ -1,0 +1,112 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-057
+semantic-identity: "the rows this schedule actually prints, exactly as Revit prints them"
+kind: action
+domain: revit.schedules
+capability: READ_SCHEDULE_CONTENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the schedule's ROWS - the data it puts on the drawing - cell by cell, as
+  the text Revit itself renders. It changes nothing.
+
+  **IT READS THE PRINTED TEXT, AND THAT IS THE WHOLE POINT.**
+  `ViewSchedule.GetCellText` hands back exactly what appears in the cell, which
+  means every number arrives ALREADY FORMATTED IN THE PROJECT'S OWN UNITS - the
+  duct is "450x250" because that is what the drawing says, not 1.4763779527
+  feet needing a conversion this fragment would have to guess at.
+
+  That matters more than convenience. Reading the parameters instead would mean
+  naming a units API to format them, and that call is the one that breaks at
+  Revit 2021. Going through the rendered table sidesteps the whole problem and
+  is simultaneously the more honest answer: **what the schedule says is what
+  gets issued**, and any other reading is a reconstruction of it.
+
+  IT EXISTS BECAUSE *"read me what is in the schedule"* AND *"the duct is
+  missing from the schedule"* HAD NOWHERE TO GO. Measured before this batch,
+  they resolved to `FIND_SCHEDULES` and `CREATE_SCHEDULE` - one finds the
+  schedule and says nothing about its contents, the other makes a second
+  schedule. Neither reads a row.
+
+  **THE ROW COUNT IS THE ANSWER TO THE MISSING-ELEMENT QUESTION.** Somebody
+  saying a duct is missing has a schedule whose filters or phase exclude it.
+  This reports what IS there; `REPORT_SCHEDULE_DEFINITION` reports the rules
+  that decided it. The pair answers the question and neither half does alone,
+  which is why both name the other.
+
+  **A LARGE SCHEDULE IS TRUNCATED AND SAYS SO.** A thousand-row takeoff read
+  whole is not an answer anybody can read, and silently returning the first
+  fifty would be a wrong answer wearing a right one's clothes. The cap is a
+  stated input, the total is always reported, and the truncation is named.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: maxRows
+      type: int
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: rows
+      type: IList<string>
+    - name: totalBodyRows
+      type: int
+    - name: truncated
+      type: bool
+    - name: skippedNotSchedules
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSchedule.GetTableData`,
+  `TableData.GetSectionData`, `TableSectionData.NumberOfRows` and
+  `NumberOfColumns`, `ViewSchedule.GetCellText(SectionType, int, int)` and the
+  `SectionType` enum (`Header`, `Body`, `Summary`, `Footer`, `None`) are present
+  and unchanged 2020 through 2027, with the same argument counts.
+
+  **No units call is made, and none is needed** - the cell text arrives already
+  formatted by Revit in the project's own units, which is the reason this route
+  was chosen over reading the underlying parameters.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "read me what is in the schedule"    -> here - the ROWS
+#   "show me the schedule rows"          -> here
+#   "the duct is missing from my schedule"
+#                                        -> here FIRST to see what is there,
+#                                           then REPORT_SCHEDULE_DEFINITION for
+#                                           the filter that excluded it. Two
+#                                           fragments, one question
+#   "what columns does it have"          -> REPORT_SCHEDULE_DEFINITION - the
+#                                           SET-UP, not the data
+#   "export the schedule to excel"       -> EXPORT_SCHEDULE_TO_CSV - a FILE on
+#                                           disk for somebody else. This puts
+#                                           the rows in the reply
+#   "how many ducts are there"           -> COUNT_ELEMENTS. Reading a schedule
+#                                           to count the model is the long way
+#                                           round and inherits the schedule's
+#                                           own filters
+#   "which schedules are there"          -> FIND_SCHEDULES
+
+utterances:
+  - read me what is in the schedule
+  - show me the rows of the schedule
+  - what does the schedule actually say
+  - print the schedule contents
+  - what is listed in this schedule
+  - the duct is missing from the schedule
+  - is that element in the schedule

@@ -75,6 +75,28 @@ compatibility-note: >
 #
 #   "make a key schedule"            -> CREATE_KEY_SCHEDULE - and this is how
 #                                       its columns get added afterwards
+#   "remove a column"                -> REMOVE_SCHEDULE_FIELDS. THE OPPOSITE
+#                                       OPERATION, and until it was built every
+#                                       "take the level column out" resolved to
+#                                       HERE and would have put the column back
+#   "hide a column but keep the field"
+#                                    -> REMOVE_SCHEDULE_FIELDS with hideOnly
+#   "what columns are there"         -> REPORT_SCHEDULE_DEFINITION - a QUESTION,
+#                                       and it must not be answered by this
+#                                       fragment, which writes
+#   "rename the column heading"      -> SET_SCHEDULE_APPEARANCE. The heading is
+#                                       what PRINTS; the field keeps its name
+#   "sort or group the schedule"     -> SET_SCHEDULE_SORT_GROUP
+#   "filter the schedule"            -> SET_SCHEDULE_FILTERS
+#   "add a formula / calculated column"
+#                                    -> NOT HERE AND NOWHERE IN THIS LIBRARY.
+#                                       A calculated field's formula CANNOT BE
+#                                       WRITTEN through the API: ScheduleField
+#                                       carries no formula member on any release
+#                                       2020 to 2027, checked against the
+#                                       reference assemblies. Revit's route:
+#                                       the schedule's Fields tab, the fx
+#                                       "Calculated Value" button
 
 utterances:
   - add a column to the schedule

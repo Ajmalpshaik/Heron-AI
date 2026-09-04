@@ -1,0 +1,133 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-056
+semantic-identity: "what this schedule is set up to do - its columns, its sorting, its filters"
+kind: action
+domain: revit.schedules
+capability: REPORT_SCHEDULE_DEFINITION
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads back how a schedule is CONFIGURED - the columns it carries, the order
+  they sit in, what it sorts and groups by, what it filters out, and whether it
+  totals. It changes nothing.
+
+  IT EXISTS BECAUSE EVERY QUESTION ABOUT A SCHEDULE WAS BEING ANSWERED BY THE
+  FRAGMENT THAT ADDS COLUMNS TO ONE. Measured against the library before this
+  batch, *"what columns does this schedule have"*, *"show the schedule filter
+  rules"* and *"what fields are in this schedule"* all resolved to
+  `ADD_SCHEDULE_FIELDS` or `FIND_SCHEDULES`. The first is a **write** answering
+  a question; the second finds the schedule and then has nothing to say about
+  it. A question must not be answered by a fragment that modifies anything.
+
+  **A HIDDEN COLUMN IS STILL A COLUMN, and that is the row worth reading.**
+  Revit keeps a hidden field in the definition - it is in the schedule, it is
+  simply not drawn. Somebody looking at the sheet and asking "where did the
+  Level column go" is looking at a schedule that still HAS the Level column.
+  Listing only what is visible would confirm their wrong guess, so hidden
+  columns are listed and marked rather than omitted.
+
+  **A FILTER'S NUMERIC VALUE IS REPORTED IN REVIT'S INTERNAL UNITS AND SAID TO
+  BE.** A double filter value could be a length, an airflow, a pressure or an
+  angle, and telling them apart needs the units API - which is the call that
+  breaks at Revit 2021 and is forbidden here. So the number is handed back raw
+  with the internal-units caveat attached rather than converted on a guess. A
+  number converted by the wrong rule is worse than a number nobody converted:
+  it looks finished.
+
+  **A FILTER VALUE IS READ THROUGH THE GETTER THAT MATCHES ITS KIND.** Asking
+  a string filter for its double value throws. Each filter is asked what kind
+  of value it holds first, which is also the honest way to report a filter that
+  holds no value at all - "has a value" and "is blank" are real filter types.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: fieldNames
+      type: IList<string>
+    - name: hiddenFieldNames
+      type: IList<string>
+    - name: filterCount
+      type: int
+    - name: sortFieldCount
+      type: int
+    - name: skippedNotSchedules
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSchedule.Definition`,
+  `ScheduleDefinition.GetFieldOrder`, `GetField(ScheduleFieldId)`,
+  `GetSortGroupFields`, `GetFilters`, `IsItemized`, `ShowGrandTotal`,
+  `ScheduleField.GetName`, `ColumnHeading`, `IsHidden`, and `ScheduleFilter`'s
+  `FilterType` and its five value getters are present and unchanged 2020
+  through 2027.
+
+  **No units call is made anywhere, deliberately.** `ScheduleField.UnitType`
+  exists on 2020 and is GONE by 2027, where the replacement is `GetSpecTypeId`
+  - a member 2020 has never had. Naming either one would split this fragment in
+  two, and neither is needed to report what a schedule is set up to do.
+
+  Field identity is `ScheduleFieldId`, which is not an `ElementId`, so nothing
+  here reads an id as a number and 2024's 64-bit change does not reach it.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what columns does this schedule have"  -> here
+#   "show the schedule filter rules"        -> here
+#   "add a column to the schedule"          -> ADD_SCHEDULE_FIELDS - a WRITE.
+#                                              This fragment is the question
+#                                              that one was answering
+#   "take a column out"                     -> REMOVE_SCHEDULE_FIELDS
+#   "sort the schedule by level"            -> SET_SCHEDULE_SORT_GROUP
+#   "filter the schedule to level 2"        -> SET_SCHEDULE_FILTERS
+#   "read me what is IN the schedule"       -> READ_SCHEDULE_CONTENTS - the
+#                                              ROWS, the data. This fragment
+#                                              reports the SET-UP, and those
+#                                              are different questions that
+#                                              sound alike
+#   "which schedules are there"             -> FIND_SCHEDULES, which is what
+#                                              hands the schedules to here
+#   "show units as mm in that column"       -> CANNOT BE DONE by any fragment
+#                                              here. The unit is `UnitType` on
+#                                              2020 and `GetSpecTypeId` from
+#                                              2022; the first is gone by 2027,
+#                                              the second never existed on 2020,
+#                                              and every fragment here is one
+#                                              implementation for all eight
+#                                              releases. Revit's route: the
+#                                              Formatting tab, Field Format.
+#                                              SET_SCHEDULE_APPEARANCE carries
+#                                              this same row
+#   "add a formula / calculated column"     -> CANNOT BE DONE either:
+#                                              ScheduleField carries no formula
+#                                              member on any release. Revit's
+#                                              route: the Fields tab, the fx
+#                                              Calculated Value button.
+#                                              ADD_SCHEDULE_FIELDS carries this
+#                                              same row
+
+utterances:
+  - what columns does this schedule have
+  - what fields are in this schedule
+  - show the schedule filter rules
+  - how is this schedule sorted
+  - what is this schedule filtered on
+  - is there a total on this schedule
+  - why is the level column not showing
+  - what is this schedule set up to do
