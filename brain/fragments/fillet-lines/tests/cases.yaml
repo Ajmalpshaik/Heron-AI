@@ -1,0 +1,50 @@
+positive:
+  - given: >
+      two model lines meeting at 90 degrees, filleted at 300 mm
+    expect: >
+      an arc tangent to both, both lines cut back exactly to their tangent
+      points, and NO gap at either join. Measure the arc's radius in Revit -
+      300 mm, not 300 feet, which is the mistake a missing conversion makes
+
+  - given: two detail lines in a named view, at 45 degrees
+    expect: >
+      the same, all three new elements in that view. A 45 degree corner needs a
+      longer tangent than a 90 for the same radius, so the lines are cut back
+      further - that difference is the tangent arithmetic working
+
+  - given: the three new ids reported back
+    expect: >
+      all three real and selectable, and the two old ids gone. The report has
+      to name them, because anything that referred to the old ones is now
+      broken
+
+negative:
+  - given: two model lines that ALREADY share a coincident endpoint
+    expect: >
+      a real fillet. THIS IS THE FIRST CASE TO RUN, and it is why the lines are
+      deleted and redrawn rather than edited. Shortening them in place reports
+      success, commits cleanly, and leaves the original geometry on re-read -
+      the arc appears and the corner it was supposed to round is still square
+
+  - given: a 2000 mm radius on lines only 900 mm long
+    expect: >
+      refused, with the tangent length it would need AND the length available.
+      Nothing deleted. A refusal without those numbers leaves the caller
+      guessing a smaller radius
+
+  - given: two ducts handed in
+    expect: >
+      refused by name, pointing at PLACE_MEP_FITTING. Not an arc drawn near
+      them - an MEP corner is a fitting, and a drafting arc beside a duct looks
+      right on a plan and is not in the model
+
+  - given: two lines at 180 degrees
+    expect: refused. The arithmetic gives an enormous arc rather than an error
+
+  - given: detail lines with no view named
+    expect: refused, nothing deleted
+
+second_route: >
+  Revit's own Fillet Arc tool run on an identical pair, and the two arcs
+  compared - radius, tangent points, and whether the source lines were shortened
+  to the same place

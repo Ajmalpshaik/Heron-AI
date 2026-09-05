@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-SEL-008
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-013
+semantic-identity: "what is actually in that filter i saved earlier"
+kind: filter
+domain: revit.selection
+capability: SELECT_FROM_SAVED_SET
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads a named filter back out as a set of elements - the other half of
+  CREATE_SELECTION_FILTER, which saves a set and could not until now get it
+  back, and of CREATE_VIEW_FILTER, which writes a rule.
+
+  **The two kinds of filter are the same word and two different things, and
+  this fragment is where that finally bites.** A **selection filter** stores an
+  explicit list of ids: reading it means handing back what was saved, and the
+  answer is the same in every view. A **view filter** stores a RULE - everything
+  whose System Type contains CHW - and there is no list to read. "Its elements"
+  can only mean *the elements that rule matches, in one view*, so a view must be
+  named, and the same rule in a different view is a different answer.
+
+  **So a view filter without a view is refused, not guessed.** Falling back to
+  the active view would answer a question about whichever drawing happened to
+  be open, and would be right often enough that nobody would notice when it was
+  not.
+
+  **A saved list can hold ids that no longer exist**, because deleting an
+  element does not tidy the sets that mentioned it. Those are counted as
+  `missing` rather than dropped, which is the difference between "the set has
+  shrunk" and "the set was always this size".
+
+  **A name that matches nothing is refused with the real names listed**, and
+  the report says which kind each filter is - the thing you have to know before
+  you can ask this question properly.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: filterName
+      type: string
+      source: request
+    - name: view
+      type: View
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: missing
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FilterElement`,
+  `SelectionFilterElement.GetElementIds`, `ParameterFilterElement.GetCategories`
+  and `GetElementFilter` are present 2020 through 2027, compiled at both ends.
+  The categories come back from Revit as ElementIds and are handed straight to
+  `ElementMulticategoryFilter` in that form - never converted to or from a
+  number, which is what would have made 2024's 64-bit ids matter.
+
+# ROUTING - repeated in CREATE_SELECTION_FILTER, CREATE_VIEW_FILTER and
+# REPORT_VIEW_FILTERS.
+#
+#   "what is in that filter i saved" -> here
+#   "get my saved selection back"    -> here
+#   "use that saved set again"       -> here, then whatever acts on it
+#   "save these as a set"            -> CREATE_SELECTION_FILTER - the write
+#   "make a filter for supply air"   -> CREATE_VIEW_FILTER - a RULE, not a list
+#   "what filters exist"             -> REPORT_VIEW_FILTERS - the names and
+#                                       their rules, which is what tells you
+#                                       whether a view is needed here
+#   "put that filter on this view"   -> APPLY_VIEW_FILTER - showing it, rather
+#                                       than reading it
+
+utterances:
+  - what is in that filter i saved
+  - get my saved selection back
+  - select the elements in that filter
+  - use that saved set again
+  - read a selection filter

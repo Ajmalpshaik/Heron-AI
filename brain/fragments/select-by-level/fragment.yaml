@@ -1,0 +1,94 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-012
+semantic-identity: "everything on one level, with no category named first"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_LEVEL
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers "what is on Level 2" when **no category has been named** - the
+  whole-model question a modeller asks before a floor-by-floor check, a level
+  clean-up, or a hand-over of one storey.
+
+  **FILTER_ELEMENTS_BY_CATEGORY already takes a level, and is the better answer
+  whenever a category is known.** It bounds the scan to one category and is
+  cheaper by the size of the model. This exists for the case it cannot serve:
+  no category at all, or several at once. Where they overlap, that one wins,
+  and both files carry the same cross-reference.
+
+  **It shares that fragment's level lookup exactly, including the last entry.**
+  There is no single "which level is this on" call - a wall keeps it on
+  `Wall.LevelId`, many elements on `Element.LevelId`, a family instance on its
+  own parameters, and an MEP curve ONLY on `RBS_START_LEVEL_PARAM`, where the
+  other four are absent rather than empty. A lookup that stops before that last
+  one returns a confident zero for every duct in the model.
+
+  **An element whose level cannot be resolved is COUNTED, not dropped.** That is
+  the same decision, for the same reason: silently dropping it turns a broken
+  lookup into a smaller number with no explanation. A great many elements
+  legitimately have no level - views, sheets, materials, most annotation - so
+  an unbounded run reports a large `unresolvedLevel` and that is correct.
+
+  **Unbounded, this walks the whole model.** Give a category list unless the
+  question really is about every category.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: levelId
+      type: ElementId
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: unresolvedLevel
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Wall.LevelId`, `Element.LevelId` and
+  the five level BuiltInParameters are present 2020 through 2027, compiled at
+  both ends. ElementId is compared to ElementId and never read as a number, and
+  categories are handed to `ElementMulticategoryFilter` as BuiltInCategory
+  values rather than as ElementIds built from them - which is what would have
+  made 2024's 64-bit ids matter here.
+
+# ROUTING - repeated in FILTER_ELEMENTS_BY_CATEGORY and SET_ELEMENT_LEVEL.
+#
+#   "what is on level 2"             -> here. No category named, so the
+#                                       category-bound filter cannot answer it
+#   "select everything on this level" -> here
+#   "all the pipes on level 2"       -> FILTER_ELEMENTS_BY_CATEGORY, which
+#                                       takes a level and bounds the scan to
+#                                       one category. Cheaper, and the right
+#                                       answer whenever a category is named
+#   "what level is this on"          -> READ_ELEMENT_LEVEL - one element, not
+#                                       a sweep
+#   "move these to level 2"          -> SET_ELEMENT_LEVEL - this one only reads
+#   "what levels are there"          -> LIST_LEVELS - the names and elevations,
+#                                       which is what you need before you can
+#                                       name one here
+
+utterances:
+  - what is on level 2
+  - select everything on this level
+  - show me everything on the second floor
+  - find all elements on a level
+  - which elements sit on this storey

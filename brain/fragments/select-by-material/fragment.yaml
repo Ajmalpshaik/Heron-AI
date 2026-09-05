@@ -1,0 +1,101 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-015
+semantic-identity: "the elements made of one material"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_MATERIAL
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows the model to the elements that use one named material - "which walls
+  are fair-faced block", "everything in galvanised steel" - optionally bounded
+  to a list of categories.
+
+  **Revit has no material-to-elements lookup, so this is a SCAN and says so.**
+  Every element in scope is asked what it is made of; there is no index to
+  consult. That is not an implementation detail the caller can ignore - it is
+  why the category bound matters here more than in most filters, and why the
+  scanned count is reported beside the answer.
+
+  **Paint is a separate question and is off by default.** A material can reach
+  an element two ways: as its real make-up, through the type's compound
+  structure or family geometry, or as PAINT applied to one face. "What is this
+  wall made of" and "what did we paint" are different questions with different
+  answers, and folding them together silently would inflate the first. Asking
+  for paint includes both, and the report says which was asked.
+
+  **A material name that does not exist is refused, with the real names
+  listed.** Revit material names are long, near-duplicated and inconsistently
+  punctuated - "Steel, Galvanized" against "Steel - Galvanized" - so a miss is
+  far more often a spelling than an absence, and a bare zero would read as the
+  wrong one.
+
+  **The material usually lives on the TYPE, and that is not a mistake.** An
+  instance reports the materials its type and geometry give it, so every wall
+  of one type answers alike. Changing what one is made of means a new type,
+  which is DUPLICATE_TYPE and then REPLACE_MATERIAL.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: materialName
+      type: string
+      source: request
+    - name: includePaint
+      type: bool
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: scanned
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Material` and
+  `Element.GetMaterialIds(bool)` are present 2020 through 2027, compiled at
+  both ends. The returned ids are compared to the material's ElementId
+  directly, never read as numbers.
+
+# ROUTING - repeated in READ_ELEMENT_MATERIAL, REPLACE_MATERIAL and
+# REPORT_MATERIAL_TAKEOFF.
+#
+#   "which walls are fair faced
+#    block"                          -> here
+#   "everything in galvanised steel" -> here
+#   "what is this wall made of"      -> READ_ELEMENT_MATERIAL - one element,
+#                                       every material it carries, not a sweep
+#   "swap that material for
+#    another"                        -> REPLACE_MATERIAL - this one only reads
+#   "how much of each material"      -> REPORT_MATERIAL_TAKEOFF - quantities,
+#                                       once the elements are chosen
+#   "which materials are unused"     -> PURGE_UNUSED_MATERIALS, which asks the
+#                                       same question of every material at once
+#                                       and is the right shape for that
+#   "make this one wall different"   -> DUPLICATE_TYPE first. Material lives on
+#                                       the type, so changing one instance
+#                                       without a new type changes them all
+
+utterances:
+  - which walls are fair faced block
+  - find everything in galvanised steel
+  - everything in galvanised steel
+  - select elements using this material
+  - show me what is made of concrete
+  - filter by material

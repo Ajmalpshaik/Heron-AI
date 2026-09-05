@@ -75,6 +75,7 @@ compatibility-note: >
 # A CLASH CHECK RUN BEFORE THE INSULATION IS A CLASH CHECK OF THE WRONG MODEL.
 
 utterances:
+  - insulate these
   - insulate these ducts
   - add insulation
   - put 50 mm insulation on these

@@ -1,0 +1,44 @@
+positive:
+  - given: >
+      a model with 40 walls of a type whose core is "Concrete, Cast-in-Place",
+      asked for that name over the walls category
+    expect: >
+      those 40, and the scanned count equal to the total number of walls. Open
+      one wall's type in Revit and read its compound structure to confirm
+
+  - given: the same material with no category list
+    expect: >
+      the 40 walls plus any floor, column or beam using it, and a scanned count
+      in the thousands. Every wall from the bounded run must still be present
+
+  - given: a name typed in the wrong case
+    expect: found anyway
+
+negative:
+  - given: >
+      a wall PAINTED with a material it is not made of, asked with includePaint
+      false and then true
+    expect: >
+      absent from the first answer and present in the second. THIS IS THE FIRST
+      CASE TO RUN. If both answers match, one of the two questions is not being
+      asked, and "what is this made of" has quietly become "what has this
+      material touched"
+
+  - given: '"Steel - Galvanized" asked for in a model whose material is "Steel, Galvanized"'
+    expect: >
+      refused, with the real names listed. Not a bare zero - with names this
+      long and this inconsistently punctuated, a miss is nearly always a
+      spelling, and the list is what makes the next attempt right
+
+  - given: a material that exists but nothing uses
+    expect: >
+      0 elements and a scanned count in the thousands. That is the honest zero,
+      and it is the same answer PURGE_UNUSED_MATERIALS is built on
+
+  - given: an empty material name
+    expect: refused, with the reason
+
+second_route: >
+  A material takeoff schedule filtered to the same material and counted, and
+  one element's type opened in Revit to read its compound structure by hand -
+  the schedule and this fragment could share a mistake, the manual read cannot

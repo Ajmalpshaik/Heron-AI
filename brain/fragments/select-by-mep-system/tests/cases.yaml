@@ -1,0 +1,52 @@
+positive:
+  - given: >
+      a model with supply air runs named SA 1, SA 2 and SA 3, matched on NAME
+      with "SA 1"
+    expect: >
+      only that run's ducts and fittings - SA 2 and SA 3 absent. Select one in
+      Revit and read System Name in Properties to confirm
+
+  - given: the same model matched on TYPE with "Supply Air"
+    expect: >
+      all three runs together, a strictly LARGER set than the name match, and
+      the name match wholly inside it. If the two come back the same size, one
+      of the two parameters is not being read
+
+  - given: '"DXS" matched on type, in a project using short codes'
+    expect: >
+      every DXS 1, DXS 2 and DXS 3 element - a contains match, because that is
+      how these are named and typed
+
+negative:
+  - given: any run at all, with the answer checked for TYPE elements
+    expect: >
+      ZERO of them. THIS IS THE FIRST CASE TO RUN. Uniting four category
+      collectors and applying the instances-only filter to each side before the
+      union silently drops it - measured at 52 elements returned where 4 were
+      right, every extra one a type such as "Radius Elbows / Tees". A count
+      that is an order of magnitude too high, all of it looking like real
+      elements, is the shape of this failure
+
+  - given: matchOn left empty
+    expect: >
+      refused, and told what the two choices mean. Not a default to either -
+      name and type answer different questions and both look plausible
+
+  - given: >
+      a model where every duct has a system NAME, matched on TYPE with a string
+      that appears in the names but not the types
+    expect: >
+      0 matched. Anything above zero means the name parameter is being read
+      while the report says type - which is exactly the bug that put the
+      name-matching behaviour in the wrong fragment before
+
+  - given: ducts that are drawn but connected to nothing
+    expect: >
+      counted in withoutSystem and named in the report. A duct on no system is
+      usually a disconnected duct, and it must not vanish silently from the
+      arithmetic
+
+second_route: >
+  A duct or pipe schedule with System Name and System Type as two separate
+  fields, filtered the same way and counted - the two columns side by side are
+  also the clearest proof that they are different facts
