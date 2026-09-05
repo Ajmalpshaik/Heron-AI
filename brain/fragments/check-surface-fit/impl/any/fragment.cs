@@ -38,7 +38,15 @@ if (rayView == null)
 }
 else
 {
-    var intersector = new ReferenceIntersector(FindReferenceTarget.Element, rayView);
+    // THE TWO-ARGUMENT CONSTRUCTOR DOES NOT EXIST ON ANY RELEASE HERE. This
+    // read `new ReferenceIntersector(FindReferenceTarget.Element, rayView)`
+    // until 2026-09-05, and failed to compile on all EIGHT - it is not a
+    // version split, it is a signature Revit has never shipped. The
+    // filter-first overload is the one that exists, so a filter has to be
+    // given; an inverted ElementIsElementTypeFilter passes every placed
+    // instance and no types, which is what "anything behind it" means.
+    var intersector = new ReferenceIntersector(
+        new ElementIsElementTypeFilter(true), FindReferenceTarget.Element, rayView);
     var unit = direction.Normalize();
 
     foreach (var element in elements)
