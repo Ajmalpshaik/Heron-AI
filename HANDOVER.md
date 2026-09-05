@@ -2775,6 +2775,71 @@ fragment being written at the time.
 
 ---
 
+## 9b. Three sessions at once — the protocol that stops them colliding
+
+**This has been tried, and it went wrong.** Commit `6cdb9f7` is the record: two sessions built fragments
+in parallel, and the merge found **41 capabilities built twice** and **31 ids collided** —
+`FRG-VIEW-014` was `find-schedules` on one branch and `set-view-crop` on the other. A session's work was
+thrown away and a cleanup commit renumbered 36 fragments. Read that commit message before deciding this
+section is over-cautious.
+
+Both failures have one cause. [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start)
+says **"take the next free number in the area"**, and two sessions starting from the same `main` both
+take the same next free number. That rule is correct for one session and broken for three.
+
+### What actually collides, and what does not
+
+A fragment batch changes almost nothing shared. Pull request #8 touched **73 files — 71 of them new
+folders under `brain/fragments/`, and exactly two shared**: `HANDOVER.md` and `NEEDS-CHECKING.md`. So the
+whole conflict surface is two files and the id space, and both can be partitioned before anybody starts.
+
+### The partition
+
+Each session owns **source folders** and **id areas** no other session may touch. Distinct sources are
+what stop two sessions re-authoring the same capability; distinct areas are what stop the ids colliding,
+and they let §9a's "next free number" rule stand exactly as written.
+
+| Session | Branch | Source folders under `AJ-AI-Brain/scripts/` | Id areas | Files |
+|---|---|---|---|---|
+| **A** — views and sheets | `claude/fragments-views` | `actions/sheets-views/`, `actions/visibility/`, `actions/color-graphics/`, `actions/sheet-dates-revisions/` | `VIEW`, `SHT` | 102 |
+| **B** — elements and geometry | `claude/fragments-elements` | `creators/`, `actions/structural-changes/`, `actions/move-copy-rotate/`, `filters/` | `ELE`, `GEO`, `MEP`, `SEL` | 133 |
+| **C** — data, QA and parameters | `claude/fragments-data` | `actions/reporting/`, `actions/qa-checks/`, `actions/parameters-naming/`, `actions/selection/` | `DOC`, `QA`, `PAR` | 94 |
+
+**A fragment belonging in another session's area is not built.** It is listed in the pull request and
+left to the session that owns that area. Reaching across is how the areas stop being disjoint.
+
+`filters/` is the widest gap in the library: 51 source files against **three** `SEL` fragments built.
+
+### The five rules
+
+1. **`git fetch origin main` first**, and branch off the latest `main` — not at push time. The warning at
+   the top of this file exists because a session found out at push time once.
+2. **Do not edit `HANDOVER.md` or `NEEDS-CHECKING.md`.** They are the only two shared files, so all three
+   sessions would conflict on them. The batch summary goes in the **pull request description**, and is
+   folded into this file once, after all three have merged.
+3. **Never invent an agent id.** Use only ids already in the registry on `main`. Eight fragments in
+   `6cdb9f7` carried agent ids the merged registry did not have — all of them one branch's own numbering.
+4. **Compare by capability, not by folder name.** `find-sheets` and `list-sheets` are different folders
+   for the same job, and a folder-name comparison adds a second `FIND_SHEETS` beside main's
+   `LIST_SHEETS`. The check is `grep -h '^capability:' brain/fragments/*/fragment.yaml`.
+5. **Merge one pull request at a time**, and have the other sessions rebase after each merge. Three
+   merges landing together is the situation `6cdb9f7` had to clean up.
+
+### Say this to start a session
+
+> **"Read HANDOVER.md §9b in Heron-AI. You are SESSION A."** — and B and C the same, one per chat.
+
+The table above is the whole briefing: that session's row gives it its sources, its id areas and its
+branch, and the five rules bind all three. Nothing else has to be pasted.
+
+### What is not fragment work
+
+`recipes/` (44 files) become **skills**, not fragments — a recipe is a whole job. `context/` (12) is
+mostly the host's, per [D-46](docs/DECISIONS.md). The real remaining pool is about **330** source files,
+not 379.
+
+---
+
 ## 10. How to work on this
 
 - **The owner is a BIM modeller, not a developer.** Explain in BIM terms. He delegates technical choices
@@ -2837,11 +2902,11 @@ every release from 2020 to 2027. **Every fragment and all ten skills** sit at `D
 but [D-30](docs/DECISIONS.md) being obeyed: promotion needs one proof containing a negative case, and a
 negative case needs a model. `python tools/check-gaps.py` is now the file that answers "what is left",
 because it is computed from disk and this one is not — and where they disagree, believe the tool. It
-currently says **nothing** here is unfinished and **56 are waiting: 48 on a Revit, plus the unproven
-fragments as one further item, 3 on Windows, 1 on the .NET SDK (`A9`, the uncompiled batch), 1 on a
-network that can reach the weights host, 1 on the owner, and 1 on an optional dependency this machine
-does not have.** Re-derive that from the tool rather than editing the digits — a total that disagrees
-with its own breakdown is the cheapest drift there is to catch, and it has survived here before.
+currently says **nothing** here is unfinished and **55 are waiting: 49 on a Revit — `A9`, the uncompiled
+batch, among them — plus the unproven fragments as one further item, 3 on Windows, 1 on a network that
+can reach the weights host, and 1 on the owner.** Re-derive that from the tool rather than editing the
+digits — a total that disagrees with its own breakdown is the cheapest drift there is to catch, and it
+has survived here before.
 Almost nothing in this repository is waiting on another session; it is waiting on a machine — and **four
 times now**, something believed to be waiting on a machine was waiting on somebody trying it. The
 newest was `A8`, filed under *needs Windows* when what it needed was `pip install mcp` — and trying it
