@@ -92,6 +92,20 @@ USINGS = [
     "Autodesk.Revit.DB.Electrical",
     "Autodesk.Revit.DB.Structure",
     "Autodesk.Revit.UI",
+    # Extensible storage - the data an add-in writes INTO the file, which is
+    # invisible everywhere in Revit's own interface. Added 2026-09-06 for
+    # REPORT_ADDIN_DATA. There is no way to reach a Schema without naming its
+    # namespace, and writing it out in full inside the fragment is worse than
+    # declaring it here: tools/check-structure.py forbids `Autodesk.Revit` in
+    # brain/ precisely so a fragment can only use what THIS LIST says it has.
+    # A fully-qualified name smuggles in a namespace the executor was never
+    # told to supply - green here, missing at the PC.
+    #
+    # A namespace whose types a fragment could reach ANOTHER way does not
+    # belong here. The Revit exceptions namespace was deliberately NOT added
+    # for COMPARE_MODELS: it matches the two exception type NAMES instead,
+    # which needs nothing declared.
+    "Autodesk.Revit.DB.ExtensibleStorage",
 ]
 
 CSPROJ = """<Project Sdk="Microsoft.NET.Sdk">

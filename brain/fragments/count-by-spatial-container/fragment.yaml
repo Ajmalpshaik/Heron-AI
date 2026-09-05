@@ -1,0 +1,142 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-016
+semantic-identity: "how many of these are in each room, when the elements carry no room parameter to group by"
+kind: action
+domain: revit.reporting
+capability: COUNT_BY_SPATIAL_CONTAINER
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Counts the elements handed in, broken down by which room, MEP space or HVAC
+  zone physically CONTAINS each one - decided by testing the element's point
+  against the container's own boundary, not by reading a parameter. It changes
+  nothing.
+
+  **`GROUP_AND_COUNT` CANNOT DO THIS, AND THE REASON IS NOT A LIMITATION OF THAT
+  FRAGMENT.** It groups on a parameter value, which is the right mechanism for
+  almost everything. **Most MEP elements have no Room or Space parameter at
+  all** - a duct does not know which room it passes through, and nothing writes
+  it there. Asking for *"how many diffusers per room"* through a parameter
+  lookup returns one enormous group of blanks and looks like an answer.
+
+  **PHASE IS NOT ONE OF THESE, AND IT IS WORTH SAYING WHY NOT.** *"Count by
+  phase created"* looks like the same question and is not: phase IS an ordinary
+  parameter, so `GROUP_AND_COUNT` already does it, faster and exactly. Only room,
+  space and zone need the geometric test, and only those three are offered here.
+
+  **THE ZONE IS ONE HOP FURTHER THAN THE SPACE, AND SAYS SO WHEN IT FAILS.** A
+  zone is not tested against directly: the containing space is found first, and
+  the zone is the one that space belongs to. So an element can miss for two
+  distinct reasons - no space contains it, or the space that does has not been
+  put in a zone - and those are reported as two different groups, because they
+  are two different jobs for two different people.
+
+  **THE TEST POINT IS TAKEN AT THE CONTAINER'S OWN HEIGHT, WHICH IS THE WHOLE
+  TRICK.** A room's containment test is answered at the room's own level, and a
+  diffuser sits at ceiling height - so testing the element's own Z reports
+  everything as being in no room. The element's X and Y are used with the
+  container's Z. This is the same correction the room and space filters already
+  make, reused rather than rediscovered.
+
+  **AN UNPLACED OR UNENCLOSED ROOM IS SKIPPED, NOT ASKED.** A room with no area
+  is either not placed or not bounded; its containment test cannot mean
+  anything, and asking it anyway is how an element gets filed under a room that
+  does not exist on the drawing. The count of those skipped is reported, because
+  a model full of them is the real finding.
+
+  **IT IS AN ELEMENT-BY-CONTAINER SWEEP AND THAT COST IS STATED.** Every element
+  is tested against every container until one matches. On a large floor with
+  many rooms that is real work, and it is the price of an answer no parameter
+  carries.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "room", "space" or "zone". Anything else is refused by name rather than
+    # quietly treated as one of them.
+    - name: containerKind
+      type: string
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: groupNames
+      type: IList<string>
+    - name: groupCounts
+      type: IList<int>
+    - name: placed
+      type: int
+    - name: unplaced
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Room.IsPointInRoom`,
+  `Space.IsPointInSpace`, `Space.Zone`, `Zone.Name`, `SpatialElement.Area`,
+  `Element.get_BoundingBox` and `LocationPoint.Point` are present and unchanged
+  2020 through 2027.
+
+  `Room` comes from the architecture namespace and `Space` and `Zone` from the
+  mechanical one; the fragment harness imports both. **`Area` is declared on
+  `SpatialElement`, not on `Room` or `Space`**, which is why a check that stops
+  at the declared type reports it as absent - it is inherited and it is there.
+
+  Containers are found by CATEGORY and then cast, never by `OfClass`, so an
+  element type or a room tag cannot arrive where a room is expected.
+
+  No units API is called. The one number compared to zero is an area in Revit's
+  internal units, and the comparison is to zero, which needs no conversion.
+
+  No `ElementId` is read as a number.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "how many diffusers in each room"    -> here. The element carries no room
+#                                           parameter, so this is a GEOMETRIC
+#                                           test, not a lookup
+#   "count these by space"               -> here
+#   "count these by zone"                -> here. Via the containing space - a
+#                                           zone is not tested against directly
+#   "count these by system name"         -> GROUP_AND_COUNT. That IS a parameter,
+#                                           and the lookup is faster and exact
+#   "count these by phase created"       -> GROUP_AND_COUNT. Phase is an ordinary
+#                                           parameter and does NOT need this
+#   "which of these are in this room"    -> FILTER_ELEMENTS_IN_ROOM - the SET,
+#                                           for one room. This gives the counts
+#                                           for all of them
+#   "how many are there"                 -> COUNT_ELEMENTS
+#   "total the length per group"         -> SUM_BY_GROUP - a measured quantity
+#                                           rather than a count
+#   "which rooms are missing services"   -> CHECK_ROOM_MEP_COMPLETENESS
+#   "how many diffusers in here"         -> FILTER_ELEMENTS_IN_ROOM. "IN HERE"
+#                                           NAMES ONE ROOM; this fragment answers
+#                                           the same question for every room at
+#                                           once. Ranking put this one first on
+#                                           2026-09-06 and that is the wrong way
+#                                           round
+#   "count these by hvac zone"           -> here. Ranked SECOND on 2026-09-06
+#                                           behind CREATE_HVAC_ZONE, which MAKES
+#                                           a zone. A counting sentence must not
+#                                           reach a fragment that creates one
+
+utterances:
+  - how many diffusers are in each room
+  - count these elements by room
+  - count these by space
+  - count these by hvac zone
+  - break this count down per room
+  - how many of these per space
+  - which room is each of these in, as a count

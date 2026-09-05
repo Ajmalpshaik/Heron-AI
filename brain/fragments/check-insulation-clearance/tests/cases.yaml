@@ -1,0 +1,65 @@
+positive:
+  - given: two pipes 120 mm apart on the bare geometry, each with 50 mm insulation, rule 100 mm
+    expect: >
+      A VIOLATION at 20 mm real gap. THE BARE CHECK PASSES THIS PAIR. That
+      difference is the entire reason the fragment exists, and it is the case to
+      check first
+
+  - given: the same pair with the rule at 20 mm
+    expect: >
+      no violation, and the bare figure, both jackets and the real gap all still
+      printed on request. The arithmetic has to be visible or nobody can argue
+      with the number
+
+  - given: a duct carrying two insulation elements, 25 mm and 50 mm
+    expect: >
+      50 mm used, not 75. The thickest wrap governs; the sum would invent a
+      jacket nobody specified
+
+  - given: a duct with lining but no insulation
+    expect: >
+      treated as bare. Lining is inside the duct - it takes air away, not
+      outside space
+
+negative:
+  - given: a set where nothing is insulated in the model and assumeThicknessMm is 0
+    expect: >
+      THE WARNING, stated before any result, that this is exactly the
+      bare-geometry answer. THIS IS THE CASE THE FRAGMENT MUST NOT PASS
+      SILENTLY - a clean run over an unlagged model looks identical to a clean
+      run over a lagged one, and one of the two is worthless
+
+  - given: two elements that share a connector, ignoreConnected true
+    expect: >
+      no violation between them. A duct and the fitting welded to it are at zero
+      clearance by construction, and reporting that fills the output with
+      findings nobody can act on
+
+  - given: an element with no bounding box
+    expect: >
+      counted and named as skipped, in words, and explicitly NOT as a pass
+
+  - given: a wall, a column, or anything that cannot carry a wrap
+    expect: >
+      zero insulation and NO exception escaping. GetInsulationIds throws by
+      design for those, and that throw is what identifies them - a pre-filter by
+      category would miss whatever the API accepts and nobody predicted
+
+  - given: fewer than two measurable elements
+    expect: >
+      "no pair could be compared", said as not being every pair passing
+
+  - given: any run at all
+    expect: NOTHING CHANGED, and no transaction opened
+
+second_route:
+  - >
+    A Revit dimension between the two insulation elements themselves - not
+    between the hosts. The wrap is a real element with real faces, so the
+    dimension IS the number this fragment computes, and disagreement means the
+    subtraction is wrong
+
+  - >
+    Run CHECK_MINIMUM_CLEARANCE over the same pair and subtract the two
+    thicknesses by hand. It samples the real faces rather than the boxes, so it
+    is the check on whether the box approximation is costing anything here

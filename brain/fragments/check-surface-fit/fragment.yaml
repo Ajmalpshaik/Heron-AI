@@ -80,6 +80,21 @@ compatibility-note: >
   Elements are compared by `ElementId`, never by a number. `maxDistance` and
   `evenness` arrive in internal FEET.
 
+  **THE CONSTRUCTOR WAS WRONG ON ALL EIGHT RELEASES UNTIL 2026-09-05, AND THIS
+  NOTE SAID IT HAD BEEN CHECKED.** It called
+  `new ReferenceIntersector(FindReferenceTarget.Element, rayView)` - a
+  two-argument form Revit has never shipped, on any release here. It is now the
+  filter-first overload with an inverted `ElementIsElementTypeFilter`, which
+  passes every placed instance and no types.
+
+  The reason it survived is worth more than the fix. `tools/check-api-surface.py`
+  MATCHES BY NAME, and `ReferenceIntersector` exists everywhere, so a wrong
+  SIGNATURE reads as present - its own docstring says exactly that. The compile
+  gate is the only thing that reads an argument list, and no compiler had ever
+  read this fragment. **A sentence claiming a member was "read off the reference
+  assemblies at both ends" is a claim about names only until something compiles
+  it.**
+
 # ROUTING - repeated in MOVE_TO_RAY_HIT, SNAP_TO_GRID and CHECK_OBSTRUCTIONS.
 #
 #   "is the equipment sitting flat on the floor" -> here

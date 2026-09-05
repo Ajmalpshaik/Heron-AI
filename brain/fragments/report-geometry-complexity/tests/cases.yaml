@@ -1,0 +1,61 @@
+positive:
+  - given: a whole category of mechanical equipment
+    expect: >
+      the types ranked by fine triangles times instance count, with the ranking
+      matching what somebody who knows the model already suspects is heavy. That
+      agreement is the check - the number is new, the suspicion is not
+
+  - given: a family with proper detail-level control
+    expect: >
+      a small coarse figure against a large fine one, and the words "has
+      detail-level control". A family that behaves must not read like a problem
+
+  - given: 400 instances of one 12,000-triangle type and 1 instance of a 200,000-triangle type
+    expect: >
+      the 400-instance type ABOVE the single heavy one - 4.8 million against
+      200,000. Ranking on the type's own count would invert that, and the wrong
+      family would get replaced
+
+  - given: a downloaded manufacturer family, one instance, before it goes in the library
+    expect: >
+      three figures and the behaviour verdict, which is enough to accept or
+      reject it without loading it into a live model first
+
+negative:
+  - given: a face-hosted void, an annotation, or a type whose geometry does not come back
+    expect: >
+      "NOT MEASURED" IN WORDS, and NOT a zero. THIS IS THE CASE THAT MATTERS. A
+      zero sorts the heaviest thing in the model to the bottom of the ranking and
+      reads as good news, which is worse than no ranking
+
+  - given: maxTypes smaller than the number of distinct types present
+    expect: >
+      the count of types never looked at, stated, and the summary saying the
+      ranking is of what was measured rather than of the model. A truncated
+      ranking presented as complete is a wrong answer, not a partial one
+
+  - given: lines, groups or views in the set
+    expect: >
+      counted as "no type" and excluded, in words. Silence would read as them
+      having been measured and found weightless
+
+  - given: any model at all
+    expect: >
+      NOTHING CHANGED, no transaction opened, and no view's detail level altered.
+      The detail levels here are geometry-read options, not a view setting
+
+  - given: an empty element list
+    expect: >
+      "nothing could be measured" with the note that it is a reading that failed,
+      not a model with no geometry
+
+second_route:
+  - >
+    Revit's own Manage - Purge Unused and the model's file size before and after
+    swapping the top-ranked family. A real drop confirms the ranking pointed at
+    the right family; no drop says it did not
+
+  - >
+    Export the family to its own .rfa and look at the geometry in the Family
+    Editor. A thread, a modelled fastener or a full assembly at coarse detail is
+    visible by eye once the ranking says where to look

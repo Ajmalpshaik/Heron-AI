@@ -1,0 +1,67 @@
+positive:
+  - given: a view pattern of "MEP-*" and twelve views called "Copy of Copy of Level 1"
+    expect: >
+      all twelve reported, each named, with the pattern quoted beside it. Quoting
+      the rule in the finding is what lets somebody disagree with the rule rather
+      than with the tool
+
+  - given: a sheet pattern of "M-*" over a mixed architectural and MEP sheet set
+    expect: >
+      the non-MEP sheets reported as not matching. That is the correct answer for
+      the rule given - the rule, not the model, is the thing to argue with
+
+  - given: the suspect list containing "copy of" and no pattern at all
+    expect: >
+      the copies found, AND the section saying no pattern was given so a
+      correctly-shaped wrong name passes. A partial check announced as partial is
+      useful; announced as complete it is worse than nothing
+
+  - given: a workshared model and a workset pattern
+    expect: >
+      the user worksets checked by name, with NO ids attached to those findings -
+      a workset id is not an element id and would resolve to nothing
+
+negative:
+  - given: a rule set naming no pattern for sheets and no suspect names
+    expect: >
+      "NOT CHECKED" FOR SHEETS, with the number present, and the section counted
+      as not checked. THIS IS THE CASE THAT MATTERS. A zero here would read as
+      every sheet passing when nobody looked at one
+
+  - given: a required parameter that is not on the category at all
+    expect: >
+      counted as NOT PRESENT and described as project setup - separately from
+      BLANK, which is data entry. Combining them sends the work to the wrong
+      person, which is the whole reason they are counted apart
+
+  - given: a model that is not workshared
+    expect: >
+      worksets NOT CHECKED, said as a fact about the model rather than a pass
+
+  - given: an MEP model with duct and pipe systems
+    expect: >
+      the systems collected and NO EXCEPTION. Collecting them through
+      OfClass(typeof(MEPSystem)) throws at runtime because that class is
+      abstract, and it would take the whole sweep down on exactly the model this
+      is for
+
+  - given: view templates present and skipViewTemplates true
+    expect: >
+      none of them reported. A project's templates rarely follow the sheet naming
+      convention and flagging them buries the findings
+
+  - given: any run at all
+    expect: >
+      NOTHING RENAMED AND NOTHING SET. This reports; RENAME_ELEMENTS and
+      EDIT_TEXT_VALUES are what fix it
+
+second_route:
+  - >
+    Revit's own Project Browser sorted by name, and the Sheet List schedule. The
+    badly named views and the wrong sheet numbers are visible there by eye, which
+    is how a first run should be checked before anybody trusts the counts
+
+  - >
+    The project's BIM execution plan or naming standard document. The patterns
+    handed in should be traceable to a written rule, and a finding nobody can
+    trace to one is a finding nobody will act on

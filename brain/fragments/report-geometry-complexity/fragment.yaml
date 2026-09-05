@@ -1,0 +1,137 @@
+heron-agent: HERON-REVIT-PRF-017
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-018
+semantic-identity: "which families are making this model slow, measured rather than guessed"
+kind: action
+domain: revit.document
+capability: REPORT_GEOMETRY_COMPLEXITY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Measures how much geometry each family TYPE actually carries - as a triangle
+  count, at every detail level - and ranks the types by what they cost the model
+  once their instances are counted. The answer to *"the model has got heavy and
+  nobody knows why"*, and the check to run on a downloaded manufacturer family
+  before it enters the library. It changes nothing.
+
+  **TRIANGLES, NOT FILE SIZE, BECAUSE DRAWING IS WHAT COSTS.** A family's file
+  size says what it weighs on disk. What slows Revit down is what it has to
+  DRAW: every face of every solid, tessellated into triangles, for every
+  instance in every open view. `Face.Triangulate().NumTriangles` is that number
+  directly. A cast-in sleeve with a modelled thread can carry more triangles
+  than an air handling unit, and neither its name nor its size hints at it.
+
+  **MEASURED PER TYPE AND MULTIPLIED BY THE INSTANCES, WHICH IS THE WHOLE
+  POINT.** Geometry belongs to the type, so four hundred instances of a
+  twelve-thousand-triangle family is 4.8 million triangles from ONE library
+  choice. The type's own count is not what hurts; the product is, and the
+  ranking is on the product.
+
+  **ALL THREE DETAIL LEVELS ARE MEASURED, BECAUSE THE COMPARISON IS THE
+  ACTIONABLE PART.** A family reading 40 triangles coarse and 40,000 fine is
+  BEHAVING - it has proper detail-level control and costs nothing on a working
+  plan. A family with the same large number at all three has none, and pays full
+  price in every view. That gap says whether to fix the family or replace it,
+  and one number alone says neither.
+
+  **IT IS A COMPARISON, NOT A SCORE, AND THE READ-BACK SAYS SO.** Revit's
+  tessellation is what it decides at the moment of asking, not a stored
+  property. The numbers rank families against each other honestly and mean
+  nothing as absolutes, so no threshold is built in and none should be read into
+  them.
+
+  **A TYPE THAT COULD NOT BE MEASURED IS NAMED, NEVER SCORED ZERO.** A family
+  whose geometry does not come back - a face-hosted void, a corrupt type, a
+  category whose geometry is view-specific - is listed as unmeasured. Reporting
+  it as zero would put the heaviest thing in the model at the bottom of the
+  ranking and read as good news.
+
+  **THE COST OF ASKING IS REAL AND IS CAPPED.** Reading geometry three times per
+  distinct type is genuine work, so `maxTypes` stops a whole-model run running
+  away, and the summary says how many types were left unmeasured by the cap
+  rather than quietly truncating the ranking.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: maxTypes
+      type: int
+      source: request
+    - name: listTop
+      type: int
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: heaviestTypeName
+      type: string
+    - name: typesMeasured
+      type: int
+    - name: typesUnmeasured
+      type: int
+    - name: totalTriangles
+      type: long
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Options`, `Options.DetailLevel`,
+  `ViewDetailLevel`, `Element.get_Geometry`, `GeometryElement`,
+  `GeometryInstance.GetInstanceGeometry`, `Solid.Faces`, `Face.Triangulate` and
+  `Mesh.NumTriangles` are present and unchanged 2020 through 2027.
+
+  `ElementId` is used only as a dictionary key and compared to other
+  `ElementId`s - never read as a number, so the 2024 widening to 64-bit does not
+  reach this fragment.
+
+  No units API is called: a triangle count is a count, and the one length here
+  is never converted.
+
+  `Options.ComputeReferences` is left off deliberately. References cost time and
+  this fragment measures rather than picks.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "why has this model got so heavy"    -> here, for the GEOMETRY half of that
+#                                           question. Warnings, links and
+#                                           purge-able types are the other half
+#   "which family is the heavy one"      -> here. Ranked on triangles x
+#                                           instances, not on file size
+#   "is this downloaded family any good" -> here, before it goes in the library.
+#                                           The coarse-to-fine gap is the answer
+#   "what warnings is this model carrying"-> READ_MODEL_WARNINGS
+#   "which families are not used"        -> FIND_UNUSED_FAMILIES - a different
+#                                           kind of weight, and cheaper to fix
+#   "how big is this element"            -> REPORT_BOUNDING_BOX for its extent,
+#                                           MEASURE_ELEMENT_VOLUME for its
+#                                           volume. Neither says what it costs
+#                                           to draw
+#   "how many of these are there"        -> COUNT_ELEMENTS
+#   "check this family before i load it" -> here, and READ THIS ROW. Ranked on
+#                                           2026-09-06 that sentence resolves to
+#                                           LOAD_FAMILY, which is a MODIFY - the
+#                                           fragment that DOES the thing the
+#                                           sentence asks to check first. The
+#                                           exact phrasing is served here by
+#                                           identity; a paraphrase of it is not,
+#                                           and that is the dangerous direction
+
+utterances:
+  - which families are making this model slow
+  - why has this model got so heavy
+  - find the heaviest families in the model
+  - how much geometry does this family carry
+  - is this manufacturer family too detailed
+  - which family should i replace to speed this up
+  - check this family before i load it

@@ -1,0 +1,65 @@
+positive:
+  - given: a file of 40 rows of Mark values against 40 selected air terminals
+    expect: >
+      40 values written, 40 rows matched, and the Marks visible in Revit's own
+      Properties palette afterwards - each one different, which is the thing
+      WRITE_ELEMENT_PARAMETERS cannot do
+
+  - given: a row whose value is quoted and contains a comma
+    expect: >
+      the comma preserved inside the value, not treated as a column break. A
+      spreadsheet writes that quoting and a parser that ignores it silently
+      shifts every column after it
+
+  - given: a numeric column exported as "450" from a project showing millimetres
+    expect: >
+      450 mm on the way back in, through Revit's own parsing. Nothing here
+      converts units, so the value means what the project displays
+
+  - given: a type parameter column and includeTypeParameters true
+    expect: >
+      written on the TYPE, with the row saying so. A type edit reaches every
+      instance sharing it, which is a bigger change than the row looks
+
+negative:
+  - given: a file exported from a DIFFERENT model
+    expect: >
+      every row reported as matching no element in the set handed in, and NOTHING
+      WRITTEN. THIS IS THE CASE THAT MATTERS. Resolving rows against the whole
+      document instead would apply a stale file to whatever happened to share an
+      id
+
+  - given: a row whose parameter is read-only
+    expect: >
+      counted as read-only and NOT as "value refused". Revit computes that value;
+      the fix is to pick a different target, not to correct the cell
+
+  - given: a header naming a parameter the category does not have
+    expect: >
+      counted separately from both other skips, and named. The fix is the header
+      or the project setup, and a merged "skipped" number sends it to neither
+
+  - given: a value Revit accepts and then rounds
+    expect: >
+      reported as READS BACK DIFFERENT, with both values. A Set call returning
+      true is not a value in the model, and this is the count that says which
+
+  - given: an empty element list
+    expect: >
+      "nothing was written" with the instruction to run the filter first - not a
+      quiet success over nothing
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and one
+      operation is one undo entry
+
+second_route:
+  - >
+    Revit's own schedule of the same parameter over the same elements, exported
+    again after the import. It should come back byte-identical to what went in,
+    apart from the values Revit is reported to have reformatted
+
+  - >
+    The Properties palette on three elements picked at random from the file.
+    Manual, and it is what catches a whole column written one row out of step

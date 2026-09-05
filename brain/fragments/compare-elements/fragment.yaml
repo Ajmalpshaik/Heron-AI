@@ -75,6 +75,19 @@ compatibility-note: >
   by name through the document instead, which is also what a person would want
   to read.
 
+# ROUTING - the same rows are in COMPARE_MODELS.
+#
+#   "what changed between them"          -> here. TWO ELEMENTS, inside ONE model
+#   "what is different between these two"-> here
+#   "what changed since the last issue"  -> COMPARE_MODELS - two MODELS, and it
+#                                           needs a FILE PATH. A sentence that
+#                                           names no file cannot be that
+#                                           question, which is how the two are
+#                                           told apart. Added 2026-09-06, when
+#                                           COMPARE_MODELS was built and started
+#                                           outranking this fragment on its own
+#                                           declared sentence
+
 utterances:
   - what is different between these two
   - why is this one different

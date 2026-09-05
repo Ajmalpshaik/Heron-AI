@@ -1,0 +1,130 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-017
+semantic-identity: "what other add-ins have written into this file, where nothing in Revit's interface shows it"
+kind: action
+domain: revit.document
+capability: REPORT_ADDIN_DATA
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists every Extensible Storage schema this Revit session carries - its name,
+  the vendor who defined it, whether we are allowed to read it, its fields where
+  we are - and counts how many elements in THIS model actually hold data of that
+  shape. It changes nothing.
+
+  **EXTENSIBLE STORAGE IS THE FOURTH PLACE DATA HIDES, AND THIS LIBRARY WAS
+  LOOKING IN THREE.** Parameters, project information and element properties are
+  all visible in Revit's own interface, so a modeller can find them by clicking.
+  An add-in can instead define a *schema* - a shape with a GUID - and attach an
+  entity of that shape to an element, or to an invisible document-wide record.
+  The value is then inside the `.rvt` with nothing in the interface showing it.
+  That is where a coordination tool keeps its own ids, where a manufacturer's
+  add-in keeps a product code, and where a tool records *"I have processed
+  this"*. `REPORT_PARAMETER_INVENTORY` lists every parameter an element carries
+  and would list none of this.
+
+  **A SCHEMA CAN REFUSE TO BE READ, AND THAT IS THE DESIGN, NOT A FAULT.** Each
+  one carries a read and a write access level - public, vendor or application. A
+  vendor-level schema is readable only by code signed with that vendor's id, so
+  `ReadAccessGranted()` comes back false here and the FIELDS stay hidden. The
+  schema's name, vendor, GUID and carrier count are still visible, which is
+  normally the question anyway. **The refusal is reported and obeyed.** The
+  access level is another vendor's decision about their own data; there is no
+  option here for getting round it and there should not be.
+
+  **SCHEMAS ARE SESSION-WIDE AND CARRIERS ARE PER-MODEL, WHICH IS THE WHOLE
+  READING OF THE OUTPUT.** `ListSchemas()` returns every schema any loaded
+  add-in has registered in this Revit session, including ones with no data in
+  this file at all. A schema with zero carriers means *an add-in is installed*;
+  a schema with carriers means *this model has been written to*. Those are
+  different facts and dropping the empty ones would hide the difference, so both
+  are listed and each is labelled.
+
+  **THE INVISIBLE DOCUMENT-WIDE RECORD IS RECOGNISED BY TYPE NAME, NOT BY A
+  CAST, AND THAT IS A COMPILER CONSTRAINT RATHER THAN A STYLE CHOICE.** Data
+  that belongs to the model as a whole rather than to any element usually sits
+  on a `DataStorage` element, which is not selectable and has no category. That
+  type is public-looking and NOT publicly accessible - naming it is a compile
+  error on every release here, checked on 2020 on 2026-09-05 by naming it and
+  reading the error. So the carrier is identified by `GetType().Name` and
+  described in words, which costs nothing and compiles everywhere.
+
+  **COUNTING CARRIERS IS ONE COLLECTOR PASS PER SCHEMA**, so a model with many
+  schemas pays for it. `countCarriers` off gives the schema list alone, and the
+  summary says which of the two questions was answered.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: countCarriers
+      type: bool
+      source: request
+    - name: showFields
+      type: bool
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: schemaNames
+      type: IList<string>
+    - name: schemasRegistered
+      type: int
+    - name: schemasUsedHere
+      type: int
+    - name: carriersFound
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Schema.ListSchemas`, `SchemaName`,
+  `VendorId`, `GUID`, `Documentation`, `ReadAccessLevel`, `WriteAccessLevel`,
+  `ReadAccessGranted`, `ListFields`, `Field.FieldName`, `Field.ValueType` and
+  `ExtensibleStorageFilter` are present and unchanged 2020 through 2027.
+
+  **The extensible storage namespace is NOT one the fragment wrapper imports**,
+  so every type in it is written out in full. That is deliberate: adding the
+  namespace to the harness would be a promise to the executor that has to be
+  kept in two places, and one fragment does not justify it.
+
+  `DataStorage` is never named. It is not publicly accessible and naming it does
+  not compile on any release here - the carrier is matched on `GetType().Name`
+  instead.
+
+  No units API is called and no `ElementId` is read as a number.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what data is hidden in this file"   -> here. Extensible storage - not
+#                                           visible anywhere in Revit's own UI
+#   "which add-ins have touched this"    -> here, by the data they left. What is
+#                                           RUNNING is a different question and
+#                                           this fragment cannot see it
+#   "what parameters does this have"     -> REPORT_PARAMETER_INVENTORY. A
+#                                           parameter is visible in Properties;
+#                                           none of this is
+#   "what does this file depend on"      -> REPORT_EXTERNAL_REFERENCES - links,
+#                                           images, keynote files
+#   "what is this file"                  -> READ_MODEL_FILE_INFO
+#   "read a vendor's hidden values"      -> NOT ANSWERED HERE, on purpose. A
+#                                           closed schema's refusal is reported
+#                                           and obeyed
+
+utterances:
+  - what data have other add-ins written into this model
+  - is there hidden data on these elements
+  - which tool stamped these elements
+  - list the extensible storage schemas
+  - what comes with this file that is not mine
+  - there is data on this element that is not a parameter
+  - what add-in data does this model carry

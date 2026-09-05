@@ -1,0 +1,138 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-015
+semantic-identity: "put the values from this table back onto the elements they came from"
+kind: action
+domain: revit.parameters
+capability: IMPORT_PARAMETER_VALUES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Reads a CSV whose first column identifies the element and whose remaining
+  columns are parameter names, and writes those values back onto the model - a
+  different value per element, from a table somebody edited outside Revit. The
+  return leg of the spreadsheet round trip that every asset-data job actually
+  runs on.
+
+  **`WRITE_ELEMENT_PARAMETERS` SETS ONE LITERAL ON EVERY ELEMENT AND THAT IS A
+  DIFFERENT JOB.** *"Set the Comments to 'issued'"* is that fragment. *"Here are
+  four hundred rows of equipment tags the client sent back"* cannot be, because
+  the value is different on every row. This one reads the table, matches each
+  row to an element, and writes per row.
+
+  **THE ID IS MATCHED AS TEXT, AND NO `ElementId` IS EVER CONSTRUCTED FROM A
+  NUMBER.** The earlier library parsed the column to an `int` and built an
+  `ElementId` from it - which is the exact shape of the thing that broke when
+  ids went 64-bit at Revit 2024, and it is unnecessary. Every element already
+  knows how to print its own id, so the lookup is `element.Id.ToString()`
+  against the cell as it stands. **One implementation, no version split, and the
+  rule that an id is never read as a number is kept rather than worked around.**
+
+  **THE IMPORT IS SCOPED TO THE ELEMENTS HANDED IN, NOT TO THE WHOLE MODEL, AND
+  THAT IS A SAFETY DECISION.** The earlier version resolved each row against the
+  entire document, so a stale file could write anywhere. Here a filter runs
+  first, the count is seen, and the import can only touch what was in front of
+  you. A row whose id is not in that set is skipped and NAMED - which also
+  catches the file that came back for the wrong model.
+
+  **IT OPENS NO TRANSACTION.** Golden Rule 16: a fragment assumes one is open
+  and never opens one, so a batch is one undo entry. The earlier version wrapped
+  itself in its own transaction and rolled back on failure; here a partial
+  import is undone by the caller's own rollback, together with everything else
+  in the same operation, which is the behaviour a modeller pressing Ctrl+Z
+  expects.
+
+  **IT READS BACK WHAT LANDED, NOT WHAT WAS ASKED FOR.** Revit accepts a value
+  and then formats, rounds or rejects it more often than people expect. Every
+  value written is re-read, and anything that came back different is reported as
+  its own count - a tally of `Set` calls that returned true is not a tally of
+  values now in the model.
+
+  **A READ-ONLY PARAMETER, AN UNKNOWN NAME AND AN UNPARSEABLE NUMBER ARE THREE
+  DIFFERENT SKIPS AND ARE COUNTED APART.** They have three different fixes -
+  change the target, fix the header, fix the cell - and one merged "skipped"
+  number sends every one of them to the wrong place.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: csvPath
+      type: string
+      source: request
+    - name: includeTypeParameters
+      type: bool
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: valuesWritten
+      type: int
+    - name: rowsMatched
+      type: int
+    - name: rowsUnmatched
+      type: int
+    - name: valuesRejected
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.LookupParameter`,
+  `Parameter.IsReadOnly`, `Parameter.StorageType`, `Parameter.Set`,
+  `Parameter.SetValueString`, `Parameter.AsString` and `Parameter.AsValueString`
+  are present and unchanged 2020 through 2027.
+
+  **No `ElementId` is constructed from a number, which is what makes this one
+  implementation.** `ElementId(int)` still exists at 2027 and `ElementId(long)`
+  does not exist before 2024, so a fragment that builds an id from a cell has to
+  pick a side or carry a version split. Matching `element.Id.ToString()` against
+  the cell has neither problem.
+
+  No units API is called. Numeric values go through `SetValueString`, which is
+  Revit's own parsing in the project's display units - so a cell reading "450"
+  means 450 of whatever the project shows, exactly as it did when it was
+  exported.
+
+  **`System.IO` is written out in full**, as the fragment wrapper does not
+  import it.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "load these values back into the model from the spreadsheet" -> here. A
+#                                           DIFFERENT value per element,
+#                                           read from a table
+#   "the client sent the tags back"      -> here
+#   "set the comments to issued"         -> WRITE_ELEMENT_PARAMETERS - ONE
+#                                           literal on every element. Neither
+#                                           fragment can do the other's job
+#   "put AJ- in front of every mark"     -> EDIT_TEXT_VALUES - transforms what is
+#                                           already there
+#   "copy the Mark into Comments"        -> COPY_PARAMETER_VALUE
+#   "export the schedule so i can edit it" -> EXPORT_SCHEDULE_TO_CSV is the outward
+#                                           leg. Its rows carry what the schedule
+#                                           shows; this reads a table with an id
+#                                           column, so check the header before
+#                                           assuming the two are the same shape
+#   "which of these are blank"           -> DESCRIBE_BLANK_PARAMETERS, before
+#                                           importing rather than after
+#   "clear these values"                 -> REMOVE_PARAMETER_VALUE
+
+utterances:
+  - import the parameter values from this csv
+  - load these values back into the model from the spreadsheet
+  - the client sent the equipment tags back in excel
+  - write these marks onto the elements from a file
+  - update the parameters from this table
+  - bulk set different values per element from a file
+  - push the edited schedule back into revit

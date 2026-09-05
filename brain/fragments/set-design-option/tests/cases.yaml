@@ -1,0 +1,56 @@
+positive:
+  - given: "Option 1" made active in the Revit interface, and twelve elements handed in
+    expect: >
+      twelve copies inside that option, the originals still in the main model,
+      and the read-back saying COPIED rather than moved. Checked by switching the
+      option off and seeing the originals still there
+
+  - given: the same run
+    expect: >
+      newElementIds carrying the copies, so a following fragment can act on what
+      landed rather than on what was asked for
+
+  - given: an element Revit refuses to copy, among others
+    expect: >
+      the difference between asked-for and returned reported in words. A count of
+      what went in is not a count of what was asked for
+
+negative:
+  - given: the main model active, and a real option named
+    expect: >
+      REFUSED, NOTHING COPIED, and the exact menu path printed. THIS IS THE CASE
+      THAT MATTERS. Copying while the main model is active puts the copies in the
+      main model - a wrong answer that looks exactly like a right one, and is
+      only found much later
+
+  - given: an option name that does not exist
+    expect: >
+      the real option names listed, and nothing copied. A name that is nearly
+      right is the commonest way this is asked for
+
+  - given: a model with no design options at all
+    expect: >
+      said plainly, with the note that no API here creates one either. Silence
+      would read as the option being empty
+
+  - given: any run at all
+    expect: >
+      THE ACTIVE DESIGN OPTION UNCHANGED, before and after. This fragment cannot
+      set it, so it must not clear the one the modeller deliberately set up
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE, and no original deleted. There is no
+      deleteOriginals flag - DELETE_ELEMENTS is composed after, on purpose
+
+second_route:
+  - >
+    Revit's own status bar Design Option dropdown, switched between the option
+    and the main model. The copies appear and disappear with the option; the
+    originals do not. That is the visual proof the copy landed where it was meant
+    to
+
+  - >
+    REPORT_DESIGN_OPTIONS over the same model afterwards. It reads what is inside
+    each option through a different route, so agreement between the two is a real
+    check rather than this fragment marking its own work
