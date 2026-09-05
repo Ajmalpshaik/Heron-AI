@@ -1,0 +1,83 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-072
+semantic-identity: "why is my filter not catching these"
+kind: filter
+domain: revit.views
+capability: TEST_VIEW_FILTER_MATCH
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Tests an existing filter against elements and says, for each one, whether it
+  MATCHES, fails the rule, or could never match at all - without applying the
+  filter to any view or changing anything.
+
+  **THE THIRD VERDICT IS THE WHOLE POINT.** A rule-based view filter only ever
+  applies to the categories it was scoped to. An element outside that list can
+  satisfy the rule perfectly and still never be caught, because the filter was
+  never looking at its category. A plain pass/fail test reports those as
+  "fails the rule" and sends somebody off rewriting a rule that was already
+  correct - which is hours, and it is the commonest way this question gets
+  answered wrongly.
+
+  **A selection filter has no rule, so membership is the only question.** It is
+  a hand-picked list; an element is in it or it is not, and there is nothing to
+  diagnose. The report says which kind of filter it found, because that changes
+  what the answer even means.
+
+  **Nothing is applied and no view is touched.** APPLY_VIEW_FILTER is what puts
+  a filter on a view. This exists so the rule can be understood before it is.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: filterName
+      type: string
+      source: request
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: matched
+      type: IList<Element>
+    - name: outOfScope
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ParameterFilterElement.GetCategories`,
+  `GetElementFilter`, `ElementFilter.PassesFilter` and
+  `SelectionFilterElement.GetElementIds` are present 2020 through 2027, compiled
+  at both ends. Category ids are compared as ElementIds, never as numbers.
+
+# ROUTING - repeated in CREATE_VIEW_FILTER, APPLY_VIEW_FILTER and
+# REPORT_VIEW_FILTERS.
+#
+#   "why is my filter not catching these" -> here
+#   "test this filter against these" -> here
+#   "would this filter pick this up" -> here
+#   "make a filter for supply air"   -> CREATE_VIEW_FILTER
+#   "put that filter on this view"   -> APPLY_VIEW_FILTER. Nothing here is
+#                                       applied and no view is touched
+#   "what filters exist"             -> REPORT_VIEW_FILTERS
+#   "what is in that saved set"      -> SELECT_FROM_SAVED_SET, which reads a
+#                                       selection filter out as elements rather
+#                                       than testing membership
+
+utterances:
+  - why is my filter not catching these
+  - test this filter against these elements
+  - would this filter pick this up
+  - does this element match the view filter
+  - check what this filter matches

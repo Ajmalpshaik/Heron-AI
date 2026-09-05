@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-075
+semantic-identity: "copy this view template so i can make a variant"
+kind: action
+domain: revit.views
+capability: DUPLICATE_VIEW_TEMPLATE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies a view template, so a variant can be made from it instead of rebuilt
+  by hand.
+
+  **A VIEW TEMPLATE CANNOT BE COPIED WITH View.Duplicate, AND THE GUARD THAT
+  LOOKS LIKE IT SAYS SO IS ALSO WRONG.** `CanViewBeDuplicated` returns false for
+  every template on every duplicate option, so a fragment written the obvious
+  way reports "cannot be duplicated" and does nothing, for ever. Removing the
+  guard does not help either: `Duplicate` then throws. The copy has to go
+  through `ElementTransformUtils.CopyElements`, which does work - verified on a
+  real template that came across carrying its scale and detail level.
+
+  **IT DOES NOT NAME THE COPY, AND THAT IS FORCED BY GOLDEN RULE 16.** Template
+  names must be unique, so Revit auto-suffixes the copy - 'Mechanical Plan'
+  becomes 'Mechanical Plan1' - and that name is only readable once the copying
+  transaction has COMMITTED. A fragment that never opens a transaction therefore
+  cannot rename it in the same breath. So this reports the name Revit gave, and
+  RENAME_ELEMENTS does the rest in the next one. Splitting it is not a
+  limitation being worked around; it is the rule being obeyed rather than
+  quietly broken.
+
+  **The copy is read back and its real name reported.** Predicting the suffix is
+  guessing, and a caller renaming a template it has not confirmed exists is how
+  a half-finished 'Mechanical Plan1' gets left behind.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: templateName
+      type: string
+      source: request
+  provides:
+    - name: copyId
+      type: ElementId
+    - name: copyName
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementTransformUtils.CopyElements` and
+  `View.IsTemplate` are present 2020 through 2027, compiled at both ends.
+  `View.Duplicate` is deliberately NOT used - it cannot copy a template on this
+  API at all, and `CanViewBeDuplicated` reports false for templates on every
+  option, which makes the obvious implementation fail silently rather than
+  loudly.
+
+# ROUTING - repeated in APPLY_VIEW_TEMPLATE, CREATE_VIEW_TEMPLATE_FROM_VIEW and
+# RENAME_ELEMENTS.
+#
+#   "copy this view template"        -> here
+#   "make a variant of this template" -> here
+#   "duplicate the template"         -> here
+#   "make a template from this view" -> CREATE_VIEW_TEMPLATE_FROM_VIEW - a new
+#                                       template out of a view's settings,
+#                                       rather than a copy of one that exists
+#   "rename the copy"                -> RENAME_ELEMENTS, and it has to be a
+#                                       SEPARATE call: the copy's name is only
+#                                       readable once this transaction has
+#                                       committed
+#   "put the template on these views" -> APPLY_VIEW_TEMPLATE
+
+utterances:
+  - copy this view template
+  - make a variant of this view template
+  - duplicate the view template
+  - copy a template to make a new one
+  - duplicate this template

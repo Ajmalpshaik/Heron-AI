@@ -1,0 +1,40 @@
+positive:
+  - given: a piece of equipment placed at a point
+    expect: >
+      one set of coordinates, reported as AT. Check it against the element's own
+      Properties in Revit
+
+  - given: a duct running between two places
+    expect: >
+      BOTH ends reported, and the word RUNS. Not a midpoint - a run has no
+      single position
+
+  - given: a mixed set of equipment, ducts and an in-place element
+    expect: the three kinds counted separately in the summary
+
+negative:
+  - given: a thirty-metre duct reported as a single coordinate
+    expect: >
+      that NOT happening. THIS IS THE FIRST CASE TO RUN. The midpoint of a long
+      run is a plausible set of numbers naming a place the duct merely passes
+      through, and nothing about the answer would say so
+
+  - given: an L-shaped element with no location of its own
+    expect: >
+      the bounding-box centre NAMED as a fallback. That point is outside the
+      element, and reporting it as "the location" is a wrong answer with three
+      decimal places on it
+
+  - given: coordinates taken to be survey coordinates
+    expect: >
+      the report having said they are from the internal origin. Handing these
+      to a surveyor without that sentence is how a building gets set out in the
+      wrong place
+
+  - given: an element with neither a location nor a bounding box
+    expect: counted and named, not silently absent
+
+second_route: >
+  Revit's own Properties palette for a point-based element, and the tape measure
+  from the project base point for a coordinate that has to mean something
+  outside the model

@@ -117,6 +117,7 @@ compatibility-note: >
 #                                            neither one affects the other
 
 utterances:
+  - show only the supply ducts in it
   - filter the schedule to level 2 only
   - show only the supply ducts in the schedule
   - the schedule should only show this system

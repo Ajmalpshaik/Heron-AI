@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-071
+semantic-identity: "put the levels on these on the drawing"
+kind: action
+domain: revit.views
+capability: ADD_SPOT_ELEVATIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a spot elevation on each element in one view - the annotation that
+  puts a real height on a drawing, as opposed to a tag, which puts an identity
+  on one.
+
+  **WHICH FACE IS PICKED IS THE ANSWER, AND REVIT OFFERS THE WRONG ONE FIRST.**
+  A floor hands back its BOTTOM face before its top. A fragment that takes the
+  first planar face with a reference therefore annotates the SOFFIT and reports
+  success - a plausible number, three hundred millimetres wrong, printed
+  straight onto a sheet. This was found by running it: a 300 mm slab with its
+  top at 0 was annotated -300.0 and reported as one placed, none skipped.
+
+  **The face test has to be POSITIVE, and that is the subtle half.** Guarding
+  with the absolute value of the normal's Z does NOT catch it, because the
+  soffit's normal is -1 and its absolute value passes. The test is that the
+  normal points UP.
+
+  **So every candidate face is collected before one is chosen**, never
+  first-one-wins, and the face wanted is asked for rather than assumed - top for
+  a finished floor level, bottom for a soffit, and the report prints the height
+  actually annotated on each element so a wrong face cannot hide behind a
+  success count.
+
+  **An element whose geometry yields no usable face reference is skipped and
+  named.** A spot elevation needs a real geometric reference, not a point, and
+  much of a model cannot give one.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: preferTopFace
+      type: bool
+      source: request
+    - name: leaderOffsetMm
+      type: double
+      source: request
+  provides:
+    - name: placed
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Options.ComputeReferences`,
+  `PlanarFace.FaceNormal`, `Face.GetBoundingBox`, `Face.Evaluate` and
+  `Document.Create.NewSpotElevation` are present 2020 through 2027, compiled at
+  both ends. Millimetres become feet by dividing by 304.8 as plain arithmetic.
+
+# ROUTING - repeated in TAG_ELEMENTS_IN_VIEW, CREATE_DIMENSION and
+# REPORT_LOCATION.
+#
+#   "put the levels on the drawing"  -> here
+#   "add spot levels to these"       -> here
+#   "annotate the slab level"        -> here, with the top face asked for
+#   "tag these"                      -> TAG_ELEMENTS_IN_VIEW - the same family
+#                                       of annotation reporting IDENTITY rather
+#                                       than height
+#   "dimension between these"        -> CREATE_DIMENSION - a distance on the
+#                                       drawing, not a level
+#   "what height is this"            -> REPORT_LOCATION, which answers without
+#                                       drawing anything
+
+utterances:
+  - put the levels on the drawing
+  - add spot levels to these
+  - annotate the slab level
+  - add spot elevations
+  - show the finished floor level on this

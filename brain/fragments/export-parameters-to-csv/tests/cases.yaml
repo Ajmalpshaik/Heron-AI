@@ -1,0 +1,41 @@
+positive:
+  - given: forty ducts with Mark and Comments exported
+    expect: >
+      forty-one lines - a header and forty rows - with the element id first on
+      every one. Open it in a spreadsheet and the columns line up
+
+  - given: a duct whose Height is 500 mm, with Height as a column
+    expect: >
+      500 in the file, in whatever the project displays - not 1.64. Decimal feet
+      in a file a human is meant to edit is a trap
+
+  - given: an element missing one of the parameters
+    expect: >
+      an EMPTY cell in that column, and the row still present with every other
+      column filled. Every row has the same columns or the file is not a table
+
+negative:
+  - given: a Comments value containing a comma
+    expect: >
+      that field QUOTED, and the row still parsing into the right number of
+      columns. THIS IS THE FIRST CASE TO RUN. An unquoted comma splits one row
+      into an extra column, every column after it is wrong for that element
+      alone, and in a forty-row spreadsheet nobody sees it
+
+  - given: a value containing a double quote
+    expect: the quote doubled inside a quoted field, per CSV, and the row still parsing
+
+  - given: a parameter name that exists on nothing
+    expect: >
+      the column present but empty, AND named in the report as empty
+      everywhere. A column of blanks and a misspelled parameter look identical
+      in the file
+
+  - given: a path that cannot be written
+    expect: >
+      the failure reported with the path, and no claim about what is in the file
+
+second_route: >
+  Open the file in a spreadsheet and count the columns on the row with the comma
+  in it - that is the check the quoting exists for. Then compare three values
+  against the elements' own Properties in Revit

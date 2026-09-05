@@ -1,0 +1,35 @@
+positive:
+  - given: forty tags in one view, handed in as a set
+    expect: >
+      forty removed, and the forty tagged ducts still in the model. Look at the
+      view - the annotation is gone and the services are not
+
+  - given: an element tagged in three views, one of its tags removed
+    expect: >
+      the other two still there. A tag is view-specific and "remove the tags"
+      usually means more than one view
+
+  - given: an empty set
+    expect: refused, with the reason
+
+negative:
+  - given: >
+      a set gathered by category that contains the DUCTS as well as their tags
+    expect: >
+      only the tags deleted, and every duct NAMED as not a tag. THIS IS THE
+      FIRST CASE TO RUN, and it is the one that matters: a delete that took
+      both would be the most damaging thing in this library, and the wrong
+      selection would look like a successful run
+
+  - given: the same, with the report read as a summary count only
+    expect: >
+      the not-a-tag entries listed individually. "Removed 40, skipped 12" with
+      no detail cannot be told from a partly-tagged view
+
+  - given: a tag Revit refuses to delete
+    expect: named with its reason, and removed not counting it
+
+second_route: >
+  Revit's own selection: select the returned set before running and read the
+  status bar count, then look at the view afterwards. The model elements being
+  still there is the check that matters, and it is visible without any tooling

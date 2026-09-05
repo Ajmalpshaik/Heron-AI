@@ -1,0 +1,87 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-073
+semantic-identity: "save these views out as pictures"
+kind: action
+domain: revit.export
+capability: EXPORT_VIEW_IMAGE
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Writes views and sheets out as PNG images at a chosen width - the "send them a
+  picture of this" job, done at a real resolution instead of a screenshot of
+  whatever the screen happened to show.
+
+  **It writes files onto a disk, which is why it is PUBLISH and not MODIFY.**
+  An export leaves the model alone and puts something where other people can
+  find it, and that is a higher bar than changing a duct. The folder is reported
+  back because somebody has to be told where their drawings went.
+
+  **Revit names the files itself and this does not pretend otherwise.** The
+  prefix given is a stem; Revit appends the view type and the view name to it.
+  So the folder and the prefix are reported and the exact filenames are not
+  invented - a list of predicted names that turned out wrong would be worse than
+  no list.
+
+  **A view that cannot be printed is not exported, and is named.** Templates,
+  and some view types, cannot go to an image at all. Silently dropping them
+  gives a folder with fewer files than views and nothing saying which are
+  missing.
+
+  **No transaction, and that is not an oversight.** An export reads the model
+  and writes a file; it changes nothing to undo.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: views
+      type: IList<View>
+    - name: folder
+      type: string
+      source: request
+    - name: filePrefix
+      type: string
+      source: request
+    - name: pixelWidth
+      type: int
+      source: request
+  provides:
+    - name: exported
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ImageExportOptions`, `ExportRange`,
+  `ImageFileType`, `ZoomFitType`, `FitDirectionType`, `View.CanBePrinted` and
+  `Document.ExportImage` are present 2020 through 2027, compiled at both ends.
+
+# ROUTING - repeated in EXPORT_SHEETS_TO_PDF and EXPORT_VIEWS_TO_DWG.
+#
+#   "save these views as pictures"   -> here
+#   "export a png of this sheet"     -> here
+#   "send them an image of the plan" -> here
+#   "export these sheets to pdf"     -> EXPORT_SHEETS_TO_PDF - the format
+#                                       somebody issues drawings in
+#   "export to dwg"                  -> EXPORT_VIEWS_TO_DWG - the format
+#                                       somebody else opens in CAD
+#   "print these"                    -> not a fragment. Printing is a machine
+#                                       and a queue, and neither belongs here
+
+utterances:
+  - save these views as pictures
+  - export a png of this sheet
+  - send them an image of the plan
+  - export view images
+  - save this view as an image

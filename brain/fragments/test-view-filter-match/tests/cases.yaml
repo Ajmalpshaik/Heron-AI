@@ -1,0 +1,40 @@
+positive:
+  - given: >
+      a rule filter scoped to Ducts, matching System Type contains SUP, tested
+      against ten ducts of which four are supply
+    expect: the four reported as matching and the six as failing the rule
+
+  - given: a selection filter tested against a set
+    expect: >
+      membership reported, and the filter named as a SELECTION filter with no
+      rule. The kind changes what the answer means
+
+  - given: the filter renamed and re-tested by the new name
+    expect: the same verdicts - nothing here depends on the name but the lookup
+
+negative:
+  - given: >
+      a filter scoped to Ducts only, tested against PIPES that satisfy the rule
+      perfectly
+    expect: >
+      OUT OF SCOPE, not "fails the rule". THIS IS THE FIRST CASE TO RUN. A plain
+      pass/fail sends somebody off rewriting a rule that was already correct,
+      and they will not find anything wrong with it because nothing is
+
+  - given: the same, with the out-of-scope count read
+    expect: >
+      the report telling them to add the CATEGORY, not change the rule. The
+      verdict without that sentence is still a puzzle
+
+  - given: a filter name that does not exist
+    expect: refused, with the real names listed
+
+  - given: any run at all
+    expect: >
+      no view changed and no filter applied. This is a diagnosis and it must
+      leave the model exactly as it was
+
+second_route: >
+  Apply the filter to a throwaway view in Revit and look at what disappears -
+  and for the out-of-scope case, open the filter's own Categories tab, which is
+  where the real answer has been all along
