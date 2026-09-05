@@ -1,0 +1,119 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-026
+semantic-identity: "the room and space schedule - number, name, level, area and volume"
+kind: action
+domain: revit.rooms
+capability: REPORT_ROOM_SPACE_DATA
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  The room and space table: number, name, level, area and volume for every
+  Room or MEP Space given. Read-only, and it works on both categories at once
+  because they share one base type - number, name, level and area are the same
+  properties on each.
+
+  **A ZERO VOLUME IS USUALLY A SETTING, NOT A ROOM.** Room volumes are only
+  computed when *Area and Volume Computations* is set to compute volumes; with
+  it off - which is the Revit default - EVERY room reports zero. Reporting
+  those zeros as numbers produces a schedule that says the building has no
+  volume, and somebody then goes looking for the modelling fault. Ids with no
+  computed volume are named in `volumeNotComputed` instead, so the answer says
+  which switch to turn on rather than handing over a column of noughts. Spaces
+  compute volume without that switch, so a mixed set can legitimately have the
+  volume for its spaces and not for its rooms.
+
+  **AN UNPLACED ROOM IS NOT AN UNENCLOSED ONE, AND ONLY ONE OF THEM IS A
+  MODELLING FAULT.** Both report zero area. A room with no location was never
+  put in the model - it sits in the schedule waiting to be placed. A room with
+  a location and no area was placed somewhere its boundaries do not close. They
+  are told apart here by asking for the location, and named separately, because
+  the first is deleted or placed and the second is a wall or a room-bounding
+  setting to fix.
+
+  **OCCUPANCY AND THE OTHER TEXT COLUMNS ARE DELIBERATELY NOT HERE.** Reading
+  one named parameter off a set of elements is `READ_ELEMENT_PARAMETERS`,
+  which already handles the instance-then-type lookup and says which elements
+  simply do not carry it. Adding a column here would be a second place that
+  reads parameters, and the two would drift.
+
+  Areas are square feet and volumes cubic feet - Revit's internal units, per
+  D-20, converted at the edge where the user is.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: identities
+      type: IDictionary<ElementId, string>
+    - name: areas
+      type: IDictionary<ElementId, double>
+    - name: volumes
+      type: IDictionary<ElementId, double>
+    - name: unplaced
+      type: IList<ElementId>
+    - name: unenclosed
+      type: IList<ElementId>
+    - name: volumeNotComputed
+      type: IList<ElementId>
+    - name: notSpatial
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Rooms and Spaces are both reached as
+  `SpatialElement`, whose `Area`, `Number` and `Level` are unchanged 2020 to
+  2027 - which is also why the fragment never names `Room` or `Space` as a
+  type. The volume is read through `BuiltInParameter.ROOM_VOLUME` rather than
+  a property: the parameter is the same on both categories and on every
+  release, and it also carries the "not computed" state that a property would
+  hand back as a plain zero.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "list the rooms and their sizes"    -> here. The schedule shape: number,
+#                                          name, level, area, volume
+#   "how big is this room"              -> MEASURE_ROOM_DIMENSIONS - the
+#                                          length and width of ONE room, for
+#                                          setting out
+#   "what shape is the room"            -> READ_ROOM_GEOMETRY - the outline,
+#                                          for laying something out inside it
+#   "which rooms are not enclosed"      -> SELECT_UNENCLOSED_ROOMS, which
+#                                          sweeps the whole model for them.
+#                                          This one reports the set it is
+#                                          given and names the faults it finds
+#   "the airflow in the spaces"         -> REPORT_SPACE_AIRFLOW
+#   "report the areas"                  -> REPORT_AREAS - the Area-plan kind,
+#                                          a third spatial element that is
+#                                          neither a Room nor a Space
+#   "how many of these are in each room" -> COUNT_BY_SPATIAL_CONTAINER
+#   "what is the volume of this"        -> MEASURE_ELEMENT_VOLUME for an
+#                                          ordinary element. Room and space
+#                                          volume is here, with the reason a
+#                                          zero is usually a project setting
+#   "set the room number"               -> WRITE_ELEMENT_PARAMETERS. This
+#                                          fragment only reads
+
+utterances:
+  - list the rooms with their areas
+  - room schedule
+  - what is the area of each space
+  - give me the room numbers and names
+  - the room volumes
+  - which rooms are not placed
+  - space areas by level
+  - list the rooms and their sizes

@@ -113,6 +113,11 @@ compatibility-note: >
 #                                        filters that catch work modelled
 #                                        tomorrow. These are OVERRIDES, and an
 #                                        element drawn later gets nothing
+#   "the colours are not showing on      -> AUDIT_VIEW_FILTERS when a
+#    this drawing"                          filter is already applied and
+#                                           nothing is drawing; here when
+#                                           nothing has been coloured yet
+
 utterances:
   - colour code by system
   - give every system its own colour

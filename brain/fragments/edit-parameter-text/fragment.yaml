@@ -1,0 +1,124 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-018
+semantic-identity: "put a prefix on the mark, or change a word inside it, without retyping the whole value"
+kind: action
+domain: revit.parameters
+capability: EDIT_PARAMETER_TEXT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Edits the text ALREADY IN a named parameter across a set of elements - adds a
+  prefix, adds a suffix, or replaces a piece of text inside it - rather than
+  overwriting it with one fixed value.
+
+  **THAT IS THE SHAPE THE JOB ALMOST ALWAYS TAKES.** *"Put AJ_ in front of the
+  mark on all of them"* and *"change SUP to SUPPLY in the comments"* keep the
+  value that is already there and change part of it. A fragment that only wrote
+  a whole value would set forty elements to one identical string, which is a
+  different job - `WRITE_ELEMENT_PARAMETERS` - and destroys what was there.
+
+  **RE-RUNNING IT MUST NOT STACK.** A prefix already on the value is not added
+  again, so running the same edit twice leaves `AJ_M-01` rather than
+  `AJ_AJ_M-01`. Batch jobs get re-run - after an undo, after a filter is
+  widened, after somebody is not sure whether it took - and stacking is the
+  failure that makes the second run worse than the first.
+
+  **A TYPE PARAMETER REACHES BEYOND THE SET IT WAS GIVEN, AND THAT IS
+  REPORTED.** Where the name is not an instance parameter, the element's TYPE
+  is asked - which is where Type Mark, Manufacturer and Model live. Editing it
+  changes every instance of that type in the project, including ones nobody
+  selected. Each type is edited once however many instances resolved to it, and
+  the types touched are named, so the reach is visible rather than discovered
+  later.
+
+  **IT REPORTS WHAT LANDED, NOT WHAT WAS ASKED FOR.** Every value is read back
+  after writing and compared with what was intended; anything that did not take
+  is refused rather than counted. A parameter can be read-only, driven by a
+  formula, or owned by somebody else on a workshared model, and each of those
+  accepts the call and keeps its old value.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  batch is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: parameterName
+      type: string
+      source: request
+    # Empty means "not this one". All three can be asked for at once; the
+    # replace happens first, then the prefix, then the suffix.
+    - name: find
+      type: string
+      source: request
+    - name: replaceWith
+      type: string
+      source: request
+    - name: prefix
+      type: string
+      source: request
+    - name: suffix
+      type: string
+      source: request
+  provides:
+    - name: edited
+      type: int
+    - name: typesEdited
+      type: IList<ElementId>
+    - name: unchanged
+      type: IList<ElementId>
+    - name: absent
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The parameter is found by name through
+  the ordinary lookup, and only text-storage parameters are touched - a number
+  has no meaningful prefix, and forcing one through the string setter is how a
+  numeric parameter ends up unreadable. Nothing here depends on a units API,
+  which is what breaks at 2021.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "put AJ_ in front of the mark"      -> here
+#   "change SUP to SUPPLY in the        -> here
+#    comments"
+#   "set the comments to X on all of    -> WRITE_ELEMENT_PARAMETERS - one
+#    them"                                 fixed value for every element, which
+#                                          overwrites what is there
+#   "rename these elements"             -> RENAME_ELEMENTS. An element's NAME
+#                                          is not a parameter write and maps to
+#                                          different things per category
+#   "rename the family"                 -> RENAME_FAMILY
+#   "number them 1, 2, 3 along the run" -> RENUMBER_SEQUENTIAL
+#   "clear the parameter"               -> REMOVE_PARAMETER_VALUE
+#   "copy this parameter into that one" -> COPY_PARAMETER_VALUE
+#   "change the text in a text note"    -> EDIT_TEXT_VALUES, which is
+#                                          annotation, not a parameter
+#   "filter out the ones with no mark"   -> SET_SCHEDULE_FILTERS to change
+#                                           what a schedule shows, or
+#                                           DESCRIBE_BLANK_PARAMETERS to find
+#                                           them. Neither is a text edit
+
+utterances:
+  - add a prefix to the mark
+  - put AJ in front of every comment
+  - change SUP to SUPPLY in the parameter
+  - add a suffix to the type mark
+  - find and replace inside the comments
+  - edit the text in this parameter without retyping it

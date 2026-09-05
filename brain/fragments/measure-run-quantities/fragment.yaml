@@ -79,6 +79,19 @@ compatibility-note: >
   with `AsDouble()` - Revit's internal feet and square feet - rather than
   through any units API, which is what keeps this clear of the 2021 units move.
   D-20 keeps the millimetre conversion at the edge where the user is.
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "how long are the ducts"             -> here
+#   "sheet metal area"                   -> here for the STRAIGHT runs -
+#                                           Revit's own perimeter x length
+#   "how much metal is in the bends"     -> MEASURE_FITTING_AREA, which
+#                                           measures a fitting from its
+#                                           geometry and takes off the open
+#                                           ends
+#   "how many kilos of ductwork is this" -> REPORT_DUCT_WEIGHT, which turns
+#                                           the area into metal through a
+#                                           gauge table
+#   "total it by size"                   -> SUM_BY_GROUP, fed from here
 
 utterances:
   - how long are the ducts

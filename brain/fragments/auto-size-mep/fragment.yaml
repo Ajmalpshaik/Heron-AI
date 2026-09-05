@@ -113,6 +113,10 @@ compatibility-note: >
 #   "what velocity is in this duct"  -> MEASURE_MEP_VELOCITY - a READ
 #   "the flow is zero everywhere"    -> TRACE_CONNECTIVITY. Nothing here can
 #                                       size a run Revit thinks carries no air
+#   "how many kilos is that ductwork"    -> REPORT_DUCT_WEIGHT - the metal
+#                                           once the size is settled. This
+#                                           decides the size itself
+#   "size the ductwork"                  -> here, not REPORT_DUCT_WEIGHT
 
 utterances:
   - size the ducts from the flow

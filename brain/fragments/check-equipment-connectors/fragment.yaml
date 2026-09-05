@@ -83,6 +83,12 @@ compatibility-note: >
 #   "join these open ends up"            -> CONNECT_OPEN_ENDS - a WRITE
 #   "what flow does this connector carry" -> REPORT_CONNECTOR_LOADS - the
 #                                           number on it, not whether it matches
+#   "what connectors does this AHU have" -> REPORT_CONNECTORS - it
+#                                           DESCRIBES every connector,
+#                                           size, direction and partner.
+#                                           This one GRADES what is joined
+#   "which spigots are open"             -> REPORT_CONNECTORS
+#   "what size is the spigot"            -> REPORT_CONNECTORS
 
 utterances:
   - are the equipment connectors the right size for the duct

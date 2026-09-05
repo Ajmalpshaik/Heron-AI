@@ -1,0 +1,55 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one AHU family with a nested fan, coil and filter, all four in the set
+    expect: >
+      `unitCount` = 1, all four ids mapping to the AHU in `roots`, and the
+      three parts under it in `assemblyParts`. A plain count says four, and
+      four is what every schedule in the model also says
+
+  - given: a set of plain, unnested equipment
+    expect: >
+      `unitCount` equal to the number of elements, and an empty part list for
+      each. Where nothing is nested the answer must equal the ordinary count,
+      or the fragment is inventing structure
+
+  - given: a lagged pipe - the pipe plus its insulation
+    expect: >
+      one unit, the insulation listed as a part of the pipe. Insulation is a
+      separate element and inflates a count exactly as a nested family does
+
+  - given: a nested part reached through two levels of family
+    expect: >
+      the innermost part mapping to the OUTERMOST host, not to its immediate
+      parent. Stopping one level up leaves the count wrong by the middle layer
+
+negative:
+  - given: a filter that caught the nested FAN but not the AHU it sits in
+    expect: >
+      the AHU's id in `rootsOutsideSet`. That is the category filter's blind
+      spot - a nested part can be in a different category from its host, and
+      silently reporting the fan as a unit is the whole defect
+
+  - given: a family that is somehow its own ancestor
+    expect: >
+      its id in `cycles`, no hang, and every other element still reported. An
+      unguarded walk here does not throw - it never returns, and Revit stops
+      responding
+
+  - given: a shared nested family, which is a real independent instance by design
+    expect: >
+      it reported as a part of its host anyway, with no verdict attached. The
+      difference between the counts is the flag to look at; whether it is
+      wrong is the modeller's call
+
+  - given: an element with no nesting and no insulation
+    expect: >
+      itself as its own root and an empty part list - not an absence from
+      `roots`. A missing entry would read as an element that could not be
+      placed anywhere
+
+second_route:
+  - >
+    select the unit in Revit and use Tab to step through what it contains, or
+    open the family to see the nesting. Counting the same elements with another
+    script is not a second route

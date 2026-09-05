@@ -1,0 +1,105 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-036
+semantic-identity: "what connectors are on this thing, where they point, and what is really plugged into them"
+kind: action
+domain: revit.mep
+capability: REPORT_CONNECTORS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists every MEP connector on the given elements - domain, shape, size, where
+  it sits and which way it faces - and, for each one, the elements REALLY
+  joined to it. Read-only.
+
+  **`IsConnected` IS AN INTENT FLAG, NOT A FACT, AND IT HAS BEEN WRONG IN A
+  REAL MODEL.** A connector can report `true` with nothing physically joined to
+  it, and a run traced from that flag comes back complete while the air stops
+  at a gap. So the flag is read and reported, and it is never what decides:
+  the partners come from walking `AllRefs` and keeping only refs owned by
+  ANOTHER element. Where the two disagree the element is named in
+  `flagDisagrees`, which is the finding, not a footnote.
+
+  **A SYSTEM IS NOT A PARTNER.** `AllRefs` also carries the logical MEP system
+  the connector belongs to. Counting that as a connection makes every connector
+  on a named system look joined, which is the exact failure the flag already
+  causes - so refs owned by an `MEPSystem`, and refs back to the element
+  itself, are dropped before anything is counted.
+
+  **IT IS THE LOOK BEFORE THE DRAW.** Before a duct can be run off a spigot,
+  four things have to be known and only one of them is in a schedule: is there
+  a connector, what domain and size is it, which way does it face, and is it
+  already taken. That is this fragment, and the direction is why it exists in
+  geometry rather than as a count - a spigot facing into the wall is a
+  different job from one facing the corridor.
+
+  Positions and sizes are handed on in Revit's internal feet, not millimetres
+  (D-20 keeps the conversion at the edge, where the user is).
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: connectorFacts
+      type: IDictionary<ElementId, IList<string>>
+    - name: connections
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: openConnectors
+      type: IDictionary<ElementId, int>
+    - name: flagDisagrees
+      type: IList<ElementId>
+    - name: noConnectors
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ConnectorManager`, `Connector.AllRefs`,
+  `Domain`, `Shape`, `Origin` and `CoordinateSystem` are unchanged 2020 to 2027.
+  The size properties are the version-independent risk instead: `Radius` is only
+  there on a round connector and `Width`/`Height` only on a rectangular one, and
+  the wrong one THROWS rather than returning zero - on every release. Each is
+  guarded, and an electrical connector, which has no profile at all, is reported
+  with its domain and no size rather than being dropped.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what connectors does this have"      -> here. The inventory, with
+#                                            direction and size, before
+#                                            anything is drawn
+#   "which spigots are open"              -> here - `openConnectors`
+#   "does what is plugged in MATCH the    -> CHECK_EQUIPMENT_CONNECTORS. It
+#    equipment"                              judges size, shape and domain
+#                                            against the partner and reports
+#                                            mismatches. This one describes;
+#                                            that one grades
+#   "what flow is on the connectors"      -> REPORT_CONNECTOR_LOADS - the
+#                                            numbers the connector CARRIES,
+#                                            not its geometry
+#   "what is connected to what"           -> TRACE_CONNECTIVITY, which walks
+#                                            the whole run. This stops at one
+#                                            element's own partners
+#   "where does the system stop"          -> FIND_DEAD_ENDS
+#   "narrow this set to the connected     -> SELECT_BY_CONNECTION_STATUS,
+#    ones"                                   which hands on a set to act on
+#                                            rather than describing each one
+
+utterances:
+  - what connectors does this AHU have
+  - which spigots are open
+  - which way is the connector facing
+  - show me the connectors on these
+  - is anything connected to this
+  - what size is the spigot
+  - report the connectors

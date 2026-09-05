@@ -1,0 +1,107 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-078
+semantic-identity: "the filter is on the view so why is nothing coloured"
+kind: action
+domain: revit.views
+capability: AUDIT_VIEW_FILTERS
+version: 1
+source: OFFICIAL
+risk: ANALYZE
+
+purpose: >
+  Reads every filter applied to a view and reports the separate states that all
+  have to be right before a filter draws anything, naming the one that is
+  wrong. Read-only.
+
+  **A FILTER CAN BE PRESENT AND DO NOTHING IN FOUR DIFFERENT WAYS, AND REVIT
+  REPORTS NONE OF THEM AS AN ERROR.** It can be applied but switched OFF, and
+  it still sits in the list looking applied. Its visibility can be off, which
+  HIDES everything it matches instead of colouring it - a different switch from
+  the overrides, on the same list. Its categories can be switched off in this
+  view, so the filter is correct and has nothing to act on. Or its override can
+  be EMPTY, which is what adding a filter without setting one leaves behind:
+  present, enabled, matching, and visually identical to having no filter at
+  all. Each is an afternoon, and the filter is visibly there the whole time.
+
+  **A VIEW TEMPLATE MAY OWN THE FILTERS, WHICH IS THE ANSWER TO "MY CHANGE DID
+  NOT SAVE".** When the template controls the filters slot, anything set on the
+  view is discarded the moment the template reasserts. It is reported once, at
+  the top, because it explains every other row at the same time.
+
+  **IT DOES NOT REPAIR ANYTHING, AND THAT IS A DECISION.** Switching disabled
+  filters back on is a write, and a write hidden inside an audit is how a
+  diagnosis becomes a change nobody asked for. Turn them on with the fragment
+  that owns that job, once the audit has said which ones.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: disabled
+      type: IList<ElementId>
+    - name: hidden
+      type: IList<ElementId>
+    - name: blankOverride
+      type: IList<ElementId>
+    - name: nothingToActOn
+      type: IList<ElementId>
+    - name: templateOwned
+      type: bool
+    - name: filterCount
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  A compile-time split at 2021 for the enabled/disabled switch, which Revit
+  2020 does not have at all: on that release the check is SKIPPED and said to
+  be skipped, never reported as passed. Everything else - the filter list,
+  visibility, the overrides, category visibility and the template-controlled
+  parameter ids - is unchanged 2020 to 2027. A view that cannot carry graphic
+  overrides at all, such as a schedule or a sheet, is reported as such rather
+  than as a view with no filters.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "the filter is on the view and       -> here
+#    nothing is coloured"
+#   "why can I not see my ducts"         -> DIAGNOSE_VISIBILITY, which asks
+#                                           about ONE ELEMENT and every reason
+#                                           it might be invisible. This asks
+#                                           about the FILTERS on a view
+#   "what filters exist in the project"  -> REPORT_VIEW_FILTERS
+#   "which parameters can I filter on"   -> REPORT_FILTERABLE_PARAMETERS, asked
+#                                           before a filter is built
+#   "does this filter catch this         -> TEST_VIEW_FILTER_MATCH
+#    element"
+#   "put a filter on this view"          -> APPLY_VIEW_FILTER, which is also
+#                                           where a disabled one is switched
+#                                           back on - this fragment only reads
+#   "take the filter off"                -> REMOVE_VIEW_FILTER
+#   "the colours are not showing on      -> here when a filter is applied
+#    this drawing"                          and nothing draws;
+#                                           COLOR_BY_PARAMETER when nothing
+#                                           has been coloured yet
+
+utterances:
+  - the filter is on the view but nothing is coloured
+  - why is my view filter not working
+  - check the filters on this view
+  - is this filter switched off
+  - my filter change did not save
+  - the colours are not showing on this drawing

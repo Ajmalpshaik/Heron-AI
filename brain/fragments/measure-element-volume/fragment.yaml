@@ -94,6 +94,12 @@ compatibility-note: >
 # reads semantic-identity, the utterances, the capability, the domain and the
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
+#   "the room volumes"                   -> REPORT_ROOM_SPACE_DATA, which
+#                                           also says when volume
+#                                           computation is switched off
+#   "how much sheet metal is in this     -> MEASURE_RUN_QUANTITIES for the
+#    duct"                                  straight runs, MEASURE_FITTING_AREA
+#                                           for the bends
 
 utterances:
   - what is the volume of this

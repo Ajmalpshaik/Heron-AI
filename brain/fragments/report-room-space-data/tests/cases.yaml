@@ -1,0 +1,55 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a floor of placed, enclosed rooms
+    expect: >
+      an area for each matching Revit's own Area column to two decimals.
+      Compare against a room schedule in Revit, not against a hand measurement -
+      the schedule is what gets issued
+
+  - given: a set of MEP Spaces
+    expect: >
+      areas AND volumes for all of them. Spaces compute volume without the
+      project switch rooms need, so a space with no volume is a real fault
+
+  - given: a mixed set of Rooms and Spaces
+    expect: >
+      both kinds reported in one table with no branch, because both are read
+      through the shared base type
+
+  - given: a room whose number is 3.12 and name Meeting Room, on Level 2
+    expect: >
+      "3.12 Meeting Room, Level 2" in `identities`
+
+negative:
+  - given: a project with Area and Volume Computations set to areas only
+    expect: >
+      every room id in `volumeNotComputed` and NOTHING in `volumes` - not a
+      column of zeros. A zero volume reads as a modelling fault and this is a
+      project setting
+
+  - given: a room that exists in the schedule but was never placed
+    expect: >
+      its id in `unplaced`, and NOT in `areas` with a 0. It is a room waiting
+      to be placed, not a room of no size
+
+  - given: a room placed where the walls do not close
+    expect: >
+      its id in `unenclosed` and NOT in `unplaced`. The two need different
+      fixes - this one is a wall or a room-bounding setting
+
+  - given: a duct, or anything that is not a Room or a Space
+    expect: >
+      its id in `notSpatial` and no row anywhere else. The rest of the set
+      must still be reported
+
+  - given: the same rooms read twice with nothing changed between
+    expect: >
+      identical numbers. A drift means the area is being recomputed from the
+      boundary rather than read off the element
+
+second_route:
+  - >
+    build a Revit room schedule with Number, Name, Level, Area and Volume and
+    compare it row for row. Revit's own schedule is the second route, not
+    another script

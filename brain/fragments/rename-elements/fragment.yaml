@@ -82,6 +82,10 @@ compatibility-note: >
 #   "rename this workset"                -> RENAME_WORKSET - a workset is NOT
 #                                        an element. It lives in the workset
 #                                        table, which nothing here reaches
+#   "put a prefix on the mark or the     -> EDIT_PARAMETER_TEXT. A name is
+#    comments"                              not a parameter, and the two
+#                                           are written differently
+
 utterances:
   - rename these
   - change the name of these

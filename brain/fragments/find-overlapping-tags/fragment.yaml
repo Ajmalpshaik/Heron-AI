@@ -101,6 +101,10 @@ compatibility-note: >
 #                                          which ones clash; moving them is a
 #                                          job somebody still has to build
 #   "find the lines drawn on top of each other" -> FIND_OVERLAPPING_LINES
+#   "what are these tags pointing at"    -> REPORT_TAGS_AND_TARGETS,
+#                                           including targets inside a link.
+#                                           This one is about where tags SIT
+#   "check the tags before I issue this" -> REPORT_TAGS_AND_TARGETS
 
 utterances:
   - the tags are on top of each other

@@ -1,0 +1,135 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-037
+semantic-identity: "how many kilos of sheet metal is in this ductwork"
+kind: action
+domain: revit.mep
+capability: REPORT_DUCT_WEIGHT
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Turns ductwork into a sheet-metal weight: the developed sheet area of each
+  duct from its own shape, the metal thickness from a caller-supplied gauge
+  table, and the kilos that follow. The procurement answer - *"how much
+  ductwork is this"* - rather than the drawing answer. Read-only.
+
+  **THE GAUGE TABLE AND THE DENSITY ARE THE CALLER'S, AND THAT IS DELIBERATE.**
+  Which thickness a size gets is an office or project standard and it changes
+  with the pressure class, the specification and the country; the density
+  changes with the material. Building one table in would publish one office's
+  standard as though it were a fact, and the number would then be quoted by
+  people who never chose it. `sizeBandsMm` and `thicknessMm` are supplied as a
+  pair - band `i` covers everything up to `sizeBandsMm[i]` - so the caller
+  passes the table for the pressure class they are working to and the answer
+  says which band each duct landed in. D-33: every number is a request input.
+
+  **THE SHAPE IS ASKED, NOT INFERRED - AND AN OVAL IS WHY.** An oval duct
+  carries a width, a height AND a diameter, so testing "has a diameter" calls
+  every oval round and then uses the wrong perimeter. The duct type states its
+  shape outright, so that is read first; the parameter pattern is kept only as
+  a fallback for a duct whose type cannot be read, and every duct that used it
+  is named in `shapeInferred`. An oval perimeter has no closed form, so it is
+  approximated by the standard series rather than by pi times the mean of the
+  sides, which is several percent out on a flat oval.
+
+  **REVIT ALREADY KNOWS ONE OF THESE NUMBERS, SO THE ANSWER IS CHECKED FOR
+  FREE.** Revit computes its own surface area for a duct - perimeter times
+  length - and it is a genuinely independent second calculation of what is
+  worked out here from the size. `areaDifference` is the gap between the two
+  as a fraction. A disagreement is nearly always shape detection, and the
+  weight is wrong by the same proportion, so a takeoff should be checked
+  against it before anybody prices it.
+
+  **FITTINGS ARE NOT IN THIS NUMBER AND ARE NOT ESTIMATED HERE.** A percentage
+  uplift for bends and tees is a guess standing in for a measurement that
+  `MEASURE_FITTING_AREA` now takes. Add that measured area rather than a
+  percentage of this one, and no allowance is being counted twice.
+
+  Areas are square feet - Revit's internal unit, per D-20 - and weights are
+  kilograms, which Revit has no internal unit for.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # Upper bound of each gauge band in millimetres, ascending. The governing
+    # size is the diameter on a round duct and the larger side otherwise.
+    - name: sizeBandsMm
+      type: IList<double>
+      source: request
+    # Metal thickness in millimetres for each band, same length and order.
+    - name: thicknessMm
+      type: IList<double>
+      source: request
+    # kg per cubic metre. Steel is about 7850, aluminium about 2700 - but the
+    # material is the caller's to state, not this fragment's to assume.
+    - name: densityKgPerM3
+      type: double
+      source: request
+  provides:
+    - name: sheetAreas
+      type: IDictionary<ElementId, double>
+    - name: weights
+      type: IDictionary<ElementId, double>
+    - name: bandUsed
+      type: IDictionary<ElementId, string>
+    - name: shapeInferred
+      type: IList<ElementId>
+    - name: unsized
+      type: IList<ElementId>
+    - name: outsideBands
+      type: IList<ElementId>
+    - name: areaDifference
+      type: double
+    - name: areaChecked
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The sizes come from `BuiltInParameter`
+  rather than by parameter name, so the fragment does not depend on the
+  language Revit is running in, and `MEPCurveType.Shape` is present unchanged
+  2020 to 2027. `RBS_CURVE_SURFACE_AREA` is absent on categories that are not
+  ducts or pipes, which is handled as a missing cross-check rather than as a
+  zero area.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "how many kilos of ductwork is this" -> here
+#   "what gauge should this duct be"    -> here - `bandUsed` says which band
+#                                          each duct fell in
+#   "how much metal is in the bends"    -> MEASURE_FITTING_AREA. Fittings are
+#                                          measured from their geometry, not
+#                                          estimated as a percentage of this
+#   "how long are the ducts"            -> MEASURE_RUN_QUANTITIES, which also
+#                                          hands back Revit's own surface area
+#                                          for a takeoff that needs no gauge
+#   "total it by size"                  -> SUM_BY_GROUP, fed by
+#                                          READ_ELEMENT_PARAMETERS for the size
+#   "what size should this duct be"     -> AUTO_SIZE_MEP. That decides the
+#                                          size from the airflow; this decides
+#                                          the metal once the size is settled
+#   "size the ductwork"                 -> AUTO_SIZE_MEP. Deciding the size
+#                                          and weighing the metal are two
+#                                          different jobs, in that order
+
+utterances:
+  - how many kilos of ductwork is this
+  - duct weight takeoff
+  - what gauge is this duct
+  - sheet metal quantity
+  - weight of the supply ductwork
+  - how much metal in these ducts

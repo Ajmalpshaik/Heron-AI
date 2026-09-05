@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-076
+semantic-identity: "what is each tag on this drawing actually pointing at"
+kind: action
+domain: revit.annotation
+capability: REPORT_TAGS_AND_TARGETS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Every tag in a view and what it is really pointing at - including targets
+  that live inside a LINKED model, and tags pointing at nothing at all. The
+  check before a drawing is issued. Read-only.
+
+  **HALF THE TAGS ON A COORDINATION DRAWING ARE INVISIBLE TO THE OBVIOUS
+  CALL.** The accessor that returns local targets returns them only: on an MEP
+  job the architecture is a link, so room tags, door tags and anything tagged
+  on the architect's model come back as an EMPTY set - not an error, just
+  nothing. A report built on it says the sheet has no tags on exactly the
+  elements a coordination sheet exists to annotate. The link-aware accessor
+  carries both halves of the answer: which link, and which element inside it.
+
+  **AN ORPHANED TAG IS THE ONE THAT REACHES THE PRINTER.** A tag whose target
+  was deleted, or whose link was unloaded, still draws - usually as a bare
+  leader or a question mark. It is noticed on the printed sheet rather than on
+  screen, which is the most expensive place to notice anything. Those are named
+  separately from tags that point somewhere.
+
+  **A TAG CAN POINT AT SEVERAL ELEMENTS SINCE 2022, AND TAKING THE FIRST IS
+  WRONG.** A multi-reference tag genuinely annotates all of them. Every target
+  is listed, and the tags carrying more than one are named, because they behave
+  differently when anything is moved or deleted.
+
+  It reports what the tags point at, not whether the text is right: a tag whose
+  displayed value disagrees with the element's parameter is a different check.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+  provides:
+    - name: tagTargets
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: linkedTags
+      type: IDictionary<ElementId, string>
+    - name: orphanTags
+      type: IList<ElementId>
+    - name: multiTags
+      type: IList<ElementId>
+    - name: tagCount
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  A compile-time split at 2022. Before it a tag pointed at exactly one element
+  and the API was a property; from 2022 a tag can point at several and the
+  property was REMOVED in favour of a method. Naming either one directly stops
+  this compiling on the other side, and a try/catch does not help - a missing
+  member is a compile error, not a runtime one. Both branches read the
+  link-aware form, so a tag into a linked model is reported on every release,
+  and the compile gate covers both sides on all eight.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what are my tags pointing at"      -> here, including targets inside a
+#                                          linked model
+#   "which tags point at nothing"       -> here - `orphanTags`
+#   "what is NOT tagged yet"            -> FIND_UNTAGGED_ELEMENTS, which asks
+#                                          about the elements. This asks about
+#                                          the tags
+#   "tag the rest of them"              -> TAG_ELEMENTS_IN_VIEW
+#   "the tags are sitting on top of     -> FIND_OVERLAPPING_TAGS, which is
+#    each other"                          about where they SIT, not what they
+#                                          point at
+#   "delete these tags"                 -> REMOVE_TAGS
+
+utterances:
+  - what are these tags pointing at
+  - which tags are orphaned
+  - are the tags on the linked model
+  - check the tags before I issue this
+  - why does this tag show a question mark
+  - list the tags in this view

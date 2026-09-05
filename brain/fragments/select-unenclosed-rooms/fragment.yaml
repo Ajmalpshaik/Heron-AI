@@ -1,0 +1,94 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-021
+semantic-identity: "find the rooms that are not enclosed or were never placed"
+kind: filter
+domain: revit.selection
+capability: SELECT_UNENCLOSED_ROOMS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Sweeps the model for Rooms and MEP Spaces that are not doing their job -
+  placed where the boundaries do not close, or never placed at all - and hands
+  them on as the set to act on. Read-only.
+
+  **THE TWO FAULTS LOOK IDENTICAL AND NEED OPPOSITE FIXES.** Both report zero
+  area. A room with no location was never put in the model: it sits in the
+  schedule and is deleted or placed. A room with a location and no area was
+  placed somewhere its boundaries do not close: a wall, a gap, or a
+  room-bounding setting. Reporting them as one list of "bad rooms" sends
+  somebody looking for walls around a room that is not in the model.
+
+  **AN UNBOUNDED SPACE IS AN MEP PROBLEM, NOT A TIDINESS ONE.** A Space with no
+  volume carries no heating or cooling load, and it is still in the schedule
+  with zeros in it. The load calculation completes, the numbers look like
+  numbers, and the room is simply missing from the total.
+
+  **REDUNDANCY IS DELIBERATELY NOT HERE.** Two rooms in one enclosed region is
+  a third fault and Revit already reports it as a warning, which
+  `SELECT_WITH_WARNINGS` reads. Re-deriving it from geometry here would be a
+  second, weaker answer to a question already answered properly.
+
+  The faulty elements are handed on as `elements`, which is the pipeline's
+  currency - the name the next action consumes - with the two states also named
+  separately so the report can say which fix each one needs.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: includeRooms
+      type: bool
+      source: request
+    - name: includeSpaces
+      type: bool
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: unplaced
+      type: IList<ElementId>
+    - name: unenclosed
+      type: IList<ElementId>
+    - name: roomsChecked
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Rooms and Spaces are collected by
+  CATEGORY and read through their shared base type, so the fragment never names
+  the category-specific classes and the same code covers both. `Area` and
+  `Location` are unchanged 2020 to 2027.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which rooms are not enclosed"      -> here. It sweeps the model
+#   "which rooms were never placed"     -> here - `unplaced`
+#   "list the rooms and their areas"    -> REPORT_ROOM_SPACE_DATA, which
+#                                          reports a set you already have and
+#                                          names the same two faults inside it
+#   "the room warnings"                 -> SELECT_WITH_WARNINGS, which is also
+#                                          where REDUNDANT rooms come from -
+#                                          Revit reports those itself
+#   "place the rooms"                   -> PLACE_ROOMS
+#   "how big is this room"              -> MEASURE_ROOM_DIMENSIONS
+#   "what is in this room"              -> FILTER_ELEMENTS_IN_ROOM
+
+utterances:
+  - which rooms are not enclosed
+  - find the unbounded spaces
+  - rooms with no area
+  - which rooms were never placed
+  - the spaces are not calculating
+  - check the rooms before I run the loads

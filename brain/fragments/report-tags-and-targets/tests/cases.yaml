@@ -1,0 +1,53 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a view with duct tags on ducts in this model
+    expect: >
+      every tag in `tagTargets` pointing at the duct it visibly annotates.
+      Click one tag in Revit and check the highlighted element is the id
+      reported
+
+  - given: a coordination view with room tags on rooms in a LINKED model
+    expect: >
+      those tags in `tagTargets` AND in `linkedTags` naming the link. If they
+      come back as orphans, the local-only accessor is being used and half the
+      sheet is invisible to the report
+
+  - given: a multi-reference tag on three pipes
+    expect: >
+      three target ids and the tag id in `multiTags`. All three are genuinely
+      annotated by it
+
+  - given: a view with no tags at all
+    expect: >
+      `tagCount` 0 and every list empty, with no throw
+
+negative:
+  - given: a tag whose target was deleted
+    expect: >
+      its id in `orphanTags` and NOT in `tagTargets`. It still draws on the
+      sheet as a bare leader, which is where it gets noticed if this does not
+      report it
+
+  - given: a tag pointing into a link that has been UNLOADED
+    expect: >
+      an orphan, not a silent omission. A tag counted as fine because its link
+      is missing is the drawing-issue failure this exists to catch
+
+  - given: a tag into a link whose linked element id happens to match an element in this model
+    expect: >
+      the tag reported against the LINK, never against the local element. The
+      two id spaces are unrelated, and crediting the local one is a confident
+      wrong answer
+
+  - given: the same view read on Revit 2021 and on 2024
+    expect: >
+      the same targets. The version split is a compile-time one, and if the
+      pre-2022 branch is wrong it fails silently on exactly the release the
+      owner runs live
+
+second_route:
+  - >
+    in Revit, select a tag and use the highlight to see what it points at, or
+    turn on the linked model and look. Reading the same property twice is not
+    a second route

@@ -102,6 +102,9 @@ compatibility-note: >
 #                                         kind again, and an MEP element
 #   "make the area schedule"           -> CREATE_SCHEDULE. This reports numbers
 #                                         into the reply; that makes a view
+#   "list the rooms and their areas"     -> REPORT_ROOM_SPACE_DATA. Rooms
+#                                           and Spaces are not Areas, and
+#                                           the numbers do not agree
 
 utterances:
   - report the areas in this model

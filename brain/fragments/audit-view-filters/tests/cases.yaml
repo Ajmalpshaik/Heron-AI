@@ -1,0 +1,62 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a view with three working filters
+    expect: >
+      `filterCount` 3, and nothing in `disabled`, `hidden`, `blankOverride` or
+      `nothingToActOn`. A working view must come back quiet, or every real
+      finding drowns
+
+  - given: a filter switched off on the view, on Revit 2021 or later
+    expect: >
+      its id in `disabled` and a finding naming it. This is the state that is
+      visibly there and doing nothing
+
+  - given: a filter whose visibility is off
+    expect: >
+      its id in `hidden` and a finding saying its matches are HIDDEN, not
+      coloured. It is a different switch from the overrides and gets confused
+      with them constantly
+
+  - given: a view driven by a template that controls the filters slot
+    expect: >
+      `templateOwned` true and one finding at the top naming the template. It
+      explains every other row on the view at once
+
+negative:
+  - given: a filter added without an override being set
+    expect: >
+      its id in `blankOverride`. It is present, enabled and matching, and looks
+      identical to having no filter - which is why nothing else will ever
+      report it
+
+  - given: a filter carrying ONLY a halftone, or only a transparency
+    expect: >
+      NOT in `blankOverride`. Testing for one particular kind of override
+      reports a working filter as empty, and somebody then rebuilds it
+
+  - given: a filter whose every category is switched off in this view
+    expect: >
+      its id in `nothingToActOn`, and a finding saying the rule is fine. The
+      fix is the category visibility, and a report blaming the rule sends
+      somebody to rewrite one that was already correct
+
+  - given: this run on Revit 2020, which has no enabled/disabled switch
+    expect: >
+      a finding saying that check was SKIPPED, and `disabled` empty. Silence
+      there would read as "no filters are switched off", which is not what was
+      established
+
+  - given: a schedule or a sheet, which cannot carry overrides at all
+    expect: >
+      a finding saying so, not "0 filters". The second is true and useless
+
+  - given: the view read twice with nothing changed
+    expect: >
+      identical findings, and nothing changed on the view. This is an audit;
+      a repair here would be a write nobody asked for
+
+second_route:
+  - >
+    open the view's Visibility/Graphics dialog, Filters tab, in Revit and read
+    the tick boxes and the override columns. That dialog is the second route

@@ -114,6 +114,11 @@ compatibility-note: >
 
 #   "create an HVAC zone for these spaces" -> CREATE_HVAC_ZONE - the spaces
 #                                        have to exist first, which is this
+#   "which rooms are not enclosed"       -> SELECT_UNENCLOSED_ROOMS. It
+#                                           finds the faulty ones and
+#                                           changes nothing
+#   "rooms with no area"                 -> SELECT_UNENCLOSED_ROOMS
+
 utterances:
   - place the rooms
   - add spaces to this level
