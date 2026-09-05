@@ -2790,8 +2790,47 @@ take the same next free number. That rule is correct for one session and broken 
 ### What actually collides, and what does not
 
 A fragment batch changes almost nothing shared. Pull request #8 touched **73 files — 71 of them new
-folders under `brain/fragments/`, and exactly two shared**: `HANDOVER.md` and `NEEDS-CHECKING.md`. So the
-whole conflict surface is two files and the id space, and both can be partitioned before anybody starts.
+folders under `brain/fragments/`, and exactly two shared**: `HANDOVER.md` and `NEEDS-CHECKING.md`.
+
+**That paragraph used to end "so the whole conflict surface is two files and the id space", and it was
+wrong.** Two of the three things three sessions collide on are not files in this repository at all, and
+neither is fixed by partitioning ids:
+
+- **the working directory**, which a branch does not partition — see the next section, and
+- **the retrieval store** at `%APPDATA%\Heron\knowledge`, which is ONE store per machine serving every
+  checkout on it. Three sessions rebuilding it in turn means any session's routing numbers may have been
+  computed over another session's library. `tools/check-routing.py` compared `store.count()` against the
+  fragments on disk to decide the store was stale, and all three trees held exactly 226 — so the count
+  matched, no rebuild fired, and the tool reported with full confidence on the wrong library. It printed
+  *"claimed in a routing table and not reached: 14"* on one run and *"7 questions answered by something
+  that writes"* on another. Both were artefacts; the second is the tool's own headline safety check.
+  Fixed in `d1ee3ad` — it compares the ids now — but the general shape is worth remembering: **a global
+  cache is shared state between sessions even when the repository is not.**
+
+### A branch is not a workspace — give each session its own worktree
+
+**`git checkout` is per WORKING TREE, not per chat.** Three sessions in one folder are three sessions on
+one branch, whatever each was told. This was tried: all three started in `D:\Ajmal\Aj Programs\Heron Ai`,
+each ran `git checkout -B <its branch>`, and each one silently moved the branch out from under the other
+two. Session A wrote a whole eight-fragment batch onto `main` by accident and had to move it into a
+worktree afterwards, and every session saw the others' half-finished files appear in its own `git status`
+— which is also how a session can commit another session's work by running `git add -A`.
+
+Set up three worktrees ONCE, from the main checkout, before any session starts:
+
+```bash
+git fetch origin main
+git worktree add -b claude/fragments-views    ../Heron-A origin/main   # session A
+git worktree add -b claude/fragments-elements ../Heron-B origin/main   # session B
+git worktree add -b claude/fragments-data     ../Heron-C origin/main   # session C
+```
+
+Each session then works **only** in its own folder and never runs `git checkout` in the shared one. The
+main checkout stays on `main` and is what everybody pulls into to see the merged result.
+
+When a session's pull request has merged, its worktree is finished. Remove it with
+`git worktree remove ../Heron-A` — never `rm -rf`, which leaves git's worktree metadata pointing at a
+folder that no longer exists — then delete the branch locally and on GitHub.
 
 ### The partition
 
@@ -2799,38 +2838,56 @@ Each session owns **source folders** and **id areas** no other session may touch
 what stop two sessions re-authoring the same capability; distinct areas are what stop the ids colliding,
 and they let §9a's "next free number" rule stand exactly as written.
 
-| Session | Branch | Source folders under `AJ-AI-Brain/scripts/` | Id areas | Files |
-|---|---|---|---|---|
-| **A** — views and sheets | `claude/fragments-views` | `actions/sheets-views/`, `actions/visibility/`, `actions/color-graphics/`, `actions/sheet-dates-revisions/` | `VIEW`, `SHT` | 102 |
-| **B** — elements and geometry | `claude/fragments-elements` | `creators/`, `actions/structural-changes/`, `actions/move-copy-rotate/`, `filters/` | `ELE`, `GEO`, `MEP`, `SEL` | 133 |
-| **C** — data, QA and parameters | `claude/fragments-data` | `actions/reporting/`, `actions/qa-checks/`, `actions/parameters-naming/`, `actions/selection/` | `DOC`, `QA`, `PAR` | 94 |
+| Session | Worktree | Branch | Source folders under `AJ-AI-Brain/scripts/` | Id areas | Files |
+|---|---|---|---|---|---|
+| **A** — views and sheets | `../Heron-A` | `claude/fragments-views` | `actions/sheets-views/`, `actions/visibility/`, `actions/color-graphics/`, `actions/sheet-dates-revisions/` | `VIEW`, `SHT` | 102 |
+| **B** — elements and geometry | `../Heron-B` | `claude/fragments-elements` | `creators/`, `actions/structural-changes/`, `actions/move-copy-rotate/`, `filters/` | `ELE`, `GEO`, `MEP`, `SEL` | 133 |
+| **C** — data, QA and parameters | `../Heron-C` | `claude/fragments-data` | `actions/reporting/`, `actions/qa-checks/`, `actions/parameters-naming/`, `actions/selection/` | `DOC`, `QA`, `PAR` | 94 |
 
 **A fragment belonging in another session's area is not built.** It is listed in the pull request and
 left to the session that owns that area. Reaching across is how the areas stop being disjoint.
 
 `filters/` is the widest gap in the library: 51 source files against **three** `SEL` fragments built.
 
-### The five rules
+### The seven rules
 
-1. **`git fetch origin main` first**, and branch off the latest `main` — not at push time. The warning at
+1. **Work in your own worktree, and never `git checkout` in the shared one.** A branch does not
+   partition a folder; the section above is what happens when three sessions share one. Check you are in
+   the right place before writing anything — `git rev-parse --show-toplevel` and `git branch
+   --show-current` together, not either alone.
+2. **`git fetch origin main` first**, and branch off the latest `main` — not at push time. The warning at
    the top of this file exists because a session found out at push time once.
-2. **Do not edit `HANDOVER.md` or `NEEDS-CHECKING.md`.** They are the only two shared files, so all three
+3. **Stage your own paths by name. Never `git add -A`.** In a shared tree that commits whatever the other
+   sessions have left lying around; even in your own worktree it is the habit that makes the first
+   mistake expensive.
+4. **Do not edit `HANDOVER.md` or `NEEDS-CHECKING.md`.** They are the only two shared files, so all three
    sessions would conflict on them. The batch summary goes in the **pull request description**, and is
    folded into this file once, after all three have merged.
-3. **Never invent an agent id.** Use only ids already in the registry on `main`. Eight fragments in
+5. **Never invent an agent id.** Use only ids already in the registry on `main`. Eight fragments in
    `6cdb9f7` carried agent ids the merged registry did not have — all of them one branch's own numbering.
-4. **Compare by capability, not by folder name.** `find-sheets` and `list-sheets` are different folders
+6. **Compare by capability, not by folder name.** `find-sheets` and `list-sheets` are different folders
    for the same job, and a folder-name comparison adds a second `FIND_SHEETS` beside main's
    `LIST_SHEETS`. The check is `grep -h '^capability:' brain/fragments/*/fragment.yaml`.
-5. **Merge one pull request at a time**, and have the other sessions rebase after each merge. Three
+7. **Merge one pull request at a time**, and have the other sessions rebase after each merge. Three
    merges landing together is the situation `6cdb9f7` had to clean up.
+
+### When another session has already fixed the thing you were about to fix
+
+It happens, because all three run the same checkers against the same `main`. **Take their commit rather
+than writing your own version of the same change** — `git cherry-pick -x <their sha>` keeps it
+byte-identical, so when both pull requests land git sees the same content on both sides and there is no
+conflict at all. It worked: `check-surface-fit` was broken on `main`, Session C fixed it in `024f9e3`,
+Session A cherry-picked that commit to get a green gate without waiting, and the later rebase reported
+*"skipped previously applied commit"* and dropped it silently. Two independent fixes to one file would
+have conflicted instead.
 
 ### Say this to start a session
 
 > **"Read HANDOVER.md §9b in Heron-AI. You are SESSION A."** — and B and C the same, one per chat.
 
-The table above is the whole briefing: that session's row gives it its sources, its id areas and its
-branch, and the five rules bind all three. Nothing else has to be pasted.
+Set the three worktrees up first, per the section above; that is the one piece of preparation the
+sentence assumes. After that the table is the whole briefing: that session's row gives it its sources,
+its id areas, its branch and its folder, and the rules bind all three. Nothing else has to be pasted.
 
 ### What is not fragment work
 
