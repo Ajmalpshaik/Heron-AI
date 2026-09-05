@@ -1,0 +1,3 @@
+[mcp_servers.heron]
+command = "python"
+args = ["mcp/server/heron_mcp_server.py"]
