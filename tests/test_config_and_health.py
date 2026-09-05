@@ -33,6 +33,7 @@ import io
 import os
 import re
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
@@ -123,7 +124,7 @@ def main():
 
     print()
     print("Settings are a closed set - a typo must not become a setting")
-    tmp = os.path.join(os.environ.get("TMPDIR", "/tmp"), "heron-test.config")
+    tmp = os.path.join(tempfile.gettempdir(), "heron-test.config")
     io.open(tmp, "w", encoding="utf-8").write(
         u"# a comment\n"
         u"write.enabled = true\n"

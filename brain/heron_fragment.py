@@ -63,6 +63,24 @@ except ImportError:                                          # pragma: no cover
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRAGMENTS_DIR = os.path.join(ROOT, "brain", "fragments")
 
+
+def repo_relative(path):
+    """`path` written against the repository root.
+
+    Falls back to the absolute path when there is no relative form. A fragment
+    folder is not always inside the checkout - a scratch folder under a test,
+    or a library kept beside the user's data while Heron sits on another drive
+    - and on Windows os.path.relpath RAISES across drives rather than merely
+    returning something useless. Callers that join the result back onto ROOT
+    still open the right file, because os.path.join discards everything before
+    an absolute component.
+    """
+    try:
+        return os.path.relpath(path, ROOT)
+    except ValueError:
+        return os.path.abspath(path)
+
+
 # D-29. A fragment is a COMPOSABLE PIECE, not a whole answer: a filter says
 # which elements, an action says what to do to them, and they are joined. A
 # recipe is the named third kind for a job that genuinely cannot be composed -
@@ -410,7 +428,7 @@ class Fragment(object):
         for base, _dirs, files in os.walk(impl):
             for name in sorted(files):
                 full = os.path.join(base, name)
-                found.append(os.path.relpath(full, ROOT))
+                found.append(repo_relative(full))
         return sorted(found)
 
     def fingerprint(self):
@@ -428,6 +446,7 @@ class Fragment(object):
         digest = hashlib.sha256()
         for path in paths:
             digest.update(path.encode("utf-8"))
+            # ROOT is discarded when path is absolute - see repo_relative().
             digest.update(io.open(os.path.join(ROOT, path), "rb").read())
         return digest.hexdigest()[:16]
 
@@ -865,7 +884,7 @@ def main(argv):
                   % (argv[1], ", ".join(sorted(found)) or "none"))
             return 1
         print(yaml.safe_dump(frag.data, default_flow_style=False, sort_keys=False))
-        print("found in:   %s" % os.path.relpath(frag.folder, ROOT))
+        print("found in:   %s" % repo_relative(frag.folder))
         print("fingerprint %s" % (frag.fingerprint() or "nothing to hash"))
         if frag.proof:
             print("proof       %s" % ("STALE" if frag.proof_is_stale() else "stands"))
