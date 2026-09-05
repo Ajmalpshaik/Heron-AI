@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-025
+semantic-identity: "where exactly are these"
+kind: action
+domain: revit.geometry
+capability: REPORT_LOCATION
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports where each element actually is, in millimetres - a point for the
+  things that have one, both ends for the things that run somewhere, and the
+  centre of the bounding box for everything else.
+
+  **AN ELEMENT HAS ONE OF THREE KINDS OF POSITION AND THE REPORT SAYS WHICH.** A
+  piece of equipment is at a point. A duct runs from one place to another and
+  has no single position at all. A wall assembly, a group, an in-place element
+  may have neither. Reporting all three as "the location" and printing one set
+  of coordinates makes the second kind a lie - the midpoint of a thirty-metre
+  run is a place the duct passes through, not where it is.
+
+  **The bounding-box centre is named as a fallback every time it is used**, and
+  never dressed up as a location. It is the centre of a box around the thing,
+  which for anything L-shaped or sloped is a point in fresh air.
+
+  **Coordinates are Revit's internal ones, converted to millimetres.** They are
+  measured from the project's internal origin, which is not necessarily the
+  survey point or the project base point - so these numbers are for comparing
+  elements with each other, and a coordinate to hand to a surveyor is a
+  different question.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: locations
+      type: IList<string>
+    - name: withoutLocation
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `LocationPoint`, `LocationCurve`,
+  `Curve.GetEndPoint` and `Element.get_BoundingBox` are present 2020 through
+  2027, compiled at both ends. Feet become millimetres by multiplying by 304.8
+  as plain arithmetic - no units API, which is what changed shape at 2021.
+
+# ROUTING - repeated in MEASURE_DISTANCE, REPORT_BOUNDING_BOX and
+# ADD_SPOT_ELEVATIONS.
+#
+#   "where exactly is this"          -> here
+#   "what are the coordinates"       -> here
+#   "where does this duct run from and to" -> here - both ends, because a run
+#                                       has no single position
+#   "how far apart are these"        -> MEASURE_DISTANCE, which answers with a
+#                                       gap rather than two positions
+#   "how big is this"                -> REPORT_BOUNDING_BOX - the extents, not
+#                                       the position
+#   "put the level on the drawing"   -> ADD_SPOT_ELEVATIONS, which annotates
+#                                       instead of reporting
+
+utterances:
+  - where exactly are these
+  - what are the coordinates of this
+  - where does this duct run from and to
+  - report the location of these elements
+  - what position is this at

@@ -1,0 +1,43 @@
+positive:
+  - given: twelve plan views set to scale 100
+    expect: >
+      all twelve reading 1:100 in Revit's own view properties, and the count
+      saying twelve. Read one by hand
+
+  - given: the same views set to Fine detail and Shaded, with no scale given
+    expect: >
+      detail and style changed and THE SCALE UNTOUCHED. Anything not asked for
+      must not move, or a batch quietly restyles a drawing set
+
+  - given: a schedule among the views
+    expect: >
+      the properties it does not have refused and named, and the ones it does
+      still set
+
+negative:
+  - given: >
+      a view controlled by a view template that locks the scale, set to a new
+      scale
+    expect: >
+      the refusal reported AND pointed at REPORT_VIEW_TEMPLATE_CONTROL. THIS IS
+      THE FIRST CASE TO RUN. It is the commonest thing to hit, the property
+      silently stays as it was, and a count that assumed success reports the
+      view as changed
+
+  - given: all three properties given, one of them unsupported on a view
+    expect: >
+      the other two still set on that view. Setting them as one block means one
+      refusal loses the other two and nothing says so
+
+  - given: a detail level of "Very Fine"
+    expect: >
+      refused by name - Coarse, Medium and Fine are the three, and a silent
+      fallback to Medium would be an invention
+
+  - given: nothing asked for at all
+    expect: refused, with the reason - not a run that touched nothing and reported success
+
+second_route: >
+  Revit's own Properties palette on one of the views, read before and after -
+  and for the template case, the padlock shown beside a controlled property is
+  the answer the refusal is pointing at

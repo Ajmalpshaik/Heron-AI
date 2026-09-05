@@ -1,0 +1,41 @@
+positive:
+  - given: >
+      a template 'Mechanical Plan' at scale 100 and Medium detail, copied
+    expect: >
+      a new template carrying scale 100 and Medium detail, the template count up
+      by one, and the source unchanged. This shape has been run
+
+  - given: the copy's name read from the report
+    expect: >
+      'Mechanical Plan1' or whatever suffix Revit chose - READ BACK, not
+      predicted. The suffix is Revit's to pick
+
+  - given: RENAME_ELEMENTS called afterwards with the reported id
+    expect: the copy renamed. That is the second half, and it needs the first committed
+
+negative:
+  - given: an implementation written with View.Duplicate behind CanViewBeDuplicated
+    expect: >
+      "cannot be duplicated" and NOTHING DONE, for ever. THIS IS THE FIRST CASE
+      TO RUN, because it is the failure that was actually shipped: the guard
+      returns false for every template on every option, so the fragment reports
+      a clean refusal and never works. Removing the guard does not help either -
+      Duplicate throws
+
+  - given: the copy's name predicted as "<source>1" without reading it
+    expect: >
+      wrong as soon as a 'Mechanical Plan1' already exists. The suffix is not a
+      rule anybody here gets to assume
+
+  - given: a template name that does not exist
+    expect: refused, with every template name listed
+
+  - given: a view that is not a template, named
+    expect: >
+      not found as a template, and refused. This fragment is about templates and
+      DUPLICATE_VIEWS is about views
+
+second_route: >
+  Revit's own Manage then View Templates dialog - the count before and after,
+  and the new one opened to check its settings came across. That dialog is also
+  where the auto-suffix is visible

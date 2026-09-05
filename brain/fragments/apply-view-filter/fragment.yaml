@@ -103,6 +103,7 @@ compatibility-note: >
 #   "take that filter off the view"      -> REMOVE_VIEW_FILTER - the other end
 #                                        of this one
 utterances:
+  - apply the filter
   - put that filter on this view
   - apply the filter to this view
   - hide everything that filter matches

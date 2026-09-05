@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-017
+semantic-identity: "get these parameters out into a spreadsheet"
+kind: action
+domain: revit.parameters
+capability: EXPORT_PARAMETERS_TO_CSV
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Writes chosen parameters of a set of elements to a CSV file - one row per
+  element, the element id always first - so the values can be edited in a
+  spreadsheet and brought back.
+
+  **THE ELEMENT ID IS THE FIRST COLUMN AND IT IS NOT OPTIONAL.** A round trip
+  needs a key: without one, an edited file cannot be matched back to the
+  elements it came from except by a name that may not be unique and may itself
+  have been what somebody edited.
+
+  **Values are written the way Revit DISPLAYS them, not the way it stores
+  them.** A length goes out as the millimetres somebody recognises rather than
+  as decimal feet. That is what makes the file editable by a human - and it is
+  the same convention anything reading the file back has to use, or the numbers
+  change meaning on the way home.
+
+  **Fields containing a comma, a quote or a line break are quoted properly.** A
+  Comments field with a comma in it silently splits a row into two columns
+  otherwise, and every column after it is wrong for that element only - which
+  is the hardest kind of error to see in a spreadsheet.
+
+  **It writes a file, which is why it is PUBLISH.** The model is untouched; a
+  file appears somewhere other people can open, and the path is reported because
+  somebody has to be told where.
+
+  **A parameter an element does not carry is written as empty, not skipped.**
+  Every row has the same columns, or the file is not a table.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: parameterNames
+      type: IList<string>
+      source: request
+    - name: csvPath
+      type: string
+      source: request
+  provides:
+    - name: rows
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.LookupParameter`,
+  `Parameter.AsValueString`, `AsString` and `AsInteger` are present 2020 through
+  2027, compiled at both ends. The element id is written through `ToString`, so
+  nothing depends on its width - which is what 2024's move to 64-bit ids would
+  otherwise have reached.
+
+# ROUTING - repeated in EXPORT_SCHEDULE_TO_CSV, READ_ELEMENT_PARAMETERS and
+# WRITE_ELEMENT_PARAMETERS.
+#
+#   "get these parameters into a spreadsheet" -> here
+#   "export the marks to csv"        -> here
+#   "export this schedule"           -> EXPORT_SCHEDULE_TO_CSV - a schedule
+#                                       Revit already built, with its own
+#                                       fields, sorting and totals
+#   "what are these parameters"      -> READ_ELEMENT_PARAMETERS, which reports
+#                                       without writing a file
+#   "set these values"               -> WRITE_ELEMENT_PARAMETERS. Nothing here
+#                                       changes the model
+#   "bring the edited file back in"  -> not a fragment yet. Reading a CSV back
+#                                       is the other half of this round trip
+
+utterances:
+  - get these parameters into a spreadsheet
+  - export the marks to csv
+  - write these parameter values to a file
+  - export parameters to csv
+  - get this data out to excel

@@ -1,0 +1,42 @@
+positive:
+  - given: three plan views exported at 1920 px into an empty folder
+    expect: >
+      three PNG files in it, each 1920 px wide. Open one - the width is the
+      setting working, and the content is the view
+
+  - given: a sheet exported
+    expect: >
+      the whole sheet including its title block, not just the viewport. A sheet
+      is a view and it exports as one
+
+  - given: the same export run twice into the same folder
+    expect: >
+      Revit's own overwrite behaviour, whatever it is, and the folder reported
+      both times. This fragment does not manage the files it wrote
+
+negative:
+  - given: a view template among the views
+    expect: >
+      it NAMED as not exportable, and the other views still exported. THIS IS
+      THE FIRST CASE TO RUN. A folder with two files where three views were
+      asked for, and nothing saying which is missing, is the failure - and it
+      looks exactly like success
+
+  - given: a folder path that cannot be written to
+    expect: >
+      the failure reported with the path, and no claim that anything was
+      written
+
+  - given: nothing exportable at all
+    expect: >
+      said in words, with the unexportable views named. Not a silent zero
+
+  - given: the exact filenames predicted from the prefix
+    expect: >
+      no such prediction in the report. Revit builds the names and a wrong list
+      is worse than none
+
+second_route: >
+  Open the folder and count the files, then open one and check its pixel width
+  in any image viewer. The count against the view list is the check that catches
+  a silently dropped view

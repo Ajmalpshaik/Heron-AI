@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-074
+semantic-identity: "set the scale and detail on these views"
+kind: action
+domain: revit.views
+capability: SET_VIEW_PROPERTIES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets scale, detail level and visual style across many views at once - the
+  light version of what a view template does, for the case where a template is
+  not wanted or does not exist yet.
+
+  **EACH PROPERTY IS SET ON ITS OWN, AND ONE REFUSAL DOES NOT STOP THE OTHERS.**
+  Not every view type carries every property: a schedule has no scale and no
+  visual style, and a view under a template refuses the properties that template
+  controls. Setting them as one block means a single unsupported property leaves
+  the other two unset on that view and nothing saying so.
+
+  **A view controlled by a template will refuse, and that is reported as a
+  reason rather than a failure.** It is the commonest thing to hit here and the
+  answer is not to try harder - it is REPORT_VIEW_TEMPLATE_CONTROL to see what
+  the template holds, and then either change the template or release the
+  property.
+
+  **Anything not given is not touched.** A fragment that wrote a default into
+  every property somebody left out would quietly restyle a whole drawing set.
+
+  **Every value is read back after writing.** A view property that refuses can
+  return without raising, and a count that assumed success would report twelve
+  views set where nine were.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: views
+      type: IList<View>
+    - name: scale
+      type: int
+      source: request
+    - name: detailLevel
+      type: string
+      source: request
+    - name: visualStyle
+      type: string
+      source: request
+  provides:
+    - name: changed
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.Scale`, `View.DetailLevel`,
+  `View.DisplayStyle`, `ViewDetailLevel` and `DisplayStyle` are present 2020
+  through 2027, compiled at both ends. The detail level and visual style are
+  matched against the enumeration names as text, so a release adding a style is
+  matched rather than needing a new case.
+
+# ROUTING - repeated in APPLY_VIEW_TEMPLATE, SET_VIEW_SCALE and
+# REPORT_VIEW_TEMPLATE_CONTROL.
+#
+#   "set these views to 1 to 100"    -> here
+#   "make these views fine detail"   -> here
+#   "put these views on shaded"      -> here
+#   "apply the template to these"    -> APPLY_VIEW_TEMPLATE, which sets
+#                                       everything the template holds at once
+#                                       and is the right answer when one exists
+#   "change the scale of this view"  -> SET_VIEW_SCALE for one property on one
+#                                       view; this is the batch across several
+#   "why will it not change"         -> REPORT_VIEW_TEMPLATE_CONTROL. A view
+#                                       under a template refuses the properties
+#                                       that template controls, and that is the
+#                                       commonest reason a set here does nothing
+
+utterances:
+  - set these views to 1 to 100
+  - make these views fine detail
+  - put these views on shaded
+  - set the scale and detail on these
+  - change the visual style of these views

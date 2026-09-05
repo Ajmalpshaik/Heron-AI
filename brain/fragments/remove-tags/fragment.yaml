@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-070
+semantic-identity: "take these tags off the drawing"
+kind: action
+domain: revit.views
+capability: REMOVE_TAGS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Deletes tag annotations - and only the tags. It is the undo TAG_ELEMENTS and
+  TAG_ELEMENTS_IN_VIEW never had, and the clean-up after a tagging run that
+  produced more than anybody wanted.
+
+  **IT DELETES THE TAG, NEVER THE THING TAGGED.** That is the whole risk in this
+  fragment and the reason it refuses anything that is not a tag rather than
+  skipping it quietly. A set gathered by category and handed in loosely could
+  easily contain the ducts as well as their tags, and a delete that took both
+  would be the most damaging thing in this library.
+
+  **So anything that is not a tag is COUNTED AND NAMED, not silently ignored.**
+  "Removed 40 tags, skipped 12" with no detail leaves nobody able to tell a
+  wrong selection from a partly-tagged view.
+
+  **A tag is view-specific, so this removes it from the one view it lives in.**
+  The same element tagged in three views has three tags, and deleting one
+  leaves the other two. That is Revit, not a limitation here, and it is said
+  because "remove the tags" usually means all of them.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  whole drawing's worth of tags is one undo.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: removed
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `IndependentTag` and `Document.Delete`
+  are present 2020 through 2027, compiled at both ends. Nothing reads an
+  ElementId as a number.
+
+# ROUTING - repeated in TAG_ELEMENTS, TAG_ELEMENTS_IN_VIEW and DELETE_ELEMENTS.
+#
+#   "take these tags off"            -> here
+#   "remove the tags from this view" -> here
+#   "untag these elements"           -> here. It deletes the TAG, and the thing
+#                                       tagged is untouched
+#   "tag these ducts"                -> TAG_ELEMENTS - the other direction
+#   "delete these ducts"             -> DELETE_ELEMENTS. That deletes MODEL
+#                                       elements, and mixing the two up is the
+#                                       accident this fragment refuses to have
+#   "which are untagged"             -> FIND_UNTAGGED_ELEMENTS
+#   "the tags are on top of each
+#    other"                          -> FIND_OVERLAPPING_TAGS, which finds them
+#                                       rather than deleting them
+
+utterances:
+  - take these tags off the drawing
+  - remove the tags from this view
+  - untag these elements
+  - delete these tags
+  - clean up the tags

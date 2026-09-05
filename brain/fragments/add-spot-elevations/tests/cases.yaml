@@ -1,0 +1,45 @@
+positive:
+  - given: >
+      a 300 mm floor whose top is at 0, annotated with the top face asked for,
+      in a floor plan
+    expect: >
+      0.0 mm reported and drawn. NOT -300.0 - that is the soffit, and it is what
+      this fragment exists to avoid
+
+  - given: the same floor with the bottom face asked for
+    expect: -300.0 mm. The choice has to change the answer or it is not being made
+
+  - given: twenty slabs annotated at once
+    expect: >
+      twenty heights printed, one per element. Read them - a face picked wrongly
+      on one slab shows up there and nowhere else
+
+negative:
+  - given: a floor whose faces Revit returns bottom-first
+    expect: >
+      the TOP annotated. THIS IS THE FIRST CASE TO RUN, and it has failed
+      before: first-planar-face-wins annotated the soffit and reported
+      "1 placed, 0 skipped". A plausible number, wrong by the slab thickness,
+      printed onto a sheet
+
+  - given: the face test written with the absolute value of the normal's Z
+    expect: >
+      the soffit passing it. The soffit's normal is -1 and its absolute value is
+      1, so the guard lets exactly the wrong face through. The test has to be
+      that the normal points UP
+
+  - given: an element whose geometry yields no face reference
+    expect: skipped and named, not silently absent from the count
+
+  - given: an element with no upward face at all
+    expect: >
+      the fallback used AND reported. Falling back silently is the same failure
+      as picking the wrong face
+
+  - given: a view template handed in
+    expect: refused - a template has no drawing to annotate
+
+second_route: >
+  Read the number Revit prints on the drawing and compare it with the level in
+  the element's own Properties. That comparison is the whole test, and it is the
+  one that caught the soffit
