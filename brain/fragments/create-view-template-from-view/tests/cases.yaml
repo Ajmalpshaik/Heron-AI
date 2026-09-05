@@ -1,0 +1,49 @@
+positive:
+  - given: >
+      a fully set-up MEP plan with overrides, a scale and a phase, and
+      newTemplateName "MEP Coordination Plan"
+    expect: >
+      that template in Manage - View Templates in Revit, carrying the same
+      scale, detail level, phase and graphic overrides as the view it came from.
+      Checked in the template's own settings, not taken from the return value
+
+  - given: applyToSource false
+    expect: >
+      THE SOURCE VIEW STILL HAS NO TEMPLATE ON IT, and its settings still
+      editable. This is the case that separates capturing a standard from being
+      locked to it
+
+  - given: applyToSource true
+    expect: >
+      the source view now following the template it produced, and its scale and
+      visibility now read-only in Properties. appliedToSource true only because
+      a read back found the template on the view
+
+negative:
+  - given: newTemplateName already used by another view template
+    expect: >
+      THE TEMPLATE STILL EXISTS, under the name Revit gave it, and templateName
+      reporting THAT name rather than the one asked for. THIS IS THE FIRST CASE
+      TO RUN - a version that discards the template over a naming clash throws
+      away the captured settings, which are the whole point
+
+  - given: a view template passed in as the source view
+    expect: >
+      refused by name and nothing created. A template has no settings of its own
+      to capture, and a second template made from one is a silent duplicate
+
+  - given: a view type Revit will not make a template from
+    expect: >
+      Revit's own refusal carried, templateId left invalid, and NOTHING reported
+      as created
+
+  - given: applyToSource true on a source view Revit will not accept it on
+    expect: >
+      the template kept, appliedToSource false, and the refusal named. The
+      capture must not be undone because the second half failed
+
+second_route: >
+  Revit's own route - View tab, View Templates, Create Template from Current
+  View. That is what the captured settings are compared against, and it is also
+  the route that shows this fragment's one deliberate difference: Revit does not
+  apply the new template back to the view either.

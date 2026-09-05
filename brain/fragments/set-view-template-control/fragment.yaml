@@ -1,0 +1,126 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-067
+semantic-identity: "change which settings a view template holds and which it leaves each view to decide"
+kind: action
+domain: revit.views
+capability: SET_VIEW_TEMPLATE_CONTROL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes which settings a view template includes. A setting the template
+  includes is locked on every view following it; a setting left out is each
+  view's own to set.
+
+  IT EXISTS BECAUSE THE ANSWER TO A LOCKED SETTING IS USUALLY NOT TO THROW THE
+  TEMPLATE AWAY. *"The scale is greyed out"* almost always means *let the scale
+  be mine and keep the rest of the standard*, and until this fragment the only
+  thing the library could do was `REMOVE_VIEW_TEMPLATE`, which gives up every
+  other setting the template was holding.
+
+  **THIS CHANGES THE TEMPLATE, SO IT CHANGES EVERY VIEW FOLLOWING IT.** That is
+  the whole hazard and it must be read before the call, not after. Freeing
+  *View Scale* to fix one plan frees it on all thirty-four views on that
+  template, and each of them keeps whatever scale it happens to have - which
+  reads as nothing having happened until somebody notices a sheet at the wrong
+  scale weeks later. So the count of views on the template is reported whether
+  it was asked for or not.
+
+  **THE EARLIER LIBRARY BELIEVED THIS WAS A PER-VIEW SETTING, AND IT IS NOT.**
+  Its file said each view sharing a template could exclude different parameters
+  from that template's control, and was marked live-verified. Revit's shipped
+  documentation says the parameters are those *"not marked as included when THIS
+  VIEW is used as a template"* - the same wording on Revit 2020 and on 2027.
+  Called on an ordinary view the API does not fail; it records a preference for
+  the day that view becomes a template, and changes nothing anybody can see.
+  **A silent no-op is the worst possible answer here**, so a view that is not a
+  template is refused by name.
+
+  **THERE IS NO "REPLACE THE WHOLE LIST" OPTION, AND THAT IS DELIBERATE.** The
+  earlier library had one. A list that replaces the excluded set silently locks
+  or frees every setting the caller did not think to name, across every view on
+  the template. This adds and removes the settings named and touches nothing
+  else.
+
+  **A SETTING THE TEMPLATE CANNOT CONTROL IS REPORTED, NOT SWALLOWED.** Revit
+  ignores ids outside the template's own controllable list without complaining,
+  which turns a misspelt setting name into a successful call that did nothing.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: template
+      type: View
+      source: request
+    - name: parameterNames
+      type: IList<string>
+      source: request
+    - name: include
+      type: bool
+      source: request
+  provides:
+    - name: nowHeld
+      type: IList<string>
+    - name: nowFree
+      type: IList<string>
+    - name: notOnTemplate
+      type: IList<string>
+    - name: viewsFollowing
+      type: int
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.IsTemplate`,
+  `View.GetTemplateParameterIds()`,
+  `View.GetNonControlledTemplateParameterIds()`,
+  `View.SetNonControlledTemplateParameterIds()`, `View.ViewTemplateId`,
+  `Element.Parameters`, `Parameter.Id` and `Parameter.Definition` are present
+  and unchanged 2020 through 2027, read off the reference assemblies at both
+  ends.
+
+  **Settings are matched by the display name Revit shows, resolved against the
+  template's own parameter set**, so no `ElementId` is ever read as a number -
+  the member that went 64-bit at 2024 and lost its old name by 2026 is never
+  touched.
+
+# ROUTING - the same rows are in REPORT_VIEW_TEMPLATE_CONTROL and
+# REMOVE_VIEW_TEMPLATE.
+#
+#   "let this view set its own scale"    -> here, with include false. READ THE
+#                                           WARNING: it frees the scale on every
+#                                           view following that template
+#   "make the template control the scale" -> here, with include true
+#   "stop the template locking the filters" -> here, with include false
+#   "why is this greyed out"             -> REPORT_VIEW_TEMPLATE_CONTROL first.
+#                                           It names the template and what it
+#                                           holds, and it is the call to make
+#                                           before this one
+#   "take the template off this view"    -> REMOVE_VIEW_TEMPLATE - one view, and
+#                                           it gives up the whole standard. This
+#                                           fragment keeps the standard and
+#                                           frees one setting, for everybody
+#   "put a different template on"        -> APPLY_VIEW_TEMPLATE
+
+utterances:
+  - let this view control its own scale instead of the template
+  - let this view set its own scale
+  - the scale is greyed out, unlock it
+  - stop the view template locking the detail level
+  - make the template control the visibility settings
+  - exclude a parameter from the view template
+  - include this setting in the view template
+  - unlock one setting but keep the rest of the template

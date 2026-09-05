@@ -1,0 +1,128 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-012
+semantic-identity: "put a different title block on these sheets"
+kind: action
+domain: revit.sheets
+capability: SET_SHEET_TITLE_BLOCK
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes the title block on a set of sheets to one given type - the whole
+  drawing set moved onto a new border in one call.
+
+  IT EXISTS BECAUSE A TITLE BLOCK CHANGE IS A WHOLE-SET JOB DONE ONE SHEET AT A
+  TIME. A client changes their border, or a project moves off the old one, and
+  every sheet has to follow. The library could make sheets and list them and
+  could not change what they are drawn on.
+
+  **THERE ARE TWO DIFFERENT OPERATIONS HERE AND ONLY ONE OF THEM IS SAFE.**
+  If the new type is in the SAME family as what the sheet already has, the type
+  is swapped on the existing instance and every instance-level value on it is
+  kept. If it is a DIFFERENT family, the old title block is deleted and a new
+  one placed - and anything typed into the old instance is gone with it. So the
+  two are counted separately and the replaced sheets are named one by one,
+  because *"48 sheets updated"* hides the four that quietly lost data.
+
+  **WHAT SURVIVES A CROSS-FAMILY REPLACE, AND WHAT DOES NOT.** Sheet Number,
+  Sheet Name, issue date and every other sheet parameter live on the SHEET, not
+  on the title block, and are untouched either way. What is lost is anything
+  held on the title block INSTANCE - a per-sheet override typed into the border,
+  a moved revision schedule. That distinction is the one people get wrong, and
+  it is why the replaced list is worth reading before the next step.
+
+  **THE TYPE ARRIVES ALREADY FOUND.** The earlier library matched it inside the
+  same call by a name substring, which picks silently and can pick wrong when
+  two families carry the same type name. Finding the type is a filter's job in
+  this library, and handing in a `FamilySymbol` makes the choice visible before
+  anything is changed.
+
+  **A TYPE THAT IS NOT A TITLE BLOCK IS REFUSED**, because Revit will place
+  almost anything on a sheet and the result is a drawing with a door on it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: symbol
+      type: FamilySymbol
+      source: request
+  provides:
+    - name: swappedInPlace
+      type: int
+    - name: replaced
+      type: IList<string>
+    - name: notASheet
+      type: int
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSheet.SheetNumber`,
+  `FamilyInstance.Symbol`, `FamilyInstance.OwnerViewId`, `FamilySymbol.Family`,
+  `FamilySymbol.IsActive`, `FamilySymbol.Activate()`, `Document.Delete` and
+  `Document.Regenerate()` are present and unchanged 2020 through 2027.
+
+  **`doc.Create.NewFamilyInstance(XYZ, FamilySymbol, View)` is the overload used,
+  and it is inherited from `ItemFactoryBase` rather than declared on the
+  creation `Document`** - present on both 2020 and 2027, read off the reference
+  assemblies. That matters because the sibling overloads did move between those
+  two types across this range: `NewFamilyInstance(XYZ, FamilySymbol, Level,
+  StructuralType)` is on the creation `Document` at 2020 and on
+  `ItemFactoryBase` at 2027. A check that stopped at the declared type would
+  report a false absence here.
+
+  **Categories and families are compared as `ElementId` to `ElementId`**, never
+  as numbers, so 2024's 64-bit ids do not reach this code.
+
+# ROUTING - the same rows are in REPORT_SHEET_TITLE_BLOCKS and CREATE_SHEETS.
+#
+#   "change the title block on these sheets" -> here
+#   "put the new border on the whole set"    -> here, and READ the replaced
+#                                               list: a cross-family swap loses
+#                                               anything typed into the old
+#                                               title block instance
+#   "what title block is on this sheet"      -> REPORT_SHEET_TITLE_BLOCKS, and
+#                                               it is the call to make FIRST -
+#                                               it says whether the change will
+#                                               be a same-family swap or a
+#                                               replace
+#   "change the sheet name or number"        -> those live on the SHEET, not the
+#                                               title block. WRITE_ELEMENT_PARAMETERS
+#   "make new sheets"                        -> CREATE_SHEETS, which places a
+#                                               title block as it goes
+#   "which sheets are there"                 -> LIST_SHEETS
+#
+#   "change the title block on these sheets" / "swap the title block"
+#                                       -> SET_SHEET_TITLE_BLOCK, WHICH DECLARES
+#                                          BOTH. The report ranks above it on
+#                                          wording, because the two share almost
+#                                          every word and only one of them says
+#                                          change. Identity resolves it, and the
+#                                          crossing is written down here because
+#                                          the direction matters: a read
+#                                          answering a write request wastes a
+#                                          call, and the reverse silently
+#                                          replaces forty borders
+
+utterances:
+  - change the title block on these sheets
+  - swap the title block for a different one
+  - put the new border on all the sheets
+  - update the title block across the drawing set
+  - change the sheet border type
+  - move these sheets onto the new title block

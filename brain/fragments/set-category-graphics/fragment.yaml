@@ -67,6 +67,28 @@ compatibility-note: >
 #                                   so work drawn next week is coloured too
 #   "make these red"             -> OVERRIDE_GRAPHICS_IN_VIEW - stuck to the ids
 #                                   you found, blind to anything added after
+#
+# ROWS ADDED 2026-09-06. The same rows are in SET_LINK_GRAPHICS and
+# RESET_VIEW_GRAPHICS.
+#
+#   "grey the architecture back"  -> HERE, and it is declared here. TWO TABLES
+#                                   claimed this sentence and this one keeps it.
+#                                   It cannot be split by wording, because the
+#                                   words do not say whether those walls are in
+#                                   this model or in a LINK - and that is the
+#                                   whole difference
+#   "grey the architecture back, and it is a LINK"
+#                                -> SET_LINK_GRAPHICS. THIS FRAGMENT REACHES
+#                                   INSIDE A LINK NOT AT ALL: on a linked job it
+#                                   greys nothing, reports success, and leaves
+#                                   the view untouched, because the host
+#                                   genuinely has no walls. That is the quietest
+#                                   failure in this whole cluster
+#   "put this view back to normal" -> RESET_VIEW_GRAPHICS, which sweeps every
+#                                   overridable category without being handed
+#                                   the list. This fragment already clears ONE
+#                                   category with an empty override; that one is
+#                                   for when nobody knows which were written
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

@@ -78,6 +78,29 @@ compatibility-note: >
 #   "make all the architecture faint"  -> SET_CATEGORY_GRAPHICS
 #   "put it back how it was"           -> RESET_GRAPHIC_OVERRIDES
 #
+# ROWS ADDED 2026-09-06, the other side of three crossings with the view
+# template fragments built that day. The same rows are in each of them.
+#
+#   "set the view template"            -> HERE, and it is declared here, so
+#                                         identity resolves it before any
+#                                         ranking. REMOVE_VIEW_TEMPLATE ranks
+#                                         high on it by wording alone and must
+#                                         never win it - a request to put a
+#                                         standard ON a view answered by the
+#                                         fragment that takes one OFF is the
+#                                         worst mistake in this cluster
+#   "take the template off this view"  -> REMOVE_VIEW_TEMPLATE. It does NOT put
+#                                         the view back how it looked before -
+#                                         the settings stay and merely unlock
+#   "why is this setting greyed out"   -> REPORT_VIEW_TEMPLATE_CONTROL. This
+#                                         fragment is what caused it
+#   "unlock ONE setting, keep the rest" -> SET_VIEW_TEMPLATE_CONTROL. Note it
+#                                         edits the TEMPLATE, so it frees that
+#                                         setting on every view following it
+#   "save this view as the template"   -> CREATE_VIEW_TEMPLATE_FROM_VIEW, which
+#                                         is where a template comes from before
+#                                         this fragment can apply one
+#
 # A TEMPLATE BEATS A HAND OVERRIDE, SILENTLY. Neither call reports the
 # conflict, and the override is not deleted - it is overruled and becomes
 # unreachable, which reads as the work having been lost.

@@ -100,13 +100,27 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
-#   "grey out the linked model"        -> here. A link is ONE element in the
-#                                        host, so one override on it covers
-#                                        everything inside - and a CATEGORY
-#                                        override in the host reaches into a
-#                                        link not at all, which is why a
-#                                        grayout on a linked job appears to do
-#                                        nothing
+#   "grey out the linked model"        -> SET_LINK_GRAPHICS AS OF 2026-09-06,
+#                                        which declares it. The reasoning below
+#                                        is why, and it is now that fragment's:
+#                                        a link is ONE element in the host, so
+#                                        one override on it covers everything
+#                                        inside - and a CATEGORY override in the
+#                                        host reaches into a link not at all,
+#                                        which is why a grayout on a linked job
+#                                        appears to do nothing. This fragment
+#                                        can still take a link instance handed
+#                                        to it; it just cannot find the links,
+#                                        name them by file, or say that a view
+#                                        template is overruling the result
+#   "halftone the walls"               -> HERE for named host walls, and
+#                                        SET_CATEGORY_GRAPHICS for the whole
+#                                        category. SET_LINK_GRAPHICS ranks high
+#                                        on it because it declares the sentence
+#                                        somebody types when a greyout did
+#                                        nothing, and that sentence has the word
+#                                        walls in it. It is only the answer if
+#                                        those walls are inside a link
 #   "make this pipe look the same as that one" -> READ_GRAPHIC_OVERRIDES
 #                                        FIRST, then here with what it
 #                                        returns. Matching is a read and a

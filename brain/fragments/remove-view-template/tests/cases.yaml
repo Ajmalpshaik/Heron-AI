@@ -1,0 +1,42 @@
+positive:
+  - given: a plan view with the office standard template applied
+    expect: >
+      the template gone in Revit - checked in the view's Properties, not taken
+      from the return value - and every setting it was holding now editable.
+      detachedFrom naming the template it WAS following
+
+  - given: twelve views, four of them sharing one template
+    expect: >
+      all twelve detached, and the template element still in the project. THIS
+      IS THE CASE THAT SEPARATES DETACH FROM DELETE - a fifth view elsewhere
+      that was using the same template must still be following it afterwards
+
+negative:
+  - given: a view that already has no template
+    expect: >
+      named in hadNoTemplate and NOT counted as detached. THIS IS THE FIRST CASE
+      TO RUN. A fragment that counts a no-op as a change is the fragment that
+      reports twelve views fixed when it touched none
+
+  - given: a view template passed in as if it were a view
+    expect: >
+      refused by name, and the real views in the same call still detached. A
+      silent skip here reads exactly like success
+
+  - given: >
+      a detached view looked at immediately afterwards, expecting it to go back
+      to how it looked before the template was ever applied
+    expect: >
+      IT LOOKS IDENTICAL, and that is correct. The settings the template gave it
+      are kept and merely unlocked. This case exists because it is the one
+      people report as the fragment not working
+
+  - given: a view Revit refuses to detach
+    expect: >
+      that refusal carried with Revit's own message, the other views in the
+      batch still done, and detached counting only what a read back confirmed
+
+second_route: >
+  Revit's own route - select the view, Properties palette, the View Template
+  row, set it to <None>. That is what the result is checked against, and the
+  same place the template name is read from before detaching.

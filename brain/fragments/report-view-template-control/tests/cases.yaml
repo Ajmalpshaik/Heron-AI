@@ -1,0 +1,55 @@
+positive:
+  - given: a plan view whose template includes View Scale
+    expect: >
+      View Scale named in that template's HOLDS list, and the Scale row greyed
+      out in Revit's Properties palette for that view. THE TWO MUST AGREE - the
+      greyed row in Revit is what this is checked against, not the return value
+
+  - given: a template that includes V/G Overrides Model but leaves Detail Level free
+    expect: >
+      V/G Overrides Model in HOLDS and Detail Level in LEAVES FREE, and Detail
+      Level still editable on the view in Revit
+
+  - given: a view template passed in directly instead of a view
+    expect: >
+      the same two lists, reported as the template's own. This is the question
+      to ask BEFORE changing what a template includes
+
+  - given: two views following the same template
+    expect: >
+      THE SAME HOLDS LIST FOR BOTH. This is the case that proves the include
+      list belongs to the template. A version that reads it off each view can
+      report two different answers for one template, which is what the earlier
+      library described and Revit does not do
+
+negative:
+  - given: a view with no template applied
+    expect: >
+      counted in withoutTemplate and reported as having no template - NOT
+      reported as a template that holds nothing. THIS IS THE FIRST CASE TO RUN:
+      "no template" and "a template controlling zero settings" are opposite
+      answers to "why is this greyed out", and an empty list looks the same in
+      both
+
+  - given: a view following a template whose element cannot be resolved
+    expect: >
+      said plainly - still locked, and nothing here can say by what. Not
+      silently reported as untemplated
+
+  - given: a template that can control settings and includes none of them
+    expect: >
+      HOLDS reported as none IN WORDS, and the view's settings genuinely still
+      editable in Revit. An empty list must not be readable as "nothing was
+      checked"
+
+  - given: a parameter id on the template's include list that no name can be found for
+    expect: >
+      the count still correct and that entry simply unnamed. A missing name must
+      not drop a locked setting out of the total
+
+second_route: >
+  Revit's own routes, and both are used to check this. First, the Properties
+  palette on the view - a row that is greyed out is a row the template holds.
+  Second, View tab, View Templates, Manage View Templates, where the include
+  checkbox column IS the list this fragment reads, and where it visibly belongs
+  to the template rather than to any one view.
