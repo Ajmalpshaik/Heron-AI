@@ -1,0 +1,44 @@
+positive:
+  - given: >
+      an air handling unit built from a shared fan, a coil and two dampers,
+      handed in as one parent
+    expect: >
+      the four nested elements, each with its own category. Select the AHU in
+      Revit and Tab into it to see the same four
+
+  - given: a fixture nested three levels deep, recursive true
+    expect: >
+      every level returned and the depth reported as 3. With recursive false,
+      only the first level
+
+  - given: twenty ordinary instances with no nesting
+    expect: >
+      0 elements and withoutSubComponents reported as 20. That is the ordinary
+      case and it must read as ordinary, not as a failure
+
+negative:
+  - given: >
+      a category count of sensors over a model where four sensors are nested
+      inside equipment
+    expect: >
+      the count SHORT by four, and this fragment supplying them. THIS IS THE
+      FIRST CASE TO RUN, because it is the fact the fragment exists for: the
+      short count looks entirely correct and nothing in the model says otherwise
+
+  - given: a wall and a duct among the parents
+    expect: >
+      counted and named as not family instances. Silently skipping them makes a
+      wrong parent list indistinguishable from a model with no nesting
+
+  - given: a family nested in a way that refers back to itself
+    expect: >
+      each element returned once and the run finishing. Following nesting
+      without a visited set would not stop
+
+  - given: no parents given
+    expect: refused, with the reason
+
+second_route: >
+  In Revit, select the parent and press Tab to cycle into its nested parts, or
+  open the family in the Family Editor and read its nested components - either
+  is the count this fragment claims to match

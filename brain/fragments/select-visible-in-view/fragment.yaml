@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-016
+semantic-identity: "what is actually showing in this view, not what exists in the model"
+kind: filter
+domain: revit.selection
+capability: SELECT_VISIBLE_IN_VIEW
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows the model to what a named view actually SHOWS, optionally bounded to a
+  list of categories - the set behind "count what is on this drawing", "tag
+  everything visible here", "export only what the sheet shows".
+
+  **This is not "exists in the model", and the gap between the two is the whole
+  point.** A view applies its crop, its view range, its phase filter, its
+  category switches, its view filters, its worksets and its template, and every
+  one of them can remove something that is unquestionably in the model. Counting
+  the model and reporting it as the drawing is the commonest way a schedule and
+  a plan end up disagreeing.
+
+  **It works on any view by name, not only the one on screen.** That is what
+  makes it useful before a sheet is issued: ask what a view will show without
+  opening it.
+
+  **It answers "what is showing", never "why is that not showing".**
+  DIAGNOSE_VISIBILITY takes one element and one view and works out which of the
+  eight mechanisms hid it. This one gives the set and no reasons - a thing
+  missing from this answer is a question that fragment exists for.
+
+  **A view template is not a view and is refused.** A template has no elements
+  of its own; it is a set of settings applied to views. Handing one in and
+  getting an empty answer would read as "this view shows nothing".
+
+  UNPROVEN AGAINST A MODEL, and one part deserves naming: exactly which
+  visibility mechanisms Revit's own view-scoped collector honours - temporary
+  hide/isolate in particular - has not been watched here. What is claimed is
+  that this is Revit's answer to the question, not a re-implementation of it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The view-scoped
+  `FilteredElementCollector(Document, ElementId)` constructor and
+  `View.IsTemplate` are present 2020 through 2027, compiled at both ends.
+  Categories are handed to `ElementMulticategoryFilter` as BuiltInCategory
+  values rather than as ElementIds built from them.
+
+# ROUTING - repeated in DIAGNOSE_VISIBILITY, FIND_VIEWS_SHOWING_ELEMENT and
+# COUNT_ELEMENTS.
+#
+#   "what is showing on this view"   -> here
+#   "count what is on this drawing"  -> here, then COUNT_ELEMENTS
+#   "tag everything visible here"    -> A SKILL. It is this fragment and then
+#                                       TAG_ELEMENTS_IN_VIEW, and a
+#                                       composition is a skill's job -
+#                                       TAG_ELEMENTS_IN_VIEW answers it today
+#                                       and does the visible half itself
+#   "why can't I see this duct"      -> DIAGNOSE_VISIBILITY - one element, one
+#                                       view, and which mechanism hid it. This
+#                                       fragment gives a set and no reasons
+#   "which views show this element"  -> FIND_VIEWS_SHOWING_ELEMENT - the same
+#                                       question from the other end
+#   "how many ducts are there"       -> FILTER_ELEMENTS_BY_CATEGORY. That is
+#                                       the MODEL's answer, and it is a
+#                                       different number from this one
+
+utterances:
+  - what is showing on this view
+  - select everything visible in this view
+  - what will this drawing actually show
+  - find the elements visible in a view
+  - count what is on this drawing

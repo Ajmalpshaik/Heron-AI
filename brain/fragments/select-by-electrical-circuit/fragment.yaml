@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-032
+semantic-identity: "everything wired onto one circuit, or onto every circuit of a kind"
+kind: filter
+domain: revit.mep
+capability: SELECT_BY_ELECTRICAL_CIRCUIT
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Gathers the elements on electrical circuits, matched by the circuit's kind -
+  power, lighting, data - or by its name, or both.
+
+  **This is a separate fragment from SELECT_BY_MEP_SYSTEM on purpose.** A duct
+  or pipe system type is a document element with a name a project can change; an
+  electrical circuit's type is a fixed enumeration in the API. They look like
+  the same question in a modeller's words and they are read in genuinely
+  different ways, so folding them together would mean one of the two reading
+  through a mechanism that does not exist for it.
+
+  **A CIRCUIT'S ELEMENTS ARE ITS LOADS, AND THE PANEL IS NOT AMONG THEM.** This
+  was measured: a circuit plainly involving a receptacle and a panelboard
+  reported ONE element. That is Revit being correct and easy to misread -
+  everything downstream of the panel is on the circuit, the panel FEEDS it. So
+  the panels are reported separately rather than left as an apparent omission,
+  because "1 element on a circuit between two pieces of equipment" reads as a
+  broken filter.
+
+  **Kind and name both narrow, and asking for neither is refused.** Every
+  circuit in a model is a legitimate answer to no filter at all, and it is
+  almost never the question - a refusal costs one more sentence and saves
+  reading a list of everything.
+
+  **The kind is matched as text against the enumeration's own name**, so
+  "power" finds `PowerCircuit`. That is what a modeller types, and the
+  alternative is asking them to know the API's spelling.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: circuitKind
+      type: string
+      source: request
+    - name: circuitName
+      type: string
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: panels
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElectricalSystem`, its `SystemType`,
+  `Elements` and `PanelName` are present 2020 through 2027, compiled at both
+  ends. The circuit kind is compared as text against the enumeration's own
+  name, so a release adding a kind is matched rather than needing a new case.
+
+# ROUTING - repeated in SELECT_BY_MEP_SYSTEM, REPORT_CONNECTOR_LOADS and
+# CREATE_ELECTRICAL_RUN.
+#
+#   "what is on this circuit"        -> here
+#   "select all the lighting circuits" -> here, matching the kind
+#   "what is wired to panel A"       -> here, matching the name - and read the
+#                                       panels list, because the panel itself
+#                                       is never among the elements
+#   "all the supply air"             -> SELECT_BY_MEP_SYSTEM. A duct system
+#                                       type is a document element; a circuit
+#                                       type is a fixed enumeration, and they
+#                                       are read differently
+#   "how much load is on it"         -> REPORT_CONNECTOR_LOADS - the numbers,
+#                                       once the elements are chosen
+#   "draw the containment"           -> CREATE_ELECTRICAL_RUN. Tray and conduit
+#                                       are the physical route; a circuit is
+#                                       the electrical one, and a model can
+#                                       have either without the other
+
+utterances:
+  - what is on this circuit
+  - select all the lighting circuits
+  - what is wired to panel A
+  - find elements on a power circuit
+  - show me everything on this electrical circuit

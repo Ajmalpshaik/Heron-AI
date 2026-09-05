@@ -1,0 +1,45 @@
+positive:
+  - given: >
+      a cropped plan whose crop excludes half the ducts on that level
+    expect: >
+      only the ducts inside the crop, and a count LOWER than
+      FILTER_ELEMENTS_BY_CATEGORY gives for the same level. Both numbers are
+      right and they answer different questions
+
+  - given: a view whose Ducts category is switched off
+    expect: >
+      no ducts at all, while the model plainly has them. That gap is the whole
+      reason this fragment exists
+
+  - given: a view that is not the one currently open
+    expect: >
+      answered without opening it. Then open it and count on screen - the two
+      must agree
+
+negative:
+  - given: >
+      the same category counted in the model and counted here, reported as one
+      number
+    expect: >
+      the two counts DIFFERENT, and this fragment's report saying which one it
+      is. THIS IS THE FIRST CASE TO RUN. A fragment that quietly returns the
+      model's answer when asked for the view's is indistinguishable from a
+      correct one on any view with no crop and nothing switched off - which is
+      most test models and almost no real ones
+
+  - given: a view TEMPLATE handed in
+    expect: >
+      refused by name. Not an empty set - a template has no elements, and zero
+      would read as "this view shows nothing"
+
+  - given: a view where everything really is hidden
+    expect: 0, reported as 0 showing. That zero is honest
+
+  - given: no view given
+    expect: refused, with the reason
+
+second_route: >
+  Open the view in Revit, select all in it, and read the count Revit's status
+  bar shows. That is the definition this fragment is claiming to match, and it
+  is the only check that also covers temporary hide and isolate - which have
+  NOT been watched here

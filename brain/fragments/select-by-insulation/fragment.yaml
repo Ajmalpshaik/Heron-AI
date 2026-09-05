@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-031
+semantic-identity: "which ducts and pipes are insulated, and which are still bare"
+kind: filter
+domain: revit.mep
+capability: SELECT_BY_INSULATION
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Splits a duct or pipe category into what has insulation applied and what is
+  still bare - the sweep behind "which ducts still need insulating" and "show me
+  what is already done".
+
+  **It asks the insulation, not the duct.** A duct carries no reliable "am I
+  insulated" parameter; the truth is a separate element that records which host
+  it wraps. So this reads the wrappers and builds the set of hosts they name,
+  which is the real relationship rather than a parameter that might have been
+  filled in by hand.
+
+  **The lookup is built once, not per element.** Asking each duct "is anything
+  wrapping you" means a scan of the whole model per duct. Reading every wrapper
+  once and collecting the hosts it names is the same answer for the cost of one
+  pass, and on a real model that is the difference between a second and several
+  minutes.
+
+  **Lining is not insulation, and whether it counts is asked rather than
+  assumed.** External thermal insulation and internal acoustic lining are
+  different elements doing different jobs, and a modeller asking "which ducts
+  are insulated" may mean either. The report always says which was counted, so
+  two runs with different answers are not a contradiction.
+
+  **A bare duct and a duct that cannot carry insulation look the same from a
+  count.** Fittings, flex and equipment are in the same categories a modeller
+  names, so the bare list is the honest answer to "what has nothing on it" and
+  not a work list. Whether each one SHOULD be insulated is a judgement, and it
+  is the modeller's.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+    - name: wantInsulated
+      type: bool
+      source: request
+    - name: countLiningAsInsulated
+      type: bool
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: scanned
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `DuctInsulation`, `DuctLining`,
+  `PipeInsulation` and `InsulationLiningBase.HostElementId` are present 2020
+  through 2027, compiled at both ends. Host ids are compared as ElementIds and
+  never read as numbers.
+
+# ROUTING - repeated in SET_MEP_INSULATION and CHECK_INSULATION_CLEARANCE.
+#
+#   "which ducts still need insulating" -> here, wantInsulated false
+#   "show me what is insulated"      -> here, wantInsulated true
+#   "insulate these"                 -> SET_MEP_INSULATION - this one only
+#                                       reads, and is what to run first to see
+#                                       what is left
+#   "will the insulation fit"        -> CHECK_INSULATION_CLEARANCE - a
+#                                       clearance question, and it needs the
+#                                       insulation to exist before it can be
+#                                       asked
+#   "what insulation is on this
+#    duct"                           -> SELECT_BY_HOST with the duct as the
+#                                       host, which returns the wrapper itself
+#                                       rather than a yes or no
+
+utterances:
+  - which ducts still need insulating
+  - show me what is already insulated
+  - find the bare pipework
+  - select insulated ducts
+  - which pipes have no insulation

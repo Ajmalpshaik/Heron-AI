@@ -1,0 +1,41 @@
+positive:
+  - given: a duct deliberately overlapped with a copy of itself
+    expect: >
+      the copy found. This is the mechanism's positive control and it has been
+      run: overlap is detected
+
+  - given: a pipe passing through a wall with no sleeve
+    expect: >
+      the wall returned. Look at it in a section - the pipe really is inside the
+      wall's solid, which is what makes this a clash and not a junction
+
+  - given: the same target with a category list of walls only
+    expect: the wall and nothing else, from the same overlap set
+
+negative:
+  - given: two ducts joined by a real elbow fitting at a shared connector
+    expect: >
+      ZERO, and the report saying so in words. THIS IS THE FIRST CASE TO RUN.
+      It has been run across every category, not just the one tested, and found
+      nothing - correctly. A clean connection shares a face and no volume. The
+      danger is not the zero, it is reading the zero as "nothing is connected"
+      or as a broken filter
+
+  - given: the target itself checked for in the answer
+    expect: >
+      absent. It overlaps its own geometry perfectly, and leaving it in puts a
+      false pair in every clash list built on this
+
+  - given: an element with no solid geometry as the target
+    expect: >
+      refused or reported as untestable, with the reason named - not a silent
+      empty set
+
+  - given: no target given
+    expect: refused, with the reason
+
+second_route: >
+  Revit's own Interference Check between the target and the candidate category,
+  and the two lists compared - and for the connected-ducts case, looking at the
+  joint in section, which shows plainly that the two solids meet without
+  overlapping

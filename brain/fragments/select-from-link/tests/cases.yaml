@@ -1,0 +1,44 @@
+positive:
+  - given: a loaded structural link, structural framing category
+    expect: >
+      the beams in it, and a count matching a schedule opened in the linked
+      file itself. Not a count of anything in the host
+
+  - given: the same link with no category list
+    expect: everything in it, a far larger number, and the same link named in the report
+
+  - given: a link placed with a rotation
+    expect: >
+      the transform returned NON-identity and the report saying so. A point read
+      off one of these elements without applying it lands somewhere the element
+      is not
+
+negative:
+  - given: >
+      one of the returned elements handed to a fragment that calls
+      doc.GetElement on its id
+    expect: >
+      the WRONG element or nothing. THIS IS THE FIRST CASE TO RUN, and it is
+      why the warning is in the report rather than in a comment: the id is a
+      number that means something different in each document, so the failure is
+      silent and the result looks like a real element
+
+  - given: a link that is present but unloaded
+    expect: >
+      refused and named as unloaded. Not zero - "the structural model is empty"
+      and "nobody loaded it" are different facts and a zero says the first
+
+  - given: '"structural" asked for in a model with two structural links'
+    expect: >
+      refused as ambiguous, with both named. Picking the first is a coin toss
+      reported as an answer
+
+  - given: a link name that matches nothing
+    expect: refused, with every link listed
+
+  - given: a loaded but genuinely empty link
+    expect: 0, reported as 0 in a loaded link. That zero is honest
+
+second_route: >
+  Open the linked file directly in Revit and schedule the same category there.
+  That is the only check that is independent of the link mechanism itself

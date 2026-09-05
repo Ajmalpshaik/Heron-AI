@@ -1,0 +1,41 @@
+positive:
+  - given: >
+      a power circuit built from one receptacle and a panelboard, kind "Power"
+    expect: >
+      the receptacle returned and the panel named in the panels list, NOT among
+      the elements. This exact shape has been run and returned one element
+
+  - given: kind "Lighting" in a model with both kinds
+    expect: only the lighting loads, and the power ones absent
+
+  - given: a circuit name matching one panel's circuits
+    expect: that panel's loads, and that panel named
+
+negative:
+  - given: kind "Data" in a model whose only circuit is power
+    expect: >
+      ZERO. THIS IS THE FIRST CASE TO RUN - it is the negative control, and it
+      has been run: it proves the kind test excludes rather than passing
+      everything through. A filter that returns the power loads here is matching
+      nothing and reporting success
+
+  - given: >
+      a circuit between a receptacle and a panel, and the element count read
+      alone
+    expect: >
+      1, which looks like a missing element and is not. The report has to name
+      the panel separately or this reads as a broken filter every time
+
+  - given: neither kind nor name given
+    expect: refused, with the reason - not every circuit in the model
+
+  - given: a model with no electrical work at all
+    expect: >
+      0 circuits matched AND the sentence saying an empty model looks the same.
+      A bare zero cannot be told from a filter that is not working
+
+second_route: >
+  Revit's own System Browser, Electrical view - it lists each circuit with its
+  loads under its panel, which is the same structure this fragment reports as
+  elements plus panels. Building a circuit to test against is a fair way to get
+  a fixture where a model has none

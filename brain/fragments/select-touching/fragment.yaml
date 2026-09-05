@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-018
+semantic-identity: "what is physically overlapping this one element"
+kind: filter
+domain: revit.selection
+capability: SELECT_TOUCHING
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds the elements whose real geometry OVERLAPS one given element -
+  "what is clashing with this beam", "what is running through this wall" -
+  optionally bounded to a list of categories.
+
+  **Overlapping is not the same as meeting, and for MEP that distinction
+  decides the answer.** Two ducts joined by an elbow at a shared connector are
+  touching face to face and do NOT occupy the same space, so this returns
+  nothing for them - proved by running it against exactly that pair, across
+  every category. It is not a fault: the test is volumetric overlap, and a clean
+  connection has none. "What is connected to this duct" is TRACE_CONNECTIVITY;
+  this is "what is in the same place as it".
+
+  **So an empty answer means no clash, not no relationship**, and the report
+  says so rather than leaving a bare zero to be misread as a broken filter.
+
+  **The element is never returned as touching itself.** It overlaps its own
+  geometry perfectly, and including it would put a false pair in every clash
+  list built on this.
+
+  **This is one element against the model.** FIND_CLASHES takes two SETS and
+  reports pairs, which is what a coordination round needs; this is the single
+  question a modeller asks with something already selected.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: target
+      type: Element
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementIntersectsElementFilter` is
+  present 2020 through 2027, compiled at both ends. The target is excluded by
+  comparing ElementId to ElementId, never by reading either as a number.
+
+# ROUTING - repeated in FIND_CLASHES, TRACE_CONNECTIVITY and SELECT_IN_REGION.
+#
+#   "what is clashing with this"     -> here
+#   "what runs through this wall"    -> here
+#   "what is touching this beam"     -> here
+#   "what is connected to this duct" -> TRACE_CONNECTIVITY. A clean connection
+#                                       has NO volumetric overlap, so this
+#                                       fragment returns nothing for it - a
+#                                       correct answer to a different question
+#   "run a clash check"              -> FIND_CLASHES - two sets, pairs
+#                                       reported, which is what a coordination
+#                                       round needs
+#   "what is in this area"           -> SELECT_IN_REGION - a volume, not an
+#                                       element, as the target
+
+utterances:
+  - what is clashing with this
+  - what is touching this element
+  - what runs through this wall
+  - find everything overlapping this
+  - what is in the same place as this
