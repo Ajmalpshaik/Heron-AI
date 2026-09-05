@@ -99,6 +99,10 @@ compatibility-note: >
 #                                            joins ends already at one point
 #   "put an elbow here"                   -> PLACE_MEP_FITTING
 #   "is this duct connected"              -> TRACE_CONNECTIVITY - a READ
+#   "the pressure drop reads zero"        -> REPORT_MEP_PRESSURE_DROP calls a
+#                                            system with an open end
+#                                            UNCALCULATED. This fragment is
+#                                            the fix for that cause
 #   "where are the open ends"             -> FIND_DEAD_ENDS - sorts the
 #                                            deliberate ends from the mistakes
 #   "close the gap between these runs"    -> NOTHING HERE DOES THAT. Nothing

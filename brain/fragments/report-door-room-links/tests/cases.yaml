@@ -1,0 +1,59 @@
+positive:
+  - given: a corridor with six doors into six offices
+    expect: >
+      each door reading "Corridor -> Office NN", checked against the plan in
+      Revit door by door, not accepted from the return value
+
+  - given: an entrance door in an external wall
+    expect: >
+      "(outside)" on one side and the lobby on the other - reported as a normal
+      result, not as a failure. An entrance door legitimately has one room
+
+  - given: a model with Existing and New Construction phases and a door whose room changed
+    expect: >
+      different rooms for each phaseName, and the phase NAMED in the summary. On a
+      refurbishment this is the whole answer, and the bare property gives only the
+      last phase
+
+negative:
+  - given: a door that has been flipped in the model
+    expect: >
+      listed in disagreements, with BOTH readings shown and the geometry named as
+      the one to believe - and NOTHING CORRECTED. THIS IS THE FIRST CASE TO RUN
+      AND THE REASON THE FRAGMENT EXISTS. FromRoom and ToRoom follow the door's
+      facing, so a flipped door reads backwards while the plan looks right, and a
+      version that trusts the properties reports it as correct
+
+  - given: a door in a corridor where the rooms have not been placed
+    expect: >
+      listed in noRoomEitherSide with the likely cause, not silently reported as
+      "(outside) -> (outside)" alone. Outside on both sides of an internal door is
+      not an answer, it is a symptom
+
+  - given: a room whose boundary does not close
+    expect: >
+      the probe against that room failing WITHOUT taking the door down with it,
+      and the other rooms still tested. One unenclosed room must not end the run
+
+  - given: a door with no point location
+    expect: >
+      reported as NOT CHECKED, with Revit's own reading still shown. Silently
+      reporting the property as verified is the failure this guards against
+
+  - given: a phaseName that does not exist in the document
+    expect: >
+      the substitution SAID, with the phase actually used named, and the warning
+      that the rooms change by phase
+
+  - given: a list containing walls and windows
+    expect: skipped, doorsChecked reflecting only the doors
+
+second_route:
+  - >
+    A door schedule in Revit with the From Room and To Room fields added. That is
+    what this reports - and where a flipped door shows up as a backwards row,
+    which is the case worth comparing against
+
+  - >
+    Click the door in plan and read which room is which side. On a disagreement,
+    this is the tie-breaker and the geometry should match it

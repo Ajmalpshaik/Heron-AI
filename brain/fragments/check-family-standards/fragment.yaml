@@ -93,6 +93,16 @@ compatibility-note: >
 #   "which families are not used"        -> FIND_UNUSED_FAMILIES - about USAGE,
 #                                           not about whether they are built
 #                                           correctly
+#   "which families are nested inside this one"
+#                                        -> GROUP_BY_ASSEMBLY, which walks UP to
+#                                           the host and DOWN to every nested
+#                                           part. That sentence resolved HERE
+#                                           until 2026-09-05, and this fragment
+#                                           audits whether a family is BUILT
+#                                           right - a different question
+#   "what parameters does it have"       -> REPORT_PARAMETER_INVENTORY - the
+#                                           full list on one element, before you
+#                                           know any of the names
 
 utterances:
   - check the families are named to our standard

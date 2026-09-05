@@ -113,6 +113,10 @@ compatibility-note: >
 #   "what fall is on this drain"     -> MEASURE_MEP_SLOPE - a READ, and it must
 #                                       not answer a request to change the model
 #   "check the slopes"               -> MEASURE_MEP_SLOPE
+#   "what is the pressure drop"      -> REPORT_MEP_PRESSURE_DROP - Revit's own
+#                                       calculation, a READ. That sentence
+#                                       resolved HERE, to a fragment that
+#                                       CHANGES THE SLOPE, until 2026-09-05
 #   "level these up"                 -> ALIGN_MEP_ELEVATION - one flat height,
 #                                       the opposite instruction to a fall
 #   "raise the ducts 200"            -> MOVE_ELEMENTS - moves both ends together

@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-038
+semantic-identity: "what this wall, floor or roof is actually made of, layer by layer"
+kind: action
+domain: revit.reporting
+capability: REPORT_COMPOUND_STRUCTURE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the layer build-up of a wall, floor, roof or ceiling TYPE - each layer's
+  function, material and thickness, where the core starts and stops, and the
+  total. The *"what is this wall made of"* answer. It changes nothing.
+
+  **IT EXISTS BECAUSE THE QUESTION WAS BEING ANSWERED BY `CREATE_WALL`.**
+  Measured before this batch, *"what is the wall build up"* resolved to the
+  fragment that BUILDS A WALL. A question about an existing type, answered by
+  making a new element - the worst shape of mis-route in this library, and the
+  same one `CHECK_FAMILY_STANDARDS` and `REPORT_VIEW_FILTERS` were built to
+  close.
+
+  **IT REPORTS TYPES, NOT INSTANCES, AND DEDUPES.** Nine walls of one type are
+  one build-up, and listing it nine times buries the one thing being asked. An
+  instance is resolved to its type; a type handed in directly is used as it is,
+  so this works downstream of a category filter or a type filter equally.
+
+  **THE CORE IS MARKED, BECAUSE IT IS WHAT DIMENSIONS AND ROOMS MEASURE TO.**
+  Revit's core boundary decides where a wall's location line can sit, what a
+  room boundary follows, and what a dimension to "wall face" actually hits. A
+  layer list without the core marked reads as a plain stack and hides the one
+  line that changes measurements.
+
+  **A CURTAIN WALL AND AN IN-PLACE ELEMENT HAVE NO COMPOUND STRUCTURE, AND THAT
+  IS AN ANSWER.** It is not an error and not an empty result. A curtain wall is
+  made of panels and mullions instead - `REPORT_CURTAIN_ELEMENTS` is that
+  question, and this fragment names it rather than returning nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: typesReported
+      type: int
+    - name: withoutStructure
+      type: IList<string>
+    - name: totalThicknessMm
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `HostObjAttributes.GetCompoundStructure`,
+  `CompoundStructure.GetLayers`, `GetFirstCoreLayerIndex`,
+  `GetLastCoreLayerIndex`, and `CompoundStructureLayer.Function`, `Width` and
+  `MaterialId` are present and unchanged 2020 through 2027.
+
+  **No units API is called.** Layer widths are Revit internal feet and are
+  multiplied by 304.8 to millimetres, plain arithmetic at the edge - which is
+  what D-20 requires and what keeps this working across the 2021 units break.
+
+  The material arrives as an `ElementId` and is resolved with `doc.GetElement`;
+  nothing here reads an id as a number, so 2024's 64-bit change does not reach
+  this code.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is this wall made of"        -> here
+#   "what is the wall build up"        -> here. It resolved to CREATE_WALL, which
+#                                         MAKES A WALL, until 2026-09-05
+#   "what layers are in this floor"    -> here
+#   "how thick is this wall"           -> here - the total is reported per type
+#   "build me a wall"                  -> CREATE_WALL. One reads a type, one puts
+#                                         an element in the model
+#   "what material is this"            -> READ_ELEMENT_MATERIAL - the materials
+#                                         ON an element. This reports the LAYERS
+#                                         of its type, which is where a wall's
+#                                         materials actually live
+#   "how much of each material"        -> REPORT_MATERIAL_TAKEOFF - quantities
+#   "what is in this curtain wall"     -> REPORT_CURTAIN_ELEMENTS. A curtain wall
+#                                         has NO compound structure; panels and
+#                                         mullions are what it is made of
+
+utterances:
+  - what is this wall made of
+  - what is the wall build up
+  - what layers are in this wall
+  - show me the wall construction
+  - how thick is this wall type
+  - what is the floor build up
+  - list the layers of this roof

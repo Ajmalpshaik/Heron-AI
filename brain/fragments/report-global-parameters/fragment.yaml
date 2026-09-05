@@ -76,7 +76,18 @@ compatibility-note: >
 #                                                    COLUMN, one value per
 #                                                    element. A global is ONE
 #                                                    value for the whole model
-#   "what parameters does this duct have"         -> READ_ELEMENT_PARAMETERS
+#   "what parameters does this duct have"         -> REPORT_PARAMETER_INVENTORY -
+#                                                    the FULL LIST on one
+#                                                    element, before you know any
+#                                                    names. Both that sentence
+#                                                    and "what parameters can I
+#                                                    filter on" resolved HERE
+#                                                    until 2026-09-05, which is
+#                                                    the mix-up this fragment's
+#                                                    own purpose warns about
+#   "what is the Mark on these"                   -> READ_ELEMENT_PARAMETERS -
+#                                                    one parameter you can
+#                                                    already NAME
 
 utterances:
   - show me the global parameters in this model

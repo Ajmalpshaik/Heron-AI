@@ -1,0 +1,47 @@
+positive:
+  - given: a curtain wall of 24 glazed panels on a 4 x 6 grid
+    expect: >
+      24 panels, and the grid line counts matching what is drawn - counted on the
+      elevation in Revit, not taken from the return value
+
+  - given: mullions of two profiles
+    expect: >
+      grouped BY TYPE with a count each, not one total. Forty mullions is not a
+      purchase order; twelve of one and twenty-eight of another is
+
+  - given: a facade with three spandrel cells built as basic walls
+    expect: >
+      those three named SEPARATELY as basic-wall cells, with their wall type. THIS
+      IS THE CASE A GLASS ORDER GETS WRONG - they come back from GetPanelIds like
+      any other cell and counting them as glazing over-orders
+
+negative:
+  - given: a curtain wall with one panel deleted
+    expect: >
+      that cell counted in emptyCells and named as a hole in the elevation. THIS
+      IS THE FIRST CASE TO RUN. A null cell silently skipped and a solid infill
+      look identical in a count, and only one of them is a modelling problem
+
+  - given: an ordinary layered wall
+    expect: >
+      named in notCurtain with the reason, and REPORT_COMPOUND_STRUCTURE the
+      route - not an empty result
+
+  - given: a duct handed in among the walls
+    expect: named in notCurtain, the real curtain walls still reported
+
+  - given: a curtain wall with no mullions at all
+    expect: >
+      "no mullions" IN WORDS. A silent absent section reads as a fragment that
+      failed part way
+
+  - given: a curtain wall whose panels Revit refuses to enumerate
+    expect: >
+      that named with Revit's own message, and the mullions and grid still
+      reported for the same wall. One guard around everything loses the rest
+
+second_route:
+  - >
+    Select the curtain wall in Revit and use Tab to cycle panels and mullions, or
+    a curtain panel schedule and a mullion schedule. Those are what the counts are
+    checked against

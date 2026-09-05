@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-029
+semantic-identity: "which fitting this pipe or duct type will insert, and at which sizes"
+kind: action
+domain: revit.mep
+capability: REPORT_ROUTING_PREFERENCES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the routing preferences table off a pipe or duct TYPE - which elbow,
+  tee, cross, transition, union and cap Revit will insert, and at which sizes.
+  The answer to *"why did it put THAT fitting in"*. It changes nothing.
+
+  IT EXISTS BECAUSE THE QUESTION WAS BEING ANSWERED BY `CREATE_MEP_SYSTEM_TYPE`.
+  Measured before this batch, both *"report the routing preferences of this pipe
+  type"* and *"which fittings does this pipe type use"* resolved there - a
+  fragment that CREATES a system type, for a question about an existing one.
+
+  **THE THING THAT MAKES A TYPE FAIL SILENTLY: A SIZE OUTSIDE EVERY RULE'S RANGE
+  GETS NO FITTING AT ALL.** Each rule carries a minimum and maximum size. Draw at
+  a size outside every window in a group and Revit inserts nothing - the run just
+  stays unconnected at that junction, **with no error and no warning.** That gap
+  is what this fragment is really for, so the covered size range per group is
+  reported explicitly rather than left to be worked out from a table of numbers.
+
+  **A RULE POINTING AT AN UNLOADED FAMILY LOOKS LIKE A BUG AND IS NOT.** The rule
+  is fine; the family is gone from the project. Same visible symptom as an empty
+  group - no fitting appears - and a completely different fix, so the two are
+  reported separately.
+
+  **AN EMPTY GROUP IS A REAL ANSWER.** A type with no cap rule cannot cap a run.
+  Reporting only the groups that have rules hides exactly the group somebody is
+  asking about when a run will not close.
+
+  Routing preferences are invisible until something goes wrong, and then they are
+  the whole explanation. Checking one before drawing with a type you did not
+  build costs nothing; finding out afterwards costs a redraw.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: typesReported
+      type: int
+    - name: emptyGroups
+      type: IList<string>
+    - name: missingFamilies
+      type: IList<string>
+    - name: notRoutable
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `MEPCurveType.RoutingPreferenceManager`,
+  `RoutingPreferenceManager.GetNumberOfRules(RoutingPreferenceRuleGroupType)` and
+  `GetRule(group, int)`, `RoutingPreferenceRule.MEPPartId`, `NumberOfCriteria`
+  and `GetCriterion(int)`, and `PrimarySizeCriterion.MinimumSize` and
+  `MaximumSize` are present and unchanged 2020 through 2027, with the same
+  argument counts.
+
+  **The rule's size window is reached through `GetCriterion(int)`, not through a
+  `GetCriteria()` collection** - that method does not exist on any release,
+  checked against the reference assemblies for 2020, 2024 and 2027.
+
+  **No units API is called.** Criterion sizes are Revit internal feet and are
+  multiplied by 304.8 to millimetres, plain arithmetic at the edge.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what fittings does this type use"  -> here
+#   "why did it put that elbow in"      -> here
+#   "why is there no fitting at all"    -> here, and read the SIZE RANGE: a size
+#                                          outside every rule's window gets no
+#                                          fitting and no warning
+#   "make a new system type"            -> CREATE_MEP_SYSTEM_TYPE - a WRITE, and
+#                                          what both these questions resolved to
+#                                          until 2026-09-05
+#   "draw a pipe"                       -> CREATE_PIPE. Check this FIRST when
+#                                          drawing with a type you did not build
+#   "put a fitting in here"             -> PLACE_MEP_FITTING - one fitting, by
+#                                          hand, rather than the table that
+#                                          decides them automatically
+#   "the run is not connected"          -> FIND_DEAD_ENDS. A missing routing rule
+#                                          is one CAUSE of that, and this says
+#                                          whether it is this one
+
+utterances:
+  - report the routing preferences of this pipe type
+  - which fittings does this pipe type use
+  - why did it put that elbow in
+  - what elbow will this duct type use
+  - why is there no fitting on this junction
+  - check the routing preferences before I draw
+  - what sizes does this type have fittings for

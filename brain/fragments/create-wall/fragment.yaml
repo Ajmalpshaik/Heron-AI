@@ -88,6 +88,15 @@ compatibility-note: >
 #   "make a floor slab over this area"  -> CREATE_FLOOR
 #   "join these walls together"         -> JOIN_GEOMETRY - nothing here joins
 #                                          anything
+#   "what is this wall made of"         -> REPORT_COMPOUND_STRUCTURE - the layer
+#                                          build-up of a type. A QUESTION, and
+#                                          "what is the wall build up" resolved
+#                                          HERE, to a fragment that builds a
+#                                          wall, until 2026-09-05
+#   "what is in this curtain wall"      -> REPORT_CURTAIN_ELEMENTS - panels and
+#                                          mullions, which is what a curtain
+#                                          wall is made of instead of layers.
+#                                          That sentence also resolved here
 #   "split this wall"                   -> NOTHING CAN. Revit exposes a break
 #                                          for ducts and pipes and for nothing
 #                                          else - SPLIT_MEP_RUN is named for

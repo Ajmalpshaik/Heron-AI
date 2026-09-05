@@ -83,6 +83,13 @@ compatibility-note: >
 #                                           belongs to
 #   "what system is this on"             -> READ_MEP_SYSTEM
 #   "draw a duct here"                   -> CREATE_DUCT
+#   "which fittings does this type use"  -> REPORT_ROUTING_PREFERENCES - a READ
+#                                           of an EXISTING type's fitting table.
+#                                           Both that sentence and "report the
+#                                           routing preferences" resolved HERE,
+#                                           to a fragment that creates a type,
+#                                           until 2026-09-05
+#   "what is the pressure drop"          -> REPORT_MEP_PRESSURE_DROP
 
 utterances:
   - make a duct system type

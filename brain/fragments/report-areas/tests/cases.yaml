@@ -1,0 +1,49 @@
+positive:
+  - given: a model with a Gross Building scheme and a Rentable scheme over the same floors
+    expect: >
+      TWO scheme totals, each on its own, and NO combined figure. Each total
+      checked against Revit's own area schedule for that scheme before it is
+      quoted
+
+  - given: a four-storey building in one scheme
+    expect: a sub-total per level, and the level sub-totals summing to the scheme total
+
+  - given: schemeNameContains "Rent"
+    expect: only the rentable scheme reported, the others left out
+
+  - given: listEachArea true
+    expect: one line per area with its number, level and m2
+
+negative:
+  - given: any model with two overlapping schemes
+    expect: >
+      NO GRAND TOTAL ANYWHERE IN THE OUTPUT, and the reason stated. THIS IS THE
+      FIRST CASE TO RUN AND THE REASON THE FRAGMENT EXISTS. Both schemes' Area
+      elements sit in OST_Areas at once, so a plain sum is roughly double the
+      building — a number that looks like a floor area and is not one
+
+  - given: an area created in the schedule but never placed
+    expect: >
+      listed as UNPLACED with its own count, not as a 0 m2 row beside the real
+      areas. It sits nowhere in the model and the fix is to place it or delete it
+
+  - given: an area placed with a gap in its boundary lines
+    expect: >
+      listed as UNBOUNDED, SEPARATELY from unplaced. Both read as zero in a
+      schedule and the two fixes are completely different, which is why they are
+      not one category
+
+  - given: a model with rooms but no areas
+    expect: >
+      "no Area elements at all" IN WORDS, with the note that areas are not rooms.
+      A bare zero here reads as "this building has no floor area", and sends
+      somebody looking for a fault that is not there
+
+  - given: an area whose scheme cannot be read
+    expect: grouped under "<no scheme>" rather than dropped
+
+second_route:
+  - >
+    Revit's own area schedule, one per scheme, with a Grand Total row. That is
+    what each scheme total is checked against - and doing it scheme by scheme is
+    exactly the point this fragment is making

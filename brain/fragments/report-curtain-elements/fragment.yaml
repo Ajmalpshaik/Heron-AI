@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-039
+semantic-identity: "the panels, mullions and grid lines a curtain wall is actually made of"
+kind: action
+domain: revit.reporting
+capability: REPORT_CURTAIN_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads what a curtain wall is built from - its panels, its mullions by type,
+  and how many grid lines run each way. It changes nothing.
+
+  **IT EXISTS BECAUSE THE QUESTION WAS BEING ANSWERED BY `CREATE_WALL`.**
+  Measured before this batch, *"what panels and mullions are in this curtain
+  wall"* resolved to the fragment that BUILDS A WALL - a question about an
+  existing element answered by making a new one.
+
+  **A CURTAIN WALL IS THE ONE WALL WITH NO LAYERS, AND THIS IS ITS OTHER HALF.**
+  `REPORT_COMPOUND_STRUCTURE` correctly reports that a curtain wall has no
+  build-up. That is a true answer and an unhelpful one on its own: the wall IS
+  made of something, and it is panels and mullions. The two fragments carry each
+  other's row for that reason.
+
+  **A PANEL IS NOT ALWAYS A `Panel`.** A curtain grid cell can hold a basic wall
+  instead of a curtain panel family - that is how a solid infill or a spandrel
+  is normally modelled - and it comes back in `GetPanelIds` like any other cell.
+  Counting only `Panel` elements under-reports the wall and makes a glazing
+  takeoff look short. Both kinds are counted, and the wall-as-panel ones are
+  named separately because they are the ones a glass order must not include.
+
+  **AN EMPTY CELL IS A REAL STATE.** A grid cell whose panel has been deleted
+  returns an id that resolves to nothing. It is a hole in the elevation, and it
+  is reported as one rather than skipped - a skipped null and a solid wall look
+  identical in a count.
+
+  **MULLIONS ARE GROUPED BY TYPE, WHICH IS WHAT GETS ORDERED.** Forty mullions
+  is not a purchase order; twelve of one profile and twenty-eight of another is.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: curtainWallsFound
+      type: int
+    - name: panelCount
+      type: int
+    - name: mullionCount
+      type: int
+    - name: emptyCells
+      type: int
+    - name: notCurtain
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Wall.CurtainGrid`,
+  `CurtainGrid.GetPanelIds`, `GetMullionIds`, `GetUGridLineIds`,
+  `GetVGridLineIds`, and the `Panel` and `Mullion` types are present and
+  unchanged 2020 through 2027.
+
+  Every id is an `ElementId` resolved with `doc.GetElement`; nothing reads an id
+  as a number, so 2024's 64-bit change does not reach this code. No units call is
+  made.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is in this curtain wall"      -> here
+#   "how many panels and mullions"      -> here
+#   "how much glass is in this facade"  -> here for the COUNT, and note the
+#                                          panels that are basic walls are named
+#                                          separately - they are not glass
+#   "what is this wall made of"         -> REPORT_COMPOUND_STRUCTURE for a normal
+#                                          wall. A curtain wall has NO layer
+#                                          build-up, and that fragment says so
+#                                          and points here
+#   "build me a curtain wall"           -> CREATE_WALL. One reads, one makes -
+#                                          and this question resolved to that
+#                                          fragment until 2026-09-05
+#   "what area is the glazing"          -> MEASURE_ELEMENT_VOLUME on the panels,
+#                                          which reports surface area
+
+utterances:
+  - what panels and mullions are in this curtain wall
+  - what is in this curtain wall
+  - how many curtain panels are there
+  - list the mullions on this facade
+  - how many grid lines in this curtain wall
+  - break down this curtain wall
+  - what is this facade made of

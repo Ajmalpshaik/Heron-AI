@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-019
+semantic-identity: "the box each element occupies, and the box the whole set occupies"
+kind: action
+domain: revit.geometry
+capability: REPORT_BOUNDING_BOX
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  The extent each element occupies - its size and its lowest corner, in mm -
+  plus the single box that contains the whole set. It changes nothing.
+
+  IT EXISTS BECAUSE *"what is the bounding box of this duct"* RESOLVED TO
+  `FILTER_ELEMENTS_IN_ROOM`, and *"how big is the box around these elements"* to
+  `SET_VIEW_SECTION_BOX` - a filter and a view setting, for a measurement.
+
+  **THE BOX IS ALIGNED TO PROJECT X AND Y, AND THAT IS THE ONE THING TO KNOW
+  BEFORE USING THE NUMBER.** It is not the element's own size. For anything
+  running square to the project it is the same thing; for anything at an angle
+  it is bigger than the object, in a shape the object does not have.
+
+  | Asking about | Use |
+  |---|---|
+  | A duct, a pipe, a piece of equipment - **how much space does it take** | here |
+  | A **room** - how big is it | `MEASURE_ROOM_DIMENSIONS`, which measures on the room's own axes |
+  | **How much material** is in it | `MEASURE_ELEMENT_VOLUME` - solid volume and surface area |
+
+  `MEASURE_ROOM_DIMENSIONS` carries this same table and states the case in
+  numbers: turn an 8000 x 4000 room thirty degrees and its box becomes roughly
+  8900 x 7500. **This fragment is the right answer to "what space does it
+  occupy" and the wrong answer to "how big is it".**
+
+  **THE COMBINED BOX IS THE USEFUL HALF FOR COORDINATION.** *"Will this plant
+  fit through that opening"*, *"how deep is the services zone"*, *"where do I
+  put the section box"* are all one question about a set, not a list of boxes.
+  It is reported whether or not the per-element list is truncated.
+
+  **AN ELEMENT WITH NO BOX IS REPORTED, NOT SKIPPED.** A view-specific element,
+  an empty group or a purely annotation element has none. Skipping them silently
+  makes the combined box look like it covers everything asked about.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: maxRows
+      type: int
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: measured
+      type: int
+    - name: noBoundingBox
+      type: IList<string>
+    - name: combinedSizeMm
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.get_BoundingBox(View)`,
+  `BoundingBoxXYZ.Min` and `Max`, and `XYZ` are present and unchanged 2020
+  through 2027.
+
+  `null` is passed as the view deliberately, which asks for the MODEL box rather
+  than the box in one view - a view's box is cropped by that view and is not the
+  element's extent.
+
+  **No units API is called.** Internal feet are multiplied by 304.8 to
+  millimetres, plain arithmetic at the edge - which is what D-20 requires and
+  what keeps this working across the 2021 units break.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is the bounding box of this"  -> here
+#   "how much space does this take up"  -> here
+#   "will this fit through the opening" -> here, the COMBINED box
+#   "how big is this room"              -> MEASURE_ROOM_DIMENSIONS. A rotated
+#                                          room's box is much bigger than the
+#                                          room, so the box is the WRONG answer
+#                                          to that sentence. That fragment
+#                                          carries this same row
+#   "how much material is in it"        -> MEASURE_ELEMENT_VOLUME - solid volume
+#                                          and surface area, not extent
+#   "how long is this duct run"         -> MEASURE_ELEMENT_LENGTHS
+#   "set the section box round these"   -> SET_VIEW_SECTION_BOX - which CHANGES
+#                                          a view, and is what this question used
+#                                          to reach
+
+utterances:
+  - what is the bounding box of this duct
+  - how big is the box around these elements
+  - how much space do these take up
+  - what are the extents of this equipment
+  - will this fit through the opening
+  - how deep is this services zone
+  - what is the overall size of this set

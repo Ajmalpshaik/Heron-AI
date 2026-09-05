@@ -124,6 +124,22 @@ compatibility-note: >
   millimetre conversion at the edge where the user is. No units API is touched,
   which is what keeps this clear of the 2021 units move.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "how big is this room"           -> here - measured on the ROOM'S OWN
+#                                       AXES, which is why it is not the
+#                                       bounding box
+#   "what is the bounding box of this"
+#                                    -> REPORT_BOUNDING_BOX - the extent in
+#                                       PROJECT X and Y. Right for a duct or a
+#                                       piece of plant; WRONG for a room, and
+#                                       the numbers above say by how much. That
+#                                       fragment carries this same table
+#   "report the areas"               -> REPORT_AREAS. An AREA is a third
+#                                       spatial element, not a room
+#   "what is in this room"           -> FILTER_ELEMENTS_IN_ROOM
+#   "place the rooms"                -> PLACE_ROOMS - a write
+
 utterances:
   - how big is this room
   - what are the room sizes

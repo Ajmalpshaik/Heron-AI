@@ -1,0 +1,114 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-018
+semantic-identity: "which room each door leads from and to, checked against the geometry"
+kind: action
+domain: revit.geometry
+capability: REPORT_DOOR_ROOM_LINKS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Says which room each door leads FROM and TO - and checks Revit's own answer
+  against where the rooms physically are. It changes nothing.
+
+  **IT EXISTS BECAUSE THE QUESTION WAS BEING ANSWERED BY `PLACE_ROOMS`.**
+  Measured before this batch, *"what rooms are on either side of this door"*
+  resolved to the fragment that CREATES ROOMS - a read question answered by
+  putting elements in the model.
+
+  **`FromRoom` AND `ToRoom` ARE DECIDED BY THE DOOR'S FACING, NOT BY THE ROOMS.**
+  This is the whole reason the fragment is more than two lines. Flip a door in
+  the model and the two swap - the plan still looks right, the schedule reads
+  backwards, and nothing warns you. So each one is CHECKED: take a point a short
+  way either side of the door along its own facing normal and ask each room
+  whether the point is inside it. **Where the geometry disagrees with the
+  property, the geometry wins and the disagreement is REPORTED, never silently
+  corrected** - a flipped door is a modelling problem worth knowing about, not
+  just a reporting one.
+
+  That is this project's standing rule in a new place: Revit's own data describes
+  INTENT, and intent and physical reality come apart. `TRACE_CONNECTIVITY` exists
+  for the same reason on the MEP side.
+
+  **FROM AND TO ARE PHASE-DEPENDENT, AND THE BARE PROPERTY ANSWERS FOR THE LAST
+  PHASE ONLY.** On a refurbishment - where the room on either side of a door is
+  exactly what changes - the bare property is wrong for every phase but one. The
+  phase actually used is named in every row, so a reader can see which answer
+  they were given.
+
+  **A DOOR WITH ONE ROOM IS CORRECT, NOT A FAILURE.** An entrance door has
+  outside on one side. That is reported as `(outside)`. A door with NEITHER side
+  in a room is a different thing - usually rooms not placed or not enclosed - and
+  is reported as that.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: phaseName
+      type: string
+      source: request
+    - name: probeDistanceMm
+      type: double
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: doorsChecked
+      type: int
+    - name: disagreements
+      type: IList<string>
+    - name: noRoomEitherSide
+      type: IList<string>
+    - name: phaseUsed
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FamilyInstance.get_FromRoom(Phase)`,
+  `get_ToRoom(Phase)`, `FacingOrientation`, `Document.Phases` and
+  `Room.IsPointInRoom(XYZ)` are present and unchanged 2020 through 2027, with
+  the same argument counts.
+
+  `Room` comes from `Autodesk.Revit.DB.Architecture`, which the wrapper imports.
+
+  **No units API is called.** The probe distance arrives in millimetres and is
+  divided by 304.8 to internal feet, plain arithmetic at the edge - which is what
+  D-20 requires and what keeps this working across the 2021 units break.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which room does this door open into"  -> here
+#   "what rooms are either side of a door" -> here. It resolved to PLACE_ROOMS,
+#                                             which CREATES ROOMS, until
+#                                             2026-09-05
+#   "the door schedule reads backwards"    -> here - that is a FLIPPED DOOR, and
+#                                             this names which ones
+#   "place the rooms"                      -> PLACE_ROOMS. One reads, one makes
+#   "how big is this room"                 -> MEASURE_ROOM_DIMENSIONS
+#   "what is in this room"                 -> FILTER_ELEMENTS_IN_ROOM
+#   "write it into the door parameters"    -> NOT here. This reports; it does not
+#                                             write. WRITE_ELEMENT_PARAMETERS
+#                                             takes the answer, and keeping the
+#                                             read read-only is what lets it be
+#                                             run on somebody else's model
+
+utterances:
+  - which room does each door open into
+  - what rooms are on either side of this door
+  - which room is this door in
+  - the door schedule rooms read backwards
+  - check the from and to room on these doors
+  - what room does this door lead to
+  - are any doors flipped the wrong way
