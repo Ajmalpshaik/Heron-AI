@@ -241,7 +241,7 @@ class Store(object):
              frag.status or "",
              frag.data.get("domain", ""),
              frag.data.get("risk", ""),
-             os.path.relpath(frag.folder, ROOT),
+             FRAG.repo_relative(frag.folder),
              ",".join(frag.supported)))
         self.db.commit()
 
