@@ -1,0 +1,63 @@
+positive:
+  - given: a model that has been opened and saved by a coordination add-in
+    expect: >
+      that add-in's schema listed by name and vendor, with a carrier count above
+      zero - checked against the add-in's own documentation for what it stamps
+
+  - given: a schema whose read access is Public
+    expect: >
+      its fields listed, each with its value type, because a public schema is
+      readable by anything
+
+  - given: a model with a document-wide record and no element carriers
+    expect: >
+      "a document-wide record, not selectable in the model" as the bucket, and a
+      carrier count of one. That element cannot be picked in Revit, so naming
+      what it is is the only way the count makes sense
+
+  - given: countCarriers false
+    expect: >
+      the schema list alone, fast, and a summary line saying carriers were NOT
+      counted. A summary implying the model was checked when it was not is the
+      failure this wording exists to prevent
+
+negative:
+  - given: a schema whose read access is Vendor, defined by somebody else
+    expect: >
+      the schema listed with "CLOSED", NO FIELDS, and the refusal stated. THIS IS
+      THE CASE THAT MUST NOT SUCCEED. Fields appearing here would mean the access
+      level was defeated, which is another vendor's decision overridden
+
+  - given: a schema registered by an installed add-in that has never written to this file
+    expect: >
+      "carriers in THIS model: none", still listed. Dropping it would lose the
+      difference between "the add-in is installed" and "the add-in wrote here",
+      which are different facts with different consequences
+
+  - given: a Revit session with no add-in but Heron loaded
+    expect: >
+      "no extensible storage schema is registered in this Revit session", with the
+      note that it is a fact about the SESSION. A file written by an add-in that
+      is not installed here reads exactly the same, and saying so is the point
+
+  - given: any model at all
+    expect: >
+      NO ELEMENT, PARAMETER OR SCHEMA CHANGED. This is a read, and extensible
+      storage is the one place where a careless write is invisible afterwards
+
+  - given: a schema whose carrier collector throws
+    expect: >
+      that schema still listed with its name and vendor, the count reported as
+      failed, and every other schema still counted. One bad collector must not
+      cost the report
+
+second_route:
+  - >
+    The add-in vendor's own documentation for what it stamps and where. A schema
+    name and vendor id are meant to be recognisable, and that is the check
+
+  - >
+    Save the model, close every add-in, reopen: schemas registered by add-ins
+    that are no longer loaded disappear from the list while their CARRIERS stay
+    in the file. That difference is what proves the session/model split above is
+    real rather than a wording choice

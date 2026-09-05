@@ -1,0 +1,66 @@
+positive:
+  - given: this model and a save-as copy of it with three ducts deleted and one Mark edited
+    expect: >
+      3 removed, 0 added, 1 changed - and the changed row naming the Mark with
+      its old value and its new one. That is the whole contract of a change report
+
+  - given: the same pair on Revit 2021 or later
+    expect: >
+      most matched elements skipped on Revit's own per-element stamp, with the
+      count of skips stated. The answer must be identical to the full walk - the
+      stamp is a speed-up, never a different result
+
+  - given: a workshared central file as the other model
+    expect: >
+      it opens detached with worksets closed, and THE CENTRAL IS NOT TOUCHED -
+      no local created, no borrow taken, no save-to-central prompt afterwards
+
+  - given: somebody else's local file as the other model
+    expect: >
+      it opens. Without allowing the wrong user, Revit refuses outright and the
+      commonest real path fails
+
+negative:
+  - given: the same file compared with itself
+    expect: >
+      "THESE TWO FILES ARE THE SAME MODEL AT THE SAME SAVE", and 0/0/0. THIS IS
+      THE CASE THAT PROVES THE COMPARISON. Any difference reported here is a
+      fault in this fragment, and the warning is what makes that readable rather
+      than reassuring
+
+  - given: a model saved in an older Revit release
+    expect: >
+      "it is a VERSION MISMATCH, not damage", naming both releases. Revit's own
+      word for this is "corrupt", which sends people looking for damage that is
+      not there
+
+  - given: an empty parameterNames list
+    expect: >
+      added and removed still counted, changed reported as 0 WITH the note that
+      no parameter was compared. A zero that means "nothing changed" and a zero
+      that means "nothing was checked" must not print the same
+
+  - given: an empty categories list
+    expect: >
+      "nothing was compared" and no diff at all. A clean diff over an empty set
+      reads exactly like good news, which is the failure
+
+  - given: a path that does not exist
+    expect: >
+      "there is no file at ...", and explicitly NOT a model with no changes
+
+  - given: any run at all
+    expect: >
+      the other document CLOSED afterwards, and no transaction opened on either.
+      A document left open holds a file lock the modeller cannot explain
+
+second_route:
+  - >
+    Revit's own Collaborate - Compare Models, where the release has it, over the
+    same pair. It answers the same question through a different mechanism and
+    should agree on the added and removed counts
+
+  - >
+    Delete a known element, save-as, and compare: the count must be exactly one
+    and it must name that element. A deliberate single change is the cheapest
+    possible check that the matching is on identity rather than on a key

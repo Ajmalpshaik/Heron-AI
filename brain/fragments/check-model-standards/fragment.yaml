@@ -1,0 +1,146 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-026
+semantic-identity: "does this model follow the project's own naming and data rules, before it is issued"
+kind: action
+domain: revit.qa
+capability: CHECK_MODEL_STANDARDS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks the model against the project's own naming and data conventions - view
+  names, sheet numbers, level names, workset names, MEP system names, and
+  whether the parameters the project requires are actually filled in. The sweep
+  before a model is issued, and the one that finds the twelve views somebody
+  called *"Copy of Copy of Level 1"*. It changes nothing.
+
+  **THE RULES ARE PATTERNS YOU SUPPLY, NOT A STANDARD THIS FRAGMENT KNOWS.**
+  Naming conventions are project-specific and change between employers and
+  between clients; a fragment with one hard-coded would be wrong on every job
+  but one. Each rule is plain text with `*` as a wildcard, which is the form
+  somebody who owns the standard can write and check without being a programmer.
+
+  **WILDCARDS ONLY, AND THAT IS A DECISION RATHER THAN A LIMITATION.** The
+  pattern language is `*` and literal text, case-insensitive. A regular
+  expression would be more powerful and would move authorship of the standard
+  from the person who owns it to whoever is holding the keyboard.
+
+  **IT REPORTS WHAT IT COULD NOT CHECK, AND THAT IS AS IMPORTANT AS WHAT
+  FAILED.** A rule set naming no pattern for sheets does not mean the sheets are
+  fine - it means nobody looked. Every section says NOT CHECKED, with the
+  reason, instead of printing a reassuring zero. This is the same defect as a
+  filter that matches nothing and reports success, and it is the one this whole
+  project exists around.
+
+  **BLANK AND ABSENT ARE SEPARATED, BECAUSE THEY GO TO DIFFERENT PEOPLE.** A
+  parameter that exists and is empty is data entry. A parameter that is not on
+  the category at all is a project setup job. One combined *"empty"* number
+  sends the work to the wrong person, and `DESCRIBE_BLANK_PARAMETERS` makes the
+  same separation for one parameter as an actionable set.
+
+  **VIEW TEMPLATES AND REVIT'S OWN INTERNAL VIEWS ARE EXCLUDED BY DEFAULT.** A
+  project's templates rarely follow the sheet naming convention, and the
+  browser and system views are not named by anybody. Flagging them buries the
+  real findings under noise nobody can act on.
+
+  **THIS CHECKS CONVENTIONS, NOT CORRECTNESS.** A view named perfectly can still
+  show the wrong thing. It is the cheap half of a model audit; the warnings, the
+  links and the geometry weight are the other half, and neither replaces looking
+  at the drawings.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Keyed by what is being named: "view", "sheet", "level", "workset",
+    # "system". A key that is absent or empty is NOT CHECKED and says so.
+    - name: namePatterns
+      type: IDictionary<string, string>
+      source: request
+    # RESOLVED categories, never BuiltInCategory names in a string.
+    - name: requiredOn
+      type: IList<Category>
+      source: request
+    - name: requiredParameters
+      type: IList<string>
+      source: request
+    - name: suspectNames
+      type: IList<string>
+      source: request
+    - name: skipViewTemplates
+      type: bool
+      source: request
+    - name: maxRows
+      type: int
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: failures
+      type: int
+    - name: sectionsChecked
+      type: int
+    - name: sectionsNotChecked
+      type: int
+    - name: offenders
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSheet.SheetNumber`, `View.IsTemplate`,
+  `View.ViewType`, `Level`, `FilteredWorksetCollector`, `WorksetKind`,
+  `Workset.Name`, `ElementMulticategoryFilter`, `Element.LookupParameter`,
+  `Parameter.HasValue`, `Parameter.AsString` and `Parameter.AsValueString` are
+  present and unchanged 2020 through 2027.
+
+  **MEP systems are collected by CATEGORY, not by `OfClass(typeof(MEPSystem))`.**
+  That class is abstract and Revit rejects an abstract type to `OfClass` at
+  runtime on every release - a filter that throws on a workshared MEP model
+  would take the whole standards sweep with it.
+
+  **The wildcard matcher is written out rather than using a regular expression
+  library.** `System.Text.RegularExpressions` would work everywhere; the reason
+  is the pattern language, not the platform - see `purpose`.
+
+  No units API is called: every value read here is compared as text. No
+  `ElementId` is read as a number.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "check this model against our naming standard" -> here. The MODEL: views,
+#                                            sheets,
+#                                            levels, worksets, systems, and the
+#                                            parameters the project requires
+#   "check the naming before we issue"    -> here
+#   "find the views called copy of copy"  -> here, with the pattern. Without a
+#                                            pattern this section says NOT
+#                                            CHECKED, which is the honest answer
+#   "audit the family library"            -> CHECK_FAMILY_STANDARDS - the
+#                                            FAMILIES themselves, not the model
+#                                            they sit in
+#   "which of these are blank"            -> DESCRIBE_BLANK_PARAMETERS - one
+#                                            parameter, as a set you can act on.
+#                                            This one counts, that one hands you
+#                                            the elements
+#   "what warnings is this model carrying"-> READ_MODEL_WARNINGS
+#   "why is the model so heavy"           -> REPORT_GEOMETRY_COMPLEXITY
+#   "which views have no template"        -> FIND_VIEWS_WITHOUT_TEMPLATE
+#   "fix the names this found"            -> RENAME_ELEMENTS or EDIT_TEXT_VALUES
+
+utterances:
+  - check this model against our naming standard
+  - are the views and sheets named correctly
+  - run a standards check before we issue
+  - find the views called copy of copy
+  - which elements are missing the parameters the project requires
+  - check the model naming conventions
+  - is this model ready to submit

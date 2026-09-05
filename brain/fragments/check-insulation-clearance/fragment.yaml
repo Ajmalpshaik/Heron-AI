@@ -1,0 +1,154 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-025
+semantic-identity: "the gap measured to the outside of the lagging, which is the gap that has to be built"
+kind: action
+domain: revit.qa
+capability: CHECK_INSULATION_CLEARANCE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  The same clearance sweep as `CHECK_MINIMUM_CLEARANCE`, with the one correction
+  that changes the answer on a real MEP job: the distance is measured to the
+  OUTSIDE OF THE INSULATION, not to the bare duct or pipe. A 50 mm jacket on
+  each of two services eats 100 mm of the gap, so a pair reading 120 mm clear on
+  the bare geometry has 20 mm in fact and cannot be built. It changes nothing.
+
+  **THE BARE-GEOMETRY CHECK IS OPTIMISTIC AND THIS ONE IS NOT.** Revit models
+  insulation as SEPARATE elements wrapped round the host, so a duct's own solid
+  and its own bounding box stop at the sheet metal. Every distance measured off
+  the host is therefore too generous by the jacket thickness at each end. This
+  reads each element's real insulation and takes it off the measured gap.
+
+  **INSULATION IS FOUND THROUGH THE HOST, AND THE LOOKUP THROWS BY DESIGN - THE
+  CATCH IS THE CATEGORY FILTER.** `GetInsulationIds` raises for any element that
+  cannot carry a wrap. Pre-filtering by category instead would miss whatever the
+  API accepts and nobody predicted, so the throw is caught and read as *"this
+  one carries none"*. That behaviour is already proven elsewhere in this
+  library and is reused rather than rediscovered.
+
+  **LINING IS DELIBERATELY NOT COUNTED.** Duct lining sits INSIDE the duct - it
+  takes air away, not space outside. Adding it to an external clearance figure
+  would inflate every gap and produce failures that are not there.
+
+  **THE THICKEST WRAP GOVERNS, NOT THE SUM OF THEM.** A host may legitimately
+  carry more than one insulation element. The clearance is decided by the
+  fattest one; adding them together would invent a jacket nobody specified.
+
+  **AN ELEMENT WITH NO INSULATION MODELLED IS THE SILENT PROBLEM, SO IT IS
+  COUNTED AND SAID FIRST.** If the specification calls for insulated chilled
+  water and the model carries no insulation elements, this check reads EXACTLY
+  like the bare one and passes things that will not fit. The insulated /
+  not-insulated split is printed before any result, so the assumption is visible
+  rather than buried. `assumeThicknessMm` is how a run is checked against what
+  it is *going* to be lagged with, and every row it touches says it was assumed.
+
+  **DISTANCE IS BOUNDING-BOX BASED, DELIBERATELY.** Once both jackets are
+  subtracted the answer is an engineering figure rather than a precise one, and
+  the box keeps a whole-floor sweep affordable. For a defensible millimetre on
+  one specific pair of linear runs, the centreline calculation is exact and this
+  is not.
+
+  **`ElementId` IS NEVER CONVERTED TO A NUMBER HERE, AND THE EARLIER LIBRARY DID
+  CONVERT IT.** Its version reflected `ElementId.Value` or `IntegerValue` to key
+  a set of connected elements. `ElementId` compares and hashes perfectly well as
+  itself, so the set is a set of `ElementId`, and the whole 2024 widening to
+  64-bit stops being something this fragment has to know about.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: requiredClearanceMm
+      type: double
+      source: request
+    - name: assumeThicknessMm
+      type: double
+      source: request
+    - name: ignoreConnected
+      type: bool
+      source: request
+    - name: maxRows
+      type: int
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: tooClose
+      type: IList<ElementId>
+    - name: violations
+      type: int
+    - name: insulatedCount
+      type: int
+    - name: bareCount
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `InsulationLiningBase.GetInsulationIds`,
+  `BuiltInParameter.RBS_INSULATION_THICKNESS`, `Element.get_BoundingBox`,
+  `MEPCurve.ConnectorManager`, `FamilyInstance.MEPModel`, `Connector.AllRefs`
+  and `Connector.Owner` are present and unchanged 2020 through 2027.
+
+  **`Thickness` is read off the wrap by REFLECTION and never named as a typed
+  member.** It is declared on the derived wrap classes rather than on the base
+  the API hands back, and the built-in parameter is the fallback where the
+  property is not there. Neither is assumed to exist.
+
+  Millimetres become internal feet by dividing by 304.8, as plain arithmetic. No
+  units API is called - that is what breaks at Revit 2021, and every figure here
+  is handed on in feet.
+
+  `ElementId` is only ever compared or hashed as itself, never read as a number.
+
+# ROUTING - these rows are in the fragments named here. FIVE fragments answer
+# "is there enough room" and they measure DIFFERENT THINGS. The wrong one is not
+# slower, it is a different number.
+#
+#   "clearance with the lagging on"      -> here. The gap to the OUTSIDE of the
+#                                           jacket, over any set, approximate
+#   "these read clear but both pipes are insulated" -> here. The whole fragment
+#   "how close are these two"            -> CHECK_MINIMUM_CLEARANCE - any
+#                                           element against a target set,
+#                                           samples the real faces, BARE
+#                                           geometry. More exact per pair, and
+#                                           optimistic on anything lagged
+#   "how much room above that duct"      -> CHECK_VERTICAL_CLEARANCE - Z
+#                                           separation only
+#   "can this pump be serviced"          -> CHECK_EQUIPMENT_CLEARANCE - the
+#                                           MAINTENANCE zone. Can it be
+#                                           maintained, not can it be built
+#   "do these overlap"                   -> FIND_CLASHES. A clash is yes/no with
+#                                           no distance in it, and is NOT a
+#                                           clearance failure
+#   "which runs still need insulating"   -> not a clearance question. This
+#                                           fragment REPORTS the bare count as a
+#                                           side effect and is not the way to ask
+#   "draw the dimension"                 -> DIMENSION_MEP_RUNS
+#   "insulate these"                     -> SET_MEP_INSULATION, which PUTS THE
+#                                           LAGGING ON. This fragment only
+#                                           measures, and ranked first on that
+#                                           sentence on 2026-09-06 because its
+#                                           utterances are full of the word.
+#                                           SET_MEP_INSULATION already claims it
+#                                           in its own table and should win
+
+utterances:
+  - check the clearance with the insulation on
+  - is there enough room once these are lagged
+  - clearance to the outside of the insulation
+  - these read clear but both pipes are insulated
+  - will these fit with 50mm lagging
+  - insulation aware clearance check
+  - the gap is not big enough once it is insulated

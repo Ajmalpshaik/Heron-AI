@@ -199,7 +199,36 @@ def main():
             # the thief. `tools/check-routing.py` runs it over the whole library;
             # this is one case of it, kept here because it is the property the
             # words route exists to have.
-            own_words = "what is the ceiling grid spacing"
+            #
+            # AND ON 2026-09-06 THE QUERY WAS REPAIRED, because it was not one
+            # of that fragment's own declared words - which is the only thing
+            # the paragraph above claims to be testing.
+            #
+            # It read "what is the ceiling grid spacing". FRG-GEO-007 declares
+            # "read the ceiling grid", "where does the ceiling grid start" and
+            # "what size are the ceiling tiles"; it has never declared the word
+            # SPACING anywhere. FRG-VIEW-021 declares "dimension the duct
+            # spacing", so on that one word it wins fairly, and the assertion
+            # was resting on "ceiling" and "grid" being rare enough to outvote
+            # it. At 218 fragments they were, by ONE PLACE. At 226 they were
+            # not, and the fragment that tipped it did so by using the words
+            # "ceiling height" once, in prose, while explaining something else.
+            #
+            # MEASURED on 2026-09-06 at 226 fragments, before this line changed:
+            #   "what is the ceiling grid spacing"   FRG-GEO-007 at #2  <- the failure
+            #   "read the ceiling grid"              FRG-GEO-007 at #1
+            #   "where does the ceiling grid start"  FRG-GEO-007 at #1
+            #   "what size are the ceiling tiles"    FRG-GEO-007 at #1
+            # So the property this check exists to have HELD, on all three of
+            # the sentences the fragment actually declares. What failed was a
+            # sentence nobody declared, decided by a word belonging to somebody
+            # else - which is a fact about the corpus, and the exact instability
+            # the comment above says an assertion here must not have.
+            #
+            # The query is now a DECLARED utterance, so this cannot drift again
+            # for that reason. If it fails now, something has genuinely taken
+            # FRG-GEO-007's own vocabulary and the message names it.
+            own_words = "where does the ceiling grid start"
             own_id = "FRG-GEO-007"
             mine_w = [h["id"] for h in SEARCH.keywords(store, own_words, limit=32)]
             rank_w = mine_w.index(own_id) + 1 if own_id in mine_w else None

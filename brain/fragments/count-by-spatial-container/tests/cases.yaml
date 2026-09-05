@@ -1,0 +1,64 @@
+positive:
+  - given: every air terminal on a floor, containerKind "room"
+    expect: >
+      a count per room, largest first, matching what a person gets counting the
+      diffusers on the plan room by room. That hand count is the check
+
+  - given: a diffuser at ceiling height in a room whose level is the floor below it
+    expect: >
+      counted IN that room. THIS IS THE CASE THE Z CORRECTION EXISTS FOR - using
+      the element's own Z reports it as being in no room, and then every diffuser
+      in the building reports the same way
+
+  - given: containerKind "zone" over spaces that belong to zones
+    expect: >
+      a count per zone name, reached through each element's containing space
+
+  - given: an L-shaped room
+    expect: >
+      elements in the short leg counted in it. IsPointInRoom answers the real
+      boundary; a bounding-box test would put them in the neighbouring room
+
+negative:
+  - given: containerKind "phase"
+    expect: >
+      REFUSED BY NAME and nothing counted. Phase is an ordinary parameter and
+      GROUP_AND_COUNT already does it faster and exactly - and a default here
+      would answer a question nobody asked
+
+  - given: a model whose rooms are all unplaced
+    expect: >
+      "this model has no placed and enclosed room at all", with their count, and
+      NO per-element breakdown. Every element would report as in none, and
+      printing that as a result reads as a finding about the elements
+
+  - given: a duct that runs through three rooms
+    expect: >
+      counted ONCE, in whichever room contains its centre. That is what a point
+      test can honestly say, and it is why this counts elements rather than
+      apportioning them
+
+  - given: an element with no location and no bounding box
+    expect: >
+      "(no location Revit can read)" as its own group - distinguishable from "(in
+      no room)", which is a different fact with a different fix
+
+  - given: containerKind "zone" and spaces that are in no zone
+    expect: >
+      "(the space it is in has no zone)" AS A SEPARATE GROUP from "(in no space,
+      so no zone either)". Merging them sends one person's job to the other
+
+  - given: any run at all
+    expect: NOTHING CHANGED, and no transaction opened
+
+second_route:
+  - >
+    A Revit schedule of the same category with the Room or Space field added,
+    where the category HAS one. Where the two agree the geometric test is
+    confirmed; where the schedule shows blanks and this shows rooms, that
+    blankness is exactly the gap this fragment exists to fill
+
+  - >
+    FILTER_ELEMENTS_IN_ROOM for one room, counted. It answers the same question
+    for a single room through the same containment test, so it is the per-room
+    check on a whole-floor sweep

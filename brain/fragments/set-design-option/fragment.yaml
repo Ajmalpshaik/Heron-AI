@@ -1,0 +1,124 @@
+heron-agent: HERON-REVIT-PHS-032
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-019
+semantic-identity: "put these elements into a design option, and say plainly when Revit will not let you"
+kind: action
+domain: revit.document
+capability: SET_DESIGN_OPTION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts elements from the main model into a named design option, and refuses -
+  clearly, naming the manual step - when Revit's own API makes that impossible.
+  The write counterpart to `REPORT_DESIGN_OPTIONS`, which can say what options
+  exist and what is inside them but cannot put anything there.
+
+  **`Element.DesignOption` IS READ-ONLY, SO THERE IS NO "REASSIGN" CALL AND THIS
+  FRAGMENT DOES NOT PRETEND OTHERWISE.** The only route the API leaves is the one
+  Revit's own interface ultimately uses: with the target option ACTIVE, copy the
+  elements in place. The copies belong to the option; the originals stay in the
+  main model, untouched. The read-back says exactly that, because *"added to the
+  option"* would describe a move that did not happen.
+
+  **NO PUBLIC API CAN MAKE A DESIGN OPTION ACTIVE, AND THAT REFUSAL IS THE MOST
+  USEFUL THING HERE.** The earlier library recorded a full search: every member
+  matching *"ActiveDesignOption"* anywhere on `Document` or `DesignOption` is
+  the read-only `DesignOption.GetActiveDesignOptionId`, there is no setter on
+  either, and the option-set class is internal. The postable commands open a
+  dialog with no way to pass a target. So this fragment CHECKS which option is
+  active and stops with the exact menu path when it is not the right one -
+  rather than copying into whichever option happened to be active, which is a
+  wrong answer that looks like a right one.
+
+  **IT NEVER ACTIVATES OR DEACTIVATES ANYTHING, INCLUDING AFTERWARDS.** Since it
+  cannot set the active option, it must not clear the one the modeller
+  deliberately set up before running it.
+
+  **`deleteOriginals` WAS NOT CARRIED OVER, AND THAT IS DELIBERATE.** The
+  earlier version could delete the main-model originals afterwards to simulate a
+  move. Copying and deleting are two jobs: composing `DELETE_ELEMENTS` after
+  this one makes the deletion visible in the operation, reviewable on its own,
+  and refusable on its own. Folding it into a flag hides the most destructive
+  half of the work behind a boolean.
+
+  **IT OPENS NO TRANSACTION.** Golden Rule 16 - the caller's transaction covers
+  the copy, so the copy and whatever else is in the same operation are one undo
+  entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: designOptionName
+      type: string
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: newElementIds
+      type: IList<ElementId>
+    - name: copied
+      type: int
+    - name: wasPossible
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `DesignOption`,
+  `DesignOption.GetActiveDesignOptionId` and `ElementTransformUtils.CopyElements`
+  are present and unchanged 2020 through 2027.
+
+  **`Document.SetActiveDesignOptionId` IS NOT NAMED BECAUSE IT DOES NOT EXIST,
+  ON ANY RELEASE.** The earlier library called it and it was never a member of
+  anything - the whole surface was searched and the only match is the read-only
+  getter. This is the failure mode a name-matching API check cannot catch and a
+  compiler can, which is why every fragment here is compiled on all eight.
+
+  Design options are compared by `ElementId`, never by a number.
+
+  No units API is called: the copy is at `XYZ.Zero`, which is a translation of
+  nothing and needs no conversion.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "put these in design option B"       -> here, and read the refusal: the
+#                                           option has to be ACTIVE first, and
+#                                           only the interface can make it so
+#   "add these to the option set"        -> here
+#   "what design options are there"      -> REPORT_DESIGN_OPTIONS - the read, and
+#                                           the one to run first to get the exact
+#                                           option name
+#   "copy these elements"                -> COPY_ELEMENTS. Copying is the
+#                                           mechanism here; WHICH OPTION the
+#                                           copies land in is the whole point of
+#                                           this fragment, and that one does not
+#                                           address it
+#   "delete the originals afterwards"    -> DELETE_ELEMENTS, composed after this
+#                                           one ON PURPOSE. It is not a flag
+#                                           here - the destructive half stays
+#                                           visible and separately refusable
+#   "make this option active"            -> NOT ANSWERED BY ANY FRAGMENT, and it
+#                                           cannot be. No public API activates a
+#                                           design option. Status bar dropdown,
+#                                           or Manage - Design Options - Edit
+#                                           Selected
+#   "which elements are in an option"    -> REPORT_DESIGN_OPTIONS
+
+utterances:
+  - put these elements into a design option
+  - add this to design option B
+  - move these into the alternative option
+  - copy these into the design option
+  - assign these elements to an option set
+  - i need these in the other option

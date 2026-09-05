@@ -1,0 +1,167 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-024
+semantic-identity: "what changed between this model and the last issue of it"
+kind: action
+domain: revit.qa
+version: 1
+capability: COMPARE_MODELS
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Compares the open model against another `.rvt` on disk - what was added, what
+  was removed, and which of the named parameters changed on the elements present
+  in both. The *"what did they change in this revision"* question answered from
+  the two models rather than from a transmittal note. It opens the other file
+  read-only, detached, and closes it again; neither model is modified.
+
+  **`COMPARE_ELEMENTS` COMPARES TWO ELEMENTS INSIDE ONE MODEL AND THIS COMPARES
+  TWO MODELS.** They read as the same job and are not: one answers *"why does
+  this duct behave differently from that one"*, this one answers *"what came
+  back different in the architect's new issue"*. Nothing in this library could
+  ask the second question.
+
+  **THE VERSION LINE IS READ BEFORE THE DIFF, AND IT IS THE PART THAT SAYS
+  WHETHER TO BELIEVE THE REST.** Two files with the same version GUID and save
+  count are literally the same model at the same save. Any difference reported
+  after that is a fault in the comparison, not a change in the model - so it is
+  checked first and stated first, rather than left for somebody to wonder about
+  at the bottom of a long list.
+
+  **ELEMENTS ARE MATCHED ON `ElementId`, AND THE SECOND MATCHING MODE WAS
+  DELIBERATELY NOT CARRIED OVER.** The earlier library offered a composite key -
+  category, family, type and Mark, falling back to location - for models whose
+  ids "share no lineage", and its own note recorded that the key mode is
+  strictly worse for the case this exists for: a save-as preserves ids, so on a
+  model and an earlier save of itself the id IS the identity, while the
+  composite key invents an *added* and a *removed* every time somebody edits a
+  Mark or nudges an element. **That is precisely the noise a change report must
+  not produce**, and offering it as an option asks the reader to choose between
+  a right answer and a wrong one. Two genuinely unrelated models are a different
+  question and do not have this answer.
+
+  **THE FILE IS OPENED DETACHED, WITH THE WORKSETS CLOSED, AND AS THE WRONG
+  USER.** Every real project file is workshared. A bare open touches the central;
+  loading every workset costs minutes this comparison does not need; and the path
+  handed over is usually somebody else's local, which Revit refuses outright
+  without being told to allow it. All three are set unconditionally because on a
+  non-workshared file each is harmless.
+
+  **REVIT CALLS A FILE FROM ANOTHER RELEASE "CORRUPT", AND THAT WORD SENDS
+  PEOPLE LOOKING FOR DAMAGE THAT IS NOT THERE.** The header can be read without
+  opening the file, so when the open fails this reports which release it was
+  saved in against which release is running, and only says damaged when those
+  match.
+
+  **A CLEAN DIFF IS NOT A PROOF THAT NOTHING CHANGED, AND THE READ-BACK SAYS
+  SO.** Only the categories handed in are looked at and only the parameters
+  named. A wall that changed thickness without moving reads as unchanged unless
+  thickness is in the list. The summary states what was actually covered, so the
+  claim stays the size of the check.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: otherModelPath
+      type: string
+      source: request
+    # RESOLVED categories, never BuiltInCategory names in a string - the same
+    # rule ADD_PROJECT_PARAMETER follows. Turning a BIM word into a category is
+    # its own job and belongs upstream.
+    - name: categories
+      type: IList<Category>
+      source: request
+    - name: parameterNames
+      type: IList<string>
+      source: request
+    - name: maxRows
+      type: int
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: added
+      type: int
+    - name: removed
+      type: int
+    - name: changed
+      type: int
+    - name: sameSaveVersion
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `OpenOptions`,
+  `DetachFromCentralOption`, `WorksetConfiguration`,
+  `WorksetConfigurationOption`, `ModelPathUtils.ConvertUserVisiblePathToModelPath`,
+  `Application.OpenDocumentFile`, `Document.Close`,
+  `Document.GetDocumentVersion`, `DocumentVersion.VersionGUID`,
+  `DocumentVersion.NumberOfSaves`, `BasicFileInfo.Extract` and
+  `ElementMulticategoryFilter` are present and unchanged 2020 through 2027.
+
+  **`Element.VersionGuid` is reached by REFLECTION and never named**, because it
+  does not exist on Revit 2020 and naming it is a compile error there rather
+  than something a try/catch could hold. The lookup is done ONCE and reused, so
+  the reflection costs one call for the whole run. Where the property is absent
+  the fragment falls through to the full parameter walk and says which path it
+  took.
+
+  **`Document.GetChangedElements` was deliberately NOT used**, though it is the
+  fastest answer on Revit 2023 and later. It needs an episode GUID recorded at a
+  previous point in time, and Heron has nowhere to have recorded one - a
+  capability that only works when something else already ran is not a capability
+  a fragment can offer.
+
+  Elements are matched by comparing `ElementId` to `ElementId`, never by reading
+  one as a number, so the 2024 widening to 64-bit does not reach this fragment.
+
+  No units API is called. Parameter values are compared through `AsValueString`,
+  which is Revit's own formatting in each model's units - so a value that only
+  LOOKS different because the two files display different units reports as
+  different, which is honest and is stated.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what changed since the last issue"  -> here. Two MODELS
+#   "what did the architect change in this revision" -> here
+#   "what changed between them"          -> COMPARE_ELEMENTS, and the reason is
+#                                           worth keeping: A SENTENCE THAT NAMES
+#                                           NO FILE CANNOT BE THE TWO-MODELS
+#                                           QUESTION, because this fragment
+#                                           cannot run without a path. Ranking
+#                                           put this one first on 2026-09-06;
+#                                           the identity route still serves
+#                                           COMPARE_ELEMENTS, which declares it
+#   "why is this duct different from that one" -> COMPARE_ELEMENTS - two ELEMENTS,
+#                                           inside ONE model. Both sentences
+#                                           start "what is different" and they
+#                                           are not the same question
+#   "who changed it"                     -> REPORT_ELEMENT_OWNERSHIP, once this
+#                                           has said WHAT changed
+#   "what links does this model have"    -> LIST_LINKED_MODELS
+#   "what is in this file"               -> READ_MODEL_FILE_INFO - reads the
+#                                           header WITHOUT opening it, which is
+#                                           the cheap first look before this
+#   "compare two unrelated models"       -> NOT ANSWERED HERE, on purpose. Ids
+#                                           share no lineage between unrelated
+#                                           files, and matching on a composite
+#                                           key reports an edited Mark as an
+#                                           element added and one removed
+
+utterances:
+  - what changed since the last issue of this model
+  - compare this model to the previous version
+  - what did the architect change in this revision
+  - which elements were added or removed between these two files
+  - diff this model against the one on disk
+  - what is different from last week's model
+  - show me the changes between these two revit files
