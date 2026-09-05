@@ -1,0 +1,94 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-023
+semantic-identity: "how far apart are these two"
+kind: action
+domain: revit.geometry
+capability: MEASURE_DISTANCE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports how far apart two elements are - the straight-line distance, and the
+  horizontal and vertical parts of it separately, in millimetres.
+
+  **Asking how far apart two things are used to reach FIND_NEAREST_ELEMENTS**,
+  which finds the nearest one and does not measure. That was measured. A
+  finder and a measure are different jobs, and the question here already knows
+  which two elements it is about.
+
+  **Three numbers, because a modeller needs all three.** The straight-line
+  distance is what a tape measure gives; the horizontal distance is what a plan
+  drawing shows; the vertical is the one that decides whether a duct clears a
+  beam. Reporting only the first makes the reader do trigonometry to get the
+  other two, and they are what the question was usually about.
+
+  **The distance is measured between the two nearest points of the elements'
+  bounding boxes, and the report says so.** An element is not a point: a
+  thirty-metre duct has no single position, and measuring centre to centre
+  would call two touching runs thirty metres apart. Where both are point-placed
+  the two definitions agree, and the report still names which was used.
+
+  **Touching or overlapping elements report zero**, which is a real answer and
+  not a failure. SELECT_TOUCHING is what says whether they overlap.
+
+  **Millimetres out, by multiplying by 304.8.** Internal feet are not what
+  anybody asked, and stating the unit in the answer is what stops a number being
+  read as the wrong one.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: first
+      type: Element
+      source: request
+    - name: second
+      type: Element
+      source: request
+  provides:
+    - name: straightMm
+      type: double
+    - name: horizontalMm
+      type: double
+    - name: verticalMm
+      type: double
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.get_BoundingBox`,
+  `LocationPoint` and `XYZ.DistanceTo` are present 2020 through 2027, compiled
+  at both ends. Feet become millimetres by multiplying by 304.8 as plain
+  arithmetic - no units API, which is what changed shape at 2021.
+
+# ROUTING - repeated in FIND_NEAREST_ELEMENTS, CHECK_MINIMUM_CLEARANCE and
+# SELECT_TOUCHING.
+#
+#   "how far apart are these two"    -> here
+#   "what is the gap between these"  -> here
+#   "how much clearance is there between them" -> here for the NUMBER;
+#                                       CHECK_MINIMUM_CLEARANCE for whether it
+#                                       passes, which needs a standard to
+#                                       compare against
+#   "what is nearest to this"        -> FIND_NEAREST_ELEMENTS. That searches;
+#                                       this measures two things already known
+#   "are they touching"              -> SELECT_TOUCHING. This reports zero for
+#                                       touching AND for overlapping, and
+#                                       cannot tell them apart
+
+utterances:
+  - how far apart are these two
+  - what is the gap between these
+  - measure the distance between these two elements
+  - how much clearance is there between them
+  - what is the vertical distance between these

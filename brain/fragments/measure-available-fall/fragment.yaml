@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-034
+semantic-identity: "what fall can i get between these two points"
+kind: action
+domain: revit.mep
+capability: MEASURE_AVAILABLE_FALL
+version: 1
+source: OFFICIAL
+risk: ANALYZE
+
+purpose: >
+  Works out what gradient a drain can be laid at between two elements - the
+  question every below-ground and every long horizontal drainage run starts
+  with, and the one that decides whether a layout is possible at all.
+
+  **Asking it used to reach CREATE_GRID.** That was measured, and it is the
+  shape of miss that matters: a drainage question answered by a fragment that
+  draws a grid line.
+
+  **It reports the fall three ways, because a drainage engineer uses all
+  three.** The height difference in millimetres is what a level survey gives;
+  the run length is what a plan gives; and the gradient as 1 in N is what a
+  specification is written in. Reporting only one leaves the reader doing the
+  arithmetic the question was about.
+
+  **It says what IS available, never what is required.** Whether 1 in 80 is
+  acceptable depends on the pipe size, the flow, the standard being worked to
+  and the authority - and that judgement is not a fragment's. MEASURE_MEP_SLOPE
+  reads the fall a pipe already has; this one measures the room to give it.
+
+  **A rise is reported as a rise, not as a negative fall.** Water does not run
+  uphill, and a layout where the second point is higher than the first is a
+  finding rather than a number with a minus sign that somebody might use.
+
+  **The run length is the horizontal distance, not the straight line.** A drain
+  is laid to a gradient measured along the plan, and using the sloping length
+  overstates the fall available - by little on a shallow run and by enough to
+  matter on a steep one.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: upstream
+      type: Element
+      source: request
+    - name: downstream
+      type: Element
+      source: request
+  provides:
+    - name: fallMm
+      type: double
+    - name: runMm
+      type: double
+    - name: gradientOneIn
+      type: double
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.get_BoundingBox` and `XYZ` are
+  present 2020 through 2027, compiled at both ends. Feet become millimetres by
+  multiplying by 304.8 as plain arithmetic - no units API, which is what changed
+  shape at 2021.
+
+# ROUTING - repeated in MEASURE_MEP_SLOPE, SET_MEP_SLOPE and MEASURE_DISTANCE.
+#
+#   "what fall can I get between these two points" -> here
+#   "is there enough fall"           -> here for the NUMBER. Whether it is
+#                                       ENOUGH depends on pipe size, flow and
+#                                       the standard being worked to, and that
+#                                       is not a fragment's judgement
+#   "what fall does this pipe have"  -> MEASURE_MEP_SLOPE - the slope a run
+#                                       already has, not the room to give it one
+#   "set these to 1 in 80"           -> SET_MEP_SLOPE - this one only measures
+#   "how far apart are these"        -> MEASURE_DISTANCE, which reports the gap
+#                                       and does not turn it into a gradient
+
+utterances:
+  - what fall can I get between these two points
+  - is there enough fall for this drain
+  - what gradient is available here
+  - how much fall have I got
+  - measure the available fall

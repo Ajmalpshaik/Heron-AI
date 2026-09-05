@@ -1,0 +1,88 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-043
+semantic-identity: "turn this join round so the other one does the cutting"
+kind: action
+domain: revit.elements
+capability: SWITCH_JOIN_ORDER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Reverses the direction of an existing join, so the element that was giving up
+  its overlap now keeps it and the other one gives it up instead.
+
+  **This is the fix when the join is right and its direction is wrong**, which
+  is most of the time. A structural column swallowed by a wall, a slab that has
+  eaten the beam it sits on: the two SHOULD be joined, and unjoining them to
+  make the picture look right loses the join and leaves both volumes overlapping
+  in the takeoff. Turning it round keeps the join and moves the overlap to the
+  side that should carry it.
+
+  **It changes quantities by design.** The overlap moves from one element's
+  takeoff to the other's. That is the whole operation, and it is reported rather
+  than left to be discovered in a schedule.
+
+  **A pair that is not joined is refused, not joined-then-switched.** Joining
+  something because it was asked to be turned round is inventing an instruction,
+  and the two elements might have been left apart on purpose. JOIN_GEOMETRY is
+  the fragment that joins.
+
+  **The result is read back**, because the call returning is not the direction
+  having changed. A switch that silently did nothing would leave a takeoff
+  everybody now believes is right.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  batch of pairs is one undo.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: first
+      type: IList<Element>
+    - name: second
+      type: IList<Element>
+  provides:
+    - name: switched
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `JoinGeometryUtils.SwitchJoinOrder`,
+  `AreElementsJoined` and `IsCuttingElementInJoin` are present 2020 through
+  2027, compiled at both ends.
+
+# ROUTING - repeated in JOIN_GEOMETRY, UNJOIN_GEOMETRY and
+# REPORT_JOINED_ELEMENTS.
+#
+#   "the wrong one is cutting"       -> here
+#   "swap which element cuts"        -> here
+#   "the wall has eaten the column"  -> here, NOT unjoin. The two should be
+#                                       joined; it is the direction that is
+#                                       wrong, and unjoining loses the join and
+#                                       leaves both volumes overlapping
+#   "join these"                     -> JOIN_GEOMETRY - and this refuses a pair
+#                                       that is not joined rather than joining
+#                                       it first
+#   "unjoin these"                   -> UNJOIN_GEOMETRY
+#   "which one is cutting"           -> REPORT_JOINED_ELEMENTS - the read to do
+#                                       first, and the one that shows this
+#                                       worked
+
+utterances:
+  - the wrong one is cutting
+  - swap which element cuts
+  - the wall has eaten the column
+  - turn this join round
+  - switch the join order

@@ -1,0 +1,94 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-044
+semantic-identity: "make these the same as that one"
+kind: action
+domain: revit.elements
+capability: MATCH_ELEMENT_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes a set of elements to the type of one chosen element - "make these the
+  same as that one", pointed at rather than named.
+
+  **The type is taken from an element, and that is the difference from
+  CHANGE_ELEMENT_TYPE.** That fragment is told a type by name, which is right
+  when the name is known. This one is told an element, which is right when it is
+  not: a modeller points at the wall that is correct far more often than they
+  can recite what it is called. Both exist because both are how the request
+  actually arrives.
+
+  **Only elements of the same category can take the type**, and the rest are
+  refused by name rather than skipped. A duct cannot become a wall type, and a
+  run that quietly changed nine of twelve would leave three wrong and nothing
+  saying which.
+
+  **What it does NOT copy is as important as what it does.** This changes the
+  TYPE. Instance parameters - mark, comments, offsets, the things somebody typed
+  on each element - are left exactly as they were. Revit's own match tool copies
+  more than that, and expecting this to is how a mark gets overwritten across
+  twelve elements at once.
+
+  **The type is read back off each element after the change**, because a
+  ChangeTypeId that returns is not a type that took. Some elements refuse
+  silently, and a count that assumed success would report twelve changed where
+  nine were.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so the
+  whole set is one undo.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: source
+      type: Element
+      source: request
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: changed
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.ChangeTypeId` and
+  `Element.GetTypeId` are present 2020 through 2027, compiled at both ends. Type
+  ids are compared as ElementIds and never read as numbers, which is what would
+  have made 2024's 64-bit change matter here.
+
+# ROUTING - repeated in CHANGE_ELEMENT_TYPE, DUPLICATE_TYPE and
+# COPY_PARAMETER_VALUE.
+#
+#   "make these the same as that one" -> here
+#   "match this type onto those"      -> here
+#   "change these to 200 blockwork"   -> CHANGE_ELEMENT_TYPE - the type is
+#                                       NAMED, which is the other half of the
+#                                       same job
+#   "make a new type like this one
+#    but 300 wide"                    -> DUPLICATE_TYPE. Nothing here creates a
+#                                       type; it only moves elements onto one
+#                                       that exists
+#   "copy the mark across too"        -> COPY_PARAMETER_VALUE. This changes the
+#                                       TYPE and leaves every instance
+#                                       parameter alone, which is deliberate
+#                                       and is not what Revit's own match tool
+#                                       does
+
+utterances:
+  - make these the same as that one
+  - match this type onto those
+  - change these to match that wall
+  - make them all like this one
+  - match element type

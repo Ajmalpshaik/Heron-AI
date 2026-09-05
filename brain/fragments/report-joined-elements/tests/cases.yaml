@@ -1,0 +1,36 @@
+positive:
+  - given: a wall joined to two columns
+    expect: >
+      two rows, each naming both elements AND which one cuts. The direction is
+      the half the report exists for
+
+  - given: the same wall after SWITCH_JOIN_ORDER on one pair
+    expect: that row reading the other way round, and the other row unchanged
+
+  - given: a set of twenty walls in a model with no joins
+    expect: >
+      no rows and withoutJoins reported as 20. That is the ordinary case and it
+      has to read as ordinary
+
+negative:
+  - given: a beam whose volume schedules short, with the reason unknown
+    expect: >
+      this fragment naming the join and the direction. THIS IS THE FIRST CASE
+      TO RUN, because it is the job: a join is invisible, and "the quantities
+      look wrong" has no other way to become a list
+
+  - given: a pair joined, with the direction read once from each side
+    expect: >
+      exactly ONE of the two saying CUTS. If both say the same thing the
+      direction is not being read and the report is inventing a fact
+
+  - given: an element that cannot be asked about joins
+    expect: counted as unreadable and named, not silently absent
+
+  - given: no elements given
+    expect: refused, with the reason
+
+second_route: >
+  Revit itself: select one element and look at a section through the junction -
+  the other is cut there or it is not. Switching the join in the UI and
+  re-running must flip exactly the row for that pair

@@ -1,0 +1,37 @@
+positive:
+  - given: a wall and a column joined, handed in as one pair
+    expect: >
+      unjoined reported as 1, and the column whole again in a plan view. Look at
+      the junction - the cut is gone
+
+  - given: >
+      the same wall and column scheduled for volume before and after
+    expect: >
+      the volumes DIFFERENT, and the report having warned that quantities move.
+      That difference is the whole reason anybody joins or unjoins
+
+  - given: four pairs handed in, three of them joined
+    expect: 3 separated and 1 reported as not joined to begin with
+
+negative:
+  - given: a pair that was never joined
+    expect: >
+      counted as already apart, NOT as unjoined. THIS IS THE FIRST CASE TO RUN.
+      "12 unjoined" when five were never joined is a number nobody can act on,
+      and it is indistinguishable from a run that worked
+
+  - given: two lists of different lengths
+    expect: refused, nothing changed - a join is a pair and there is no sensible pairing
+
+  - given: the same element handed in on both sides
+    expect: refused by id, not silently skipped
+
+  - given: a pair Revit refuses to separate
+    expect: >
+      named with its reason, and unjoined NOT counting it. The read-back after
+      the call is what catches a call that returned and did nothing
+
+second_route: >
+  Revit's own Modify then Unjoin Geometry on the same pair, and a section
+  through the junction before and after - the cut is either there or it is not,
+  and that is the only proof that does not go through the same API

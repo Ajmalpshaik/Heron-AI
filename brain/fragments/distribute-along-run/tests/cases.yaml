@@ -1,0 +1,42 @@
+positive:
+  - given: >
+      a 7300 mm duct, a hanger family, 2000 mm centres, 150 mm start offset
+    expect: >
+      four placed at 150, 2150, 4150 and 6150, and 1000 mm reported left over.
+      Measure the first two in Revit - the gap is 2000, not 1750 or 1825
+
+  - given: the same run at 1000 mm centres
+    expect: seven placed, and the leftover reported for that spacing too
+
+  - given: a curved run
+    expect: >
+      the spacing measured ALONG the curve, not in a straight line between the
+      ends. Two adjacent instances on the arc must be the asked-for distance
+      apart following the pipe
+
+negative:
+  - given: a 7300 mm run at 2000 mm centres
+    expect: >
+      the last gap 1000 mm and REPORTED, not the spacing quietly changed to
+      1825 to come out even. THIS IS THE FIRST CASE TO RUN. Stretching to fit
+      is a different instruction from the one given, and every hanger then sits
+      somewhere the drawing does not show
+
+  - given: the run moved after placing
+    expect: >
+      the hangers staying where they were, and the report having said so. They
+      are point-placed, not hosted, and finding that out later is the failure
+
+  - given: a start offset of 4000 on a 7300 mm run
+    expect: refused, with both numbers - nothing placed
+
+  - given: a spacing of zero or below
+    expect: refused, with the reason
+
+  - given: an element that is not placed along a curve
+    expect: refused by name, not an empty success
+
+second_route: >
+  Dimension the placed instances in Revit and read the spacing off the drawing,
+  and check the last gap against the reported leftover - the drawing is the only
+  place the stretched-to-fit mistake would be visible

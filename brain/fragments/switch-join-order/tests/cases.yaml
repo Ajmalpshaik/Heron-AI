@@ -1,0 +1,38 @@
+positive:
+  - given: a wall and a column joined, with the wall cutting the column
+    expect: >
+      the column cutting the wall afterwards, and the report naming both ids and
+      which way round it went. Confirm with REPORT_JOINED_ELEMENTS, which must
+      read the opposite of what it read before
+
+  - given: the same pair volume-scheduled before and after
+    expect: >
+      the overlap moving from one takeoff to the other. That is the operation
+      working, not a side effect
+
+  - given: the fragment run twice on the same pair
+    expect: the direction back where it started - a switch is its own inverse
+
+negative:
+  - given: a pair that is NOT joined
+    expect: >
+      REFUSED, and NOT joined first. THIS IS THE FIRST CASE TO RUN. Joining
+      because somebody asked to turn a join round invents an instruction, and
+      those two elements may have been left apart deliberately
+
+  - given: a call that returns without changing the direction
+    expect: >
+      reported as refused and NOT counted as switched. Reading the direction
+      before and after is the only thing that separates a switch from a no-op,
+      and a silent no-op leaves a takeoff everybody now trusts
+
+  - given: two lists of different lengths
+    expect: refused, nothing changed
+
+  - given: a pair where Revit raises on the switch
+    expect: named with its reason, and switched not counting it
+
+second_route: >
+  Revit's own Modify then Switch Join Order on the same pair, and a section
+  through the junction before and after - which element is cut is visible there,
+  and it does not go through the same API this fragment uses

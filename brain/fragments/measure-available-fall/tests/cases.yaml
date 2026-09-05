@@ -1,0 +1,46 @@
+positive:
+  - given: >
+      a gully at level 0 and a manhole 24000 mm away whose invert is 300 mm
+      lower
+    expect: >
+      300 mm of fall over 24000 mm, reported as 1 in 80. Check the arithmetic by
+      hand - 24000 / 300 is 80, and a fragment that reports 1 in 0.0125 has the
+      ratio upside down
+
+  - given: the same two moved 12000 mm apart with the same levels
+    expect: 1 in 40 - halving the run doubles the gradient
+
+  - given: a run where the drop is measured against a sloping connection
+    expect: >
+      the LOWEST point of each element used, not its centre. A drain is set out
+      from its invert, and a centre-to-centre figure is wrong by half a diameter
+      at each end
+
+negative:
+  - given: a downstream point 50 mm HIGHER than the upstream one
+    expect: >
+      reported as a RISE, with no gradient given. THIS IS THE FIRST CASE TO RUN.
+      A negative fall carried into a calculation lays a drain uphill, and a
+      minus sign is far too quiet a way to say that
+
+  - given: two points at exactly the same level
+    expect: >
+      no fall available, said in words. Zero fall and a failed measurement look
+      identical as a number
+
+  - given: two points directly above one another
+    expect: >
+      refused as having no horizontal run, with the height difference still
+      reported. Dividing by a zero run gives an infinite gradient that looks
+      like a very good answer
+
+  - given: a shallow run measured with the sloping length instead of the plan length
+    expect: >
+      a gradient that is WRONG in the safe-looking direction. The horizontal
+      distance is what a gradient is measured along, and using the slope
+      overstates what is available
+
+second_route: >
+  A level survey read off the model in Revit and the arithmetic done by hand:
+  fall divided into run. For a real drain, the invert levels on the drainage
+  schedule are the number this must match

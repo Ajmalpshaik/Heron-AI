@@ -1,0 +1,43 @@
+positive:
+  - given: >
+      two columns 6000 mm apart on one level, on the same grid line
+    expect: >
+      6000 mm straight and horizontal, 0 vertical. Measure it in Revit with the
+      tape tool - the two numbers must agree
+
+  - given: a duct 300 mm below a beam, directly under it
+    expect: >
+      300 mm vertical, 0 horizontal, 300 mm straight. The vertical figure is the
+      one that decides whether it clears, and it has to be reported separately
+
+  - given: two elements offset in plan AND in height
+    expect: >
+      all three numbers different, and straight larger than either of the other
+      two. If straight equals horizontal, the vertical part is being dropped
+
+negative:
+  - given: two long parallel ducts running beside each other, 200 mm apart
+    expect: >
+      200 mm, NOT the distance between their midpoints. THIS IS THE FIRST CASE
+      TO RUN. Measuring centre to centre calls two touching thirty-metre runs
+      thirty metres apart, and the number looks entirely plausible
+
+  - given: two elements that overlap
+    expect: >
+      zero, with the sentence saying it cannot tell touching from overlapping.
+      A zero that does not say that reads as a failed measurement
+
+  - given: a sloped pipe measured against a beam
+    expect: >
+      a number treated as a LOWER bound, with the report saying so. A bounding
+      box is bigger than a sloped element, so the real clearance is at least
+      this and may be more - reporting it as exact is a wrong answer with a
+      decimal point on it
+
+  - given: an element with no bounding box, such as a text note
+    expect: refused by name, not zero
+
+second_route: >
+  Revit's own tape measure between the same two faces, read in millimetres.
+  For the sloped case, a section cut through both - the drawn dimension is the
+  real clearance and this fragment's number is the conservative one
