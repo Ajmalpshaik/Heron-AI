@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-009
+semantic-identity: "the things really hosted on this element, not the things near it"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_HOST
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows the model to the elements that Revit records as HOSTED ON one given
+  element - the doors and windows cut into a wall, the face-hosted sensors on a
+  ceiling, the insulation and lining wrapped around a duct.
+
+  **This is the recorded parent relationship, not proximity.** Two elements
+  touching, overlapping or sharing a face are not hosted on each other, and
+  nothing here will find them. That is the point: a host relationship is what
+  makes the child move when the parent moves, and it is the only one worth
+  filtering on when the question is "what depends on this".
+
+  Two mechanisms are covered, because Revit uses two and neither one alone is
+  enough: `FamilyInstance.Host` for host-based families, and
+  `InsulationLiningBase.HostElementId` for duct and pipe insulation and lining.
+  A filter that reads only the first finds no insulation at all and says so
+  with a confident zero.
+
+  **MEP FITTINGS ARE NOT HOSTED ON THEIR RUN - THEY ARE CONNECTED TO IT.** An
+  elbow, a tee and a valve in a duct run each have connectors joining them to
+  their neighbours and NO host, so "what is on this pipe" answered here comes
+  back empty and correct and useless. TRACE_CONNECTIVITY follows connectors and
+  is the fragment that answers it. This is the single most likely way to misuse
+  this filter, which is why the empty result says so in words.
+
+  **A level is not a host in this sense either.** Almost every element records a
+  level, so "everything on Level 2" is a different question -
+  FILTER_ELEMENTS_BY_CATEGORY takes a level and answers it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: host
+      type: Element
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FamilyInstance.Host` and
+  `InsulationLiningBase.HostElementId` are present 2020 through 2027, compiled
+  at both ends - `InsulationLiningBase` in particular was checked rather than
+  assumed, because it is the base class both duct and pipe insulation inherit
+  from and reading only the leaf types would have missed lining. ElementId is
+  compared to ElementId throughout.
+
+# ROUTING - repeated in TRACE_CONNECTIVITY, REPORT_ELEMENT_DEPENDENCIES and
+# REPORT_CURTAIN_ELEMENTS.
+#
+#   "what is hosted on this wall"    -> here
+#   "what is cut into this wall"     -> here - doors and windows are hosted
+#   "what insulation is on this duct" -> here, and ONLY here: a filter
+#                                       reading FamilyInstance.Host alone
+#                                       finds none of it
+#   "what fittings are on this
+#    pipe run"                       -> TRACE_CONNECTIVITY. Fittings are
+#                                       CONNECTED, never hosted, and this
+#                                       fragment returns a correct empty answer
+#   "what breaks if i delete this"   -> REPORT_ELEMENT_DEPENDENCIES - wider
+#                                       than hosting, and the right question
+#                                       before a deletion
+#   "what is in this curtain wall"   -> REPORT_CURTAIN_ELEMENTS - panels and
+#                                       mullions as a grid, not as a flat list
+#   "everything on level 2"          -> FILTER_ELEMENTS_BY_CATEGORY with a
+#                                       level. A level is not a host
+
+utterances:
+  - what is hosted on this wall
+  - show me the doors in this wall
+  - what insulation is on this duct
+  - find everything hosted on this element
+  - what is hosted on this ceiling

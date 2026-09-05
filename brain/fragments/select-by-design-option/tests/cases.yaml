@@ -1,0 +1,46 @@
+positive:
+  - given: >
+      a model with one option set holding "Scheme A" and "Scheme B", asked for
+      "Scheme B" with the ducts category
+    expect: >
+      only Scheme B's ducts, and the report naming the option AND its set - the
+      set name is what makes the answer checkable
+
+  - given: no option name given, with the walls category
+    expect: >
+      the Main Model walls only, with the Scheme A and Scheme B walls absent,
+      and the report saying "Main Model (no design option)"
+
+  - given: a model with NO design options at all, no option name given
+    expect: >
+      every element in the category bound, answered rather than refused. "There
+      are no options" and "the Main Model is everything" are the same statement
+
+negative:
+  - given: >
+      a model with THREE option sets, asked for "Option 1 (primary)" with no
+      set name
+    expect: >
+      REFUSED as ambiguous, with all three set names listed, and NO elements
+      returned. THIS IS THE FIRST CASE TO RUN, and it is the whole reason this
+      fragment exists - Revit names the primary option of every set identically,
+      so a filter that takes the first match answers the wrong option and says
+      it worked
+
+  - given: the same request WITH the set name given
+    expect: resolved to exactly one option, and answered
+
+  - given: an option name that exists in no set
+    expect: >
+      refused, with every option and its set listed. Not an empty result - an
+      empty option and a mistyped option must not read alike
+
+  - given: an option that exists but is empty
+    expect: >
+      0 elements and the sibling-option sentence in the report. That zero is
+      correct and the sentence is what stops it being read as a failure
+
+second_route: >
+  Revit's own Manage then Design Options dialog for the names and sets, and the
+  option's own Edit mode - entering it shows exactly the elements that belong to
+  it, counted on screen

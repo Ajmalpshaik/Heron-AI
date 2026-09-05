@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-019
+semantic-identity: "the nested parts inside these family instances"
+kind: filter
+domain: revit.selection
+capability: SELECT_SUBCOMPONENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Returns the nested sub-components of family instances - the shared families
+  placed inside a piece of MEP equipment, the parts of a multi-component
+  fixture - as elements the next fragment can read.
+
+  **A category sweep never finds these, and that is the point.** A nested
+  shared family instance is a real element with its own category and
+  parameters, but it lives inside its parent; a collector over the model
+  returns the parent. So "count the sensors" comes back short by every sensor
+  built into a piece of equipment, and nothing about that answer looks wrong.
+
+  **It is the opposite direction from SELECT_BY_HOST.** Hosting is a door in a
+  wall - two elements, one recorded as the other's parent. Nesting is a family
+  built out of families. A modeller says "inside" for both, and the two return
+  entirely different sets.
+
+  **Nesting goes as deep as somebody built it, so it is followed by default and
+  the depth is reported.** A part four levels down is still a part. Following
+  it also means a cycle would loop forever, so every id is visited once.
+
+  **A parent with no sub-components contributes nothing, and that is a valid
+  answer.** Most families are not nested. An empty result over a set of ordinary
+  instances is correct, and the count of parents that had none is reported so it
+  cannot be mistaken for a failed read.
+
+  **Only family instances have sub-components.** A wall, a duct or a system
+  family handed in is counted and named rather than silently skipped.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: parents
+      type: IList<Element>
+    - name: recursive
+      type: bool
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: withoutSubComponents
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FamilyInstance.GetSubComponentIds` is
+  present 2020 through 2027, compiled at both ends. Ids are compared and stored
+  as ElementIds throughout - the visited set is a list of ElementId compared by
+  value, never a set of numbers, which is what 2024's 64-bit change would have
+  broken.
+
+# ROUTING - repeated in SELECT_BY_HOST, SELECT_GROUP_MEMBERS and
+# COUNT_ELEMENTS.
+#
+#   "what is inside this equipment"  -> here
+#   "the nested families in these"   -> here
+#   "what is hosted on this wall"    -> SELECT_BY_HOST. Hosting is a door in a
+#                                       wall; nesting is a family built out of
+#                                       families. A modeller says "inside" for
+#                                       both and they return different sets
+#   "what is in this group"          -> SELECT_GROUP_MEMBERS - a group is a
+#                                       third kind of containing, and none of
+#                                       the three answers for the others
+#   "count the sensors"              -> COUNT_ELEMENTS, and it will come back
+#                                       SHORT by every sensor nested inside
+#                                       equipment. Run this first and add them
+
+utterances:
+  - what is inside this equipment
+  - the nested families in these
+  - show me the sub components
+  - what parts make up this fixture
+  - find nested family instances

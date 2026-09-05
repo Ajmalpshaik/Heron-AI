@@ -1,0 +1,100 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-024
+semantic-identity: "put one of these every so many metres along that run"
+kind: action
+domain: revit.geometry
+capability: DISTRIBUTE_ALONG_RUN
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places instances of one family at a fixed spacing along a linear element -
+  hangers and supports down a duct run, brackets along a tray, sprinklers off a
+  branch.
+
+  **Asking for this used to reach ARRAY_ELEMENTS**, which repeats elements that
+  already exist along a direction somebody gives. This takes the direction from
+  the run itself and creates what is not there yet, which is how the request
+  actually arrives: nobody places the first hanger and then arrays it.
+
+  **THE SPACING IS NOT STRETCHED TO FIT, AND THE REMAINDER IS REPORTED.** A run
+  of 7.3 m at 2 m centres takes three, with 1.3 m left over. Quietly using
+  1.825 m to come out even is a different instruction from the one given, and
+  it is the kind of helpfulness that puts a support somewhere a drawing says it
+  is not. The leftover is stated so the decision stays with whoever asked.
+
+  **What is placed is NOT hosted on the run.** These are point-placed instances
+  standing where the run is today. Move the duct and they stay behind. Revit's
+  own hanger families work the same way and it surprises people every time, so
+  it is said in the read-back rather than discovered later.
+
+  **An end offset keeps the first and last off the joints.** A hanger exactly on
+  a fitting is not buildable, and starting flush with the end is almost never
+  what anybody means.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a run
+  full of hangers is one undo.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: run
+      type: Element
+      source: request
+    - name: symbol
+      type: FamilySymbol
+      source: request
+    - name: spacingMm
+      type: double
+      source: request
+    - name: startOffsetMm
+      type: double
+      source: request
+  provides:
+    - name: placed
+      type: IList<ElementId>
+    - name: leftoverMm
+      type: double
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `LocationCurve`, `Curve.Evaluate`,
+  `FamilySymbol.Activate` and
+  `Document.Create.NewFamilyInstance(XYZ, FamilySymbol, StructuralType)` are
+  present 2020 through 2027, compiled at both ends. Millimetres become feet by
+  dividing by 304.8 as plain arithmetic - no units API.
+
+# ROUTING - repeated in ARRAY_ELEMENTS, PLACE_FAMILY_INSTANCES and
+# MEASURE_ELEMENT_LENGTHS.
+#
+#   "add hangers along this duct run at 2 metre centres" -> here
+#   "set these out evenly along the run" -> here
+#   "put a bracket every 1500 along this" -> here
+#   "copy these across at 600
+#    centres"                        -> ARRAY_ELEMENTS - it repeats elements
+#                                       that EXIST, along a direction given to
+#                                       it. This creates new ones and takes the
+#                                       direction from the run
+#   "place twelve of these"          -> PLACE_FAMILY_INSTANCES - at points
+#                                       somebody chooses, with no run involved
+#   "how long is this run"           -> MEASURE_ELEMENT_LENGTHS, which is what
+#                                       tells you how many will fit
+
+utterances:
+  - add hangers along this duct run at 2 metre centres
+  - set these out evenly along the run
+  - put a bracket every 1500 along this
+  - space these along the pipe
+  - distribute these along the run

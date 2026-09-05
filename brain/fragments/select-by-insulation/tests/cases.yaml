@@ -1,0 +1,47 @@
+positive:
+  - given: >
+      a model with 17 ducts of which 4 are insulated, ducts category,
+      wantInsulated true
+    expect: >
+      exactly those 4. This shape has been run: 4 back for true, 13 for false.
+      The two answers must add up to the scanned count
+
+  - given: the same with wantInsulated false
+    expect: >
+      the other 13, and no overlap with the first answer. Select one and look -
+      it has nothing wrapping it
+
+  - given: a duct with internal lining and no external insulation
+    expect: >
+      counted as insulated when lining counts, and BARE when it does not, with
+      the report naming which. Two different answers from the same model is
+      correct here and the sentence is what makes it readable
+
+negative:
+  - given: insulation added to a duct, then the fragment re-run
+    expect: >
+      that duct moving from the bare list to the insulated one. THIS IS THE
+      FIRST CASE TO RUN, because it proves the fragment reads the real
+      relationship rather than a parameter: add the insulation and the answer
+      must change without anybody editing the duct
+
+  - given: no category list at all
+    expect: >
+      nearly everything reported bare, with the sentence saying why. A large
+      bare count over the whole model is not a finding - most elements cannot
+      be insulated
+
+  - given: a model with no insulation anywhere, wantInsulated true
+    expect: >
+      0, and the total number of insulated hosts reported as 0. Those two
+      together are what separate an empty model from a broken read
+
+  - given: the bare list read as a work list
+    expect: >
+      the report having said it is not one. Fittings and equipment are in the
+      same categories and appear in it
+
+second_route: >
+  A duct schedule with the Insulation Type field added, filtered to blank and to
+  non-blank, and both counts compared - and one duct looked at in section, where
+  the wrap is visible or it is not

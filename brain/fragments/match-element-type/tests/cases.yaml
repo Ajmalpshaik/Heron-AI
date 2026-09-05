@@ -1,0 +1,41 @@
+positive:
+  - given: >
+      one 200 blockwork wall as the source and twelve 100 stud walls handed in
+    expect: >
+      twelve changed, and each one reading 200 blockwork in Revit's Properties.
+      Check one by hand - the count is this fragment's own arithmetic
+
+  - given: three of the twelve already 200 blockwork
+    expect: >
+      nine changed and three reported as already having it. Not twelve changed -
+      "changed" has to mean something happened
+
+  - given: the source element itself among the set
+    expect: skipped without comment - it already is what it is being asked to become
+
+negative:
+  - given: >
+      twelve walls each with a different Mark, matched onto one type
+    expect: >
+      every Mark UNCHANGED. THIS IS THE FIRST CASE TO RUN. Revit's own match
+      tool copies more than the type, so anybody expecting this to behave like
+      it would lose twelve marks in one undo step and not notice until a
+      schedule was read
+
+  - given: a duct among a set of walls
+    expect: >
+      refused by id and category, and NOT counted. A run that quietly changed
+      nine of twelve leaves three wrong and nothing saying which
+
+  - given: an element whose ChangeTypeId returns without changing the type
+    expect: >
+      reported as refused. Reading the type back is the only way to tell that
+      apart from success
+
+  - given: a source element that has no type
+    expect: refused, with the reason - not an empty run reported as done
+
+second_route: >
+  Revit's own Match Type Properties tool on the same source and set, then the
+  Marks compared before and after - which is also the check that shows the two
+  tools do NOT do the same thing

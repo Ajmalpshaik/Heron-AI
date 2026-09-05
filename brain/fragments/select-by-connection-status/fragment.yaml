@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-033
+semantic-identity: "which runs have a loose end, and which are fully joined"
+kind: filter
+domain: revit.mep
+capability: SELECT_BY_CONNECTION_STATUS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Splits a duct, pipe or fitting category into what has at least one OPEN end
+  and what is joined at every end - the cheap sweep behind "find the loose
+  ends", run before a system is trusted.
+
+  **It is a local check, not a trace.** It asks each element about its own
+  connectors and walks nothing. A run whose every piece is joined to its
+  neighbour passes here and can still lead nowhere - it can be a closed loop
+  connected to no plant at all. FIND_SYSTEM_ISLANDS and TRACE_CONNECTIVITY
+  follow the chain; this is the question that costs one pass and catches the
+  commonest defect.
+
+  **ASKING A CONNECTOR WHETHER IT IS CONNECTED CAN THROW, and that is not
+  hypothetical.** A panelboard's connectors include surface ones, and reading
+  connection status on those raises rather than returning false - measured on a
+  panelboard with six connectors. So only END connectors are asked, which is
+  also the only kind the question means: a surface connector has no end to
+  leave open. Every read is guarded even so.
+
+  **An element with NO connectors is neither open nor joined, and is counted
+  separately.** A duct accessory modelled without connectors cannot answer the
+  question at all, and putting it in either list would be an invention. A large
+  count there usually means the category is wrong rather than the model.
+
+  **A fitting is included and that is deliberate.** A run is only as connected
+  as its fittings, and the elbow nobody joined is exactly what this is looking
+  for.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+    - name: wantOpenEnds
+      type: bool
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: withoutConnectors
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `MEPCurve.ConnectorManager`,
+  `FamilyInstance.MEPModel.ConnectorManager`, `Connector.ConnectorType` and
+  `Connector.IsConnected` are present 2020 through 2027, compiled at both ends.
+  `IsConnected` is only read on End connectors and is guarded regardless -
+  reading it on a surface connector throws rather than returning false.
+
+# ROUTING - repeated in CONNECT_OPEN_ENDS, TRACE_CONNECTIVITY and
+# FIND_SYSTEM_ISLANDS.
+#
+#   "find the loose ends"            -> here, wantOpenEnds true
+#   "which ducts are not joined up"  -> here
+#   "join those open ends"           -> CONNECT_OPEN_ENDS - this one only
+#                                       reads, and is what to run first
+#   "what connects to what"          -> TRACE_CONNECTIVITY - it WALKS the
+#                                       chain. This asks each element about
+#                                       itself and walks nothing
+#   "which bits are orphaned"        -> FIND_SYSTEM_ISLANDS. A run can pass
+#                                       this check at every joint and still
+#                                       reach no plant - that is what an island
+#                                       is, and this cannot see it
+#   "are the fixtures plumbed"       -> CHECK_FIXTURE_CONNECTIVITY, which knows
+#                                       what services a fixture needs
+
+utterances:
+  - find the loose ends
+  - which ducts are not joined up
+  - show me the open pipe ends
+  - select elements with an unconnected end
+  - which runs are fully connected

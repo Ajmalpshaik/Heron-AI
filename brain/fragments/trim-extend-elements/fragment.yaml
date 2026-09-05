@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-021
+semantic-identity: "make these two lines meet cleanly at a corner"
+kind: action
+domain: revit.geometry
+capability: TRIM_EXTEND_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Takes exactly TWO straight elements and moves each one's nearer end to the
+  point where their directions cross, so they meet at one clean corner. It
+  trims where they overran and extends where they fell short - the same
+  operation either way, which is why it is one fragment and not two.
+
+  Works on anything with a straight line location: duct, pipe, cable tray,
+  conduit, wall, model line, detail line.
+
+  **The corner is solved in plan, and that is a limit, not an oversight.** Two
+  runs at the same height square off correctly; two that are skew in three
+  dimensions have no single corner, and a vertical riser turning into a
+  horizontal run is not this operation. The Z of each element is left as it was.
+
+  **THE RESULT IS READ BACK FROM THE MODEL, because writing it is not proof it
+  took.** Reassigning a location curve in place has been seen to do nothing at
+  all for two drafting lines that ALREADY shared an endpoint - no exception, the
+  transaction commits, and re-reading the element gives the original geometry
+  back. Rather than trust a fix that was never tested for this operation, this
+  re-reads both elements afterwards and reports **where each end actually
+  landed**. A move that silently did not happen shows up as a stated failure
+  instead of a success message.
+
+  **Two parallel lines are refused.** There is no corner to meet at, and
+  inventing one is worse than saying so.
+
+  **This breaks MEP connections at the ends it moves.** A duct dragged off its
+  neighbour is disconnected, and Revit does not put it back. PLACE_MEP_FITTING
+  joins the new corner with a real elbow, which is usually the next step.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). The
+  earlier version of this opened its own, which would have made a batch several
+  undo steps instead of one.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: corner
+      type: XYZ
+    - name: moved
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `LocationCurve`, `Line.CreateBound`,
+  `Line.Direction` and `Curve.GetEndPoint` are present 2020 through 2027,
+  compiled at both ends. The corner is plain arithmetic on XYZ - no units API,
+  no geometry service, nothing that changed shape at 2021.
+
+# ROUTING - repeated in PLACE_MEP_FITTING, MOVE_ELEMENTS and FILLET_LINES.
+#
+#   "make these two meet"            -> here
+#   "trim these back to the corner"  -> here
+#   "extend this until it hits
+#    that one"                       -> here
+#   "put an elbow in"                -> PLACE_MEP_FITTING. Run this FIRST so
+#                                       the two ends coincide - a fitting needs
+#                                       connectors close enough to bridge
+#   "round that corner off"          -> FILLET_LINES for drafting lines,
+#                                       PLACE_MEP_FITTING for a duct or pipe.
+#                                       An MEP corner is rounded by a real
+#                                       fitting, not by an arc
+#   "move this duct 200 across"      -> MOVE_ELEMENTS - a whole element, not
+#                                       one of its ends
+
+utterances:
+  - make these two lines meet
+  - make these two meet
+  - trim these back to the corner
+  - extend this line until it meets that one
+  - square off these two ducts
+  - trim and extend to a corner

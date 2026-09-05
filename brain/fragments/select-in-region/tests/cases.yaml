@@ -1,0 +1,47 @@
+positive:
+  - given: >
+      a 5000 x 5000 x 3000 mm box over a plant room, fast test, ducts only
+    expect: >
+      the ducts in that area, and the volume echoed back as 5000 x 5000 x 3000
+      mm. Look at the box in Revit with a section box set to the same numbers
+      and count on screen
+
+  - given: the same box with the exact test
+    expect: >
+      a set no LARGER than the fast one, and every element in it also in the
+      fast one. The exact test can only ever remove
+
+  - given: the two corners handed in the other way round
+    expect: the same answer - either order is a volume
+
+negative:
+  - given: >
+      a drainage pipe at 1 in 100 running diagonally past the corner of the box,
+      tested both ways
+    expect: >
+      present in the FAST answer and absent from the EXACT one. THIS IS THE
+      FIRST CASE TO RUN. The bounding box of a sloped pipe is far bigger than
+      the pipe, so the fast test reports it inside a volume it never enters -
+      and nothing about the result says so unless the report names which test
+      ran
+
+  - given: 5000 handed in as 5000 feet rather than millimetres
+    expect: >
+      an absurd volume echoed in the report - 1,524,000 mm - beside whatever
+      count comes back. The count alone cannot be told from a correct one
+
+  - given: two corners that are equal in Z
+    expect: refused, with the three dimensions named. A flat box is not a volume
+
+  - given: an area that genuinely contains nothing
+    expect: 0, with the volume stated. That zero is honest
+
+  - given: the exact test over a category with no solid geometry
+    expect: >
+      0 matched and withoutGeometry equal to what the bounding box found.
+      Without that count, "no solid geometry" and "nothing there" read alike
+
+second_route: >
+  Set a 3D view's section box to the same six coordinates, select all in that
+  view, and count - Revit's own answer to "what is in this box", and it also
+  shows the sloped-pipe case plainly on screen

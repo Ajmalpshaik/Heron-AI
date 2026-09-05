@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-020
+semantic-identity: "the elements inside a linked model, not the link itself"
+kind: filter
+domain: revit.selection
+capability: SELECT_FROM_LINK
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reaches inside a loaded Revit link and returns the elements in it - "how many
+  beams are in the structural model", "what ducts does the MEP link have" -
+  bounded to a list of categories.
+
+  **WHAT COMES BACK BELONGS TO ANOTHER DOCUMENT, AND ALMOST EVERY ACTION IN
+  THIS LIBRARY WILL FAIL ON IT.** These elements live in the linked file, not
+  the host. Their ids resolve only inside that file, so a fragment that calls
+  `doc.GetElement(element.Id)` gets the wrong element or nothing at all - and
+  nothing can be written into a link from the host session in any case. They are
+  safe to READ: name, category, parameters, geometry, all read straight off the
+  object. They are not safe to move, set, tag or delete. This is stated here,
+  where the set is produced, because the failure downstream is silent or worse.
+
+  **The link's geometry is in the link's own coordinates.** Where a link was
+  placed with an offset or a rotation, a point read off one of these elements is
+  not a point in the host model until the link's transform is applied. Any
+  distance or clash reasoning across the boundary has to do that; this fragment
+  returns the elements and does not move them.
+
+  **An unloaded link is a refusal, not an empty answer.** A link that is
+  present but unloaded has no document to read, and zero elements would read as
+  "the structural model is empty" rather than "nobody loaded it".
+
+  **A name that matches nothing is refused with the loaded links listed**, and
+  a name that matches several is refused rather than guessed - a project with
+  two structural links has two right answers and no way to choose between them.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: linkName
+      type: string
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: linkTransform
+      type: Transform
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `RevitLinkInstance`,
+  `GetLinkDocument` and `GetTotalTransform` are present 2020 through 2027,
+  compiled at both ends. No ElementId crosses the document boundary as a number
+  - the elements are returned as objects, which is the only form that means
+  anything outside their own file.
+
+# ROUTING - repeated in LIST_LINKED_MODELS, COPY_FROM_LINK and RELOAD_LINKS.
+#
+#   "how many beams are in the structural link" -> here
+#   "what is in the architects model" -> here
+#   "what links does this model
+#    have"                           -> LIST_LINKED_MODELS - the files and
+#                                       their state, which is what tells you
+#                                       whether one is loaded enough to read
+#   "copy those grids into ours"     -> COPY_FROM_LINK. Nothing here writes,
+#                                       and nothing here CAN write into a link
+#   "get the latest architecture"    -> RELOAD_LINKS
+#   "does our duct clash with
+#    their beam"                     -> a SKILL. It is this fragment, then the
+#                                       link's transform applied, then a clash
+#                                       test - and the transform step is the
+#                                       one that gets forgotten
+
+utterances:
+  - how many beams are in the structural link
+  - what is in the architects model
+  - select elements inside a linked model
+  - read the elements from this link
+  - what ducts does the linked mep model have

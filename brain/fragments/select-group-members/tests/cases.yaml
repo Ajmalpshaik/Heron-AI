@@ -1,0 +1,45 @@
+positive:
+  - given: a toilet-block group holding 14 elements
+    expect: >
+      all 14, and the group type name in the report. Count them in Revit by
+      entering group edit mode - the two numbers must agree
+
+  - given: >
+      the SECOND placed instance of that same group type
+    expect: >
+      14 again, but 14 DIFFERENT ids. Same type, different copies - if the ids
+      match the first instance, the group instance is being ignored and a type
+      is being read
+
+  - given: a group holding a nested group
+    expect: >
+      the nested group returned as ONE element and counted in nestedGroups, not
+      flattened into its own members
+
+negative:
+  - given: >
+      a whole-model COUNT_ELEMENTS run over a model containing this group
+    expect: >
+      the group counted as ONE. THIS IS THE FIRST CASE TO RUN, because it is
+      the fact this fragment exists for - every other filter in the library
+      sees a group as a single item, so a modeller's "there are 200 of these"
+      and Revit's count disagree until something opens the group
+
+  - given: a write attempted against a returned member
+    expect: >
+      Revit refusing it, or applying it to EVERY instance of the group type.
+      The report has to have said so before that happens
+
+  - given: an element handed in that is not a group
+    expect: >
+      refused by name, with assemblies pointed at GROUP_BY_ASSEMBLY. Not an
+      empty member list
+
+  - given: a group whose member list names a deleted element
+    expect: >
+      the survivors returned and the difference named. A count that quietly
+      shrinks is the failure
+
+second_route: >
+  Revit itself: select the group, Edit Group, and count what the edit mode
+  shows - that is the definition this fragment is claiming to match

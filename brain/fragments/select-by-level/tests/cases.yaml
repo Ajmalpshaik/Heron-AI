@@ -1,0 +1,45 @@
+positive:
+  - given: >
+      Level 2 of a model with walls, doors, ducts and pipes on it, no category
+      list
+    expect: >
+      all four kinds present in the answer. **Check the ducts by name.** They
+      are the only ones that depend on the last entry of the parameter order,
+      and their absence is the failure this lookup exists to prevent
+
+  - given: the same level with a category list of ducts and pipes
+    expect: >
+      only ducts and pipes, a scanned count far lower than the unbounded run,
+      and the SAME ducts and pipes as the unbounded run returned
+
+  - given: an element moved to another level in Revit, then a re-run
+    expect: it gone from this answer and present in that level's
+
+negative:
+  - given: >
+      a model whose ducts are all on Level 2, asked for Level 2, with the level
+      lookup's last entry removed
+    expect: >
+      ZERO ducts, reported as success. THIS IS THE FIRST CASE TO RUN, and it is
+      the whole reason the order is written out as data. The other four
+      parameters are ABSENT on an MEP curve, not empty, so nothing throws and
+      nothing warns
+
+  - given: an unbounded run over a whole model
+    expect: >
+      a LARGE unresolvedLevel - views, sheets, materials and most annotation
+      have no level. That number being near zero means the lookup is claiming a
+      level for things that do not have one
+
+  - given: a level id that is not a Level
+    expect: refused, with the reason - not an empty result
+
+  - given: a level that genuinely has nothing on it
+    expect: >
+      0 elements, a scanned count in the thousands, and the unresolved count
+      beside it. That is the one honest zero here
+
+second_route: >
+  A schedule of any of those categories with Level as a field, filtered to the
+  same level and counted - and for the ducts specifically, Revit's own
+  Properties palette read on one of them

@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-030
+semantic-identity: "every duct and pipe on one system, or on one kind of system"
+kind: filter
+domain: revit.mep
+capability: SELECT_BY_MEP_SYSTEM
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Gathers the ducts, pipes and their fittings that belong to one MEP system -
+  either one named run, or every run of one system type - as a set the next
+  fragment can act on.
+
+  **System NAME and system TYPE are different questions, and this fragment
+  makes the caller say which.** The type is the classification: Supply Air,
+  Domestic Cold Water, or whatever short code the project renamed it to. The
+  name is the particular run: `SA 1`, `DXS 2`. Several separately named systems
+  share one type, which is exactly the difference somebody is checking when
+  they ask. Guessing between them would answer a different question than the
+  one asked and look identical - the same decision READ_MEP_SYSTEM makes for a
+  single element, and CREATE_ELECTRICAL_RUN makes between tray and conduit.
+
+  **They are read from different parameters, and getting that wrong is silent.**
+  The name is on `RBS_SYSTEM_NAME_PARAM`. The type is an ElementId-valued
+  parameter pointing at the system type element, so it is read through its
+  display name - which is where a project's short code actually lives. Reading
+  the name parameter first and falling back to the type never reaches the
+  fallback, because the name parameter is present on nearly every duct and
+  pipe: the fragment then matches names while reporting types.
+
+  **The four categories are gathered in ONE pass, not united.** Uniting four
+  collectors is the obvious shape and it has a trap in it:
+  `FilteredElementCollector.UnionWith` does not carry each side's own quick
+  filters into the merged result, so an instances-only filter applied per side
+  is silently lost and TYPE elements land in the answer beside real ones -
+  measured at 52 returned where 4 were right, every extra one a type. Taking
+  all four categories in a single multi-category filter cannot have the
+  problem, so the knowledge is kept here and the hazard is not.
+
+  **Matching is a contains, because that is how these are named.** A project
+  types `DXS` and means every `DXS 1`, `DXS 2`, `DXS 3`.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: matchOn
+      type: string
+      source: request
+    - name: systemText
+      type: string
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: withoutSystem
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `BuiltInParameter.RBS_SYSTEM_NAME_PARAM`,
+  `RBS_PIPING_SYSTEM_TYPE_PARAM` and `RBS_DUCT_SYSTEM_TYPE_PARAM` are present
+  2020 through 2027, compiled at both ends. The system type parameter holds an
+  ElementId and is read through `AsValueString` - never as a number, which is
+  what would have made 2024's 64-bit ids matter here. Categories go to
+  `ElementMulticategoryFilter` as BuiltInCategory values.
+
+# ROUTING - repeated in READ_MEP_SYSTEM, TRACE_CONNECTIVITY and
+# FIND_SYSTEM_ISLANDS.
+#
+#   "select everything on DXS 1"     -> here, matching the NAME
+#   "all the supply air"             -> here, matching the TYPE
+#   "show only the supply ducts
+#    in it"                          -> SET_SCHEDULE_FILTERS. That is a
+#                                       schedule being narrowed, not a set of
+#                                       elements being gathered - this fragment
+#                                       takes the sentence on keywords alone
+#                                       and should not
+#   "show me the chilled water"      -> here, matching the TYPE
+#   "what system is this duct on"    -> READ_MEP_SYSTEM - one element, both its
+#                                       name and its type, not a sweep
+#   "what connects to what"          -> TRACE_CONNECTIVITY - the geometry side.
+#                                       This is the data side, and a duct can
+#                                       carry a system name while being
+#                                       physically disconnected
+#   "which bits are orphaned"        -> FIND_SYSTEM_ISLANDS. An element with no
+#                                       system at all is counted here but not
+#                                       diagnosed here
+#   "rename this system"             -> not this one. This only reads
+
+utterances:
+  - select everything on this system
+  - find all the supply air ductwork
+  - all the supply air
+  - show me the chilled water pipes
+  - select every duct on DXS 1
+  - filter by mep system

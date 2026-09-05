@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-042
+semantic-identity: "what is this joined to, and which one is cutting which"
+kind: filter
+domain: revit.elements
+capability: REPORT_JOINED_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports, for each element handed in, what Revit has joined it to and which
+  side of each join is doing the cutting.
+
+  **A join is invisible until it is wrong.** Nothing on screen says two elements
+  are joined; what shows is a wall that stops short, a beam that has lost its
+  end, or a takeoff that is quietly short by the overlap. This is the read that
+  turns "the quantities look wrong" into a list.
+
+  **Which one CUTS is the half nobody remembers to ask.** A join always has a
+  direction: one element gives its overlap to the other. Two walls joined the
+  wrong way round look almost identical in plan and produce different volumes,
+  different material takeoffs and a different section. So the direction is
+  reported for every pair, not just the fact of the join.
+
+  **It reports and changes nothing.** UNJOIN_GEOMETRY separates a pair and
+  SWITCH_JOIN_ORDER turns one round; both are hard to undo across a model, and
+  the honest first step is to look.
+
+  **An element joined to nothing is a normal answer.** Most elements are, and
+  an empty list against a wall is not a failed read - the count of elements with
+  no joins at all is reported so the two cannot be confused.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: joins
+      type: IList<string>
+    - name: withoutJoins
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `JoinGeometryUtils.GetJoinedElements`
+  and `IsCuttingElementInJoin` are present 2020 through 2027, compiled at both
+  ends. Ids are resolved to elements and reported by name and id, never read as
+  numbers.
+
+# ROUTING - repeated in JOIN_GEOMETRY, UNJOIN_GEOMETRY and SWITCH_JOIN_ORDER.
+#
+#   "what is this joined to"         -> here
+#   "why are my quantities short"    -> here. A joined element gives its
+#                                       overlap away, and nothing on screen
+#                                       says so
+#   "which one is cutting which"     -> here - the direction, which is the half
+#                                       that decides the volumes
+#   "join these"                     -> JOIN_GEOMETRY
+#   "unjoin these two walls"         -> UNJOIN_GEOMETRY
+#   "the wrong one is cutting"       -> SWITCH_JOIN_ORDER - turn the join
+#                                       round rather than lose it
+
+utterances:
+  - what is this joined to
+  - which elements are joined to this wall
+  - which one is cutting which
+  - show me the joins on these
+  - why are my quantities short

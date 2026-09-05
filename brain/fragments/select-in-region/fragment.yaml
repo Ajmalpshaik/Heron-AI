@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-017
+semantic-identity: "everything inside this box of space"
+kind: filter
+domain: revit.selection
+capability: SELECT_IN_REGION
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows the model to the elements inside a rectangular volume given by two
+  corners - the "what is in this area" question when there is no room to filter
+  by, or the area crosses several rooms, or it is outdoors.
+
+  **Two tests, one fragment, and the caller says which.** The fast test asks
+  whether an element's BOUNDING BOX overlaps the volume. The exact test asks
+  whether its real geometry does. They were two files in the earlier library and
+  they answer one question at two accuracies, which is a flag rather than a
+  second fragment - the same call CREATE_ELECTRICAL_RUN makes about tray and
+  conduit.
+
+  **The difference is not academic and the report always names which ran.** A
+  bounding box is axis-aligned, so a sloped drainage pipe or a rotated duct has
+  a box far larger than the pipe: it is reported as inside a volume it never
+  enters. On level work the two agree; on anything sloped or rotated the fast
+  test OVER-reports, and silently.
+
+  **The exact test is slower and it is not free of its own trap:** an element
+  with no solid geometry at all - many annotation and analytical elements -
+  cannot intersect anything and drops out. Those are counted rather than
+  dropped, so a small exact answer beside a large fast one can be read.
+
+  **Corners are given in millimetres and converted here by dividing by 304.8.**
+  Nothing about this needs a units API, and the report states the volume in
+  millimetres so a value handed in already converted shows up as an absurd box
+  rather than as a quiet zero.
+
+  **The two corners are sorted, so either order works.** A volume given
+  max-first is not an error a modeller should have to think about.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: minMm
+      type: XYZ
+      source: request
+    - name: maxMm
+      type: XYZ
+      source: request
+    - name: exact
+      type: bool
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: withoutGeometry
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Outline`,
+  `BoundingBoxIntersectsFilter`, `ElementIntersectsSolidFilter`, `CurveLoop` and
+  `GeometryCreationUtilities.CreateExtrusionGeometry` are present 2020 through
+  2027, compiled at both ends. Millimetres become feet by dividing by 304.8 as
+  plain arithmetic - no units API, which is what changed shape at 2021.
+
+# ROUTING - repeated in FILTER_ELEMENTS_IN_ROOM, SELECT_TOUCHING and
+# FIND_CLASHES.
+#
+#   "what is in this area"           -> here
+#   "everything in this box"         -> here
+#   "what is in the plant room"      -> FILTER_ELEMENTS_IN_ROOM if the room is
+#                                       modelled. It uses the room's real
+#                                       boundary, which an L-shaped room needs
+#                                       and a box cannot express
+#   "what is touching this duct"     -> SELECT_TOUCHING - one element as the
+#                                       target, not a volume
+#   "what clashes with what"         -> FIND_CLASHES - pairs across two sets,
+#                                       not membership of a region
+#   "is there room for this valve"   -> CHECK_MINIMUM_CLEARANCE, which knows
+#                                       what a clearance means. This only says
+#                                       what is inside a box
+
+utterances:
+  - what is in this area
+  - select everything in this box
+  - find elements within a region
+  - what is inside these coordinates
+  - select everything in this zone

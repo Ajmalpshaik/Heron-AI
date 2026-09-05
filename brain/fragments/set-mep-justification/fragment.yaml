@@ -1,0 +1,102 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-035
+semantic-identity: "line these runs up on their tops instead of their centres"
+kind: action
+domain: revit.mep
+capability: SET_MEP_JUSTIFICATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the horizontal and vertical offset that positions a duct or pipe within
+  its own section - the setting that decides whether a run of changing sizes
+  keeps its centres in line, its tops in line, or one side flat.
+
+  **It is what "align the tops" actually means on MEP.** A 400 deep duct
+  reducing to a 250 keeps its CENTRELINE by default, so the top steps up and
+  the bottom steps down at the transition. Above a ceiling only the top matters,
+  and a run set out on its centres loses headroom at every size change for no
+  reason. ALIGN_MEP_ELEVATION moves whole runs to a level; this decides where
+  the pipe sits inside its own size.
+
+  **The offsets are set, not the dropdown.** Revit shows justification as a
+  choice - centre, top, bottom - and stores the result as a pair of offsets from
+  the curve's reference. This writes those offsets, which is the same fact
+  underneath. What it does NOT do is compute the offset that means "top" for a
+  given size; that depends on the run's own height, and handing in the number
+  keeps the arithmetic somewhere it can be seen.
+
+  **An element that carries neither offset is counted, not skipped.** Fittings,
+  accessories and flex do not have them. A run that reports twelve set when nine
+  could take the setting would leave three stepping and nothing saying which.
+
+  **The value is read back after writing**, because a parameter that refuses
+  returns without complaint on some element types.
+
+  UNPROVEN AGAINST A MODEL. The two parameters were compiled on 2020 and on
+  2027, so they exist across the range; that they move the run the way Revit's
+  own justification dropdown does has NOT been watched here, and it is the first
+  thing to check when a model is in front of somebody.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: horizontalOffsetMm
+      type: double
+      source: request
+    - name: verticalOffsetMm
+      type: double
+      source: request
+  provides:
+    - name: set
+      type: int
+    - name: withoutOffsets
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `MEPCurve`,
+  `BuiltInParameter.RBS_CURVE_HOR_OFFSET_PARAM` and
+  `RBS_CURVE_VERT_OFFSET_PARAM` are present 2020 through 2027, compiled at both
+  ends. Millimetres become feet by dividing by 304.8 as plain arithmetic - no
+  units API, which is what changed shape at 2021.
+
+# ROUTING - repeated in ALIGN_MEP_ELEVATION, SET_MEP_SIZE and
+# MEASURE_DISTANCE.
+#
+#   "line these up on their tops"    -> here
+#   "keep the top flat through the reducer" -> here
+#   "set the justification"          -> here
+#   "put these all at 2800"          -> ALIGN_MEP_ELEVATION - whole runs moved
+#                                       to a level. This decides where the pipe
+#                                       sits INSIDE its own size, which is a
+#                                       different question and often the one
+#                                       actually meant
+#   "make this duct 400 deep"        -> SET_MEP_SIZE. Changing the size is what
+#                                       makes the justification matter
+#   "how much headroom is left"      -> MEASURE_DISTANCE between the run and
+#                                       the ceiling, which is what this setting
+#                                       is usually protecting
+
+utterances:
+  - line these runs up on their tops
+  - keep the top flat through the reducer
+  - set the justification on these ducts
+  - align the bottoms of these pipes
+  - set the mep offset

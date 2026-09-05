@@ -71,6 +71,7 @@ compatibility-note: >
 # that retrieval could not act on, and these resolved elsewhere.
 
 utterances:
+  - offset these ducts
   - run another duct parallel to this
   - move the pipe over 300
   - offset it sideways

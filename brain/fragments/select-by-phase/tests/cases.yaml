@@ -1,0 +1,42 @@
+positive:
+  - given: >
+      a model whose Phase 2 added 40 walls, asked for created = "Phase 2" with
+      the walls category
+    expect: >
+      those 40, and a withoutPhasing count of 0 - a category of walls is
+      entirely phase-bearing, so anything above zero there means the read is
+      wrong, not the model
+
+  - given: created = "Phase 2" AND demolished = "Phase 3" together
+    expect: >
+      only the elements that satisfy BOTH. An element created in Phase 2 and
+      never demolished must NOT appear
+
+  - given: the phase asked for as "phase 2", lower case
+    expect: the same answer - nobody retypes Revit's capitalisation
+
+negative:
+  - given: no category list, so the sweep covers levels, grids, views and sheets
+    expect: >
+      withoutPhasing in the hundreds or thousands and NAMED in the report. THIS
+      IS THE FIRST CASE TO RUN. If it comes back 0 the phase read is silently
+      failing and every answer above is a coincidence
+
+  - given: a phase name that does not exist in the model
+    expect: >
+      refused, with the model's real phase names listed. Not an empty result -
+      offices rename "Existing" and a typo must not read as an empty phase
+
+  - given: demolished = a real phase, on a model where nothing is demolished
+    expect: >
+      0 elements, and the report saying this is "demolished in that phase" and
+      not "demolished". The zero is correct and the sentence is what stops it
+      being misread
+
+  - given: neither phase name given
+    expect: refused, with the reason
+
+second_route: >
+  A schedule with Phase Created and Phase Demolished added as fields, filtered
+  to the same phase and counted - or Revit's own phase filter on a view, set to
+  show only that phase

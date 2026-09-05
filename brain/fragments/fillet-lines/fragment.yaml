@@ -1,0 +1,101 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-022
+semantic-identity: "round the corner between two drafting lines to a radius"
+kind: action
+domain: revit.geometry
+capability: FILLET_LINES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Rounds the corner between exactly TWO model or detail lines with a true
+  tangent arc at a given radius: both lines are cut back to their tangent
+  points and an arc is drawn between them.
+
+  **"Fillet" means two different operations in Revit, and only one of them is
+  this.** On drafting lines it is geometry - a radius somebody chooses. On a
+  duct or a pipe it is a real ELBOW FITTING, whose shape comes from the type's
+  routing preferences and not from any radius that could be typed. The earlier
+  library carried both in one file behind a mode switch; here the MEP half is
+  already PLACE_MEP_FITTING, so this fragment is the drafting half alone and
+  refuses MEP curves by name rather than doing something plausible to them.
+
+  **THE TWO SOURCE LINES ARE DELETED AND REDRAWN, SO THEY COME BACK WITH NEW
+  IDS.** That is not tidiness - it is the only thing that works. Editing a line
+  in place to shorten it has been seen to do nothing at all when the two lines
+  already share an endpoint, which is exactly the corner this fragment exists
+  to round: no exception, a clean commit, and the original geometry still there
+  on re-read. Delete and redraw is reliable where the in-place edit is not, and
+  the cost is that anything holding the old ids - a saved set, a tag, a
+  dimension - is holding ids that no longer exist. The new ids are reported.
+
+  **A radius too large for the lines is refused with the length it would
+  need.** The tangent point has to fall on both lines; a radius that pushes it
+  past the end has no fillet, and the number needed to correct it is more use
+  than a refusal on its own.
+
+  **A corner of about 0 or about 180 degrees is refused.** There is nothing to
+  round in a straight line or a fold-back, and the arithmetic there produces a
+  huge arc rather than an error.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16) - which
+  matters more here than usual, because the delete and the redraw must be one
+  undo step or a failure halfway leaves two lines gone and no arc.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: radiusMm
+      type: double
+      source: request
+    - name: view
+      type: View
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Arc.Create`, `Line.CreateBound`,
+  `SketchPlane.Create`, `Plane.CreateByNormalAndOrigin`,
+  `Document.Create.NewModelCurve` and `NewDetailCurve` are present 2020 through
+  2027, compiled at both ends. Millimetres become feet by dividing by 304.8, as
+  plain arithmetic - no units API, which is what changed shape at 2021.
+
+# ROUTING - repeated in PLACE_MEP_FITTING and TRIM_EXTEND_ELEMENTS.
+#
+#   "round that corner off"          -> here, for model and detail lines
+#   "fillet these two lines"         -> here
+#   "put a radius on that corner"    -> here
+#   "round off this duct corner"     -> PLACE_MEP_FITTING. A duct corner is
+#                                       rounded by a real elbow whose shape
+#                                       comes from the type, not by an arc, and
+#                                       there is no radius to choose
+#   "make these two meet first"      -> TRIM_EXTEND_ELEMENTS. This fragment
+#                                       needs a real corner between the two
+#                                       directions; it does not need them to
+#                                       be touching already
+#   "draw an arc"                    -> CREATE_LINE. A fillet is a corner being
+#                                       rounded, not an arc being drawn
+
+utterances:
+  - round that corner off
+  - fillet these two lines
+  - put a radius on this corner
+  - round the corner between these lines
+  - fillet at 300mm

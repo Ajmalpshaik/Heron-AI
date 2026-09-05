@@ -1,0 +1,45 @@
+positive:
+  - given: >
+      a run of 400 deep duct reducing to 250, both set to the same vertical
+      offset
+    expect: >
+      the tops flat through the transition when looked at IN SECTION. That look
+      is the proof - the parameter reading back the value it was given only says
+      the number went in
+
+  - given: twelve runs set in one call
+    expect: >
+      twelve reported, and the read-back confirming each. Then measure two of
+      them by hand
+
+  - given: an offset of zero
+    expect: >
+      the runs back on their centrelines. Zero is a legitimate value and must
+      not be treated as "no instruction"
+
+negative:
+  - given: fittings and flex among the runs
+    expect: >
+      counted in withoutOffsets and NOT in the set count. THIS IS THE FIRST
+      CASE TO RUN. "Twelve set" when nine could take the setting leaves three
+      still stepping at the transitions and nothing saying which three
+
+  - given: a parameter that is read-only on some element type
+    expect: >
+      not counted as set. Some parameters return without complaint when they
+      refuse, and reading the value back is the only thing that separates that
+      from success
+
+  - given: the batch trusted without a section being looked at
+    expect: >
+      the report having said the behaviour is unwatched. The parameters exist on
+      2020 and 2027 - that they move the run the way the justification dropdown
+      does is the thing nobody here has seen
+
+  - given: no elements given
+    expect: refused, with the reason
+
+second_route: >
+  Set the same runs with Revit's own Justification control in the Properties
+  palette and compare - and cut a section at the size change, which is where a
+  wrong offset is visible and a right one is invisible

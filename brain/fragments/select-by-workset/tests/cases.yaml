@@ -1,0 +1,41 @@
+positive:
+  - given: >
+      a workshared model with a "Linked Models" workset holding 6 links, and
+      the name "Linked Models" asked for
+    expect: >
+      those 6 back, and the scanned count LARGER than 6 - a scan that found 6
+      out of 6 has not searched the model, it has searched a subset
+
+  - given: the same workset asked for as "linked models", all lower case
+    expect: >
+      the same 6. Revit's own dialog shows the name capitalised and nobody
+      retypes it that way
+
+  - given: a category list of ducts and pipes on a workset holding both plus fittings
+    expect: >
+      only the ducts and pipes, and the scanned count LOWER than the
+      unrestricted sweep - proof the category bound was applied and not ignored
+
+negative:
+  - given: a model that is NOT workshared
+    expect: >
+      REFUSED and named as not workshared. THIS IS THE FIRST CASE TO RUN. A
+      zero here is indistinguishable from an empty workset and means the
+      opposite thing
+
+  - given: the name "Linked model" on a model whose workset is "Linked Models"
+    expect: >
+      refused, with the real workset names listed. Not an empty result - a
+      typo must not read as an empty workset
+
+  - given: an empty workset asked for by its correct name
+    expect: >
+      0 elements AND a scanned count in the thousands. That is the one honest
+      zero, and it is only readable because the scan size is reported beside it
+
+  - given: an empty or blank workset name
+    expect: refused, with the reason
+
+second_route: >
+  Revit's own Manage then Worksets dialog, which shows each workset, and a
+  schedule with Workset added as a field - counted there and compared

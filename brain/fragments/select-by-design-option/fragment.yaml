@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-PHS-032
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-006
+semantic-identity: "the elements inside one design option, or the ones in none"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_DESIGN_OPTION
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows the model to the elements belonging to ONE named design option -
+  "show me what is in Scheme B" - or, with no option named, to the elements in
+  no option at all, which is the Main Model.
+
+  **TWO DESIGN OPTIONS CAN HAVE THE SAME NAME, AND THAT IS THE NORMAL CASE.**
+  Revit names the primary option of EVERY option set "Option 1 (primary)", so a
+  model with three option sets has three options called exactly that. A lookup
+  that takes the first match picks whichever the collector returned first and
+  reports success - the wrong answer delivered with confidence, which is the
+  defect this whole project is built around. **This refuses to choose.** When a
+  name is ambiguous it names the option sets involved and stops, so the caller
+  can say which set they meant.
+
+  **"No option" means the Main Model, and it is almost the whole file.** An
+  unbounded Main Model sweep returns nearly every element in the project. Give
+  a category list unless the whole model is genuinely wanted.
+
+  **An element in the OTHER option of the same set is not "missing".** Design
+  options are alternatives, so what is not in the option asked for is in a
+  sibling option or in the Main Model. A count smaller than expected usually
+  means the elements are in the sibling, not that they were dropped.
+
+  **A model with no design options at all is answered, not refused.** Unlike an
+  unworkshared model asked about worksets, "there are no design options" and
+  "the Main Model is everything" are the same true statement, and the Main
+  Model answer is still correct. Only a NAMED option that does not exist is
+  refused.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: optionName
+      type: string
+      source: request
+    - name: optionSetName
+      type: string
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: optionId
+      type: ElementId
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `DesignOption`, `Element.DesignOption`
+  and `BuiltInParameter.OPTION_SET_ID` are present 2020 through 2027, compiled
+  at both ends. No ElementId is built from an int.
+
+# ROUTING - repeated in REPORT_DESIGN_OPTIONS and SELECT_BY_PHASE.
+#
+#   "show me what is in scheme b"    -> here
+#   "select the main model only"     -> here, with no option named
+#   "what design options are in
+#    this model"                     -> REPORT_DESIGN_OPTIONS - the names and
+#                                       their sets, which is what you need
+#                                       BEFORE you can name one here
+#   "what was added in phase 2"      -> SELECT_BY_PHASE. Phase is WHEN, design
+#                                       option is WHICH ALTERNATIVE - two axes,
+#                                       and an element has a position on both
+#   "make this option the one
+#    we build"                       -> not a fragment. Accepting a design
+#                                       option is a model-restructuring job and
+#                                       belongs to whoever owns the decision
+
+utterances:
+  - show me what is in scheme b
+  - select everything in this design option
+  - find elements in the main model only
+  - which ducts are in option 2
+  - filter by design option

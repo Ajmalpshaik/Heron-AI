@@ -1,0 +1,47 @@
+positive:
+  - given: >
+      a duct run of six pieces where one elbow was never joined, ducts and duct
+      fittings, wantOpenEnds true
+    expect: >
+      the elbow and its two neighbours. Click the elbow in Revit - the open
+      connector shows as a warning symbol at that end
+
+  - given: the same run with the elbow joined, re-run
+    expect: >
+      that set empty. Joining the elbow must change the answer, or the check is
+      reading something other than the connection
+
+  - given: wantOpenEnds false over the same category
+    expect: >
+      the fully joined pieces, and the two answers plus withoutConnectors adding
+      up to the scanned count
+
+negative:
+  - given: a panelboard, or any family with surface connectors, in the category
+    expect: >
+      no exception, and the element answered or counted as unreadable. THIS IS
+      THE FIRST CASE TO RUN. Reading connection status on a surface connector
+      RAISES rather than returning false - measured on a panelboard with six
+      connectors - so an unguarded sweep dies part way through and reports
+      whatever it had reached as if it were the answer
+
+  - given: a category of elements modelled without connectors
+    expect: >
+      all of them in withoutConnectors and none in either list, with the
+      wrong-category sentence shown. Calling them all open would be an invention
+
+  - given: a closed loop of pipe joined at every joint and reaching no plant
+    expect: >
+      reported as fully connected - which is TRUE and not the whole truth. The
+      report has to say this walked nothing, or a clean answer here reads as a
+      working system
+
+  - given: an empty category list
+    expect: >
+      the whole model swept and a very large withoutConnectors count, with the
+      sentence saying the category is probably wrong
+
+second_route: >
+  Revit's own disconnect warnings, and clicking a suspect element to see the
+  open-connector symbol at its end - the symbol is the definition this fragment
+  is claiming to match

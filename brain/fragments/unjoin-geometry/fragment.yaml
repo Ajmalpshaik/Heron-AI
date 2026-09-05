@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-041
+semantic-identity: "stop these two elements cutting into each other"
+kind: action
+domain: revit.elements
+capability: UNJOIN_GEOMETRY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Separates elements that Revit has joined, so each one keeps its own volume
+  again - the fix for a wall that has eaten a column, a floor that has swallowed
+  a beam, and a material takeoff that is quietly short because one element is
+  cutting another.
+
+  **Until now, asking to UNJOIN reached JOIN_GEOMETRY.** That was measured, and
+  it is the worst shape a routing miss can take: the fragment that arrives is
+  the exact opposite operation, it succeeds, and the model is now more joined
+  than before somebody asked for less.
+
+  **A join is a pair, and this takes pairs.** Handing in a set and unjoining
+  everything from everything is a different and much more destructive
+  operation; each pair is named, and each one that was not joined in the first
+  place is reported rather than silently counted as done.
+
+  **Unjoining changes quantities, and that is the point.** Joined elements
+  share their overlap: one of them loses that volume from its takeoff. Anybody
+  unjoining after a schedule has been issued needs to know the numbers move,
+  so the count of pairs actually separated is reported rather than a success
+  message.
+
+  **It reports what happened, not what was asked.** A pair that was already
+  unjoined is named as already unjoined; a pair Revit refuses is named with its
+  reason. "12 unjoined" when 5 of them were never joined is the defect this
+  project exists around.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  batch of pairs is one undo.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: first
+      type: IList<Element>
+    - name: second
+      type: IList<Element>
+  provides:
+    - name: unjoined
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `JoinGeometryUtils.AreElementsJoined`
+  and `UnjoinGeometry` are present 2020 through 2027, compiled at both ends.
+  Elements are passed as objects, never as ids read for their number.
+
+# ROUTING - repeated in JOIN_GEOMETRY, REPORT_JOINED_ELEMENTS and
+# SWITCH_JOIN_ORDER.
+#
+#   "unjoin these two walls"         -> here
+#   "stop this wall cutting the column" -> here
+#   "join these"                     -> JOIN_GEOMETRY - the opposite, and what
+#                                       the unjoin request used to reach
+#   "what is this joined to"         -> REPORT_JOINED_ELEMENTS - read first,
+#                                       because a join nobody knew about is
+#                                       what makes a takeoff wrong
+#   "the wrong one is cutting"       -> SWITCH_JOIN_ORDER. The join is right
+#                                       and its direction is not - unjoining
+#                                       there loses the join as well as fixing
+#                                       nothing
+#   "my quantities are short"        -> REPORT_JOINED_ELEMENTS, then this. A
+#                                       joined element gives its overlap away
+
+utterances:
+  - unjoin these two walls
+  - stop this wall cutting the column
+  - separate these joined elements
+  - undo the join between these
+  - unjoin geometry

@@ -1,0 +1,114 @@
+heron-agent: HERON-REVIT-IMP-019
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-040
+semantic-identity: "turn the lines on a CAD layer into real revit lines"
+kind: action
+domain: revit.elements
+capability: EXTRACT_CAD_CURVES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Reads the geometry of an imported or linked CAD file and redraws the curves
+  on chosen layers as real Revit model lines or detail lines - the "trace this
+  DWG background into Revit" job, done by reading it rather than by drawing
+  over it.
+
+  **NAMING NO LAYER SURVEYS; NAMING LAYERS EXTRACTS.** With an empty layer list
+  this creates nothing and reports every layer it found with a curve count
+  against each. That is the opposite of the obvious default, on purpose: a
+  drawing's layer names cannot be guessed, they are case-sensitive, and "all
+  layers" on a survey drawing is tens of thousands of lines nobody asked for.
+  So one run tells you what is there, and the second run asks for it by name.
+
+  **Layer names are matched exactly, including case.** A CAD layer is whatever
+  the other office typed. Matching loosely would quietly pull in a neighbouring
+  layer, and the survey above is what makes exact matching workable.
+
+  **Only flat curves are taken, and the rest are counted.** A model line needs
+  a sketch plane and a detail line lives in one view; a curve whose two ends
+  differ in height belongs to neither. Those are reported rather than dropped,
+  because a survey drawing with levels baked into it produces almost nothing
+  and the count is the only clue why.
+
+  **Polylines become straight segments, and splines and ellipses are refused.**
+  A polyline is already a chain of straight pieces and comes across exactly. A
+  spline is not, and approximating one silently would put linework in a Revit
+  model that does not match the drawing it came from.
+
+  **There is a cap on how many lines one run creates**, and it is reported when
+  it bites. A traced layer that turns out to hold 40,000 segments should stop
+  and say so rather than fill the model.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Golden
+  Rule 17's preview - run it, look, roll back - is how to see the result before
+  keeping it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: imports
+      type: IList<Element>
+    - name: layerNames
+      type: IList<string>
+      source: request
+    - name: asDetailLines
+      type: bool
+      source: request
+    - name: view
+      type: View
+      source: request
+    - name: maxCurves
+      type: int
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: layerCounts
+      type: IDictionary<string, int>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ImportInstance`, `GeometryInstance`,
+  `GetInstanceGeometry`, `GraphicsStyle`, `PolyLine.GetCoordinates`,
+  `SketchPlane.Create`, `Document.Create.NewModelCurve` and `NewDetailCurve`
+  are present 2020 through 2027, compiled at both ends. The layer is read from
+  the graphics style's category NAME, never from an id treated as a number.
+
+# ROUTING - repeated in CREATE_LINE, LIST_LINKED_MODELS and REMAP_LINE_STYLES.
+#
+#   "trace this cad background"      -> here
+#   "turn the dwg lines into
+#    revit lines"                    -> here
+#   "what layers are in this dwg"    -> here, with no layer named. That is the
+#                                       survey, and it creates nothing
+#   "draw a line from here to
+#    there"                          -> CREATE_LINE - one line somebody
+#                                       specifies, not linework read out of a
+#                                       drawing
+#   "what is linked into this
+#    model"                          -> LIST_LINKED_MODELS - the files, which
+#                                       is what you feed this
+#   "put these lines on the right
+#    line style"                     -> REMAP_LINE_STYLES afterwards. What
+#                                       comes out of here lands on a default
+#                                       style, not on the CAD layer's
+
+utterances:
+  - trace this cad background into revit lines
+  - turn the dwg lines into model lines
+  - what layers are in this cad file
+  - what layers are in this dwg
+  - extract curves from this cad link
+  - convert cad linework to detail lines

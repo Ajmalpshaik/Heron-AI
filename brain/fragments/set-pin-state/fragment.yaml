@@ -61,6 +61,11 @@ compatibility-note: >
 #
 #   "pin these" / "lock them"              -> here, pinned true
 #   "unpin" / "unlock so I can move it"    -> here, pinned false
+#   "are these pinned" / "what is pinned"  -> SELECT_BY_PIN_STATE, which reads
+#                                             and changes nothing. This
+#                                             fragment used to declare that
+#                                             sentence and answered a question
+#                                             with a writer
 #   "move them up 200"                     -> MOVE_ELEMENTS
 #   "why did they not move"                -> MOVE_ELEMENTS reports blocked;
 #                                             a pinned element is the commonest
@@ -76,4 +81,3 @@ utterances:
   - lock these in place
   - unpin them
   - unlock it so I can move it
-  - are these pinned

@@ -1,0 +1,46 @@
+positive:
+  - given: >
+      two ducts at 90 degrees on one level with a 600 mm gap between their near
+      ends
+    expect: >
+      both EXTENDED to the corner, moved reported as 2, and the gap gone when
+      measured in Revit. The far end of each must be exactly where it was -
+      check both, because a fragment that moved the wrong end would also close
+      the gap
+
+  - given: two model lines that overrun past each other by 300 mm
+    expect: both TRIMMED back to the crossing point - the same operation, the other direction
+
+  - given: two runs at different heights, crossing in plan
+    expect: >
+      each squared off at the plan corner and each keeping its own Z. This is
+      a limit, and the answer has to be the stated one rather than a guess at
+      a 3D corner
+
+negative:
+  - given: two model lines that ALREADY share a coincident endpoint
+    expect: >
+      either a real move, or moved reported as 0 with the silent-no-op sentence.
+      THIS IS THE FIRST CASE TO RUN. Revit has been seen to accept the new curve
+      for this exact shape and keep the old geometry - no exception, a clean
+      commit, and a success message that is a lie. The read-back is the only
+      thing that catches it
+
+  - given: two parallel ducts
+    expect: refused, nothing changed. There is no corner and a computed one would be nowhere
+
+  - given: one element with an arc location curve
+    expect: refused, nothing changed
+
+  - given: three elements handed in
+    expect: refused, nothing changed - this is pairwise and cannot mean anything else
+
+  - given: two connected ducts squared off
+    expect: >
+      the connection BROKEN at the moved ends and the report saying so. Silence
+      here would leave a disconnected system that still looks joined on screen
+
+second_route: >
+  Measure the gap in Revit before and after with the tape tool, and re-select
+  each element to read its endpoints fresh. The re-selection matters: it is the
+  same re-read the fragment does, done by hand

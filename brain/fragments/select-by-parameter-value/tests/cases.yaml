@@ -1,0 +1,49 @@
+positive:
+  - given: >
+      "Family and Type" contains "VCD" over the duct accessory category, in a
+      model with 30 VCDs and 90 other accessories
+    expect: >
+      the 30, with the scanned count at 120 and withoutParameter at 0 - every
+      family instance has a family and a type
+
+  - given: Mark begins with "AHU"
+    expect: >
+      only marks starting AHU, and NOT one that merely contains it. The four
+      modes have to differ or only "contains" is really implemented
+
+  - given: a shared type parameter matched with includeTypeParameters true
+    expect: >
+      the instances found. With the same request and includeTypeParameters
+      false, 0 matched and withoutParameter equal to the scanned count
+
+negative:
+  - given: >
+      Mark "notcontains" ABC over a whole category where most elements have no
+      Mark at all
+    expect: >
+      ONLY elements that have a Mark and whose Mark lacks ABC. THIS IS THE
+      FIRST CASE TO RUN. Reading a missing parameter as an empty string makes
+      every unmarked element a match, and the answer is then the whole category
+      reported as a successful filter
+
+  - given: a parameter name that is spelled wrongly
+    expect: >
+      0 matched, withoutParameter equal to the scanned count, and the report
+      saying nothing carries it. Not a bare zero - a typo and a model with no
+      matches must not read alike
+
+  - given: >
+      a length parameter searched for the text "500" in a project displaying
+      metres
+    expect: >
+      whatever it finds, treated as UNRELIABLE. The stored value is feet and
+      the text is whatever Revit formatted; this is the case that belongs to
+      SELECT_BY_NUMERIC_PARAMETER and the routing table has to send it there
+
+  - given: an empty parameter name
+    expect: refused, with the reason
+
+second_route: >
+  A schedule of the same category with that parameter as a field and a Contains
+  filter set to the same text, counted - Revit answering the same question in
+  its own words

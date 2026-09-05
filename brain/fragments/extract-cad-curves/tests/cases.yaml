@@ -1,0 +1,48 @@
+positive:
+  - given: a linked DWG with layers A-WALL, A-GRID and A-TEXT, no layer named
+    expect: >
+      NOTHING created, and all three layers listed with a segment count each.
+      That is the run that makes the next one possible - the names cannot be
+      guessed
+
+  - given: the same DWG with "A-WALL" named, as model lines
+    expect: >
+      model lines only where the DWG has wall linework, and the count matching
+      the survey's figure for that layer. Look at them against the DWG on
+      screen - they must sit on it, not beside it, which is what the instance
+      transform is for
+
+  - given: the same layer as detail lines with a view named
+    expect: >
+      the lines in that view alone, and absent from every other view
+
+negative:
+  - given: '"a-wall" named in lower case, when the DWG layer is "A-WALL"'
+    expect: >
+      refused for that layer, with the real names listed, and nothing created.
+      THIS IS THE FIRST CASE TO RUN. Matching loosely would pull in whatever
+      layer was nearest and produce linework that looks plausible and is from
+      the wrong place
+
+  - given: a DWG whose linework is at varying heights
+    expect: >
+      few or no lines created, and the not-flat count reported. A silent near
+      zero here reads as an empty layer, which it is not
+
+  - given: a layer holding splines
+    expect: >
+      those refused and counted, not approximated into polylines. An
+      approximation is linework that does not match the drawing it came from
+
+  - given: a layer holding 40,000 segments with a cap of 500
+    expect: >
+      500 created and the cap NAMED in the report. A run that quietly stops at
+      its own limit looks like a layer that was smaller than it is
+
+  - given: nothing that is a CAD import handed in
+    expect: refused, pointing at LIST_LINKED_MODELS. Not an empty result
+
+second_route: >
+  Open the DWG in its own CAD program, isolate the same layer and count the
+  entities there - then compare with what landed in Revit, remembering that one
+  polyline of eight vertices is seven Revit lines

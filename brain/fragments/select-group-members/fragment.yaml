@@ -1,0 +1,87 @@
+heron-agent: HERON-REVIT-GRP-033
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-014
+semantic-identity: "everything inside this group, as elements i can act on"
+kind: filter
+domain: revit.selection
+capability: SELECT_GROUP_MEMBERS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Returns the member elements of a model group instance - the repeated toilet
+  block, the typical FCU-and-terminals cluster - as a set the next fragment can
+  act on.
+
+  **A group instance is one element, and its members are not in any normal
+  sweep.** `FilteredElementCollector` returns the group, not the twelve things
+  inside it, so every count and every filter in this library sees a group as a
+  single item. This is the fragment that opens it.
+
+  **Reading a group is safe; acting on what comes out usually is not.** Revit
+  will not let a member be changed in place - editing one means entering group
+  edit mode, or the change applies to every instance of that group type. So
+  this returns the members and says plainly that a write against them is
+  likely to be refused or to hit every copy. That warning belongs here, at the
+  point the set is produced, not at the point somebody is surprised.
+
+  **A group NAME is a type name, and several instances share it.** Naming a
+  group by name is therefore ambiguous whenever it is placed more than once -
+  which is the entire reason groups exist. So an instance is what this takes,
+  and there is no name lookup to guess with.
+
+  **Nested groups come back as groups**, one element each, not flattened. A
+  member that is itself a group can be handed back in for its own members;
+  flattening silently would make the count disagree with what Revit shows and
+  hide a structure the modeller built on purpose.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: group
+      type: Element
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: nestedGroups
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Group.GetMemberIds` and `GroupType` are
+  present 2020 through 2027, compiled at both ends. Member ids are resolved
+  through `Document.GetElement` and compared as ElementIds, never as numbers.
+
+# ROUTING - repeated in GROUP_ELEMENTS, UNGROUP_ELEMENTS and GROUP_BY_ASSEMBLY.
+#
+#   "what is in this group"          -> here
+#   "select the things inside it"    -> here
+#   "group these"                    -> GROUP_ELEMENTS - the write
+#   "explode this group"             -> UNGROUP_ELEMENTS. That is what is
+#                                       really wanted when the next step is to
+#                                       EDIT the members - this fragment only
+#                                       hands them out to read
+#   "what is in this assembly"       -> GROUP_BY_ASSEMBLY. An assembly is a
+#                                       different Revit thing from a group and
+#                                       does not answer to this
+#   "how many of these groups
+#    are there"                      -> COUNT_ELEMENTS over the group category
+
+utterances:
+  - what is in this group
+  - select the elements inside this group
+  - show me the group members
+  - list what this group contains
+  - find everything in this model group

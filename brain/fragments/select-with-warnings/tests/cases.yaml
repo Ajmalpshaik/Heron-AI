@@ -1,0 +1,42 @@
+positive:
+  - given: >
+      a model whose warning dialog shows 40 warnings, asked for all of them
+    expect: >
+      a set whose count is at or below the number of failing-element rows in
+      Revit's own dialog, never above it, and every returned element really
+      highlighted when selected
+
+  - given: errorsOnly on a model with both severities
+    expect: >
+      a strictly smaller set than the unfiltered one, and every element in it
+      present in the unfiltered set too
+
+  - given: a description phrase matching one warning type
+    expect: only the elements of those warnings, and the warning count reported
+
+negative:
+  - given: >
+      one wall named by three separate overlap warnings
+    expect: >
+      that wall ONCE. THIS IS THE FIRST CASE TO RUN. Concatenating each
+      warning's failing elements returns it three times, the count reads 3
+      instead of 1, and a fix run over the set touches it three times
+
+  - given: a warning naming an element deleted since the list was built
+    expect: >
+      it counted as unresolved and named in the report, not silently dropped.
+      A large unresolved figure is the signal that the list is stale
+
+  - given: a model with no warnings at all
+    expect: >
+      0 elements and the report saying the model has no warnings - not an empty
+      set with no explanation
+
+  - given: a model with real clashes and no Revit warnings
+    expect: >
+      0, and the closing sentence about clashes not being warnings. This is the
+      misreading that matters: an empty answer here does not mean a clean model
+
+second_route: >
+  Revit's own Manage then Warnings dialog - the row count read there, and one
+  warning expanded and its elements selected by hand for comparison

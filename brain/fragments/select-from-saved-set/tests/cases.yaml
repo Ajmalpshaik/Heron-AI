@@ -1,0 +1,48 @@
+positive:
+  - given: >
+      a set of 12 saved by CREATE_SELECTION_FILTER, read back by the same name
+    expect: >
+      the same 12, and the report calling it a saved list. Run it in a
+      different view and get the SAME 12 - that invariance is what makes it a
+      list rather than a rule
+
+  - given: a view filter named, with a view given
+    expect: >
+      the elements that rule matches in that view, and the report saying it was
+      re-evaluated. Run it in a second view with different visibility and
+      expect a DIFFERENT answer - if it is the same, the view is being ignored
+
+  - given: a filter name typed in the wrong case
+    expect: found anyway - nobody retypes Revit's capitalisation
+
+negative:
+  - given: a view filter named with NO view
+    expect: >
+      REFUSED, and told it is a rule. THIS IS THE FIRST CASE TO RUN. Falling
+      back to the active view returns a plausible set that answers a question
+      about whichever drawing was open, and is right often enough that the
+      wrong answers never get noticed
+
+  - given: >
+      a saved set of 12, three of whose elements were deleted afterwards
+    expect: >
+      9 returned and missing reported as 3. Not 9 with no explanation - "the
+      set has shrunk since you saved it" and "the set was always 9" are
+      different facts
+
+  - given: a filter name that does not exist
+    expect: >
+      refused, with every filter listed AND each one labelled saved-list or
+      rule. The label is the part that makes the next attempt correct
+
+  - given: an empty filter name
+    expect: refused, with the reason
+
+  - given: a saved set that is genuinely empty
+    expect: >
+      0 elements, 0 missing, and the report saying it holds 0 ids. An empty
+      saved set is a legitimate thing and must not read as a failure
+
+second_route: >
+  Revit's own Manage then Filters dialog for the names and kinds, and for a
+  saved set, selecting it there and reading the count Revit shows
