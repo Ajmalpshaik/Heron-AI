@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-WRK-014
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-004
+semantic-identity: "the elements that sit on one named workset"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_WORKSET
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows the model to the elements on ONE named user workset, optionally
+  bounded to a list of categories. It is the "show me what is on Linked
+  Models" / "what did the structural team put on their workset" question,
+  and it is the set almost every workset clean-up starts from.
+
+  **A model that is not workshared has no worksets, and that is a REFUSAL
+  rather than an empty answer.** The two look identical from the outside -
+  zero elements - and they mean opposite things. One says "nothing is on that
+  workset"; the other says "the question does not apply to this file". A
+  filter that returns a confident zero for the second is the exact defect this
+  project exists around.
+
+  **A workset name that does not exist is also a refusal, and the existing
+  names are listed.** Typing `Linked models` for `Linked Models` must not read
+  as "that workset is empty". The names are given back so the next attempt is
+  a correction rather than a guess.
+
+  **Only USER worksets are searched.** A workshared model also carries family
+  worksets and view worksets, which Revit maintains and nobody assigns work
+  to. A modeller asking about "the MEP workset" means the user one, and
+  matching across all kinds would let an internal name win.
+
+  **This says nothing about who OWNS or has CHECKED OUT those elements.**
+  Workset is where an element lives; ownership is who is holding it right now.
+  They are different questions and READ_ELEMENT_OWNERSHIP answers the second.
+
+  Reports how many elements were scanned as well as how many matched, so a
+  small answer can be read against the size of the sweep.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: worksetName
+      type: string
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: scanned
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.IsWorkshared`,
+  `FilteredWorksetCollector`, `WorksetKind.UserWorkset` and `Element.WorksetId`
+  are unchanged 2020 through 2027. `ElementMulticategoryFilter` is handed
+  BuiltInCategory values directly rather than ElementIds built from them, so
+  2024's move to 64-bit ids cannot reach this code.
+
+# ROUTING - repeated in READ_ELEMENT_OWNERSHIP, LIST_WORKSETS and
+# SET_ELEMENT_WORKSET.
+#
+#   "what is on the linked models workset"   -> here
+#   "select everything on the mep workset"   -> here, then SET_SELECTION
+#   "what worksets does this
+#    model have"                     -> LIST_WORKSETS - the names, not the
+#                                       contents
+#   "who has this checked out"       -> READ_ELEMENT_OWNERSHIP - ownership is
+#                                       not the same fact as workset
+#   "move these onto the MEP
+#    workset"                        -> SET_ELEMENT_WORKSET - this one only
+#                                       reads
+#   "put everything on level 2 on
+#    its own workset"                -> a composition: this filter cannot do
+#                                       the level half. FILTER_ELEMENTS_BY_
+#                                       CATEGORY takes a level, and a SKILL
+#                                       joins the two
+
+utterances:
+  - what is on the linked models workset
+  - select everything on the mep workset
+  - show me the elements in this workset
+  - find elements on workset
+  - which elements belong to the structural workset

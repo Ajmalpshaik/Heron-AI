@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-011
+semantic-identity: "the elements that are pinned, or the ones that are not"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_PIN_STATE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows the model to the elements that ARE pinned, or to the ones that are
+  NOT, optionally bounded to a list of categories. It is the read half of the
+  pair SET_PIN_STATE writes, and it is the sweep that answers "what did we
+  actually lock down" before a big move.
+
+  **Asked over the whole model, "everything pinned" is mostly links and
+  datums.** Revit pins a linked model and an imported CAD file when it is
+  inserted, and most teams pin their grids and levels early. So an unbounded
+  answer is dominated by things nobody was asking about, and the category bound
+  is what makes the question the one that was meant. The report says which case
+  it just answered.
+
+  **The unpinned sweep is the more useful one, and it is the bigger one.**
+  "Which grids are NOT pinned" is a real check with a short answer; "which
+  elements are not pinned" is almost the entire model. Both are offered because
+  the first is worth having, and the count is reported beside the scan size so
+  the second cannot be mistaken for a finding.
+
+  **A pinned group and its members are separate facts.** Pinning a group
+  instance does not pin what is inside it, and this reports exactly what each
+  element says about itself.
+
+  Reports how many elements were scanned as well as how many matched, so a
+  small answer can be read against the size of the sweep.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: wantPinned
+      type: bool
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: scanned
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.Pinned` is present 2020
+  through 2027, compiled at both ends. Categories are handed to
+  `ElementMulticategoryFilter` as BuiltInCategory values rather than as
+  ElementIds built from them, so 2024's move to 64-bit ids cannot reach this
+  code.
+
+# ROUTING - repeated in SET_PIN_STATE, MOVE_ELEMENTS and SELECT_BY_WORKSET.
+#
+#   "what is pinned"                 -> here
+#   "which grids are not pinned"     -> here, wantPinned false, grids category.
+#                                       The useful shape of the question
+#   "pin all the grids"              -> SET_PIN_STATE - this one only reads
+#   "move these up 200"              -> MOVE_ELEMENTS, which REFUSES a pinned
+#                                       element rather than moving it. Run this
+#                                       first when a move comes back short
+#   "why did nothing move"           -> MOVE_ELEMENTS, which reports what it
+#                                       was blocked by - that decision is
+#                                       already written in SET_PIN_STATE's
+#                                       table and this one keeps it. Come here
+#                                       afterwards to see how much of the
+#                                       category is pinned, not to ask why one
+#                                       move failed
+#   "what is on the shared
+#    workset"                        -> SELECT_BY_WORKSET. A pin is not a
+#                                       permission and a workset is not a lock
+
+utterances:
+  - are these pinned
+  - what is pinned in this model
+  - show me everything that is pinned
+  - which grids are not pinned
+  - find unpinned elements
+  - select all pinned elements

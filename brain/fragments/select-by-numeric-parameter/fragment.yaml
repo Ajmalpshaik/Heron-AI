@@ -1,0 +1,121 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-008
+semantic-identity: "the elements whose numeric parameter passes a comparison"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_NUMERIC_PARAMETER
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows the model to the elements whose named NUMERIC parameter passes a
+  comparison - "ducts 500 mm high", "pipes larger than 100 mm", "walls between
+  200 and 300 thick" - optionally bounded to a list of categories. It is the
+  half of SELECT_BY_PARAMETER_VALUE that a unit makes impossible to do with
+  text.
+
+  **The comparison value is handed in already in Revit's internal unit, and
+  that is a deliberate refusal to guess.** A length is stored in decimal feet,
+  so 500 mm arrives as 500 / 304.8. But an airflow, a pressure, an angle and a
+  temperature each have their own internal unit, and this fragment cannot know
+  which one the named parameter uses without asking a units API - the API that
+  changed shape at Revit 2021 and is the reason [D-20](../../../docs/DECISIONS.md)
+  keeps conversion at the edge. Taking a `valueMm` here would be a promise this
+  code cannot keep for any parameter that is not a length. **The read-back
+  states the comparison in internal units AND what it would be in millimetres
+  if the parameter is a length**, so a value handed in unconverted is visible
+  rather than silent.
+
+  **An INTEGER parameter is compared directly, not skipped.** The obvious code
+  tests for `StorageType.Double` and returns nothing for everything else, so
+  "poles equals 3" comes back as a clean, wrong zero. Integers are counts and
+  yes/no flags, they carry no unit, and comparing them to the same number is
+  right.
+
+  **Elements that do not carry the parameter, and elements that carry it as
+  text, are counted separately.** `withoutParameter` and `notNumeric` are the
+  difference between "nothing matched", "that parameter does not exist here"
+  and "that parameter is a string - use SELECT_BY_PARAMETER_VALUE".
+
+  **`eq` is a tolerance, never an equality.** Two doubles that both display as
+  500 mm are not the same double. A comparison written as `==` finds almost
+  nothing and looks like a filter that ran.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: parameterName
+      type: string
+      source: request
+    - name: comparison
+      type: string
+      source: request
+    - name: compareValue
+      type: double
+      source: request
+    - name: compareValueMax
+      type: double
+      source: request
+    - name: tolerance
+      type: double
+      source: request
+    - name: includeTypeParameters
+      type: bool
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: withoutParameter
+      type: int
+    - name: notNumeric
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.LookupParameter`,
+  `Parameter.HasValue`, `StorageType`, `AsDouble` and `AsInteger` are present
+  2020 through 2027, compiled at both ends. **No units API is touched** -
+  `DisplayUnitType` became `ForgeTypeId` at 2021 and there is no single
+  expression that spans the range, which is exactly why the conversion is the
+  caller's and the arithmetic here is plain.
+
+# ROUTING - repeated in SELECT_BY_PARAMETER_VALUE, MEASURE_ELEMENT_LENGTHS and
+# SET_MEP_SIZE.
+#
+#   "ducts 500 mm high"              -> here, with 500/304.8 handed in
+#   "pipes larger than 100 mm"       -> here, gt
+#   "walls between 200 and 300"      -> here, between
+#   "find every vcd"                 -> SELECT_BY_PARAMETER_VALUE - a name is
+#                                       text and has no unit
+#   "all the 300x300 ducts"          -> A SKILL. It is this fragment run
+#                                       TWICE, on Width and on Height, with
+#                                       the two results intersected - one
+#                                       fragment cannot answer it and should
+#                                       not pretend to. Where the size is in
+#                                       the type NAME instead, it is one call
+#                                       to SELECT_BY_PARAMETER_VALUE
+#   "how long are these ducts"       -> MEASURE_ELEMENT_LENGTHS - the value
+#                                       reported, not used to filter
+#   "make these ducts 500 high"      -> SET_MEP_SIZE - this one only reads
+
+utterances:
+  - find ducts 500 mm high
+  - select pipes larger than 100 mm
+  - which walls are thicker than 200
+  - filter by a numeric parameter
+  - show me everything with a diameter over 150

@@ -1,0 +1,114 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-007
+semantic-identity: "the elements whose parameter text matches what i typed"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_PARAMETER_VALUE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows the model to the elements whose named parameter matches a piece of
+  TEXT - "every VCD", "mark begins with AHU", "comments contain revise",
+  "type name is 300x300" - optionally bounded to a list of categories.
+
+  Three names are understood beyond real parameters, because they are what a
+  modeller actually says: **Family**, **Type**, and **Family and Type**. The
+  last one matches against `Family : Type` the way Revit's own properties
+  palette writes it.
+
+  **AN ELEMENT THAT DOES NOT CARRY THE PARAMETER IS COUNTED, NEVER MATCHED -
+  not even by a "does not contain" query.** Treating a missing parameter as an
+  empty string is the obvious code and it is wrong in one direction that
+  matters: "everything whose Mark is not ABC" then returns every element in the
+  model, including the thousands that have no Mark at all. They are reported as
+  `withoutParameter` instead, which also means a MISTYPED parameter name comes
+  back as "0 matched, 4,812 do not carry it" rather than as a plausible zero.
+
+  **This matches text, and a number is not text.** A length, an airflow or a
+  pressure is stored as a double and only becomes "500" after Revit formats it
+  - in the project's display units, with the project's rounding and separators.
+  Searching for "500" finds it in a millimetre project, misses it in a metre
+  one, and misses 500.4 rounded to "500" in neither predictably.
+  SELECT_BY_NUMERIC_PARAMETER compares the stored number and is the right
+  answer for anything with a unit.
+
+  **Type parameters are searched after instance parameters, and only if asked.**
+  A name that exists on both wins at the instance, which is the same order
+  Revit's own schedules use.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: parameterName
+      type: string
+      source: request
+    - name: matchText
+      type: string
+      source: request
+    - name: matchMode
+      type: string
+      source: request
+    - name: includeTypeParameters
+      type: bool
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: withoutParameter
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.LookupParameter`,
+  `Parameter.HasValue`, `StorageType`, `AsString`, `AsValueString`,
+  `ElementType.FamilyName` and `FamilyInstance.Symbol` are present 2020 through
+  2027, compiled at both ends. An ElementId-valued parameter is resolved to its
+  element and read by NAME - never as a number, which is what would have made
+  2024's 64-bit ids matter here.
+
+# ROUTING - repeated in SELECT_BY_NUMERIC_PARAMETER, FILTER_ELEMENTS_BY_TYPE
+# and DESCRIBE_BLANK_PARAMETERS.
+#
+#   "find every vcd"                 -> here, matching Family and Type
+#   "mark begins with ahu"           -> here
+#   "comments contain revise"        -> here
+#   "ducts 500 mm high"              -> SELECT_BY_NUMERIC_PARAMETER. A number
+#                                       only becomes text after Revit formats
+#                                       it in the project's units - searching
+#                                       for "500" here is a coin toss
+#   "all the 300x300 ducts"          -> A SKILL. On a duct, 300x300 is Width
+#                                       and Height - two numbers, not text -
+#                                       so it is SELECT_BY_NUMERIC_PARAMETER
+#                                       twice with the results intersected,
+#                                       and a composition is a skill's job.
+#                                       Route here only when the size really
+#                                       is in the type NAME, which is common
+#                                       on fittings and rare on duct
+#   "every duct of this type"        -> FILTER_ELEMENTS_BY_TYPE - the type
+#                                       itself, not its name as text
+#   "what is blank"                  -> DESCRIBE_BLANK_PARAMETERS - presence
+#                                       and emptiness, not a value to match
+
+utterances:
+  - find every vcd
+  - select elements where mark begins with ahu
+  - which elements have comments containing revise
+  - find all elements whose type name contains
+  - filter by parameter value
+  - show me everything with fire rating 2hr

@@ -1,0 +1,100 @@
+heron-agent: HERON-REVIT-PHS-032
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-005
+semantic-identity: "the elements created in one phase, or demolished in one"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_PHASE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Narrows the model to the elements whose Phase Created, or Phase Demolished,
+  is one named project phase - "everything added in Phase 2", "what is coming
+  out in Phase 1" - optionally bounded to a list of categories. Both may be
+  asked at once, and then both must hold.
+
+  **MOST OF A MODEL HAS NO PHASING AT ALL, and that is counted rather than
+  dropped.** Levels, grids, views, sheets, view-specific annotation and every
+  element type carry no phase parameters. The obvious code swallows them in a
+  try/catch and reports only the matches, so a broken phase lookup and a
+  correct small answer read identically. This reports `withoutPhasing`
+  alongside, exactly as FILTER_ELEMENTS_BY_CATEGORY reports `unresolvedLevel`
+  and for the same reason: a thing that does nothing must never be able to look
+  like a thing that worked.
+
+  **Phase is read from `CreatedPhaseId` and `DemolishedPhaseId`, and those were
+  checked on 2020 rather than assumed.** The obvious guess is that a property
+  pair this readable arrived later than 2020 and that the two phase
+  BuiltInParameters are the safe route; a compile on both ends of the range
+  says otherwise, and the guess would have put a false sentence in this file.
+
+  **"Demolished in Phase 1" is not "demolished".** An element that is never
+  demolished has no demolition phase at all, so asking for a named one answers
+  a narrower question than it sounds like. Say which phase, or ask a different
+  question.
+
+  **A phase name that does not exist is refused, with the real names listed.**
+  Revit's default phases are "Existing" and "New Construction" and almost every
+  office renames them; a typo must not come back as an empty phase.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: createdPhaseName
+      type: string
+      source: request
+    - name: demolishedPhaseName
+      type: string
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: withoutPhasing
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.CreatedPhaseId`,
+  `Element.DemolishedPhaseId` and the `Phase` class are present 2020 through
+  2027 - compiled at both ends rather than remembered. No ElementId is built
+  from an int, so 2024's move to 64-bit ids cannot reach this code.
+
+# ROUTING - repeated in READ_ELEMENT_PHASE, SET_ELEMENT_PHASE and REPORT_PHASES.
+#
+#   "what was added in phase 2"      -> here
+#   "show me everything being demolished in phase 1" -> here, with the
+#                                       demolished name set
+#   "what phase is this element in"  -> READ_ELEMENT_PHASE - one element, both
+#                                       its phases, not a sweep
+#   "what phases does this
+#    model have"                     -> REPORT_PHASES - the names and their
+#                                       order, which is what you need before
+#                                       you can ask this one
+#   "put these in phase 2"           -> SET_ELEMENT_PHASE - this one only reads
+#   "which design option are
+#    these in"                       -> SELECT_BY_DESIGN_OPTION. Phase and
+#                                       design option are both "which version
+#                                       of the building" and they are not the
+#                                       same axis
+
+utterances:
+  - what was added in phase 2
+  - show me everything being demolished in phase 1
+  - select all elements created in the new construction phase
+  - find elements by phase
+  - which walls are existing

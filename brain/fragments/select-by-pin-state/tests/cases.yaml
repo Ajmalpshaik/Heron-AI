@@ -1,0 +1,42 @@
+positive:
+  - given: a model with 12 grids, 9 of them pinned, asked pinned over grids
+    expect: >
+      the 9, with the scanned count at 12. Then look at one in Revit - the pin
+      icon is on it - and unpin one and run again for 8
+
+  - given: the same request with wantPinned false
+    expect: >
+      the other 3, and the two answers together adding up to the scanned count.
+      If they do not, some element refused to report its pin state and that is
+      worth knowing
+
+  - given: a linked model in a file with links, asked pinned with no category
+    expect: the link present in the answer, and the unbounded caution reported
+
+negative:
+  - given: unpinned asked over the whole model with no category list
+    expect: >
+      a count in the thousands AND the sentence saying that is not a finding.
+      THIS IS THE FIRST CASE TO RUN. A bare number here reads as a discovery
+      when it is just the size of the model
+
+  - given: a pinned GROUP whose members are not individually pinned
+    expect: >
+      the group instance returned and its members NOT returned. Pinning a group
+      does not pin what is inside it, and a filter that reports otherwise has
+      invented a fact
+
+  - given: a category in which nothing at all is pinned
+    expect: >
+      0 elements and a scanned count above zero. The scan size is the only
+      thing separating an honest empty answer from a filter that never ran
+
+  - given: an empty category list
+    expect: >
+      treated as every category, and the unbounded caution reported. Not
+      refused - the whole-model question is legitimate, it just needs saying
+
+second_route: >
+  Revit itself: select the returned set and try to move it. A pinned element
+  refuses and raises the pin warning, which is the behaviour the pin flag is
+  claiming

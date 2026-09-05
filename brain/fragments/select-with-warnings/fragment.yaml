@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-WRN-016
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-010
+semantic-identity: "the elements revit is currently complaining about"
+kind: filter
+domain: revit.selection
+capability: SELECT_WITH_WARNINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Turns the model's current warning list into a SET OF ELEMENTS that can be
+  selected, isolated, coloured or handed to a fix - optionally narrowed to
+  errors only, or to warnings whose text contains a phrase.
+
+  **READ_MODEL_WARNINGS reports the warnings; this returns the elements.** They
+  read as the same job and they are not: one produces a list to look at, the
+  other produces something the next fragment can act on. Both exist because the
+  review and the fix are separate steps.
+
+  **One element is usually named by several warnings, and it appears once.** A
+  wall in three "elements overlap" warnings is one wall to select. Adding the
+  failing elements of every warning together gives a list with duplicates in
+  it, and every count taken from that list is then wrong.
+
+  **A warning can name an element that is no longer there.** Warnings are
+  resolved as the model changes and Revit's list is not always ahead of it, so
+  ids that no longer resolve are counted as `unresolved` rather than dropped -
+  a large unresolved figure means the warning list is stale, which is worth
+  knowing before acting on it.
+
+  **This is Revit's warning list, not a quality audit.** A clash, a wrong size,
+  a missing tag and a broken naming convention are not warnings and none of
+  them appear here. FIND_CLASHES, CHECK_FAMILY_STANDARDS and the other QA
+  fragments answer those.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: errorsOnly
+      type: bool
+      source: request
+    - name: descriptionContains
+      type: string
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: unresolved
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.GetWarnings`,
+  `FailureMessage.GetSeverity`, `GetDescriptionText`, `GetFailingElements` and
+  the `FailureSeverity` enum are present 2020 through 2027, compiled at both
+  ends. Duplicate ids are removed by comparing ElementId to ElementId, never by
+  reading either as a number.
+
+# ROUTING - repeated in READ_MODEL_WARNINGS, FIND_CLASHES and
+# CHECK_FAMILY_STANDARDS.
+#
+#   "select everything with a warning" -> here
+#   "isolate the error level warnings" -> here with errorsOnly, then
+#                                       ISOLATE_ELEMENTS
+#   "what warnings does this
+#    model have"                     -> READ_MODEL_WARNINGS - the list to read,
+#                                       grouped and counted
+#   "show me the duplicate
+#    instances"                      -> FIND_DUPLICATE_ELEMENTS, which is the
+#                                       fragment built for it. Revit does raise
+#                                       identical-instance WARNINGS, so this one
+#                                       finds them too if a description phrase
+#                                       is given - but the dedicated check is
+#                                       the better answer and does not depend on
+#                                       Revit having noticed
+#   "what clashes"                   -> FIND_CLASHES. A clash is not a Revit
+#                                       warning and will never appear here
+#   "are the families named
+#    properly"                       -> CHECK_FAMILY_STANDARDS - a standard is
+#                                       ours, a warning is Revit's
+
+utterances:
+  - select everything with a warning
+  - show me the elements revit is warning about
+  - isolate the error level warnings
+  - find elements with duplicate instances warning
+  - which elements have warnings

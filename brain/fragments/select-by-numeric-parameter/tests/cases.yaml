@@ -1,0 +1,51 @@
+positive:
+  - given: >
+      Height eq 500/304.8 over the duct category, in a model with 18 ducts at
+      500 mm high
+    expect: >
+      those 18, and the report stating both the internal figure and "500 mm if
+      a length". Measure one of the 18 in Revit to confirm it really is 500
+
+  - given: Diameter gt 100/304.8 over pipes
+    expect: >
+      every pipe above 100 mm and none at exactly 100 - gt and gte have to
+      differ or only one of them is implemented
+
+  - given: a between of 200/304.8 to 300/304.8 over walls
+    expect: both bounds inclusive, and nothing outside them
+
+  - given: an INTEGER parameter compared with eq 3
+    expect: >
+      the elements whose count is 3. A filter that tests only for
+      StorageType.Double answers this with a clean, wrong zero
+
+negative:
+  - given: 500 handed in WITHOUT converting, against a length parameter
+    expect: >
+      0 matched AND a report saying the comparison was 500 internal units,
+      which is 152,400 mm. THIS IS THE FIRST CASE TO RUN. The zero is the same
+      zero a correct-but-empty model gives; the absurd millimetre figure beside
+      it is the only thing that tells them apart
+
+  - given: a parameter name spelled wrongly
+    expect: >
+      0 matched, withoutParameter equal to the scanned count, and the report
+      saying nothing carries it
+
+  - given: a TEXT parameter compared numerically
+    expect: >
+      0 matched, notNumeric equal to the count that carry it, and the report
+      naming SELECT_BY_PARAMETER_VALUE. Not a bare zero
+
+  - given: eq against a length that is 500.0001 mm in the model
+    expect: >
+      still matched, because eq is a tolerance. An == comparison finds almost
+      nothing here and looks exactly like a filter that ran
+
+  - given: a between whose upper bound is below its lower bound
+    expect: refused, with the reason - not an empty result
+
+second_route: >
+  A schedule of the same category with that parameter as a field and a numeric
+  filter set to the same bound, counted - and one element measured by hand,
+  because a schedule and this fragment could share a unit mistake

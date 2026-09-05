@@ -1,0 +1,40 @@
+positive:
+  - given: a wall carrying 3 doors and 5 windows, handed in as the host
+    expect: >
+      all 8, reported as 8 host-based family instances and 0 wraps. Then MOVE
+      THE WALL in Revit: all 8 move with it, which is what hosting means and
+      what a proximity match would not survive
+
+  - given: a duct with insulation applied, handed in as the host
+    expect: >
+      the insulation found and counted in the wrap figure. A filter reading
+      only FamilyInstance.Host returns 0 here and looks like it worked
+
+  - given: a ceiling carrying face-hosted sprinklers and sensors
+    expect: those instances, and no light fitting that merely sits below it
+
+negative:
+  - given: a pipe with 6 fittings and 2 valves in its run, handed in as the host
+    expect: >
+      0 elements AND the report naming TRACE_CONNECTIVITY. THIS IS THE FIRST
+      CASE TO RUN. The zero is correct - fittings are connected, never hosted -
+      and without that sentence it reads as a broken filter or, worse, as
+      "there is nothing on this pipe"
+
+  - given: a wall with a second wall butted hard against it
+    expect: >
+      the second wall NOT returned. Touching is not hosting, and a filter that
+      returns it has quietly become a proximity search
+
+  - given: a host with nothing hosted on it at all
+    expect: >
+      0, with the same explanatory sentence. That zero is honest and it has to
+      be readable as honest
+
+  - given: no host element given
+    expect: refused, with the reason
+
+second_route: >
+  Revit's own behaviour, which is the real definition: select the host, move or
+  delete it, and see what follows or is destroyed. The Tab-cycle highlight on a
+  wall also shows its hosted openings
