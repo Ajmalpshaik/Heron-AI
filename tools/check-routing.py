@@ -86,6 +86,53 @@ def risk_of(store, fragment_id):
     return None
 
 
+def ids_on_disk():
+    """The id of every fragment in this working tree.
+
+    The IDS and not the COUNT - see the staleness check in main() for the run
+    that made the difference matter.
+    """
+    try:
+        import yaml
+    except ImportError:
+        sys.stderr.write("This needs PyYAML: pip install --user pyyaml\n")
+        raise SystemExit(2)
+
+    found = set()
+    for name in sorted(os.listdir(FRAGMENTS)):
+        path = os.path.join(FRAGMENTS, name, "fragment.yaml")
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as fh:
+            doc = yaml.safe_load(fh)
+        if doc and doc.get("id"):
+            found.add(doc["id"])
+    return found
+
+
+def describe_drift(store_ids, disk_ids, limit=4):
+    """How the store and the working tree disagree, in words.
+
+    "held 226 of 226" was the old message for a store holding a completely
+    different library, which is why this names the fragments instead.
+    """
+    missing = sorted(disk_ids - store_ids)
+    unexpected = sorted(store_ids - disk_ids)
+
+    def few(ids):
+        shown = ", ".join(ids[:limit])
+        return shown + (", and %d more" % (len(ids) - limit) if len(ids) > limit else "")
+
+    parts = []
+    if missing:
+        parts.append("%d on disk the store does not hold (%s)"
+                     % (len(missing), few(missing)))
+    if unexpected:
+        parts.append("%d in the store that are not on disk (%s)"
+                     % (len(unexpected), few(unexpected)))
+    return "; ".join(parts) if parts else "the same ids in a different order"
+
+
 def utterances():
     """(fragment id, sentence) for every declared utterance."""
     try:
@@ -142,23 +189,45 @@ def main(argv):
     # the same failure the empty case guards against, one step milder, and the
     # comment above already states the principle: never print a routing result
     # computed over a library this store does not actually hold.
-    on_disk = len([
-        name for name in os.listdir(FRAGMENTS)
-        if os.path.exists(os.path.join(FRAGMENTS, name, "fragment.yaml"))
-    ])
+    #
+    # THE TEST IS THE IDS AND NOT THE COUNT, and that cost a run too. This
+    # compared store.count() to the number of folders on disk until 2026-09-06.
+    # One store at %APPDATA%\Heron\knowledge serves every checkout on the
+    # machine, and three sessions building fragments in parallel (HANDOVER 9b)
+    # each had a working tree of exactly 226 - so the count MATCHED while the
+    # store held another session's library, no rebuild was triggered, and the
+    # tool reported confidently on fragments that were not the ones on disk. It
+    # printed "claimed and not reached: 14" on one run and "7 questions answered
+    # by a writer" on another. Both were artefacts of the wrong library, and
+    # both look exactly like a real result - which is the whole danger. A COUNT
+    # IS NOT AN IDENTITY.
+    disk_ids = ids_on_disk()
     store = SCOPE.open_scope(SCOPE.GLOBAL)
-    if store.count() != on_disk:
-        was = store.count()
+    store_ids = set(row["id"] for row in store.fragments())
+    if store_ids != disk_ids:
+        drift = describe_drift(store_ids, disk_ids)
         store.close()
         built, problems = SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
-        print("  (store held %d of %d fragment(s) on disk - rebuilt %d%s)"
-              % (was, on_disk, built,
+        store_ids = set(row["id"] for row in store.fragments())
+        print("  (store did not match this working tree - %s; rebuilt %d%s)"
+              % (drift, built,
                  "; %d problem(s)" % len(problems) if problems else ""))
         if store.count() == 0:
             store.close()
             print("  the store is STILL empty after a rebuild - nothing to route")
             print("  against, and this is not a routing result. Check brain/fragments/.")
+            return 2
+        if store_ids != disk_ids:
+            # A rebuild that does not reconcile them means something is wrong
+            # with the library itself - a fragment that will not load, most
+            # likely. Refusing is the same principle as the empty case: the
+            # numbers below would be computed over a library this store does
+            # not hold, and they would look perfectly normal.
+            print("  the store STILL does not match after a rebuild - %s."
+                  % describe_drift(store_ids, disk_ids))
+            print("  This is not a routing result. Run `python brain/heron_fragment.py`.")
+            store.close()
             return 2
 
     try:
