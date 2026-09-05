@@ -1,0 +1,54 @@
+positive:
+  - given: a duct schedule with Mark, Size, Length and System Type columns
+    expect: >
+      those four named IN THE ORDER THEY SIT IN, checked against Revit's own
+      Fields tab on that schedule before the list is believed
+
+  - given: a schedule sorted by Level then by Mark, with a header on Level
+    expect: >
+      "Level ascending with header, then Mark ascending" - the header reported,
+      because a header is what puts the level name across the sheet and its
+      absence is what somebody is usually asking about
+
+  - given: a schedule filtered to one system type
+    expect: >
+      the field, the rule and the value named - readable back into Revit's own
+      Filter tab without translation
+
+  - given: a schedule whose Level column has been hidden
+    expect: >
+      Level LISTED and marked HIDDEN. Not omitted. This is the case the fragment
+      was written for - the column is still in the schedule and the person
+      looking at the sheet cannot see it
+
+negative:
+  - given: a schedule with no filters and no sorting at all
+    expect: >
+      "filters: none" and "sorted by: nothing" IN WORDS, not two absent lines.
+      THIS IS THE CASE THAT PROVES THE FRAGMENT RAN. A version that silently
+      skips empty sections is indistinguishable from one that never read the
+      definition, and both print a schedule name followed by nothing
+
+  - given: a list handed in that contains a drafting view and a sheet
+    expect: >
+      those counted in skippedNotSchedules and named as skipped, with the real
+      schedules still described. A silent skip makes a wrong upstream filter
+      look like an empty model
+
+  - given: a schedule that throws when its definition is read
+    expect: >
+      that one reported as undescribable BY NAME and the rest of the batch
+      completing. A single guard around the whole loop would report whatever it
+      had reached, which reads as a short list rather than as a crash
+
+  - given: a filter that tests for "has no value"
+    expect: >
+      reported as a presence rule with no value, NOT crashed on. Asking such a
+      filter for its string value throws, and this is the case that catches a
+      version reading every filter through one getter
+
+second_route:
+  - >
+    Revit's own schedule Properties - Fields, Filter, Sorting/Grouping and
+    Formatting tabs - which is exactly what this reports and is the check to
+    read it against

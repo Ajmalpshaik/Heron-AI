@@ -1,0 +1,108 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-062
+semantic-identity: "write these schedules out as text files, and check the file is really there"
+kind: action
+domain: revit.schedules
+capability: EXPORT_SCHEDULE_TO_CSV
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Writes schedules out as delimited text - the file that opens in Excel - and
+  reports the paths that ACTUALLY EXIST ON DISK afterwards, the same read-back
+  `EXPORT_SHEETS_TO_PDF` and `EXPORT_VIEWS_TO_DWG` use and for the same reason.
+
+  IT EXISTS BECAUSE `FIND_SCHEDULES` ALREADY SAID IT DID. That fragment's own
+  purpose names *"adding columns, exporting to CSV, placing on a sheet"* as the
+  things it hands schedules to, and two of the three had never been built.
+  `CREATE_SCHEDULE` carried a routing row reading *"nothing in the library
+  exports anything yet"*, written when that was true and left standing after
+  four export fragments landed. Measured before this batch, *"export this
+  schedule to excel"* returned `FIND_SCHEDULES`, which finds the schedule and
+  stops.
+
+  **RISK IS PUBLISH, NOT MODIFY.** Nothing in the model changes. A file is
+  written that gets emailed to a quantity surveyor, and one Ctrl+Z does not
+  un-send it. That is a higher risk than editing the model, not a lower one.
+
+  **IT WRITES WHAT THE SCHEDULE PRINTS, INCLUDING ITS FILTERS.** A schedule
+  filtered to Level 2 exports Level 2. That is correct and it is the commonest
+  misunderstanding in the whole cluster - somebody exporting "the duct schedule"
+  and getting a third of the ducts has a filtered schedule, not a broken export.
+  So the row count written is REPORTED, and `REPORT_SCHEDULE_DEFINITION` is
+  named as the fragment that says why it is what it is.
+
+  **THE DELIMITER IS A STATED INPUT.** A comma is the default and is wrong in
+  every region whose decimal separator is a comma - the file opens as one
+  column. Tab is the safe answer when that is in doubt, and it is the caller's
+  call rather than a silent default that produces a plausible, useless file.
+
+  **NO TRANSACTION, AND NONE IS NEEDED** - export is document I/O, not a model
+  edit.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: exportFolder
+      type: string
+      source: request
+    - name: fieldDelimiter
+      type: string
+      source: request
+  provides:
+    - name: written
+      type: IList<string>
+    - name: missingAfterExport
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+    - name: rowsWritten
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSchedule.Export(string, string,
+  ViewScheduleExportOptions)` and the options' `FieldDelimiter`,
+  `TextQualifier`, `Title`, `ColumnHeaders` and `HeadersFootersBlanks` are
+  present and unchanged 2020 through 2027, with the same argument counts.
+
+  The row count comes from `GetTableData().GetSectionData(SectionType.Body)`,
+  which is the same stable route `READ_SCHEDULE_CONTENTS` uses. No units call is
+  made - Revit writes the cells already formatted in the project's own units,
+  which is what makes the exported file readable without conversion.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "export this schedule to excel"   -> here. A .txt/.csv Excel opens; Revit
+#                                        writes no .xlsx and this fragment does
+#                                        not pretend to
+#   "give me the schedule as a csv"   -> here
+#   "read me what is in the schedule" -> READ_SCHEDULE_CONTENTS - the rows in
+#                                        the REPLY, no file, no risk
+#   "why are there only 40 rows"      -> REPORT_SCHEDULE_DEFINITION. An export
+#                                        writes what the schedule PRINTS,
+#                                        filters included, and that is correct
+#   "export the sheets"               -> EXPORT_SHEETS_TO_PDF
+#   "export the views"                -> EXPORT_VIEWS_TO_DWG
+#   "which schedules are there"       -> FIND_SCHEDULES, which is what hands the
+#                                        schedules to here
+
+utterances:
+  - export this schedule to excel
+  - give me the schedule as a csv file
+  - save the schedule out to a file
+  - write the schedule to a text file
+  - i need this schedule in excel
+  - export the quantities out

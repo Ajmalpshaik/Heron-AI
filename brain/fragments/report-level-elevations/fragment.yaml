@@ -84,6 +84,17 @@ compatibility-note: >
   D-20 keeps the conversion at the edge where the user is, and this fragment is
   about which of two numbers to use rather than about units.
 
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what elevation is each level at" -> here
+#   "report the areas in this model"  -> REPORT_AREAS. AREA elements, per
+#                                        scheme - that sentence resolved HERE
+#                                        until 2026-09-05, and a list of level
+#                                        heights is not a floor area
+#   "list the levels"                 -> LIST_LEVELS - the levels themselves;
+#                                        this fragment is about whether their
+#                                        heights can be trusted
+
 utterances:
   - can I trust the level heights on this model
   - what elevation is each level at

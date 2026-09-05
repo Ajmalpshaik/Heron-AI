@@ -1,0 +1,51 @@
+positive:
+  - given: nine walls all of one type
+    expect: >
+      ONE build-up reported, not nine. typesReported 1. Checked against Revit's
+      own Edit Type - Structure dialog on that wall, layer for layer
+
+  - given: a 300 mm cavity wall
+    expect: >
+      each layer's function, material and thickness in mm, and a total of 300 -
+      compared against the wall's own Width in Revit before the numbers are
+      believed
+
+  - given: any layered wall
+    expect: >
+      the core marked. That line is what a room boundary follows and what a
+      dimension to "wall face" hits, and a plain stack hides it
+
+  - given: a mixed set of walls, floors and roofs
+    expect: each type reported once, whatever category it is
+
+negative:
+  - given: a curtain wall
+    expect: >
+      "NO layer build-up" IN WORDS with the reason, and REPORT_CURTAIN_ELEMENTS
+      named. THIS IS THE FIRST CASE TO RUN. A curtain wall returning silence is
+      indistinguishable from a fragment that never ran, and both look like an
+      empty answer
+
+  - given: an in-place wall
+    expect: counted in withoutStructure, named, and the batch continuing
+
+  - given: a set containing a duct and a door
+    expect: >
+      skipped without error - they resolve to a type with no compound structure -
+      and the real walls still reported
+
+  - given: a layer whose material is "by category"
+    expect: >
+      "<by category / none>" rather than a blank or a crash. A null MaterialId is
+      normal, not a fault
+
+  - given: a wall type whose layers Revit refuses to read
+    expect: >
+      that type named with Revit's own message and the other types still
+      reported. One guard around the whole loop loses the rest
+
+second_route:
+  - >
+    Revit's own Edit Type - Structure dialog on the wall, floor or roof. That
+    dialog IS this report, and is what the layers, the core boundary and the
+    total are checked against

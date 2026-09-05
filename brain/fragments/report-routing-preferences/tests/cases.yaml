@@ -1,0 +1,46 @@
+positive:
+  - given: a standard pipe type with elbows, tees and transitions
+    expect: >
+      each group's rules with the fitting family named and the size window in mm -
+      compared against Revit's own Edit Type - Routing Preferences dialog on that
+      type, row for row
+
+  - given: a pipe type whose elbows cover 15 to 300 mm
+    expect: >
+      "covered 15 to 300 mm" stated, and the warning that outside it Revit
+      inserts nothing. That sentence is the point of the report
+
+  - given: a duct type and a pipe type in one call
+    expect: both reported, each deduped to its type once
+
+negative:
+  - given: a pipe type with NO cap rule
+    expect: >
+      "NO RULE - this type cannot place a Caps at all" LISTED, not omitted. THIS
+      IS THE FIRST CASE TO RUN. Reporting only the groups that have rules hides
+      exactly the group somebody is asking about when a run will not close
+
+  - given: a rule pointing at a fitting family that is not loaded in the project
+    expect: >
+      "FAMILY NOT LOADED - the rule is fine, the family is gone" and a separate
+      count. Same visible symptom as an empty group - no fitting appears - and a
+      completely different fix, so they must not read the same
+
+  - given: drawing at 350 mm on a type whose rules stop at 300
+    expect: >
+      the covered range making that visible BEFORE the run is drawn. Revit gives
+      no error for this at all, which is why the range is stated rather than left
+      in the table
+
+  - given: a wall or a duct instance handed in
+    expect: >
+      the duct resolving to its type and reported; the wall named in notRoutable
+      rather than crashing
+
+  - given: a type whose routing manager cannot be read
+    expect: named in notRoutable, the other types still reported
+
+second_route:
+  - >
+    Revit's own Edit Type - Routing Preferences dialog on the pipe or duct type.
+    That dialog IS this table, and is what every row is checked against

@@ -79,8 +79,17 @@ compatibility-note: >
 
 # ROUTING - repeated in PLACE_ROOMS and FILTER_ELEMENTS_IN_ROOM.
 #
-#   "how big is this room"       -> here
-#   "what is the room area"      -> here
+#   "how big is this room"       -> MEASURE_ROOM_DIMENSIONS. This row said
+#                                   "here" until 2026-09-05, contradicting the
+#                                   table in this fragment's OWN purpose ten
+#                                   lines above it - which records that the
+#                                   sentence moved when that fragment was
+#                                   built. Two comments in one file disagreeing
+#                                   is invisible until something reads both
+#   "what is the room area"      -> here - the AREA of a room it already reads.
+#                                   Declared as an utterance since 2026-09-05,
+#                                   because REPORT_AREAS was winning it on rank
+#                                   while this table claimed it
 #   "place the rooms"            -> PLACE_ROOMS - it needs them to EXIST first,
 #                                   and this reads rooms that already do
 #   "add spaces to this level"   -> PLACE_ROOMS, with spaces asked for
@@ -92,6 +101,7 @@ compatibility-note: >
 #   "make elevations inside each room"   -> CREATE_ROOM_ELEVATIONS - and this
 #                                        one gives it the centre point
 utterances:
+  - what is the room area
   - the ceiling height in here
   - how many fit in this room
   - lay them out in this space

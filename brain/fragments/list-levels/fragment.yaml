@@ -62,6 +62,13 @@ compatibility-note: >
 #                                  the same words in it
 #   "move these to level 3"     -> SET_ELEMENT_LEVEL
 #   "add a level"               -> CREATE_LEVEL
+#   "sort the schedule by level"-> SET_SCHEDULE_SORT_GROUP. NOT HERE. That
+#                                  sentence resolved to this fragment until
+#                                  2026-09-04 - a question about the ORDER OF
+#                                  ROWS IN A TABLE, answered with a list of the
+#                                  project's levels
+#   "filter the schedule to level 2"
+#                               -> SET_SCHEDULE_FILTERS
 #
 # "WHAT IS THE ELEVATION OF THIS" LANDS HERE AND SHOULD LAND ON
 # READ_ELEMENT_LEVEL, whose sentence it is - "of this" means an element, and

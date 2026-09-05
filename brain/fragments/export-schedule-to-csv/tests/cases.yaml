@@ -1,0 +1,53 @@
+positive:
+  - given: a duct schedule of 40 rows and a writable folder
+    expect: >
+      one file on disk, OPENED AND READ, its rows matching the schedule on
+      screen - and rowsWritten reporting 40
+
+  - given: fieldDelimiter "tab"
+    expect: >
+      a file that opens in Excel as columns in a region whose decimal separator
+      is a comma. This is the case a comma default fails, and it fails by
+      producing a plausible one-column file rather than an error
+
+  - given: three schedules and one folder
+    expect: three files, each named after its schedule
+
+negative:
+  - given: a schedule filtered to Level 2, of a model with ducts on four levels
+    expect: >
+      ONLY LEVEL 2 EXPORTED, and that being CORRECT. THIS IS THE CASE MOST OFTEN
+      MISREAD as a broken export. rowsWritten must make the short count visible
+      before somebody opens the file and assumes ducts are missing from the model
+
+  - given: an empty exportFolder
+    expect: >
+      refused with the reason, and NOTHING WRITTEN anywhere. A default folder
+      here puts somebody's quantities where they will not look for them
+
+  - given: a folder that cannot be created
+    expect: >
+      refused by name with the system's own message, and no attempt made on any
+      schedule
+
+  - given: a schedule named "Duct Schedule - L2/L3"
+    expect: >
+      a file written with the illegal characters replaced, not an unhandled
+      exception. A schedule name is not a file name
+
+  - given: an export that Revit accepts without writing a file
+    expect: >
+      named in missingAfterExport. THIS IS WHY THE DISK IS CHECKED - Export
+      returns nothing and throws inconsistently, so "it did not throw" is not
+      evidence a file exists, and a reported success with no file is the worst
+      outcome available
+
+  - given: a delimiter word the fragment does not know
+    expect: >
+      a TAB used, the substitution SAID, and the export still done - not silently
+      comma-delimited
+
+second_route:
+  - >
+    Revit's own File - Export - Reports - Schedule, which writes the same file
+    and whose dialog is where the delimiter and qualifier options come from

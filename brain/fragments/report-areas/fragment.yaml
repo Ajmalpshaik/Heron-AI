@@ -1,0 +1,113 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-020
+semantic-identity: "the Areas in this model, per scheme, because schemes overlap on purpose"
+kind: action
+domain: revit.geometry
+capability: REPORT_AREAS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports AREAS - the Area-plan kind, not Rooms - broken down by Area Scheme and
+  by level, with a total per scheme. Gross, rentable, common-area: the numbers a
+  landlord, a cost plan or a submission asks for. It changes nothing.
+
+  **AREAS ARE A THIRD SPATIAL ELEMENT AND NOTHING HERE COVERED THEM.** This
+  library has Rooms and Spaces thoroughly - `PLACE_ROOMS`,
+  `MEASURE_ROOM_DIMENSIONS`, `READ_ROOM_GEOMETRY`, `READ_SPACE_LOADS`,
+  `FILTER_ELEMENTS_IN_ROOM` - and `OST_Areas` appeared in none of them. Asking a
+  room fragment for an area answer gets a confidently wrong number. Measured
+  before this batch, *"report the areas in this model"* resolved to
+  `REPORT_LEVEL_ELEVATIONS`.
+
+  **THE SCHEMES OVERLAP ON PURPOSE, AND THAT IS WHY THERE IS NO GRAND TOTAL.**
+  The same floor is measured twice - once under Gross Building and once under
+  Rentable - and both sets of Area elements sit in `OST_Areas` at the same time,
+  in the same place. Collect the category and sum it and the total is roughly
+  double the building and belongs to no scheme at all. **Every number here is
+  per scheme, and a total across schemes is deliberately not offered**, because
+  such a total has no meaning and would be believed.
+
+  **UNPLACED AND UNBOUNDED BOTH READ AS ZERO AND HAVE DIFFERENT FIXES**, so they
+  are separated:
+
+  | State | What is true | What to do |
+  |---|---|---|
+  | **Unplaced** | the Area exists in the schedule but sits nowhere in the model | place it, or delete the row |
+  | **Unbounded** | it IS placed, but its boundary lines do not close | close the boundary |
+
+  Both occupy a row in every area schedule and contribute nothing to the total.
+  A report that shows them as "0" alongside real areas hides the difference, and
+  the difference is the whole fix.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: schemeNameContains
+      type: string
+      source: request
+    - name: listEachArea
+      type: bool
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: schemeTotalsM2
+      type: IList<string>
+    - name: placedCount
+      type: int
+    - name: unplaced
+      type: IList<string>
+    - name: unbounded
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Area`, `AreaScheme`,
+  `Area.AreaScheme`, `Area.Number`, `Area.Level` and `Area.Area` are present and
+  unchanged 2020 through 2027. `Area` and `AreaScheme` are in
+  `Autodesk.Revit.DB`, which the wrapper imports.
+
+  `Area` and `Number` come from `SpatialElement`, the base type - checking only
+  what `Area` declares reports a false absence, which is a trap this project has
+  hit before.
+
+  **No units API is called.** `Area.Area` is internal square feet and is
+  multiplied by 0.09290304 to square metres, plain arithmetic at the edge -
+  which is what D-20 requires and what keeps this working across the 2021 units
+  break.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "report the areas in this model"   -> here - AREA elements, per scheme
+#   "what is the gross floor area"     -> here, and read the SCHEME name: gross
+#                                         and rentable are different schemes over
+#                                         the same floor
+#   "how big is this room"             -> MEASURE_ROOM_DIMENSIONS. A ROOM is not
+#                                         an AREA - they are different elements,
+#                                         placed separately, and a room fragment
+#                                         gives a confidently wrong area answer
+#   "what is the area of these rooms"  -> READ_ROOM_GEOMETRY / MEASURE_ROOM_DIMENSIONS
+#   "the space loads"                  -> READ_SPACE_LOADS - Spaces, the third
+#                                         kind again, and an MEP element
+#   "make the area schedule"           -> CREATE_SCHEDULE. This reports numbers
+#                                         into the reply; that makes a view
+
+utterances:
+  - report the areas in this model
+  - what areas do we have
+  - list the area schemes
+  - what is the gross area per level
+  - how much rentable area is there
+  - show me the area breakdown
+  - are any areas not placed

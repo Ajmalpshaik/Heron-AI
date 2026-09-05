@@ -1,0 +1,136 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-059
+semantic-identity: "sort and group this schedule by these fields, with headers and totals"
+kind: action
+domain: revit.schedules
+capability: SET_SCHEDULE_SORT_GROUP
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets what a schedule sorts and groups by - in order - and whether each level
+  gets a header, a footer and a blank line, plus the grand total at the bottom.
+
+  IT EXISTS BECAUSE *"sort the schedule by level"* RESOLVED TO `LIST_LEVELS`.
+  Measured before this batch: a question about the levels in the project,
+  returned for a sentence about the order of rows in a schedule. Nothing in the
+  library could sort anything.
+
+  **SORTING AND GROUPING ARE ONE CONTROL IN REVIT, AND THAT SURPRISES PEOPLE.**
+  There is no separate "group by". A field with `showHeader` on IS a group -
+  the header is the band carrying the level name across the sheet. So *"group
+  the schedule by system type"* and *"sort it by system type"* are the same call
+  with one flag different, and the flag is the entire difference between a
+  grouped schedule and a long flat list.
+
+  **"COLLAPSE THE ROWS" IS `itemized`, NOT A SORT, AND IT IS THE ONE THAT
+  CHANGES THE ROW COUNT.** Turning itemising off makes identical elements share
+  one row - which is what somebody means by *"just show me one line per size"*.
+  It is set here because it is on the same Revit tab and is meaningless without
+  the sorting beneath it.
+
+  **A FIELD THE SCHEDULE CANNOT SORT BY IS ASKED ABOUT BEFORE IT IS TRIED.**
+  `CanSortByField` is Revit's own answer, and it covers the cases that are
+  otherwise exceptions half way through a batch that has already changed the
+  first two fields.
+
+  **THE SORT IS REPLACED, NOT APPENDED TO.** Asking for "sort by level" on a
+  schedule already sorted by mark means sorted by level - not sorted by mark
+  then level. Appending is how a schedule ends up with four sort levels nobody
+  chose, and the existing rules are reported before they go.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: sortFieldNames
+      type: IList<string>
+      source: request
+    - name: descending
+      type: bool
+      source: request
+    - name: showHeader
+      type: bool
+      source: request
+    - name: showFooter
+      type: bool
+      source: request
+    - name: showGrandTotal
+      type: bool
+      source: request
+    - name: itemized
+      type: bool
+      source: request
+  provides:
+    - name: sorted
+      type: int
+    - name: replacedRules
+      type: IList<string>
+    - name: cannotSortBy
+      type: IList<string>
+    - name: notPresent
+      type: IList<string>
+    - name: appliedOrder
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ScheduleDefinition.GetSortGroupFields`,
+  `ClearSortGroupFields`, `AddSortGroupField`, `CanSortByField`, `IsItemized`,
+  `ShowGrandTotal`, `ShowGrandTotalTitle`, `ShowGrandTotalCount`, the
+  `ScheduleSortGroupField(ScheduleFieldId, ScheduleSortOrder)` constructor and
+  its `ShowHeader` and `ShowFooter` properties, and the `ScheduleSortOrder` enum
+  (`Ascending`, `Descending`) are present and unchanged 2020 through 2027, with
+  the same argument counts.
+
+  `ShowBlankLine` exists on every release and is deliberately NOT set - a blank
+  line between groups is a separate drafting choice, and setting it from the
+  footer flag would be this fragment inventing a preference and then changing
+  the sheet to match it.
+
+  Field identity is `ScheduleFieldId`, not an `ElementId`. No units call is made.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "sort the schedule by level"        -> here
+#   "group the schedule by system type" -> here, with showHeader - grouping IS
+#                                          sorting with a header in Revit
+#   "put a total at the bottom"         -> here, showGrandTotal
+#   "one line per size instead of every duct"
+#                                       -> here, itemized off - it is the flag
+#                                          that changes the ROW COUNT. Worded
+#                                          to match the declared utterance
+#                                          exactly: a table claiming a sentence
+#                                          the index never saw records a
+#                                          decision nothing acts on
+#   "list the levels in the project"    -> LIST_LEVELS. A question about the
+#                                          MODEL, and it is what "sort the
+#                                          schedule by level" used to return
+#   "filter the schedule to level 2"    -> SET_SCHEDULE_FILTERS. Sorting decides
+#                                          the ORDER of rows; filtering decides
+#                                          WHICH rows. Both get said as "by
+#                                          level" and they are different jobs
+#   "how is it sorted now"              -> REPORT_SCHEDULE_DEFINITION
+
+utterances:
+  - sort the schedule by level
+  - group the schedule by system type
+  - order the schedule by mark
+  - add a total to the bottom of the schedule
+  - show the grand total on this schedule
+  - group these rows together
+  - one line per size instead of every duct
+  - put a header on each group

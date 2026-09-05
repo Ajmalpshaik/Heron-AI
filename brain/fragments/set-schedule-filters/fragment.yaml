@@ -1,0 +1,126 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-060
+semantic-identity: "filter this schedule down to the rows that match, without touching any element"
+kind: action
+domain: revit.schedules
+capability: SET_SCHEDULE_FILTERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the filter rules on a schedule - which rows it shows - and changes
+  NOTHING about any element in the model.
+
+  **IT EXISTS BECAUSE THE SENTENCE IT ANSWERS WAS RESOLVING TO A FRAGMENT THAT
+  EDITS ELEMENTS.** Measured before this batch, *"filter the schedule to level 2
+  only"* returned `SET_ELEMENT_LEVEL`. That is not a near miss and it is not a
+  wasted call: the request is to hide rows in a table, and the fragment it
+  reached MOVES DUCTS TO ANOTHER LEVEL. This is the exact shape the whole
+  project exists around - an answer that looks like it worked and has changed
+  the wrong thing.
+
+  **"BY LEVEL" MEANS TWO DIFFERENT JOBS AND BOTH GET SAID THE SAME WAY.**
+  Filtering decides WHICH rows appear; sorting decides what ORDER they come in.
+  *"Do it by level"* is either. `SET_SCHEDULE_SORT_GROUP` carries this same row,
+  because which of the two a search returns is not something either fragment
+  chooses.
+
+  **THE FIELD MUST BE A COLUMN BEFORE IT CAN BE FILTERED ON, AND REVIT DECIDES
+  WHICH COLUMNS ARE FILTERABLE.** `CanFilterByValue` is its own answer and is
+  asked before anything is written. A schedule cannot filter on a field it does
+  not carry - which is why *"filter to level 2"* on a schedule with no Level
+  column is refused with that reason rather than with an exception.
+
+  **THE MATCH TYPE IS A STATED INPUT, NOT GUESSED FROM THE VALUE.** "Equals",
+  "contains" and "begins with" produce different drawings from the same word,
+  and inferring one from the shape of the text is how a schedule silently
+  includes Level 20 when somebody asked for Level 2.
+
+  **THE FILTERS ARE REPLACED, NOT ADDED TO**, and what was there is reported
+  before it goes. A schedule that accumulates filters shows fewer and fewer
+  rows, and each addition looks correct on its own.
+
+  **A VALUE IS WRITTEN AS TEXT, AND THAT IS A DELIBERATE LIMIT.** A numeric
+  filter value would have to be handed to Revit in internal units, and knowing
+  which unit a given parameter uses needs the units API - the call that breaks
+  at Revit 2021 and is forbidden here. Text rules cover the sentences that were
+  measured; a number rule would work on one release and silently mis-scale on
+  another, which is worse than not offering it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: filterFieldName
+      type: string
+      source: request
+    - name: filterValue
+      type: string
+      source: request
+    - name: matchType
+      type: string
+      source: request
+  provides:
+    - name: filtered
+      type: int
+    - name: replacedRules
+      type: IList<string>
+    - name: cannotFilterBy
+      type: IList<string>
+    - name: notPresent
+      type: IList<string>
+    - name: appliedRules
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ScheduleDefinition.GetFilters`,
+  `ClearFilters`, `AddFilter`, `CanFilterByValue`, the
+  `ScheduleFilter(ScheduleFieldId, ScheduleFilterType, string)` constructor, and
+  the `ScheduleFilterType` enum members used here (`Equal`, `NotEqual`,
+  `Contains`, `NotContains`, `BeginsWith`, `EndsWith`, `HasValue`, `HasNoValue`)
+  are present and unchanged 2020 through 2027, with the same argument counts.
+
+  Field identity is `ScheduleFieldId`, not an `ElementId`. **No units call is
+  made anywhere**, which is why the value is text - see the purpose.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "filter the schedule to level 2 only" -> here. A TABLE changes; no element
+#                                            is touched
+#   "show only the supply ducts in it"    -> here
+#   "move these ducts to level 2"         -> SET_ELEMENT_LEVEL - which is what
+#                                            the FIRST sentence used to return.
+#                                            One changes a table, one changes
+#                                            the building
+#   "sort the schedule by level"          -> SET_SCHEDULE_SORT_GROUP. Filtering
+#                                            picks WHICH rows, sorting picks
+#                                            their ORDER, and "by level" is said
+#                                            for both
+#   "what is it filtered on now"          -> REPORT_SCHEDULE_DEFINITION
+#   "show me only these in the VIEW"      -> ISOLATE_ELEMENTS or
+#                                            APPLY_VIEW_FILTER. A schedule
+#                                            filter is not a view filter and
+#                                            neither one affects the other
+
+utterances:
+  - filter the schedule to level 2 only
+  - show only the supply ducts in the schedule
+  - the schedule should only show this system
+  - filter out the ones with no mark
+  - limit the schedule to this level
+  - only show these rows in the schedule
+  - remove the other levels from the schedule

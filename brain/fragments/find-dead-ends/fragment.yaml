@@ -80,6 +80,10 @@ compatibility-note: >
 #   "connect the open ends"          -> CONNECT_OPEN_ENDS - the fix, and it
 #                                       joins only ends already at one point
 #   "is this duct connected"         -> TRACE_CONNECTIVITY
+#   "why is my pressure drop zero"   -> REPORT_MEP_PRESSURE_DROP reports the
+#                                       system as UNCALCULATED, and an open
+#                                       end is the usual cause. This fragment
+#                                       finds it; that one shows the symptom
 
 #   "are all the sinks and toilets connected to the drainage" ->
 #                                        CHECK_FIXTURE_CONNECTIVITY - it

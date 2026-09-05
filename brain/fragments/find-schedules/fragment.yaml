@@ -48,6 +48,10 @@ purpose: >
   routes whoever lands on the newer file, and which one a search returns is not
   something either fragment chooses.
 
+  **THE THREE THINGS THIS HANDS SCHEDULES TO NOW ALL EXIST.** This fragment's
+  purpose named "adding columns, exporting to CSV, placing on a sheet" from the
+  day it was written, and two of the three had no fragment until 2026-09-04.
+
 contract:
   needs:
     - name: doc
@@ -76,6 +80,21 @@ compatibility-note: >
   test, because Revit exposes no property that separates them - that is a fact
   about the API rather than a shortcut, and it is why the count is reported so a
   wrong exclusion would be visible rather than silent.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which schedules are there"        -> here. This is what HANDS a schedule to
+#                                         every fragment below
+#   "what columns / filters has it"    -> REPORT_SCHEDULE_DEFINITION
+#   "read me what is in it"            -> READ_SCHEDULE_CONTENTS - the ROWS
+#   "add a column"                     -> ADD_SCHEDULE_FIELDS
+#   "remove or hide a column"          -> REMOVE_SCHEDULE_FIELDS
+#   "sort or group it"                 -> SET_SCHEDULE_SORT_GROUP
+#   "filter it"                        -> SET_SCHEDULE_FILTERS
+#   "heading text, width, alignment"   -> SET_SCHEDULE_APPEARANCE
+#   "export it to excel"               -> EXPORT_SCHEDULE_TO_CSV
+#   "put it on a sheet"                -> PLACE_SCHEDULE_ON_SHEET
+#   "make a new schedule"              -> CREATE_SCHEDULE
 
 utterances:
   - which schedules are in this model

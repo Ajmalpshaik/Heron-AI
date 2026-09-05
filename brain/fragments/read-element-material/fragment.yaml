@@ -50,6 +50,9 @@ compatibility-note: >
 # ROUTING - repeated in DESCRIBE_ELEMENTS and MEASURE_ELEMENT_VOLUME.
 #
 #   "what material is this"        -> here
+#   "what is this wall made of"    -> REPORT_COMPOUND_STRUCTURE - the LAYERS
+#                                     of the type, which is where a wall's
+#                                     materials and thicknesses actually live
 #   "what is this element"         -> DESCRIBE_ELEMENTS - category and type
 #   "what is the volume"           -> MEASURE_ELEMENT_VOLUME - the whole solid,
 #                                     regardless of what it is made of

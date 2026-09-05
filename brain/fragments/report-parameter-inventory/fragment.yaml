@@ -1,0 +1,125 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-014
+semantic-identity: "every parameter this element actually has, before you know any of their names"
+kind: action
+domain: revit.parameters
+capability: REPORT_PARAMETER_INVENTORY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists every parameter an element ACTUALLY carries - name, storage type,
+  instance or type, whether it is built-in or shared, read-only or not, and its
+  current value. The discovery step before any bulk read or write. It changes
+  nothing.
+
+  **IT ANSWERS THE QUESTION YOU HAVE BEFORE YOU KNOW THE NAMES.**
+  `READ_ELEMENT_PARAMETERS` reads a parameter you can already name. This one
+  answers *"what parameters does this duct even have"* - and the two get asked in
+  that order. Guessing a plausible name and finding it absent is the commonest
+  wasted round trip in this whole library, and it is avoidable by looking first.
+
+  IT EXISTS BECAUSE THE QUESTION WAS GOING TO `REPORT_GLOBAL_PARAMETERS`.
+  Measured before this batch, both *"list every parameter that exists on this
+  element"* and *"what parameters can I filter on"* resolved there. **A global
+  parameter is one value for the whole model**; this is the list of columns on
+  one element. That fragment's own purpose already says they get mixed up and
+  that mixing them up wastes a session.
+
+  **THE PARAMETER GROUP IS DELIBERATELY NOT REPORTED**, and the reason is worth
+  keeping: `Definition.ParameterGroup` is gone by Revit 2027 and its replacement
+  `GetGroupTypeId` has never existed on 2020. Neither works at both ends, and
+  every fragment here is one implementation for all eight releases. The group is
+  a sorting convenience in a dialog; nothing about reading or writing a value
+  needs it.
+
+  **THREE KINDS, AND ONLY THREE CAN HONESTLY BE TOLD APART.** Built-in, Shared,
+  and *"project or family - not shared"*. Revit's API carries no flag separating
+  a parameter defined inside the Family Editor from one added through Project
+  Parameters once both are on an element. Reporting a guess as a fact is worse
+  than reporting the bucket, so the third is named as the bucket it is.
+
+  **SAMPLING ONE ELEMENT IS THE DEFAULT AND THE UNION IS THE OPTION.** One
+  element answers the question fast and is representative of its type. A mixed
+  set of different families genuinely varies, and `sampleOnly` off is how that
+  variation is found - at the cost of reading everything.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: sampleOnly
+      type: bool
+      source: request
+    - name: includeTypeParameters
+      type: bool
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: parameterNames
+      type: IList<string>
+    - name: instanceCount
+      type: int
+    - name: typeCount
+      type: int
+    - name: elementsRead
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.Parameters`,
+  `Parameter.Definition`, `Definition.Name`, `InternalDefinition.BuiltInParameter`,
+  `Parameter.IsShared`, `StorageType`, `IsReadOnly`, `AsValueString` and
+  `AsString` are present and unchanged 2020 through 2027.
+
+  **`Definition.ParameterGroup` is NOT named, and that is a version decision
+  rather than an omission.** It exists on 2020 and is GONE by 2027; the
+  replacement `Definition.GetGroupTypeId` does not exist on 2020. Naming either
+  would split this fragment in two - checked against the reference assemblies for
+  2020, 2024 and 2027.
+
+  No units API is called. Values come back through `AsValueString`, which is
+  Revit's own formatting in the project's units - the same reason
+  `READ_SCHEDULE_CONTENTS` reads printed text.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what parameters does this have"     -> here - the LIST, before you know the
+#                                           names
+#   "what parameters can I filter on"    -> here. A schedule or a view filter can
+#                                           only use a parameter the element
+#                                           carries, and this is that list
+#   "what is the Mark on these"          -> READ_ELEMENT_PARAMETERS - a parameter
+#                                           you can already NAME. Ask this
+#                                           fragment first, that one second
+#   "which of these are blank"           -> DESCRIBE_BLANK_PARAMETERS
+#   "the global parameters"              -> REPORT_GLOBAL_PARAMETERS - ONE value
+#                                           for the whole model, not a column on
+#                                           an element. Both these sentences
+#                                           resolved there until 2026-09-05
+#   "add a project parameter"            -> ADD_PROJECT_PARAMETER - a write
+#   "set the value"                      -> WRITE_ELEMENT_PARAMETERS
+#   "what group is it in"                -> NOT ANSWERED HERE, on purpose. The
+#                                           group member is gone by 2027 and its
+#                                           replacement never existed on 2020
+
+utterances:
+  - list every parameter that exists on this element
+  - what parameters can I filter on
+  - what parameters does this duct have
+  - show me all the parameters on this
+  - what fields are available on this category
+  - what can I schedule on these
+  - i do not know the parameter name

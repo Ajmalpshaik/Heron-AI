@@ -1,0 +1,121 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-028
+semantic-identity: "Revit's own pressure loss per section, and which sections are the index run"
+kind: action
+domain: revit.mep
+capability: REPORT_MEP_PRESSURE_DROP
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the pressure loss Revit has ALREADY CALCULATED for each duct or pipe
+  system - section by section, with flow, velocity and friction - and marks the
+  **critical path**, the index run that sizes the fan or the pump. It changes
+  nothing.
+
+  **REVIT ALREADY COMPUTES THIS AND NOTHING HERE WAS READING IT.** Once a system
+  is connected and sized, Revit divides it into sections and works out the
+  hydraulics for each. Every pressure question in this library was being answered
+  from first principles while the model already knew. Measured before this batch,
+  *"what is the pressure drop in this duct run"* resolved to `SET_MEP_SLOPE` -
+  a **write**, for a question.
+
+  **THE CRITICAL PATH IS THE POINT OF THE REPORT.** Total loss along the critical
+  path is what the fan or pump has to overcome; the rest of the system is not the
+  constraint. Sizing off the whole-system total instead over-specifies the plant.
+  Those sections are marked, summed separately, and reported first.
+
+  **A SYSTEM THAT IS NOT FULLY CONNECTED REPORTS ZERO, NOT AN ERROR, AND THAT IS
+  THE TRAP.** Revit only computes hydraulics for a complete, sized, connected
+  system. A run with an open end, an unconnected terminal or an unsized segment
+  gives a section count of 0 - which reads as *"no pressure loss"* when it means
+  *"not calculable"*. Those systems are listed **separately and named
+  UNCALCULATED**, never folded into the table as zeros. `FIND_DEAD_ENDS` and
+  `CONNECT_OPEN_ENDS` are what fix the cause.
+
+  **SECTION INDEX AND SECTION NUMBER ARE NOT THE SAME THING.** `SectionsCount`
+  bounds the INDEX; the number is a property of the section and is not guaranteed
+  to run 1..N without gaps. Looping over numbers reads some sections twice and
+  misses others - and being a report, it looks plausible either way. **This
+  iterates by index and reads `.Number` off each section.**
+
+  **PRESSURE AND FRICTION STAY IN REVIT'S INTERNAL UNITS AND ARE SAID TO BE.**
+  Converting them needs the units API, which is the call that breaks at Revit
+  2021. A number converted by a guessed rule looks finished and is wrong; the
+  raw value with its caveat does not. Compare against Revit's own system
+  properties, where the same numbers appear formatted.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: systemNameContains
+      type: string
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: systemsCalculated
+      type: int
+    - name: uncalculated
+      type: IList<string>
+    - name: criticalPathTotals
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `MechanicalSystem` and `PipingSystem`
+  both carry `SectionsCount`, `GetSectionByIndex(int)` and
+  `GetCriticalPathSectionNumbers()`, and `MEPSection` carries `Number`, `Flow`,
+  `Velocity`, `TotalPressureLoss` and `Friction` - all present and unchanged 2020
+  through 2027, with the same argument counts.
+
+  **`MEPSection` lives in `Autodesk.Revit.DB.Mechanical` for BOTH duct and pipe
+  systems**, which is not what its use on a `PipingSystem` suggests. That
+  namespace and `Autodesk.Revit.DB.Plumbing` are both imported by the wrapper.
+
+  **No units API is called** - see the purpose; pressure and friction are handed
+  back raw with the internal-units caveat rather than converted on a guess.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is the pressure drop"        -> here - Revit's OWN calculation
+#   "how much resistance is in this pipe"
+#                                      -> here. Worded to match the declared
+#                                         utterance exactly - a table claiming
+#                                         a sentence the index never saw
+#                                         records a decision nothing acts on
+#   "what does the fan have to beat"   -> here, the CRITICAL PATH total, not the
+#                                         whole-system total
+#   "why is the pressure drop zero"    -> here, and read the UNCALCULATED list:
+#                                         a system that is not fully connected
+#                                         and sized reports nothing, which is not
+#                                         the same as reporting no loss
+#   "set the slope on these"           -> SET_MEP_SLOPE - a WRITE, and what this
+#                                         question resolved to until 2026-09-05
+#   "how fast is the air moving"       -> MEASURE_MEP_VELOCITY, which measures
+#                                         from flow and size. Velocity appears
+#                                         here too, per section, as Revit's own
+#   "the run is not connected"         -> FIND_DEAD_ENDS to find it,
+#                                         CONNECT_OPEN_ENDS to fix it - that is
+#                                         the usual CAUSE of an uncalculated
+#                                         system
+#   "what system is this on"           -> READ_MEP_SYSTEM
+
+utterances:
+  - what is the pressure drop in this duct run
+  - how much resistance is in this pipe
+  - what does the fan have to overcome
+  - show me the index run
+  - which is the critical path
+  - report the pressure loss per section
+  - why is my pressure drop showing zero

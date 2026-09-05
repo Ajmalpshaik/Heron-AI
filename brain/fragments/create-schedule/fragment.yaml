@@ -73,9 +73,15 @@ compatibility-note: >
 #   "how many of each size"        -> GROUP_AND_COUNT - numbers in the REPLY,
 #                                     and it makes nothing in the model
 #   "how many ducts are there"     -> COUNT_ELEMENTS
-#   "export the schedule to excel" -> NOT here. Nothing in the library exports
-#                                     anything yet, and this makes the schedule
-#                                     that would be exported
+#   "export the schedule to excel" -> EXPORT_SCHEDULE_TO_CSV. This row read
+#                                     "nothing in the library exports anything
+#                                     yet" until 2026-09-04. It was true when
+#                                     written and stayed standing after five
+#                                     export fragments landed - a routing row
+#                                     that ages into a lie points a reader at
+#                                     nothing
+#   "put the schedule on a sheet"  -> PLACE_SCHEDULE_ON_SHEET - a schedule needs
+#                                     ScheduleSheetInstance, not a viewport
 #   "make a key schedule"            -> CREATE_KEY_SCHEDULE - a table of
 #                                       DEFINITIONS elements point at, not a
 #                                       list of what is in the model

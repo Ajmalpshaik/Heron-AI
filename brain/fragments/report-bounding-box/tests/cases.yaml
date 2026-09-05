@@ -1,0 +1,48 @@
+positive:
+  - given: one 400 x 250 duct running along project X
+    expect: >
+      a box roughly 250 mm deep and 400 wide plus insulation - measured against
+      the duct's own size in Revit's properties, not accepted from the return
+
+  - given: a plant room of equipment
+    expect: >
+      a COMBINED box whose height answers "how deep is the services zone" -
+      checked against a section through the room
+
+  - given: 200 elements with maxRows 50
+    expect: >
+      50 rows listed AND the combined box covering all 200, with the truncation
+      said. THIS IS THE CASE A CAP GETS WRONG: capping the combined figure
+      silently answers about a subset, and "will it fit" is then wrong in the
+      dangerous direction
+
+negative:
+  - given: a duct rotated 30 degrees to project north
+    expect: >
+      a box LARGER than the duct, and the reply saying so. THIS IS THE FIRST CASE
+      TO RUN. The number is correct as an extent and wrong as a size, and nothing
+      about it looks wrong
+
+  - given: a room asked about here rather than through MEASURE_ROOM_DIMENSIONS
+    expect: >
+      a box that overstates a rotated room by half again. The routing table is the
+      fix, not the code - this fragment must not start measuring room axes
+
+  - given: a set containing a text note and a view-specific detail line
+    expect: >
+      those named in noBoundingBox, counted, and EXCLUDED from the combined
+      figure with that exclusion stated. A silent skip makes the combined box look
+      like it covered everything asked about
+
+  - given: an empty element list
+    expect: >
+      "nothing has a bounding box" IN WORDS, not a zero-sized box. A 0 x 0 x 0
+      result reads as a measurement
+
+  - given: an element Revit refuses a box for
+    expect: that one named and the rest still measured
+
+second_route:
+  - >
+    Select the elements in Revit and read the section box extents, or measure with
+    a dimension in a section. That is what the combined figure is checked against

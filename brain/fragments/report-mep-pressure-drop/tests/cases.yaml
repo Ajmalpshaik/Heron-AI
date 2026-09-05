@@ -1,0 +1,57 @@
+positive:
+  - given: a fully connected, sized supply air system
+    expect: >
+      one row per section with flow, velocity and loss - compared against Revit's
+      own system properties, where the same figures appear formatted. Any
+      disagreement means this fragment is wrong
+
+  - given: the same system
+    expect: >
+      the CRITICAL PATH total reported FIRST and separately, and less than or
+      equal to the sum of all sections. That total is what sizes the fan; the
+      whole-system figure over-specifies it
+
+  - given: a piping system
+    expect: >
+      read the same way as a duct system - MEPSection comes from the Mechanical
+      namespace for both, which is the thing that looks wrong and is right
+
+negative:
+  - given: a duct run with one open end
+    expect: >
+      named in uncalculated as UNCALCULATED, with the reason, and NOT shown as a
+      table of zeros. THIS IS THE FIRST CASE TO RUN AND THE TRAP THIS FRAGMENT
+      EXISTS AROUND: Revit reports nothing for an incomplete system, and "0
+      pressure loss" is a plausible, wrong, and dangerous reading of that
+
+  - given: a system whose section numbers are sparse (1, 2, 5, 9)
+    expect: >
+      every section read exactly ONCE. A version looping n = 1..SectionsCount
+      reads some twice and misses others, and the report looks correct either
+      way. Verify by comparing the row count against SectionsCount
+
+  - given: an unsized duct segment in an otherwise connected run
+    expect: uncalculated, not a partial table
+
+  - given: a model with no MEP systems at all
+    expect: >
+      zero calculated and zero uncalculated, said plainly - distinguishable from a
+      run that failed
+
+  - given: a systemNameContains matching nothing
+    expect: nothing reported and nothing claimed
+
+  - given: a system that is sectioned but names no critical path
+    expect: >
+      "no critical path reported" IN WORDS with the likely cause, not a silent
+      zero total. A zero critical-path loss reads as a system that needs no fan
+
+second_route:
+  - >
+    Select the system in Revit and read its properties - Total Pressure Loss and
+    the section information. Those are the same numbers, formatted, and are what
+    this is checked against
+
+  - >
+    Revit's own System Inspector, which walks the critical path visually - the
+    check for whether the right sections were marked

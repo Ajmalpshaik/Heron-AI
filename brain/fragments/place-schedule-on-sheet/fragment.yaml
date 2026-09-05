@@ -1,0 +1,112 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-063
+semantic-identity: "put this schedule on a sheet - a different call from placing a view"
+kind: action
+domain: revit.schedules
+capability: PLACE_SCHEDULE_ON_SHEET
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts a schedule onto a sheet, at a given point, and reports where each one
+  actually landed.
+
+  **A SCHEDULE IS NOT PLACED THE WAY A VIEW IS, AND THAT IS THE WHOLE REASON
+  THIS EXISTS.** A view goes on a sheet as a `Viewport`; a schedule goes on as a
+  `ScheduleSheetInstance`, a different call. `PLACE_VIEW_ON_SHEET` already knows
+  this - it asks `Viewport.CanAddViewToSheet` first and names *"a schedule that
+  needs a different call"* among the refusals it expects. It was refusing
+  schedules correctly with nothing to hand them to. This is that call.
+
+  IT ALSO EXISTS BECAUSE THE SENTENCE WENT SOMEWHERE WORSE. Measured before this
+  batch, *"put the schedule on the sheet"* returned `CREATE_SHEET_LIST`, which
+  makes a NEW schedule listing every sheet in the project - a plausible-looking
+  result with nothing to do with what was asked.
+
+  **THE SAME SCHEDULE CAN GO ON MANY SHEETS, WHICH IS THE OPPOSITE OF A VIEW.**
+  A view can be on one sheet only and Revit refuses the second attempt; a
+  schedule can be placed repeatedly, so nothing here refuses a repeat. That
+  difference is worth stating because the view rule is the one people carry
+  over, and it makes an accidental double placement possible in a way it is not
+  for a drawing.
+
+  **THE POINT IS IN mm AND IS THE SHEET'S OWN COORDINATES.** Millimetres are
+  divided by 304.8 as plain arithmetic at the edge - no units API. The origin is
+  the sheet's, not the title block's, and the placed position is READ BACK in mm
+  rather than echoed, because that is the number somebody checks against the
+  drawing.
+
+  **A SCHEDULE HANGS FROM ITS TOP-LEFT.** The point given is where the corner
+  goes, so a schedule grows downwards and to the right from it. Stated because
+  the first guess is usually the centre, and a schedule placed by its centre sits
+  half off the sheet.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: sheetId
+      type: ElementId
+      source: request
+    - name: atXMm
+      type: double
+      source: request
+    - name: atYMm
+      type: double
+      source: request
+  provides:
+    - name: placed
+      type: IList<ElementId>
+    - name: refused
+      type: IList<string>
+    - name: placedAt
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ScheduleSheetInstance.Create(Document,
+  ElementId, ElementId, XYZ)` and its `ScheduleId` and `Point` properties are
+  present and unchanged 2020 through 2027, with the same argument counts.
+
+  The sheet arrives as an `ElementId` and is resolved with `doc.GetElement`, so
+  nothing here builds an id from a number or reads one as a number, and 2024's
+  64-bit change does not reach this code.
+
+  **No units API is called.** mm to internal feet by dividing by 304.8, and back
+  by multiplying, plain arithmetic at the edge - which is what D-20 requires and
+  what keeps this working across the 2021 units break.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "put the schedule on the sheet"    -> here. A SCHEDULE needs
+#                                         ScheduleSheetInstance, not a viewport
+#   "put this view on a sheet"         -> PLACE_VIEW_ON_SHEET, which refuses
+#                                         schedules on purpose and points here
+#   "make a sheet list"                -> CREATE_SHEET_LIST - a NEW schedule of
+#                                         every sheet, and what "put the
+#                                         schedule on the sheet" used to return
+#   "make a new sheet"                 -> CREATE_SHEET. Creating the sheet and
+#                                         placing on it stay different jobs
+#   "which schedules are there"        -> FIND_SCHEDULES
+#   "export it instead"                -> EXPORT_SCHEDULE_TO_CSV
+
+utterances:
+  - put the schedule on the sheet
+  - place this schedule on the drawing
+  - add the schedule to the sheet
+  - drop the quantity schedule onto the sheet
+  - i need the schedule on this drawing
+  - put the door schedule on sheet A101

@@ -72,6 +72,13 @@ compatibility-note: >
 #   "move them up 200"               -> MOVE_ELEMENTS
 #   "they are on the wrong level"    -> here, almost always - the geometry is
 #                                       right and the data is wrong
+#   "filter the SCHEDULE to level 2" -> SET_SCHEDULE_FILTERS. NOT HERE. That
+#                                       sentence resolved to this fragment
+#                                       until 2026-09-04 - a request to hide
+#                                       rows in a table, answered by the
+#                                       fragment that MOVES DUCTS TO ANOTHER
+#                                       LEVEL. Measured, not hypothetical
+#   "sort the schedule by level"     -> SET_SCHEDULE_SORT_GROUP
 #
 # THE SENTENCE DOES NOT SAY WHICH, and the two produce models that differ by a
 # whole storey.

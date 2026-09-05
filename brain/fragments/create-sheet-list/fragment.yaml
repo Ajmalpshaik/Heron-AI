@@ -83,6 +83,13 @@ compatibility-note: >
 #   "make a room finish schedule I can type into" -> CREATE_KEY_SCHEDULE
 #   "what sheets are in this model"   -> LIST_SHEETS - a READ, no view made
 #   "make me a new sheet"             -> CREATE_SHEET
+#   "put the schedule on the sheet"   -> PLACE_SCHEDULE_ON_SHEET. NOT HERE.
+#                                        That sentence resolved to this
+#                                        fragment until 2026-09-04, and this
+#                                        one makes a NEW schedule listing every
+#                                        sheet in the project - a
+#                                        plausible-looking result with nothing
+#                                        to do with what was asked
 
 utterances:
   - make a sheet list schedule

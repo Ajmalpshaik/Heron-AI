@@ -63,6 +63,11 @@ compatibility-note: >
 #   "how many metres of duct"        -> MEASURE_ELEMENT_LENGTHS - a length
 #   "how many square metres"         -> here - for insulation, paint, lagging
 #   "what is the volume"             -> here
+#   "how much SPACE does it take up" -> REPORT_BOUNDING_BOX - the EXTENT, the
+#                                       box it occupies, which is a different
+#                                       question from how much material is in
+#                                       it. "what are the coordinates of this
+#                                       element" resolved HERE until 2026-09-05
 #   "how much concrete"      -> READ_ELEMENT_MATERIAL. The question names a
 #                              MATERIAL and this fragment measures a shape
 #                              regardless of what it is made of. BOTH tables

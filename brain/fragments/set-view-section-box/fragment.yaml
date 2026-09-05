@@ -66,6 +66,11 @@ compatibility-note: >
 #
 #   "show me just these"              -> ISOLATE_ELEMENTS - hides the rest
 #   "box these up" / "section box"    -> here - cuts the view around them
+#   "how big is the box around these" -> REPORT_BOUNDING_BOX - a MEASUREMENT
+#                                        in mm, changing no view. That
+#                                        sentence resolved HERE until
+#                                        2026-09-05, and this fragment edits
+#                                        the view instead of answering
 #   "create a section through this"   -> CREATE_SECTION_VIEW. A NEW
 #                                        DRAWING that can go on a sheet.
 #                                        Same word, entirely different

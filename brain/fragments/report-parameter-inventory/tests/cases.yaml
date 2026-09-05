@@ -1,0 +1,62 @@
+positive:
+  - given: one duct, sampleOnly true
+    expect: >
+      its instance parameters and its type parameters, each named, compared
+      against Revit's own Properties palette and Edit Type dialog on that duct -
+      nothing in the palette missing from the list
+
+  - given: a duct's Size parameter
+    expect: >
+      "450x250" - Revit's own formatting through AsValueString, not a decimal
+      number of feet. That is what makes the list usable without conversion
+
+  - given: a mixed set of three different families, sampleOnly false
+    expect: >
+      the UNION across them, with parameters that only one family carries still
+      listed. This is the case sampling misses, and the reason the option exists
+
+  - given: a shared parameter on the element
+    expect: reported as "shared", distinct from built-in
+
+negative:
+  - given: any element at all
+    expect: >
+      NO PARAMETER GROUP COLUMN ANYWHERE, and the summary saying why. THIS IS THE
+      VERSION CASE. Definition.ParameterGroup is gone by 2027 and GetGroupTypeId
+      never existed on 2020, so a version reporting the group compiles on some
+      releases and breaks the rest
+
+  - given: a family parameter and a project parameter on the same element
+    expect: >
+      BOTH as "project/family (not shared)" — not guessed into one or the other.
+      Revit exposes no flag separating them, and a confident wrong label is worse
+      than an honest bucket
+
+  - given: a parameter that is present but empty
+    expect: >
+      "<blank>" — distinguishable from a parameter that is absent, which simply
+      does not appear. Those are different situations with different fixes
+
+  - given: a line or a group, which has no type
+    expect: >
+      "this element has no type" IN WORDS, and the instance parameters still
+      listed. Silence there reads as a fragment that stopped
+
+  - given: an empty element list
+    expect: >
+      "no parameters could be read" with the note that it is not a normal state -
+      not an empty success
+
+  - given: a parameter whose value throws when read
+    expect: >
+      "<unreadable>" for that one, every other parameter still listed. One bad
+      value must not cost the inventory
+
+second_route:
+  - >
+    Revit's own Properties palette for instance parameters and Edit Type for type
+    parameters. Those two panels ARE this list, and are what it is checked against
+
+  - >
+    Manage - Project Parameters shows which are project parameters, which is the
+    one distinction this fragment honestly cannot make on its own
