@@ -1,0 +1,55 @@
+positive:
+  - given: >
+      forty sheets on "AJ Border : A1" and a target of "AJ Border : A0" - the
+      same family, a different type
+    expect: >
+      all forty on A0 in Revit, swappedInPlace reporting 40 and replaced EMPTY.
+      Checked by opening a sheet, not from the return value
+
+  - given: >
+      a sheet on an old family and a target in a different family
+    expect: >
+      the new title block on the sheet, and that sheet NAMED IN replaced with
+      the old one's family and type. The naming is the point - it is the list of
+      sheets somebody has to go and look at
+
+  - given: a mixed set, some sheets same-family and some not
+    expect: >
+      the two counted separately, never added together. A single total of
+      "48 updated" is what hides the four that lost data
+
+negative:
+  - given: >
+      a cross-family replace, then the sheet's Sheet Number and issue date
+      checked
+    expect: >
+      BOTH UNCHANGED. THIS IS THE FIRST CASE TO RUN. Sheet parameters live on
+      the sheet, not on the title block, and a fragment that lost them would
+      have destroyed the drawing register while reporting success
+
+  - given: a door type, or any family symbol that is not a title block
+    expect: >
+      REFUSED BY NAME and no sheet touched. Revit will happily place it on a
+      sheet, and the result is a drawing with a door on it
+
+  - given: an element in the list that is not a sheet
+    expect: counted in notASheet, the real sheets in the same call still changed
+
+  - given: a sheet Revit refuses the change on
+    expect: >
+      that sheet named with Revit's own message, the rest of the set still done,
+      and the counts reflecting what a read back found rather than what was
+      attempted
+
+  - given: a sheet with no title block on it at all
+    expect: >
+      one placed, and the sheet named in replaced - not counted as a swap. A
+      sheet that never had a border and one that lost its data are different
+      outcomes, and only one of them needs checking afterwards
+
+second_route: >
+  Revit's own route - select the title block on a sheet and change its Type in
+  the Properties palette, which is the same-family swap; or delete it and drag a
+  new one in from the Project Browser, which is the replace. Doing both by hand
+  on one sheet each is how the two counts are checked, and it is also how the
+  lost instance values are seen.

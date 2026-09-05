@@ -70,6 +70,20 @@ compatibility-note: >
 #
 # SCALE IS OFTEN OWNED BY THE TEMPLATE. When this refuses on a batch, that is
 # almost always why, and the fix is in the template rather than in the view.
+#
+# ROWS ADDED 2026-09-06 - the fix that sentence needs now exists. The same rows
+# are in REPORT_VIEW_TEMPLATE_CONTROL and SET_VIEW_TEMPLATE_CONTROL.
+#
+#   "why can I not change the scale on this view"
+#                                   -> REPORT_VIEW_TEMPLATE_CONTROL, which
+#                                      declares it. IT IS NOT THIS FRAGMENT,
+#                                      and this one ranks high on it by wording
+#                                      - answering "why is it locked" by
+#                                      setting it is a write in place of an
+#                                      explanation, and it will simply refuse
+#   "let this view set its own scale" -> SET_VIEW_TEMPLATE_CONTROL, which
+#                                      declares it. The sentence asks for the
+#                                      scale to be UNLOCKED, not set
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

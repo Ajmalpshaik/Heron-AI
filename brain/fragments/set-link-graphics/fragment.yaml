@@ -1,0 +1,148 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-068
+semantic-identity: "grey or fade a whole linked model in one view"
+kind: action
+domain: revit.views
+capability: SET_LINK_GRAPHICS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Applies one graphic override to a whole linked model in one view - the way an
+  architectural or structural link is pushed into the background behind the MEP
+  work.
+
+  IT EXISTS BECAUSE A CATEGORY OVERRIDE IN THE HOST DOES NOT REACH INSIDE A
+  LINK, AND SAYS NOTHING WHEN IT DOESN'T. On a real coordination job the walls
+  and floors arrive as a LINK. `SET_CATEGORY_GRAPHICS` on the host document then
+  greys nothing, reports success, and leaves the view looking untouched -
+  because nothing was wrong. The host genuinely has no walls. That is the
+  quietest failure in the whole graphics story, and it is why this is a separate
+  fragment rather than a flag on that one.
+
+  **ONE OVERRIDE ON THE LINK COVERS EVERYTHING INSIDE IT.** A link instance is a
+  single element in the host document, so this is one call per link however many
+  thousand elements are in the file. Halftone, transparency, line colour and
+  line weight all work through it.
+
+  **IT CANNOT KEEP THE ARCHITECT'S GRID BLACK WHILE THEIR WALLS GO GREY, AND
+  THAT REFUSAL IS THE FINDING.** Overriding categories individually INSIDE a
+  link needs the collector that takes a document, a view and a link instance,
+  and that constructor DOES NOT EXIST ON REVIT 2020 - read off the reference
+  assemblies, where 2020 has three `FilteredElementCollector` constructors and
+  2027 has four. Every fragment in this library is one implementation for all
+  eight releases, so the split is not made. Revit's own route is named in the
+  routing table. The earlier library built that path and capped it at five
+  thousand elements per link, which quietly does a partial job on exactly the
+  large link that needs it.
+
+  **THE CLASS THAT LOOKS LIKE THE RIGHT ANSWER IS NOT ONE.**
+  `RevitLinkGraphicsSettings` sets a link's display MODE, and it carries no
+  halftone and no transparency on any release - and it does not exist AT ALL on
+  Revit 2020, checked in the shipped assembly at both ends of the range. The
+  override route above is the one that works.
+
+  **THE OVERRIDE ARRIVES ALREADY BUILT**, exactly as it does for
+  `SET_CATEGORY_GRAPHICS` and `OVERRIDE_GRAPHICS_IN_VIEW` - so the setters that
+  were renamed across releases stay the caller's problem, and clearing a link's
+  override needs no separate call: an empty `OverrideGraphicSettings` IS the
+  cleared state.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: overrides
+      type: OverrideGraphicSettings
+      source: request
+  provides:
+    - name: overridden
+      type: int
+    - name: notALink
+      type: int
+    - name: refused
+      type: IList<string>
+    - name: appliedTo
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `RevitLinkInstance`, `RevitLinkType`,
+  `Element.GetTypeId()`, `View.SetElementOverrides`,
+  `View.GetElementOverrides`, `View.AreGraphicsOverridesAllowed()` and the
+  `Halftone` and `Transparency` properties on `OverrideGraphicSettings` are
+  present and unchanged 2020 through 2027, read off the reference assemblies at
+  both ends.
+
+  **Two things this deliberately does NOT name.**
+  `FilteredElementCollector(Document, ElementId, ElementId)` - the collector
+  that reaches inside a link - is absent on Revit 2020, and naming it would stop
+  this compiling there; a try/catch does not help, because the code never gets
+  to run. `RevitLinkGraphicsSettings` is absent from the Revit 2020 assembly
+  entirely and carries no halftone or transparency on the releases that do have
+  it.
+
+  A link is identified by its TYPE name, which is the file name a person
+  recognises. Two placements of one file share that name and are reported
+  separately, because each carries its own override.
+
+# ROUTING - the same rows are in SET_CATEGORY_GRAPHICS and HIGHLIGHT_VS_REST.
+#
+#   "grey the architecture back"        -> SET_CATEGORY_GRAPHICS OWNS THE BARE
+#                                          SENTENCE and declares it. It cannot
+#                                          be split by wording, because the
+#                                          words do not say whether those walls
+#                                          are in this model or in a link - and
+#                                          that is the whole difference. Two
+#                                          tables claimed it and the same row is
+#                                          now in both. Come here when the
+#                                          sentence names a LINK
+#   "halftone the walls"                -> OVERRIDE_GRAPHICS_IN_VIEW for named
+#                                          host walls, SET_CATEGORY_GRAPHICS for
+#                                          the whole category. Here ONLY if
+#                                          those walls are inside a link. This
+#                                          fragment ranks high on it because it
+#                                          declares the sentence somebody types
+#                                          when a greyout did nothing, and that
+#                                          sentence has the word walls in it
+#   "fade the structural link"          -> here
+#   "halftone the linked model"         -> here
+#   "put the link back to normal"       -> here, with an empty
+#                                          OverrideGraphicSettings. An unset
+#                                          override IS Revit's cleared state
+#   "grey their walls but keep the grid black"
+#                                       -> NOT HERE AND NOWHERE IN THIS LIBRARY.
+#                                          Overriding categories INSIDE a link
+#                                          needs a collector Revit 2020 does not
+#                                          have. Revit's route: Visibility /
+#                                          Graphics, the Revit Links tab, that
+#                                          link's row, Custom, then the Model
+#                                          Categories tab inside it
+#   "which links are loaded"            -> LIST_LINKED_MODELS, which is what
+#                                          feeds this
+#   "grey everything except these"      -> HIGHLIGHT_VS_REST, on host elements
+
+utterances:
+  - grey out the linked model in this view
+  - halftone the architectural link
+  - fade the structure link back
+  - push the linked model into the background
+  - make the link lighter in this view
+  - put the link graphics back to normal
+  - the greyout did nothing because the walls are in a link

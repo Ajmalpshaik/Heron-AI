@@ -61,6 +61,24 @@ compatibility-note: >
 
 #   "what colour is this one overridden to" -> READ_GRAPHIC_OVERRIDES - this
 #                                        one only clears
+#
+# ROWS ADDED 2026-09-06. The same rows are in RESET_VIEW_GRAPHICS.
+#
+#   "put this view back to normal"   -> RESET_VIEW_GRAPHICS, which sweeps every
+#                                       CATEGORY override in the view without
+#                                       being told which ones were written -
+#                                       the case where nobody has the list
+#   "reset ALL the graphic overrides in this view"
+#                                    -> NOT ONE FRAGMENT. Three separate things
+#                                       colour a view - categories, elements and
+#                                       filters - and no single call clears all
+#                                       three. It is RESET_VIEW_GRAPHICS then
+#                                       this one, and a sentence naming two
+#                                       capabilities belongs to a SKILL (D-47).
+#                                       This fragment wins that sentence on
+#                                       wording, does the element half, and
+#                                       reports success with the categories
+#                                       still coloured
 utterances:
   - put it back how it was
   - clear the overrides

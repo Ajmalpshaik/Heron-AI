@@ -1,0 +1,118 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-065
+semantic-identity: "save the way this view is set up as a reusable view template"
+kind: action
+domain: revit.views
+capability: CREATE_VIEW_TEMPLATE_FROM_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Captures a view's current settings - its scale, detail level, discipline,
+  phase, visibility and every graphic override on it - as a new named view
+  template.
+
+  IT EXISTS BECAUSE THE LIBRARY COULD APPLY A STANDARD AND NOT MAKE ONE. Views
+  get set up by hand, one at a time, and the office standard ends up living in
+  whichever plan somebody got right. This is the call that turns that view into
+  the standard.
+
+  **IT DOES NOT PUT THE NEW TEMPLATE ON THE VIEW IT CAME FROM, UNLESS ASKED.**
+  Capturing a view's settings and being governed by them are two different
+  requests, and only the second one locks the view. A template applied back to
+  its source view makes every setting on it read-only from that moment - the
+  exact state `REMOVE_VIEW_TEMPLATE` exists to undo. Revit's own *Create
+  Template from Current View* does not apply it back either. The earlier
+  library always applied it and said so in a comment; making it a decision the
+  caller states, and reporting which happened, is deliberate.
+
+  **A DUPLICATE NAME DOES NOT LOSE THE TEMPLATE.** Revit refuses a name another
+  view or template already holds. When it does, the template is still created
+  and keeps the name Revit gave it, and the refusal is reported with that name
+  - because a fragment that threw the template away over a naming clash would
+  have destroyed the captured settings, which are the expensive part.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: sourceView
+      type: View
+      source: request
+    - name: newTemplateName
+      type: string
+      source: request
+    - name: applyToSource
+      type: bool
+      source: request
+  provides:
+    - name: templateId
+      type: ElementId
+    - name: templateName
+      type: string
+    - name: appliedToSource
+      type: bool
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.CreateViewTemplate()`,
+  `View.IsTemplate` and `View.ViewTemplateId` are present and unchanged 2020
+  through 2027, read off the reference assemblies at both ends.
+
+  **`CreateViewTemplate()` RETURNS A `View`, NOT AN `ElementId`.** That is worth
+  writing down because it reads like an id-returning call and is not: code
+  written on the assumption does not compile at all. The returned object is
+  used directly and its `.Id` taken from it.
+
+  **No ElementId is built from an int**, so 2024's 64-bit ids do not reach here.
+
+# ROUTING - the same rows are in APPLY_VIEW_TEMPLATE and DUPLICATE_VIEW.
+#
+#   "save this view's settings as a template" -> here
+#   "make a template from this plan"          -> here
+#   "make this the standard for the others"   -> NOT ONE FRAGMENT. It is this
+#                                                one to capture the template and
+#                                                APPLY_VIEW_TEMPLATE to put it
+#                                                on the other views, and a
+#                                                sentence that names two
+#                                                capabilities belongs to a SKILL
+#                                                (D-47). Written as a claim here
+#                                                it resolved to a family-standards
+#                                                check, which is neither half.
+#                                                The second call LOCKS every view
+#                                                it touches, which is why the two
+#                                                are not quietly folded into one
+#   "make a view template like this one"      -> here, and it is declared here.
+#                                                Pointing at a VIEW, this is the
+#                                                fragment. Pointing at an
+#                                                existing TEMPLATE, meaning copy
+#                                                that template, NOTHING IN THIS
+#                                                LIBRARY DOES IT - Revit's route
+#                                                is View, View Templates, Manage
+#                                                View Templates, Duplicate
+#   "copy this view"                          -> DUPLICATE_VIEW. A duplicate is
+#                                                a second view; a template is a
+#                                                rule other views follow
+#   "put the template on these"               -> APPLY_VIEW_TEMPLATE
+#   "take the template off"                   -> REMOVE_VIEW_TEMPLATE
+
+utterances:
+  - save this view's settings as a view template
+  - create a view template from this view
+  - make a template out of this plan
+  - turn this view into the standard
+  - capture these view settings for reuse
+  - make a view template like this one

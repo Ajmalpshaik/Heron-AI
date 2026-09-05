@@ -1,0 +1,129 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-069
+semantic-identity: "put this whole view's category graphics back to normal without knowing what was changed"
+kind: action
+domain: revit.views
+capability: RESET_VIEW_GRAPHICS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Clears the category-level graphic overrides across a whole view in one pass -
+  every category the view will let go of, without being told which ones were
+  touched.
+
+  IT EXISTS BECAUSE THE UNDO NEEDED A LIST NOBODY HAS. `SET_CATEGORY_GRAPHICS`
+  already clears a category: an empty override IS the cleared state, and that
+  fragment says so. But it is handed the categories, and the request that
+  actually turns up is *"I ran the greyout over this view, put it back"* - where
+  the person does not know, and should not have to know, which of ninety-odd
+  categories were written. A greyout pass writes most of them. This fragment
+  finds them itself, and that is the only difference between the two - stated
+  here so nobody reads it as a second way to do the same thing.
+
+  **`IsCategoryOverridable` IS THE REAL TEST, AND IT IS NOT OBVIOUS.** Whether a
+  category will accept an override depends on the view, not just on the
+  category: reading `CategoryType` instead lets through categories that then
+  throw. Ones that refuse are counted and skipped, never failed.
+
+  **IT DOES NOT MAKE THE VIEW NORMAL, AND SAYING SO IS THE POINT.** Two other
+  things colour a view and both survive this untouched: overrides set on
+  individual ELEMENTS, and overrides carried by the view's FILTERS. Either can
+  leave the view looking exactly as wrong as before a full category reset - so
+  what survives is reported rather than left to be discovered. A fragment that
+  answered *"put it back"* with a bare count of ninety would be telling the
+  truth and still misleading.
+
+  **ANNOTATION CATEGORIES ARE INCLUDED BY DEFAULT** because a greyout pass sets
+  those too, and a reset that leaves the tags and dimensions grey has not
+  finished the job. Set `includeAnnotation` false to leave text, tags and
+  dimensions as they are.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). There is
+  no dry run for that reason: a fragment may not change and roll back to
+  preview, because the batch it sits in is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: includeAnnotation
+      type: bool
+      source: request
+  provides:
+    - name: cleared
+      type: int
+    - name: notOverridable
+      type: int
+    - name: refused
+      type: IList<string>
+    - name: stillOverriding
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.Settings.Categories`,
+  `View.IsCategoryOverridable`, `View.SetCategoryOverrides`,
+  `View.GetCategoryOverrides`, `View.GetFilters`, `View.GetFilterOverrides`,
+  `View.AreGraphicsOverridesAllowed` and `Category.CategoryType` are present and
+  unchanged 2020 through 2027, read off the reference assemblies at both ends.
+
+  An empty `OverrideGraphicSettings` is the cleared state on every release -
+  there is no separate clear call, which is the same mechanism
+  `RESET_GRAPHIC_OVERRIDES` uses per element.
+
+  **No ElementId is read as a number.** Category ids are compared and passed as
+  `ElementId`, so 2024's 64-bit ids never reach this code.
+
+# ROUTING - the same rows are in SET_CATEGORY_GRAPHICS,
+# RESET_GRAPHIC_OVERRIDES and HIGHLIGHT_VS_REST.
+#
+#   "put this view back to normal"      -> here, and READ WHAT IT REPORTS BACK:
+#                                          element overrides and view filters
+#                                          survive it
+#   "undo the greyout on this view"     -> here
+#   "clear ONE category's override"     -> SET_CATEGORY_GRAPHICS with an empty
+#                                          override. There is no separate clear,
+#                                          and this fragment is not a second one
+#                                          - it is the case where the list of
+#                                          categories is not known
+#   "the view is STILL coloured"        -> RESET_GRAPHIC_OVERRIDES for overrides
+#                                          stuck to individual elements, and
+#                                          REMOVE_VIEW_FILTER for a filter that
+#                                          is colouring it. This fragment names
+#                                          which of the two is still in play
+#   "reset ALL the graphic overrides in this view"
+#                                       -> NOT ONE FRAGMENT, and this one used
+#                                          to declare it. Three separate things
+#                                          colour a view - categories, elements
+#                                          and filters - and no single call
+#                                          clears all three. It is this fragment
+#                                          then RESET_GRAPHIC_OVERRIDES, and a
+#                                          sentence naming two capabilities
+#                                          belongs to a SKILL (D-47). Claimed
+#                                          here it lost to RESET_GRAPHIC_OVERRIDES
+#                                          anyway, which does the element half
+#                                          and reports success
+#   "what is overridden in this view"   -> REPORT_CATEGORY_OVERRIDES
+#   "grey everything except these"      -> HIGHLIGHT_VS_REST, which is what this
+#                                          most often undoes
+
+utterances:
+  - put this view back to normal
+  - undo the greyout on this view
+  - clear every category override in the view
+  - reset the category overrides across this whole view
+  - take the category colours off this view
+  - the view has overrides everywhere and I do not know what changed

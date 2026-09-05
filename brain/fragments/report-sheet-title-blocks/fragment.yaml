@@ -1,0 +1,108 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-013
+semantic-identity: "which title block is on each of these sheets, and which have none"
+kind: filter
+domain: revit.sheets
+capability: REPORT_SHEET_TITLE_BLOCKS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Says which title block family and type is on each sheet, and names the sheets
+  that have none.
+
+  IT EXISTS AS THE CALL TO MAKE BEFORE `SET_SHEET_TITLE_BLOCK`, because that
+  fragment behaves in two entirely different ways depending on the answer. A
+  target in the SAME family as what is already there is a safe swap; a different
+  family means the old title block is deleted and everything held on it is lost.
+  This is what tells you which of the two a drawing set is about to get - and on
+  a real set it is usually both, because sheets accumulate borders from whichever
+  template they were made in.
+
+  **A SHEET WITH NO TITLE BLOCK IS A REAL FINDING, NOT A BLANK ROW.** It prints
+  with nothing round the drawing, and it is invisible in the Project Browser -
+  the sheet is there, numbered, and looks like all the others in the list. So
+  those are counted and named rather than left as an empty cell for somebody to
+  notice.
+
+  **A SHEET WITH MORE THAN ONE TITLE BLOCK IS ALSO A FINDING**, and it is the
+  one nobody looks for. Two borders stacked exactly on top of each other look
+  like one, print like one, and mean a later swap changes whichever the API
+  reaches first while the other stays.
+
+  Reads only. It opens no transaction and changes nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: withTitleBlock
+      type: int
+    - name: withoutTitleBlock
+      type: IList<string>
+    - name: typesInUse
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSheet.SheetNumber`,
+  `FamilyInstance.OwnerViewId`, `FamilyInstance.Symbol`, `FamilySymbol.Family`
+  and `BuiltInCategory.OST_TitleBlocks` are present and unchanged 2020 through
+  2027, read off the reference assemblies at both ends.
+
+  Sheets are matched to title blocks by comparing `OwnerViewId` to the sheet id
+  - `ElementId` to `ElementId`, never a number - so 2024's 64-bit ids do not
+  reach this code.
+
+# ROUTING - the same rows are in SET_SHEET_TITLE_BLOCK and LIST_SHEETS.
+#
+#   "what title block is on this sheet"   -> here
+#   "which sheets use the old border"     -> here. typesInUse is the list of
+#                                            distinct borders across the set,
+#                                            which is what says whether a set is
+#                                            actually consistent
+#   "any sheets missing a title block"    -> here
+#   "change the title block"              -> SET_SHEET_TITLE_BLOCK, and this is
+#                                            the call to make first: it says
+#                                            whether that will be a safe
+#                                            same-family swap or a replace that
+#                                            loses what was on the old instance
+#   "list the sheets"                     -> LIST_SHEETS - sheet numbers and
+#                                            names, nothing about what they are
+#                                            drawn on
+#   "which views are on the sheet"        -> LIST_SHEETS, which reports the
+#                                            placed views
+#
+#   "change the title block on these sheets" / "swap the title block"
+#                                       -> SET_SHEET_TITLE_BLOCK, WHICH DECLARES
+#                                          BOTH. The report ranks above it on
+#                                          wording, because the two share almost
+#                                          every word and only one of them says
+#                                          change. Identity resolves it, and the
+#                                          crossing is written down here because
+#                                          the direction matters: a read
+#                                          answering a write request wastes a
+#                                          call, and the reverse silently
+#                                          replaces forty borders
+
+utterances:
+  - what title block is on this sheet
+  - which title blocks are used across these sheets
+  - are any sheets missing a title block
+  - report the sheet borders
+  - which sheets are still on the old title block
+  - check the title blocks before I change them

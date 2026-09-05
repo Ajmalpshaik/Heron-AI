@@ -1,0 +1,51 @@
+positive:
+  - given: a view a greyout pass has written most categories on
+    expect: >
+      THE VIEW BACK TO NORMAL COLOURS IN REVIT - looked at on screen - and
+      cleared reporting a count in the dozens. Checked against Visibility /
+      Graphics, where the overridden rows should now be blank
+
+  - given: includeAnnotation false
+    expect: >
+      the model categories cleared and the TEXT, TAGS AND DIMENSIONS still grey.
+      That is the whole reason the switch exists, and it is visible in the view
+
+  - given: a category the view refuses to override
+    expect: counted in notOverridable and skipped, with the rest of the pass still done
+
+negative:
+  - given: >
+      a view whose colour came from overrides on individual ELEMENTS, not from
+      categories
+    expect: >
+      THE VIEW STILL LOOKS EXACTLY THE SAME, cleared still reporting a large
+      number, and stillOverriding saying element overrides survive. THIS IS THE
+      FIRST CASE TO RUN. A count of ninety cleared categories beside a view that
+      did not change is the most convincing wrong answer this fragment can give
+
+  - given: a view carrying filters that colour it
+    expect: >
+      those filters counted in stillOverriding and NOT cleared. A reset that
+      silently dropped a filter's graphics would be deleting somebody's
+      deliberate colour coding, not undoing a greyout
+
+  - given: a view template passed in instead of a view
+    expect: refused by name, nothing cleared
+
+  - given: a view type that accepts no graphic overrides
+    expect: >
+      refused with the type named, and cleared left at zero - not reported as a
+      view that was already clean
+
+  - given: a view with no overrides at all
+    expect: >
+      cleared counting the categories it wrote a blank override onto, and the
+      view unchanged. Running this twice must be safe and must not claim a
+      second undo happened
+
+second_route: >
+  Revit's own route - Visibility / Graphics Overrides in that view, where an
+  overridden category shows its colour and pattern in the row. After this, those
+  cells should be blank. The Filters tab of the same dialog is where the
+  survivors this fragment reports are visible, and it is the check that the
+  filters were left alone.

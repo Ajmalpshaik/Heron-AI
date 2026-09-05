@@ -1,0 +1,67 @@
+positive:
+  - given: >
+      a template holding View Scale, and parameterNames ["View Scale"] with
+      include false
+    expect: >
+      the Scale row EDITABLE again in Revit's Properties on a view following
+      that template - checked in Revit, not taken from the return value - and
+      View Scale in nowFree
+
+  - given: parameterNames ["Detail Level"] with include true
+    expect: >
+      Detail Level greyed out on every view following the template, and named in
+      nowHeld
+
+  - given: a template that thirty-four views follow
+    expect: >
+      viewsFollowing reporting 34. THIS IS THE CASE THAT MAKES THE CHANGE
+      READABLE - the caller asked about one plan and changed thirty-four, and a
+      result that does not say so is the read-back defect this project exists
+      around
+
+  - given: >
+      one setting freed on a template that holds six others
+    expect: >
+      THE OTHER SIX STILL HELD. This is the difference between this fragment and
+      REMOVE_VIEW_TEMPLATE, which gives up all seven
+
+negative:
+  - given: an ordinary view passed in instead of the template
+    expect: >
+      REFUSED BY NAME, and nothing changed. THIS IS THE FIRST CASE TO RUN. Revit
+      accepts this call on an ordinary view without error and it changes nothing
+      visible - a version that passes it through reports success on a no-op, and
+      the modeller goes on believing the setting is free
+
+  - given: a parameter name spelt wrongly
+    expect: >
+      named in notOnTemplate and NOT counted as changed. Revit silently ignores
+      an id it does not recognise, so a fragment that trusts the call turns a
+      typo into a successful call that did nothing
+
+  - given: >
+      a real view parameter that a view template cannot control, such as one
+      Revit leaves off GetTemplateParameterIds
+    expect: >
+      reported as a real setting that a template cannot hold - distinguished in
+      words from a name that does not exist at all, because the two need
+      different fixes
+
+  - given: an empty parameterNames list
+    expect: >
+      NOTHING CHANGED and nothing claimed. Not every setting freed, and not
+      every setting held
+
+  - given: >
+      the same call run twice with include false
+    expect: >
+      the same result both times and no duplicate entry - the second run adds
+      nothing because the setting is already free
+
+second_route: >
+  Revit's own route - View tab, View Templates, Manage View Templates, and the
+  Include checkbox column beside each parameter. That column IS what this
+  fragment writes, and looking at it also shows the thing the earlier library
+  had backwards: the column belongs to the template on the left, not to any one
+  view. Then open a view following that template and confirm the row is greyed
+  out or editable to match.

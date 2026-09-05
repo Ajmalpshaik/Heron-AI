@@ -1,0 +1,116 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-064
+semantic-identity: "take the view template off these views so their settings can be edited again"
+kind: action
+domain: revit.views
+capability: REMOVE_VIEW_TEMPLATE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Detaches the view template from a set of views. The settings the template was
+  holding stop being locked and become editable on each view again.
+
+  IT EXISTS BECAUSE APPLY_VIEW_TEMPLATE WAS A ONE-WAY DOOR. A template locks
+  everything it controls, `APPLY_VIEW_TEMPLATE` says so in its own purpose, and
+  until this fragment nothing in the library could take one off. *"Why can't I
+  change the scale on this view"* had a diagnosis and no answer.
+
+  **DETACHING DOES NOT PUT THE VIEW BACK HOW IT WAS, AND THAT IS THE THING
+  PEOPLE GET WRONG.** The view keeps whatever the template last gave it - the
+  same scale, the same visibility, the same overrides - they simply stop being
+  controlled. So a view looks *identical* the instant after this runs, and
+  somebody who asked to "undo the template" reads that as the fragment having
+  done nothing. It did exactly what it says: the settings are now the view's
+  own. That is why the read-back names the template that WAS applied and says
+  the view is unchanged to look at.
+
+  **IT DOES NOT DELETE THE TEMPLATE.** The template element survives and every
+  other view still using it is untouched. Deleting the template itself is a
+  different job with a different blast radius - it reaches every view in the
+  project, not the ones named here - and it is `DELETE_ELEMENTS` with the
+  template as the element. The earlier library folded that into a flag on this
+  same call; splitting it is deliberate, because a flag that turns "change
+  these three views" into "change the whole project" is the wrong shape for a
+  thing that cannot be undone by re-running it.
+
+  **A VIEW TEMPLATE IS ITSELF A VIEW**, so a template can be passed in by
+  mistake. That is refused by name rather than skipped silently - a template
+  has no template of its own, and a silent skip reads the same as success.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: views
+      type: IList<View>
+      source: request
+  provides:
+    - name: detached
+      type: int
+    - name: hadNoTemplate
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+    - name: detachedFrom
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.ViewTemplateId` (both directions)
+  and `View.IsTemplate` are present and unchanged 2020 through 2027 - read off
+  the reference assemblies at both ends, not assumed.
+
+  **No ElementId is ever built from an int and none is read as a number.**
+  `ElementId.InvalidElementId` is compared to an `ElementId`, which is why
+  2024's move to 64-bit ids and the loss of `IntegerValue` by 2026 do not reach
+  this code.
+
+# ROUTING - the same rows are in APPLY_VIEW_TEMPLATE and
+# REPORT_VIEW_TEMPLATE_CONTROL.
+#
+#   "take the template off this view"    -> here
+#   "the scale is greyed out, unlock it" -> SET_VIEW_TEMPLATE_CONTROL, WHICH
+#                                           DECLARES IT. Freeing one setting is
+#                                           almost always what that sentence
+#                                           means, and taking the whole template
+#                                           off is almost always what it says.
+#                                           Come here only when the view should
+#                                           stop following the standard entirely
+#   "set the view template"              -> APPLY_VIEW_TEMPLATE, which declares
+#                                           it. THIS FRAGMENT MUST NEVER WIN
+#                                           THAT SENTENCE: it ranks second on it
+#                                           on wording alone, and a request to
+#                                           put a standard ON a view answered by
+#                                           the fragment that takes one OFF is
+#                                           the worst mistake in this cluster
+#   "is this view on a template"         -> REPORT_VIEW_TEMPLATE_CONTROL, which
+#                                           declares it. A question must not be
+#                                           answered by something that writes
+#   "which template is on this view"     -> REPORT_VIEW_TEMPLATE_CONTROL
+#   "put the template on"                -> APPLY_VIEW_TEMPLATE
+#   "delete this view template"          -> DELETE_ELEMENTS with the template as
+#                                           the element. NOT here. That reaches
+#                                           every view in the project using it,
+#                                           and this reaches only the views named
+#   "which views have no template"       -> FIND_VIEWS_WITHOUT_TEMPLATE
+
+utterances:
+  - remove the view template from this view
+  - take the template off these views
+  - detach the view template
+  - unlock this view from its template
+  - the view template is stopping me editing this view
+  - clear the view template on these plans
+  - this view should not follow a template any more

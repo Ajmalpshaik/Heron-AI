@@ -1,0 +1,46 @@
+positive:
+  - given: a set of forty sheets all on one border
+    expect: >
+      withTitleBlock reporting 40 and typesInUse reporting exactly ONE name -
+      checked against the title block Type in Revit Properties on any sheet
+
+  - given: a set built from two templates over time
+    expect: >
+      typesInUse naming both borders, and the findings saying which sheets are
+      on which. That list is what says whether a swap will be a safe same-family
+      change or a replace
+
+  - given: a sheet whose title block was deleted
+    expect: >
+      that sheet named in withoutTitleBlock IN WORDS, not left as a blank cell.
+      An empty border is invisible in the Project Browser and prints as a bare
+      drawing
+
+negative:
+  - given: a sheet with two title blocks stacked exactly on top of each other
+    expect: >
+      BOTH REPORTED, and the sheet flagged as carrying two. THIS IS THE FIRST
+      CASE TO RUN. A version that takes the first match reports a perfectly
+      normal sheet, and the second border survives every later swap and prints
+      underneath
+
+  - given: an element in the list that is not a sheet
+    expect: >
+      skipped and NOT counted as a sheet without a title block. A view handed in
+      by mistake must not appear in the missing list
+
+  - given: an empty list of sheets
+    expect: >
+      every count zero and nothing claimed. Not reported as a set that is
+      consistent
+
+  - given: a title block instance whose type cannot be read
+    expect: >
+      the sheet still counted as having one, and that entry named as unreadable.
+      A naming failure must not move the sheet into the missing list
+
+second_route: >
+  Revit own route - open a sheet, click its border, and read Family and Type in
+  the Properties palette. For the whole set, a Sheet List schedule does not show
+  the title block type, which is exactly why this fragment exists; the check by
+  hand is opening a few sheets from each part of the numbering and comparing.

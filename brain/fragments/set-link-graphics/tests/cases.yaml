@@ -1,0 +1,59 @@
+positive:
+  - given: >
+      an architectural link and an override carrying halftone and 80 percent
+      transparency, in a coordination plan
+    expect: >
+      THE WHOLE LINK FADED IN THAT VIEW IN REVIT - every wall, floor and door
+      inside it - looked at on screen, not read off the return value.
+      appliedTo reporting the halftone and transparency read back off the view
+
+  - given: two links, ARCH and STR, in one call
+    expect: >
+      both faded, each named by its file name, and the MEP work in the host
+      still at full strength
+
+  - given: an empty OverrideGraphicSettings
+    expect: >
+      the link back to its normal graphics. An unset override IS Revit's cleared
+      state, which is why there is no separate reset
+
+  - given: the same link file placed twice in the model
+    expect: >
+      both placements reported separately under the same file name, because each
+      instance carries its own override and greying one leaves the other bright
+
+negative:
+  - given: >
+      the same greying attempted with SET_CATEGORY_GRAPHICS on the host, in a
+      model whose walls are all inside a link
+    expect: >
+      NOTHING GREYED AND NO ERROR. THIS IS THE FIRST CASE TO RUN, and it is the
+      reason this fragment exists - the host has no walls, so the category
+      override is correct and does nothing. Only this fragment changes the
+      picture
+
+  - given: elements that are not link instances
+    expect: >
+      counted in notALink and not overridden. A model element handed in by
+      mistake must not be quietly greyed as though it were a link
+
+  - given: a view that is a view template
+    expect: >
+      refused by name. An element override on a template is not where it belongs
+      and would look like it worked
+
+  - given: a view whose type accepts no graphic overrides
+    expect: refused with the view type named, and nothing counted
+
+  - given: a view following a template that controls V/G overrides
+    expect: >
+      the override reported AND the template named as the reason the link may
+      look unchanged. The write succeeds and the picture does not move, which is
+      the hardest of these to diagnose from a result that only counts successes
+
+second_route: >
+  Revit's own route - Visibility / Graphics in that view, the Revit Links tab,
+  and the link's row. That dialog is what the result is checked against. It is
+  also where the thing this fragment will not do lives: the Custom button on
+  that row opens per-category control INSIDE the link, which needs a collector
+  Revit 2020 does not have.

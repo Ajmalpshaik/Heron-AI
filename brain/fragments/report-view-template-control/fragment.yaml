@@ -1,0 +1,114 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-066
+semantic-identity: "why is this view setting greyed out - which template controls it"
+kind: filter
+domain: revit.views
+capability: REPORT_VIEW_TEMPLATE_CONTROL
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  For each view, says which view template it follows and which of its settings
+  that template is holding - so a setting that will not accept a change has a
+  named reason.
+
+  IT EXISTS BECAUSE *"WHY IS THIS GREYED OUT"* IS THE MOST COMMON THING A
+  MODELLER ASKS A VIEW, and the library could apply, remove and diagnose
+  templates while never being able to answer it. A locked scale looks exactly
+  like a broken tool.
+
+  **A VIEW TEMPLATE INCLUDES SOME SETTINGS AND LEAVES OTHERS FREE**, and that
+  choice is the difference between a template that governs a drawing and one
+  that governs the whole view. This reports both halves for every view: what is
+  locked, and what the view is still allowed to decide for itself.
+
+  **THE INCLUDE LIST BELONGS TO THE TEMPLATE, NOT TO THE VIEW - AND THE EARLIER
+  LIBRARY HAD THIS BACKWARDS.** Its own file claimed each view sharing a
+  template could independently exclude different parameters from that template's
+  control, and was marked live-verified. Revit's shipped documentation for
+  `GetNonControlledTemplateParameterIds` says the opposite in its first line -
+  the parameters are the ones *"not marked as included when THIS VIEW is used as
+  a template"* - identically worded on Revit 2020 and on 2027, read off the
+  reference assemblies at both ends. So the answer is read FROM THE TEMPLATE,
+  and two views on one template are told the same thing, because they are.
+
+  **A TEMPLATE PASSED IN DIRECTLY IS ANSWERED, NOT REFUSED.** *"What does this
+  template control"* is the same question asked one step earlier, and it is the
+  question to ask before changing one.
+
+  Reads only. It opens no transaction and changes nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: views
+      type: IList<View>
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: controlledParameters
+      type: IList<string>
+    - name: withTemplate
+      type: int
+    - name: withoutTemplate
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.ViewTemplateId`,
+  `View.IsTemplate`, `View.GetTemplateParameterIds()`,
+  `View.GetNonControlledTemplateParameterIds()`, `Element.Parameters`,
+  `Parameter.Id` and `Parameter.Definition` are present and unchanged 2020
+  through 2027, read off the reference assemblies at both ends.
+
+  **PARAMETERS ARE NAMED BY WALKING THE TEMPLATE'S OWN PARAMETER SET AND
+  COMPARING `ElementId` TO `ElementId`.** The obvious route - test the id for a
+  negative number and hand it to `LabelUtils.GetLabelFor((BuiltInParameter)…)` -
+  requires reading an `ElementId` AS A NUMBER, and that is the member that went
+  64-bit at Revit 2024 and lost its old name by 2026. Matching ids to the
+  parameters already on the element needs no number at all and gives the same
+  display name Revit shows in Properties.
+
+# ROUTING - the same rows are in REMOVE_VIEW_TEMPLATE,
+# SET_VIEW_TEMPLATE_CONTROL and FIND_VIEWS_WITHOUT_TEMPLATE.
+#
+#   "why is the scale greyed out"      -> here. It names the template and the
+#                                         setting it is holding
+#   "which template is on this view"   -> here
+#   "what does this template control"  -> here, with the template itself passed
+#                                         in as the view
+#   "which views have no template"     -> FIND_VIEWS_WITHOUT_TEMPLATE - that is
+#                                         a sweep of the project looking for
+#                                         drawings nobody is holding to a
+#                                         standard. This one answers about views
+#                                         you already have in your hand
+#   "let this view set its own scale"  -> SET_VIEW_TEMPLATE_CONTROL, and read
+#                                         its warning first: the include list is
+#                                         the TEMPLATE's, so freeing a setting
+#                                         frees it on EVERY view following that
+#                                         template
+#   "take the template off entirely"   -> REMOVE_VIEW_TEMPLATE
+#   "nothing shows in this view"       -> DIAGNOSE_VISIBILITY. A template can be
+#                                         the reason, but so can six other
+#                                         things, and that fragment walks them
+
+utterances:
+  - why is this view setting greyed out
+  - which view template is controlling this view
+  - what does this view template control
+  - why can I not change the scale on this view
+  - why is the scale greyed out
+  - is this view on a template
+  - which settings are locked by the template
+  - what is this template holding
