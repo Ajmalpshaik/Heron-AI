@@ -31,6 +31,12 @@ when the thing you hit is on no list at all.
 **Updated 2026-09-05 — the library went from 210 fragments to 218, the REPORTING block, and four of the
 eight replaced an answer that was a WRITE.** That section is directly below.
 
+> **Both 2026-09-04 and 2026-09-05 batches are MERGED TO `main` — pull request #8, branch
+> `claude/heron-ai-fragments-wa93gf`.** That branch is spent: a merged pull request cannot carry new
+> work. **A fresh session starts a NEW branch from the latest `main`**, never more commits on that one.
+> `git fetch origin main` FIRST, before any work — peer sessions push to `main` too, and finding out at
+> push time is how a whole session's documentation edits become merge conflicts.
+
 **Updated 2026-09-04 — the library went from 202 fragments to 210, all eight in the SCHEDULE cluster,
 where every sentence was reaching the fragment that adds a column and two were reaching fragments that
 change the model.** That section is directly below.
@@ -2731,8 +2737,17 @@ rest.
 ### The branch
 
 The branch name is given per session and is not fixed here — the twentieth used
-`claude/heron-ai-fragments-6d5xtp`. Push with `git push -u origin <the branch you were given>`, and open
-a draft pull request against `main`.
+`claude/heron-ai-fragments-6d5xtp`, and the 2026-09-04/05 batches used
+`claude/heron-ai-fragments-wa93gf` (merged, PR #8). Push with
+`git push -u origin <the branch you were given>`, and open a draft pull request against `main`.
+
+**`git fetch origin main` at the START of the session, not at push time.** Peer sessions push to `main`
+too. A session that only checks when it is ready to push finds every documentation edit it made is
+against a stale count, and each one becomes a merge conflict.
+
+**A branch whose pull request is already MERGED is finished and cannot carry follow-up work.** Start a
+new branch from the latest `main` instead — `git fetch origin main && git checkout -B <new-branch>
+origin/main`. Stacking new commits on merged history is the one thing not to do here.
 
 **Heron-AI and AJ-Tools only.** `AJ-AI-Brain` is read-only reference.
 
