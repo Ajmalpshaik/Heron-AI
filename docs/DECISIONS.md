@@ -2515,11 +2515,37 @@ content between models — he answered **BOTH**.
 
 | | What it is | Where it stands |
 |---|---|---|
-| **B — copy the content** | Transfer view filters, line styles, parameters, standards from one model to another | **Mostly written.** `COPY_VIEW_FILTERS`, `REMAP_LINE_STYLES`, `COPY_FROM_LINK` exist; what they lack is a *second* binding to copy into |
+| **B — copy the content** | Transfer view filters, line styles, parameters, standards from one model to another | ~~**Mostly written.**~~ **THAT WAS WRONG — corrected 2026-09-06, see below** |
 | **A — repeat the action** | *"Do to Podium what you just did to Tower A"* — Heron replays the **job**, not the result | **New work.** Needs a replayable record of a job, and every element re-resolved by identity in the second model, because element ids do not carry across documents |
 
 **Neither may follow the active window.** A second document is *bound* exactly as the first is — picked
 explicitly, pinned by identity, verified at every step. Rule 20 is not relaxed; it is applied twice.
+
+### Correction 2026-09-06 — B was NOT mostly written, and the second binding was never needed
+
+**Two things in this entry were wrong, both written by reading names instead of contracts.**
+
+**First, the evidence for *"mostly written"* does not survive being opened.** `COPY_VIEW_FILTERS` takes
+`doc, sourceView, targetViews` — it copies filters from one view to *other views in the same project*.
+`REMAP_LINE_STYLES` moves lines between styles inside one document. `COPY_FROM_LINK` copies from a **link**,
+which is not another open project. **None of the three crosses two projects.** The only fragment that ever
+did is `TRANSFER_VIEWS_BETWEEN_DOCUMENTS`. Three fragment names were cited as evidence and not one was read.
+
+**Second, the *"second binding"* this entry asks for is not how it works.** The pattern already in the
+library is simpler and better: **the destination is the bound document, and the source is found by title
+among the open ones.** Nothing new is bound, Rule 20 is untouched, and the source is only ever read — so
+the undo question this decision worries about does not even arise for B. It arises for A, where a second
+document is written to.
+
+**And the read half already existed by the time this was corrected**, built the same day in another
+session: `run_fragment_read` takes an optional `document` title, refuses a model that is not open with the
+list of ones that are, excludes linked documents, and reports `wasActiveDocument` so an answer about a
+window nobody is looking at says so.
+
+**What was actually missing was a standards transfer**, and the first one is now written:
+`TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS` (`FRG-VIEW-097`), following the established pattern. It is
+`DRAFT` and has met no model — [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere)
+and [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) both apply.
 
 ### Undo — the part that is not ours to design
 

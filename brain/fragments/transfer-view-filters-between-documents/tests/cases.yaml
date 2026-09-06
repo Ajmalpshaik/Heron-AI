@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a template project open alongside, holding four view filters
+    expect: >
+      those four present in this project afterwards, listed in `copied`, and
+      selectable on the Filters tab of Visibility/Graphics
+
+  - given: nameContains "MEP"
+    expect: >
+      only the filters whose names contain MEP, and every other one left where
+      it was
+
+negative:
+  - given: a transferred filter, and the view graphics looked at straight after
+    expect: >
+      NOTHING changed on any view. A filter arrives in the PROJECT, not on a
+      view - APPLY_VIEW_FILTER is the separate act. Expecting the graphics to
+      change on arrival is the misreading this fragment exists around
+
+  - given: a filter in the source built on a SHARED PARAMETER this project does not have
+    expect: >
+      that filter named in `weakened` with its category count, and NOT in
+      `copied`. It arrives present and correctly named and selects nothing,
+      which is invisible until somebody applies it and sees no change
+
+  - given: a filter whose name already exists in this project
+    expect: >
+      that name in `clashed` and every other filter still copied. Revit
+      resolves a clash through a handler that has to be a class, and a fragment
+      is compiled inside a single method
+
+  - given: the source project NOT open
+    expect: >
+      `refused` naming what IS open, and nothing attempted. Guessing at a file
+      on disk is not something to do quietly
+
+  - given: a linked model whose title matches
+    expect: >
+      it not offered as a source. A link is reached through its
+      RevitLinkInstance, and two links can share a title
+
+second_route:
+  - >
+    open Visibility/Graphics in this project and look at the Filters tab. A
+    name being present is not proof: put it on a view and check it actually
+    selects something. A filter that matches nothing looks identical to one
+    that works, in every list that names it
