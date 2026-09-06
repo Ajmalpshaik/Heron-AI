@@ -33,13 +33,15 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**348 fragments. 13 `PROVEN`. 335 below.** D-28's executor is built, and fragments now run against a
+**348 fragments. 14 `PROVEN`. 334 below.** D-28's executor is built, and fragments now run against a
 real model. That is new as of 2026-09-06 and it is the thing every earlier handover was waiting for.
+**On 2026-09-07 every recorded proof was re-run and all thirteen held, and the executor was put in
+front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09-07--the-verification-pass-13-proofs-re-run-135-fragments-through-the-real-compiler).
 
 | | |
 |---|---|
 | Fragments | **348** — every fragment-shaped job in the earlier library, plus five cross-project transfers from PART 5 |
-| Proven | **13**, each on a recorded proof with a negative case and a staleness fingerprint (D-30) |
+| Proven | **14**, each on a recorded proof with a negative case and a staleness fingerprint (D-30). All fourteen fingerprints **FRESH** — checked 2026-09-07, none has gone stale |
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, structure, docs, gaps — all green |
 | Tests | **all pass**, `test_embed` and `test_retrieve` included — they were re-based against the model backend in PART 5, not edited until green. See the note where the warning used to be |
@@ -168,23 +170,31 @@ hours after both stopped being true).
 
 ### What a fresh session should do next, in order
 
-1. **Finish the seven half-proved fragments.** Each needs ONE specific thing opened in Revit, and none
-   can be faked. This is the cheapest real progress available:
+1. **Finish the six half-proved fragments.** `READ_SELECTION` was the seventh and is **done**
+   (2026-09-07). Each of the rest needs ONE specific thing that does not exist in either open model, and
+   none can be faked. **Making one is a minute in Revit and the model need not even be saved — the
+   fragment reads the open document, not the file.** This is the cheapest real progress available:
 
-   | Open this | Finishes |
+   | Make this, in the model already open | Finishes |
    |---|---|
-   | a workshared model with a **CLOSED workset** | strengthens `LIST_WORKSETS` — the one case never seen |
-   | a model with **design options** | `REPORT_DESIGN_OPTIONS` |
-   | a model with a **global parameter driving something** | `REPORT_GLOBAL_PARAMETERS` |
-   | **elements selected** on screen before the run | `READ_SELECTION` |
-   | a face **painted** in a material used nowhere else | `FIND_UNUSED_MATERIALS` — the paint-only case |
-   | a **placed group** plus an unused group definition | `FIND_UNUSED_GROUP_TYPES` |
+   | a **third phase** — Manage ▸ Phases ▸ Insert | `REPORT_PHASES` — both models have only the default two |
+   | **one design option** — Manage ▸ Design Options ▸ New | `REPORT_DESIGN_OPTIONS` — `optionCount` must go 0 → 1 |
+   | **one global parameter** — Manage ▸ Global Parameters ▸ New | `REPORT_GLOBAL_PARAMETERS` — `globalCount` 0 → 1 |
+   | a group, placed, then **delete the placed instance** and keep the definition | `FIND_UNUSED_GROUP_TYPES` — `unusedGroupTypes` 0 → 1 |
+   | a face **painted** in a material used nowhere else | `FIND_UNUSED_MATERIALS` — **the paint-only case, which must NOT be reported unused.** Snowdon's count must go 56 → 55, not 56 → 56 |
+   | a workshared model with a **CLOSED workset** | strengthens `LIST_WORKSETS` — still the one case never seen |
+   | Revit's own **Purge Unused** list, read by eye | `FIND_UNUSED_FAMILIES` — it has both halves already and needs only a second route |
 
-2. **Extend the executor to fragments that take inputs.** 323 of the 343 have never run, because they
+   **Each row above is a PREDICTION, not a hope.** The number it names is what must change; if it does
+   not, that is the finding.
+
+2. **Extend the executor to fragments that take inputs.** 328 of the 348 have never run, because they
    need `elements`, a view or a category — and slice 1 supplies only `doc`, `uidoc` and `app`. This is
    the largest single unlock left, and D-29's contract was designed for exactly it: a filter's
    `provides` feeding an action's `needs`. Bigger than the target-document change, because those inputs
-   are Revit objects rather than strings.
+   are Revit objects rather than strings. **2026-09-07 removed the first risk from this job:** all 135
+   DRAFT READ fragments were put through the real executor, and every name any of them failed on is a
+   name its own contract declares. There is no hidden contract mismatch to find first.
 
 3. **The write path.** `run_fragment_read` opens no transaction on purpose, so Revit itself refuses any
    change. Running a fragment that WRITES is a separate operation that does not exist, and it belongs
@@ -237,6 +247,126 @@ counts what is left; believe it over this file.
 > claimed the two sentences return identical shortlists, which holds in the full library and not in that
 > test's smaller fixture. Measured in one place and asserted in another. The corrected one says what is
 > true there, with the reason.
+
+---
+
+## 2026-09-07 — the verification pass: 13 proofs re-run, 135 fragments through the real compiler
+
+**Nothing was built. Everything already claimed was checked, and it held.** Revit 2024.3 was open on
+the owner's PC with `Snowdon Towers Sample HVAC` (9,628 elements) and, later in the session,
+`Project1 work_ajmal.al` (3,410, a workshared local) — both open at once by the end.
+
+| | |
+|---|---|
+| Recorded proofs re-run | **13 of 13 reproduce** |
+| Fingerprints | **13 of 13 FRESH** — no proof has gone stale |
+| DRAFT READ fragments put through the executor | **135**. 7 ran, 115 stopped on their own declared inputs, 13 cascaded from one. **0 no-replies, 0 unexplained failures** |
+| Contract `provides` checked against what is actually left behind | **20 fragments, 0 broken** |
+| Promoted | **`READ_SELECTION`** — 13 → **14** |
+
+### Every recorded number reproduced, and one looked like a regression until its own proof was read
+
+Each of the 13 was re-run and compared against the numbers written in its `proof:` block. Twelve
+matched to the digit — 11 levels at the same three negative elevations, 15 grids, 17 sheets with M002
+still `(0 views) - EMPTY`, 6 links, 8 external references with 1 unresolved, 145 warnings over 87
+elements in 5 kinds, 13 filters against 30 views with 9 unused, 7 unplaced views against 42 placed,
+8 views without a template of which 3 are issued.
+
+**`LIST_WORKSETS` came back `workshared false, worksetCount 0` against a proof that says `workshared
+true, worksetCount 2`** — and that is not a regression. Its `model:` field says the positive case was
+taken on `Project1 work_ajmal.al` and the negative on Snowdon, so Snowdon returning the negative is the
+proof reproducing. **Reading the whole proof, not just its positive case, is what stopped a correct
+result being filed as a fault** — and when the workshared local came back in front later the same
+session, `workshared true, worksetCount 2, closedCount 0` returned exactly as recorded.
+
+**All three of PART 4's cross-checks hold on both models.** On Snowdon: `LIST_SHEETS` 17 and
+`LIST_REVISIONS` walking sheets its own way to 17; `REPORT_VIEW_FILTERS` 9 unused and
+`FIND_UNUSED_DEFINITIONS` reaching 9 as 8 + 1; `LIST_LINKED_MODELS` 6 and `REPORT_EXTERNAL_REFERENCES`
+8, the difference being the two settings references. On `Project1 work_ajmal.al`: 0 and 0, 6 and 6 + 0,
+0 links against 2 references — the same two. **The caveat is worth stating rather than counting this
+twice: that local was made FROM `Project1`, so it is the same project wearing worksharing, and its
+agreement with `Project1`'s recorded negatives (10 filters, 18 views, 6 unused; 2 references; 2 levels;
+the template's Revision 1 on no sheets) is reproduction, not a third independent model.**
+
+### The executor was put in front of all 135 DRAFT READ fragments, and the contracts are sound
+
+The compile gate wraps every fragment in ONE assembly with every declared need in scope. The executor
+compiles each into its OWN assembly with only `doc`, `uidoc` and `app` supplied — the arrangement that
+hid PART 4's first-line bug. So all 135 were sent through it.
+
+**Every single name any of them failed on is a name its own contract declares.** Not one fragment
+references a variable its `contract.needs` never promised. That is the READ half of D-29's contract
+verified against a compiler rather than by reading, and it means **wiring inputs is now the only work
+left there** — there is no hidden mismatch to find first.
+
+> ### THE TRIAGE RULE WAS WRONG FIRST, AND IT REPORTED 13 DEFECTS THAT ARE NOT DEFECTS
+>
+> The rule was: *a `CS0103` naming a declared need is expected; any other error code is a real defect.*
+> It flagged 13. **All 13 are cascades from the missing input, and the rule cannot tell the difference.**
+>
+> With `services` unsupplied, `foreach (var service in services)` leaves `service` untyped, so `box` is
+> untyped, so `box.Max` no longer resolves to `BoundingBoxXYZ.Max` — and the compiler falls back to the
+> only `Max` it can see, reporting **`CS0119: 'Queryable.Max<TSource>' is a method`**. Same for
+> `comparing.Count` becoming `CS0428`, and `+` on two "method groups" becoming `CS0019`.
+>
+> **A missing identifier in C# does not stay a `CS0103`.** It propagates into unrelated error codes
+> several lines away, on lines that are perfectly correct. Anyone re-running this check will get the
+> same 13; they are `audit-mep-openings`, `check-ceiling-coordination`, `check-equipment-clearance`,
+> `check-sleeve-size`, `check-surface-fit`, `check-valve-accessibility`, `check-vertical-clearance`,
+> `compare-elements`, `probe-around-elements`, `read-ceiling-grid`, `read-room-geometry`,
+> `report-coverage` and `report-location`. **Settled by opening the source at the reported line, which
+> is the only thing that settles it.**
+
+### What a fragment PROMISES and what it LEAVES BEHIND were compared for the first time
+
+`contract.provides` is a promise; the C# is a separate file. Nothing had ever checked them against each
+other. Over the 20 fragments that run with no inputs: **not one fails to leave behind something it
+promises.** Nineteen of twenty leave behind MORE — internal working variables reach the caller, and two
+of them are delegates (`harvest`, an `Action`; `readable`, a `Func`) that serialize to a type name and
+tell the caller nothing. Harmless to D-29's wiring, which matches by name, and worth knowing before
+anybody treats the returned key set as the contract.
+
+### `READ_SELECTION` is proven, and its off-screen answer is a finding rather than a pass
+
+Selected 1,053 duct curves through `select_by_category` — a `FilteredElementCollector` query over the
+model — then read them back through `uidoc.Selection`: **1,053, with `vanished` 0**. Two mechanisms,
+one number. On `Project1 work_ajmal.al`, which has no ducts, both said 0. With nothing selected, both
+models returned a clean zero rather than falling back to everything, to the active view, or to the
+previous run's 1,053.
+
+**What it does NOT establish is written into the proof rather than left out.** Aimed with `--in` at
+Snowdon while the other model was in front, it returned 0 with `active view: (none)` — and whether
+Snowdon's selection was genuinely cleared when it lost the screen, or whether a `UIDocument` built for
+an off-screen document cannot see a selection at all, **was not established.** The caller cannot tell
+those apart from the bare 0 either. **That is the same defect shape `LIST_WORKSETS` names in its own
+negative case:** an empty answer and an unanswerable question must not read alike.
+
+### THE MODEL CHANGED UNDER A RUNNING JOB, AND ONLY THE PRINTED TITLE CAUGHT IT
+
+A job started against Snowdon finished against `Project1 work_ajmal.al`, because the owner switched
+Revit while it ran. **Nothing failed and no number looked wrong** — the run simply described a different
+building. It was caught because the script prints the active document before it does anything, which is
+PART 4's scar (*"the answer always names the document"*) doing its job a day later. **Any script that
+runs against Revit must print the model it read, every time, even when it is only checking.**
+
+### The six that are still half a proof, and exactly what each one needs
+
+Both open models have **no design options, no global parameters, no closed workset, no painted face,
+and exactly the two default phases**. Every one of these ran clean and returned a correct, well-worded
+negative; none can be promoted on a negative alone.
+
+| Fragment | Snowdon | Project1 work | Still needs |
+|---|---|---|---|
+| `REPORT_PHASES` | 2 (Existing, New Construction) | the same 2 | **a third phase** |
+| `REPORT_DESIGN_OPTIONS` | `optionCount 0` | `optionCount 0` | **one design option** |
+| `REPORT_GLOBAL_PARAMETERS` | `globalCount 0`, `allowed true` | the same | **one global parameter** |
+| `FIND_UNUSED_GROUP_TYPES` | `0 unused out of 2 walked` | `0 out of 0` | **a group definition with nothing placed** |
+| `FIND_UNUSED_MATERIALS` | 56 unused of 460 types | 69 of 566 | **a face painted in a material used nowhere else — which must NOT be reported unused.** That is the defect the fragment exists to guard, and it is still unseen |
+| `FIND_UNUSED_FAMILIES` | 94 families, 64 wholly unused | 116, 107 unused | both halves are there; it needs a **second route** — Revit's own Purge Unused list, read by eye |
+| `LIST_WORKSETS` *(already PROVEN)* | not workshared | 2 worksets, both open | **a CLOSED workset** — still the one case never seen |
+
+**None of these can be faked and none needs code.** They are minutes of work in Revit on a model that
+is already open, and each one closes a fragment.
 
 ---
 

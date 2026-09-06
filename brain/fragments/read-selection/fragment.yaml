@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -42,6 +42,49 @@ contract:
       type: int
     - name: vanished
       type: IList<ElementId>
+
+proof:
+  date: "2026-09-07"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Revit 2024.3, session 29340. Positive on 'Snowdon Towers Sample HVAC.rvt'
+    (9,628 elements), which was the only model this session had seen at that
+    point. Negative on the same model, and again on 'Project1 work_ajmal.al'
+    (3,410 elements, a workshared local) after the owner opened it - by the end
+    of the session both were open at once, which is when the off-screen reading
+    below was taken.
+  positive_case: >
+    1,053 duct curves selected, and the fragment read back selectionCount
+    1053, picked 1053 ids, elements 1053, vanished 0. Nothing was lost between
+    the selection being made and the fragment reading it.
+  negative_case: >
+    With nothing selected the same build returned selectionCount 0, elements
+    0, picked 0, vanished 0 - on BOTH models, in the same session. An empty
+    selection reads as empty rather than falling back to everything, to the
+    active view, or to the previous run's 1,053. Selecting a category the
+    model does not contain gives the same honest zero: 'ducts' on Project1
+    work_ajmal.al matched nothing, and the fragment agreed at 0.
+  second_route: >
+    select_by_category is a different bridge operation reaching the answer
+    from the other side - a FilteredElementCollector query over the MODEL,
+    where this fragment reads the UI selection store. The two agreed on both
+    models in the same session: 1053 and 1053 on Snowdon, 0 and 0 on Project1
+    work_ajmal.al. Two mechanisms, one number, twice.
+
+    NOT YET SEEN: a NON-ZERO `vanished`. That list exists for ids that were
+    selected and then stopped resolving, and it has been 0 on every run - the
+    case that makes it worth having needs an element deleted between the
+    selection and the read, which no read-only pass can arrange.
+
+    AND NOT ESTABLISHED: THIS ANSWER IS ONLY TRUE OF THE DOCUMENT ON SCREEN.
+    Aimed with `--in` at Snowdon while Project1 work_ajmal.al was in front, it
+    returned 0 with `active view: (none)`. Whether Snowdon's selection was
+    genuinely cleared when it lost the screen, or whether a UIDocument built
+    for an off-screen document cannot see a selection at all, was NOT
+    established - and the two are indistinguishable from the bare 0 the caller
+    gets. That is the same defect shape LIST_WORKSETS names in its own negative
+    case: an empty answer and an unanswerable question must not read alike.
+  fingerprint: "f2a532d431d20723"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
