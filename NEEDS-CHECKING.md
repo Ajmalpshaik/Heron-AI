@@ -171,7 +171,7 @@ during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is
 | ~~**B2**~~ | ~~Look at the panel~~ | **DONE 2026-09-06, twice.** First as *two* controls. Re-checked after Emergency Stop was removed ([D-46](docs/DECISIONS.md)): the panel showed **one** control, as intended. Revit 2020 and 2024 were both open at that moment and which one was looked at was not established — the two carry the same source, so this proves the ribbon is right, not which release it is right on |
 | ~~**B2a**~~ | ~~Click the arrow under Heron~~ | **DONE 2026-09-06.** The list opens with Bridge Status in it |
 | ~~**B2b**~~ | ~~Pick Bridge Status, then look at the top of the split button~~ | **DONE 2026-09-06.** Top stayed **Heron**, icon intact. `IsSynchronizedWithCurrentItem = false` does take effect in a real Revit, which a compile could not have told us. **The release it was run on was not recorded** — re-run on the other two before this counts for all of 2020-2027 |
-| **B3** | Press Heron | Connects, icon lights, as before. Step 5 behaviour must not have regressed |
+| ~~**B3**~~ | ~~Press Heron~~ | **DONE 2026-09-06.** Connects, icon lights, goes dark again on the second press. The state indicator survived the move into a split button — which is what `IsSynchronizedWithCurrentItem = false` was there to protect, now proven from the user's side rather than from the flag |
 | **B3a** | Press Heron again to disconnect, then re-open the arrow and pick Bridge Status | Says **Not connected** — the item inside the list still runs its own command, it did not become part of the toggle |
 | **B4** | `python mcp/client/heron_bridge_client.py ping` then `count` | Both answer, as they did before Step 6 |
 
