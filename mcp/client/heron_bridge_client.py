@@ -685,7 +685,7 @@ def cmd_fragment(name):
     return 1 if failures else 0
 
 
-def cmd_prove(names):
+def cmd_prove(names, in_document=None):
     """
     Run several fragments against the open model in ONE process.
 
@@ -755,8 +755,12 @@ def cmd_prove(names):
 
     failures = 0
     for name, source in sources:
+        args = {"name": name, "source": source}
+        if in_document:
+            args["document"] = in_document
+
         reply = bridge.request("run_fragment_read",
-                               op_args={"name": name, "source": source},
+                               op_args=args,
                                response_timeout=180.0)
 
         if reply is None:
@@ -774,8 +778,13 @@ def cmd_prove(names):
 
         if named_document is None:
             named_document = reply.get("document") or "(unnamed)"
-            print("model: %s   active view: %s" % (
+            print("read:   %s   active view: %s" % (
                 named_document, reply.get("activeView") or "(none)"))
+            if reply.get("wasActiveDocument") is False:
+                # Everything below is TRUE of a model nobody is looking at, and
+                # anything about a selection or an active view is about a
+                # window that is not on screen.
+                print("        NOT the document on screen - read by name.")
             print("")
 
         provides = reply.get("provides") or {}

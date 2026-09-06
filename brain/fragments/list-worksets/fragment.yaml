@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-WRK-014
 heron-step: 15
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -37,6 +37,33 @@ contract:
       type: int
     - name: workshared
       type: bool
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Positive on 'Project1 work_ajmal.al' - a WORKSHARED local file, Revit
+    2024.3. Negative on 'Snowdon Towers Sample HVAC.rvt' (9,628 elements) and
+    on the same project before it was made workshared.
+  positive_case: >
+    workshared true, worksetCount 2, and both named with their owner and their
+    open state - 'Shared Levels and Grids - open, owned by ajmal.al' and
+    'Workset1 - open, owned by ajmal.al'. closedCount 0, which is the count
+    that decides whether any other query in the session is quietly returning
+    less than the truth.
+  negative_case: >
+    On a model that is not workshared it returns worksetCount 0 with
+    workshared false AND THE REASON - 'this model is not workshared, so it has
+    no worksets'. That is the distinction that matters: an empty list and a
+    model that cannot have worksets read identically as a bare zero, and only
+    one of them means somebody should go looking.
+  second_route: >
+    Revit's own Collaborate > Worksets dialog lists the same two worksets with
+    the same owner and open state, and the status bar names the active one.
+    NOT YET SEEN: a CLOSED workset. closedCount is reported and was 0 on every
+    model run; the case where it is non-zero - the one that makes a query
+    silently return less - has not been put in front of this fragment.
+  fingerprint: "95fdda9eb9244272"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
