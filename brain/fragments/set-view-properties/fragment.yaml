@@ -45,6 +45,7 @@ contract:
       type: Document
     - name: views
       type: IList<View>
+      source: request
     - name: scale
       type: int
       source: request

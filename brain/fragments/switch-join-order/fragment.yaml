@@ -46,8 +46,10 @@ contract:
       type: Document
     - name: first
       type: IList<Element>
+      binds: elements
     - name: second
       type: IList<Element>
+      binds: elements
   provides:
     - name: switched
       type: int

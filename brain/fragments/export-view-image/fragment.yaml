@@ -43,6 +43,7 @@ contract:
       type: Document
     - name: views
       type: IList<View>
+      source: request
     - name: folder
       type: string
       source: request

@@ -55,6 +55,7 @@ contract:
       type: Document
     - name: imports
       type: IList<Element>
+      binds: elements
     - name: layerNames
       type: IList<string>
       source: request
