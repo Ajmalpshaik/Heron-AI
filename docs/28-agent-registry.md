@@ -66,7 +66,7 @@ Roughly two thirds never call a model at all.
 | `HERON-REVIT-ACI-034` | **API Change Intelligence Agent** | Continuously tracks what changed between Revit versions — deprecated and renamed APIs, changed methods, parameters, units, namespaces, and silent behavioural changes. Feeds Fragment Evolution before a version breaks something ↗ | T2 | READ | — |
 | `HERON-REVIT-CMP-021` | Revit Compatibility Agent | Will this fragment run on this Revit version | T1 | READ | — |
 | `HERON-REVIT-UI-022` | Revit UI Agent | Task dialogs, progress banner, the picker. **The picker lives in the chat, not in Revit** - that is where the question is being asked, and a second one inside Revit would be a copy nobody uses. The progress banner waits for Step 6, when something is finally slow enough to need it | T1 | READ | 5 |
-| `HERON-REVIT-RIB-023` | Revit Ribbon Agent | Ribbon tab, panels, buttons — including Emergency Stop | T1 | READ | 1 |
+| `HERON-REVIT-RIB-023` | Revit Ribbon Agent | Ribbon tab, panels, buttons. **No Emergency Stop button since 2026-09-06** ([D-46](DECISIONS.md)) | T1 | READ | 1 |
 | `HERON-REVIT-DEP-024` | Revit Deployment Agent | Builds and deploys the add-in per version | T1 | ADMIN | 1 |
 | `HERON-REVIT-UNI-035` | **Unit Conversion Agent** | Owns the boundary between Revit's internal **decimal feet** and everything a user says. Lengths, angles, areas, volumes. Converts once, at one place, and **states the unit in every result** ↗ | T1 | READ | 4 |
 | `HERON-REVIT-RBK-036` | **Session Rollback Agent** | The panic button. Reverses **everything Heron did this session**, newest first, using the audit log's transaction groups. Distinct from Transaction Safety, which owns one operation ↗ | T1 | MODIFY | — |
@@ -435,7 +435,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-OPS-HLT-004` | Platform Health Agent | HEALTHY / WARNING / DEGRADED / FAILED across every component | T1 | READ | 3 |
 | `HERON-OPS-DIA-005` | Self-Diagnostics Agent | *"Diagnose Heron"* — one clean report | T1 | READ | — |
 | `HERON-OPS-HEA-006` | Self-Healing Agent | Repairs **derived** state freely; proposes everything else | T1 | MODIFY | — |
-| `HERON-OPS-STP-007` | **Emergency Stop Agent** | Global halt from the ribbon. Works when the agent side is stuck. Sticky ↗ | T1 | READ | **6** |
+| `HERON-OPS-STP-007` | **Emergency Stop Agent** | Global halt. Sticky. **No trigger since 2026-09-06** — the ribbon button was removed ([D-46](DECISIONS.md)); the gates it feeds are still in place ↗ | T1 | READ | **6** |
 | `HERON-OPS-SHD-012` | **Shadow Execution Agent** | The harness, not the teacher. Runs a candidate **in parallel** with the production one, captures both results, and guarantees the candidate can modify nothing. Works for fragments and workflows, not only agents ↗ | T1 | READ | — |
 | `HERON-OPS-SAF-008` | Safe Mode Agent | Disables recent components, returns to last-known-good | T1 | ADMIN | — |
 | `HERON-OPS-FLG-009` | Feature Flag Agent | Flags for staged rollout and shadow running | T1 | ADMIN | — |

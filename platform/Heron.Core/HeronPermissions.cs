@@ -115,7 +115,9 @@ namespace Heron.Core
                    "to Revit. This is the default, and while the write path has never been " +
                    "run against a real model it is the right default. To turn it on, set " +
                    WriteEnabledKey + " = true in " + HeronConfig.FilePath +
-                   " and restart Revit.";
+                   ". It takes effect straight away - Allows() reads that file fresh every " +
+                   "time, so there is nothing to restart. Setting it back to false stops " +
+                   "Heron changing anything again, just as immediately.";
         }
     }
 }

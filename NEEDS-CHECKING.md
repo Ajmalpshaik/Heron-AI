@@ -168,7 +168,7 @@ during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **B1** | Start Revit 2020 | The **Heron AI** tab is there |
-| ~~**B2**~~ | ~~Look at the panel~~ | **DONE 2026-09-06.** Two controls, as intended |
+| ~~**B2**~~ | ~~Look at the panel~~ | **DONE 2026-09-06** as *two* controls. Emergency Stop was removed the same day ([D-46](docs/DECISIONS.md)), so the pass is now **one** control: **Heron** with an arrow. Re-check |
 | ~~**B2a**~~ | ~~Click the arrow under Heron~~ | **DONE 2026-09-06.** The list opens with Bridge Status in it |
 | ~~**B2b**~~ | ~~Pick Bridge Status, then look at the top of the split button~~ | **DONE 2026-09-06.** Top stayed **Heron**, icon intact. `IsSynchronizedWithCurrentItem = false` does take effect in a real Revit, which a compile could not have told us. **The release it was run on was not recorded** — re-run on the other two before this counts for all of 2020-2027 |
 | **B3** | Press Heron | Connects, icon lights, as before. Step 5 behaviour must not have regressed |
@@ -187,13 +187,13 @@ useless.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| **C1** | Press Emergency Stop | Dialog says Heron is stopped, **and** says it cannot interrupt something already running, **and** names Ctrl+Z |
-| **C2** | Press it again | Says Heron can work again |
+| ~~**C1**~~ | ~~Press Emergency Stop~~ | **CANNOT BE RUN from 2026-09-06.** The button was removed ([D-46](docs/DECISIONS.md)). `HeronStop` and both gates survive, but nothing can switch the stop on, so this step has no way to start |
+| ~~**C2**~~ | ~~Press it again~~ | **CANNOT BE RUN.** Same reason |
 | **C3** | With `write.enabled` still **false** (the default — do not change it yet), ask to move ducts | **Refuses**, and names `write.enabled` and the config file path. Nothing goes to Revit |
-| **C4** | Press Emergency Stop on, then ask to move ducts | Refuses because of the stop, not because of the permission — two different refusals, and the message must say which |
+| ~~**C4**~~ | ~~Press Emergency Stop on, then ask to move ducts~~ | **CANNOT BE RUN.** The two refusals are still written and still distinct in the code ([RevitOperations.cs](revit/Heron.Revit.Addin/RevitOperations.cs)), but with no way to set the stop, only the permission refusal can be reached. **Untested from here on** |
 | **C5** | With `write.enabled` still false, ask to **select** ducts | **Works.** The gate blocks MODIFY, not READ or EXECUTE — if selecting is refused, the levels are wrong |
-| **C6** | Press Emergency Stop on, then ask to **count** elements | **Works.** The stop blocks changes only; taking away the read tools at the moment somebody is diagnosing would be the wrong help |
-| **C7** | Now set `write.enabled = true` in `%APPDATA%\Heron\config\heron.config`, restart Revit | — |
+| ~~**C6**~~ | ~~Press Emergency Stop on, then ask to **count** elements~~ | **CANNOT BE RUN.** Same reason. The rule it proved — the stop blocks changes only, never reads — is still in the code and is now **unproven by test** |
+| **C7** | Now set `write.enabled = true` in `%APPDATA%\Heron\config\heron.config`. **No restart** — `HeronPermissions.Allows` reads that file fresh on every check, so the change lands on the next request. The instruction to restart was here, and in the refusal message, until 2026-09-06; both said it, neither needed it | — |
 | **C8** | Ask to move ducts again | **It is now permitted** (a preview appears). If it still refuses, `write.enabled` is not being read — that exact bug existed until 2026-08-28: the key was read but never *declared*, so `Load()` dropped it silently and the refusal told you to set the thing you had just set |
 | **C9** | `revit_health` | First line is a four-state rollup — `Heron: HEALTHY / WARNING / DEGRADED / FAILED`. With writing on it must show **WARNING** on the write gate and say the path is unproven |
 | **C10** | Set `revit.operationTimeoutSeconds = 120`, restart Revit, then make Revit busy long enough to time out | The message is *"Revit started the request but has not finished"* — **not** *"no answer"*. Proves the client's deadline follows the add-in's setting instead of the old hardcoded 90 s |
