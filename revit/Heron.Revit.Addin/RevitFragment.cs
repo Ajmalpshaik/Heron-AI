@@ -30,6 +30,12 @@ namespace Heron.Revit.Addin
     /// own file beside RevitWrite.cs, so that everything able to change a
     /// model stays in one place a reviewer can read end to end.
     ///
+    /// WHAT A FRAGMENT FINDS IN SCOPE IS HeronFragmentGlobals, and it is a
+    /// public TOP-LEVEL type for a reason found by running this rather than by
+    /// reading it: a script compiles into its OWN assembly, so a globals type
+    /// nested inside this internal class was unreachable and every fragment
+    /// failed on the line naming `doc`. Read that file before moving it back.
+    ///
     /// THE IMPORTS ARE A CONTRACT WITH tools/check-fragments-compile.py.
     /// That gate compiles every fragment against a fixed set of namespaces and
     /// says so in its own comment: a namespace declared there and not here
@@ -38,21 +44,6 @@ namespace Heron.Revit.Addin
     /// </summary>
     internal static class RevitFragment
     {
-        /// <summary>
-        /// What a fragment may assume is already in scope.
-        ///
-        /// Roslyn exposes the PUBLIC FIELDS of the globals object as bare
-        /// identifiers inside the script, which is exactly the shape a
-        /// fragment is written in - it assumes `doc` and leaves `elements`
-        /// behind, with no wrapper of its own.
-        /// </summary>
-        public sealed class FragmentGlobals
-        {
-            public Document doc;
-            public UIDocument uidoc;
-            public Autodesk.Revit.ApplicationServices.Application app;
-        }
-
         /// <summary>
         /// Compiled scripts, keyed by the source itself.
         ///
@@ -85,7 +76,7 @@ namespace Heron.Revit.Addin
                     "No model is open in Revit, so there is nothing for a fragment to read.");
             }
 
-            var globals = new FragmentGlobals
+            var globals = new HeronFragmentGlobals
             {
                 doc = uidoc.Document,
                 uidoc = uidoc,
@@ -152,7 +143,7 @@ namespace Heron.Revit.Addin
                     "Could not set up the script host: " + Innermost(failure).Message);
             }
 
-            var candidate = CSharpScript.Create<object>(source, options, typeof(FragmentGlobals));
+            var candidate = CSharpScript.Create<object>(source, options, typeof(HeronFragmentGlobals));
 
             var diagnostics = candidate.Compile();
 
