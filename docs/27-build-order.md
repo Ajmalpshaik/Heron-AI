@@ -371,6 +371,34 @@ cheaper than discovering it in week two.
 
 ---
 
+## Steps 15, 16 and 17 — recorded 2026-09-06, because they were in use and were not written down
+
+**These three steps were never planned here. They were found in the metadata, on 180 fragments.** This
+document stopped at Step 14 while `heron-step:` headers went on to 15, 16 and 17 — so every one of those
+fragments cited a step that this file, the file that defines what a step *is*, did not contain.
+
+| Step | Fragments | What it actually was |
+|---|---|---|
+| 14 | 147 | The first library push, tagged with the step that was current when it began |
+| 15 | 14 | A small creators cluster — grids, levels, lines, HVAC zones |
+| 16 | 8 | A second small cluster — grid, plan view, view filter, IFC export |
+| 17 | 158 | Everything from 2026-09-02 onward, including the 274 → 329 batch |
+
+**They are batch markers, not steps.** Unlike Steps 1 to 14, none of them names a capability that did not
+exist before it, and none carries a *"prove it"* clause of its own. What they record is *when* a fragment
+was written — which the git history already knew.
+
+**That is worth stating rather than tidying away.** Phase 2's definition of done was declared met on
+2026-08-29 and the work did not stop; it carried on for another week under numbers nobody had defined. In
+a header, a step number meaning *"roughly when"* looks identical to one meaning *"this capability now
+exists"*, and only this table tells them apart.
+
+**If a future batch needs a number, define it here first.** The metadata standard
+([29](29-metadata-standard.md)) requires the header, but nothing was checking that its value pointed at a
+step that exists — which is how three of them came to.
+
+---
+
 ## Honest scale — Phase 2
 
 | Step | Roughly |

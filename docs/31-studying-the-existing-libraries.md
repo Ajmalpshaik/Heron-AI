@@ -33,6 +33,41 @@ Read once, on 2026-08-28, to size the job rather than to take anything:
 | The largest areas | sheets and views (54), reporting (43), structural changes (33), QA checks (30), colour and graphics (25), parameters and naming (21) |
 | **12** skills | the real jobs: HVAC terminal layout, space airflow, duct routing, fire sprinkler layout, MEP grayout, connectivity verify, MEP trace, family creation, visual reporting |
 
+### The full sweep, 2026-09-06 — every eligible file read, and what is left
+
+The 2026-08-28 sizing above was a read to *size* the job. On 2026-09-06 the library was put on the
+owner's machine at `D:\Ajmal\AJ AI Brain`, and every eligible file was read and classified: twelve
+readers, one source folder each, then a second agent per claim told to **refute** it.
+
+| Read | Already covered by Heron | Impossible via the API | **Genuinely missing** |
+|---|---|---|---|
+| **330** | 316 | 4 | **9** |
+
+Of the 398 files, **68 were never fragment work** — 44 `recipes/` (these become skills), 12 `context/`
+([D-46](DECISIONS.md)), 8 `commands/` (native Revit commands), 3 `examples/` and 1 `lib/`. That leaves
+the 330 above. Ten claims were raised; one was refuted; **nine stand:**
+
+| Source | The job, and why nothing here covers it |
+|---|---|
+| `reporting/action-plan-shortest-route` | Compute the cheapest way to connect a loose set of points and report the ORDER plus total run length — tree (MST), chain (2-opt), or finishing each room before moving on. **Nothing in the library decides an order.** `CREATE_ELECTRICAL_RUN` consumes points already sequenced and `RENUMBER_SEQUENTIAL` states outright that it does not choose the order — so both currently depend on a human to supply what this would compute |
+| `sheets-views/action-set-view-properties` | Set a VIEW's **Phase and Phase Filter** in bulk. `SET_VIEW_PROPERTIES` was re-authored narrower — scale, detail level, visual style — and `SET_ELEMENT_PHASE` writes elements, not views |
+| `structural-changes/action-auto-size-pipe` | Size pipes from the flow they already carry — bore = flow / target velocity, snapped UP to a real size, reporting resulting velocity |
+| `structural-changes/action-batch-upgrade-revit-files` | Upgrade a FOLDER of `.rfa` / `.rft` / `.rte` to the running Revit, as windowless background documents |
+| `structural-changes/action-purge-unused` | Report unused content beyond view templates and filters — materials nothing references (paint-only use included) and GroupTypes with no placed instance |
+| `qa-checks/action-check-open-pipe-ends` | Cap open pipe ends via `PlumbingUtils.PlaceCapOnOpenEnds`, sized and connected |
+| `creators/create-dimension` | One dimension string across Grids and/or Levels — the setting-out dimension |
+| `filters/filter-by-types` | Return the TYPE elements themselves (`FamilySymbol`, `DuctType`, `WallType`) as an actionable set |
+| `filters/filter-by-view-templates` | Return View Templates themselves as an actionable set, narrowed by name and by usage |
+
+**Why this needed doing at all.** [`HANDOVER.md`](../HANDOVER.md) had recorded the library as
+**EXHAUSTED of fragment-shaped work**. That was an estimate standing in for a count: roughly 60 were
+judged worth adding, 55 were built, and 60 minus 55 was treated as "finished". **Nobody read the
+remaining files.** The denominators were right; the conclusion was not.
+
+**The lesson is the one this repository keeps relearning.** A number derived by subtraction is not a
+measurement. `tools/check-gaps.py` exists because counts asserted by hand drift; this is the same
+failure one level up — a *conclusion* asserted by hand, about work nobody had looked at.
+
 **The shape confirms [D-29](DECISIONS.md) rather than merely agreeing with it.** That library
 independently arrived at filter + action + recipe — the same three kinds, for the same reason: most
 requests split into *which elements* and *what to do to them*, and the ones that genuinely cannot be
