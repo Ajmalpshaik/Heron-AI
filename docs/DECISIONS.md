@@ -92,6 +92,7 @@ an edit.
 | [D-43](#d-43--the-constitution-is-accepted--all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
 | [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted |
 | [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases) | Heron tracks the MCP SDK across major versions, the way it tracks Revit releases | ✅ Accepted |
+| [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays) | The Emergency Stop button is removed, the switch behind it stays | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -2306,3 +2307,61 @@ unproven on the version everyone will be running tomorrow.
 - **This generalises past the MCP SDK.** Heron's other outside dependencies — `pyyaml`, the optional
   `model2vec` — get the same treatment: absent is a normal condition, present-but-different is
   discovered, and neither may take the whole system down without saying which one it was.
+
+---
+
+## D-46 — The Emergency Stop button is removed, the switch behind it stays
+
+**Status:** Accepted · **Date:** 2026-09-06 · **Supersedes:** the ribbon placement in
+[21 §4](21-resilience-and-operations.md) and the Part 2 acceptance row above
+
+### Context
+
+Emergency Stop was recorded in five places as a **Revit ribbon button**: [21 §4](21-resilience-and-operations.md),
+the Part 2 acceptance table in this log, [the glossary](15-glossary.md), [the roadmap](ROADMAP.md) and
+`HERON-OPS-STP-007` in [the agent registry](28-agent-registry.md). It shipped in Step 6 and was on the
+ribbon from then until today.
+
+On 2026-09-06 Ajmal asked what it was for. The case for it was put to him in full and unhedged — that a
+stop built inside the agent system is useless when that system is stuck, that it is checked at two
+separate gates before anything reaches a model, that it is sticky until a person clears it, and that it
+honestly cannot interrupt a Revit API call already running. **He read that and decided he did not want
+the button.** He was equally explicit about the scope: the button goes, the code behind it stays —
+*"behind that we have something programming related that we created before, that function we need."*
+
+### Decision
+
+**The ribbon carries no Emergency Stop button. Everything behind it is untouched.**
+
+`HeronStop`, the gate in `RevitOperations.Gate` that refuses anything at `Modify` risk or above, the
+second gate in `RevitWrite.Refuse`, and `EmergencyStopCommand` itself all remain exactly as they were.
+One `PushButtonData` in `HeronApplication.BuildRibbon` puts the button back.
+
+### What this costs, stated plainly
+
+- **Nothing can switch the stop on any more.** `EmergencyStopCommand` was its only caller, and it is now
+  reachable from nowhere. `HeronStop.IsStopped` is false for ever, so both gates are inert.
+- **Heron has no emergency stop a person can press.** The first of [21 §4](21-resilience-and-operations.md)'s
+  three requirements — *reachable when Heron is misbehaving* — is met by nothing today. That is the
+  honest reading and it must not be softened anywhere in this repository.
+- **The file-based kill switch that 21 §4 pairs with the button was never built.** Until it is, the
+  mechanism kept here has no trigger at all.
+- **`C1`, `C2`, `C4` and `C6` in [NEEDS-CHECKING.md](../NEEDS-CHECKING.md) can no longer be run.** The
+  rule `C6` existed to prove — the stop blocks changes only and never reads — is still written in the
+  code and is now **unproven by test**.
+
+### What this does not cost
+
+**Writes are not left unguarded.** The permission gate is a separate mechanism from the stop and is
+untouched: `write.enabled` is `false` by default, so `Modify` is still refused for a reason that has
+nothing to do with Emergency Stop. `C3`, `C5`, `C7` and `C8` still run and still prove it.
+
+And **Ctrl+Z is still what reverses a change that already happened.** It always was — the button never
+could.
+
+### Why the code was kept rather than deleted
+
+Deleting `EmergencyStopCommand` would remove the entire trigger side of a mechanism the owner asked to
+keep, leaving gates that read a flag nothing could ever set and no obvious way back. Keeping it costs one
+unreferenced class and makes restoring the button a one-line change. **Read this entry before deleting it
+as dead code** — it is unreferenced on purpose, not by oversight.

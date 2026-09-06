@@ -115,10 +115,19 @@ namespace Heron.Revit.Addin
     /// Emergency Stop. Stops Heron changing anything further, and lets it
     /// work again on a second press.
     ///
-    /// It is a ribbon button rather than a chat command because of WHEN it is
-    /// needed: the user is looking at Revit, something is happening they did
-    /// not mean, and the last thing that should stand between them and
-    /// stopping it is finding a window and composing a sentence.
+    /// NOTHING CALLS THIS TODAY. The ribbon button was removed on
+    /// 2026-09-06 (D-46), so this command is reachable from nowhere and
+    /// HeronStop can no longer be switched on by anybody. The class is
+    /// kept deliberately, not by oversight: it is the whole trigger side
+    /// of the stop, and one PushButtonData in HeronApplication.BuildRibbon
+    /// puts it back. Read D-46 before deleting it.
+    ///
+    /// It was a ribbon button rather than a chat command because of WHEN it
+    /// is needed: the user is looking at Revit, something is happening they
+    /// did not mean, and the last thing that should stand between them and
+    /// stopping it is finding a window and composing a sentence. That
+    /// argument is unchanged; what changed is that the owner decided he did
+    /// not want the button.
     ///
     /// The dialog is honest about the limit. This stops the NEXT thing Heron
     /// would do; it cannot reach into a Revit API call already running. If

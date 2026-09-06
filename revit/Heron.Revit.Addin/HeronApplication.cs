@@ -178,26 +178,10 @@ namespace Heron.Revit.Addin
                 typeof(StatusCommand).FullName);
             status.ToolTip = "Show whether the bridge is running, and on which pipe.";
 
-            // In front of the user, on the ribbon, because of WHEN it is
-            // needed: something is happening in the model that they did not
-            // mean, and reaching for a chat window is the wrong ask.
-            var stop = new PushButtonData(
-                "HeronEmergencyStop",
-                "Emergency\nStop",
-                assemblyPath,
-                typeof(EmergencyStopCommand).FullName);
-            stop.ToolTip = "Stop Heron changing anything. Press again to let it work.";
-            stop.LongDescription =
-                "Stops the next thing Heron would do to the model, and everything after it, " +
-                "until you press this again.\n\n" +
-                "It cannot interrupt something Revit has already started. If a change has " +
-                "already happened, Ctrl+Z in Revit is what puts it back.";
-
             // Connecting and asking about the connection are the same subject
             // at two depths, so they are one control rather than two buttons.
             // The top half is the toggle, pressed constantly; the arrow holds
-            // the detail, wanted only when something looks wrong. Emergency
-            // Stop is deliberately NOT in here - see its comment above.
+            // the detail, wanted only when something looks wrong.
             var bridgeGroup = panel.AddItem(
                 new SplitButtonData("HeronBridge", "Heron")) as SplitButton;
 
@@ -219,7 +203,18 @@ namespace Heron.Revit.Addin
             // this afterwards when it does.
             SetBridgeIcon(false);
 
-            panel.AddItem(stop);
+            // NO EMERGENCY STOP BUTTON - removed on Ajmal's instruction,
+            // 2026-09-06 (D-46 in docs/DECISIONS.md). The switch behind it
+            // survives on purpose: HeronStop and both gates that read it are
+            // untouched, and EmergencyStopCommand is still a working command
+            // that one AddItem here would put back.
+            //
+            // Be honest about what that leaves. Nothing can SET the stop any
+            // more, so today it is a gate that will never close. It is kept
+            // for the file-based kill switch docs/21 section 4 describes and
+            // which was never built - NOT because there is a working
+            // emergency stop. Do not delete it as dead code without reading
+            // D-46 first.
         }
 
         /// <summary>

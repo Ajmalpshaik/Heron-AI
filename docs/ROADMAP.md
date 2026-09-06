@@ -129,7 +129,7 @@ six phases of code assume one runtime.
 - **Revit Context Agent** — document, version, view, selection, links, worksets, phase *(Part 4 §13)*
 - **Workflow Engine** with retries, timeouts, rollback and **checkpoints** *([23 §3–4](23-heron-kernel.md))*
 - **Evidence System** — every important decision states its reasons *([23 §6](23-heron-kernel.md))*
-- **Emergency Stop** in the Revit ribbon — works even when the agent side is stuck
+- ~~**Emergency Stop** in the Revit ribbon~~ — built in Step 6, **button removed 2026-09-06** ([D-46](DECISIONS.md)). `HeronStop` and both gates remain; they have no trigger until the file-based kill switch of [21 §4](21-resilience-and-operations.md) is built
   *([21 §4](21-resilience-and-operations.md))*
 - Failure handling that does not retry blindly
 - **Golden Test Library** started — it only has value if it grows from day one *(Part 4 §28)*

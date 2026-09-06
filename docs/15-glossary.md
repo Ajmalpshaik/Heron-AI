@@ -68,7 +68,7 @@ during review, the defining document is linked.
 | **Prompt/Instruction Registry** | One versioned, testable home for all system and agent instructions — never scattered through code. [23 §9](23-heron-kernel.md) |
 | **Dependency graph** | Skills → fragments → API → runtime → packages. Makes the blast radius of a change computable instead of requiring a full test sweep. [21 §1](21-resilience-and-operations.md) |
 | **Shadow Mode** | A new agent or fragment runs on real requests with its **output discarded**, so evidence accrues without risk. [18 §4](18-agent-operating-system.md) |
-| **Emergency Stop** | Global halt, in the Revit ribbon so it works when the agent side is stuck. Sticky until a person restarts. [21 §4](21-resilience-and-operations.md) |
+| **Emergency Stop** | Global halt. Sticky until a person clears it. **The ribbon button was removed 2026-09-06 ([D-46](DECISIONS.md)) and nothing can switch it on today** — the gates survive, the trigger does not. [21 §4](21-resilience-and-operations.md) |
 | **Safe Mode** | Disables recently installed components and returns to last-known-good. [21](21-resilience-and-operations.md) |
 | **Workflow ID** | The correlation key tying one user sentence to every agent, retrieval, model call and element touched. [21 §13](21-resilience-and-operations.md) |
 | **Constitution** | The runtime-enforceable subset of the Golden Rules, written as prohibitions and injected into agents. [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) |
