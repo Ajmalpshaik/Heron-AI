@@ -1,0 +1,62 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one 600x400 rectangular duct 3 m long, bands and thickness supplied
+    expect: >
+      the sheet area equal to 2 x (0.6 + 0.4) x 3 = 6 m2, and the weight equal
+      to that area times the band thickness times the density. Do this one by
+      hand before running it over a floor - it is four numbers and it is the
+      only check that proves the arithmetic
+
+  - given: a round duct
+    expect: >
+      pi x diameter x length as the area, and `bandUsed` naming a ROUND band.
+      A round duct matched against a rectangular band is a wrong answer that
+      looks entirely plausible
+
+  - given: a run of ducts that all carry Revit's own surface area
+    expect: >
+      `areaChecked` equal to the number of ducts and `areaDifference` near
+      zero. That is two independent calculations agreeing, and it is what makes
+      the weight quotable
+
+  - given: a duct whose type states its shape
+    expect: >
+      nothing in `shapeInferred`. Every id that appears there is a duct whose
+      shape was guessed, and that guess is where this goes wrong
+
+negative:
+  - given: an OVAL duct, which carries width, height AND diameter
+    expect: >
+      an oval perimeter, not a round one. If the area comes out as pi x
+      diameter x length the shape test ran in the wrong order, and every oval
+      in the model is being weighed as a circle
+
+  - given: a duct larger than the largest band supplied
+    expect: >
+      its id in `outsideBands` and NO weight for it. A duct silently given the
+      last band would be under-gauged, and the total would look complete
+
+  - given: cable tray or conduit, which has no surface area parameter
+    expect: >
+      `areaChecked` smaller than the number of elements, and `areaDifference`
+      computed only from the ones that carry both figures. A comparison that
+      counts the computed area of a duct Revit has no area for reports a
+      disagreement that is not there
+
+  - given: sizeBandsMm with four entries and thicknessMm with three
+    expect: >
+      only the three complete pairs used, and no throw. A caller's mismatched
+      table must not lose the run
+
+  - given: an element with no length parameter at all - a fitting, an air terminal
+    expect: >
+      its id in `unsized` and no row in `weights`. A fitting counted as zero
+      length would report the run as fully costed when the bends are missing
+
+second_route:
+  - >
+    build a Revit duct schedule with Length and Area, total it, and compare
+    against `sheetAreas` converted to the same unit. Revit's own schedule is
+    the second route - and where it disagrees, `areaDifference` has already
+    said so

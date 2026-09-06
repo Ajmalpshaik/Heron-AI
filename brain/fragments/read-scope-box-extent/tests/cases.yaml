@@ -1,0 +1,41 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a model with a scope box named Podium
+    expect: >
+      its two corners in millimetres and the size in the finding. Check the
+      figures against the scope box's own extents dragged in a plan
+
+  - given: those corners handed to SELECT_IN_REGION
+    expect: >
+      the elements inside the box. The two compose with nothing in between,
+      which is what the millimetre unit is for
+
+  - given: a partial name that matches one box
+    expect: >
+      that box found. A partial name is what somebody types
+
+negative:
+  - given: a name matching TWO scope boxes
+    expect: >
+      nothing returned and a finding naming both. Picking the first answers
+      about the wrong half of a building, and looks entirely successful
+
+  - given: a name that matches no scope box
+    expect: >
+      a finding saying so - and saying that one has to be drawn by hand,
+      because none can be created from code on any release
+
+  - given: a model with no scope boxes at all
+    expect: >
+      that stated as its own finding, distinct from "your name did not match"
+
+  - given: a scope box with no readable extent
+    expect: >
+      the id returned and no corners, rather than corners at the origin. A box
+      at zero would select the wrong part of the model
+
+second_route:
+  - >
+    select the scope box in Revit and read its extents in the properties
+    palette, or drag its grips in a plan and watch the values

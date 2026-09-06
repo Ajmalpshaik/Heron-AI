@@ -9,7 +9,7 @@ semantic-identity: "cut this duct or pipe in two at a measured distance along it
 kind: action
 domain: revit.mep
 capability: SPLIT_MEP_RUN
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -30,6 +30,15 @@ purpose: >
   that lands outside the length is refused with the length reported, giving the
   number needed to correct it rather than just "no".
 
+  **VERSION 2 ASKS WHETHER THE TWO HALVES CAME BACK JOINED TO EACH OTHER, AND
+  JOINS THEM WHEN THEY DID NOT.** Version 1 broke the run and said nothing
+  about the joint: the far ends keep their connections, which is what the
+  sentence above describes, and the new joint in the middle is a different
+  question. The earlier library measured the break leaving that joint OPEN and
+  had to close it by hand - unverified here, which is why this reports what it
+  found rather than asserting it. A run split into two pieces that nothing
+  bridges looks perfect on screen and traces as two systems.
+
 contract:
   needs:
     - name: doc
@@ -41,6 +50,11 @@ contract:
       source: request
   provides:
     - name: created
+      type: IList<ElementId>
+    # VERSION 2: whether the two halves came back joined TO EACH OTHER.
+    - name: halvesJoined
+      type: IList<ElementId>
+    - name: halvesLeftOpen
       type: IList<ElementId>
     - name: refused
       type: IList<ElementId>
@@ -79,6 +93,9 @@ compatibility-note: >
 #                                   using three forms of the word "draw" to
 #                                   explain which END the distance is from
 #   "build a wall between these points" -> CREATE_WALL
+#   "put a damper in this duct"          -> PLACE_ACCESSORY_ON_RUN, which
+#                                           breaks, places and rejoins. This
+#                                           one only breaks
 
 utterances:
   - split this duct

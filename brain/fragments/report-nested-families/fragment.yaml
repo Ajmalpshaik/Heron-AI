@@ -1,0 +1,105 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-045
+semantic-identity: "how many whole units are these, not how many family instances"
+kind: action
+domain: revit.families
+capability: REPORT_NESTED_FAMILIES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Groups elements by the whole piece of kit they belong to - walking UP to the
+  outermost host and DOWN to every nested part - and says how far a plain
+  instance count is from the number of real units. Read-only.
+
+  **A COUNT OF NESTED EQUIPMENT IS NOT A COUNT OF EQUIPMENT.** An air handling
+  unit with a nested fan, coil and filter is four family instances in the same
+  category. Every schedule, and every count this library can make, returns
+  four. There is one unit on site. The same happens to a pump set, a packaged
+  chiller, a valve set, a light fitting with a nested emergency module - and it
+  is invisible, because four is a perfectly plausible number.
+
+  **INSULATION AND LINING ARE THE SAME PROBLEM IN DIFFERENT CLOTHES.** They are
+  separate elements that belong to a host and inflate a count exactly as a
+  nested part does. They are followed through the host relationship, so a
+  lagged pipe is one unit rather than three.
+
+  **THE WALK GOES BOTH WAYS, AND UP IS THE ONE THAT WAS MISSING.** Walking down
+  from a host is the easy direction and it answers the wrong question: a
+  category filter catches the nested FAN, not the AHU it sits in, because a
+  nested part can be in a different category from its host. Asking each element
+  for its host and following that to the top is what puts the fan back with its
+  unit - and where that host is not in the set it was given, its id is named in
+  `rootsOutsideSet`, because that is the filter's blind spot made visible.
+
+  **THE WALK IS GUARDED AGAINST A CYCLE.** Nothing should be its own ancestor,
+  and a corrupt or half-copied family has produced one. An unguarded loop on
+  the host relationship hangs Revit rather than erroring, so every id visited
+  is remembered and a repeat stops the walk and names the element.
+
+  **IT REPORTS THE NESTING; IT DOES NOT JUDGE IT.** A shared nested family is a
+  real independent instance by design - it is meant to schedule and tag on its
+  own. The difference between the instance count and the unit count is the flag
+  to look at, not the verdict.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: roots
+      type: IDictionary<ElementId, ElementId>
+    - name: assemblyParts
+      type: IDictionary<ElementId, IList<ElementId>>
+    - name: unitCount
+      type: int
+    - name: rootsOutsideSet
+      type: IList<ElementId>
+    - name: cycles
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FamilyInstance.SuperComponent` and
+  `GetSubComponentIds` are unchanged 2020 to 2027, and the insulation and
+  lining relationships are reached through the shared wrap base type, which
+  covers duct insulation, duct lining and pipe insulation with one branch
+  rather than three.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "how many AHUs are there really"    -> here. The unit count, not the
+#                                          instance count
+#   "count the elements"                -> COUNT_ELEMENTS, which counts
+#                                          instances - correct, and a
+#                                          different question
+#   "count them by type"                -> GROUP_AND_COUNT
+#   "what is inside this family"        -> SELECT_SUBCOMPONENTS, the DOWN walk
+#                                          alone, when the parts themselves are
+#                                          what the next step acts on
+#   "which elements are in this group"  -> SELECT_GROUP_MEMBERS. A group is
+#                                          not a nested family and behaves
+#                                          differently
+#   "what is in this assembly"          -> GROUP_BY_ASSEMBLY
+
+utterances:
+  - how many units are these really
+  - the count is wrong because of nested families
+  - group these by the equipment they belong to
+  - how many AHUs not how many parts
+  - which of these are nested inside something
+  - is this counting the nested families twice
+  - how many AHUs are there really

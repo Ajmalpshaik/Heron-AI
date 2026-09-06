@@ -1,0 +1,100 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-022
+semantic-identity: "find everything of this family, wherever it is"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_FAMILY
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds every element belonging to a named family, by the FAMILY name rather
+  than by a type or an example element. The *"where are all the VCDs"* question,
+  asked when the family name is known and the category is not.
+
+  **THE CATEGORY IS OFTEN THE THING NOBODY KNOWS.** A dampers family can be
+  loaded as duct accessories on one job and mechanical equipment on another,
+  and a family whose name says what it is can sit anywhere. Naming the category
+  first is what makes that search come back empty and look like the family is
+  not in the model. So the category list is optional here, and an empty one
+  means the whole model.
+
+  **AN UNBOUNDED SCAN IS REPORTED AS ONE.** Walking every element in a
+  document is fine for one lookup and expensive to do repeatedly, so
+  `scannedWholeModel` says which kind of search ran. Where the category IS
+  known, passing it is cheaper and narrower.
+
+  **SYSTEM FAMILIES COUNT TOO.** A wall, a duct or a pipe belongs to a system
+  family - *Basic Wall*, *Rectangular Duct* - and asking for those by name is
+  the same question. Both routes are read: the loadable family through the
+  instance's own symbol, the system family through the element's type.
+
+  **MATCHING IS BY CONTAINED TEXT UNLESS EXACT IS ASKED FOR.** Family names on
+  a real job carry prefixes and revision suffixes, so a contains match is what
+  finds them; exact is there for when two families differ by a suffix and only
+  one is wanted. Which families actually matched is reported with a count each,
+  so a search that caught more than it meant to says so.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: familyName
+      type: string
+      source: request
+    - name: exactMatch
+      type: bool
+      source: request
+    # Empty means the whole model - see the purpose.
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: matchedFamilies
+      type: IDictionary<string, int>
+    - name: scannedWholeModel
+      type: bool
+    - name: found
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The family behind an instance is
+  reached through its symbol, and a system family through the element's type
+  name - both unchanged 2020 to 2027. Categories are compared as ElementId
+  against ElementId rather than as numbers, which is what survives the id going
+  64-bit.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "find all the VCDs"                  -> here, when VCD is the FAMILY name
+#   "where are all the fire dampers"     -> here
+#   "everything of the same type as      -> FILTER_ELEMENTS_BY_TYPE, which
+#    this one"                              takes an example element. This one
+#                                           takes a name and needs no example
+#   "all the ducts"                      -> FILTER_ELEMENTS_BY_CATEGORY, when
+#                                           the CATEGORY is what is meant
+#   "which families are not used"        -> FIND_UNUSED_FAMILIES
+#   "these are in the wrong category"    -> CHECK_CATEGORY_MISMATCH
+#   "load this family"                   -> LOAD_FAMILY
+#   "rename this family"                 -> RENAME_FAMILY
+
+utterances:
+  - find all the VCDs
+  - select everything from this family
+  - where are all the fire dampers
+  - find the family by name
+  - which elements use this family

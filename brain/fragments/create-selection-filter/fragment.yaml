@@ -82,6 +82,9 @@ compatibility-note: >
 #                                       makes a saved set do something to a
 #                                       drawing
 #   "what filters already exist"     -> REPORT_VIEW_FILTERS
+#   "add these to the saved set"         -> UPDATE_SAVED_SET. This one makes
+#                                           a new set; that one edits an
+#                                           existing one
 
 utterances:
   - save these as a set

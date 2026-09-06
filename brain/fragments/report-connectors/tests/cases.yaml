@@ -1,0 +1,60 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a piece of mechanical equipment with four spigots, two of them ducted
+    expect: >
+      four lines in `connectorFacts`, two element ids in `connections`, and
+      `openConnectors` = 2. Count the spigots on the family in Revit before
+      trusting the number - a connector that is in the family but not in the
+      report means the MEP model was not reached
+
+  - given: a straight duct joined at both ends
+    expect: >
+      two connectors, both joined, `openConnectors` = 0. Its two partners are
+      the fittings either side, not the ducts beyond them
+
+  - given: a round duct
+    expect: >
+      "radius ... ft" in the fact line and no width or height. Multiply by two
+      and compare against the duct's Diameter in Revit; if it disagrees, the
+      wrong profile branch was taken
+
+  - given: an air terminal with one connector facing down
+    expect: >
+      facing near (0, 0, -1). The direction is the whole reason this is read
+      from geometry rather than from a schedule
+
+negative:
+  - given: a connector whose `IsConnected` is true with nothing physically joined
+    expect: >
+      the element id in `flagDisagrees`, `connections` for it EMPTY, and the
+      connector counted as OPEN. This case is why the fragment exists: a run
+      traced from the flag reads complete while the air stops at the gap
+
+  - given: an element whose connector belongs to a named MEP system but is joined to nothing
+    expect: >
+      OPEN, and no partner. The system ref in `AllRefs` must not be counted -
+      if it is, every connector on a named system reads as connected and the
+      report is worthless
+
+  - given: a wall, or any element with no MEP model at all
+    expect: >
+      its id in `noConnectors` and no entry in `connectorFacts`. Not a failure,
+      a fact about the element - and the rest of the set must still be reported
+
+  - given: an ELECTRICAL connector, which has no profile and throws on Shape
+    expect: >
+      a line carrying its domain, origin and direction with the size reported
+      as unavailable. A dropped connector would read as equipment having fewer
+      connections than it has
+
+  - given: a mixed set of ducts, equipment and walls
+    expect: >
+      no throw, every element accounted for in exactly one of the outputs. One
+      element that cannot be read must not lose the rest
+
+second_route:
+  - >
+    open the element in Revit, click the connector and read the properties
+    palette - domain, size and the direction arrow on screen. Revit's own
+    display is the second route, not another script

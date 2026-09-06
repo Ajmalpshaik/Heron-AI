@@ -90,6 +90,11 @@ compatibility-note: >
 # "show the sizes on the drawing" wants tags. Landing on the wrong one produces
 # a confident answer to a question nobody asked, and one of the two writes to
 # the model.
+#   "put tags on these"                  -> here
+#   "centre the room tags"               -> CENTER_ROOM_TAGS, which only
+#                                           MOVES tags that already exist
+#   "stack the tags at the side"         -> STACK_TAGS, for tags that already
+#                                           exist
 
 utterances:
   - tag these

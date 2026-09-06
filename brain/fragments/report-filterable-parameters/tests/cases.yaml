@@ -1,0 +1,51 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: pipes and pipe fittings
+    expect: >
+      a list of parameters matching Revit's own Filters dialog for the same two
+      categories, exactly. The dialog is the check - if the lists differ, one of
+      them is not asking what the create call asks
+
+  - given: one category on its own
+    expect: >
+      `commonParameters` and that category's `perCategory` count agreeing.
+      With one category the intersection is the category
+
+  - given: a model with a shared parameter applied to ducts
+    expect: >
+      that parameter listed under its own name, not as a bare id. A report of
+      ids is not something anybody can choose from
+
+  - given: a category with nothing of that kind modelled yet
+    expect: >
+      the full parameter list anyway. Reading a sample element gives up here,
+      which is exactly when the filters are being set up
+
+negative:
+  - given: two categories that each allow a parameter but do not share it
+    expect: >
+      the parameter absent from `commonParameters` and present in both
+      `perCategory` counts. The set SHRINKS as categories are added, and a
+      report that showed the union would offer a parameter the filter refuses
+
+  - given: a category that cannot be filtered at all - a link, some annotation categories
+    expect: >
+      its id in `unfilterableCategories` and NOT in the filterable list. One
+      unfilterable category makes the create call throw with an exception
+      naming none of them, so this is the whole point of asking first
+
+  - given: an empty category list
+    expect: >
+      empty outputs and no throw. Nothing to intersect is not an error
+
+  - given: a parameter that is listed here but is empty on every element
+    expect: >
+      it still listed. "Filterable" is about the mechanism, not the values -
+      the filter is legal and simply matches nothing
+
+second_route:
+  - >
+    open Revit's own View Filters dialog, pick the same categories, and read
+    the parameter dropdown. That dialog is driven by the same rules the create
+    call enforces, and it is the second route

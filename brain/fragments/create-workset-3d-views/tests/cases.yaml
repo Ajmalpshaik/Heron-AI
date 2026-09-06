@@ -1,0 +1,41 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a workshared model with six user worksets
+    expect: >
+      six 3D views, each showing only its own workset. Open one and check the
+      others are gone - that is the whole deliverable
+
+  - given: a namePrefix of "WS - "
+    expect: >
+      views named WS - <workset>, which is what sorts them together in the
+      browser
+
+  - given: this run again after one more workset is added
+    expect: >
+      one new view and the rest in `alreadyExisted`. A name clash throws, so
+      re-running must not fail on the views that are already there
+
+negative:
+  - given: a model that is NOT workshared
+    expect: >
+      `refused` saying so, and no views. It is a different problem from a
+      workshared model with no worksets yet, and both produce nothing
+
+  - given: a workshared model with no user worksets
+    expect: >
+      `refused` saying that instead
+
+  - given: a project with no 3D view family type
+    expect: >
+      `refused`. No 3D view can be made in it at all, and that is not a fault
+      of the request
+
+  - given: Revit's own internal worksets - views, families, project standards
+    expect: >
+      no views for them. Thirty views nobody wants bury the six that matter
+
+second_route:
+  - >
+    open one view and turn the other worksets back on by hand - what appears is
+    what was hidden, and it should be everything except that workset's own

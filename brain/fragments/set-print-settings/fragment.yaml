@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-019
+semantic-identity: "set the paper size and orientation and save it as a print setting"
+kind: action
+domain: revit.sheets
+capability: SET_PRINT_SETTINGS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the paper size, orientation and fit, and saves them as a named print
+  setting - the middle link of the print chain: a sheet set to print, a setting
+  to print it with, and the print itself.
+
+  **THE PAPER SIZES COME FROM THE PRINT DRIVER, NOT FROM REVIT.** A size that
+  exists on the PDF writer may not exist on the plotter in the corridor, and
+  asking for one the current driver does not have fails in a way that reads as
+  a Revit problem. What the driver actually offers is reported, so a refused
+  size can be seen against the list rather than guessed at.
+
+  **THE PRINT MANAGER IS NOT TRANSACTIONAL.** These settings are application
+  state as much as document state: an undo does not reliably put the previous
+  paper size back. That is worth knowing before treating this as a change like
+  any other.
+
+  **A NAME ALREADY IN USE IS REFUSED.** Saving over an existing setting is not
+  what somebody means by "save this as A1 Landscape", and quietly replacing one
+  another drawing set prints with is worse than the refusal.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16) - for the
+  document side of it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Exactly as the driver names it. Empty lists what is available and
+    # changes nothing.
+    - name: paperSizeName
+      type: string
+      source: request
+    # "portrait" | "landscape" | "" to leave alone.
+    - name: orientation
+      type: string
+      source: request
+    - name: zoomToFit
+      type: bool
+      source: request
+    # Empty applies the settings without saving them under a name.
+    - name: saveAsName
+      type: string
+      source: request
+  provides:
+    - name: availableSizes
+      type: IList<string>
+    - name: applied
+      type: IList<string>
+    - name: savedAs
+      type: string
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The print manager, its print setup and
+  the print parameters are unchanged 2020 to 2027. What is NOT stable is the
+  driver underneath: some drivers throw when a paper size is assigned rather
+  than refusing it, so every assignment here is guarded on its own and the
+  available list is reported whatever happens.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "set the paper size"                 -> here
+#   "save this as a print setting"       -> here
+#   "which sheets to print"              -> MANAGE_SHEET_SETS, the set. This is
+#                                           the setting it prints with
+#   "print these to PDF"                 -> EXPORT_SHEETS_TO_PDF, the print
+#                                           itself
+#   "the drawing is the wrong size on    -> SET_VIEW_SCALE, which is the view
+#    the sheet"                             rather than the paper
+
+utterances:
+  - set the paper size for printing
+  - save this as a print setting
+  - print settings for A1 landscape
+  - what paper sizes can i print

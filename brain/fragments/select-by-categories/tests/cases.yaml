@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: ducts, duct fittings, duct accessories and flex duct asked for together
+    expect: >
+      one set holding all four, and `perCategory` breaking it down. Compare each
+      number against a Revit schedule of that category - they must agree
+
+  - given: a view passed in
+    expect: >
+      only what that view draws. A plan of one floor must not return the whole
+      building
+
+  - given: the same category listed twice
+    expect: >
+      every element once. One filter cannot return a duplicate; a collector per
+      category can, which is the reason for this shape
+
+negative:
+  - given: a category asked for that has nothing in the model
+    expect: >
+      it present in `perCategory` with 0, not absent. Absent reads as "not
+      asked for", and the difference is whether somebody goes looking for
+      missing dampers
+
+  - given: an empty category list
+    expect: >
+      no elements and no throw. Nothing asked for is not an error, and it must
+      not fall through to "everything"
+
+  - given: a view that draws none of the categories
+    expect: >
+      an empty set with the breakdown still listing each category at 0
+
+  - given: a set spanning categories whose names differ from the enum names
+    expect: >
+      the breakdown keyed by Revit's own category NAME, which is what the
+      person reading it uses
+
+second_route:
+  - >
+    build a Revit schedule per category, or use the project browser's category
+    counts, and compare. Revit's own numbers are the second route

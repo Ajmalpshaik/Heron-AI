@@ -68,6 +68,9 @@ compatibility-note: >
 # reads semantic-identity, the utterances, the capability, the domain and the
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
+#   "select everything from this family" -> SELECT_BY_FAMILY, which takes a
+#                                           NAME. This one takes an example
+#                                           element and matches its type
 
 utterances:
   - select everything like this one

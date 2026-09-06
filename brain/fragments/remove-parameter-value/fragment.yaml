@@ -80,6 +80,9 @@ compatibility-note: >
 #   "which ones have no value"           -> DESCRIBE_BLANK_PARAMETERS - a READ,
 #                                           and the one to run before clearing
 #                                           anything
+#   "take the mark off these"            -> here for the Mark PARAMETER. A
+#                                           section mark on a drawing is
+#                                           REPORT_VIEW_REFERENCES
 
 utterances:
   - clear the value out of this parameter

@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-038
+semantic-identity: "how much metal is in the bends and tees"
+kind: action
+domain: revit.mep
+capability: MEASURE_FITTING_AREA
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Measures the sheet area of MEP fittings - bends, tees, transitions, reducers,
+  caps - from their own geometry, instead of estimating them as a percentage of
+  the straight duct. Read-only.
+
+  **THE OPEN ENDS ARE NOT METAL, AND SUBTRACTING THEM IS THE WHOLE
+  TECHNIQUE.** A fitting's solid is closed: Revit caps it at each connector.
+  Adding up every face therefore includes those end disks, where the duct
+  carries on and there is no metal at all. Each connector's own opening is
+  taken off - the circle on a round connector, the rectangle on a rectangular
+  one. On a small elbow the caps are a large share of the surface and on a long
+  transition they are almost none, so leaving them in does not inflate the
+  total evenly: it biases the MIX, which is worse, because it survives a
+  sense-check on the total.
+
+  **A FITTING THAT COMES OUT NEGATIVE IS REPORTED, NOT SILENTLY FLOORED.**
+  Where the openings exceed the surface - a solid that did not come through
+  cleanly, or an oval connector, which has no simple opening area - the gross
+  figure is kept and the id is named in `suspect`. A takeoff that quietly
+  returns a nonsense area is worse than one that says which fittings it could
+  not measure.
+
+  **WHAT A FITTING IS COMES FROM ITS PART TYPE, NOT ITS NAME.** Elbow, Tee,
+  Cross, Transition, Union, Cap: family names are whatever somebody typed, and
+  the part type is what Revit itself routes on. It is reported per fitting so a
+  takeoff can be read by kind - and unions, which are couplings carrying no
+  sheet of their own, are named separately rather than dropped here. Whether a
+  coupling belongs in a sheet-metal total is the estimator's call, not this
+  fragment's.
+
+  **THIS IS DEVELOPED SURFACE, NOT A CUTTING LIST.** No laps, seams, offcut or
+  wastage - those are allowances a fabricator adds, and they belong wherever
+  the caller keeps its own standards. Pair it with `REPORT_DUCT_WEIGHT` over
+  the straight runs and drop any percentage uplift for fittings, or the same
+  metal is counted twice.
+
+  Areas are square feet, Revit's internal unit, per D-20.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: fittingAreas
+      type: IDictionary<ElementId, double>
+    - name: grossAreas
+      type: IDictionary<ElementId, double>
+    - name: partTypes
+      type: IDictionary<ElementId, string>
+    - name: couplings
+      type: IList<ElementId>
+    - name: suspect
+      type: IList<ElementId>
+    - name: noGeometry
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Options`, `GeometryInstance` and
+  `Solid.Faces` are unchanged 2020 to 2027, and the part type is reached
+  through the mechanical fitting model, which pipe, conduit and cable-tray
+  fittings simply do not have - they report a blank part type and their area
+  is measured exactly the same way. The geometry is asked for at fine detail
+  because a coarse fitting is a stick, and a stick has almost no surface.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "how much metal is in the bends"     -> here
+#   "measure the fittings"               -> here
+#   "how many kilos of duct is this"     -> REPORT_DUCT_WEIGHT, the STRAIGHT
+#                                           runs with a gauge table. Use this
+#                                           fragment for the fittings instead
+#                                           of an uplift, never as well
+#   "how long are the ducts"             -> MEASURE_RUN_QUANTITIES
+#   "how much is each material"          -> REPORT_MATERIAL_TAKEOFF, which
+#                                           reads Revit's own takeoff engine
+#                                           by material rather than measuring
+#                                           faces
+#   "how big is this element"            -> MEASURE_ELEMENT_VOLUME
+#   "how much sheet metal is in this    -> MEASURE_RUN_QUANTITIES for the
+#    duct"                                 straight runs, or REPORT_DUCT_WEIGHT
+#                                          for the metal. Here only for the
+#                                          FITTINGS
+
+utterances:
+  - how much metal is in the fittings
+  - measure the bends and tees
+  - fitting surface area
+  - sheet area of the elbows
+  - takeoff for the duct fittings
+  - how much metal is in the bends

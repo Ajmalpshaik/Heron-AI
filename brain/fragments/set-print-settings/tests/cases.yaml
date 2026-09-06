@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a driver that has A1, paperSizeName "A1", orientation "landscape"
+    expect: >
+      both applied and listed. Open File - Print in Revit and read the setting;
+      that dialog is what actually prints
+
+  - given: saveAsName given
+    expect: >
+      the setting in the print dialog's saved list under that name
+
+  - given: paperSizeName empty
+    expect: >
+      `availableSizes` listing what the driver has, and nothing changed. That
+      is the discovery step
+
+negative:
+  - given: a paper size the current driver does not have
+    expect: >
+      `refused` naming it AND `availableSizes` filled in. It fails in a way
+      that reads as a Revit fault otherwise, and the list is what settles it
+
+  - given: a save name already in use
+    expect: >
+      `refused`, not an overwrite. Replacing the setting another drawing set
+      prints with is worse than saying no
+
+  - given: a driver that THROWS on a paper size instead of refusing it
+    expect: >
+      the orientation and the fit still applied. One assignment that throws
+      must not cost the others
+
+  - given: an undo after this
+    expect: >
+      the print settings not reliably restored. They are application state as
+      much as document state, and that is worth knowing before treating this
+      like any other change
+
+second_route:
+  - >
+    open File - Print in Revit, read the paper size and orientation, and check
+    the saved settings list

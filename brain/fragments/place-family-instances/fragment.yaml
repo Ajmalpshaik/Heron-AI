@@ -69,6 +69,10 @@ compatibility-note: >
 # reads semantic-identity, the utterances, the capability, the domain and the
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
+#   "put a damper here"                  -> PLACE_ACCESSORY_ON_RUN when it
+#                                           goes INTO a duct or pipe: the run
+#                                           has to be broken and rejoined, and
+#                                           placing one here leaves it loose
 
 utterances:
   - place the air terminals

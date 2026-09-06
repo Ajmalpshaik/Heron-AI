@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-049
+semantic-identity: "somebody dragged a grid end and now it is short in this view only"
+kind: action
+domain: revit.datums
+capability: RESET_DATUM_EXTENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts grids and levels back on their shared 3D extent in the views given,
+  throwing away the per-view override somebody made by dragging an end.
+
+  **IT IS THE OTHER HALF OF MAXIMIZING THE EXTENTS.** A datum end that was
+  dragged short in a view keeps its own extent there, and it OVERRIDES the
+  shared one - so maximizing the grids changes nothing in exactly the view
+  somebody is looking at, and the fix reads as broken. This clears the override
+  so the shared length comes through.
+
+  **IT LOOKS LIKE A PER-VIEW CHANGE AND IT IS NOT ONLY THAT.** Handing an end
+  back to the shared extent means the line moves in the view being looked at
+  AND stops being independent there ever after. That is the point of it, and it
+  is why this is a bulk change worth stating in numbers - how many datums, in
+  how many views - before it is run.
+
+  **AN END ALREADY ON THE SHARED EXTENT IS NOT A CHANGE.** Counting those would
+  report every grid reset on a set where nothing was overridden, and the count
+  is what somebody checks the drawings against.
+
+  Both ends are handled separately, because only one is usually dragged.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: views
+      type: IList<View>
+      source: request
+  provides:
+    - name: endsReset
+      type: int
+    - name: datumsChanged
+      type: IList<ElementId>
+    - name: alreadyShared
+      type: IList<ElementId>
+    - name: notADatum
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Asking an end which extent type it uses
+  in a view, and setting it back to the shared one, are both on the shared
+  datum type and unchanged 2020 to 2027 - and neither needs the datum's curve,
+  which only a grid has.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "the grid is short in this view      -> here
+#    only"
+#   "someone dragged the grid ends"      -> here
+#   "the grids only go half way"         -> MAXIMIZE_DATUM_EXTENTS, which
+#                                           lengthens the SHARED extent. Run
+#                                           this first where a view overrides
+#                                           it, or that fix shows nothing there
+#   "the bubbles are on the wrong side"  -> SET_DATUM_BUBBLES, which is per
+#                                           view and per end and is a different
+#                                           property entirely
+#   "list the grids"                     -> LIST_GRIDS
+
+utterances:
+  - the grid is short in this view
+  - reset the grid extents
+  - someone dragged the grid ends in this view
+  - put the levels back to model extent
+  - the grids look different in every view
+  - someone dragged the grid ends

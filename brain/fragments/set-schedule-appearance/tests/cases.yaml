@@ -18,6 +18,17 @@ positive:
   - given: headingSideways true
     expect: the heading running vertically, which is how a narrow column keeps a long title
 
+  - given: hideOrShow "hide" on a field the schedule SORTS by
+    expect: >
+      the column off the drawing and the sort order unchanged. That is the
+      whole reason hiding sits next to removing - REMOVE_SCHEDULE_FIELDS would
+      take the sort with it
+
+  - given: a width change on a schedule that has a hidden column
+    expect: >
+      the hidden column still hidden. Every input left empty stays untouched,
+      or the fragment un-hides work somebody did deliberately
+
 negative:
   - given: an empty newHeading and columnWidthMm of 0
     expect: >

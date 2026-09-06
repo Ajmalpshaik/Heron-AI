@@ -1,0 +1,50 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a door schedule, parts "Type" and "Mark", separator " - "
+    expect: >
+      one new column reading Type - Mark on every row. Change a mark in the
+      model and watch the column follow: that is what makes it a field rather
+      than typed text
+
+  - given: three parts
+    expect: >
+      all three joined in the order given, with the separator before the second
+      and third only
+
+  - given: a separator list shorter than the field list
+    expect: >
+      the remaining parts joined with nothing between them, and no throw
+
+negative:
+  - given: a part name that is not schedulable for that schedule's category
+    expect: >
+      the schedule's id in `partMissing` and NO column added to it. Half a
+      column looks correct and is missing a value on every row, and nobody
+      checks a column that is already there
+
+  - given: two schedules of different categories, where one lacks a part
+    expect: >
+      the other one still getting the column. The parts are resolved against
+      each schedule's own list, which is why one can succeed and one not
+
+  - given: arithmetic asked for - "Area / 10"
+    expect: >
+      it joined as TEXT, or refused - never calculated. A calculated value is a
+      different mechanism with no public API across this release range, and a
+      column that concatenates while looking like a calculation is the worst
+      possible outcome
+
+  - given: a sheet or a drafting view in the set
+    expect: >
+      its id in `notASchedule` and the real schedules still done
+
+  - given: an empty part list
+    expect: >
+      the schedule in `refused` and nothing added
+
+second_route:
+  - >
+    open the schedule in Revit, and check the column against the two parameters
+    it was built from on a row you can read. Then change one and see the column
+    follow

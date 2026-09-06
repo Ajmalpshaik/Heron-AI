@@ -1,0 +1,51 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: louvres modelled as generic models, expected category air terminals
+    expect: >
+      those elements in `elements` and "Generic Models" in `foundIn` with the
+      count. Select one in Revit and read its category in the properties
+      palette - it is the plainest check there is
+
+  - given: a model where every louvre IS in the expected category
+    expect: >
+      `elements` empty and `correctlyCategorised` counting them all. A clean
+      model must come back clean and still say how much it looked at
+
+  - given: a family named neutrally whose TYPE name carries the word
+    expect: >
+      it found. Reading only the family name halves what this catches
+
+  - given: mismatches spread across two categories
+    expect: >
+      both named in `foundIn` with a count each. One family made wrongly and
+      several unrelated mistakes need different amounts of work
+
+negative:
+  - given: keywords that match nothing in this model
+    expect: >
+      empty results, `scanned` still counting the walk. Nothing found is an
+      answer; nothing looked at is a different one, and they must not read the
+      same
+
+  - given: an element whose name matches but which has no category at all
+    expect: >
+      it reported under a named "no category" bucket rather than dropped. A
+      dropped element is a finding nobody sees
+
+  - given: a system family - a wall, a duct
+    expect: >
+      it not scanned. A system family's category is fixed by what it is and
+      cannot be mismatched, so counting them would bury the real findings
+
+  - given: this run twice
+    expect: >
+      identical output and nothing changed. Re-categorising is done in the
+      family editor and reloads through every instance - not something to slip
+      into a check
+
+second_route:
+  - >
+    select one of the reported elements in Revit and read its category, then
+    build a schedule of the expected category and see that it is missing from
+    it. The missing schedule row is what the fault actually costs

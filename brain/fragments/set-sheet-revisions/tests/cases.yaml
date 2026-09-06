@@ -1,0 +1,44 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: twelve sheets and one revision, attach true
+    expect: >
+      the revision in every sheet's revision block. Look at a title block on a
+      sheet - that block is the deliverable
+
+  - given: sheets that already carried earlier revisions
+    expect: >
+      those still listed afterwards. Adding must never replace: nobody reads a
+      revision block to check last month's entries are still in it
+
+  - given: attach false with a revision that was listed
+    expect: >
+      it gone from those sheets, and the others untouched
+
+  - given: a revision already on a sheet, attach true
+    expect: >
+      no change counted for that sheet
+
+negative:
+  - given: attach false on a revision that a CLOUD puts on the sheet
+    expect: >
+      the sheet id in `cloudDriven` and the revision still there. That list
+      holds only revisions with no cloud; the cloud is what has to go
+
+  - given: a project revision on no sheet and in no cloud
+    expect: >
+      `revisionsRemaining` possibly SMALLER afterwards. Revit purges it when
+      sheet revisions are written, and that number is the only place it shows
+
+  - given: a view or a schedule in the element list
+    expect: >
+      its id in `notASheet` and the real sheets still done
+
+  - given: an empty revision list
+    expect: >
+      nothing changed on any sheet
+
+second_route:
+  - >
+    open a sheet and read its revision block, and check Manage - Sheet Issues
+    and Revisions for the project list afterwards

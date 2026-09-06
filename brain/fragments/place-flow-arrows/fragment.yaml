@@ -1,0 +1,102 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-039
+semantic-identity: "show which way the air is going on the drawing"
+kind: action
+domain: revit.annotation
+capability: PLACE_FLOW_ARROWS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places flow-direction arrows along MEP runs in one view, at a spacing,
+  pointing the way the air or water actually goes.
+
+  **THE DIRECTION COMES FROM THE CONNECTORS, NOT FROM THE LINE.** A duct's
+  location curve runs whichever way it happened to be drawn: start to end says
+  nothing about flow. The connectors know - one is an inlet and one an outlet -
+  and the arrow points from the first toward the second. Drawing along the
+  curve instead puts half the arrows on a drawing backwards, with nothing to
+  warn anybody, and a backwards arrow on an issued drawing is read as fact.
+
+  **A RUN WHOSE CONNECTORS DO NOT SAY IS LEFT ALONE.** Plenty of ductwork is
+  modelled without a system, and its connectors carry no direction at all.
+  Those runs are named, not given an arrow chosen by the geometry - a guessed
+  arrow is indistinguishable from a known one once it is on the sheet.
+
+  **RISERS GET NOTHING, ON PURPOSE.** A vertical run seen in a plan has no
+  meaningful arrow: the flow is towards or away from the reader. Near-vertical
+  runs are counted and skipped rather than given a nonsense direction.
+
+  **THE ARROWS ARE ANNOTATION AND LIVE IN ONE VIEW.** They do not appear in any
+  other view, which is correct and is what somebody notices as absence. Place
+  them per view being issued.
+
+  **THE SYMBOL MUST ALREADY BE IN THE PROJECT AND MUST BE ACTIVATED.** This
+  loads nothing - the arrow family is a drawing-office standard, not something
+  to invent - and an inactive symbol makes the first placement throw, which is
+  the classic first-use-in-a-session failure.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: arrowFamilyName
+      type: string
+      source: request
+    - name: arrowTypeName
+      type: string
+      source: request
+    # How far apart along the run, in millimetres - a paper judgement that
+    # follows the view scale.
+    - name: spacingMm
+      type: double
+      source: request
+  provides:
+    - name: placed
+      type: int
+    - name: noDirection
+      type: IList<ElementId>
+    - name: tooVertical
+      type: IList<ElementId>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The connector flow direction, placing a
+  family instance into a view, and rotating an element about an axis are
+  unchanged 2020 to 2027. The rotation axis is the VIEW's own direction, not
+  world Z, so the arrows line up in a section exactly as they do in a plan.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "show the flow direction on the      -> here
+#    drawing"
+#   "put arrows on the ducts"            -> here
+#   "are the arrows pointing the right   -> CHECK_FLOW_DIRECTION, which reads
+#    way"                                   the model and draws nothing
+#   "tag these ducts"                    -> TAG_ELEMENTS_IN_VIEW
+#   "which way does this run flow"       -> TRACE_CONNECTIVITY
+#   "the duct is not connected"          -> FIND_DEAD_ENDS
+
+utterances:
+  - show the flow direction on the drawing
+  - put flow arrows on these ducts
+  - add direction arrows to the pipework
+  - the drawing needs air flow arrows

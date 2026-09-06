@@ -71,6 +71,8 @@ compatibility-note: >
   `ViewSheet.IsPlaceholder` are unchanged 2020 to 2027. Positions are Revit's
   internal FEET throughout and are only ever compared with each other, so no
   units API is called and the 2021 units move cannot reach this.
+#   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS, the read
+#                                           that comes before this write
 
 utterances:
   - put these views on a sheet

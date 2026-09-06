@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a grid dragged short in one plan, that plan passed in
+    expect: >
+      the grid back at its full shared length in that view, `endsReset` 1 or 2
+      depending on how many ends were dragged. Look at the plan
+
+  - given: several views passed in at once
+    expect: >
+      every overridden end in all of them cleared, and `endsReset` counting
+      ends rather than datums - one datum can be overridden at both ends in
+      three views
+
+  - given: this run then MAXIMIZE_DATUM_EXTENTS
+    expect: >
+      the new shared length showing in the view that used to override it. That
+      is the pairing these two exist for
+
+negative:
+  - given: a datum already on the shared extent everywhere
+    expect: >
+      its id in `alreadyShared` and `endsReset` 0. Setting it again succeeds
+      and does nothing, and reporting that as a reset puts a number in front of
+      somebody that the drawings do not show
+
+  - given: a datum that is not shown in one of the views
+    expect: >
+      that view skipped for it, without a refusal and without losing the other
+      views
+
+  - given: a wall or a duct in the set
+    expect: >
+      its id in `notADatum` and the datums still done
+
+  - given: an end Revit refuses to change
+    expect: >
+      the datum's id in `refused`, established by asking the extent type
+      AFTER the call
+
+  - given: an empty view list
+    expect: >
+      nothing changed and no throw. There is nowhere to clear an override
+
+second_route:
+  - >
+    look at the grid in the view before and after, and in a second view that
+    was not passed in - the shared extent must be unchanged there

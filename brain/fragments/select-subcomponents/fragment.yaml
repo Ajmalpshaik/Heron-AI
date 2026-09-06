@@ -84,6 +84,10 @@ compatibility-note: >
 #   "count the sensors"              -> COUNT_ELEMENTS, and it will come back
 #                                       SHORT by every sensor nested inside
 #                                       equipment. Run this first and add them
+#   "how many units are these really"    -> REPORT_NESTED_FAMILIES, which
+#                                           walks UP to the outermost host
+#                                           as well as down
+#   "the nested families in these"       -> REPORT_NESTED_FAMILIES
 
 utterances:
   - what is inside this equipment

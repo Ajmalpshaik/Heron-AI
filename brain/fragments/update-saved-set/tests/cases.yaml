@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a saved set of 20 beams, mode "add" with 5 more elements
+    expect: >
+      `setSize` 25 and `changed` 5. Open Manage - Selection Sets in Revit and
+      check the count there; the set is a real element and Revit shows it
+
+  - given: mode "remove" with 5 of the elements that are in it
+    expect: >
+      `setSize` 15 and `changed` 5
+
+  - given: mode "replace"
+    expect: >
+      only the given elements in the set afterwards, whatever was there before
+
+  - given: mode "delete"
+    expect: >
+      `deleted` true and the set gone from Revit's own list
+
+negative:
+  - given: mode "add" with elements ALREADY in the set
+    expect: >
+      `changed` 0 and `setSize` unchanged. Counting them would report twenty
+      added when none were, and the set is the thing somebody checks
+
+  - given: a set holding ids whose elements were deleted
+    expect: >
+      `missing` counting them and those ids NOT written back. A set that
+      quietly shrinks looks like somebody edited it
+
+  - given: a set name that does not exist
+    expect: >
+      `refused` naming it and nothing created. Creating one here leaves two
+      sets a letter apart, each with half the elements
+
+  - given: mode "remove" with elements that are not in the set
+    expect: >
+      `changed` 0 and the set unchanged - not an error
+
+  - given: an unrecognised mode
+    expect: >
+      `refused` saying so, and nothing written. Guessing which of add and
+      replace was meant is the difference between 25 elements and 5
+
+second_route:
+  - >
+    open Manage - Selection Sets in Revit and read the set, or select it from
+    there. Revit's own dialog is the second route

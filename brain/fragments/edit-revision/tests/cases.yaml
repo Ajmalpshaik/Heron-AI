@@ -1,0 +1,45 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: revision 3 with a wrong date, a new date given
+    expect: >
+      the date changed and "date" in `changed`. Open Manage - Sheet Issues and
+      Revisions in Revit; that dialog is what the sheets read from
+
+  - given: a description and a date together
+    expect: >
+      both changed and both listed
+
+  - given: issueState "issue"
+    expect: >
+      `nowIssued` true and "issued" listed. That is a decision rather than a
+      correction, which is why it is reported on its own
+
+  - given: only a description given
+    expect: >
+      the date, issued-by and issued-to untouched
+
+negative:
+  - given: two revisions both described "For Construction"
+    expect: >
+      the one matched by SEQUENCE NUMBER edited. Matching on the description
+      would edit whichever came first, silently, on a document about to go out
+
+  - given: a revision that is already ISSUED
+    expect: >
+      the refused edits NOT listed in `changed`, and the reason named. Revit
+      returns from the call and keeps the old value
+
+  - given: a sequence number that does not exist
+    expect: >
+      `refused` saying so and nothing changed
+
+  - given: every field empty
+    expect: >
+      nothing changed and `refused` saying nothing was asked for - not a silent
+      success
+
+second_route:
+  - >
+    open Manage - Sheet Issues and Revisions in Revit and read the row, then
+    look at a sheet's revision schedule - that is what the drawing prints

@@ -1,0 +1,98 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-015
+semantic-identity: "save these sheets as a named set for printing"
+kind: action
+domain: revit.sheets
+capability: MANAGE_SHEET_SETS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates, renames or deletes the named sheet sets that appear in Revit's print
+  and export dialogs - the saved lists an issue is printed from.
+
+  **EVERY ROUTE GOES THROUGH THE PRINT MANAGER, AND THERE IS NO OTHER ONE.** A
+  sheet set is an element, and it cannot be built with a constructor, renamed
+  through its name, or removed with a delete. All three go through the print
+  manager's sheet-set setting, which is an odd shape for a model change and is
+  simply how Revit exposes it.
+
+  **THE SETTING THROWS UNLESS THE PRINT RANGE IS SET FIRST.** Asking for it
+  while the range is anything but "selected views" raises an error whose text
+  is about the print dialog and says nothing about sheet sets. Every mode sets
+  the range first.
+
+  **THE PRINT MANAGER IS NOT TRANSACTIONAL.** The print range stays changed
+  even if the surrounding transaction rolls back - it is application state, not
+  document state. That is worth knowing before assuming an undo puts everything
+  back.
+
+  **A SET IS A LIST OF VIEWS, AND A DELETED VIEW LEAVES A HOLE.** The set is
+  written from the elements given, and what it holds afterwards is read back
+  rather than assumed.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: setName
+      type: string
+      source: request
+    # "create" | "rename" | "delete"
+    - name: mode
+      type: string
+      source: request
+    # Used by rename only.
+    - name: newName
+      type: string
+      source: request
+  provides:
+    - name: memberCount
+      type: int
+    - name: done
+      type: bool
+    - name: notASheet
+      type: IList<ElementId>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The print manager, its sheet-set
+  setting and the save, rename and delete on it are unchanged 2020 to 2027 -
+  and so is the requirement to set the print range before touching any of them.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "save these sheets as a set"         -> here
+#   "delete that print set"              -> here
+#   "print these to PDF"                 -> EXPORT_SHEETS_TO_PDF, which prints
+#                                           a set once it exists
+#   "make the sheets"                    -> CREATE_SHEETS
+#   "which sheets are there"             -> LIST_SHEETS
+#   "save these elements as a set"       -> CREATE_SELECTION_FILTER. A
+#                                           selection set and a sheet set are
+#                                           different things with one word
+#   "make a revision for this issue"     -> CREATE_REVISION. A sheet set is
+#                                           what gets printed; a revision is
+#                                           what the sheets record
+
+utterances:
+  - save these sheets as a named set
+  - make a print set
+  - delete that sheet set
+  - rename the print set
+  - i need a set for the issue

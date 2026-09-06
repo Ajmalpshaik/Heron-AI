@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-077
+semantic-identity: "which parameters can I actually build a view filter on for these categories"
+kind: action
+domain: revit.views
+capability: REPORT_FILTERABLE_PARAMETERS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Asked before a view filter is built: which of these categories can be
+  filtered at all, and which parameters are legal to filter on across ALL of
+  them together. Read-only.
+
+  **IT ANSWERS THE TWO WAYS CREATING A FILTER FAILS, BEFORE IT FAILS.** A
+  category that cannot be filtered - links, some annotation and view-specific
+  categories - makes the create call throw, with an exception that names none
+  of them, so one bad category loses the whole filter. And a parameter can be
+  present on the element and still not be available to a filter. Both are
+  askable in advance; neither is guessable from the element.
+
+  **THE LEGAL SET SHRINKS AS CATEGORIES ARE ADDED, WHICH IS WHY IN-COMMON IS
+  THE ANSWER THAT MATTERS.** Two categories that each allow a parameter may
+  allow nothing together. `commonParameters` is what a filter over the whole
+  set can use; `perCategory` shows each category on its own, so the one doing
+  the narrowing is visible instead of being hunted for by deletion.
+
+  **IT NEEDS NO ELEMENT TO EXIST.** The other route to a parameter id is to
+  read a sample element of the category, which gives up when nothing of that
+  kind has been modelled yet - the normal case at the start of a job, and
+  exactly when the filters are being set up. This asks the categories.
+
+  **"FILTERABLE" IS ABOUT THE MECHANISM, NOT ABOUT THE VALUES.** A parameter
+  listed here can be empty on every element in the model: the filter is legal
+  and matches nothing. It also says nothing about which COMPARISON is allowed -
+  a text rule on a numeric parameter is refused later, by the create call.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: categoryIds
+      type: ICollection<ElementId>
+      source: request
+  provides:
+    - name: commonParameters
+      type: IDictionary<ElementId, string>
+    - name: perCategory
+      type: IDictionary<ElementId, int>
+    - name: filterableCategories
+      type: IList<ElementId>
+    - name: unfilterableCategories
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The filterable-category and
+  filterable-parameter utilities are unchanged 2020 to 2027. Parameter NAMES
+  are resolved from the document where the id belongs to a project or shared
+  parameter and from the built-in enumeration otherwise, because a report of
+  bare ids is not something anybody can choose from.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "why will the filter not take that   -> here. Ask before building, not
+#    parameter"                             after the create call throws
+#   "which categories can be filtered"   -> here
+#   "make a view filter"                 -> CREATE_VIEW_FILTER
+#   "one filter per value"               -> CREATE_VIEW_FILTERS_BY_VALUE
+#   "put the filter on the view"         -> APPLY_VIEW_FILTER
+#   "what filters exist already"         -> REPORT_VIEW_FILTERS
+#   "the filter is on the view and       -> AUDIT_VIEW_FILTERS, which is about
+#    nothing is coloured"                   a filter already applied
+#   "what parameters do these elements   -> REPORT_PARAMETER_INVENTORY.
+#    have"                                  Present on the element and legal
+#                                           in a filter are different
+#                                           questions, and the second is here
+
+utterances:
+  - which parameters can I filter on
+  - why will the filter not take this parameter
+  - can this category be filtered
+  - what can I build a view filter on
+  - filterable parameters for ducts and pipes

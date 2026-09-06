@@ -1,0 +1,107 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-085
+semantic-identity: "one column made of two parameters joined together"
+kind: action
+domain: revit.schedules
+capability: ADD_SCHEDULE_COMBINED_FIELD
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds a column that joins several existing parameters into one, with a
+  separator between them - *"Type - Mark"* in a single column instead of two
+  that have to be read together.
+
+  **IT IS A REAL SCHEDULE FIELD, NOT TEXT.** The values follow the model: change
+  a mark and the column changes with it. Typing the joined values into a text
+  parameter gives the same drawing today and a wrong one after the next
+  revision.
+
+  **THIS IS NOT A FORMULA COLUMN, AND THE TWO GET CONFUSED.** A combined field
+  JOINS values as text. A calculated value works arithmetic on them - area
+  divided by a rate, a height in different units - and it is a different
+  mechanism that arrived later in the API. Asking for arithmetic here gets
+  concatenation, which looks like a working column and is not the number
+  anybody wanted.
+
+  **A PART THAT DOES NOT RESOLVE STOPS THE WHOLE COLUMN.** Half a column, built
+  from the parts whose names happened to match, is worse than none: it reads as
+  correct and is missing a value on every row. Where a named parameter is not
+  schedulable for that schedule's category, the schedule is named and nothing
+  is added to it.
+
+  **PREFIX AND SUFFIX PER PART ARE DELIBERATELY NOT HERE.** They would be two
+  more lists running in parallel with the fields, and a contract nobody can
+  call correctly is worse than a narrower one that works. The separator carries
+  the cases this is actually asked for.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: columnName
+      type: string
+      source: request
+    # The parameters to join, in order, by the names the schedule offers.
+    - name: partFields
+      type: IList<string>
+      source: request
+    # What goes BEFORE each part, same order. The first entry is ignored -
+    # nothing precedes the first value. Fewer entries than parts means no
+    # separator for the rest.
+    - name: partSeparators
+      type: IList<string>
+      source: request
+  provides:
+    - name: added
+      type: int
+    - name: partMissing
+      type: IList<ElementId>
+    - name: notASchedule
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The schedulable-field list, the
+  combined-parameter data and the insert call are unchanged 2020 to 2027.
+  Formula-based calculated values are NOT used here: they have no public API on
+  the older releases in this range, and a fragment that worked on half of them
+  would be a version-shaped hole that reads as green.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "one column with the type and the    -> here
+#    mark together"
+#   "join these two columns"             -> here
+#   "a column that calculates something" -> NOT here. A combined field joins
+#                                           text; arithmetic is a calculated
+#                                           value, a different mechanism with
+#                                           no public API across this whole
+#                                           release range
+#   "add a column"                       -> ADD_SCHEDULE_FIELDS, for a plain
+#                                           parameter
+#   "rename the heading"                 -> SET_SCHEDULE_FIELD_FORMAT
+#   "what fields does this schedule      -> REPORT_SCHEDULE_DEFINITION, which
+#    have"                                  is where the exact names come from
+
+utterances:
+  - one column with the type and the mark together
+  - join two parameters into one column
+  - combine these fields in the schedule
+  - add a combined parameter column
+  - join these two columns

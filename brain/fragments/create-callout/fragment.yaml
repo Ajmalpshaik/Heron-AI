@@ -73,6 +73,8 @@ compatibility-note: >
 #   "make a drafting view"       -> CREATE_DRAFTING_VIEW, when the detail is
 #                                   drawn by hand and should never change
 #   "create a section through this" -> CREATE_SECTION_VIEW
+#   "which view does this callout open"  -> REPORT_VIEW_REFERENCES. This one
+#                                           makes a new callout
 
 utterances:
   - create a callout

@@ -1,0 +1,51 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a model with two rooms placed outside the walls
+    expect: >
+      both in `elements` and in `unenclosed`, and `roomsChecked` equal to the total
+      number of rooms in the model. Check one in Revit - it should show Not
+      Enclosed in the properties palette
+
+  - given: a model whose rooms are all properly bounded
+    expect: >
+      `elements` empty and `roomsChecked` still counting every room. A sweep that
+      finds nothing must still say how much it looked at, or "no problems"
+      cannot be told from "nothing was checked"
+
+  - given: includeSpaces true on an MEP model
+    expect: >
+      unbounded Spaces found as well as Rooms, in one pass. A Space with no
+      volume carries no load and is silently missing from the totals
+
+  - given: includeRooms true and includeSpaces false
+    expect: >
+      Spaces ignored entirely, even faulty ones. The scope is the caller's
+
+negative:
+  - given: a room that exists in the schedule and was never placed
+    expect: >
+      its id in `unplaced`, NOT in `unenclosed`. Sending somebody to look for
+      the walls around a room that is not in the model is the wrong fix for
+      the wrong fault
+
+  - given: a room that is placed and properly enclosed
+    expect: >
+      it absent from every list. A correct room appearing here would have
+      somebody re-drawing walls that are already right
+
+  - given: includeRooms and includeSpaces both false
+    expect: >
+      empty outputs, `roomsChecked` = 0, and no throw. Nothing asked for is not an
+      error
+
+  - given: a model with no rooms at all
+    expect: >
+      empty outputs and `roomsChecked` = 0, distinct from a model whose rooms are
+      all fine
+
+second_route:
+  - >
+    build a Revit room schedule with Area and sort by it, or look at the
+    Warnings dialog. Revit shows Not Enclosed and Not Placed itself, and that
+    is the second route

@@ -86,6 +86,10 @@ compatibility-note: >
 #                                       is, and this cannot see it
 #   "are the fixtures plumbed"       -> CHECK_FIXTURE_CONNECTIVITY, which knows
 #                                       what services a fixture needs
+#   "show me the connectors on these"    -> REPORT_CONNECTORS - the
+#                                           inventory per element. This
+#                                           one narrows a set to act on
+#   "report the connectors"              -> REPORT_CONNECTORS
 
 utterances:
   - find the loose ends

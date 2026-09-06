@@ -1,0 +1,103 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-027
+semantic-identity: "these are modelled in the wrong category"
+kind: filter
+domain: revit.qa
+capability: CHECK_CATEGORY_MISMATCH
+version: 1
+source: OFFICIAL
+risk: ANALYZE
+
+purpose: >
+  Finds elements that ARE one thing but were MODELLED as another: the family or
+  type name says louvre, damper or fan, and the element sits in a category that
+  does not match. Hands the mismatches on as the set to look at, and changes
+  nothing.
+
+  **A WRONG CATEGORY IS INVISIBLE UNTIL IT MATTERS, AND THEN IT IS EVERYWHERE
+  AT ONCE.** The element looks right on screen. It is the schedule that misses
+  it, the view filter that does not catch it, the export that files it under
+  the wrong discipline, and the clash test that ignores it. By the time one of
+  those is noticed the model has been built on for weeks.
+
+  **IT IS FOUND BY NAME BECAUSE THAT IS WHAT CARRIES THE INTENT.** Somebody
+  named the family for what it is; the category is what they picked from a
+  list, sometimes wrongly, sometimes because the right one was not available
+  when the family was made. So the keywords are the caller's - the words this
+  office uses for the thing - and no list is built in, because every job names
+  its kit differently.
+
+  **IT REPORTS WHERE THEY ACTUALLY ARE.** Knowing that eleven elements are in
+  the wrong category is half an answer; knowing that seven are in generic
+  models and four in casework says whether it was one mistake or several.
+
+  **IT DOES NOT RE-CATEGORISE ANYTHING.** Changing a family's category is done
+  in the family editor and it reloads through every instance in the project -
+  it is a real piece of work with real consequences, not a repair to slip into
+  a check.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The words this office uses for the thing, matched against the family AND
+    # type name. No list is built in: every job names its kit differently.
+    - name: nameKeywords
+      type: IList<string>
+      source: request
+    - name: expectedCategory
+      type: BuiltInCategory
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: foundIn
+      type: IDictionary<string, int>
+    - name: correctlyCategorised
+      type: int
+    - name: scanned
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Family and type names are read through
+  the instance's symbol, and categories are compared as ElementId against
+  ElementId - never as numbers, which is the comparison that stopped working
+  when the id went 64-bit. The scan covers loadable family instances, which is
+  where a mis-categorised element can be: a system family's category is fixed
+  by what it is.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "these are in the wrong category"    -> here
+#   "why is this missing from my         -> here first. A wrong category is the
+#    schedule"                              usual reason a real element is
+#                                           absent from a schedule and present
+#                                           on screen
+#   "find all the X families"            -> SELECT_BY_FAMILY, which searches by
+#                                           name and does not judge the
+#                                           category
+#   "check the model against our         -> CHECK_MODEL_STANDARDS
+#    standards"
+#   "check the families"                 -> CHECK_FAMILY_STANDARDS
+#   "change these to another type"       -> CHANGE_ELEMENT_TYPE. A category
+#                                           change is not a type change and is
+#                                           done in the family editor
+#   "what is in this schedule"           -> READ_SCHEDULE_CONTENTS
+
+utterances:
+  - these are modelled in the wrong category
+  - the louvres are not in the right category
+  - why is this missing from the schedule
+  - find elements in the wrong category
+  - check the categories are right before i export

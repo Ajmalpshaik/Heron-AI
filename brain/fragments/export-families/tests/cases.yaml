@@ -1,0 +1,47 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a project with forty loadable families and an empty folder
+    expect: >
+      forty .rfa files in it and `saved` 40. Load one back into a blank project
+      and look at it - the file opening is the only proof that matters
+
+  - given: nameContains set to part of a family name
+    expect: >
+      only the matching families saved
+
+  - given: a run over several hundred families
+    expect: >
+      Revit still responsive afterwards. Every family document is closed,
+      including the ones that failed - leaving them open is what forces a
+      restart
+
+negative:
+  - given: a family called "300 x 150 / 45deg"
+    expect: >
+      a file saved under a cleaned name, with both names in `savedAs`. The
+      slash is legal in Revit and impossible on a disk, and the save throws on
+      it untouched
+
+  - given: two families whose names clean to the SAME file name
+    expect: >
+      the second in `nameCollisions` and NOT saved over the first. One file and
+      no sign the other existed is the worst outcome here
+
+  - given: a system family - a wall type, a duct type
+    expect: >
+      it skipped entirely. There is no file behind it and it cannot be opened
+      for editing at all
+
+  - given: a folder that does not exist or cannot be written to
+    expect: >
+      the failures named in `refused` and no claim of success
+
+  - given: a family Revit refuses to open for editing
+    expect: >
+      it in `refused`, the rest still saved, and its document closed
+
+second_route:
+  - >
+    open one of the saved files in Revit and check it is the family you meant.
+    A file on disk that nobody has opened is not evidence

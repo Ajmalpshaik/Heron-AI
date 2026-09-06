@@ -139,6 +139,12 @@ compatibility-note: >
 #                                       spatial element, not a room
 #   "what is in this room"           -> FILTER_ELEMENTS_IN_ROOM
 #   "place the rooms"                -> PLACE_ROOMS - a write
+#   "what are the room sizes"            -> here. It MEASURES and draws
+#                                           nothing - a question must not be
+#                                           answered by something that marks
+#                                           the drawing
+#   "put the room sizes on the plan"     -> DIMENSION_ROOMS, which creates
+#                                           real dimensions
 
 utterances:
   - how big is this room

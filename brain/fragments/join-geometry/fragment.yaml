@@ -94,6 +94,9 @@ compatibility-note: >
 #                                       Joining is what makes two elements
 #                                       agree about which one cuts the other
 #   "build a wall between these points" -> CREATE_WALL - it joins nothing
+#   "join these two columns"             -> ADD_SCHEDULE_COMBINED_FIELD if a
+#                                           SCHEDULE column is meant. This
+#                                           one joins geometry
 
 utterances:
   - join these walls together

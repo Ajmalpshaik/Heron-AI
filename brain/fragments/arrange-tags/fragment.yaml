@@ -1,0 +1,134 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-080
+semantic-identity: "the tags are sitting on top of each other, spread them out"
+kind: action
+domain: revit.annotation
+capability: ARRANGE_TAGS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Pushes overlapping tags apart until nothing sits on top of anything else,
+  leaving every tag as near where it started as it can be. The tidy-up for tags
+  that ALREADY exist - placed by hand, or by an earlier run - which is the case
+  a placement job cannot reach, because that only arranges the tags it places
+  itself.
+
+  **A TAG'S BOUNDING BOX INCLUDES ITS LEADER, SO IT CANNOT BE USED TO MEASURE
+  THE TAG.** On a leadered tag the box wraps the head AND the leader line - on
+  a congested plan that is metres, not millimetres, and spacing derived from it
+  flings tags across the drawing. Sizes are therefore measured ONLY from
+  leaderless tags, and the leadered ones take the median of those. Where every
+  tag in the set has a leader nothing can be measured at all, and the caller's
+  stated size is used instead: a size somebody chose beats a measured number
+  that is silently wrong. Which of the two happened is reported.
+
+  **A BENT LEADER HAS ALREADY BEEN THREADED ROUND SOMETHING, SO IT STAYS PUT.**
+  An elbow means somebody - or an earlier pass - routed that tag past a duct,
+  another tag, or its own text. Nudging it reopens a problem that was already
+  solved. When exactly one tag of a clashing pair has a straight leader, that
+  one takes the whole separation; only a pair of the same kind splits it.
+  Straight or bent is read fresh from each tag's current elbow, never
+  remembered.
+
+  **THAT PREFERENCE CAN FAIL TO CONVERGE, SO IT IS TWO PHASES.** A tag boxed in
+  by bent-leader neighbours has nowhere to go alone. The first phase keeps the
+  preference; anything still clashing at the end of it is separated with both
+  tags moving, and the tags that needed the exception are named. A preference
+  must not silently block a real clash, and must not be silently dropped
+  either.
+
+  **MOVING A TAG DRAGS A FREE LEADER'S END OFF ITS ELEMENT.** A leader whose
+  end is attached follows the element it points at. A free one carries its own
+  end point, which travels with the head - so a bulk tidy-up quietly pulls
+  every arrow off the thing it was pointing at. Free ends are read before the
+  move and written back after.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    # The clear gap to leave between two tags, on paper terms the reader
+    # judges. No default: what looks right at 1:100 is crowded at 1:50.
+    - name: minGapMm
+      type: double
+      source: request
+    # How many separation passes before the first phase gives up.
+    - name: maxPasses
+      type: int
+      source: request
+    # Used ONLY when every tag in the set has a leader, so nothing can be
+    # measured. Stated by the caller rather than assumed here.
+    - name: fallbackTagWidthMm
+      type: double
+      source: request
+    - name: fallbackTagHeightMm
+      type: double
+      source: request
+  provides:
+    - name: moved
+      type: int
+    - name: measuredFrom
+      type: int
+    - name: bothHadToMove
+      type: IList<ElementId>
+    - name: stillOverlapping
+      type: IList<ElementId>
+    - name: notTags
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  A compile-time split at 2022 for the leader. Before it a tag had one leader
+  and its elbow and end were properties; from 2022 a tag can point at several
+  elements and both became methods taking the reference they belong to, with
+  the properties REMOVED. Naming either set directly stops the fragment
+  compiling on the other half of the range, and a try/catch cannot help
+  because a missing member fails the compile rather than the run. The head
+  position, which is what actually moves, is unchanged 2020 to 2027.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "the tags are on top of each other"  -> FIND_OVERLAPPING_TAGS owns that
+#                                           sentence and REPORTS them; here
+#                                           when they are to be MOVED
+#   "spread the tags out"                -> here
+#   "which tags overlap"                 -> FIND_OVERLAPPING_TAGS, which
+#                                           reports and changes nothing. Run it
+#                                           first if you want to see the list
+#   "centre the room tags"               -> CENTER_ROOM_TAGS. Room tags belong
+#                                           in their rooms, which is a
+#                                           different rule from not touching
+#   "tag the rest of these"              -> TAG_ELEMENTS_IN_VIEW
+#   "what are the tags pointing at"      -> REPORT_TAGS_AND_TARGETS
+#   "fix the leader shape on these tags" -> FORCE_TAG_LEADER_LSHAPE. This one
+#                                           moves tag HEADS and leaves the
+#                                           leader shape alone
+#   "there is no room for the tags here" -> STACK_TAGS, which gathers them at
+#                                           the side instead of spreading them
+
+utterances:
+  - the tags are sitting on top of each other
+  - spread the tags out
+  - tidy up the tags on this view
+  - arrange the tags so they do not clash
+  - the tags are overlapping on this drawing
+  - fix the tag clash

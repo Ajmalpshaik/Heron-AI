@@ -1,0 +1,51 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a template project open alongside, viewKind "schedules"
+    expect: >
+      the schedules here afterwards with their fields and filters intact. Open
+      one - a schedule that arrived without its definition is not a transfer
+
+  - given: viewKind "legends"
+    expect: >
+      the legends here WITH their content drawn in them. An empty legend with
+      the right name is the failure this fragment exists around
+
+  - given: viewKind "drafting"
+    expect: >
+      the details drawn in each view, not just the view
+
+  - given: viewKind "templates"
+    expect: >
+      the view templates here, ready to apply
+
+negative:
+  - given: a legend copied without its contents
+    expect: >
+      NOT what this does. The document-to-document copy takes the shell only,
+      and the second copy is what carries the drawing
+
+  - given: a text type in this project with the same name as one in the source
+    expect: >
+      that view named in `clashed` and the rest still copied. The handler that
+      resolves a clash has to be a class, and a fragment cannot declare one -
+      this is a job the fragment shape cannot finish
+
+  - given: the source project NOT open
+    expect: >
+      `refused` naming what IS open, and nothing attempted. Guessing at a file
+      on disk is not something to do quietly
+
+  - given: a view whose name already exists here
+    expect: >
+      Revit making "Name(1)" rather than this skipping it. Read the names back
+      before a big transfer
+
+  - given: the title-block revision schedule in the source
+    expect: >
+      it not copied. Revit maintains it itself and copying it can misbehave
+
+second_route:
+  - >
+    open a transferred legend or drafting view and look at it. A view with the
+    right name and nothing in it is the exact failure to check for

@@ -94,6 +94,11 @@ compatibility-note: >
 #   "turn off this workset in this view" -> SET_VIEW_WORKSET_VISIBILITY - that
 #                                        changes one DRAWING. This changes the
 #                                        MODEL, in every view at once
+#   "what is on each workset"            -> CREATE_WORKSET_3D_VIEWS for a
+#                                           view per workset, SELECT_BY_WORKSET
+#                                           for a list. This one MOVES
+#                                           elements onto a workset
+
 utterances:
   - put them on a different workset
   - move these to the MEP workset

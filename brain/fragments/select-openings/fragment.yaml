@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-025
+semantic-identity: "where are the shafts and the holes in the slab"
+kind: filter
+domain: revit.selection
+capability: SELECT_OPENINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Collects the openings cut through the building - shafts, floor openings, wall
+  openings, roof openings - as a set to act on. The MEP question behind it is
+  always the same: where can this riser go, and is there a hole here already.
+
+  **ONE QUERY MISSES MOST OF THEM, BECAUSE OPENINGS ARE NOT ONE CATEGORY.**
+  They are spread across several - a shaft cutting many levels, a hole in a
+  slab, a rectangular opening in a wall, one in a roof - and each is its own
+  category with its own name. Asking for the obvious one comes back with a
+  fraction of what is there and looks like an answer.
+
+  **AN OPENING CUT BY A FAMILY IS NOT AN OPENING ELEMENT.** The hole a door or
+  a window makes belongs to that family and appears in none of these
+  categories. That is correct - it is the door's hole, not a shaft - and it is
+  said here because "show me every hole" means both to a person, and only one
+  of them is findable this way.
+
+  **THE BREAKDOWN IS PART OF THE ANSWER.** Twelve shafts is a coordination
+  picture; twelve floor openings is a different one. They are counted per kind
+  rather than summed.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Null means the whole model; a view narrows it to what that view draws.
+    - name: inViewOnly
+      type: View
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: byKind
+      type: IDictionary<string, int>
+    - name: found
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The opening categories are unchanged
+  2020 to 2027, and they are collected through a multi-category filter in one
+  pass rather than one collector per category - which is both faster and unable
+  to return the same opening twice.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "where are the shafts"               -> here
+#   "is there a hole in this slab"       -> here
+#   "check the sleeves"                  -> AUDIT_MEP_OPENINGS, which is about
+#                                           the sleeves MEP puts in rather than
+#                                           the holes the building has
+#   "what size should the sleeve be"     -> CHECK_SLEEVE_SIZE
+#   "what is in the way"                 -> CHECK_OBSTRUCTIONS
+#   "all the ductwork"                   -> SELECT_BY_CATEGORIES
+
+utterances:
+  - where are the shafts
+  - find the openings in the slab
+  - is there a hole here for this riser
+  - show me every opening
+  - select the wall openings

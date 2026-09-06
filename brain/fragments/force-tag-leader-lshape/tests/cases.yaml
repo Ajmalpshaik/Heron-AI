@@ -1,0 +1,58 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: duct tags with straight diagonal leaders, legMm 8 in a 1:100 view
+    expect: >
+      every leader bending: a horizontal shoulder into the tag, then a straight
+      run to the duct. Look at the plan - this is a drafting standard and the
+      eye is the judge
+
+  - given: room tags in the same set
+    expect: >
+      them bent too. A cast to the independent tag class alone skips every room
+      tag and reports the rest as done
+
+  - given: a tag whose element is to the LEFT of it
+    expect: >
+      the shoulder pointing left. A leg on the far side runs back across the
+      tag's own text, which is worse than the diagonal it replaced
+
+  - given: the same view at 1:50
+    expect: >
+      a shoulder half the model length of the one at 1:100, and the same length
+      on paper
+
+negative:
+  - given: a tag whose leader end is ATTACHED
+    expect: >
+      the end set to free first and the elbow taking. With it attached Revit
+      owns the shape, the set returns normally, and nothing bends
+
+  - given: that same tag afterwards, and its element moved
+    expect: >
+      the leader end staying where it was. A free end no longer follows its
+      element - that is the price of the standard and it must not be a surprise
+
+  - given: a tag with no leader at all
+    expect: >
+      its id in `noLeader` and nothing written. There is nothing to bend
+
+  - given: a text note or a dimension in the set
+    expect: >
+      its id in `notTags`, and the real tags still bent
+
+  - given: a tag Revit refuses to bend
+    expect: >
+      its id in `refused`, established by reading the elbow back - not by the
+      call returning
+
+  - given: a ROOM tag, which has no leader end condition at all
+    expect: >
+      its elbow set directly and read back. The property is not on that class
+      on any release, so a branch written to mirror the independent tag does
+      not compile - and that is where this was caught
+
+second_route:
+  - >
+    look at the sheet. Then move one tagged element and check the leader
+    behaves the way a free end does - that is the trade this fragment makes

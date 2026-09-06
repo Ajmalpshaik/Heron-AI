@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: section marks on a duplicated sheet, still pointing at the original views
+    expect: >
+      every mark opening the chosen view afterwards, and the bubbles showing
+      the NEW sheet and detail number. The bubble text is the check - it is
+      drawn from the view, so it changes without anything being typed
+
+  - given: a callout bubble re-pointed at another callout view
+    expect: >
+      it opening that view on a double-click in Revit
+
+  - given: a set where some marks already point at the target
+    expect: >
+      those ids in `alreadyThere` and NOT counted in `repointed`. Forty
+      reported when four changed is a number nobody can check a drawing against
+
+negative:
+  - given: a target view id that is not a view, or cannot be referenced
+    expect: >
+      every element in `refused`, nothing changed, and no half-done sheet. The
+      target is checked once - forty identical refusals in a report teach the
+      reader to skim it
+
+  - given: a dimension or a tag in the selection
+    expect: >
+      its id in `referencesNothing` and the real marks still re-pointed
+
+  - given: a mark whose kind cannot reference the chosen view
+    expect: >
+      its id in `refused`, established by reading what it points at AFTER the
+      call. The call does not always throw when it does nothing
+
+  - given: the same re-point run twice
+    expect: >
+      the second run reporting everything in `alreadyThere` and `repointed` 0.
+      Nothing is changed twice, and the count says so
+
+second_route:
+  - >
+    look at the bubble on the sheet, and double-click the mark. Both come from
+    the view it references and neither is this fragment reading itself back

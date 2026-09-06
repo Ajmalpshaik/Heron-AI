@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-SEL-008
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-023
+semantic-identity: "add these to the set i saved, or take them out of it"
+kind: action
+domain: revit.selection
+capability: UPDATE_SAVED_SET
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes what is in a named selection set that already exists - adds elements,
+  removes them, replaces the lot, or deletes the set. The other half of saving
+  a set: parking the beams while the ducts are run is only useful if the parked
+  set can be corrected afterwards.
+
+  **THE SET LIVES IN THE MODEL, NOT IN THIS SESSION.** It is a real element, so
+  it survives the file being closed, it is visible to everybody on the job, and
+  Revit maintains it as elements are deleted. That is also why editing one is a
+  model change with an undo entry, not a convenience.
+
+  **IDS IN THE SET THAT NO LONGER RESOLVE ARE COUNTED, NEVER SILENTLY
+  DROPPED.** A saved set outlives the elements in it. Somebody deletes forty
+  beams, the set still names them, and a set that quietly shrinks looks like it
+  was edited by somebody. `missing` is that number, read fresh each time.
+
+  **CREATING IS A DIFFERENT FRAGMENT AND THIS ONE REFUSES TO DO IT.** Asking to
+  add to a set that does not exist is almost always the name being wrong -
+  spelled differently, or on another model. Creating one silently would leave
+  two sets a letter apart, both half right, which is worse than the error.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: setName
+      type: string
+      source: request
+    # "add" | "remove" | "replace" | "delete"
+    - name: mode
+      type: string
+      source: request
+  provides:
+    - name: setSize
+      type: int
+    - name: changed
+      type: int
+    - name: missing
+      type: int
+    - name: deleted
+      type: bool
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The selection filter element and its
+  get and set of member ids are unchanged 2020 to 2027, and membership is
+  compared as ElementId against ElementId rather than as numbers - the
+  comparison that survived the id going 64-bit.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "add these to the saved set"        -> here
+#   "take those out of the set"         -> here
+#   "delete that selection set"         -> here, mode "delete"
+#   "save these as a set"               -> CREATE_SELECTION_FILTER. This one
+#                                          refuses to create, because a
+#                                          mistyped name would leave two sets a
+#                                          letter apart
+#   "select what is in that set"        -> SELECT_FROM_SAVED_SET
+#   "select these in Revit"             -> SET_SELECTION, which is the current
+#                                          selection and not saved anywhere
+#   "hide these while i work"           -> ISOLATE_ELEMENTS or HIDE_ELEMENTS,
+#                                          composed after the set is read
+
+utterances:
+  - add these to the saved set
+  - remove these from my selection set
+  - update the named set
+  - delete that selection set
+  - the saved set is out of date
+  - take those out of the set

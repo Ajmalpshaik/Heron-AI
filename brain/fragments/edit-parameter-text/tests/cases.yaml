@@ -1,0 +1,61 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: prefix "AJ_" on Comments over ten elements whose comments read M-01 ... M-10
+    expect: >
+      ten edits, every value reading AJ_M-01 and so on, and the ORIGINAL text
+      still there after the prefix. Check one in Revit's properties palette
+
+  - given: find "SUP" replaceWith "SUPPLY" on a set whose marks contain SUP
+    expect: >
+      only the matching part changed and the rest of each value untouched
+
+  - given: a suffix on Type Mark, where forty instances share one type
+    expect: >
+      the type in `typesEdited` ONCE and the suffix applied ONCE. Forty writes
+      would apply it forty times and the value would be wrong in a way that
+      looks like success
+
+  - given: prefix and find/replace asked for together
+    expect: >
+      the replace applied first, then the prefix. Any other order makes the
+      prefix part of the text the replace searches
+
+negative:
+  - given: the SAME prefix edit run a second time
+    expect: >
+      every element in `unchanged` and `edited` = 0. Values must read AJ_M-01,
+      never AJ_AJ_M-01. Batch jobs get re-run, and a stacking prefix makes the
+      second run worse than the first
+
+  - given: a parameter that is read-only or driven by a formula
+    expect: >
+      the id in `refused`, never in `edited`. The set call can succeed while
+      the value does not change, and the read-back is the only thing that knows
+
+  - given: a NUMERIC parameter named in parameterName
+    expect: >
+      the ids in `absent`, and nothing written. A number has no meaningful
+      prefix, and forcing one through the string setter leaves a parameter
+      nobody can read
+
+  - given: an element that does not carry the parameter at all
+    expect: >
+      its id in `absent` and the rest of the batch still edited. One element
+      without the parameter must not lose the others
+
+  - given: find text that appears in none of the values
+    expect: >
+      everything in `unchanged`. That is the honest answer to "did it work" -
+      usually the search text was wrong
+
+  - given: a type parameter edit on a workshared model where the type is owned by another user
+    expect: >
+      the id in `refused` and no claim of success. Ownership failure is a
+      normal outcome, not an exception to hide
+
+second_route:
+  - >
+    read the values back in a Revit schedule of the same parameter after the
+    transaction commits, and undo once - one undo must put every value back,
+    which is what proves the batch was one transaction

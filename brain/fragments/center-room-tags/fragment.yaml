@@ -1,0 +1,105 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-079
+semantic-identity: "put the room tags back in the middle of their rooms"
+kind: action
+domain: revit.annotation
+capability: CENTER_ROOM_TAGS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves each room tag so its head sits at the middle of the room it tags. The
+  tidy-up after tags have been dragged about, or after rooms were re-shaped and
+  the tags stayed where they were.
+
+  **THE MIDDLE OF AN L-SHAPED ROOM IS NOT INSIDE IT.** The true area centroid of
+  an L or a U falls in the corridor, or in the next tenancy - and a tag placed
+  there reads as belonging to the wrong room, which is worse than the untidy
+  tag it replaced. So the centroid is TESTED against the room before it is
+  used, and where it falls outside, a point that is genuinely inside is found
+  by sampling. Every tag that needed that is named, because those are the rooms
+  worth looking at on screen.
+
+  **THE CENTROID IS AREA-WEIGHTED, NOT THE MIDDLE OF THE BOX.** A bounding-box
+  centre is right for a rectangle and wrong for everything else, and it is
+  wrong in the direction that puts the tag in a doorway. The polygon centroid
+  is computed from the room's own boundary; the box is the fallback for a room
+  whose boundary cannot be read at all.
+
+  **A TAG ON A ROOM IN A LINKED MODEL NEEDS THE LINK'S TRANSFORM.** On an MEP
+  job the rooms are usually in the architect's link. The room's centre then
+  comes back in the LINK's coordinates, and using it directly puts the tag at
+  the wrong end of the site - far enough away that it looks like a different
+  bug. The link's transform is applied, and a tag whose link cannot be resolved
+  is refused rather than moved to a guessed place.
+
+  **THE HEAD IS WHAT MOVES.** Setting the tag's location does not move a room
+  tag; its head position is the property that does. Every tag is read back
+  after the move and reported at where it actually landed.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  whole plan's worth of tags is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: centred
+      type: int
+    - name: landedAt
+      type: IDictionary<ElementId, XYZ>
+    - name: interiorPointUsed
+      type: IList<ElementId>
+    - name: orphanTags
+      type: IList<ElementId>
+    - name: notRoomTags
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The room tag, its head position, the
+  boundary segments and the point-in-room test are unchanged 2020 to 2027. The
+  linked-room half is reached through the tag's tagged-room id, which carries
+  the link instance as well as the room, so no version-specific accessor is
+  needed.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "the room tags are all over the      -> here
+#    place"
+#   "centre the room tags"               -> here
+#   "the tags are on top of each other"  -> ARRANGE_TAGS, which pushes tags
+#                                           apart. This one puts each tag in
+#                                           its own room and can leave two
+#                                           small rooms' tags close together
+#   "which tags overlap"                 -> FIND_OVERLAPPING_TAGS
+#   "what are the tags pointing at"      -> REPORT_TAGS_AND_TARGETS
+#   "tag the rooms"                      -> TAG_ELEMENTS_IN_VIEW places the
+#                                           missing ones; this only moves tags
+#                                           that already exist
+#   "put tags on these"                  -> TAG_ELEMENTS. This one moves the
+#                                           ones that are already there
+#   "there is no room for the tags here" -> STACK_TAGS, which gathers them at
+#                                           the side of the plan
+
+utterances:
+  - centre the room tags
+  - the room tags are in the wrong place
+  - move the tags to the middle of the rooms
+  - tidy up the room tags
+  - the tags moved when i changed the rooms
+  - put the room tag in the room

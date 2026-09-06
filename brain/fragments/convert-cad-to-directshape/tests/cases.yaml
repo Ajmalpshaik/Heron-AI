@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: an imported 3D DWG holding forty solids, category Generic Models
+    expect: >
+      forty elements afterwards, each selectable on its own. Click one in Revit -
+      before this, clicking anywhere in the import selects the whole thing
+
+  - given: those elements after conversion
+    expect: >
+      them findable by category, schedulable, and visible to a clash check.
+      That is the whole point: the library works on them from here on
+
+  - given: the import itself afterwards
+    expect: >
+      it still there, unchanged. Converting is additive and which of the two
+      overlapping sets to keep is not decided here
+
+negative:
+  - given: an import whose geometry is all surfaces
+    expect: >
+      few or no elements and `skippedSolids` counting the rest. Five from a
+      hundred means the file was exported as surfaces - a conversation with
+      whoever sent it, not a fault here
+
+  - given: a category that will not hold a direct shape
+    expect: >
+      `refused` and NOTHING attempted. Every solid would fail identically, and
+      a hundred identical rows teach a reader to skim the report
+
+  - given: the geometry read at the top level only
+    expect: >
+      NOT what this does. An import's solids live inside a geometry instance,
+      and stopping at the top reports a clean run over a file it never opened
+
+  - given: a wall or a duct in the set
+    expect: >
+      its id in `notAnImport`, and any real imports still converted
+
+  - given: a solid Revit refuses to take
+    expect: >
+      it counted in `skippedSolids` and the rest still created
+
+second_route:
+  - >
+    select one of the new elements in Revit and read its category, then run a
+    clash check against it - "something in the DWG" becoming a named element is
+    the result this exists for

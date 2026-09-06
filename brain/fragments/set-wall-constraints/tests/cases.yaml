@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: walls on Level 1 re-hosted to Level 2, which is 3000 mm higher
+    expect: >
+      the walls attached to Level 2, their base offset now -3000 mm, and the
+      walls in exactly the same place. Look at a SECTION - a plan cannot show
+      this at all
+
+  - given: only a base level given, top left alone
+    expect: >
+      the top constraint untouched and the wall's top elevation unchanged. One
+      call re-hosting one end is the normal case
+
+  - given: both levels given
+    expect: >
+      both ends re-hosted and the wall's height identical to what it was
+
+negative:
+  - given: a wall whose TOP is unconnected, with a top level asked for
+    expect: >
+      its id in `unconnectedTop` and its top left alone. Giving it a top level
+      converts it from unconnected to level-bound, which is a design change and
+      not a re-host
+
+  - given: a wall the re-solve cannot keep still
+    expect: >
+      its id in `elevationChanged`. The whole promise here is "nothing moves",
+      and a count of walls re-hosted does not test that promise
+
+  - given: an offset or constraint parameter that is read-only
+    expect: >
+      the id in `refused` and no half-set wall - the level must not be changed
+      while the offset cannot be
+
+  - given: a level id that is not a level
+    expect: >
+      every element in `refused` and nothing changed. It fails every wall
+      identically, so it is refused once rather than forty times
+
+  - given: a door or a duct in the set
+    expect: >
+      its id in `notAWall` and the walls still re-hosted
+
+second_route:
+  - >
+    open a section through the walls before and after, or read the wall's Base
+    Constraint and Base Offset in the properties palette - the two together are
+    the elevation this fragment promises not to change

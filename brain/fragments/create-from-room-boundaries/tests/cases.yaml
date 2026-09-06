@@ -1,0 +1,47 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: thirty enclosed rooms and a ceiling type
+    expect: >
+      a ceiling in each, the shape of its room. Look at a reflected ceiling
+      plan - the edges follow the walls without anybody typing a coordinate
+
+  - given: a floor type instead
+    expect: >
+      floors, not ceilings. The type decides, so there is no mode to get wrong
+
+  - given: heightAboveLevel for ceilings
+    expect: >
+      them at that height above the room's level
+
+negative:
+  - given: a room wrapping around a SHAFT
+    expect: >
+      the shaft left open and the room's id in `withHoles`. A slab over the
+      shaft looks right in plan, passes every check, and is found by whoever
+      tries to run a riser
+
+  - given: that same room on a release that takes one loop only
+    expect: >
+      the ceiling built AND a line in `refused` saying the hole was not cut.
+      Building it silently is the failure; skipping it entirely is not what was
+      asked for either
+
+  - given: an unenclosed room
+    expect: >
+      its id in `unenclosed` and nothing built. Thirty rooms producing
+      twenty-eight ceilings has to say which two
+
+  - given: a wall type passed as the host type
+    expect: >
+      `refused` and nothing attempted - there is nothing to decide what to
+      build
+
+  - given: a release with no ceiling creation at all
+    expect: >
+      `refused` saying so, rather than the fragment failing to compile there
+
+second_route:
+  - >
+    open a reflected ceiling plan and a section through the shaft. The section
+    is where a slab over a shaft becomes obvious

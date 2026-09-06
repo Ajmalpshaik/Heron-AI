@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a congested services plan with twenty tags, cropped
+    expect: >
+      two tidy columns just outside the crop, the middle of the drawing
+      readable, every tag still leadered to its own element. Look at the plan -
+      that is the deliverable
+
+  - given: tags whose elements are on the left of the view
+    expect: >
+      those tags in the LEFT column. One edge for everything doubles the leader
+      lengths and drags them across the drawing
+
+  - given: marginMm 10 in a 1:100 view
+    expect: >
+      the column a metre outside the crop in model terms, and 10 mm on paper.
+      At 1:50 the same 10 mm is half a metre
+
+negative:
+  - given: tags parked in the order the filter returned them
+    expect: >
+      NOT what this does. Ordering by where each element sits up the view is
+      what keeps the leaders from crossing - the same tags in the same places
+      otherwise
+
+  - given: an UNCROPPED view
+    expect: >
+      `usedTagExtent` true and the columns outside the tags' own extent. There
+      are no edges to park against, and the result looks different enough that
+      the report has to say why
+
+  - given: a tag with a FREE leader end
+    expect: >
+      the arrow still on its element afterwards
+
+  - given: a text note in the set
+    expect: >
+      its id in `notTags`
+
+  - given: a tag Revit will not move
+    expect: >
+      its id in `refused` and not counted, established by reading the head back
+
+second_route:
+  - >
+    look at the plan, and follow two leaders from the column back to their
+    elements - crossing leaders are the failure and they are obvious by eye

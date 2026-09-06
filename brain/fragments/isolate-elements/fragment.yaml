@@ -61,6 +61,10 @@ compatibility-note: >
 #   "just show me this part of the plan"  -> SET_VIEW_CROP - trims what the
 #                                           drawing SHOWS, in the view's plane
 #   "crop the view to follow the room shape" -> SET_VIEW_CROP_TO_SHAPE
+#   "show how much, not just which"      -> SHOW_ANALYSIS_HEATMAP, a gradient
+#                                           with a legend. This one hides
+#                                           everything else
+
 utterances:
   - show me just these
   - isolate them

@@ -1,0 +1,57 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one straight duct and a volume damper symbol, positionAlong 0.5
+    expect: >
+      TWO ducts afterwards where there was one, the damper between them, and
+      both its connectors joined. Count the ducts before and after - if the
+      count did not change, the run was never broken and the damper is sitting
+      loose on top of it
+
+  - given: a pipe and a valve
+    expect: >
+      the same, through the pipe's own break utility. Ducts and pipes have
+      separate calls and no shared one
+
+  - given: the system traced afterwards
+    expect: >
+      it running THROUGH the accessory, end to end. A damper that is placed but
+      not connected leaves the system severed while looking finished
+
+  - given: positionAlong 0.25
+    expect: >
+      the accessory a quarter of the way along, and the two halves in that
+      proportion
+
+negative:
+  - given: the accessory hosted on the run instead of breaking it first
+    expect: >
+      NOT what this does. That call looks like the Revit command, changes no
+      duct count, leaves the accessory hostless with neither connector joined,
+      and reports success - which is the defect this fragment was rewritten to
+      avoid
+
+  - given: a break that succeeds and a placement that fails
+    expect: >
+      both half ids in `leftSevered`. The break does not join the halves to
+      each other, so the run is now in two pieces and somebody has to know
+
+  - given: an accessory whose connectors do not reach either half
+    expect: >
+      it in `placed` AND the run in `leftSevered`. Placed is not connected, and
+      reporting only the placement would read as done
+
+  - given: a fitting or an air terminal in the set
+    expect: >
+      its id in `notARun`. Only a duct or a pipe can be broken
+
+  - given: a symbol never used this session
+    expect: >
+      it activated first. Without that the first placement throws, and it reads
+      as the family being wrong
+
+second_route:
+  - >
+    select the accessory in Revit and drag it a little - a connected accessory
+    drags the ducts with it. Then undo once: one undo must put the whole run
+    back

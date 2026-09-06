@@ -1,0 +1,50 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: eight duct tags in a congested area, stacked at a clear point
+    expect: >
+      a tidy vertical column, evenly spaced, each still leadered to its own
+      duct. Look at the plan - crossing leaders are the failure and they are
+      obvious
+
+  - given: gapMm 5 in a 1:100 view
+    expect: >
+      500 model mm between tags. At 1:50 the same 5 mm must give 250 - the gap
+      is a PAPER distance and the scale is what turns it into a model one
+
+  - given: room tags in the set
+    expect: >
+      them stacked too. Casting only to the independent tag class silently
+      skips every room tag, and the set comes back half done
+
+  - given: tags with free leader ends
+    expect: >
+      the arrows still on their elements afterwards
+
+negative:
+  - given: tags sorted by the order the filter returned them
+    expect: >
+      NOT what this does. The order is by each tag's own element along the
+      stack axis, and any other order weaves the leaders through each other
+
+  - given: an element in the set that is not a tag
+    expect: >
+      its id in `notTags`, and the real tags still stacked
+
+  - given: a tag with no head position at all
+    expect: >
+      its id in `noHead` rather than a move to a guessed point
+
+  - given: a tag Revit refuses to move
+    expect: >
+      its id in `refused` and NOT counted, established by reading the head back
+
+  - given: gapMm 0
+    expect: >
+      every tag at the same point - which is what was asked for, and visibly
+      wrong on the drawing rather than silently adjusted here
+
+second_route:
+  - >
+    look at the plan. A stack is judged by eye, and crossing leaders are the
+    thing to look for

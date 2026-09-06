@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-017
+semantic-identity: "delete that revision from the project"
+kind: action
+domain: revit.sheets
+capability: DELETE_REVISION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Deletes a project revision.
+
+  **DELETING ONE RENUMBERS EVERY LATER REVISION, AND THAT IS THE PART THAT
+  CATCHES PEOPLE.** Delete revision 3 of 5 and the old 4 and 5 become 3 and 4.
+  Every note, every email and every drawing that referred to "revision 4" now
+  points at a different issue - and nothing in the model records that it moved.
+  The numbers after the deletion are read back and reported for exactly that
+  reason.
+
+  **REVIT REFUSES TO DELETE ONE THAT A CLOUD STILL USES**, which is a refusal
+  rather than a crash, and it is usually the right answer: the cloud is on a
+  sheet somebody has issued.
+
+  **IT IS FOUND BY SEQUENCE NUMBER**, the number Revit's own dialog shows -
+  not by description, which repeats across a job.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so one
+  undo puts the revision and its numbering back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: sequenceNumber
+      type: int
+      source: request
+  provides:
+    - name: deleted
+      type: bool
+    - name: renumbered
+      type: IDictionary<int, string>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. A revision is an ordinary element to
+  delete, and its sequence number and description are unchanged 2020 to 2027.
+  Revit's own refusal when a cloud still references it comes back as a failed
+  delete rather than as a thrown error on some releases, so the result is
+  established by looking for the revision afterwards.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "delete that revision"               -> here, and everything after it
+#                                           renumbers
+#   "change the revision"                -> EDIT_REVISION, when the fix is a
+#                                           wrong date or description rather
+#                                           than a revision that should not
+#                                           exist
+#   "take that revision off the sheets"  -> SET_SHEET_REVISIONS, which leaves
+#                                           the revision itself alone
+#   "list the revisions"                 -> LIST_REVISIONS
+#   "delete these elements"              -> DELETE_ELEMENTS, the general one
+#   "take that revision off the sheets"  -> SET_SHEET_REVISIONS, which leaves
+#                                           the revision itself in place
+
+utterances:
+  - delete that revision
+  - remove the revision from the project
+  - get rid of revision 3

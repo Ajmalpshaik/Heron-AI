@@ -98,6 +98,10 @@ compatibility-note: >
 #                                       exists for it to clear
 #   "make a floor slab over this area" -> CREATE_FLOOR - the other flat thing,
 #                                       and the one the ceiling hangs under
+#   "put a ceiling in every room"        -> CREATE_FROM_ROOM_BOUNDARIES,
+#                                           which takes the shape from the
+#                                           room and leaves its shafts open.
+#                                           This one takes one typed loop
 
 utterances:
   - make a ceiling over this area

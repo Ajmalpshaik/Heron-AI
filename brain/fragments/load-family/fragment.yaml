@@ -67,6 +67,8 @@ compatibility-note: >
 #   "which families are unused"  -> FIND_UNUSED_FAMILIES, which reports what
 #                                   Revit's Purge Unused would look at and
 #                                   deletes nothing
+#   "i need that family as an rfa"       -> EXPORT_FAMILIES, the way OUT.
+#                                           This one is the way in
 
 utterances:
   - load a family

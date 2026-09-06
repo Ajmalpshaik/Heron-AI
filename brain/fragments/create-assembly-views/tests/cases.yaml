@@ -1,0 +1,47 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one complete assembly, both extras asked for
+    expect: >
+      a 3D orthographic, three detail sections, a part list and a material
+      takeoff - all under that assembly in the project browser, not loose in
+      the view tree
+
+  - given: the assembly moved afterwards
+    expect: >
+      its views following it. They are oriented to the assembly's own origin,
+      which is what a hand-drawn section cannot do
+
+  - given: withPartList false
+    expect: >
+      the views without a part list, and the count reflecting it
+
+  - given: twenty assemblies
+    expect: >
+      a view set for each, and `created` counting the views per assembly
+
+negative:
+  - given: this run TWICE on the same assembly
+    expect: >
+      the second run putting it in `alreadyHadViews` and making nothing. Two of
+      everything means two drawings claiming to be the same part
+
+  - given: an assembly whose type is not settled
+    expect: >
+      its id in `refused` and the other nineteen still done. A half-made
+      assembly is normal in a set that size
+
+  - given: the MEMBERS of an assembly passed instead of the assembly
+    expect: >
+      their ids in `notAnAssembly`. Only the assembly instance can generate
+      views
+
+  - given: a detail section Revit will not create for one orientation
+    expect: >
+      the other views still made and the count showing fewer. One refused
+      orientation must not lose the drawing set
+
+second_route:
+  - >
+    open the project browser and look under the assembly - the views live there
+    rather than in the main view tree, which is what proves they are owned by it

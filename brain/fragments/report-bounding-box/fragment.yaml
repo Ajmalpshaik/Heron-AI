@@ -98,6 +98,13 @@ compatibility-note: >
 #   "set the section box round these"   -> SET_VIEW_SECTION_BOX - which CHANGES
 #                                          a view, and is what this question used
 #                                          to reach
+#   "what is the overall size of this    -> here
+#    set"
+#   "dimension the rooms"                -> DIMENSION_ROOMS, which draws it
+#                                           on the plan instead of reporting
+#   "what are the extents of this        -> here. A datum extent is a
+#    equipment"                             different thing entirely -
+#                                           MAXIMIZE_DATUM_EXTENTS
 
 utterances:
   - what is the bounding box of this duct

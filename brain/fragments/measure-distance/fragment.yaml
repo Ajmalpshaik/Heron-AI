@@ -85,6 +85,9 @@ compatibility-note: >
 #   "are they touching"              -> SELECT_TOUCHING. This reports zero for
 #                                       touching AND for overlapping, and
 #                                       cannot tell them apart
+#   "how far is the nearest thing"       -> PROBE_AROUND_ELEMENTS, which
+#                                           casts a ray. This one measures
+#                                           between two named elements
 
 utterances:
   - how far apart are these two

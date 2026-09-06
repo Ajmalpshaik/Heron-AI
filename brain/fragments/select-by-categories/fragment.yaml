@@ -1,0 +1,87 @@
+heron-agent: HERON-REVIT-CAT-009
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-024
+semantic-identity: "all the ductwork - the ducts, the fittings, the accessories and the flex"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_CATEGORIES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Collects several categories into one set in a single pass. What somebody
+  means by *"the ductwork"* is five Revit categories - ducts, fittings,
+  accessories, flex duct and the insulation on them - and by *"the pipework"*,
+  five more. One category is almost never the whole answer.
+
+  **ONE COLLECTOR, NOT ONE PER CATEGORY.** Running a separate collector for
+  each category walks the document that many times and then needs the results
+  de-duplicated by hand. A multi-category filter asks once, which is both
+  faster and the only version that cannot return the same element twice.
+
+  **IT REPORTS THE BREAKDOWN, WHICH IS WHERE THE MISTAKE SHOWS.** A total of
+  480 says nothing about whether the flex duct was included; 300 ducts, 150
+  fittings, 30 accessories and no flex says the model has no flex duct or the
+  category was left out of the list. One of those is worth knowing before a
+  takeoff goes out.
+
+  **A CATEGORY WITH NOTHING IN IT IS REPORTED AS ZERO, NOT LEFT OUT.** The
+  absence is the finding: a duct system with no accessories is either a model
+  with no dampers in it yet, or a filter that missed them.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+    # Null means the whole model; a view narrows it to what that view draws.
+    - name: inViewOnly
+      type: View
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: perCategory
+      type: IDictionary<string, int>
+    - name: found
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The multi-category filter and the
+  view-scoped collector are unchanged 2020 to 2027, and categories are named
+  through the element's own category rather than by converting an id back to a
+  number.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "all the ductwork"                  -> here: ducts, fittings, accessories,
+#                                          flex and insulation are five
+#                                          categories and one answer
+#   "all the pipework"                  -> here
+#   "all the ducts"                     -> FILTER_ELEMENTS_BY_CATEGORY when it
+#                                          really is the one category
+#   "find all the VCDs"                 -> SELECT_BY_FAMILY, by family name
+#   "everything of this type"           -> FILTER_ELEMENTS_BY_TYPE
+#   "what is visible in this view"      -> SELECT_VISIBLE_IN_VIEW, which is
+#                                          about visibility rather than
+#                                          category
+
+utterances:
+  - all the ductwork
+  - select the whole pipe system
+  - ducts and fittings and accessories together
+  - everything in these categories
+  - all the mep in this view

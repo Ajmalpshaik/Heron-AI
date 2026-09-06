@@ -1,0 +1,58 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a rectangular room 8800 clear between 200 mm walls, measureTo "inside"
+    expect: >
+      two dimensions reading 8800 and the room's other clear size, and nothing
+      in `disagreed`. Check one against the room's own area - clear size times
+      clear size is the number the area agrees with
+
+  - given: the same room with measureTo "outside"
+    expect: >
+      9200 - the clear size plus both wall thicknesses. If it reads 8800 the
+      face was picked by its layer name rather than by distance
+
+  - given: the same room with measureTo "centre"
+    expect: >
+      9000 - clear plus half of each wall. This is the setting-out size that
+      agrees with the grid
+
+  - given: a floor of rooms
+    expect: >
+      two dimensions per room and `created` counting them all. They are live
+      dimensions - move a wall and the number follows
+
+negative:
+  - given: a wall type whose location line is a finish face, measureTo "centre"
+    expect: >
+      the room's id in `disagreed`. The reference resolves to the LOCATION
+      line, not the middle, and the number looks entirely correct on the
+      drawing - the independent expected value is the only thing that catches it
+
+  - given: an L-SHAPED room
+    expect: >
+      its id in `notRectangular`, and dimensions of the OVERALL extent. That is
+      one honest answer and it is not the same as dimensioning each leg, so it
+      is named rather than presented as the room's size
+
+  - given: a room bounded by room separation lines rather than walls
+    expect: >
+      its id in `noReference` and no dimension. There is no wall face to
+      dimension to, and a dimension drawn to something else would be wrong in a
+      way nobody could see
+
+  - given: an unplaced room, or a duct, in the set
+    expect: >
+      its id in `notARoom` and the rest of the set still dimensioned
+
+  - given: a dimension Revit creates but reports no value for
+    expect: >
+      it in `created` and absent from `values`, with no false entry in
+      `disagreed`. A multi-segment string has no single value, which is not an
+      error
+
+second_route:
+  - >
+    measure the same room in Revit with the Measure tool, or read its area and
+    check the clear sizes multiply to it. The fragment's own expected value and
+    Revit's dimension are two mechanisms; a tape on the drawing is the third

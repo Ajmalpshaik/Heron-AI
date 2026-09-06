@@ -1,0 +1,61 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one round elbow on a known duct size
+    expect: >
+      a net area near the duct perimeter times the centreline arc length.
+      Do this one by hand first - if the answer is roughly double, the
+      connector openings were not subtracted and every fitting in the model is
+      being over-measured
+
+  - given: a rectangular tee
+    expect: >
+      three openings subtracted, one per connector, and `partTypes` reporting
+      Tee. The part type is what Revit routes on; the family name is whatever
+      somebody typed
+
+  - given: a mix of elbows, tees and transitions
+    expect: >
+      every fitting in `fittingAreas` and its raw surface in `grossAreas`. The
+      two together are what shows how much of the surface was open end
+
+  - given: a pipe or cable-tray fitting, which has no mechanical fitting model
+    expect: >
+      a blank part type and an area measured exactly the same way. The missing
+      part type is a fact about the category, not a failure
+
+negative:
+  - given: a fitting whose connectors are OVAL
+    expect: >
+      nothing subtracted for those ends, and the id in `suspect` if that makes
+      the openings exceed the surface. A guessed oval opening would be a made-up
+      number inside a priced quantity
+
+  - given: a fitting drawn at coarse detail in every view
+    expect: >
+      a real area anyway, because the geometry is asked for at fine detail
+      here rather than taken from a view. If areas come out near zero, the
+      detail level is being inherited from somewhere
+
+  - given: a wall, or anything with no solids at that detail level
+    expect: >
+      its id in `noGeometry` and no area. Not a failure - and the rest of the
+      set must still be measured
+
+  - given: a UNION coupling
+    expect: >
+      its id in `couplings` AND still measured. Dropping it here would make the
+      returned count disagree with the set that was passed in, and whether a
+      coupling carries metal is the estimator's call
+
+  - given: a fitting whose solid did not come through cleanly
+    expect: >
+      the id in `suspect` with the GROSS area kept, never a negative number and
+      never a zero. A nonsense area that looks like a measurement is the defect
+      this list exists for
+
+second_route:
+  - >
+    export the same fittings to a fabrication takeoff, or unroll one elbow by
+    hand from its size and angle, and compare. A second script reading the same
+    faces is not a second route

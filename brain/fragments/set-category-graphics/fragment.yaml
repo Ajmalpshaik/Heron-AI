@@ -104,6 +104,10 @@ compatibility-note: >
 #   "put the categories back to normal in this view" -> here, with an EMPTY
 #                                        settings object. There is no separate
 #                                        clear because that IS the clear
+#   "everything in these categories"     -> SELECT_BY_CATEGORIES, which
+#                                           collects them. This one changes
+#                                           how a category draws
+
 utterances:
   - grey the whole background
   - make all the architecture faint

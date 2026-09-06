@@ -86,6 +86,9 @@ compatibility-note: >
 #   "hatch this area on the drawing" -> CREATE_FILLED_REGION. It LOOKS like a
 #                                       slab on a plan and is in no other
 #                                       view, no schedule and not the model
+#   "make a slab under these rooms"      -> CREATE_FROM_ROOM_BOUNDARIES. This
+#                                           one takes one typed loop and cuts
+#                                           no openings
 
 utterances:
   - make a floor slab over this area

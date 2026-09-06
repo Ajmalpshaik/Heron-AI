@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: eight sheets of the same plan at 1:100, one named as master
+    expect: >
+      the plan in the same place on all eight. Page through them in Revit - the
+      building must not shift, which is the whole test
+
+  - given: a master sheet that is NOT in the set being aligned
+    expect: >
+      the set still aligned to it. Aligning to a sheet that is already right is
+      the normal case
+
+  - given: a sheet whose title block sits at a different origin
+    expect: >
+      its id in `titleBlockMoved` and the plan landing in the right place on
+      the PAPER. The centre is measured from the sheet, not the title block
+
+negative:
+  - given: a sheet whose view is at 1:50 while the master is 1:100
+    expect: >
+      its id in `scaleMismatch` and NOT moved. Two scales cannot line up by
+      their centres - the same centre puts different amounts of building in the
+      box, and "aligning" it makes it differently wrong
+
+  - given: a sheet carrying three viewports
+    expect: >
+      its id in `ambiguous` and nothing moved on it. Which one is "the plan" is
+      not answerable here, and moving the wrong one is worse than moving none
+
+  - given: a master sheet number that matches no sheet
+    expect: >
+      every element in `refused` and nothing moved anywhere
+
+  - given: a viewport Revit refuses to move
+    expect: >
+      the sheet in `refused`, established by reading the centre back. A sheet
+      counted as aligned that is not is a report nobody can trust
+
+  - given: the same alignment run twice
+    expect: >
+      the second run reporting the same count with nothing actually moving.
+      Setting a centre to what it already is must not break anything
+
+second_route:
+  - >
+    page through the sheets in Revit, or print two and lay them on top of each
+    other. Paper is the second route, and it is the one the fault appears on

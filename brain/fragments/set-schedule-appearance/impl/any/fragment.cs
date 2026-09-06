@@ -1,6 +1,12 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `fieldName`, `newHeading`,
-// `columnWidthMm`, `alignment` and `headingSideways` are in scope; leaves
-// `changed`, `notPresent`, `refused` and `appliedAppearance` behind.
+// `columnWidthMm`, `alignment`, `headingSideways` and `hideOrShow` are in
+// scope; leaves `changed`, `notPresent`, `refused` and `appliedAppearance`
+// behind.
+//
+// HIDING IS NOT REMOVING (version 2). A field added to sort or filter by is
+// often not meant to print. Hidden, it keeps doing that job off the drawing;
+// removed, the sort goes with it and somebody rebuilds it later wondering what
+// changed.
 //
 // ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 //
@@ -107,6 +113,24 @@ foreach (var element in elements)
     {
         refused.Add(string.Format("'{0}' is not an alignment this fragment writes. Use left, "
             + "centre or right", alignment));
+    }
+
+    // VERSION 2. Empty leaves it alone, exactly like every other input here -
+    // a fragment that wrote a default would un-hide a column somebody hid
+    // deliberately, every time it was called to change a width.
+    string visibility = (hideOrShow ?? "").Trim().ToLowerInvariant();
+    if (visibility == "hide" || visibility == "show")
+    {
+        try
+        {
+            found.IsHidden = visibility == "hide";
+            didSomething = true;
+        }
+        catch (Exception ex)
+        {
+            refused.Add(string.Format("'{0}' on '{1}' - hiding refused: {2}",
+                fieldName, schedule.Name, ex.Message));
+        }
     }
 
     if (headingSideways)

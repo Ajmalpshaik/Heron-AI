@@ -1,0 +1,37 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: five revisions, number 3 deleted, none of them clouded
+    expect: >
+      `deleted` true and `renumbered` showing four revisions numbered 1 to 4 -
+      the old 4 and 5 having moved down. Check the numbers against what an
+      email or a drawing says before relying on either
+
+  - given: the last revision deleted
+    expect: >
+      nothing renumbered, and the remaining ones unchanged
+
+negative:
+  - given: a revision a revision CLOUD still uses
+    expect: >
+      `deleted` false and `refused` saying why. Revit refuses it, and that is
+      usually right - the cloud is on a sheet somebody issued
+
+  - given: some releases refusing WITHOUT throwing
+    expect: >
+      the outcome established by looking for the revision afterwards. A call
+      that returns is not evidence that anything was deleted
+
+  - given: a sequence number that does not exist
+    expect: >
+      `refused` saying so and nothing deleted
+
+  - given: revision 3 of 5 deleted
+    expect: >
+      the renumbering REPORTED, not left silent. Every note that said
+      "revision 4" now names a different issue and nothing else records it
+
+second_route:
+  - >
+    open Manage - Sheet Issues and Revisions and read the sequence column, then
+    open a sheet whose revision schedule listed the old numbers

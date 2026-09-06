@@ -1,0 +1,94 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-020
+semantic-identity: "get the families out of this model and into a folder"
+kind: action
+domain: revit.export
+capability: EXPORT_FAMILIES
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Saves loadable families out of the open project, each as its own file in a
+  folder. How you recover a family from a model somebody sent, and how a whole
+  project's family set goes into a library in one pass.
+
+  **IT WORKS BECAUSE EDITING A FAMILY HANDS BACK A DOCUMENT WITH NO WINDOW.**
+  The open project cannot be saved from here - that restriction is about the
+  document somebody is looking at - but a family opened for editing is a
+  separate background document, and one with no window saves normally. That is
+  the whole mechanism, and it is why this changes nothing in the project.
+
+  **EVERY FAMILY DOCUMENT IS CLOSED AGAIN, WHETHER OR NOT IT SAVED.** Leaving
+  them open is what turns a run over four hundred families into a Revit that
+  has to be restarted. The close happens on the failure path too.
+
+  **THE FILE NAME IS THE FAMILY NAME WITH WHAT WINDOWS REFUSES TAKEN OUT.** A
+  family called *300 x 150 / 45deg* is legal in Revit and not on a disk, and
+  the save throws on it. Names are cleaned, and the cleaned name is reported
+  next to the original so two families that clean to the same name are visible
+  rather than one quietly overwriting the other.
+
+  **IT IS A PUBLISH, NOT A MODIFY.** Nothing in the model changes; files appear
+  outside it. That is a higher risk than changing an element, because what
+  leaves the model is no longer under its control.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and must not: each family
+  is a separate document, and a transaction in the project would not cover them
+  anyway.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: folder
+      type: string
+      source: request
+    # Empty means every loadable family. Otherwise only families whose name
+    # contains this.
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: saved
+      type: int
+    - name: savedAs
+      type: IDictionary<string, string>
+    - name: nameCollisions
+      type: IList<string>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Opening a family for editing, saving a
+  document to a path and closing it are unchanged 2020 to 2027. Only loadable
+  families can be opened this way - a system family has no file behind it at
+  all - and asking for one is refused rather than throwing.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "get that family out of this model"  -> here
+#   "save all the families to a folder"  -> here
+#   "load this family in"                -> LOAD_FAMILY, the way in
+#   "which families are unused"          -> FIND_UNUSED_FAMILIES, worth running
+#                                           first when the point is a clean
+#                                           library
+#   "find all the VCDs"                  -> SELECT_BY_FAMILY
+#   "export the model to IFC"            -> EXPORT_MODEL_TO_IFC
+#   "rename this family"                 -> RENAME_FAMILY
+
+utterances:
+  - get the families out of this model
+  - save all the families to a folder
+  - export the families
+  - i need that family as an rfa
+  - pull the family out of this project

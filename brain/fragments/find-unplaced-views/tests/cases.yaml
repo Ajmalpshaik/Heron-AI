@@ -1,0 +1,38 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a project with forty views, twelve of them on sheets
+    expect: >
+      twenty-eight returned and `placedCount` 12. Check one against the project
+      browser - a placed view shows its sheet number beside it
+
+  - given: `byType`
+    expect: >
+      the breakdown by view kind. Twenty unplaced 3D views and eight sections
+      are different conversations
+
+negative:
+  - given: schedules placed on sheets
+    expect: >
+      them NOT reported as unplaced. A schedule is placed through a different
+      element kind, and reading viewports alone offers the whole drawing set's
+      schedules for deletion
+
+  - given: view TEMPLATES in the project
+    expect: >
+      none of them reported. A template belongs on no sheet by definition, and
+      listing it puts it in front of somebody about to delete
+
+  - given: the project browser and system browser views
+    expect: >
+      neither reported. They are real view elements nobody ever means
+
+  - given: a request to purge them
+    expect: >
+      nothing deleted here. An unplaced view today is on a sheet tomorrow, and
+      some are somebody's live workspace
+
+second_route:
+  - >
+    in the project browser, look at the sheet column beside each view - Revit
+    shows the sheet number for a placed view and nothing for an unplaced one

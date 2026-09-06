@@ -98,6 +98,11 @@ compatibility-note: >
 #                                        a number or an element reference
 #   "put the room name on all the equipment" -> ASSIGN_LOCATION_DATA - it WORKS
 #                                        OUT a different value per element
+#   "list the rooms and their numbers"   -> REPORT_ROOM_SPACE_DATA
+#   "add a prefix to what is already     -> EDIT_PARAMETER_TEXT. This one
+#    there"                                 writes one fixed value over
+#                                           every element
+
 utterances:
   - set the comments on these
   - write the airflow back

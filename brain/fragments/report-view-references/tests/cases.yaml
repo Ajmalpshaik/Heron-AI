@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a plan with section marks whose views are placed on sheets
+    expect: >
+      each mark mapped to its view in `referencedViews`, with the view's name.
+      Double-click the mark in Revit - it opens the view this reports
+
+  - given: a callout bubble
+    expect: >
+      the callout view it opens. Callouts, sections and elevation marks are all
+      markers of the same kind here
+
+  - given: a set of marks pointing at views on sheets
+    expect: >
+      `notOnASheet` empty. That is what a bubble with numbers in it means
+
+negative:
+  - given: a mark pointing at a view that is on NO sheet
+    expect: >
+      its id in `notOnASheet`. The bubble prints blank and reads as a broken
+      mark; it is a view waiting to be placed, which is a different fix
+
+  - given: a duplicated set of sheets whose marks still point at the ORIGINAL views
+    expect: >
+      the original views reported, not the new ones. That is the whole
+      diagnosis - the mark is not carrying wrong text, it is pointing
+      somewhere else
+
+  - given: a dimension, a detail line or a tag in the set
+    expect: >
+      its id in `referencesNothing` and no entry elsewhere. Most elements
+      reference no view, and a whole selection is the normal input
+
+  - given: this run twice with nothing changed
+    expect: >
+      identical output, and nothing changed on the drawing. It is a report;
+      re-pointing a mark belongs to the write fragment
+
+second_route:
+  - >
+    double-click the mark in Revit and see which view opens, and look at the
+    bubble on the sheet. Revit's own behaviour is the second route

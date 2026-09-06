@@ -83,6 +83,11 @@ compatibility-note: >
 #                                           to any element, so nothing here can
 #                                           see one
 #   "add a parameter to all the doors"    -> ADD_PROJECT_PARAMETER
+#   "the section mark shows the wrong    -> REPORT_VIEW_REFERENCES. A section
+#    number"                                MARK is not the Mark parameter,
+#                                           and its text comes from the view
+#                                           it points at
+
 utterances:
   - what is the Mark on these
   - what is the system name on these

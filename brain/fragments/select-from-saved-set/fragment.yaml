@@ -83,6 +83,7 @@ compatibility-note: >
 #                                       whether a view is needed here
 #   "put that filter on this view"   -> APPLY_VIEW_FILTER - showing it, rather
 #                                       than reading it
+#   "add these to the saved set"         -> UPDATE_SAVED_SET
 
 utterances:
   - what is in that filter i saved

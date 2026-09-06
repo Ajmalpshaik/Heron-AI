@@ -115,6 +115,13 @@ compatibility-note: >
 #                                            APPLY_VIEW_FILTER. A schedule
 #                                            filter is not a view filter and
 #                                            neither one affects the other
+#   "add a prefix to the mark"           -> EDIT_PARAMETER_TEXT, which
+#                                           changes the VALUES. This one
+#                                           changes what the schedule shows
+#   "why is this missing from the        -> CHECK_CATEGORY_MISMATCH first: a
+#    schedule"                              wrong category is the usual
+#                                           reason a real element is absent
+#                                           and on screen
 
 utterances:
   - show only the supply ducts in it

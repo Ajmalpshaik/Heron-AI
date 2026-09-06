@@ -1,0 +1,94 @@
+heron-agent: HERON-REVIT-GRP-033
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-091
+semantic-identity: "make the shop drawing views for this assembly"
+kind: action
+domain: revit.views
+capability: CREATE_ASSEMBLY_VIEWS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Turns each assembly into its own set of shop-drawing views: a 3D
+  orthographic, detail sections from the sides you ask for, a part list and a
+  material takeoff. The prefabrication deliverable, which is otherwise a long
+  manual sequence repeated per assembly.
+
+  **AN ASSEMBLY IS THE ONLY THING IN REVIT THAT GENERATES ITS OWN DRAWINGS, AND
+  THAT IS WHY THIS IS WORTH A FRAGMENT.** The views it makes are OWNED by the
+  assembly: they show only its members, they orient to the assembly's own
+  origin rather than to project north, and they follow it if it moves. Nothing
+  built by hand reproduces that - a section drawn across an assembly is just a
+  section.
+
+  **THE ASSEMBLY HAS TO BE COMPLETE FIRST.** An assembly whose type is not
+  settled refuses to make views, and the refusal is per assembly rather than
+  fatal - a set of twenty usually has one that was left half made.
+
+  **IT DOES NOT MAKE THE SHEET.** Revit can make one, and placing views on
+  sheets is a job this library already does properly - with title blocks,
+  positions and a naming convention that belong to the office rather than to
+  this call. The views are created and named; the sheet is the next fragment.
+
+  **IT DOES NOT RE-MAKE VIEWS THAT ARE ALREADY THERE.** Running it twice on the
+  same assembly would otherwise leave two of everything, which on a
+  prefabrication job means two drawings claiming to be the same part.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: withPartList
+      type: bool
+      source: request
+    - name: withMaterialTakeoff
+      type: bool
+      source: request
+  provides:
+    - name: created
+      type: IDictionary<ElementId, int>
+    - name: alreadyHadViews
+      type: IList<ElementId>
+    - name: notAnAssembly
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The assembly view utility and its
+  orthographic, detail-section, part-list and material-takeoff calls are
+  unchanged 2020 to 2027, as is asking an assembly whether its type is
+  complete.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make the shop drawings for this     -> here
+#    assembly"
+#   "put them on a sheet"                -> CREATE_SHEET then
+#                                           PLACE_VIEWS_ON_SHEET. The title
+#                                           block and the numbering are the
+#                                           office's, not this call's
+#   "group these elements"               -> GROUP_ELEMENTS. A group is not an
+#                                           assembly and generates no drawings
+#   "what is in this assembly"           -> GROUP_BY_ASSEMBLY
+#   "make a 3d view"                     -> CREATE_3D_VIEW, which is not owned
+#                                           by anything and shows the model
+
+utterances:
+  - make the shop drawing views for this assembly
+  - create the assembly views
+  - i need the fabrication drawings for these
+  - part list and views for the assembly

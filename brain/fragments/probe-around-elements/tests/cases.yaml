@@ -1,0 +1,42 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a duct under a slab, probed upwards in a 3D view showing everything
+    expect: >
+      the slab named with a distance. Measure it in Revit from the duct's
+      centre - not its top - and the numbers should agree
+
+  - given: six directions - up, down and the four sides
+    expect: >
+      one line per direction that hit something within the distance
+
+  - given: an element with no location point
+    expect: >
+      the middle of its bounding box used as the origin, and a result anyway
+
+negative:
+  - given: a 3D view with the WALLS category hidden
+    expect: >
+      a wall not reported, and the path reading clear. This is the trap: the
+      same element in a view showing walls reports them, and nothing warns you.
+      Proven in a real model - 0 neighbours in one view, 4 in another
+
+  - given: a ray that starts inside its own element
+    expect: >
+      its own faces NOT reported. It is the first thing in the way otherwise,
+      at zero distance, on every element
+
+  - given: a pipe passing the CORNER of a large unit
+    expect: >
+      it possibly missed. One ray per direction sees only what is in line with
+      the centre, and anything large wants several origins
+
+  - given: a maxDistance smaller than the nearest thing
+    expect: >
+      the element in `nothingHit` - which means nothing within that distance,
+      not nothing at all
+
+second_route:
+  - >
+    measure it in Revit with the Measure tool, from the element's insertion
+    point, and check the view is showing the categories you care about

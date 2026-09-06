@@ -114,6 +114,10 @@ compatibility-note: >
 #   "what group is it in"                -> NOT ANSWERED HERE, on purpose. The
 #                                           group member is gone by 2027 and its
 #                                           replacement never existed on 2020
+#   "which parameters can I build a      -> REPORT_FILTERABLE_PARAMETERS.
+#    view filter on"                        Present on the element and
+#                                           legal in a filter are different
+#                                           questions
 
 utterances:
   - list every parameter that exists on this element

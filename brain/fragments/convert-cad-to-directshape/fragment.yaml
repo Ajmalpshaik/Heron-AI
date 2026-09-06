@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-050
+semantic-identity: "the contractor sent a 3D dwg and revit treats it as one lump"
+kind: action
+domain: revit.elements
+capability: CONVERT_CAD_TO_DIRECTSHAPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Turns the solids inside an imported CAD file into real Revit elements - one
+  element per solid, in a category you choose.
+
+  **AN IMPORTED CAD IS ONE ELEMENT HOLDING EVERYTHING, AND THAT IS WHY IT IS
+  USELESS UNTIL THIS IS DONE.** It has no category per piece, no parameters,
+  nothing to schedule, and a clash check can only ever say *"something in the
+  DWG"* - never which pipe. Once each solid is its own element in a real
+  category, every other fragment in this library works on it: filters,
+  colours, schedules, clash checks, parameters.
+
+  **THE CATEGORY IS THE CALLER'S AND IT MATTERS MORE THAN IT LOOKS.** It is
+  what every later filter, schedule and view filter will find these by. Not
+  every category accepts one of these elements, and one that does not is
+  refused up front rather than per solid.
+
+  **NOTHING IS DELETED.** The import stays where it is. Converting is additive,
+  so the two sets of geometry overlap until somebody decides which to keep -
+  and that decision is not one to make inside a conversion.
+
+  **A SOLID WITH NO VOLUME IS NOT AN ELEMENT.** A CAD file carries surfaces,
+  lines and degenerate shells as well as solids. Only real solids are
+  converted, and how many were skipped is reported: a file that yields five
+  elements from a hundred pieces was probably exported as surfaces, which is a
+  conversation with whoever sent it rather than a bug here.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  whole import is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: category
+      type: BuiltInCategory
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: skippedSolids
+      type: int
+    - name: notAnImport
+      type: IList<ElementId>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Creating a direct shape, setting its
+  geometry and asking whether a category will take one are unchanged 2020 to
+  2027. The geometry is walked through the instance level, because an import's
+  solids sit inside a geometry instance and stopping at the top level finds
+  none at all.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make the dwg into real elements"    -> here
+#   "the cad import is one lump"         -> here
+#   "get the lines out of the cad"       -> EXTRACT_CAD_CURVES, which takes the
+#                                           2D linework rather than the solids
+#   "what links are in this model"       -> LIST_LINKED_MODELS
+#   "reload the links"                   -> RELOAD_LINKS
+#   "check these for clashes"            -> FIND_CLASHES, which is what becomes
+#                                           possible once the solids are
+#                                           elements
+
+utterances:
+  - turn the cad import into real elements
+  - the dwg is one lump in revit
+  - make direct shapes from this cad
+  - i cannot clash check the contractor's dwg
+  - make the dwg into real elements

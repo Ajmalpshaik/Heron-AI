@@ -106,6 +106,15 @@ USINGS = [
     # for COMPARE_MODELS: it matches the two exception type NAMES instead,
     # which needs nothing declared.
     "Autodesk.Revit.DB.ExtensibleStorage",
+    # Revit's analysis visualisation - the gradient overlay with a legend that
+    # a value per element is painted with. Added 2026-09-06 for
+    # SHOW_ANALYSIS_HEATMAP. Like extensible storage above, there is no way to
+    # reach a spatial field manager or a display style without naming this
+    # namespace, and writing it out in full inside a fragment is worse:
+    # tools/check-structure.py forbids `Autodesk.Revit` in brain/ exactly so a
+    # fragment can only use what THIS LIST says it has. Adding it here is a
+    # promise the executor must keep too.
+    "Autodesk.Revit.DB.Analysis",
 ]
 
 CSPROJ = """<Project Sdk="Microsoft.NET.Sdk">
