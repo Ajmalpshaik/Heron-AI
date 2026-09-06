@@ -726,6 +726,102 @@ missing piece rather than a bug, and it is small.**
 
 ---
 
+**2026-09-07, PART 7 — THE FIRST AGENT IS BUILDABLE NOW, AND THE AUDIT LOG HAS BEEN
+ANSWERING A QUESTION NOBODY ASKED IT.**
+
+This part is a survey and a decision, not a batch. Nothing was built. What it establishes is **which
+agent to build first and why**, measured off disk rather than read off the roadmap.
+
+### Agents: 12 named, 0 running, and the word means two things
+
+**`docs/08-agent-catalog.md` names twelve agents. `docs/28-agent-registry.md` holds 250 ids, and 61 of
+those are claimed by real code** (`check-gaps.py`, whose anchored pattern is the number to believe — a
+loose grep says 78 and counts prose).
+
+**Those 61 are OWNERSHIP LABELS, not software.** Every source file carries `Heron-Agent:` saying which
+agent would own it. **There is no agents folder, no orchestrator, no agent runtime** — the search was
+run rather than assumed: `mcp/server/heron_workflow.py` is the only thing of that shape, and the rest of
+the matches are five documents *about* agents and two tools that *count* them.
+
+> **`Failure Analysis Agent` has a TEST and no implementation.** `tests/test_failure_analysis.py` exists;
+> nothing under `mcp/`, `brain/` or `platform/` implements it. A test passing against an absent component
+> is worth knowing about before somebody reads the green suite as coverage.
+
+### THE AUDIT LOG IS NOT EMPTY, AND THIS SESSION SAID IT WAS
+
+**Corrected within one exchange, and recorded because the wrong version was already spoken.** The claim
+was *"there is barely any usage yet, so a Capability Gap report would report on nothing."* Then it was
+looked at:
+
+| `%APPDATA%\Heron\audit` | |
+|---|---|
+| entries | **331** (10 in August, 321 in September) |
+| `run_fragment_read` | **285** |
+| `count_elements` | 40 · `select_by_category` 6 |
+| **succeeded / failed** | **196 / 135** |
+
+**One hundred and thirty-five recorded failures that nobody has ever read.** Most are from this day's
+proving runs across both tracks. That is not "no usage" — it is a corpus, and it makes two of the twelve
+agents buildable that were dismissed an hour earlier on a guess.
+
+**The general shape, which this repository keeps meeting:** a claim about a derived store, made from
+memory rather than from the store. The fix is the same every time — open it.
+
+### What can be built now, and what cannot
+
+**Five of the twelve, all read-only, none able to touch a model.**
+
+| | Agent | What makes it possible NOW |
+|---|---|---|
+| **1** | **Fragment Validation** ⭐ | PART 6's executor. It could not have existed last week |
+| **2** | **Failure Analysis** | 135 recorded failures, unread. Named, tested, unimplemented |
+| **3** | **Capability Gap** | 331 audit entries. [ROADMAP](docs/ROADMAP.md) says explicitly to build it *"much earlier than this phase"* |
+| **4** | **Regression Testing** | `tests/test_golden.py` already detects STALE proofs; some are stale now |
+| **5** | **Intent** | retrieval by meaning already works underneath it |
+
+**The other seven cannot.** `Fix` needs Heron generating code (Phase 5). `Fragment Merge` / `Split` /
+`Evolution` need trust scores and months of per-fragment history. `Fragment Performance` needs timing
+nobody collects. `Agent Retirement` has **no agents to retire**. `Communication / Persona` is real and
+worth nothing today.
+
+### The recommendation, and the line it must not cross
+
+**Build ONE: Fragment Validation.** It is the only one aimed at what is actually stopping this project —
+**333 DRAFT against 16 PROVEN, proved by hand, one at a time.** Five half-built agents and 333 unproven
+fragments is the failure mode to avoid.
+
+> **IT MUST NEVER SET `heron-status: PROVEN` ITSELF.** It gathers evidence and DRAFTS; a person
+> confirms. [D-30](docs/DECISIONS.md) exists because an unproven claim quietly ages into a believed one,
+> and an agent stamping 333 fragments is the fastest machine ever built for doing exactly that. **The
+> analogy that fixes it: clash detection finds the clashes and lists them; the engineer decides which are
+> real and the engineer signs the drawing. The machine never signs.**
+
+**This is deliberately out of the roadmap's order** — agents are Phase 3+, and this is Phase 2. The
+justification is that it is read-only and it attacks the measured bottleneck. Recorded as a departure
+rather than slipped in.
+
+`docs/PROMPT-fragment-validation-agent.md` is the brief, written so another session can start from it
+without asking anything.
+
+### A git trap that cost nothing this time and would eventually cost a day
+
+**`git push origin <branch>` from a worktree checked out on a DIFFERENT branch pushes that named branch,
+not your HEAD.** It succeeds, prints a normal result, and this session reported *"committed and pushed"*
+about a commit that was still only on the machine. Two commits sat unpushed for hours —
+`e1e7fef` (the Group J proofs) and `716c3f6` (the per-chat chain and the hand-back) — while `main` moved
+underneath.
+
+**Found by checking rather than by being bitten.** The check is one line and belongs after any push that
+matters:
+
+```bash
+git branch -r --contains <sha>     # empty means it is NOT on the remote, whatever push said
+```
+
+**"Pushed" is a claim about a named branch. It is not a claim about your work.**
+
+---
+
 **2026-09-06, PART 3 — FOUR MORE BUILT, THE FIFTH REFUTED BY TRYING TO BUILD IT.
 The library is 339 → 343, and every fragment-shaped job found in the earlier library is now built.**
 
