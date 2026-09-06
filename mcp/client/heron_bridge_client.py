@@ -30,6 +30,7 @@ Two rules from the field notes (docs/00e, docs/25) are enforced here:
     dead entries are removed.
 """
 
+import io
 import json
 import os
 import subprocess
@@ -611,6 +612,70 @@ def cmd_count(pid=None):
     return 1 if failures else 0
 
 
+def cmd_fragment(name):
+    """
+    Run one fragment's C# against the open model - D-28's executor, reached.
+
+    THE SOURCE IS SENT, NOT A NAME. Revit has no idea where the fragment
+    library lives and should not: the add-in would then need a path into
+    somebody's repository, and a fragment could be changed under it between
+    the check and the run. The client reads the file it just checked and sends
+    exactly that text.
+
+    READ ONLY. The operation opens no transaction, so Revit refuses anything
+    that would change the model - the guarantee is Revit's rather than ours.
+    """
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    source_path = os.path.join(root, "brain", "fragments", name, "impl", "any", "fragment.cs")
+
+    if not os.path.isfile(source_path):
+        print("No fragment called '%s' - looked for %s" % (name, source_path))
+        return 2
+
+    with io.open(source_path, "r", encoding="utf-8") as fh:
+        source = fh.read()
+
+    live, starting, _, mismatched = discover()
+    if not live and starting:
+        print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
+        return 1
+    if not live:
+        print("No Revit is connected. Press Heron on the ribbon to connect first.")
+        report_mismatched(mismatched)
+        return 1
+
+    failures = 0
+    for bridge in live:
+        reply = bridge.request("run_fragment_read",
+                               op_args={"name": name, "source": source},
+                               response_timeout=120.0)
+
+        if reply is None:
+            print("No reply from Revit %s (session %s)." % (bridge.revit_version, bridge.pid))
+            failures += 1
+            continue
+
+        if not reply.get("ok"):
+            # A compile failure or a throw is a FINDING, not a crash. It is
+            # the most useful thing this whole path produces on the day a
+            # fragment is wrong, so it is printed in full.
+            print("%s  [%s]" % (name, reply.get("error")))
+            print("    %s" % reply.get("message"))
+            failures += 1
+            continue
+
+        print("%s - ran on Revit %s (session %s)" % (name, bridge.revit_version, bridge.pid))
+        provides = reply.get("provides") or {}
+        if not provides:
+            print("    left nothing behind")
+        for key in sorted(provides):
+            print("    %-22s %s" % (key, provides[key]))
+
+    for bridge in live:
+        bridge.close()
+    return 1 if failures else 0
+
+
 def cmd_doctor():
     """
     Self-diagnostics - the prototype of HERON-OPS-DIA-005.
@@ -727,6 +792,11 @@ def main(argv):
         return cmd_count(argv[2] if len(argv) > 2 else None)
     if argv[1] == "doctor":
         return cmd_doctor()
+    if argv[1] == "fragment":
+        if len(argv) < 3:
+            print("Which fragment? e.g. list-levels")
+            return 2
+        return cmd_fragment(argv[2])
 
     print(__doc__.strip())
     return 2

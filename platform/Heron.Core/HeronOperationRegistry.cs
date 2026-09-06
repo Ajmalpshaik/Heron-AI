@@ -73,6 +73,18 @@ namespace Heron.Core
                 // SEE, which is why it is not merely a Read.
                 { "select_by_category", HeronRisk.Execute },
 
+                // ANALYZE - runs a fragment's own C# against the model and
+                // reports what it left behind. It is here rather than at
+                // Modify for a structural reason, not a hopeful one: the
+                // executor opens NO TRANSACTION, and Revit refuses every model
+                // change made outside one. The guarantee is Revit's, not a
+                // check of ours that could be forgotten.
+                //
+                // Running a fragment that WRITES is a different operation that
+                // does not exist yet, and it will belong beside move_elements
+                // at Modify with a preview the user accepted.
+                { "run_fragment_read",  HeronRisk.Analyze },
+
                 // MODIFY - and this is the only row in the table that does.
                 // It needs a preview the user accepted, and writing must be
                 // switched on (HeronPermissions, D-19).

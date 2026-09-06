@@ -27,6 +27,21 @@
     <ProjectReference Include="..\Heron.Bridge\Heron.Bridge.csproj" />
   </ItemGroup>
 
+  <!--
+    D-28's in-process C# scripting runtime - the thing that lets a fragment
+    reach Revit at all.
+
+    CHECKED BEFORE IT WAS ADDED, because loading a second Roslyn inside a host
+    that already has one is the classic way this fails: Revit 2024 ships NO
+    Microsoft.CodeAnalysis assemblies in its install, and the running process
+    had none loaded. Re-check that before assuming it holds for another
+    release - Dynamo carries its own, and a conflict here is an add-in that
+    dies at OnStartup.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.8.0" />
+  </ItemGroup>
+
   <!-- Option 1: NuGet, when RevitApiDir is not supplied. -->
   <ItemGroup Condition="'$(RevitApiDir)' == ''">
     <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" ExcludeAssets="runtime" />
