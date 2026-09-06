@@ -28,6 +28,100 @@ when the thing you hit is on no list at all.
 
 ---
 
+**Updated 2026-09-06 (latest session) — THE NINE ARE BUILT, AS TEN FRAGMENTS. The library is 329 →
+339.** Every one compiles on Revit 2020 through 2027, the ten gates are green, the tests pass, and
+routing is back to its exact baseline. **Nothing is proven** — all 339 are `DRAFT` and the compile
+gate is the API surface agreeing, not evidence any of them does the right thing (D-30, D-45).
+
+| | Baseline (329) | Now (339) |
+|---|---|---|
+| Compile, 2020–2027 | green | green |
+| Routing, by words #1 | 81% | 81% |
+| Routing, by nearness #1 | 55% | 54% |
+| Table claims not reached | **4** | **4** |
+| Sentences two fragments both want | 351 of 1875 (18.7%) | 362 of 1941 (18.7%) |
+
+**The nine became ten because one was two jobs.** `action-purge-unused` covered materials AND group
+definitions, which share no mechanism and no sentence — `FIND_UNUSED_MATERIALS` and
+`FIND_UNUSED_GROUP_TYPES`. Folding them together would have needed a mode string, and a mode string
+is the shape that hands a whole list to a delete on a typo.
+
+**Building them found a defect in a fragment already here.** `FIND_UNUSED_DEFINITIONS` walked views
+only, so a view template used solely as a **view family type's default** — the template new views of
+that kind start with — was reported unused. Nothing points at it, and deleting it changes what every
+new plan is created with, silently. Caught only because `SELECT_VIEW_TEMPLATES` asked the same
+question a third way and the two answers disagreed. Fixed in both, with the negative case written
+into `tests/cases.yaml`.
+
+**Three routing defects were fixed, and two of them were already here.** Every crossing this batch
+introduced was answered, and the count came back to the baseline 4 rather than merely "not much
+worse":
+
+- **`"why will this material not purge"` had been unreachable for ever, and nobody could see it.**
+  `REPLACE_MATERIAL` wrapped that sentence across two lines of its routing table, so the string the
+  checker extracted carried the comment marker — `why will this material not
+#    purge` — which no
+  utterance can ever match. It only surfaced because `FIND_UNUSED_MATERIALS` started winning the
+  sentence. **A claimed sentence goes on ONE line.**
+- **A QUESTION was ranking to a fragment that WRITES.** `REPORT_VIEW_TEMPLATE_CONTROL` declared
+  *"which view template is controlling this view"* and its table claimed the shorter *"which template
+  is on this view"* — which resolved to `REMOVE_VIEW_TEMPLATE`. That is the worst shape there is, and
+  the tool's green *"no question is answered by something that writes"* does not cover it: that line
+  only checks DECLARED utterances, which resolve by identity before any ranking runs.
+- **The noun was doing the routing again — fourth session running.** `AUTO_SIZE_PIPE` declared
+  *"auto size the chilled water pipes"* and took *"show me the chilled water"* off
+  `SELECT_BY_MEP_SYSTEM`: a sentence that selects and changes nothing, answered by a fragment that
+  resizes pipework. Fixed by removing the service name from every utterance and leaving it in the
+  purpose, which is indexed far more weakly. **Every utterance is led by the verb.**
+
+**NINE WAS A FLOOR, NOT A CEILING, AND THAT IS STILL TRUE.** The audit that found them handed each of
+the ten *missing* claims to a refuter. **The 317 *already covered* claims were never put to one.**
+That check was built to stop a duplicate being written — the cheap failure. A false "covered" is the
+expensive one, because it ends the search. Two things were tried on 2026-09-06 and only one worked:
+
+- **Matching source file names against fragment vocabulary does not work.** Six of the nine KNOWN
+  gaps score 0.67–1.00 against unrelated fragments; `create-dimension.cs` matched
+  `REPORT_GLOBAL_PARAMETERS` at 1.00. A tool that cannot find the gaps already known cannot find new
+  ones, so it was thrown away rather than reported as reassurance.
+- **About fifteen of the most suspicious files were read by hand and no new gap was found** — the two
+  likeliest were covered well (`SELECT_TOUCHING`, `SELECT_IN_REGION`). Fifteen of 317 is a sample.
+
+**So the next session's honest choice is: put the covered claims to a refuter the way the missing
+ones were, or stop saying anything about what is left.** Until that runs, the true statement is *nine
+were found and ten were built*, never *that was all there was*.
+
+**One number was wrong in two documents and is now fixed.** The audit table read 316 covered + 4
+impossible + 9 missing = **329, against 330 read**. The refuted claim was struck off the missing
+column and never added to the covered one. It is one file and changes no conclusion — which is
+exactly why it survived being printed twice. **A total nobody adds up is not a check.**
+
+> ### §9b was not followed and it cost something. Read this before working in the shared folder.
+>
+> This session ran in `D:\Ajmal\Aj Programs\Heron Ai` alongside another one, without worktrees.
+> [§9b](#9b-three-sessions-at-once--the-protocol-that-stops-them-colliding) says not to. It went
+> wrong twice, in both directions:
+>
+> 1. **The branch moved out from under this session mid-work.** It started on
+>    `claude/fragments-the-nine` off `main` at `3435d8d`. By commit time the other session had run
+>    `git checkout` in the same folder, so `git commit` put this whole 37-file batch on top of
+>    `docs/b2-confirmed-in-revit` — somebody else's branch. `git checkout` is per WORKING TREE, not
+>    per chat, and nothing warns you. It was moved off with a worktree afterwards.
+> 2. **Undoing that discarded an uncommitted edit belonging to the other session.** `git status`
+>    read clean; the branch was reset back to what it had already pushed; and in the seconds
+>    between, that session wrote `NEEDS-CHECKING.md` again. The reset took it. It was never staged,
+>    so it is not in the object database and `git fsck` has nothing — the only dangling blobs were
+>    this session's own fragment drafts. **Everything committed survived** (B2, B2a, B2b and B3 are
+>    all recorded DONE in `5150842`); what was lost was one increment on top, and B3a is still
+>    showing open, so that is the likely content.
+>
+> **The lesson is not "check status first" — that was done, and it was clean.** A working tree
+> shared with a live session has no safe moment: it can be written between the check and the
+> command. There is no careful way to run a destructive git command in a folder somebody else is
+> working in. The answer is the one §9b already gives, and this is the second commit to record it:
+> **one worktree per session, set up before either starts.**
+
+---
+
 **Updated 2026-09-06 (later session) — "EXHAUSTED" WAS WRONG. The earlier library still holds NINE
 fragment-shaped jobs, found by reading all 330 eligible files rather than sampling them.** The owner
 put `AJ-AI-Brain` on this machine, so for the first time the claim below could be checked instead of
@@ -38,7 +132,10 @@ was then handed to a second agent told to REFUTE it. One of the ten was refuted.
 |---|---|---|---|
 | **330** | 316 | 4 | **9** |
 
-**The nine, with the folder they came from:**
+**The nine, with the folder they came from — ALL BUILT 2026-09-06, as ten fragments. See the section
+above.** The claims in this table were verified independently against their nearest existing
+neighbour before anything was written: five of the nine had a close one, and all five turned out to
+be genuinely distinct.
 
 | Source | The job |
 |---|---|
@@ -2859,8 +2956,15 @@ origin/main`. Stacking new commits on merged history is the one thing not to do 
 
 **Heron-AI and AJ-Tools only.** `AJ-AI-Brain` is read-only reference — **read it, never edit it, never
 commit to it.** As of 2026-09-06 it is on the owner's machine at `D:\Ajmal\AJ AI Brain`, so it can be
-audited directly rather than guessed at. `scripts/` holds 398 `.cs` files; **nine of them are still
-fragment-shaped work**, listed in the 2026-09-06 section at the top of this file.
+audited directly rather than guessed at. `scripts/` holds 398 `.cs` files. **The nine that were still
+fragment-shaped work were built on 2026-09-06, as ten fragments** — see the section at the top of
+this file.
+
+**Do not read that as "finished" a second time.** The audit that found the nine only put its
+*missing* claims to a refuter; the 317 *already covered* claims were never tested, and a false
+"covered" is what ends a search. **The next piece of library work is that refutation pass, not more
+fragments.** Reading fifteen of the 317 by hand found nothing new, which raises confidence and closes
+nothing.
 
 ### Before the C# — one step this recipe did not have
 

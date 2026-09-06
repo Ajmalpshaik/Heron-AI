@@ -1,0 +1,69 @@
+positive:
+  - given: >
+      a project carrying 240 materials, of which 61 are referenced by no
+      element and no type
+    expect: >
+      unusedMaterials holds 61 ids and unusedNames the 61 names, with
+      scannedInstances and scannedTypes both reported so the size of the walk
+      is visible
+
+  - given: >
+      a material applied ONLY as paint, face by face, on a handful of walls -
+      never in any compound structure and never in geometry
+    expect: >
+      it does NOT appear as unused. This is the case the fragment exists for:
+      the geometry read alone gives it no user, and deleting it strips the paint
+      off every face it was on
+
+  - given: >
+      a wall type loaded from a template, never placed, whose compound structure
+      names three materials
+    expect: >
+      those three do NOT appear as unused. Scanning only placed elements would
+      report every material of every unplaced type as unused, which on a
+      template-derived project is most of them
+
+  - given: a model where every material is genuinely in use
+    expect: >
+      unusedMaterials is empty and the findings still report what was walked.
+      An empty list beside a large scanned count is a real answer
+
+negative:
+  - given: >
+      the returned list handed straight to a delete
+    expect: >
+      nothing in this fragment stops it and nothing in this fragment does it.
+      Deleting is left to Revit's own Purge Unused on purpose - it is hard to
+      reverse on a shared model, and this is the same decision
+      FIND_UNUSED_FAMILIES and FIND_UNUSED_DEFINITIONS both took
+
+  - given: >
+      a material kept deliberately for a finishes package not yet modelled
+    expect: >
+      it IS reported as unused, correctly, and that is not the same as safe to
+      remove. The fragment answers what is referenced by nothing; what should go
+      is a judgement and it is the modeller's
+
+  - given: >
+      elements whose materials cannot be read at all
+    expect: >
+      unreadable counts them and a finding says the list may wrongly contain
+      something they reference. An unreadable element treated as referencing
+      nothing under-reports use, which is the dangerous direction
+
+  - given: >
+      somebody expecting this to also cover view templates, filters or family
+      types
+    expect: >
+      it covers materials and nothing else. The other three kinds are
+      FIND_UNUSED_DEFINITIONS, FIND_UNUSED_GROUP_TYPES and
+      FIND_UNUSED_FAMILIES, split apart because the cost of proving each is
+      wildly different and a cheap check that quietly became expensive stops
+      being run
+
+second_route: >
+  Revit's own Purge Unused dialog lists unused materials among everything else
+  it offers, and it is the tool that should do the deleting. The check on this
+  fragment's paint handling is to paint a face with a material used nowhere
+  else, then run both: a version reading only geometry materials offers it for
+  deletion and Revit's own dialog does not.

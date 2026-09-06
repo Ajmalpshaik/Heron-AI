@@ -107,16 +107,31 @@ compatibility-note: >
 #   "what material is this"          -> READ_ELEMENT_MATERIAL - a READ, and it
 #                                       must not answer a request to change one
 #   "how much concrete is in this"   -> REPORT_MATERIAL_TAKEOFF
-#   "why will this material not
-#    purge"                          -> here is usually the answer: it is still
-#                                       in a layer or a type parameter nobody
-#                                       looked at
+#   "why will this material not purge" -> here is usually the answer: it is
+#                                       still in a layer or a type parameter
+#                                       nobody looked at
+#
+# THE ROW ABOVE USED TO WRAP THE SENTENCE ACROSS TWO LINES, and the routing
+# checker read the continuation marker as part of the sentence - so the claim
+# it extracted could never be matched by any utterance, and reported unreached
+# for ever. A claimed sentence goes on ONE line.
 #   "make a new material"            -> CREATE_MATERIAL - both materials have
 #                                       to exist before one can replace the
 #                                       other
+#   "which materials is nobody
+#    using"                          -> FIND_UNUSED_MATERIALS - the opposite
+#                                       question. That one lists materials with
+#                                       NO user at all, so it cannot say what
+#                                       is still holding on to a particular one
 
 utterances:
   - change the material on these
+  # DECLARED BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT, 2026-09-06. A routing
+  # table is a COMMENT and comments are not indexed, so this sentence resolved
+  # to FIND_UNUSED_MATERIALS - which lists materials with NO user, and therefore
+  # cannot say what is still holding on to THIS one. Asking why one will not
+  # purge is asking what still uses it.
+  - why will this material not purge
   - swap this material for that one
   - replace the finish on these walls
   - the client changed the material

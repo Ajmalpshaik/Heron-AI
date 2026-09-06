@@ -1,0 +1,87 @@
+positive:
+  - given: >
+      40 light fittings across one open office, mode "chain", no group keys,
+      orthogonalDistance true
+    expect: >
+      order holds all 40 ids as one sequence, links holds 39 steps with a length
+      each, totalLengthMm is their sum and guarantee reads "heuristic". The
+      sequence is what CREATE_ELECTRICAL_RUN and RENUMBER_SEQUENTIAL have always
+      needed a human to supply
+
+  - given: the same 40 fittings with mode "tree"
+    expect: >
+      order is EMPTY, links holds 39 branching connections, and guarantee reads
+      "exact". A tree has no sequence - it branches, which is what makes it the
+      shortest - and returning a plausible-looking order for it is the mistake
+      the empty list prevents
+
+  - given: >
+      17 terminals across 3 ceiling zones, mode "continuous", group keys naming
+      the zone
+    expect: >
+      each zone is completed before the next is entered, and each zone's EXIT is
+      chosen by trying every candidate and scoring the path through the zone
+      plus the jump out. The links carry JUMP entries where a zone boundary is
+      crossed, and there are only as many of them as there are zones minus one
+
+  - given: mode "tree" with group keys
+    expect: >
+      a tree per group plus one FEEDER link joining each group to the nearest
+      already-joined one, at their nearest pair of points. Local runs per room
+      with feeders between them, which is the real shape of distribution
+
+negative:
+  - given: >
+      the same 17 terminals routed ungrouped and then grouped
+    expect: >
+      THE GROUPED TOTAL IS LONGER, and that is correct rather than a
+      regression. Grouping is a constraint - finish this room before leaving it
+      - and constraints cost length. The ungrouped figure is shorter only
+      because it crossed between zones far more often than anybody would build,
+      which is to say it ran back and forth through walls. The ungrouped number
+      is unbuildable
+
+  - given: mode "chian" - a typo
+    expect: >
+      nothing is computed and a finding names the bad mode. Defaulting to one of
+      the three would silently answer a different question, and the caller could
+      not tell which answer they had
+
+  - given: group keys of 15 entries against 17 elements
+    expect: >
+      the keys are IGNORED, everything routes as one group, and a finding warns
+      the total is the unbuildable one. Pairing by position anyway puts a
+      fitting in the wrong room and the total still looks plausible
+
+  - given: mode "continuous" with no group keys
+    expect: >
+      it runs as a chain and says so. Continuous is DEFINED by finishing one
+      group before the next; without groups there is no such thing, and
+      pretending otherwise would report a mode that did not run
+
+  - given: >
+      the reported length quoted to a client as a cable order
+    expect: >
+      it is wrong, and the finding says so on every run. These are point-to-
+      point distances: orthogonal at best, blind to obstructions, trays, and
+      every vertical drop nobody modelled. It is the right ORDER plus an
+      estimate
+
+  - given: >
+      a chain result described downstream as "the shortest possible route"
+    expect: >
+      guarantee reads "heuristic" and contradicts it. Only the tree is exact;
+      the exact version of the chain problem has no fast solution, and claiming
+      it would be a claim the code cannot support
+
+  - given: elements with no readable location among the set
+    expect: >
+      they are in noLocation and NOT in the route, with a finding saying they
+      are not connected by something that was never measured. Silently dropping
+      them would report a complete run that misses fittings
+
+second_route: >
+  Measuring the run by hand off a plan, in the order a foreman would actually
+  pull it - which is the check that matters, because it is the only one that
+  knows where the walls are. A hand measure will beat the ungrouped answer for
+  buildability every time, and should land close to the grouped one.

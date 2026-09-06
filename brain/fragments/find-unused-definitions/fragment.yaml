@@ -29,10 +29,22 @@ purpose: >
   nothing references at all, and only the second is safe to remove without
   thinking.
 
+  **A TEMPLATE CAN BE IN USE WITH NO VIEW POINTING AT IT, AND THIS FRAGMENT
+  USED TO MISS THAT.** A view family type names the template that NEW views of
+  that kind start with. Nothing follows it today, so walking views alone called
+  it unused - and deleting it silently changes what every new plan of that kind
+  is created with, with nothing on screen having said so. Corrected 2026-09-06,
+  found while building SELECT_VIEW_TEMPLATES: the second fragment asked the
+  question a third way and the two answers disagreed, which is the only reason
+  it was caught at all.
+
   **MATERIALS ARE NOT INCLUDED, ON PURPOSE.** Proving a material unused means
   walking every element, every type's compound structure and every painted face
   in the project. A partial answer there would be a deletion list with real
   materials in it, which is not a mistake worth risking for tidiness.
+  FIND_UNUSED_MATERIALS is that walk, built separately because its cost is
+  different by orders of magnitude and a cheap check that quietly became an
+  expensive one stops being run.
 
   **IT REPORTS AND DELETES NOTHING**, for the same reason the unused-families
   fragment does: purging is one Revit command away, and it is hard to undo on a
@@ -65,9 +77,21 @@ compatibility-note: >
 
 # ROUTING - the same rows are in the fragments named here.
 #
-#   "which view templates are unused"    -> here
+#   "which view templates are unused"    -> here. It is a QUESTION, and the
+#                                           answer is a report
 #   "the filter list is full of rubbish" -> here
+#   "delete the unused templates"        -> SELECT_VIEW_TEMPLATES with usage
+#                                           unused, which returns the templates
+#                                           as ELEMENTS so something can act on
+#                                           them. Reading the answer is here;
+#                                           acting on it needs elements, and
+#                                           that is the whole split between the
+#                                           two. Both check the view-family-type
+#                                           default, and they did not always -
+#                                           see the purpose
 #   "which families are unused"          -> FIND_UNUSED_FAMILIES
+#   "which materials are unused"         -> FIND_UNUSED_MATERIALS
+#   "which groups are unused"            -> FIND_UNUSED_GROUP_TYPES
 #   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS
 #   "what filters exist and where"       -> REPORT_VIEW_FILTERS, which lists
 #                                           them all with their views rather
@@ -76,6 +100,11 @@ compatibility-note: >
 
 utterances:
   - which view templates are not used
+  # DECLARED BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT, 2026-09-06. The
+  # fragment declared "are NOT USED" and the table claimed "are UNUSED"; one
+  # word apart, and the second resolved to SELECT_VIEW_TEMPLATES - which returns
+  # elements to act on rather than answering the question.
+  - which view templates are unused
   - the filter list is full of old filters
   - what can i purge from the templates
   - unused view filters

@@ -1,0 +1,68 @@
+positive:
+  - given: >
+      9 pipes that FIND_DEAD_ENDS already sorted as genuine accidents, 7 open
+      at one end and 2 open at both, capTypeId InvalidElementId
+    expect: >
+      capped holds 9 ids and endsCapped is 11, not 9. The number that matters
+      is ends - a count of pipes understates the work by half on exactly the
+      runs worth looking at
+
+  - given: a resolved cap type id given instead of InvalidElementId
+    expect: >
+      that type is used rather than whatever the pipe's routing preferences
+      would have chosen. Both are legitimate; the id is asked for so the
+      project's own cap is not quietly replaced by a default
+
+  - given: a set where 4 of the pipes are already terminated at both ends
+    expect: >
+      they go to alreadyClosed and are not counted in capped. Nothing was done
+      to them, and reporting them as capped would report work that did not
+      happen
+
+  - given: the same set run a second time
+    expect: >
+      every pipe reports alreadyClosed and endsCapped is 0. Running twice
+      places no second cap
+
+negative:
+  - given: >
+      a pipe whose type's routing preferences name no cap fitting
+    expect: >
+      it goes to stillOpen with a finding naming REPORT_ROUTING_PREFERENCES,
+      and the rest of the batch continues. One pipe with a missing preference
+      is not a batch failure
+
+  - given: >
+      a pipe where the call returns without raising and the end is still open
+    expect: >
+      it is in stillOpen and NOT in capped. This is the case the before-and-
+      after count exists for - a count taken from having made the call reports
+      that pipe as terminated, and the model says otherwise
+
+  - given: a set of ducts passed by mistake
+    expect: >
+      every one goes to notPipes with a finding saying there is no equivalent
+      call for duct. Not an error, and not a silent zero that reads as "no open
+      ends"
+
+  - given: >
+      every open end in a model handed to this fragment without sorting first
+    expect: >
+      they all get capped, and that is the failure this fragment cannot protect
+      against. Risers waiting for the level above and legs left for the
+      contractor are now closed, the model LOOKS finished, and the real gaps
+      are hidden. The sorting is FIND_DEAD_ENDS and it belongs before this
+
+  - given: >
+      run before CONNECT_OPEN_ENDS on a run whose two halves end at the same
+      point
+    expect: >
+      both ends get capped and the two halves never join. A capped end no
+      longer pairs, so the join must happen first - this is an ordering trap,
+      not a defect in either fragment
+
+second_route: >
+  Drawing a cap by hand at each end - pick the fitting, place it, drag it onto
+  the connector - which is what the call replaces. Re-asking Revit whether the
+  pipe has an open connector after capping is the check on both routes, and it
+  is what this fragment does internally rather than leaving to a second run.

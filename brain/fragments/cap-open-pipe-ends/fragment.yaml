@@ -1,0 +1,132 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-042
+semantic-identity: "cap the open ends on these pipes"
+kind: action
+domain: revit.mep
+capability: CAP_OPEN_PIPE_ENDS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts a cap fitting on every open end of the pipes given, sized to the pipe and
+  connected to it. The termination a run drawn leg by leg never got.
+
+  **THE SET IT IS GIVEN IS THE DECISION, AND THAT IS WHY THIS ONLY CAPS.** An
+  open end is very often deliberate: a riser waiting for the level above, a run
+  stopping at a future connection, a leg left for the contractor. Capping every
+  open end in a model makes it LOOK finished and hides the gaps that are real,
+  which is worse than the untidiness it fixed. So the sorting happens before
+  this fragment - FIND_DEAD_ENDS separates the deliberate ends from the
+  accidents and SELECT_BY_CONNECTION_STATUS narrows to open ones - and this one
+  does the writing and nothing else. It carries no report-only mode because the
+  report already exists elsewhere and two fragments answering the same question
+  is how they drift apart.
+
+  **REVIT PLACES THE CAP ITSELF, AND THAT IS THE WHOLE REASON THIS IS CHEAP.**
+  `PlumbingUtils.PlaceCapOnOpenEnds` finds the fitting, sizes it to the pipe,
+  works out which way the connector faces and joins it. By hand that is a family
+  lookup, a direction calculation and an instance per end, and it is where the
+  earlier attempt at this went wrong.
+
+  **IT IS PIPES ONLY, AND THE SYMMETRICAL CALL FOR DUCT DOES NOT EXIST.** There
+  is no mechanical-side equivalent that places a duct cap. Saying so here saves
+  the search: a duct is capped by drawing the cap as part of the run. Anything
+  in the set that is not a pipe is named rather than silently dropped.
+
+  **AN EMPTY CAP TYPE MEANS REVIT CHOOSES FROM THE PIPE'S ROUTING PREFERENCES,
+  AND A TYPE WITH NO CAP IN ITS PREFERENCES FAILS PER PIPE.** That failure is
+  reported against the pipe rather than taken as a batch failure -
+  REPORT_ROUTING_PREFERENCES is where the missing entry is found.
+
+  **EVERY PIPE IS COUNTED BEFORE AND AFTER, AND THE NUMBER REPORTED IS ENDS,
+  NOT PIPES.** A pipe open at both ends takes two caps, so a count of pipes
+  understates the work by half on exactly the runs that most need looking at.
+  A pipe that still reads open after the call is named in `stillOpen` - the call
+  can return without raising and leave the end exactly as it was, and a count
+  taken from "we called it" would report that pipe as terminated.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Placing
+  fittings raises Revit warnings on a real model; the transaction's owner
+  decides how those are handled, which is why no failure-handling option is set
+  here.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # InvalidElementId lets Revit pick the cap from the pipe's routing
+    # preferences. A resolved type id, never a name.
+    - name: capTypeId
+      type: ElementId
+      source: request
+  provides:
+    - name: capped
+      type: IList<ElementId>
+    - name: endsCapped
+      type: int
+    - name: stillOpen
+      type: IList<ElementId>
+    - name: alreadyClosed
+      type: IList<ElementId>
+    - name: notPipes
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `PlumbingUtils.PlaceCapOnOpenEnds`,
+  `Pipe.ConnectorManager`, `Connector.ConnectorType`, `Connector.IsConnected`
+  and `ConnectorType.End` are unchanged 2020 to 2027.
+
+  `Pipe` and `PlumbingUtils` come from the plumbing namespace the fragment
+  wrapper already imports, so neither is written out in full - a fully
+  qualified name would smuggle in a namespace the executor was never told to
+  supply.
+
+# ROUTING - repeated in CONNECT_OPEN_ENDS, FIND_DEAD_ENDS and
+# SELECT_BY_CONNECTION_STATUS.
+#
+#   "cap the open pipe ends"              -> here
+#   "terminate these pipes"               -> here
+#   "put caps on the open ends"           -> here
+#   "join the ends that are touching"     -> CONNECT_OPEN_ENDS. That one JOINS
+#                                            two open ends to EACH OTHER where
+#                                            they already meet; this one closes
+#                                            an end that has nothing to join
+#                                            to. They are complements, and
+#                                            running this one first caps the
+#                                            ends the other would have joined
+#   "which pipes are not terminated"      -> FIND_DEAD_ENDS, which also sorts
+#                                            the deliberate ends from the
+#                                            accidents. That sorting is the
+#                                            step this fragment assumes has
+#                                            already happened
+#   "show me everything with an open end" -> SELECT_BY_CONNECTION_STATUS
+#   "cap the open duct ends"              -> NOT POSSIBLE the same way. There
+#                                            is no duct equivalent of the call
+#                                            this uses; a duct cap is drawn as
+#                                            part of the run
+#
+# ORDER MATTERS BETWEEN THIS AND CONNECT_OPEN_ENDS. Capping first closes ends
+# that were about to be joined to each other, and a capped end no longer pairs.
+# Join first, then cap what is left.
+
+utterances:
+  - cap the open pipe ends
+  - terminate these pipes
+  - put caps on the open ends
+  - close off the ends of these pipes
+  - cap the pipes that end in nothing
+  - the pipe run was never terminated

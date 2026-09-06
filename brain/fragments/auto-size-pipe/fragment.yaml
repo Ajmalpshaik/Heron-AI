@@ -1,0 +1,164 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-041
+semantic-identity: "size these pipes from the flow they carry"
+kind: action
+domain: revit.mep
+capability: AUTO_SIZE_PIPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sizes pipe from the flow it already carries, by the velocity method: the bore
+  that gives flow divided by the target velocity, snapped UP to the next real
+  size. Reports the velocity that results, so a run left screaming at 4 m/s is
+  visible before anybody builds it.
+
+  **NOMINAL SIZE IS NOT BORE, AND ON PIPE THAT IS AN ENGINEERING ERROR RATHER
+  THAN A ROUNDING ONE.** This is the difference from AUTO_SIZE_MEP and the
+  reason the two are not one fragment. A duct labelled 300 is 300 across the
+  inside. A pipe labelled 50 has an internal bore of about 53 in steel and
+  about 44 in a thick-walled plastic - and velocity goes as the square of it,
+  so calling the label the bore is wrong by a fifth at the sizes where noise
+  and erosion actually bite.
+
+  **SO THE BORES ARE ASKED FOR SEPARATELY, PAIRED WITH THE LABELS.** Give both
+  lists and every velocity reported is real. Give only the labels and the
+  fragment still sizes, still reports - and says on every row that the velocity
+  is approximate, plus which way it is wrong: a true bore LARGER than the label
+  means the real velocity is lower than reported, which is safe, and a bore
+  SMALLER than the label means it is higher, which is the direction that causes
+  the noise complaint. An approximate number nobody flagged is the number that
+  gets signed off.
+
+  **THE VELOCITY IS YOURS AND NO DEFAULT IS WORTH TRUSTING.** A chilled water
+  main at 2.5 m/s and a branch at 1.0 m/s are both normal and give completely
+  different pipes for the same flow, and copper, steel and plastic have
+  different erosion limits. Size one system at a time, at that system's figure.
+  This fragment does not know what service it is looking at and does not
+  pretend to.
+
+  **IT READS THE FLOW REVIT ALREADY HAS AND CALCULATES NO DEMAND.** Revit fills
+  that in from the fixtures and equipment downstream once the system is
+  connected. A pipe connected to nothing reads zero, and zero sizes to nothing
+  - so those are reported as NO FLOW, never quietly sized to the smallest pipe
+  in the list. A whole run with no flow is a CONNECTIVITY problem and
+  TRACE_CONNECTIVITY is where it goes.
+
+  **IT IS NOT THE FIXTURE-UNIT SIZER AND IT IS NOT FOR DRAINAGE.** Domestic hot
+  and cold water is sized from fixture units through a probable-demand curve,
+  which takes completely different inputs; a gravity drain is sized on fixture
+  units and fall, not on a velocity in a full bore. Both are different jobs, not
+  different numbers in this one.
+
+  **IT ALWAYS ROUNDS UP, NEVER TO NEAREST.** Rounding down to the nearer size
+  pushes the velocity above the design figure, which is the one direction that
+  causes noise and rework.
+
+  **IT SIZES SEGMENTS, NOT A SYSTEM.** It does not step a main down as branches
+  take flow off it - each pipe is sized to its own flow. A main that should
+  reduce at each tee has to be split first.
+
+  **EVERY SIZE IS READ BACK.** A pipe type whose segment offers only certain
+  sizes refuses anything else, and it refuses quietly. The velocity reported is
+  computed on the size that came back, not on the size that was asked for.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). There is
+  no dry-run switch: previewing is the host's approval gate.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # No default. See the purpose - this is the number the whole result turns on.
+    - name: targetVelocity
+      type: double
+      source: request
+    # Real manufactured sizes, in millimetres, ascending. Supplied rather than
+    # built in: a size table is a project standard, not a constant.
+    - name: nominalSizesMm
+      type: IList<double>
+      source: request
+    # The true internal bore of each entry above, same order, same length.
+    # Empty is allowed and makes every reported velocity approximate.
+    - name: boresMm
+      type: IList<double>
+      source: request
+  provides:
+    - name: sized
+      type: int
+    - name: findings
+      type: IList<string>
+    - name: noFlow
+      type: IList<ElementId>
+    - name: refused
+      type: IList<string>
+    - name: velocityIsApproximate
+      type: bool
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `BuiltInParameter.RBS_PIPE_FLOW_PARAM`
+  and `BuiltInParameter.RBS_PIPE_DIAMETER_PARAM` are present 2020 to 2027, and
+  `Parameter.AsDouble` / `Parameter.Set(double)` are unchanged.
+
+  **No units API is touched, and on this fragment that is the whole version
+  story.** Revit's internal length is feet and its internal flow is cubic feet
+  per second; both are converted by plain arithmetic - 304.8 millimetres per
+  foot and 0.028316846592 cubic metres per cubic foot, which is exact. Asking
+  Revit to convert would mean `DisplayUnitType` before 2021 and `ForgeTypeId`
+  from 2022, which is the break this project refuses to write (D-20).
+
+# ROUTING - repeated in AUTO_SIZE_MEP, SET_MEP_SIZE and MEASURE_MEP_VELOCITY.
+#
+#   "size these pipes"                    -> here
+#   "size the chilled water from the
+#    flow"                                -> here
+#   "what size should this pipe be"       -> here - it writes the answer. To
+#                                            only ASK, MEASURE_MEP_VELOCITY
+#                                            reads what the current size gives
+#   "size these ducts"                    -> AUTO_SIZE_MEP. Same method, air,
+#                                            and it holds one dimension on a
+#                                            rectangle. It does NOT do pipe:
+#                                            the label-versus-bore problem
+#                                            barely exists on duct and decides
+#                                            the answer on pipe
+#   "make these pipes 50 mm"              -> SET_MEP_SIZE - a size somebody has
+#                                            already decided. No flow is read
+#                                            and nothing is calculated
+#   "size the hot and cold water"         -> NOT here. Fixture units through a
+#                                            probable-demand curve is a
+#                                            different input entirely, and
+#                                            belongs in a skill
+#   "size the drainage"                   -> NOT here. Fixture units and fall,
+#                                            not a velocity in a full bore
+#   "why is there no flow in this run"    -> TRACE_CONNECTIVITY
+#
+# THE SENTENCE "SIZE THE PIPEWORK" MEANS THIS ONLY WHEN A FLOW ALREADY EXISTS
+# IN THE MODEL. On a domestic water job it means the fixture-unit chain, and
+# handing that job to this one sizes every pipe to zero.
+
+# THE SERVICE NAME IS DELIBERATELY NOT IN ANY UTTERANCE HERE. An earlier draft
+# declared "auto size the chilled water pipes", and it took "show me the chilled
+# water" away from SELECT_BY_MEP_SYSTEM - a sentence that selects and changes
+# nothing, answered by a fragment that resizes pipework. Measured 2026-09-06.
+# The noun was doing the routing, not the verb; every utterance below is led by
+# what this DOES, and the services it applies to are named in the purpose, which
+# is indexed far more weakly than a declared sentence.
+utterances:
+  - size these pipes
+  - size the pipework from the flow
+  - work out the pipe sizes from the flow rate
+  - size these pipes to a velocity
+  - resize the pipes for the design velocity
+  - size the pipes to the design velocity

@@ -25,10 +25,23 @@ negative:
     expect: >
       it not reported. Used once is used
 
+  - given: >
+      a template no view follows, which a view family type names as the
+      template new views of that kind start with
+    expect: >
+      it NOT reported as unused, and a finding saying how many were kept for
+      that reason. This fragment used to report it: nothing points at the
+      template, so walking views alone called it unused, and deleting it would
+      have changed what every new plan of that kind is created with. Corrected
+      2026-09-06 - and the only reason it was caught is that
+      SELECT_VIEW_TEMPLATES asked the same question a third way and the two
+      answers disagreed
+
   - given: unused MATERIALS in the project
     expect: >
       them not reported, and the reason stated in the findings. A partial
-      answer there is a deletion list with real materials in it
+      answer there is a deletion list with real materials in it -
+      FIND_UNUSED_MATERIALS is that walk, built separately
 
   - given: this run twice
     expect: >

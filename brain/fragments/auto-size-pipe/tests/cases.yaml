@@ -1,0 +1,76 @@
+positive:
+  - given: >
+      40 chilled water pipes carrying real flow, targetVelocity 1.5, a nominal
+      size table from 15 to 500 and the matching steel bores
+    expect: >
+      sized is 40, each pipe snapped UP to the first size big enough, and every
+      findings row carries the flow, the bore needed, the size it became and
+      the velocity it now runs at. The velocities are real because the bores
+      were given
+
+  - given: a pipe needing a 47 mm bore against a table holding 40 and 50
+    expect: >
+      it becomes 50, never 40. Rounding to the nearer size would push the
+      velocity above the design figure, and that is the one direction that
+      causes noise and erosion
+
+  - given: >
+      the same 40 pipes with boresMm left empty
+    expect: >
+      velocityIsApproximate is true, every row says so, and a finding names
+      which way the error runs - a bore larger than the label means the true
+      velocity is LOWER than reported and safe, a smaller bore means HIGHER and
+      not. The sizing still happens; only the velocity claim is qualified
+
+  - given: >
+      a pipe whose type segment offers only 32 and 65, asked for 50
+    expect: >
+      the read-back sees 65 came back, that pipe is reported in refused with
+      both numbers, and the velocity quoted is the one it actually has. It is
+      not counted in sized
+
+negative:
+  - given: >
+      15 pipes in the set that are connected to nothing and read zero flow
+    expect: >
+      they go to noFlow and are NOT sized, with a finding saying this is a
+      connectivity problem rather than a sizing one. Sizing them to the
+      smallest pipe in the table would report a disconnected run as
+      successfully sized - which is the failure the whole read-back discipline
+      exists for
+
+  - given: targetVelocity left at 0
+    expect: >
+      nothing is sized and a finding says why. There is no default worth
+      trusting: a main and a branch are both normal at figures that differ by a
+      factor of two, and picking one silently sizes an entire system wrongly
+
+  - given: >
+      a domestic hot and cold water job handed to this fragment
+    expect: >
+      almost every pipe reports NO FLOW, because Revit has no flow in a
+      fixture-unit system until it is calculated. That is the correct behaviour
+      and the wrong tool - domestic water is sized from fixture units through a
+      probable-demand curve, which is a different input entirely
+
+  - given: >
+      a bore list of 12 entries against a size table of 18
+    expect: >
+      the bores are IGNORED, a finding says they could not be paired, and every
+      velocity is marked approximate. Pairing them by position anyway would put
+      a wrong bore against a right label, which is worse than admitting the
+      numbers are not there
+
+  - given: a pipe needing 620 mm bore against a table topping out at 500
+    expect: >
+      it is refused with the number it needed. Sizing it to the biggest
+      available would leave it over velocity with nothing saying so
+
+second_route: >
+  Revit's own Duct and Pipe Sizing tool sizes a whole selected system by
+  velocity or friction, stepping a main down at each branch. It is the better
+  tool for a whole system and it is not the same job: it needs a complete
+  connected system, and it will not touch a set of pipes chosen by hand. A hand
+  calculation - flow divided by velocity for the area, then the next size up -
+  is the check that this fragment's arithmetic is right, and is what one pipe
+  should be checked against before a system is run.
