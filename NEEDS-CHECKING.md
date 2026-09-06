@@ -180,6 +180,31 @@ python tools/check-compile.py          # 2020 through 2027, all four projects, 0
 | ~~**A7**~~ | ~~`pip install --user model2vec` then `python brain/heron_embed.py "stop the air going the wrong way"`~~ | **DONE 2026-09-06 on the owner's PC. `Backend: model`, 343 fragments embedded** — the weights host is reachable from here, which it was not from either container. **The check was not stopped at that line**, because *the model loaded* and *the model helps* are different claims. Scored against candidates sharing **no word** with the query: the model ranks `check flow direction` **first at 0.391** and `rename a sheet` at **0.001**; the built-in `lexical` backend ranks the same correct answer **LAST at 0.038**, below `rename a sheet` at 0.048. **The old engine's best guess was `find dead ends` and its worst was the right answer** — which is what *tolerant of spelling but not of meaning* costs, in numbers. **Two things recorded rather than smoothed over.** In the full index `find-dead-ends` (0.478) edged `check-flow-direction` (0.475) by **0.003** — too close to call, and both are defensible readings of that sentence, so this row proves the backend understands meaning and does **not** prove any particular ordering. And **this row's PASS wording is retired with its reasoning**: it asked for *"the duct fragment"*, written when the library held seven and no damper/flow fragment existed. At 343 the honest form is *a flow-direction fragment ranks top-2 with no shared words*, which is what happened |
 | ~~**A9**~~ | ~~On any machine with the .NET SDK, run `python tools/check-fragments-compile.py`~~ | **DONE 2026-09-06, on the owner's PC, at 343 fragments — `Every fragment compiles on every release it claims`, all eight, 2020 through 2027.** This row had been run green once before at **329** and left open because the library kept growing; it is closed now because the machine that can re-run it in minutes is the owner's own, so it stops being a row and becomes a command. **What it proves is the API surface agreeing and the contract being kept** — each fragment leaving what it promised at the declared type. **It proves nothing about behaviour**, which needs a real model and a proof carrying a negative case ([D-30](docs/DECISIONS.md)). The nine version defects this check caught before they were written are recorded in the git history of this row rather than repeated here |
 
+## Group J — the executor's inputs (needs Revit, and something selected)
+
+**Nothing in this group has ever run.** The executor could supply three names — `doc`, `uidoc`, `app` —
+until 2026-09-07, so the 328 fragments declaring anything else compiled green against a scope the machine
+could not reproduce. The host now binds every declared need from the fragment's own contract, which is
+what the compile gate has always done with its method parameters. **It compiles on all eight releases and
+has never met a model.**
+
+Each row here needs Revit open **and something selected**, which no earlier group has required.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **J1** | Select **a few ducts** in Revit, then `HERON_CLIENT_ID=me python mcp/client/heron_bridge_client.py prove count-elements` | It runs, and the line under it reads `<- elements from the selection (N)` with **N matching what you selected**. Before this change the same command was refused, because `elements` was a name the host had no way to fill |
+| **J2** | Select **nothing**, then run J1 again | It **refuses**, naming `elements`, and says nothing is selected. **This is the row that matters most.** An action handed zero elements reports *"0 changed"*, which a modeller reads as *"there was nothing to do"* rather than *"nobody was asked"* — the whole library was written to keep those apart and the host must not be the thing that collapses them |
+| **J3** | With ducts selected, `prove filter-elements-by-category count-elements` | The **chain**: the second line reads `<- elements from filter-elements-by-category (N)`, not `from the selection`. This is [D-29](docs/DECISIONS.md)'s design finally running — a filter's `provides` feeding an action's `needs`. Check N against the filter's own reported count |
+| **J4** | Select two ducts, then `prove unjoin-geometry` | It **refuses**, and says one selection cannot tell `first` from `second`. Binding both to the same set would run, report success, and be wrong — and nothing downstream could tell |
+| **J5** | `prove` a fragment needing a category or a name — e.g. `filter-elements-by-type` | It refuses with `needs_request_values`, naming what the caller would have to supply. **There is no route for those yet**, and 278 fragments are behind it. That is the next unlock, and it is bigger than this one |
+| **J6** | Run J1, wait, then run `prove count-elements` again with **nothing selected** | It **refuses**. It must NOT quietly reuse the elements from the earlier run. The client says `chain: reset` on the first fragment of every batch precisely so a later batch cannot inherit an earlier one's values |
+| **J7** | With two models open, select in one and `prove --in "<the other>" count-elements` | It **refuses** rather than binding a selection belonging to a different document. Elements are handles into the model they came from |
+| **J8** | Break a fragment's C# deliberately, with a bound need, and run it | The compile error says how many **generated lines** sit in front of the snippet. Without that, the line number points past the end of a short fragment and the compiler looks wrong |
+
+**None of this proves any fragment does the right thing.** It proves the inputs arrive, or are refused with
+a reason. [D-30](docs/DECISIONS.md) still wants a proof with a negative case, per fragment, and that is 335
+rows this group does not touch.
+
 ## Group R — read the decisions back (no Revit needed)
 
 **Not a test — a conversation**, and the only item in this file that is not about code behaving. It is

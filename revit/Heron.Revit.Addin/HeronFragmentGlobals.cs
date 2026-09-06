@@ -51,5 +51,36 @@ namespace Heron.Revit.Addin
         /// than inside one.
         /// </summary>
         public Autodesk.Revit.ApplicationServices.Application app;
+
+        /// <summary>
+        /// EVERY OTHER `needs` THE HOST HAS TO BIND, by the name the contract
+        /// gives it. A fragment never touches this - RevitFragment generates a
+        /// typed local for each entry and puts it in front of the source, so
+        /// the snippet still reads `elements` and not a dictionary lookup.
+        ///
+        /// WHY A BAG AND NOT MORE FIELDS. The obvious move is a field per
+        /// name, and it does not survive contact with the library: the
+        /// host-sourced needs are `elements`, `view`, and then `equipment`,
+        /// `targets`, `first`, `second`, `openings`, `values`, `blank` - role
+        /// names a fragment gives to whatever was handed to it. A field per
+        /// role means editing this file, rebuilding the add-in and restarting
+        /// Revit every time somebody writes a fragment that names its input
+        /// something new, which is not a contract, it is a queue.
+        ///
+        /// THE GENERATED PROLOGUE IS THE SAME IDEA AS THE COMPILE GATE'S
+        /// METHOD PARAMETERS, and that is the point rather than a
+        /// coincidence. tools/check-fragments-compile.py wraps each snippet in
+        /// a method whose parameters ARE its declared needs. Until this bag
+        /// existed the executor could supply three names, so 196 fragments
+        /// compiled green against a scope the machine could not reproduce -
+        /// the `needs` version of the drift tests/test_fragment_imports.py
+        /// guards for namespaces. Generating the scope from the same contract
+        /// on both sides is what makes them agree by construction instead of
+        /// by two lists somebody has to keep level.
+        ///
+        /// The double underscore is deliberate: it must never collide with a
+        /// name a fragment declares, and no contract in the library uses one.
+        /// </summary>
+        public System.Collections.Generic.IDictionary<string, object> __heron;
     }
 }
