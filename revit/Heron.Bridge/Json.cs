@@ -6,6 +6,7 @@
 // See docs/29-metadata-standard.md
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
@@ -133,6 +134,143 @@ namespace Heron.Bridge
                 if (json[i] == '}') return null;
                 return null;                              // malformed
             }
+        }
+
+        /// <summary>
+        /// Reads a top-level ARRAY OF FLAT OBJECTS, as a list of string maps.
+        /// Returns null if the key is absent or is not such an array, and an
+        /// EMPTY list if it is an array with nothing in it - the caller has to
+        /// tell those apart, because "no needs were sent" and "this fragment
+        /// needs nothing" are different facts and only one of them is a bug.
+        ///
+        /// This exists for `needs`, which is the fragment's contract crossing
+        /// the wire. Its values are all strings - a name, a type, a source -
+        /// so anything richer is skipped rather than half-read: a reader that
+        /// quietly drops the part it did not understand is how a contract
+        /// arrives looking complete and missing a term.
+        ///
+        /// TYPES CONTAIN COMMAS AND ANGLE BRACKETS. `IDictionary&lt;ElementId,
+        /// double&gt;` is a real declared type in this library, which is
+        /// exactly why the needs list is sent as JSON and parsed, rather than
+        /// packed into a delimited string somebody would have to guess the
+        /// escaping for.
+        /// </summary>
+        public static List<Dictionary<string, string>> ReadObjectArray(string json, string key)
+        {
+            if (string.IsNullOrEmpty(json) || string.IsNullOrEmpty(key)) return null;
+
+            var i = SkipWhitespace(json, 0);
+            if (i >= json.Length || json[i] != '{') return null;
+            i++;
+
+            while (true)
+            {
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length || json[i] == '}') return null;
+                if (json[i] != '"') return null;
+
+                string name;
+                i = ReadStringToken(json, i, out name);
+                if (i < 0) return null;
+
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length || json[i] != ':') return null;
+                i = SkipWhitespace(json, i + 1);
+                if (i >= json.Length) return null;
+
+                if (string.Equals(name, key, StringComparison.Ordinal))
+                {
+                    if (json[i] != '[') return null;      // present, wrong shape
+                    return ReadFlatObjects(json, i);
+                }
+
+                if (json[i] == '"')
+                {
+                    string ignored;
+                    i = ReadStringToken(json, i, out ignored);
+                    if (i < 0) return null;
+                }
+                else
+                {
+                    i = SkipValue(json, i);
+                    if (i < 0) return null;
+                }
+
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length) return null;
+                if (json[i] == ',') { i++; continue; }
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// The array itself, starting at s[i] == '['. Non-string members of an
+        /// object are stepped over; a member that is not an object at all
+        /// makes the whole read fail rather than silently shortening the list.
+        /// </summary>
+        private static List<Dictionary<string, string>> ReadFlatObjects(string s, int i)
+        {
+            var items = new List<Dictionary<string, string>>();
+            i = SkipWhitespace(s, i + 1);
+            if (i < s.Length && s[i] == ']') return items;   // empty, and that is a fact
+
+            while (i < s.Length)
+            {
+                i = SkipWhitespace(s, i);
+                if (i >= s.Length || s[i] != '{') return null;
+                i++;
+
+                var item = new Dictionary<string, string>(StringComparer.Ordinal);
+
+                i = SkipWhitespace(s, i);
+                if (i < s.Length && s[i] == '}') { i++; }
+                else
+                {
+                    while (true)
+                    {
+                        i = SkipWhitespace(s, i);
+                        if (i >= s.Length || s[i] != '"') return null;
+
+                        string field;
+                        i = ReadStringToken(s, i, out field);
+                        if (i < 0) return null;
+
+                        i = SkipWhitespace(s, i);
+                        if (i >= s.Length || s[i] != ':') return null;
+                        i = SkipWhitespace(s, i + 1);
+                        if (i >= s.Length) return null;
+
+                        if (s[i] == '"')
+                        {
+                            string value;
+                            i = ReadStringToken(s, i, out value);
+                            if (i < 0) return null;
+                            item[field] = value;
+                        }
+                        else
+                        {
+                            i = SkipValue(s, i);
+                            if (i < 0) return null;
+                        }
+
+                        i = SkipWhitespace(s, i);
+                        if (i >= s.Length) return null;
+                        if (s[i] == ',') { i++; continue; }
+                        if (s[i] == '}') { i++; break; }
+                        return null;
+                    }
+                }
+
+                items.Add(item);
+
+                i = SkipWhitespace(s, i);
+                if (i >= s.Length) return null;
+                if (s[i] == ',') { i++; continue; }
+                if (s[i] == ']') return items;
+                return null;
+            }
+
+            return null;                                  // unterminated
         }
 
         private static int SkipWhitespace(string s, int i)

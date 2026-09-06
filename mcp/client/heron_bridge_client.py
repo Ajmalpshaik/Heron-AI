@@ -621,6 +621,106 @@ def cmd_count(pid=None):
     return 1 if failures else 0
 
 
+def fragment_needs(path):
+    """
+    The `contract.needs` of one fragment, as a list of dicts. None if it cannot
+    be read with certainty.
+
+    WHY THIS IS NOT yaml.safe_load. This client is stdlib only and says so at
+    the top - it has to run on a machine where nothing is installed, which is
+    the whole reason `doctor` exists. So the one block it needs is read here.
+
+    IT REFUSES RATHER THAN RETURNING A SHORT LIST, and that is the only thing
+    that makes a hand-rolled reader acceptable. A needs list quietly missing an
+    entry is the worst failure available on this path: the executor binds what
+    it was told about, the fragment names something nobody put in scope, and the
+    error arrives at the PC as a compile failure inside generated code. Anything
+    this does not recognise makes the whole read fail, by name.
+
+    tests/test_fragment_needs_reader.py runs it against every fragment in the
+    library and compares it with PyYAML, so "it agrees with a real parser" is
+    measured rather than asserted here.
+    """
+    try:
+        with io.open(path, "r", encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return None
+
+    # Find `contract:` at the left margin, then `needs:` two spaces in.
+    inside_contract = False
+    inside_needs = False
+    needs = []
+
+    for raw in lines:
+        line = raw.rstrip()
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+
+        indent = len(line) - len(line.lstrip())
+        stripped = line.strip()
+
+        if indent == 0:
+            # A new top-level key ends the contract, whatever it is.
+            if inside_needs:
+                return needs
+            inside_contract = (stripped == "contract:")
+            continue
+
+        if not inside_contract:
+            continue
+
+        if indent == 2:
+            if inside_needs:
+                return needs            # `provides:` or anything else after it
+            inside_needs = (stripped == "needs:")
+            continue
+
+        if not inside_needs:
+            continue
+
+        if indent == 4 and stripped.startswith("- "):
+            key, _, value = stripped[2:].partition(":")
+            if key.strip() != "name":
+                return None             # an item that does not start with a name
+            needs.append({"name": value.strip()})
+            continue
+
+        if indent == 6 and needs:
+            key, sep, value = stripped.partition(":")
+            if not sep:
+                return None
+            needs[-1][key.strip()] = value.strip()
+            continue
+
+        # Anything else inside the needs block is a shape this does not
+        # understand, and guessing at it is what this refuses to do.
+        return None
+
+    return needs if inside_needs else []
+
+
+def needs_for(root, name):
+    """
+    The contract to send with a fragment's source, or None with a reason
+    printed. The source and the contract come from the same folder and must be
+    read together - sending one without the other is how the executor ends up
+    binding a scope the snippet was not written against.
+    """
+    path = os.path.join(root, "brain", "fragments", name, "fragment.yaml")
+    if not os.path.isfile(path):
+        print("%-30s has no fragment.yaml - cannot send its contract" % name)
+        return None
+
+    needs = fragment_needs(path)
+    if needs is None:
+        print("%-30s contract could not be read with certainty, so nothing was sent."
+              % name)
+        print("%s Fix the needs block in %s" % (" " * 30, path))
+        return None
+    return needs
+
+
 def cmd_fragment(name):
     """
     Run one fragment's C# against the open model - D-28's executor, reached.
@@ -644,6 +744,11 @@ def cmd_fragment(name):
     with io.open(source_path, "r", encoding="utf-8") as fh:
         source = fh.read()
 
+    # The contract travels with the source - see needs_for.
+    needs = needs_for(root, name)
+    if needs is None:
+        return 2
+
     live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
@@ -656,7 +761,8 @@ def cmd_fragment(name):
     failures = 0
     for bridge in live:
         reply = bridge.request("run_fragment_read",
-                               op_args={"name": name, "source": source},
+                               op_args={"name": name, "source": source,
+                                        "needs": needs, "chain": "reset"},
                                response_timeout=120.0)
 
         if reply is None:
@@ -709,7 +815,17 @@ def cmd_prove(names, in_document=None):
             print("No fragment called '%s'" % name)
             return 2
         with io.open(path, "r", encoding="utf-8") as fh:
-            sources.append((name, fh.read()))
+            source = fh.read()
+
+        # THE CONTRACT GOES WITH THE SOURCE. A fragment is a snippet that
+        # assumes names are in scope (D-29), and only its contract says which.
+        # Revit has never seen fragment.yaml, so what the executor can put in
+        # scope is exactly what is sent here.
+        needs = needs_for(root, name)
+        if needs is None:
+            return 2
+
+        sources.append((name, source, needs))
 
     live, starting, _, mismatched = discover()
     if not live and starting:
@@ -754,8 +870,18 @@ def cmd_prove(names, in_document=None):
     named_document = None
 
     failures = 0
-    for name, source in sources:
-        args = {"name": name, "source": source}
+    for index, (name, source, needs) in enumerate(sources):
+        args = {"name": name, "source": source, "needs": needs}
+
+        # THE FIRST FRAGMENT OPENS A CHAIN; the rest continue it. Revit holds
+        # what each one leaves behind so the next can consume it - a filter's
+        # `provides` feeding an action's `needs`, which is D-29's whole design
+        # and cannot live on this side because a client cannot hold a Revit
+        # Element across a wire. Saying "reset" here is what stops a later
+        # batch inheriting values from an earlier one.
+        if index == 0:
+            args["chain"] = "reset"
+
         if in_document:
             args["document"] = in_document
 
@@ -789,6 +915,13 @@ def cmd_prove(names, in_document=None):
 
         provides = reply.get("provides") or {}
         print("%-30s ok" % name)
+
+        # WHERE THE INPUTS CAME FROM, when the host had to bind any. A run on
+        # the selection and a run on the previous fragment's output look
+        # identical in the results, and reading one as the other is how a
+        # filter gets blamed for an answer it never produced.
+        if reply.get("bound"):
+            print("%s   <- %s" % (" " * 30, reply.get("bound")))
         for key in sorted(provides):
             print("%s   %-20s %s" % (" " * 30, key, provides[key]))
 

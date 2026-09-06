@@ -142,10 +142,61 @@ namespace Heron.Revit.Addin
                 doc = target,
                 uidoc = uidoc,
                 app = app.Application,
+                __heron = new Dictionary<string, object>(StringComparer.Ordinal),
             };
 
+            // WHAT THIS FRAGMENT SAYS IT NEEDS, sent with the source because
+            // the contract lives in fragment.yaml on the client's disk and
+            // Revit has never seen it - the same reason the source is sent
+            // rather than a name.
+            //
+            // ABSENT IS NOT THE SAME AS EMPTY, and both are legal. A caller
+            // that sends no `needs` at all gets the old behaviour: doc, uidoc
+            // and app, and nothing else. A fragment that genuinely needs
+            // nothing beyond those sends an empty list. Only the first is
+            // ambiguous, and it is treated as "this caller has not been
+            // updated" rather than as "this fragment needs nothing" - which
+            // would turn every unbound need into a compile error blamed on
+            // the fragment.
+            var needs = Json.ReadObjectArray(request, "needs");
+
+            // A CHAIN IS OPENED DELIBERATELY, NOT INHERITED. What the previous
+            // fragment left is held in a static, so without this it would
+            // outlive the batch that produced it: a fragment run an hour later
+            // against the same model would bind elements collected by
+            // something nobody remembers running, report them as coming "from
+            // the previous fragment", and be right about the words and wrong
+            // about the run. The client says "reset" on the first fragment of
+            // a batch and nothing on the rest.
+            if (string.Equals(Json.ReadString(request, "chain"), "reset",
+                              StringComparison.Ordinal))
+            {
+                Carried.Clear();
+                CarriedFrom = null;
+                CarriedBy = null;
+            }
+
+            var bound = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "doc", "uidoc", "app"
+            };
+
+            var prologue = "";
+
+            if (needs != null)
+            {
+                string binding;
+                var refusal = BindNeeds(needs, globals, target, uidoc, bound, out prologue, out binding);
+                if (refusal != null) return refusal;
+                Note = binding;
+            }
+            else
+            {
+                Note = null;
+            }
+
             Script<object> script;
-            var compileError = Compile(source, out script);
+            var compileError = Compile(prologue + source, PrologueLines(prologue), out script);
             if (compileError != null) return compileError;
 
             ScriptState<object> state;
@@ -165,7 +216,8 @@ namespace Heron.Revit.Addin
                     "'" + name + "' threw while running: " + Innermost(failure).Message);
             }
 
-            return Report(name, state, target, uidoc, app.ActiveUIDocument);
+            Remember(name, state, target, bound);
+            return Report(name, state, target, uidoc, app.ActiveUIDocument, bound);
         }
 
         /// <summary>
@@ -178,7 +230,7 @@ namespace Heron.Revit.Addin
         /// and the disagreement is worth reporting rather than smoothing over,
         /// because it means the gate is checking something the model is not.
         /// </summary>
-        private static string Compile(string source, out Script<object> script)
+        private static string Compile(string source, int prologueLines, out Script<object> script)
         {
             script = null;
 
@@ -215,10 +267,22 @@ namespace Heron.Revit.Addin
 
             if (errors.Count > 0)
             {
+                // THE LINE NUMBERS ARE NOT THE FRAGMENT'S. The host puts one
+                // generated line in front of the snippet for each need it
+                // bound, so every error below is that many lines further down
+                // than the same error in fragment.cs. Said plainly here
+                // because the alternative is somebody reading line 14 of a
+                // nine-line fragment and concluding the compiler is wrong.
+                var offset = prologueLines == 0 ? "" :
+                    " (line numbers include " + prologueLines +
+                    " generated line(s) the host put in front of the fragment - " +
+                    "subtract " + prologueLines + " to find the line in fragment.cs)";
+
                 return Json.Error("compile_failed",
                     "The fragment did not compile against the assemblies this Revit has loaded: " +
                     string.Join("; ", errors.Take(5)) +
-                    (errors.Count > 5 ? " ... and " + (errors.Count - 5) + " more" : ""));
+                    (errors.Count > 5 ? " ... and " + (errors.Count - 5) + " more" : "") +
+                    offset);
             }
 
             lock (Compiled)
@@ -239,7 +303,8 @@ namespace Heron.Revit.Addin
         /// being something the fragment had to remember to build.
         /// </summary>
         private static string Report(string name, ScriptState<object> state,
-                                     Document target, UIDocument uidoc, UIDocument active)
+                                     Document target, UIDocument uidoc, UIDocument active,
+                                     HashSet<string> bound)
         {
             // THE ANSWER ALWAYS NAMES THE DOCUMENT, and the model it ran
             // against is the first thing on it. A bare result is how somebody
@@ -274,14 +339,28 @@ namespace Heron.Revit.Addin
                 Json.Bool("wasActiveDocument", inFront),
             };
 
+            // WHERE THE INPUTS CAME FROM, on the answer itself. A fragment
+            // that ran on the selection and one that ran on the previous
+            // fragment's output produce the same shape of result, and reading
+            // the second as the first is how somebody concludes a filter is
+            // broken when it was never consulted.
+            if (!string.IsNullOrEmpty(Note)) parts.Add(Json.Str("bound", Note));
+
             var left = new List<string>();
 
             foreach (var variable in state.Variables)
             {
                 // Skip what the host put in. Those are the `needs`, and
                 // echoing a whole Document back is neither useful nor small.
-                if (variable.Name == "doc" || variable.Name == "uidoc" || variable.Name == "app")
-                    continue;
+                //
+                // THIS USED TO NAME THE THREE GLOBALS AND NOTHING ELSE, which
+                // was correct exactly as long as the host could bind only
+                // three names. The moment it could bind `elements`, the list
+                // the host had just handed IN came back OUT under `provides`,
+                // reported as something the fragment produced - a filter that
+                // did nothing would have looked identical to one that worked.
+                // The set is now whatever was actually bound for this run.
+                if (bound != null && bound.Contains(variable.Name)) continue;
 
                 left.Add(Json.Str(variable.Name, Describe(variable.Value)));
             }
@@ -290,6 +369,394 @@ namespace Heron.Revit.Addin
             parts.Add(Json.Num("providesCount", left.Count));
 
             return Json.Ok(parts.ToArray());
+        }
+
+        /// <summary>How many generated lines sit in front of the snippet.</summary>
+        private static int PrologueLines(string prologue)
+        {
+            if (string.IsNullOrEmpty(prologue)) return 0;
+            var count = 0;
+            foreach (var c in prologue) if (c == '\n') count++;
+            return count;
+        }
+
+        /// <summary>
+        /// Where this run's inputs came from, for the answer to carry. Set by
+        /// BindNeeds, read by Report. Single-threaded by construction: every
+        /// operation arrives on the Revit API thread, one at a time.
+        /// </summary>
+        private static string Note;
+
+        /// <summary>
+        /// What the LAST fragment left behind, so the next one can consume it.
+        /// D-29's whole design is a filter's provides feeding an action's
+        /// needs, and this is the only place that hand-off can live: the
+        /// client cannot hold a Revit Element across a wire.
+        ///
+        /// KEYED BY DOCUMENT, AND CLEARED WHEN IT CHANGES. Elements belong to
+        /// the document they were read from. Handing a list from one model to
+        /// a fragment running against another is not a slightly wrong answer -
+        /// Revit throws, or worse, an id that means one thing in one file
+        /// means something else in the other. The title is checked before
+        /// anything carries over, and the store is dropped when it moves.
+        /// </summary>
+        private static readonly Dictionary<string, object> Carried =
+            new Dictionary<string, object>(StringComparer.Ordinal);
+
+        private static string CarriedFrom;      // document title
+        private static string CarriedBy;        // fragment name
+
+        /// <summary>
+        /// Turn the declared contract into real values and a typed prologue.
+        /// Returns null when every need is bound, or the refusal.
+        ///
+        /// THE PROLOGUE IS THE COMPILE GATE'S METHOD SIGNATURE, WRITTEN OUT.
+        /// tools/check-fragments-compile.py wraps a snippet in a method whose
+        /// parameters are its declared needs; this puts the same names in
+        /// scope as locals of the same declared types. That is why the two
+        /// agree - not because two lists are kept level, but because both are
+        /// generated from the one contract.
+        ///
+        /// IT REFUSES RATHER THAN SUPPLYING AN EMPTY LIST. An action handed
+        /// zero elements reports "0 changed" and looks like a success, and a
+        /// modeller reads that as "there was nothing to do". Every fragment in
+        /// this library was written to distinguish those; the host must not be
+        /// the thing that collapses them.
+        /// </summary>
+        private static string BindNeeds(List<Dictionary<string, string>> needs,
+                                        HeronFragmentGlobals globals,
+                                        Document target,
+                                        UIDocument uidoc,
+                                        HashSet<string> bound,
+                                        out string prologue,
+                                        out string binding)
+        {
+            prologue = "";
+            binding = null;
+
+            var lines = new StringBuilder();
+            var how = new List<string>();
+            var unmet = new List<string>();
+            var fromRequest = new List<string>();
+
+            // The selection, read ONCE. It belongs to the document on screen,
+            // so it is only a candidate when that is the document being read.
+            IList<ElementId> selected = null;
+            if (uidoc != null)
+            {
+                try
+                {
+                    var active = uidoc.Document;
+                    if (active != null && active.Title == target.Title)
+                    {
+                        var ids = uidoc.Selection.GetElementIds();
+                        if (ids != null && ids.Count > 0) selected = new List<ElementId>(ids);
+                    }
+                }
+                catch { selected = null; }
+            }
+
+            // HOW MANY NEEDS COULD THE SELECTION ANSWER. This is asked before
+            // anything is bound, and it is the reason UNJOIN_GEOMETRY cannot
+            // quietly run on one set of elements twice. "first" and "second"
+            // are both unbound lists of elements; one selection cannot say
+            // which is which, and picking one is a wrong answer that looks
+            // exactly like a right one.
+            var selectable = 0;
+            foreach (var need in needs)
+            {
+                string nm, ty, src;
+                if (!Fields(need, out nm, out ty, out src)) continue;
+                if (bound.Contains(nm)) continue;
+                if (src == "request") continue;
+                if (Carried.ContainsKey(nm) && CarriedFrom == target.Title) continue;
+                if (IsElementList(ty)) selectable++;
+            }
+
+            foreach (var need in needs)
+            {
+                string name, type, source;
+                if (!Fields(need, out name, out type, out source))
+                {
+                    return Json.Error("bad_contract",
+                        "A needs entry arrived without a usable name and type. The " +
+                        "contract crossing the wire is the fragment's own, so this is a " +
+                        "fault in fragment.yaml or in the client that read it, not " +
+                        "something the model can answer.");
+                }
+
+                // The three the host has always had. Already in scope as
+                // fields on the globals object - a prologue line would only
+                // shadow them.
+                if (name == "doc" || name == "uidoc" || name == "app")
+                {
+                    bound.Add(name);
+                    continue;
+                }
+
+                if (!IsIdentifier(name))
+                {
+                    return Json.Error("bad_contract",
+                        "'" + name + "' is not a usable C# name, and this generates code. " +
+                        "A need's name becomes a local variable.");
+                }
+
+                if (!IsTypeName(type))
+                {
+                    return Json.Error("bad_contract",
+                        "'" + type + "' is not a usable type for need '" + name + "'. " +
+                        "A need's declared type is written into generated code, so it is " +
+                        "checked here rather than handed to the compiler as-is.");
+                }
+
+                // A REQUEST-SOURCED NEED IS THE CALLER'S, NOT THE MODEL'S -
+                // a category, a name to match, a distance. Nothing here can
+                // invent one, and inventing one is exactly how a job runs
+                // against the wrong category and reports success.
+                if (source == "request")
+                {
+                    fromRequest.Add(name + " (" + type + ")");
+                    continue;
+                }
+
+                object value = null;
+                string origin = null;
+
+                // 1. THE CHAIN. What the previous fragment in this session
+                //    left behind, under this name, in THIS document.
+                if (CarriedFrom == target.Title && Carried.ContainsKey(name))
+                {
+                    value = Carried[name];
+                    origin = "from " + (CarriedBy ?? "the previous fragment");
+                }
+
+                // 2. THE SELECTION, and only when it is unambiguous.
+                else if (selected != null && IsElementList(type) && selectable == 1)
+                {
+                    value = selected;
+                    origin = "from the selection";
+                }
+
+                if (value == null)
+                {
+                    unmet.Add(name + " (" + type + ")");
+                    continue;
+                }
+
+                var shaped = Shape(value, type, target);
+                if (shaped == null)
+                {
+                    unmet.Add(name + " (" + type + ") - nothing usable survived");
+                    continue;
+                }
+
+                globals.__heron[name] = shaped;
+                bound.Add(name);
+
+                lines.Append(type).Append(" ").Append(name)
+                     .Append(" = (").Append(type).Append(")__heron[\"")
+                     .Append(name).Append("\"];\n");
+
+                how.Add(name + " " + origin + Size(shaped));
+            }
+
+            if (fromRequest.Count > 0)
+            {
+                return Json.Error("needs_request_values",
+                    "'" + string.Join("', '", fromRequest.ToArray()) + "' " +
+                    (fromRequest.Count == 1 ? "is a value the CALLER supplies" :
+                                              "are values the CALLER supplies") +
+                    ", not something the model holds - a category, a name to match, a " +
+                    "distance. Heron cannot run this fragment until there is a way to " +
+                    "pass them, and guessing one is how a job runs against the wrong " +
+                    "thing and reports success.");
+            }
+
+            if (unmet.Count > 0)
+            {
+                var why = selected == null
+                    ? "Nothing is selected in Revit, and no earlier fragment in this " +
+                      "session left a value of that name."
+                    : (selectable > 1
+                        ? "There is a selection, but this fragment needs " + selectable +
+                          " separate sets of elements and one selection cannot say which " +
+                          "is which. Run the fragments that produce them first."
+                        : "The selection does not fit, and no earlier fragment in this " +
+                          "session left a value of that name.");
+
+                return Json.Error("needs_unbound",
+                    "Cannot run: '" + string.Join("', '", unmet.ToArray()) +
+                    "' " + (unmet.Count == 1 ? "was" : "were") + " never supplied. " + why +
+                    " Running anyway would report 0 results, which reads as 'there was " +
+                    "nothing to find' rather than 'nobody was asked'.");
+            }
+
+            prologue = lines.ToString();
+            binding = how.Count == 0 ? null : string.Join("; ", how.ToArray());
+            return null;
+        }
+
+        /// <summary>
+        /// Keep what this fragment left, for the next one. Only the names the
+        /// fragment itself produced - anything the host bound is already the
+        /// previous step's and re-storing it would make a value look one
+        /// fragment fresher than it is.
+        /// </summary>
+        private static void Remember(string name, ScriptState<object> state,
+                                     Document target, HashSet<string> bound)
+        {
+            if (CarriedFrom != target.Title) Carried.Clear();
+
+            CarriedFrom = target.Title;
+            CarriedBy = name;
+
+            foreach (var variable in state.Variables)
+            {
+                if (bound != null && bound.Contains(variable.Name)) continue;
+
+                object value = null;
+                try { value = variable.Value; } catch { continue; }
+                if (value == null) continue;
+
+                // ELEMENTS ARE KEPT AS IDS. An Element is a handle into an
+                // open document and goes stale - a regenerate, an undo, or
+                // another job deleting something leaves an object that throws
+                // on its next property read. An id can be checked.
+                var elements = value as IEnumerable<Element>;
+                if (elements != null)
+                {
+                    var ids = new List<ElementId>();
+                    try { foreach (var e in elements) if (e != null) ids.Add(e.Id); }
+                    catch { continue; }
+                    Carried[variable.Name] = ids;
+                    continue;
+                }
+
+                Carried[variable.Name] = value;
+            }
+        }
+
+        /// <summary>
+        /// The stored value, as the declared type wants it - and re-read from
+        /// the document, so an element deleted since it was collected is gone
+        /// rather than throwing later on a property nobody expected to fail.
+        /// </summary>
+        private static object Shape(object value, string type, Document doc)
+        {
+            var ids = value as IList<ElementId>;
+
+            if (ids != null && IsElementList(type))
+            {
+                var live = new List<Element>();
+                foreach (var id in ids)
+                {
+                    Element found = null;
+                    try { found = doc.GetElement(id); } catch { }
+                    if (found != null) live.Add(found);
+                }
+                return live.Count == 0 ? null : (object)live;
+            }
+
+            if (ids != null && type.IndexOf("ElementId", StringComparison.Ordinal) >= 0)
+            {
+                return ids.Count == 0 ? null : value;
+            }
+
+            var already = value as IList<Element>;
+            if (already != null && IsElementList(type))
+                return already.Count == 0 ? null : value;
+
+            return value;
+        }
+
+        private static string Size(object shaped)
+        {
+            var list = shaped as ICollection;
+            return list == null ? "" : " (" + list.Count + ")";
+        }
+
+        private static bool Fields(Dictionary<string, string> need,
+                                   out string name, out string type, out string source)
+        {
+            name = null; type = null; source = "host";
+            if (need == null) return false;
+            if (!need.TryGetValue("name", out name) || string.IsNullOrEmpty(name)) return false;
+            if (!need.TryGetValue("type", out type) || string.IsNullOrEmpty(type)) return false;
+            string declared;
+            if (need.TryGetValue("source", out declared) && !string.IsNullOrEmpty(declared))
+                source = declared;
+            return true;
+        }
+
+        /// <summary>An IList/ICollection/IEnumerable of Element, not of ElementId.</summary>
+        private static bool IsElementList(string type)
+        {
+            if (string.IsNullOrEmpty(type)) return false;
+            if (type.IndexOf("ElementId", StringComparison.Ordinal) >= 0) return false;
+            return type.IndexOf("<Element>", StringComparison.Ordinal) >= 0;
+        }
+
+        /// <summary>
+        /// A C# identifier. Checked because a need's name is written into
+        /// generated source, and a contract is a file on somebody's disk.
+        /// </summary>
+        private static bool IsIdentifier(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+            if (!char.IsLetter(text[0]) && text[0] != '_') return false;
+            foreach (var c in text)
+                if (!char.IsLetterOrDigit(c) && c != '_') return false;
+            return !Keywords.Contains(text);
+        }
+
+        /// <summary>
+        /// Names that read perfectly in a contract and cannot be variables.
+        /// `params`, `object`, `event`, `base`, `string`, `fixed` and `in` are
+        /// all words a Revit contract would reach for without a second
+        /// thought. Without this the prologue fails to compile and the error
+        /// names a line the fragment did not write, so the fragment gets
+        /// blamed for the host's generated code.
+        ///
+        /// tests/test_fragment_needs.py checks the whole library against the
+        /// same list, so a contract like this is caught at the desk. This is
+        /// the second line, for a contract that reaches the machine anyway.
+        /// </summary>
+        private static readonly HashSet<string> Keywords =
+            new HashSet<string>(StringComparer.Ordinal)
+            {
+                "abstract", "as", "base", "bool", "break", "byte", "case",
+                "catch", "char", "checked", "class", "const", "continue",
+                "decimal", "default", "delegate", "do", "double", "else",
+                "enum", "event", "explicit", "extern", "false", "finally",
+                "fixed", "float", "for", "foreach", "goto", "if", "implicit",
+                "in", "int", "interface", "internal", "is", "lock", "long",
+                "namespace", "new", "null", "object", "operator", "out",
+                "override", "params", "private", "protected", "public",
+                "readonly", "ref", "return", "sbyte", "sealed", "short",
+                "sizeof", "stackalloc", "static", "string", "struct", "switch",
+                "this", "throw", "true", "try", "typeof", "uint", "ulong",
+                "unchecked", "unsafe", "ushort", "using", "virtual", "void",
+                "volatile", "while",
+            };
+
+        /// <summary>
+        /// A type NAME - letters, digits, dots for a namespace, and the
+        /// brackets and commas a generic needs. Deliberately narrow: this
+        /// string is written into code, so anything it does not recognise is
+        /// refused with the type named, rather than reaching the compiler and
+        /// coming back as an error about a line the fragment did not write.
+        /// </summary>
+        private static bool IsTypeName(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+            foreach (var c in text)
+            {
+                if (char.IsLetterOrDigit(c)) continue;
+                if (c == '_' || c == '.' || c == '<' || c == '>' ||
+                    c == ',' || c == ' ' || c == '[' || c == ']') continue;
+                return false;
+            }
+            return char.IsLetter(text[0]) || text[0] == '_';
         }
 
         /// <summary>
