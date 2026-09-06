@@ -337,6 +337,27 @@ code is the last command's**, and I had piped it through `tail`. The tool return
 before it was written down, which is the only reason it is a footnote instead of a wrong entry in this
 file.
 
+### The other track proved READ_SELECTION the same day, and it lands exactly on this
+
+`READ_SELECTION` went `PROVEN` on 2026-09-07 in the verification worktree — 1,053 duct curves read back
+as 1,053, and an honest 0 with nothing selected, on two models, agreeing with `select_by_category`
+reached from the other side. **Its `second_route` note names the ambiguity this binding had to decide,
+and neither track knew the other was on it:**
+
+> Aimed with `--in` at Snowdon while another model was in front, it returned **0** with
+> `active view: (none)`. Whether Snowdon's selection was genuinely cleared when it lost the screen, or
+> whether a `UIDocument` built for an off-screen document **cannot see a selection at all**, was NOT
+> established — and the two are indistinguishable from the bare 0 the caller gets.
+
+**The binding refuses that case rather than resolving it**, which is the only honest move while it stays
+unestablished: the selection is a candidate **only when the document being read is the one on screen**.
+An off-screen target gets `needs_unbound`, naming what was missing — never a silent empty list.
+
+**And it settles a distinction worth keeping.** `READ_SELECTION` reporting **0** is correct and is the
+whole point of that fragment. An *action* being handed **0** and reporting *"0 changed"* is not. **Same
+zero, two opposite correct behaviours, decided entirely by which side of the binding it sits on** — which
+is why the refusal lives in the host and not in the fragments.
+
 ### What is NOT true yet
 
 **None of this has run in Revit.** It compiles on eight releases and the suite is green, and by this
