@@ -81,10 +81,19 @@ must be strengthened on its OWN ground. That is the third session this trap has 
 - **The build order stops at Step 14, and 180 fragments claim Steps 15, 16 and 17.** Those steps are
   named nowhere in [27](docs/27-build-order.md). The library build happened without being written into
   the plan it was supposedly following.
-- **Agents: 250 registered, 61 implemented.** 49 carry a build step (all in Steps 1–6); of those, 4 are
-  host-provided and **29 are built, so 16 that were due are not**. Another **32 were built that carry no
-  step at all** — ahead of a plan that never scheduled them. The registry's `Step` column was never
-  extended past Step 6.
+- **Agents: 250 registered, 82 implemented, and every agent that was DUE is built.** 49 carry a build
+  step, all in Steps 1–6; 4 of those are host-provided and the other 45 have source files, so **nothing
+  scheduled is outstanding**. A further **37 are built that carry no step at all** — the registry's
+  `Step` column was never extended past Step 6, so 201 agents have no scheduled position and "are we on
+  plan" cannot be answered for them.
+
+  > **This line first said *61 implemented, 16 due but missing*, and that was wrong — caught within the
+  > hour by checking one of the sixteen.** `HERON-MCP-HLT-005` and `HERON-MCP-VER-007` are both named in
+  > `mcp/server/heron_mcp_server.py`; `HERON-MCP-CMP-008` is in `heron_session.py`. **The pattern was
+  > capturing only the FIRST id on a header line, and headers here list several separated by commas.**
+  > That is the same failure `NEEDS-CHECKING.md` records three times over — *prove the pattern can see
+  > what you know is there* — arrived at from the opposite direction: not a count that missed a group,
+  > but a count that missed the second and third entry in every row it did match.
 
 **A test could poison itself, and did.** `tests/test_scope_store.py` plants a malformed fragment inside
 the real `brain/fragments/` tree. It cleaned up in a `finally` but built the directory OUTSIDE the
@@ -108,9 +117,9 @@ and `SPLIT_MEP_RUN` v2 (it cut a run and left both halves open — it now rejoin
 > is spent: a merged pull request cannot carry new work. **A fresh session starts a NEW branch from the
 > latest `main`**, never more commits on that one. `git fetch origin main` FIRST, before any work.
 >
-> The remote branch could **not** be deleted from the container — the git proxy answers `403` to a ref
-> deletion, which is an egress policy and not something to route around. Delete it on GitHub if it is
-> still listed.
+> **DONE 2026-09-06 — that branch is deleted and `origin` carries only `main`.** The note here said the
+> container's git proxy answered `403` to a ref deletion and asked for it to be done on GitHub; it was
+> still sitting there weeks later, because a request parked in a document is not a task anybody owns.
 
 **The count above is the one to distrust first.** This line said 218 while `main` already carried 274,
 because peer sessions added fragments and never came back to this file. Run
@@ -2848,7 +2857,10 @@ against a stale count, and each one becomes a merge conflict.
 new branch from the latest `main` instead — `git fetch origin main && git checkout -B <new-branch>
 origin/main`. Stacking new commits on merged history is the one thing not to do here.
 
-**Heron-AI and AJ-Tools only.** `AJ-AI-Brain` is read-only reference.
+**Heron-AI and AJ-Tools only.** `AJ-AI-Brain` is read-only reference — **read it, never edit it, never
+commit to it.** As of 2026-09-06 it is on the owner's machine at `D:\Ajmal\AJ AI Brain`, so it can be
+audited directly rather than guessed at. `scripts/` holds 398 `.cs` files; **nine of them are still
+fragment-shaped work**, listed in the 2026-09-06 section at the top of this file.
 
 ### Before the C# — one step this recipe did not have
 
