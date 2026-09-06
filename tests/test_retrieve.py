@@ -143,11 +143,68 @@ def main():
                   "fragments - %s of %s. With 'show me' in front, none of them "
                   "come back at all, and that gap is what A7 is for"
                   % (", ".join(ducts), ", ".join(sharpIds)))
-            check(spread < 0.01,
-                  "and the top %d are effectively TIED (spread %.5f, one rank "
-                  "of fusion is 0.00026) - the order among them is noise, not "
-                  "ranking, because the built-in backend is n-grams. A7 is "
-                  "what should break this check" % (len(ids), spread))
+            # A7 RAN ON 2026-09-06 AND BROKE THIS CHECK, exactly as the
+            # paragraph above said it would. That is the tripwire firing, not a
+            # regression, and what it fired on is worth writing down properly
+            # rather than deleting.
+            #
+            # Measured on the owner's PC with the trained backend, same query:
+            #
+            #   "show me every duct in the model" -> MEP-003, SEL-024, MEP-031,
+            #                                        MEP-022, MEP-037
+            #   "every duct in the model"         -> IDENTICAL, to four decimals
+            #
+            # FOUR duct fragments where there were NONE, and the two sentences
+            # now agree. The saturating phrase no longer decides the shortlist,
+            # which is precisely the defect this check was built to describe.
+            #
+            # So the assertion becomes conditional on the backend rather than
+            # being loosened for both. A machine with no model still gets the
+            # old behaviour and should still be told the truth about it - and
+            # if the trained backend ever stops separating these, that is a
+            # real regression rather than a machine without a download.
+            model_backend, _why_backend = EMBED.backend()
+            if model_backend == EMBED.MODEL:
+                check(spread >= 0.01,
+                      "the trained backend RANKS the shortlist (spread %.5f, "
+                      "one rank of fusion is 0.00026) - it is no longer five "
+                      "arbitrary fragments in arbitrary order" % spread)
+            else:
+                check(spread < 0.01,
+                      "and the top %d are effectively TIED (spread %.5f, one "
+                      "rank of fusion is 0.00026) - the order among them is "
+                      "noise, not ranking, because the built-in backend is "
+                      "n-grams" % (len(ids), spread))
+
+            # The prize A7 was wanted for, asserted rather than described. With
+            # no model this cannot hold, and saying so is the point.
+            if model_backend == EMBED.MODEL:
+                loud, _ = R.retrieve(store, "show me every duct in the model",
+                                     revit="2024")
+                quiet, _ = R.retrieve(store, "every duct in the model",
+                                      revit="2024")
+                mep = [c.id for c in loud if c.id.startswith("FRG-MEP-")]
+                check(len(mep) >= 2,
+                      "'SHOW ME every duct' now finds duct fragments - %s. With "
+                      "n-grams it found none at all" % ", ".join(mep))
+                # The two sentences now AGREE on part of the answer, which
+                # they did not before: with n-grams the "show me" shortlist and
+                # the "every duct" shortlist had no duct fragment in common at
+                # all - one was warnings/sheets/levels, the other was ducts.
+                #
+                # They are not IDENTICAL here, and that was asserted and
+                # measured wrong before this comment existed. In the FULL
+                # library the two return the same five ids to four decimals; in
+                # this fixture they differ in order and in two of five. The
+                # fixture is smaller and differently composed, so a claim
+                # measured against the whole library does not transfer to it -
+                # which is the same lesson as "a library too small to be wrong",
+                # arriving from the other direction.
+                shared = set(c.id for c in loud) & set(c.id for c in quiet)
+                check(len(shared) >= 2,
+                      "and the two sentences now AGREE on %d of 5 (%s) - with "
+                      "n-grams they shared no duct fragment at all"
+                      % (len(shared), ", ".join(sorted(shared))))
             check(len(got) > 1 and got[0].score != got[1].score,
                   "and the scores DIFFER (%.4f vs %.4f) - nothing is winning on "
                   "alphabetical order" % (got[0].score, got[1].score))

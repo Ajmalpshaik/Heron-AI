@@ -280,6 +280,38 @@ def main():
         shutil.rmtree(base_h, ignore_errors=True)
 
     print()
+    print("D-48 - one unreadable fragment costs ONE fragment, never the library")
+    base_i = tempfile.mkdtemp()
+    try:
+        for slug, text in (
+            ("aaa-good", "id: FRG-ISO-001\nname: first good one\n"),
+            ("bbb-broken", "id: FRG-ISO-002\nname: [unclosed\n  bad: : :\n"),
+            ("ccc-good", "id: FRG-ISO-003\nname: second good one\n"),
+        ):
+            d = os.path.join(base_i, slug)
+            os.makedirs(d)
+            io.open(os.path.join(d, "fragment.yaml"), "w",
+                    encoding="utf-8").write(text)
+
+        # The broken one sorts BETWEEN the two good ones on purpose: a loader
+        # that dies on it would take the third with it and leave the first
+        # looking like a partial success rather than a failure.
+        raised = None
+        try:
+            found_i, problems_i = F.load_all(base_i)
+        except Exception as exc:                              # noqa: BLE001
+            raised, found_i, problems_i = exc, {}, []
+
+        check(raised is None,
+              "load_all survives a fragment.yaml that cannot be parsed")
+        check(sorted(found_i) == ["FRG-ISO-001", "FRG-ISO-003"],
+              "both good fragments load, including the one AFTER the broken one")
+        check(any("FRG-ISO" not in p and "bbb-broken" in p for p in problems_i),
+              "the broken one is named in problems rather than swallowed")
+    finally:
+        shutil.rmtree(base_i, ignore_errors=True)
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
@@ -287,7 +319,8 @@ def main():
         return 1
 
     print("PASSED - identity survives a rename, contracts compose as data, and")
-    print("a proof without a negative case is refused.")
+    print("a proof without a negative case is refused - and one unreadable")
+    print("fragment costs one fragment rather than all 343 (D-48).")
     print("It says NOTHING about whether either fragment's C# works: both are")
     print("DRAFT and neither has met a model. See NEEDS-CHECKING.md.")
     return 0

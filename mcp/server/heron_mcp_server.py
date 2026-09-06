@@ -872,4 +872,11 @@ if __name__ == "__main__":
         # The bridge is a Windows named pipe, and Revit is Windows-only.
         sys.stderr.write("Heron's bridge uses Windows named pipes. Revit is Windows-only.\n")
         sys.exit(2)
+    # Load the trained encoder on a background thread BEFORE serving anything.
+    # It is about a second in a fresh process and was measured still importing
+    # forty seconds later when it first ran inside a request handler, on the
+    # event loop - the host waited and no reply ever came. Until it finishes,
+    # every answer uses the lexical backend and says so. See heron_embed.warm().
+    brain.warm()
+
     server.run()

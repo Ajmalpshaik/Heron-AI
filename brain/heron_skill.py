@@ -94,7 +94,21 @@ class Skill(object):
 
 
 def load(path):
-    data = yaml.safe_load(io.open(path, encoding="utf-8").read())
+    """Read one skill file. Every failure leaves as a ValueError (D-48).
+
+    The reason is load_all's, not this function's: it catches so that one
+    unreadable skill costs one skill. An IOError escaping from here walked
+    straight out of load_all and took the whole library with it - measured on
+    2026-09-06 with a DIRECTORY named `x.yaml`, which load_all happily passed
+    to io.open because it filtered on the extension and never asked whether the
+    entry was a file. Two skills beside it, and it returned neither.
+    """
+    try:
+        data = yaml.safe_load(io.open(path, encoding="utf-8").read())
+    except yaml.YAMLError as exc:
+        raise ValueError("could not be parsed - %s" % " ".join(str(exc).split()))
+    except (IOError, OSError) as exc:
+        raise ValueError("could not be read - %s" % " ".join(str(exc).split()))
     if not isinstance(data, dict):
         raise ValueError("%s is not a mapping" % path)
     return Skill(data, path)
@@ -109,10 +123,24 @@ def load_all(root=None):
     for name in sorted(os.listdir(root)):
         if not name.endswith((".yaml", ".yml")):
             continue
+        path = os.path.join(root, name)
+        if not os.path.isfile(path):
+            # A directory named `x.yaml` is not a skill. This is checked rather
+            # than assumed because the extension filter above cannot tell.
+            problems.append("%s: not a file, so it is not a skill" % name)
+            continue
         try:
-            skill = load(os.path.join(root, name))
+            skill = load(path)
         except (ValueError, yaml.YAMLError) as exc:
             problems.append("%s: %s" % (name, exc))
+            continue
+        except Exception as exc:                     # noqa: BLE001 - deliberate
+            # D-48: one broken skill costs one skill. A bare except is normally
+            # a smell; here it IS the guarantee, and it is commented so it is
+            # not tidied away by someone who reads it as laziness.
+            problems.append("%s: unreadable - %s: %s"
+                            % (name, type(exc).__name__,
+                               " ".join(str(exc).split())))
             continue
         if not skill.id:
             problems.append("%s: no id" % name)

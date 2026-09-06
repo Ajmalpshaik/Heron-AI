@@ -1,0 +1,52 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a template project open alongside holding eight materials
+    expect: >
+      those eight in the material browser here afterwards, in `copied`, each
+      with its surface and cut patterns and its appearance asset. Open one in
+      the browser and read the Appearance tab, not just the Identity tab
+
+  - given: nameContains "Concrete"
+    expect: >
+      only the concrete materials, and nothing else in the browser touched
+
+negative:
+  - given: a material that arrives WITHOUT its appearance asset
+    expect: >
+      it named in `weakened` saying so, and NOT in `copied`. This is the case
+      the fragment exists for - the material keeps its shading colour, so it
+      looks correct in a shaded view, in the browser and in every list, and is
+      wrong only in a rendered or realistic view
+
+  - given: a material whose surface pattern did not come
+    expect: >
+      it in `weakened` naming the surface pattern. A material drawing without
+      its hatch looks like a drafting decision rather than a defect
+
+  - given: a material name that already exists here with a different appearance
+    expect: >
+      that name in `clashed` and THIS project's material untouched. Replacing
+      it changes how everything already using it draws AND renders
+
+  - given: a material in the source with no appearance asset at all
+    expect: >
+      it in `copied`, not `weakened`. What is checked is whether the source's
+      asset ARRIVED, not whether the landed material has one - the difference
+      matters and is why the source is read before the copy
+
+  - given: the source project NOT open
+    expect: >
+      `refused` naming what IS open, and nothing attempted
+
+  - given: a linked model whose title matches
+    expect: >
+      it not offered as a source. A link is reached through its
+      RevitLinkInstance, and two links can share a title
+
+second_route:
+  - >
+    open the Material Browser and put a transferred material on a face, then
+    switch the view to Realistic. Shaded is not the check: a material missing
+    its appearance asset renders flat and shades correctly, which is exactly
+    why this is found late and by somebody else

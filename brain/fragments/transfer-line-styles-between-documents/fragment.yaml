@@ -1,0 +1,107 @@
+heron-agent: HERON-REVIT-CAT-009
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-052
+semantic-identity: "bring the line styles over from the other project"
+kind: action
+domain: revit.elements
+capability: TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies line styles from another OPEN project into this one - *"bring the line
+  styles over from the template"*, *"get the line styles from last job"*.
+
+  **A LINE STYLE IS A SUBCATEGORY, NOT AN ELEMENT, SO IT IS BUILT RATHER THAN
+  COPIED.** Each one is a subcategory of the Lines category, and it is made
+  here with `NewSubcategory` and then given the source's line weight, colour
+  and pattern. That is why this fragment cannot lean on the
+  document-to-document copy that `TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS` and
+  `TRANSFER_VIEWS_BETWEEN_DOCUMENTS` use - there is no element to copy.
+
+  **THE LINE PATTERN IS A SEPARATE ELEMENT, AND THAT IS WHERE THIS GOES WRONG
+  QUIETLY.** A style whose pattern does not exist here lands **solid** -
+  present, correctly named, right colour, right weight, and drawing the wrong
+  thing. Nobody notices until a drawing is issued. So the pattern is matched by
+  **name** in this project, and where it is missing the pattern element itself
+  is brought over first. If even that fails the style is still created, left
+  solid, and named in `weakened` rather than reported as created. **A style
+  that arrived looking right and draws solid is the failure being guarded
+  against.**
+
+  **A NAME THAT ALREADY EXISTS HERE IS SKIPPED, NEVER OVERWRITTEN.** Two
+  projects can hold a style with one name and different weights, and silently
+  replacing this project's standards with another project's is worse than
+  doing nothing. The name goes in `clashed` and the existing style is left
+  exactly as it was.
+
+  **BOTH PROJECTS MUST BE OPEN IN THE SAME REVIT.** The source is found by its
+  title among the open documents; if it is not open, the open ones are listed
+  and nothing is attempted. Linked documents are not offered - a link is
+  reached through its `RevitLinkInstance`, and two links can share a title.
+
+  **ONLY THE PROJECTION WEIGHT IS CARRIED.** A line style has no cut weight to
+  copy; asking for one returns nothing useful on any release.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). **The
+  undo belongs to THIS document** - Rule 16 is per document, and the source
+  project is only read.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    - name: sourceDocumentTitle
+      type: string
+      source: request
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: IList<string>
+    - name: clashed
+      type: IList<string>
+    - name: weakened
+      type: IList<string>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Categories.NewSubcategory(Category,
+  String)`, `Category.SetLineWeight(Int32, GraphicsStyleType)`,
+  `Category.GetLineWeight(GraphicsStyleType)`,
+  `Category.GetLinePatternId(GraphicsStyleType)`,
+  `Category.SetLinePatternId(ElementId, GraphicsStyleType)` and
+  `LinePatternElement.GetLinePattern()` were read off the SHIPPED 2020 and 2024
+  assemblies and are identical at both ends. The Lines category is reached with
+  `Category.GetCategory`, never by building an ElementId from a number, and no
+  ElementId is ever turned into an int - that value changed width at 2024.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "bring the line styles over from       -> here
+#    the template"
+#   "move these lines onto another style"  -> REMAP_LINE_STYLES, which stays
+#                                             inside ONE project
+#   "draw a line"                          -> CREATE_LINE
+#   "these lines sit on top of each other" -> FIND_OVERLAPPING_LINES
+#   "bring the view filters over"          -> TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS
+#   "bring the schedules over"             -> TRANSFER_VIEWS_BETWEEN_DOCUMENTS
+
+utterances:
+  - bring the line styles over from the template
+  - copy the line styles from the other project
+  - transfer the line styles from that model
+  - get the line styles from last job

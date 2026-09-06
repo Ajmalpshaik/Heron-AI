@@ -45,6 +45,17 @@ purpose: >
   view called "Name(1)". Read the names back before committing to a big
   transfer.
 
+  **A VIEW TEMPLATE'S VALUE IS THE FILTERS IT CARRIES, and those are separate
+  elements.** A template copied into a project that does not have them arrives
+  present, correctly named, and controlling less than it did - identical in the
+  template list, and visible only as the wrong things being shown on somebody's
+  sheet. So a transferred template is read back and its filters counted against
+  the source's; one that arrived short is named in `weakened` rather than
+  `copied`, and told to run
+  [TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS](../transfer-view-filters-between-documents/fragment.yaml)
+  first. **Run the filters transfer before this one** and the shortfall does
+  not arise.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -68,6 +79,8 @@ contract:
       type: IList<string>
     - name: clashed
       type: IList<string>
+    - name: weakened
+      type: IList<string>
     - name: refused
       type: string
 
@@ -78,6 +91,10 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. The document-to-document and
   view-to-view copies, and the open-document list, are unchanged 2020 to 2027.
+  **The filter count uses `View.GetFilters()` and NOT `GetOrderedFilters()`**:
+  the ordered spelling is ABSENT from Revit 2020 and present by 2024, read off
+  the shipped assemblies at both ends rather than assumed. It is the obvious
+  one to reach for and it compiles on exactly one end.
   Two internal schedule kinds that Revit maintains itself - the title-block
   revision schedule and the keynote one - are excluded, because copying them is
   meaningless and can misbehave.

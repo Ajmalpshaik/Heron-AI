@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-097
+semantic-identity: "bring the view filters over from the other project"
+kind: action
+domain: revit.views
+capability: TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies view filters from another OPEN project into this one - *"bring the
+  filters over from the template"*, *"copy the filters from last job"*.
+
+  **A FILTER ARRIVES IN THE PROJECT, NOT ON A VIEW.** A `ParameterFilterElement`
+  is project-wide: transferring it makes it available, and puts it on nothing.
+  Applying it to a view is a separate act - `APPLY_VIEW_FILTER` - and expecting
+  the graphics to change on arrival is the misreading this fragment exists
+  around. It is the same shape as a transferred legend arriving empty.
+
+  **A FILTER'S RULES POINT AT PARAMETERS, AND THAT IS WHERE A TRANSFER GOES
+  WRONG QUIETLY.** A filter built on a shared or project parameter means
+  nothing in a project that does not have that parameter. Revit brings what it
+  can and the filter can land holding fewer categories than it left with - a
+  filter that exists, is named right, and selects nothing. So each landed
+  filter is read back and its categories counted against the source's, and any
+  that shrank is named in `weakened` rather than reported as copied. **A
+  transfer that reports success and delivers a filter that matches nothing is
+  the failure being guarded against**, and it is invisible until somebody
+  applies it and sees no change.
+
+  **BOTH PROJECTS MUST BE OPEN IN THE SAME REVIT.** The source is found by its
+  title among the open documents. If it is not open, the open ones are listed
+  and nothing is attempted - guessing at a file on disk is not something to do
+  quietly. Linked documents are not offered: a link is reached through its
+  `RevitLinkInstance`, and two links can share a title.
+
+  **A NAME THAT ALREADY EXISTS HERE MAKES THAT ONE FILTER FAIL, AND THIS
+  CANNOT FIX IT.** Revit resolves a clash through a handler object that has to
+  be a CLASS, and a fragment body is compiled inside a single method, so none
+  can be declared. Each filter is copied in its own attempt, a clashing one is
+  named in `clashed`, and the rest go through. This is the same limit
+  `TRANSFER_VIEWS_BETWEEN_DOCUMENTS` records, for the same reason.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). **The
+  undo it belongs to is THIS document's** - Rule 16 is per document, and
+  nothing here touches the source project.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    - name: sourceDocumentTitle
+      type: string
+      source: request
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: copied
+      type: IList<string>
+    - name: clashed
+      type: IList<string>
+    - name: weakened
+      type: IList<string>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ParameterFilterElement`,
+  `GetCategories()` and the document-to-document `CopyElements` are unchanged
+  2020 to 2027. Only `GetCategories()` is used to measure what arrived,
+  deliberately: the rule-reading API moved between releases and a count of
+  categories answers "did this land intact" without depending on which spelling
+  a release ships.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "bring the filters over from the       -> here
+#    template project"
+#   "copy this view's filters onto the      -> COPY_VIEW_FILTERS, which stays
+#    other views"                              inside ONE project, view to view
+#   "put that filter on this view"          -> APPLY_VIEW_FILTER, for a filter
+#                                              that is already in the project
+#   "make a filter for this value"          -> CREATE_VIEW_FILTERS_BY_VALUE
+#   "which filters are on this view"        -> REPORT_VIEW_FILTERS
+#   "bring the schedules over"              -> TRANSFER_VIEWS_BETWEEN_DOCUMENTS
+
+utterances:
+  - bring the view filters over from the template
+  - copy the filters from the other project
+  - transfer the view filters from that model
+  - get the filters from last job

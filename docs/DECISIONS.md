@@ -46,29 +46,29 @@ an edit.
 
 | # | Decision | Status |
 |---|---|---|
-| [D-00](#d-00--documentation-first-no-implementation-yet) | Documentation first, no implementation yet | ✅ Accepted |
-| [D-01](#d-01--execution-host-claude-code-plugin) | Execution host — Claude Code plugin | ✅ Accepted |
-| [D-02](#d-02--mcp--add-in-transport-named-pipes) | MCP ↔ add-in transport — named pipes | ✅ Accepted |
-| [D-03](#d-03--mcp-tool-granularity-thick-and-specific) | MCP tool granularity — thick and specific | ✅ Accepted |
-| [D-04](#d-04--generated-code-execution-hybrid) | Generated code execution — hybrid | ✅ Accepted |
-| [D-05](#d-05--revit-version-support-2020-to-latest) | Revit version support — 2020 → latest | ✅ Accepted |
-| [D-06](#d-06--implementation-languages-c-for-revit-python-for-brain) | Languages — C# for Revit, Python for brain | ✅ Accepted |
-| [D-07](#d-07--free-open-source-on-public-github) | Free open source on public GitHub | ✅ Accepted |
-| [D-08](#d-08--licence-apache-20) | Licence — Apache 2.0 | ✅ Accepted |
-| [D-09](#d-09--revit-thread-marshalling-externalevent) | Revit thread marshalling — ExternalEvent | ✅ Accepted |
-| [D-10](#d-10--repository-stays-private-until-working-code-exists) | Repo stays private until code exists | ✅ Accepted |
-| [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system) | Adopt Master Specification Part 2 (Agent OS) | ✅ Accepted |
-| [D-12](#d-12--adopt-the-master-handover-baseline-part-3-and-its-fifteen-golden-rules) | Adopt Baseline (Part 3) + 15 Golden Rules | ✅ Accepted |
-| [D-13](#d-13--adopt-additional-requirements-part-4-kernel-workflow-engine-constitution) | Adopt Part 4 — Kernel, Workflow Engine, Constitution | ✅ Accepted |
-| [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes) | Unify six status vocabularies into two axes | ⏳ Proposed |
-| [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour) | Field notes authoritative on bridge behaviour | ✅ Accepted |
-| [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope) | Live session list; freeze out of scope | ✅ Accepted |
-| [D-17](#d-17--runtime-state-is-machine-local-not-roaming) | Runtime state is machine-local, not roaming | ✅ Accepted |
-| [D-18](#d-18--the-transaction-agent-belongs-to-step-6-not-step-2) | The Transaction Agent belongs to Step 6, not Step 2 | ✅ Accepted |
-| [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) | Writing is off by default until the write path has met a real Revit | ✅ Accepted |
-| [D-20](#d-20--millimetres-to-feet-is-arithmetic-not-unitutils) | Millimetres to feet is arithmetic, not UnitUtils | ✅ Accepted |
-| [D-21](#d-21--failure-analysis-is-a-table-not-a-model-call) | Failure analysis is a table, not a model call | ✅ Accepted |
-| [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over) | A second chat is refused, not allowed to take over | ✅ Accepted |
+| [D-00](#d-00--documentation-first-no-implementation-yet) | Documentation first, no implementation yet | ✔ **Fulfilled** · read back 2026-09-06 |
+| [D-01](#d-01--execution-host-claude-code-plugin) | Execution host — Claude Code plugin | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-02](#d-02--mcp--add-in-transport-named-pipes) | MCP ↔ add-in transport — named pipes | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-03](#d-03--mcp-tool-granularity-thick-and-specific) | MCP tool granularity — thick and specific | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-04](#d-04--generated-code-execution-hybrid) | Generated code execution — hybrid | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-05](#d-05--revit-version-support-2020-to-latest) | Revit version support — 2020 → latest | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-06](#d-06--implementation-languages-c-for-revit-python-for-brain) | Languages — C# for Revit, Python for brain | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-07](#d-07--free-open-source-on-public-github) | Free open source on public GitHub | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-08](#d-08--licence-apache-20) | Licence — Apache 2.0 | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-09](#d-09--revit-thread-marshalling-externalevent) | Revit thread marshalling — ExternalEvent | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-10](#d-10--repository-stays-private-until-working-code-exists) | Repo stays private until code exists | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system) | Adopt Master Specification Part 2 (Agent OS) | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-12](#d-12--adopt-the-master-handover-baseline-part-3-and-its-fifteen-golden-rules) | Adopt Baseline (Part 3) + 15 Golden Rules | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-13](#d-13--adopt-additional-requirements-part-4-kernel-workflow-engine-constitution) | Adopt Part 4 — Kernel, Workflow Engine, Constitution | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes) | Unify six status vocabularies into two axes | ⏳ Proposed · ✔ re-put 2026-09-06, answer unchanged |
+| [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour) | Field notes authoritative on bridge behaviour | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope) | Live session list; freeze out of scope | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-17](#d-17--runtime-state-is-machine-local-not-roaming) | Runtime state is machine-local, not roaming | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-18](#d-18--the-transaction-agent-belongs-to-step-6-not-step-2) | The Transaction Agent belongs to Step 6, not Step 2 | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) | Writing is off by default until the write path has met a real Revit | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-20](#d-20--millimetres-to-feet-is-arithmetic-not-unitutils) | Millimetres to feet is arithmetic, not UnitUtils | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-21](#d-21--failure-analysis-is-a-table-not-a-model-call) | Failure analysis is a table, not a model call | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over) | A second chat is refused, not allowed to take over | ✅ Accepted · ✔ read back 2026-09-06 |
 | [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) | The knowledge store is SQLite, one file per scope | ✅ Accepted · ✔ read back 2026-08-29 |
 | [D-24](#d-24--embeddings-are-computed-locally-by-default) | Embeddings are computed locally by default | ✅ Accepted · ✔ read back 2026-08-29 |
 | [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) | The existing libraries are studied and re-authored, never imported | ✅ Accepted · ✔ read back 2026-08-29 |
@@ -90,9 +90,12 @@ an edit.
 | [D-41](#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer) | Single-user now; company knowledge is a git repo and the admin is the reviewer | ✅ Accepted |
 | [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is setup.ps1 | ✅ Accepted |
 | [D-43](#d-43--the-constitution-is-accepted--all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
-| [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted |
-| [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases) | Heron tracks the MCP SDK across major versions, the way it tracks Revit releases | ✅ Accepted |
-| [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays) | The Emergency Stop button is removed, the switch behind it stays | ✅ Accepted |
+| [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases) | Heron tracks the MCP SDK across major versions, the way it tracks Revit releases | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays) | The Emergency Stop button is removed, the switch behind it stays | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-47](#d-47--a-job-can-cross-projects--both-repeating-it-and-copying-content--and-undo-does-not-cross-with-it) | A job can cross projects; undo does not cross with it | ✅ Accepted |
+| [D-48](#d-48--one-broken-part-costs-one-part-never-the-whole-library) | One broken part costs one part, never the whole library | ✅ Accepted |
+| [D-49](#d-49--a-heavy-optional-import-never-happens-on-a-request-thread) | A heavy optional import never happens on a request thread | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -126,7 +129,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-00 — Documentation first, no implementation yet
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Affects:** the whole repository
+**Status:** ✔ **Fulfilled** — its condition was met · **Date:** 2026-08-27 · **Read back and closed:** 2026-09-06 · **Affects:** the whole repository
 
 ### Context
 
@@ -144,11 +147,18 @@ owner explicitly says to start.
 - Open questions are visible rather than discovered one at a time during implementation.
 - Nothing runs yet. First code is Phase 0 in [ROADMAP.md](ROADMAP.md).
 
+### Closed 2026-09-06 — read back to the owner
+
+**This rule is spent, not broken.** It held until the owner said start; Phase 0, Step 6 and the whole
+of Phase 2 were then built on it. Read back on 2026-09-06 and marked **Fulfilled** rather than
+*Accepted*, because a satisfied condition left reading as a live rule looks like a rule being ignored.
+The owner added no replacement gate.
+
 ---
 
 ## D-01 — Execution host: Claude Code plugin
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-1](OPEN-QUESTIONS.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Question:** [Q-1](OPEN-QUESTIONS.md)
 **Affects:** [02](02-architecture-overview.md), [04](04-heron-mcp.md), [07](07-installation-and-update.md), [ROADMAP](ROADMAP.md)
 
 ### Context
@@ -178,7 +188,10 @@ Heron supplies skills, subagents, an MCP server and the Revit add-in.
 **Makes hard / accepts:**
 - The user must install and run Claude Code, and needs a Claude subscription.
 - A BIM modeller works in a terminal, which is in tension with Golden Rule 1. Mitigated by the
-  Communication/Persona layer, and revisitable later.
+  Communication/Persona layer, and revisitable later. **Revisited 2026-09-06 and confirmed unchanged**
+  — the owner was asked directly whether he now wanted a docked window inside Revit as well, with the
+  size of that job stated, and chose to stay with Claude Code alone. The door in the next paragraph
+  stays open; nothing is being built for it.
 
 **Locks in:**
 - Agent definitions follow Claude Code conventions (skills, subagents, MCP tools).
@@ -201,7 +214,7 @@ panel remains possible later without a rewrite.
 
 ## D-02 — MCP ↔ add-in transport: named pipes
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-2](OPEN-QUESTIONS.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Question:** [Q-2](OPEN-QUESTIONS.md)
 **Affects:** [03 §5](03-heron-revit.md), [04](04-heron-mcp.md)
 
 ### Decision
@@ -230,7 +243,7 @@ Messages are JSON, schema-versioned, request/response with correlation IDs.
 
 ## D-03 — MCP tool granularity: thick and specific
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-5](OPEN-QUESTIONS.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Question:** [Q-5](OPEN-QUESTIONS.md)
 **Affects:** [04 §3](04-heron-mcp.md), [09](09-skills-and-fragments.md), [12](12-security-and-permissions.md)
 
 ### Decision
@@ -256,11 +269,20 @@ against a live project model without a preview or a detached copy.
   Mitigated by capability discovery — a small stable core set plus `heron_find_capability`,
   registering specific tools only when needed. This must be designed in from the start, not retrofitted.
 
+### Read back 2026-09-06 — confirmed, and the owner gave a reason the original entry did not have
+
+Asked with the tool count now at **329**, he kept it, and for **reuse**: *"this will be like modular so
+each tool can [have] multiple usage easily."* The entry above argues granularity from **permissioning**
+and from fragments accumulating; his argument is that a small tool gets used by many different jobs
+while a big one gets used by its own. That is the same reasoning [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer)
+arrived at independently a day later — **it was his instinct first**, and it is worth recording that the
+two were reached from opposite ends and met.
+
 ---
 
 ## D-04 — Generated code execution: hybrid
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-7](OPEN-QUESTIONS.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Question:** [Q-7](OPEN-QUESTIONS.md)
 **Affects:** [09 §10](09-skills-and-fragments.md), [13](13-testing-and-quality.md)
 
 ### Decision
@@ -287,14 +309,17 @@ The `PROVEN → PRODUCTION` gate is exactly where a fragment gets compiled and s
 - Iteration happens where it is cheap; permanence happens where it is safe.
 - The lifecycle in spec §18 turns out to *describe* this hybrid — a good sign the design is coherent.
 - Golden Rule 18 (generated code never touches a live model first) is enforced by the sandbox.
-- **Open sub-decision:** which scripting runtime (pyRevit / IronPython / Python.NET / Roslyn scripting).
-  The owner's existing pyRevit work is the strongest evidence and should be reviewed before choosing.
+- ~~**Open sub-decision:** which scripting runtime (pyRevit / IronPython / Python.NET / Roslyn scripting).~~
+  **CLOSED 2026-08-28 by [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) — Roslyn C#,
+  in process, through the existing bridge.** This line still read *open* on 2026-09-06, ten days after it
+  was settled, and the read-back is what found it: a sub-decision closed in a **new** entry leaves the
+  old entry's own text saying otherwise, and nobody re-reads an entry they think they know.
 
 ---
 
 ## D-09 — Revit thread marshalling: ExternalEvent
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-4](OPEN-QUESTIONS.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Question:** [Q-4](OPEN-QUESTIONS.md)
 **Affects:** [03 §4](03-heron-revit.md)
 
 ### Decision
@@ -317,7 +342,7 @@ operation. `Idling` is used only for a lightweight liveness heartbeat.
 
 ## D-05 — Revit version support: 2020 to latest
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-3](OPEN-QUESTIONS.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Question:** [Q-3](OPEN-QUESTIONS.md)
 **Affects:** [03](03-heron-revit.md), [13](13-testing-and-quality.md), [16](16-version-support-strategy.md)
 
 ### Context
@@ -349,7 +374,7 @@ in place, then fanned out. Full strategy in [16](16-version-support-strategy.md)
 
 ## D-06 — Implementation languages: C# for Revit, Python for brain
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-6](OPEN-QUESTIONS.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Question:** [Q-6](OPEN-QUESTIONS.md)
 **Affects:** [03](03-heron-revit.md), [04](04-heron-mcp.md), [05](05-heron-brain.md)
 
 ### Context
@@ -399,7 +424,7 @@ the Heron architecture. This work happens **after** documentation is finalised, 
 
 ## D-07 — Free open source on public GitHub
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-21](OPEN-QUESTIONS.md), [Q-22](OPEN-QUESTIONS.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Question:** [Q-21](OPEN-QUESTIONS.md), [Q-22](OPEN-QUESTIONS.md)
 **Affects:** [06](06-heron-platform.md), [10](10-memory-and-knowledge.md), [12](12-security-and-permissions.md), [17](17-open-source-and-distribution.md)
 
 ### Context
@@ -429,13 +454,20 @@ An Autodesk App Store listing follows later, also free.
 public is irreversible in practice and has not been done — it needs an explicit instruction from
 the owner, once the licence and the public/private file separation are in place.
 
+**Asked again 2026-09-06, in the read-back, and the answer was: free and open source — and
+STILL PRIVATE.** The licence is in place ([D-08](#d-08--licence-apache-20)) and working code now exists,
+so [D-10](#d-10--repository-stays-private-until-working-code-exists)'s condition is met and the block is
+no longer the condition — it is the owner's choice, made deliberately and freshly on that date. **The
+commercial half did not move**: free, open source, anyone may install it. Only the timing of going
+public did, and going public still needs him to say so.
+
 Full plan: [17 — Open Source & Distribution](17-open-source-and-distribution.md).
 
 ---
 
 ## D-08 — Licence: Apache 2.0
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-27](OPEN-QUESTIONS.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Question:** [Q-27](OPEN-QUESTIONS.md)
 **Affects:** `LICENSE`, `NOTICE`, [17 §3](17-open-source-and-distribution.md)
 
 ### Context
@@ -473,7 +505,7 @@ live client models).
 
 ## D-10 — Repository stays private until working code exists
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Question:** [Q-28](OPEN-QUESTIONS.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Question:** [Q-28](OPEN-QUESTIONS.md)
 **Affects:** repository visibility, [17](17-open-source-and-distribution.md)
 
 ### Context
@@ -508,11 +540,24 @@ is irreversible in practice — history persists, forks propagate, GitHub caches
 - Before flipping to public, verify once more that no client data has entered the history — the
   `.gitignore` is a safety net, not a guarantee against a deliberate `git add -f`.
 
+### Superseded 2026-09-06 — both conditions are MET, and the repository is private by choice
+
+**Condition 1 was done on 2026-08-27 and condition 2 is now done too**: Phase 0, Step 6 and the whole of
+Phase 2 exist and compile on 2020 through 2027. So **this decision has stopped deciding anything** — as
+written it would have permitted going public, and the repository is still private.
+
+Asked in the read-back what the rule should be now, and offered a condition he could hang it on — *after
+the Revit proofs pass* — the owner chose **"when I say so"**: no written condition, no automatic trigger,
+public only on his explicit word. That is narrower than what this entry allowed and it is deliberate.
+
+**The pre-flight check above still stands and is the one thing that is NOT at his discretion:** verify no
+client data is in the history before flipping, `.gitignore` being a safety net rather than a guarantee.
+
 ---
 
 ## D-11 — Adopt Master Specification Part 2 (Agent Operating System)
 
-**Status:** Accepted · **Date:** 2026-08-27
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27
 **Affects:** [18](18-agent-operating-system.md), [19](19-context-and-cost.md), [20](20-knowledge-trust-and-conflict.md), [21](21-resilience-and-operations.md), [22](22-users-modes-and-extensibility.md), [ROADMAP](ROADMAP.md)
 
 ### Context
@@ -534,7 +579,7 @@ The following Part 2 mechanisms are adopted into the architecture:
 | **Shadow Mode** for agent onboarding | Phase 5, alongside the sandbox |
 | **Dependency graph** over skills → fragments → API → runtime | Phase 2. Makes change blast-radius computable |
 | **Knowledge trust levels and conflict resolution** | Phase 4, sharing one status vocabulary with the fragment lifecycle |
-| **Emergency Stop** | Phase 1, in the Revit ribbon — must work when the agent side is stuck |
+| **Emergency Stop** | ~~Phase 1, in the Revit ribbon~~ — **the BUTTON was removed 2026-09-06 ([D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays)).** Flagged as a conflict during this entry's read-back — Part 2 asks for a control that works when the agent side is stuck — and **resolved the same day by the owner: the Heron button IS that control.** It calls `bridge.Stop()`, so nothing can reach Revit at all. Part 2's requirement is **met by a different control**, not dropped |
 | **Workflow ID** in the audit log | Phase 1 |
 | **Approval only at meaningful boundaries** | Applies immediately to all permission design |
 | **Fragment branching** — one semantic fragment, many implementations | Confirms [16](16-version-support-strategy.md) |
@@ -570,7 +615,7 @@ these rules rather than replacing them.
 
 ## D-12 — Adopt the Master Handover Baseline (Part 3) and its fifteen Golden Rules
 
-**Status:** Accepted · **Date:** 2026-08-27
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27
 **Affects:** [14 — Golden Rules](14-golden-rules.md) and **every document that cross-references a rule number**
 
 ### Context
@@ -638,7 +683,7 @@ Evaluation stage and Parts 1–2's filter placement — see [20 §1](20-knowledg
 
 ## D-13 — Adopt Additional Requirements (Part 4): Kernel, Workflow Engine, Constitution
 
-**Status:** Accepted · **Date:** 2026-08-27
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27
 **Affects:** [23](23-heron-kernel.md), [24](24-trust-model.md), [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md), [ROADMAP](ROADMAP.md), [19](19-context-and-cost.md)
 
 ### Context
@@ -703,7 +748,7 @@ so there are no copies to drift.
 
 ## D-14 — Unify six status vocabularies into two orthogonal axes
 
-**Status:** Proposed · **Date:** 2026-08-27 · **Question:** [Q-34](OPEN-QUESTIONS.md)
+**Status:** Proposed · **Date:** 2026-08-27 · **Re-put to the owner 2026-09-06 — same answer** · **Question:** [Q-34](OPEN-QUESTIONS.md)
 **Affects:** [24](24-trust-model.md), [09](09-skills-and-fragments.md), [18](18-agent-operating-system.md), [20](20-knowledge-trust-and-conflict.md)
 
 ### Context
@@ -752,11 +797,21 @@ unattended. That is proposed [Golden Rule 17](14-golden-rules.md) made mechanica
 
 Full proposal: [24 — The Unified Trust Model](24-trust-model.md).
 
+### Asked a second time 2026-09-06 — and the answer did not move
+
+Put to him again in the read-back, in the family framing that worked, and with the argument for closing
+it now stated plainly: **all 329 fragments already carry both labels**, so the model is not hypothetical.
+He answered **"yes, but show me on screen first"** — word for word what he said on 2026-08-28.
+
+**So this stays Proposed and [`R1b`](../NEEDS-CHECKING.md) stays open.** Two asks, eleven days apart,
+same answer: he accepts the *idea* and will not sign off a trust model he has not watched work. Nothing
+further is gained by asking a third time — **only a screen closes this one.**
+
 ---
 
 ## D-15 — Adopt the field notes as authoritative on bridge behaviour
 
-**Status:** Accepted · **Date:** 2026-08-27
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27
 **Affects:** [25](25-multi-session-and-binding.md), [03](03-heron-revit.md), [04](04-heron-mcp.md), [14](14-golden-rules.md), [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md)
 
 ### Context
@@ -824,7 +879,7 @@ than taking over. A lease must never block a rollback — cleanup always wins. T
 
 ## D-16 — The session list is built live, and the Revit freeze is out of scope
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Source:** [field notes addendum](00e-field-notes-proven-bridge.md)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Source:** [field notes addendum](00e-field-notes-proven-bridge.md)
 **Affects:** [25 2a, 6a](25-multi-session-and-binding.md), [ROADMAP](ROADMAP.md), [Q-36](OPEN-QUESTIONS.md)
 
 ### Context
@@ -903,7 +958,7 @@ Recorded so this is not re-opened later.
 
 ## D-17 — Runtime state is machine-local, not roaming
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Found during:** Step 1 implementation
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Found during:** Step 1 implementation
 **Affects:** `HeronPaths`, [25 §2](25-multi-session-and-binding.md), [06 §2](06-heron-platform.md)
 
 ### Context
@@ -941,7 +996,7 @@ place that means "follows the person".
 
 ## D-18 — The Transaction Agent belongs to Step 6, not Step 2
 
-**Status:** Accepted · **Date:** 2026-08-28 · **Found during:** Step 2 implementation
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-28 · **Found during:** Step 2 implementation
 
 ### Context
 
@@ -977,7 +1032,7 @@ are READ.
 
 ## D-19 — Writing is off by default until the write path has met a real Revit
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Found during:** Step 6 implementation
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Found during:** Step 6 implementation
 
 ### Context
 
@@ -1013,11 +1068,31 @@ user did not offer up. This is the same sentence applied to writing rather than 
   why it is off is written to be **deleted** once the path is proven, so a stale justification cannot sit
   there looking current.
 
+### Read back 2026-09-06 — kept off, and the owner described the loop he wants it turned on FOR
+
+He confirmed it stays off, and then said unprompted how he expects to work once it is on:
+
+> *"We will test that separately and we need to make changes in the Revit and new creation tools while
+> working. I need to test — then if that works okay it's proven, next time it will work. And if not
+> working, or it did wrong, I can undo, then again I can tell what I need exactly."*
+
+**That is [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) in his own
+words, arrived at independently** — one real run that worked, watched by him, is what makes a tool
+proven; not ten runs, and not a compile. It also confirms [D-04](#d-04--generated-code-execution-hybrid):
+he expects **new** tools to be built mid-session, not only existing ones run.
+
+**And it makes [Golden Rule 16](14-golden-rules.md) load-bearing rather than nice to have.** His whole
+loop rests on *"I can undo"* — undo is not a convenience here, it is the thing that makes trying an
+unproven tool on a live model a reasonable act. **If one undo ever fails to reverse one action, this
+working method stops being safe**, which is why `D5` (one Ctrl+Z) sits in the register and why
+[D-47](#d-47--a-job-can-cross-projects--both-repeating-it-and-copying-content--and-undo-does-not-cross-with-it)
+has to warn him **before** a cross-model job rather than after.
+
 ---
 
 ## D-20 — Millimetres to feet is arithmetic, not UnitUtils
 
-**Status:** Accepted · **Date:** 2026-08-27 · **Found during:** Step 6 implementation
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Found during:** Step 6 implementation
 
 ### Context
 
@@ -1058,7 +1133,7 @@ define, genuinely needs the API — and needs the version split that comes with 
 
 ## D-21 — Failure analysis is a table, not a model call
 
-**Status:** Accepted · **Date:** 2026-08-28 · **Found during:** Step 6 implementation
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-28 · **Found during:** Step 6 implementation
 **Supersedes:** the **T2** tier given to `HERON-ORC-FAIL-004` in [28](28-agent-registry.md)
 
 ### Context
@@ -1103,7 +1178,7 @@ The registry's tier is corrected, along with the department and platform totals 
 
 ## D-22 — A second chat is refused, not allowed to take over
 
-**Status:** Accepted · **Date:** 2026-08-28 · **Found during:** Step 6, auditing for gaps
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-28 · **Found during:** Step 6, auditing for gaps
 **Changes proven behaviour.** Supersedes *"last speaker wins"* as the rule that decides who may work.
 
 ### Context
@@ -2199,7 +2274,7 @@ become binding must not misdescribe its own authority.**
 
 ## D-44 — A re-authored fragment starts unproven in Heron, whatever it was elsewhere
 
-**Status:** Accepted · **Date:** 2026-08-29 · **Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported), [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-29 · **Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported), [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)
 
 ### Context
 
@@ -2253,7 +2328,7 @@ inherited rather than re-taken is a claim nobody has watched.
 
 ## D-45 — Heron tracks the MCP SDK across major versions, the way it tracks Revit releases
 
-**Status:** Accepted · **Date:** 2026-08-31 · **Extends:** [D-05](#d-05--revit-version-support-2020-to-latest), [D-06](#d-06--implementation-languages-c-for-revit-python-for-brain)
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-31 · **Extends:** [D-05](#d-05--revit-version-support-2020-to-latest), [D-06](#d-06--implementation-languages-c-for-revit-python-for-brain)
 
 ### Context
 
@@ -2312,7 +2387,7 @@ unproven on the version everyone will be running tomorrow.
 
 ## D-46 — The Emergency Stop button is removed, the switch behind it stays
 
-**Status:** Accepted · **Date:** 2026-09-06 · **Supersedes:** the ribbon placement in
+**Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-09-06 · **Supersedes:** the ribbon placement in
 [21 §4](21-resilience-and-operations.md) and the Part 2 acceptance row above
 
 ### Context
@@ -2374,9 +2449,241 @@ nothing to do with Emergency Stop. `C3`, `C5`, `C7` and `C8` still run and still
 And **Ctrl+Z is still what reverses a change that already happened.** It always was — the button never
 could.
 
+### Read back 2026-09-06 — and the owner named the control that replaces it
+
+Put to him with the conflict stated plainly — Part 2 requires a stop that works when the agent side is
+stuck, and after this removal nothing in the UI could set one — he answered with a question:
+
+> *"I think this is not needed, because if I need to stop I can directly off the bridge. Am I right?"*
+
+**He is right, and it was checked rather than agreed with.** The Heron button's command calls
+`bridge.Stop()` ([Commands.cs](../revit/Heron.Revit.Addin/Commands.cs)), which stops the pipe server
+outright. That is **stronger** than the switch it replaces: the Emergency Stop flag was read *inside* the
+add-in after a request had already arrived, whereas a stopped bridge means **no request arrives at all**.
+One button he already presses daily, and its icon shows the state from across the room.
+
+**So Part 2's requirement is met by a different control rather than abandoned**, and the conflict recorded
+against [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system) earlier the same day is
+closed by that.
+
+**Two limits, stated so neither is discovered later:**
+
+- **Neither control stops an operation already executing** inside Revit's thread — the removed button
+  could not either. **Ctrl+Z is what reverses something that already happened**, which is the whole weight
+  [Golden Rule 16](14-golden-rules.md) carries and why [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)'s
+  read-back records the owner's working loop resting on it.
+- **The Heron button is a ribbon button**, so a frozen Revit UI cannot be clicked. **This is not a
+  regression** — Emergency Stop was a ribbon button on the same ribbon with the same limitation.
+
+**And the stop capability keeps a test.** `C1`, `C2`, `C4` and `C6` cannot be run, but `B3` and `B3a` in
+[`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) press the Heron button and check it disconnects — so what is
+untested is the *old* mechanism, not the ability to stop.
+
 ### Why the code was kept rather than deleted
 
 Deleting `EmergencyStopCommand` would remove the entire trigger side of a mechanism the owner asked to
 keep, leaving gates that read a flag nothing could ever set and no obvious way back. Keeping it costs one
 unreferenced class and makes restoring the button a one-line change. **Read this entry before deleting it
 as dead code** — it is unreferenced on purpose, not by oversight.
+
+---
+
+## D-47 — A job can cross projects — both repeating it and copying content — and undo does not cross with it
+
+**Status:** Accepted · **Date:** 2026-09-06 · **Question:** [Q-41](OPEN-QUESTIONS.md)
+**Affects:** [25](25-multi-session-and-binding.md), [14 — Rule 16](14-golden-rules.md), [09](09-skills-and-fragments.md), [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope), [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over)
+
+### Context
+
+**Raised by the owner, not by a specification.** During the 2026-09-06 read-back he confirmed
+[D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope) as written and then
+immediately asked for something it does not allow: *"maybe from one project refer same, like that need to
+do in another project."*
+
+Everything about binding in Heron assumes **one job, one document**. Rule 20 pins the target document by
+identity and forbids following the active window; [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over)
+refuses a second chat rather than sharing; [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope)
+builds a picker because a job belongs to exactly one Revit. A job that starts in Tower A and lands in
+Podium crosses all three.
+
+Offered the two readings with their costs stated — **A**, repeat the action on a second model; **B**, copy
+content between models — he answered **BOTH**.
+
+### Decision
+
+**Both are in scope. B first, A second, and the order is cost, not preference.**
+
+| | What it is | Where it stands |
+|---|---|---|
+| **B — copy the content** | Transfer view filters, line styles, parameters, standards from one model to another | ~~**Mostly written.**~~ **THAT WAS WRONG — corrected 2026-09-06, see below** |
+| **A — repeat the action** | *"Do to Podium what you just did to Tower A"* — Heron replays the **job**, not the result | **New work.** Needs a replayable record of a job, and every element re-resolved by identity in the second model, because element ids do not carry across documents |
+
+**Neither may follow the active window.** A second document is *bound* exactly as the first is — picked
+explicitly, pinned by identity, verified at every step. Rule 20 is not relaxed; it is applied twice.
+
+### Correction 2026-09-06 — B was NOT mostly written, and the second binding was never needed
+
+**Two things in this entry were wrong, both written by reading names instead of contracts.**
+
+**First, the evidence for *"mostly written"* does not survive being opened.** `COPY_VIEW_FILTERS` takes
+`doc, sourceView, targetViews` — it copies filters from one view to *other views in the same project*.
+`REMAP_LINE_STYLES` moves lines between styles inside one document. `COPY_FROM_LINK` copies from a **link**,
+which is not another open project. **None of the three crosses two projects.** The only fragment that ever
+did is `TRANSFER_VIEWS_BETWEEN_DOCUMENTS`. Three fragment names were cited as evidence and not one was read.
+
+**Second, the *"second binding"* this entry asks for is not how it works.** The pattern already in the
+library is simpler and better: **the destination is the bound document, and the source is found by title
+among the open ones.** Nothing new is bound, Rule 20 is untouched, and the source is only ever read — so
+the undo question this decision worries about does not even arise for B. It arises for A, where a second
+document is written to.
+
+**And the read half already existed by the time this was corrected**, built the same day in another
+session: `run_fragment_read` takes an optional `document` title, refuses a model that is not open with the
+list of ones that are, excludes linked documents, and reports `wasActiveDocument` so an answer about a
+window nobody is looking at says so.
+
+**What was actually missing was a standards transfer**, and the first one is now written:
+`TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS` (`FRG-VIEW-097`), following the established pattern. It is
+`DRAFT` and has met no model — [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere)
+and [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) both apply.
+
+### Undo — the part that is not ours to design
+
+**Revit keeps a separate undo stack per document.** A job spanning two models therefore **cannot** be one
+Ctrl+Z, and no amount of design makes it one.
+
+So [Golden Rule 16](14-golden-rules.md) is **restated, not broken**: *one user action, one undo* becomes
+**one undo per document**, and Heron **says so before it starts** — *"this touches two models; undoing in
+Podium will not undo Tower A."* Warning afterwards is the exact failure Rule 16 exists to prevent, so the
+warning is part of the operation rather than a note in the documentation.
+
+### Consequences
+
+- ~~**Rule 16's wording needs updating**~~ **DONE 2026-09-06.** [Rule 16](14-golden-rules.md) now reads
+  *one user action, one undo — **per document***, and carries the reason as measurement rather than
+  assertion: `Transaction` and `TransactionGroup` were read by reflection out of the **shipped** Revit 2020
+  and 2024 assemblies, and every constructor of both takes exactly one `Document`. **What was NOT measured
+  is stated too** — 2027's assembly is .NET 10 and could not be reflection-loaded, so the exhaustive
+  absence of a two-document overload is proven on two releases, not eight. The
+  [conventions skill](../.claude/skills/revit-addin-conventions/SKILL.md) carries the same limit, since that
+  is what an implementer reads rather than this file.
+- Every cross-project write is still a write: [Rule 17](14-golden-rules.md)'s preview applies to the
+  second model as much as the first, and [Rule 21](14-golden-rules.md)'s re-read applies per document.
+- `write.enabled` gates both models. Nothing here loosens [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit).
+- **Neither half is proven, and A is not built at all.** This decision sets direction; it claims no code.
+
+---
+
+## D-48 — One broken part costs one part, never the whole library
+
+**Status:** Accepted · **Date:** 2026-09-06 · **Extends:** [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases)
+**Affects:** [`brain/heron_fragment.py`](../brain/heron_fragment.py), [09](09-skills-and-fragments.md), [21](21-resilience-and-operations.md)
+
+### Context
+
+**Raised by the owner while [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases) was being read back to him**, as a question rather than a request:
+
+> *"If one tool update, do not remove all. Like if that tool is there is no, means need to update, so
+> tell need to update but remaining old one need to be work. This is right, am I right??"*
+
+**He was right, and the answer had two halves.** D-45's own incident is the *exception* rather than the
+example: what vanished on 2026-08-31 was the MCP server itself — the floor every tool stands on — and
+when the floor is missing there is no surface left to serve a surviving tool from. That case genuinely is
+all or nothing.
+
+**But the rule he stated is correct one layer down, and Heron was breaking it.** Measured the same day,
+rather than reasoned about: a folder holding one good fragment, one with malformed YAML, and a second good
+one returned **no fragments at all** and raised `ParserError`. `load()` promised in its own docstring to
+raise `ValueError`; `yaml.YAMLError` is not a `ValueError`, so a parse error walked straight through
+`load_all`'s `except ValueError` and took **all 343** fragments with it.
+
+Nobody had seen it because every fragment in the repository is machine-written and well-formed. **The
+library was correct, so the loader's behaviour on an incorrect one had never been observed** — the same
+shape as `A8` and `A7` before it: an untried path, not an unknown one.
+
+### Decision
+
+**A part that cannot be read is skipped, named, and costs only itself.**
+
+1. `load()` converts **every** failure into a `ValueError` carrying a readable message — parse errors and
+   I/O errors included — so `load_all`'s contract is true rather than merely written down.
+2. `load_all()` additionally catches **anything** a fragment can throw. A bare `except` is normally a
+   smell; here it *is* the guarantee, and it is commented as such so it is not tidied away later.
+3. The broken part is **reported by name**, never swallowed. *"Tell need to update"* is the half of his
+   sentence that stops this from being silent degradation, which would be worse than the crash.
+
+### Consequences
+
+- [`tests/test_fragment_store.py`](../tests/test_fragment_store.py) now proves it, with the broken
+  fragment sorted **between** the two good ones on purpose: a loader that dies on it takes the third with
+  it, and a test placing it last would pass while the library still lost everything after the failure.
+- **The rule generalises beyond fragments** and should be applied wherever Heron loads a set of things it
+  did not write: skills, capabilities, community packages. **It is not claimed for those yet** — only the
+  fragment loader is measured and fixed.
+- **It does not loosen [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases).**
+  A missing foundation still fails loudly and completely; that is the correct behaviour when there is
+  nothing left to degrade to. This decision governs the many, not the floor.
+
+---
+
+## D-49 — A heavy optional import never happens on a request thread
+
+**Status:** Accepted · **Date:** 2026-09-06 · **Found during:** `A8`, on the owner's PC
+**Affects:** [`brain/heron_embed.py`](../brain/heron_embed.py), [`mcp/server/heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [05](05-heron-brain.md), [21](21-resilience-and-operations.md)
+
+### Context
+
+`heron_capabilities` stopped replying. Not slowly — **at all**: a real Claude Code tool call waited **thirty
+minutes** and got nothing back. Every existing test passed while this was true.
+
+The stack, taken with `faulthandler` rather than reasoned about:
+
+```text
+heron_capabilities            <- the request handler, on the asyncio event loop
+  catalogue()
+    _Open.__enter__
+      heron_embed.index()
+        backend()
+          _load_model()
+            import model2vec
+              import numpy
+                loading numpy's native extension   <- still here 40 s later
+```
+
+`import model2vec` costs **1.0 s** in a fresh process. On the event loop, inside a handler, it was measured
+still importing at 40 s and past 170 s in another run.
+
+**Closing [`A7`](../NEEDS-CHECKING.md) is what caused it.** Until `model2vec` was installed that import
+raised `ImportError` instantly, Heron degraded to the `lexical` backend, and the handler always answered.
+Installing it — to prove the search understands meaning, which it does — turned an instant failure into an
+unbounded wait. **Two register rows, each correct alone, and the failure lived only in their combination.**
+
+### Decision
+
+**A heavy or optional import never runs on a thread that owes somebody an answer.**
+
+1. `heron_embed.warm()` imports the trained encoder on a **background thread**, started once at server
+   startup before `server.run()`.
+2. While that is running, `_load_model()` returns `None` **immediately** to every other caller, so the
+   backend is `lexical` and says so on its own first line. **A slower answer that arrives beats a better
+   one that does not.**
+3. The guard **exempts the warming thread itself**. Without that it is worse than useless: the warm-up hits
+   its own guard, returns, clears the flag and loads nothing — after which the next request imports on the
+   event loop exactly as before. **That was this fix's first version**, and the stack that caught it looked
+   identical to the stack it was meant to remove.
+
+### Consequences
+
+- [`tests/test_mcp_stdio.py`](../tests/test_mcp_stdio.py) drives the server as a **real subprocess over real
+  stdio** and holds every reply to a **deadline**. `tests/test_mcp_serves.py` could not have caught this: it
+  dispatches in-process, where the import is already done or fails instantly. **The two files differ by one
+  process boundary and that boundary is the whole bug.**
+- A test that waits forever cannot tell a slow answer from no answer. Any check on a thing that must reply
+  carries a deadline, or it is not checking the thing that failed here.
+- **The register learned something about itself.** Its rows are deliberately independent and worked down in
+  order; nothing in it can express *these two are fine apart and broken together*. This is the first time
+  that has bitten, and no numbering scheme fixes it — only running the earlier rows again after a later one
+  changes the machine.
+- The rule generalises to any optional dependency the brain may grow. **It is claimed only for the embedder
+  today**, because that is the one measured.
+

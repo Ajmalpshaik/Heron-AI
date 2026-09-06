@@ -33,18 +33,25 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**343 fragments. 13 `PROVEN`. 330 below.** D-28's executor is built, and fragments now run against a
+**348 fragments. 13 `PROVEN`. 335 below.** D-28's executor is built, and fragments now run against a
 real model. That is new as of 2026-09-06 and it is the thing every earlier handover was waiting for.
 
 | | |
 |---|---|
-| Fragments | **343** — every fragment-shaped job in the earlier library is built |
+| Fragments | **348** — every fragment-shaped job in the earlier library, plus five cross-project transfers from PART 5 |
 | Proven | **13**, each on a recorded proof with a negative case and a staleness fingerprint (D-30) |
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, structure, docs, gaps — all green |
-| Tests | all pass **except `test_embed` and `test_retrieve`** — see the warning below |
+| Tests | **all pass**, `test_embed` and `test_retrieve` included — they were re-based against the model backend in PART 5, not edited until green. See the note where the warning used to be |
+| Register | **63 rows, 19 closed, 44 left.** Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | deployed to Revit 2024, built from `main` at `538bf55` |
-| Branches | `main` only, plus whatever another session is holding |
+| Branches | `main` only |
+
+**EVERY REGISTER ROW THAT DID NOT NEED REVIT IS NOW CLOSED.** `A4`, `A6`, `A7`, `A8` and `A9` all fell on
+2026-09-06 on the owner's own PC — rows parked for months on *"a machine"*, closed in one afternoon by
+somebody sitting at one. Nothing is waiting on a compiler, a network, a Windows box or an MCP host any
+more. **44 of the 45 remaining rows need Revit open with a real model**, and the forty-fifth needs a
+conversation.
 
 **REVIT BEING OPEN IS NOT ENOUGH, AND THIS FILE USED TO IMPLY IT WAS.** Every earlier entry said the
 proving pass "needs the PC". True and nowhere near sufficient: until 2026-09-06 **nothing could execute
@@ -62,6 +69,97 @@ because each was written on top of the last. Read them by their part number, not
 | **2** | Refutation pass on the 317 "already covered" claims, which nobody had ever tested | five more found; the arithmetic closed at 330 for the first time |
 | **3** | Built four of those five | 339 → 343. **The fifth was my own wrong claim** — a schedule calculated column is impossible on every release, and the compile gate killed it in one run |
 | **4** | Built D-28's executor and ran the first proving pass | **13 `PROVEN`** |
+| **5** | A SECOND TRACK, in parallel and in another worktree: the decision read-back, five register rows closed on the PC, and D-47 part B | 343 → 348, and **Group A finished** |
+
+### PART 5 in one screen — it is NOT in the sections below, it is here
+
+**It ran in a different worktree at the same time as PARTS 1-4**, which is why the two do not interleave.
+Three things came out of it and each is recorded where it belongs rather than only here.
+
+**1. The oldest twenty-six decisions were read back, and had never been.** `R1` covered `D-23` to `D-43`
+on 2026-08-29; `D-00` to `D-22` and `D-44` to `D-46` had never been put to the owner at all — the
+earliest answers, given before any code existed. All twenty-six confirmed, none reversed. **It found five
+real defects**, which is the only reason it was worth doing:
+
+| Found | |
+|---|---|
+| **One malformed `fragment.yaml` took down all 343 fragments** | `load()` promised `ValueError`; `yaml.YAMLError` is not one. Measured, not read — one good, one broken, one good returned *nothing*. **The owner named this shape before the code was looked at** ([D-48](docs/DECISIONS.md)) |
+| **The same bug in the SKILL loader, by a different route** | A *directory* named `x.yaml` reached `io.open` because the loader filtered on the extension and never asked whether the entry was a file. Every skill lost |
+| **`D-04` still said the scripting runtime was open** | `D-28` closed it ten days earlier. A sub-decision closed in a NEW entry leaves the old entry's text saying otherwise |
+| **Part 2 required a stop control that no longer existed** | `D-46` removed the button. Resolved by the owner in the same conversation: the Heron button calls `bridge.Stop()`, which is **stronger** than the flag it replaced |
+| **Rule 16 promised an undo Revit cannot give** | Fixed — see below |
+
+**2. Five register rows closed, and one of them broke another.** `A4`, `A6`, `A7`, `A8`, `A9`. **`A8`
+failed first and that is why it was worth running**: `heron_capabilities` never replied, and a real Claude
+Code tool call sat on it for **thirty minutes**. The stack — taken with `faulthandler`, not reasoned about
+— was `import model2vec → import numpy → loading numpy's native extension`, **on the asyncio event
+loop**. An import costing 1.0 s in a fresh process, still running at 40 s there.
+
+> **CLOSING `A7` IS WHAT BROKE `A8`.** Until `model2vec` was installed that import failed instantly and
+> Heron degraded to `lexical`, so the handler always answered. **Two register rows, each correct alone,
+> and the failure lived only in their combination.** This file's register is deliberately a list of
+> independent rows worked down in order, and **nothing in it can express *these two are fine apart and
+> broken together***. No numbering fixes that; only re-running earlier rows after a later one changes the
+> machine. First time it has bitten. [D-49](docs/DECISIONS.md), and
+> [`tests/test_mcp_stdio.py`](tests/test_mcp_stdio.py) is the check made permanent — a real subprocess
+> over real stdio, with a **deadline** on every reply, because a test that waits forever cannot tell a
+> slow answer from no answer.
+
+**3. D-47 part B — the cross-project transfers a modeller actually asks for.** Five built, one existing
+one completed, all `DRAFT` and none has met a model:
+
+| Transfer | The quiet failure it guards |
+|---|---|
+| **View filters** `FRG-VIEW-097` | arrives **matching nothing** — a rule points at a parameter this project lacks |
+| **Line styles** `FRG-ELE-052` | arrives **drawing solid** — the pattern is a separate element |
+| **Project parameters** `FRG-PAR-020` | a non-shared one **cannot be carried at all**, and is named rather than dropped |
+| **Materials** `FRG-ELE-053` | arrives **rendering flat** — no appearance asset, and it shades correctly, so it looks right everywhere except a rendered view |
+| **Object styles** `FRG-ELE-054` | the one that **OVERWRITES** — so it reports the diff, not the inventory |
+| **View templates** *(existing fragment, completed)* | arrives **controlling less** — its filters are separate elements and were never counted |
+
+**Every one of those failures is invisible in the list that names it.** The filter is there. The style is
+there. The material is there. You find out on an issued drawing, or in a realistic view, or when a
+category quietly loses a parameter and every value in it. **Not one of them reports those as success** —
+they go to `weakened` or `skipped`, named, with the reason.
+
+**They compose, in an order, and say so at the point of failure:** materials before object styles; view
+filters before view templates.
+
+### The thing PART 5 kept re-learning, three times in one day
+
+**A test can encode a truth about a system that then moves under it, and the failure looks identical to a
+regression.** It happened three times on 2026-09-06 and the third one was mine:
+
+| | What moved | What the test said |
+|---|---|---|
+| `test_retrieve` | `A7` switched the backend to a trained model | *"the top 5 are effectively TIED"* — they stopped being tied, which is the improvement |
+| `test_embed` | same | *"put them on the screen → the selection fragment"* — the model reads *"put ON"* as PLACING, which is a fair reading |
+| `test_mcp_stdio` | **D-28's executor landed in the other worktree hours later** | *"it still says it CANNOT run them"* — Heron can now run a read-only fragment, so my own assertion was stale before it was a day old |
+
+**The rule that came out of it, and it is now applied in all three:** re-base the assertion on what is
+true, keep the old behaviour asserted where the old conditions still hold, and **write down why it
+moved** — never edit it until green. Two of the three carried their own prediction (*"A7 is what should
+break this check"*); the third did not, and was caught only because the suite was re-run after merging
+`main` rather than assumed still green.
+
+**Re-run the suite after merging, not before.** That is the cheap habit this cost nothing to learn and
+would have cost a green-looking branch otherwise.
+
+**`D-47` itself was corrected in the doing.** It claimed part B was *"mostly written"* and cited three
+fragments; not one of them crosses two projects, and opening them was all it took to find out. It also
+asked for a *"second binding"* that is not how this works — the destination is the bound document and the
+source is found by title among the open ones, which is the pattern
+`TRANSFER_VIEWS_BETWEEN_DOCUMENTS` already established.
+
+**And Rule 16 now says what Revit can deliver.** It promised *one user action, one undo* without
+qualification, and `D-47` had just allowed a job to cross projects. Every `Transaction` and
+`TransactionGroup` constructor takes exactly one `Document` — read by reflection out of the shipped 2020
+and 2024 assemblies. So the rule reads **per document**, and a cross-model job must say so **before** it
+starts. What was *not* measured is stated too: 2027's assembly is .NET 10 and could not be
+reflection-loaded, so the exhaustive absence of a two-document overload is proven on two releases, not
+eight.
+
+---
 
 Not in the parts below, because they were fixes rather than batches: the phantom-session bug
 (`revit_health` reported six connected Revits when zero existed), the target-document input, and the
@@ -122,14 +220,23 @@ counts what is left; believe it over this file.
 - **`Application.Documents` contains the LINKS.** On Snowdon that is six extra documents that look like
   projects to choose from.
 
-> ### `test_embed` and `test_retrieve` fail. DO NOT "FIX" THEM BY EDITING THE EXPECTATIONS.
+> ### `test_embed` and `test_retrieve` — DONE in PART 5, and done the way this warning asked
 >
-> `NEEDS-CHECKING` row **A7** was closed the same day: `model2vec` installed, the retrieval backend
-> switched from `lexical` to `model`, and all 343 fragments were re-embedded. Both tests encode rankings
-> measured against the old n-gram backend, and `test_retrieve`'s own failure message predicted it —
-> *"A7 is what should break this check."* They need re-basing against the model backend **with the
-> reasoning written down**, which is a real piece of work and belongs with A7. They were deliberately
-> left failing rather than edited until green.
+> **This block used to say they were failing and must not be edited until green. Both now pass, and
+> nothing was edited until green.** The warning asked for them to be *"re-based against the model backend
+> with the reasoning written down, which belongs with the A7 work"* — A7 was closed in PART 5 and that is
+> what happened there.
+>
+> Each assertion is now **conditional on the backend**, so a machine with no `model2vec` still gets the
+> old behaviour and is still told the truth about it. And the improvement is **asserted rather than
+> described**: *"show me every duct in the model"* returns **four duct fragments** where n-grams returned
+> none, and the two sentences with and without *"show me"* now agree on part of the answer where they
+> previously shared nothing.
+>
+> **One of those assertions was written wrong first**, and it is recorded rather than smoothed over: it
+> claimed the two sentences return identical shortlists, which holds in the full library and not in that
+> test's smaller fixture. Measured in one place and asserted in another. The corrected one says what is
+> true there, with the reason.
 
 ---
 

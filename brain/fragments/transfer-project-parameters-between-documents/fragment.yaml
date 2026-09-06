@@ -1,0 +1,124 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-020
+semantic-identity: "bring the project parameters over from the other project"
+kind: action
+domain: revit.parameters
+capability: TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS
+version: 1
+source: OFFICIAL
+risk: ADMIN
+
+purpose: >
+  Binds this project the same shared parameters another OPEN project has -
+  *"bring the project parameters over from the template"*, *"set up the same
+  parameters as last job"*.
+
+  **IT IS ADMIN RISK, NOT MODIFY, for the reason
+  [ADD_PROJECT_PARAMETER](../add-project-parameter/fragment.yaml) already
+  states**: a binding changes the project's data structure for everybody who
+  opens the file, it is what a client's BIM execution plan governs, and
+  un-binding a parameter discards every value anybody typed into it. Doing it
+  for a dozen parameters at once does not make it smaller.
+
+  **THE SHARED PARAMETER FILE IS REQUIRED, AND THAT IS NOT THIS FRAGMENT BEING
+  AWKWARD.** A shared parameter's definition lives in the .txt file, not in the
+  project. The source document knows the parameter's name, its GUID and what it
+  is bound to; it does not hold the definition needed to bind it somewhere
+  else. So each parameter is matched **by GUID** in the file you name - a name
+  match would happily bind a different parameter that happens to share a word.
+
+  **A NON-SHARED PROJECT PARAMETER CANNOT BE CARRIED AT ALL, and it is named
+  rather than skipped silently.** A project parameter created without a shared
+  definition exists only inside its own file; the API cannot recreate one
+  elsewhere. Those come back in `skipped` saying so, because a transfer that
+  quietly leaves out three of ten parameters is worse than one that refuses.
+
+  **AN EXISTING BINDING IS NEVER REPLACED.** Re-binding is how a category
+  quietly loses a parameter it had, along with every value in it. A parameter
+  already bound here goes to `clashed` and this project is left alone -
+  including when the source binds it to more categories than this project does.
+
+  **THE PARAMETER GROUP IS CARRIED WHERE IT CAN BE READ, AND THE FALLBACK IS
+  REPORTED.** `Definition.ParameterGroup` is gone by Revit 2027 and
+  `GetGroupTypeId` has never existed on 2020 - a matched pair where neither
+  spelling works at both ends. Both are tried at run time; where neither
+  answers, the parameter is filed under **Data** and named in `regrouped`, so a
+  parameter that landed in a different part of the properties palette is
+  something you are told rather than something you find.
+
+  **BOTH PROJECTS MUST BE OPEN IN THE SAME REVIT.** The source is found by its
+  title among the open documents; if it is not open, the open ones are listed
+  and nothing is attempted. Linked documents are not offered.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). **The
+  undo belongs to THIS document** - the source project is only read.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    - name: sourceDocumentTitle
+      type: string
+      source: request
+    - name: sharedParameterFile
+      type: string
+      source: request
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: bound
+      type: IList<string>
+    - name: clashed
+      type: IList<string>
+    - name: skipped
+      type: IList<string>
+    - name: regrouped
+      type: IList<string>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  THE VERSION RANGE BITES HERE, exactly as it does in `ADD_PROJECT_PARAMETER`,
+  and the same technique answers it: the moving calls are resolved at run time
+  by their OWN signatures rather than written down. `BindingMap.Insert`'s third
+  argument took a group ENUM up to Revit 2021 and a `ForgeTypeId` from 2022,
+  and 2027 removed the old enum outright - so the method is chosen by its third
+  parameter's type and the group value is produced to match. Reading the
+  source's group is the same break in reverse: `Definition.ParameterGroup`
+  exists on 2020 and is gone by 2027, `Definition.GetGroupTypeId` has never
+  existed on 2020, so both are attempted by name and neither is written as a
+  call. `BindingMap.ForwardIterator`, `ElementBinding.Categories`,
+  `SharedParameterElement.GuidValue`, `DefinitionFile.Groups` and
+  `ExternalDefinition.GUID` were read off the SHIPPED 2020 and 2024 assemblies
+  and are identical at both ends. No ElementId is turned into an int anywhere.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "bring the project parameters over     -> here
+#    from the template"
+#   "add a parameter called X to ducts"    -> ADD_PROJECT_PARAMETER, one
+#                                             parameter, made rather than moved
+#   "what parameters does this project     -> REPORT_PARAMETER_INVENTORY
+#    have"
+#   "fill in this parameter"               -> WRITE_ELEMENT_PARAMETERS
+#   "copy this value onto those"           -> COPY_PARAMETER_VALUE
+#   "bring the view filters over"          -> TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS
+#   "bring the line styles over"           -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
+
+utterances:
+  - bring the project parameters over from the template
+  - set up the same parameters as the other project
+  - transfer the shared parameters from that model
+  - give this project the same parameters as last job

@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 41 answered · 0 open · nothing blocking any phase**
+**Progress: 42 answered · 0 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -25,7 +25,14 @@ Three of the four were settled by looking rather than deciding: at a system alre
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
 instead of standing between him and something usable.
 
-**Nothing is open.** `Q-35` closed on 2026-08-28: Ajmal asked for all 30 Articles to be **read out**, and
+**`Q-41` is the forty-second question, and the first one the OWNER asked** — raised and answered on
+2026-09-06, during the decision read-back rather than by any specification. He confirmed
+[D-16](DECISIONS.md) as written and then asked for something it does not allow: a job done in one
+project, repeated in another. Answered **both** readings, promoted as [D-47](DECISIONS.md), and it
+blocks no phase. **The count moved 41→42 in one message**, which is worth noticing: this file's counts
+have only ever grown by a document being adopted, and a question from him lands exactly the same way.
+
+`Q-35` closed on 2026-08-28: Ajmal asked for all 30 Articles to be **read out**, and
 accepted them after reading ([D-43](DECISIONS.md)). The Constitution is binding.
 
 **One answer is agreed but not signed off**, and no count can show that — see `Q-34` below.
@@ -250,6 +257,49 @@ short close, and two comparable numbers get a picture unasked.
 That dissolves the distrust the recommendation was trying to manage. Inferring a persona is guessing about
 a person — wrong sometimes and invisible when wrong. Inferring an answer's shape is reading the request —
 deterministic, and visible when it is wrong.
+
+---
+
+### 🟠 Q-41 — Can a job done in one project be repeated in another? *(new, 2026-09-06)*
+
+**Raised by the owner during the D-16 read-back**, unprompted and in his own words: *"maybe from one
+project refer same, like that need to do in another project."*
+
+He confirmed [D-16](DECISIONS.md) as written and then asked for something D-16 does not allow. That is
+worth stating plainly rather than filing as a feature: **every binding rule in Heron assumes one job, one
+document.** [Golden Rule 20](14-golden-rules.md) pins the target document by identity and forbids
+following the active window; [D-22](DECISIONS.md) refuses a second chat rather than letting it take over;
+[D-16](DECISIONS.md) builds a picker precisely because a job belongs to exactly one Revit. A job that
+starts in Tower A and lands in Podium crosses all three.
+
+**Two readings, and they are different products:**
+
+| Reading | What it means | Rough cost |
+|---|---|---|
+| **A — repeat the action** | *"Do to Podium what you just did to Tower A."* Heron remembers the operation, not the result, and re-runs it against a second document — re-resolving every element by its own identity, because element ids do not carry across models | Moderate. Needs a replayable record of a job, and a second binding |
+| **B — copy the content** | *"Bring Tower A's view filters / line styles / parameters into Podium."* Standard Revit transfer-project-standards territory, and the library already has `COPY_VIEW_FILTERS`, `REMAP_LINE_STYLES` and `COPY_FROM_LINK` | Low. Mostly written already |
+
+**Which one he means is not yet established** and the question stays open until he says. **B is nearly
+free and A is a change to the binding model** — so guessing wrong is expensive in one direction and
+wasteful in the other, which is exactly the case [D-33](DECISIONS.md) says to ask about rather than assume.
+
+**Whichever it is, one thing does not move:** a write into a second document is still a write, so
+[Golden Rule 17](14-golden-rules.md)'s preview and [Golden Rule 16](14-golden-rules.md)'s single undo
+apply to the second model as much as the first — and an undo cannot span two documents, so a job that
+touches two models cannot honestly be one undo. **That alone may decide the shape of the answer.**
+
+**Answer: BOTH — 2026-09-06. See [D-47](DECISIONS.md).** Asked which of the two he meant, and told plainly
+that one was nearly free and the other changed the binding model, the owner answered *"BOTH"*.
+
+So neither is dropped, and the order is decided by cost rather than by preference: **B ships first**
+because most of it exists, and **A follows** because it needs a replayable record of a job and a second
+binding before it can be honest.
+
+**And the undo problem is settled by Revit, not by us.** Revit keeps a separate undo stack per document,
+so a job spanning two models **cannot** be one Ctrl+Z, and no design makes it one.
+[Golden Rule 16](14-golden-rules.md) is therefore restated rather than broken: **one undo per document**,
+and Heron must say so before it starts — *"this touches two models; undoing in Podium will not undo Tower
+A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
 
 ---
 

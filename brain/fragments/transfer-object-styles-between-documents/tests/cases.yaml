@@ -1,0 +1,59 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a template project open alongside whose walls are line weight 5 where this project has 3
+    expect: >
+      Walls at 5 here afterwards, and the entry in `changed` reading
+      "projection weight 3 to 5". Open Manage > Object Styles in both and read
+      the two side by side
+
+  - given: a custom subcategory under Walls in the source that this project lacks
+    expect: >
+      it created here, named in `created`, and then styled. A firm's own
+      sub-style is the thing worth carrying
+
+  - given: nameContains "Duct"
+    expect: >
+      only the duct categories touched, and every other line weight in the
+      project exactly as it was
+
+negative:
+  - given: a category whose settings ALREADY match the source
+    expect: >
+      it NOT in `changed` and nothing written. The report is the diff, not the
+      inventory - a transfer that lists two hundred categories tells you
+      nothing about what it did
+
+  - given: a category in the source whose material is not in this project
+    expect: >
+      that category in `weakened` naming the material, and the category KEEPING
+      the material it had. Bringing the material would drag its appearance
+      asset behind it, which is the materials transfer's job - run that first
+
+  - given: a top-level category in the source that does not exist here
+    expect: >
+      it in `skipped` saying a top-level category cannot be made. The set is
+      Revit's, not a project's
+
+  - given: one line pattern used by twenty categories in the source
+    expect: >
+      the pattern brought over ONCE and reused. Twenty patterns with one name
+      is its own defect and is invisible in a list of names
+
+  - given: a non-cuttable category
+    expect: >
+      no cut weight read or written for it. Asking returns nothing useful on
+      any release
+
+  - given: the whole transfer, then one Ctrl+Z
+    expect: >
+      EVERY category back as it was. This is the fragment that changes how the
+      whole model draws, and one undo has to put all of it back (Golden Rule
+      16)
+
+second_route:
+  - >
+    open Manage > Object Styles in both projects and compare the weight, colour
+    and pattern columns. Then look at a section: object styles are what cut
+    lines are drawn with, and a wrong cut weight shows there long before
+    anybody reads the table
