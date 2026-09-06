@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-029
+semantic-identity: "give me the scope boxes themselves as a set I can act on"
+kind: filter
+domain: revit.selection
+capability: SELECT_SCOPE_BOXES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Returns the Scope Boxes in the model as elements, narrowed by name.
+
+  **EVERYTHING ELSE HERE TAKES A SCOPE BOX BY NAME, AND THAT IS THE GAP.**
+  READ_SCOPE_BOX_EXTENT finds one by name and hands back its corners;
+  ASSIGN_SCOPE_BOX_TO_VIEW puts a named one onto views. Neither can answer
+  *"what scope boxes are there"*, and neither can hand a set to a rename, a
+  report or a delete. A scope box is an ordinary element and nothing here could
+  reach it as one. This is the same shape as the gap SELECT_VIEW_TEMPLATES
+  filled, found the same way.
+
+  **A SCOPE BOX CANNOT BE CREATED FROM CODE, WHICH MAKES REACHING THE EXISTING
+  ONES MORE USEFUL, NOT LESS.** Revit exposes no create call on any release
+  here - every box is drawn once by hand - so the ones in the model are all
+  there will ever be, and renaming or auditing them is the only automation
+  available. Resizing one is out too: the delete-and-recreate route needs the
+  create call that does not exist.
+
+  **IT IS FOUND BY CATEGORY, NOT BY CLASS.** A scope box has no dedicated API
+  class - it is an ordinary element in the Volume of Interest category, which is
+  why a class-based query finds nothing and why the earlier library reached it
+  by category as well. A search for a Scope Box type is the most likely wrong
+  turn here.
+
+  **IT REPORTS NO EXTENTS.** READ_SCOPE_BOX_EXTENT already does that, and doing
+  it twice in two fragments is how two answers to one question drift apart. This
+  one answers *which*, that one answers *how big*.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: matchedNames
+      type: IList<string>
+    - name: scanned
+      type: int
+    - name: found
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `BuiltInCategory.OST_VolumeOfInterest`
+  and `FilteredElementCollector.OfCategory` are unchanged 2020 to 2027, and no
+  id is read as a number.
+
+# ROUTING - repeated in READ_SCOPE_BOX_EXTENT and ASSIGN_SCOPE_BOX_TO_VIEW.
+#
+#   "what scope boxes are there"          -> here
+#   "list the scope boxes"                -> here
+#   "rename the scope boxes"              -> here, then RENAME_ELEMENTS
+#   "delete that scope box"               -> here, then DELETE_ELEMENTS - a
+#                                            scope box is an ordinary element,
+#                                            so no dedicated delete is needed
+#   "how big is the podium scope box"     -> READ_SCOPE_BOX_EXTENT, which takes
+#                                            the NAME and returns corners. That
+#                                            is the one that feeds
+#                                            SELECT_IN_REGION
+#   "put the podium scope box on these
+#    views"                               -> ASSIGN_SCOPE_BOX_TO_VIEW
+#   "make a scope box"                    -> NOT POSSIBLE. Revit exposes no
+#                                            create call on any release here;
+#                                            the box is drawn by hand once
+#   "resize that scope box"               -> NOT POSSIBLE either, and for the
+#                                            same reason - delete and recreate
+#                                            needs the create call
+
+utterances:
+  - give me the scope boxes
+  - list the scope boxes in this model
+  - what scope boxes are there
+  - find the scope box by name
+  - select the scope boxes
+  - the scope boxes themselves not the views

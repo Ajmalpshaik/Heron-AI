@@ -39,6 +39,13 @@ purpose: >
   parameter moves geometry, which makes it a MODIFY job and not a report, and
   the create call changed shape at Revit 2022.
 
+  **SETTING ONE IS NOW `SET_GLOBAL_PARAMETER`**, built 2026-09-06. That sentence
+  above said where it did NOT belong and nothing said where it DID, so for a
+  while nothing in the library could write a global at all - and
+  `WRITE_ELEMENT_PARAMETERS` cannot stand in, because a global's value is not a
+  parameter on an element. Read this fragment's `drives` list before writing:
+  it is exactly what will move. Creating one is still not here.
+
 contract:
   needs:
     - name: doc

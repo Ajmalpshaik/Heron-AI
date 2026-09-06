@@ -73,6 +73,23 @@ compatibility-note: >
 #                                          a whole category switched off, not
 #                                          these elements hidden
 
+# ROUTING - repeated in ZOOM_TO_ELEMENTS.
+#
+#   "show them again"                     -> here. UNHIDES them. This is the
+#                                            answer when a VIEW SETTING is
+#                                            hiding them
+#   "show me these"                       -> EITHER, and the difference is why
+#                                            they cannot be seen. Hidden by the
+#                                            view is here. Off the screen - on
+#                                            another level, in another view -
+#                                            is ZOOM_TO_ELEMENTS, which moves
+#                                            the camera and unhides nothing
+#   "where is it"                         -> ZOOM_TO_ELEMENTS
+#
+# THE NAME OF THIS FRAGMENT IS A TRAP AND IT IS WORTH SAYING SO. `SHOW_ELEMENTS`
+# reads like "put them on the screen" and means "undo a hide". The two jobs were
+# one word apart in the earlier library too.
+
 utterances:
   - unhide these
   - show them again

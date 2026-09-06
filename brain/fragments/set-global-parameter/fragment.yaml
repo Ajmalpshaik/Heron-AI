@@ -1,0 +1,138 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-019
+semantic-identity: "change the global parameter that drives the model"
+kind: action
+domain: revit.parameters
+capability: SET_GLOBAL_PARAMETER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Writes a new value into a global parameter - the single project-wide value
+  that drives dimensions and element parameters wherever it is labelled.
+
+  **THIS MOVES GEOMETRY, AND THAT IS WHY IT IS ITS OWN FRAGMENT.**
+  REPORT_GLOBAL_PARAMETERS lists them and says outright that setting one is not
+  a report's job. It is right: changing a global re-drives every dimension
+  labelled by it, so a one-line edit can move walls on twelve levels. Nothing
+  else in this library could do it, and nothing else should.
+
+  **A GLOBAL'S VALUE IS NOT A PARAMETER ON AN ELEMENT, WHICH IS WHY
+  WRITE_ELEMENT_PARAMETERS CANNOT REACH IT.** A global parameter IS an element,
+  but its value is read and written through its own pair of calls rather than
+  through the parameter collection every other fragment uses. Pointing the
+  ordinary parameter writer at one finds nothing to write.
+
+  **THE VALUE ARRIVES ALREADY BUILT, AND THAT IS DELIBERATE.** A global holds a
+  length, a number, a string or an element id, and the value handed in carries
+  its own type - the same choice OVERRIDE_GRAPHICS_IN_VIEW makes with its
+  settings object, and for the same reason: it keeps one implementation working
+  on eight releases without a units API anywhere near it. A length arrives in
+  Revit's internal feet, converted at the edge (D-20).
+
+  **TWO KINDS OF GLOBAL CANNOT BE SET AT ALL, AND BOTH LOOK ORDINARY.** One
+  driven by a FORMULA takes its value from the formula, so a write is refused. A
+  REPORTING one reads a dimension out of the model - it is an output, not an
+  input, and it can never be written. Both are checked before anything is
+  attempted, and both come back as a named reason rather than as a failure.
+
+  **A TYPE MISMATCH IS REFUSED RATHER THAN COERCED.** Writing text into a length
+  is not a conversion anybody meant, and Revit's own answer to it is not
+  consistent enough to rely on.
+
+  **THE VALUE IS READ BACK AFTER WRITING.** A global that refuses can return
+  without raising, and the whole point of the fragment is what moved - so what
+  is reported is what the model holds afterwards, not what was asked for.
+
+  **A FAMILY DOCUMENT CANNOT HAVE GLOBAL PARAMETERS AT ALL**, and an empty list
+  there means *this kind of document cannot*, not *there are none*. Asked in one,
+  this says so instead of reporting a missing parameter.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: parameterName
+      type: string
+      source: request
+    # Already built, carrying its own type. A length arrives in internal feet.
+    - name: newValue
+      type: ParameterValue
+      source: request
+  provides:
+    - name: changed
+      type: bool
+    - name: before
+      type: string
+    - name: after
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `GlobalParametersManager.AreGlobalParametersAllowed`,
+  `GlobalParametersManager.FindByName`, `GlobalParameter.GetValue`,
+  `GlobalParameter.SetValue`, `GlobalParameter.IsReporting`,
+  `GlobalParameter.GetFormula` and the `ParameterValue` subclasses are unchanged
+  2020 to 2027.
+
+  The value carries its own type in, so no units API is touched and nothing here
+  meets the 2021 move to ForgeTypeId. The parameter is found by name through
+  Revit's own lookup rather than by an id read as a number.
+
+# ROUTING - repeated in REPORT_GLOBAL_PARAMETERS and WRITE_ELEMENT_PARAMETERS.
+#
+#   "change the global parameter"          -> here
+#   "set the global to 3000"               -> here
+#   "change the value that drives the model" -> here
+#
+# THE ROW ABOVE USED TO READ "the driving DIMENSION has changed" AND IT WENT
+# STRAIGHT TO CREATE_DIMENSION - the noun trap this repository has recorded four
+# times. A global DRIVES a dimension; naming the dimension hands the sentence to
+# the dimension cluster. It was then rewritten WRAPPED ACROSS TWO LINES, which
+# is the OTHER defect fixed the same day: the checker reads the continuation
+# marker as part of the sentence, so the claim can never be matched. A claimed
+# sentence goes on ONE line, and it must be a sentence this fragment actually
+# declares.
+#   "what global parameters are there"     -> REPORT_GLOBAL_PARAMETERS, which
+#                                             also says what each one DRIVES -
+#                                             the thing to read before writing,
+#                                             because that list is what will
+#                                             move
+#   "set the mark on these"                -> WRITE_ELEMENT_PARAMETERS. That
+#                                             writes a parameter ON elements. A
+#                                             global is ONE value for the whole
+#                                             project and is written a
+#                                             different way entirely
+#   "make a global parameter"              -> NOT HERE. Creating one changed
+#                                             shape at Revit 2022, and this
+#                                             fragment writes to globals that
+#                                             already exist
+#
+# THE WORD "PARAMETER" MEANS EITHER, and the difference is whether it is one
+# value for the project or one value per element. A global drives geometry; an
+# element parameter describes an element.
+
+utterances:
+  - change the global parameter
+  # DECLARED BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT, 2026-09-06. It resolved
+  # to a selection fragment - a bare number with no noun of its own goes
+  # wherever the verb leads.
+  - set the global to 3000
+  - set the global parameter value
+  - update the driving dimension
+  - change the value that drives the model
+  - set the project wide parameter
+  - the global parameter needs a new value

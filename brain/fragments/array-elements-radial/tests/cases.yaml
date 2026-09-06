@@ -1,0 +1,68 @@
+positive:
+  - given: >
+      one bollard, centre at the turning-head centre, totalSweepDegrees 360,
+      count 8
+    expect: >
+      7 copies created and 8 bollards in total, at 0, 45, 90 ... 315 degrees.
+      stepDegrees reads 45 - the sweep divided by the COUNT, because the last
+      gap closes back to the start
+
+  - given: one seat, totalSweepDegrees 90, count 8
+    expect: >
+      7 copies at 0, 12.86, 25.71 ... 90 degrees. stepDegrees reads 12.857 - the
+      sweep divided by count MINUS ONE, because both ends of a partial sweep are
+      occupied. This is a different divisor from the case above and the findings
+      say which rule ran
+
+  - given: four sprinklers as one set, centre on a column, 360 degrees, count 6
+    expect: >
+      the whole set of four is copied and rotated together five times - 20 new
+      elements, copiesEach reads 5. The set keeps its shape; each copy is the
+      group swept round, not four independent arrays
+
+  - given: a sweep of 720 degrees with count 8
+    expect: >
+      treated as a full circle - two whole turns still close back on the start,
+      so the step divides by the count. The test is whether the sweep is a whole
+      number of turns, not whether it equals 360
+
+negative:
+  - given: totalSweepDegrees 360 with count 8, checked for stacked elements
+    expect: >
+      NO element sits on top of the original. This is the defect the fragment
+      exists to avoid: dividing 360 by 8 and then placing copies at 45 through
+      360 puts the eighth exactly on the original - a duplicate that looks right
+      on screen, schedules twice and counts twice. The earlier version of this
+      idea did exactly that
+
+  - given: count 1
+    expect: >
+      nothing is created and a finding says why. The count is the TOTAL
+      including the original, so one asks for no copies at all
+
+  - given: totalSweepDegrees 0
+    expect: >
+      nothing is created and a finding says every copy would land on the
+      original. Not an array of stacked elements, and not a silent success
+
+  - given: >
+      elements that are pinned, so Revit refuses the rotation
+    expect: >
+      the copies are reported in refused with the reason and the note that they
+      are sitting on the original. They are NOT deleted - removing something
+      inside somebody else's transaction is not this fragment's call - and the
+      created count comes from the model, so it never claims an array that is
+      not there
+
+  - given: >
+      somebody who meant "rotate these round the column" and reached this
+    expect: >
+      the originals stay exactly where they are and copies appear. Rotating what
+      is already there and creating nothing is ROTATE_ELEMENTS; the two
+      sentences are nearly identical and the results are not
+
+second_route: >
+  Revit's own Array tool in radial mode, with Group and Associate turned off -
+  the same copies, and the same divisor question. Setting it to 8 items over a
+  full circle and counting what appears is the check on the full-circle rule;
+  Revit gives 8, not 9 with two in one place.

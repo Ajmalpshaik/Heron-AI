@@ -1,0 +1,63 @@
+positive:
+  - given: >
+      three duct fittings on Level 6, with a Level 2 plan open, alsoSelect false
+    expect: >
+      the screen moves to them and the selection is untouched. viewAfter names
+      the view Revit chose, which is NOT the Level 2 plan - that jump is the
+      whole point, and reporting it is what makes it explainable
+
+  - given: the same three with alsoSelect true
+    expect: >
+      they are selected AND the screen moves. The selection is set before the
+      show, so the highlight is already on when the view arrives
+
+  - given: elements already visible in the active view
+    expect: >
+      the view zooms to fit them and does not change. Revit only moves as far as
+      it has to
+
+  - given: a set of 40 elements spread across one plan
+    expect: >
+      the view zooms to a box containing all 40, not to the first one. shown
+      reads 40
+
+negative:
+  - given: >
+      somebody who meant "these are hidden in this view, bring them back" and
+      reached this
+    expect: >
+      the camera moves and the elements are STILL not visible, because a view
+      setting is hiding them and no amount of zooming fixes that. SHOW_ELEMENTS
+      is the unhide, and the two are cross-referenced in both routing tables
+      because "show me these" is the sentence for both
+
+  - given: >
+      elements that were deleted between the filter and this call
+    expect: >
+      they go to missing and nothing is attempted with them. Handing a dead id
+      to Show is one of the ways Revit's modal dialog appears
+
+  - given: every element given has been deleted
+    expect: >
+      nothing is attempted at all and a finding says why. NOT a call with an
+      empty list, which is the other way to make the dialog appear
+
+  - given: >
+      elements that exist but are visible in no open view, run inside a batch
+    expect: >
+      Revit raises its own modal dialog and the batch STOPS until somebody
+      clicks it. This fragment cannot suppress that and does not pretend to -
+      which is why it belongs at the END of a job and never inside a loop
+
+  - given: >
+      alsoSelect true, run while the user was part-way through building a
+      selection by hand
+    expect: >
+      their selection is REPLACED. That is why selecting is a flag rather than
+      always-on
+
+second_route: >
+  Right-clicking a warning or a schedule row in Revit and choosing Show, which
+  is the same call - including the same view jump and the same dialog when no
+  view can show the element. Watching Revit's own Show behave identically is the
+  check that this fragment is not doing something unusual.
