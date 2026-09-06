@@ -247,6 +247,25 @@ during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is
 | **B3a** | Press Heron again to disconnect, then re-open the arrow and pick Bridge Status | Says **Not connected** — the item inside the list still runs its own command, it did not become part of the toggle |
 | **B4** | `python mcp/client/heron_bridge_client.py ping` then `count` | Both answer, as they did before Step 6 |
 
+### The activity banner — [D-50](docs/DECISIONS.md), and NOT ONE LINE OF IT HAS RUN
+
+Written on a machine with **no .NET SDK**, so it has not compiled, let alone been seen. It is WPF
+inside Revit's own process, which is the class of code a compile would not have vouched for anyway.
+**`A2`/`A3` must be re-run first** — a banner that will not build costs the whole add-in, not just the
+banner. Then these, on any one release, then `B9` for the rest.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **B5** | Re-run `python tools/check-compile.py 2020 2024` before opening Revit at all | All four projects, **0 warnings**. This is the first WPF-heavy file in the add-in; if it does not build, nothing below can be attempted |
+| **B6** | Connect, then ask for a count | A dark card at the **top centre of the Revit window**, saying **"Heron AI is reading your model"** with the job under it and a **blue READING** chip. It must appear *while* Revit is frozen, **not after** — appearing only at the end means the pre-`Raise` ordering did not hold, and the whole design rests on it |
+| **B7** | Watch the same card after the answer arrives | It turns green, says **"Heron AI has finished"** with how long it took, holds about **1.4 s**, then goes. If it vanishes instantly, the hide timer is firing early; if it never goes, `End` is not being reached |
+| **B8** | With `write.enabled = true`, ask to move ducts and approve | **Amber**, **"Heron AI is changing your model"**, chip reads **CHANGING**. This is the whole point of the feature — if a write shows the blue reading card, stop and fix it before using Heron on real work |
+| **B9** | Click a ribbon button through the card while it is up | Revit takes the click. The banner is `WS_EX_TRANSPARENT` and must never eat one. **The one that will fail on an older release if `SetWindowLongPtrW` is not found** — the code falls back to a clickable banner rather than throwing, so a failure here is cosmetic, not fatal |
+| **B10** | Ask something with a dialog open in Revit, so it refuses with `revit_busy` | The card says **"Revit was busy - nothing was sent"** in red. **This is the case that was invisible before** — the chat got a sentence and the screen showed nothing |
+| **B11** | Run a batch of fragments back to back | **One** steady card, not one flash per fragment. If it strobes, the hide timer is not being cancelled by the next `Begin` |
+| **B12** | On a 150% display, and with Revit on a second monitor | Centred on **Revit's** window, not the primary screen, and not a third of a screen off. Those are the two separate bugs the DPI transform and `OnScreen` are each there to prevent |
+| **B13** | Put `ui.activityBanner = false` in `%APPDATA%\Heron\config\heron.config`, restart Revit, ask for a count | No card, and the count still answers normally. Proves the switch is read and that the banner is not on the answer's path |
+
 ## Group C — the gate, before anything can move
 
 **Do not skip to D.** C3 is what proves the write path cannot fire by accident; testing the move before

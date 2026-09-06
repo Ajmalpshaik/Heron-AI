@@ -58,6 +58,18 @@ namespace Heron.Revit.Addin
         /// background thread.
         /// </summary>
         private static RevitDispatcher Dispatcher;
+
+        /// <summary>
+        /// What Revit shows while Heron is working - HERON-REVIT-UI-022.
+        ///
+        /// Built HERE and nowhere else, because it captures Revit's own WPF
+        /// dispatcher from whichever thread constructs it, and OnStartup is
+        /// the one place guaranteed to be Revit's. Built from a background
+        /// thread it would post its work to a thread that draws nothing, and
+        /// nothing would ever appear - with no error to say why.
+        /// </summary>
+        private static HeronActivityBanner Banner;
+
         internal static string LogDirectory { get; private set; }
 
         // Two listener threads and the Revit thread all log. AppendAllText from
@@ -85,12 +97,20 @@ namespace Heron.Revit.Addin
                 Bridge = new BridgeServer(
                     new BridgeIdentity(revitVersion, addinVersion), Log);
 
+                // Revit's thread, so the banner captures the right
+                // dispatcher. On by default: a frozen Revit with no
+                // explanation reads as a crash, and the person who most needs
+                // telling is the one who has not gone looking for a setting.
+                Banner = new HeronActivityBanner(
+                    config.GetBool("ui.activityBanner", true), Log);
+
                 // The thread hop. OnStartup runs on Revit's thread, which is
                 // the only place the event may be created - and it is wired in
                 // before the bridge can start, so no request can ever arrive
                 // to find it missing.
                 Dispatcher = new RevitDispatcher(Log,
-                    revitVersion + "/" + Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture));
+                    revitVersion + "/" + Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture),
+                    Banner);
                 Dispatcher.Register();
                 Bridge.RequestHandler = Dispatcher.Dispatch;
 
@@ -131,6 +151,15 @@ namespace Heron.Revit.Addin
             try
             {
                 Dispatcher = null;
+
+                // Before the bridge, so a request arriving mid-shutdown cannot
+                // raise a banner onto a dispatcher that is going away.
+                if (Banner != null)
+                {
+                    Banner.Shutdown();
+                    Banner = null;
+                }
+
                 if (Bridge != null)
                 {
                     Bridge.Stop();

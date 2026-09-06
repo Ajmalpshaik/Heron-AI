@@ -96,6 +96,7 @@ an edit.
 | [D-47](#d-47--a-job-can-cross-projects--both-repeating-it-and-copying-content--and-undo-does-not-cross-with-it) | A job can cross projects; undo does not cross with it | ✅ Accepted |
 | [D-48](#d-48--one-broken-part-costs-one-part-never-the-whole-library) | One broken part costs one part, never the whole library | ✅ Accepted |
 | [D-49](#d-49--a-heavy-optional-import-never-happens-on-a-request-thread) | A heavy optional import never happens on a request thread | ✅ Accepted |
+| [D-50](#d-50--revit-says-out-loud-what-heron-is-doing-to-it-and-whether-it-is-reading-or-changing) | Revit says out loud what Heron is doing to it, and whether it is reading or changing | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -2687,3 +2688,68 @@ unbounded wait. **Two register rows, each correct alone, and the failure lived o
 - The rule generalises to any optional dependency the brain may grow. **It is claimed only for the embedder
   today**, because that is the one measured.
 
+---
+
+## D-50 — Revit says out loud what Heron is doing to it, and whether it is reading or changing
+
+**Status:** Accepted · **Date:** 2026-09-06 · **Found during:** the owner using it
+**Affects:** [`HeronActivityBanner.cs`](../revit/Heron.Revit.Addin/HeronActivityBanner.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [25 §6](25-multi-session-and-binding.md), [28](28-agent-registry.md) `HERON-REVIT-UI-022`
+
+### Context
+
+The owner, in his own words: *"there is no visual identification showing if the cloud or the AI is
+talking to Revit. I cannot understand what is happening visually from the Revit side."*
+
+He is right, and the gap was structural rather than an oversight. Revit showed exactly one thing about
+Heron - the ribbon button's connected picture - and that says a **pipe is open**. It says nothing about
+whether anything is happening right now, nothing about what, and nothing about how it ended. A refusal
+was completely invisible from Revit: the chat received a sentence and the screen showed nothing at all.
+
+[25 §6](25-multi-session-and-binding.md) had already settled that this matters and called the banner
+*"the cheapest trust feature in the platform"*, and [28](28-agent-registry.md) had reserved
+`HERON-REVIT-UI-022` for it - deferred with the note *"waits for Step 6, when something is finally slow
+enough to need it"*. Step 6 shipped, the executor arrived, and jobs are now slow enough. This builds it.
+
+### The decision
+
+**Three parts, and the third is the one that is new.**
+
+1. **The banner is raised BEFORE the work is handed to Revit, from the listener thread.** Revit draws on
+   the same thread it works on, so nothing can be painted once a job starts. Anything that decides to
+   show a banner *because a job is slow* can only decide it on the very thread the job has already
+   taken. There is no delayed-appearance design available, and this is the reason.
+
+2. **It is lowered by whoever truly finished the work**, which is `Execute` on Revit's own thread - not
+   the caller. A client that gave up at `still_running` has stopped waiting; **Revit has not stopped
+   working**, and the screen must follow the model rather than the client. The one exception is a job
+   Revit never took, where the listener lowers it because nothing else ever will. Both paths claim the
+   right through one interlocked flag on the job, so the two can never both fire.
+
+3. **It says whether Heron is READING or CHANGING**, and that is the half the earlier project never had.
+   *"Something is happening"* is worth little to somebody whose real question is whether his model is
+   being touched. The word and the colour come from `HeronOperationRegistry` **looked up by operation
+   name** - Golden Rule 19 - so nothing arriving on the pipe can make a write wear the reading colour.
+
+It also shows the outcome for a moment after the work, with how long it took. A freeze that lasted
+twelve seconds reads as a hang; the same freeze labelled **12 s** reads as a duration.
+
+### What was deliberately not done
+
+- **No percentage.** A request carries no progress data - Revit does not report how far through a script
+  it is - so the bar is an indeterminate sweep. A bar that fills at a made-up rate is a lie somebody
+  will time their own work against.
+- **No dialog, and nothing clickable.** The banner is click-through (`WS_EX_TRANSPARENT`), never
+  activated, and absent from Alt+Tab, so it cannot eat a click or steal focus - Golden Rule 8.
+- **Nothing was done about the freeze itself.** [25 §6a](25-multi-session-and-binding.md) settled that
+  as out of scope and this does not reopen it. The banner explains the freeze; it does not shorten it.
+
+### Consequences
+
+- One new setting, `ui.activityBanner`, declared in both halves of the config. **It is the only default
+  in that table that is on.** The others protect the model by staying off; this one protects the person
+  by staying on, and somebody who does not know the banner exists is exactly who needs it.
+- A cosmetic fault must never cost a request: every entry point swallows and logs, and a repeated
+  failure drops the window rather than the job.
+- **None of it is proven.** It has never run - there is no .NET SDK on the machine it was written on,
+  so it has not even compiled. `B5` to `B9` in [NEEDS-CHECKING.md](../NEEDS-CHECKING.md) are what turn
+  that into evidence, and until they are run this is a design, not a feature.

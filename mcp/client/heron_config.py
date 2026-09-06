@@ -49,6 +49,7 @@ DEFAULTS = {
     "revit.operationTimeoutSeconds": "60",
     "write.enabled": "false",
     "log.retainDays": "14",
+    "ui.activityBanner": "true",
 }
 
 # How far the client's deadline must sit beyond the add-in's, in seconds.
