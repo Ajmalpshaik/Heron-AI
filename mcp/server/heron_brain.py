@@ -98,6 +98,26 @@ def _brain():
     return SCOPE, CAP, SKILL, SEARCH, EMBED, RETRIEVE
 
 
+def warm():
+    """Start loading the trained encoder, off the request path. Never raises.
+
+    Called once at server startup. If the brain is unavailable - no PyYAML, no
+    model2vec - there is simply nothing to warm and the Revit tools are
+    unaffected, which is the same rule _brain() already follows.
+    """
+    try:
+        _S, _C, _SK, _SE, EMBED, _R = _brain()
+    except BrainUnavailable:
+        return
+    try:
+        EMBED.warm()
+    except Exception:
+        # A warm-up that cannot start must never stop the server starting. The
+        # cost of failing here is a lexical backend, which is a documented
+        # degradation rather than an outage.
+        pass
+
+
 class _Open(object):
     """A ready store: built if empty, indexed if stale, closed on the way out.
 

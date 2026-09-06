@@ -95,6 +95,7 @@ an edit.
 | [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays) | The Emergency Stop button is removed, the switch behind it stays | ✅ Accepted · ✔ read back 2026-09-06 |
 | [D-47](#d-47--a-job-can-cross-projects--both-repeating-it-and-copying-content--and-undo-does-not-cross-with-it) | A job can cross projects; undo does not cross with it | ✅ Accepted |
 | [D-48](#d-48--one-broken-part-costs-one-part-never-the-whole-library) | One broken part costs one part, never the whole library | ✅ Accepted |
+| [D-49](#d-49--a-heavy-optional-import-never-happens-on-a-request-thread) | A heavy optional import never happens on a request thread | ✅ Accepted |
 
 **All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
 go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
@@ -2590,4 +2591,67 @@ shape as `A8` and `A7` before it: an untried path, not an unknown one.
 - **It does not loosen [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases).**
   A missing foundation still fails loudly and completely; that is the correct behaviour when there is
   nothing left to degrade to. This decision governs the many, not the floor.
+
+---
+
+## D-49 — A heavy optional import never happens on a request thread
+
+**Status:** Accepted · **Date:** 2026-09-06 · **Found during:** `A8`, on the owner's PC
+**Affects:** [`brain/heron_embed.py`](../brain/heron_embed.py), [`mcp/server/heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [05](05-heron-brain.md), [21](21-resilience-and-operations.md)
+
+### Context
+
+`heron_capabilities` stopped replying. Not slowly — **at all**: a real Claude Code tool call waited **thirty
+minutes** and got nothing back. Every existing test passed while this was true.
+
+The stack, taken with `faulthandler` rather than reasoned about:
+
+```text
+heron_capabilities            <- the request handler, on the asyncio event loop
+  catalogue()
+    _Open.__enter__
+      heron_embed.index()
+        backend()
+          _load_model()
+            import model2vec
+              import numpy
+                loading numpy's native extension   <- still here 40 s later
+```
+
+`import model2vec` costs **1.0 s** in a fresh process. On the event loop, inside a handler, it was measured
+still importing at 40 s and past 170 s in another run.
+
+**Closing [`A7`](../NEEDS-CHECKING.md) is what caused it.** Until `model2vec` was installed that import
+raised `ImportError` instantly, Heron degraded to the `lexical` backend, and the handler always answered.
+Installing it — to prove the search understands meaning, which it does — turned an instant failure into an
+unbounded wait. **Two register rows, each correct alone, and the failure lived only in their combination.**
+
+### Decision
+
+**A heavy or optional import never runs on a thread that owes somebody an answer.**
+
+1. `heron_embed.warm()` imports the trained encoder on a **background thread**, started once at server
+   startup before `server.run()`.
+2. While that is running, `_load_model()` returns `None` **immediately** to every other caller, so the
+   backend is `lexical` and says so on its own first line. **A slower answer that arrives beats a better
+   one that does not.**
+3. The guard **exempts the warming thread itself**. Without that it is worse than useless: the warm-up hits
+   its own guard, returns, clears the flag and loads nothing — after which the next request imports on the
+   event loop exactly as before. **That was this fix's first version**, and the stack that caught it looked
+   identical to the stack it was meant to remove.
+
+### Consequences
+
+- [`tests/test_mcp_stdio.py`](../tests/test_mcp_stdio.py) drives the server as a **real subprocess over real
+  stdio** and holds every reply to a **deadline**. `tests/test_mcp_serves.py` could not have caught this: it
+  dispatches in-process, where the import is already done or fails instantly. **The two files differ by one
+  process boundary and that boundary is the whole bug.**
+- A test that waits forever cannot tell a slow answer from no answer. Any check on a thing that must reply
+  carries a deadline, or it is not checking the thing that failed here.
+- **The register learned something about itself.** Its rows are deliberately independent and worked down in
+  order; nothing in it can express *these two are fine apart and broken together*. This is the first time
+  that has bitten, and no numbering scheme fixes it — only running the earlier rows again after a later one
+  changes the machine.
+- The rule generalises to any optional dependency the brain may grow. **It is claimed only for the embedder
+  today**, because that is the one measured.
 

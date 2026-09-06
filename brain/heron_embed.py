@@ -68,6 +68,7 @@ same sentence written without one has already cost this project three sessions.
 
 import io
 import os
+import threading
 import re
 import sys
 import math
@@ -144,6 +145,53 @@ def model_vector(text, dims=DIMS):
 
 _MODEL_CACHE = []
 
+# Set while a background warm-up is importing the trained encoder. While it is
+# set, _load_model() returns None IMMEDIATELY rather than importing on the
+# calling thread - see warm() for why that matters.
+_WARMING = threading.Event()
+
+# The warm-up thread itself, so _load_model() can tell it apart from a caller.
+_WARM_THREAD = [None]
+
+
+def warm():
+    """Import the trained encoder on a BACKGROUND thread, and return at once.
+
+    WHY THIS EXISTS, measured rather than reasoned about, 2026-09-06.
+
+    `import model2vec` costs about 1.0 s in a fresh process. Called for the
+    first time from INSIDE an MCP request handler - which runs on the asyncio
+    event loop - it was still inside `create_module`, loading a native
+    extension, 40 seconds later, and past 170 seconds in another run. The
+    handler never replied, the host waited forever, and a real Claude Code tool
+    call sat there for thirty minutes. The tool itself is fine: the same
+    function answers in 6.2 s in-process and through the SDK's own dispatch.
+
+    The failure needed BOTH halves and neither is wrong alone. Before
+    model2vec was installed, this import raised ImportError instantly and Heron
+    degraded to `lexical`, so the handler always answered. Installing it to
+    prove the search understands meaning (`A7`) is what made `A8` hang.
+
+    So: a heavy optional import never happens on a request thread. It happens
+    here, once, at startup, off the loop - and until it finishes, every caller
+    gets `lexical`, which is exactly the degradation this module already
+    describes and reports on its first line. A slower answer that arrives beats
+    a better one that does not.
+    """
+    if _MODEL_CACHE or _WARMING.is_set():
+        return
+    _WARMING.set()
+
+    def run():
+        try:
+            _load_model()
+        finally:
+            _WARMING.clear()
+
+    t = threading.Thread(target=run, name="heron-embed-warm", daemon=True)
+    _WARM_THREAD[0] = t
+    t.start()
+
 
 def _load_model():
     """Whatever trained encoder this machine has, or None.
@@ -154,6 +202,19 @@ def _load_model():
     """
     if _MODEL_CACHE:
         return _MODEL_CACHE[0]
+
+    if _WARMING.is_set() and threading.current_thread() is not _WARM_THREAD[0]:
+        # A warm-up is already importing this on its own thread. Do NOT import
+        # it here as well: this call may be on an event loop, and that is the
+        # 30-minute hang warm() exists to prevent. Answer lexically for now.
+        #
+        # The thread check is not decoration. Without it the WARM-UP THREAD
+        # hits this guard itself, returns None, clears the flag, and loads
+        # nothing at all - after which the next request imports on the event
+        # loop exactly as before. That was this fix's first version, and the
+        # stack dump that caught it looked identical to the stack it was
+        # meant to remove.
+        return None
 
     name = os.environ.get("HERON_EMBED_MODEL")
 
