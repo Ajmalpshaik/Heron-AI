@@ -63,7 +63,7 @@ proof:
     NOT YET SEEN: a CLOSED workset. closedCount is reported and was 0 on every
     model run; the case where it is non-zero - the one that makes a query
     silently return less - has not been put in front of this fragment.
-  fingerprint: "95fdda9eb9244272"
+  fingerprint: "8bf14600b7498d54"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

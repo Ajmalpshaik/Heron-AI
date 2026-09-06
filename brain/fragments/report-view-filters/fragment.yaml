@@ -60,7 +60,7 @@ proof:
     Project1: 10 filters against 18 views, 6 unused - a different model gives different numbers rather than a repeated answer, and neither run reported the other's filters.
   second_route: >
     FIND_UNUSED_DEFINITIONS reached the same unused count by a different route in the same run: 8 used by nothing plus 1 used only by unused templates = 9 on Snowdon, and 6 on Project1. Two mechanisms agreeing.
-  fingerprint: "12fc08ce102b1949"
+  fingerprint: "007bed6516b5b671"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

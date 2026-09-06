@@ -51,7 +51,7 @@ proof:
     Project1: 0 grids, and notLinear 0. An empty model returns an empty list rather than inventing one, and it does NOT return Snowdon's 15 - both documents were open at the same time.
   second_route: >
     Revit's own Project Browser and any plan view show the 15 grid bubbles; the count is checkable by eye.
-  fingerprint: "31d210eb01dfac91"
+  fingerprint: "2f076288055d1e1a"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

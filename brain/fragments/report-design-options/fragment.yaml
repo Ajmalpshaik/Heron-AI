@@ -84,7 +84,7 @@ proof:
     option, and a second set, are the cases where naming an option under its set
     stops being decoration and starts being the only way to tell two options
     called 'Option 1' apart.
-  fingerprint: "398cb31fcdc01331"
+  fingerprint: "2c66cc81ce4cc869"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

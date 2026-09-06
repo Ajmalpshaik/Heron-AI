@@ -19,6 +19,10 @@ No Revit API, no MCP yet. Just: can something outside Revit reach inside it?
     python mcp/client/heron_bridge_client.py count 24312
     python mcp/client/heron_bridge_client.py doctor    # diagnose a failure
     python mcp/client/heron_bridge_client.py release   # hand this Revit back
+    python mcp/client/heron_bridge_client.py validate list-levels
+                                                       # run one fragment through the
+                                                       # phases a proof needs, and
+                                                       # record what came back
 
 Two rules from the field notes (docs/00e, docs/25) are enforced here:
 
@@ -956,6 +960,192 @@ def cmd_prove(names, in_document=None):
     return 1 if failures else 0
 
 
+def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None):
+    """
+    Run ONE fragment through the phases a proof needs, and record what came back.
+
+    THIS IS THE HALF THAT NEEDS REVIT, AND NOTHING MORE. It runs, it writes down
+    what happened, and it stops. It draws no conclusion, writes into no
+    fragment, and cannot promote anything - the judging is
+    `brain/heron_validate.py`, which needs no Revit and can be tested on a
+    machine that has never had it.
+
+    The seam is a plain JSON run record. That is not tidiness: `brain` may
+    depend only on `platform` (tools/check-structure.py), so the judging half
+    cannot reach the bridge even if it wanted to, and this half stays
+    dependency-free for the locked-down machine it has to run on.
+
+    THREE PHASES, AND THE SECOND IS THE ONE THAT MATTERS
+    ---------------------------------------------------
+      positive      run it, on the model in front or the one named with --in
+      negative      run it again where the answer MUST be nothing. Either a
+                    second open model that lacks the thing (--negative-in), or
+                    the selection cleared by hand at the keyboard. D-30 exists
+                    for this phase: a fragment that succeeds while doing nothing
+                    passes ten runs and a thousand, and only an answer that
+                    should be empty can catch it
+      second route  a native operation reaching the answer another way
+                    (--cross count_elements, or --cross duct)
+
+    A PHASE THAT DID NOT RUN IS SIMPLY ABSENT FROM THE RECORD, and the draft
+    then says NOT ESTABLISHED. Nothing here invents a result it did not see.
+    """
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    source_path = os.path.join(root, "brain", "fragments", name, "impl", "any",
+                               "fragment.cs")
+    if not os.path.isfile(source_path):
+        print("No fragment called '%s'" % name)
+        return 2
+    with io.open(source_path, "r", encoding="utf-8") as fh:
+        source = fh.read()
+    needs = needs_for(root, name)
+    if needs is None:
+        return 2
+
+    live, starting, _, mismatched = discover()
+    if not live and starting:
+        print("Revit is still starting - its bridge is not answering yet.")
+        return 1
+    if not live:
+        print("No Revit is connected. Press Heron on the ribbon to connect first.")
+        report_mismatched(mismatched)
+        return 1
+
+    bridge = live[0]
+    for other in live[1:]:
+        other.close()
+
+    opening = bridge.request("count_elements")
+    if opening is None or not opening.get("ok"):
+        print("Could not identify the active model. Refusing to record evidence")
+        print("about a model that will not name itself.")
+        bridge.close()
+        return 1
+
+    model = "%s (%s elements), Revit %s, session %s" % (
+        opening.get("document"), "{:,}".format(opening.get("count", 0)),
+        bridge.revit_version, bridge.pid)
+    print("model:  %s" % model)
+    print("")
+
+    phases = []
+
+    def run_fragment(phase, document, arranged, reset):
+        args = {"name": name, "source": source, "needs": needs}
+        if reset:
+            args["chain"] = "reset"
+        if document:
+            args["document"] = document
+        reply = bridge.request("run_fragment_read", op_args=args,
+                               response_timeout=180.0)
+        if reply is None:
+            record = {"phase": phase, "ok": False, "error": "no_reply",
+                      "message": "Revit did not answer", "arranged": arranged}
+        elif not reply.get("ok"):
+            record = {"phase": phase, "ok": False,
+                      "error": reply.get("error"),
+                      "message": reply.get("message"), "arranged": arranged}
+        else:
+            record = {"phase": phase, "ok": True,
+                      "provides": reply.get("provides") or {},
+                      "bound": reply.get("bound"),
+                      "document": reply.get("document"),
+                      "arranged": arranged}
+        phases.append(record)
+        print("%-14s %s" % (phase, "ok" if record["ok"] else record.get("error")))
+        return record
+
+    run_fragment("positive", in_document, "run as it would normally be run", True)
+
+    if negative_in:
+        run_fragment("negative", negative_in,
+                     "run against '%s', which should not contain what this "
+                     "reports" % negative_in, True)
+    else:
+        print("")
+        print("NEGATIVE CASE. Arrange an answer that must come back empty -")
+        print("clear the selection in Revit, or switch to a model without the")
+        print("thing this fragment reports. Then press Enter.")
+        print("Press Ctrl+C instead to stop, and the record will say the")
+        print("negative case was never run rather than pretending otherwise.")
+        try:
+            _prompt()
+        except (EOFError, KeyboardInterrupt):
+            print("")
+            print("skipped - the draft will say NOT ESTABLISHED")
+        else:
+            run_fragment("negative", in_document,
+                         "run after the state was arranged by hand so the "
+                         "answer had to be empty", True)
+
+    if cross:
+        # A CROSS-CHECK THAT DID NOT RUN MUST SAY SO. Silence here would reach
+        # the draft as NOT ESTABLISHED, which is honest, and leave whoever asked
+        # for it believing it had been done - which is not.
+        if cross == "count_elements":
+            reply = bridge.request("count_elements")
+            arranged = ("count_elements counted the whole active document by a "
+                        "different route")
+            provides = {"count": (reply or {}).get("count")}
+        elif cross == "duct":
+            print("")
+            print("The duct cross-check CHANGES what is selected in Revit.")
+            reply = bridge.request("select_by_category", op_args={"category": "ducts"})
+            arranged = ("select_by_category collected every duct with a "
+                        "FilteredElementCollector - the model side, not the UI side")
+            provides = {"selected": (reply or {}).get("selected")}
+        else:
+            reply, arranged, provides = None, None, None
+            print("")
+            print("Unknown cross-check '%s'. It is 'count_elements' or 'duct'." % cross)
+            print("Nothing was run for it, and the draft will say NOT ESTABLISHED.")
+
+        if arranged is not None:
+            if reply is not None and reply.get("ok"):
+                phases.append({"phase": "second_route", "ok": True,
+                               "provides": provides,
+                               "document": reply.get("document"),
+                               "arranged": arranged})
+                print("%-14s ok" % "second_route")
+            else:
+                print("%-14s %s - not recorded"
+                      % ("second_route",
+                         (reply or {}).get("error") or "no reply"))
+
+    bridge.release()
+    bridge.close()
+
+    record = {
+        "run_record": out or "brain/proof-drafts/runs/%s.json" % name,
+        "fragment": name,
+        "date": time.strftime("%Y-%m-%d"),
+        "model": model,
+        "phases": phases,
+    }
+    path = out or os.path.join(root, "brain", "proof-drafts", "runs",
+                               "%s.json" % name)
+    folder = os.path.dirname(os.path.abspath(path))
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    with io.open(path, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(record, indent=2, sort_keys=True))
+
+    print("")
+    print("Recorded %s" % path)
+    print("Nothing has been proved. Turn it into a draft, then read it:")
+    print("  python brain/heron_validate.py draft %s --from \"%s\"" % (name, path))
+    return 0
+
+
+def _prompt():
+    """input() on both Pythons. Its own function so the tests can stand in for it."""
+    try:
+        return raw_input()                                   # noqa: F821
+    except NameError:
+        return input()
+
+
 def cmd_release():
     """
     Give this Revit back by hand.
@@ -1125,6 +1315,22 @@ def main(argv):
             print("Which fragment? e.g. list-levels")
             return 2
         return cmd_fragment(argv[2])
+    if argv[1] == "validate":
+        rest = argv[2:]
+        options = {"in_document": None, "cross": None, "negative_in": None,
+                   "out": None}
+        flags = {"--in": "in_document", "--cross": "cross",
+                 "--negative-in": "negative_in", "--out": "out"}
+        while len(rest) >= 2 and rest[0] in flags:
+            options[flags[rest[0]]] = rest[1]
+            rest = rest[2:]
+        if len(rest) != 1:
+            print("Which fragment? e.g. validate list-levels")
+            print("  --in \"Doc\"           run against a model that is open but not in front")
+            print("  --negative-in \"Doc\"  take the negative case from a second model")
+            print("  --cross count_elements | duct")
+            return 2
+        return cmd_validate(rest[0], **options)
 
     print(__doc__.strip())
     return 2

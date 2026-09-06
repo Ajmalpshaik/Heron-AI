@@ -77,7 +77,7 @@ proof:
     Snowdon Towers: templatesKeptForViewTypeDefault 0, and filtersUsedOnlyByUnusedTemplates 1 - the second-order case reported separately rather than folded into the plain unused count. Both the kept-count and the second-order list return empty when they should.
   second_route: >
     REPORT_VIEW_FILTERS counted the same unused filters from the other direction in the same run - 9 on Snowdon, 6 on Project1.
-  fingerprint: "2fd6181bc08721fc"
+  fingerprint: "a158af44710d19e5"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
