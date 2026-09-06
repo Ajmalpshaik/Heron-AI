@@ -168,7 +168,7 @@ during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **B1** | Start Revit 2020 | The **Heron AI** tab is there |
-| ~~**B2**~~ | ~~Look at the panel~~ | **DONE 2026-09-06** as *two* controls. Emergency Stop was removed the same day ([D-46](docs/DECISIONS.md)), so the pass is now **one** control: **Heron** with an arrow. Re-check |
+| ~~**B2**~~ | ~~Look at the panel~~ | **DONE 2026-09-06, twice.** First as *two* controls. Re-checked after Emergency Stop was removed ([D-46](docs/DECISIONS.md)): the panel showed **one** control, as intended. Revit 2020 and 2024 were both open at that moment and which one was looked at was not established — the two carry the same source, so this proves the ribbon is right, not which release it is right on |
 | ~~**B2a**~~ | ~~Click the arrow under Heron~~ | **DONE 2026-09-06.** The list opens with Bridge Status in it |
 | ~~**B2b**~~ | ~~Pick Bridge Status, then look at the top of the split button~~ | **DONE 2026-09-06.** Top stayed **Heron**, icon intact. `IsSynchronizedWithCurrentItem = false` does take effect in a real Revit, which a compile could not have told us. **The release it was run on was not recorded** — re-run on the other two before this counts for all of 2020-2027 |
 | **B3** | Press Heron | Connects, icon lights, as before. Step 5 behaviour must not have regressed |
