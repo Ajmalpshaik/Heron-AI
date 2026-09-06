@@ -2253,7 +2253,7 @@ inherited rather than re-taken is a claim nobody has watched.
 
 ## D-45 — Heron tracks the MCP SDK across major versions, the way it tracks Revit releases
 
-**Status:** Accepted · **Date:** 2026-08-31 · **Extends:** [D-05](#d-05--revit-2020--latest), [D-06](#d-06--c-for-revit-python-for-everything-outside-it)
+**Status:** Accepted · **Date:** 2026-08-31 · **Extends:** [D-05](#d-05--revit-version-support-2020-to-latest), [D-06](#d-06--implementation-languages-c-for-revit-python-for-brain)
 
 ### Context
 
@@ -2271,7 +2271,7 @@ import. The technique that found it in ten minutes was installing the dependency
 
 ### Decision
 
-**A dependency Heron does not control is treated the way [D-05](#d-05--revit-2020--latest) treats a
+**A dependency Heron does not control is treated the way [D-05](#d-05--revit-version-support-2020-to-latest) treats a
 Revit release: the version in front of it is discovered, never assumed, and an unrecognised one fails
 loudly rather than silently.**
 
@@ -2329,6 +2329,17 @@ honestly cannot interrupt a Revit API call already running. **He read that and d
 the button.** He was equally explicit about the scope: the button goes, the code behind it stays —
 *"behind that we have something programming related that we created before, that function we need."*
 
+**His reason, given afterwards, is the better argument and is why this entry exists rather than a
+one-line note.** *"I can use this same thing with the main bridge button. If I don't want it I can
+stop the bridge connection, it's easy. So no need."*
+
+He is right, and disconnecting is the **stronger** of the two. Emergency Stop refused `Modify` and
+above while letting reads through. Disconnecting closes the pipe, so **nothing** arrives at all —
+no reads, no writes, no lease. It is one click on a button that is already there, whose picture
+already tells you which state you are in, and it has exactly the same honest limit: neither can
+interrupt a Revit API call that has already started. Two controls doing overlapping jobs is how
+somebody ends up unsure which one is holding.
+
 ### Decision
 
 **The ribbon carries no Emergency Stop button. Everything behind it is untouched.**
@@ -2341,9 +2352,13 @@ One `PushButtonData` in `HeronApplication.BuildRibbon` puts the button back.
 
 - **Nothing can switch the stop on any more.** `EmergencyStopCommand` was its only caller, and it is now
   reachable from nowhere. `HeronStop.IsStopped` is false for ever, so both gates are inert.
-- **Heron has no emergency stop a person can press.** The first of [21 §4](21-resilience-and-operations.md)'s
-  three requirements — *reachable when Heron is misbehaving* — is met by nothing today. That is the
-  honest reading and it must not be softened anywhere in this repository.
+- **There is no stop that leaves the connection up.** The first of [21 §4](21-resilience-and-operations.md)'s
+  three requirements — *reachable when Heron is misbehaving* — **is** met, but by the Heron toggle
+  rather than by the control 21 §4 named. What is genuinely gone is the softer stop: the one that
+  blocked changes while still letting you ask Heron what it had just done. After disconnecting,
+  reconnecting is what gets that back.
+- **Neither control can interrupt work Revit has already started.** That was true of the button and
+  is true of disconnecting. Ctrl+Z remains the only thing that reverses a change already made.
 - **The file-based kill switch that 21 §4 pairs with the button was never built.** Until it is, the
   mechanism kept here has no trigger at all.
 - **`C1`, `C2`, `C4` and `C6` in [NEEDS-CHECKING.md](../NEEDS-CHECKING.md) can no longer be run.** The
