@@ -78,6 +78,21 @@ compatibility-note: >
 #   "everything inside this box"         -> SELECT_IN_REGION with typed corners
 #   "how big is this element"            -> REPORT_BOUNDING_BOX
 
+# ROUTING - repeated in SELECT_SCOPE_BOXES.
+#
+#   "how big is the podium scope box"     -> here. Takes the NAME, returns the
+#                                            corners, and feeds SELECT_IN_REGION
+#   "what scope boxes are there"          -> SELECT_SCOPE_BOXES, which hands
+#                                            them back as ELEMENTS so a rename,
+#                                            a report or a delete can act on
+#                                            them. Everything here took a box by
+#                                            NAME and nothing could enumerate
+#                                            them - the same gap
+#                                            SELECT_VIEW_TEMPLATES filled
+#   "make a scope box"                    -> NOT POSSIBLE on any release here,
+#                                            and resizing one is out for the
+#                                            same reason
+
 utterances:
   - how big is that scope box
   - what is inside the scope box

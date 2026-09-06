@@ -1,0 +1,58 @@
+positive:
+  - given: a project carrying 6 scope boxes, nameContains empty
+    expect: >
+      found is 6 and every one is a scope box element that a rename or a delete
+      can act on. matchedNames carries the names, which is the only thing that
+      identifies a scope box to a person
+
+  - given: nameContains "Podium" on a project with Podium North and Podium South
+    expect: >
+      both come back and nothing else. The match is case-insensitive and on a
+      substring, so the way a modeller types it does not have to be exact
+
+  - given: a project with no scope boxes at all
+    expect: >
+      found is 0 and scanned is 0, with no error. A model that never had one is
+      a real answer
+
+  - given: the result passed to RENAME_ELEMENTS
+    expect: >
+      the scope boxes rename like any other element. That is the whole point of
+      returning elements rather than names - nothing here could reach a scope
+      box as an element before
+
+negative:
+  - given: >
+      an implementation that looked for a ScopeBox class instead of the Volume
+      of Interest category
+    expect: >
+      it finds NOTHING, on a model full of scope boxes. There is no scope box
+      class in the API, and this is the wrong turn the fragment is written to
+      prevent
+
+  - given: somebody who wanted the box's size and reached this
+    expect: >
+      they get elements and no extents. READ_SCOPE_BOX_EXTENT takes a NAME and
+      returns corners, and it is the one that feeds SELECT_IN_REGION. Answering
+      both here would be two fragments answering one question
+
+  - given: somebody who wanted to CREATE a scope box
+    expect: >
+      nothing here does that and nothing can. Revit exposes no create call on
+      any release covered, so the boxes in the model are all there will ever be.
+      Resizing is out for the same reason - delete-and-recreate needs the create
+      call
+
+  - given: nameContains set to a string matching no scope box
+    expect: >
+      found is 0 with scanned still reporting every box walked. An empty result
+      beside a real scanned count is an absence; an empty result beside a
+      scanned of zero would mean the collector never ran, and the two must be
+      tellable apart
+
+second_route: >
+  The Project Browser does not list scope boxes at all - they are found by
+  selecting one in a plan view, or through the Scope Box property drop-down on a
+  view, which shows the names. That drop-down is the only place in Revit's own
+  interface the full list appears, which is a large part of why reaching them
+  from code is worth anything.

@@ -1,0 +1,69 @@
+positive:
+  - given: >
+      a project global "Corridor Width" holding 1500 mm, a DoubleParameterValue
+      of 1800/304.8 handed in
+    expect: >
+      changed is true, before and after both reported, and every dimension
+      labelled by it has re-driven. The findings say outright that everything
+      labelled by it has moved - which is the consequence somebody needs told,
+      not a detail
+
+  - given: a string global and a StringParameterValue
+    expect: >
+      it writes. The value carries its own type in, so one implementation covers
+      lengths, numbers, text and element ids without a units API anywhere near it
+
+  - given: the same value written twice
+    expect: >
+      the second run reports "reads X after the write, which is what it read
+      before. Nothing moved." Not a second success - the read-back is what
+      distinguishes them
+
+  - given: a global whose value is read back unchanged after the write
+    expect: >
+      changed is false. The report is what the model holds afterwards, never
+      what was asked for
+
+negative:
+  - given: a REPORTING global parameter
+    expect: >
+      nothing is written and a finding says it reads a dimension out of the
+      model and can never be set. It is an output. This is one of the two kinds
+      that look completely ordinary until the write silently does nothing
+
+  - given: a global driven by a formula
+    expect: >
+      nothing is written and the finding names the formula and says to change
+      that instead. The second of the two invisible kinds
+
+  - given: a StringParameterValue offered to a length global
+    expect: >
+      refused, not coerced. Writing text into a length is not a conversion
+      anybody meant, and Revit's own answer to it is not consistent enough to
+      lean on
+
+  - given: this run against a FAMILY document
+    expect: >
+      a finding saying this kind of document cannot hold global parameters at
+      all - NOT "not found". The two read identically to a tool and completely
+      differently to a person, and the wrong one sends somebody hunting for a
+      parameter that could never exist
+
+  - given: a name that matches no global
+    expect: >
+      nothing written, and the finding points at REPORT_GLOBAL_PARAMETERS for
+      the exact names
+
+  - given: >
+      somebody who meant "set the Mark on these elements" and reached this
+    expect: >
+      no element is touched. A global is ONE value for the whole project and it
+      drives geometry; an element parameter describes an element.
+      WRITE_ELEMENT_PARAMETERS is the other one
+
+second_route: >
+  Manage > Global Parameters, typing the value into the dialog - the same write,
+  and the same two refusals: the dialog greys out a reporting parameter and
+  shows a formula-driven one as its formula rather than as an editable value.
+  Watching those two greyed rows is the check that the refusals here are Revit's
+  and not invented.

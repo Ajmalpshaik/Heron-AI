@@ -1,0 +1,133 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-031
+semantic-identity: "space copies of these evenly around a centre point"
+kind: action
+domain: revit.geometry
+capability: ARRAY_ELEMENTS_RADIAL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies elements evenly around a centre point - bollards round a turning head,
+  sprinklers round a column, seats round a table, luminaires round an atrium.
+
+  **ARRAY_ELEMENTS IS LINEAR AND ONLY LINEAR, WHICH IS WHY THIS IS SEPARATE.**
+  That one takes a direction, a spacing and a count. Nothing in it can sweep
+  round a point, and the two share no arithmetic: one adds a vector repeatedly,
+  this one rotates about an axis. Folding them together would mean a mode flag
+  where half the inputs are meaningless in each mode.
+
+  **A FULL CIRCLE AND A PARTIAL SWEEP DIVIDE DIFFERENTLY, AND GETTING THAT
+  WRONG STACKS A COPY ON THE ORIGINAL.** Eight items round a full circle sit at
+  0, 45, 90 ... 315 - the step is the sweep divided by the COUNT, because the
+  last gap closes back to the start. Eight items across a 90 degree sweep sit at
+  0, 12.86, 25.71 ... 90 - the step is the sweep divided by count MINUS ONE,
+  because both ends are occupied. The earlier version of this idea always
+  divided by the count, so a full circle placed its last copy at 360 degrees,
+  exactly on top of the original: a stacked duplicate that looks correct on
+  screen, schedules twice and counts twice. This fragment decides which case it
+  is from the sweep itself and says which rule it used.
+
+  **THE COUNT IS THE TOTAL, INCLUDING THE ORIGINAL.** Eight means eight things
+  afterwards, not nine - the same promise ARRAY_ELEMENTS makes, and what a
+  modeller means when they count what appeared.
+
+  **THE AXIS IS VERTICAL, THROUGH THE POINT GIVEN.** That is the array anybody
+  draws on a plan. A sweep about a horizontal axis is a different job with a
+  different input - it needs an axis line, not a plan point - and pretending one
+  input covers both would give a fragment that is right about one.
+
+  **THE ORIGINALS ARE NOT MOVED**, and it is a plain copy rather than a Revit
+  radial Array element. A real Array stays linked and renumbers itself;
+  independent copies are what somebody wants when they intend to adjust them
+  afterwards. Nothing here creates the linked kind.
+
+  **EVERY COPY IS COUNTED FROM THE MODEL.** A rotation that Revit refuses -
+  something pinned, something constrained - leaves fewer copies than were asked
+  for, and a count taken from the request would report an array that is not
+  there.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # The centre of rotation in plan, millimetres. The axis is vertical through
+    # it, so no Z is asked for.
+    - name: centreXMm
+      type: double
+      source: request
+    - name: centreYMm
+      type: double
+      source: request
+    # 360 for a full circle. Anything else is a partial sweep and divides
+    # differently - see the purpose.
+    - name: totalSweepDegrees
+      type: double
+      source: request
+    # The TOTAL number of items afterwards, the original included.
+    - name: count
+      type: int
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: copiesEach
+      type: int
+    - name: stepDegrees
+      type: double
+    - name: refused
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElementTransformUtils.CopyElements`,
+  `ElementTransformUtils.RotateElements` and `Line.CreateBound` are unchanged
+  2020 to 2027.
+
+  Millimetres become feet by dividing by 304.8 and degrees become radians by
+  plain arithmetic (D-20). No units API is touched, so nothing here meets the
+  2021 move to ForgeTypeId. Ids are carried as `ElementId` and none is read as
+  a number.
+
+# ROUTING - repeated in ARRAY_ELEMENTS, COPY_ELEMENTS and ROTATE_ELEMENTS.
+#
+#   "space these round a point"            -> here
+#   "eight of these round the column"      -> here
+#   "copy these round in a circle"         -> here
+#   "space these out along the corridor"   -> ARRAY_ELEMENTS - a direction and a
+#                                             spacing. It cannot sweep, and
+#                                             this one cannot run along a line
+#   "copy these over there"                -> COPY_ELEMENTS - ONE copy at one
+#                                             offset
+#   "turn these round"                     -> ROTATE_ELEMENTS - rotates what is
+#                                             already there and creates
+#                                             nothing. The sentence "rotate
+#                                             these round the column" means
+#                                             THAT, not this
+#
+# THE WORD "ARRAY" MEANS BOTH SHAPES and a modeller says it for either. Which
+# one is meant shows in the rest of the sentence: a direction or a spacing is
+# linear, a centre or a circle is this.
+
+utterances:
+  - space copies of these evenly around a centre point
+  - array these round a circle
+  - put eight of these round the column
+  - copy these round in a circle
+  - radial array
+  - space these evenly around a point

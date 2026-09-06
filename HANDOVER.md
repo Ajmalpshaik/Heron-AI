@@ -28,6 +28,57 @@ when the thing you hit is on no list at all.
 
 ---
 
+**Updated 2026-09-06 (latest session) — FOUR MORE BUILT, THE FIFTH REFUTED BY TRYING TO BUILD IT.
+The library is 339 → 343, and every fragment-shaped job found in the earlier library is now built.**
+
+| | |
+|---|---|
+| Fragments | **343**, all `DRAFT` |
+| Compile, 2020–2027 | green |
+| Routing, table claims not reached | **4** — the baseline, unchanged |
+| Gates, tests | all green |
+
+**The four built:** `ARRAY_ELEMENTS_RADIAL`, `SET_GLOBAL_PARAMETER`, `ZOOM_TO_ELEMENTS`,
+`SELECT_SCOPE_BOXES`.
+
+**THE FIFTH WAS MY OWN WRONG CLAIM, AND THE COMPILE GATE KILLED IT IN ONE RUN.** The schedule
+CALCULATED VALUE column is **impossible on every release**, not a version-gated gap. The claim came
+from the source library's own note - *"added to the public API in a later Revit release (2022+) as
+`ScheduleField.SetFormula`"* - which says in the very next clause that it is untested: *"that's the
+shape to try ... and re-verify against that version"*. **That hedge was read as a version note
+instead of as the guess it was.** Probing all eight releases:
+
+    ScheduleField.SetFormula                   does not exist, 2020 through 2027
+    ScheduleField.Formula                      no such property
+    ScheduleDefinition.AddCalculatedField      no such method
+    ScheduleDefinition.AddCalculatedParameter  no such method
+
+`AddField(ScheduleFieldType.Formula)` **does** compile everywhere, which is the trap: the field can be
+added and nothing can give it a formula. The shipped assembly agrees - every `Calculated*` member on
+the schedule side is a **Get**. **A calculated column can be read and cannot be authored.**
+
+> **The mirror of a lesson already in this file.** *"Impossible on version X"* written without naming
+> the version becomes a lie the day another Revit is installed. **A POSSIBILITY recorded without a
+> version, on a call nobody ran, is equally a lie** - and worse, because it sends somebody off to
+> build something that cannot exist. Four probe lines cost less than the fragment's purpose would
+> have.
+
+**Two routing defects were caught in this batch, and one of them was mine twice over.** The noun trap
+took *"the driving dimension has changed"* straight to `CREATE_DIMENSION` - a global DRIVES a
+dimension, and naming the dimension hands the sentence to the dimension cluster. **Rewriting that row
+then wrapped it across two lines, which is the OTHER defect fixed earlier the same day**: the checker
+reads the continuation marker as part of the sentence, so the claim can never match. A claimed
+sentence goes on ONE line, and it must be a sentence the fragment actually declares - a table row
+saying *"show these again"* against a declared *"show them again"* is one word from useless.
+
+**Final count on the earlier library:** 312 covered + 5 impossible + 13 missing, **all 13 built**.
+330 accounted for.
+
+**Nothing is proven.** All 343 are `DRAFT`. Eight green releases is the API surface agreeing, not
+evidence any fragment does the right thing (D-30, D-45). **That, and nothing else, is what is left.**
+
+---
+
 **Updated 2026-09-06 (latest session) — THE REFUTATION PASS ON THE COVERED SIDE IS DONE, AND IT FOUND
 FIVE MORE.** The blind spot the section below warned about is closed. All 321 remaining source files
 were put to the opposite test from the original audit: *name the Heron capability that does this job,
@@ -40,13 +91,14 @@ or the claim fails.*
 
 **The arithmetic closes now:** 312 + 4 + 14 missing (9 built + 5 new) = **330**. It did not before.
 
-**The five nothing covers** — none is built yet:
+**The five raised — four were real and are now BUILT; the fifth was wrong and is corrected in the
+section above:**
 
 | The job | Why nothing here does it |
 |---|---|
 | **Radial array** | `ARRAY_ELEMENTS` takes a direction, a spacing and a count. It is linear and only linear. A radial array sweeps copies around a centre point through an angle |
 | **Set a global parameter's value** | `REPORT_GLOBAL_PARAMETERS` says *"deliberately not here — a MODIFY job"*, and nothing picked it up. A global is written through `GlobalParameter.SetValue`, not a parameter on an element, so `WRITE_ELEMENT_PARAMETERS` cannot reach it |
-| **A schedule CALCULATED VALUE column** | `ADD_SCHEDULE_COMBINED_FIELD` states outright it is not this — a combined field JOINS text, and asking it for arithmetic gets concatenation that reads like a working column. **Impossible on 2020–21, real from 2022**, so it is a fragment with a narrower `revit:` list |
+| ~~**A schedule CALCULATED VALUE column**~~ | **WRONG — refuted the same day by trying to build it. It is impossible on every release.** See the section above |
 | **Navigate the view to elements** | `UIDocument.ShowElements`. Nothing calls it. `SET_SELECTION` selects without moving the view — and **`SHOW_ELEMENTS` is a name trap: it means UNHIDE**, so *"show me these"* reaches the wrong fragment |
 | **Scope boxes as an element set** | `READ_SCOPE_BOX_EXTENT` finds ONE by name; nothing enumerates them or hands them back as elements to rename or delete. **The same gap as `SELECT_VIEW_TEMPLATES`**, found and built the same day |
 

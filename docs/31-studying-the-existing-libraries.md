@@ -110,23 +110,55 @@ neighbour's own purpose narrowed it, the source file was read and the fragment's
 | Already covered | 317 | **312** | **5** |
 | Impossible via the API | 4 | **4** | 0 |
 
+> **One of those five was then refuted in turn, by building it — see below. The final count is 312
+> covered, 5 impossible, 13 missing, and all 13 are built.**
+
 **The four impossible verdicts all held, and the source library had already proved each one itself** -
 `Document.Phases` is read-only and no Phase-creation method exists anywhere in the API surface;
 `PHASE_NAME` is read-only so a phase cannot be renamed; there is no Scope Box creation call, which
 also kills the delete-and-recreate route to resizing one.
 
-**The five that were NOT covered:**
+**The five raised, of which four were real** - all four built 2026-09-06 as
+`ARRAY_ELEMENTS_RADIAL`, `SET_GLOBAL_PARAMETER`, `ZOOM_TO_ELEMENTS` and `SELECT_SCOPE_BOXES`:
 
 | Source | The job, and why nothing here does it |
 |---|---|
 | `move-copy-rotate/action-array-elements` (radial mode) | Copies swept around a CENTRE POINT through a sweep angle. `ARRAY_ELEMENTS` takes a direction, a spacing and a count - it is linear and only linear. The library's own precedent settles this: a linear array is worth a fragment rather than N copies, so a radial one is too |
 | `parameters-naming/action-report-global-parameters` (set mode) | SET a global parameter's value. `REPORT_GLOBAL_PARAMETERS` says *"creating or setting one is deliberately not here ... a MODIFY job"* - and no other fragment picked it up. A global's value is written through `GlobalParameter.SetValue`, not through a parameter on an element, so `WRITE_ELEMENT_PARAMETERS` cannot reach it. Carries two real refusals: a formula-driven global rejects the write, and a reporting one can never be set |
-| `sheets-views/action-add-schedule-calculated-field` (formula mode) | A CALCULATED VALUE column - arithmetic on other fields. `ADD_SCHEDULE_COMBINED_FIELD` states outright that it is not this: a combined field JOINS values as text, and asking it for arithmetic gets concatenation that reads like a working column. **Impossible on 2020 and 2021, real from 2022** via `ScheduleField.SetFormula`, so it is a fragment with a narrower `revit:` list - the shape `EXPORT_SHEETS_TO_PDF` already uses |
+| ~~`sheets-views/action-add-schedule-calculated-field` (formula mode)~~ | **WRONG - this claim was refuted the same day, and the correction is below.** It is a fifth IMPOSSIBLE, not a gap |
 | `visibility/action-show-elements` | Navigate the view to elements - `UIDocument.ShowElements`. Nothing here calls it. `SET_SELECTION` selects and does not move the view, which leaves a user staring at another level with something highlighted off screen; and **`SHOW_ELEMENTS` is a name trap** - it means UNHIDE, so *"show me these"* reaches the wrong fragment entirely |
 | `filters/by-view-and-sheet/filter-by-scope-box` | Scope boxes as an actionable element SET, narrowed by name. `READ_SCOPE_BOX_EXTENT` finds ONE by name and returns its corners; `ASSIGN_SCOPE_BOX_TO_VIEW` acts on one by name. Nothing enumerates them or hands them back as elements to rename, report on or delete. **Structurally the same gap as `SELECT_VIEW_TEMPLATES`**, which was found and built the same day |
 
-**The arithmetic closes now, which it did not before:** 312 covered + 4 impossible + 14 missing
-(9 built + 5 new) = **330**.
+### A gap claim of my own, refuted by trying to build it
+
+**The schedule CALCULATED VALUE column is not a gap. It is impossible on every release, and the
+claim above was made on somebody else's guess.** The source file says the capability *"was added to
+the public API in a later Revit release (2022+) as `ScheduleField.SetFormula(string)`"* and then says
+plainly that this is untested - *"that's the shape to try ... and re-verify against that version"*.
+That hedge was read as a version note and not as the speculation it was.
+
+**The compile gate settled it in one run.** Declaring all eight releases and probing the candidates:
+
+    ScheduleField.SetFormula              does not exist on 2020 through 2027
+    ScheduleField.Formula                 no such property
+    ScheduleDefinition.AddCalculatedField no such method
+    ScheduleDefinition.AddCalculatedParameter  no such method
+
+`ScheduleDefinition.AddField(ScheduleFieldType.Formula)` **does** compile on every release, which is
+the trap: a formula field can be added and there is no way to give it a formula. Reading the shipped
+assembly confirms the shape - every `Calculated*` member on the schedule side is a **Get**
+(`GetCalculatedValueName`, `GetCalculatedValueText`, `GetCellCalculatedValue`). **A calculated column
+can be read and cannot be authored.**
+
+**The lesson is the one this repository already had, arriving from a new direction.** *"Impossible on
+version X"* recorded without naming the version becomes a lie the day another Revit is installed -
+that is why the source library re-checked its own purge note. This is the mirror: **a POSSIBILITY
+recorded without a version, on a call nobody ran, is equally a lie**, and it is more dangerous
+because it sends somebody off to build something that cannot exist. The four probe lines that settled
+it cost less than writing the fragment's purpose would have.
+
+**The arithmetic closes at:** 312 covered + **5** impossible + **13** missing (all 13 now built) =
+**330**.
 
 **What the refuted five have in common is worth more than the five.** Four of them sit *inside* a
 fragment that covers the neighbouring case and says so in its own purpose - "not a formula column",

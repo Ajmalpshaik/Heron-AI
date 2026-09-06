@@ -76,6 +76,21 @@ compatibility-note: >
 # ARRAYING AND COPYING ARE THE SAME WORD HALF THE TIME. One offset repeated N
 # times is this; one offset once is COPY_ELEMENTS.
 
+# ROUTING - repeated in ARRAY_ELEMENTS_RADIAL.
+#
+#   "space these out along the corridor"  -> here. A DIRECTION and a spacing
+#   "array these round a circle"          -> ARRAY_ELEMENTS_RADIAL. A CENTRE
+#                                            point and a sweep angle. The two
+#                                            share no arithmetic - one adds a
+#                                            vector repeatedly, the other
+#                                            rotates about an axis - which is
+#                                            why they are two fragments rather
+#                                            than one with a mode flag
+#
+# THE WORD "ARRAY" MEANS BOTH SHAPES. Which one is meant shows in the rest of
+# the sentence: a direction or a spacing is linear, a centre or a circle is
+# radial.
+
 utterances:
   - array them along the corridor
   - space these out evenly

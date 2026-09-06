@@ -1,0 +1,118 @@
+heron-agent: HERON-REVIT-SEL-008
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-030
+semantic-identity: "take me to these on screen, wherever they are"
+kind: action
+domain: revit.selection
+capability: ZOOM_TO_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+purpose: >
+  Moves the screen to the elements - Revit's own *Show* - so the person can
+  actually see what was found.
+
+  **SELECTING IS NOT SHOWING, AND THE DIFFERENCE IS THE WHOLE FRAGMENT.**
+  SET_SELECTION highlights elements and does not move the view a millimetre. Ask
+  it to show you three fittings on Level 6 while a Level 2 plan is open and you
+  get a highlighted nothing: the count says three, the screen says empty, and
+  the modeller concludes the tool is broken. This navigates.
+
+  **THE NAME `SHOW_ELEMENTS` IS ALREADY TAKEN BY A DIFFERENT JOB, AND THAT TRAP
+  IS THE REASON THIS ONE IS CALLED ZOOM.** SHOW_ELEMENTS means UNHIDE - it
+  reverses a hide. *"Show me these"* is the sentence for both, so the two are
+  cross-referenced in each other's routing rather than left to a ranking to
+  separate.
+
+  **IT CAN CHANGE THE ACTIVE VIEW, AND THAT SURPRISES PEOPLE.** Revit finds a
+  view where the elements are visible, which may not be the one on screen. Doing
+  it any other way would mean refusing to show anything not already in front of
+  the user, which defeats the point. The view it landed on is reported so the
+  jump is explainable rather than mysterious.
+
+  **IF NOTHING CAN SHOW THEM, REVIT PUTS UP A DIALOG THIS FRAGMENT CANNOT
+  SUPPRESS.** *"There is no open view that shows any of the highlighted
+  elements"* is modal, and in the middle of a batch it stops everything until
+  somebody clicks it. So this is the last step of a job, not one in the middle
+  of a loop, and ids that no longer resolve are dropped first - a deleted
+  element is the cheap half of that problem and the half worth removing.
+
+  **SELECTING IS A SEPARATE FLAG BECAUSE THE TWO ARE SEPARATE WISHES.** *"Where
+  is it"* wants the camera moved and nothing touched; *"select and show"* wants
+  both. Doing both always would replace a selection the user was in the middle
+  of building.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none. It changes
+  nothing in the model, which is why it is EXECUTE rather than MODIFY: it acts
+  on the session, not the building.
+
+contract:
+  needs:
+    - name: uidoc
+      type: UIDocument
+    - name: elements
+      type: IList<Element>
+    # true also puts them in the selection; false moves the camera only.
+    - name: alsoSelect
+      type: bool
+      source: request
+  provides:
+    - name: shown
+      type: int
+    - name: missing
+      type: IList<ElementId>
+    - name: viewAfter
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `UIDocument.ShowElements(ICollection<ElementId>)`,
+  `UIDocument.Selection.SetElementIds` and `UIDocument.ActiveView` are unchanged
+  2020 to 2027.
+
+  `UIDocument` comes from the Revit UI namespace the fragment wrapper already
+  imports, so it is not written out in full - a fully qualified name would
+  smuggle in a namespace the executor was never told to supply.
+
+# ROUTING - repeated in SHOW_ELEMENTS, SET_SELECTION and HIDE_ELEMENTS.
+#
+#   "where is it"                          -> here
+#   "take me to it"                        -> here
+#   "zoom to these"                        -> here
+#   "show me these"                        -> HERE when they are hidden BY
+#                                             DISTANCE - off screen, on another
+#                                             level, in another view. This
+#                                             moves the camera
+#   "show them again"                      -> SHOW_ELEMENTS. That one UNHIDES -
+#                                             it reverses HIDE_ELEMENTS or
+#                                             ISOLATE_ELEMENTS. It moves no
+#                                             camera and it is the answer when
+#                                             the elements are hidden BY A VIEW
+#                                             SETTING rather than by distance
+#   "select these"                         -> SET_SELECTION, which highlights
+#                                             and does NOT move the view. On
+#                                             another level that looks like an
+#                                             empty result
+#   "hide these"                           -> HIDE_ELEMENTS
+#
+# TWO FRAGMENTS ANSWER "SHOW ME THESE" AND THE DIFFERENCE IS WHY THEY CANNOT BE
+# SEEN. Off the screen is this one. Hidden by the view is SHOW_ELEMENTS. The
+# sentence does not say which, so both tables carry both.
+
+utterances:
+  - take me to these on screen
+  - where is it
+  - zoom to these
+  - zoom in on what you found
+  - take me to that element
+  - select and show me these
