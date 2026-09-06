@@ -474,11 +474,29 @@ class Fragment(object):
 # ---------------------------------------------------------------------------
 
 def load(folder):
-    """Read one fragment folder. Raises ValueError with a readable message."""
+    """Read one fragment folder. Raises ValueError with a readable message.
+
+    EVERY failure in here leaves as a ValueError, and that is load_all's
+    contract rather than a detail: it catches ValueError so that one unreadable
+    fragment costs one fragment. A parse error escaping as yaml.YAMLError -
+    which is NOT a ValueError - walked straight out of load_all and took the
+    whole library with it. Measured on 2026-09-06: one malformed fragment.yaml
+    beside one good one returned no fragments at all, raising ParserError.
+
+    The owner named this shape before the code was looked at: "if one tool
+    update do not remove all ... tell need to update but remaining old one need
+    to work". See D-48.
+    """
     path = os.path.join(folder, "fragment.yaml")
     if not os.path.exists(path):
         raise ValueError("%s has no fragment.yaml" % folder)
-    data = yaml.safe_load(io.open(path, encoding="utf-8").read())
+    try:
+        data = yaml.safe_load(io.open(path, encoding="utf-8").read())
+    except yaml.YAMLError as exc:
+        raise ValueError("%s: fragment.yaml could not be parsed - %s"
+                         % (folder, " ".join(str(exc).split())))
+    except (IOError, OSError) as exc:
+        raise ValueError("%s: fragment.yaml could not be read - %s" % (folder, exc))
     if not isinstance(data, dict):
         raise ValueError("%s: fragment.yaml is not a mapping" % folder)
     return Fragment(data, folder)
@@ -504,6 +522,15 @@ def load_all(root=None):
             frag = load(folder)
         except ValueError as exc:
             problems.append(str(exc))
+            continue
+        except Exception as exc:                     # noqa: BLE001 - deliberate
+            # D-48: one broken fragment costs one fragment. A bare except is
+            # normally a smell; here it is the guarantee. Anything load() failed
+            # to turn into a readable ValueError still must not remove the other
+            # 328 - so it is named, recorded as a problem, and skipped.
+            problems.append("%s: unreadable - %s: %s"
+                            % (name, type(exc).__name__,
+                               " ".join(str(exc).split())))
             continue
         if not frag.id:
             problems.append("%s: no id, so it has no identity to be known by" % name)

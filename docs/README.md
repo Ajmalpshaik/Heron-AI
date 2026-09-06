@@ -24,7 +24,8 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**All 41 questions are answered — 41 answered · 0 open — and nothing gates any phase.**
+**All 42 questions are answered — 42 answered · 0 open — and nothing gates any phase.** `Q-41` was both
+asked and answered by the owner on 2026-09-06, during the decision read-back rather than by a specification.
 
 **Phase 1, assessed 2026-08-28** (it had not been, and the count above had quietly stopped covering the
 work in progress). Three questions touched Step 6 at the time, and one of them mattered:
