@@ -45,9 +45,10 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, structure, docs, gaps — all green |
 | Tests | **all pass**, `test_embed` and `test_retrieve` included — they were re-based against the model backend in PART 5, not edited until green. See the note where the warning used to be |
-| Register | **63 rows, 19 closed, 44 left.** Group A is FINISHED. **Only `R1b` does not need Revit** |
+| Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | deployed to Revit 2024, built from `main` at `538bf55` |
-| Branches | `main` only |
+| Bindable inputs | **70 of 349** — PART 6 binds every need a fragment's contract declares, from the on-screen selection and from what the previous fragment left behind. **278 still want a caller's half** — a category, a name, a distance — and that is now the largest unlock left |
+| Branches | `main`, plus `verify/proofs-re-run-and-executor-triage` — this session's, merged with `main` at PART 6 |
 
 **EVERY REGISTER ROW THAT DID NOT NEED REVIT IS NOW CLOSED.** `A4`, `A6`, `A7`, `A8` and `A9` all fell on
 2026-09-06 on the owner's own PC — rows parked for months on *"a machine"*, closed in one afternoon by
@@ -187,13 +188,19 @@ hours after both stopped being true).
    **Each row above is a PREDICTION, not a hope.** The number it names is what must change; if it does
    not, that is the finding.
 
-2. **Extend the executor to fragments that take inputs.** 329 of the 349 have never run, because they
-   need `elements`, a view or a category — and slice 1 supplies only `doc`, `uidoc` and `app`. This is
-   the largest single unlock left, and D-29's contract was designed for exactly it: a filter's
-   `provides` feeding an action's `needs`. Bigger than the target-document change, because those inputs
-   are Revit objects rather than strings. **2026-09-07 removed the first risk from this job:** all 135
-   DRAFT READ fragments were put through the real executor, and every name any of them failed on is a
-   name its own contract declares. There is no hidden contract mismatch to find first.
+2. ~~**Extend the executor to fragments that take inputs.**~~ **HALF DONE, 2026-09-07 — see PART 6.**
+   The host now binds every need a fragment's contract declares, from the same contract the compile gate
+   reads. **What it can fill: the on-screen selection, and what the previous fragment in the batch left
+   behind** — D-29's filter-feeding-action, running. That takes the fragments whose inputs the host can
+   supply from **20 to 70**. **What is still missing is the caller's half**: a category, a name to match,
+   a distance. **278 fragments want one of those and there is no route for them**, which is now the
+   largest single unlock left, and it is bigger than this one was. **None of PART 6 has met a model** —
+   Group J in NEEDS-CHECKING.md is the eight rows that would prove it.
+
+   **The other track had already removed the first risk from this job, and the two agree.** All 135
+   DRAFT READ fragments were put through the real executor the same day, and **every name any of them
+   failed on is a name its own contract declares** — which is exactly the assumption PART 6 binds
+   against. There was no hidden contract mismatch to find first, and there was none.
 
 3. **The write path.** `run_fragment_read` opens no transaction on purpose, so Revit itself refuses any
    change. Running a fragment that WRITES is a separate operation that does not exist, and it belongs
@@ -545,6 +552,138 @@ path exists to run it at all.
 > - if a run is interrupted, `git status` on `brain/fragments/` says immediately whether anything was
 >   left broken
 
+---
+
+> **PART 6 RAN ON THE OTHER TRACK, IN PARALLEL WITH THE SECTION ABOVE, AND THE TWO ARE NOT IN
+> CONFLICT.** Its table says *Proven: still 13* and *Fragments: 348*, and both were true where it was
+> written — the promotions and the new fragment landed on this track at the same time. **The count as
+> merged is 349 fragments and 16 `PROVEN`.** The two tracks agree on the thing that matters: PART 6
+> binds each fragment's declared `needs`, and the pass above confirmed against a real compiler that
+> **every name a fragment fails on is a name its contract declares** — which is the assumption PART 6
+> rests on.
+
+**2026-09-07, PART 6 — THE GATE AND THE EXECUTOR HAD DRIFTED IN A SECOND PLACE, AND NOTHING WAS
+LOOKING AT IT. 196 fragments compiled green against a scope the machine could not reproduce.**
+
+| | |
+|---|---|
+| Fragments | 348, unchanged — nothing was built |
+| Compile, 2020–2027 | green, all four projects |
+| Tests | all pass, plus two new ones |
+| Bindable inputs | **20 → 70** |
+| Proven | **still 13.** Nothing here has met a model |
+
+**`tools/check-gaps.py` said there was nothing left to do here, and it was wrong in a way worth
+recording.** Its exact words: *"UNFINISHED - nothing. Everything buildable here is built."* Meanwhile
+items 2 and 3 of this file's own next-steps list were pure code needing no Revit. **The tool computes
+UNFINISHED from the register and the build order, and the executor's next two slices are in neither** —
+so the file this handover names as the authority reports an empty queue while the roadmap beside it lists
+the biggest unlock left. Believe the tool over prose about *counts*; do not read its silence as *nothing
+to build*.
+
+### The defect, which is the same shape as one this repo already wrote a test for
+
+`tools/check-fragments-compile.py` wraps every fragment in a method **whose parameters are its declared
+`needs`** — all of them, whatever they are called. `RevitFragment.cs` supplied **three names**: `doc`,
+`uidoc`, `app`. So:
+
+    196 fragments declare a HOST-sourced need the executor had no way to supply
+    348 compile green
+     20 could actually run
+
+and **nothing connected those numbers to each other.** This is precisely the drift
+`tests/test_fragment_imports.py` exists to catch for *namespaces* — its own comment calls it *"a green
+gate and a failure at the PC"* — one field over, in the open, with no test on it.
+
+### What changed
+
+**The host binds every declared need, and generates a typed local for each.** The prologue is the compile
+gate's method signature written out, from the same `contract.needs`. The two sides now agree **by
+construction** rather than by two lists somebody keeps level — which is the fix the imports test could
+never have, because namespaces have no contract to be generated from.
+
+**Where a value comes from, in order, and it says which on the answer:**
+
+| | |
+|---|---|
+| **the chain** | what the previous fragment in the batch left under that name — D-29's design, finally running |
+| **the selection** | `uidoc.Selection`, and **only when it is unambiguous** |
+| neither | **it refuses, and names what was missing** |
+
+**THE REFUSAL IS THE POINT, NOT THE FALLBACK.** An action handed zero elements reports *"0 changed"*,
+which reads as *there was nothing to do* rather than *nobody was asked*. Every fragment in this library
+was written to keep those apart; the host must not be the thing that collapses them. Same reasoning kills
+the tempting shortcut: **`unjoin-geometry` needs `first` and `second`, and one selection cannot say which
+is which**, so binding both to the same set is refused rather than run.
+
+**Four traps closed while writing it, each of which would have failed at the PC:**
+
+- **`Report()` echoed the host's own inputs back as `provides`.** It skipped exactly `doc`, `uidoc`
+  and `app` — correct while those were all the host could bind. The moment it could bind `elements`, the
+  list handed IN came back OUT as something the fragment produced: **a filter that did nothing would have
+  looked identical to one that worked.**
+- **The carry-over is static, so it outlived its batch.** A fragment run an hour later would bind
+  elements collected by something nobody remembers running, and report them as *"from the previous
+  fragment"* — right about the words, wrong about the run. The client now says `chain: reset` on the
+  first fragment of every batch.
+- **Elements are carried as ids, not as `Element`s**, and re-read from the document at bind time. An
+  `Element` is a handle that goes stale on a regenerate or an undo and throws on its next property read.
+- **The prologue shifts every compile-error line number.** The error now says by how many, because the
+  alternative is somebody reading line 14 of a nine-line fragment and concluding the compiler is wrong.
+
+### Two new tests, and one of them is the guard that was missing
+
+- **`tests/test_fragment_needs.py`** — the `needs` half of `test_fragment_imports.py`. Every declared need
+  must be writable into generated code: a C# **keyword** (`params`, `object`, `event`, `base` are all
+  words a Revit contract would reach for) reads perfectly in a contract and cannot be a variable name.
+- **`tests/test_fragment_needs_reader.py`** — the client is **stdlib only** by design, so it cannot use
+  PyYAML to read the contract it must now send. It has a hand-rolled reader that **refuses rather than
+  returning a short list**, because a needs list quietly missing an entry fails at the PC as a compile
+  error inside generated code, blamed on a fragment that is correct. This test reads all 348 both ways:
+  **348 agree, 0 refused, 0 disagree.**
+
+### Two corrections, recorded rather than smoothed over
+
+**The first number I gave was wrong.** I said the unlock took runnable from 20 to **74**, counting
+fragments whose only extra need was `elements` or `view`. **The real figure is 70**: some of those needs
+are `source: request`, which is the caller's value and not the model's, and I had counted them as though
+the host could fill them. Measured one way, asserted another — the same mistake PART 5 recorded about
+`test_embed`, three weeks apart.
+
+**And I nearly reported a defect that was mine.** `check-compile.py` printed `FAILED 2020…2027` and the
+shell reported exit 0, which looks exactly like a gate that fails green. It is not: **a pipeline's exit
+code is the last command's**, and I had piped it through `tail`. The tool returns 1 correctly. Checked
+before it was written down, which is the only reason it is a footnote instead of a wrong entry in this
+file.
+
+### The other track proved READ_SELECTION the same day, and it lands exactly on this
+
+`READ_SELECTION` went `PROVEN` on 2026-09-07 in the verification worktree — 1,053 duct curves read back
+as 1,053, and an honest 0 with nothing selected, on two models, agreeing with `select_by_category`
+reached from the other side. **Its `second_route` note names the ambiguity this binding had to decide,
+and neither track knew the other was on it:**
+
+> Aimed with `--in` at Snowdon while another model was in front, it returned **0** with
+> `active view: (none)`. Whether Snowdon's selection was genuinely cleared when it lost the screen, or
+> whether a `UIDocument` built for an off-screen document **cannot see a selection at all**, was NOT
+> established — and the two are indistinguishable from the bare 0 the caller gets.
+
+**The binding refuses that case rather than resolving it**, which is the only honest move while it stays
+unestablished: the selection is a candidate **only when the document being read is the one on screen**.
+An off-screen target gets `needs_unbound`, naming what was missing — never a silent empty list.
+
+**And it settles a distinction worth keeping.** `READ_SELECTION` reporting **0** is correct and is the
+whole point of that fragment. An *action* being handed **0** and reporting *"0 changed"* is not. **Same
+zero, two opposite correct behaviours, decided entirely by which side of the binding it sits on** — which
+is why the refusal lives in the host and not in the fragments.
+
+### What is NOT true yet
+
+**None of this has run in Revit.** It compiles on eight releases and the suite is green, and by this
+file's own standard that is the API surface agreeing and nothing more. **The add-in has not even been
+deployed** — the DLL is locked while Revit runs, and Revit was open on the other track all day.
+**Group J in NEEDS-CHECKING.md is the eight rows that would prove it**, and `J2` — refusing when nothing
+is selected — is the one that matters most.
 
 
 ---
