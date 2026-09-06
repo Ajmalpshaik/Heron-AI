@@ -76,6 +76,9 @@ compatibility-note: >
 #   "what is the Mark on these"          -> READ_ELEMENT_PARAMETERS. The Mark
 #                                           PARAMETER and a section MARK are
 #                                           different things with one word
+#   "hide the marks that are not on      -> SET_SECTION_MARK_VISIBILITY,
+#    sheets"                                which acts on the same marks this
+#                                           one reports
 
 utterances:
   - what view does this section mark point at

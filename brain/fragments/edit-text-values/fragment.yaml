@@ -99,6 +99,9 @@ compatibility-note: >
 #                                           for text notes on a drawing
 #   "change SUP to SUPPLY in the         -> EDIT_PARAMETER_TEXT
 #    parameter"
+#   "change part of the name"            -> EDIT_PARAMETER_TEXT for a
+#                                           parameter, RENAME_ELEMENTS for a
+#                                           name. Neither is a text note
 
 utterances:
   - put a prefix on the mark

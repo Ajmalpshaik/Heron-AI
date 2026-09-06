@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-086
+semantic-identity: "hide the section marks that point at views nobody will get"
+kind: action
+domain: revit.views
+capability: SET_SECTION_MARK_VISIBILITY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Shows only the section and elevation marks whose view is actually on a sheet,
+  and hides the rest - the pre-issue tidy-up so a plan is not covered in
+  markers pointing at working views nobody will ever receive. Or brings them
+  all back in one call.
+
+  **THE MARK IS NOT THE SECTION.** What is hidden in the plan is the marker
+  element, not the view. Hiding the view would be a different and much worse
+  thing, and the two are easy to confuse because they carry the same name -
+  which is also how the marker is matched to its view here.
+
+  **WHETHER IT IS ON A SHEET IS ONE PARAMETER READ.** Revit fills the sheet
+  number in on the view when it is placed. Hunting through viewports for the
+  answer is slower and gets the empty case wrong.
+
+  **IT UNHIDES EVERYTHING FIRST, THEN HIDES WHAT SHOULD BE HIDDEN.** Without
+  that, a mark hidden on an earlier run stays hidden after its section is
+  finally placed on a sheet: the tool would only ever hide, never restore, and
+  a drawing would lose marks over time with nobody able to say when.
+
+  **IT IS ONE VIEW'S OVERRIDE.** Hiding here is per view. It does not touch
+  category visibility or any filter - so a mark still invisible afterwards is
+  hidden by something else, and unhiding through this will never bring it back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    # true hides the marks whose view is on no sheet; false brings every mark
+    # in this view back.
+    - name: onSheetsOnly
+      type: bool
+      source: request
+  provides:
+    - name: hidden
+      type: int
+    - name: shown
+      type: int
+    - name: unmatched
+      type: IList<ElementId>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The marker category, the per-view hide
+  and unhide, and the view's sheet-number parameter are unchanged 2020 to 2027.
+  A marker is matched to its view BY NAME, which Revit keeps unique across
+  views - there is no direct link from the marker element to the view it
+  belongs to on any release here.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "hide the section marks that are     -> here
+#    not on sheets"
+#   "the plan is covered in section      -> here
+#    marks"
+#   "what view does this mark open"      -> REPORT_VIEW_REFERENCES, which also
+#                                           names the marks pointing at views
+#                                           that are on NO sheet - the same
+#                                           marks this hides
+#   "point the marks at the new views"   -> REPOINT_VIEW_REFERENCE
+#   "hide these elements"                -> HIDE_ELEMENTS, the general one.
+#                                           This one decides WHICH marks by
+#                                           whether their view is issued
+#   "why can I not see this"             -> DIAGNOSE_VISIBILITY, when
+#                                           unhiding here does not bring
+#                                           something back
+
+utterances:
+  - hide the section marks that are not on sheets
+  - the plan is covered in section marks
+  - tidy the section marks before i issue
+  - bring all the section marks back

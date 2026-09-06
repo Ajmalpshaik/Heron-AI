@@ -81,7 +81,7 @@ compatibility-note: >
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "find all the VCDs"                  -> here, when VCD is the FAMILY name
-#   "where are all the X families"       -> here
+#   "where are all the fire dampers"     -> here
 #   "everything of the same type as      -> FILTER_ELEMENTS_BY_TYPE, which
 #    this one"                              takes an example element. This one
 #                                           takes a name and needs no example

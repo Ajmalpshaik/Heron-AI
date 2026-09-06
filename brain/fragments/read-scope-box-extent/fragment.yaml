@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-027
+semantic-identity: "how big is that scope box, and where is it"
+kind: action
+domain: revit.geometry
+capability: READ_SCOPE_BOX_EXTENT
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds a scope box by name and hands back the box it occupies. Read-only.
+
+  **IT EXISTS TO FEED THE REGION SELECTION.** *"What is inside the podium scope
+  box"* is a real question and nothing could answer it: selecting in a region
+  needs two corners, and the corners of a scope box were unreadable. This
+  publishes them under the names that selection already uses, so the two
+  compose without anything in between.
+
+  **A SCOPE BOX CANNOT BE CREATED FROM CODE, WHICH MAKES READING ONE MORE
+  USEFUL, NOT LESS.** Revit exposes no create call on any release here - the
+  box is drawn once by hand. Everything after that is automatable, and this is
+  the piece that was missing.
+
+  **NAMES ARE MATCHED BY CONTAINED TEXT, AND AMBIGUITY IS REFUSED.** Scope
+  boxes get named for zones and phases, so a partial name is what somebody
+  types. Where two boxes match it is refused rather than resolved by picking
+  the first: one is the wrong half of a building.
+
+  Millimetres, deliberately - not the feet the rest of this library hands on.
+  The region selection this feeds takes millimetres at its own edge, and
+  publishing the same unit is what lets them compose without a conversion
+  nobody can see.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: scopeBoxName
+      type: string
+      source: request
+  provides:
+    - name: minMm
+      type: XYZ
+    - name: maxMm
+      type: XYZ
+    - name: scopeBoxId
+      type: ElementId
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. A scope box is an ordinary element of
+  the volume-of-interest category on all of them - there is no scope box class
+  in the API at all, which is also why none can be created - and its extent is
+  read from its bounding box, unchanged 2020 to 2027.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "how big is that scope box"          -> here
+#   "what is inside the podium scope     -> here, then SELECT_IN_REGION, which
+#    box"                                   takes the two corners this hands on
+#   "put the scope box on these views"   -> ASSIGN_SCOPE_BOX_TO_VIEW
+#   "make a scope box"                   -> not possible from code on any
+#                                           release: Revit exposes no create
+#                                           call. Draw it once by hand
+#   "everything inside this box"         -> SELECT_IN_REGION with typed corners
+#   "how big is this element"            -> REPORT_BOUNDING_BOX
+
+utterances:
+  - how big is that scope box
+  - what is inside the scope box
+  - the extent of the podium scope box
+  - select everything in this scope box

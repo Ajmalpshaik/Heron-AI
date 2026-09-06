@@ -26,6 +26,13 @@ negative:
       heightKnown FALSE. Never a height of 0.0 that a spacing calculation can
       pick up and use as though it were measured
 
+  - given: a room wrapping around a shaft or a core
+    expect: >
+      the room's outline in `boundary` and the shaft's edge in `holes`, never
+      both in one list. Version 1 flattened them, and a layout built on that
+      laid terminals across the void - it went unnoticed because a room with no
+      hole gives the same answer either way
+
 second_route:
   - the room's Area parameter in Revit's properties palette
   - the room tag on the plan, which is what a checker reads

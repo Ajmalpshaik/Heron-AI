@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-084
+semantic-identity: "dimension the wall and pick up the door and window positions"
+kind: action
+domain: revit.annotation
+capability: DIMENSION_WALL_OPENINGS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws a running dimension along each wall that picks up every door and window
+  opening in it - end, jamb, jamb, end - and a second overall dimension outside
+  it. The two-tier string every plan uses.
+
+  **THE JAMBS COME OFF THE WALL, NOT OFF THE DOOR, AND THAT IS THE WHOLE
+  TECHNIQUE.** A door offers its own left and right references and dimensioning
+  to those is the obvious route. They resolve to reference PLANES, not faces -
+  there is no position to read off them, so the references cannot be put in
+  ORDER, and an unordered set gives a scrambled dimension string that still
+  looks like a dimension. An opening CUTS the wall, leaving planar faces in the
+  wall's own solid whose normal runs along it. One geometry walk gives the two
+  ends AND every jamb, all on one element, each with a position to sort by.
+
+  **THE SEGMENTS MUST ADD UP TO THE OVERALL, AND THAT CHECK IS BUILT IN.** A
+  join notch or a second solid can leave an extra face parallel to the run, and
+  an extra face is an extra segment that still reads as a valid dimension. The
+  segments are summed and compared with the overall; a wall where they disagree
+  is named rather than left on the drawing.
+
+  **A MULTI-SEGMENT DIMENSION HAS NO SINGLE VALUE.** Asking a running string
+  for its value gets nothing back - not an error, and not a failure to create.
+  The overall is read from the separate overall dimension, which is one of the
+  reasons there are two.
+
+  **IT MEASURES THE WALL'S SOLID, NOT ITS LOCATION LINE.** A wall joined to
+  another is extended by the join, so the ends of the string sit where the
+  masonry actually finishes. That is what a setting-out dimension should say,
+  and it is not the same as the wall's own length parameter.
+
+  Rooms may be passed instead of walls: each room's bounding walls are
+  dimensioned, which is how the job is usually asked for.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    # How far off the wall the string is drawn. Paper distance follows the view
+    # scale, so there is no default worth carrying between jobs.
+    - name: offsetMm
+      type: double
+      source: request
+    # true draws the second, overall dimension outside the running one.
+    - name: withOverall
+      type: bool
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: segmentsDisagree
+      type: IList<ElementId>
+    - name: noOpeningFaces
+      type: IList<ElementId>
+    - name: notAWall
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The wall geometry with references, the
+  planar faces it yields, the dimension creation call and the segment list on a
+  dimension are unchanged 2020 to 2027. A dimension's own value is nullable on
+  every release and is null for a multi-segment string, which is read as a fact
+  rather than as a failure.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "dimension the wall with the door    -> here
+#    in it"
+#   "put the door positions on the plan" -> here
+#   "dimension the rooms"                -> DIMENSION_ROOMS, which measures a
+#                                           room's overall size and cannot see
+#                                           an opening at all
+#   "dimension these ducts"              -> DIMENSION_MEP_RUNS
+#   "dimension between these two"        -> CREATE_DIMENSION
+#   "how wide is that door"              -> READ_ELEMENT_PARAMETERS. A question
+#                                           must not be answered by marking the
+#                                           drawing
+
+utterances:
+  - dimension the wall with the door in it
+  - put the door positions on the plan
+  - dimension the openings in these walls
+  - i need the wall dimensions with the windows
+  - dimension the wall and give the overall as well

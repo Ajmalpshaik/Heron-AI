@@ -1,0 +1,58 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a wall with one 762 mm door in it
+    expect: >
+      a running string of end - jamb - jamb - end, with the middle segment
+      reading 762. Measure the door in Revit and compare - the jamb positions
+      are what the whole technique is for
+
+  - given: a wall with two windows
+    expect: >
+      six stations and five segments, in order along the wall. Out of order is
+      the failure that looks like a working dimension
+
+  - given: withOverall true
+    expect: >
+      a second dimension outside the string, reading the whole wall, and
+      nothing in `segmentsDisagree`
+
+  - given: rooms passed instead of walls
+    expect: >
+      each room's bounding walls dimensioned. That is how the job is asked for
+
+negative:
+  - given: a wall whose openings were dimensioned from the DOOR's own references
+    expect: >
+      that route not taken. Those references are planes with no position, so
+      they cannot be ordered - and an unordered reference set produces a
+      scrambled string that still looks like a dimension
+
+  - given: a wall with a join notch leaving an extra face along the run
+    expect: >
+      the wall's id in `segmentsDisagree`. The extra face is an extra segment
+      that reads as valid; only the sum against the overall catches it
+
+  - given: a curved wall
+    expect: >
+      its id in `noOpeningFaces` and no dimension. The run has no single
+      direction to project stations onto
+
+  - given: a wall with no readable faces along the run
+    expect: >
+      its id in `noOpeningFaces`, not a dimension between two guessed points
+
+  - given: the running dimension asked for its own value
+    expect: >
+      nothing, and that treated as normal. A multi-segment string has no single
+      value; the overall is what carries the number
+
+  - given: a duct or a floor in the set
+    expect: >
+      its id in `notAWall` and the walls still dimensioned
+
+second_route:
+  - >
+    measure the door in Revit and compare it against the middle segment, and
+    check the overall against the wall on the plan. The model is the second
+    route, not another read of the same faces

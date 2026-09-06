@@ -9,7 +9,7 @@ semantic-identity: "the shape, area and height of one room or space"
 kind: action
 domain: revit.geometry
 capability: READ_ROOM_GEOMETRY
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -48,13 +48,26 @@ purpose: >
   the better answer - not to buy back a rank, which is the one move
   `brain/retrieval-history.md` rules out.
 
+  **VERSION 2 SEPARATES THE HOLES FROM THE OUTLINE, AND VERSION 1 DID NOT.**
+  A room's boundary comes back as a list of LOOPS: the first is the outside
+  edge and every one after it is a hole - a core, a shaft, a column the room
+  wraps around. Version 1 flattened them all into one list, so a layout built
+  on it treated the shaft's edge as part of the room's outline. Nothing had
+  noticed, because a room without a hole in it - which is most rooms - gives
+  the same answer either way. `holes` is now its own list, and a caller that
+  ignores it is at worst where it was before.
+
 contract:
   needs:
     - name: room
       type: SpatialElement
       source: request
   provides:
+    # VERSION 2: the OUTER loop only. Version 1 handed back every loop in one
+    # list, which put a shaft's edge in with the room's outline.
     - name: boundary
+      type: IList<Curve>
+    - name: holes
       type: IList<Curve>
     - name: area
       type: double

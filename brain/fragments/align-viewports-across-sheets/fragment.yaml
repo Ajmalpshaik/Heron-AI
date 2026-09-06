@@ -1,0 +1,89 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-014
+semantic-identity: "the plan jumps about when i flick through the sheets"
+kind: action
+domain: revit.sheets
+capability: ALIGN_VIEWPORTS_ACROSS_SHEETS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts the plan in the same place on every sheet: one sheet is the master and
+  every other sheet's viewport moves to match it. The fix for a set where the
+  building shifts as somebody pages through the drawings.
+
+  **TWO THINGS DECIDE WHETHER THIS IS EVEN MEANINGFUL, AND BOTH ARE CHECKED
+  BEFORE ANYTHING MOVES.** A viewport's centre is measured in SHEET space, not
+  from the title block - so if one sheet's title block sits at a different
+  origin, copying the centre lands the plan at the right sheet coordinate and
+  the wrong place on the paper. Revit does not stop you, and nothing looks
+  wrong until it prints. And two viewports at different SCALES cannot line up
+  by their centres at all: the same centre puts different amounts of building
+  in the same box.
+
+  **A MISMATCHED SHEET IS SKIPPED AND NAMED, NEVER SILENTLY "ALIGNED".** Both
+  cases above produce a sheet that is now differently wrong, and the report is
+  the only thing that says which sheets to look at.
+
+  **A SHEET WITH SEVERAL VIEWPORTS IS AMBIGUOUS AND IS LEFT ALONE.** Which of
+  three views is "the plan" is not a question this can answer, and moving the
+  wrong one is worse than moving none.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  whole drawing set is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: masterSheetNumber
+      type: string
+      source: request
+  provides:
+    - name: aligned
+      type: int
+    - name: scaleMismatch
+      type: IList<ElementId>
+    - name: titleBlockMoved
+      type: IList<ElementId>
+    - name: ambiguous
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. A viewport's box centre is read and set
+  by the same two calls 2020 to 2027, and the title block's origin is its own
+  location point. Nothing here depends on a units API.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "the plan jumps between sheets"      -> here
+#   "line the viewports up"              -> here
+#   "put this view on a sheet"           -> PLACE_VIEW_ON_SHEET, which places
+#                                           one. This moves ones already placed
+#   "put these views on sheets"          -> PLACE_VIEWS_ON_SHEET
+#   "make the sheets"                    -> CREATE_SHEETS
+#   "change the title block"             -> SET_SHEET_TITLE_BLOCK. This
+#                                           fragment only MOVES a title block,
+#                                           and only when asked to
+#   "the views are at different scales"  -> SET_VIEW_SCALE, which is what makes
+#                                           an alignment possible at all
+
+utterances:
+  - the plan jumps when i flick through the sheets
+  - line up the viewports across the sheets
+  - put the plan in the same place on every sheet
+  - align the views on these sheets

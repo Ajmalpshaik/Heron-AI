@@ -97,6 +97,9 @@ compatibility-note: >
 #                                       reference assemblies. Revit's route:
 #                                       the schedule's Fields tab, the fx
 #                                       "Calculated Value" button
+#   "add a column for the mark"          -> here, for a plain parameter
+#   "one column with two parameters in   -> ADD_SCHEDULE_COMBINED_FIELD
+#    it"
 
 utterances:
   - add a column to the schedule

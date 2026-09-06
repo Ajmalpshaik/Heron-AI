@@ -1,0 +1,46 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a plan carrying eight section marks, three of whose views are on sheets
+    expect: >
+      three marks visible and five hidden. Look at the plan - this is a
+      drawing-appearance change and the eye is the check
+
+  - given: onSheetsOnly false
+    expect: >
+      every mark visible again in that view, `shown` counting them
+
+  - given: a section later placed on a sheet, then this run again
+    expect: >
+      its mark BACK. The unhide runs first every time, which is what stops a
+      drawing losing marks over months
+
+  - given: a second view
+    expect: >
+      it untouched. Hiding here is one view's override
+
+negative:
+  - given: a marker whose name matches no section view
+    expect: >
+      its id in `unmatched` and left VISIBLE. A missing mark on an issued
+      drawing is worse than an extra one, so nothing is hidden on a guess
+
+  - given: a marker that cannot be hidden in this view
+    expect: >
+      its id in `unmatched` and no throw. The hide call refuses a whole set
+      containing one element it cannot act on
+
+  - given: a mark hidden by a view FILTER or by category visibility
+    expect: >
+      it still invisible after an unhide here, and that being expected. This
+      touches one mechanism only, and knowing that saves the hour spent
+      unhiding something that was never hidden this way
+
+  - given: a view with no marks at all
+    expect: >
+      zero for both counts and no throw
+
+second_route:
+  - >
+    look at the plan, and check one hidden mark's section in the project
+    browser - it should be a view with no sheet number against it

@@ -93,6 +93,8 @@ compatibility-note: >
 #   "how much headroom is left"      -> MEASURE_DISTANCE between the run and
 #                                       the ceiling, which is what this setting
 #                                       is usually protecting
+#   "take those out of the set"          -> UPDATE_SAVED_SET, for a saved
+#                                           selection set
 
 utterances:
   - line these runs up on their tops

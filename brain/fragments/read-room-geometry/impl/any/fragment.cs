@@ -1,5 +1,5 @@
-// NOT STANDALONE. Assumes `room` is in scope; leaves `boundary`, `area`,
-// `height`, `unbounded` and `heightKnown` behind.
+// NOT STANDALONE. Assumes `room` is in scope; leaves `boundary`, `holes`,
+// `area`, `height`, `unbounded` and `heightKnown` behind.
 //
 // EVERYTHING IS IN REVIT'S INTERNAL FEET. Not millimetres. The conversion
 // belongs at the edge where a person reads the number (D-20), and a fragment
@@ -23,17 +23,27 @@
 var options = new SpatialElementBoundaryOptions();
 options.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Finish;
 
+// A ROOM'S BOUNDARY IS A LIST OF LOOPS, AND ONLY THE FIRST IS THE OUTLINE.
+//
+// Every loop after it is a HOLE - a core, a shaft, a column the room wraps
+// around. Version 1 of this fragment flattened them all into one list, so a
+// layout built on it treated the shaft's edge as part of the room's outline
+// and laid terminals across the void. It went unnoticed because a room with no
+// hole in it - most rooms - gives the same answer either way.
+
 var boundary = new List<Curve>();
+var holes = new List<Curve>();
 var segments = room.GetBoundarySegments(options);
 
 if (segments != null)
 {
-    foreach (var loop in segments)
+    for (int loopIndex = 0; loopIndex < segments.Count; loopIndex++)
     {
-        foreach (var segment in loop)
+        var into = loopIndex == 0 ? boundary : holes;
+        foreach (var segment in segments[loopIndex])
         {
             var curve = segment.GetCurve();
-            if (curve != null) boundary.Add(curve);
+            if (curve != null) into.Add(curve);
         }
     }
 }

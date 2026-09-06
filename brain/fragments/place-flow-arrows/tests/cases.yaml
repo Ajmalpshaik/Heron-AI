@@ -1,0 +1,52 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a connected supply run in a plan, spacing 2000 mm
+    expect: >
+      arrows along it pointing FROM the AHU TOWARD the terminals. Check one
+      against the system in Revit - the direction is the whole point and it is
+      the thing nothing else will catch
+
+  - given: a run drawn in the opposite direction to the flow
+    expect: >
+      the arrows still pointing the way the air goes. The curve runs whichever
+      way somebody drew it; the connectors know
+
+  - given: a long run and a short one
+    expect: >
+      arrows every 2000 mm on both, starting half a spacing in so none sits on
+      a fitting
+
+  - given: the same view in a section
+    expect: >
+      the arrows lined up with the runs there too. The rotation axis is the
+      view's own direction, not world Z
+
+negative:
+  - given: a duct with no system, whose connectors carry no direction
+    expect: >
+      its id in `noDirection` and NO arrow. A guessed arrow is indistinguishable
+      from a known one once it is printed
+
+  - given: a riser, seen in a plan
+    expect: >
+      its id in `tooVertical` and no arrow. The flow is towards the reader and
+      any arrow drawn is a nonsense
+
+  - given: an arrow family that is not loaded
+    expect: >
+      `refused` saying so and nothing placed. This loads nothing on purpose
+
+  - given: a symbol that has never been used this session
+    expect: >
+      it activated first and the arrows placed. Without that the first
+      placement throws, and it reads as the family being wrong
+
+  - given: a spacing of zero
+    expect: >
+      `refused`, not an endless loop
+
+second_route:
+  - >
+    look at the drawing against the system in Revit - open the system browser
+    or trace the run - and check two arrows at opposite ends of a branch

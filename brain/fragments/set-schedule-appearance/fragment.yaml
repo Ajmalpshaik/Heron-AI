@@ -9,7 +9,7 @@ semantic-identity: "how this schedule's columns read on the sheet - heading text
 kind: action
 domain: revit.schedules
 capability: SET_SCHEDULE_APPEARANCE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -43,6 +43,14 @@ purpose: >
   instead. A fragment that quietly edits a shared type to satisfy one sentence
   is the more dangerous of the two options.
 
+  **VERSION 2 ADDS HIDING A COLUMN, WHICH IS NOT THE SAME AS REMOVING IT.** A
+  field is often added to sort or filter by and is not meant to print. Hidden,
+  it keeps doing that job off the drawing; removed, the sort goes with it and
+  somebody rebuilds it later wondering what changed. It belongs here rather
+  than in a fragment of its own: it is one more thing about how a column
+  PRINTS, and a second fragment reaching into the same field would be two
+  places to look.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -65,6 +73,10 @@ contract:
       source: request
     - name: headingSideways
       type: bool
+      source: request
+    # VERSION 2. "hide" | "show" | "" to leave it alone.
+    - name: hideOrShow
+      type: string
       source: request
   provides:
     - name: changed
@@ -101,6 +113,9 @@ compatibility-note: >
 
 # ROUTING - the same rows are in the fragments named here.
 #
+#   "hide that column"                 -> here, version 2. Hiding keeps any
+#                                         sort or filter that uses the field;
+#                                         REMOVE_SCHEDULE_FIELDS loses it
 #   "rename the column heading"        -> here. The FIELD keeps its own name;
 #                                         only the printed heading changes
 #   "make the schedule column wider"   -> here, in mm
@@ -140,3 +155,5 @@ utterances:
   - turn the schedule heading sideways
   - centre the values in that column
   - the heading text should say something else
+  - hide that column
+  - hide this column on the schedule
