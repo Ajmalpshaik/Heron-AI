@@ -373,7 +373,7 @@ cheaper than discovering it in week two.
 
 ## Steps 15, 16 and 17 — recorded 2026-09-06, because they were in use and were not written down
 
-**These three steps were never planned here. They were found in the metadata, on 180 fragments.** This
+**These three steps were never planned here. They were found in the metadata, on 190 fragments.** This
 document stopped at Step 14 while `heron-step:` headers went on to 15, 16 and 17 — so every one of those
 fragments cited a step that this file, the file that defines what a step *is*, did not contain.
 
@@ -382,7 +382,18 @@ fragments cited a step that this file, the file that defines what a step *is*, d
 | 14 | 147 | The first library push, tagged with the step that was current when it began |
 | 15 | 14 | A small creators cluster — grids, levels, lines, HVAC zones |
 | 16 | 8 | A second small cluster — grid, plan view, view filter, IFC export |
-| 17 | 158 | Everything from 2026-09-02 onward, including the 274 → 329 batch |
+| 17 | 168 | Everything from 2026-09-02 onward, including the 274 → 329 and 329 → 339 batches |
+
+> **THIS TABLE DRIFTS EVERY TIME A FRAGMENT IS WRITTEN, AND NOTHING CHECKS IT.** It read 158 against
+> Step 17 and 180 in the sentence above until 2026-09-06, when the 329 → 339 batch made both wrong the
+> moment it landed — every new fragment carries `heron-step: 17`. `tools/check-docs.py` does not
+> enforce these numbers, so nothing caught it; it was found by hand afterwards. **Recount from disk
+> rather than trusting the row**, which is the same instruction this repository has had to write about
+> four other counts:
+>
+> ```bash
+> grep -h '^heron-step:' brain/fragments/*/fragment.yaml | sed 's/heron-step: *//' | sort -n | uniq -c
+> ```
 
 **They are batch markers, not steps.** Unlike Steps 1 to 14, none of them names a capability that did not
 exist before it, and none carries a *"prove it"* clause of its own. What they record is *when* a fragment
