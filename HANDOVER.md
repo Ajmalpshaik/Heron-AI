@@ -28,6 +28,35 @@ when the thing you hit is on no list at all.
 
 ---
 
+**Updated 2026-09-06 — the library went from 274 fragments to 329, and the earlier library is now
+EXHAUSTED of fragment-shaped work.** Fifty-five new fragments in five batches, plus three upgrades:
+`SET_SCHEDULE_APPEARANCE` v2 (hide a column), `READ_ROOM_GEOMETRY` v2 (holes separated from the outline)
+and `SPLIT_MEP_RUN` v2 (it cut a run and left both halves open — it now rejoins them and reports
+`halvesJoined` against `halvesLeftOpen`).
+
+> **MERGED TO `main` — pull request #17, branch `claude/heron-ai-fragment-balance-dxk0l6`.** That branch
+> is spent: a merged pull request cannot carry new work. **A fresh session starts a NEW branch from the
+> latest `main`**, never more commits on that one. `git fetch origin main` FIRST, before any work.
+>
+> The remote branch could **not** be deleted from the container — the git proxy answers `403` to a ref
+> deletion, which is an egress policy and not something to route around. Delete it on GitHub if it is
+> still listed.
+
+**The count above is the one to distrust first.** This line said 218 while `main` already carried 274,
+because peer sessions added fragments and never came back to this file. Run
+`ls brain/fragments | wc -l` and believe that, not this paragraph.
+
+**What is left in the earlier library is not fragments.** Every remaining source file is one of three
+things: a RECIPE (a multi-step job that belongs in a skill, composed from these fragments), IMPOSSIBLE
+through the API (creating or renaming a phase, creating or resizing a scope box), or ALREADY COVERED
+here. The last batch was asked for sixteen and delivered fifteen for exactly that reason — there was no
+honest sixteenth candidate, and padding it would have meant a duplicate.
+
+**Nothing in those fifty-five is proven.** All are `DRAFT`; the compile gate is green on Revit 2020–2027
+for all 329, which is the API surface agreeing and not evidence that any of them does the right thing
+(D-30, D-45). Each carries its positive case, its negative case and a second route in `tests/cases.yaml`,
+waiting on one concentrated pass with Revit open.
+
 **Updated 2026-09-05 — the library went from 210 fragments to 218, the REPORTING block, and four of the
 eight replaced an answer that was a WRITE.** That section is directly below.
 
