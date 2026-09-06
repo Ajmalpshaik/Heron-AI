@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two walls cleaning up into each other at a corner, whichEnd "both"
+    expect: >
+      the corner reading as two separate walls in plan, and `changed` = 2. Look
+      at the plan - the cleanup is the whole visible effect
+
+  - given: a beam whose end is eaten by a column
+    expect: >
+      the beam drawn full length. Structural framing has its own call and it
+      must be reached for framing, not the wall one
+
+  - given: allowJoin true on walls that were disallowed
+    expect: >
+      Revit cleaning the corner up again - and the wall end possibly MOVING as
+      it does. Turning it back on is a real change, not an undo
+
+  - given: whichEnd "start"
+    expect: >
+      only end 0 changed and the other end left as it was
+
+negative:
+  - given: a PINNED wall
+    expect: >
+      its id in `wasPinned`, the join state actually changed, and the wall
+      pinned again afterwards. The join call does not throw on a pinned
+      element - it silently does nothing, and the script would report success
+      on an untouched model
+
+  - given: a duct or a floor in the set
+    expect: >
+      its id in `unsupported`. There is no shared join call, and a mixed
+      selection is the normal input
+
+  - given: a wall Revit refuses to change at one end
+    expect: >
+      its id in `refused` and NOT counted in `changed`. Each end is asked
+      afterwards whether the join is allowed; the call returning is not evidence
+
+  - given: the same disallow run twice
+    expect: >
+      the same state and no error. The second run finds the ends already as
+      asked, which is not a failure
+
+second_route:
+  - >
+    right-click the wall end in Revit and read whether Disallow Join is ticked,
+    and look at the corner in plan. Revit's own menu is the second route

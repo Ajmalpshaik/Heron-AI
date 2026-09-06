@@ -1,0 +1,87 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-083
+semantic-identity: "make these section marks open the new views instead of the old ones"
+kind: action
+domain: revit.views
+capability: REPOINT_VIEW_REFERENCE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Re-points section marks, callout bubbles and elevation marks at a different
+  view, so they open - and annotate for - the view somebody actually means.
+
+  **THE JOB THIS EXISTS FOR IS A DUPLICATED SET.** Sheets get duplicated, the
+  marks come with them, and every one still references the ORIGINAL view - so
+  each bubble on the new sheets prints the old sheet and detail number. Nothing
+  about the mark looks wrong, and retyping the text is impossible because the
+  text is not on the mark: it is drawn from whichever view the mark points at.
+
+  **IT CHANGES WHAT A DRAWING SAYS, WHICH IS WHY IT IS SEPARATE FROM THE
+  REPORT.** Read first with `REPORT_VIEW_REFERENCES`, look at what each mark
+  points at now, then re-point the ones that are wrong. An audit that repaired
+  as it went would change a set of drawings while somebody was still deciding.
+
+  **EVERY MARK IS READ BACK.** The call can leave a mark where it was - a
+  marker whose kind cannot reference the chosen view, for instance - so what
+  each mark points at afterwards is read again and only a real change counts.
+  A mark that did not take is refused, never reported as done.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  whole sheet's marks are one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: targetViewId
+      type: ElementId
+      source: request
+  provides:
+    - name: repointed
+      type: int
+    - name: alreadyThere
+      type: IList<ElementId>
+    - name: referencesNothing
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Both halves - reading which view a
+  marker references and changing it - come from the referenceable-view utility,
+  unchanged 2020 to 2027. The target view is checked for being referenceable
+  before anything is attempted, because the call refuses rather than adapts.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "point these marks at the new views" -> here
+#   "the bubbles on the duplicated       -> here, after reading them
+#    sheets show the old numbers"
+#   "what view does this mark open"      -> REPORT_VIEW_REFERENCES, the read
+#                                           half. Run it first
+#   "put this view on a sheet"           -> PLACE_VIEW_ON_SHEET, which is the
+#                                           fix when the bubble is EMPTY rather
+#                                           than wrong
+#   "make a section here"                -> CREATE_SECTION_VIEW
+#   "take the mark off these"            -> REMOVE_PARAMETER_VALUE, for the
+#                                           Mark parameter. A section mark is
+#                                           not that
+
+utterances:
+  - point these section marks at the new view
+  - the marks still open the old views
+  - re-point the callouts after duplicating the sheets
+  - make this bubble reference the new section

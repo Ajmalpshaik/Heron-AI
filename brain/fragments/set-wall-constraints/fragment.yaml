@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-047
+semantic-identity: "put these walls on a different level without them moving"
+kind: action
+domain: revit.elements
+capability: SET_WALL_CONSTRAINTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves walls onto a different base and top level WITHOUT the walls themselves
+  moving or changing height. The *"we reorganised the levels and now every wall
+  is attached to the wrong one"* repair.
+
+  **A WALL'S POSITION IS ITS LEVEL PLUS ITS OFFSET, AND CHANGING THE LEVEL
+  ALONE MOVES THE WALL.** Set the base level and the offset stays as it was, so
+  every wall jumps by the difference between the two levels - silently, all at
+  once, and it looks like the walls were fine until somebody opens a section.
+  This reads each wall's REAL elevation first, sets the level, then re-solves
+  the offset so the wall ends up exactly where it started. Nothing appears to
+  move; only what the wall is attached to changes.
+
+  **A WALL WHOSE TOP IS UNCONNECTED HAS NO TOP LEVEL.** Its height is a plain
+  number and its top constraint reads as nothing. Giving it a top level
+  converts it from unconnected to level-bound, which is a real design change
+  rather than a re-host, so those walls are named and skipped unless the caller
+  says otherwise.
+
+  **EVERY WALL IS MEASURED AGAIN AFTERWARDS.** The base and top elevations are
+  read back and compared with what they were, and any wall that actually moved
+  is reported. That is the only evidence that a re-host was a re-host.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  whole block of walls is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # Invalid means "leave this constraint alone" - one call can re-host the
+    # base, the top, or both.
+    - name: baseLevelId
+      type: ElementId
+      source: request
+    - name: topLevelId
+      type: ElementId
+      source: request
+    - name: allowUnconnectedToBecomeBound
+      type: bool
+      source: request
+  provides:
+    - name: rehosted
+      type: int
+    - name: elevationChanged
+      type: IList<ElementId>
+    - name: unconnectedTop
+      type: IList<ElementId>
+    - name: notAWall
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The constraints are reached by
+  BuiltInParameter rather than by name, so nothing depends on the language
+  Revit is running in, and all of them are unchanged 2020 to 2027. Levels are
+  compared as ElementId against ElementId - never as numbers, which stopped
+  being readable when the id went 64-bit.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "put these walls on level 3"         -> here, without the walls moving
+#   "the walls are attached to the       -> here
+#    wrong level"
+#   "move these elements up"             -> MOVE_ELEMENTS, which MOVES them.
+#                                           This one deliberately does not
+#   "change the level of these"          -> SET_ELEMENT_LEVEL for elements that
+#                                           are not walls
+#   "make the walls taller"              -> a height change, not a re-host:
+#                                           WRITE_ELEMENT_PARAMETERS on the
+#                                           height parameter
+#   "build a wall here"                  -> CREATE_WALL
+#   "the corners are cleaning up wrong"  -> DISALLOW_JOIN
+#   "what is attached to this element"   -> REPORT_ELEMENT_DEPENDENCIES
+
+utterances:
+  - put these walls on a different level
+  - the walls are on the wrong level
+  - re-host these walls to level 3
+  - change the wall base constraint without moving them
+  - we renamed the levels and the walls followed

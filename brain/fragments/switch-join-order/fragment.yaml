@@ -79,6 +79,12 @@ compatibility-note: >
 #   "which one is cutting"           -> REPORT_JOINED_ELEMENTS - the read to do
 #                                       first, and the one that shows this
 #                                       worked
+#   "the wall has eaten the column"      -> here, when the question is which
+#                                           of two joined elements cuts the
+#                                           other
+#   "stop them joining at all"           -> DISALLOW_JOIN, which turns the
+#                                           end cleanup off rather than
+#                                           reversing it
 
 utterances:
   - the wrong one is cutting

@@ -96,6 +96,9 @@ compatibility-note: >
 #   "make elevations inside each room"   -> CREATE_ROOM_ELEVATIONS - a marker
 #                                        with four slots looking outward. A
 #                                        section cannot make that symbol
+#   "what view does this section open"   -> REPORT_VIEW_REFERENCES, the read
+#                                           side. This one creates a section
+
 utterances:
   - create a section through this
   - make a section here
@@ -104,3 +107,4 @@ utterances:
   - give me a cross section
   - section this run
   - add a section view
+  - section it and put it on a sheet

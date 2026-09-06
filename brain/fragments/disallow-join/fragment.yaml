@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-048
+semantic-identity: "stop these walls cleaning up into each other at the ends"
+kind: action
+domain: revit.elements
+capability: DISALLOW_JOIN
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Turns automatic end-joining off - or back on - for walls and structural
+  framing. Revit's own *Disallow Join*, in bulk: the fix for walls that clean
+  up into each other where they should read as separate, and for beams whose
+  ends get eaten by the column they run into.
+
+  **A PINNED ELEMENT REFUSES SILENTLY, AND THAT IS THE STEP EVERYONE MISSES.**
+  The join calls do not throw on a pinned wall. They return normally and change
+  nothing, so a script reports success on a model it never touched. Pinned
+  elements are unpinned first and pinned back afterwards, and how many were
+  pinned is reported - the number is otherwise invisible, and its absence is
+  what makes this look like a Revit bug.
+
+  **WALLS AND BEAMS ARE TWO DIFFERENT CALLS AND THERE IS NO SHARED ONE.**
+  Anything that is neither is named as unsupported rather than quietly skipped,
+  because a selection is usually mixed and "it did nothing" is not an answer.
+
+  **WHICH END IS 0 AND WHICH IS 1 DEPENDS ON HOW THE WALL WAS DRAWN.** They are
+  the start and finish of the location curve, and nothing on screen says which
+  is which - so `whichEnd` exists, and "both" is the answer that does what
+  somebody pointing at a corner means.
+
+  **TURNING IT BACK ON IS A REAL CHANGE TOO.** Re-allowing a join lets Revit
+  clean the corner up again, which can visibly move where a wall ends. It is
+  the same call in reverse and it is reported the same way.
+
+  Every element is read back afterwards, so what is reported is the join state
+  the model actually has.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "start" | "end" | "both". Nothing on screen says which is which.
+    - name: whichEnd
+      type: string
+      source: request
+    # false disallows the join - the usual request. true puts Revit's automatic
+    # joining back, which can move where a wall finishes.
+    - name: allowJoin
+      type: bool
+      source: request
+  provides:
+    - name: changed
+      type: int
+    - name: wasPinned
+      type: IList<ElementId>
+    - name: unsupported
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The wall join utilities and the
+  structural framing ones are separate and both unchanged 2020 to 2027, and
+  each has a matching question - is the join allowed at this end - which is
+  what the read-back uses. Neither throws on a pinned element, which is why the
+  pin is handled here rather than relied on to surface as an error.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "the walls are joining where they    -> here
+#    should not"
+#   "disallow join on these"             -> here
+#   "the beam end is eaten by the        -> here - structural framing uses its
+#    column"                                own call, and this covers both
+#   "join these two elements"            -> JOIN_GEOMETRY, which is geometry
+#                                           joining between elements, NOT the
+#                                           end cleanup of a wall
+#   "unjoin these"                       -> UNJOIN_GEOMETRY
+#   "the wrong one is cutting"           -> SWITCH_JOIN_ORDER
+#   "put these walls on another level"   -> SET_WALL_CONSTRAINTS
+#   "is the model clean"                 -> READ_MODEL_WARNINGS, which is
+#                                           Revit's own list
+
+utterances:
+  - stop the walls joining at the corner
+  - disallow join on these walls
+  - the walls are cleaning up into each other
+  - the beam is being eaten by the column
+  - allow the joins again

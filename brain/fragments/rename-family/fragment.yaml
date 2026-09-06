@@ -88,6 +88,9 @@ compatibility-note: >
 #                                        - a READ. A question about whether
 #                                          the names are right must not be
 #                                          answered by something that renames
+#   "which elements use this family"     -> SELECT_BY_FAMILY. This one
+#                                           renames it
+
 utterances:
   - rename the family
   - rename this component

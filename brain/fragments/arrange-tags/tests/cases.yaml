@@ -1,0 +1,59 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a plan with several tags stacked on top of each other, all leaderless
+    expect: >
+      nothing overlapping afterwards, `stillOverlapping` empty, and each tag
+      near where it started. Look at the plan - this is judged by eye
+
+  - given: a mix of leadered and leaderless tags
+    expect: >
+      `measuredFrom` equal to the number of LEADERLESS tags, and sensible
+      spacing. If tags fly metres apart, the size is being taken from a
+      leadered tag's box, which wraps the leader as well
+
+  - given: a clashing pair where one tag has a straight leader and one is bent
+    expect: >
+      the straight one moving and the bent one staying exactly where it was.
+      A bent leader was already threaded past something
+
+  - given: two clashing tags that both have straight leaders
+    expect: >
+      both moving about half the separation each
+
+negative:
+  - given: a set where EVERY tag has a leader, so nothing can be measured
+    expect: >
+      `measuredFrom` = 0 and the caller's stated size used. A size somebody
+      chose beats a measured number that is silently wrong - and the report
+      must say which happened
+
+  - given: a tag boxed in by bent-leader neighbours with nowhere to go
+    expect: >
+      its id in `bothHadToMove` after the second phase. A preference must not
+      silently block a real clash, and must not be silently dropped either
+
+  - given: a tag whose leader end is FREE
+    expect: >
+      the arrow still on the element it was pointing at after the move. A free
+      end travels with the head, and a bulk tidy-up otherwise pulls every arrow
+      off its element across the whole drawing
+
+  - given: a tag whose leader end is ATTACHED
+    expect: >
+      the leader following its element with nothing written back. Writing an
+      end to an attached leader is a change nobody asked for
+
+  - given: a text note or a dimension in the set
+    expect: >
+      its id in `notTags` and every real tag still arranged
+
+  - given: tags too crowded for any arrangement to separate
+    expect: >
+      the ones still clashing named in `stillOverlapping`, not silence. The
+      alternative is somebody finding them on the printed sheet
+
+second_route:
+  - >
+    run FIND_OVERLAPPING_TAGS on the same view afterwards - it is a separate
+    mechanism asking the same question - and look at the plan

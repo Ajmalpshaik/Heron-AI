@@ -1,0 +1,58 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a plan of rectangular rooms with their tags dragged out of place
+    expect: >
+      every tag head at the middle of its own room, and `centred` equal to the
+      number of tags. Look at the plan - this is judged by eye and nothing else
+      will tell you it went wrong
+
+  - given: a room tag whose room is in a LINKED architectural model
+    expect: >
+      the tag centred on that room, not thrown to the far end of the site. If
+      tags land hundreds of metres away, the link transform is not being
+      applied
+
+  - given: a curved room
+    expect: >
+      the centre inside the room. The boundary is tessellated, so an arc wall
+      contributes its shape rather than the straight line across it
+
+  - given: the same tags centred twice
+    expect: >
+      the second run moving nothing measurable. Centring is idempotent, and a
+      drift on the second pass means the position is being computed from the
+      tag rather than from the room
+
+negative:
+  - given: an L-SHAPED room, whose true centroid falls outside it
+    expect: >
+      the tag INSIDE the room and its id in `interiorPointUsed`. A tag in the
+      corridor reads as belonging to a room it is not in, and it still shows
+      the right name, so nobody catches it
+
+  - given: a tag whose room was deleted, or a room that was never placed
+    expect: >
+      its id in `orphanTags` and no move. There is nothing to centre on, and
+      moving it to a guessed point would be worse than leaving it
+
+  - given: a duct tag or a text note in the set
+    expect: >
+      its id in `notRoomTags`, untouched, and every room tag still centred. A
+      mixed selection is the normal case
+
+  - given: a tag on a room in a link that is not loaded
+    expect: >
+      its id in `refused`. The room's coordinates cannot be resolved, and a
+      tag moved on a guess lands somewhere arbitrary
+
+  - given: a tag Revit refuses to move
+    expect: >
+      its id in `refused` and NOT counted in `centred`. The head is read back
+      after every move; a count of what was asked for is not evidence
+
+second_route:
+  - >
+    look at the plan, or export it - this is annotation and the eye is the
+    check. Reading the head positions back with another script only repeats
+    what this one already read

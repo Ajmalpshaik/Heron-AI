@@ -1,0 +1,86 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-082
+semantic-identity: "what view does this section mark actually open"
+kind: action
+domain: revit.views
+capability: REPORT_VIEW_REFERENCES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  For each section mark, callout bubble or elevation mark, reports WHICH VIEW
+  it points at - and whether that view is on a sheet. Read-only.
+
+  **A MARK AND THE VIEW IT OPENS ARE TWO SEPARATE ELEMENTS, AND THE TEXT ON THE
+  MARK IS NOT A PARAMETER OF THE MARK.** The bubble draws its detail number and
+  sheet number from the VIEW it references. So a mark reading the wrong numbers
+  is almost never a text problem: it is pointing at a different view from the
+  one somebody assumes - usually the original, after a set was duplicated.
+
+  **A MARK POINTING AT A VIEW THAT IS ON NO SHEET SHOWS AN EMPTY BUBBLE.** That
+  is the state worth finding before a drawing is issued, and it is reported as
+  its own list rather than left to be read off the sheet.
+
+  **IT CHANGES NOTHING.** Re-pointing a mark at another view is a real edit and
+  it belongs to `REPOINT_VIEW_REFERENCE`. Reporting and repairing in one call
+  is how an audit becomes a change nobody asked for.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: referencedViews
+      type: IDictionary<ElementId, ElementId>
+    - name: viewNames
+      type: IDictionary<ElementId, string>
+    - name: notOnASheet
+      type: IList<ElementId>
+    - name: referencesNothing
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The link between a marker and the view
+  it references is read through the referenceable-view utility, which is
+  unchanged 2020 to 2027 and is the only public way to it - the relationship is
+  not a parameter and cannot be found by reading the mark. Whether the
+  referenced view sits on a sheet is asked of the view's own sheet-number
+  parameter, which is equally stable.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what view does this section open"   -> here
+#   "the section mark shows the wrong    -> here first: it is almost always
+#    sheet number"                          pointing at the wrong VIEW, not
+#                                           carrying the wrong text
+#   "point these marks at the new views" -> REPOINT_VIEW_REFERENCE, which is
+#                                           the write half
+#   "which views are on sheets"          -> FIND_VIEWS
+#   "put this view on a sheet"           -> PLACE_VIEW_ON_SHEET
+#   "make a section here"                -> CREATE_SECTION_VIEW
+#   "make a callout"                     -> CREATE_CALLOUT
+#   "what is the Mark on these"          -> READ_ELEMENT_PARAMETERS. The Mark
+#                                           PARAMETER and a section MARK are
+#                                           different things with one word
+
+utterances:
+  - what view does this section mark point at
+  - the section bubble shows the wrong sheet number
+  - which view does this callout open
+  - check the section marks before i issue
+  - the reference bubbles are empty
+  - what view does this section open

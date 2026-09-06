@@ -74,6 +74,10 @@ compatibility-note: >
   returning empty for an element that cannot be joined at all - a tag, a view -
   so it is guarded per element rather than assumed to be answerable, which is
   the difference between a report and a crash on a mixed selection.
+#   "what is attached to this element"   -> here
+#   "put these walls on another level"   -> SET_WALL_CONSTRAINTS, which
+#                                           changes what a wall is attached
+#                                           TO without moving it
 
 utterances:
   - can I delete this

@@ -1,0 +1,113 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-081
+semantic-identity: "put the room sizes on the plan as real dimensions"
+kind: action
+domain: revit.annotation
+capability: DIMENSION_ROOMS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws real Revit dimensions across each room - its overall width and depth,
+  wall face to wall face - just outside the room. Live dimension elements that
+  update with the model, not text that goes stale the moment a wall moves.
+
+  **THREE DIFFERENT NUMBERS COME OFF THE SAME ROOM AND ALL THREE ARE ASKED
+  FOR.** Inside is the clear room size, the number a client means by *"how big
+  is the room"* and the one that agrees with the room's area. Outside is face
+  to outer face, what an envelope or a plot line is checked against. Centre is
+  wall centreline to centreline, the setting-out size that agrees with the
+  grid. On a room 8800 clear between 200 walls those are 8800, 9200 and 9000 -
+  three right answers to three different questions, so `measureTo` is a request
+  input and has no default worth trusting.
+
+  **THE FACE IS PICKED BY DISTANCE, NEVER BY ITS NAME.** Revit offers a wall's
+  faces as interior and exterior LAYERS, and which of those bounds the room
+  depends on which way the wall was drawn - so choosing by name gets it right
+  about half the time, silently. The nearest face to the room boundary is the
+  one bounding it and the farthest is the outer one, whatever they are called.
+
+  **EVERY DIMENSION IS READ BACK AND CHECKED AGAINST A NUMBER WORKED OUT A
+  DIFFERENT WAY.** The expected size comes from the room's own boundary extent
+  plus each wall's real thickness, and the dimension's own value is read after
+  it is created. A disagreement is reported per room rather than left on the
+  drawing: the usual cause is a wall type whose location line is not its
+  centre, which makes the centre mode quietly measure to a face.
+
+  **AN L-SHAPED ROOM GETS ITS OVERALL SIZE, WHICH MAY NOT BE WHAT IS WANTED.**
+  Width and depth of the whole extent is one honest answer for a concave room
+  and it is not the same as dimensioning each leg. Rooms that are not
+  rectangular are dimensioned and named, so they can be looked at.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    # "inside" | "outside" | "centre" - see the purpose. No default.
+    - name: measureTo
+      type: string
+      source: request
+    # How far outside the room the dimension STRING is drawn. Paper distance
+    # follows the view scale: 1000 mm reads at 1:100 what 500 mm reads at 1:50.
+    - name: offsetMm
+      type: double
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: values
+      type: IDictionary<ElementId, double>
+    - name: disagreed
+      type: IList<ElementId>
+    - name: notRectangular
+      type: IList<ElementId>
+    - name: noReference
+      type: IList<ElementId>
+    - name: notARoom
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Boundary segments, the side-face
+  references, the dimension creation call and the dimension's own value are
+  unchanged 2020 to 2027. A dimension's value is a NULLABLE double in feet on
+  every release - a multi-segment string returns nothing there, which is not an
+  error and is why the read-back tests for a value before comparing.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "dimension the rooms"                -> here
+#   "put the room sizes on the plan"     -> here, as live dimensions
+#   "how big is this room"               -> MEASURE_ROOM_DIMENSIONS. It reads
+#                                           the size and draws nothing, which
+#                                           is what a question wants
+#   "list the rooms and their areas"     -> REPORT_ROOM_SPACE_DATA
+#   "dimension these ducts"              -> DIMENSION_MEP_RUNS
+#   "dimension between these"            -> CREATE_DIMENSION, the general one
+#   "dimension the equipment"            -> DIMENSION_FAMILY_INSTANCES
+#   "what is the overall size of this    -> REPORT_BOUNDING_BOX
+#    set"
+
+utterances:
+  - dimension the rooms
+  - put the room sizes on the plan
+  - add dimensions to every room
+  - dimension room 4
+  - i need the internal room dimensions
+  - dimension from the outside of the walls

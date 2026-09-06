@@ -1,0 +1,105 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-046
+semantic-identity: "the grids only go half way, make them all reach the same line"
+kind: action
+domain: revit.datums
+capability: MAXIMIZE_DATUM_EXTENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Stretches grids and levels to span the whole model, so every grid of the same
+  direction ends on exactly the same line. The *"some grids are short and they
+  all stop in a different place"* tidy-up, done to the datum's own 3D extent so
+  every view set to model extent picks it up.
+
+  **DO NOT WORK THE LENGTH OUT AND PUSH A LONGER CURVE IN.** Two separate
+  things go wrong with that, and the first is silent. Setting a grid's curve in
+  a view is refused - *"the curve is unbound or not coincident with the
+  original"* - and it is refused even when the grid is handed back its OWN
+  curve, unchanged. So that error is not telling you the geometry is off, and
+  checking the maths harder is wasted time. Revit's own maximize call is the
+  one that works.
+
+  **AND A MODEL BOUNDING BOX IS A POISONED NUMBER.** Every sheet carries a
+  nominal box in model space about a hundred feet across, and cameras sit
+  outside the building, so a whole-model box comes back far larger than the
+  building. Grids extended to it are half as long again as anything real.
+  Nothing here measures the model: the maximize call decides the extent.
+
+  **THE RESULT IS NEVER SHORTER THAN WHAT YOU STARTED WITH.** Revit's idea of
+  the model for this purpose includes the datums themselves, so the answer is
+  the union of the building and the existing grids - which is why a grid that
+  already reached further out keeps its length and pulls the others to it.
+
+  **A VIEW WHERE AN END WAS DRAGGED SHORT WILL NOT SHOW THE CHANGE.** That end
+  is on a view-specific extent, which overrides the shared one, and the fix
+  then looks as if it did nothing in exactly the view somebody is looking at.
+  Those are found and named rather than left to be discovered.
+
+  There is no margin: the call lands flush on the extent, so a grid can finish
+  exactly level with the slab edge with no overhang. Drafting overhang is a
+  separate move, and the curve-setting route above is not available to make it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: maximized
+      type: int
+    - name: lengthsAfter
+      type: IDictionary<ElementId, double>
+    - name: unchanged
+      type: IList<ElementId>
+    - name: hiddenByViewExtent
+      type: IList<ElementId>
+    - name: notADatum
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The maximize call and the per-view
+  extent type live on the shared datum type and are unchanged 2020 to 2027. The
+  length REPORTING is not: only a grid has a curve, and a level is a horizontal
+  plane with none, so the length is read through the grid type and a level is
+  reported as maximized without one. Reading a curve off the shared datum type
+  is a compile error, not a runtime one - which is how a version-checked
+  fragment can still fail to build.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "the grids only go half way"         -> here
+#   "make all the grids the same length" -> here
+#   "the grid bubbles are on the wrong   -> SET_DATUM_BUBBLES. Bubbles are per
+#    side"                                  view and per end; extents are
+#                                           shared across views. Confusing the
+#                                           two is how somebody "fixes" one
+#                                           view and breaks the set
+#   "put the grids in"                   -> CREATE_GRIDS
+#   "list the grids"                     -> LIST_GRIDS
+#   "the grid is short in THIS view      -> that end is on a view-specific
+#    only"                                  extent, which this reports and does
+#                                           not change
+
+utterances:
+  - the grids only go half way
+  - maximize the grids to the whole model
+  - make all the grids end in the same place
+  - the grids are all different lengths
+  - extend the levels across the building

@@ -1,0 +1,50 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a model with a VCD family loaded as duct accessories, no categories given
+    expect: >
+      every VCD instance found, `scannedWholeModel` true, and the family named
+      in `matchedFamilies` with its count. Compare against a schedule of that
+      family - the counts must agree
+
+  - given: the same search with the duct accessory category passed in
+    expect: >
+      the same elements, `scannedWholeModel` false. Narrower and cheaper when
+      the category is known
+
+  - given: a system family name such as Basic Wall
+    expect: >
+      the walls of that family found. A loadable-family-only search misses
+      every wall, duct and pipe, which are exactly what people ask for by name
+
+  - given: exactMatch true on a family whose name has a revision suffix
+    expect: >
+      only the exact name matching, and the suffixed one absent
+
+negative:
+  - given: a family loaded under a category nobody expected
+    expect: >
+      it still found, because the category was not named first. That is the
+      whole reason the category is optional - naming it is what makes a real
+      search come back empty
+
+  - given: a contains match that catches two families
+    expect: >
+      BOTH named in `matchedFamilies` with counts. A single number would hide
+      that the search caught more than was meant
+
+  - given: an empty family name
+    expect: >
+      nothing matched and no elements. An empty name matching everything would
+      hand back the whole model as a result
+
+  - given: a name that exists in no family
+    expect: >
+      empty results and `found` = 0 - not an error. The honest answer to a
+      search that found nothing
+
+second_route:
+  - >
+    build a Revit schedule filtered on Family, or use Select All Instances on
+    one of them, and compare the count. Revit's own selection is the second
+    route

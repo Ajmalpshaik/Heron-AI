@@ -73,6 +73,8 @@ compatibility-note: >
 #                                   complaints about them
 #   "which parameters are blank" -> DESCRIBE_BLANK_PARAMETERS - a different
 #                                   audit, and one Revit raises no warning for
+#   "is the model clean"                 -> here. Revit's own warnings are
+#                                           the first answer to that
 
 utterances:
   - how many warnings

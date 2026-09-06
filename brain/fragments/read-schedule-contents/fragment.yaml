@@ -101,6 +101,10 @@ compatibility-note: >
 #                                           round and inherits the schedule's
 #                                           own filters
 #   "which schedules are there"          -> FIND_SCHEDULES
+#   "why is this missing from the        -> CHECK_CATEGORY_MISMATCH. A
+#    schedule"                              schedule only ever shows one
+#                                           category, so an element modelled
+#                                           in another is invisible to it
 
 utterances:
   - read me what is in the schedule

@@ -1,0 +1,53 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: six grids of ragged lengths, four in one direction and two in the other
+    expect: >
+      every grid in a direction ending on the same line, and `lengthsAfter`
+      identical within a direction. Measure the ends in plan - ragged by 0 is
+      the whole point
+
+  - given: levels passed in as well
+    expect: >
+      them maximized too, and checked in a SECTION rather than a plan. Levels
+      extend in elevation, and looking for the change in a plan finds nothing
+
+  - given: a grid that already reached further out than the building
+    expect: >
+      it keeping its length and the others coming out to it. The extent
+      includes the datums themselves, so the result is never shorter than what
+      you started with
+
+negative:
+  - given: a grid whose end was dragged short in ONE view
+    expect: >
+      its id in `hiddenByViewExtent`. That end is on a view-specific extent and
+      the change will not show there - which reads on screen as the fix having
+      done nothing
+
+  - given: a set already at full extent
+    expect: >
+      those ids in `unchanged` and `maximized` counting only real changes.
+      Reporting every grid as maximized when nothing moved is a number nobody
+      can check
+
+  - given: a wall or a duct in the set
+    expect: >
+      its id in `notADatum` and the datums still done
+
+  - given: a datum Revit refuses to maximize
+    expect: >
+      its id in `refused` and the rest of the set finished. One refusal must
+      not lose the batch
+
+  - given: a level, which has no curve
+    expect: >
+      it counted as done with a zero length, and no throw. Only a grid has a
+      curve, and asking a level for one is a compile error rather than a
+      runtime one
+
+second_route:
+  - >
+    look at the plan for the grids and a section for the levels, and check the
+    ends line up. Reading the curve back with another script only repeats what
+    this one read

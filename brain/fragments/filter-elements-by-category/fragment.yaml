@@ -68,6 +68,11 @@ compatibility-note: >
 # document", they ask for ducts. Revit's own tokens belong here too: they are
 # what a modeller pastes in, and they are exactly what a meaning-based search
 # handles worst.
+#   "find all elements of a category"    -> here
+#   "find all the VCDs"                  -> SELECT_BY_FAMILY, when the FAMILY
+#                                           name is what is known and the
+#                                           category is not
+
 utterances:
   - select all ducts
   - how many ducts are there
