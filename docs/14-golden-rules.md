@@ -77,10 +77,23 @@ Rules **16–19** come from reviewing all four specification documents against t
 
 Rules **20–21** come from the field — failure modes actually observed in a working bridge ([field notes](00e-field-notes-proven-bridge.md)). They are not speculation; they happened.
 
-### 16. One user action, one undo.
+### 16. One user action, one undo — per document.
 Every model-modifying operation runs inside exactly one named `TransactionGroup`, assimilated on success and rolled back completely on failure. "Move ducts 200 mm up" appears in Revit's undo stack as a single entry, whatever happened internally.
 
-*Why:* the user must always be able to reverse Heron with one keystroke. Without this, trust never forms.
+**The limit is Revit's, not a choice.** `Transaction` and `TransactionGroup` each take exactly one `Document`. Read by reflection out of the **shipped** assemblies for **Revit 2020 and 2024** — both releases, every constructor, all four of them:
+
+```text
+TransactionGroup  ctor(Document, String)   ctor(Document)
+Transaction       ctor(Document, String)   ctor(Document)
+```
+
+**Neither release offers an overload that spans two documents.** On 2027 the types are present but the constructor list was not read — its assembly is .NET 10 and could not be reflection-loaded here; what *is* proven there is that `new TransactionGroup(doc, name)` in [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs) compiles on **all eight** releases 2020-2027 (`tools/check-compile.py`). So the single-`Document` constructor exists everywhere Heron runs; the exhaustive *absence* of a two-document overload is measured on 2020 and 2024 only. **That distinction is kept rather than rounded up**, because "no such overload exists" and "I did not find one" are different sentences and this file is where the difference matters. Each document keeps its own undo stack, so **a job touching two models cannot be one Ctrl+Z, and no design makes it one.**
+
+**So a cross-model job says so before it starts** — *"this touches two models; undoing in Podium will not undo Tower A"* — and it says it **first**. Warning afterwards is the exact failure this rule exists to prevent: the user reaches for Ctrl+Z believing one press is enough, and half the work stays. See [D-47](DECISIONS.md).
+
+*Why:* the user must always be able to reverse Heron with one keystroke, and must never be surprised about how far that keystroke reaches. Without the first, trust never forms; without the second, it forms and then breaks.
+
+*Status of the second half:* **nothing in Heron writes to two documents today**, so the per-document limit currently costs nothing. It is written here now because the decision to allow cross-project jobs is taken ([D-47](DECISIONS.md)) and a rule that promises what Revit cannot deliver is worse than no rule.
 
 ### 17. No autonomous write to a live model without a preview or a proven fragment.
 A `MODIFY` operation may run unattended only when it uses a `PRODUCTION` fragment. Anything less proven requires the user to see and accept a preview first.

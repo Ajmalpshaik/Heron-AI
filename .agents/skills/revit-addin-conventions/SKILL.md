@@ -93,9 +93,14 @@ Consequences to hold on to:
 **A read-only operation takes no transaction.** Counting, checking, listing, exporting, reporting —
 none of these open one. Do not create an empty transaction "just in case".
 
-**Every write produces exactly one undo step.** The user presses Ctrl+Z once and everything reverses.
-Wrap a simple write in one `Transaction`; wrap anything with several stages in one named
-`TransactionGroup`. On failure, roll back so the model is untouched.
+**Every write produces exactly one undo step, IN ONE DOCUMENT.** The user presses Ctrl+Z once and
+everything in that model reverses. Wrap a simple write in one `Transaction`; wrap anything with several
+stages in one named `TransactionGroup`. On failure, roll back so the model is untouched.
+
+**One undo cannot cross two documents, and that is Revit's shape rather than a convention:** every
+`Transaction` and `TransactionGroup` constructor takes exactly one `Document`, so a job touching two models
+is at best one undo *each*. Nothing in Heron writes to two documents today. If you are the one who builds
+that ([D-47](../../../docs/DECISIONS.md)), the operation must **say so before it starts** - never after.
 
 Name it for what the user did, so Revit's undo history reads properly: `Heron: Move ducts up 200 mm`.
 

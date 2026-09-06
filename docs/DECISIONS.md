@@ -2533,8 +2533,14 @@ warning is part of the operation rather than a note in the documentation.
 
 ### Consequences
 
-- **Rule 16's wording needs updating** in [14](14-golden-rules.md) to carry the per-document limit
-  explicitly. Until it does, the rule as written promises something Revit cannot deliver.
+- ~~**Rule 16's wording needs updating**~~ **DONE 2026-09-06.** [Rule 16](14-golden-rules.md) now reads
+  *one user action, one undo — **per document***, and carries the reason as measurement rather than
+  assertion: `Transaction` and `TransactionGroup` were read by reflection out of the **shipped** Revit 2020
+  and 2024 assemblies, and every constructor of both takes exactly one `Document`. **What was NOT measured
+  is stated too** — 2027's assembly is .NET 10 and could not be reflection-loaded, so the exhaustive
+  absence of a two-document overload is proven on two releases, not eight. The
+  [conventions skill](../.claude/skills/revit-addin-conventions/SKILL.md) carries the same limit, since that
+  is what an implementer reads rather than this file.
 - Every cross-project write is still a write: [Rule 17](14-golden-rules.md)'s preview applies to the
   second model as much as the first, and [Rule 21](14-golden-rules.md)'s re-read applies per document.
 - `write.enabled` gates both models. Nothing here loosens [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit).
