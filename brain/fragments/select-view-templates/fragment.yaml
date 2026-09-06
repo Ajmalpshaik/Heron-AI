@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-028
+semantic-identity: "give me the view templates themselves as a set I can act on"
+kind: filter
+domain: revit.selection
+capability: SELECT_VIEW_TEMPLATES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Returns the View Templates themselves as elements, narrowed by name and by
+  whether anything uses them. Not the views that follow them.
+
+  **EVERY OTHER TEMPLATE FRAGMENT HERE TAKES A TEMPLATE BY NAME, AND THAT IS
+  THE GAP.** APPLY_VIEW_TEMPLATE, REMOVE_VIEW_TEMPLATE, DUPLICATE_VIEW_TEMPLATE
+  and SET_VIEW_TEMPLATE_CONTROL all start from a template somebody has already
+  named. None of them can answer *"do it to all of them"*, or hand a set of
+  templates to a rename, a report or a delete. A template is an element like
+  any other and nothing here could reach it as one.
+
+  **USED AND UNUSED ARE NOT THE SAME QUESTION AS APPLIED AND NOT APPLIED, AND
+  GETTING THAT WRONG DELETES A LIVE TEMPLATE.** A template is in use if a view
+  follows it - and ALSO if a view family type names it as the template new
+  views of that kind start with. The second is invisible: no view points at it,
+  so a check that only walks views calls it unused, and deleting it silently
+  changes what every new plan is created with. Both reasons are gathered, and
+  both are reported per template rather than collapsed into one flag.
+
+  **AN UNRECOGNISED USAGE MODE RETURNS NOTHING, NOT EVERYTHING.** A typo in the
+  mode falling back to "no filter" hands the whole template list to whatever
+  comes next, and what comes next is often a delete. The refusal is reported as
+  a finding.
+
+  **IT DELETES NOTHING AND JUDGES NOTHING.** *"Which definitions is nobody
+  using"* as a report is FIND_UNUSED_DEFINITIONS, which also covers view
+  filters and states its own reasoning about them. This one hands back
+  templates as elements so something else can act, which is the half that was
+  missing.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: nameContains
+      type: string
+      source: request
+    # "all" | "used" | "unused". Anything else is refused, not defaulted.
+    - name: usage
+      type: string
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: matchedNames
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+    - name: scanned
+      type: int
+    - name: found
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.IsTemplate`,
+  `View.ViewTemplateId` and `ViewFamilyType.DefaultTemplateId` are unchanged
+  2020 to 2027.
+
+  Template ids are compared as `ElementId` against `ElementId` and none is read
+  as a number, so nothing here meets the 2024 widening to 64-bit or the removal
+  of `IntegerValue` by 2026.
+
+# ROUTING - repeated in FIND_UNUSED_DEFINITIONS, APPLY_VIEW_TEMPLATE and
+# REPORT_VIEW_TEMPLATE_CONTROL.
+#
+#   "give me the view templates"          -> here
+#   "rename all the templates"            -> here, then RENAME_ELEMENTS
+#   "which templates is nobody using"     -> BOTH, and the difference is what
+#                                            comes next. Wanting to READ the
+#                                            answer is FIND_UNUSED_DEFINITIONS,
+#                                            which covers view filters too and
+#                                            says what a filter used only by an
+#                                            unused template means. Wanting to
+#                                            ACT on them - delete, rename,
+#                                            report parameters - is here,
+#                                            because that needs elements
+#   "put this template on these views"    -> APPLY_VIEW_TEMPLATE
+#   "why is this greyed out"              -> REPORT_VIEW_TEMPLATE_CONTROL
+#   "copy this template"                  -> DUPLICATE_VIEW_TEMPLATE
+#
+# NEITHER OF THE TWO THAT ANSWER "UNUSED" DELETES ANYTHING, and that is the
+# same decision in both files rather than a coincidence.
+
+utterances:
+  - give me the view templates
+  - list every view template in this model
+  - select the view templates
+  - which view templates are unused
+  - the templates themselves not the views
+  - find view templates by name

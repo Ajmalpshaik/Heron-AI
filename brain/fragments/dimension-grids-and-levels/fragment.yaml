@@ -1,0 +1,130 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-096
+semantic-identity: "put a dimension string across the grids"
+kind: action
+domain: revit.annotation
+capability: DIMENSION_GRIDS_AND_LEVELS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws one dimension string across two or more Grids, or across two or more
+  Levels - the setting-out dimension that goes on nearly every drawing and is
+  the first thing a contractor builds from.
+
+  **A DATUM IS DIMENSIONED A COMPLETELY DIFFERENT WAY FROM EVERYTHING ELSE, AND
+  THAT IS WHY THIS IS ITS OWN FRAGMENT.** Every other dimension here has to dig
+  a Reference out of an element's geometry - read with ComputeReferences on, and
+  for MEP with non-visible objects included too, then hunt for the one shape
+  that carries a Reference. A Grid, a Level and a Reference Plane are the three
+  things in Revit that can be referenced AS THE WHOLE ELEMENT, with no geometry
+  read at all. Folding this into CREATE_DIMENSION would have meant one fragment
+  with two unrelated mechanisms inside it, and the geometry route returns
+  nothing for a grid.
+
+  **GRIDS AND LEVELS ARE NOT MIXED INTO ONE STRING, AND THE EARLIER VERSION OF
+  THIS IDEA ALLOWED IT.** They are measured along axes at right angles to each
+  other: grids across the plan, levels up the elevation. A string holding both
+  measures each reference along whichever single axis the string was given, so
+  the levels in a grid string come back as a row of zeros or as a distance to
+  a point that means nothing. The set is refused rather than drawn, because a
+  dimension that is drawn wrongly is read as correct.
+
+  **A DATUM THAT IS NOT VISIBLE IN THE VIEW IS REFUSED BEFORE ANYTHING IS
+  DRAWN.** Revit throws when asked to dimension to something the view is not
+  showing, and that throw takes the whole string down - including the datums
+  that were fine. They are checked against the view first and reported by name.
+
+  **THE LINE GIVEN IS WHERE THE STRING SITS, NOT WHAT IT MEASURES.** Revit works
+  the measurement out from the references themselves; the line decides where the
+  text and witness lines land. So the measuring axis is built ACROSS the datums
+  and in the view plane, and `offsetMm` slides the string clear of them along
+  the other axis.
+
+  **A CURVED GRID IS REFUSED.** An arc grid has no single direction, so there is
+  no one axis a string across it measures along. It is reported rather than
+  dropped.
+
+  **REFERENCE PLANES ARE LEFT OUT ON PURPOSE.** They can be referenced the same
+  way, so including them would have been free. They are not what a setting-out
+  drawing dimensions to, they are usually invisible on the sheet, and a fragment
+  that silently swept them in would put a dimension on a drawing witnessing to
+  something nobody can see.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: offsetMm
+      type: double
+      source: request
+  provides:
+    - name: created
+      type: ElementId
+    - name: refused
+      type: IList<ElementId>
+    - name: notVisibleInView
+      type: IList<ElementId>
+    - name: notADatum
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Grid.Curve`, `Level.Elevation`, the
+  `Reference(Element)` constructor, `ReferenceArray`, `View.ViewDirection`,
+  `View.Origin` and `Document.Create.NewDimension(View, Line, ReferenceArray)`
+  are unchanged 2020 to 2027.
+
+  Millimetres become feet by dividing by 304.8 (D-20) and no units API is
+  touched, so nothing here meets the 2021 move to ForgeTypeId. Ids are carried
+  as `ElementId` and none is read as a number.
+
+# ROUTING - repeated in CREATE_DIMENSION, DIMENSION_MEP_RUNS and
+# DIMENSION_ROOMS.
+#
+#   "dimension the grids"                 -> here
+#   "put the setting out dimensions on"   -> here
+#   "dimension between the levels"        -> here, in a section or elevation
+#   "grid to grid dimension"              -> here
+#   "dimension between the ducts"         -> DIMENSION_MEP_RUNS - a centreline
+#                                            has to be dug out of the geometry
+#                                            with non-visible objects included,
+#                                            and the whole-element Reference
+#                                            this one uses returns nothing for
+#                                            a duct
+#   "dimension between these two units"   -> CREATE_DIMENSION
+#   "dimension the room"                  -> DIMENSION_ROOMS
+#   "how far apart are the grids"         -> REPORT_LEVEL_ELEVATIONS for
+#                                            levels, or a measure - a NUMBER,
+#                                            changing nothing. This one WRITES
+#                                            a Dimension into the view
+#
+# MEASURING AND DIMENSIONING ARE THE SAME SENTENCE AND DIFFERENT JOBS. "How far
+# apart" wants a number and must change nothing; "put a dimension on" writes an
+# element onto the drawing.
+
+utterances:
+  - dimension the grids
+  - put the setting out dimensions on this plan
+  - dimension between the levels
+  - grid to grid dimension
+  - add a dimension string across the grid lines
+  - dimension the floor to floor heights
