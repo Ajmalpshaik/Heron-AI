@@ -28,6 +28,46 @@ when the thing you hit is on no list at all.
 
 ---
 
+**Updated 2026-09-06 (latest session) — THE REFUTATION PASS ON THE COVERED SIDE IS DONE, AND IT FOUND
+FIVE MORE.** The blind spot the section below warned about is closed. All 321 remaining source files
+were put to the opposite test from the original audit: *name the Heron capability that does this job,
+or the claim fails.*
+
+| | Claimed | Held | Refuted |
+|---|---|---|---|
+| Already covered | 317 | **312** | **5** |
+| Impossible via the API | 4 | **4** | 0 |
+
+**The arithmetic closes now:** 312 + 4 + 14 missing (9 built + 5 new) = **330**. It did not before.
+
+**The five nothing covers** — none is built yet:
+
+| The job | Why nothing here does it |
+|---|---|
+| **Radial array** | `ARRAY_ELEMENTS` takes a direction, a spacing and a count. It is linear and only linear. A radial array sweeps copies around a centre point through an angle |
+| **Set a global parameter's value** | `REPORT_GLOBAL_PARAMETERS` says *"deliberately not here — a MODIFY job"*, and nothing picked it up. A global is written through `GlobalParameter.SetValue`, not a parameter on an element, so `WRITE_ELEMENT_PARAMETERS` cannot reach it |
+| **A schedule CALCULATED VALUE column** | `ADD_SCHEDULE_COMBINED_FIELD` states outright it is not this — a combined field JOINS text, and asking it for arithmetic gets concatenation that reads like a working column. **Impossible on 2020–21, real from 2022**, so it is a fragment with a narrower `revit:` list |
+| **Navigate the view to elements** | `UIDocument.ShowElements`. Nothing calls it. `SET_SELECTION` selects without moving the view — and **`SHOW_ELEMENTS` is a name trap: it means UNHIDE**, so *"show me these"* reaches the wrong fragment |
+| **Scope boxes as an element set** | `READ_SCOPE_BOX_EXTENT` finds ONE by name; nothing enumerates them or hands them back as elements to rename or delete. **The same gap as `SELECT_VIEW_TEMPLATES`**, found and built the same day |
+
+**The four "impossible" verdicts all held**, and the source library had proved each itself: `Document.Phases`
+is read-only with no creation method anywhere in the API; `PHASE_NAME` is read-only; there is no Scope
+Box creation call, which also kills resize-by-recreate.
+
+**THE LESSON IS CHEAPER THAN THE PASS THAT FOUND IT. Four of the five sit inside a fragment that
+covers the neighbouring case and says so in its own purpose** — *"not a formula column"*,
+*"deliberately not here"*, *"linear along a direction"*. **A fragment that names its own boundary is
+the best gap detector in this repository**, and reading those sentences is far cheaper than reading
+somebody else's library. The fifth came from a name collision: two different jobs both called *show
+elements*.
+
+**One method was tried and thrown away rather than reported as reassurance.** Matching source file
+names against fragment vocabulary does not work — six of the nine *already-known* gaps score
+0.67–1.00 against unrelated fragments. A tool that cannot find the gaps you already know cannot be
+trusted to find the ones you do not.
+
+---
+
 **Updated 2026-09-06 (latest session) — THE NINE ARE BUILT, AS TEN FRAGMENTS. The library is 329 →
 339.** Every one compiles on Revit 2020 through 2027, the ten gates are green, the tests pass, and
 routing is back to its exact baseline. **Nothing is proven** — all 339 are `DRAFT` and the compile
@@ -87,8 +127,11 @@ expensive one, because it ends the search. Two things were tried on 2026-09-06 a
   likeliest were covered well (`SELECT_TOUCHING`, `SELECT_IN_REGION`). Fifteen of 317 is a sample.
 
 **So the next session's honest choice is: put the covered claims to a refuter the way the missing
-ones were, or stop saying anything about what is left.** Until that runs, the true statement is *nine
-were found and ten were built*, never *that was all there was*.
+ones were, or stop saying anything about what is left.**
+
+> **DONE the same day, and it found five more.** See the section at the top of this file. The
+> paragraph below this one was right to distrust the number: nine was not all there was, and it took
+> the opposite test to show it.
 
 **One number was wrong in two documents and is now fixed.** The audit table read 316 covered + 4
 impossible + 9 missing = **329, against 330 read**. The refuted claim was struck off the missing
@@ -2960,11 +3003,10 @@ audited directly rather than guessed at. `scripts/` holds 398 `.cs` files. **The
 fragment-shaped work were built on 2026-09-06, as ten fragments** — see the section at the top of
 this file.
 
-**Do not read that as "finished" a second time.** The audit that found the nine only put its
-*missing* claims to a refuter; the 317 *already covered* claims were never tested, and a false
-"covered" is what ends a search. **The next piece of library work is that refutation pass, not more
-fragments.** Reading fifteen of the 317 by hand found nothing new, which raises confidence and closes
-nothing.
+**The refutation pass on the covered side is now DONE** (2026-09-06) and it found **five more**,
+listed at the top of this file. 312 of the 317 "covered" claims held, all 4 "impossible" verdicts
+held, and the arithmetic closes at 330 for the first time. **The five are not built.** That, and the
+proving pass, is what is left of this library.
 
 ### Before the C# — one step this recipe did not have
 

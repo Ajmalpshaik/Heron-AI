@@ -93,10 +93,54 @@ what every new plan is created with with nothing on screen saying so. It was cau
 `SELECT_VIEW_TEMPLATES` asked the same question a third way and the two answers disagreed. Both check
 both kinds of use now.
 
-**NINE IS A FLOOR, NOT A CEILING, AND THE METHOD IS WHY.** Ten *missing* claims were handed to a
+**NINE WAS A FLOOR, NOT A CEILING, AND THE METHOD WAS WHY.** Ten *missing* claims were handed to a
 refuter. **The 317 *already covered* claims were not.** The refutation pass was built to stop a
 duplicate being written, which is the cheap failure; a false "covered" is the expensive one, because
-it ends the search. The blind spot is one-sided by construction and it is still open.
+it ends the search.
+
+### The refutation pass on the covered side, 2026-09-06 — five more found
+
+**That blind spot is now closed.** All 321 remaining files - 317 claimed covered, 4 claimed
+impossible - were put to the opposite test: *name the Heron capability that does this job, or the
+claim fails.* A claim backed only by a plausible-sounding neighbour was not accepted; where the
+neighbour's own purpose narrowed it, the source file was read and the fragment's contract checked.
+
+| | Claimed | Held | Refuted |
+|---|---|---|---|
+| Already covered | 317 | **312** | **5** |
+| Impossible via the API | 4 | **4** | 0 |
+
+**The four impossible verdicts all held, and the source library had already proved each one itself** -
+`Document.Phases` is read-only and no Phase-creation method exists anywhere in the API surface;
+`PHASE_NAME` is read-only so a phase cannot be renamed; there is no Scope Box creation call, which
+also kills the delete-and-recreate route to resizing one.
+
+**The five that were NOT covered:**
+
+| Source | The job, and why nothing here does it |
+|---|---|
+| `move-copy-rotate/action-array-elements` (radial mode) | Copies swept around a CENTRE POINT through a sweep angle. `ARRAY_ELEMENTS` takes a direction, a spacing and a count - it is linear and only linear. The library's own precedent settles this: a linear array is worth a fragment rather than N copies, so a radial one is too |
+| `parameters-naming/action-report-global-parameters` (set mode) | SET a global parameter's value. `REPORT_GLOBAL_PARAMETERS` says *"creating or setting one is deliberately not here ... a MODIFY job"* - and no other fragment picked it up. A global's value is written through `GlobalParameter.SetValue`, not through a parameter on an element, so `WRITE_ELEMENT_PARAMETERS` cannot reach it. Carries two real refusals: a formula-driven global rejects the write, and a reporting one can never be set |
+| `sheets-views/action-add-schedule-calculated-field` (formula mode) | A CALCULATED VALUE column - arithmetic on other fields. `ADD_SCHEDULE_COMBINED_FIELD` states outright that it is not this: a combined field JOINS values as text, and asking it for arithmetic gets concatenation that reads like a working column. **Impossible on 2020 and 2021, real from 2022** via `ScheduleField.SetFormula`, so it is a fragment with a narrower `revit:` list - the shape `EXPORT_SHEETS_TO_PDF` already uses |
+| `visibility/action-show-elements` | Navigate the view to elements - `UIDocument.ShowElements`. Nothing here calls it. `SET_SELECTION` selects and does not move the view, which leaves a user staring at another level with something highlighted off screen; and **`SHOW_ELEMENTS` is a name trap** - it means UNHIDE, so *"show me these"* reaches the wrong fragment entirely |
+| `filters/by-view-and-sheet/filter-by-scope-box` | Scope boxes as an actionable element SET, narrowed by name. `READ_SCOPE_BOX_EXTENT` finds ONE by name and returns its corners; `ASSIGN_SCOPE_BOX_TO_VIEW` acts on one by name. Nothing enumerates them or hands them back as elements to rename, report on or delete. **Structurally the same gap as `SELECT_VIEW_TEMPLATES`**, which was found and built the same day |
+
+**The arithmetic closes now, which it did not before:** 312 covered + 4 impossible + 14 missing
+(9 built + 5 new) = **330**.
+
+**What the refuted five have in common is worth more than the five.** Four of them sit *inside* a
+fragment that covers the neighbouring case and says so in its own purpose - "not a formula column",
+"deliberately not here", "linear along a direction". **A fragment that names its own boundary is the
+best gap detector in this repository, and reading those sentences is cheaper than reading the source
+library.** The fifth was found by a name collision rather than a boundary: two different jobs both
+called "show elements".
+
+**One method was tried and thrown away, and that is worth recording so nobody repeats it.** Matching
+source file names against fragment vocabulary looked promising and does not work: six of the nine
+*already-known* gaps score 0.67-1.00 against unrelated fragments - `create-dimension.cs` matched
+`REPORT_GLOBAL_PARAMETERS` at 1.00. **A tool that cannot find the gaps you already know cannot be
+trusted to find the ones you do not**, and reporting its silence as reassurance would have been worse
+than not running it.
 
 A cross-check on 2026-09-06 raised confidence without closing it:
 
