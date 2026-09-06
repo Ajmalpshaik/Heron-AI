@@ -69,16 +69,77 @@ namespace Heron.Revit.Addin
                     "client's disk and not in Revit.");
             }
 
-            var uidoc = app.ActiveUIDocument;
-            if (uidoc == null || uidoc.Document == null)
+            // WHICH MODEL. Named, or the one in front.
+            //
+            // THE ACTIVE DOCUMENT IS A CHOICE, NOT A LIMIT. Revit is perfectly
+            // able to read a document that is open and not in front - it is
+            // how TRANSFER_VIEWS_BETWEEN_DOCUMENTS works, and it is what makes
+            // "read that project, write into this one" possible at all.
+            // Defaulting to the active one is only right when nobody said
+            // otherwise, and the first proving run showed the cost of assuming
+            // it: a run intended for one model came back reading another,
+            // because that window was open but not ACTIVE.
+            var wanted = Json.ReadString(request, "document");
+
+            Document target = null;
+            var openTitles = new List<string>();
+
+            foreach (Document candidate in app.Application.Documents)
             {
-                return Json.Error("no_document",
-                    "No model is open in Revit, so there is nothing for a fragment to read.");
+                if (candidate == null) continue;
+
+                // A LINKED document is skipped, and that is deliberate rather
+                // than an oversight. Application.Documents contains the links
+                // too, so on this very model six of them would appear here as
+                // if they were projects to choose. A link is reached through
+                // its RevitLinkInstance - SELECT_FROM_LINK - because two links
+                // can share a title, and a link's geometry is in its own
+                // coordinates until the instance transform is applied.
+                if (candidate.IsLinked) continue;
+
+                openTitles.Add(candidate.Title);
+
+                if (!string.IsNullOrEmpty(wanted)
+                    && string.Equals(candidate.Title, wanted, StringComparison.OrdinalIgnoreCase))
+                {
+                    target = candidate;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(wanted) && target == null)
+            {
+                return Json.Error("no_such_document",
+                    "No open model called \"" + wanted + "\". Open: "
+                    + (openTitles.Count == 0 ? "(none)" : string.Join(", ", openTitles))
+                    + ". A model that is not open cannot be read, and Heron will not open one - "
+                    + "opening a project is a decision with a lock and a load time behind it.");
+            }
+
+            UIDocument uidoc = null;
+
+            if (target == null)
+            {
+                uidoc = app.ActiveUIDocument;
+                if (uidoc == null || uidoc.Document == null)
+                {
+                    return Json.Error("no_document",
+                        "No model is open in Revit, so there is nothing for a fragment to read.");
+                }
+                target = uidoc.Document;
+            }
+            else
+            {
+                // A UIDocument for a document that is open but not in front.
+                // It is built rather than left null so that a fragment needing
+                // `uidoc` still composes - but see the note below: what it
+                // reports is about the SCREEN, and the screen is showing
+                // something else.
+                try { uidoc = new UIDocument(target); } catch { uidoc = null; }
             }
 
             var globals = new HeronFragmentGlobals
             {
-                doc = uidoc.Document,
+                doc = target,
                 uidoc = uidoc,
                 app = app.Application,
             };
@@ -104,7 +165,7 @@ namespace Heron.Revit.Addin
                     "'" + name + "' threw while running: " + Innermost(failure).Message);
             }
 
-            return Report(name, state, uidoc);
+            return Report(name, state, target, uidoc, app.ActiveUIDocument);
         }
 
         /// <summary>
@@ -177,7 +238,8 @@ namespace Heron.Revit.Addin
         /// back by name, so the report is read out of the run rather than
         /// being something the fragment had to remember to build.
         /// </summary>
-        private static string Report(string name, ScriptState<object> state, UIDocument uidoc)
+        private static string Report(string name, ScriptState<object> state,
+                                     Document target, UIDocument uidoc, UIDocument active)
         {
             // THE ANSWER ALWAYS NAMES THE DOCUMENT, and the model it ran
             // against is the first thing on it. A bare result is how somebody
@@ -187,16 +249,29 @@ namespace Heron.Revit.Addin
             // the sample building anybody had in mind. Without the title on
             // the line, that reads as a fact about the project.
             var title = "";
-            try { title = uidoc.Document.Title; } catch { }
+            try { title = target.Title; } catch { }
 
             var view = "";
-            try { view = uidoc.ActiveView == null ? "" : uidoc.ActiveView.Name; } catch { }
+            try { view = uidoc == null || uidoc.ActiveView == null ? "" : uidoc.ActiveView.Name; }
+            catch { }
+
+            // WHETHER THE MODEL READ IS THE ONE ON SCREEN. When it is not,
+            // anything a fragment says about a selection or an active view is
+            // about a window nobody is looking at - true, and easy to misread.
+            var inFront = true;
+            try
+            {
+                inFront = active != null && active.Document != null
+                    && active.Document.Title == title;
+            }
+            catch { }
 
             var parts = new List<string>
             {
                 Json.Str("ran", name),
                 Json.Str("document", title),
                 Json.Str("activeView", view),
+                Json.Bool("wasActiveDocument", inFront),
             };
 
             var left = new List<string>();

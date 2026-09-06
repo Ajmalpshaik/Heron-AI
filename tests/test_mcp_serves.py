@@ -194,11 +194,29 @@ async def exercise(server):
     print()
     print("  and both refusals survived the round trip")
     for name, answer in sorted(answers.items()):
-        check("cannot" in answer.lower() and "run" in answer.lower(),
-              "%s still says it cannot RUN what it resolved" % name)
-        check("draft" in answer.lower() or "not proven" in answer.lower()
-              or "nothing here is proven" in answer.lower(),
-              "%s still says nothing underneath is proven" % name)
+        # RE-BASED 2026-09-06. Both of these matched wording that was true
+        # when written and false by the end of that day: D-28's executor was
+        # built, twenty fragments ran against a real model, and thirteen were
+        # promoted on a recorded proof. Looking for the words "cannot run" and
+        # "draft" would now demand the tool lie.
+        #
+        # THE INTENT IS KEPT EXACTLY: an answer must carry its own limits, so
+        # the host cannot read a resolution as a promise. Only the limits
+        # changed.
+        low = answer.lower()
+
+        # A fragment that WRITES still has no way to reach Revit. That is the
+        # half of the old caution which is still true, and the half a plan
+        # fails on at its last step.
+        check("writes" in low and "revit" in low,
+              "%s still warns that a fragment which WRITES cannot reach Revit"
+              % name)
+
+        # And it must still say how much is unproved rather than implying the
+        # library is finished. PROVEN counts are read from the fragment files,
+        # so this sentence moves on its own as fragments are promoted.
+        check("proven" in low or "proved" in low,
+              "%s still says how much underneath is proved" % name)
 
     return answers
 

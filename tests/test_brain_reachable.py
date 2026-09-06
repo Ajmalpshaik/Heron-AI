@@ -215,8 +215,19 @@ def main():
         # inferred otherwise would build a plan that fails at the last step.
         for name in ("heron_capabilities", "heron_resolve", "heron_lookup"):
             body = server.split("def %s(" % name, 1)[-1].split("@server.tool()")[0]
-            check("_CANNOT_RUN" in body,
-                  "%s tells the caller it cannot RUN what it resolved" % name)
+            # RE-BASED 2026-09-06, and the reason matters more than the check.
+            # This looked for the constant _CANNOT_RUN, whose text said "a
+            # fragment's code has no way to reach Revit". D-28's executor was
+            # built that day and the sentence went false, so both the constant
+            # and the claim were replaced by _cannot_run(), which says what is
+            # now true: a READ fragment runs, a fragment that WRITES still
+            # cannot reach Revit.
+            #
+            # The intent is unchanged - every brain tool must hand back the
+            # limit along with the answer, so a plan is not built on something
+            # that fails at its last step.
+            check("_cannot_run()" in body,
+                  "%s tells the caller what it still cannot RUN" % name)
 
         # --- 7. it refuses rather than answering "nothing" ------------------
         # Last, because it takes the knowledge folder away. "Heron knows how to

@@ -46,6 +46,7 @@ over a same-named directory, verified rather than assumed. Do not "fix" this by
 renaming the folder.
 """
 
+import io
 import os
 import sys
 
@@ -563,23 +564,96 @@ def revit_use_this_model() -> str:
 # All three read what Heron KNOWS and none of them sends anything to Revit.
 # ---------------------------------------------------------------------------
 
-# NOTHING BELOW CAN RUN A FRAGMENT, AND EVERY ANSWER SAYS SO.
+# WHAT CAN ACTUALLY BE RUN, AND WHAT IS ACTUALLY PROVEN.
 #
-# A fragment carries C# in impl/, and there is no executor: the bridge speaks a
-# fixed set of operations and none of them compiles anything. D-28 chose Roslyn
-# in-process for this and it is not built. So resolving a request to a
-# capability tells the host WHAT WOULD DO THE JOB and nothing about whether it
-# can be done today - and a tool that let that be inferred would be worse than
-# no tool, because a plan built on it would fail at the last step.
-_CANNOT_RUN = (
-    "Heron can say what would do this. It cannot do it yet: a fragment's code "
-    "has no way to reach Revit - the bridge speaks a fixed set of operations "
-    "and none of them runs one.")
+# BOTH OF THESE WERE FLAT SENTENCES AND BOTH WENT FALSE ON 2026-09-06, in the
+# same afternoon that made them false. They said "a fragment's code has no way
+# to reach Revit" and "every skill and every fragment is DRAFT". By the end of
+# the day D-28's executor was built and twenty fragments had run against a real
+# model, thirteen of them promoted on a recorded proof.
+#
+# A HAND-TYPED CLAIM ABOUT THE STATE OF THE SYSTEM IS A COUNT BY ANOTHER NAME,
+# and this repository has been caught by hand-typed counts five times. These are
+# computed from the fragments on disk now, so they cannot say DRAFT about a
+# fragment that is PROVEN - or claim nothing runs on the day something does.
+#
+# The caution they carried is kept, because it is still true where it applies:
+# a fragment that WRITES has no way to reach Revit yet, and a fragment nobody
+# has proved is still only a claim.
 
-_NOT_PROVEN = (
-    "Nothing here is proven. Every skill and every fragment is DRAFT, and "
-    "D-30 promotes on one recorded proof containing a negative case, which "
-    "needs a real model. See NEEDS-CHECKING.md.")
+def _repo_root():
+    """This file is mcp/server/x.py, so the repository is two folders up."""
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _proven_split():
+    """
+    (proven, total) fragments, read from THE FRAGMENT FILES THEMSELVES.
+
+    NOT from the retrieval store, and that is the whole point. The store is an
+    INDEX, rebuilt on demand, and it was stale the first time this was written:
+    thirteen fragments were PROVEN on disk and the store still said zero, so
+    the tool would have gone on telling every caller that nothing is proven
+    until somebody happened to reindex.
+
+    A status is a fact about a file. Reading it from a cache of that file adds
+    a way to be wrong and buys nothing here - this runs once per tool call over
+    a few hundred small files.
+
+    (None, None) when it cannot be read, which is reported as UNKNOWN rather
+    than as zero proven. Those are different sentences.
+    """
+    folder = os.path.join(_repo_root(), "brain", "fragments")
+    if not os.path.isdir(folder):
+        return None, None
+
+    proven = total = 0
+    try:
+        for name in sorted(os.listdir(folder)):
+            path = os.path.join(folder, name, "fragment.yaml")
+            if not os.path.isfile(path):
+                continue
+            total += 1
+            with io.open(path, "r", encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    if not line.startswith("heron-status:"):
+                        continue
+                    if line.split(":", 1)[1].strip().upper() in ("PROVEN", "PRODUCTION"):
+                        proven += 1
+                    break
+    except OSError:
+        return None, None
+
+    return (proven, total) if total else (None, None)
+
+
+def _cannot_run():
+    """What can and cannot reach Revit today."""
+    return (
+        "Heron can now RUN a read-only fragment against the open model - D-28's "
+        "executor compiles it with Roslyn inside Revit and reports what it left "
+        "behind. It opens no transaction, so Revit itself refuses any change. "
+        "A fragment that WRITES still has no way to reach Revit: that operation "
+        "does not exist yet, so a plan whose last step changes the model will "
+        "fail at that step.")
+
+
+def _not_proven():
+    """How much is proved, counted rather than claimed."""
+    proven, total = _proven_split()
+    if proven is None:
+        return ("How much of this is proven could not be read from disk just "
+                "now, which is not the same as none. D-30 promotes on one "
+                "recorded proof containing a negative case.")
+    if proven == 0:
+        return ("Nothing here is proven yet. D-30 promotes on one recorded "
+                "proof containing a negative case, which needs a real model. "
+                "See NEEDS-CHECKING.md.")
+    return ("%d of %d capabilities are PROVEN - each on a recorded proof "
+            "against a named model, carrying a negative case and a fingerprint "
+            "that reports STALE if the code moves under it (D-30). The other "
+            "%d are not, and a fragment that has not been proved is a claim. "
+            "See NEEDS-CHECKING.md." % (proven, total, total - proven))
 
 
 def _revit_version():
@@ -666,8 +740,8 @@ def heron_capabilities() -> str:
     lines.append("")
     lines.append('"Every part provided" means each piece has something on disk '
                  "that claims to do it. It does not mean Heron can run it. "
-                 + _CANNOT_RUN)
-    lines.append(_NOT_PROVEN)
+                 + _cannot_run())
+    lines.append(_not_proven())
     return "\n".join(lines)
 
 
@@ -728,8 +802,8 @@ def heron_resolve(capability: str) -> str:
                      "that would work on your release.")
 
     lines.append("")
-    lines.append(_CANNOT_RUN)
-    lines.append(_NOT_PROVEN)
+    lines.append(_cannot_run())
+    lines.append(_not_proven())
     return "\n".join(lines)
 
 
@@ -788,8 +862,8 @@ def heron_lookup(request: str) -> str:
         lines.append("Filtered to Revit %s (%s)." % (revit, how))
 
     lines.append("")
-    lines.append(_CANNOT_RUN)
-    lines.append(_NOT_PROVEN)
+    lines.append(_cannot_run())
+    lines.append(_not_proven())
     return "\n".join(lines)
 
 

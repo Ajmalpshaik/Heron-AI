@@ -685,7 +685,7 @@ def cmd_fragment(name):
     return 1 if failures else 0
 
 
-def cmd_prove(names):
+def cmd_prove(names, in_document=None):
     """
     Run several fragments against the open model in ONE process.
 
@@ -731,12 +731,36 @@ def cmd_prove(names):
     # The model every answer below came from, printed ONCE at the top rather
     # than on every line. A proving run that does not say which model it read
     # proves nothing about that model.
+    # WHICH MODEL IS IN FRONT, before anything runs. count_elements always
+    # describes the ACTIVE document and takes no target, so when a fragment is
+    # aimed elsewhere with --in the two lines differ - and that difference is
+    # exactly what was missing when a run intended for one model came back
+    # reading another.
+    opening = bridge.request("count_elements")
+    if opening is not None and opening.get("ok"):
+        print("active: %s%s" % (opening.get("document"),
+                                "  (unsaved changes)" if opening.get("unsaved") else ""))
+        if opening.get("documentPath"):
+            print("path:   %s" % opening.get("documentPath"))
+        print("size:   %s elements" % "{:,}".format(opening.get("count", 0)))
+        print("")
+    elif opening is not None and not opening.get("ok"):
+        print("could not identify the active model: %s"
+              % (opening.get("message") or opening.get("error")))
+        print("Refusing to prove anything against a model that will not name itself.")
+        bridge.close()
+        return 1
+
     named_document = None
 
     failures = 0
     for name, source in sources:
+        args = {"name": name, "source": source}
+        if in_document:
+            args["document"] = in_document
+
         reply = bridge.request("run_fragment_read",
-                               op_args={"name": name, "source": source},
+                               op_args=args,
                                response_timeout=180.0)
 
         if reply is None:
@@ -754,8 +778,13 @@ def cmd_prove(names):
 
         if named_document is None:
             named_document = reply.get("document") or "(unnamed)"
-            print("model: %s   active view: %s" % (
+            print("read:   %s   active view: %s" % (
                 named_document, reply.get("activeView") or "(none)"))
+            if reply.get("wasActiveDocument") is False:
+                # Everything below is TRUE of a model nobody is looking at, and
+                # anything about a selection or an active view is about a
+                # window that is not on screen.
+                print("        NOT the document on screen - read by name.")
             print("")
 
         provides = reply.get("provides") or {}
@@ -887,10 +916,18 @@ def main(argv):
     if argv[1] == "doctor":
         return cmd_doctor()
     if argv[1] == "prove":
-        if len(argv) < 3:
+        rest = argv[2:]
+        # prove --in "Project1" list-levels ...  reads a model that is open
+        # but not necessarily the one in front.
+        in_document = None
+        if len(rest) >= 2 and rest[0] == "--in":
+            in_document = rest[1]
+            rest = rest[2:]
+        if not rest:
             print("Which fragments? e.g. prove list-levels list-grids")
+            print("               or  prove --in \"Project1\" list-levels")
             return 2
-        return cmd_prove(argv[2:])
+        return cmd_prove(rest, in_document)
     if argv[1] == "fragment":
         if len(argv) < 3:
             print("Which fragment? e.g. list-levels")
