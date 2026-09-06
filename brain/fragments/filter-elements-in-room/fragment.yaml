@@ -15,8 +15,9 @@ risk: READ
 
 purpose: >
   Narrows a set of elements to the ones inside a given room. The filter every
-  room-based MEP job needs — terminals in this room, sprinklers in this room,
-  what is served by this space — and nothing here could do it.
+  room-based MEP job needs — terminals in this room, the fittings in this
+  room, sprinklers in this room, what is served by this space — and
+  nothing here could do it.
 
   **A room is a VOLUME, not a rectangle.** An L-shaped room's bounding box
   covers ground that is not in the room, and a bounding-box test puts the
@@ -86,3 +87,4 @@ utterances:
   - what is serving this space
   - find everything in here
   - how many diffusers in here
+  - how many fittings in here

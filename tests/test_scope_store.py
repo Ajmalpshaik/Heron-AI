@@ -172,10 +172,15 @@ def main():
         print("An invalid fragment is not indexed")
         before, _ = S.rebuild()
         broken_dir = os.path.join(ROOT, "brain", "fragments", "zz-broken-temp")
-        os.makedirs(os.path.join(broken_dir, "impl", "any"))
-        open(os.path.join(broken_dir, "fragment.yaml"), "w").write(
-            "id: FRG-ELE-999\nkind: nonsense\n")
         try:
+            # Created INSIDE the try, and exist_ok. This directory is written
+            # into the real fragment library, so an interrupted run leaves it
+            # there - and the next run has to be able to clear it rather than
+            # die on it. Built outside the try, the cleanup below never ran on
+            # that second failure, so one interrupt poisoned the test for good.
+            os.makedirs(os.path.join(broken_dir, "impl", "any"), exist_ok=True)
+            open(os.path.join(broken_dir, "fragment.yaml"), "w").write(
+                "id: FRG-ELE-999\nkind: nonsense\n")
             after, _ = S.rebuild()
             check(after == before,
                   "a malformed fragment is skipped, not indexed as if it were fine")

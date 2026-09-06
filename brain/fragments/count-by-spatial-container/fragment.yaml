@@ -22,8 +22,10 @@ purpose: >
   **`GROUP_AND_COUNT` CANNOT DO THIS, AND THE REASON IS NOT A LIMITATION OF THAT
   FRAGMENT.** It groups on a parameter value, which is the right mechanism for
   almost everything. **Most MEP elements have no Room or Space parameter at
-  all** - a duct does not know which room it passes through, and nothing writes
-  it there. Asking for *"how many diffusers per room"* through a parameter
+  all** - a duct, a fitting or a valve does not know which room
+  or space it sits in, and nothing writes it there. Counting the fittings per
+  space is this fragment's job for that reason, and not the ductwork measuring
+  fragments'. Asking for *"how many diffusers per room"* through a parameter
   lookup returns one enormous group of blanks and looks like an answer.
 
   **PHASE IS NOT ONE OF THESE, AND IT IS WORTH SAYING WHY NOT.** *"Count by
@@ -36,7 +38,9 @@ purpose: >
   the zone is the one that space belongs to. So an element can miss for two
   distinct reasons - no space contains it, or the space that does has not been
   put in a zone - and those are reported as two different groups, because they
-  are two different jobs for two different people.
+  are two different jobs for two different people. **Counting these by HVAC zone
+  is a READ and it never makes a zone**: a sentence asking how many elements are
+  in each hvac zone belongs here, not with the fragment that creates one.
 
   **THE TEST POINT IS TAKEN AT THE CONTAINER'S OWN HEIGHT, WHICH IS THE WHOLE
   TRICK.** A room's containment test is answered at the room's own level, and a
@@ -132,6 +136,33 @@ compatibility-note: >
 #                                           a zone. A counting sentence must not
 #                                           reach a fragment that creates one
 
+# MEASURED AND FIXED 2026-09-06. The two collisions recorded above were still
+# live, and two more were found with them. Ranks are the fragment's own position
+# for that sentence, before -> after:
+#
+#   "count the fittings per space"        6 -> 1  (lost to MEASURE_FITTING_AREA,
+#                                                  which weighs sheet metal, and
+#                                                  to PLACE_ROOMS, which CREATES
+#                                                  rooms - a write for a count)
+#   "how many fittings are in each room"  2 -> 1
+#   "count these by hvac zone"            2 -> 1  (lost to CREATE_HVAC_ZONE)
+#   "how many fittings in here"          99 -> 1  in FILTER_ELEMENTS_IN_ROOM,
+#                                                  where it belongs - "in here"
+#                                                  names ONE room
+#
+# THE NOUN WAS DOING THE ROUTING, NOT THE VERB. "fittings" appears in three of
+# MEASURE_FITTING_AREA's utterances, so any sentence carrying it was pulled into
+# the ductwork cluster and the counting verb could not pull it back.
+#
+# Fixed by ADDING utterances here and one true sentence to the purpose - nothing
+# was taken away from MEASURE_FITTING_AREA or CREATE_HVAC_ZONE, whose own
+# sentences were re-measured and still win. Weakening a competitor's utterance to
+# buy back a rank is never the answer; see brain/retrieval-history.md.
+#
+# Two rounds had to be UNDONE on the way, and both failed the same way: text
+# added here that carried the other fragment's words ("per room", "in this room")
+# stole its sentences. A fragment must be strengthened on its OWN ground.
+
 utterances:
   - how many diffusers are in each room
   - count these elements by room
@@ -140,3 +171,7 @@ utterances:
   - break this count down per room
   - how many of these per space
   - which room is each of these in, as a count
+  - count the fittings per space
+  - how many fittings are in each room
+  - how many of these in each hvac zone
+  - count the elements in each zone
