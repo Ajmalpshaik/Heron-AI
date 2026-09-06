@@ -1,0 +1,149 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-025
+semantic-identity: "upgrade this library of families to the Revit we are running"
+kind: action
+domain: revit.document
+capability: UPGRADE_FAMILY_FILES
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Opens each family, template or project file given, saves it into a
+  destination folder under the running Revit, and closes it - the batch version
+  of open-it-and-press-Save-As, for a library that has to move to a new release.
+
+  **IT WORKS BECAUSE A FILE OPENED THIS WAY HAS NO WINDOW.** Revit will not let
+  an add-in save the document somebody is looking at; a document opened through
+  the application rather than the interface is a background document with no
+  window, and it saves normally. Each file is opened, saved and closed before
+  the next one starts, so memory does not climb through a large library.
+
+  **IT ALWAYS WRITES SOMEWHERE ELSE, AND THERE IS NO IN-PLACE MODE.** An upgrade
+  is one-way: once a file is saved by a newer Revit, the older Revit can never
+  open it again. Overwriting the originals destroys the only copy that still
+  works for everyone left on the old version - a colleague, a consultant, an
+  archive. A destination that resolves to the source file is refused per file
+  rather than warned about.
+
+  **A WORKSHARED PROJECT IS DETACHED BEFORE IT IS TOUCHED, AND A PROJECT WHOSE
+  WORKSHARING CANNOT BE READ IS REFUSED.** Opened without saying otherwise, a
+  central file opens AS the central - and upgrading and saving from there is a
+  genuinely damaging thing to do to a live job. Detaching means the copy on disk
+  is untouched and the open document cannot write back to the central at all.
+  The file is asked first whether it is workshared, because asking to detach a
+  file that is not workshared is itself refused; and if that question cannot be
+  answered on a project file, the file is skipped rather than opened hopefully.
+
+  **WORKSETS ARE OPENED, NOT CLOSED, AND THAT IS THE OPPOSITE OF THE USUAL
+  ADVICE.** A read-only pass over a big model closes worksets for speed. An
+  upgrade has to rewrite every element in the file, so a closed workset leaves
+  its content unconverted - the file reports as upgraded and part of it is not.
+
+  **THE THUMBNAIL IS SET DELIBERATELY, BECAUSE IT IS HOW A FAMILY LIBRARY IS
+  ACTUALLY USED.** A file's preview comes from one nominated view. Save without
+  saying which and the upgraded copy can come out blank, and a library browsed
+  by thumbnail in Revit's own dialog becomes unnavigable. Whatever the file
+  already nominated is kept; failing that a 3D view, failing that a plan - and
+  each candidate is checked against Revit's own test first, because handing it
+  a view that cannot be a preview makes the save throw.
+
+  **THE FILE IS COMPACTED ON THE WAY OUT.** The upgrade is the one moment the
+  whole file is rewritten anyway, so it costs nothing extra, and it is the
+  difference between a library that grows every release and one that does not.
+
+  **PROJECT FILES ARE OFF UNLESS ASKED FOR.** Families and templates upgrade
+  cleanly. A project is a decision about a job rather than a maintenance task,
+  and it is turned on explicitly.
+
+  **ONE FILE FAILING DOES NOT STOP THE BATCH.** A family that will not upgrade
+  usually will not for a real reason - a corrupt nested family, a missing type
+  catalogue - and the message is kept against that file while the rest continue.
+
+  **IT IS SLOW AND REVIT IS BUSY THROUGHOUT.** `maxFiles` is a brake, not a
+  formality: seconds per file means a real library is minutes, and the first
+  batch should be small enough to open two of the results by hand.
+
+  ASSUMES NO TRANSACTION AND MUST NOT BE RUN INSIDE ONE. It does not touch the
+  open model at all; it opens and closes other documents, which a transaction on
+  this one has no business wrapping.
+
+contract:
+  needs:
+    - name: app
+      type: Application
+    # The files themselves, already chosen. Walking a folder tree, deciding
+    # recursion and filtering extensions is a filesystem job, and doing it here
+    # would hide which files are about to be rewritten.
+    - name: sourceFiles
+      type: IList<string>
+      source: request
+    - name: destinationFolder
+      type: string
+      source: request
+    - name: allowProjectFiles
+      type: bool
+      source: request
+    - name: maxFiles
+      type: int
+      source: request
+  provides:
+    - name: upgraded
+      type: IDictionary<string, string>
+    - name: failed
+      type: IList<string>
+    - name: skipped
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Application.OpenDocumentFile`,
+  `OpenOptions`, `DetachFromCentralOption`, `WorksetConfiguration`,
+  `BasicFileInfo.Extract`, `SaveAsOptions`, `Document.GetDocumentPreviewSettings`
+  and `Document.Close(bool)` are unchanged 2020 to 2027.
+
+  There is no version-dependent behaviour to guard here, and that is worth
+  stating: the file format changes every release, but the API that opens and
+  saves it does not. What the fragment upgrades TO is whichever Revit is
+  running, which is the whole point - there is no target-version argument
+  because Revit can only ever save its own.
+
+# ROUTING - repeated in EXPORT_FAMILIES and READ_MODEL_FILE_INFO.
+#
+#   "upgrade our family library"          -> here
+#   "move these families to the new
+#    Revit"                               -> here
+#   "batch save as for this folder"       -> here
+#   "save the families out of this model" -> EXPORT_FAMILIES. That one pulls
+#                                            families OUT of the open model to
+#                                            disk; this one takes files already
+#                                            on disk and rewrites them under
+#                                            the running release. Neither is
+#                                            the other
+#   "what version is this file"           -> READ_MODEL_FILE_INFO - and that is
+#                                            the question to ask before this
+#                                            one, because a file already on the
+#                                            running release needs no upgrade
+#
+# THE SENTENCE "UPGRADE THE MODEL" USUALLY MEANS SOMETHING ELSE ENTIRELY - open
+# the project and let Revit convert it, which is a job with a person watching
+# it. This is for CONTENT: the folder of families and templates that has to
+# follow.
+
+utterances:
+  - upgrade our family library
+  - move these families to the new Revit version
+  - batch save as for this folder of families
+  - upgrade these rfa files
+  - convert the family library to the current release
+  - we installed a new Revit and the content is on the old one

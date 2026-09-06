@@ -1,0 +1,70 @@
+positive:
+  - given: >
+      a floor plan showing grids 1 to 6, all parallel, all six passed, offsetMm
+      2000
+    expect: >
+      created holds one Dimension id, the string carries six references, and it
+      sits 2000 mm clear of the grid ends along the grid direction. The
+      measurement is Revit's own, worked out from the references - the line
+      only decided where the text landed
+
+  - given: >
+      a section view showing Level 00, Level 01 and Level 02, all three passed
+    expect: >
+      one string measuring floor to floor up the elevation. The measuring axis
+      is vertical here and horizontal for grids, which is the whole reason the
+      two kinds are never mixed
+
+  - given: >
+      six grids passed of which one is not shown in this view
+    expect: >
+      the five visible ones are dimensioned and the sixth is named in
+      notVisibleInView with a finding. Revit throws when asked to dimension to
+      something the view does not show, and the throw would have lost the five
+      good ones too
+
+  - given: >
+      grids passed together with two walls and a duct
+    expect: >
+      the grids are dimensioned; the walls and duct go to notADatum, not to
+      refused. They are a different mechanism entirely - a whole-element
+      Reference returns nothing for them - and CREATE_DIMENSION is where they go
+
+negative:
+  - given: three grids and two levels passed together as one set
+    expect: >
+      NOTHING is drawn, all five go to refused, and a finding says to make two
+      strings. The earlier version of this idea allowed the mix: the losing kind
+      is then measured along the wrong axis and comes back as a row of zeros,
+      which is a wrong dimension that reads as a correct one on the sheet
+
+  - given: two levels passed while the active view is a floor plan
+    expect: >
+      nothing is drawn and a finding names a section or elevation as where
+      floor to floor heights go. A plan looks straight down the axis the
+      dimension would have to measure along
+
+  - given: an arc grid passed among five straight ones
+    expect: >
+      the five are dimensioned and the arc is in refused. An arc has no single
+      direction, so there is no one axis a string across it measures along -
+      and dropping it silently would leave a string that quietly missed a grid
+
+  - given: one grid passed on its own
+    expect: >
+      nothing is created and a finding says one reference is not a dimension.
+      Not an empty success
+
+  - given: >
+      two grids that are drawn on top of each other, at the same position
+    expect: >
+      nothing is created and a finding says the string would measure zero. A
+      zero-length dimension line is refused by Revit and a zero dimension on a
+      setting-out drawing is worse than none
+
+second_route: >
+  The Aligned Dimension tool, picking each grid or level by hand in the view -
+  the same references, chosen by clicking. Revit's own behaviour is the check
+  on the mixing rule: picking a grid and then a level with that tool gives a
+  string that measures along one axis only, which is exactly what this refuses
+  to write in bulk.

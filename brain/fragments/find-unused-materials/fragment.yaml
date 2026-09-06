@@ -1,0 +1,127 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-029
+semantic-identity: "which materials is nothing using"
+kind: action
+domain: revit.qa
+capability: FIND_UNUSED_MATERIALS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports the materials nothing in the model references - the list that
+  accumulates through years of loaded families and transferred standards, and
+  makes every material browser unreadable.
+
+  **FIND_UNUSED_DEFINITIONS REFUSED TO ANSWER THIS AND SAID EXACTLY WHY: proving
+  a material unused means walking every element, every type's compound structure
+  and every painted face.** This fragment is that walk. It is separate from that
+  one because the cost is different by orders of magnitude - a view filter is
+  proved unused by reading a few hundred views, a material by reading
+  everything in the model - and a cheap report that quietly becomes an expensive
+  one is how a check stops being run.
+
+  **A MATERIAL USED ONLY AS PAINT LOOKS UNUSED, AND THAT IS THE DEFECT THIS
+  FRAGMENT IS BUILT AROUND.** Revit answers "what materials does this element
+  use" TWO different ways depending on a flag: one set is geometry and compound
+  structure, the other is PAINT - the finishes applied face by face. Reading
+  only the first offers a painted finish for deletion, and deleting it strips
+  the paint off every face it was ever on. Both sets are read, for every
+  element, and unioned.
+
+  **TYPES ARE WALKED AS WELL AS INSTANCES, AND MOST OF THE TIME THAT IS WHERE
+  THE MATERIAL LIVES.** A wall type's compound structure names its materials
+  whether or not one wall of that type is placed. Scanning only placed elements
+  reports every material of every loaded-but-unplaced type as unused, which on a
+  template-derived project is most of them.
+
+  **IT REPORTS AND DELETES NOTHING, and that is the same decision
+  FIND_UNUSED_FAMILIES and FIND_UNUSED_DEFINITIONS both recorded.** Purging is
+  one Revit command away, it is hard to reverse on a shared model, and a
+  fragment that deleted a hundred materials would be the most damaging thing in
+  this library.
+
+  **UNUSED IS NOT THE SAME AS SAFE TO REMOVE.** A project keeps materials for
+  work not yet modelled and a template ships them on purpose. This answers
+  *"what is nothing referencing"*; *"what should go"* is a judgement and it is
+  the modeller's.
+
+  **IT IS A WHOLE-MODEL SCAN AND SLOW ON A LARGE FILE.** The count of what was
+  walked is reported, so an answer that came back suspiciously fast can be seen
+  for what it is.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: unusedMaterials
+      type: IList<ElementId>
+    - name: unusedNames
+      type: IList<string>
+    - name: scannedInstances
+      type: int
+    - name: scannedTypes
+      type: int
+    - name: unreadable
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.GetMaterialIds(bool)` and the
+  `Material` class are unchanged 2020 to 2027, and the boolean argument means
+  the same thing throughout - false for geometry and compound structure, true
+  for paint.
+
+  Material ids are compared as `ElementId` against `ElementId` and none is read
+  as a number, so nothing here meets the 2024 widening to 64-bit or the removal
+  of `IntegerValue` by 2026.
+
+# ROUTING - repeated in FIND_UNUSED_DEFINITIONS, FIND_UNUSED_FAMILIES and
+# FIND_UNUSED_GROUP_TYPES.
+#
+#   "which materials is nobody using"     -> here
+#   "clean up the materials"              -> here for the list. The deleting is
+#                                            Revit's own Purge Unused, on
+#                                            purpose
+#   "purge unused"                        -> ALL FOUR, and they answer about
+#                                            different content. Materials here;
+#                                            family types
+#                                            FIND_UNUSED_FAMILIES; view
+#                                            templates and view filters
+#                                            FIND_UNUSED_DEFINITIONS; group
+#                                            definitions
+#                                            FIND_UNUSED_GROUP_TYPES. None of
+#                                            the four deletes anything, and
+#                                            that is one decision taken four
+#                                            times rather than a coincidence
+#   "what is this material used on"       -> SELECT_BY_MATERIAL - the forward
+#                                            question, and the one to ask
+#                                            before deleting anything this
+#                                            reports
+#   "make a new material"                 -> CREATE_MATERIAL
+#
+# THE ANSWER HERE IS ONLY AS GOOD AS THE PAINT READ. A version of this that
+# reads geometry materials and not painted ones reports a used finish as
+# unused, and deleting it strips paint off every face. That is the defect, and
+# it is why both reads are named in the purpose rather than left in the code.
+
+utterances:
+  - which materials is nobody using
+  - find the unused materials
+  - clean up the material list
+  - what materials can I purge
+  - unused materials in this model
+  - the material browser is full of rubbish

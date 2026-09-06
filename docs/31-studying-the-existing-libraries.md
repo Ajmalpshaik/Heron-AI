@@ -41,7 +41,12 @@ readers, one source folder each, then a second agent per claim told to **refute*
 
 | Read | Already covered by Heron | Impossible via the API | **Genuinely missing** |
 |---|---|---|---|
-| **330** | 316 | 4 | **9** |
+| **330** | 317 | 4 | **9** |
+
+> **The covered column read 316 until 2026-09-06 and the row did not add up: 316 + 4 + 9 = 329
+> against 330 read.** The refuted claim was struck off the missing column and never added to the
+> covered one. It is one file and it changes no conclusion, which is exactly why it survived being
+> printed twice in two documents — a total nobody adds up is not a check.
 
 Of the 398 files, **68 were never fragment work** — 44 `recipes/` (these become skills), 12 `context/`
 ([D-46](DECISIONS.md)), 8 `commands/` (native Revit commands), 3 `examples/` and 1 `lib/`. That leaves
@@ -58,6 +63,55 @@ the 330 above. Ten claims were raised; one was refuted; **nine stand:**
 | `creators/create-dimension` | One dimension string across Grids and/or Levels — the setting-out dimension |
 | `filters/filter-by-types` | Return the TYPE elements themselves (`FamilySymbol`, `DuctType`, `WallType`) as an actionable set |
 | `filters/filter-by-view-templates` | Return View Templates themselves as an actionable set, narrowed by name and by usage |
+
+### All nine are built, and the audit's blind spot is not closed
+
+**Built 2026-09-06 as TEN fragments, because one of the nine was two jobs.** `action-purge-unused`
+covered materials and group definitions, which share no mechanism and no sentence: a material is
+proved unused by walking every element, every type and every painted face, and a group definition by
+asking whether anything is placed. They are `FIND_UNUSED_MATERIALS` and `FIND_UNUSED_GROUP_TYPES`.
+Splitting is what [`HANDOVER.md` §9a](../HANDOVER.md) step 2 asks for; folding them together would
+have meant a mode string, and a mode string is the shape that hands a whole list to a delete on a
+typo.
+
+| Source | Built as |
+|---|---|
+| `reporting/action-plan-shortest-route` | `PLAN_CONNECTION_ORDER` — computes, draws nothing |
+| `sheets-views/action-set-view-properties` | `SET_VIEW_PHASE` |
+| `structural-changes/action-auto-size-pipe` | `AUTO_SIZE_PIPE` |
+| `structural-changes/action-batch-upgrade-revit-files` | `UPGRADE_FAMILY_FILES` |
+| `structural-changes/action-purge-unused` | `FIND_UNUSED_MATERIALS` **and** `FIND_UNUSED_GROUP_TYPES` |
+| `qa-checks/action-check-open-pipe-ends` | `CAP_OPEN_PIPE_ENDS` — caps only; the reporting half already existed |
+| `creators/create-dimension` | `DIMENSION_GRIDS_AND_LEVELS` |
+| `filters/filter-by-types` | `SELECT_TYPES` |
+| `filters/filter-by-view-templates` | `SELECT_VIEW_TEMPLATES` |
+
+**Building them found a defect in a fragment that was already here.** `FIND_UNUSED_DEFINITIONS`
+walked views only, so a view template used solely as a view family type's default — the template new
+views of that kind start with — was reported unused. Nothing points at it, and deleting it changes
+what every new plan is created with with nothing on screen saying so. It was caught because
+`SELECT_VIEW_TEMPLATES` asked the same question a third way and the two answers disagreed. Both check
+both kinds of use now.
+
+**NINE IS A FLOOR, NOT A CEILING, AND THE METHOD IS WHY.** Ten *missing* claims were handed to a
+refuter. **The 317 *already covered* claims were not.** The refutation pass was built to stop a
+duplicate being written, which is the cheap failure; a false "covered" is the expensive one, because
+it ends the search. The blind spot is one-sided by construction and it is still open.
+
+A cross-check on 2026-09-06 raised confidence without closing it:
+
+- **Matching source file names against fragment vocabulary does not work, and was abandoned rather
+  than reported.** Six of the nine KNOWN gaps score 0.67 to 1.00 against unrelated fragments —
+  `create-dimension.cs` matched `REPORT_GLOBAL_PARAMETERS` at 1.00. Name similarity separates
+  nothing, and a tool that cannot find the gaps already known cannot be trusted to find new ones.
+- **About fifteen of the most suspicious files were then read by hand, and no new gap was found.**
+  The two likeliest turned out to be covered well: `filter-by-element-intersection` by
+  `SELECT_TOUCHING`, which carries the same connector scar; `filter-by-solid-intersection` by
+  `SELECT_IN_REGION`, which deliberately folded the fast and exact tests into one flag.
+
+Fifteen of 317 is a sample, not a proof. **Closing this needs the covered claims put to a refuter the
+way the missing ones were**, and until that runs the honest statement is *nine were found and nine
+are built*, never *nine were all there were*.
 
 **Why this needed doing at all.** [`HANDOVER.md`](../HANDOVER.md) had recorded the library as
 **EXHAUSTED of fragment-shaped work**. That was an estimate standing in for a count: roughly 60 were

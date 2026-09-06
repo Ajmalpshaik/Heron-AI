@@ -1,0 +1,174 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-030
+semantic-identity: "what order should I connect these in"
+kind: action
+domain: revit.geometry
+capability: PLAN_CONNECTION_ORDER
+version: 1
+source: OFFICIAL
+risk: ANALYZE
+
+purpose: >
+  Works out the cheapest way to connect a loose set of elements and reports the
+  ORDER, the links and the total run length. *"Which order do I wire these
+  forty fittings in"*, *"chain these terminals off that unit"*, *"how much
+  cable is this"*.
+
+  **NOTHING ELSE IN THIS LIBRARY DECIDES AN ORDER, AND TWO FRAGMENTS ALREADY
+  DEPEND ON ONE.** CREATE_ELECTRICAL_RUN consumes points that are already
+  sequenced and RENUMBER_SEQUENTIAL states outright that it does not choose the
+  order. Both currently need a human to supply the sequence they eat. This
+  computes it.
+
+  **IT COMPUTES AND DRAWS NOTHING.** The earlier version of this idea also drew
+  the route into a view, which meant one fragment doing an optimisation and a
+  drafting job. The answer here is data - an order, a set of links, a length -
+  and drawing it is a separate decision with its own traps about model versus
+  detail lines. Splitting them is also what makes this safe to run on a whole
+  floor to see the number.
+
+  **A TREE AND A CHAIN ARE DIFFERENT QUESTIONS AND ONLY ONE OF THEM GIVES AN
+  ORDER.** A tree connects everything with the least total length and is allowed
+  to branch - which is how a real homerun behaves, splitting to serve several
+  fittings. It has no sequence, so `order` comes back EMPTY for it and `links`
+  carries the answer. A chain is one continuous run visiting each element once,
+  which is what a sequence means. Handing a tree result to something expecting
+  an order is the mistake this separation exists to make impossible.
+
+  **THE GUARANTEES ARE DIFFERENT AND THE FRAGMENT SAYS WHICH APPLIES.** The tree
+  is exact - it IS the shortest total for the distances given. The chain is a
+  heuristic, nearest-neighbour improved by repeated pair-swapping, usually
+  within a few percent and never guaranteed, because the exact version of that
+  problem has no fast solution. `guarantee` carries the word, so nothing
+  downstream claims "shortest possible" for a chain.
+
+  **UNGROUPED, IT DOES NOT KNOW WALLS EXIST.** Nearest-neighbour will hop into
+  the next room because a fitting there is 200 mm closer and then come back,
+  which nobody would ever pull cable like. Passing `groupKeys` routes each room
+  or zone as its own run and then links the runs together - local runs, feeders
+  between them, which is the real shape of distribution.
+
+  **EXPECT GROUPING TO REPORT A LONGER TOTAL AND DO NOT TREAT THAT AS A
+  REGRESSION.** Grouping is a constraint - finish this room before leaving it -
+  and constraints cost length. The ungrouped figure is shorter only because it
+  is cheating: it crosses between zones far more often than anybody would
+  build, which is to say it runs back and forth through walls. **The ungrouped
+  number is unbuildable and the grouped number is the real one.**
+
+  **THE CONTINUOUS MODE CHOOSES WHERE EACH GROUP ENDS, AND THAT IS THE WHOLE
+  IDEA.** Finishing a room and then jumping to the nearest fitting in any room
+  not yet done is obvious. What is not obvious is that the EXIT should not be
+  accepted, it should be optimised: every candidate last-fitting in the room is
+  tried, and the one that minimises the path through the room PLUS the jump out
+  of it wins. That one change is the difference between a grouped route that
+  costs a quarter more than the unbuildable ideal and one that lands within a
+  few per cent of it.
+
+  **THE LENGTHS ARE ESTIMATES AND THE MEASURE IS AN INPUT, BECAUSE CABLE DOES
+  NOT FLY.** Point to point in a straight line is a LOWER BOUND that can never
+  be achieved. Orthogonal distance - across, along and up - assumes running
+  square along ceilings and down walls, which is far closer to how it is
+  actually installed, and it is the one to use unless a lower bound is
+  specifically wanted. Neither knows about obstructions, trays, or a drop
+  nobody modelled. **This is the right connection ORDER plus a sensible length
+  estimate. It is not a cable schedule.**
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none, needs none and changes
+  nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "tree" | "chain" | "continuous". Anything else is refused, not defaulted.
+    - name: mode
+      type: string
+      source: request
+    # One key per element, same order, same length - a room name, a zone, a
+    # level. Empty means one group. Resolving an element to its room is its own
+    # job and belongs upstream.
+    - name: groupKeys
+      type: IList<string>
+      source: request
+    # true measures across, along and up - how it is installed. false measures
+    # straight line, which is a lower bound nothing can achieve.
+    - name: orthogonalDistance
+      type: bool
+      source: request
+  provides:
+    - name: order
+      type: IList<ElementId>
+    - name: links
+      type: IList<string>
+    - name: totalLengthMm
+      type: double
+    - name: guarantee
+      type: string
+    - name: noLocation
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, and almost none of it is Revit. The
+  only API touched is reading a location - `Element.Location` as `LocationPoint`
+  or `LocationCurve`, then `Element.get_BoundingBox(null)` as the fallback - and
+  all three are unchanged 2020 to 2027.
+
+  Lengths come out of Revit in feet and are converted to millimetres by
+  multiplying by 304.8 (D-20). No units API is touched, so nothing here meets
+  the 2021 move to ForgeTypeId.
+
+# ROUTING - repeated in CREATE_ELECTRICAL_RUN, RENUMBER_SEQUENTIAL and
+# MEASURE_ELEMENT_LENGTHS.
+#
+#   "what order do I connect these in"    -> here
+#   "which order should these be wired"   -> here
+#   "how much cable to connect these"     -> here, as an ESTIMATE. Not a cable
+#                                            schedule
+#   "chain these off that unit"           -> here with mode chain
+#   "draw the run"                        -> NOT here. This computes an order
+#                                            and draws nothing. The drawing is
+#                                            CREATE_ELECTRICAL_RUN, and it
+#                                            consumes a sequence rather than
+#                                            computing one - so the two COMPOSE,
+#                                            this one first
+#   "renumber these in order"             -> RENUMBER_SEQUENTIAL, which says
+#                                            outright that it does not choose
+#                                            the order. Same composition: this
+#                                            one supplies the order it needs
+#
+# THE TWO ROWS ABOVE USED TO READ "-> here first, then X" AND THAT WAS AN
+# OVERCLAIM. A sentence naming the WRITE is answered by the writer; what this
+# fragment supplies is the input it was always missing. Written the other way,
+# the table claimed two sentences the index correctly refused it.
+#   "how long is this duct"               -> MEASURE_ELEMENT_LENGTHS - the
+#                                            length of things that EXIST. This
+#                                            one estimates the length of a run
+#                                            that does not exist yet
+#
+# THE TWO CONSUMERS ARE THE REASON THIS EXISTS. Both were built needing a
+# sequence and neither could produce one, so both quietly required a human to
+# supply it.
+
+utterances:
+  - what order do I connect these in
+  # DECLARED BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT, 2026-09-06. It resolved
+  # to CHECK_EQUIPMENT_CLEARANCE - the word "unit" was doing the routing.
+  - chain these off that unit
+  - which order should these fittings be wired
+  - work out the shortest route between these
+  - chain these terminals together
+  - how much cable to connect all of these
+  - plan the run order for these fixtures

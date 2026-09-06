@@ -1,0 +1,70 @@
+positive:
+  - given: >
+      categories holding only Duct Accessories, both name filters empty, a
+      project with 14 duct accessory types loaded
+    expect: >
+      found is 14 and every one is a type element, not an instance. matchedNames
+      reads "family : type" for each, which is the only place those names are
+      visible - a type has no tag and appears on no drawing
+
+  - given: >
+      a fire damper type that was loaded months ago and has never been placed
+      anywhere in the project
+    expect: >
+      it comes back. This is the case the fragment exists for: nothing that
+      starts from a placed element can reach it, so it cannot be renamed,
+      reported on or checked against a standard by any other route here
+
+  - given: >
+      categories holding Ducts, familyNameContains empty, typeNameContains
+      "Radius" on a project whose duct types are system families
+    expect: >
+      the round duct types whose type name carries Radius come back. A system
+      family type has no Family object, and matching only the loadable case
+      would have reported zero with a browser full of them
+
+  - given: categories null and both name filters empty
+    expect: >
+      every element type in the document, with scanned equal to found. That is
+      the honest answer to "what types are in this model" and the reason null
+      is allowed rather than refused
+
+negative:
+  - given: >
+      somebody who meant "all the 600x600 diffusers on this drawing" and got
+      the diffuser TYPE
+    expect: >
+      a count of 1 or 2 where they expected hundreds. The sentence means the
+      types when a product is about to change and the instances when a drawing
+      is being counted, and FILTER_ELEMENTS_BY_TYPE is the other half
+
+  - given: >
+      a category asked for that no type in the project belongs to - Structural
+      Framing on a services-only model
+    expect: >
+      found is 0 with scanned still reporting every type walked. An empty
+      answer beside a large scanned count is a real absence; an empty answer
+      beside a scanned of zero would mean the collector never ran, and the two
+      must be tellable apart
+
+  - given: >
+      categories left null on a request that meant one category, on a project
+      template carrying several thousand types
+    expect: >
+      the WHOLE type table comes back. This is the failure the reported count
+      exists to make visible - a rename batch aimed at one category reaching
+      everything, with the number as the only warning
+
+  - given: >
+      typeNameContains set to a string that matches nothing, on a category that
+      definitely has types
+    expect: >
+      found is 0, not an error and not every type in the category. A filter
+      that fell back to "no match means no filter" would hand a batch far more
+      than was asked for
+
+second_route: >
+  Revit's Project Browser lists loaded family types under Families, and the
+  system family types under their own headings - the same set, read by eye. The
+  Purge Unused dialog shows a narrower version of it: the types with nothing
+  placed, which is FIND_UNUSED_FAMILIES rather than this.

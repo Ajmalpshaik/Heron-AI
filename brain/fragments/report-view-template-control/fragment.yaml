@@ -105,6 +105,11 @@ compatibility-note: >
 
 utterances:
   - why is this view setting greyed out
+  # DECLARED BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT, 2026-09-06. The shorter
+  # phrasing resolved to REMOVE_VIEW_TEMPLATE - a QUESTION answered by something
+  # that CHANGES THE MODEL, which is the worst shape there is. The longer
+  # phrasing was declared and the short one was not.
+  - which template is on this view
   - which view template is controlling this view
   - what does this view template control
   - why can I not change the scale on this view

@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-GRP-033
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-030
+semantic-identity: "which group definitions have nothing placed"
+kind: action
+domain: revit.qa
+capability: FIND_UNUSED_GROUP_TYPES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports the group definitions - model and detail - with no instance placed
+  anywhere in the project.
+
+  **THE TEST IS PROVABLE RATHER THAN A GUESS: a group type whose set of placed
+  groups is empty has nothing placed.** Revit keeps that relationship both ways,
+  so this is a reverse-lookup and not a heuristic, which is what makes it worth
+  reporting at all.
+
+  **AN ATTACHED DETAIL GROUP HAS NO INSTANCES OF ITS OWN AND IS STILL IN USE,
+  AND THAT IS THE TRAP.** A detail group attached to a model group is offered
+  through its parent - the parent is placed, the detail group is available on
+  every one of those placements, and its own set of placed groups can still read
+  empty. Reported as unused and deleted, the detail that annotates a placed
+  group is gone. Every placed group is asked which attached detail group types
+  it offers, and those are treated as used no matter what their own instance
+  count says.
+
+  **DELETING A GROUP TYPE IS NOT UNGROUPING, AND THE TWO GET CONFUSED.** There
+  is nothing placed to ungroup - the definition itself goes and the model looks
+  identical afterwards. That is why this is safe to report and would not be safe
+  to guess at.
+
+  **IT REPORTS AND DELETES NOTHING**, the same decision FIND_UNUSED_FAMILIES,
+  FIND_UNUSED_DEFINITIONS and FIND_UNUSED_MATERIALS all took, for the same
+  reason: purging is one Revit command away and hard to reverse on a shared
+  model.
+
+  **UNUSED IS NOT THE SAME AS SAFE TO REMOVE.** A group kept for a repeating
+  unit not yet placed is exactly what this reports, and it should stay. The
+  judgement is the modeller's.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: unusedGroupTypes
+      type: IList<ElementId>
+    - name: unusedNames
+      type: IList<string>
+    - name: usedOnlyAsAttached
+      type: IList<ElementId>
+    - name: scanned
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `GroupType.Groups`,
+  `Group.GetAvailableAttachedDetailGroupTypeIds()` and the `GroupType` and
+  `Group` classes are unchanged 2020 to 2027.
+
+  Group type ids are compared as `ElementId` against `ElementId` and none is
+  read as a number, so nothing here meets the 2024 widening to 64-bit or the
+  removal of `IntegerValue` by 2026.
+
+# ROUTING - repeated in FIND_UNUSED_MATERIALS, FIND_UNUSED_DEFINITIONS,
+# FIND_UNUSED_FAMILIES and UNGROUP_ELEMENTS.
+#
+#   "which groups is nobody using"        -> here
+#   "clean up the groups"                 -> here for the list; Revit's own
+#                                            Purge Unused does the removing
+#   "purge unused"                        -> ALL FOUR of the unused-content
+#                                            fragments, by what kind of content
+#                                            is meant. None of them deletes
+#   "ungroup these"                       -> UNGROUP_ELEMENTS, and it is a
+#                                            different job entirely. That one
+#                                            takes PLACED groups apart and
+#                                            leaves their elements behind; this
+#                                            reports definitions with nothing
+#                                            placed, whose removal changes
+#                                            nothing visible
+#   "what is in this group"               -> SELECT_GROUP_MEMBERS
+#
+# THE SENTENCE "GET RID OF THE UNUSED GROUPS" MEANS THE DEFINITIONS, and the
+# sentence "get rid of the groups" usually means ungroup what is placed. They
+# are opposite operations on opposite things.
+
+utterances:
+  - which group definitions have nothing placed
+  # DECLARED BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT, 2026-09-06. A routing
+  # table is a COMMENT and comments are not indexed - this sentence resolved to
+  # SELECT_GROUP_MEMBERS, which lists what is INSIDE a placed group.
+  - which groups is nobody using
+  - find the unused groups
+  - clean up the group list
+  - what groups can I purge
+  - unused model groups in this project
+  - the group browser is full of old groups

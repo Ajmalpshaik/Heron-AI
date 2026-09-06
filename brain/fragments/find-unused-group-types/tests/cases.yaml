@@ -1,0 +1,63 @@
+positive:
+  - given: >
+      a project with 34 group definitions, 9 of which have no instance placed
+      anywhere
+    expect: >
+      unusedGroupTypes holds those 9 with their names, and scanned reports 34.
+      The test is the definition's own set of placed groups being empty, which
+      Revit keeps both ways - a reverse-lookup, not a heuristic
+
+  - given: >
+      a detail group attached to a model group that IS placed, whose own set of
+      placed groups reads empty
+    expect: >
+      it appears in usedOnlyAsAttached and NOT in unusedGroupTypes, with a
+      finding saying why. This is the trap the fragment is built around:
+      reported as unused and deleted, the detail annotating a placed group is
+      gone
+
+  - given: a project where every group definition has instances placed
+    expect: >
+      unusedGroupTypes is empty and scanned still reports the walk. An empty
+      list beside a real count is an answer
+
+  - given: both model groups and detail groups in the project
+    expect: >
+      both kinds are walked - they are the same class of definition, and a
+      version that covered only model groups would leave the detail groups
+      accumulating unseen
+
+negative:
+  - given: >
+      somebody who said "get rid of the groups" meaning take the placed ones
+      apart
+    expect: >
+      this reports definitions with NOTHING placed and touches none of the
+      placed groups. UNGROUP_ELEMENTS is the opposite operation on the opposite
+      thing, and the two sentences are almost identical
+
+  - given: >
+      a group definition kept deliberately for a repeating unit not yet placed
+    expect: >
+      it IS reported as unused, correctly, and it should stay. What is
+      referenced by nothing and what should go are different questions, and only
+      the first is answered here
+
+  - given: a group type whose instance set cannot be read
+    expect: >
+      it is skipped rather than reported as unused. Unreadable is not zero, and
+      treating it as zero puts a live group definition on a deletion list
+
+  - given: >
+      the fragment run on a model where the attached-detail-group lookup throws
+      on some placed groups
+    expect: >
+      those groups are passed over rather than treated as offering nothing.
+      Assuming nothing is the direction that deletes a detail group still in use
+
+second_route: >
+  Revit's own Purge Unused dialog lists unused groups, and the Project Browser
+  shows every group definition with its placed count. The check on the attached
+  detail group handling is to place a model group carrying an attached detail
+  group and then run both: a version testing only the definition's own instance
+  set offers that detail group for deletion, and Revit's own dialog does not.

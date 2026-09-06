@@ -1,0 +1,81 @@
+positive:
+  - given: >
+      40 .rfa files, a destination folder that exists and is not the source,
+      allowProjectFiles false, maxFiles 50
+    expect: >
+      upgraded maps each source path to its new path, the originals are
+      byte-for-byte untouched, and every copy opens in the running Revit. The
+      one-way nature of an upgrade is why the originals surviving is part of
+      the pass, not an aside
+
+  - given: a family whose file already nominates a preview view
+    expect: >
+      the upgraded copy keeps that preview. A library is browsed by thumbnail in
+      Revit's own dialog, and a blank one makes it unnavigable
+
+  - given: a family with no nominated preview but with a 3D view
+    expect: >
+      the 3D view becomes the preview, having first passed Revit's own test for
+      whether that view can be one. Handing it a view that cannot makes the save
+      throw, which would have lost a file that was otherwise fine
+
+  - given: >
+      a workshared .rvt with allowProjectFiles true, whose worksharing reads
+      cleanly
+    expect: >
+      it opens DETACHED with all worksets open, and the central on disk is
+      untouched. Detached because opening it as the central and saving from
+      there damages a live job; worksets open because an upgrade rewrites every
+      element and a closed workset leaves its content unconverted
+
+negative:
+  - given: a destination folder that resolves to the source folder
+    expect: >
+      every file is skipped with the reason. This is the failure the fragment
+      exists to prevent: an upgraded file cannot be opened by the older Revit
+      ever again, so overwriting the originals destroys the only copy that still
+      works for a colleague, a consultant or an archive
+
+  - given: >
+      a .rvt whose worksharing cannot be read, with allowProjectFiles true
+    expect: >
+      it is SKIPPED, not opened hopefully. Opening it without knowing risks
+      opening a live central file as the central, and the cost of being wrong
+      there is far higher than the cost of skipping a file
+
+  - given: a non-workshared project file
+    expect: >
+      no detach option is set on it. Asking to detach a file that is not
+      workshared is itself refused by Revit, so a version that always detached
+      would fail on exactly the simple files it should handle best
+
+  - given: >
+      a family that is corrupt, or whose nested family is missing, in the middle
+      of a batch of 40
+    expect: >
+      it lands in failed with Revit's own message and the other 39 continue.
+      One bad file stopping a library upgrade halfway is worse than the bad file
+
+  - given: a file already open in this Revit
+    expect: >
+      it is skipped by name up front, not discovered by a throw halfway through.
+      Revit cannot open the same file twice
+
+  - given: 300 files with maxFiles left at 50
+    expect: >
+      50 are attempted and 250 are in skipped with the brake named. Not lost,
+      not silently truncated - the brake is deliberate because this is seconds
+      per file and Revit is busy throughout
+
+  - given: the destination folder does not exist
+    expect: >
+      nothing is opened and a finding says so. The folder is not created here:
+      an upgrade that invents its own output folder is one nobody can find
+      afterwards
+
+second_route: >
+  Opening each file in Revit and pressing Save As, which is exactly what this
+  automates and is how any result should be spot-checked. Revit's own batch
+  upgrade behaviour on opening an old file - convert and save - is the same
+  conversion; what it does not do is leave the original alone, which is the
+  whole reason this writes elsewhere.
