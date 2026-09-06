@@ -168,16 +168,16 @@ namespace Heron.Revit.Addin
                 "The picture shows the state: lit when connected, dark when not. A Revit that " +
                 "was never connected is invisible to every chat, by design.";
 
+            // No "\n" in this label, unlike the others: it is a row in a list
+            // now, not a ribbon button, and the wrap it used to force there
+            // would split it across two lines here for no reason.
             var status = new PushButtonData(
                 "HeronStatus",
-                "Bridge\nStatus",
+                "Bridge Status",
                 assemblyPath,
                 typeof(StatusCommand).FullName);
             status.ToolTip = "Show whether the bridge is running, and on which pipe.";
 
-            // Starts on the disconnected picture - the bridge never connects on
-            // its own unless bridge.autoConnect says so, and OnStartup corrects
-            // this below when it does.
             // In front of the user, on the ribbon, because of WHEN it is
             // needed: something is happening in the model that they did not
             // mean, and reaching for a chat window is the wrong ask.
@@ -193,10 +193,32 @@ namespace Heron.Revit.Addin
                 "It cannot interrupt something Revit has already started. If a change has " +
                 "already happened, Ctrl+Z in Revit is what puts it back.";
 
-            BridgeButton = panel.AddItem(toggle) as PushButton;
+            // Connecting and asking about the connection are the same subject
+            // at two depths, so they are one control rather than two buttons.
+            // The top half is the toggle, pressed constantly; the arrow holds
+            // the detail, wanted only when something looks wrong. Emergency
+            // Stop is deliberately NOT in here - see its comment above.
+            var bridgeGroup = panel.AddItem(
+                new SplitButtonData("HeronBridge", "Heron")) as SplitButton;
+
+            // AddPushButton hands back the live button, which is the only way
+            // to reach it again - the ribbon API offers no lookup, and this
+            // one has to be found after every toggle to change its picture.
+            BridgeButton = bridgeGroup.AddPushButton(toggle);
+            bridgeGroup.AddPushButton(status);
+
+            // A split button normally promotes whatever was last picked from
+            // the list to the top. Here the top button's picture IS the
+            // connected / disconnected state, so one look at Bridge Status
+            // would replace the state indicator with something that has no
+            // state - and it would never come back.
+            bridgeGroup.IsSynchronizedWithCurrentItem = false;
+
+            // Starts on the disconnected picture - the bridge never connects on
+            // its own unless bridge.autoConnect says so, and OnStartup corrects
+            // this afterwards when it does.
             SetBridgeIcon(false);
 
-            panel.AddItem(status);
             panel.AddItem(stop);
         }
 
