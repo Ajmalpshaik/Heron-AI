@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -39,6 +39,19 @@ contract:
       type: IList<string>
     - name: onNoSheets
       type: IList<ElementId>
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
+  positive_case: >
+    Snowdon Towers: 1 revision, 'Date 1 Revision 1 - 1 sheet: M001', onNoSheets 0.
+  negative_case: >
+    Project1: the template's Revision 1 came back as ON NO SHEETS with its id, and shownOn 0. That is the discriminating case - it did not report an empty list, and it did not claim the revision was in use. A revision that exists and reaches no drawing is exactly what this has to tell apart.
+  second_route: >
+    LIST_SHEETS independently reported 17 sheets on Snowdon and 0 on Project1, matching the sheet set this fragment walked.
+  fingerprint: "5a3373822bfd6f74"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

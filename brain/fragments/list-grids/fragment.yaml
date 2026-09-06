@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 16
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -39,6 +39,19 @@ contract:
       type: IList<string>
     - name: notLinear
       type: IList<ElementId>
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
+  positive_case: >
+    Snowdon Towers: 15 grids, each reported with its direction - '1 - runs north-south'. Countable against the plan.
+  negative_case: >
+    Project1: 0 grids, and notLinear 0. An empty model returns an empty list rather than inventing one, and it does NOT return Snowdon's 15 - both documents were open at the same time.
+  second_route: >
+    Revit's own Project Browser and any plan view show the 15 grid bubbles; the count is checkable by eye.
+  fingerprint: "31d210eb01dfac91"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

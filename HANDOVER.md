@@ -79,6 +79,90 @@ evidence any fragment does the right thing (D-30, D-45). **That, and nothing els
 
 ---
 
+**Updated 2026-09-06 (latest session) — THE PROVING PASS RAN. TWELVE FRAGMENTS ARE `PROVEN`, THE FIRST
+IN THIS PROJECT'S LIFE — AND THE THING THAT WAS BLOCKING IT WAS NEVER REVIT.**
+
+**D-28's executor is built.** A fragment's C# is compiled by Roslyn inside Revit's own process, against
+the assemblies Revit has actually loaded, and what it leaves behind comes back by name. It opens NO
+transaction, so Revit itself refuses any model change — the guarantee is Revit's, not a check of ours.
+
+| | |
+|---|---|
+| Models | `Snowdon Towers Sample HVAC` (9,628 elements) **and** `Project1` (3,410, default template), both open at once, Revit 2024.3 |
+| Fragments run | **20** |
+| Failed | **0** |
+| Promoted to `PROVEN` | **12** |
+| Still below `PROVEN` | **331** |
+
+**REVIT WAS NEVER THE BLOCKER, AND THIS FILE SAID SO IN THE SERVER'S OWN CODE:** *"there is no
+executor: the bridge speaks a fixed set of operations and none of them compiles anything."* Every
+session that wrote *"the proving pass needs the PC"* was half right. The PC was necessary and nowhere
+near sufficient.
+
+**ONE MODEL WITH CONTENT AND ONE WITHOUT IS WHAT MADE IT A PROOF.** The pair gives the positive and the
+negative case in one sitting, on one build, through one executor. Having both open AT ONCE proved
+something neither could alone: every fragment returned only the ACTIVE document's content. Reading
+across documents is exactly how these could have been quietly wrong.
+
+**THREE CROSS-CHECKS FELL OUT OF RUNNING THE SET TOGETHER** — they were not arranged, and they are the
+third leg D-30 asks for:
+
+- `LIST_SHEETS` says 17 sheets; `LIST_REVISIONS` walks sheets its own way and also says 17
+- `REPORT_VIEW_FILTERS` says 9 unused; `FIND_UNUSED_DEFINITIONS` reaches 9 from the other side
+- `LIST_LINKED_MODELS` finds 6 links; `REPORT_EXTERNAL_REFERENCES` finds 8 references — the difference
+  is exactly the two settings references, on both models
+
+**THIS MORNING'S FIX FIRED ON A REAL MODEL.** Project1 holds a view template no view follows, which a
+view family type names as the default for new views — `templatesKeptForViewTypeDefault: 1`. Before the
+correction that template reads as unused, and deleting it changes what every new view of that kind is
+created with, silently. Snowdon reports `0`. Both halves observed.
+
+**EIGHT WERE NOT PROMOTED, ALL FOR THE SAME REASON: HALF THE PAIR WAS NEVER SEEN.** Neither model is
+workshared, neither has design options or global parameters, nothing was selected in either, and both
+have exactly the two default phases. `FIND_UNUSED_MATERIALS` needs the case that matters put in front
+of it — **a material used ONLY as paint, which must NOT be reported unused**. That needs a painted
+face, and there wasn't one.
+
+> **WHAT TO OPEN NEXT TIME, so the other eight can finish:** a **workshared** model with a **closed
+> workset**, one carrying **design options** and **global parameters**, and one with **a face painted in
+> a material used nowhere else**. Each of those closes a specific fragment, and none of them can be
+> faked.
+
+**FOUR DEFECTS WERE FOUND BY RUNNING IT, AND NONE COULD HAVE BEEN FOUND BY READING IT:**
+
+- **Every fragment died on its first line.** The globals type was nested inside an internal class;
+  scripts compile into their OWN assembly, so `doc` was unreachable. The add-in compiled clean and all
+  343 fragments compiled clean — because the gate's wrapper puts them in the SAME assembly, the one
+  arrangement where the bug cannot appear. **Exactly the hole D-28 warned the compile gate could not
+  cover.**
+- **The add-in deployed without the code it needed to run.** Roslyn was referenced, restored and
+  compiled against, and not one of its assemblies reached the output folder — only its twelve localized
+  RESOURCE folders, which looks like a working deploy from a distance. It would have been an add-in that
+  vanished at `OnStartup`. `CopyLocalLockFileAssemblies` took the output from 3 DLLs to 15.
+- **Two commands in a row are refused.** `CLIENT_ID` is minted per process, which is right for the
+  long-lived MCP server and wrong for a command line — every command orphaned a lease for five minutes.
+  Fixed with `prove`: one process, one lease, many fragments.
+- **The answer did not name the model, and that nearly forged a proof.** The first fragment to run
+  reported two levels called *Level 1* and *Level 2* at 0 and 4000 mm — which is a plausible sample
+  building AND exactly what an empty template contains. Later, with both models open, a run intended for
+  `Project1` came back reading `Snowdon Towers` because the window was open but not ACTIVE. **Without the
+  title on the line those 15 grids would have been recorded as the "returns 0 on an empty model"
+  negative case.** The earlier library's own scar says it: *"The answer always names the document."*
+
+**§9b CAUGHT THIS SESSION THREE TIMES, IN THREE DIFFERENT SHARED THINGS** — the working tree (a
+`checkout` in the shared folder deleted this session's files from disk mid-build), the lease, and the
+retrieval store. All three are named in that section. **The work moved to its own worktree and the
+collisions stopped.**
+
+> **`test_embed` and `test_retrieve` fail, and it is not this work.** `NEEDS-CHECKING` row **A7** was
+> closed the same day: `model2vec` installed, backend switched from `lexical` to `model`, 343 fragments
+> re-embedded. Both tests encode rankings measured against the n-gram backend, and `test_retrieve`'s own
+> failure message predicted it — *"A7 is what should break this check."* They need re-basing against the
+> model backend WITH the reasoning written down, which belongs with the A7 work. They were not quietly
+> edited to go green.
+
+---
+
 **Updated 2026-09-06 (latest session) — THE REFUTATION PASS ON THE COVERED SIDE IS DONE, AND IT FOUND
 FIVE MORE.** The blind spot the section below warned about is closed. All 321 remaining source files
 were put to the opposite test from the original audit: *name the Heron capability that does this job,
