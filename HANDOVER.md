@@ -194,8 +194,8 @@ hours after both stopped being true).
    behind** — D-29's filter-feeding-action, running. That takes the fragments whose inputs the host can
    supply from **20 to 70**. **What is still missing is the caller's half**: a category, a name to match,
    a distance. **278 fragments want one of those and there is no route for them**, which is now the
-   largest single unlock left, and it is bigger than this one was. **None of PART 6 has met a model** —
-   Group J in NEEDS-CHECKING.md is the eight rows that would prove it.
+   largest single unlock left, and it is bigger than this one was. **PART 6 has now met a model** — six of Group J's
+   eight passed on 2026-09-07, `J2` included. `J7` and `J8` are still open.
 
    **The other track had already removed the first risk from this job, and the two agree.** All 135
    DRAFT READ fragments were put through the real executor the same day, and **every name any of them
@@ -677,14 +677,148 @@ whole point of that fragment. An *action* being handed **0** and reporting *"0 c
 zero, two opposite correct behaviours, decided entirely by which side of the binding it sits on** — which
 is why the refusal lives in the host and not in the fragments.
 
-### What is NOT true yet
+### IT RAN. Six of Group J's eight, the same day
 
-**None of this has run in Revit.** It compiles on eight releases and the suite is green, and by this
-file's own standard that is the API surface agreeing and nothing more. **The add-in has not even been
-deployed** — the DLL is locked while Revit runs, and Revit was open on the other track all day.
-**Group J in NEEDS-CHECKING.md is the eight rows that would prove it**, and `J2` — refusing when nothing
-is selected — is the one that matters most.
+**This section used to say none of it had run and the add-in was not even deployed. Both stopped being
+true within the hour.** Revit was closed, the add-in deployed from `main` at `9dfdf07`, and the checks
+run against `Project1 work_ajmal.al` (3,435 elements, view `1 - Mech`) in Revit 2024, session 20704.
 
+| | |
+|---|---|
+| **J1** | five ducts selected → `<- elements from the selection (5)`, `count 5`. **The first fragment needing an input ever to run here** |
+| **J2** | nothing selected → **refused**, naming `elements`, exit code 1. Not `count 0` |
+| **J3** | `list-levels` then `count-elements` → `<- elements from list-levels (2)` **while five ducts were selected**. The chain wins over the selection and says so |
+| **J4** | `unjoin-geometry` → refused, naming `first` AND `second`, because one selection cannot say which is which |
+| **J5** | `filter-elements-by-category` → refused, naming `category` and `levelId` with types |
+| **J6** | a fresh batch after J3 → `from the selection (5)`, **not** the two carried levels. `chain: reset` fired |
+
+**`J2` is the one that mattered and it held.** The message is the design in one line: *"Running anyway
+would report 0 results, which reads as 'there was nothing to find' rather than 'nobody was asked'."*
+
+**Two rows were NOT run and are still open.** `J7` needs a second model open and is the one
+`READ_SELECTION`'s own proof flagged as unresolved. `J8` would mean deliberately breaking a library
+fragment, so **the compile-error line-offset wording has never been seen**.
+
+**And this proves nothing about any fragment.** `COUNT_ELEMENTS` returned 5 for 5 and 2 for 2 and is
+still `DRAFT`: no second route, and J2's negative is the HOST refusing before the fragment ran, not the
+fragment handling an empty set. D-30 is untouched by all of it — 335 fragments still need proofs.
+
+### The lease has no handover, and it cost twenty minutes
+
+The first `prove` was refused: *"This Revit is in use by another chat."* The other track held the lease
+and it only frees on a **five-minute idle timeout** or the **Heron button**.
+
+**The earlier project had the opposite rule and said so plainly.** `AJ AI Brain`'s
+`knowledge/revit-sessions-and-chats.md`, written 2026-08-27 from the owner's own questions:
+
+> **"They fight.** Whichever speaks last takes the Revit over and cuts the other one off... **It is not a
+> queue — a second chat does not wait its turn, it pushes the first one out.**"
+
+Heron kept the transport half — the newest connection still takes the pipe — and deliberately put the
+lease on top, because **the old project could not write and Heron can**: chopping a read mid-way is
+harmless, chopping a duct move is not. That trade is right and it is recorded in `BridgeServer.cs`.
+
+**What was traded away and never replaced is the convenience.** There is no *"I have moved to this chat,
+hand it over"*: `HeronLease.Release` only works for the holder, and `Clear` only runs when the ribbon
+button is pressed. So switching chats means waiting five minutes or reaching for the ribbon. **That is a
+missing piece rather than a bug, and it is small.**
+
+
+---
+
+**2026-09-07, PART 7 — THE FIRST AGENT IS BUILDABLE NOW, AND THE AUDIT LOG HAS BEEN
+ANSWERING A QUESTION NOBODY ASKED IT.**
+
+This part is a survey and a decision, not a batch. Nothing was built. What it establishes is **which
+agent to build first and why**, measured off disk rather than read off the roadmap.
+
+### Agents: 12 named, 0 running, and the word means two things
+
+**`docs/08-agent-catalog.md` names twelve agents. `docs/28-agent-registry.md` holds 250 ids, and 61 of
+those are claimed by real code** (`check-gaps.py`, whose anchored pattern is the number to believe — a
+loose grep says 78 and counts prose).
+
+**Those 61 are OWNERSHIP LABELS, not software.** Every source file carries `Heron-Agent:` saying which
+agent would own it. **There is no agents folder, no orchestrator, no agent runtime** — the search was
+run rather than assumed: `mcp/server/heron_workflow.py` is the only thing of that shape, and the rest of
+the matches are five documents *about* agents and two tools that *count* them.
+
+> **`Failure Analysis Agent` has a TEST and no implementation.** `tests/test_failure_analysis.py` exists;
+> nothing under `mcp/`, `brain/` or `platform/` implements it. A test passing against an absent component
+> is worth knowing about before somebody reads the green suite as coverage.
+
+### THE AUDIT LOG IS NOT EMPTY, AND THIS SESSION SAID IT WAS
+
+**Corrected within one exchange, and recorded because the wrong version was already spoken.** The claim
+was *"there is barely any usage yet, so a Capability Gap report would report on nothing."* Then it was
+looked at:
+
+| `%APPDATA%\Heron\audit` | |
+|---|---|
+| entries | **331** (10 in August, 321 in September) |
+| `run_fragment_read` | **285** |
+| `count_elements` | 40 · `select_by_category` 6 |
+| **succeeded / failed** | **196 / 135** |
+
+**One hundred and thirty-five recorded failures that nobody has ever read.** Most are from this day's
+proving runs across both tracks. That is not "no usage" — it is a corpus, and it makes two of the twelve
+agents buildable that were dismissed an hour earlier on a guess.
+
+**The general shape, which this repository keeps meeting:** a claim about a derived store, made from
+memory rather than from the store. The fix is the same every time — open it.
+
+### What can be built now, and what cannot
+
+**Five of the twelve, all read-only, none able to touch a model.**
+
+| | Agent | What makes it possible NOW |
+|---|---|---|
+| **1** | **Fragment Validation** ⭐ | PART 6's executor. It could not have existed last week |
+| **2** | **Failure Analysis** | 135 recorded failures, unread. Named, tested, unimplemented |
+| **3** | **Capability Gap** | 331 audit entries. [ROADMAP](docs/ROADMAP.md) says explicitly to build it *"much earlier than this phase"* |
+| **4** | **Regression Testing** | `tests/test_golden.py` already detects STALE proofs; some are stale now |
+| **5** | **Intent** | retrieval by meaning already works underneath it |
+
+**The other seven cannot.** `Fix` needs Heron generating code (Phase 5). `Fragment Merge` / `Split` /
+`Evolution` need trust scores and months of per-fragment history. `Fragment Performance` needs timing
+nobody collects. `Agent Retirement` has **no agents to retire**. `Communication / Persona` is real and
+worth nothing today.
+
+### The recommendation, and the line it must not cross
+
+**Build ONE: Fragment Validation.** It is the only one aimed at what is actually stopping this project —
+**333 DRAFT against 16 PROVEN, proved by hand, one at a time.** Five half-built agents and 333 unproven
+fragments is the failure mode to avoid.
+
+> **IT MUST NEVER SET `heron-status: PROVEN` ITSELF.** It gathers evidence and DRAFTS; a person
+> confirms. [D-30](docs/DECISIONS.md) exists because an unproven claim quietly ages into a believed one,
+> and an agent stamping 333 fragments is the fastest machine ever built for doing exactly that. **The
+> analogy that fixes it: clash detection finds the clashes and lists them; the engineer decides which are
+> real and the engineer signs the drawing. The machine never signs.**
+
+**This is deliberately out of the roadmap's order** — agents are Phase 3+, and this is Phase 2. The
+justification is that it is read-only and it attacks the measured bottleneck. Recorded as a departure
+rather than slipped in.
+
+`docs/PROMPT-fragment-validation-agent.md` is the brief, written so another session can start from it
+without asking anything.
+
+### A git trap that cost nothing this time and would eventually cost a day
+
+**`git push origin <branch>` from a worktree checked out on a DIFFERENT branch pushes that named branch,
+not your HEAD.** It succeeds, prints a normal result, and this session reported *"committed and pushed"*
+about a commit that was still only on the machine. Two commits sat unpushed for hours —
+`e1e7fef` (the Group J proofs) and `716c3f6` (the per-chat chain and the hand-back) — while `main` moved
+underneath.
+
+**Found by checking rather than by being bitten.** The check is one line and belongs after any push that
+matters:
+
+```bash
+git branch -r --contains <sha>     # empty means it is NOT on the remote, whatever push said
+```
+
+**"Pushed" is a claim about a named branch. It is not a claim about your work.**
 
 ---
 

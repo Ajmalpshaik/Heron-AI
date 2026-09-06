@@ -182,28 +182,39 @@ python tools/check-compile.py          # 2020 through 2027, all four projects, 0
 
 ## Group J — the executor's inputs (needs Revit, and something selected)
 
-**Nothing in this group has ever run.** The executor could supply three names — `doc`, `uidoc`, `app` —
-until 2026-09-07, so the 328 fragments declaring anything else compiled green against a scope the machine
-could not reproduce. The host now binds every declared need from the fragment's own contract, which is
-what the compile gate has always done with its method parameters. **It compiles on all eight releases and
-has never met a model.**
+**SIX OF THE EIGHT ARE DONE, 2026-09-07, and they were run within the hour of the group being written.**
+The executor could supply three names — `doc`, `uidoc`, `app` — so the 328 fragments declaring anything
+else compiled green against a scope the machine could not reproduce. The host now binds every declared
+need from the fragment's own contract, which is what the compile gate has always done with its method
+parameters.
+
+**The run:** Revit 2024, session 20704, `Project1 work_ajmal.al` (3,435 elements, unsaved), active view
+`1 - Mech`, five ducts selected. Deployed from `main` at `9dfdf07`. **`J7` and `J8` were NOT run and are
+still open** — see their rows.
+
+**This is the first time in this project's life that a fragment needing an input has run at all.**
 
 Each row here needs Revit open **and something selected**, which no earlier group has required.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| **J1** | Select **a few ducts** in Revit, then `HERON_CLIENT_ID=me python mcp/client/heron_bridge_client.py prove count-elements` | It runs, and the line under it reads `<- elements from the selection (N)` with **N matching what you selected**. Before this change the same command was refused, because `elements` was a name the host had no way to fill |
-| **J2** | Select **nothing**, then run J1 again | It **refuses**, naming `elements`, and says nothing is selected. **This is the row that matters most.** An action handed zero elements reports *"0 changed"*, which a modeller reads as *"there was nothing to do"* rather than *"nobody was asked"* — the whole library was written to keep those apart and the host must not be the thing that collapses them |
-| **J3** | With ducts selected, `prove filter-elements-by-category count-elements` | The **chain**: the second line reads `<- elements from filter-elements-by-category (N)`, not `from the selection`. This is [D-29](docs/DECISIONS.md)'s design finally running — a filter's `provides` feeding an action's `needs`. Check N against the filter's own reported count |
-| **J4** | Select two ducts, then `prove unjoin-geometry` | It **refuses**, and says one selection cannot tell `first` from `second`. Binding both to the same set would run, report success, and be wrong — and nothing downstream could tell |
-| **J5** | `prove` a fragment needing a category or a name — e.g. `filter-elements-by-type` | It refuses with `needs_request_values`, naming what the caller would have to supply. **There is no route for those yet**, and 278 fragments are behind it. That is the next unlock, and it is bigger than this one |
-| **J6** | Run J1, wait, then run `prove count-elements` again with **nothing selected** | It **refuses**. It must NOT quietly reuse the elements from the earlier run. The client says `chain: reset` on the first fragment of every batch precisely so a later batch cannot inherit an earlier one's values |
-| **J7** | With two models open, select in one and `prove --in "<the other>" count-elements` | It **refuses** rather than binding a selection belonging to a different document. Elements are handles into the model they came from |
-| **J8** | Break a fragment's C# deliberately, with a bound need, and run it | The compile error says how many **generated lines** sit in front of the snippet. Without that, the line number points past the end of a short fragment and the compiler looks wrong |
+| ~~**J1**~~ | ~~Select a few ducts, then `prove count-elements`~~ | **DONE 2026-09-07.** Five ducts selected; `<- elements from the selection (5)`, `count 5`, `countedNothing false`. The number matched the selection and the answer said where it came from. **The first fragment needing an input ever to run in this project** |
+| ~~**J2**~~ | ~~Select nothing, then run J1 again~~ | **DONE 2026-09-07 — the row that mattered most, and it held.** `needs_unbound`: *"'elements (IList&lt;Element&gt;)' was never supplied. Nothing is selected in Revit, and no earlier fragment in this session left a value of that name. Running anyway would report 0 results, which reads as 'there was nothing to find' rather than 'nobody was asked'."* **Exit code 1**, so a script cannot read it as success either. It did NOT report `count 0` |
+| ~~**J3**~~ | ~~`prove <a filter> count-elements`~~ | **DONE 2026-09-07, with `list-levels` rather than `filter-elements-by-category`** — the latter needs caller values and is `J5`. `list-levels` found 2 levels; `count-elements` then read `<- elements from list-levels (2)`, `count 2`. **Five ducts were selected at the time and it did not use them**, which is the part worth having: the chain takes precedence over the selection and says which it used. [D-29](docs/DECISIONS.md)'s filter-feeding-action, running for the first time |
+| ~~**J4**~~ | ~~`prove unjoin-geometry` with a selection~~ | **DONE 2026-09-07.** `needs_unbound` naming both `first (IList<Element>)` and `second (IList<Element>)`: *"There is a selection, but this fragment needs 2 separate sets of elements and one selection cannot say which is which."* It counted the ambiguity rather than picking one |
+| ~~**J5**~~ | ~~`prove` a fragment needing a category or a name~~ | **DONE 2026-09-07.** `filter-elements-by-category` refused with `needs_request_values`, naming **both** `category (BuiltInCategory)` and `levelId (ElementId)` with their types. **278 fragments are behind this**, and it is the next unlock — bigger than this one was |
+| ~~**J6**~~ | ~~Run a batch, then run another, and check it does not inherit~~ | **DONE 2026-09-07, and run the sharper way round.** After the `J3` batch left 2 levels carried, a FRESH `prove count-elements` returned `<- elements from the selection (5)` — the five ducts, **not** the two carried levels. Had `chain: reset` not fired it would have said `from list-levels (2)`, so the two outcomes are distinguishable rather than both plausible |
+| **J7** | With two models open, select in one and `prove --in "<the other>" count-elements` | **NOT RUN — only one model was open.** It **must refuse** rather than bind a selection belonging to a different document. This is the case `READ_SELECTION`'s own proof flagged as unresolved: aimed off-screen it returns a bare `0`, and *"whether the selection was genuinely cleared, or whether a UIDocument built for an off-screen document cannot see a selection at all, was NOT established"*. The binding refuses instead of resolving it, and **that refusal is still unproven** |
+| **J8** | Break a fragment's C# deliberately, with a bound need, and run it | **NOT RUN.** It would mean damaging a library fragment to see the message, and no fragment happened to fail on its own. The compile error is written to say how many **generated lines** sit in front of the snippet; **that wording has never been seen** |
 
-**None of this proves any fragment does the right thing.** It proves the inputs arrive, or are refused with
-a reason. [D-30](docs/DECISIONS.md) still wants a proof with a negative case, per fragment, and that is 335
-rows this group does not touch.
+**None of this proves any fragment does the right thing**, and the six ticks above must not be read as if
+it did. It proves the inputs arrive, or are refused with a reason. [D-30](docs/DECISIONS.md) still wants a
+proof with a negative case, per fragment, and that is 335 rows this group does not touch.
+
+**`COUNT_ELEMENTS` in particular is still `DRAFT`.** It returned 5 for 5 and 2 for 2, which is evidence
+and not a proof: no second route reached the same number, and the negative case above is the HOST
+refusing before the fragment ran rather than the fragment handling an empty set. Whoever proves it
+properly can use these numbers; they are not the proof.
 
 ## Group R — read the decisions back (no Revit needed)
 

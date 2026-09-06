@@ -18,6 +18,7 @@ No Revit API, no MCP yet. Just: can something outside Revit reach inside it?
     python mcp/client/heron_bridge_client.py count     # count elements in the open model
     python mcp/client/heron_bridge_client.py count 24312
     python mcp/client/heron_bridge_client.py doctor    # diagnose a failure
+    python mcp/client/heron_bridge_client.py release   # hand this Revit back
 
 Two rules from the field notes (docs/00e, docs/25) are enforced here:
 
@@ -136,6 +137,25 @@ class Bridge(object):
     @property
     def pipe_path(self):
         return r"\\.\pipe" + "\\" + self.pipe_name
+
+    def release(self):
+        """
+        Hand the session back, so the next chat does not wait five minutes.
+
+        THE LEASE RENEWS ON EVERY REQUEST, so finishing a batch still leaves
+        this chat holding the Revit for the full lease. Saying so explicitly is
+        the difference between "I have stopped" and "I have gone quiet", and
+        only the first is something another chat can act on.
+
+        Best effort by design. A hand-back that fails costs a wait, never
+        correctness - the lease expires on its own either way - so this must
+        never turn a finished, successful batch into an error.
+        """
+        try:
+            reply = self.request("release", timeout=2.0, response_timeout=10.0)
+        except Exception:                              # noqa: BLE001 - see above
+            return False
+        return bool(reply and reply.get("released"))
 
     def close(self):
         """Drop the connection. Safe to call more than once."""
@@ -787,6 +807,7 @@ def cmd_fragment(name):
             print("    %-22s %s" % (key, provides[key]))
 
     for bridge in live:
+        bridge.release()
         bridge.close()
     return 1 if failures else 0
 
@@ -925,11 +946,47 @@ def cmd_prove(names, in_document=None):
         for key in sorted(provides):
             print("%s   %-20s %s" % (" " * 30, key, provides[key]))
 
+    # DONE - hand the Revit back rather than sitting on it for five more
+    # minutes. This is what makes moving straight to another chat work.
+    bridge.release()
     bridge.close()
 
     print("")
     print("%d ran, %d failed" % (len(sources) - failures, failures))
     return 1 if failures else 0
+
+
+def cmd_release():
+    """
+    Give this Revit back by hand.
+
+    THE ORDINARY CASE NEEDS NOTHING - `prove` hands back when it finishes. This
+    is for the times it could not: a command killed part-way, a chat closed
+    mid-job, or a session id that was set for one run and is now being reused.
+
+    IT CANNOT TAKE A REVIT FROM ANOTHER CHAT. The bridge only lets the holder
+    give up its own claim, so running this while somebody else is working says
+    so and changes nothing. The one thing that frees another chat's session is
+    still the Heron button, which is a person deciding at the machine.
+    """
+    live, starting, _, mismatched = discover()
+    if not live and starting:
+        print("Revit is still starting - its bridge is not answering yet.")
+        return 1
+    if not live:
+        print("No Revit is connected.")
+        report_mismatched(mismatched)
+        return 1
+
+    for index, bridge in enumerate(live):
+        reply = bridge.request("release")
+        if reply is None:
+            print("%s  no reply" % describe(bridge, index))
+        else:
+            print("%s  %s" % (describe(bridge, index),
+                              reply.get("message") or reply.get("error")))
+        bridge.close()
+    return 0
 
 
 def cmd_doctor():
@@ -1048,6 +1105,8 @@ def main(argv):
         return cmd_count(argv[2] if len(argv) > 2 else None)
     if argv[1] == "doctor":
         return cmd_doctor()
+    if argv[1] == "release":
+        return cmd_release()
     if argv[1] == "prove":
         rest = argv[2:]
         # prove --in "Project1" list-levels ...  reads a model that is open

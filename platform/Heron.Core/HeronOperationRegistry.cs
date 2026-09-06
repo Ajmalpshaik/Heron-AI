@@ -60,6 +60,12 @@ namespace Heron.Core
                 { "info",               HeronRisk.Read },
                 { "count_elements",     HeronRisk.Read },
 
+                // GIVING THE SESSION BACK. Read, because it cannot touch a
+                // model - it hands back a claim, and only the chat that holds
+                // it may. It is the OPPOSITE of a takeover: a second chat can
+                // never use this to free somebody else's Revit.
+                { "release",            HeronRisk.Read },
+
                 // ANALYZE - reads the model and computes over it. preview_move
                 // is here rather than at Modify because it genuinely changes
                 // nothing: it is the description of a change, not the change.
