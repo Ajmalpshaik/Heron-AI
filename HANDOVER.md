@@ -8,8 +8,11 @@ That is enough. This file is the memory; nothing else has to be remembered or re
 branch, the numbers, the decisions, and what comes next. Two things worth adding **only if they apply
 that day**:
 
-- **"Revit is open"** — that unlocks the whole proving pass, which is the one thing months of work here
-  have been waiting on. Without it a session will correctly keep building instead.
+- **"Revit is open"** — and say WHICH model, because that now decides what can be proved. Until
+  2026-09-06 this line said Revit was "the one thing months of work here have been waiting on", and
+  that was wrong: **nothing could execute a fragment at all**. The executor is built now, so Revit
+  being open is finally the thing that matters — and [the top section](#where-this-stands-right-now--read-this-then-9a-or-9)
+  lists exactly which six models finish the fragments that are still half-proved.
 - **"Work only on Heron-AI and AJ-Tools"** — the standing scope. `AJ-AI-Brain` is the earlier project
   and is **read-only reference**.
 
@@ -28,7 +31,109 @@ when the thing you hit is on no list at all.
 
 ---
 
-**Updated 2026-09-06 (latest session) — FOUR MORE BUILT, THE FIFTH REFUTED BY TRYING TO BUILD IT.
+## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
+
+**343 fragments. 13 `PROVEN`. 330 below.** D-28's executor is built, and fragments now run against a
+real model. That is new as of 2026-09-06 and it is the thing every earlier handover was waiting for.
+
+| | |
+|---|---|
+| Fragments | **343** — every fragment-shaped job in the earlier library is built |
+| Proven | **13**, each on a recorded proof with a negative case and a staleness fingerprint (D-30) |
+| Compile gate | green, Revit 2020–2027 |
+| Other gates | metadata, structure, docs, gaps — all green |
+| Tests | all pass **except `test_embed` and `test_retrieve`** — see the warning below |
+| Add-in | deployed to Revit 2024, built from `main` at `538bf55` |
+| Branches | `main` only, plus whatever another session is holding |
+
+**REVIT BEING OPEN IS NOT ENOUGH, AND THIS FILE USED TO IMPLY IT WAS.** Every earlier entry said the
+proving pass "needs the PC". True and nowhere near sufficient: until 2026-09-06 **nothing could execute
+a fragment at all**, and the server said so in its own code. The PC was never the blocker. The executor
+was. It is built now, so the sentence is finally true.
+
+### What 2026-09-06 did, in order — the four parts are BELOW THIS, and not in this order
+
+The sections that follow are the record, and the file lists them **PART 3, PART 4, PART 2, PART 1**
+because each was written on top of the last. Read them by their part number, not by where they sit.
+
+| Part | What it was | Result |
+|---|---|---|
+| **1** | Verified the nine "missing" claims and built them | 329 → 339, as TEN fragments — one was two jobs |
+| **2** | Refutation pass on the 317 "already covered" claims, which nobody had ever tested | five more found; the arithmetic closed at 330 for the first time |
+| **3** | Built four of those five | 339 → 343. **The fifth was my own wrong claim** — a schedule calculated column is impossible on every release, and the compile gate killed it in one run |
+| **4** | Built D-28's executor and ran the first proving pass | **13 `PROVEN`** |
+
+Not in the parts below, because they were fixes rather than batches: the phantom-session bug
+(`revit_health` reported six connected Revits when zero existed), the target-document input, and the
+served-claims fix (three MCP tools were telling every caller that nothing runs and everything is DRAFT,
+hours after both stopped being true).
+
+### What a fresh session should do next, in order
+
+1. **Finish the seven half-proved fragments.** Each needs ONE specific thing opened in Revit, and none
+   can be faked. This is the cheapest real progress available:
+
+   | Open this | Finishes |
+   |---|---|
+   | a workshared model with a **CLOSED workset** | strengthens `LIST_WORKSETS` — the one case never seen |
+   | a model with **design options** | `REPORT_DESIGN_OPTIONS` |
+   | a model with a **global parameter driving something** | `REPORT_GLOBAL_PARAMETERS` |
+   | **elements selected** on screen before the run | `READ_SELECTION` |
+   | a face **painted** in a material used nowhere else | `FIND_UNUSED_MATERIALS` — the paint-only case |
+   | a **placed group** plus an unused group definition | `FIND_UNUSED_GROUP_TYPES` |
+
+2. **Extend the executor to fragments that take inputs.** 323 of the 343 have never run, because they
+   need `elements`, a view or a category — and slice 1 supplies only `doc`, `uidoc` and `app`. This is
+   the largest single unlock left, and D-29's contract was designed for exactly it: a filter's
+   `provides` feeding an action's `needs`. Bigger than the target-document change, because those inputs
+   are Revit objects rather than strings.
+
+3. **The write path.** `run_fragment_read` opens no transaction on purpose, so Revit itself refuses any
+   change. Running a fragment that WRITES is a separate operation that does not exist, and it belongs
+   beside `move_elements` at `Modify` with a preview the user accepted.
+
+### How to run a fragment today
+
+```bash
+# one lease, many fragments - see the trap below
+HERON_CLIENT_ID=my-session python mcp/client/heron_bridge_client.py prove list-levels list-grids
+
+# aim at a model that is open but NOT the one on screen
+HERON_CLIENT_ID=my-session python mcp/client/heron_bridge_client.py prove --in "Project1" list-levels
+```
+
+Twenty fragments need nothing but `doc` and can be run this way today. `python tools/check-gaps.py`
+counts what is left; believe it over this file.
+
+### Traps that cost real time on 2026-09-06 — do not rediscover these
+
+- **A CLI command orphans the Revit lease for five minutes.** `CLIENT_ID` is minted per process, which
+  is right for the long-lived MCP server and wrong for a command line. **Always set `HERON_CLIENT_ID`**,
+  and use `prove` rather than one `fragment` call at a time.
+- **`git checkout` in the shared folder moves the tree under every other session.** It happened three
+  times in one day: files vanished mid-build, a commit landed on somebody else's branch, and a forced
+  reset destroyed another session's uncommitted edit. **[§9b](#9b-three-sessions-at-once--the-protocol-that-stops-them-colliding)
+  says use a worktree. Use one.** The collisions stopped the moment that was done.
+- **`git worktree remove --force` discards uncommitted work.** It ate five lines of a client change that
+  had not been committed yet. Commit before tidying up, not after.
+- **The add-in DLL is locked while Revit runs.** Any change under `revit/` needs Revit CLOSED, then
+  `tools/deploy-addin.ps1 -RevitVersion 2024`, then Revit restarted and **Heron pressed** — the bridge
+  never connects on its own.
+- **`Application.Documents` contains the LINKS.** On Snowdon that is six extra documents that look like
+  projects to choose from.
+
+> ### `test_embed` and `test_retrieve` fail. DO NOT "FIX" THEM BY EDITING THE EXPECTATIONS.
+>
+> `NEEDS-CHECKING` row **A7** was closed the same day: `model2vec` installed, the retrieval backend
+> switched from `lexical` to `model`, and all 343 fragments were re-embedded. Both tests encode rankings
+> measured against the old n-gram backend, and `test_retrieve`'s own failure message predicted it —
+> *"A7 is what should break this check."* They need re-basing against the model backend **with the
+> reasoning written down**, which is a real piece of work and belongs with A7. They were deliberately
+> left failing rather than edited until green.
+
+---
+
+**2026-09-06, PART 3 — FOUR MORE BUILT, THE FIFTH REFUTED BY TRYING TO BUILD IT.
 The library is 339 → 343, and every fragment-shaped job found in the earlier library is now built.**
 
 | | |
@@ -79,7 +184,7 @@ evidence any fragment does the right thing (D-30, D-45). **That, and nothing els
 
 ---
 
-**Updated 2026-09-06 (latest session) — THE PROVING PASS RAN. TWELVE FRAGMENTS ARE `PROVEN`, THE FIRST
+**2026-09-06, PART 4 — THE PROVING PASS RAN. TWELVE FRAGMENTS ARE `PROVEN`, THE FIRST
 IN THIS PROJECT'S LIFE — AND THE THING THAT WAS BLOCKING IT WAS NEVER REVIT.**
 
 **D-28's executor is built.** A fragment's C# is compiled by Roslyn inside Revit's own process, against
@@ -163,7 +268,7 @@ collisions stopped.**
 
 ---
 
-**Updated 2026-09-06 (latest session) — THE REFUTATION PASS ON THE COVERED SIDE IS DONE, AND IT FOUND
+**2026-09-06, PART 2 — THE REFUTATION PASS ON THE COVERED SIDE IS DONE, AND IT FOUND
 FIVE MORE.** The blind spot the section below warned about is closed. All 321 remaining source files
 were put to the opposite test from the original audit: *name the Heron capability that does this job,
 or the claim fails.*
@@ -204,7 +309,7 @@ trusted to find the ones you do not.
 
 ---
 
-**Updated 2026-09-06 (latest session) — THE NINE ARE BUILT, AS TEN FRAGMENTS. The library is 329 →
+**2026-09-06, PART 1 — THE NINE ARE BUILT, AS TEN FRAGMENTS. The library is 329 →
 339.** Every one compiles on Revit 2020 through 2027, the ten gates are green, the tests pass, and
 routing is back to its exact baseline. **Nothing is proven** — all 339 are `DRAFT` and the compile
 gate is the API surface agreeing, not evidence any of them does the right thing (D-30, D-45).
