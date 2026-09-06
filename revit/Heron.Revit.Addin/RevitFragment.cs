@@ -160,20 +160,23 @@ namespace Heron.Revit.Addin
             // the fragment.
             var needs = Json.ReadObjectArray(request, "needs");
 
+            // WHICH CHAT IS ASKING. The bridge puts this on every request and
+            // HeronLease already reads it the same way; the chain has to know
+            // it too, because what one fragment leaves for the next is that
+            // CHAT'S working state and nobody else's.
+            var client = Json.ReadString(request, "client");
+
             // A CHAIN IS OPENED DELIBERATELY, NOT INHERITED. What the previous
-            // fragment left is held in a static, so without this it would
-            // outlive the batch that produced it: a fragment run an hour later
-            // against the same model would bind elements collected by
-            // something nobody remembers running, report them as coming "from
-            // the previous fragment", and be right about the words and wrong
-            // about the run. The client says "reset" on the first fragment of
-            // a batch and nothing on the rest.
+            // fragment left would otherwise outlive the batch that produced
+            // it: a fragment run an hour later against the same model would
+            // bind elements collected by something nobody remembers running,
+            // report them as coming "from the previous fragment", and be right
+            // about the words and wrong about the run. The client says "reset"
+            // on the first fragment of a batch and nothing on the rest.
             if (string.Equals(Json.ReadString(request, "chain"), "reset",
                               StringComparison.Ordinal))
             {
-                Carried.Clear();
-                CarriedFrom = null;
-                CarriedBy = null;
+                Forget(client);
             }
 
             var bound = new HashSet<string>(StringComparer.Ordinal)
@@ -186,7 +189,8 @@ namespace Heron.Revit.Addin
             if (needs != null)
             {
                 string binding;
-                var refusal = BindNeeds(needs, globals, target, uidoc, bound, out prologue, out binding);
+                var refusal = BindNeeds(needs, globals, target, uidoc, bound, client,
+                                        out prologue, out binding);
                 if (refusal != null) return refusal;
                 Note = binding;
             }
@@ -216,7 +220,7 @@ namespace Heron.Revit.Addin
                     "'" + name + "' threw while running: " + Innermost(failure).Message);
             }
 
-            Remember(name, state, target, bound);
+            Remember(name, state, target, bound, client);
             return Report(name, state, target, uidoc, app.ActiveUIDocument, bound);
         }
 
@@ -393,18 +397,111 @@ namespace Heron.Revit.Addin
         /// needs, and this is the only place that hand-off can live: the
         /// client cannot hold a Revit Element across a wire.
         ///
-        /// KEYED BY DOCUMENT, AND CLEARED WHEN IT CHANGES. Elements belong to
-        /// the document they were read from. Handing a list from one model to
-        /// a fragment running against another is not a slightly wrong answer -
-        /// Revit throws, or worse, an id that means one thing in one file
-        /// means something else in the other. The title is checked before
-        /// anything carries over, and the store is dropped when it moves.
+        /// ONE CHAIN PER CHAT, AND THAT IS THE WHOLE POINT OF THIS TYPE.
+        /// It began as a single static dictionary, which is correct exactly as
+        /// long as one chat can talk to one Revit at a time - and that is true
+        /// today only because HeronLease refuses the second one. So the lease
+        /// was load-bearing for a bug rather than for a policy: remove it, let
+        /// two chats interleave small read fragments the way the dispatcher's
+        /// queue already allows, and chat B's action would bind chat A's
+        /// filter output. Two people, one clipboard.
+        ///
+        /// Nobody would have seen it. Both chats get a plausible answer, both
+        /// are told the elements came "from the previous fragment", and the
+        /// only wrong thing is WHOSE.
+        ///
+        /// KEYED BY DOCUMENT TOO, AND DROPPED WHEN IT CHANGES. Elements belong
+        /// to the document they were read from. Handing a list from one model
+        /// to a fragment running against another is not a slightly wrong
+        /// answer - Revit throws, or an id that means one thing in one file
+        /// means something else in the other.
         /// </summary>
-        private static readonly Dictionary<string, object> Carried =
-            new Dictionary<string, object>(StringComparer.Ordinal);
+        private sealed class Chain
+        {
+            public readonly Dictionary<string, object> Values =
+                new Dictionary<string, object>(StringComparer.Ordinal);
 
-        private static string CarriedFrom;      // document title
-        private static string CarriedBy;        // fragment name
+            public string Document;         // whose elements these are
+            public string By;               // the fragment that left them
+            public DateTime TouchedUtc;
+        }
+
+        private static readonly Dictionary<string, Chain> Chains =
+            new Dictionary<string, Chain>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// How long a chat's carried values survive without being touched.
+        ///
+        /// A chain is working state between two fragments of one batch, which
+        /// is seconds. This is a housekeeping bound rather than a feature: a
+        /// Revit left open for a week must not accumulate a dictionary of
+        /// Element ids per chat that ever spoke to it.
+        /// </summary>
+        private static readonly TimeSpan ChainLifetime = TimeSpan.FromMinutes(30);
+
+        /// <summary>The most chats whose chains are kept at once.</summary>
+        private const int MaxChains = 16;
+
+        /// <summary>
+        /// This chat's chain, or null.
+        ///
+        /// NO CLIENT ID MEANS NO CHAIN, DELIBERATELY. A request that does not
+        /// say who is asking cannot be given carried values, because there is
+        /// no honest answer to "whose were they" - and falling back to a
+        /// shared bucket is exactly the bug this type exists to remove. Such a
+        /// caller still runs fragments; it just cannot chain them, and the
+        /// refusal it gets names what was missing like any other.
+        /// </summary>
+        private static Chain ChainFor(string client, bool create)
+        {
+            if (string.IsNullOrEmpty(client)) return null;
+
+            Sweep();
+
+            Chain chain;
+            if (Chains.TryGetValue(client, out chain))
+            {
+                chain.TouchedUtc = DateTime.UtcNow;
+                return chain;
+            }
+
+            if (!create) return null;
+
+            chain = new Chain { TouchedUtc = DateTime.UtcNow };
+            Chains[client] = chain;
+            return chain;
+        }
+
+        private static void Forget(string client)
+        {
+            if (string.IsNullOrEmpty(client)) return;
+            Chains.Remove(client);
+        }
+
+        /// <summary>
+        /// Drop what is stale, and the oldest if there are too many. Element
+        /// ids are small, but a dictionary per chat for the life of a Revit
+        /// process is still a leak nobody would ever look for.
+        /// </summary>
+        private static void Sweep()
+        {
+            var now = DateTime.UtcNow;
+
+            var stale = new List<string>();
+            foreach (var entry in Chains)
+                if (now - entry.Value.TouchedUtc > ChainLifetime) stale.Add(entry.Key);
+            foreach (var key in stale) Chains.Remove(key);
+
+            while (Chains.Count > MaxChains)
+            {
+                string oldest = null;
+                var when = DateTime.MaxValue;
+                foreach (var entry in Chains)
+                    if (entry.Value.TouchedUtc < when) { when = entry.Value.TouchedUtc; oldest = entry.Key; }
+                if (oldest == null) break;
+                Chains.Remove(oldest);
+            }
+        }
 
         /// <summary>
         /// Turn the declared contract into real values and a typed prologue.
@@ -428,11 +525,17 @@ namespace Heron.Revit.Addin
                                         Document target,
                                         UIDocument uidoc,
                                         HashSet<string> bound,
+                                        string client,
                                         out string prologue,
                                         out string binding)
         {
             prologue = "";
             binding = null;
+
+            // THIS CHAT'S carried values, and no other chat's.
+            var chain = ChainFor(client, false);
+            var carried = chain != null && chain.Document == target.Title
+                ? chain.Values : null;
 
             var lines = new StringBuilder();
             var how = new List<string>();
@@ -469,7 +572,7 @@ namespace Heron.Revit.Addin
                 if (!Fields(need, out nm, out ty, out src)) continue;
                 if (bound.Contains(nm)) continue;
                 if (src == "request") continue;
-                if (Carried.ContainsKey(nm) && CarriedFrom == target.Title) continue;
+                if (carried != null && carried.ContainsKey(nm)) continue;
                 if (IsElementList(ty)) selectable++;
             }
 
@@ -522,12 +625,12 @@ namespace Heron.Revit.Addin
                 object value = null;
                 string origin = null;
 
-                // 1. THE CHAIN. What the previous fragment in this session
+                // 1. THE CHAIN. What the previous fragment THIS CHAT ran
                 //    left behind, under this name, in THIS document.
-                if (CarriedFrom == target.Title && Carried.ContainsKey(name))
+                if (carried != null && carried.ContainsKey(name))
                 {
-                    value = Carried[name];
-                    origin = "from " + (CarriedBy ?? "the previous fragment");
+                    value = carried[name];
+                    origin = "from " + (chain.By ?? "the previous fragment");
                 }
 
                 // 2. THE SELECTION, and only when it is unambiguous.
@@ -603,12 +706,17 @@ namespace Heron.Revit.Addin
         /// fragment fresher than it is.
         /// </summary>
         private static void Remember(string name, ScriptState<object> state,
-                                     Document target, HashSet<string> bound)
+                                     Document target, HashSet<string> bound,
+                                     string client)
         {
-            if (CarriedFrom != target.Title) Carried.Clear();
+            // A caller that did not say who it is gets no chain - see ChainFor.
+            var chain = ChainFor(client, true);
+            if (chain == null) return;
 
-            CarriedFrom = target.Title;
-            CarriedBy = name;
+            if (chain.Document != target.Title) chain.Values.Clear();
+
+            chain.Document = target.Title;
+            chain.By = name;
 
             foreach (var variable in state.Variables)
             {
@@ -628,11 +736,11 @@ namespace Heron.Revit.Addin
                     var ids = new List<ElementId>();
                     try { foreach (var e in elements) if (e != null) ids.Add(e.Id); }
                     catch { continue; }
-                    Carried[variable.Name] = ids;
+                    chain.Values[variable.Name] = ids;
                     continue;
                 }
 
-                Carried[variable.Name] = value;
+                chain.Values[variable.Name] = value;
             }
         }
 

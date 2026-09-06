@@ -383,6 +383,46 @@ namespace Heron.Bridge
                     Json.Num("leaseSecondsRemaining", (long)HeronLease.SecondsRemaining));
             }
 
+            // HANDING IT BACK, WHICH IS THE HALF THAT WAS MISSING.
+            //
+            // The lease is claimed on every request and renewed for five
+            // minutes each time, so a chat that has FINISHED still holds the
+            // Revit for five minutes after its last command. Switching chats
+            // meant waiting that out or reaching for the ribbon button. The
+            // mechanism to give it up existed from the start and nothing ever
+            // called it.
+            //
+            // THIS IS NOT THE OLD PROJECT'S TAKEOVER, AND THE DIFFERENCE IS
+            // THE WHOLE POINT. There, a new chat preempted the old one
+            // instantly - listed in that project's own spec under
+            // "Limitations", and the reason its user had to police it by
+            // saying "don't go to Revit, another session is running". Here the
+            // chat that OWNS the session gives it up when its work is done.
+            // Nobody is ever cut off mid-job, and HeronLease.Release refuses
+            // anyone but the holder, so this can never become a way to take
+            // another chat's Revit.
+            //
+            // BEFORE THE LEASE CLAIM, beside ping and info, because claiming
+            // in order to release would renew the very thing being given up.
+            // It touches no model and needs no Revit thread.
+            if (op == "release")
+            {
+                var who = Json.ReadString(request, "client");
+                var released = HeronLease.Release(who);
+
+                return Json.Ok(
+                    Json.Bool("released", released),
+                    // A caller that did not hold it is told so plainly rather
+                    // than getting a bare false: "nothing to give back" and
+                    // "somebody else has it" are different facts, and only one
+                    // of them means waiting.
+                    Json.Str("message", released
+                        ? "Session handed back. Another chat can use this Revit now."
+                        : (HeronLease.Holder == null
+                            ? "Nothing to hand back - this Revit was not held."
+                            : "Not yours to hand back: another chat holds this Revit.")));
+            }
+
             // THE LEASE. One Revit is one door: a second chat is refused here
             // rather than taking the session and chopping whatever the first
             // was doing. Claiming also RENEWS, so an active chat never loses
