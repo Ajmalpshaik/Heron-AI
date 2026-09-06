@@ -79,6 +79,8 @@ compatibility-note: >
 #   "i need a set for the issue"         -> MANAGE_SHEET_SETS for the sheets
 #                                           to print. This one makes the
 #                                           revision they carry
+#   "change the revision date"           -> EDIT_REVISION. This one makes a
+#                                           new revision
 
 utterances:
   - add a revision

@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-051
+semantic-identity: "put a ceiling in every room, the shape of the room"
+kind: action
+domain: revit.elements
+capability: CREATE_FROM_ROOM_BOUNDARIES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Builds a floor or a ceiling on each room, taking the shape from the room's
+  own boundary - including the holes. No typed coordinates: the room already
+  knows its shape.
+
+  **THE HOLES ARE THE REASON THIS EXISTS.** A room's boundary comes back as
+  several loops: the first is the outside edge and every one after it is a
+  shaft, a core or a column the room wraps around. Building from the first loop
+  alone puts a slab straight over the shaft - which looks right in plan, passes
+  every check, and is found by the person who tries to run a riser through it.
+  The plain creators take ONE loop and say so; this is the fragment for the
+  real-room case.
+
+  **AN UNENCLOSED ROOM HAS NO USABLE BOUNDARY.** It reports no area and no
+  loops, so nothing can be built on it. Those rooms are named rather than
+  silently skipped - a floor of thirty rooms that produced twenty-eight
+  ceilings needs to say which two.
+
+  **THE TYPE DECIDES WHAT IS BUILT.** A floor type makes floors and a ceiling
+  type makes ceilings, so there is no mode to get wrong - and a type that is
+  neither is refused before anything is attempted.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # A FloorType or a CeilingType - which one decides what gets built.
+    - name: hostType
+      type: Element
+      source: request
+    # Ceilings only: how far above the room's level the ceiling sits.
+    - name: heightAboveLevel
+      type: double
+      source: request
+  provides:
+    - name: created
+      type: IDictionary<ElementId, ElementId>
+    - name: withHoles
+      type: IList<ElementId>
+    - name: unenclosed
+      type: IList<ElementId>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  The creation calls moved. A floor is made one way up to 2021 and another from
+  2022, and a ceiling cannot be made from code at all before 2022 - so both are
+  reached by looking the method up at run time rather than naming it, which is
+  what lets one file serve all eight releases. A release with no ceiling call
+  says so instead of failing to build. The boundary loops themselves are
+  unchanged 2020 to 2027.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "put a ceiling in every room"        -> here, and the shafts stay open
+#   "make a slab under this block of     -> here
+#    rooms"
+#   "make a floor from these points"     -> CREATE_FLOOR, which takes ONE typed
+#                                           loop and cuts no openings
+#   "make a ceiling from these points"   -> CREATE_CEILING, the same
+#   "what shape is this room"            -> READ_ROOM_GEOMETRY, which hands
+#                                           back the outline and the holes
+#                                           separately
+#   "which rooms are not enclosed"       -> SELECT_UNENCLOSED_ROOMS
+
+utterances:
+  - put a ceiling in every room
+  - make a slab under these rooms
+  - build the floor from the room shape
+  - i need ceilings in all the rooms

@@ -89,6 +89,10 @@ compatibility-note: >
 #                                          this has found the problem
 #   "how high is the ceiling"            -> MEASURE_CEILING_HEIGHT - how much
 #                                          void there is to work in at all
+#   "what is above this duct"            -> PROBE_AROUND_ELEMENTS, which
+#                                           NAMES what it hits and how far.
+#                                           This one judges a clearance
+#                                           against a number you give
 
 utterances:
   - how much room is there between the duct and the pipe above it

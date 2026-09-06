@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-016
+semantic-identity: "change the revision description or date"
+kind: action
+domain: revit.sheets
+capability: EDIT_REVISION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes an existing project revision - its description, date, who it was
+  issued by and to, whether it is issued, and how its clouds and tags show.
+
+  **IT IS FOUND BY SEQUENCE NUMBER, NOT BY DESCRIPTION.** The sequence number
+  is what Revit shows in its own revision dialog and what every sheet's
+  revision schedule sorts on. Descriptions repeat across a job - two issues
+  called "For Construction" is normal - so matching on one would edit whichever
+  came first.
+
+  **ISSUING A REVISION LOCKS IT.** Once issued, Revit stops most edits to it
+  and to the clouds that carry it. Setting that flag is therefore the one field
+  here that changes what can be done next, and it is reported separately for
+  that reason.
+
+  **ANY FIELD LEFT EMPTY IS NOT TOUCHED.** One call fixes a date without
+  rewriting a description somebody worded carefully.
+
+  **EVERY FIELD IS READ BACK.** A revision that refuses an edit - usually
+  because it is issued - returns from the call and keeps its old value.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: sequenceNumber
+      type: int
+      source: request
+    - name: description
+      type: string
+      source: request
+    - name: revisionDate
+      type: string
+      source: request
+    - name: issuedBy
+      type: string
+      source: request
+    - name: issuedTo
+      type: string
+      source: request
+    # "issue" | "unissue" | "" to leave alone.
+    - name: issueState
+      type: string
+      source: request
+  provides:
+    - name: changed
+      type: IList<string>
+    - name: nowIssued
+      type: bool
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. A revision's description, date, issued
+  by and to, issued flag and sequence number are unchanged 2020 to 2027. The
+  date is a plain string on the revision, not a date type - Revit stores
+  whatever the office writes, which is why nothing here parses it.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "change the revision date"           -> here
+#   "mark that revision as issued"       -> here
+#   "make a new revision"                -> CREATE_REVISION
+#   "list the revisions"                 -> LIST_REVISIONS, which is where the
+#                                           sequence number comes from
+#   "delete that revision"               -> DELETE_REVISION, which renumbers
+#                                           every later one
+#   "put that revision on these sheets"  -> SET_SHEET_REVISIONS
+#   "cloud this change"                  -> ADD_REVISION_CLOUD
+
+utterances:
+  - change the revision description
+  - fix the revision date
+  - mark the revision as issued
+  - update who the revision was issued by
+  - change the revision date

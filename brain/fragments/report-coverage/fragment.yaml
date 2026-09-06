@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-PRF-017
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-024
+semantic-identity: "how much floor does each diffuser actually serve"
+kind: action
+domain: revit.document
+capability: REPORT_COVERAGE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports what each point-based element covers at a stated radius - the area
+  each one serves, the total, and how far each is from its nearest neighbour.
+  Built for air terminals and it works for anything placed on a grid: lights,
+  sprinklers, detectors, sockets.
+
+  **THE RADIUS IS THE CALLER'S AND THERE IS NOTHING IN THE MODEL TO READ IT
+  FROM.** A diffuser carries flow, pressure drop and neck size; it does not
+  carry a coverage. What one covers is a design decision - a throw at a
+  velocity, a code spacing, a lighting level - and a fragment that invented one
+  would put a number nobody chose into a layout somebody signs.
+
+  **THE TOTAL IS AN UPPER BOUND, NOT AN ANSWER, AND OVERLAPS ARE WHY.** Circles
+  that overlap are counted twice in a sum. The total is still worth having
+  against a room's area - if it is BELOW the floor area there are certainly
+  gaps - but a total above it proves nothing. Said here rather than left for
+  somebody to work out from a number that looks like a result.
+
+  **THE NEAREST-NEIGHBOUR DISTANCE IS WHERE THE GAPS SHOW.** Two elements
+  further apart than twice the radius cannot overlap, so there is floor between
+  them nothing covers. That comparison is the one that finds a hole in a
+  layout, and it is reported per element.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    # Internal units. No default: a throw, a code spacing and a lighting level
+    # are three different numbers for the same diffuser.
+    - name: coverageRadius
+      type: double
+      source: request
+  provides:
+    - name: areaEach
+      type: double
+    - name: areaTotal
+      type: double
+    - name: nearestNeighbour
+      type: IDictionary<ElementId, double>
+    - name: gapSuspects
+      type: IList<ElementId>
+    - name: noPoint
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. It reads each element's location point
+  and does arithmetic - nothing here touches an API that has moved, and no
+  units call is involved, which is what keeps it clear of the 2021 change.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "how much does each diffuser cover"  -> here
+#   "are there gaps in this layout"      -> here - `gapSuspects` and the
+#                                           neighbour distances
+#   "how many do i need for this room"   -> that is a layout decision, not a
+#                                           model read: the room's area comes
+#                                           from REPORT_ROOM_SPACE_DATA and the
+#                                           arithmetic belongs to whoever is
+#                                           designing
+#   "is anything in the way"             -> CHECK_OBSTRUCTIONS, for a layout
+#                                           that has to be buildable as well as
+#                                           complete
+#   "how far apart are these"            -> MEASURE_DISTANCE, between two named
+#                                           elements rather than across a set
+#   "colour them by how much"            -> SHOW_ANALYSIS_HEATMAP
+
+utterances:
+  - how much floor does each diffuser cover
+  - are there gaps between these detectors
+  - coverage of the sprinklers
+  - what area does each of these serve
+  - are there gaps in this layout

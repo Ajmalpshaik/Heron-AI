@@ -71,6 +71,8 @@ compatibility-note: >
   `placeholders` carries `ElementId`, whose backing width changed at 2024 - it is
   only collected and returned here, never converted to or from an integer, which
   is what keeps this clear of that break.
+#   "which sheets carry this date"       -> EXTRACT_DATES_FROM_TEXT, which
+#                                           reads the dates typed on them
 
 utterances:
   - which sheets are in this model

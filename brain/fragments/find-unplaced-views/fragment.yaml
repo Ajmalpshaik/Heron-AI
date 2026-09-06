@@ -1,0 +1,77 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-093
+semantic-identity: "which views did nobody put on a sheet"
+kind: filter
+domain: revit.views
+capability: FIND_UNPLACED_VIEWS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds the views that are on no sheet - the working views nobody placed. The
+  list somebody wants before an issue, and before any tidy-up.
+
+  **A SCHEDULE IS NOT PLACED THROUGH A VIEWPORT, AND THAT IS WHY A NAIVE
+  VERSION OF THIS IS DANGEROUS.** Sheets carry schedules as a different kind of
+  element entirely. Collect viewports only, and every schedule in the project
+  comes back as unplaced - so a tidy-up built on that offers to delete the
+  drawing set's schedules. Both routes are read here.
+
+  **IT REPORTS AND DELETES NOTHING.** *"Purge the unplaced views"* is a real
+  request and the honest half of it is showing what would go: some working
+  views are somebody's live workspace, and one that is unplaced today is on a
+  sheet tomorrow. Deleting is one Revit command away for whoever decides.
+
+  **A VIEW TEMPLATE IS NOT AN UNPLACED VIEW.** Templates are views by type and
+  belong on no sheet by definition - counting them would put every template in
+  a deletion list. Neither are the browser views Revit keeps for itself.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: byType
+      type: IDictionary<string, int>
+    - name: placedCount
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Viewports and schedule sheet instances
+  are separate element kinds on all of them, and both carry the id of the view
+  they place, which is what makes the two routes readable the same way.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which views are not on a sheet"     -> here
+#   "purge the unplaced views"           -> here first. It reports and deletes
+#                                           nothing: an unplaced view today is
+#                                           on a sheet tomorrow
+#   "which views are there"              -> FIND_VIEWS, narrowed by type and
+#                                           name rather than by placement
+#   "put these views on sheets"          -> PLACE_VIEWS_ON_SHEET
+#   "which families are unused"          -> FIND_UNUSED_FAMILIES
+#   "what else is unused"                -> FIND_UNUSED_DEFINITIONS, for view
+#                                           templates and filters
+#   "delete these"                       -> DELETE_ELEMENTS, deliberately and
+#                                           with the list in front of you
+
+utterances:
+  - which views are not on a sheet
+  - find the unplaced views
+  - the project browser is full of working views
+  - what would purge unplaced views delete

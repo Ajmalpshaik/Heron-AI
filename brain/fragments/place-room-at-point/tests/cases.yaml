@@ -1,0 +1,42 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: three points inside enclosed areas on a level
+    expect: >
+      three rooms, each where the point was, all with a real area. Check one in
+      Revit - the room tag lands where you put it
+
+  - given: asSpace true
+    expect: >
+      MEP Spaces, not Rooms. Loads and airflow read Spaces, and the two look
+      identical on screen
+
+  - given: a point in a room that already has one
+    expect: >
+      Revit's own behaviour, reported as it happens rather than pre-judged here
+
+negative:
+  - given: a point OUTSIDE any enclosed region
+    expect: >
+      a room created with NO area, and its id in `unenclosed`. Revit reports no
+      error, and the room sits in the schedule looking real - which is the
+      whole reason this measures afterwards
+
+  - given: a point Revit refuses outright
+    expect: >
+      `refused` counting it and the other points still placed
+
+  - given: a Z value in the points
+    expect: >
+      it ignored, the level deciding the height. Half-using it would put rooms
+      at heights nobody asked for
+
+  - given: an empty point list
+    expect: >
+      nothing created and no throw
+
+second_route:
+  - >
+    look at the plan and at a room schedule - a room with no area is visible in
+    the schedule as a blank, which is what makes the unenclosed case worth
+    catching at placement

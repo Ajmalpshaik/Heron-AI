@@ -28,5 +28,16 @@ negative:
       InvalidElementId rather than throwing, so an unchecked result would be
       recorded as a successful split of nothing
 
+  - given: a duct split in the middle, and the two halves traced afterwards
+    expect: >
+      ONE system through the cut, and the element's id in `halvesJoined`. The
+      earlier library measured the break leaving that joint OPEN - a run that
+      looks perfect on screen and traces as two systems
+
+  - given: a break Revit will not let the halves close across
+    expect: >
+      the id in `halvesLeftOpen`, not silence. A severed run nobody knows about
+      is the worst outcome here
+
 second_route:
   - Revit's own Split Element tool used at the same point, with both halves' Length parameters read back

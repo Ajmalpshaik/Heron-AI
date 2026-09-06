@@ -72,6 +72,9 @@ compatibility-note: >
 #                                       the position
 #   "put the level on the drawing"   -> ADD_SPOT_ELEVATIONS, which annotates
 #                                       instead of reporting
+#   "unload this link"                   -> UNLOAD_LINKS. A link's position
+#                                           is what this reports; unloading
+#                                           keeps it and drops the geometry
 
 utterances:
   - where exactly are these

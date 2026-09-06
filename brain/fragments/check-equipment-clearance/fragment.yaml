@@ -99,6 +99,9 @@ compatibility-note: >
 #                                        one is a zone with a front and a back
 #   "is anything above this point"       -> CHECK_OBSTRUCTIONS - one ray from
 #                                        one point
+#   "what is around this equipment"      -> PROBE_AROUND_ELEMENTS, for what
+#                                           is actually there rather than
+#                                           whether a stated clearance holds
 
 utterances:
   - is there enough space in front of the panel to open the door

@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-094
+semantic-identity: "park the tags down the sides so i can read the drawing"
+kind: action
+domain: revit.annotation
+capability: ARRANGE_TAGS_TO_VIEW_EDGES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Parks every tag in a column down the left and right edges of the view, each
+  still leadered back to its own element. The *"I cannot read the drawing for
+  tags"* fix on a busy services plan, where there is no room for tags anywhere
+  in the middle.
+
+  **EACH TAG GOES TO THE SIDE ITS OWN ELEMENT IS ON.** Sending them all to one
+  edge doubles the leader length and crosses every leader over the drawing.
+  Which half of the view the element sits in is the only rule that keeps the
+  leaders short.
+
+  **THE ORDER DOWN EACH COLUMN FOLLOWS THE ELEMENTS, NOT THE SET.** Tags are
+  placed in the order their elements sit up the view, so the leaders fan out
+  without crossing. Any other order produces the same tags in the same places
+  with a plate of spaghetti between them.
+
+  **THE MARGIN AND THE GAP ARE PAPER MILLIMETRES.** Both are judged on the
+  printed sheet, so both are multiplied by the view scale. A model-distance
+  margin puts the tags off the sheet at 1:200 and inside the building at 1:20.
+
+  **IT USES THE CROP WHEN THERE IS ONE.** An uncropped view has no edges to
+  park against, so the extent of the tagged elements is used instead and the
+  columns sit outside that - which is the same intent and a different number.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    # Paper millimetres from the edge, and between tags in the column.
+    - name: marginMm
+      type: double
+      source: request
+    - name: gapMm
+      type: double
+      source: request
+  provides:
+    - name: parked
+      type: int
+    - name: perSide
+      type: IDictionary<string, int>
+    - name: usedTagExtent
+      type: bool
+    - name: notTags
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  A compile-time split at 2022 for the leader end, which became a method taking
+  its reference. The crop box, its transform and the view's own right and up
+  directions are unchanged 2020 to 2027, and spatial tags are handled in their
+  own branch because they share no base with independent tags that carries a
+  head position.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "park the tags at the sides"         -> here
+#   "i cannot read the drawing for tags" -> here
+#   "stack these tags in one column"     -> STACK_TAGS, at a point you choose.
+#                                           This one uses the view's own edges
+#                                           and both sides
+#   "spread the tags out"                -> ARRANGE_TAGS, which keeps them near
+#                                           their elements
+#   "which tags overlap"                 -> FIND_OVERLAPPING_TAGS
+#   "make the leaders L-shaped"          -> FORCE_TAG_LEADER_LSHAPE
+#   "put the tags in a column"           -> STACK_TAGS, at one point you
+#                                           choose. This one uses both edges
+
+utterances:
+  - park the tags down the sides
+  - i cannot read the drawing for tags
+  - move the tags to the edge of the view
+  - put the tags in columns at the sides

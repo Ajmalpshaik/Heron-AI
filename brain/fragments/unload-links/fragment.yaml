@@ -1,0 +1,79 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-023
+semantic-identity: "unload the architecture link so the model runs faster"
+kind: action
+domain: revit.document
+capability: UNLOAD_LINKS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Unloads linked models - the link stays in the project and its geometry leaves
+  memory. What everybody does when a coordination model makes a file crawl.
+
+  **UNLOADING IS NOT REMOVING, AND THE DIFFERENCE MATTERS AT THE NEXT OPEN.**
+  An unloaded link is still listed, still carries its position, and comes back
+  with one reload. A removed link is gone: its position, its workset
+  assignment, anything hosted on it. Removing is deleting an element, which
+  this library already does properly and deliberately - so it is not offered
+  here, where somebody typing "get rid of the link" would find it.
+
+  **IT WORKS ON LINK TYPES, NOT INSTANCES.** Several instances of one link -
+  the same building placed twice - share a type, and unloading is a property of
+  the type. Passing three instances of one link is one unload, and the report
+  says so rather than claiming three.
+
+  **THIS IS DOCUMENT MANAGEMENT, NOT A MODEL EDIT.** Whether Revit permits it
+  inside an open transaction is UNPROVEN here - the same honest position the
+  reload fragment takes. It opens none itself (Golden Rule 16). If the host
+  wraps it in one and Revit refuses, that is the finding.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: unloaded
+      type: IList<ElementId>
+    - name: alreadyUnloaded
+      type: IList<ElementId>
+    - name: notALink
+      type: IList<ElementId>
+    - name: refused
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Unloading is on the link TYPE and is
+  unchanged 2020 to 2027, and whether a link is currently loaded is asked
+  through the type's own load state rather than by looking for geometry.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "unload the architecture link"       -> here
+#   "the model is slow with the links    -> here
+#    in"
+#   "reload the links"                   -> RELOAD_LINKS, the way back
+#   "remove the link completely"         -> DELETE_ELEMENTS on the link type.
+#                                           Removing loses its position and
+#                                           anything hosted on it, which is why
+#                                           it is not offered here
+#   "what links are in this model"       -> LIST_LINKED_MODELS
+#   "copy something from the link"       -> COPY_FROM_LINK
+
+utterances:
+  - unload the architecture link
+  - the model is slow with all the links loaded
+  - unload these links for now
+  - drop the link out of memory

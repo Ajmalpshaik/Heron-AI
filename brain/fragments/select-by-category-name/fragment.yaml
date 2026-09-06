@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-CAT-009
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-026
+semantic-identity: "everything in the category called duct accessories"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_CATEGORY_NAME
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Collects a category's elements by the category's plain NAME - "Ducts", "Duct
+  Accessories", "Mechanical Equipment" - rather than by the internal identifier
+  a person never says.
+
+  **IT EXISTS BECAUSE THE WORDS ARE WHAT ARRIVES.** A request comes in
+  somebody's own language, and turning "duct accessories" into the right
+  internal category is a guess with a wrong answer that looks right: the
+  identifier for duct accessories is not the obvious one, and a near miss picks
+  a different category silently.
+
+  **A NAME THAT MATCHES NOTHING RETURNS THE NEAR MISSES.** "Duct Accessory"
+  singular, or "Ducts Accessories", is what a person types - and a list of the
+  category names that nearly matched turns a dead end into one more sentence.
+  Guessing which one they meant is what this refuses to do.
+
+  **CATEGORY NAMES ARE LOCALISED.** On a French or Arabic Revit the names are
+  in that language while the internal identifiers are not, so this is the
+  fragment that works on that machine and the identifier route is the one that
+  does not - and the reverse is true when a script has to run everywhere.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: categoryName
+      type: string
+      source: request
+    - name: inViewOnly
+      type: View
+      source: request
+  provides:
+    - name: elements
+      type: IList<Element>
+    - name: resolvedTo
+      type: string
+    - name: nearMisses
+      type: IList<string>
+    - name: found
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The document's category list and each
+  category's name are unchanged 2020 to 2027. The names themselves are
+  LOCALISED, which is a property of the model rather than of the release - and
+  the reason this fragment and the identifier-based one are both worth having.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "everything in duct accessories"     -> here, when the words are what you
+#                                           have
+#   "all the ducts"                      -> FILTER_ELEMENTS_BY_CATEGORY when
+#                                           the internal category is already
+#                                           known - narrower and exact
+#   "all the ductwork"                   -> SELECT_BY_CATEGORIES, several
+#                                           categories in one pass
+#   "find all the VCDs"                  -> SELECT_BY_FAMILY, by family name
+#   "these are in the wrong category"    -> CHECK_CATEGORY_MISMATCH
+
+utterances:
+  - everything in duct accessories
+  - select the mechanical equipment category
+  - all elements in the category called ducts
+  - i do not know the category code

@@ -105,6 +105,9 @@ compatibility-note: >
 #   "list the rooms and their areas"     -> REPORT_ROOM_SPACE_DATA. Rooms
 #                                           and Spaces are not Areas, and
 #                                           the numbers do not agree
+#   "place a room in that area"          -> PLACE_ROOM_AT_POINT. An Area is
+#                                           not a Room and this fragment
+#                                           reports the Area-plan kind
 
 utterances:
   - report the areas in this model

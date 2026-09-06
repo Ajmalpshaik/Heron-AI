@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-022
+semantic-identity: "what dates are written on these sheets"
+kind: action
+domain: revit.document
+capability: EXTRACT_DATES_FROM_TEXT
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the text notes on sheets and pulls out the dates written in them, with
+  the sheets each one came from. Read-only.
+
+  **THE DATE ON A DRAWING IS OFTEN TYPED TEXT, NOT A PARAMETER.** Title blocks
+  get filled in by hand more often than anybody admits, and a revision date
+  typed into a text note is invisible to every schedule and every filter. This
+  is how that text becomes data - so a revision can be matched to the sheets
+  that already claim its date.
+
+  **CASE DOES NOT MAKE A DIFFERENT DATE.** MAY and May are the same issue, and
+  reporting them separately would have somebody chasing an issue that never
+  happened.
+
+  **A THREE-LETTER WORD BETWEEN TWO NUMBERS IS NOT A DATE.** Every candidate is
+  checked as a real calendar date before it is reported: 31 SEP is not one, and
+  a drawing note reading "2 OFF 300" must not become a date. That check is the
+  difference between a list somebody can act on and a list they have to
+  re-read.
+
+  **IT READS TEXT NOTES ON THE SHEET, NOT INSIDE THE VIEWS PLACED ON IT.** A
+  date typed into a plan is on the plan, not on the sheet, and pretending
+  otherwise would attribute a date to every sheet that view appears on.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: datesFound
+      type: IDictionary<string, IList<ElementId>>
+    - name: sheetsWithNoDate
+      type: IList<ElementId>
+    - name: notASheet
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Text notes and their text are unchanged
+  2020 to 2027, and the date reading is plain string work with no dependence on
+  any Revit type at all.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what dates are on these sheets"     -> here
+#   "which sheets carry this date"       -> here
+#   "put that revision on the sheets     -> SET_SHEET_REVISIONS, fed by this.
+#    that carry its date"                   Reading the dates and attaching the
+#                                           revision are two decisions
+#   "change the revision date"           -> EDIT_REVISION
+#   "change the text in a note"          -> EDIT_TEXT_VALUES
+#   "read a parameter off these"         -> READ_ELEMENT_PARAMETERS, for a date
+#                                           that IS a parameter
+
+utterances:
+  - what dates are written on these sheets
+  - find the dates in the title block text
+  - which sheets carry this date
+  - the date is typed in a text note

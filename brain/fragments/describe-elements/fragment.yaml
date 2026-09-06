@@ -59,6 +59,10 @@ compatibility-note: >
 #
 # IDENTITY AND PROPERTIES ARE DIFFERENT QUESTIONS. This one answers what a thing
 # is; the parameter read answers what is filled in on it.
+#   "everything in duct accessories"     -> SELECT_BY_CATEGORY_NAME, which
+#                                           collects a category by its plain
+#                                           name. This one describes elements
+#                                           you already have
 
 utterances:
   - what is this element

@@ -1,0 +1,100 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-028
+semantic-identity: "what is around this thing, and how far away"
+kind: action
+domain: revit.geometry
+capability: PROBE_AROUND_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Fires rays out of each element in the directions asked for and reports what
+  each one hits and how far away. The look before a move: what is above this
+  duct, what is beside this pump, how much room is there.
+
+  **RAYS ONLY SEE WHAT THE 3D VIEW SHOWS, AND NOTHING WARNS YOU.** Ray casting
+  runs inside a 3D view and obeys it completely - hidden categories, section
+  boxes, view filters, closed worksets. A view with walls switched off reports
+  a clear path with a wall standing in it. Proven in a real model: the same
+  element, the same ray, 0 neighbours in one view and 4 in another. The view
+  is a request input for that reason, and the first thing to check when a
+  result looks impossibly empty.
+
+  **THE DISTANCE IS FROM THE ELEMENT'S POINT, NOT ITS FACE.** The ray starts at
+  the insertion point, inside the element, so a 600 mm deep unit reports about
+  300 mm less clearance than a tape would. It is a real number measured from a
+  stated place, and reading it as face-to-face is how a clearance passes on
+  paper and fails on site.
+
+  **ONE RAY PER DIRECTION MISSES THINGS BESIDE A BIG ELEMENT.** A single ray
+  from the centre sees only what is directly in line with it: a pipe passing
+  the corner of an air handling unit is invisible to it. For anything large,
+  probe from several points rather than trusting one.
+
+  **A HIT ON THE ELEMENT ITSELF IS DROPPED.** The ray starts inside its own
+  geometry, so its own faces are the first thing in the way.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view3d
+      type: View3D
+      source: request
+    - name: elements
+      type: IList<Element>
+    # Each direction to fire in. Up, down, and the four sides are the usual
+    # set; the caller decides, because "what is around this" means different
+    # directions for a riser and for a floor-standing unit.
+    - name: directions
+      type: IList<XYZ>
+      source: request
+    - name: maxDistance
+      type: double
+      source: request
+  provides:
+    - name: hits
+      type: IDictionary<ElementId, IList<string>>
+    - name: nothingHit
+      type: IList<ElementId>
+    - name: noOrigin
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The reference intersector, its nearest
+  hit and the proximity it reports are unchanged 2020 to 2027 - and so is the
+  requirement for a real 3D view to cast in, which is why the view is a request
+  input rather than something found here.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is above this duct"            -> here
+#   "what is around this equipment"      -> here
+#   "which of these points is blocked"   -> CHECK_OBSTRUCTIONS, which answers
+#                                           blocked or clear for POINTS in one
+#                                           direction. This one names what was
+#                                           hit and how far, from ELEMENTS
+#   "is there enough clearance"          -> CHECK_MINIMUM_CLEARANCE, which
+#                                           judges against a number you give
+#   "move it up until it clears"         -> MOVE_TO_RAY_HIT
+#   "find the clashes"                   -> FIND_CLASHES, which is geometry
+#                                           against geometry rather than a ray
+
+utterances:
+  - what is above this duct
+  - what is around this equipment
+  - how far is the nearest thing
+  - probe around these elements
+  - what would i hit if i moved this up

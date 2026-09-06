@@ -1,0 +1,41 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a project with twenty view templates, six applied to views
+    expect: >
+      fourteen in `unusedTemplates`. Check one in Revit: select a view and see
+      that its template is not that one
+
+  - given: filters left over from a template project
+    expect: >
+      them in `unusedFilters`. That dialog is where they accumulate unseen
+
+  - given: a filter used by a template that IS applied to views
+    expect: >
+      it in neither list. It is doing its job through the template
+
+negative:
+  - given: a filter whose only user is an UNUSED template
+    expect: >
+      its id in `filtersUsedOnlyByUnusedTemplates`, not in `unusedFilters`. It
+      IS referenced, and separating the two is what lets somebody clear the
+      obvious half without thinking
+
+  - given: a template applied to one view only
+    expect: >
+      it not reported. Used once is used
+
+  - given: unused MATERIALS in the project
+    expect: >
+      them not reported, and the reason stated in the findings. A partial
+      answer there is a deletion list with real materials in it
+
+  - given: this run twice
+    expect: >
+      the same lists and nothing changed. It reports; purging is one Revit
+      command away for whoever decides
+
+second_route:
+  - >
+    open the View Templates dialog and the Filters dialog in Revit and compare.
+    Those two dialogs are where the rubbish lives

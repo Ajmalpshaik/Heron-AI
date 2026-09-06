@@ -28,6 +28,25 @@
 var distance = distanceMm / 304.8;
 
 var created = new List<ElementId>();
+var halvesJoined = new List<ElementId>();
+var halvesLeftOpen = new List<ElementId>();
+
+// The connectors of one element nearest a point - the ends either side of the
+// cut. Written once because both halves are asked the same question.
+Func<Element, XYZ, List<Connector>> connectorsNear = (element2, where) =>
+{
+    var found = new List<Connector>();
+    var curve2 = element2 as MEPCurve;
+    if (curve2 == null) return found;
+    ConnectorManager manager = null;
+    try { manager = curve2.ConnectorManager; } catch { }
+    if (manager == null) return found;
+    ConnectorSet set = null;
+    try { set = manager.Connectors; } catch { }
+    if (set == null) return found;
+    foreach (Connector connector in set) if (connector != null) found.Add(connector);
+    return found;
+};
 var refused = new List<ElementId>();
 var notMepCurve = new List<ElementId>();
 
@@ -76,4 +95,57 @@ foreach (var element in elements)
     }
 
     created.Add(newId);
+
+    // VERSION 2. THE JOINT IN THE MIDDLE IS ITS OWN QUESTION.
+    //
+    // The far ends keep whatever they were connected to. Whether the two new
+    // halves are joined TO EACH OTHER is not the same fact, and the earlier
+    // library measured the break leaving it open - a run that traces as two
+    // systems while looking perfect on screen. Unverified here, so this asks
+    // rather than asserts: the connectors nearest the cut are found, joined if
+    // they are not already, and which happened is reported.
+    var halves = new List<Element>();
+    halves.Add(doc.GetElement(element.Id));
+    halves.Add(doc.GetElement(newId));
+
+    Connector first = null, second = null;
+    double closest = double.MaxValue;
+    bool alreadyJoined = false;
+
+    foreach (var oneEnd in connectorsNear(halves[0], at))
+    {
+        foreach (var otherEnd in connectorsNear(halves[1], at))
+        {
+            if (oneEnd == null || otherEnd == null) continue;
+
+            bool joined = false;
+            try
+            {
+                foreach (Connector reference in oneEnd.AllRefs)
+                {
+                    if (reference == null || reference.Owner == null) continue;
+                    if (reference.Owner.Id == newId) { joined = true; break; }
+                }
+            }
+            catch { }
+            if (joined) { alreadyJoined = true; break; }
+
+            double apart;
+            try { apart = oneEnd.Origin.DistanceTo(otherEnd.Origin); } catch { continue; }
+            if (apart < closest) { closest = apart; first = oneEnd; second = otherEnd; }
+        }
+        if (alreadyJoined) break;
+    }
+
+    if (alreadyJoined) { halvesJoined.Add(element.Id); continue; }
+
+    bool nowJoined = false;
+    if (first != null && second != null)
+    {
+        try { first.ConnectTo(second); nowJoined = first.IsConnected; }
+        catch { nowJoined = false; }
+    }
+
+    if (nowJoined) halvesJoined.Add(element.Id);
+    else halvesLeftOpen.Add(element.Id);
 }

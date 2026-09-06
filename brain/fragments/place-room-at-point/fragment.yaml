@@ -1,0 +1,89 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-029
+semantic-identity: "put a room here, at this point"
+kind: action
+domain: revit.rooms
+capability: PLACE_ROOM_AT_POINT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a room - or an MEP space - at the points you name, on one level. You
+  choose where each one goes.
+
+  **THIS IS THE OTHER HALF OF PLACING ROOMS, AND WHICH ONE IS WANTED DEPENDS ON
+  WHO CHOOSES THE SPOT.** Filling every enclosed region on a level in one pass
+  is a different fragment and the right one for a floor plate that is finished.
+  This one is for the room that has to go in a particular place - a corridor
+  segment somebody wants split, a plant area inside a larger hall.
+
+  **A POINT OUTSIDE AN ENCLOSED REGION STILL MAKES A ROOM.** Revit creates it
+  and gives it no area at all - the "not enclosed" state - and reports no
+  error. Placed rooms with zero area are then in the schedule looking like real
+  rooms, so every one placed here is measured afterwards and the unenclosed
+  ones are named.
+
+  **A SPACE IS NOT A ROOM AND MEP WORK NEEDS THE SPACE.** Loads, airflow and
+  every space-based schedule read Spaces; Rooms are the architectural element.
+  They look identical on screen, which is exactly why this is a stated input
+  rather than a guess from context.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: level
+      type: Level
+      source: request
+    # Where each room goes. Only the plan position is used - the level decides
+    # the height.
+    - name: points
+      type: IList<XYZ>
+      source: request
+    - name: asSpace
+      type: bool
+      source: request
+  provides:
+    - name: created
+      type: IList<ElementId>
+    - name: unenclosed
+      type: IList<ElementId>
+    - name: refused
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Placing a room or a space at a point on
+  a level is unchanged 2020 to 2027, and both are read back through the shared
+  spatial base type - which is also why one fragment covers both.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "put a room here"                    -> here
+#   "add a space in that area"           -> here, with asSpace true
+#   "place rooms everywhere"             -> PLACE_ROOMS, which fills every
+#                                           enclosed region on a level in one
+#                                           pass. Right for a finished floor
+#                                           plate, wrong for one named spot
+#   "which rooms are not enclosed"       -> SELECT_UNENCLOSED_ROOMS, which
+#                                           sweeps the model for the state this
+#                                           fragment reports for what it placed
+#   "list the rooms and their areas"     -> REPORT_ROOM_SPACE_DATA
+#   "how big is this room"               -> MEASURE_ROOM_DIMENSIONS
+
+utterances:
+  - put a room here
+  - add a space at this point
+  - place a room in that area
+  - i need a space for the load calculation

@@ -1,0 +1,81 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-028
+semantic-identity: "which view templates and filters is nothing using"
+kind: action
+domain: revit.qa
+capability: FIND_UNUSED_DEFINITIONS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports the view templates and view filters that nothing in the project uses -
+  the definitions that accumulate through years of copied views and template
+  projects.
+
+  **A DEFINITION IS NOT AN ELEMENT AND NOBODY SEES IT ACCUMULATE.** An unused
+  family type is visible in a browser; an unused view filter sits in a dialog
+  nobody opens. Fifty of them make every filter list unreadable, and the ones
+  that matter get lost among them.
+
+  **A FILTER CAN BE USED BY A TEMPLATE RATHER THAN BY A VIEW**, and a template
+  that is itself unused still counts as a user of it. Both facts are reported -
+  a filter used only by an unused template is a different finding from one
+  nothing references at all, and only the second is safe to remove without
+  thinking.
+
+  **MATERIALS ARE NOT INCLUDED, ON PURPOSE.** Proving a material unused means
+  walking every element, every type's compound structure and every painted face
+  in the project. A partial answer there would be a deletion list with real
+  materials in it, which is not a mistake worth risking for tidiness.
+
+  **IT REPORTS AND DELETES NOTHING**, for the same reason the unused-families
+  fragment does: purging is one Revit command away, and it is hard to undo on a
+  shared model.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: unusedTemplates
+      type: IDictionary<ElementId, string>
+    - name: unusedFilters
+      type: IDictionary<ElementId, string>
+    - name: filtersUsedOnlyByUnusedTemplates
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. A view's template id, and the filters
+  applied to a view, are read the same way 2020 to 2027 - including on a view
+  that IS a template, which is what makes the second-order case readable.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which view templates are unused"    -> here
+#   "the filter list is full of rubbish" -> here
+#   "which families are unused"          -> FIND_UNUSED_FAMILIES
+#   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS
+#   "what filters exist and where"       -> REPORT_VIEW_FILTERS, which lists
+#                                           them all with their views rather
+#                                           than only the unused ones
+#   "delete these"                       -> DELETE_ELEMENTS, deliberately
+
+utterances:
+  - which view templates are not used
+  - the filter list is full of old filters
+  - what can i purge from the templates
+  - unused view filters

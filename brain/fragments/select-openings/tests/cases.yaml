@@ -1,0 +1,37 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a building with shafts and slab penetrations
+    expect: >
+      both kinds returned and `byKind` separating them. Twelve shafts and
+      twelve floor openings are two different coordination pictures
+
+  - given: a view passed in
+    expect: >
+      only the openings that view draws
+
+  - given: a model with openings of one kind only
+    expect: >
+      the other kinds present in `byKind` at 0. No shafts at all is a finding
+      on a building with risers in it
+
+negative:
+  - given: a query for one opening category only
+    expect: >
+      NOT what this does. Openings are spread across several categories and one
+      query returns a fraction of them while looking complete
+
+  - given: the hole a DOOR cuts in a wall
+    expect: >
+      it not returned. That hole belongs to the door family and is in none of
+      these categories - correct, and worth knowing when somebody says "every
+      hole"
+
+  - given: a model with no openings at all
+    expect: >
+      an empty set with every kind at 0, and no throw
+
+second_route:
+  - >
+    switch to a 3D view, isolate the opening categories in Revit, and count
+    what you see

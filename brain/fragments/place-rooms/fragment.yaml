@@ -118,6 +118,8 @@ compatibility-note: >
 #                                           finds the faulty ones and
 #                                           changes nothing
 #   "rooms with no area"                 -> SELECT_UNENCLOSED_ROOMS
+#   "put a room here"                    -> PLACE_ROOM_AT_POINT, when the
+#                                           spot is chosen rather than found
 
 utterances:
   - place the rooms

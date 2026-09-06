@@ -1,0 +1,89 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-018
+semantic-identity: "put that revision on these sheets, or take it off"
+kind: action
+domain: revit.sheets
+capability: SET_SHEET_REVISIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Attaches a revision to sheets, or detaches it - the revision list that prints
+  in a title block, without drawing a cloud.
+
+  **A SHEET CARRIES REVISIONS TWO WAYS AND THIS IS THE OTHER ONE.** A cloud on
+  a sheet puts its revision in the schedule automatically. A revision can also
+  be listed on a sheet with no cloud anywhere - which is how a whole-drawing
+  issue is recorded - and that list is what this writes.
+
+  **IT ADDS TO WHAT IS THERE, OR REMOVES FROM IT - IT NEVER REPLACES.**
+  Overwriting the list would silently drop every earlier issue off a title
+  block, and nobody reads a revision block to check that last month's entries
+  are still in it.
+
+  **WRITING THIS LIST CAN MAKE REVIT PURGE AN UNUSED REVISION.** A revision on
+  no sheet and in no cloud can vanish project-wide the next time sheet
+  revisions are written. That is Revit's behaviour, not this fragment's, and it
+  is why the revisions that still exist afterwards are read back and counted.
+
+  **A CLOUD-DRIVEN REVISION CANNOT BE REMOVED THIS WAY.** It is on the sheet
+  because a cloud puts it there; the cloud is what has to go. Those are named
+  rather than reported as removed.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: revisionIds
+      type: IList<ElementId>
+      source: request
+    # true attaches, false detaches.
+    - name: attach
+      type: bool
+      source: request
+  provides:
+    - name: sheetsChanged
+      type: int
+    - name: cloudDriven
+      type: IList<ElementId>
+    - name: notASheet
+      type: IList<ElementId>
+    - name: revisionsRemaining
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Reading and writing a sheet's
+  additional revisions is unchanged 2020 to 2027, and so is the fact that the
+  list holds only the revisions NOT put there by a cloud - which is why a
+  cloud-driven one cannot be removed through it.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "put that revision on these sheets"  -> here
+#   "take that revision off the sheets"  -> here, with attach false
+#   "cloud this change"                  -> ADD_REVISION_CLOUD, which puts the
+#                                           revision on the sheet as a side
+#                                           effect and is the other way in
+#   "make a new revision"                -> CREATE_REVISION
+#   "which sheets carry this revision"   -> LIST_REVISIONS
+#   "delete the revision itself"         -> DELETE_REVISION
+
+utterances:
+  - put that revision on these sheets
+  - add the revision to the drawing list
+  - take that revision off these sheets
+  - the revision is missing from the title block
