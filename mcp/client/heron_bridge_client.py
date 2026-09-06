@@ -377,7 +377,10 @@ def discover(prune=True):
         no reply, unknown  -> leave it alone. Never delete on a guess
 
     A bridge announcing a protocol this client does not speak is separated
-    out rather than talked to.
+    out rather than talked to - but it is still put to the same liveness test,
+    because a mismatched bridge whose process is GONE is just as stale as any
+    other. Skipping that test is what left six dead sessions being reported as
+    connected (2026-09-06).
     """
     live, starting, stale, mismatched = [], [], [], []
     if not os.path.isdir(DISCOVERY_DIR):
@@ -405,8 +408,25 @@ def discover(prune=True):
         # A bridge speaking another protocol is refused rather than half-used.
         # Reading it with the wrong assumptions is how a wrong answer looks
         # exactly like a right one.
+        #
+        # BUT A MISMATCH IS NOT A REASON TO SKIP THE LIVENESS TEST, and this
+        # branch used to `continue` straight past it. A protocol-1 bridge that
+        # died yesterday was therefore never classified stale and never pruned:
+        # `revit_health` reported six connected sessions when the machine held
+        # not one Heron pipe, and told the owner to "restart that Revit" for
+        # six Revits that did not exist. Found 2026-09-06 by counting the named
+        # pipes and finding none.
+        #
+        # The protocol says how to TALK to a bridge. The process says whether
+        # it is THERE. They are different questions and the second one still
+        # has to be asked.
         if bridge.protocol_version != PROTOCOL_VERSION:
-            mismatched.append(bridge)
+            if bridge_process_is_running(bridge.pid) is False:
+                stale.append(path)
+            else:
+                # Alive, or we cannot tell - and "cannot tell" is never
+                # treated as dead, the same rule as everywhere else here.
+                mismatched.append(bridge)
             continue
 
         if bridge.request("ping") is not None:
