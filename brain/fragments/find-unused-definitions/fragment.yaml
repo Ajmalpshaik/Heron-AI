@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -65,6 +65,19 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
+  positive_case: >
+    Project1: 15 unused view templates, 6 unused filters, and 1 template KEPT because a view family type names it as the default for new views - templatesKeptForViewTypeDefault 1. That is the defect corrected on 2026-09-06 firing on a real model: without it that template is reported unused, and deleting it changes what every new view of that kind is created with.
+  negative_case: >
+    Snowdon Towers: templatesKeptForViewTypeDefault 0, and filtersUsedOnlyByUnusedTemplates 1 - the second-order case reported separately rather than folded into the plain unused count. Both the kept-count and the second-order list return empty when they should.
+  second_route: >
+    REPORT_VIEW_FILTERS counted the same unused filters from the other direction in the same run - 9 on Snowdon, 6 on Project1.
+  fingerprint: "2fd6181bc08721fc"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

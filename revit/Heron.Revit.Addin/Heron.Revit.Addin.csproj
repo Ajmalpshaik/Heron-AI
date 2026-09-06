@@ -21,10 +21,37 @@
     <RootNamespace>Heron.Revit.Addin</RootNamespace>
     <AssemblyName>Heron.Revit.Addin</AssemblyName>
     <UseWPF Condition="'$(HeronTfm)' != 'net472' AND '$(HeronTfm)' != 'net48'">true</UseWPF>
+
+    <!--
+      An add-in has to CARRY its dependencies. Revit loads this assembly from
+      a folder of its own and resolves nothing on its behalf, so a NuGet
+      dependency left out of the output is a FileNotFoundException at
+      OnStartup - which costs the whole add-in, not just the feature.
+
+      Without this the Roslyn assemblies stayed in the package cache and only
+      their localized resource folders were copied, which looks like the
+      package deployed.
+    -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Heron.Bridge\Heron.Bridge.csproj" />
+  </ItemGroup>
+
+  <!--
+    D-28's in-process C# scripting runtime - the thing that lets a fragment
+    reach Revit at all.
+
+    CHECKED BEFORE IT WAS ADDED, because loading a second Roslyn inside a host
+    that already has one is the classic way this fails: Revit 2024 ships NO
+    Microsoft.CodeAnalysis assemblies in its install, and the running process
+    had none loaded. Re-check that before assuming it holds for another
+    release - Dynamo carries its own, and a conflict here is an add-in that
+    dies at OnStartup.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.8.0" />
   </ItemGroup>
 
   <!-- Option 1: NuGet, when RevitApiDir is not supplied. -->

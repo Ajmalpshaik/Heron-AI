@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -39,6 +39,19 @@ contract:
       type: IList<string>
     - name: onSheets
       type: IList<ElementId>
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
+  positive_case: >
+    Snowdon Towers: 8 views with no template, of which 3 are ON SHEETS and named as issued - 'Cover - ON SHEET M000, no view template'. The issued ones are the half that matters on a drawing set.
+  negative_case: >
+    Project1: 18 views with no template and issued 0 - none of them is on a sheet, so none is an issue. The fragment separates 'working view with no template' from 'issued drawing with no template' rather than counting both as faults.
+  second_route: >
+    FIND_UNPLACED_VIEWS and LIST_SHEETS agree in the same run that Project1 has nothing on a sheet.
+  fingerprint: "d1557341e2eaf156"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

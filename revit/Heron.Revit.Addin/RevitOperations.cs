@@ -63,6 +63,14 @@ namespace Heron.Revit.Addin
                 case "select_by_category":
                     return SelectByCategory(app, Json.ReadString(request, "category"));
 
+                // D-28's executor. Reads only: it opens no transaction, so
+                // Revit itself refuses anything that would change the model.
+                // Its own file, for the same reason RevitWrite has one - the
+                // code that runs OTHER PEOPLE'S code is worth reading in one
+                // piece.
+                case "run_fragment_read":
+                    return RevitFragment.Run(app, request);
+
                 default:
                     // Step 6 added the write path. It lives in its own file so
                     // that everything able to change a model is in one place a
