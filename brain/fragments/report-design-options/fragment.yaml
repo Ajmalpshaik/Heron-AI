@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PHS-032
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -46,6 +46,45 @@ contract:
       type: int
     - name: activeOption
       type: string
+
+proof:
+  date: "2026-09-07"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Revit 2024.3, session 29340. Positive on 'Project1 work_ajmal.al' (3,435
+    elements, a workshared local) AFTER the owner created a design option in it
+    during the session. Negative on 'Snowdon Towers Sample HVAC.rvt' (9,628
+    elements), measured twice on the same build earlier the same day while both
+    models were open at once.
+  positive_case: >
+    optionCount 1, reported as 'Option Set 1 / Option 1  <primary> [primary] -
+    0 element(s)'. Four separate things are right in that one line: the option
+    is named under its SET rather than on its own, it is marked primary, it
+    holds no elements - which is true of an option just created and nothing
+    moved into - and activeOption is 'Main Model', because creating an option
+    does not start editing it. A count alone would not have shown any of that.
+  negative_case: >
+    Snowdon Towers: optionCount 0, and the finding says 'this project has NO
+    design options. Everything is in the Main Model' rather than returning a
+    bare zero. That distinction is the whole point - a project with no options
+    and a project whose options could not be read give the same 0, and only one
+    of them means somebody should go looking. Measured at 0 BEFORE the owner
+    created one and at 1 after, on one build, which ties the number to a known
+    cause.
+  second_route: >
+    The same answer was reached by a DIFFERENT REVIT FILTER in the same run.
+    This fragment collects OfCategory(BuiltInCategory.OST_DesignOptions); a
+    FilteredElementCollector(doc).OfClass(typeof(DesignOption)) found 1 element
+    with the same name, 'Option 1  <primary>'. A class filter and a category
+    filter are different mechanisms that can legitimately disagree. Revit's own
+    Manage > Design Options dialog is the third, and it is what the owner used.
+
+    NOT YET SEEN: MORE THAN ONE OPTION, AND MORE THAN ONE OPTION SET. Everything
+    above holds for a single set holding a single primary option. A secondary
+    option, and a second set, are the cases where naming an option under its set
+    stops being decoration and starts being the only way to tell two options
+    called 'Option 1' apart.
+  fingerprint: "398cb31fcdc01331"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

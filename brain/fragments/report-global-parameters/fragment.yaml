@@ -79,6 +79,18 @@ compatibility-note: >
 #                                                       dimensions, and this
 #                                                       lists which
 #   "what is driving these dimensions"            -> here
+#   "make a global parameter"                     -> CREATE_GLOBAL_PARAMETER -
+#                                                    which MAKES one. This lists
+#                                                    what is already there, and
+#                                                    that list is what to read
+#                                                    before making another
+#   "set the global to 3000"                      -> SET_GLOBAL_PARAMETER -
+#                                                    which WRITES a value and
+#                                                    re-drives every dimension
+#                                                    labelled by it. This
+#                                                    fragment's purpose says
+#                                                    outright that setting one
+#                                                    is not a report's job
 #   "add a parameter to all the doors"            -> ADD_PROJECT_PARAMETER - a
 #                                                    COLUMN, one value per
 #                                                    element. A global is ONE

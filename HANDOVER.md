@@ -33,19 +33,22 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**348 fragments. 13 `PROVEN`. 335 below.** D-28's executor is built, and fragments now run against a
+**349 fragments. 16 `PROVEN`. 333 below.** D-28's executor is built, and fragments now run against a
 real model. That is new as of 2026-09-06 and it is the thing every earlier handover was waiting for.
+**On 2026-09-07 every recorded proof was re-run and all thirteen held, and the executor was put in
+front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09-07--the-verification-pass-13-proofs-re-run-135-fragments-through-the-real-compiler).
 
 | | |
 |---|---|
-| Fragments | **348** — every fragment-shaped job in the earlier library, plus five cross-project transfers from PART 5 |
-| Proven | **13**, each on a recorded proof with a negative case and a staleness fingerprint (D-30) |
+| Fragments | **349** — every fragment-shaped job in the earlier library, five cross-project transfers from PART 5, and `CREATE_GLOBAL_PARAMETER`, built 2026-09-07 for a gap the library named in its own routing table |
+| Proven | **16**, each on a recorded proof with a negative case and a staleness fingerprint (D-30). All sixteen fingerprints **FRESH** — checked 2026-09-07, none has gone stale |
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, structure, docs, gaps — all green |
 | Tests | **all pass**, `test_embed` and `test_retrieve` included — they were re-based against the model backend in PART 5, not edited until green. See the note where the warning used to be |
-| Register | **63 rows, 19 closed, 44 left.** Group A is FINISHED. **Only `R1b` does not need Revit** |
+| Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | deployed to Revit 2024, built from `main` at `538bf55` |
-| Branches | `main` only |
+| Bindable inputs | **70 of 349** — PART 6 binds every need a fragment's contract declares, from the on-screen selection and from what the previous fragment left behind. **278 still want a caller's half** — a category, a name, a distance — and that is now the largest unlock left |
+| Branches | `main`, plus `verify/proofs-re-run-and-executor-triage` — this session's, merged with `main` at PART 6 |
 
 **EVERY REGISTER ROW THAT DID NOT NEED REVIT IS NOW CLOSED.** `A4`, `A6`, `A7`, `A8` and `A9` all fell on
 2026-09-06 on the owner's own PC — rows parked for months on *"a machine"*, closed in one afternoon by
@@ -168,17 +171,22 @@ hours after both stopped being true).
 
 ### What a fresh session should do next, in order
 
-1. **Finish the seven half-proved fragments.** Each needs ONE specific thing opened in Revit, and none
-   can be faked. This is the cheapest real progress available:
+1. **Finish the four half-proved fragments.** `READ_SELECTION`, `REPORT_PHASES` and
+   `REPORT_DESIGN_OPTIONS` are **done (2026-09-07)** — the owner made the last two conditions himself
+   while the session ran. Each of the rest needs ONE specific thing that does not exist in any open
+   model, and none can be faked. **Making one is a minute in Revit and the model need not even be saved
+   — the fragment reads the open document, not the file.** This is the cheapest real progress available:
 
-   | Open this | Finishes |
+   | Make this, in the model already open | Finishes |
    |---|---|
-   | a workshared model with a **CLOSED workset** | strengthens `LIST_WORKSETS` — the one case never seen |
-   | a model with **design options** | `REPORT_DESIGN_OPTIONS` |
-   | a model with a **global parameter driving something** | `REPORT_GLOBAL_PARAMETERS` |
-   | **elements selected** on screen before the run | `READ_SELECTION` |
-   | a face **painted** in a material used nowhere else | `FIND_UNUSED_MATERIALS` — the paint-only case |
-   | a **placed group** plus an unused group definition | `FIND_UNUSED_GROUP_TYPES` |
+   | **one global parameter** — Manage ▸ Global Parameters ▸ New | `REPORT_GLOBAL_PARAMETERS` — `globalCount` 0 → 1. **`CREATE_GLOBAL_PARAMETER` exists now and CANNOT do this for you** — it writes, and no write path runs a fragment yet |
+   | a group, placed, then **delete the placed instance** and keep the definition | `FIND_UNUSED_GROUP_TYPES` — `unusedGroupTypes` 0 → 1 |
+   | a face **painted** in a material used nowhere else | `FIND_UNUSED_MATERIALS` — **the paint-only case, which must NOT be reported unused.** Snowdon's count must go 56 → 55, not 56 → 56 |
+   | a workshared model with a **CLOSED workset** | strengthens `LIST_WORKSETS` — still the one case never seen |
+   | Revit's own **Purge Unused** list, read by eye | `FIND_UNUSED_FAMILIES` — it has both halves already and needs only a second route |
+
+   **Each row above is a PREDICTION, not a hope.** The number it names is what must change; if it does
+   not, that is the finding.
 
 2. ~~**Extend the executor to fragments that take inputs.**~~ **HALF DONE, 2026-09-07 — see PART 6.**
    The host now binds every need a fragment's contract declares, from the same contract the compile gate
@@ -188,6 +196,11 @@ hours after both stopped being true).
    a distance. **278 fragments want one of those and there is no route for them**, which is now the
    largest single unlock left, and it is bigger than this one was. **None of PART 6 has met a model** —
    Group J in NEEDS-CHECKING.md is the eight rows that would prove it.
+
+   **The other track had already removed the first risk from this job, and the two agree.** All 135
+   DRAFT READ fragments were put through the real executor the same day, and **every name any of them
+   failed on is a name its own contract declares** — which is exactly the assumption PART 6 binds
+   against. There was no hidden contract mismatch to find first, and there was none.
 
 3. **The write path.** `run_fragment_read` opens no transaction on purpose, so Revit itself refuses any
    change. Running a fragment that WRITES is a separate operation that does not exist, and it belongs
@@ -242,6 +255,312 @@ counts what is left; believe it over this file.
 > true there, with the reason.
 
 ---
+
+## 2026-09-07 — the verification pass: 13 proofs re-run, 135 fragments through the real compiler
+
+**Nothing was built. Everything already claimed was checked, and it held.** Revit 2024.3 was open on
+the owner's PC with `Snowdon Towers Sample HVAC` (9,628 elements) and, later in the session,
+`Project1 work_ajmal.al` (3,410, a workshared local) — both open at once by the end.
+
+| | |
+|---|---|
+| Recorded proofs re-run | **13 of 13 reproduce** |
+| Fingerprints | **13 of 13 FRESH** — no proof has gone stale |
+| DRAFT READ fragments put through the executor | **135**. 7 ran, 115 stopped on their own declared inputs, 13 cascaded from one. **0 no-replies, 0 unexplained failures** |
+| Contract `provides` checked against what is actually left behind | **20 fragments, 0 broken** |
+| Promoted | **`READ_SELECTION`** — 13 → **14** |
+
+### Every recorded number reproduced, and one looked like a regression until its own proof was read
+
+Each of the 13 was re-run and compared against the numbers written in its `proof:` block. Twelve
+matched to the digit — 11 levels at the same three negative elevations, 15 grids, 17 sheets with M002
+still `(0 views) - EMPTY`, 6 links, 8 external references with 1 unresolved, 145 warnings over 87
+elements in 5 kinds, 13 filters against 30 views with 9 unused, 7 unplaced views against 42 placed,
+8 views without a template of which 3 are issued.
+
+**`LIST_WORKSETS` came back `workshared false, worksetCount 0` against a proof that says `workshared
+true, worksetCount 2`** — and that is not a regression. Its `model:` field says the positive case was
+taken on `Project1 work_ajmal.al` and the negative on Snowdon, so Snowdon returning the negative is the
+proof reproducing. **Reading the whole proof, not just its positive case, is what stopped a correct
+result being filed as a fault** — and when the workshared local came back in front later the same
+session, `workshared true, worksetCount 2, closedCount 0` returned exactly as recorded.
+
+**All three of PART 4's cross-checks hold on both models.** On Snowdon: `LIST_SHEETS` 17 and
+`LIST_REVISIONS` walking sheets its own way to 17; `REPORT_VIEW_FILTERS` 9 unused and
+`FIND_UNUSED_DEFINITIONS` reaching 9 as 8 + 1; `LIST_LINKED_MODELS` 6 and `REPORT_EXTERNAL_REFERENCES`
+8, the difference being the two settings references. On `Project1 work_ajmal.al`: 0 and 0, 6 and 6 + 0,
+0 links against 2 references — the same two. **The caveat is worth stating rather than counting this
+twice: that local was made FROM `Project1`, so it is the same project wearing worksharing, and its
+agreement with `Project1`'s recorded negatives (10 filters, 18 views, 6 unused; 2 references; 2 levels;
+the template's Revision 1 on no sheets) is reproduction, not a third independent model.**
+
+### The executor was put in front of all 135 DRAFT READ fragments, and the contracts are sound
+
+The compile gate wraps every fragment in ONE assembly with every declared need in scope. The executor
+compiles each into its OWN assembly with only `doc`, `uidoc` and `app` supplied — the arrangement that
+hid PART 4's first-line bug. So all 135 were sent through it.
+
+**Every single name any of them failed on is a name its own contract declares.** Not one fragment
+references a variable its `contract.needs` never promised. That is the READ half of D-29's contract
+verified against a compiler rather than by reading, and it means **wiring inputs is now the only work
+left there** — there is no hidden mismatch to find first.
+
+> ### THE TRIAGE RULE WAS WRONG FIRST, AND IT REPORTED 13 DEFECTS THAT ARE NOT DEFECTS
+>
+> The rule was: *a `CS0103` naming a declared need is expected; any other error code is a real defect.*
+> It flagged 13. **All 13 are cascades from the missing input, and the rule cannot tell the difference.**
+>
+> With `services` unsupplied, `foreach (var service in services)` leaves `service` untyped, so `box` is
+> untyped, so `box.Max` no longer resolves to `BoundingBoxXYZ.Max` — and the compiler falls back to the
+> only `Max` it can see, reporting **`CS0119: 'Queryable.Max<TSource>' is a method`**. Same for
+> `comparing.Count` becoming `CS0428`, and `+` on two "method groups" becoming `CS0019`.
+>
+> **A missing identifier in C# does not stay a `CS0103`.** It propagates into unrelated error codes
+> several lines away, on lines that are perfectly correct. Anyone re-running this check will get the
+> same 13; they are `audit-mep-openings`, `check-ceiling-coordination`, `check-equipment-clearance`,
+> `check-sleeve-size`, `check-surface-fit`, `check-valve-accessibility`, `check-vertical-clearance`,
+> `compare-elements`, `probe-around-elements`, `read-ceiling-grid`, `read-room-geometry`,
+> `report-coverage` and `report-location`. **Settled by opening the source at the reported line, which
+> is the only thing that settles it.**
+
+### What a fragment PROMISES and what it LEAVES BEHIND were compared for the first time
+
+`contract.provides` is a promise; the C# is a separate file. Nothing had ever checked them against each
+other. Over the 20 fragments that run with no inputs: **not one fails to leave behind something it
+promises.** Nineteen of twenty leave behind MORE — internal working variables reach the caller, and two
+of them are delegates (`harvest`, an `Action`; `readable`, a `Func`) that serialize to a type name and
+tell the caller nothing. Harmless to D-29's wiring, which matches by name, and worth knowing before
+anybody treats the returned key set as the contract.
+
+### `READ_SELECTION` is proven, and its off-screen answer is a finding rather than a pass
+
+Selected 1,053 duct curves through `select_by_category` — a `FilteredElementCollector` query over the
+model — then read them back through `uidoc.Selection`: **1,053, with `vanished` 0**. Two mechanisms,
+one number. On `Project1 work_ajmal.al`, which has no ducts, both said 0. With nothing selected, both
+models returned a clean zero rather than falling back to everything, to the active view, or to the
+previous run's 1,053.
+
+**What it does NOT establish is written into the proof rather than left out.** Aimed with `--in` at
+Snowdon while the other model was in front, it returned 0 with `active view: (none)` — and whether
+Snowdon's selection was genuinely cleared when it lost the screen, or whether a `UIDocument` built for
+an off-screen document cannot see a selection at all, **was not established.** The caller cannot tell
+those apart from the bare 0 either. **That is the same defect shape `LIST_WORKSETS` names in its own
+negative case:** an empty answer and an unanswerable question must not read alike.
+
+### THE MODEL CHANGED UNDER A RUNNING JOB, AND ONLY THE PRINTED TITLE CAUGHT IT
+
+A job started against Snowdon finished against `Project1 work_ajmal.al`, because the owner switched
+Revit while it ran. **Nothing failed and no number looked wrong** — the run simply described a different
+building. It was caught because the script prints the active document before it does anything, which is
+PART 4's scar (*"the answer always names the document"*) doing its job a day later. **Any script that
+runs against Revit must print the model it read, every time, even when it is only checking.**
+
+### The six that are still half a proof, and exactly what each one needs
+
+Both open models have **no design options, no global parameters, no closed workset, no painted face,
+and exactly the two default phases**. Every one of these ran clean and returned a correct, well-worded
+negative; none can be promoted on a negative alone.
+
+| Fragment | Snowdon | Project1 work | Still needs |
+|---|---|---|---|
+| ~~`REPORT_PHASES`~~ | 2 (Existing, New Construction) | the same 2 | ~~a third phase~~ **— DONE the same day, see below** |
+| ~~`REPORT_DESIGN_OPTIONS`~~ | `optionCount 0` | `optionCount 0` | ~~one design option~~ **— DONE the same day, see below** |
+| `REPORT_GLOBAL_PARAMETERS` | `globalCount 0`, `allowed true` | the same | **one global parameter** |
+| `FIND_UNUSED_GROUP_TYPES` | `0 unused out of 2 walked` | `0 out of 0` | **a group definition with nothing placed** |
+| `FIND_UNUSED_MATERIALS` | 56 unused of 460 types | 69 of 566 | **a face painted in a material used nowhere else — which must NOT be reported unused.** That is the defect the fragment exists to guard, and it is still unseen |
+| `FIND_UNUSED_FAMILIES` | 94 families, 64 wholly unused | 116, 107 unused | both halves are there; it needs a **second route** — Revit's own Purge Unused list, read by eye |
+| `LIST_WORKSETS` *(already PROVEN)* | not workshared | 2 worksets, both open | **a CLOSED workset** — still the one case never seen |
+
+**None of these can be faked and none needs code.** They are minutes of work in Revit on a model that
+is already open, and each one closes a fragment.
+
+### Later the same day — the owner made the conditions, and two more fragments are PROVEN
+
+**He created three phases and one design option in `Project1 work_ajmal.al` while the session ran.**
+Both predictions in the table above came true, and both fragments are now `PROVEN` — **14 → 16.**
+
+| | Before he touched it | After | Second route, by a DIFFERENT Revit filter |
+|---|---|---|---|
+| `REPORT_PHASES` | 2 — Existing, New Construction | **5** — Existing, **Phase 1, Phase 2, Phase 3**, New Construction | fragment walks `doc.Phases` (a `PhaseArray`); `OfClass(typeof(Phase))` found the same 5 names |
+| `REPORT_DESIGN_OPTIONS` | `optionCount 0` | **1** — `Option Set 1 / Option 1 <primary> [primary] - 0 element(s)` | fragment collects `OfCategory(OST_DesignOptions)`; `OfClass(typeof(DesignOption))` found the same 1 |
+
+**The phase ORDER is what makes that a proof rather than a count.** The three new phases came back
+sitting BETWEEN the two the template ships with — which is where inserting after Existing puts them.
+A phase list with the right names in the wrong order is wrong, and only the order shows it.
+
+**Both negatives were measured BEFORE he changed anything, on the same build.** That is what ties each
+number to a known cause rather than to a reading taken once.
+
+### THREE "CREATE" CAPABILITIES WERE ASKED FOR. ONLY ONE OF THEM CAN EXIST.
+
+The owner asked for fragments that create a phase, a design option and a global parameter. Reflection
+against the assemblies **Revit 2024 has actually loaded** — read, not looked up:
+
+| | What the shipped assembly says | Verdict |
+|---|---|---|
+| **Global parameter** | `GlobalParameter Create(Document, String, ForgeTypeId)` | **buildable — and built** |
+| **Phase** | no public static `Create`/`New`, **no public constructor**, `Document.Phases` is `CanWrite=False`, and the only `Document` member mentioning phases is `get_Phases` | **IMPOSSIBLE** |
+| **Design option** | no `Create`, no constructor, no `Document` method mentions one — and **`DesignOptionSet` is not a type at all** | **IMPOSSIBLE** |
+
+**Both refusals were already written in this library and are now confirmed on the shipped assembly.**
+`REPORT_PHASES`' own routing table says *"create a new phase → NOTHING HERE CAN. Revit exposes no
+create call for a phase on any release"*, and `REPORT_DESIGN_OPTIONS` says the same about making an
+option active. **A fragment that names its own boundary is the best gap detector in this repository** —
+that is now true in both directions: it found the one gap worth building AND it correctly refused the
+two that cannot be.
+
+### `CREATE_GLOBAL_PARAMETER` is built — 348 → 349 — and the library named this gap itself
+
+`SET_GLOBAL_PARAMETER`'s routing table has said *"make a global parameter → NOT HERE"* since
+2026-09-06 **and routed it to nothing.** Measured on a rebuilt store, every one of those sentences was
+being answered by `REPORT_GLOBAL_PARAMETERS` — a question fragment fielding a request to create.
+
+**THE VERSION RANGE WAS MEASURED, NOT ASSUMED, AND THE TWO FAILURES ARE DIFFERENT FAILURES** — the same
+shape `EXPORT_SHEETS_TO_PDF` records. All eight releases were declared and the compile gate was run:
+
+    Revit 2020   CS0246 - `ForgeTypeId` does not exist at all
+    Revit 2021   CS1503 - `ForgeTypeId` EXISTS, and `Create` still takes the old `ParameterType`
+
+**The 2021 result is the trap, and it is the one a reflection check gets wrong.** Asking whether
+`ForgeTypeId` is present answers YES for 2021 and the code still will not compile, because a type being
+available says nothing about which overload a call carries. **Presence is not usability** — which is
+exactly the limit `check-api-surface.py` states about itself. It declares 2022–2027; all eight releases
+are green.
+
+**IT CANNOT BE RUN, AND THAT IS NOT A GAP IN THE FRAGMENT.** `run_fragment_read` opens no transaction,
+so Revit refuses any change; running a fragment that WRITES is the operation that does not exist yet.
+So this one is `DRAFT`, compiled on six releases, and **cannot reach `PROVEN` until the write path is
+built.** It also means it cannot be used to create the global parameter that would finish
+`REPORT_GLOBAL_PARAMETERS` — that still needs Manage ▸ Global Parameters ▸ New, by hand.
+
+### A ROUTING REGRESSION WAS INTRODUCED, AND `check-routing.py` DID NOT FIND IT
+
+The checker reported one crossing on the new fragment — `"change the global parameter"`. **That was a
+false positive**, exactly as the tool's own preamble warns: it measures one half of the fusion, and
+`find` resolves a declared phrasing by identity before any ranking runs. Put through `find`, the host's
+real entry point, it answered `SET_GLOBAL_PARAMETER` correctly.
+
+**The real defect was in sentences NOBODY had declared, which is where no checker was looking:**
+
+| Sentence | 348 fragments | 349, first attempt | Why it matters |
+|---|---|---|---|
+| `"update the global parameter value"` | `SET` | **`CREATE`** | a plain regression |
+| `"change the global param"` | `REPORT` | **`CREATE`** | worse than its rank — **a harmless read replaced by an ADMIN write.** `LIST_LEVELS` records the same trade the right way round |
+
+**Fixed by strengthening the fragment that should win, never by weakening the new one** — both are now
+declared utterances of `SET_GLOBAL_PARAMETER` and resolve by identity. Two of the new fragment's own
+utterances were withdrawn with the reason written down: *"set up a global parameter for this project"*
+borrowed **SET's own verb**, and *"I need a global parameter"* carries no verb at all, so it was decided
+by the noun — the noun trap, now recorded five times.
+
+**One landing is left and declared rather than hidden:** the bare noun `"global parameter"`, with no
+verb, moved from `REPORT` to `CREATE`. It is genuinely ambiguous, the risk direction is the wrong one,
+and it is not fixed by declaring a sentence nobody says. What bounds it is written in the fragment:
+resolving is not running, `CREATE` is `ADMIN` so the permission gate stands in front of it, and no write
+path exists to run it at all.
+
+> ### THE RETRIEVAL STORE DOES NOT DROP A FRAGMENT THAT HAS BEEN DELETED, AND THIS INVALIDATES ANY BEFORE-AND-AFTER TAKEN WITHOUT REBUILDING IT
+>
+> **The whole fragment directory was moved off disk and the store still answered
+> `CREATE_GLOBAL_PARAMETER`.** Indexing is content-hashed and **additive**: it re-reads what is there
+> and nothing removes an entry whose file is gone. `_Open()` reports the store as indexed, and it is —
+> just not of the library as it now stands.
+>
+> **Every routing measurement in this file taken by editing and re-running is only as good as the store
+> underneath it.** The first "after" numbers in this session were wrong for exactly this reason and were
+> thrown away. The twenty-third session's note that *"the routing checker's store went stale and
+> reported a good fragment as unrankable"* is the same fault from the other side.
+>
+> **The fix is one line, and Golden Rule 11 says it is safe** — the stores are DERIVED, so deleting one
+> is a documented recovery action rather than damage:
+>
+> ```bash
+> rm "$APPDATA/Heron/knowledge/global.db"     # then any find() rebuilds it
+> ```
+>
+> **Do this before AND after any routing comparison.** A baseline measured on a store that still holds
+> the thing you are measuring the absence of is not a baseline.
+
+> ### THE EXECUTOR'S READ-ONLY GUARANTEE IS A GUARANTEE ABOUT THE EXECUTOR AND A PROMISE ABOUT THE SOURCE, AND `RevitFragment.cs` SAYS IT IS NEITHER
+>
+> Its own comment reads: *"READ ONLY, AND THAT IS A STRUCTURAL GUARANTEE RATHER THAN A PROMISE. Nothing
+> here opens a transaction. Revit refuses every model change made outside one, so a fragment run through
+> this path CANNOT alter the model - the enforcement is Revit's, **not a check of ours that could be
+> forgotten**."*
+>
+> **The first half is true and the conclusion does not follow.** Nothing in `RevitFragment` opens a
+> transaction — but the C# it compiles arrives **in the request**, and nothing reads it before it runs.
+> A fragment whose own source opened a `Transaction` would write, and Revit would allow it, because from
+> Revit's side there is now a transaction.
+>
+> **THIS IS NOT A GUESS, AND IT WAS NOT TESTED BY WRITING TO A MODEL.** Established by reading, because
+> the only way to demonstrate it is to change somebody's model on purpose:
+>
+> - `run_fragment_read` is declared `HeronRisk.Analyze` in
+>   [`platform/Heron.Core/HeronOperationRegistry.cs`](platform/Heron.Core/HeronOperationRegistry.cs)
+> - the emergency stop only blocks `risk >= HeronRisk.Modify`, so **the stop does not cover it**
+> - `HeronPermissions.Explain(risk)` at Analyze returns nothing, so **`write.enabled = false` does not
+>   cover it either**
+>
+> So a fragment that broke Golden Rule 16 would write with writing switched OFF, with the stop pressed,
+> with no preview, no audit entry and no single-undo grouping — through the operation named `..._read`.
+>
+> **AND THE SOURCE IS NOT CHECKED TO BE A FRAGMENT AT ALL.** `name` is a label; `source` is whatever the
+> client sends. Five arbitrary probe scripts were run through this path on 2026-09-07 — reflection over
+> the shipped assemblies, and the second-route counts behind two of the proofs above. None of them is a
+> fragment in the library. That is exactly why the executor is useful, and it is also why the source
+> cannot be assumed to obey Rule 16.
+>
+> **What actually holds today**: every fragment in the library obeys Rule 16, and the client sends only
+> what it read off disk. That is authorship discipline and a well-behaved client — a promise, kept. It
+> is not what the comment claims.
+>
+> **This is a decision for the owner, not a bug to quietly patch**, because every fix trades something:
+> declare the op at `Modify` so the stop and the permission gate cover it (and lose read-only proving
+> while writing is off); scan the source before compiling (the "check of ours that could be forgotten"
+> the comment was written to avoid); or leave the behaviour and correct the comment. **The one thing not
+> to do is leave the comment saying a promise is a guarantee.**
+
+> ### `test_graph.py` REWRITES REAL FRAGMENT FILES ON DISK, SO TWO TEST RUNS MUST NEVER OVERLAP — AND WHEN THEY DO IT LOOKS EXACTLY LIKE A BROKEN GRAPH DERIVER
+>
+> It failed twice on 2026-09-07 with four checks down, the first of them the one that matters:
+>
+>     with the real contracts, the filter feeds the action:
+>     and the filter is reported as an orphan nothing can consume
+>     and the action as one nothing can feed
+>
+> **Nothing was wrong with the graph.** `test_graph.py` proves the deriver reads the files rather than
+> remembering, and the only way to prove that is to BREAK a real contract on disk and put it back — so
+> `break_providers()` writes a modified `fragment.yaml` over the real one and `restore_providers()`
+> writes the original back. **While it is running, the library on disk is deliberately wrong.**
+>
+> Both failures were caused by running a second thing at the same time: a concurrent `check-routing.py`,
+> and later a second test sweep. The other process read the library mid-break and reported the break as
+> its own finding. **Run alone, it passed three times out of three.**
+>
+> **What saved the library is that `restore_providers()` sits in a `finally`** — after a collision
+> `load_all()` still returned 349 fragments with 0 problems and `git status` showed no stray fragment
+> edits. A run KILLED rather than failed has no such protection: it leaves real fragments broken on
+> disk, and the next session would find a library that does not load.
+>
+> **The rules that follow, and they cost nothing:**
+>
+> - **never run two test sweeps at once**, and do not run `check-gaps.py` beside anything — it runs the
+>   test suite itself, which is how one of these two collisions happened
+> - **a graph or contract failure straight after a concurrent run is suspect before it is believed** —
+>   re-run it alone before recording it as a regression
+> - if a run is interrupted, `git status` on `brain/fragments/` says immediately whether anything was
+>   left broken
+
+---
+
+> **PART 6 RAN ON THE OTHER TRACK, IN PARALLEL WITH THE SECTION ABOVE, AND THE TWO ARE NOT IN
+> CONFLICT.** Its table says *Proven: still 13* and *Fragments: 348*, and both were true where it was
+> written — the promotions and the new fragment landed on this track at the same time. **The count as
+> merged is 349 fragments and 16 `PROVEN`.** The two tracks agree on the thing that matters: PART 6
+> binds each fragment's declared `needs`, and the pass above confirmed against a real compiler that
+> **every name a fragment fails on is a name its contract declares** — which is the assumption PART 6
+> rests on.
 
 **2026-09-07, PART 6 — THE GATE AND THE EXECUTOR HAD DRIFTED IN A SECOND PLACE, AND NOTHING WAS
 LOOKING AT IT. 196 fragments compiled green against a scope the machine could not reproduce.**
@@ -365,6 +684,7 @@ file's own standard that is the API surface agreeing and nothing more. **The add
 deployed** — the DLL is locked while Revit runs, and Revit was open on the other track all day.
 **Group J in NEEDS-CHECKING.md is the eight rows that would prove it**, and `J2` — refusing when nothing
 is selected — is the one that matters most.
+
 
 ---
 
@@ -779,6 +1099,69 @@ that could be *built* without a machine; the seventh is doing the thing that can
 one — **writing fragments**, from 7 to **32** so far, each studied and rewritten rather than copied
 ([D-44](docs/DECISIONS.md): none of them inherits the earlier library's proven status). For whoever picks
 this up next: a fresh Claude session, a person, or the owner on his phone.
+
+---
+
+## HANDOVER — the session that ran 2026-09-07 (the verification track)
+
+**What happened, in one line: nothing was taken on trust. Every proof already recorded was re-run and
+all thirteen held, three more fragments earned one, and four things that cost real time are now written
+down so nobody pays for them twice.**
+
+**It ran beside PART 6, and neither track knew about the other until the merge.** PART 6 built the
+executor's inputs; this track checked what was already claimed. They agree where it counts, and the
+merge commit says how.
+
+| | Start | End |
+|---|---|---|
+| Fragments | 348 | **349** |
+| `PROVEN` | 13 | **16** |
+| Recorded proofs re-run | — | **13 of 13 hold, 13 of 13 fingerprints fresh** |
+| DRAFT READ fragments through the real executor | — | **135, zero unexplained failures** |
+
+### The three that were proven, and why they could not have been before
+
+`READ_SELECTION`, then `REPORT_PHASES` and `REPORT_DESIGN_OPTIONS` — **the last two only because the
+owner made the conditions himself while the session ran.** Neither model in this repository's history
+had a third phase or a design option in it, so a fragment that ignored the model and returned the
+default pair would have passed every check ever run against it. **That is the whole reason D-30 asks
+for a negative case**, and it is the first time the rule has visibly earned its keep on the same day it
+was applied.
+
+### One fragment was built, and two that were asked for cannot exist
+
+`CREATE_GLOBAL_PARAMETER` — **the gap was named by this library itself.** `SET_GLOBAL_PARAMETER`'s
+routing table had said *"make a global parameter → NOT HERE"* and pointed at nothing since 2026-09-06.
+
+Creating a **phase** and creating a **design option** were asked for in the same breath and **neither is
+possible on any release** — no create method, no constructor, `Document.Phases` read-only, and
+`DesignOptionSet` is not a type at all. Both refusals were already written in the two report fragments'
+own routing tables; reflection against the shipped assembly confirmed them rather than discovering them.
+**A fragment that names its own boundary is this repository's best gap detector, and it works in both
+directions: it found the one worth building and refused the two that cannot be.**
+
+### Four things that cost time, now written down
+
+| | |
+|---|---|
+| **The retrieval store never drops a deleted fragment** | The whole directory was moved off disk and the store still answered from it. Indexing is additive. **Every before-and-after taken without deleting `global.db` first is worthless** — the first set taken this session was |
+| **`test_graph.py` rewrites real fragment files** | Two runs overlapped and it failed in a way indistinguishable from a broken graph deriver. Never run two sweeps at once, and never run `check-gaps.py` beside anything — it runs the suite itself |
+| **The executor's read-only guarantee is a promise, not a guarantee** | `run_fragment_read` is declared `Analyze`, so neither the emergency stop nor `write.enabled` covers it, and the C# arrives in the request unread. A fragment breaking Rule 16 would write with writing switched off. **Re-verified after the PART 6 merge and it still stands word for word** |
+| **A missing C# identifier does not stay a `CS0103`** | It cascades into unrelated error codes on lines that are correct. A triage rule written on that assumption reported 13 defects that are not defects |
+
+### What the next session should do, in order
+
+1. **The four half-proved fragments**, listed with their predictions at the top of this file. One needs
+   a global parameter created by hand — **`CREATE_GLOBAL_PARAMETER` cannot do it**, because no write
+   path runs a fragment yet.
+2. **Group J in `NEEDS-CHECKING.md`** — the eight rows that would prove PART 6's input binding. None of
+   it has met a model.
+3. **The caller's half of the inputs.** 278 fragments want a category, a name or a distance and there
+   is no route for one. Now the largest single unlock.
+
+**A warning worth repeating because it was nearly paid twice:** `LIST_WORKSETS` came back looking like a
+regression, and was not — its proof records the positive case on a *different model* from the negative.
+**Read the whole proof before believing a re-run disagrees with it.**
 
 ---
 
