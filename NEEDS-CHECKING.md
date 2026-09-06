@@ -35,17 +35,22 @@ what it did not.
 every one that matters most. Compiling is not behaving: `D3` is still the line that catches a unit
 error, and nothing here has moved anything yet.
 
-**63 rows, 16 closed, 47 left** — recounted on 2026-09-06 with the pattern named below, IDs printed
-and read rather than the total trusted. **And 16 closed does not mean 16 proved:** 12 passed
-(`A1`, `A2`, `A3`, `A5`, `A6`, `A9`, `R1`, `R2`, `B2`, `B2a`, `B2b`, `B3`) and **4 are RETIRED unproven** —
+**63 rows, 17 closed, 46 left** — recounted on 2026-09-06 with the pattern named below, IDs printed
+and read rather than the total trusted. **And 17 closed does not mean 17 proved:** 13 passed
+(`A1`, `A2`, `A3`, `A4`, `A5`, `A6`, `A9`, `R1`, `R2`, `B2`, `B2a`, `B2b`, `B3`) and **4 are RETIRED unproven** —
 `C1`, `C2`, `C4` and `C6` cannot be run at all since the Emergency Stop button was removed
 ([D-46](docs/DECISIONS.md)). A struck row is not automatically a passed one, and a single "done" figure
 cannot say which.
 
-Of the 47 left: **43 need Revit**, **1 needs Windows but not Revit** (`A4`), **1 needs a host on the PC**
-(`A8`), **1 needs a reachable network** (`A7`), and **1 needs a screen in front of him** (`R1b` — seeing
-the trust model work). **Nothing is waiting on a compiler any more**: `A6` and `A9` both closed on
-2026-09-06 on the owner's Windows PC, which carries .NET 9 and 10 and Revit 2020, 2024 and 2027.
+Of the 46 left: **43 need Revit**, **1 needs a host on the PC** (`A8`), **1 needs a reachable network**
+(`A7`), and **1 needs a screen in front of him** (`R1b` — seeing the trust model work).
+
+**Nothing is waiting on a compiler, on Windows, or on a pipe any more.** `A4`, `A6` and `A9` all closed on
+2026-09-06 on the owner's own PC, which carries .NET 9 and 10 and Revit 2020, 2024 and 2027 — three rows
+that had been parked for a machine, closed in an afternoon once somebody was sitting at one. **That is the
+fifth time something filed under *needs a machine* turned out to be waiting on somebody trying it**, and
+this time the machine really was the blocker for all three. The distinction is worth keeping: these were
+correctly parked. `A8` was not.
 
 > **This paragraph has now drifted FIVE times, and the fifth is the most instructive.** It said
 > *60 items, 6 done, 54 left* against **63 rows and 15 struck** — wrong in both directions at once.
@@ -113,14 +118,14 @@ right. Add an item every time something is built away from Revit.
 
 ## Group A — does it build, and does the bridge work
 
-**Does NOT need Revit.** This group is **six rows done of NINE** — `A6` and `A9` both closed on
+**Does NOT need Revit.** This group is **seven rows done of NINE** — `A6` and `A9` both closed on
 2026-09-06 on the owner's PC, which carries the .NET SDK. *(This line said "of eight" while nine rows
 sat under it, which is the same drift as the summary above and was caught the same way: by counting
 the rows in this section rather than believing the sentence over them.)*
 
-**None of the three left needs a compiler, and none needs Revit:** `A4` needs the Windows named pipe
-actually exercised, `A8` needs a real MCP host connecting over stdio, and `A7` needs a network that can
-reach the weights host. The fourth, **`A9`,
+**Seven of the nine are now closed.** `A4`, `A6` and `A9` all fell on 2026-09-06 on the owner's PC.
+**The two left need neither a compiler nor Revit nor Windows:** `A8` needs a real MCP host connecting
+over stdio, and `A7` needs a network that can reach the weights host. The fourth, **`A9`,
 needs only a machine with the .NET SDK on it** - it is the batches of fragments written on 2026-09-02,
 2026-09-04 and 2026-09-05 in containers where the SDK could not be installed, so for the first time in
 this library some C# has never been near a compiler. `A8` arrived on
@@ -159,7 +164,7 @@ python tools/check-compile.py          # 2020 through 2027, all four projects, 0
 | ~~**A1**~~ | ~~`dotnet --version`~~ | **DONE 2026-08-28.** SDK 8.0.130. Still worth one run on the owner's PC, where `tools/setup.ps1` checks it anyway and stops with the download link |
 | ~~**A2**~~ | ~~`dotnet build -p:RevitVersion=2020`~~ | **DONE 2026-08-28.** Compiles, 0 warnings, after the `CreationGUID` fix above. The other five spots this row used to warn about — `WorksharingUtils.GetCheckoutStatus`, `IFailuresPreprocessor`, `TransactionGroup.GetStatus`, `BuiltInCategory.INVALID`, `UIDocument.RefreshActiveView` — are all **clean on 2020 and 2024** |
 | ~~**A3**~~ | ~~`dotnet build -p:RevitVersion=2024`~~ | **DONE 2026-08-28.** So are 2021, 2022 and 2023 — all four projects, 0 warnings each |
-| **A4** | `dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024` then `python tests/test_bridge_roundtrip.py` — **on Windows** | **Mostly done 2026-08-28, and the remainder genuinely needs Windows.** All 32 checks pass on Linux: framing, the JSON parser, the token, newest-connection-wins, the toggle cycle and **the whole lease**. What a Linux run cannot touch is the Windows named pipe itself — its naming, its security descriptor, and the `CreateNewInstance` flag from [HANDOVER](HANDOVER.md) §4 note 2. Run it once on Windows and this row goes. **The runtime is now detected rather than pinned** (2026-09-02): the test asks `dotnet --list-runtimes` and builds for the newest `Microsoft.NETCore.App` the machine can actually run. It used to hardcode `net8.0`, so on a box carrying only the .NET 10 runtime the host built and then refused to start — *"You must install or update .NET"* — and the suite reported *not found* for four sessions running, which reads as a missing build rather than a missing runtime. A pinned framework in a test meant to run on whatever machine is in front of it is a machine-specific assumption written down as a constant. Nothing to remember now. Re-run on Linux 2026-08-29: **all 32 checks pass**, lease included |
+| ~~**A4**~~ | ~~`python tests/test_bridge_roundtrip.py` — **on Windows**~~ | **DONE 2026-09-06 on the owner's PC. All 32 checks pass against a REAL Windows named pipe** — `heron.2024.21512` — which is the one thing the Linux runs could never touch: the pipe's actual naming, its security descriptor, and the `CreateNewInstance` flag from [HANDOVER](HANDOVER.md) §4 note 2. Framing, the JSON parser, the token, newest-connection-wins, the toggle cycle and **the whole lease** all behave on Windows exactly as they did on Linux, so the shim was faithful. **One result is worth naming separately:** *"disconnect stops it and withdraws the announcement"* passes — which is the control the owner named as his stop when [D-46](docs/DECISIONS.md) was read back to him, now proven on the platform it has to work on. The Emergency Stop button it replaced never had a passing test. **What this still does NOT touch is Revit**: the host is a test host, no model is open, and `D3` is untouched by all of it |
 | ~~**A5**~~ | ~~`python tools/check-compile.py 2025 2026 2027`~~ | **DONE 2026-08-28, and it did not need Windows either.** All four projects compile on 2025, 2026 and 2027 — `net8.0-windows` and `net10.0-windows`, 0 warnings — on Linux, with the .NET 10 SDK and `-p:EnableWindowsTargeting=true`. This row assumed the Windows Desktop SDK was a property of the operating system; it is a property of the **SDK package**, and Ubuntu's `dotnet-sdk-10.0` ships it while its `dotnet-sdk-8.0` does not. The script had the right MSBuild flag and applied it **only on Windows**, where it does nothing. Full account and the validation in [docs/30 §2a](docs/30-compiling-away-from-windows.md). `python tools/check-api-surface.py` still runs and still adds something a compile cannot — it reads the **shipped** assemblies, where a compile reads the NuGet reference packages |
 | ~~**A6**~~ | ~~On **Windows**, run `python tools/check-compile.py 2025` and read the first lines of output~~ | **DONE 2026-09-06, on the owner's PC — the probe reads the SDK correctly on Windows.** Output: *"Compiling with .NET SDK 10.0.303 on Windows. WindowsDesktop targets found in the .NET 10 SDK"*, then all four projects **ok** on Revit 2025. This row existed because `check-compile.py` decides whether it can build the WPF releases by **looking for** `Sdks/Microsoft.NET.Sdk.WindowsDesktop` under each installed SDK rather than by asking whether it is on Windows — and **that probe had only ever run on Linux**, where a false negative costs nothing. On Windows a false negative would have **silently skipped 2025-2027 on the one machine where they used to build**, which is why a five-minute check was worth keeping. It did not misread, so the fallback path (attempt the build anyway when the SDK list cannot be read at all) is **still unproven** — it was never reached |
 | **A8** | On the PC, with the Heron MCP server configured in Claude Code, ask it *"what can you do?"* and watch `heron_capabilities` run. Then `heron_lookup` with *"select all the ducts"* | **Mostly done 2026-08-31, and it did not need Windows either — read what moved and what did not.** This row existed because the three brain tools were written on a machine with **no MCP SDK installed**, so `FastMCP` had never served them. That was a missing **package**, not a missing operating system: the SDK is pure Python and installs from PyPI. Installed on Linux, a real SDK now serves **all ten** tools with their descriptions and argument schemas, and `heron_capabilities`, `heron_resolve` and `heron_lookup` all answer through the SDK's own dispatch with both refusals intact — [`tests/test_mcp_serves.py`](tests/test_mcp_serves.py), which is that check made permanent. **Installing the SDK immediately found a defect no text read could see**: `pip install --user mcp` now resolves to **2.x**, which deleted `mcp.server.fastmcp`, so Heron's server raised `ImportError` before registering a single tool — every Heron tool absent from the host. Fixed, and proven on **both** SDK majors side by side. **What genuinely remains needs the PC:** a real host over stdio — that Claude Code connects, renders the docstrings, and picks a tool from them. In-process dispatch is a strong signal ahead of that, not a substitute for it. **PASS is what the host shows:** ten jobs, **all ten** with every part provided and **none** unprovided (this row said *four* and *seven missing* until 2026-08-31 — it was written on 2026-08-29 **before** the seven capabilities were written later the same day, so as worded it would have failed a correct Heron), and every answer saying plainly that it **cannot run** any of them. **And one assertion here is RETIRED rather than repaired, with its reasoning, because quietly deleting it would look identical.** This row also required `heron_lookup` to answer `FILTER_ELEMENTS_BY_CATEGORY`. Measured, it answers `SET_SELECTION` (provided by `FRG-SEL-001`), with `FILTER_ELEMENTS_BY_CATEGORY` the runner-up and both routes agreeing. That is **the same assertion Steps 10 and 11 already retired**, written into the register and not retired alongside them: *"select all the ducts"* is filter-**then**-select, a composition, and a composition is what a **skill** names — `heron_capabilities` lists it as the skill *"Show me these on screen"*. Asking which single capability serves that sentence is asking the wrong layer, and of the two, `SET_SELECTION` is the one the sentence actually ends at. So the check is that `heron_lookup` **names a capability and its route**, not which one | 
