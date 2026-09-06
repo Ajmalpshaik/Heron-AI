@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -45,6 +45,40 @@ contract:
       type: IDictionary<string, ElementId>
     - name: phaseCount
       type: int
+
+proof:
+  date: "2026-09-07"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Revit 2024.3, session 29340. Positive on 'Project1 work_ajmal.al' (3,435
+    elements, a workshared local) AFTER the owner added three phases to it
+    during the session. Negative on 'Snowdon Towers Sample HVAC.rvt' (9,628
+    elements), measured twice on the same build earlier the same day while both
+    models were open at once.
+  positive_case: >
+    phaseCount 5, and the names came back IN PROJECT ORDER - Existing, Phase 1,
+    Phase 2, Phase 3, New Construction. The order is the answer, not a
+    detail: the three new phases sit BETWEEN the two the template ships with,
+    which is where inserting after Existing puts them, and a phase list in any
+    other order would be wrong even with the right names in it. phaseIds
+    returned 5 entries, matching.
+  negative_case: >
+    Snowdon Towers: exactly 2, Existing and New Construction - the pair every
+    Revit project starts with. That is the case that makes 5 mean something,
+    and it is the reason this fragment could not be promoted before 2026-09-07:
+    both models available until then had only the default pair, so a fragment
+    that simply returned "Existing, New Construction" regardless would have
+    passed. It was measured at 2 BEFORE the owner added any phase and at 5
+    after, on one build, which ties the number to a known cause.
+  second_route: >
+    The same 5 names were reached by a DIFFERENT REVIT FILTER in the same run.
+    This fragment walks `doc.Phases`, a PhaseArray; a
+    FilteredElementCollector(doc).OfClass(typeof(Phase)) found 5 elements with
+    exactly the same names. Two different mechanisms, one answer - and they can
+    legitimately disagree, which is what makes agreeing worth something. Revit's
+    own Manage > Phases dialog is the third: it is what the owner used to create
+    them.
+  fingerprint: "fe91601e84901793"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

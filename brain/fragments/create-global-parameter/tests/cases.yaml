@@ -1,0 +1,96 @@
+positive:
+  - given: >
+      a project with no global called "Corridor Width", the name handed in and
+      SpecTypeId.Length as the spec
+    expect: >
+      created is true, parameterId names the new element, and the findings say
+      it was read back BY NAME after the write. Manage > Global Parameters shows
+      one new row
+
+  - given: the same request run a second time
+    expect: >
+      created is FALSE and nothing is duplicated. The finding says it already
+      exists and hands back the one that is there. This is the ordinary result
+      of asking twice, not an error - and Revit refuses duplicate global names
+      outright, so the alternative to checking is a throw inside somebody's
+      transaction
+
+  - given: a spec of SpecTypeId.Boolean.YesNo rather than a length
+    expect: >
+      it creates. The spec arrives already built and is not interpreted here, so
+      one implementation covers lengths, numbers, yes/no and text without a
+      units API anywhere near it
+
+  - given: a name with leading and trailing spaces
+    expect: >
+      the name is trimmed before anything is looked up or created, so " Width "
+      and "Width" are the same request rather than two parameters that look
+      identical in the dialog
+
+negative:
+  - given: this run against a FAMILY document
+    expect: >
+      nothing is created and the finding says this kind of document cannot hold
+      global parameters AT ALL - not "failed to create". The two read
+      identically to a tool and completely differently to a person, and the
+      wrong one sends somebody hunting for a setting that could never exist
+
+  - given: an empty name, or a name that is only whitespace
+    expect: >
+      nothing is created, and the reason given is that every other fragment
+      finds a global BY NAME - so an unnamed one could never be written to
+      afterwards
+
+  - given: no spec handed in
+    expect: >
+      nothing is created. A global holds a KIND of value and Revit fixes that at
+      the moment it is made; it cannot be changed later, so guessing one here
+      would be a decision disguised as a default
+
+  - given: >
+      a name that FindByName does not find but Revit reports as not unique
+    expect: >
+      nothing is created, and the finding says the two reads disagree and names
+      that as the reason. Creating anyway is a throw. This is the case that
+      exists because two lookups can legitimately disagree, and the honest
+      answer is to say so rather than pick one
+
+  - given: the create call returns but looking the name up again finds nothing
+    expect: >
+      created stays FALSE. What the project holds afterwards is the only thing
+      reported - a call returning is not evidence, and this is the defect the
+      whole read-back rule exists for
+
+  - given: >
+      Revit keeps the parameter but under a different name from the one asked for
+    expect: >
+      created is true AND a finding says outright that the name was not kept,
+      naming both. Everything else in this library finds a global by name, so a
+      silent rename is a parameter nobody can reach again
+
+  - given: >
+      somebody who meant "add a parameter called AJ_Status to duct accessories"
+      and reached this
+    expect: >
+      no category is bound and no element gains anything. That is
+      ADD_PROJECT_PARAMETER - one value PER ELEMENT, bound to categories. A
+      global is ONE value for the whole project. Both sentences say "add a
+      parameter"
+
+  - given: a caller on Revit 2020 or 2021
+    expect: >
+      this fragment is not offered at all. It declares 2022 to 2027 because the
+      third argument to the creating call changed type at 2022, and the old
+      `ParameterType` enum is not present in 2024 in any form
+
+second_route: >
+  Manage > Global Parameters > New in Revit's own dialog - the same creation,
+  and the same two refusals are visible there: the New button is absent in a
+  family document, and typing a name that already exists is rejected by the
+  dialog rather than silently making a second. Watching those two is the check
+  that the refusals here are Revit's and not invented.
+
+  The count from REPORT_GLOBAL_PARAMETERS is the other side of it: it reads
+  `globalCount` by a different route, so running it before and after this must
+  show exactly one more - and running this twice must leave that count alone the
+  second time.

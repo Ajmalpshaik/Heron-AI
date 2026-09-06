@@ -1,0 +1,197 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-021
+semantic-identity: "make a new global parameter for this project"
+kind: action
+domain: revit.parameters
+capability: CREATE_GLOBAL_PARAMETER
+version: 1
+source: OFFICIAL
+risk: ADMIN
+
+purpose: >
+  Creates a global parameter - the single project-wide value that can then be
+  labelled onto dimensions and element parameters to drive them.
+
+  **THE LIBRARY NAMED THIS GAP ITSELF, AND THAT IS WHY IT EXISTS.**
+  SET_GLOBAL_PARAMETER's own routing table says *"make a global parameter -> NOT
+  HERE"* and routes it to nothing. REPORT_GLOBAL_PARAMETERS lists them,
+  SET_GLOBAL_PARAMETER writes into one that already exists, and until this
+  fragment nothing could make one. A fragment that names its own boundary is the
+  best gap detector in this repository; this is that boundary answered.
+
+  **IT MAKES THE PARAMETER AND DOES NOT SET ITS VALUE.** The new global holds
+  whatever its spec starts at, and writing a value is SET_GLOBAL_PARAMETER's
+  job. That split is the same one ADD_PROJECT_PARAMETER and
+  WRITE_ELEMENT_PARAMETERS already keep: making the thing and filling it in are
+  different operations with different risks, and folding them together would
+  mean a typo in a value silently created a parameter as well.
+
+  **IT IS ADMIN AND SET_GLOBAL_PARAMETER IS MODIFY, WHICH IS NOT A CLAIM THAT
+  THIS ONE IS MORE DANGEROUS.** Setting a global re-drives every dimension
+  labelled by it and can move walls on twelve levels; this creates a value
+  nothing is labelled by yet and moves nothing at all. The levels differ because
+  the CLASS of change differs - this changes what the project CONTAINS for
+  everybody who opens it, which is the thing a BIM execution plan governs, where
+  setting changes what the model LOOKS LIKE. That is the same reading
+  ADD_PROJECT_PARAMETER applies to itself.
+
+  **RE-RUNNING IT DOES NOT MAKE A SECOND ONE.** An existing global of that name
+  is handed back rather than duplicated, and the findings say so plainly. Revit
+  refuses duplicate global names outright, so the alternative to checking is a
+  throw in the middle of somebody's transaction.
+
+  **A FAMILY DOCUMENT CANNOT HAVE GLOBAL PARAMETERS AT ALL**, and that is
+  reported as *this kind of document cannot* rather than as a failure to create.
+  The two read identically to a tool and completely differently to a person.
+
+  **WHAT IS REPORTED IS WHAT THE PROJECT HOLDS AFTERWARDS**, read back by name
+  after the write rather than assumed from the call returning. That is the rule
+  this project exists around.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: parameterName
+      type: string
+      source: request
+    # The KIND of value it holds - a length, a number, a yes/no, text. Handed in
+    # already built, so no units API is touched anywhere in here (D-20).
+    - name: specTypeId
+      type: ForgeTypeId
+      source: request
+  provides:
+    - name: created
+      type: bool
+    - name: parameterId
+      type: ElementId
+    - name: findings
+      type: IList<string>
+
+revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  **2022 AND LATER ONLY, AND THE RANGE WAS MEASURED RATHER THAN ASSUMED** - the
+  same way EXPORT_SHEETS_TO_PDF measured its own, and with the same result: the
+  compile gate was run with all eight releases declared, and **the two failures
+  are not the same failure.**
+
+    Revit 2020   CS0246 - `ForgeTypeId` does not exist at all
+    Revit 2021   CS1503 - `ForgeTypeId` EXISTS, and `GlobalParameter.Create`
+                          still takes the old `ParameterType` in argument 3
+
+  **That 2021 result is the trap, and it is the one a reflection check gets
+  wrong.** Asking whether `ForgeTypeId` is present answers YES for 2021, and the
+  code still cannot compile there, because the type being available says nothing
+  about which overload the creating call carries. Presence is not usability. The
+  range was therefore taken from a real compile on each release rather than from
+  the member list - which is exactly the limit `check-api-surface.py` states
+  about itself: matching by NAME passes a member whose SIGNATURE moved.
+
+  For the record, read out of the shipped Revit 2024 assembly by reflection
+  before any of that:
+
+    Autodesk.Revit.DB.GlobalParameter
+      GlobalParameter Create(Document document, String name, ForgeTypeId specTypeId)
+
+    Autodesk.Revit.DB.ParameterType   -> GONE. Not present in 2024 at all.
+
+  **`ParameterType` being absent from the newer releases is what makes this a
+  real boundary rather than a preference.** One implementation cannot carry both
+  shapes without a version branch, and this library keeps one implementation per
+  fragment.
+
+  Everything else here is unchanged across the releases claimed:
+  `GlobalParametersManager.AreGlobalParametersAllowed`, `.FindByName`,
+  `.IsUniqueName` and `Document.GetElement`. No units API is called - the spec
+  arrives already built, which is what keeps the 2021 units rewrite away from
+  this code (D-20). No `ElementId` is read as a number, so 2024's move to 64-bit
+  ids does not reach here either.
+
+  **A 2020 or 2021 caller gets nothing from this fragment rather than a
+  fallback**, and that is a decision. The fallback would be a second
+  implementation carrying an enum that no longer exists on six of the eight
+  releases, to serve the two oldest.
+
+# ROUTING - repeated in SET_GLOBAL_PARAMETER and REPORT_GLOBAL_PARAMETERS.
+#
+#   "make a global parameter"            -> here. SET_GLOBAL_PARAMETER's table
+#                                           has claimed this sentence and
+#                                           routed it to nothing since
+#                                           2026-09-06; this is where it lands
+#   "add a global parameter"             -> here
+#   "create a new global parameter"      -> here
+#   "set the global to 3000"             -> SET_GLOBAL_PARAMETER. That WRITES a
+#                                           value into one that already exists,
+#                                           and it re-drives every dimension
+#                                           labelled by it
+#   "list the global parameters"         -> REPORT_GLOBAL_PARAMETERS, which is
+#                                           the list to read before making
+#                                           another one
+#   "add a project parameter"            -> ADD_PROJECT_PARAMETER. A PROJECT
+#                                           parameter is one value PER ELEMENT,
+#                                           bound to categories. A global is ONE
+#                                           value for the whole project. Both
+#                                           sentences say "add a parameter" and
+#                                           they are different jobs
+#
+# THE NOUN IS NOT ENOUGH HERE AND THAT IS THE TRAP. "Parameter" means either
+# kind, and the word that decides it is GLOBAL. A sentence that only says
+# "make a new parameter" is genuinely ambiguous and belongs to whoever asked -
+# it is not silently taken by this fragment.
+#
+# MEASURED BEFORE AND AFTER, ON A STORE REBUILT BOTH TIMES (2026-09-07). Every
+# sentence below moved, and every move but the last is an improvement:
+#
+#   "make a global parameter"           REPORT -> here, by identity
+#   "add a global parameter"            REPORT -> here, by identity
+#   "create a new global parameter"     REPORT -> here, by identity
+#   "new global parameter please"       REPORT -> here
+#   "change the global param"           REPORT -> SET_GLOBAL_PARAMETER
+#   "update the global parameter value" SET    -> SET, kept by declaring it there
+#
+# THE ONE THAT IS NOT AN IMPROVEMENT IS THE BARE NOUN. "global parameter", with
+# no verb at all, went from REPORT_GLOBAL_PARAMETERS to here - a read replaced
+# by an ADMIN write, which is the WRONG RISK DIRECTION. LIST_LEVELS records the
+# same trade the right way round: a read giving a near-miss is a better failure
+# than a write giving one.
+#
+# IT IS LEFT, AND THIS IS THE REASON RATHER THAN A SHRUG. REPORT_GLOBAL_PARAMETERS
+# should win a bare noun and does not. It is not fixed by declaring "global
+# parameter" as an utterance somewhere, because that buys a rank with a sentence
+# nobody says (brain/retrieval-history.md), and it is not fixed by weakening the
+# three real sentences above. What bounds it meanwhile: resolving is not
+# running, this fragment is ADMIN so the permission gate stands in front of it,
+# and no write path exists to run it at all.
+
+# TWO UTTERANCES WERE WITHDRAWN THE HOUR THEY WERE WRITTEN, AND THE REASON IS
+# NOT A RANK. "set up a global parameter for this project" and "I need a global
+# parameter" were declared here first. Measured through `find` - the host's own
+# entry point - they took two sentences that MEAN SET:
+#
+#     "change the global param"             -> CREATE_GLOBAL_PARAMETER
+#     "update the global parameter value"   -> CREATE_GLOBAL_PARAMETER
+#
+# Both are write sentences about a parameter that already exists, and both had
+# gone to SET_GLOBAL_PARAMETER before this fragment existed. The cause is the
+# verb: "SET up" hands this fragment the word that is SET_GLOBAL_PARAMETER's
+# whole identity, and "I need a" carries no verb at all, so it is decided by the
+# noun - the noun trap this repository has now recorded five times.
+#
+# This is NOT the forbidden move of weakening a real sentence to buy back a
+# rank (brain/retrieval-history.md). Neither withdrawn line is what a modeller
+# actually says, and one of them was borrowing another fragment's verb to say
+# it. What somebody really says here is "make", "add" or "create".
+utterances:
+  - make a global parameter
+  - add a global parameter
+  - create a new global parameter
