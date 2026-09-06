@@ -162,13 +162,17 @@ within hours on the day did not move again.
 
 ## Group B — does Revit still load
 
-A third ribbon button was added to a panel that already worked. If Heron disappears entirely, this is why.
+The panel was rebuilt: Heron and Bridge Status are now one split button, and a ribbon that throws
+during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is why.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **B1** | Start Revit 2020 | The **Heron AI** tab is there |
-| **B2** | Look at the panel | **Three** buttons: Heron, Bridge Status, Emergency Stop |
+| ~~**B2**~~ | ~~Look at the panel~~ | **DONE 2026-09-06.** Two controls, as intended |
+| ~~**B2a**~~ | ~~Click the arrow under Heron~~ | **DONE 2026-09-06.** The list opens with Bridge Status in it |
+| ~~**B2b**~~ | ~~Pick Bridge Status, then look at the top of the split button~~ | **DONE 2026-09-06.** Top stayed **Heron**, icon intact. `IsSynchronizedWithCurrentItem = false` does take effect in a real Revit, which a compile could not have told us. **The release it was run on was not recorded** — re-run on the other two before this counts for all of 2020-2027 |
 | **B3** | Press Heron | Connects, icon lights, as before. Step 5 behaviour must not have regressed |
+| **B3a** | Press Heron again to disconnect, then re-open the arrow and pick Bridge Status | Says **Not connected** — the item inside the list still runs its own command, it did not become part of the toggle |
 | **B4** | `python mcp/client/heron_bridge_client.py ping` then `count` | Both answer, as they did before Step 6 |
 
 ## Group C — the gate, before anything can move
