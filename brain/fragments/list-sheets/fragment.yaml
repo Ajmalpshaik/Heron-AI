@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -38,6 +38,19 @@ contract:
       type: IList<string>
     - name: placeholders
       type: IList<ElementId>
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
+  positive_case: >
+    Snowdon Towers: 17 sheets, and M002 'Notes, Symbols & Schedules' flagged '(0 views) - EMPTY' rather than listed as if it carried drawings.
+  negative_case: >
+    Project1: 0 sheets, 0 placeholders. Empty, from a model that has none - and not Snowdon's 17, with both documents open.
+  second_route: >
+    LIST_REVISIONS walked the sheets independently in the same run and also reported 17 on Snowdon and 0 on Project1. Two mechanisms, one number.
+  fingerprint: "6010a39b2f3440c5"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 15
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -41,6 +41,19 @@ contract:
       type: IList<string>
     - name: elevationsMm
       type: IDictionary<ElementId, double>
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
+  positive_case: >
+    Snowdon Towers: 11 levels with elevations - Parking -5156.2 mm, L1 - Block 35 -1803.4 mm, L1 - Block 37 -1054.1 mm. Negative elevations are read correctly rather than clamped.
+  negative_case: >
+    Project1: exactly the 2 template levels, Level 1 at 0 mm and Level 2 at 4000 mm. With BOTH documents open it returned only the active one's levels - it does not read across documents, which is the way this could have been quietly wrong.
+  second_route: >
+    REPORT_LEVEL_ELEVATIONS read the same 11 levels by a different route in the same run, and Revit's Project Browser lists them.
+  fingerprint: "9c7c6288cc72b0eb"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

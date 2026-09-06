@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -48,6 +48,19 @@ contract:
       type: IList<ElementId>
     - name: filterCount
       type: int
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
+  positive_case: >
+    Snowdon Towers: 13 filters checked against 30 views, 9 unused, each named and described as a RULE.
+  negative_case: >
+    Project1: 10 filters against 18 views, 6 unused - a different model gives different numbers rather than a repeated answer, and neither run reported the other's filters.
+  second_route: >
+    FIND_UNUSED_DEFINITIONS reached the same unused count by a different route in the same run: 8 used by nothing plus 1 used only by unused templates = 9 on Snowdon, and 6 on Project1. Two mechanisms agreeing.
+  fingerprint: "12fc08ce102b1949"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

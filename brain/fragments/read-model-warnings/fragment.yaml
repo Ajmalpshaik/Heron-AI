@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-WRN-016
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -42,6 +42,19 @@ contract:
       type: int
     - name: notInThisModel
       type: IList<ElementId>
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
+  positive_case: >
+    Snowdon Towers: 145 warnings over 87 elements, grouped into 5 kinds, worst first - 'x111 The calculation was run with the Pressure Drop set to 0'. The grouping is the answer; 145 individual rows would not be.
+  negative_case: >
+    Project1: 0 warnings, 0 elements, 0 kinds. A clean model returns nothing rather than a spurious finding, with both documents open.
+  second_route: >
+    Revit's own Manage > Warnings dialog lists the same set and the same total.
+  fingerprint: "61f9cf28783841b4"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

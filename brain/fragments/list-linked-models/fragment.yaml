@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -40,6 +40,19 @@ contract:
       type: IList<string>
     - name: notLoaded
       type: IList<ElementId>
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
+  positive_case: >
+    Snowdon Towers: 6 links, ALL loaded, notLoaded 0, each named with its placement - 'Snowdon Towers Sample Architectural.rvt : Architecture : location <Not Shared>'.
+  negative_case: >
+    Project1: 0 links, 0 loaded, 0 notLoaded. Empty because there are none - and with both documents open it did not report Snowdon's six.
+  second_route: >
+    REPORT_EXTERNAL_REFERENCES counted 8 references on Snowdon and 2 on Project1 in the same run; the difference is exactly these 6 links.
+  fingerprint: "61306a1830fb89f6"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

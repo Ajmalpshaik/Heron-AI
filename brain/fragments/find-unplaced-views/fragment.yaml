@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -45,6 +45,19 @@ contract:
       type: IDictionary<string, int>
     - name: placedCount
       type: int
+
+proof:
+  date: "2026-09-06"
+  by: "Claude Opus 5, at Ajmal PS's PC"
+  model: >
+    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
+  positive_case: >
+    Snowdon Towers: 7 views on no sheet against 42 that are placed - 'North - Mech', 'South - Mech', 'Model Linking'.
+  negative_case: >
+    Project1: placedCount 0. Nothing is on a sheet because the model has no sheets, and the fragment says so rather than reporting every view as an unplaced problem without context.
+  second_route: >
+    LIST_SHEETS independently found 17 sheets on Snowdon and 0 on Project1, which is what makes 42 placed and 0 placed the right answers.
+  fingerprint: "c7e5f40b3916bf41"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
