@@ -1,0 +1,53 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a template project open alongside, holding six line styles
+    expect: >
+      those six on the Line Styles list here afterwards, in `created`, each
+      with the source's weight, colour and pattern. Draw with one and compare
+      it against the same style in the template
+
+  - given: nameContains "MEP"
+    expect: >
+      only the styles whose names contain MEP, and no other style touched
+
+  - given: three styles in the source that all use one custom pattern
+    expect: >
+      the pattern brought over ONCE, not three times. A second pattern with the
+      same name is its own defect and is invisible in a list of names
+
+negative:
+  - given: a style in the source using a custom line pattern this project lacks
+    expect: >
+      the pattern brought over with it and the style drawing dashed. If the
+      pattern could NOT come, the style still made, drawing SOLID, and named in
+      `weakened` - never in `created`. A style that arrived looking right and
+      draws solid is found on an issued drawing, not here
+
+  - given: a style name that already exists here with a different weight
+    expect: >
+      that name in `clashed` and THIS project's style untouched. Silently
+      replacing one project's standards with another's is worse than doing
+      nothing
+
+  - given: the source project NOT open
+    expect: >
+      `refused` naming what IS open, and nothing attempted
+
+  - given: a linked model whose title matches
+    expect: >
+      it not offered as a source. A link is reached through its
+      RevitLinkInstance, and two links can share a title
+
+  - given: a style whose pattern is the built-in solid
+    expect: >
+      no pattern work attempted and the style in `created`. Solid here is
+      already solid there, and there is no element behind it to carry
+
+second_route:
+  - >
+    open Manage > Additional Settings > Line Styles and read the weight,
+    colour and pattern columns against the source project. A name appearing in
+    the list is not proof: draw a line with the style and look at it. Solid
+    when it should be dashed is the failure this fragment reports separately,
+    and it looks correct in every list that names it
