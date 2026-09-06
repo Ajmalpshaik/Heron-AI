@@ -63,7 +63,16 @@ import heron_config                            # noqa: E402
 #
 # Random and meaningless on purpose. It identifies a conversation, never a
 # person or a machine.
-CLIENT_ID = uuid.uuid4().hex[:12]
+#
+# HERON_CLIENT_ID OVERRIDES IT, and that exists because the sentence above is
+# only true of a long-running client. The MCP server is one process for one
+# chat, so a fresh id per process is exactly right. A COMMAND LINE IS NOT: each
+# invocation is its own process, so every command looked like a NEW chat and
+# the previous one's lease sat orphaned for five minutes. Two commands in a row
+# were refused - found 2026-09-06, one fragment into the first proving run.
+#
+# Setting it makes several commands one conversation, which is what they are.
+CLIENT_ID = os.environ.get("HERON_CLIENT_ID") or uuid.uuid4().hex[:12]
 
 # How long to wait for an answer once the bridge has accepted the connection.
 #
@@ -676,6 +685,91 @@ def cmd_fragment(name):
     return 1 if failures else 0
 
 
+def cmd_prove(names):
+    """
+    Run several fragments against the open model in ONE process.
+
+    ONE PROCESS, ONE LEASE, MANY FRAGMENTS - and that is the whole point.
+    The lease identifies a CHAT, and a command line that exits after each
+    command leaves one orphaned for five minutes, so the second command is
+    always refused. Proving twenty fragments one command at a time is a
+    hundred minutes of waiting for nothing.
+
+    IT ALSO KEEPS THE ANSWERS COMPARABLE. Every fragment here reads the same
+    model in the same state, in one sitting - so a number that disagrees with
+    another is a real disagreement rather than something that changed in
+    between.
+    """
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    sources = []
+    for name in names:
+        path = os.path.join(root, "brain", "fragments", name, "impl", "any", "fragment.cs")
+        if not os.path.isfile(path):
+            print("No fragment called '%s'" % name)
+            return 2
+        with io.open(path, "r", encoding="utf-8") as fh:
+            sources.append((name, fh.read()))
+
+    live, starting, _, mismatched = discover()
+    if not live and starting:
+        print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
+        return 1
+    if not live:
+        print("No Revit is connected. Press Heron on the ribbon to connect first.")
+        report_mismatched(mismatched)
+        return 1
+
+    bridge = live[0]
+    for other in live[1:]:
+        other.close()
+
+    print("Revit %s, session %s - %d fragment(s)" % (
+        bridge.revit_version, bridge.pid, len(sources)))
+    print("")
+
+    # The model every answer below came from, printed ONCE at the top rather
+    # than on every line. A proving run that does not say which model it read
+    # proves nothing about that model.
+    named_document = None
+
+    failures = 0
+    for name, source in sources:
+        reply = bridge.request("run_fragment_read",
+                               op_args={"name": name, "source": source},
+                               response_timeout=180.0)
+
+        if reply is None:
+            print("%-30s NO REPLY" % name)
+            failures += 1
+            continue
+
+        if not reply.get("ok"):
+            # A compile failure or a throw is the most useful thing this whole
+            # path produces on the day a fragment is wrong. Printed in full.
+            print("%-30s %s" % (name, reply.get("error")))
+            print("%s %s" % (" " * 30, reply.get("message")))
+            failures += 1
+            continue
+
+        if named_document is None:
+            named_document = reply.get("document") or "(unnamed)"
+            print("model: %s   active view: %s" % (
+                named_document, reply.get("activeView") or "(none)"))
+            print("")
+
+        provides = reply.get("provides") or {}
+        print("%-30s ok" % name)
+        for key in sorted(provides):
+            print("%s   %-20s %s" % (" " * 30, key, provides[key]))
+
+    bridge.close()
+
+    print("")
+    print("%d ran, %d failed" % (len(sources) - failures, failures))
+    return 1 if failures else 0
+
+
 def cmd_doctor():
     """
     Self-diagnostics - the prototype of HERON-OPS-DIA-005.
@@ -792,6 +886,11 @@ def main(argv):
         return cmd_count(argv[2] if len(argv) > 2 else None)
     if argv[1] == "doctor":
         return cmd_doctor()
+    if argv[1] == "prove":
+        if len(argv) < 3:
+            print("Which fragments? e.g. prove list-levels list-grids")
+            return 2
+        return cmd_prove(argv[2:])
     if argv[1] == "fragment":
         if len(argv) < 3:
             print("Which fragment? e.g. list-levels")

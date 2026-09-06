@@ -104,7 +104,7 @@ namespace Heron.Revit.Addin
                     "'" + name + "' threw while running: " + Innermost(failure).Message);
             }
 
-            return Report(name, state);
+            return Report(name, state, uidoc);
         }
 
         /// <summary>
@@ -177,11 +177,26 @@ namespace Heron.Revit.Addin
         /// back by name, so the report is read out of the run rather than
         /// being something the fragment had to remember to build.
         /// </summary>
-        private static string Report(string name, ScriptState<object> state)
+        private static string Report(string name, ScriptState<object> state, UIDocument uidoc)
         {
+            // THE ANSWER ALWAYS NAMES THE DOCUMENT, and the model it ran
+            // against is the first thing on it. A bare result is how somebody
+            // acts on an answer that came from a model they were not looking
+            // at - and during the first proving run this fragment reported two
+            // levels called "Level 1" and "Level 2" from what was plainly not
+            // the sample building anybody had in mind. Without the title on
+            // the line, that reads as a fact about the project.
+            var title = "";
+            try { title = uidoc.Document.Title; } catch { }
+
+            var view = "";
+            try { view = uidoc.ActiveView == null ? "" : uidoc.ActiveView.Name; } catch { }
+
             var parts = new List<string>
             {
                 Json.Str("ran", name),
+                Json.Str("document", title),
+                Json.Str("activeView", view),
             };
 
             var left = new List<string>();
