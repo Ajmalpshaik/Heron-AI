@@ -45,6 +45,19 @@ negative:
     expect: >
       it not copied. Revit maintains it itself and copying it can misbehave
 
+  - given: a view template carrying six filters, copied into a project that has none of them
+    expect: >
+      it named in `weakened` reading "0 of 6 filters", NOT in `copied`, and
+      told to run TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS first. The template
+      arrives present and correctly named and controls less than it did, which
+      is identical in the template list and shows up as the wrong things being
+      visible on a sheet
+
+  - given: the view filters transferred FIRST, then the templates
+    expect: >
+      the templates in `copied` with their full filter count. The two
+      fragments compose, and this is the order to run them in
+
 second_route:
   - >
     open a transferred legend or drafting view and look at it. A view with the

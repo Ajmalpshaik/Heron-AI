@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `app`, `sourceDocumentTitle`, `viewKind` and
-// `nameContains` are in scope, and leaves `copied`, `clashed` and `refused`
-// behind.
+// `nameContains` are in scope, and leaves `copied`, `clashed`, `weakened` and
+// `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -26,6 +26,7 @@
 
 var copied = new List<string>();
 var clashed = new List<string>();
+var weakened = new List<string>();
 string refused = "";
 
 string wantedTitle = (sourceDocumentTitle ?? "").Trim();
@@ -133,6 +134,42 @@ else
                     }
                     catch { clashed.Add(name + " (shell copied, contents refused)"); continue; }
                 }
+            }
+        }
+
+        // A VIEW TEMPLATE'S VALUE IS THE FILTERS IT CARRIES, and they are
+        // separate elements. A template copied into a project that does not
+        // have them arrives PRESENT, CORRECTLY NAMED, and controlling less
+        // than it did - which looks identical in the template list and shows
+        // up as the wrong things being visible on somebody's sheet.
+        //
+        // GetFilters() and NOT GetOrderedFilters(): the ordered one is absent
+        // from Revit 2020 and present by 2024. Read off both assemblies rather
+        // than assumed, because the ordered spelling is the obvious one to
+        // reach for and it compiles on exactly one end.
+        if (kind == "templates")
+        {
+            int wantedFilters = 0;
+            int gotFilters = 0;
+            bool counted = false;
+            try
+            {
+                wantedFilters = view.GetFilters().Count;
+                var landedTemplate = doc.GetElement(arrived.First()) as View;
+                if (landedTemplate != null)
+                {
+                    gotFilters = landedTemplate.GetFilters().Count;
+                    counted = true;
+                }
+            }
+            catch { counted = false; }
+
+            if (counted && gotFilters < wantedFilters)
+            {
+                weakened.Add(name + " (" + gotFilters.ToString() + " of " +
+                             wantedFilters.ToString() + " filters - run " +
+                             "TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS first)");
+                continue;
             }
         }
 
