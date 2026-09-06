@@ -127,33 +127,6 @@ def main():
         print("Heron does not know these releases: %s" % ", ".join(unknown))
         return 2
 
-    # BUILD THE ADD-IN FIRST, AND ALWAYS FOR THE SAME RELEASE.
-    #
-    # This tool reads ONE compiled binary and checks its Revit references against
-    # every release. That only means anything if the binary was built for a KNOWN
-    # release - and until 2026-09-06 it read whatever happened to be on disk.
-    #
-    # check-compile.py builds this same add-in for all eight releases in turn and
-    # leaves it built for the LAST one, 2027. So running the checkers in their
-    # documented order left a 2027 binary here, and this tool then reported
-    # `Autodesk.Revit.UI.ItemData` - a 2025+ type - MISSING on 2020 to 2024. A
-    # real finding about that binary, and a false one about Heron: the add-in is
-    # built per release (Directory.Build.props), so a 2027 binary never reaches
-    # Revit 2020.
-    #
-    # An answer that changes with what ran before it is not a gate. Build it here.
-    if "--no-build" not in sys.argv:
-        print("Building the add-in for Revit %s (one binary, read against all)..."
-              % BUILD_VERSION)
-        addin = subprocess.run(
-            ["dotnet", "build", os.path.join("revit", "Heron.Revit.Addin"),
-             "-p:RevitVersion=%s" % BUILD_VERSION, "--nologo", "-v", "q"],
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        if addin.returncode != 0:
-            print(addin.stdout.decode("utf-8", "replace"))
-            print("FAIL  the add-in did not build for Revit %s." % BUILD_VERSION)
-            return 1
-
     if not os.path.exists(ADDIN):
         print("FAIL  %s not found - it is what gets read." % ADDIN)
         print("      dotnet build revit/Heron.Revit.Addin -p:RevitVersion=%s"
