@@ -1,0 +1,108 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-053
+semantic-identity: "bring the materials over from the other project"
+kind: action
+domain: revit.elements
+capability: TRANSFER_MATERIALS_BETWEEN_DOCUMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies materials from another OPEN project into this one - *"bring the
+  materials over from the template"*, *"get the materials from last job"*.
+
+  **A MATERIAL IS AN ELEMENT, so this is a document-to-document copy** - the
+  same shape as `TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS`, and unlike
+  `TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS`, where a style is a subcategory and
+  has to be built.
+
+  **WHAT A MATERIAL DRAGS BEHIND IT IS THE WHOLE PROBLEM.** A material is a
+  thin thing pointing at several fat ones: an **appearance asset** (what it
+  looks like rendered), a **thermal** and a **structural** asset, and up to
+  four **fill patterns** for its surface and cut. Every one of those is a
+  separate element. Revit usually brings them along; usually is not a word this
+  library accepts, so each landed material is read back and compared against
+  the source **property by property**, and anything that did not arrive is
+  named in `weakened` rather than reported as copied.
+
+  **THE APPEARANCE ASSET IS THE ONE THAT FOOLS PEOPLE.** A material that
+  arrives without it keeps its shading colour, so it looks entirely correct in
+  a shaded view, in every list, and in the material browser. It is wrong only
+  in a **rendered or realistic** view - which is usually opened last, often by
+  somebody else, and sometimes not before the images go out.
+
+  **A NAME THAT ALREADY EXISTS HERE IS SKIPPED, NEVER OVERWRITTEN.** Two
+  projects can hold "Concrete - Cast In Situ" with different patterns and
+  different appearance assets, and quietly replacing this project's version
+  changes how everything already using it draws and renders. The name goes in
+  `clashed` and this project is left alone.
+
+  **BOTH PROJECTS MUST BE OPEN IN THE SAME REVIT.** The source is found by its
+  title among the open documents; if it is not open, the open ones are listed
+  and nothing is attempted. Linked documents are not offered - a link is
+  reached through its `RevitLinkInstance`, and two links can share a title.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). **The
+  undo belongs to THIS document** - the source project is only read.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    - name: sourceDocumentTitle
+      type: string
+      source: request
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: copied
+      type: IList<string>
+    - name: clashed
+      type: IList<string>
+    - name: weakened
+      type: IList<string>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Material.AppearanceAssetId`,
+  `ThermalAssetId`, `StructuralAssetId`, `SurfaceForegroundPatternId`,
+  `SurfaceBackgroundPatternId`, `CutForegroundPatternId`,
+  `CutBackgroundPatternId`, `Color` and `Transparency` were read off the
+  SHIPPED 2020 and 2024 assemblies and are identical at both ends. **The
+  pre-2019 spelling `SurfacePatternId` is absent from BOTH** - it was checked
+  for rather than assumed gone, because a property that vanished before the
+  supported range still gets written from memory. No ElementId is turned into
+  an int anywhere; ids are compared with `ElementId.InvalidElementId`.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "bring the materials over from the     -> here
+#    template"
+#   "make a material called X"             -> CREATE_MATERIAL, made rather
+#                                             than moved
+#   "swap this material for that one"      -> REPLACE_MATERIAL, inside ONE
+#                                             project
+#   "what material is this"                -> READ_ELEMENT_MATERIAL
+#   "which materials are unused"           -> FIND_UNUSED_MATERIALS
+#   "bring the line styles over"           -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
+#   "bring the view filters over"          -> TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS
+
+utterances:
+  - bring the materials over from the template
+  - copy the materials from the other project
+  - transfer the materials from that model
+  - get the materials from last job
