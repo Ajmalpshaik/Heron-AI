@@ -35,9 +35,16 @@ what it did not.
 every one that matters most. Compiling is not behaving: `D3` is still the line that catches a unit
 error, and nothing here has moved anything yet.
 
-**59 items, 6 done, 53 left** — counted from the rows on 2026-08-29, not carried forward. Of the 53:
-**48 need Revit**, **3 need Windows but not Revit** (`A4`, `A6`, `A8`), **1 needs only a reachable
-network** (`A7`), and **1 needs a screen in front of him** (`R1b` — seeing the trust model work).
+**60 items, 6 done, 54 left** — recounted from the rows on 2026-09-06 with the pattern named below,
+and the IDs printed and read rather than the total trusted. Of the 54: **48 need Revit**, **3 need
+Windows but not Revit** (`A4`, `A6`, `A8`), **1 needs only a reachable network** (`A7`), **1 needs a
+screen in front of him** (`R1b` — seeing the trust model work), and **1 needs only a .NET SDK** (`A9`).
+
+> **This line said *59 items, 6 done, 53 left* until 2026-09-06, and that is the FOURTH time this
+> paragraph has drifted — the same failure it warns about two paragraphs down.** The row it could not
+> see was `A9`, added after the 2026-08-29 count and never added to the split; A4, A6, A7 and A8 were
+> listed while A9 sat beside them unmentioned. **`A9` was run green on 2026-09-06** — all 329 fragments
+> compile on all eight releases — and is still open only because nobody struck the row.
 `R1` and `R2` were closed on 2026-08-29; `E10` was added the same day, when studying the owner's
 earlier library found a case Heron's write path did not handle.
 

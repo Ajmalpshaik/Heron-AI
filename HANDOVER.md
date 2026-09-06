@@ -28,6 +28,76 @@ when the thing you hit is on no list at all.
 
 ---
 
+**Updated 2026-09-06 (later session) — "EXHAUSTED" WAS WRONG. The earlier library still holds NINE
+fragment-shaped jobs, found by reading all 330 eligible files rather than sampling them.** The owner
+put `AJ-AI-Brain` on this machine, so for the first time the claim below could be checked instead of
+believed. Twelve readers took one source folder each and classified every file; every "missing" claim
+was then handed to a second agent told to REFUTE it. One of the ten was refuted. Nine were not.
+
+| Read | Already covered | Impossible via the API | **Genuinely missing** |
+|---|---|---|---|
+| **330** | 316 | 4 | **9** |
+
+**The nine, with the folder they came from:**
+
+| Source | The job |
+|---|---|
+| `reporting/action-plan-shortest-route` | Compute the cheapest way to connect a loose set of points and report the ORDER plus total run length — tree (MST), chain (2-opt) or per-room. **Nothing in the 329 decides an order**, which is why `CREATE_ELECTRICAL_RUN` and `RENUMBER_SEQUENTIAL` both still need a human to supply the sequence they consume |
+| `sheets-views/action-set-view-properties` | Set a VIEW's **Phase and Phase Filter** in bulk. `SET_VIEW_PROPERTIES` was re-authored narrower — scale, detail level, visual style only — and `SET_ELEMENT_PHASE` moves elements, not views |
+| `structural-changes/action-auto-size-pipe` | Size pipes from the flow they already carry — bore = flow / target velocity, snapped UP to a real size |
+| `structural-changes/action-batch-upgrade-revit-files` | Upgrade a FOLDER of `.rfa` / `.rft` / `.rte` to the running Revit, as background documents |
+| `structural-changes/action-purge-unused` | Report unused materials (including paint-only use) and GroupTypes with no placed instance |
+| `qa-checks/action-check-open-pipe-ends` | Cap open pipe ends via `PlumbingUtils.PlaceCapOnOpenEnds` |
+| `creators/create-dimension` | One dimension string across Grids and/or Levels — the setting-out dimension |
+| `filters/filter-by-types` | Return the TYPE elements themselves (`FamilySymbol`, `DuctType`, `WallType`) as an actionable set |
+| `filters/filter-by-view-templates` | Return View Templates themselves as an actionable set, narrowed by name and by usage |
+
+**Why the earlier count said zero.** The 2026-09-05 estimate of "roughly 60 worth adding" was made by
+sampling and by reading folder names. Fifty-five were then built, and the arithmetic — 60 minus 55 —
+was allowed to stand in for a recount. **Nobody read the remaining files.** The three the last batch
+"could not find an honest candidate" for were real; there were nine, and they are listed above. The
+denominators it quoted were right: 398 `.cs` files, 68 never fragment work (44 `recipes/` + 12
+`context/` + 8 `commands/` + 3 `examples/` + 1 `lib/`), 330 eligible — all confirmed by count.
+
+**Four routing defects were found and fixed the same day, in the count/room/fitting cluster.** Ranks
+are the correct fragment's own position, before → after: *"count the fittings per space"* 6 → 1,
+*"how many fittings are in each room"* 2 → 1, *"count these by hvac zone"* 2 → 1, *"how many fittings
+in here"* **not in the top 25** → 1. Two were the worst shape there is — `PLACE_ROOMS` ranked third
+for a counting question, and `CREATE_HVAC_ZONE` won one outright, beating `COUNT_BY_SPATIAL_CONTAINER`
+**on that fragment's own declared utterance**.
+
+**The noun was doing the routing, not the verb.** "fittings" appears in three of
+`MEASURE_FITTING_AREA`'s utterances, so any sentence carrying it was pulled into the ductwork cluster.
+Fixed by adding only. **Two attempts had to be undone**, both failing the same way: text added to one
+fragment carrying the other's words (*"per room"*, *"in this room"*) stole its sentences. A fragment
+must be strengthened on its OWN ground. That is the third session this trap has caught.
+
+**Numbers in this file that were wrong, corrected from the rows:**
+
+- The stale branch **is now deleted**. The note below saying the container got a `403` still stood
+  weeks later; it was removed from GitHub on 2026-09-06 and `origin` now carries only `main`.
+- `NEEDS-CHECKING.md` says *59 items, 6 done, 53 left*. The rows say **60, 6 done, 54 left** — the
+  drift this file warns about, for the fourth time.
+- **The build order stops at Step 14, and 180 fragments claim Steps 15, 16 and 17.** Those steps are
+  named nowhere in [27](docs/27-build-order.md). The library build happened without being written into
+  the plan it was supposedly following.
+- **Agents: 250 registered, 61 implemented.** 49 carry a build step (all in Steps 1–6); of those, 4 are
+  host-provided and **29 are built, so 16 that were due are not**. Another **32 were built that carry no
+  step at all** — ahead of a plan that never scheduled them. The registry's `Step` column was never
+  extended past Step 6.
+
+**A test could poison itself, and did.** `tests/test_scope_store.py` plants a malformed fragment inside
+the real `brain/fragments/` tree. It cleaned up in a `finally` but built the directory OUTSIDE the
+`try`, so an interrupted run left `zz-broken-temp` behind and every later run died on `FileExistsError`
+before reaching the cleanup. One interrupt poisoned it permanently — inside the very directory this
+file tells you to trust for the count. Reproduced, then fixed.
+
+**Still true, and unchanged by any of the above: nothing is proven.** All 329 are `DRAFT`. The ten
+gates are green and 18/18 tests pass, which is the API surface agreeing and not evidence that any
+fragment does the right thing (D-30, D-45).
+
+---
+
 **Updated 2026-09-06 — the library went from 274 fragments to 329, and the earlier library is now
 EXHAUSTED of fragment-shaped work.** Fifty-five new fragments in five batches, plus three upgrades:
 `SET_SCHEDULE_APPEARANCE` v2 (hide a column), `READ_ROOM_GEOMETRY` v2 (holes separated from the outline)
