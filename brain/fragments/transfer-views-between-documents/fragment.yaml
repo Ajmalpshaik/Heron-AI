@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-089
+semantic-identity: "bring the standard schedules and legends over from the other project"
+kind: action
+domain: revit.views
+capability: TRANSFER_VIEWS_BETWEEN_DOCUMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies schedules, legends, drafting views or view templates from another open
+  project into this one - *"bring the standard schedules over from the
+  template"*, *"copy the legends from last job"*.
+
+  **A VIEW COPIED BETWEEN DOCUMENTS ARRIVES EMPTY, AND THAT IS THE FACT THE
+  WHOLE THING TURNS ON.** The document-to-document copy takes the view SHELL:
+  right name, right type, nothing drawn in it. A drafting view or a legend
+  needs a SECOND copy - of the elements that view owns, into the new view -
+  and missing it produces a transfer that reports success and delivers blank
+  sheets. Schedules and view templates are definitions rather than drawn
+  content, so one copy is all they need.
+
+  **BOTH PROJECTS MUST BE OPEN IN THE SAME REVIT.** The source is found by its
+  title among the open documents. If it is not open, the open ones are listed
+  and nothing is attempted - guessing at a file on disk is not something to do
+  quietly.
+
+  **A DUPLICATE TYPE NAME MAKES THAT ONE VIEW FAIL, AND THIS CANNOT FIX IT.**
+  Revit resolves a clash - a text type or filled-region type of the same name
+  already here - through a handler object that has to be a CLASS, and a
+  fragment body cannot declare one: every fragment is compiled inside a single
+  method. So each view is copied in its own attempt, a clashing one is named,
+  and the rest go through. A project with many clashes wants Revit's own
+  Transfer Project Standards instead. This is the first job in this library
+  that the fragment shape structurally cannot do, and saying so is better than
+  a workaround that half works.
+
+  **IT DOES NOT SKIP A NAME THAT ALREADY EXISTS HERE.** Revit makes a second
+  view called "Name(1)". Read the names back before committing to a big
+  transfer.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    - name: sourceDocumentTitle
+      type: string
+      source: request
+    # "schedules" | "legends" | "drafting" | "templates"
+    - name: viewKind
+      type: string
+      source: request
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: copied
+      type: IList<string>
+    - name: clashed
+      type: IList<string>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The document-to-document and
+  view-to-view copies, and the open-document list, are unchanged 2020 to 2027.
+  Two internal schedule kinds that Revit maintains itself - the title-block
+  revision schedule and the keynote one - are excluded, because copying them is
+  meaningless and can misbehave.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "bring the schedules over from the    -> here
+#    template project"
+#   "copy the legends from the last job"  -> here
+#   "copy these views onto new sheets"    -> DUPLICATE_VIEWS and
+#                                            PLACE_VIEWS_ON_SHEET, which stay
+#                                            inside one project
+#   "make a schedule"                     -> CREATE_SCHEDULE
+#   "apply that view template"            -> APPLY_VIEW_TEMPLATE, once the
+#                                            template is here
+#   "get the latest architecture"         -> RELOAD_LINKS. A link is not a
+#                                            copy and nothing is transferred
+
+utterances:
+  - bring the standard schedules over from the template
+  - copy the legends from the other project
+  - transfer the drafting views
+  - copy the view templates from that model

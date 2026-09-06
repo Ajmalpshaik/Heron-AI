@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: twelve sheets and mode "create" with a new name
+    expect: >
+      the set in Revit's own print dialog holding twelve sheets. Open
+      File - Print and look at the set list; that dialog is where these are used
+
+  - given: mode "rename"
+    expect: >
+      the set under its new name and the same members
+
+  - given: mode "delete"
+    expect: >
+      the set gone from the print dialog
+
+  - given: the set created, then read back
+    expect: >
+      `memberCount` matching what the dialog shows - read from the set, not
+      counted from what was sent
+
+negative:
+  - given: the print range left as it was
+    expect: >
+      NOT how this works. Asking for the sheet-set setting first raises an
+      error about the print dialog that mentions no sheet set at all, which is
+      why the range is set first every time
+
+  - given: a transaction that rolls back afterwards
+    expect: >
+      the print RANGE still changed. The print manager is application state,
+      not document state, and an undo does not put it back
+
+  - given: a set name that does not exist, for rename or delete
+    expect: >
+      `refused` naming it and nothing changed
+
+  - given: a view template in the set of elements
+    expect: >
+      its id in `notASheet`. A template cannot be printed
+
+  - given: an empty element list with mode "create"
+    expect: >
+      `refused`, not an empty set created quietly
+
+second_route:
+  - >
+    open File - Print in Revit and look at the saved set list, then select the
+    set and check the sheets it selects

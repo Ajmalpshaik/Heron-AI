@@ -79,6 +79,9 @@ compatibility-note: >
 #                                   using three forms of the word "draw" to
 #                                   explain which END the distance is from
 #   "build a wall between these points" -> CREATE_WALL
+#   "put a damper in this duct"          -> PLACE_ACCESSORY_ON_RUN, which
+#                                           breaks, places and rejoins. This
+#                                           one only breaks
 
 utterances:
   - split this duct

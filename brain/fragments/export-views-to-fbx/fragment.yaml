@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-021
+semantic-identity: "export the 3d view for the visualisation people"
+kind: action
+domain: revit.export
+capability: EXPORT_VIEWS_TO_FBX
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Exports 3D views to FBX - the handover format for visualisation and
+  coordination software that will not take a Revit file.
+
+  **FBX TAKES 3D VIEWS AND NOTHING ELSE.** A plan, a section or a sheet in the
+  list is rejected by Revit with an error about the export rather than about
+  the view, so they are separated here and named. That is the commonest way
+  this fails and it looks like the export itself is broken.
+
+  **WHAT THE VIEW SHOWS IS WHAT THE FILE CONTAINS.** An FBX carries the view's
+  visibility exactly: a hidden category, a section box, a view filter, a
+  workset switched off - all of it travels. Exporting the wrong 3D view sends
+  somebody a model with the services missing, and nothing in the file says so.
+  Check the view before, not the file after.
+
+  **IT READS THE MODEL AND CHANGES NOTHING, WHICH IS WHY IT NEEDS NO
+  TRANSACTION.** It is still a PUBLISH: what leaves the model is no longer
+  under its control, and that is a higher risk than changing an element.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and must not.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: views
+      type: IList<View>
+      source: request
+    - name: folder
+      type: string
+      source: request
+    - name: fileName
+      type: string
+      source: request
+  provides:
+    - name: exported
+      type: IList<string>
+    - name: notThreeD
+      type: IList<ElementId>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The export call, its options and the
+  view set are unchanged 2020 to 2027. Nothing here depends on a units API or
+  on any member that moved.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "export the 3d view for the          -> here
+#    visualisation people"
+#   "export to navisworks"               -> EXPORT_MODEL_TO_NWC
+#   "export to IFC"                      -> EXPORT_MODEL_TO_IFC
+#   "export the drawings"                -> EXPORT_SHEETS_TO_PDF or
+#                                           EXPORT_VIEWS_TO_DWG
+#   "export an image of this view"       -> EXPORT_VIEW_IMAGE
+#   "get the families out"               -> EXPORT_FAMILIES
+
+utterances:
+  - export the 3d view to fbx
+  - the visualisation people need an fbx
+  - export this view for 3ds max
+  - send a 3d model out of revit

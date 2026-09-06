@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-WRK-014
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-090
+semantic-identity: "give me a 3d view for each workset so i can see what is on it"
+kind: action
+domain: revit.views
+capability: CREATE_WORKSET_3D_VIEWS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates one isometric 3D view per user workset, each showing only its own
+  workset and hiding every other. The coordination set-up: what is actually ON
+  each workset, seen rather than guessed from names.
+
+  **ONLY USER WORKSETS.** Revit maintains worksets of its own for views,
+  families and project standards, and nobody means those. A view per internal
+  workset would bury the four that matter under thirty that do not.
+
+  **A NON-WORKSHARED MODEL HAS NO USER WORKSETS AT ALL**, so it is said plainly
+  rather than producing nothing and looking broken - which is the same output
+  as a model whose worksets are all empty, and a different problem.
+
+  **A VIEW NAME MUST BE UNIQUE AND REVIT THROWS ON A CLASH.** Existing names
+  are collected first and a workset whose view already exists is skipped and
+  named, so re-running this after adding one workset does not fail on the
+  nineteen that were already done.
+
+  **VISIBILITY IS SET PER VIEW, NOT BY A FILTER.** Each view shows its own
+  workset and hides the rest through the view's own workset visibility, which
+  is what a modeller then toggles by hand if they want two at once.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: namePrefix
+      type: string
+      source: request
+  provides:
+    - name: created
+      type: IDictionary<string, ElementId>
+    - name: alreadyExisted
+      type: IList<string>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The workset collector, the isometric
+  3D view creation and the per-view workset visibility are unchanged 2020 to
+  2027. A project with no 3D view family type cannot make a 3D view at all,
+  which is reported rather than thrown.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "a 3d view for each workset"         -> here
+#   "what is on this workset"            -> SELECT_BY_WORKSET for the list.
+#                                           Here when the answer wanted is a
+#                                           view to look at
+#   "which worksets are there"           -> LIST_WORKSETS
+#   "put these on that workset"          -> SET_ELEMENT_WORKSET
+#   "make a 3d view"                     -> CREATE_3D_VIEW, one view of
+#                                           everything
+#   "hide that workset in this view"     -> SET_VIEW_WORKSET_VISIBILITY
+
+utterances:
+  - a 3d view for each workset
+  - i want to see what is on each workset
+  - make workset views for coordination
+  - create a view per workset

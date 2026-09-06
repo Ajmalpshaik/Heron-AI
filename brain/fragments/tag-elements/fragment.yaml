@@ -93,6 +93,8 @@ compatibility-note: >
 #   "put tags on these"                  -> here
 #   "centre the room tags"               -> CENTER_ROOM_TAGS, which only
 #                                           MOVES tags that already exist
+#   "stack the tags at the side"         -> STACK_TAGS, for tags that already
+#                                           exist
 
 utterances:
   - tag these

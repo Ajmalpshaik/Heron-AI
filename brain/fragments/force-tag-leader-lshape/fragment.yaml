@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-088
+semantic-identity: "make the tag leaders bend into the tag instead of running diagonally"
+kind: action
+domain: revit.annotation
+capability: FORCE_TAG_LEADER_LSHAPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Bends every tag's leader into an L - a short horizontal leg into the tag,
+  then a straight run to the element - instead of one diagonal line. The
+  drafting standard on most issued drawings, applied in bulk.
+
+  **THE ELBOW WILL NOT TAKE UNTIL THE LEADER END IS FREE.** With the end
+  attached, Revit owns the leader's shape and setting an elbow is quietly
+  ignored - the call returns, nothing bends, and the tag looks untouched. The
+  end condition is set first, which is a real change to how that leader
+  behaves: a free end no longer follows its element when the element moves.
+  That trade is the whole reason this is a deliberate act rather than a
+  setting.
+
+  **AND A ROOM TAG HAS NO END CONDITION TO SET.** The property is not on that
+  class at all, on any release - the compile gate caught it the first time this
+  was written to mirror the independent-tag branch. Its elbow is set directly
+  and read back, which is what says whether it took.
+
+  **TAG CLASSES SHARE NO BASE THAT CARRIES A LEADER.** An independent tag and a
+  room, space or area tag each declare their own elbow, end and head. Casting
+  to the independent kind alone silently skips every room tag in the set and
+  reports the rest as done, so both are handled explicitly - which the compiler
+  checks, and a name lookup does not.
+
+  **THE LEG IS A PAPER LENGTH.** How long the horizontal shoulder should be is
+  judged on the printed sheet, so the number is multiplied by the view scale.
+  A model-distance leg is invisible at 1:200 and absurd at 1:20.
+
+  **THE LEG POINTS TOWARD THE ELEMENT.** A shoulder that leaves the tag on the
+  wrong side crosses back over the text, which is worse than the diagonal it
+  replaced.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    # Paper millimetres for the horizontal leg into the tag.
+    - name: legMm
+      type: double
+      source: request
+  provides:
+    - name: bent
+      type: int
+    - name: noLeader
+      type: IList<ElementId>
+    - name: notTags
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  A compile-time split at 2022, where an independent tag's elbow and end became
+  methods taking the reference they belong to and the properties were removed.
+  Spatial tags - room, space and area - kept properties on every release and
+  are handled in their own branch. Naming either set alone would compile on
+  half the range, which is the version-shaped hole that reads as green.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make the leaders L-shaped"          -> here
+#   "the leaders should bend into the    -> here
+#    tag"
+#   "the tags are on top of each other"  -> FIND_OVERLAPPING_TAGS, then
+#                                           ARRANGE_TAGS. A bent leader is
+#                                           left alone by that fragment,
+#                                           because bending it was deliberate
+#   "stack the tags at the side"         -> STACK_TAGS
+#   "centre the room tags"               -> CENTER_ROOM_TAGS
+#   "tag these"                          -> TAG_ELEMENTS_IN_VIEW
+#   "spread the tags out"                -> ARRANGE_TAGS, which moves heads
+#                                           and leaves leader shape alone
+
+utterances:
+  - make the tag leaders L-shaped
+  - the leaders should bend into the tag
+  - straight diagonal leaders are not our standard
+  - put a shoulder on the leaders
+  - fix the leader shape on these tags

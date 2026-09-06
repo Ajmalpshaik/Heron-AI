@@ -1,0 +1,54 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: ducts with velocities, painted in a 3D view
+    expect: >
+      a gradient across the model AND a colour legend drawn by Revit. The
+      legend is the difference between this and a colour override - check it is
+      there
+
+  - given: the same values read back against the legend
+    expect: >
+      the fastest duct at the top of the scale. Pick the highest number in the
+      set and find it on the model
+
+  - given: this run a second time with different values
+    expect: >
+      the schema found rather than registered again, and the new numbers shown
+
+negative:
+  - given: the display style created but the view not told to use it
+    expect: >
+      NOT what happens here. That is the first of the five silent failures: the
+      data is stored, no legend appears, and the model looks untouched
+
+  - given: a schema id remembered from an earlier run after the view was cleared
+    expect: >
+      it re-checked against what is registered now. A stale id writes against
+      something that no longer exists
+
+  - given: an element the view draws as a line - detail level coarse
+    expect: >
+      its id in `noFaces`. The paint attaches to a face, and this is a fact
+      about the view rather than a failure
+
+  - given: values that are all identical
+    expect: >
+      `allOneValue` true. One colour over the whole model reads as a broken
+      tool, and saying so is the difference
+
+  - given: an element with no entry in the values
+    expect: >
+      its id in `noValue` and no paint - never a zero, which on a gradient is
+      the bottom of the scale and looks like a real reading
+
+  - given: a plan view
+    expect: >
+      it painting the faces seen from above - a pipe's top surface, nearly
+      invisible. It is not broken; a 3D view is what this is for
+
+second_route:
+  - >
+    read the legend against the numbers the values came from, and check one
+    element at each end of the scale. The legend is Revit's own drawing of the
+    data, not this fragment's

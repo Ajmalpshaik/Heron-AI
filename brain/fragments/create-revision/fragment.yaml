@@ -76,6 +76,9 @@ compatibility-note: >
 #                                         revision to exist first. This is what
 #                                         makes one
 #   "which sheets have this revision"  -> LIST_REVISIONS
+#   "i need a set for the issue"         -> MANAGE_SHEET_SETS for the sheets
+#                                           to print. This one makes the
+#                                           revision they carry
 
 utterances:
   - add a revision

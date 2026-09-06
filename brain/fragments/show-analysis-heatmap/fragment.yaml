@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-092
+semantic-identity: "colour the model by how much, with a scale and a legend"
+kind: action
+domain: revit.views
+capability: SHOW_ANALYSIS_HEATMAP
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Paints a gradient over the model from a number per element - pipes by
+  pressure drop, spaces by airflow, ducts by velocity - using Revit's own
+  analysis display, which draws its own colour legend.
+
+  **THIS SHOWS HOW MUCH; THE OVERRIDE FRAGMENTS SHOW WHICH.** A graphic
+  override gives one flat colour per bucket: 26 l/s and 260 l/s are both
+  "blue", and there is no scale to read against. This interpolates between the
+  smallest and largest value and puts a legend on the drawing, so it reads as
+  an analysis rather than as a selection highlight.
+
+  **FIVE THINGS MAKE IT SHOW NOTHING AND NONE OF THEM ERRORS.** The view has to
+  be told to USE the display style - creating one is not enough, and without
+  that step the data is stored, no legend appears and the model looks
+  untouched. The result schema id goes stale the moment somebody clears the
+  view, so it is re-checked against what is registered on every run rather than
+  remembered. It only paints FACES, so an element the view draws as a line
+  contributes nothing. A plan paints the faces you are looking down at, which
+  for a pipe is the top of a cylinder and nearly invisible - a 3D view is what
+  this is for. And if every value is the same, the whole model comes out one
+  colour, which reads as broken: that is reported rather than left to look like
+  a failure.
+
+  **THE VALUES ARE THE CALLER'S.** Where the number comes from - a flow, a
+  pressure drop, an occupancy - is another fragment's answer. This paints
+  whatever it is given, which is why it works for any of them.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    # The number per element, in whatever unit the legend should read in.
+    - name: values
+      type: IDictionary<ElementId, double>
+    # What the legend calls it - "Velocity (m/s)", "Airflow (l/s)".
+    - name: measurementName
+      type: string
+      source: request
+  provides:
+    - name: painted
+      type: int
+    - name: noFaces
+      type: IList<ElementId>
+    - name: noValue
+      type: IList<ElementId>
+    - name: allOneValue
+      type: bool
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The spatial field manager, the result
+  schema, the field values and the analysis display style are unchanged 2020 to
+  2027. This is the first fragment in the library to need the analysis
+  namespace, which was added to the compile gate's list with the same rule the
+  rest of it follows - the executor has to supply exactly that set.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "colour the model by velocity"       -> here. A scale and a legend
+#   "colour these by system"             -> COLOR_BY_PARAMETER, which gives one
+#                                           flat colour per value - the WHICH
+#                                           question rather than HOW MUCH
+#   "make these red"                     -> OVERRIDE_GRAPHICS_IN_VIEW
+#   "show me the ones that fail"         -> HIGHLIGHT_VS_REST
+#   "what is the velocity in these"      -> MEASURE_MEP_VELOCITY, which is
+#                                           where the numbers come from
+#   "put the numbers in a chart"         -> that is the reply's job, not the
+#                                           model's. This paints the model and
+#                                           does not replace a chart
+
+utterances:
+  - colour the model by velocity
+  - show a heatmap of the airflow
+  - paint the pipes by pressure drop
+  - i want a gradient with a legend
+  - show how much not just which

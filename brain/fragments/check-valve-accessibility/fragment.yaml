@@ -94,6 +94,9 @@ compatibility-note: >
 #                                        in a pipe does not
 #   "is anything above this point"       -> CHECK_OBSTRUCTIONS - one ray, one
 #                                        point, no ceiling or reach question
+#   "add a valve to the pipe"            -> PLACE_ACCESSORY_ON_RUN. This one
+#                                           asks whether an existing one can
+#                                           be reached
 
 utterances:
   - can we reach the valve to operate it

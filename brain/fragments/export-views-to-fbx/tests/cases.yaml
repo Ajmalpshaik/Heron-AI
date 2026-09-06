@@ -1,0 +1,44 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one 3D view and a writable folder
+    expect: >
+      an .fbx file in it. Open it in the receiving software - a file on disk
+      that nobody has opened is not evidence of an export
+
+  - given: several 3D views
+    expect: >
+      a file per view, and each view named in `exported`
+
+  - given: a 3D view with a section box
+    expect: >
+      the FBX containing only what the box shows. That is correct, and it is
+      also the trap: the file says nothing about what was cut away
+
+negative:
+  - given: a plan or a sheet in the view list
+    expect: >
+      its id in `notThreeD` and the 3D views still exported. Revit rejects it
+      with an error about the export, which reads as the export being broken
+
+  - given: a 3D view with the MEP categories switched off
+    expect: >
+      an FBX with no services in it, exactly as the view shows. Nothing in the
+      file says anything is missing - the view is what has to be checked first
+
+  - given: a folder that does not exist
+    expect: >
+      `refused` naming it, and no claim of success
+
+  - given: no 3D views at all in the list
+    expect: >
+      `refused` saying so rather than an empty export
+
+  - given: a view template in the list
+    expect: >
+      it in `notThreeD`. A template draws nothing and cannot be exported
+
+second_route:
+  - >
+    open the exported file in the software it was made for and look for the
+    services. That is the check the file itself cannot give you

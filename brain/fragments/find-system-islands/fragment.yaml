@@ -75,6 +75,10 @@ compatibility-note: >
   class covers them - not because the classes are out of reach. Mechanical,
   Plumbing, Electrical and Structure are all imported by the wrapper, measured
   on 2026-08-31 rather than assumed; only Architecture is not.
+#   "put a damper in this duct"          -> PLACE_ACCESSORY_ON_RUN, which
+#                                           breaks and rejoins a run on
+#                                           purpose. This one finds breaks
+#                                           nobody meant
 
 utterances:
   - is this system all connected

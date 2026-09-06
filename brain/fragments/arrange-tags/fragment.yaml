@@ -119,6 +119,11 @@ compatibility-note: >
 #                                           different rule from not touching
 #   "tag the rest of these"              -> TAG_ELEMENTS_IN_VIEW
 #   "what are the tags pointing at"      -> REPORT_TAGS_AND_TARGETS
+#   "fix the leader shape on these tags" -> FORCE_TAG_LEADER_LSHAPE. This one
+#                                           moves tag HEADS and leaves the
+#                                           leader shape alone
+#   "there is no room for the tags here" -> STACK_TAGS, which gathers them at
+#                                           the side instead of spreading them
 
 utterances:
   - the tags are sitting on top of each other

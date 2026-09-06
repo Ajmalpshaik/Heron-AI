@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-087
+semantic-identity: "stack these tags in a tidy column at the side"
+kind: action
+domain: revit.annotation
+capability: STACK_TAGS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Arranges tags into a neat vertical column at one point, each still leadered
+  back to its own element. What a drafter does by hand beside a busy area, when
+  there is no room for the tags where the elements are.
+
+  **THE STACK ORDER IS NEAREST-ELEMENT-FIRST, NOT THE ORDER THE SET ARRIVED
+  IN.** Tags are sorted by where their own element sits along the stack, so the
+  leaders fan out without crossing. Stacking them in the order a filter
+  happened to return produces a plate of spaghetti that looks like the tool is
+  broken - and it is the same tags, in the same places, with the same leaders.
+
+  **THE GAP IS A PAPER DISTANCE AND HAS TO BE MULTIPLIED BY THE VIEW SCALE.**
+  Every millimetre in tag work is a paper millimetre: 5 mm between tags is 500
+  model mm at 1:100 and 250 at 1:50. Using the number as a model distance is
+  the commonest mistake in this whole subject, and it produces a stack that is
+  either unreadable or off the sheet.
+
+  **IT MOVES HEADS AND LEAVES THE LEADERS TO FOLLOW.** An attached leader end
+  stays on its element; a free one is carried back to where it was, so the
+  arrows do not come off the things they point at.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    # Where the top of the stack goes, in the view's plane.
+    - name: stackAt
+      type: XYZ
+      source: request
+    # Paper millimetres between tags - multiplied by the view scale here.
+    - name: gapMm
+      type: double
+      source: request
+  provides:
+    - name: stacked
+      type: int
+    - name: noHead
+      type: IList<ElementId>
+    - name: notTags
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  A compile-time split at 2022 for the leader end, which became a method taking
+  the reference it belongs to. Tag classes share no base that exposes a head
+  position, so an independent tag and a spatial tag - room, space and area -
+  are handled in their own branches rather than by one cast: casting to the
+  independent kind silently skips every room tag in the set.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "stack these tags at the side"       -> here
+#   "put the tags in a column"           -> here
+#   "the tags are on top of each other"  -> FIND_OVERLAPPING_TAGS to see them,
+#                                           ARRANGE_TAGS to push them apart
+#                                           where they are
+#   "spread the tags out"                -> ARRANGE_TAGS. This one gathers them
+#                                           instead, which is the answer when
+#                                           there is no room at all
+#   "centre the room tags"               -> CENTER_ROOM_TAGS
+#   "make the leaders L-shaped"          -> FORCE_TAG_LEADER_LSHAPE
+#   "put tags on these"                  -> TAG_ELEMENTS_IN_VIEW. This one
+#                                           only moves tags that exist
+
+utterances:
+  - stack these tags in a column
+  - put the tags at the side of the plan
+  - there is no room for the tags here
+  - line the tags up vertically
+  - stack the tags

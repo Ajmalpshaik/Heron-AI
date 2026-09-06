@@ -93,6 +93,8 @@ compatibility-note: >
 #                                           that already exist
 #   "put tags on these"                  -> TAG_ELEMENTS. This one moves the
 #                                           ones that are already there
+#   "there is no room for the tags here" -> STACK_TAGS, which gathers them at
+#                                           the side of the plan
 
 utterances:
   - centre the room tags

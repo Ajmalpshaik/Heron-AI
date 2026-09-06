@@ -61,6 +61,8 @@ compatibility-note: >
   units call is made. `viewType` is matched by NAME against the enum rather than
   taking a typed enum value, so a release that adds a member needs no change here
   and an unknown name is reported instead of silently matching nothing.
+#   "a 3d view for each workset"         -> CREATE_WORKSET_3D_VIEWS. This one
+#                                           lists views that exist
 
 utterances:
   - which views are in this model

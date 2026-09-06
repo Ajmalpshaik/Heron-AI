@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-040
+semantic-identity: "put a damper in this duct and keep the run connected"
+kind: action
+domain: revit.mep
+capability: PLACE_ACCESSORY_ON_RUN
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Inserts an accessory - a volume damper, a fire damper, a valve, a strainer -
+  INTO an existing duct or pipe: the run is cut in two, the accessory is placed
+  at the cut, and both halves are joined to it so the system stays continuous.
+
+  **PLACING IT ON THE RUN AS A HOST DOES NOT BREAK THE RUN, AND NOTHING SAYS
+  SO.** The obvious call takes the run as a host and looks exactly like the
+  Revit command that does break it. It does not: the duct count stays the same,
+  the accessory has no host, and it sits loose on top of the duct with neither
+  connector joined - reported as a success. The correct sequence is to break
+  the curve first, place the accessory, then connect each half's free end.
+
+  **BREAKING SWAPS WHICH HALF KEEPS THE ID.** The original id stays with the
+  SECOND half and the new id is the first. Anything remembering ids across the
+  break is then holding the wrong element, which is why both halves are
+  re-fetched by id rather than kept as objects.
+
+  **THE TWO HALVES ARE NOT JOINED TO EACH OTHER BY THE BREAK.** That is what
+  leaves room for the accessory. If the accessory fails to place, the run is
+  left in two pieces - so a failure is reported per run with both ids, not
+  swallowed.
+
+  **THE ENDS ARE PAIRED BY DISTANCE, NEVER BY ORDER.** Which connector on the
+  accessory faces which half depends on how the family was built and how the
+  duct was drawn; pairing by the nearest free end is the only rule that holds
+  for both.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so the
+  break, the placement and both connections are one undo entry - which matters
+  here more than usual, because a half-done insert leaves a severed system.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: accessorySymbol
+      type: FamilySymbol
+      source: request
+    # Where along each run, 0 to 1. 0.5 is the middle; the caller decides.
+    - name: positionAlong
+      type: double
+      source: request
+  provides:
+    - name: placed
+      type: IList<ElementId>
+    - name: leftSevered
+      type: IList<ElementId>
+    - name: notARun
+      type: IList<ElementId>
+    - name: refused
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Ducts and pipes break through their own
+  utility - there is no shared call - and both are unchanged 2020 to 2027, as
+  are placing a family instance at a point and connecting two connectors. The
+  symbol is activated first, because an unactivated one makes the first
+  placement throw on every release.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "put a damper in this duct"          -> here. The run is cut and rejoined
+#   "add a valve to the pipe"            -> here
+#   "join these two duct ends"           -> PLACE_MEP_FITTING, which fits an
+#                                           elbow or a transition between ENDS
+#                                           that already exist
+#   "cut this duct in two"               -> SPLIT_MEP_RUN, the break alone
+#   "connect the open ends"              -> CONNECT_OPEN_ENDS
+#   "place these families"               -> PLACE_FAMILY_INSTANCES, which puts
+#                                           one at a point and joins nothing
+#   "is this run still connected"        -> TRACE_CONNECTIVITY
+#   "is there a break in this system"    -> FIND_SYSTEM_ISLANDS. This one
+#                                           makes a break deliberately and
+#                                           closes it again
+#   "can i get at that valve"            -> CHECK_VALVE_ACCESSIBILITY, once
+#                                           it is in
+
+utterances:
+  - put a damper in this duct
+  - add a valve to the pipe
+  - insert a fire damper into the run
+  - place the VCD in the duct
+  - i need an accessory in this run
