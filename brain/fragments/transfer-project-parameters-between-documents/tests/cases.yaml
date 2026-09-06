@@ -1,0 +1,55 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a template project open alongside with five shared project parameters, and the shared parameter file that defines them
+    expect: >
+      those five bound here afterwards, in `bound`, to the SAME categories and
+      as instance or type exactly as they were. Open Manage > Project
+      Parameters and compare the two lists side by side
+
+  - given: nameContains "AJ_"
+    expect: >
+      only the parameters whose names contain AJ_, and no other binding touched
+
+negative:
+  - given: a NON-SHARED project parameter in the source
+    expect: >
+      it named in `skipped` saying it cannot be carried - NOT quietly left out.
+      It exists only inside that file and the API cannot recreate one here. A
+      transfer that silently drops three of ten is worse than one that refuses
+
+  - given: a shared parameter in the source whose definition is NOT in the file given
+    expect: >
+      it in `skipped` naming the file, and nothing bound. Matching by name
+      instead would happily bind a DIFFERENT parameter that shares a word, and
+      the project would look correct while sharing nothing with anybody
+
+  - given: a parameter already bound in this project, to fewer categories than the source binds it to
+    expect: >
+      that name in `clashed` and THIS project's binding untouched. Re-binding
+      is how a category quietly loses a parameter along with every value
+      anybody typed into it
+
+  - given: the run on Revit 2027, where Definition.ParameterGroup no longer exists
+    expect: >
+      the parameters still bound, filed under Data, and every one of them named
+      in `regrouped`. A parameter that landed in a different part of the
+      properties palette is something to be TOLD, not something to find
+
+  - given: no shared parameter file given, or a path that will not open
+    expect: >
+      `refused` saying the definition lives in that file and nothing attempted.
+      Inventing a file under a temporary folder is the failure
+      ADD_PROJECT_PARAMETER already records
+
+  - given: the source project NOT open
+    expect: >
+      `refused` naming what IS open, and nothing attempted
+
+second_route:
+  - >
+    open Manage > Project Parameters here and in the source and read the two
+    lists against each other - name, discipline, type of parameter, and the
+    category list behind each one. A name appearing in this project is not
+    proof: select an element of a bound category and check the parameter is
+    actually on it, in the group you expected
