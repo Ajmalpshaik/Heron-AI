@@ -186,8 +186,8 @@ hours after both stopped being true).
    behind** — D-29's filter-feeding-action, running. That takes the fragments whose inputs the host can
    supply from **20 to 70**. **What is still missing is the caller's half**: a category, a name to match,
    a distance. **278 fragments want one of those and there is no route for them**, which is now the
-   largest single unlock left, and it is bigger than this one was. **None of PART 6 has met a model** —
-   Group J in NEEDS-CHECKING.md is the eight rows that would prove it.
+   largest single unlock left, and it is bigger than this one was. **PART 6 has now met a model** — six of Group J's
+   eight passed on 2026-09-07, `J2` included. `J7` and `J8` are still open.
 
 3. **The write path.** `run_fragment_read` opens no transaction on purpose, so Revit itself refuses any
    change. Running a fragment that WRITES is a separate operation that does not exist, and it belongs
@@ -358,13 +358,51 @@ whole point of that fragment. An *action* being handed **0** and reporting *"0 c
 zero, two opposite correct behaviours, decided entirely by which side of the binding it sits on** — which
 is why the refusal lives in the host and not in the fragments.
 
-### What is NOT true yet
+### IT RAN. Six of Group J's eight, the same day
 
-**None of this has run in Revit.** It compiles on eight releases and the suite is green, and by this
-file's own standard that is the API surface agreeing and nothing more. **The add-in has not even been
-deployed** — the DLL is locked while Revit runs, and Revit was open on the other track all day.
-**Group J in NEEDS-CHECKING.md is the eight rows that would prove it**, and `J2` — refusing when nothing
-is selected — is the one that matters most.
+**This section used to say none of it had run and the add-in was not even deployed. Both stopped being
+true within the hour.** Revit was closed, the add-in deployed from `main` at `9dfdf07`, and the checks
+run against `Project1 work_ajmal.al` (3,435 elements, view `1 - Mech`) in Revit 2024, session 20704.
+
+| | |
+|---|---|
+| **J1** | five ducts selected → `<- elements from the selection (5)`, `count 5`. **The first fragment needing an input ever to run here** |
+| **J2** | nothing selected → **refused**, naming `elements`, exit code 1. Not `count 0` |
+| **J3** | `list-levels` then `count-elements` → `<- elements from list-levels (2)` **while five ducts were selected**. The chain wins over the selection and says so |
+| **J4** | `unjoin-geometry` → refused, naming `first` AND `second`, because one selection cannot say which is which |
+| **J5** | `filter-elements-by-category` → refused, naming `category` and `levelId` with types |
+| **J6** | a fresh batch after J3 → `from the selection (5)`, **not** the two carried levels. `chain: reset` fired |
+
+**`J2` is the one that mattered and it held.** The message is the design in one line: *"Running anyway
+would report 0 results, which reads as 'there was nothing to find' rather than 'nobody was asked'."*
+
+**Two rows were NOT run and are still open.** `J7` needs a second model open and is the one
+`READ_SELECTION`'s own proof flagged as unresolved. `J8` would mean deliberately breaking a library
+fragment, so **the compile-error line-offset wording has never been seen**.
+
+**And this proves nothing about any fragment.** `COUNT_ELEMENTS` returned 5 for 5 and 2 for 2 and is
+still `DRAFT`: no second route, and J2's negative is the HOST refusing before the fragment ran, not the
+fragment handling an empty set. D-30 is untouched by all of it — 335 fragments still need proofs.
+
+### The lease has no handover, and it cost twenty minutes
+
+The first `prove` was refused: *"This Revit is in use by another chat."* The other track held the lease
+and it only frees on a **five-minute idle timeout** or the **Heron button**.
+
+**The earlier project had the opposite rule and said so plainly.** `AJ AI Brain`'s
+`knowledge/revit-sessions-and-chats.md`, written 2026-08-27 from the owner's own questions:
+
+> **"They fight.** Whichever speaks last takes the Revit over and cuts the other one off... **It is not a
+> queue — a second chat does not wait its turn, it pushes the first one out.**"
+
+Heron kept the transport half — the newest connection still takes the pipe — and deliberately put the
+lease on top, because **the old project could not write and Heron can**: chopping a read mid-way is
+harmless, chopping a duct move is not. That trade is right and it is recorded in `BridgeServer.cs`.
+
+**What was traded away and never replaced is the convenience.** There is no *"I have moved to this chat,
+hand it over"*: `HeronLease.Release` only works for the holder, and `Clear` only runs when the ribbon
+button is pressed. So switching chats means waiting five minutes or reaching for the ribbon. **That is a
+missing piece rather than a bug, and it is small.**
 
 ---
 
