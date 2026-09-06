@@ -95,11 +95,30 @@ impossible + 9 missing = **329, against 330 read**. The refuted claim was struck
 column and never added to the covered one. It is one file and changes no conclusion — which is
 exactly why it survived being printed twice. **A total nobody adds up is not a check.**
 
-> **Uncommitted work from an earlier session was in the tree and was NOT committed with this batch.**
-> `revit/Heron.Revit.Addin/HeronApplication.cs` and `NEEDS-CHECKING.md` carry a ribbon split-button
-> change with its matching test plan. It is somebody else's half-finished work; every file here was
-> staged by name and `git add -A` was never run — which is the trap [§9b](#9b-three-sessions-at-once--the-protocol-that-stops-them-colliding)
-> records. It is still sitting there, uncommitted, and it still needs its owner.
+> ### §9b was not followed and it cost something. Read this before working in the shared folder.
+>
+> This session ran in `D:\Ajmal\Aj Programs\Heron Ai` alongside another one, without worktrees.
+> [§9b](#9b-three-sessions-at-once--the-protocol-that-stops-them-colliding) says not to. It went
+> wrong twice, in both directions:
+>
+> 1. **The branch moved out from under this session mid-work.** It started on
+>    `claude/fragments-the-nine` off `main` at `3435d8d`. By commit time the other session had run
+>    `git checkout` in the same folder, so `git commit` put this whole 37-file batch on top of
+>    `docs/b2-confirmed-in-revit` — somebody else's branch. `git checkout` is per WORKING TREE, not
+>    per chat, and nothing warns you. It was moved off with a worktree afterwards.
+> 2. **Undoing that discarded an uncommitted edit belonging to the other session.** `git status`
+>    read clean; the branch was reset back to what it had already pushed; and in the seconds
+>    between, that session wrote `NEEDS-CHECKING.md` again. The reset took it. It was never staged,
+>    so it is not in the object database and `git fsck` has nothing — the only dangling blobs were
+>    this session's own fragment drafts. **Everything committed survived** (B2, B2a, B2b and B3 are
+>    all recorded DONE in `5150842`); what was lost was one increment on top, and B3a is still
+>    showing open, so that is the likely content.
+>
+> **The lesson is not "check status first" — that was done, and it was clean.** A working tree
+> shared with a live session has no safe moment: it can be written between the check and the
+> command. There is no careful way to run a destructive git command in a folder somebody else is
+> working in. The answer is the one §9b already gives, and this is the second commit to record it:
+> **one worktree per session, set up before either starts.**
 
 ---
 
