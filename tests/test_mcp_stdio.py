@@ -145,8 +145,29 @@ def main():
         if answered:
             check("job(s) Heron knows by name" in answered,
                   "it lists the jobs it knows")
-            check("cannot" in answered.lower(),
-                  "and still says plainly that it cannot RUN them")
+
+            # THIS ASSERTION WAS RE-BASED ON 2026-09-06, hours after it was
+            # written, and the reason is worth more than the check.
+            #
+            # It used to require the word "cannot" - Heron saying it could not
+            # RUN anything it named. That was true when this file was written
+            # and false by the time it next ran: D-28's executor landed in
+            # another worktree the same day, and a read-only fragment now runs
+            # against the open model. The test encoded yesterday's truth about
+            # a system that had moved, which is the same shape as test_embed
+            # and test_retrieve being broken by A7 - and the standard is the
+            # same too: re-base it on what is true, with the reason written
+            # down, never edit it until green.
+            #
+            # What is asserted instead is the limit that has NOT moved and is
+            # the one that matters: a fragment that WRITES still cannot reach
+            # Revit at all, and an unproven fragment is still called a claim.
+            check("no way to reach Revit" in answered,
+                  "it says plainly that a fragment which WRITES still cannot "
+                  "reach Revit - the limit that has not moved")
+            check("PROVEN" in answered and "not" in answered,
+                  "and it still separates what is proved from what is merely "
+                  "present")
 
         print()
         print("  and the tool beside it still works")
@@ -171,9 +192,9 @@ def main():
     print("PASSED - a real host starts Heron, is offered ten tools, and gets an")
     print("answer from every one it asks - inside a deadline rather than eventually.")
     print()
-    print("It says NOTHING about whether any fragment WORKS. Every skill and every")
-    print("fragment is DRAFT, and D3 in NEEDS-CHECKING.md is still the line that")
-    print("catches a unit error.")
+    print("It says NOTHING about whether any fragment WORKS. 13 of 348 are")
+    print("PROVEN and the rest are claims, and D3 in NEEDS-CHECKING.md is still")
+    print("the line that catches a unit error.")
     return 0
 
 
