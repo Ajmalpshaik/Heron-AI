@@ -116,10 +116,16 @@ compatibility-note: >
 #                                             global is ONE value for the whole
 #                                             project and is written a
 #                                             different way entirely
-#   "make a global parameter"              -> NOT HERE. Creating one changed
-#                                             shape at Revit 2022, and this
+#   "make a global parameter"              -> CREATE_GLOBAL_PARAMETER. This
 #                                             fragment writes to globals that
-#                                             already exist
+#                                             already exist. THAT ROW ROUTED TO
+#                                             NOTHING until 2026-09-07, and it
+#                                             is how the gap was found: it said
+#                                             "NOT HERE" and named no fragment,
+#                                             which is this library's own best
+#                                             gap detector. Creating one is 2022
+#                                             and later only - the third
+#                                             argument changed type
 #
 # THE WORD "PARAMETER" MEANS EITHER, and the difference is whether it is one
 # value for the project or one value per element. A global drives geometry; an
@@ -136,3 +142,17 @@ utterances:
   - change the value that drives the model
   - set the project wide parameter
   - the global parameter needs a new value
+  # DECLARED 2026-09-07, WHEN CREATE_GLOBAL_PARAMETER WAS BUILT AND TOOK THEM.
+  # Measured through `find` on a REBUILT store, before and after, rather than
+  # guessed: "update the global parameter value" resolved HERE with 348
+  # fragments and to CREATE_GLOBAL_PARAMETER with 349, and "change the global
+  # param" went from REPORT_GLOBAL_PARAMETERS to CREATE. The first is a plain
+  # regression; the second is worse than its rank suggests, because a read
+  # giving a near-miss is a better failure than an ADMIN write giving one.
+  #
+  # THE FIX IS HERE RATHER THAN THERE, and that is the rule this repository
+  # keeps re-learning: strengthen the fragment that SHOULD win, never weaken the
+  # one that did. Both of these are exactly what somebody says, and both mean a
+  # parameter that already exists.
+  - update the global parameter value
+  - change the global param
