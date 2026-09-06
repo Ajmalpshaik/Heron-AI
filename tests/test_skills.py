@@ -24,6 +24,7 @@ WHAT IT DOES NOT PROVE
   that is not satisfied here is WORK.
 """
 
+import io
 import os
 import shutil
 import sys
@@ -162,6 +163,38 @@ def main():
         os.environ.pop("HERON_KNOWLEDGE", None)
 
     print()
+    print("7. D-48 - one unreadable skill costs ONE skill, never the library")
+    room = tempfile.mkdtemp(prefix="heron-skills-d48-")
+    try:
+        io.open(os.path.join(room, "aaa-good.yaml"), "w",
+                encoding="utf-8").write("id: SKL-ISO-001\nname: first good\n")
+        # A DIRECTORY carrying the .yaml extension. load_all filtered on the
+        # extension and never asked whether the entry was a file, so io.open
+        # raised PermissionError straight out of the loader.
+        os.makedirs(os.path.join(room, "bbb-a-directory.yaml"))
+        io.open(os.path.join(room, "ccc-broken.yaml"), "w",
+                encoding="utf-8").write("id: SKL-ISO-002\nname: [unclosed\n  x: : :\n")
+        io.open(os.path.join(room, "ddd-good.yaml"), "w",
+                encoding="utf-8").write("id: SKL-ISO-003\nname: second good\n")
+
+        raised = None
+        try:
+            found_d, problems_d = SKILL.load_all(room)
+        except Exception as exc:                              # noqa: BLE001
+            raised, found_d, problems_d = exc, {}, []
+
+        check(raised is None,
+              "load_all survives both a directory named .yaml and a bad parse")
+        check(sorted(found_d) == ["SKL-ISO-001", "SKL-ISO-003"],
+              "both good skills load, including the one AFTER the two failures")
+        check(any("not a file" in p for p in problems_d),
+              "the directory is named as a problem rather than swallowed")
+        check(any("could not be parsed" in p for p in problems_d),
+              "the malformed one is named too")
+    finally:
+        shutil.rmtree(room, ignore_errors=True)
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
@@ -169,7 +202,8 @@ def main():
         return 1
 
     print("PASSED - ten skills, none of which names a fragment, and a build")
-    print("queue produced by real jobs rather than by guessing.")
+    print("queue produced by real jobs rather than by guessing - and one")
+    print("unreadable skill costs one skill rather than all ten (D-48).")
     print()
     print("Phase 2's definition of done is 'ten real skills WORK'. Ten are")
     print("written and every one is DRAFT. That last word needs a Revit.")
