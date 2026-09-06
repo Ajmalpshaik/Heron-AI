@@ -1,0 +1,118 @@
+heron-agent: HERON-REVIT-CAT-009
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-054
+semantic-identity: "bring the object styles over from the other project"
+kind: action
+domain: revit.elements
+capability: TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes this project's Object Styles match another OPEN project's - *"bring the
+  object styles over from the template"*, *"set the line weights up like the
+  other job"*. Line weights, line colour, line pattern and material, for
+  categories and their subcategories.
+
+  **THIS ONE OVERWRITES, AND THAT IS THE DIFFERENCE FROM EVERY OTHER TRANSFER
+  IN THIS LIBRARY.** Filters, line styles, parameters and materials all SKIP a
+  name that is already here, because arriving twice is a mistake. Object styles
+  are not like that: Walls exists in both projects, always, and the entire job
+  is to change what Walls looks like here. So an existing category **is
+  changed**, and every category actually changed is named in `changed` with
+  what moved - because a transfer that silently restyles two hundred categories
+  and reports a number is not something anybody can check.
+
+  **NOTHING IS TOUCHED UNLESS IT DIFFERS.** A category whose settings already
+  match the source is left alone and does not appear in `changed`, so the
+  report is the diff rather than the inventory.
+
+  **A MISSING SUBCATEGORY IS CREATED; A MISSING CATEGORY IS NOT.** A custom
+  subcategory - a firm's own sub-style under Walls - is made here with
+  `NewSubcategory` and then styled. A top-level category cannot be created at
+  all: the set is Revit's, so one that is absent here is named in `skipped`
+  rather than attempted.
+
+  **THE MATERIAL AND THE LINE PATTERN ARE THE TWO THAT GO QUIET.** Both are
+  separate elements, matched **by name** in this project - the same thing in
+  two projects has two different ids, and an id carried across means nothing
+  here. A line pattern that is missing is brought over as an element. A
+  **material** is not: bringing a material over drags its appearance asset and
+  its own patterns behind it, which is
+  `TRANSFER_MATERIALS_BETWEEN_DOCUMENTS`'s whole job and not something to do as
+  a side effect of styling a category. So a category whose material is not here
+  keeps the material it had, and is named in `weakened` saying which material
+  is missing and to run the materials transfer first.
+
+  **BOTH PROJECTS MUST BE OPEN IN THE SAME REVIT**, and categories are matched
+  by NAME - both documents are in the same Revit and therefore the same
+  language, which is what makes that safe. If the source is not open, the open
+  ones are listed and nothing is attempted. Linked documents are not offered.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). **The
+  undo belongs to THIS document** - the source project is only read. That
+  matters more here than in the other transfers: this is the one that changes
+  how the whole model draws, and one Ctrl+Z has to put all of it back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    - name: sourceDocumentTitle
+      type: string
+      source: request
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: changed
+      type: IList<string>
+    - name: created
+      type: IList<string>
+    - name: skipped
+      type: IList<string>
+    - name: weakened
+      type: IList<string>
+    - name: refused
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Category.GetLineWeight`,
+  `SetLineWeight`, `LineColor`, `GetLinePatternId`, `SetLinePatternId`,
+  `Material`, `SubCategories`, `CanAddSubcategory`, `IsCuttable` and `Parent`
+  were read off the SHIPPED 2020 and 2024 assemblies and are identical at both
+  ends. Cut weight is only read and written where `IsCuttable` says the
+  category can be cut - asking elsewhere returns nothing useful on any release.
+  Categories are matched by NAME rather than by turning an ElementId into a
+  BuiltInCategory, which would mean an int, and that value changed width at
+  2024.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "bring the object styles over from     -> here. PROJECT-WIDE, Manage >
+#    the template"                            Object Styles
+#   "make walls grey in THIS view"         -> SET_CATEGORY_GRAPHICS, a view
+#                                             override, not a project setting
+#   "bring the line styles over"           -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS,
+#                                             the Lines category only
+#   "bring the materials over"             -> TRANSFER_MATERIALS_BETWEEN_DOCUMENTS,
+#                                             and run it BEFORE this one
+#   "what overrides are on this view"      -> REPORT_CATEGORY_OVERRIDES
+#   "turn this category off"               -> SET_CATEGORY_VISIBILITY
+
+utterances:
+  - bring the object styles over from the template
+  - copy the object styles from the other project
+  - set the line weights up like the other job
+  - transfer the object styles from that model
