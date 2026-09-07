@@ -132,8 +132,10 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 
 | Document | Purpose |
 |---|---|
+| [**HANDOVER.md**](HANDOVER.md) | Where the last session stopped — what exists, what is **proven** rather than merely built, and what to say to carry on |
+| [**NEEDS-CHECKING.md**](NEEDS-CHECKING.md) | The proving register — every unproven claim as a numbered item, grouped by what it needs. `python tools/check-gaps.py` reads this file |
 | [PROPOSALS.md](PROPOSALS.md) | Gaps found in review, feature ideas, strategic questions |
-| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | 38 questions, prioritised, with answer slots |
+| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | 42 questions, prioritised, with answer slots |
 | [ROADMAP.md](ROADMAP.md) | Phase 0 → Phase 7, and what is deliberately deferred |
 | [DECISIONS.md](DECISIONS.md) | Append-only log of decisions actually made |
 | [../tools/](../tools/README.md) | Scripts that keep these documents honest — link checker, count recomputer, map generator |

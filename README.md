@@ -167,9 +167,11 @@ which settles the remaining blocking questions with facts instead of opinion.
 
 ## A note on this repository
 
-It is currently **private**. It becomes public once the licence is chosen, the disclaimer and
-`SECURITY.md` are written, and the public-code / private-knowledge separation is verified — because
-publishing is irreversible in practice and client project data must never be able to reach it.
+It is still **private**. Three of the four conditions for making it public are now met — the licence
+is chosen (Apache 2.0, [D-08](docs/DECISIONS.md)), and [DISCLAIMER.md](DISCLAIMER.md) and
+[SECURITY.md](SECURITY.md) are written. **The one that remains is the public-code / private-knowledge
+separation being verified**, and it is the one that matters most: publishing is irreversible in
+practice, and client project data must never be able to reach it.
 See [17 — Open Source & Distribution](docs/17-open-source-and-distribution.md).
 
 ---
