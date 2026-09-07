@@ -2759,3 +2759,68 @@ twelve seconds reads as a hang; the same freeze labelled **12 s** reads as a dur
 - **The compiler was believed absent and was not.** This was written as if nothing could be built here,
   because the .NET installer download is blocked; the distribution's own package is not.
   [docs/30](30-compiling-away-from-windows.md) already said so and it was re-learned the hard way.
+
+## D-51 — A negative case is judged by its counts, not by whether the fragment stayed silent
+
+**Status:** Accepted · **Date:** 2026-09-07 · **Found during:** the owner proving his first fragment with the agent
+**Affects:** [`heron_validate.py`](../brain/heron_validate.py) `looks_empty`, [D-30](DECISIONS.md), every fragment that provides `findings`
+
+### Context
+
+`REPORT_GLOBAL_PARAMETERS` was run twice against `Project1 work_ajmal.al` — once with a global parameter
+present, once after the owner deleted it. `globalCount` went **1 → 0** and the sentences changed from
+*"'Length' = 0.6562 ft (200 mm) - typed in - drives 0 dimensions"* to *"this project has no global
+parameters"*. That is a fragment demonstrably reading the model.
+
+The agent flagged it anyway: **"this did NOT come back empty."**
+
+Two separate problems were behind that, and only one of them was a bug.
+
+**The bug.** `looks_empty` measured values with `len()`, but `RevitFragment.Describe` renders everything
+as text — a collection as `"3 item(s) [a, b, c]"`, a scalar as its own string. A count of zero therefore
+arrived as the **string `"0"`**, one character long, and read as "not empty". The check could never
+return True for anything the executor produced. **Every** negative case was flagged, whatever it
+actually returned. Fixed separately by teaching it the shapes its own executor emits.
+
+**The question.** Even fixed, this fragment still fails, because it always provides two sentences in
+`findings` — including when it finds nothing. So does every reporting fragment: **134 of the 349**
+provide `findings`.
+
+### The decision
+
+**The counts decide. The note does not.** `findings` is excluded from the emptiness test.
+
+The argument that settled it is that **silence is the worse answer.** A snagging inspector who hands in
+a blank sheet has told you nothing — it could mean no snags, or that he never turned up. *"No snags
+found"* tells you he was there. `REPORT_GLOBAL_PARAMETERS` exists precisely to separate *"this project
+has none"* from *"this kind of document cannot have any"*, and it cannot make that distinction while
+staying silent.
+
+The alternative was worse in a way that matters more than strictness: the warning fired on every
+negative case a reporting fragment could produce, so it would have been read past every time. **A
+warning that always fires is not a safeguard, it is furniture.**
+
+**Two conservative properties are deliberately kept**, because the failure this check exists to catch
+— a fragment quietly answering about the wrong set — is still real:
+
+1. **An unreadable value still returns False.** Anything `_as_count` cannot turn into a number gets a
+   person's attention rather than a shrug.
+2. **A phase that provides nothing BUT prose still returns False.** There is then no count to have been
+   zero, and *"the note was written"* is not a measurement.
+
+### What this does not do
+
+**It does not promote anything.** `looks_empty` only decides whether the draft carries a warning; a
+person still signs, and `heron-status` is still untouchable by the agent ([D-30](DECISIONS.md)).
+
+**It does not settle the second route.** `REPORT_GLOBAL_PARAMETERS` has no second route recorded and
+its draft still says `NOT ESTABLISHED`, which is correct — D-30 asks for one *"where one exists"*, and
+whether one exists here has not been established either way.
+
+### The risk being accepted, stated plainly
+
+**134 fragments become easier to prove than they were this morning.** If `findings` ever carries a
+result rather than a note in some fragment, that fragment's negative case can now pass on the strength
+of its other counts alone. Nothing in the docs says `findings` is narration — it is a convention read
+off 134 files, not a rule anybody wrote down. Writing it down is what this entry is for.
+

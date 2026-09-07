@@ -540,31 +540,52 @@ def _as_count(value):
         return None
 
 
+# Names that carry PROSE rather than a quantity. `findings` is the library's
+# convention for the sentences a fragment wants read aloud - 134 of the 349
+# fragments provide one - and a fragment that correctly reports "there are none
+# here" still fills it. See D-51: the counts decide, the note does not.
+NOTE_KEYS = frozenset(("findings",))
+
+
 def looks_empty(phase):
     """Whether a phase's numbers really do read as nothing.
 
-    Deliberately conservative: anything it cannot read as a number leaves the
-    answer False, so an unrecognised shape reports "not empty" and gets a
-    person's attention. The failure this guards against is a fragment that
-    quietly answers about the wrong set, and a checker that assumes empty when
-    unsure is exactly how that gets waved through.
+    THE COUNTS DECIDE (D-51). A fragment that finds nothing still writes a
+    sentence saying so, and that sentence is the evidence it ran rather than
+    evidence it found something. Requiring literal silence flagged every
+    negative case a reporting fragment could ever produce, and a warning that
+    always fires is the one people learn to skip past.
 
-    BOOLEANS ARE NOT QUANTITIES and are skipped, however they arrive - as a
-    Python bool or as the string "true". `REPORT_GLOBAL_PARAMETERS` returns
-    `allowed: true` in BOTH cases, because the document still permits globals
-    whether or not any exist; counting that as content would mean this fragment
-    could never demonstrate an empty answer at all.
+    Still deliberately conservative in the two ways that matter:
+
+      * a value it cannot read as a number returns False, so an unrecognised
+        shape gets a person's attention rather than a shrug;
+      * a phase that provides NOTHING BUT prose returns False, because there is
+        then no count to judge and "the note was written" is not a measurement.
+
+    Booleans are flags, not quantities, however they arrive - as a Python bool
+    or as the string "true". `REPORT_GLOBAL_PARAMETERS` returns `allowed: true`
+    in the positive AND the negative case, because the document permits globals
+    either way, and counting that as content would make an empty answer
+    impossible for it to demonstrate.
     """
     provides = phase.get("provides") or {}
     if not provides:
         return False
-    for value in provides.values():
+
+    counted = 0
+    for key, value in provides.items():
+        if key in NOTE_KEYS:
+            continue
         count = _as_count(value)
         if count is None:
             return False              # unreadable shape - say so, do not assume
         if count != 0:
             return False
-    return True
+        counted += 1
+
+    # Nothing but prose. There is no number here to have been zero.
+    return counted > 0
 
 
 # ---------------------------------------------------------------------------
