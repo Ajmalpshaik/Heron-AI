@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -50,6 +50,27 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,692 elements), Revit 2024, session 42676
+  positive_case: 'two host walls in Snowdon Towers Sample HVAC, deliberately JOINED with Modify
+    > Join Geometry and then selected. The join had to be made on purpose: this fragment reads
+    JoinGeometryUtils.GetJoinedElements, and walls that merely meet at a corner clean up by
+    a different mechanism that does not register there - a first attempt with touching-but-unjoined
+    walls returned joins 0. returned findings 2 item(s) [2 join(s) across 2 element(s). 0
+    of them are joined to nothi..., The side that CUTS gives its overlap away, so it is the
+    one ...], joins 2 item(s) [Exterior - Brick on Mtl. Stud (id 1544039) CUTS Exterior -
+    B..., Exterior - Brick on Mtl. Stud (id 1544064) is CUT BY Exterio...], withoutJoins 0.
+    inputs came elements from the selection (2). on Snowdon Towers Sample HVAC'
+  negative_case: 28 duct taps in the same model, none joined to anything, so the answer had
+    to be empty. returned findings 1 item(s) [0 join(s) across 28 element(s). 28 of them are
+    joined to not...], joins 0 item(s), withoutJoins 28. inputs came elements from the selection
+    (28). on Snowdon Towers Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 867e61b48b8336e2
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -738,7 +738,23 @@ NOTE_KEYS = frozenset(("findings",))
 # actually observed, not because the pattern was widened to admit them.
 REJECT_PREFIX = re.compile(r"^(no|not|un)[A-Z]")
 REJECT_NAMES = frozenset(("unmeasurable", "unplaced", "unenclosed",
-                          "elementsWithNoMaterial"))
+                          "elementsWithNoMaterial", "withoutJoins"))
+
+# THE PATTERN ABOVE HAS REACHED ITS LIMIT, and the next person should know it
+# rather than widen it again. A blanket `without*` or `missing*` rule was
+# considered on 2026-09-07 and REJECTED: `report-routing-preferences` declares
+# `missingFamilies`, and a routing preference pointing at a family nobody has
+# loaded is precisely that fragment's FINDING, not its bookkeeping. Sixteen
+# provides start with without/missing/lacking and they are not all one kind.
+#
+# The names here are listed one at a time as they are met, deliberately, so that
+# adding one is a decision rather than a side effect.
+#
+# THE REAL FIX IS IN THE CONTRACT, NOT HERE. A fragment knows which of its
+# provides are results and which count what it was handed and could not use;
+# nothing but the name carries that today, which is why this list exists at all.
+# A `role: result | accounting` key on each `provides` entry would replace every
+# pattern in this file with something the fragment states about itself.
 
 
 # Names that count WORK DONE rather than things found - `scanned`, `jointsChecked`,
