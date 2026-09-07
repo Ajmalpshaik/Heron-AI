@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -53,6 +53,28 @@ contract:
       type: IList<string>
     - name: typesInUse
       type: IList<string>
+
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,641 elements), Revit 2024, session 42676
+  positive_case: '12 sheets selected in Snowdon Towers Sample HVAC - Plan HVAC L0 Parking,
+    L1, L2 and others - run as it would normally be run. returned allBlocks 17 item(s) [E1
+    30 x 42 Horizontal_Snowdon, E1 30 x 42 Horizontal_Snowdon, E1 30 x 42 Horizontal_Snowdon,
+    ...], findings 12 item(s) [M100 - Plan HVAC L0 Parking: E1 30 x 42 Horizontal_Snowdon
+    :..., M101 - Plan HVAC L1: E1 30 x 42 Horizontal_Snowdon : E1 30 x..., M102 - Plan HVAC
+    L2: E1 30 x 42 Horizontal_Snowdon : E1 30 x..., ...], typesInUse 1 item(s) [E1 30 x 42
+    Horizontal_Snowdon : E1 30 x 42 Horizontal_Snowdo...], withTitleBlock 12, withoutTitleBlock
+    0 item(s). inputs came elements from the selection (12). on Snowdon Towers Sample HVAC'
+  negative_case: 28 duct taps selected in Snowdon Towers Sample HVAC - a duct tap is not a
+    sheet and carries no title block, so the answer had to be empty. returned allBlocks 17
+    item(s) [E1 30 x 42 Horizontal_Snowdon, E1 30 x 42 Horizontal_Snowdon, E1 30 x 42 Horizontal_Snowdon,
+    ...], findings 0 item(s), typesInUse 0 item(s), withTitleBlock 0, withoutTitleBlock 0
+    item(s). inputs came elements from the selection (28). on Snowdon Towers Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 43b1a394c8ef5c82
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

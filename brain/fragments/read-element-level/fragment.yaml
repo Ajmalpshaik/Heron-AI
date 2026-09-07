@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -40,6 +40,28 @@ contract:
       type: IDictionary<ElementId, double>
     - name: noLevel
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,628 elements), Revit 2024, session 42676
+  positive_case: 28 duct taps selected in Snowdon Towers Sample HVAC - run as it would normally
+    be run. returned MillimetresPerFoot 304.8, levelName 28 entry(ies), levelParameters 3
+    item(s) [RBS_START_LEVEL_PARAM, FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM], noLevel 0 item(s),
+    offsetMm 28 entry(ies), offsetParameters 3 item(s) [RBS_OFFSET_PARAM, INSTANCE_FREE_HOST_OFFSET_PARAM,
+    INSTANCE_ELEVATION_PARAM]. inputs came elements from the selection (28). on Snowdon Towers
+    Sample HVAC
+  negative_case: 12 sheets selected in Snowdon Towers Sample HVAC - Plan HVAC L0 Parking,
+    L1, L2 and others - a sheet does not sit on a level, so the answer had to be empty. returned
+    MillimetresPerFoot 304.8, levelName 0 entry(ies), levelParameters 3 item(s) [RBS_START_LEVEL_PARAM,
+    FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM], noLevel 12 item(s) [1363532, 1363547, 1363562,
+    ...], offsetMm 0 entry(ies), offsetParameters 3 item(s) [RBS_OFFSET_PARAM, INSTANCE_FREE_HOST_OFFSET_PARAM,
+    INSTANCE_ELEVATION_PARAM]. inputs came elements from the selection (12). on Snowdon Towers
+    Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 8027a37730d618c2
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
