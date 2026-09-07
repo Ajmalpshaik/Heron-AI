@@ -16,6 +16,13 @@ that day**:
 - **"Work only on Heron-AI and AJ-Tools"** — the standing scope. `AJ-AI-Brain` is the earlier project
   and is **read-only reference**.
 
+**To carry the PROVING on in a fresh session, say:** *"Read the PROVING track entry in HANDOVER.md and
+carry on proving fragments."* That entry holds the whole method — two contrasting selections, why
+clearing the selection proves nothing, which things have to be DRAWN in the host because the model's
+content is linked, and the three shapes of proof. **It went 16 to 52 in one night; the method is why,
+not the hours.** Have Revit open with a rich model — `Snowdon Towers Sample HVAC` is the one it was
+worked out on — and expect to be asked for one selection at a time.
+
 **To carry the library build on in a fresh session, say:** *"Read HANDOVER.md §9a in Heron-AI and carry
 on building fragments."* [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start)
 holds the whole recipe — where the sources are, the eight steps per fragment, the commands, and the
@@ -33,7 +40,7 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**349 fragments. 50 `PROVEN`. 299 below.** D-28's executor is built, and fragments now run against a
+**350 fragments. 52 `PROVEN`. 298 below.** D-28's executor is built, and fragments now run against a
 real model. That is new as of 2026-09-06 and it is the thing every earlier handover was waiting for.
 **Proving is live and these two numbers move hourly — run
 `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` rather than trusting the
@@ -43,10 +50,10 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 
 | | |
 |---|---|
-| Fragments | **349** — every fragment-shaped job in the earlier library, five cross-project transfers from PART 5, and `CREATE_GLOBAL_PARAMETER`, built 2026-09-07 for a gap the library named in its own routing table |
-| Proven | **50** as of 2026-09-08, each on a recorded proof with a negative case and a staleness fingerprint (D-30). Moving hourly while the proving track runs — derive it, do not read it here |
+| Fragments | **350** — every fragment-shaped job in the earlier library, five cross-project transfers from PART 5, `CREATE_GLOBAL_PARAMETER` (2026-09-07), and `FIND_DATES_IN_VIEWS`, built AND proved 2026-09-08 for a question the owner asked that the sheets fragment answers wrongly |
+| Proven | **52** as of 2026-09-08, each on a recorded proof with a negative case and a staleness fingerprint (D-30). **16 → 52 in one night** — see the proving-track entry below for the method, which is the reusable part. Moving hourly — derive it, do not read it here |
 | Compile gate | green, Revit 2020–2027 |
-| Other gates | metadata, docs, gaps, agent-count — green. **`structure` is RED as of `83fd7e8`**, from a fragment naming `Autodesk.Revit` explicitly. Not from the platform track; see that session's entry |
+| Other gates | metadata, docs, gaps, agent-count, **structure** — all green. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
 | Tests | **all pass**, `test_embed` and `test_retrieve` included — they were re-based against the model backend in PART 5, not edited until green. See the note where the warning used to be |
 | Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | deployed to Revit 2024, built from `main` at `538bf55`. **STALE as of 2026-09-08** — the dispatcher now records which fragment ran and writes durations as numbers, and neither reaches the trail until it is rebuilt and redeployed |
@@ -260,6 +267,102 @@ counts what is left; believe it over this file.
 > true there, with the reason.
 
 ---
+
+## HANDOVER — the session that ran 2026-09-07 into 2026-09-08 (the PROVING track)
+
+**16 `PROVEN` at the start of it, 52 at the end.** Everything below was done with Revit 2024 open on the
+owner's PC, mostly on `Snowdon Towers Sample HVAC`. **The method is the reusable part and it is at the
+bottom of this entry — read that first if you are here to prove more fragments.**
+
+### What was proved, and the one thing that made it fast
+
+| | |
+|---|---|
+| The activity banner (D-50) | **B6, B7, B8, B9, B10, B11, B13 all pass.** It had never been seen on a screen; it has now, in every colour |
+| The write path | **Was structurally broken. Fixed, and the first write Heron has ever made ran through it** |
+| 36 fragments | Proved to *run* against a real model — most for the first time |
+| 36 more | **Proved outright**, 16 → 52 |
+| One new fragment | `FIND_DATES_IN_VIEWS` — written and proved the same night |
+
+### THE FIVE BUGS, because each cost real time and each is the kind that returns
+
+1. **The write path could never have worked.** `revit_apply_move` returned *"Missing or wrong token"*.
+   One JSON key, `token`, meant the SESSION token to `BridgeServer.Dispatch` (line 349, checked first)
+   and the APPROVAL token to `RevitWrite` (line 103). `body.update(op_args)` let the second overwrite
+   the first, so every apply was refused as unauthenticated. **No value satisfied both.** The approval
+   is now `approvalToken`, and `op_args` refuses `op`/`token`/`client` outright rather than silently
+   winning. Nothing but a live Revit could have found it: both sides compiled, both read a string
+   called `token`.
+2. **`looks_empty` could never return True.** The executor renders everything as text, so a count of
+   zero arrives as the STRING `"0"` — one character, therefore "not empty". **Every negative case was
+   flagged, whatever it returned.** A warning that always fires is furniture.
+3. **`read-space-loads` threw on the only selection it exists for**, with Revit's own `Not Computed!`.
+   Its `noLoad` handler already said *"the space is unbounded and has no volume to load"* and could
+   never be reached — the property read threw first. **A guard placed after the thing it guards
+   against.**
+4. **Both schedule fragments refused the only object a person can select.** They demanded a
+   `ViewSchedule`; clicking a schedule on a sheet gives a `ScheduleSheetInstance`. A view cannot be
+   selected as an element, so they were correct in isolation and **unusable in practice**.
+5. **A vendor namespace inside `brain/`**, from fix 3. `check-structure` refuses it and was right to.
+   It greps the file TEXT, so a **comment** naming it fails too.
+
+### Three decisions, and one of them replaced the guessing for good
+
+- **[D-51](docs/DECISIONS.md)** — a negative case is judged by its COUNTS, not by whether the fragment
+  went silent. `findings` is prose; 134 of the 350 provide one.
+- **[D-52](docs/DECISIONS.md)** — a count of what was TURNED DOWN is not a count of what was FOUND.
+  `noSystem: 16` means sixteen were examined and none had one, which is **stronger** evidence than
+  silence. Amended the same evening to cover work counters (`scanned`, `jointsChecked`).
+- **[D-53](docs/DECISIONS.md)** — a fragment that CANNOT come back empty is proved by **tracking**:
+  `count-elements` returned 28, 16, 4, 12, 37 against selections of 28, 16, 4, 12, 37. Eleven fragments
+  went through on that.
+
+**FOUR RULE CHANGES IN ONE EVENING, ALL IN THE SAME DIRECTION, AND THAT WAS SAID OUT LOUD AT THE TIME.**
+The fifth was refused. What replaced it is the fix that matters: **`role: result | accounting` on a
+`provides` entry**, so a fragment DECLARES which outputs are findings and which count what it was
+handed. Optional, absent means `result`, a typo is a validation error. The naming patterns remain only
+as fallback. **If you find yourself adding a name to `REJECT_NAMES`, add the `role` key instead.**
+
+### The method — this is the part to reuse
+
+**TWO CONTRASTING SELECTIONS, NEVER SELECT-THEN-CLEAR.** Clearing the selection does not give an empty
+answer: `elements` becomes unbound and the executor refuses, which proves nothing. Select ducts (the
+positive for MEP fragments, the negative for room fragments), then spaces (the reverse). **Five
+selections — ducts, spaces, walls, sheets, equipment — carried most of the library.** Sheets are the
+best negative in it: no length, no volume, no level, no routing.
+
+**THE ARRANGEMENT IS THE WORK; RUNNING TAKES SECONDS.** On a model whose content is LINKED — which
+Snowdon Towers is — the thing must be **drawn in the host**, because the executor skips linked
+documents by design. Five proofs needed something built: host walls, a ceiling, a curtain wall, a Join
+Geometry join (walls merely touching do NOT count), and a reference section (a plain section selects
+the *view*, not the marker).
+
+**THREE KINDS OF FRAGMENT, THREE PROOF SHAPES:**
+
+| Kind | Proof | Cost |
+|---|---|---|
+| Reporters | Two selections, one with the thing and one without | Cheap |
+| Structure reporters — `count-elements` | Can never be empty; **tracking** (D-53) | Cheap |
+| **Defect-finders — 34 unproven** | The fault must be BUILT on purpose | Slow, one per fragment |
+
+**A DEFECT-FINDER CANNOT BE PROVED ON A CLEAN MODEL.** `check-flow-direction` was rejected four times
+before equipment showed `jointsChecked: 57` — it works, there is simply no fault in Snowdon Towers to
+find. Its positive needs two connectors both set to `Out`, built in the Family Editor.
+
+**A THROWAWAY FRAGMENT IS THE FASTEST DIAGNOSTIC HERE.** The executor runs any read-only C# handed to
+it, so *"what does Revit actually see"* is answerable in about a minute without building anything. It
+is what found the date sitting in a text note as `09-09-2026`.
+
+### What is left, honestly
+
+- **Every proof says `second_route: NOT ESTABLISHED`.** All 52. D-30 asks for one *"where one exists"*
+  and nobody has settled whether one exists for any of them. **That is the largest open weakness.**
+- **`read-space-loads` is fixed and UNPROVEN.** Every space in the model returns `noLoad`; a positive
+  needs Areas and Volumes on with the analysis run, or a Design Heating Load typed on one space.
+- **`read-schedule-contents` is fixed and UNPROVEN** — it needs `maxRows`, a caller's value.
+- **278 of 350 still want a caller's half** — a category, a name, a distance. Unchanged, and still the
+  largest unlock.
+- **The add-in is STALE** and was before this session; nothing here rebuilt it.
 
 ## 2026-09-06 — Revit now SHOWS what Heron is doing to it
 
