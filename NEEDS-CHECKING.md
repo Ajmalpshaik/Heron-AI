@@ -349,6 +349,47 @@ restart as `B13`.
 `op`, `token` or `client`. Renaming the key fixes today's bug; making `update` refuse to overwrite the
 three reserved keys would stop the next one.
 
+### Clearing the selection is NOT a negative case — learned 2026-09-07, on 36 fragments at once
+
+**36 unproven READ fragments were run against `Project1 work_ajmal.al` with 5 ducts selected, and all
+36 executed.** Not one failed to compile, bind or return. That is the first time most of them have ever
+run against a real model, and it is worth having — but **it is not a D-30 proof of any of them**, and
+the attempt to get the second leg in the same pass is what taught the lesson below.
+
+**The selection was then cleared, and all 36 refused with `needs_unbound`:**
+
+> *Cannot run: 'elements (IList<Element>)' was never supplied. Nothing is selected in Revit, and no
+> earlier fragment in this session left a value of that name. **Running anyway would report 0 results,
+> which reads as "there was nothing to find" rather than "nobody was asked".***
+
+**The executor is right and the test design was wrong.** An empty selection does not produce an empty
+answer; it produces a refusal, because the need cannot be bound at all. A refusal is not evidence that
+a fragment reports honestly — the fragment never ran.
+
+**So a fragment fed by `elements` needs a negative case shaped differently: a selection that CONTAINS
+NONE OF WHAT IT REPORTS.** Ducts selected, and `REPORT_CURTAIN_ELEMENTS` returns
+`curtainWallsFound: 0` — that is a real empty answer from a fragment that really ran.
+
+And that had already happened in the same pass, which is the useful part. With 5 ducts selected:
+
+| Behaved as a POSITIVE case | Behaved as a NEGATIVE case |
+|---|---|
+| `count-elements` 5, `describe-elements` 5, `read-element-level` 5, `read-mep-system` 5, `report-connectors` 5, `report-location` 5, `measure-element-lengths` 3 | `report-curtain-elements` 0, `measure-room-dimensions` 0, `measure-ceiling-height` 0, `read-space-loads` 0, `report-schedule-definition` 0, `report-sheet-title-blocks` 0 |
+
+**Neither column is a proof on its own.** A fragment needs BOTH from its own arrangement: curtain walls
+selected AND ducts selected proves `REPORT_CURTAIN_ELEMENTS`; ducts selected AND something without a
+level proves `READ_ELEMENT_LEVEL`. **That is per-fragment work and it does not batch**, which is the
+honest cost of D-30 and the reason 16 of 349 are proven rather than 300.
+
+**`read-selection` is the exception and shows why:** it takes `uidoc`, not `elements`, and reads the
+selection itself — so an empty selection reaches it as a real empty answer rather than an unbound need.
+A fragment that is handed the selection cannot tell "nothing selected" from "not asked"; one that reads
+it can.
+
+The 36 run records are in `brain/proof-drafts/runs/`. **Their positive leg is real evidence and their
+negative leg is a refusal, so drafting them as they stand produces 36 drafts that each say the negative
+case was never established.** That is honest and it is not progress.
+
 ## Group C — the gate, before anything can move
 
 **Do not skip to D.** C3 is what proves the write path cannot fire by accident; testing the move before
