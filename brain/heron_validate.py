@@ -571,8 +571,20 @@ REJECT_NAMES = frozenset(("unmeasurable", "unplaced", "unenclosed",
                           "elementsWithNoMaterial"))
 
 
+# Names that count WORK DONE rather than things found - `scanned`, `jointsChecked`,
+# `constraintsScanned`, `sectionsNotChecked`. Thirteen such names exist across the
+# library and every one of them is an int. Same principle as the rejection counts
+# above and recorded under the same decision: a count of how many were examined is
+# not a count of how many were found. `scanned: 2` alongside `unusedGroupTypes: 0`
+# means it walked two definitions and none was unused - which is the evidence that
+# it ran at all, and the opposite of a reason to doubt the answer.
+WORK_COUNTER = re.compile(r"(?i)(scanned|checked)")
+
+
 def _is_accounting(key):
-    return bool(REJECT_PREFIX.match(key)) or key in REJECT_NAMES
+    return (bool(REJECT_PREFIX.match(key))
+            or key in REJECT_NAMES
+            or bool(WORK_COUNTER.search(key)))
 
 
 # `RevitFragment.Describe` renders anything it cannot format as a count or a

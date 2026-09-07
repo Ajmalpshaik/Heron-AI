@@ -2863,6 +2863,24 @@ the less informative behaviour.
    helpers the fragment left in scope, identical in both runs, saying nothing about what was found. A
    bare type name is not a quantity that could have been zero.
 
+### Amended the same evening — work counters too
+
+**`scanned` blocked the first defect-finder ever proved.** `FIND_UNUSED_GROUP_TYPES` reported
+`unusedGroupTypes: 0`, `unusedNames: 0`, `usedOnlyAsAttached: 0` — every result zero — alongside
+`scanned: 2`, meaning it walked two group definitions. The warning fired on the 2.
+
+A count of how many things were EXAMINED is not a count of how many were FOUND, which is the sentence
+this decision is named for. `scanned: 2` beside `unusedGroupTypes: 0` is the evidence the fragment ran;
+without it, an all-zero answer could not be told from a fragment that never looked.
+
+So names containing `scanned` or `checked` are excluded too. **Thirteen such names exist across the
+library** — `scanned`, `jointsChecked`, `constraintsScanned`, `sectionsNotChecked`, `roomsChecked` and
+others — and **every one of them is declared `int`.** None is a result.
+
+**This was the fourth loosening in one evening and it went to the owner as a question rather than being
+decided here**, precisely because the first three had all been argued the same way and the argument was
+becoming a habit.
+
 ### The risk being accepted, stated plainly
 
 **This is the second standard relaxed in one evening, both to let fragments through, and that pattern is
