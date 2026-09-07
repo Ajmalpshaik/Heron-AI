@@ -26,7 +26,7 @@ consequence, and all three came back unchanged:
 
 **It happened in conversation rather than at the PC**, which is recorded rather than smoothed over. What
 *at the PC* was for — him sitting with them rather than tapping yes — did happen. What still needs a
-screen is [`R1b`](../NEEDS-CHECKING.md): [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes)
+screen is [`R1b`](NEEDS-CHECKING.md): [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes)
 stays **Proposed** until he has seen the trust model working with his own fragments in it.
 
 **And it happened AFTER Phase 2 was built, not before**, which was his own override and is weaker than
@@ -804,7 +804,7 @@ Put to him again in the read-back, in the family framing that worked, and with t
 it now stated plainly: **all 329 fragments already carry both labels**, so the model is not hypothetical.
 He answered **"yes, but show me on screen first"** — word for word what he said on 2026-08-28.
 
-**So this stays Proposed and [`R1b`](../NEEDS-CHECKING.md) stays open.** Two asks, eleven days apart,
+**So this stays Proposed and [`R1b`](NEEDS-CHECKING.md) stays open.** Two asks, eleven days apart,
 same answer: he accepts the *idea* and will not sign off a trust model he has not watched work. Nothing
 further is gained by asking a third time — **only a screen closes this one.**
 
@@ -1063,7 +1063,7 @@ user did not offer up. This is the same sentence applied to writing rather than 
 - The read-only guarantee is **weaker than it was**, and that must be said plainly rather than presented
   as an improvement. It moved from "there is no code to do this" to "the code is switched off". The first
   needs no trust; the second does.
-- The default flips to `true` **only** when [HANDOVER §6](../HANDOVER.md#6-the-return-to-the-machine-checklist)
+- The default flips to `true` **only** when [HANDOVER §6](HANDOVER.md#6-the-return-to-the-machine-checklist)
   has been walked end to end against a real model — not when the code merely compiles.
 - Anyone reading `HeronPermissions` finds the reasoning in the file, not only here. The comment saying
   why it is off is written to be **deleted** once the path is proven, so a stale justification cannot sit
@@ -1372,7 +1372,7 @@ rules, and verified in Heron.
 - **A fragment proven elsewhere is not proven in Heron.** Re-authored work starts at DRAFT and earns its
   status through Heron's own checks, whatever status it held in the library it was read from.
 - It reinforces what was already true: none of those projects' names, branding or dependencies come
-  across ([HANDOVER §7](../HANDOVER.md)). This decision is the same rule applied to substance rather
+  across ([HANDOVER §7](HANDOVER.md)). This decision is the same rule applied to substance rather
   than to labels.
 
 ---
@@ -1776,7 +1776,7 @@ of element.
 [D-26](#d-26--the-model-file-is-never-uploaded), which moved three times. Neither reversal was a mistake
 by Ajmal; both were the first answer being sharpened once its consequence was visible.
 
-That is the whole argument for `R1` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md), and it is now
+That is the whole argument for `R1` in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), and it is now
 evidence rather than caution: **a decision taken in one pass, from a phone, reads differently when its
 consequence is in front of you.** Read them back before building on them.
 
@@ -2437,7 +2437,7 @@ One `PushButtonData` in `HeronApplication.BuildRibbon` puts the button back.
   is true of disconnecting. Ctrl+Z remains the only thing that reverses a change already made.
 - **The file-based kill switch that 21 §4 pairs with the button was never built.** Until it is, the
   mechanism kept here has no trigger at all.
-- **`C1`, `C2`, `C4` and `C6` in [NEEDS-CHECKING.md](../NEEDS-CHECKING.md) can no longer be run.** The
+- **`C1`, `C2`, `C4` and `C6` in [NEEDS-CHECKING.md](NEEDS-CHECKING.md) can no longer be run.** The
   rule `C6` existed to prove — the stop blocks changes only and never reads — is still written in the
   code and is now **unproven by test**.
 
@@ -2477,7 +2477,7 @@ closed by that.
   regression** — Emergency Stop was a ribbon button on the same ribbon with the same limitation.
 
 **And the stop capability keeps a test.** `C1`, `C2`, `C4` and `C6` cannot be run, but `B3` and `B3a` in
-[`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) press the Heron button and check it disconnects — so what is
+[`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) press the Heron button and check it disconnects — so what is
 untested is the *old* mechanism, not the ability to stop.
 
 ### Why the code was kept rather than deleted
@@ -2654,7 +2654,7 @@ heron_capabilities            <- the request handler, on the asyncio event loop
 `import model2vec` costs **1.0 s** in a fresh process. On the event loop, inside a handler, it was measured
 still importing at 40 s and past 170 s in another run.
 
-**Closing [`A7`](../NEEDS-CHECKING.md) is what caused it.** Until `model2vec` was installed that import
+**Closing [`A7`](NEEDS-CHECKING.md) is what caused it.** Until `model2vec` was installed that import
 raised `ImportError` instantly, Heron degraded to the `lexical` backend, and the handler always answered.
 Installing it — to prove the search understands meaning, which it does — turned an instant failure into an
 unbounded wait. **Two register rows, each correct alone, and the failure lived only in their combination.**
@@ -2754,7 +2754,7 @@ twelve seconds reads as a hang; the same freeze labelled **12 s** reads as a dur
   API surface agreeing across every runtime this add-in claims - net472, net48, net8.0-windows and
   net10.0-windows - which is the whole "worked in 2020, broke in 2025" class, caught without opening
   Revit. **It is not evidence that the banner appears.** `B6` to `B13` in
-  [NEEDS-CHECKING.md](../NEEDS-CHECKING.md) need Revit open, and `B8` - a write showing amber rather
+  [NEEDS-CHECKING.md](NEEDS-CHECKING.md) need Revit open, and `B8` - a write showing amber rather
   than blue - is the one that matters.
 - **The compiler was believed absent and was not.** This was written as if nothing could be built here,
   because the .NET installer download is blocked; the distribution's own package is not.

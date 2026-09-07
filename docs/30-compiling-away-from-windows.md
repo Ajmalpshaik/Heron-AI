@@ -154,7 +154,7 @@ the signature it is used with. That is the entire *"worked in 2020, broke in 202
 otherwise surfaces as an add-in that will not load, in front of the user, mid-job.
 
 **It proves nothing about behaviour.** Code that compiles can move a duct 200 feet instead of 200
-millimetres and compile just as cleanly. `D3` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) — *move
+millimetres and compile just as cleanly. `D3` in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — *move
 them, then measure one* — is what catches that, and no compiler substitutes for it.
 
 So the honest sentence after a green run is **"it compiles on 2020 through 2027"**, and not one word
@@ -167,7 +167,7 @@ compiles say exactly what five did, about more versions.
 
 `RevitWrite.DocumentKey()` used `Document.CreationGUID` to identify the pinned document for Golden
 Rule 20. It compiled clean on 2024 and failed on 2020: **the property does not exist there.** It had
-been named in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) as a *likely* problem spot, by reading — and
+been named in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) as a *likely* problem spot, by reading — and
 reading is what had already passed it twice.
 
 The fix was not a `#if`. The document's Project Information element carries a `UniqueId` that is created
@@ -209,7 +209,7 @@ bridge speaks the same protocol; only the two lines that open the connection dif
 All 32 of its checks pass here — the framing, the JSON parser, the token, the newest-connection-wins
 handover, the toggle cycle, and **the whole lease**. What it does **not** cover is the Windows named
 pipe itself: its naming, its security descriptor, and the `CreateNewInstance` flag that
-[HANDOVER §4](../HANDOVER.md) note 2 was written about. Revit runs on Windows, so `A4` in the register
+[HANDOVER §4](HANDOVER.md) note 2 was written about. Revit runs on Windows, so `A4` in the register
 still means the Windows run — this is a strong signal ahead of it, not a replacement for it.
 
 **It found a real defect the first time it ran**, in the test rather than in the bridge: the lease

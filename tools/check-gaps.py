@@ -330,7 +330,7 @@ def check_register():
     """NEEDS-CHECKING, split the same way this tool splits everything."""
     print()
     print("THE REGISTER - what it says is left")
-    text = read("NEEDS-CHECKING.md")
+    text = read("docs/NEEDS-CHECKING.md")
     rows = re.findall(r"^\| (~~)?\*\*([A-Z]\d+[a-z]?)\*\*(~~)?\s*\|(.*)$",
                       text, re.M)
     done = [r for r in rows if r[0]]

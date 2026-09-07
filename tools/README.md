@@ -146,7 +146,7 @@ python tools/check-compile.py 2020 2024       # just those two
 ```
 
 Builds all four projects against every Revit version, using the Revit API reference assemblies from
-NuGet. This is `A2`, `A3` and `A5` of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) in one command instead
+NuGet. This is `A2`, `A3` and `A5` of [`NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) in one command instead
 of one version at a time.
 
 **It does not need Windows and it does not need Revit** — which is the point, because until
@@ -199,7 +199,7 @@ fragment's own file and line, not at the generated wrapper.
 compile on all 8 releases"* until 2026-09-02, by which point the library was well past four times that -
 a number typed into prose goes stale the day after it is true, and a stale green is worse than no
 claim, because it is believed. **Run the tool; its own output is the count.** What each session records
-instead is in [`../HANDOVER.md`](../HANDOVER.md): which releases were compiled, when, and by what.
+instead is in [`../docs/HANDOVER.md`](../docs/HANDOVER.md): which releases were compiled, when, and by what.
 
 Same limit as every compiler: it says nothing about **behaviour**. That is [D-30](../docs/DECISIONS.md)'s
 proof with a negative case, and it needs a real model.
