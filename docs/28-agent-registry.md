@@ -376,8 +376,8 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-WSP-PTH-007` | Path Manager Agent | Product / data / derived separation enforced in code | T1 | — | 1 |
 | `HERON-WSP-MIG-008` | Workspace Migration Agent | Schema and layout migrations. Idempotent, versioned, backed up | T1 | ADMIN | — |
 | `HERON-WSP-CLN-009` | Cleanup Agent | Identifies unused artefacts. **Archives, never deletes** | T1 | MODIFY | — |
-| `HERON-WSP-BAK-010` | Backup Agent | Backs up the data class. Not the derived index | T1 | — | — |
-| `HERON-WSP-RST-011` | Restore Agent | Restore and rebuild. Must be tested, not merely implemented | T1 | ADMIN | — |
+| `HERON-WSP-BAK-010` | Backup Agent | Backs up the data class. Not the derived index. **Built 2026-09-08** — `tools/heron-backup.py`. Written after measuring that nothing in the repository backed up anything: the audit trail is Heron's only record of what it has done and is not in git. Excludes rather than includes, so a file nobody anticipated is kept by default | T1 | — | — |
+| `HERON-WSP-RST-011` | Restore Agent | Restore and rebuild. Must be tested, not merely implemented. **Built 2026-09-08**, in the same commit as the Backup Agent because docs/21 s8 calls an untested restore path a belief. `drill` does the round trip into scratch and compares content hashes both ways. Refuses without `--confirm`, refuses a backup that fails verification, and takes a safety copy of whatever it overwrites | T1 | ADMIN | — |
 | `HERON-WSP-REG-012` | File Registry Agent | What exists, where, and under which identity | T1 | — | — |
 
 ## 13. Naming & Taxonomy — 7

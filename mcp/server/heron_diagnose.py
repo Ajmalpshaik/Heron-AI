@@ -211,6 +211,52 @@ def _history(components, notes):
     return found
 
 
+def _backups(components, notes):
+    """
+    Has the user's own data ever been copied, and how long ago.
+
+    Loaded by path because the tool's filename has hyphens in it and because
+    the path logic must stay in ONE place - asking the backup agent where
+    backups live beats this file working it out again.
+
+    It reports and never takes one. A diagnosis that quietly started copying
+    files would be doing work nobody asked for, at the moment they are already
+    dealing with something going wrong.
+    """
+    import importlib.util
+    path = os.path.join(ROOT, "tools", "heron-backup.py")
+    spec = importlib.util.spec_from_file_location("heron_backup_tool", path)
+    if spec is None or spec.loader is None:
+        notes.append("the backup agent could not be loaded from %s" % path)
+        return None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    found = module.backups()
+    if not found:
+        components.append(_component(
+            "backups", HEALTH.WARNING,
+            "none. The audit trail is Heron's only record of what it has done, "
+            "it is not in git, and nothing has ever copied it. Run  "
+            "python tools/heron-backup.py backup"))
+        return []
+
+    newest, path_of_newest, manifest = found[0]
+    problems = module.verify(path_of_newest, manifest)
+    if problems:
+        components.append(_component(
+            "backups", HEALTH.WARNING,
+            "%d taken, and the newest does not verify: %s"
+            % (len(found), problems[0])))
+    else:
+        components.append(_component(
+            "backups", HEALTH.HEALTHY,
+            "%d taken, newest %s, %d file(s), verified"
+            % (len(found), manifest.get("taken", newest),
+               len(manifest.get("files", [])))))
+    return found
+
+
 def _tools(components, notes):
     """Is every declared tool actually being offered."""
     try:
@@ -263,6 +309,7 @@ def diagnose():
     releases = _ask(_releases, "releases", components, notes)
     history = _ask(_history, "history", components, notes)
     declared = _ask(_tools, "tools", components, notes)
+    copies = _ask(_backups, "backups", components, notes)
 
     return {
         "health": HEALTH.Health(components),
@@ -272,6 +319,7 @@ def diagnose():
         "releases": releases,
         "history": history,
         "tools": declared,
+        "backups": copies,
     }
 
 

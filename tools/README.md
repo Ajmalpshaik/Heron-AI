@@ -300,6 +300,44 @@ member. A checker that finds nothing is evidence about the checker until it has 
 
 ---
 
+## `heron-backup.py` — the user's own data, and getting it back
+
+```bash
+python tools/heron-backup.py backup            # take one
+python tools/heron-backup.py drill             # the round trip, into scratch
+python tools/heron-backup.py list | verify
+python tools/heron-backup.py restore <name> --confirm
+```
+
+`%APPDATA%\Heron` holds four files and **a grep for `backup` across every `.py`, `.cs` and `.ps1` in
+this repository returned nothing.** The audit trail is Heron's only record of what it has ever done,
+[`HeronAudit`](../platform/Heron.Core/HeronAudit.cs) never prunes it, and it is not in git — so losing
+it loses the whole history with no way back. The config holds `write.enabled`, which
+[docs/12 §9](../docs/12-security-and-permissions.md) calls a security boundary.
+
+**It excludes rather than includes.** [docs/21 §8](../docs/21-resilience-and-operations.md) says not to
+back up the derived index, so `knowledge/*.db` is skipped with that reason recorded in the manifest.
+Everything else under the data folder is copied — including files nobody has thought of yet. An
+include-list is a decision taken today about tomorrow's files: the day somebody drops a personal
+fragment library in there, an include-list silently misses it and nobody finds out until they need it.
+
+**`drill` is the point, not a nicety.** docs/21 §8: *"Restore must be tested, not merely implemented.
+An untested restore path is not a restore path — it is a belief."* The drill backs up, restores into a
+scratch folder, and compares content hashes both ways, touching nothing real. It is why the Restore
+Agent shipped in the same commit as the Backup Agent.
+
+Restore refuses without `--confirm`, refuses a backup that fails verification, and **takes a safety copy
+of whatever it is about to overwrite** — the thing a restore destroys is the only record of the machine
+a second ago.
+
+**What it does not protect against, plainly:** the default copy sits under the data folder it protects.
+That survives an uninstall, an update, and a deleted audit folder. It does not survive losing the disk.
+Pass `--to` a path on another drive for that.
+
+The working prototype of `HERON-WSP-BAK-010` and `HERON-WSP-RST-011`.
+
+---
+
 ## `generate-fragment-catalog.py` — the library, readable
 
 ```bash
