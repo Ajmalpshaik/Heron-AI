@@ -438,7 +438,17 @@ def draft_from_record(frag, record):
 
     if negative and negative.get("ok"):
         negative_text = describe_phase(negative)
-        if not looks_empty(negative):
+        # `provides` is a method on Fragment; a stub in the tests may expose it
+        # as a plain list, and a record can be drafted for a fragment whose
+        # contract cannot be read at all - in which case judge everything,
+        # which is the stricter behaviour and the right default.
+        try:
+            declaration = frag.provides() if callable(frag.provides) else frag.provides
+            declared = set(d.get("name") for d in (declaration or [])
+                           if isinstance(d, dict) and d.get("name"))
+        except Exception:
+            declared = None
+        if not looks_empty(negative, declared):
             negative_text += ("\n\nWARNING: this did NOT come back empty. A "
                               "negative case that returns content is a "
                               "FINDING, not a proof - the fragment may be "
@@ -557,7 +567,8 @@ NOTE_KEYS = frozenset(("findings",))
 # single words below do not fit that shape and are listed because they were
 # actually observed, not because the pattern was widened to admit them.
 REJECT_PREFIX = re.compile(r"^(no|not|un)[A-Z]")
-REJECT_NAMES = frozenset(("unmeasurable", "unplaced", "unenclosed"))
+REJECT_NAMES = frozenset(("unmeasurable", "unplaced", "unenclosed",
+                          "elementsWithNoMaterial"))
 
 
 def _is_accounting(key):
@@ -591,7 +602,7 @@ def _is_helper_object(value):
     return False
 
 
-def looks_empty(phase):
+def looks_empty(phase, declared=None):
     """Whether a phase's numbers really do read as nothing.
 
     THE COUNTS DECIDE (D-51), AND ONLY THE COUNTS OF WHAT WAS FOUND (D-52).
@@ -618,6 +629,19 @@ def looks_empty(phase):
     provides = phase.get("provides") or {}
     if not provides:
         return False
+
+    # JUDGE ONLY WHAT THE FRAGMENT SAID IT WOULD PROVIDE. The executor reports
+    # every variable left in scope, which includes the fragment's own working
+    # values - `MetresPerFoot` 0.3048, `cubic` 0.028, a `Func` it defined. Those
+    # are never zero and never change between runs, so judging them meant a
+    # fragment could not demonstrate an empty answer no matter what it found.
+    #
+    # The contract is the authority on which names are results, and using it
+    # replaces guesswork about leftovers with the fragment's own declaration.
+    if declared:
+        provides = dict((k, v) for k, v in provides.items() if k in declared)
+        if not provides:
+            return False
 
     counted = 0
     for key, value in provides.items():

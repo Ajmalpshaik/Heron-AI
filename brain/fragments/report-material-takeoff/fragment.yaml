@@ -56,6 +56,26 @@ contract:
     - name: elementsWithNoMaterial
       type: IList<ElementId>
 
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,641 elements), Revit 2024, session 42676
+  positive_case: 4 walls selected in Snowdon Towers Sample HVAC - 'Exterior - Brick on Mtl.
+    Stud', drawn in the host model because the sample's own walls are in a LINKED model and
+    the executor skips links deliberately - run as it would normally be run. returned addTo
+    Action`3, areas 7 entry(ies), elementsWithNoMaterial 0 item(s), paintedMaterials 0 item(s),
+    volumes 5 entry(ies). inputs came elements from the selection (4). on Snowdon Towers Sample
+    HVAC
+  negative_case: 28 duct taps selected in Snowdon Towers Sample HVAC - none of which carries
+    a material, so the answer had to be empty. returned addTo Action`3, areas 0 entry(ies),
+    elementsWithNoMaterial 28 item(s) [1383647, 1383653, 1384651, ...], paintedMaterials 0
+    item(s), volumes 0 entry(ies). inputs came elements from the selection (28). on Snowdon
+    Towers Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 452f1e88de47b242
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
