@@ -276,7 +276,7 @@ a different container — **do not conclude "no compiler here" from a failed dow
 | ~~**B5b**~~ | ~~Build on Windows and deploy into Revit~~ | **DONE 2026-09-07, on the owner's PC.** `dotnet build -c Debug -p:RevitVersion=2024` — **0 warnings, 0 errors**, the first time the banner has been compiled by the **Windows** toolchain rather than Linux/NuGet reference assemblies. Deployed with `tools/deploy-addin.ps1 -RevitVersion 2024` while Revit was closed, and the **deployed** `Heron.Revit.Addin.dll` (68,608 bytes, was 53,760) was read back off disk to confirm it carries `HeronActivityBanner` and the literals `is reading your model`, `is changing your model`, `READING`, `CHANGING`. `ui.activityBanner` is absent from `%APPDATA%\Heron\config\heron.config`, so the **default `true`** applies and the banner is armed. **The bits Revit will load are now on disk — that is all this says. It still has never appeared on a screen; B6-B13 are untouched** |
 | ~~**B6**~~ | ~~Connect, then ask for a count~~ | **PROVED 2026-09-07**, Revit 2024, `Snowdon Towers Sample HVAC` (9,628 elements), on DISPLAY1 - the **non-primary** monitor at x=-1920. Captured by screen-grabbing Revit's own window every ~33 ms while the job ran. **SEEN.** Dark card, **top centre of Revit's window**, **"Heron AI is reading your model"**, sub-line **"Counting what is in the model"**, blue **READING** chip. It appeared **before** the green finished card, which is what settles the ordering: had `Raise` come after the work there would have been no reading frame at all, and there was one. **Caveat on the word 'frozen'** - the Revit-side work was **12 ms**, so nothing was frozen long enough to see. The pre-`Raise` ordering holds; "visible during a long freeze" still wants a genuinely slow job |
 | ~~**B7**~~ | ~~Watch the same card after the answer arrives~~ | **PROVED 2026-09-07**, Revit 2024, `Snowdon Towers Sample HVAC` (9,628 elements), on DISPLAY1 - the **non-primary** monitor at x=-1920. Captured by screen-grabbing Revit's own window every ~33 ms while the job ran. **Turns green**, **"Heron AI has finished"**, sub-line **"Done - 12 ms"**, green **DONE** chip. Held **1,533 ms** measured frame-to-frame, then gone - the spec said about 1.4 s. Neither firing early nor failing to fire: `End` is reached |
-| **B8** | With `write.enabled = true`, ask to move ducts and approve | **Amber**, **"Heron AI is changing your model"**, chip reads **CHANGING**. This is the whole point of the feature — if a write shows the blue reading card, stop and fix it before using Heron on real work |
+| **B8** | With `write.enabled = true`, ask to move ducts and approve | **BLOCKED 2026-09-07 - THE WRITE PATH CANNOT RUN AT ALL.** Not the amber/blue question: the request never reaches Revit. `revit_apply_move` returns *"Missing or wrong token"*, which is `BridgeServer.Dispatch` refusing it as **unauthenticated**. **One JSON key, `token`, is used for two different secrets** - see the section under this table. **The amber CHANGING card has still never been seen, and cannot be until this is fixed.** Everything up to the write worked: the gate refused correctly with `write.enabled=false`, naming the file; with it `true` the preview ran and reported **3 ducts in Project1**. It is the apply, and only the apply, that is broken |
 | ~~**B9**~~ | ~~Click a ribbon button through the card while it is up~~ | **PROVED 2026-09-07 by reading the window itself**, which is stronger than a click and touches nothing. The live banner window - WPF, titled **"Heron AI"**, class `HwndWrapper[DefaultDomain;;...]`, 460x78 at -1190,4 - has `exStyle` **0x80800A8**: **`WS_EX_TRANSPARENT` (0x20) is SET**, so clicks pass through and it cannot eat one. Also `WS_EX_NOACTIVATE` - never steals focus - and `WS_EX_TOOLWINDOW` - stays out of Alt+Tab. **`SetWindowLongPtrW` was found on 2024**, so the clickable-banner fallback was not taken. Older releases still unproven |
 | ~~**B10**~~ | ~~Ask something with a dialog open in Revit, so it refuses with `revit_busy`~~ | **PROVED 2026-09-07**, owner's Visibility/Graphics dialog left open on purpose. The card goes **RED** - red dot, red **STOPPED** chip - reading **"Heron AI stopped"** over **"Revit was busy - nothing was sent"**. **This is the case that was invisible before**: the chat got a sentence and the screen showed nothing. Run twice; the client waited the full **10.3 s** busy timeout both times before the refusal rendered, which is `revit.busyTimeoutSeconds` = 10 doing its job, not a hang |
 | ~~**B11**~~ | ~~Run a batch of fragments back to back~~ | **PROVED 2026-09-07**, Revit 2024, `Snowdon Towers Sample HVAC` (9,628 elements), on DISPLAY1 - the **non-primary** monitor at x=-1920. Captured by screen-grabbing Revit's own window every ~33 ms while the job ran. **ONE steady card, no strobe.** Five jobs back to back: the banner went up once and stayed up **2,664 ms** through all five, never once returning to the no-banner frame, and changed appearance only **twice** (reading, then finished). The hide timer is being cancelled by the next `Begin`. **Needs `HERON_CLIENT_ID` pinned** or each CLI call is a new chat and the lease refuses the second - see the note under this table |
@@ -297,6 +297,45 @@ model. Refusing to record evidence"* while plain `count` named `Snowdon Towers S
 the same Revit, same moment. **Nothing reached Revit and no banner was raised**, so it cost
 nothing here — but the proof harness could not name a model that the bridge could. Unexplained,
 and it blocks fragment proofs from the command line.
+
+### The write path is broken — found 2026-09-07, the first time it was ever run
+
+**`revit_apply_move` cannot succeed, on any model, with any settings.** This is not a tuning problem
+and not a Revit problem. The same JSON key means two different things at two different layers:
+
+| Where | Line | Reads `token` as |
+|---|---|---|
+| [`BridgeServer.cs`](revit/Heron.Bridge/BridgeServer.cs) | 349 | the **session** token, from the discovery file — the auth gate, checked **before anything else** |
+| [`RevitWrite.cs`](revit/Heron.Revit.Addin/RevitWrite.cs) | 103 | the **approval** token, minted by `preview_move` |
+
+[`heron_mcp_server.py`](mcp/server/heron_mcp_server.py) line 464 sends the approval token as
+`op_args={"token": token}`, and [`heron_bridge_client.py`](mcp/client/heron_bridge_client.py) line 240
+does `body.update(op_args)` — so the approval token **overwrites** the session token that line 239 had
+just put in the body. `BridgeServer` then sees a token that is not the session's and refuses.
+
+**There is no value that works.** Send the session token and authentication passes but `ExecuteMove`
+receives the wrong secret and rejects the approval. Send the approval token and authentication fails
+first. The write path is structurally impossible until one of the two is renamed.
+
+**It was never going to be caught by a compiler or a test.** Both sides compile perfectly; both read a
+string called `token` from a JSON object. Only running it end-to-end against a live Revit shows it,
+which is exactly what the server's own docstring warned: *"The add-in code behind revit_apply_move has
+never been compiled or run."* It has now, and this is what it found.
+
+**The fix is four edits and a rename**, keeping `token` for authentication because that is what the
+bridge checks first and what every other operation already sends:
+
+1. `RevitWrite.cs` 172 — preview returns `Json.Str("approvalToken", preview.Token)`
+2. `RevitWrite.cs` 103 — `ExecuteMove(app, Json.ReadString(request, "approvalToken"))`
+3. `heron_mcp_server.py` 422 — `approval.offer(reply.get("approvalToken"), summary)`
+4. `heron_mcp_server.py` 464 — `op_args={"approvalToken": token}`
+
+Then rebuild, redeploy, and **restart Revit** — the add-in half is compiled in. Worth doing in the same
+restart as `B13`.
+
+**A second thing to decide while fixing it:** `body.update(op_args)` lets any caller silently overwrite
+`op`, `token` or `client`. Renaming the key fixes today's bug; making `update` refuse to overwrite the
+three reserved keys would stop the next one.
 
 ## Group C — the gate, before anything can move
 
