@@ -79,6 +79,11 @@ import heron_config                            # noqa: E402
 # Setting it makes several commands one conversation, which is what they are.
 CLIENT_ID = os.environ.get("HERON_CLIENT_ID") or uuid.uuid4().hex[:12]
 
+# The three keys the request envelope owns. An operation argument that reuses
+# one of them would overwrite it, and the failure that produces is remote and
+# misleading rather than local and obvious.
+RESERVED_KEYS = frozenset(("op", "token", "client"))
+
 # How long to wait for an answer once the bridge has accepted the connection.
 #
 # This must stay comfortably ABOVE any limit the bridge applies to its own work.
@@ -240,6 +245,22 @@ class Bridge(object):
         if op_args:
             # Arguments sit alongside op and token, never nested one level down:
             # the bridge reads top-level keys only, deliberately.
+            #
+            # THAT FLATNESS IS WHY THESE THREE ARE RESERVED. `op_args` used to be
+            # merged straight over the envelope, so an argument called "token"
+            # silently replaced the session token and the bridge refused the whole
+            # request as unauthenticated - which is exactly what happened to
+            # move_elements, and it cost a live-Revit session to find because
+            # both sides compiled and both read a string called "token".
+            # Refusing here turns that class of mistake into an immediate, local
+            # error naming the key, instead of a puzzling refusal from Revit.
+            clash = RESERVED_KEYS.intersection(op_args)
+            if clash:
+                raise ValueError(
+                    "op_args may not contain %s - %s reserved for the request "
+                    "envelope. Name the argument something else."
+                    % (", ".join(sorted(clash)),
+                       "that key is" if len(clash) == 1 else "those keys are"))
             body.update(op_args)
         payload = (json.dumps(body) + "\n").encode("utf-8")
 

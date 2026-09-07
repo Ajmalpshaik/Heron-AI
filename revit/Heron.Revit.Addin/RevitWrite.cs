@@ -100,7 +100,12 @@ namespace Heron.Revit.Addin
                         Json.ReadString(request, "millimetres"));
 
                 case "move_elements":
-                    return ExecuteMove(app, Json.ReadString(request, "token"));
+                    // "approvalToken", NOT "token". BridgeServer.Dispatch has already
+                    // spent "token" on authentication before this method is reached, so a
+                    // request carrying the approval slip under that name never arrives -
+                    // it is refused at the door as unauthenticated. One key cannot be two
+                    // secrets. Found 2026-09-07, the first time the write path was run.
+                    return ExecuteMove(app, Json.ReadString(request, "approvalToken"));
 
                 default:
                     return null;      // not ours; RevitOperations reports it
@@ -169,7 +174,9 @@ namespace Heron.Revit.Addin
             lock (PreviewLock) { _pending = preview; }
 
             return Json.Ok(
-                Json.Str("token", preview.Token),
+                // Named apart from the session token on purpose - see the note at the
+                // move_elements case above.
+                Json.Str("approvalToken", preview.Token),
                 Json.Num("willMove", movable.Count),
                 Json.Num("willSkip", skipped.Count),
                 Json.Str("category", preview.Category),

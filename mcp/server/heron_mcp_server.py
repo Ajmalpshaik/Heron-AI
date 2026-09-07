@@ -419,7 +419,9 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
         "{:,}".format(reply.get("willMove", 0)) + " " + str(reply.get("category")),
         describe(millimetres), reply.get("document"))
 
-    approval.offer(reply.get("token"), summary)
+    # "approvalToken", not "token" - the add-in mints it under that name so it
+    # cannot collide with the session token the bridge authenticates on.
+    approval.offer(reply.get("approvalToken"), summary)
 
     lines = ["This would move %s." % summary]
 
@@ -461,7 +463,12 @@ def revit_apply_move() -> str:
     # cannot be known from here - and asking again would move the same
     # elements a second time. Everything before Step 6 only read, so retrying
     # was free; this is the first request where it is not.
-    reply = session.request("move_elements", op_args={"token": token}, idempotent=False)
+    # The key MUST NOT be "token": the client puts the session token there, and
+    # an op_arg of that name used to overwrite it, so the bridge refused the
+    # request as unauthenticated and no move ever reached Revit. The client now
+    # refuses reserved keys outright rather than letting that happen quietly.
+    reply = session.request("move_elements", op_args={"approvalToken": token},
+                            idempotent=False)
     session.close()
 
     # Everything that is not a success goes through the Failure Analysis Agent,
