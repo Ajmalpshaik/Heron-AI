@@ -133,8 +133,13 @@ def main():
                 names = [t["name"] for t in json.loads(listed)["result"]["tools"]]
             except Exception:
                 names = []
-        check(len(names) == 10, "the host is offered all ten tools (got %d)" % len(names))
+        # ELEVEN since heron_gaps was added (089c570). The number is asserted
+        # rather than the list, so a tool appearing or vanishing is noticed - and
+        # this count was left at ten when the eleventh arrived, which is exactly
+        # the drift it exists to catch.
+        check(len(names) == 11, "the host is offered all eleven tools (got %d)" % len(names))
         check("heron_capabilities" in names, "heron_capabilities is among them")
+        check("heron_gaps" in names, "heron_gaps is among them")
 
         print()
         print("  the call that hung for thirty minutes")
@@ -189,7 +194,7 @@ def main():
             print("  %s" % line)
         return 1
 
-    print("PASSED - a real host starts Heron, is offered ten tools, and gets an")
+    print("PASSED - a real host starts Heron, is offered eleven tools, and gets an")
     print("answer from every one it asks - inside a deadline rather than eventually.")
     print()
     print("It says NOTHING about whether any fragment WORKS. 13 of 348 are")

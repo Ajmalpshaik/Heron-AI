@@ -2896,3 +2896,63 @@ still find something — `looks_empty` returning True on a POSITIVE run is itsel
 circumstance in which a rule change should be distrusted. The evidence they rest on is recorded in each
 `proof:` block and can be re-read against a stricter rule later.
 
+## D-53 — A fragment that cannot come back empty is proved by TRACKING instead
+
+**Status:** Accepted · **Date:** 2026-09-07 · **Found during:** the owner asking to carry on proving fragments
+**Affects:** [`heron_validate.py`](../brain/heron_validate.py) `draft_from_record`, [D-30](DECISIONS.md)
+
+### Context
+
+Sixteen unproven fragments returned something for **every** selection tried — 28 duct taps, 16 spaces,
+4 walls, 12 sheets, 37 equipment. Not because they were broken. `COUNT_ELEMENTS` describes whatever it
+is handed; there is **no** selection that makes it report nothing. The only way to get an empty answer
+is to hand it nothing, which the executor refuses as an unbound need — a refusal, not an answer.
+
+So D-30's negative case, read as *"the answer must come back empty"*, cannot be satisfied by them. Ever.
+Not for want of trying.
+
+### What the negative case is actually FOR
+
+[`heron_fragment.py`](../brain/heron_fragment.py) says it plainly, above `PROOF_REQUIRED`: it is
+**"the one that catches 'succeeded and did nothing'"**. A fragment that ignores what it was given, or
+falls back to the active view or the whole model, still returns a plausible answer. The empty case
+catches that because a fallback cannot produce nothing.
+
+**Tracking catches the same fault more directly.** Across five selections the answers were:
+
+| Selected | 28 | 16 | 4 | 12 | 37 |
+|---|---|---|---|---|---|
+| `count-elements` → `count` | 28 | 16 | 4 | 12 | 37 |
+| `describe-elements` → `described` | 28 | 16 | 4 | 12 | 37 |
+| `report-location` → `locations` | 28 | 16 | 4 | 12 | 37 |
+
+**A fragment falling back to anything could not match five different counts exactly.**
+
+### The decision
+
+**For a fragment that cannot produce an empty answer, the negative leg is met by the answer TRACKING
+the input across several different inputs.** The run record carries a `tracking` list; the draft records
+each pairing and says which field followed which count.
+
+### What this does NOT license
+
+**The tracking field must be a RESULT, not a rejection count.** Three of the sixteen matched the
+selection on `withoutJoins`, `skippedNotSchedules` and `referencesNothing` — they matched because they
+**rejected everything**, which is the opposite of evidence. `REPORT_JOINED_ELEMENTS` found `joins: 0` in
+all five; it has never found a join here and is **not** proved by this decision.
+
+**It does not apply to fragments that CAN come back empty.** `READ_MEP_SYSTEM` returns `systemName: 0`
+on spaces, so it has a real negative case and must keep using it. Tracking is for the ones with no such
+arrangement available, not a cheaper route for the ones that have.
+
+### The risk being accepted
+
+**This is the fifth loosening in one day** — D-51, D-52 twice, and now this — and every one has been
+argued in the same direction. That pattern is the reason this one was put to the owner as a question
+with the alternative *"leave them unproven"* stated first, rather than decided at the end of a long
+session.
+
+What makes it different in kind, and the only reason it is defensible: **the four before it removed
+things from a check. This one replaces a check that cannot run with a different check that can** — and
+five exact matches against five different inputs is more evidence than one empty answer, not less.
+

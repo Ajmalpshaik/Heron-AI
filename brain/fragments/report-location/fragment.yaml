@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -48,6 +48,41 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,641 elements), Revit 2024, session 42676
+  positive_case: '37 mechanical equipment items selected in Snowdon Towers Sample HVAC - run
+    as it would normally be run. returned MillimetresPerFoot 304.8, findings 2 item(s) [37
+    element(s): 37 at a point, 0 running between two, 0 repor..., These are measured from
+    the project''s internal origin, which...], locations 37 item(s) [id 1365188: AT (-11131,
+    -1792, 5078) mm, id 1366142: AT (-9989, 3992, 5207) mm, id 1366299: AT (-3099, 7338, 8886)
+    mm, ...], withoutLocation 0. inputs came elements from the selection (37). on Snowdon
+    Towers Sample HVAC'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-location\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 5 different selections:\n\n      28 (28 duct taps) selected -> locations 28 item(s)\
+    \ [id 1383647: RUNS from (-10724, 3194, 5105) mm to (-10724, 52..., id 1383653: AT (-10724,\
+    \ 3042, 5105) mm, id 1384651: RUNS from (-11109, 6136, 5104) mm to (-11109, 62..., ...]\n\
+    \      16 (16 spaces) selected -> locations 16 item(s) [id 1410865: AT (-2572, -5232,\
+    \ -1054) mm, id 1410870: AT (-2540, 7807, 2464) mm, id 1410963: AT (-24459, 4810, 5740)\
+    \ mm, ...]\n      4 (4 walls) selected -> locations 4 item(s) [id 1543126: RUNS from (20811,\
+    \ 10901, 5740) mm to (20811, 693..., id 1543148: RUNS from (20811, 6936, 5740) mm to (26145,\
+    \ 6936..., id 1543192: RUNS from (26145, 6936, 5740) mm to (26145, 1090..., ...]\n   \
+    \   12 (12 sheets) selected -> locations 12 item(s) [id 1363532: no position of its own\
+    \ - the CENTRE OF ITS BOUND..., id 1363547: no position of its own - the CENTRE OF ITS\
+    \ BOUND..., id 1363562: no position of its own - the CENTRE OF ITS BOUND..., ...]\n  \
+    \    37 (37 mechanical equipment items) selected -> locations 37 item(s) [id 1365188:\
+    \ AT (-11131, -1792, 5078) mm, id 1366142: AT (-9989, 3992, 5207) mm, id 1366299: AT (-3099,\
+    \ 7338, 8886) mm, ...]\n\n    Different inputs, exact matches every time. A fragment falling\
+    \ back to the active view, the whole model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7cbbd28812f7b1e7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
