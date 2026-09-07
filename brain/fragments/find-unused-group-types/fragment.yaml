@@ -63,6 +63,33 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,654 elements), Revit 2024, session 42676
+  positive_case: the owner deliberately created unused group definitions in Snowdon Towers
+    Sample HVAC - one group deleted and one ungrouped, leaving the definitions behind with
+    nothing placed. A defect-finder cannot be proved on a model that has no defect, so the
+    defect was built on purpose. returned findings 2 item(s) [2 group definition(s) have nothing
+    placed, out of 5 walked., Nothing was deleted, deliberately. Deleting a group definiti...],
+    offeredByAPlacedGroup HashSet`1, scanned 5, unusedGroupTypes 2 item(s) [1543460, 1543572],
+    unusedNames 2 item(s) [Group 2, Group 3], usedOnlyAsAttached 0 item(s). on Snowdon Towers
+    Sample HVAC
+  negative_case: 'the same model minutes earlier, before any group was created - two group
+    types existed and both were placed, so the answer had to be empty. returned findings 2
+    item(s) [0 group definition(s) have nothing placed, out of 2 walked., Nothing was deleted,
+    deliberately. Deleting a group definiti...], offeredByAPlacedGroup HashSet`1, scanned
+    2, unusedGroupTypes 0 item(s), unusedNames 0 item(s), usedOnlyAsAttached 0 item(s). on
+    Snowdon Towers Sample HVAC
+
+
+    WARNING: this did NOT come back empty. A negative case that returns content is a FINDING,
+    not a proof - the fragment may be falling back to something it was not given.'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ba0d933624f1f873
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
