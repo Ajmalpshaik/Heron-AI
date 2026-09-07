@@ -1,12 +1,24 @@
 # tools
 
-**Ten scripts that keep this repository honest.** Plain Python 3; the two that compile also need the
+**The scripts that keep this repository honest.** Plain Python 3; the two that compile also need the
 .NET SDK, and `check-fragments-compile.py` and `check-routing.py` need PyYAML. Run them from the
 repository root.
 
-It said *"three small scripts that keep the documentation honest"* until 2026-08-29, which had been
-wrong on both halves for a while: there are ten, and five of them check **code** rather than prose.
-Counting them is the same discipline the rest of this file is about.
+It said *"three small scripts that keep the documentation honest"* until 2026-08-29, then **"ten"**
+until 2026-09-07. The second one was *correct on the day it was written* — 2026-08-30, in the commit
+that added `check-routing.py` — and went stale **the following day**, when `check-intrusion.py` landed
+and its own section was added to this file without the number at the top being touched. It then sat
+wrong for a week, in the paragraph that boasts about counting.
+
+**So the number is not typed here any more.** It is the one fact in this file that a reader can derive
+in a second:
+
+```bash
+ls tools/*.py | wc -l
+```
+
+Counting them is the same discipline the rest of this file is about, and it took three goes to apply it
+to this sentence.
 
 They exist because this repository already got its own numbers wrong twice — the agent registry
 asserted **166 agents while its own departments summed to 196**, and a build-step figure said 20 where
@@ -49,6 +61,43 @@ prose.
 > A number in that document is never typed by hand. If it disagrees with the rows, the rows win.
 
 Run it after adding, removing or re-tiering any agent.
+
+---
+
+## `agent-count.py` — how much of the 250 exists
+
+```bash
+python tools/agent-count.py
+```
+
+The register: every department with **TOTAL · BUILT · HOST · LEFT · T1 LEFT**, the tier split, and
+where Phase 0/1 actually stands. `recount-agent-registry.py` keeps the registry honest about *itself*;
+`check-metadata.py` audits it file by file. Neither answers *what proportion of each department is
+built*, which is the question asked before deciding what to build next, and which was being answered by
+adding up columns by hand.
+
+**Three states, not two — and that is the point.** An agent is BUILT, LEFT, or **HOST**: delegated to
+Claude Code on purpose by [D-01](../docs/DECISIONS.md). Collapsing HOST into LEFT produces a to-do list
+with four items that will never be done, and on 2026-09-07 it did exactly that — a build-state summary
+read *"Phase 0/1 is four agents short"* and recommended building the **Orchestrator**, which
+[docs/02 §7](../docs/02-architecture-overview.md) settles as the host's. Phase 0/1's agent list is
+complete: **45 built, 4 host-provided, 0 outstanding.**
+
+`HOST_PROVIDED` is **imported from `check-metadata.py`**, not repeated here. Two copies of that list is
+the drift this folder exists to prevent.
+
+**It fails when the register does not reconcile**, and all five gates were verified by breaking the
+inputs on purpose before the tool was believed:
+
+| Gate | Fires when |
+|---|---|
+| heading vs rows | a department heading's stated count disagrees with the rows beneath it |
+| totals vs rows | the `**Totals:**` line disagrees with the rows |
+| stale exemption | `HOST_PROVIDED` names an agent the registry no longer has |
+| delegated *and* built | a file claims an agent the host provides — the decision was reversed, or the exemption is stale |
+| ghost claim | a file claims an agent id that is not in the registry |
+
+The fourth is the one nothing else asks, and it is the one that would have caught the error above.
 
 ---
 
