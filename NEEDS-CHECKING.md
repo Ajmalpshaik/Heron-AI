@@ -247,16 +247,22 @@ during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is
 | **B3a** | Press Heron again to disconnect, then re-open the arrow and pick Bridge Status | Says **Not connected** — the item inside the list still runs its own command, it did not become part of the toggle |
 | **B4** | `python mcp/client/heron_bridge_client.py ping` then `count` | Both answer, as they did before Step 6 |
 
-### The activity banner — [D-50](docs/DECISIONS.md), and NOT ONE LINE OF IT HAS RUN
+### The activity banner — [D-50](docs/DECISIONS.md). It compiles; it has never been SEEN
 
-Written on a machine with **no .NET SDK**, so it has not compiled, let alone been seen. It is WPF
-inside Revit's own process, which is the class of code a compile would not have vouched for anyway.
-**`A2`/`A3` must be re-run first** — a banner that will not build costs the whole add-in, not just the
-banner. Then these, on any one release, then `B9` for the rest.
+**It compiles on all eight releases, 2020 through 2027, every project, 0 warnings** — `B5`, closed
+2026-09-07. That is the API surface agreeing and nothing more: **the banner has still never appeared
+on a screen.** Every row below needs Revit open, and `B8` is the one that matters.
+
+**The compiler was there all along.** This work was written believing the container had no .NET SDK,
+because `dot.net`'s installer script is blocked by the egress proxy — but **Ubuntu packages it**, and
+`apt-get install dotnet-sdk-8.0 dotnet-sdk-10.0` puts it on the PATH in about a minute. The 10.0
+package is the one that carries the WindowsDesktop targets, so it is what builds 2025–2027; 8.0 alone
+stops at 2024. That is [docs/30](docs/30-compiling-away-from-windows.md)'s own finding, re-proved from
+a different container — **do not conclude "no compiler here" from a failed download again.**
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| **B5** | Re-run `python tools/check-compile.py 2020 2024` before opening Revit at all | All four projects, **0 warnings**. This is the first WPF-heavy file in the add-in; if it does not build, nothing below can be attempted |
+| ~~**B5**~~ | ~~`python tools/check-compile.py`~~ | **DONE 2026-09-07, on Linux, all eight releases.** `Heron.Core`, `Heron.Bridge`, `Heron.Revit.Addin` and `Heron.Bridge.TestHost` — **ok on 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027**, and the add-in builds **0 warnings, 0 errors** on 2024. The first WPF-heavy file in the add-in does not break the build on any release it claims. **It says nothing about whether the banner appears, where, or in the right colour** |
 | **B6** | Connect, then ask for a count | A dark card at the **top centre of the Revit window**, saying **"Heron AI is reading your model"** with the job under it and a **blue READING** chip. It must appear *while* Revit is frozen, **not after** — appearing only at the end means the pre-`Raise` ordering did not hold, and the whole design rests on it |
 | **B7** | Watch the same card after the answer arrives | It turns green, says **"Heron AI has finished"** with how long it took, holds about **1.4 s**, then goes. If it vanishes instantly, the hide timer is firing early; if it never goes, `End` is not being reached |
 | **B8** | With `write.enabled = true`, ask to move ducts and approve | **Amber**, **"Heron AI is changing your model"**, chip reads **CHANGING**. This is the whole point of the feature — if a write shows the blue reading card, stop and fix it before using Heron on real work |

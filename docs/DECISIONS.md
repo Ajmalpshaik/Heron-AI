@@ -2750,6 +2750,12 @@ twelve seconds reads as a hang; the same freeze labelled **12 s** reads as a dur
   by staying on, and somebody who does not know the banner exists is exactly who needs it.
 - A cosmetic fault must never cost a request: every entry point swallows and logs, and a repeated
   failure drops the window rather than the job.
-- **None of it is proven.** It has never run - there is no .NET SDK on the machine it was written on,
-  so it has not even compiled. `B5` to `B9` in [NEEDS-CHECKING.md](../NEEDS-CHECKING.md) are what turn
-  that into evidence, and until they are run this is a design, not a feature.
+- **It compiles on all eight releases, 2020 through 2027, 0 warnings** (`B5`, 2026-09-07). That is the
+  API surface agreeing across every runtime this add-in claims - net472, net48, net8.0-windows and
+  net10.0-windows - which is the whole "worked in 2020, broke in 2025" class, caught without opening
+  Revit. **It is not evidence that the banner appears.** `B6` to `B13` in
+  [NEEDS-CHECKING.md](../NEEDS-CHECKING.md) need Revit open, and `B8` - a write showing amber rather
+  than blue - is the one that matters.
+- **The compiler was believed absent and was not.** This was written as if nothing could be built here,
+  because the .NET installer download is blocked; the distribution's own package is not.
+  [docs/30](30-compiling-away-from-windows.md) already said so and it was re-learned the hard way.

@@ -288,11 +288,21 @@ raised and lowered by [`RevitDispatcher`](revit/Heron.Revit.Addin/RevitDispatche
 It also holds the outcome for about 1.4 s afterwards with how long the job took — twelve seconds of
 freeze reads as a hang, the same twelve seconds labelled **12 s** reads as a duration.
 
-**NONE OF IT HAS RUN. It has not even compiled** — there is no .NET SDK on the machine it was written
-on, and this is the first WPF-heavy file in the add-in. **Do `B5` first** (`check-compile.py`): a
-banner that will not build costs the whole add-in, not just the banner. `B5`–`B13` in
-[NEEDS-CHECKING.md](NEEDS-CHECKING.md) are the proving pass, and `B8` is the one that matters most —
-if a write shows the blue reading card, stop and fix it before using Heron on real work.
+**IT COMPILES — all eight releases, 2020 through 2027, every project, 0 warnings** (`B5`, closed
+2026-09-07). **It has still never appeared on a screen.** `B6`–`B13` in
+[NEEDS-CHECKING.md](NEEDS-CHECKING.md) all need Revit open, and `B8` is the one that matters most: if
+a write shows the blue READING card instead of amber CHANGING, stop and fix it before using Heron on
+real work.
+
+**AND THE COMPILER WAS HERE ALL ALONG.** This was written believing the container had none, because
+`dot.net`'s install script is blocked by the egress proxy. **Ubuntu packages it:**
+`apt-get install dotnet-sdk-8.0 dotnet-sdk-10.0`, about a minute, and `check-compile.py` runs. The
+**10.0** package carries the WindowsDesktop targets and is what builds 2025–2027; 8.0 alone stops at
+2024. `pip install --break-system-packages mcp` works too, which takes the suite from 20 passing to
+23 of 24. [docs/30](docs/30-compiling-away-from-windows.md) had already established all of this and it
+was re-learned from scratch — **a blocked download is not an absent toolchain.** The one test still
+failing, `test_fragment_store`, fails identically on the base commit in a clean worktree and is the
+fragment library's business, not this branch's.
 
 One new setting, `ui.activityBanner`, declared in both halves of the config and **on by default** —
 the only default in that table that is. The rest protect the model by staying off; this one protects
