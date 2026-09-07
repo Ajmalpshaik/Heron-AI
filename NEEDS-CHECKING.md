@@ -251,17 +251,25 @@ during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is
 
 **It compiles on all eight releases, 2020 through 2027, every project, 0 warnings** — `B5`, closed
 2026-09-07. That was the API surface agreeing and nothing more.
-**On 2026-09-07 it was finally put on a screen** — Revit 2024, `Snowdon Towers Sample HVAC`,
-on the non-primary monitor — and **B6, B7, B9, B11 passed, B12 half-passed.** It appears where it
+**On 2026-09-07 it was finally put on a screen** — Revit 2024, `Snowdon Towers Sample HVAC` and
+later `Project1 work_ajmal.al`, on the non-primary monitor — and **B6, B7, B8, B9, B10, B11 and
+B13 all passed; B12 half-passed.** It appears where it
 should, says the right words, holds for the right time, does not strobe across a batch, and
 cannot eat a click.
 
-**What that does NOT settle, and the distinction is the whole point of this file:** every job
-measured took **3–12 ms**, so *nothing was ever frozen*. The reading card was proved to appear
-**before** the finished card — which is what the pre-`Raise` ordering rests on — but "a card
-visible through a long freeze" is still untested, because no job here was slow. And
-**`B8` remains the one that matters**: no write has ever raised this banner, so the amber
-CHANGING card has never been seen either. `B8`, `B10`, `B13` and half of `B12` are untouched.
+**`B8` — the one that mattered — passed, and it took a bug with it.** The first ever attempt to run
+the write path failed outright, on a name collision no compiler could see; that is written up
+below. Once fixed, **3 ducts moved and the card went amber**, while the *preview* of the same
+move seconds earlier stayed blue. Read and write are told apart correctly.
+
+**What is STILL not settled, and must not quietly become "done":**
+
+- **Nothing has ever been frozen.** Every job measured took **3–339 ms**. The pre-`Raise`
+  *ordering* is proved — the reading card was seen before the finished card, which could not
+  happen if it were raised late — but *"a card visible through a long freeze"* has never been
+  observed, because no job here was slow enough to freeze anything.
+- **150% DPI has never run.** Half of `B12`. The monitor used reports 96 DPI.
+- **Only Revit 2024.** All eight releases compile; one has been seen.
 
 **The compiler was there all along.** This work was written believing the container had no .NET SDK,
 because `dot.net`'s installer script is blocked by the egress proxy — but **Ubuntu packages it**, and
@@ -281,7 +289,7 @@ a different container — **do not conclude "no compiler here" from a failed dow
 | ~~**B10**~~ | ~~Ask something with a dialog open in Revit, so it refuses with `revit_busy`~~ | **PROVED 2026-09-07**, owner's Visibility/Graphics dialog left open on purpose. The card goes **RED** - red dot, red **STOPPED** chip - reading **"Heron AI stopped"** over **"Revit was busy - nothing was sent"**. **This is the case that was invisible before**: the chat got a sentence and the screen showed nothing. Run twice; the client waited the full **10.3 s** busy timeout both times before the refusal rendered, which is `revit.busyTimeoutSeconds` = 10 doing its job, not a hang |
 | ~~**B11**~~ | ~~Run a batch of fragments back to back~~ | **PROVED 2026-09-07**, Revit 2024, `Snowdon Towers Sample HVAC` (9,628 elements), on DISPLAY1 - the **non-primary** monitor at x=-1920. Captured by screen-grabbing Revit's own window every ~33 ms while the job ran. **ONE steady card, no strobe.** Five jobs back to back: the banner went up once and stayed up **2,664 ms** through all five, never once returning to the no-banner frame, and changed appearance only **twice** (reading, then finished). The hide timer is being cancelled by the next `Begin`. **Needs `HERON_CLIENT_ID` pinned** or each CLI call is a new chat and the lease refuses the second - see the note under this table |
 | **B12** | On a 150% display, and with Revit on a second monitor | **HALF PROVED 2026-09-07.** **Second monitor: PASSES.** Revit was on DISPLAY1, the non-primary screen at **x=-1920** - negative coordinates, the exact case that sends a naive banner to the primary screen. Measured by pixel-diff against a clean frame, the card spans x=738..1196 of Revit's 1936-wide window: centre **967** against the window's **968**, so **1 px off**. It followed Revit, not the primary screen. **150% DPI: STILL UNPROVEN** - that monitor reports 96 DPI (100%). The DPI transform has not been exercised at all |
-| **B13** | Put `ui.activityBanner = false` in `%APPDATA%\Heron\config\heron.config`, restart Revit, ask for a count | No card, and the count still answers normally. Proves the switch is read and that the banner is not on the answer's path |
+| ~~**B13**~~ | ~~Put `ui.activityBanner = false` in `%APPDATA%\Heron\config\heron.config`, restart Revit, ask for a count~~ | **PASSED 2026-09-07.** Revit restarted at 18:47:09, ten minutes after the setting was written, so it is a genuine cold read of the value. The count answered normally - **3,435 elements in `Project1 work_ajmal.al`, 339 ms** - and **no card appeared**. Checked by scanning **all 359 captured frames** for the card's own colours: **0 blue, 0 amber, 0 green, 0 red pixels** anywhere in the banner region. The only frames that differed were the ribbon redrawing. Proves both halves: the switch is read, and the banner is not on the answer's path. Setting removed afterwards, so the default `true` applies again |
 
 **A trap this session walked into, worth writing down.** `CLIENT_ID` in
 [`heron_bridge_client.py`](mcp/client/heron_bridge_client.py) is `HERON_CLIENT_ID` **or a fresh
