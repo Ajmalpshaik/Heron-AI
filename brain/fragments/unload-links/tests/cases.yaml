@@ -1,37 +1,44 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
 
 positive:
-  - given: a loaded architectural link
+  - given: >
+      a loaded architectural link
     expect: >
       it unloaded and its geometry gone from the views. Open Manage - Links in
       Revit; the status column is what this changes
 
-  - given: THREE instances of one link passed in
+  - given: >
+      THREE instances of one link passed in
     expect: >
       ONE id in `unloaded`. Unloading belongs to the type, and reporting three
       is a count nobody can reconcile with the Manage Links dialog
 
-  - given: the link reloaded afterwards
+  - given: >
+      the link reloaded afterwards
     expect: >
       it back with its position unchanged. That is the difference between
       unloading and removing
 
 negative:
-  - given: a link that is ALREADY unloaded
+  - given: >
+      a link that is ALREADY unloaded
     expect: >
       its id in `alreadyUnloaded` and not counted as unloaded. Nothing happened
       and the report has to say so
 
-  - given: an unload call that returns but leaves the link loaded
+  - given: >
+      an unload call that returns but leaves the link loaded
     expect: >
       the link in `refused`, established by asking whether it is loaded
       afterwards
 
-  - given: a wall or a duct in the set
+  - given: >
+      a wall or a duct in the set
     expect: >
       its id in `notALink`
 
-  - given: "get rid of the link" meaning REMOVE
+  - given: >
+      "get rid of the link" meaning REMOVE
     expect: >
       NOT this fragment. Removing loses the link's position and everything
       hosted on it, and it is a delete - done deliberately elsewhere

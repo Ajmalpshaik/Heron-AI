@@ -1,18 +1,21 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
 
 positive:
-  - given: 10 elements greyed out by a previous override, in the same view
+  - given: >
+      10 elements greyed out by a previous override, in the same view
     expect: >
       all 10 return to normal, cleared = 10, hadNothing = 0. Look at the view -
       the count alone is what a broken version returns too
 
-  - given: a grayout applied and then cleared
+  - given: >
+      a grayout applied and then cleared
     expect: >
       the view is back as it started. This is the pair working: without it a
       grayout is a one-way door
 
 negative:
-  - given: elements that never had an override
+  - given: >
+      elements that never had an override
     expect: >
       cleared = 0 and hadNothing = the count. Both leave the element looking the
       same, and only one of them means the selection matched what was changed -
@@ -25,8 +28,10 @@ negative:
       per-element setting only, and somebody undoing a grayout will hit it. The
       answer is the category capability, not a longer version of this
 
-  - given: a view whose template controls graphics
-    expect: `viewRefused` true, nothing attempted, no exception
+  - given: >
+      a view whose template controls graphics
+    expect: >
+      `viewRefused` true, nothing attempted, no exception
 
 second_route:
   - look at the view

@@ -1,43 +1,51 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
 
 positive:
-  - given: sheets whose title blocks carry "22-JUL-2025" as typed text
+  - given: >
+      sheets whose title blocks carry "22-JUL-2025" as typed text
     expect: >
       that date reported once with every sheet carrying it. Open one sheet and
       read the note - typed dates are invisible to schedules, which is why this
       exists
 
-  - given: "22 Jul 2025" and "22/JUL/25" on two sheets
+  - given: >
+      "22 Jul 2025" and "22/JUL/25" on two sheets
     expect: >
       ONE date with both sheets. Separators and a two-digit year are the same
       issue written differently
 
-  - given: MAY on one sheet and May on another
+  - given: >
+      MAY on one sheet and May on another
     expect: >
       one date, not two. Case does not make a different issue, and reporting
       two has somebody chasing one that never happened
 
 negative:
-  - given: a note reading "2 OFF 300"
+  - given: >
+      a note reading "2 OFF 300"
     expect: >
       no date. A three-letter word between two numbers is not a date, and this
       is the check that keeps the list actionable
 
-  - given: "31 SEP 2025"
+  - given: >
+      "31 SEP 2025"
     expect: >
       no date. It is not a real calendar day, so it is not reported as one
 
-  - given: a date typed inside a PLAN that is placed on the sheet
+  - given: >
+      a date typed inside a PLAN that is placed on the sheet
     expect: >
       it NOT attributed to the sheet. Otherwise every sheet that plan appears
       on inherits the date
 
-  - given: a sheet with no dated text at all
+  - given: >
+      a sheet with no dated text at all
     expect: >
       its id in `sheetsWithNoDate` - which is the useful half when the question
       is which sheets are missing their issue date
 
-  - given: a view in the element list
+  - given: >
+      a view in the element list
     expect: >
       its id in `notASheet`
 

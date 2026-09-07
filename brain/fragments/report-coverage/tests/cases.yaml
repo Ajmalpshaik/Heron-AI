@@ -1,41 +1,49 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
 
 positive:
-  - given: nine diffusers on a 3 m grid, coverage radius 2 m
+  - given: >
+      nine diffusers on a 3 m grid, coverage radius 2 m
     expect: >
       each covering pi x 2 squared, neighbours at 3 m, and nothing in
       `gapSuspects` - 3 m is less than two radii, so the circles overlap
 
-  - given: the same nine at 5 m apart with the same radius
+  - given: >
+      the same nine at 5 m apart with the same radius
     expect: >
       every one in `gapSuspects`. 5 m is more than 4 m, so there is floor
       between them nothing reaches
 
-  - given: `areaTotal` against a room's own area
+  - given: >
+      `areaTotal` against a room's own area
     expect: >
       a total BELOW the floor area proving gaps exist. That direction is sound;
       the other is not
 
 negative:
-  - given: overlapping circles
+  - given: >
+      overlapping circles
     expect: >
       the total counting the overlap TWICE. It is an upper bound, and reading
       it as coverage is the mistake this says out loud
 
-  - given: one element on its own
+  - given: >
+      one element on its own
     expect: >
       a neighbour distance of 0 rather than a false gap. It has no neighbour to
       leave a gap with
 
-  - given: two diffusers at different ceiling heights above each other
+  - given: >
+      two diffusers at different ceiling heights above each other
     expect: >
       them measured in PLAN. A height difference is not a gap in floor coverage
 
-  - given: an element with no location point
+  - given: >
+      an element with no location point
     expect: >
       its id in `noPoint`, not a coverage circle at the origin
 
-  - given: a coverage radius nobody chose
+  - given: >
+      a coverage radius nobody chose
     expect: >
       NOT possible here. There is no coverage parameter in the model to read,
       and inventing one puts a number nobody chose into a signed layout

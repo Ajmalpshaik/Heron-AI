@@ -32,6 +32,8 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as F                                    # noqa: E402
 
+NEWLINE = chr(10)
+
 FAILURES = []
 
 
@@ -39,6 +41,16 @@ def check(condition, what):
     print("  %-5s %s" % ("ok" if condition else "FAIL", what))
     if not condition:
         FAILURES.append(what)
+
+
+CASES = (
+    "positive:@"
+    "  - given: two ducts in the set@"
+    "    expect: both reported, named@"
+    "negative:@"
+    "  - given: a set containing none of what it reports@"
+    "    expect: zero reported, in words, and no error@"
+).replace("@", NEWLINE)
 
 
 def scratch(data, name="do-a-test-thing", impl="// code"):
@@ -51,6 +63,14 @@ def scratch(data, name="do-a-test-thing", impl="// code"):
         yaml.safe_dump(data, default_flow_style=False, sort_keys=False))
     io.open(os.path.join(folder, "impl", "any", "fragment.cs"), "w",
             encoding="utf-8").write(impl)
+
+    # Since 2026-09-07 a fragment without declared cases does not validate, so
+    # the fixture carries them. Not scaffolding: the gate exists because the
+    # real library had twelve unreadable case files and nothing to notice, and
+    # a fixture exempt from a rule is a fixture that stops testing it.
+    os.makedirs(os.path.join(folder, "tests"))
+    io.open(os.path.join(folder, "tests", "cases.yaml"), "w",
+            encoding="utf-8").write(CASES)
     return base, folder
 
 
@@ -80,6 +100,59 @@ def well_formed(**over):
     }
     data.update(over)
     return data
+
+
+BAD_YAML = "positive:@  - given: a: b: c@"
+
+NO_NEGATIVE = "positive:@  - given: x@    expect: y@"
+
+NO_EXPECT = "positive:@  - given: x@    expect: y@negative:@  - given: z@"
+
+NOT_A_MAPPING = ("positive:@  - just a string@"
+                 "negative:@  - given: z@    expect: w@")
+
+
+def cases_gate():
+    """
+    tests/cases.yaml is now read, and every way it can be wrong is caught.
+
+    It went unread for the whole library. 349 fragments carry one, 2,332 cases
+    are written into them by hand, and nothing in this repository opened one -
+    so twelve did not parse and nobody knew, three of those twelve belonging to
+    fragments already promoted to PROVEN. A file with no reader has no errors.
+
+    Each shape below is fired on purpose. A gate that has never refused
+    anything is a claim about the gate, not about the library.
+    """
+    print()
+    print("6. The declared cases are read, and a broken one is caught")
+    src = os.path.join(ROOT, "brain", "fragments", "report-compound-structure")
+    if not os.path.isdir(src):
+        check(False, "the sample fragment this test copies is missing")
+        return
+
+    work = tempfile.mkdtemp(prefix="heron-cases-")
+    try:
+        dst = os.path.join(work, "report-compound-structure")
+        shutil.copytree(src, dst)
+        frag = F.load(dst)
+        target = os.path.join(dst, "tests", "cases.yaml")
+
+        def fires(label, text):
+            if text is None:
+                os.remove(target)
+            else:
+                io.open(target, "w", encoding="utf-8").write(text.replace("@", NEWLINE))
+            caught = [p for p in F.validate(frag) if "case" in p]
+            check(bool(caught), label + ("" if caught else " - NOT caught"))
+
+        fires("unparseable YAML is refused", BAD_YAML)
+        fires("a file with no negative case is refused", NO_NEGATIVE)
+        fires("a case with no 'expect' is refused", NO_EXPECT)
+        fires("a case that is not a mapping is refused", NOT_A_MAPPING)
+        fires("a missing cases.yaml is refused", None)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
 
 
 def main():
@@ -311,6 +384,8 @@ def main():
     finally:
         shutil.rmtree(base_i, ignore_errors=True)
 
+    cases_gate()
+
     print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
@@ -319,7 +394,8 @@ def main():
         return 1
 
     print("PASSED - identity survives a rename, contracts compose as data, and")
-    print("a proof without a negative case is refused - and one unreadable")
+    print("a proof without a negative case is refused, the declared cases")
+    print("are read at last - and one unreadable")
     print("fragment costs one fragment rather than all 343 (D-48).")
     print("It says NOTHING about whether either fragment's C# works: both are")
     print("DRAFT and neither has met a model. See NEEDS-CHECKING.md.")

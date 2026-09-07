@@ -1,23 +1,28 @@
 positive:
-  - given: three revisions, the latest on 12 of 40 sheets
+  - given: >
+      three revisions, the latest on 12 of 40 sheets
     expect: >
       three rows in sequence, the latest naming all 12 sheet numbers in register
       order - which is the print list for that issue
 
-  - given: a sheet where the revision was ticked by hand with no cloud on it
+  - given: >
+      a sheet where the revision was ticked by hand with no cloud on it
     expect: >
       that sheet IS counted. It prints the revision either way, and a sheet
       showing a revision is issued under it however it got there
 
 negative:
-  - given: a revision clouded only on a view that is on no sheet
+  - given: >
+      a revision clouded only on a view that is on no sheet
     expect: >
       it appears in `onNoSheets`. That case is invisible in Revit until somebody
       notices the drawing went out unmarked, and it is the single most useful
       row this fragment produces
 
-  - given: a revision created but not yet clouded anywhere
-    expect: also in `onNoSheets` - the same row, and correctly so: nothing goes out under it yet
+  - given: >
+      a revision created but not yet clouded anywhere
+    expect: >
+      also in `onNoSheets` - the same row, and correctly so: nothing goes out under it yet
 
 second_route:
   - Revit's own Revisions dialog with "Show" set, or a Sheet List schedule with a revision column, compared sheet for sheet

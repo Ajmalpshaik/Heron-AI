@@ -419,6 +419,42 @@ class Fragment(object):
     def proof(self):
         return self.data.get("proof")
 
+    def cases_path(self):
+        """Where this fragment's declared test cases live."""
+        return os.path.join(self.folder, "tests", "cases.yaml")
+
+    def cases(self):
+        """
+        The declared positive and negative cases, or a reason they cannot be
+        read. Returns (cases, problem) - exactly one of them is None.
+
+        THIS FILE WENT UNREAD FOR THE WHOLE LIBRARY. 349 fragments carry one,
+        2,332 cases are written into them by hand, and on 2026-09-07 a grep
+        found NOTHING in this repository that opened one. Twelve of them did
+        not parse, and three of those twelve belonged to fragments already
+        promoted to PROVEN - the highest bar here, the one requiring a recorded
+        negative case, standing on a file describing that case which no machine
+        could read.
+
+        Nobody had been careless. The file simply had no reader, and a file
+        with no reader has no errors either.
+        """
+        path = self.cases_path()
+        if not os.path.exists(path):
+            return None, "no tests/cases.yaml"
+        try:
+            data = yaml.safe_load(io.open(path, encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            first = str(exc).split("\n")[0]
+            return None, "tests/cases.yaml is not valid YAML: %s" % first
+        except (IOError, OSError) as exc:
+            return None, "tests/cases.yaml could not be read: %s" % exc
+        if data is None:
+            return None, "tests/cases.yaml is empty"
+        if not isinstance(data, dict):
+            return None, "tests/cases.yaml must be a mapping"
+        return data, None
+
     def proof_files(self):
         """Every file the proof rested on, repo-relative. The implementation is
         what a proof is a claim ABOUT, so the implementation is what staleness
@@ -660,6 +696,46 @@ def validate(frag):
     if frag.status and frag.status not in STATUSES:
         problems.append("%s: status %r is not a lifecycle state (%s)"
                         % (where, frag.status, ", ".join(STATUSES)))
+
+    # THE DECLARED CASES. Read here because `validate` is what
+    # `python brain/heron_fragment.py` and tools/check-gaps.py run, so this is
+    # the gate the whole library passes through. The proof arrangement is
+    # written into tests/cases.yaml by hand and is the only place that says how
+    # a given fragment can be shown to fail as well as succeed - which is the
+    # half D-30 turns on.
+    #
+    # A missing `negative` is the specific hole worth naming, not a generic
+    # "incomplete file". A positive-only case file describes a demonstration,
+    # not a proof, and 36 fragments were run in one pass on 2026-09-07 before
+    # anybody noticed the negative leg had never been arranged for any of them.
+    cases, problem = frag.cases()
+    if problem:
+        problems.append("%s: %s" % (where, problem))
+    else:
+        for section in ("positive", "negative"):
+            rows = cases.get(section)
+            if not rows:
+                problems.append(
+                    "%s: tests/cases.yaml declares no %s case. A fragment with "
+                    "no %s case cannot be proved - D-30 needs both legs"
+                    % (where, section, section))
+                continue
+            if not isinstance(rows, list):
+                problems.append("%s: tests/cases.yaml %s must be a list"
+                                % (where, section))
+                continue
+            for index, row in enumerate(rows, 1):
+                if not isinstance(row, dict):
+                    problems.append("%s: %s case %d is not a mapping"
+                                    % (where, section, index))
+                    continue
+                for field in ("given", "expect"):
+                    if not row.get(field):
+                        problems.append(
+                            "%s: %s case %d has no '%s'. A case that does not "
+                            "say what to arrange, or what should come back, "
+                            "cannot be run by anybody but its author"
+                            % (where, section, index, field))
 
     contract = frag.data.get("contract")
     if isinstance(contract, dict):

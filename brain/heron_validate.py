@@ -309,6 +309,7 @@ def build_plan(library, include_all=False):
     entries = []
     for frag in library:
         route, note = route_for(frag, table)
+        declared, warning = declared_negative(frag)
         if not include_all and route in (PROVED, WRITE_PATH, UNREACHABLE, NEEDS_VALUES):
             continue
         entry = {
@@ -319,6 +320,8 @@ def build_plan(library, include_all=False):
             "note": note,
             "cross_checks": [name for name, _ in cross_checks(frag)],
             "negative_case": negative_case_plan(frag, route),
+            "declared_negative": declared,
+            "negative_warning": warning,
         }
         entries.append(entry)
 
@@ -329,6 +332,69 @@ def build_plan(library, include_all=False):
                                 0 if e["cross_checks"] else 1,
                                 e["slug"]))
     return entries
+
+
+# The arrangement that was disproved. NEEDS-CHECKING.md, 2026-09-07: an empty
+# selection reaches an `elements` fragment as an unbound need, so it is refused
+# rather than answered, and a refusal is not evidence of an honest empty answer.
+# Eighteen fragments still declare their negative case this way.
+DISPROVED_NEGATIVE = re.compile(
+    r"(empty (element|selection) list|an empty selection|nothing selected"
+    r"|no elements selected)", re.I)
+
+
+def declared_negative(frag):
+    """
+    What this fragment's OWN tests/cases.yaml says would prove it empty.
+
+    Preferred over the generic per-route advice for the reason the generic
+    advice had to be corrected at all: the useful negative case is specific to
+    what the fragment reports - "a curtain wall", "a schedule as the view", "a
+    set containing a duct and a door" - and no rule derived from the contract
+    can know that. The author already wrote it down. Nothing read it.
+
+    Returns (givens, warning). The warning is set when the declared arrangement
+    is the one that was tried on 36 fragments and produced 36 refusals.
+    """
+    cases, problem = frag.cases()
+    if problem:
+        return [], "tests/cases.yaml cannot be read: %s" % problem
+
+    givens = []
+    for row in (cases.get("negative") or []):
+        if isinstance(row, dict) and row.get("given"):
+            givens.append(" ".join(str(row["given"]).split()))
+
+    warning = None
+    if not _reads_the_selection_itself(frag):
+        for given in givens:
+            if DISPROVED_NEGATIVE.search(given):
+                warning = (
+                    "the declared negative case is %r, which cannot prove "
+                    "anything: this fragment is fed `elements`, so an empty "
+                    "list is refused as needs_unbound and it never runs. "
+                    "Rewrite it as a selection CONTAINING NONE of what it "
+                    "reports" % given)
+                break
+    return givens, warning
+
+
+def _reads_the_selection_itself(frag):
+    """
+    Does this fragment ask Revit for the selection, rather than being handed it?
+
+    The distinction decides what its negative case even IS. One that takes
+    `uidoc` does the asking, so an empty selection is a real empty answer. One
+    that takes `elements` is HANDED a list, and an empty list is
+    indistinguishable from never having been asked - so it is refused instead,
+    and cannot be proved that way.
+    """
+    contract = frag.data.get("contract") or {}
+    names = set()
+    for item in (contract.get("needs") or []):
+        if isinstance(item, dict) and item.get("name"):
+            names.add(item["name"])
+    return "uidoc" in names and "elements" not in names
 
 
 def negative_case_plan(frag, route):
@@ -353,9 +419,29 @@ def negative_case_plan(frag, route):
     as the narrow thing it is rather than as a general mechanism.
     """
     if route == FROM_SELECTION:
-        return ("run it with NOTHING selected. It must report 0 rather than "
-                "falling back to the active view, to the whole model, or to "
-                "the previous run's elements")
+        # CORRECTED 2026-09-07, and the correction cost 36 fragment runs.
+        #
+        # This used to read "run it with NOTHING selected. It must report 0."
+        # That instruction was carried out, on 36 unproven READ fragments in
+        # one pass, and produced 36 refusals and zero proofs: a fragment fed
+        # `elements` cannot BIND an empty selection, so it returns
+        # needs_unbound rather than an empty answer. The executor was right
+        # and the plan was wrong. NEEDS-CHECKING.md recorded the lesson the
+        # same day; this function, which issues the instruction, did not.
+        #
+        # A fragment that takes `uidoc` and reads the selection ITSELF is the
+        # exception, and it is why the distinction is real rather than
+        # pedantic: it can tell "nothing selected" from "nobody asked",
+        # because it did the asking. READ_SELECTION's own proof is that case.
+        if _reads_the_selection_itself(frag):
+            return ("run it with NOTHING selected. It takes uidoc and reads "
+                    "the selection itself, so an empty selection reaches it "
+                    "as a real empty answer rather than an unbound need")
+        return ("select something that contains NONE of what it reports - "
+                "ducts selected for a fragment that reports curtain walls. "
+                "NOT an empty selection: it is fed `elements`, so nothing "
+                "selected is refused as needs_unbound and the fragment never "
+                "runs. A refusal is not an empty answer")
     if route == FROM_CHAIN:
         return ("run it after a producer that returns an empty set. It must "
                 "report 0 rather than falling back to the whole model")
@@ -389,6 +475,10 @@ def print_plan(entries, library):
             print("  %-32s   second route: none this agent can run - the draft "
                   "will say NOT ESTABLISHED" % "")
         print("  %-32s   negative case: %s" % ("", entry["negative_case"]))
+        for given in entry["declared_negative"][:3]:
+            print("  %-32s     declared: %s" % ("", given))
+        if entry["negative_warning"]:
+            print("  %-32s   ** %s" % ("", entry["negative_warning"]))
     print("")
     print("Nothing here has been run. This is what to run, and what each run has")
     print("to produce before it counts as evidence.")
@@ -436,7 +526,31 @@ def draft_from_record(frag, record):
         positive_text = NOT_ESTABLISHED + " - " + phase_failure(positive)
         gaps.append("the positive case did not run")
 
-    if negative and negative.get("ok"):
+    # D-53. SOME FRAGMENTS CANNOT COME BACK EMPTY, and that is a property of what
+    # they are rather than a weakness. COUNT_ELEMENTS describes whatever it is
+    # handed; there is no selection that makes it report nothing, short of an
+    # unbound need, which is a refusal rather than an answer. For those, the leg
+    # D-30 wants - proof the fragment is not "succeeding and doing nothing" - is
+    # met by the answer TRACKING the input across several different inputs.
+    # A fragment ignoring its input, or falling back to the whole model, cannot
+    # match five different counts exactly.
+    tracking = record.get("tracking")
+    if tracking:
+        rows = "\n".join("      %s selected -> %s %s"
+                         % (t.get("selected"), t.get("field"), t.get("value"))
+                         for t in tracking)
+        negative_text = (
+            "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). "
+            "%s describes whatever it is given, so no arrangement makes its answer "
+            "empty. What D-30's negative case exists to catch - a fragment that "
+            "succeeds while doing nothing, or answers about a set it was not given "
+            "- is caught here by the answer following the input exactly across "
+            "%d different selections:\n\n%s\n\n"
+            "    Different inputs, exact matches every time. A fragment falling back "
+            "to the active view, the whole model, or a previous run could not do "
+            "that."
+            % (frag.slug, len(tracking), rows))
+    elif negative and negative.get("ok"):
         negative_text = describe_phase(negative)
         # `provides` is a method on Fragment; a stub in the tests may expose it
         # as a plain list, and a record can be drafted for a fragment whose

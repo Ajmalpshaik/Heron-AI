@@ -1,18 +1,24 @@
 positive:
-  - given: one 600x600 supply diffuser
-    expect: described reads "Air Terminals | <family> : 600x600 | id <n>", matching the Properties palette in Revit
+  - given: >
+      one 600x600 supply diffuser
+    expect: >
+      described reads "Air Terminals | <family> : 600x600 | id <n>", matching the Properties palette in Revit
 
-  - given: 30 mixed elements - ducts, fittings, terminals
-    expect: described has 30 entries and every element asked about appears exactly once
+  - given: >
+      30 mixed elements - ducts, fittings, terminals
+    expect: >
+      described has 30 entries and every element asked about appears exactly once
 
 negative:
-  - given: an element whose INSTANCE name was changed to something unlike its type
+  - given: >
+      an element whose INSTANCE name was changed to something unlike its type
     expect: >
       the family and type reported are the TYPE's, not the instance name. Names
       describe intent; reading the instance name would report whatever somebody
       last typed and it would look authoritative
 
-  - given: a detail line and a group, which have no ElementType
+  - given: >
+      a detail line and a group, which have no ElementType
     expect: >
       both appear in described as "(no type)" AND in noType - not dropped. A
       silently shorter answer than the list asked about is only visible to

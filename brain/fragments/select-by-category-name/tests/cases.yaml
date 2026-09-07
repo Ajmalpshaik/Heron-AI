@@ -1,36 +1,43 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
 
 positive:
-  - given: categoryName "Duct Accessories"
+  - given: >
+      categoryName "Duct Accessories"
     expect: >
       every duct accessory in the model, and `resolvedTo` echoing the exact
       category name. Compare the count against a schedule of that category
 
-  - given: "ducts" in lower case
+  - given: >
+      "ducts" in lower case
     expect: >
       the Ducts category. Case is not what somebody meant to change
 
-  - given: a view passed in
+  - given: >
+      a view passed in
     expect: >
       only what that view draws
 
 negative:
-  - given: categoryName "Duct Accessory", singular
+  - given: >
+      categoryName "Duct Accessory", singular
     expect: >
       no elements, and "Duct Accessories" in `nearMisses`. Guessing which was
       meant is exactly the silent wrong answer this avoids
 
-  - given: a name matching no category at all
+  - given: >
+      a name matching no category at all
     expect: >
       empty results and empty near misses - a plain "that is not a category
       here"
 
-  - given: a French or Arabic Revit
+  - given: >
+      a French or Arabic Revit
     expect: >
       the LOCALISED name matching. That is the case this fragment exists for,
       and the internal-identifier route is the one that fails there
 
-  - given: an empty category name
+  - given: >
+      an empty category name
     expect: >
       nothing selected. An empty name matching everything would hand back the
       whole model
