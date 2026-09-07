@@ -423,6 +423,43 @@ fragment does not read what it thinks it does. **Unproven and unexplained** — 
 it is trusted, because a date-reader that never finds a date is indistinguishable from one that is
 broken.
 
+### The owner built two faults on purpose — one was caught, one cannot be built that way
+
+**2026-09-07. He created a duct left unconnected, and joined two ducts intending them to both push
+out.** Selected 12 elements and both fault-finders were run against them.
+
+**`FIND_SYSTEM_ISLANDS` CAUGHT IT.** `islandCount: 4`, `sourceless: 4` — four separate pieces, none of
+them fed from anything. Against the 37 mechanical equipment items it had reported `sourceless: 0`. The
+fault signal moved with the model, which is exactly what a proof needs.
+
+**But it still cannot be proved under the current negative-case rule, and the reason is structural
+rather than anybody's mistake.** It declares `islandOf`, `islandSizes`, `sourceless` and `islandCount`,
+and **every set of elements is at least one island** — 12 sheets are 12 islands, 4 walls are 4 islands.
+There is no arrangement that makes all four fields zero, short of giving it nothing, which is an
+unbound need rather than an empty answer.
+
+**So a third kind of fragment exists, alongside reporters and defect-finders: a STRUCTURE REPORTER.**
+It always describes what it was given, and its fault signal is ONE FIELD among several — `sourceless`
+here. "The negative case must come back empty" cannot express that, because the honest empty answer is
+*"four islands, none of them sourceless"*, which is not empty at all.
+
+**Nothing was relaxed to accommodate this.** Four rules were already loosened on 2026-09-07 and the
+fourth was flagged as a habit forming; a fifth on the same day, for the same reason, is exactly what
+[D-52](docs/DECISIONS.md) warns about. **This is a gap in the PROOF METHOD, not in the fragment**, and
+it wants deciding cold: does D-30's negative case mean "every output empty", or "the fault signal
+absent while the fragment demonstrably ran"?
+
+**`CHECK_FLOW_DIRECTION` cannot be faulted with ducts at all**, and that is worth writing down before
+somebody else spends an evening trying. Line 82 of its implementation skips any joint where **either**
+connector is `Bidirectional` — correctly, because bidirectional is not a fault. **Plain Revit duct
+curve connectors ARE bidirectional**, so joining two ducts produced `bidirectionalSkipped: 8` and
+`jointsChecked: 0`. The fragment was right and the fault was unbuildable.
+
+Its positive case needs two connectors with an explicit direction — **equipment or family connectors,
+both set to `Out`, joined**. The equipment selection reached `jointsChecked: 57`, so those connectors do
+carry direction; none of them was wrong. **The fault has to be built into a family's connectors, not
+drawn in the model**, which is a different and slower job.
+
 ## Group C — the gate, before anything can move
 
 **Do not skip to D.** C3 is what proves the write path cannot fire by accident; testing the move before
