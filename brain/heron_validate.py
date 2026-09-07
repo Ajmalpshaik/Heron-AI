@@ -75,6 +75,7 @@ WHAT IT REFUSES TO DO, AND WHY EACH ONE IS HERE
 
 import argparse
 import io
+import re
 import json
 import os
 import subprocess
@@ -499,6 +500,46 @@ def phase_failure(phase):
                        phase.get("message") or "no message recorded")
 
 
+_ITEMS_RE = re.compile(r"^\s*(\d+)\s+item\(s\)")
+
+
+def _as_count(value):
+    """The number a provided value stands for, or None if it cannot be read.
+
+    THE EXECUTOR SENDS STRINGS, AND THAT IS THE WHOLE POINT OF THIS FUNCTION.
+    `RevitFragment.Describe` renders a collection as "3 item(s) [a, b, c]" and a
+    scalar as its own text, so a count of zero arrives as the STRING "0" and an
+    empty list as "0 item(s)". Comparing those with len() - which is what this
+    module did until 2026-09-07 - makes "0" a one-character string and therefore
+    "not empty", so looks_empty could never return True for anything this
+    executor produced, and EVERY negative case was flagged.
+
+    A warning that always fires is worse than no warning, because it is the one
+    people learn to skip past.
+    """
+    if isinstance(value, bool):
+        return 0
+    if isinstance(value, (int, float)):
+        return value
+    if isinstance(value, (list, dict)):
+        return len(value)
+    if not isinstance(value, str):
+        return None
+
+    text = value.strip()
+    if text == "":
+        return 0
+    if text.lower() in ("true", "false"):
+        return 0                      # a flag, not a quantity - see below
+    match = _ITEMS_RE.match(text)
+    if match:
+        return int(match.group(1))
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
 def looks_empty(phase):
     """Whether a phase's numbers really do read as nothing.
 
@@ -507,20 +548,21 @@ def looks_empty(phase):
     person's attention. The failure this guards against is a fragment that
     quietly answers about the wrong set, and a checker that assumes empty when
     unsure is exactly how that gets waved through.
+
+    BOOLEANS ARE NOT QUANTITIES and are skipped, however they arrive - as a
+    Python bool or as the string "true". `REPORT_GLOBAL_PARAMETERS` returns
+    `allowed: true` in BOTH cases, because the document still permits globals
+    whether or not any exist; counting that as content would mean this fragment
+    could never demonstrate an empty answer at all.
     """
     provides = phase.get("provides") or {}
     if not provides:
         return False
     for value in provides.values():
-        if isinstance(value, bool):
-            continue
-        if isinstance(value, (int, float)):
-            if value != 0:
-                return False
-        elif isinstance(value, (list, dict, str)):
-            if len(value) not in (0,):
-                return False
-        else:
+        count = _as_count(value)
+        if count is None:
+            return False              # unreadable shape - say so, do not assume
+        if count != 0:
             return False
     return True
 
