@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -54,6 +54,27 @@ contract:
       # Handed in and not a view reference at all - a duct is not a section
       # mark. A count of what could not be answered about.
       role: accounting
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,702 elements), Revit 2024, session 42676
+  positive_case: 'one REFERENCE section, drawn in Snowdon Towers Sample HVAC with ''Reference
+    other view'' ticked so it points at an existing view, then selected. A plain section will
+    NOT do: clicking a section line selects the section VIEW, and this fragment reads ReferenceableViewUtils.GetReferencedViewId,
+    which takes the MARKER''s id. A first attempt with an ordinary section returned referencesNothing
+    1. returned notOnASheet 0 item(s), referencedViews 1 entry(ies), referencesNothing 0 item(s),
+    viewNames 1 entry(ies). inputs came elements from the selection (1). on Snowdon Towers
+    Sample HVAC'
+  negative_case: 28 duct taps in the same model - none of them is a view reference at all,
+    so the answer had to be empty, and it accounted for all 28 as referencesNothing. returned
+    notOnASheet 0 item(s), referencedViews 0 entry(ies), referencesNothing 28 item(s) [1383647,
+    1383653, 1384651, ...], viewNames 0 entry(ies). inputs came elements from the selection
+    (28). on Snowdon Towers Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 10f3fdee009d679f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
