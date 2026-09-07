@@ -278,9 +278,33 @@ def analyse(entries):
         if ms is not None:
             bucket["ms"].append(ms)
 
+    # WHEN, not just how many. A count over the whole trail answers "has this
+    # ever gone wrong", and the question somebody asking for a health check
+    # means is "is it going wrong NOW". Those gave different answers within a
+    # day of each other here: 131 defects on 2026-09-06 from a compile bug, and
+    # 1 across 353 runs the day after it was fixed. Reporting 132 as one number
+    # warns about a problem that no longer exists, and a warning that cries
+    # wolf is one people stop reading - which costs more than never having
+    # warned at all.
+    by_day = collections.defaultdict(lambda: {"requests": 0, "defects": 0})
+    for row in entries:
+        day = str(row.get("at", ""))[:10]
+        if not day:
+            continue
+        bucket = by_day[day]
+        bucket["requests"] += 1
+        if str(row.get("error") or "") in DEFECTS:
+            bucket["defects"] += 1
+
+    newest = max(by_day) if by_day else None
+    recent = dict(by_day.get(newest, {"requests": 0, "defects": 0})) if newest else         {"requests": 0, "defects": 0}
+    recent["day"] = newest
+
     return {
         "requests": len(entries),
         "failed": len(failed),
+        "by_day": dict(by_day),
+        "recent": recent,
         "defects": defects,
         "refusals": refusals,
         "unclassified": unclassified,

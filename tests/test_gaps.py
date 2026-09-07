@@ -142,6 +142,27 @@ def main():
               "two entries read, one truncated line skipped and counted")
 
         print()
+        print("8. Yesterday's fixed bug is not today's alarm")
+        trail(workspace, [
+            u'{"at":"2026-09-06T10:00:00Z","op":"run_fragment_read","ok":false,'
+            u'"error":"compile_failed","ms":9}',
+            u'{"at":"2026-09-06T10:00:01Z","op":"run_fragment_read","ok":false,'
+            u'"error":"compile_failed","ms":9}',
+            u'{"at":"2026-09-07T10:00:00Z","op":"run_fragment_read","ok":true,"ms":7}',
+            u'{"at":"2026-09-07T10:00:01Z","op":"run_fragment_read","ok":true,"ms":7}',
+        ])
+        entries, _ = GAPS.read(workspace)
+        found = GAPS.analyse(entries)
+        check(found["recent"]["day"] == "2026-09-07",
+              "recent is the newest day in the trail, not today's date")
+        check(found["recent"]["defects"] == 0 and found["recent"]["requests"] == 2,
+              "the newest day shows 0 defects in 2 runs")
+        check(found["defects"]["compile_failed"] == 2,
+              "and the 2 historical defects are still counted, as history")
+        check(found["by_day"]["2026-09-06"]["defects"] == 2,
+              "the day they happened on is still named")
+
+        print()
         print("7. An empty trail says nothing rather than 'no gaps'")
         for name in os.listdir(workspace):
             os.remove(os.path.join(workspace, name))

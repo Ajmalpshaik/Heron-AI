@@ -196,13 +196,26 @@ def _history(components, notes):
             "has been asked"))
         return found
 
+    # JUDGED ON THE MOST RECENT DAY, not on the whole trail. This warned "132
+    # of 678 failed" for its first hours, and 131 of those were one compile bug
+    # on 2026-09-06 that was fixed the same week - 1 defect in 353 runs the day
+    # after. A health check reporting a problem that no longer exists is one
+    # people learn to skip, and then it is worse than nothing. The all-time
+    # figure is still said, as history rather than as an alarm.
     defects = sum(row["count"] for row in found.get("defects") or [])
-    if defects:
+    recent = found.get("recent") or {}
+    day, today, lately = recent.get("day"), recent.get("defects", 0),         recent.get("requests", 0)
+
+    if today:
         components.append(_component(
             "history", HEALTH.WARNING,
-            "%d of %d recorded request(s) failed for a reason Heron should "
-            "have handled. Ask for the gap report to see which"
-            % (defects, stats["requests"])))
+            "%d of %d request(s) on %s failed for a reason Heron should have "
+            "handled. Ask for the gap report to see which" % (today, lately, day)))
+    elif defects:
+        components.append(_component(
+            "history", HEALTH.HEALTHY,
+            "%d of %d request(s) on %s went wrong. %d earlier failure(s) in the "
+            "trail, none of them recent" % (today, lately, day, defects)))
     else:
         components.append(_component(
             "history", HEALTH.HEALTHY,

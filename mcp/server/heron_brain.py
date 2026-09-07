@@ -391,6 +391,7 @@ def gaps(days=None):
         "wanted": wanted,
         "skipped": skipped,
         "defects": explain(found["defects"], GAPS.DEFECTS),
+        "recent": found.get("recent") or {},
         "refusals": explain(found["refusals"], GAPS.CORRECT_REFUSALS),
         "unclassified": [{"code": code, "count": count}
                          for code, count in found["unclassified"].most_common()],
