@@ -390,6 +390,39 @@ The 36 run records are in `brain/proof-drafts/runs/`. **Their positive leg is re
 negative leg is a refusal, so drafting them as they stand produces 36 drafts that each say the negative
 case was never established.** That is honest and it is not progress.
 
+### A defect-finder cannot be proved on a model with no defects — 2026-09-07
+
+**`CHECK_FLOW_DIRECTION` was offered as a candidate four times and rejected four times, and the fifth
+selection finally explained why.** On duct taps, spaces, walls and sheets it reported
+`jointsChecked: 0` — it never examined a single joint, which looked like a broken fragment. On **37
+mechanical equipment items it reported `jointsChecked: 57`**, with `bothIn: 0` and `bothOut: 0`.
+
+**It works.** It examined 57 joints and found nothing wrong with any of them. Snowdon Towers is a
+well-built sample model, so there is no flow-direction fault in it to find.
+
+**That is a NEGATIVE case with proof it really ran** — `jointsChecked: 57` is exactly the accounting
+that distinguishes *"looked and found none"* from *"never looked"*. What it has no route to, in this
+model or any correct one, is a **POSITIVE** case. To prove it, somebody has to deliberately build the
+fault: two connectors both set to flow OUT, joined together.
+
+**This is not one fragment's problem. 37 of the 349 are defect-finders** — `check-*`, `find-*`,
+`audit-*`, `validate-*` — and **34 of them are unproven.** Every one needs a model containing the
+defect it hunts. Selecting different categories in a clean model can never prove any of them, however
+many selections are made, because the thing they look for is not there.
+
+**So the library splits into two kinds of proving work:**
+
+| Kind | How to prove it | Cost |
+|---|---|---|
+| **Reporters** — *"what is the level of this"* | Two selections in a rich model, one that has the thing and one that does not | Cheap. **16 proved this way on 2026-09-07 from five selections** |
+| **Defect-finders** — *"where is the fault"* | A model with the fault deliberately built into it | Expensive. One arrangement per defect, and somebody has to break something on purpose |
+
+`EXTRACT_DATES_FROM_TEXT` is a third and simpler case: `datesFound` was **0 in all five selections**,
+including the 12 sheets. Either no sheet in this model carries a date in the text it reads, or the
+fragment does not read what it thinks it does. **Unproven and unexplained** — and worth an hour before
+it is trusted, because a date-reader that never finds a date is indistinguishable from one that is
+broken.
+
 ## Group C — the gate, before anything can move
 
 **Do not skip to D.** C3 is what proves the write path cannot fire by accident; testing the move before
