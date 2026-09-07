@@ -997,6 +997,21 @@ def heron_compatibility(release: str = "") -> str:
     return NEWLINE.join(lines)
 
 
+@server.tool()
+def heron_diagnose() -> str:
+    """
+    Check everything about Heron at once and say what is wrong.
+
+    Use it when something is not working and the cause is not obvious, when
+    the user asks "what is wrong with Heron", "is Heron working", "why did
+    that fail", or before reporting a problem. Covers the Revit connection,
+    the settings, the knowledge layer, which Revit versions are supported and
+    how well checked, and what has been failing lately. Changes nothing.
+    """
+    import heron_diagnose as diagnosis
+    return diagnosis.describe(diagnosis.diagnose())
+
+
 if __name__ == "__main__":
     if os.name != "nt":
         # The bridge is a Windows named pipe, and Revit is Windows-only.
