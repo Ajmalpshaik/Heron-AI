@@ -54,6 +54,8 @@ will ever stand in for it.
 """
 
 import argparse
+import datetime
+import json
 import io
 import os
 import re
@@ -147,6 +149,50 @@ CSPROJ = """<Project Sdk="Microsoft.NET.Sdk">
   </ItemGroup>
 </Project>
 """
+
+
+RESULTS = os.path.join(ROOT, "build", "compile-results.json")
+
+
+def record(versions, outcomes, fragments):
+    """
+    Write down what the compiler actually found, so something else can read it.
+
+    Until now this tool printed and exited. That made every result a thing a
+    person had seen once and could only repeat from memory - and the
+    Compatibility Matrix Agent (HERON-FRG-MTX-009) is required to take its
+    status from TESTS, NEVER ASSUMPTION. There was no test result on disk to
+    take it from, so the matrix would have had nothing to read but the claims
+    in the fragment files, which is the assumption it exists to replace.
+
+    Under build/, which .gitignore already excludes: this is evidence about ONE
+    run on ONE machine with one SDK installed, and committing it would turn a
+    local measurement into a claim the repository makes about everybody's.
+    """
+    payload = {
+        "at": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "tool": "tools/check-fragments-compile.py",
+        "fragments": len(fragments),
+        "versions": {},
+    }
+    for version in versions:
+        ok, failures, count = outcomes[version]
+        payload["versions"][version] = {
+            "ok": bool(ok),
+            "claimed_by": count,
+            "failed": [fid for fid, _ in failures],
+        }
+    try:
+        directory = os.path.dirname(RESULTS)
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+        io.open(RESULTS, "w", encoding="utf-8").write(
+            json.dumps(payload, indent=2, sort_keys=True))
+        return RESULTS
+    except (IOError, OSError):
+        # Never fail the compile because the record could not be written. The
+        # compile result is the answer; this file is a convenience for later.
+        return None
 
 
 def load_fragments():
@@ -315,8 +361,10 @@ def main():
     print()
 
     bad = []
+    outcomes = {}
     for version in versions:
         ok, failures, count = build(version, fragments, args.keep)
+        outcomes[version] = (ok, failures, count)
         print("Revit %s  %s  (%d fragment(s) claim it)"
               % (version, "ok  " if ok else "FAIL", count))
         for fid, line in failures:
@@ -324,7 +372,13 @@ def main():
         if not ok:
             bad.append(version)
 
+    written = record(versions, outcomes, fragments)
     print()
+    if written:
+        print("Result recorded in %s - brain/heron_matrix.py reads it."
+              % os.path.relpath(written, ROOT).replace(os.sep, "/"))
+        print()
+
     if bad:
         print("FAILED on %s." % ", ".join(bad))
         print("A fragment that does not compile cannot be proven against a")

@@ -82,6 +82,11 @@ TOOLS = {
     # future field carrying element ids or parameter values would change that
     # judgement, and whoever adds one should revisit this line.
     "heron_gaps":               (READ,    None),
+
+    # The Compatibility Matrix (HERON-FRG-MTX-009). READ, no operation:
+    # it reads the fragment files, the build's runtime table and the last
+    # compile record. Nothing here reaches a model or a Revit session.
+    "heron_compatibility":      (READ,    None),
 }
 
 

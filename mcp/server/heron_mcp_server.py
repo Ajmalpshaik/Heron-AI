@@ -89,6 +89,8 @@ except ImportError:
             "Install it with:  pip install --user mcp" % exc
         )
 
+NEWLINE = chr(10)
+
 server = _Server("heron")
 
 # One chat, one Revit. Lives as long as this server does, which is as long as
@@ -949,6 +951,50 @@ def heron_gaps(days: int = 0) -> str:
                      "nothing is missing.")
 
     return "\n".join(lines)
+
+
+@server.tool()
+def heron_compatibility(release: str = "") -> str:
+    """
+    Which Revit versions Heron's tools actually work on, and how well checked.
+
+    Use it for "does Heron work with Revit 2020?", "which versions are
+    supported?", "has any of this been tested on my version?". Pass a release
+    like "2020" for that one only. Needs no Revit.
+    """
+    found = brain.compatibility(release or None)
+    rows = found["rows"]
+    if not rows:
+        return ("Heron does not claim Revit %s. It claims: %s."
+                % (release, ", ".join(found["releases"])))
+
+    lines = ["Heron carries %d tools and claims %d Revit release(s)."
+             % (found["fragments"], len(found["releases"])), ""]
+
+    if not found["has_compile_evidence"]:
+        lines.append("NOTHING HAS BEEN CHECKED ON THIS MACHINE. Every number "
+                     "below is what the tools claim about themselves. Run "
+                     "tools/check-fragments-compile.py to turn the claims into "
+                     "something measured.")
+        lines.append("")
+
+    for row in rows:
+        lines.append("Revit %s  (runs on %s)" % (row["release"], row["runtime"]))
+        lines.append("    %d built cleanly, %d proved against a real model"
+                     % (row["compiles"], row["proven"]))
+        if row["claimed_only"]:
+            lines.append("    %d only CLAIM it - nothing has checked them"
+                         % row["claimed_only"])
+        if row["not_claimed"]:
+            lines.append("    %d do not claim this release at all"
+                         % row["not_claimed"])
+
+    lines.append("")
+    lines.append("Built cleanly means the code fits that version's API. It is "
+                 "NOT evidence that it does the right thing in a model - that "
+                 "is the second number, and it needs a proof with a negative "
+                 "case (D-30).")
+    return NEWLINE.join(lines)
 
 
 if __name__ == "__main__":

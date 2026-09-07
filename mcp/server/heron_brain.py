@@ -395,3 +395,45 @@ def gaps(days=None):
         "unclassified": [{"code": code, "count": count}
                          for code, count in found["unclassified"].most_common()],
     }
+
+
+def compatibility(release=None):
+    """
+    Which Revit releases Heron's fragments actually work on - HERON-FRG-MTX-009.
+
+    Three states, never merged: a fragment CLAIMS a release in its own file,
+    a compiler AGREED about that release, and a D-30 proof was recorded ON
+    that release. The first is an assertion, the second is about the API
+    surface, and only the third is about behaviour.
+
+    Needs no Revit and no knowledge store - it reads the fragment files, the
+    build's own runtime table, and whatever the last compile run recorded.
+    """
+    import heron_matrix as MX
+
+    matrix = MX.build_matrix()
+    rows = []
+    for rel in matrix["releases"]:
+        tally = {MX.CLAIMED: 0, MX.COMPILES: 0, MX.PROVEN: 0, MX.NOT_CLAIMED: 0}
+        for cells in matrix["cells"].values():
+            tally[cells.get(rel, MX.NOT_CLAIMED)] += 1
+        rows.append({
+            "release": rel,
+            "runtime": matrix["runtimes"].get(rel),
+            "claimed_only": tally[MX.CLAIMED],
+            "compiles": tally[MX.COMPILES],
+            "proven": tally[MX.PROVEN],
+            "not_claimed": tally[MX.NOT_CLAIMED],
+        })
+
+    if release is not None:
+        rows = [r for r in rows if r["release"] == str(release)]
+
+    return {
+        "rows": rows,
+        "fragments": matrix["library"],
+        "releases": matrix["releases"],
+        "has_compile_evidence": bool(matrix["evidence"]),
+        "tested": matrix["tested"],
+        "evidence_at": (matrix["evidence"] or {}).get("at"),
+    }

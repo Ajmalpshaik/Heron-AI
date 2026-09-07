@@ -40,6 +40,10 @@ import sys
 import threading
 import time
 
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp", "server"))
+from heron_tools import TOOLS                                  # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 
@@ -133,11 +137,21 @@ def main():
                 names = [t["name"] for t in json.loads(listed)["result"]["tools"]]
             except Exception:
                 names = []
-        # ELEVEN since heron_gaps was added (089c570). The number is asserted
-        # rather than the list, so a tool appearing or vanishing is noticed - and
-        # this count was left at ten when the eleventh arrived, which is exactly
-        # the drift it exists to catch.
-        check(len(names) == 11, "the host is offered all eleven tools (got %d)" % len(names))
+        # THE COUNT IS DERIVED, because typing it has now gone stale twice -
+        # left at ten when the eleventh arrived, and at eleven when the twelfth
+        # did. heron_tools.TOOLS is the declaration; this asserts the server
+        # SERVES exactly what is declared, which catches everything the typed
+        # number caught and cannot rot.
+        declared = set(TOOLS)
+        offered = set(names)
+        check(offered == declared,
+              "the host is offered exactly the declared tools (declared %d, "
+              "offered %d%s)"
+              % (len(declared), len(offered),
+                 "" if offered == declared else
+                 "; only in registry: %s; only served: %s"
+                 % (sorted(declared - offered) or "none",
+                    sorted(offered - declared) or "none")))
         check("heron_capabilities" in names, "heron_capabilities is among them")
         check("heron_gaps" in names, "heron_gaps is among them")
 
@@ -194,11 +208,24 @@ def main():
             print("  %s" % line)
         return 1
 
-    print("PASSED - a real host starts Heron, is offered eleven tools, and gets an")
+    print("PASSED - a real host starts Heron, is offered every declared tool,")
+    print("and gets an")
     print("answer from every one it asks - inside a deadline rather than eventually.")
     print()
-    print("It says NOTHING about whether any fragment WORKS. 13 of 348 are")
-    print("PROVEN and the rest are claims, and D3 in NEEDS-CHECKING.md is still")
+    # DERIVED, because it was typed as "13 of 348" and the library has been
+    # 44 of 349 for some time. A number in a closing sentence goes stale the
+    # day after it is written and is believed for months.
+    try:
+        sys.path.insert(0, os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "brain"))
+        import heron_fragment as HF
+        found, _problems = HF.load_all()
+        proven = sum(1 for f in found.values() if f.status in ("PROVEN", "PRODUCTION"))
+        tally = "%d of %d are PROVEN" % (proven, len(found))
+    except Exception:
+        tally = "most are not PROVEN"
+    print("It says NOTHING about whether any fragment WORKS. %s" % tally)
+    print("and the rest are claims, and D3 in NEEDS-CHECKING.md is still")
     print("the line that catches a unit error.")
     return 0
 
