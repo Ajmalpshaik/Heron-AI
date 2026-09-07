@@ -310,6 +310,7 @@ def build_plan(library, include_all=False):
     for frag in library:
         route, note = route_for(frag, table)
         declared, warning = declared_negative(frag)
+        by_hand = declared_second_route(frag)
         if not include_all and route in (PROVED, WRITE_PATH, UNREACHABLE, NEEDS_VALUES):
             continue
         entry = {
@@ -321,6 +322,7 @@ def build_plan(library, include_all=False):
             "cross_checks": [name for name, _ in cross_checks(frag)],
             "negative_case": negative_case_plan(frag, route),
             "declared_negative": declared,
+            "declared_second_route": by_hand,
             "negative_warning": warning,
         }
         entries.append(entry)
@@ -341,6 +343,36 @@ def build_plan(library, include_all=False):
 DISPROVED_NEGATIVE = re.compile(
     r"(empty (element|selection) list|an empty selection|nothing selected"
     r"|no elements selected)", re.I)
+
+
+def declared_second_route(frag):
+    """
+    The second route this fragment's own tests/cases.yaml names.
+
+    D-30 wants a third leg: a different way to reach the same fact. `plan` had
+    only ever offered the bridge's own operations, and said "none this agent
+    can run" for everything else - 329 of 349 fragments. Every one of those 349
+    declares a second route in its case file, and it was never read.
+
+    They are almost all a PERSON's route rather than an agent's - "Revit's own
+    Edit Type / Structure dialog", "the Project Browser", "Manage / Project
+    Information". That is exactly why the plan should print them: the agent
+    cannot run them, and the person about to sit in front of Revit can.
+
+    Kept out of draft_from_record on purpose. A draft records what was actually
+    RUN, and printing a route into a draft nobody followed would manufacture
+    the evidence D-30 exists to demand.
+    """
+    cases, problem = frag.cases()
+    if problem:
+        return []
+    routes = []
+    for row in (cases.get("second_route") or []):
+        if isinstance(row, dict):
+            row = row.get("given") or row.get("route") or ""
+        if row:
+            routes.append(" ".join(str(row).split()))
+    return routes
 
 
 def declared_negative(frag):
@@ -367,15 +399,34 @@ def declared_negative(frag):
 
     warning = None
     if not _reads_the_selection_itself(frag):
-        for given in givens:
-            if DISPROVED_NEGATIVE.search(given):
-                warning = (
-                    "the declared negative case is %r, which cannot prove "
-                    "anything: this fragment is fed `elements`, so an empty "
-                    "list is refused as needs_unbound and it never runs. "
-                    "Rewrite it as a selection CONTAINING NONE of what it "
-                    "reports" % given)
-                break
+        stranded = [g for g in givens if DISPROVED_NEGATIVE.search(g)]
+        workable = len(givens) - len(stranded)
+        if stranded:
+            # WHETHER THIS BLOCKS THE PROOF IS THE USEFUL HALF, and it is why
+            # this counts rather than just flagging. Every one of the eighteen
+            # fragments carrying a stranded case also carries at least one
+            # workable one, so not one of them is actually blocked - and a
+            # warning that reads like a blocker on eighteen fragments nobody
+            # needs to touch is how a real finding gets skimmed past.
+            #
+            # NOT DELETED, on purpose. These carry real requirements -
+            # ISOLATE_ELEMENTS asks for "the view LEFT AS IT WAS", which is a
+            # safety rule, not a test. The executor refuses before the fragment
+            # runs, so the requirement is unreachable rather than untested, and
+            # throwing the sentence away would lose the rule along with the
+            # unusable arrangement. Rewriting it into a reachable one is a
+            # judgement about how Revit behaves for THAT fragment, which wants
+            # a real model and the person who wrote it.
+            warning = (
+                "%d declared negative case(s) cannot be run - %r. This "
+                "fragment is fed `elements`, so an empty list is refused as "
+                "needs_unbound and it never runs; the requirement inside it "
+                "is unreachable rather than untested. %s"
+                % (len(stranded), stranded[0],
+                   ("NOT blocking: %d workable negative case(s) remain"
+                    % workable) if workable else
+                   "BLOCKING: no workable negative case remains, so this "
+                   "fragment cannot be proved at all"))
     return givens, warning
 
 
@@ -471,9 +522,14 @@ def print_plan(entries, library):
         if entry["cross_checks"]:
             print("  %-32s   second route: %s"
                   % ("", ", ".join(entry["cross_checks"])))
+        elif entry["declared_second_route"]:
+            print("  %-32s   second route: none this agent can run. Its case "
+                  "file names one for a PERSON to run:" % "")
+            for route in entry["declared_second_route"][:2]:
+                print("  %-32s     %s" % ("", route))
         else:
-            print("  %-32s   second route: none this agent can run - the draft "
-                  "will say NOT ESTABLISHED" % "")
+            print("  %-32s   second route: none this agent can run, and none "
+                  "declared - the draft will say NOT ESTABLISHED" % "")
         print("  %-32s   negative case: %s" % ("", entry["negative_case"]))
         for given in entry["declared_negative"][:3]:
             print("  %-32s     declared: %s" % ("", given))
