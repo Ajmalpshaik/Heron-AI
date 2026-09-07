@@ -57,6 +57,29 @@ contract:
     - name: totalThicknessMm
       type: IList<string>
 
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,641 elements), Revit 2024, session 42676
+  positive_case: '4 walls selected in Snowdon Towers Sample HVAC - ''Exterior - Brick on Mtl.
+    Stud'', drawn in the host model because the sample''s own walls live in a LINKED model
+    and the executor skips links deliberately - run as it would normally be run. returned
+    findings 10 item(s) [1 type(s) with a layer build-up, from 4 element(s); 0 had no...,
+    ''Basic Wall: Exterior - Brick on Mtl. Stud'' - 7 layer(s), ou...,     1. Finish1              92.1
+    mm   Brick, Common, ...], seenTypes HashSet`1, totalThicknessMm 1 item(s) [''Basic Wall:
+    Exterior - Brick on Mtl. Stud'' = 352.4 mm], typesReported 1, typesToReport 1 item(s)
+    [Exterior - Brick on Mtl. Stud], withoutStructure 0 item(s). inputs came elements from
+    the selection (4). on Snowdon Towers Sample HVAC'
+  negative_case: 16 spaces selected in Snowdon Towers Sample HVAC - none of which has a compound
+    structure, so the answer had to be empty. returned findings 1 item(s) [0 type(s) with
+    a layer build-up, from 16 element(s); 0 had n...], seenTypes HashSet`1, totalThicknessMm
+    0 item(s), typesReported 0, typesToReport 0 item(s), withoutStructure 0 item(s). inputs
+    came elements from the selection (16). on Snowdon Towers Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bf8d3d26e1896c82
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
