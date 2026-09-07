@@ -44,7 +44,10 @@ purpose: >
   while nothing in the library could write a global at all - and
   `WRITE_ELEMENT_PARAMETERS` cannot stand in, because a global's value is not a
   parameter on an element. Read this fragment's `drives` list before writing:
-  it is exactly what will move. Creating one is still not here.
+  it is exactly what will move. Creating one is `CREATE_GLOBAL_PARAMETER`,
+  written 2026-09-07 - not here, but no longer nowhere. **Neither can RUN yet:**
+  the executor has only `run_fragment_read`, so nothing that writes can be
+  executed as a fragment at all, whatever its risk says.
 
 contract:
   needs:
