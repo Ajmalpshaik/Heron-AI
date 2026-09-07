@@ -432,22 +432,43 @@ class Fragment(object):
         return sorted(found)
 
     def fingerprint(self):
-        """One hash over the exact bytes of the implementation.
+        """One hash over the content of the implementation.
 
         Content, not timestamps - the same rule tests/test_golden.py follows,
         and for the same reason: a file touched but unchanged must not
         invalidate a proof, and a file changed back to what it was must not
         either. Returns None when there is nothing to hash, which is itself a
         finding rather than a pass.
+
+        CONTENT, AND NOT THE MACHINE IT WAS READ ON. This hashed the raw bytes
+        and the path exactly as the operating system spelled it, which made the
+        number a fact about Windows as much as about the code. Measured
+        2026-09-06 in a Linux container: ALL SIXTEEN proven fragments reported
+        STALE and `python brain/heron_fragment.py` failed with sixteen problems.
+        None of them was stale. Every implementation predated its own proof date
+        - git, file by file - and every recorded value reproduced exactly by
+        hashing the same bytes with backslash paths and CRLF line endings.
+
+        A proof stamped on the PC could therefore never verify anywhere else,
+        and a staleness gate that cries wolf sixteen times out of sixteen stops
+        being read - which is the one habit this repository cannot afford. So
+        the separator and the line ending are both normalised here. Neither
+        changes what the code SAYS, and that is the whole test of whether a
+        normalisation belongs in a fingerprint.
+
+        The sixteen values recorded under the old rule need re-recording once:
+        `python brain/heron_validate.py restamp --apply`, which refuses any
+        fragment whose implementation genuinely moved after its proof date.
         """
         paths = self.proof_files()
         if not paths:
             return None
         digest = hashlib.sha256()
         for path in paths:
-            digest.update(path.encode("utf-8"))
+            digest.update(path.replace("\\", "/").encode("utf-8"))
             # ROOT is discarded when path is absolute - see repo_relative().
-            digest.update(io.open(os.path.join(ROOT, path), "rb").read())
+            content = io.open(os.path.join(ROOT, path), "rb").read()
+            digest.update(content.replace(b"\r\n", b"\n"))
         return digest.hexdigest()[:16]
 
     def proof_is_stale(self):

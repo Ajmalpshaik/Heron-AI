@@ -83,7 +83,7 @@ proof:
     Project1: 2 levels, surveyOffset 0, atRisk false, worstDifference 0. A model with no survey offset is reported as not at risk rather than flagged anyway, which is what makes the Snowdon flag mean something.
   second_route: >
     LIST_LEVELS read the same 11 and 2 levels by a different route in the same run, and Revit's own survey point can be read on screen.
-  fingerprint: "3484626a565611c9"
+  fingerprint: "96aeb0417c7e41bc"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

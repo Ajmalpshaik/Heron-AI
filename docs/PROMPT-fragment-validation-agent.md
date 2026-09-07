@@ -7,6 +7,21 @@
 <!-- Heron-Layer:  doc -->
 <!-- See docs/29-metadata-standard.md -->
 
+> ## ✅ BUILT — 2026-09-06. This is now the record of the brief, not a job waiting.
+>
+> [`brain/heron_validate.py`](../brain/heron_validate.py) is the agent, [`tests/test_validate_agent.py`](../tests/test_validate_agent.py)
+> checks it without Revit, and `heron_bridge_client.py validate` is the half that needs a model open.
+> [`brain/proof-drafts/README.md`](../brain/proof-drafts/) explains what a draft is to whoever finds one.
+>
+> **Nothing has been run against Revit.** Every judgement below is testable off-model and was tested;
+> the running half could not be, on a machine with no Windows and no Revit on it. The three open
+> questions at the foot of this file are answered, each by a measurement rather than a preference.
+>
+> **Two numbers in this brief were checked and one was wrong.** The reachable working set is **42
+> fragments**, not 333 — see [the plan](#what-it-actually-reaches). And *"every fragment run today is
+> in the audit log with its outcome"* is **not true**: the add-in records the operation, not which
+> fragment ran, so no failure in that log can be attributed to a fragment.
+
 **Written 2026-09-07. Paste the block below into a fresh session.** It is written to be started from
 cold — it names the files, the numbers, the one rule that must not be broken, and how to know it worked.
 
@@ -106,12 +121,59 @@ that line honestly.
 **If it produces 300 drafts and a person rejects most of them, it has made the backlog worse**, because
 now somebody must read 300 wrong things instead of proving 300 right ones. Build it to do ten well.
 
-## Open questions for the session that builds it
+## What it actually reaches
 
-- Where does a draft live — a `proof-draft:` key in `fragment.yaml`, or a separate file? A key keeps one
-  fact in one home ([docs/29](29-metadata-standard.md)); a separate file keeps the library clean of
-  unreviewed content. **This is a real decision and belongs to the owner.**
-- Can the negative case be arranged automatically for a fragment needing a selection? Emptying the
-  selection is a UI action, and `run_fragment_read` deliberately cannot act on the UI.
-- Should it run against **two** models to catch answers that are true of one building only? `LIST_LEVELS`
-  was proved that way and it is what caught the difference between 11 levels and 2.
+Measured off disk on 2026-09-06, because the roadmap's number and the reachable number are nothing like
+each other. `python brain/heron_validate.py plan` recomputes all of this live.
+
+| | |
+|---|---|
+| Fragments | **349** — 333 `DRAFT`, 16 `PROVEN` |
+| Need a value only the request carries | **279** — no route today, and the plan says so per fragment |
+| Can change the model | **180** — out of scope while `write.enabled` is false |
+| Run on the document alone | **20**, and 16 of those are the 16 already proven |
+| **Worth running now** | **42** — 4 standalone, 36 fed by a selection, 2 needing a batch |
+
+**Forty-two is the honest size of this job.** It is not 333, and it is not 4 — which is what it would be
+if the selection and the chain were ignored. It is enough to be worth doing and small enough to do well,
+which is what the *"build it to do ten well"* line above was asking for.
+
+## Open questions — all three answered, each by a measurement
+
+**Where does a draft live?** *A separate file*, `brain/proof-drafts/<slug>.yaml`. Not for tidiness: a
+`proof-draft:` key inside `fragment.yaml` would need the agent to hold a write path into
+`brain/fragments/`, and once that exists *"it never sets heron-status"* is only true while the code
+stays correct. With drafts outside, `write_draft` refuses the library outright and the rule holds
+because there is nothing to break. The docs/29 cost — one fact, two homes — is real and is paid off by
+`accept` deleting the draft as it records the proof.
+
+**Can the negative case be arranged automatically for a selection-fed fragment?** *Yes in principle,
+and almost never in practice today.* `select_by_category` ends in `uiDoc.Selection.SetElementIds(found)`
+— it **sets** the selection, so asking for a category the model does not contain empties it, with no
+person involved. The catch is the category table in `RevitOperations.cs`: it holds four spellings of one
+word, `duct`. So the automatic route exists and reaches one category. Everywhere else a person clears
+the selection, which is one keystroke at the machine they are already sitting at. Widening it is a table
+row, not a design change.
+
+**Should it run against two models?** *Yes, and for a standalone fragment it is the only negative case
+there is.* A fragment reading the whole document has nothing to withhold from it — the empty answer has
+to come from a second model that genuinely lacks the thing. That is exactly how `LIST_LEVELS` was proved
+(11 levels against the 2 template levels), and `validate --negative-in "Project1"` is that shape made
+into a command.
+
+## One thing found while building it, and it is not this agent's
+
+**All 16 proven fragments reported `STALE`, and none of them was.** `python brain/heron_fragment.py`
+failed with sixteen problems in a Linux container while passing on the PC. The fingerprint hashed the
+raw bytes and the path as the operating system spelled it, so it was a fact about Windows as much as
+about the code — every recorded value reproduces exactly by hashing the same bytes with backslash paths
+and CRLF line endings, and git shows every implementation predating its own proof date.
+
+`fingerprint()` now normalises both, and the sixteen were re-recorded once with
+`heron_validate.py restamp --apply`, which **refuses** any fragment whose code genuinely moved after its
+proof was taken. Only the fingerprint line changed in each file; no proof, author, date or status was
+touched.
+
+**It matters beyond the tidying.** A staleness gate that cries wolf sixteen times out of sixteen stops
+being read, and this agent's whole third success criterion is that the fingerprint it drafts makes
+`test_golden.py` call a proof stale when — and only when — the C# changes.

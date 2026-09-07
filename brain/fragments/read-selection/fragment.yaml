@@ -84,7 +84,7 @@ proof:
     established - and the two are indistinguishable from the bare 0 the caller
     gets. That is the same defect shape LIST_WORKSETS names in its own negative
     case: an empty answer and an unanswerable question must not read alike.
-  fingerprint: "f2a532d431d20723"
+  fingerprint: "a2a503b72466b04c"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

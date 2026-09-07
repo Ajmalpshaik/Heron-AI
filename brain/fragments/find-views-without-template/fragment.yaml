@@ -51,7 +51,7 @@ proof:
     Project1: 18 views with no template and issued 0 - none of them is on a sheet, so none is an issue. The fragment separates 'working view with no template' from 'issued drawing with no template' rather than counting both as faults.
   second_route: >
     FIND_UNPLACED_VIEWS and LIST_SHEETS agree in the same run that Project1 has nothing on a sheet.
-  fingerprint: "d1557341e2eaf156"
+  fingerprint: "6acb02f8a9918238"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

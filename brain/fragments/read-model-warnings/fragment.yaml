@@ -54,7 +54,7 @@ proof:
     Project1: 0 warnings, 0 elements, 0 kinds. A clean model returns nothing rather than a spurious finding, with both documents open.
   second_route: >
     Revit's own Manage > Warnings dialog lists the same set and the same total.
-  fingerprint: "61f9cf28783841b4"
+  fingerprint: "9b6bb49afca0cf5e"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

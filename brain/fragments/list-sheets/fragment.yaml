@@ -50,7 +50,7 @@ proof:
     Project1: 0 sheets, 0 placeholders. Empty, from a model that has none - and not Snowdon's 17, with both documents open.
   second_route: >
     LIST_REVISIONS walked the sheets independently in the same run and also reported 17 on Snowdon and 0 on Project1. Two mechanisms, one number.
-  fingerprint: "6010a39b2f3440c5"
+  fingerprint: "f627d8b7568ebcc4"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

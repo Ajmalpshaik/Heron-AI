@@ -57,7 +57,7 @@ proof:
     Project1: placedCount 0. Nothing is on a sheet because the model has no sheets, and the fragment says so rather than reporting every view as an unplaced problem without context.
   second_route: >
     LIST_SHEETS independently found 17 sheets on Snowdon and 0 on Project1, which is what makes 42 placed and 0 placed the right answers.
-  fingerprint: "c7e5f40b3916bf41"
+  fingerprint: "7a7ecbf7015918ee"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -89,7 +89,7 @@ proof:
     Project1: 2 references, unresolved 0, unloaded 0. A model with no links reports the two settings references and nothing else, and claims no missing file.
   second_route: >
     LIST_LINKED_MODELS independently found exactly 6 loaded links on Snowdon and 0 on Project1 - 8 minus the two non-link references, and 2 minus the same two.
-  fingerprint: "1f68378836667d30"
+  fingerprint: "21ed8051f4b9ad5c"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

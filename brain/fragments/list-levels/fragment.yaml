@@ -53,7 +53,7 @@ proof:
     Project1: exactly the 2 template levels, Level 1 at 0 mm and Level 2 at 4000 mm. With BOTH documents open it returned only the active one's levels - it does not read across documents, which is the way this could have been quietly wrong.
   second_route: >
     REPORT_LEVEL_ELEVATIONS read the same 11 levels by a different route in the same run, and Revit's Project Browser lists them.
-  fingerprint: "9c7c6288cc72b0eb"
+  fingerprint: "49e6afa85a115f06"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

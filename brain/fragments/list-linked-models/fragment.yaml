@@ -52,7 +52,7 @@ proof:
     Project1: 0 links, 0 loaded, 0 notLoaded. Empty because there are none - and with both documents open it did not report Snowdon's six.
   second_route: >
     REPORT_EXTERNAL_REFERENCES counted 8 references on Snowdon and 2 on Project1 in the same run; the difference is exactly these 6 links.
-  fingerprint: "61306a1830fb89f6"
+  fingerprint: "e2c3a50aaaf63f52"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

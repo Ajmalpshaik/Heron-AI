@@ -78,7 +78,7 @@ proof:
     legitimately disagree, which is what makes agreeing worth something. Revit's
     own Manage > Phases dialog is the third: it is what the owner used to create
     them.
-  fingerprint: "fe91601e84901793"
+  fingerprint: "0439701671d12568"
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
