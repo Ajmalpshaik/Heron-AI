@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using System.Threading;
 using Autodesk.Revit.UI;
 using Heron.Bridge;
@@ -62,12 +63,28 @@ namespace Heron.Revit.Addin
         private readonly Action<string> _log;
         private readonly string _session;
 
+        /// <summary>
+        /// What Revit SHOWS while this is happening - HERON-REVIT-UI-022.
+        ///
+        /// It belongs here rather than deeper in because this class is the one
+        /// place that knows both halves of a request: the moment before Revit
+        /// is asked, and the moment it is done. Anything further in runs on
+        /// the blocked thread and could not raise a banner in time; anything
+        /// further out does not know when the work truly ends.
+        /// </summary>
+        private readonly HeronActivityBanner _banner;
+
         private ExternalEvent _event;
 
-        public RevitDispatcher(Action<string> log, string session)
+        public RevitDispatcher(Action<string> log, string session, HeronActivityBanner banner)
         {
             _log = log ?? delegate { };
             _session = session;
+
+            // A silent do-nothing banner rather than a null, so that every
+            // call site below is a plain call. A cosmetic feature is not
+            // worth a null check on the path that reaches the model.
+            _banner = banner ?? new HeronActivityBanner(false, log);
 
             var config = HeronConfig.Load();
             _busyTimeout = TimeSpan.FromSeconds(
@@ -106,6 +123,19 @@ namespace Heron.Revit.Addin
             var job = new RevitJob(request, HeronAudit.NewWorkflowId());
             lock (_queueLock) { _queue.Enqueue(job); }
 
+            // THE BANNER GOES UP HERE, BEFORE Raise, AND THAT ORDER IS THE
+            // WHOLE TRICK. Revit draws on the same thread it works on, so the
+            // instant Execute starts nothing can be painted - a banner posted
+            // any later would appear only once the work it announces is over.
+            // Posting it first puts it in the queue ahead of the idle pass
+            // that runs the ExternalEvent.
+            //
+            // The read/change word comes from the tool registry, looked up by
+            // operation name (Golden Rule 19). Nothing in the request decides
+            // it, so a write can never wear the reading colour.
+            var op = Json.ReadString(request, "op");
+            _banner.Begin(DescribeJob(op, request), HeronOperationRegistry.Writes(op));
+
             try
             {
                 raiser.Raise();
@@ -113,6 +143,8 @@ namespace Heron.Revit.Addin
             catch (Exception ex)
             {
                 job.Abandon();
+                if (job.TakeBannerEnd())
+                    _banner.End(false, "Revit would not take the request", -1);
                 return Json.Error("raise_failed", ex.Message);
             }
 
@@ -122,6 +154,14 @@ namespace Heron.Revit.Addin
                 // rather than doing work whose answer nobody is waiting for.
                 job.Abandon();
                 RecordRefusal(job.WorkflowId, request, "revit_busy");
+
+                // Execute will skip this one, so nobody else will lower the
+                // banner. It is also the case the banner is worth the most:
+                // the reason Revit did not take it is that something is open
+                // ON SCREEN, which is where the person is already looking.
+                if (job.TakeBannerEnd())
+                    _banner.End(false, "Revit was busy - nothing was sent", -1);
+
                 return Json.Error("revit_busy",
                     "Revit is busy and did not take the request. A dialog may be open, " +
                     "or a command may be running. Finish what is open in Revit and ask again.");
@@ -132,6 +172,12 @@ namespace Heron.Revit.Addin
                 // It IS running - Revit picked it up. Nothing can safely
                 // interrupt it, and calling this "busy" would invite a retry of
                 // something already in progress.
+                //
+                // THE BANNER IS DELIBERATELY LEFT UP. This caller has stopped
+                // waiting; the work has not stopped, and Revit is still frozen
+                // because of it. Execute lowers it when the job genuinely
+                // ends, which is the only honest moment - and until then the
+                // screen keeps saying what the freeze is.
                 RecordRefusal(job.WorkflowId, request, "still_running");
                 return Json.Error("still_running",
                     "Revit started the request but has not finished within " +
@@ -177,10 +223,19 @@ namespace Heron.Revit.Addin
                 }
                 clock.Stop();
 
+                // THE HONEST END OF THE WORK, and the reason End is not called
+                // back in Dispatch: this is the moment Revit is free again.
+                // A caller that already gave up ("still running") is not the
+                // same event as the job finishing, and the screen must follow
+                // the model rather than the client.
+                var failure = Json.ReadString(response, "error");
+                if (job.TakeBannerEnd())
+                    _banner.End(failure == null, Explain(failure), clock.ElapsedMilliseconds);
+
                 // One line per request, whatever happened. A trail that only
                 // records successes answers the wrong question later.
                 HeronAudit.Record(job.WorkflowId, op,
-                    Json.ReadString(response, "error") == null,
+                    failure == null,
                     new[]
                     {
                         new KeyValuePair<string, string>("session", _session),
@@ -191,6 +246,103 @@ namespace Heron.Revit.Addin
                     });
 
                 job.Finish(response);
+            }
+        }
+
+        /// <summary>
+        /// What the banner says Heron is doing, in the words a modeller would
+        /// use rather than the words the wire uses.
+        ///
+        /// An operation name is a protocol token: "run_fragment_read" tells
+        /// somebody watching their model precisely nothing. This is the one
+        /// place that translation lives, so a new operation that forgets to
+        /// add itself degrades to a readable version of its own name rather
+        /// than to a blank card.
+        /// </summary>
+        private static string DescribeJob(string op, string request)
+        {
+            switch (op)
+            {
+                case "count_elements":
+                    return "Counting what is in the model";
+
+                case "select_by_category":
+                    return "Selecting elements on screen";
+
+                case "preview_move":
+                    return "Working out what a move would do";
+
+                case "move_elements":
+                    return "Moving elements";
+
+                case "run_fragment_read":
+                    var name = Clean(Json.ReadString(request, "name"));
+                    return name.Length == 0 ? "Running a job" : "Running a job: " + name;
+            }
+
+            var readable = Clean(op);
+            return readable.Length == 0 ? "Working" : readable.Replace('_', ' ');
+        }
+
+        /// <summary>
+        /// Text off the wire, made safe to put on screen.
+        ///
+        /// A fragment name arrives from the client, and this banner sits over
+        /// Revit looking like part of Revit. Newlines and control characters
+        /// would let a name spread down the card, and an unbounded one would
+        /// push everything else off it - so the name is a single short line or
+        /// it is nothing. It can never say more than a name, whatever it
+        /// contains.
+        /// </summary>
+        private static string Clean(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+
+            var kept = new StringBuilder(48);
+            foreach (var c in text)
+            {
+                if (char.IsControl(c)) continue;
+                kept.Append(c);
+                if (kept.Length == 44) { kept.Append('\u2026'); break; }
+            }
+            return kept.ToString().Trim();
+        }
+
+        /// <summary>
+        /// An error code turned into the one line the banner has room for.
+        ///
+        /// The full sentence still goes back to the chat, which is where the
+        /// user can read and act on it. This is the glance version, for
+        /// somebody who is looking at Revit rather than at the chat - and the
+        /// refusals are the ones worth showing there, because until now a
+        /// refusal was completely invisible from Revit.
+        /// </summary>
+        private static string Explain(string error)
+        {
+            switch (error)
+            {
+                case null:              return "Done";
+                case "revit_busy":      return "Revit was busy - nothing was sent";
+                case "stopped":         return "Heron is stopped";
+                case "write_disabled":  return "Not allowed to change the model";
+                case "session_in_use":  return "Another chat is using this Revit";
+                case "unknown_op":      return "Heron does not know that job";
+                case "not_implemented": return "Heron has no handler for that yet";
+                case "no_source":       return "No job was sent";
+                case "needs_unbound":   return "Nothing to work on - check the selection";
+                case "needs_request_values": return "The job is missing a value";
+                case "compile_failed":  return "The job would not compile";
+                case "no_document":     return "No model is open";
+                case "document_closed": return "That model was closed";
+                case "no_such_document":
+                case "document_not_in_front": return "That model is not open here";
+                case "read_only":       return "That model is read-only";
+                case "nothing_to_move": return "Nothing to move";
+                case "preview_expired":
+                case "model_moved_on":  return "The model changed - ask again";
+                case "fragment_threw":
+                case "operation_failed": return "The job failed in Revit";
+                default:                return "Did not finish";
             }
         }
 
@@ -215,6 +367,7 @@ namespace Heron.Revit.Addin
             private readonly ManualResetEventSlim _started = new ManualResetEventSlim(false);
             private readonly ManualResetEventSlim _finished = new ManualResetEventSlim(false);
             private volatile bool _abandoned;
+            private int _bannerEnded;
 
             public RevitJob(string request, string workflowId)
             {
@@ -230,6 +383,21 @@ namespace Heron.Revit.Addin
             public bool IsAbandoned { get { return _abandoned; } }
 
             public void MarkStarted() { _started.Set(); }
+
+            /// <summary>
+            /// Claims the right to lower the banner for this job, once.
+            ///
+            /// Two threads can both believe the job is theirs to finish: the
+            /// listener abandons it on the busy timeout at the same instant
+            /// Revit picks it up, and both would then call End - leaving the
+            /// active count one short and the banner up over a Revit doing
+            /// nothing. Whoever gets here first wins, and the other says
+            /// nothing.
+            /// </summary>
+            public bool TakeBannerEnd()
+            {
+                return Interlocked.CompareExchange(ref _bannerEnded, 1, 0) == 0;
+            }
 
             public void Finish(string response)
             {

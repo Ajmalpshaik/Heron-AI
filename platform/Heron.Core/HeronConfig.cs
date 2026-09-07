@@ -72,6 +72,14 @@ namespace Heron.Core
                 { "write.enabled", "false" },
 
                 { "log.retainDays", "14" },
+
+                // WHAT REVIT SHOWS WHILE HERON WORKS (HERON-REVIT-UI-022).
+                // On by default, unlike everything else here: the other
+                // defaults protect the model by staying off, and this one
+                // protects the person by staying on. A Revit frozen with no
+                // explanation reads as a crash, and somebody who does not know
+                // the banner exists is exactly who needs it.
+                { "ui.activityBanner", "true" },
             };
 
         public static string FilePath { get { return Path.Combine(HeronPaths.Config, FileName); } }
