@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -91,6 +91,29 @@ contract:
       type: IDictionary<ElementId, double>
     - name: noCeiling
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,670 elements), Revit 2024, session 42676
+  positive_case: one space - Space M101 - selected in Snowdon Towers Sample HVAC, with a ceiling
+    drawn in the HOST model directly above it. The sample's own ceilings live in a LINKED
+    model and RevitFragment skips linked documents deliberately, so a host ceiling had to
+    be drawn for there to be anything to find. returned allCeilings 1 item(s) [2' x 4' ACT
+    System], boxOf 1 entry(ies), ceilingsOver 1 entry(ies), coverage 1 entry(ies), heights
+    1 entry(ies), mainCeiling 1 entry(ies), mainHeight 1 entry(ies), noCeiling 0 item(s),
+    undersideOf 1 entry(ies). inputs came elements from the selection (1). on Snowdon Towers
+    Sample HVAC
+  negative_case: 16 spaces selected in the same model before that ceiling existed - real rooms,
+    with every ceiling above them inside a link the executor cannot see, so the answer had
+    to be empty. returned allCeilings 0 item(s), boxOf 0 entry(ies), ceilingsOver 0 entry(ies),
+    coverage 0 entry(ies), heights 0 entry(ies), mainCeiling 0 entry(ies), mainHeight 0 entry(ies),
+    noCeiling 16 item(s) [1410865, 1410870, 1410963, ...], undersideOf 0 entry(ies). inputs
+    came elements from the selection (16). on Snowdon Towers Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2850638e45a475ba
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
