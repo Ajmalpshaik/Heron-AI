@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,28 @@ contract:
       type: int
     - name: notCurtain
       type: IList<string>
+
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,686 elements), Revit 2024, session 42676
+  positive_case: 'one Exterior Glazing curtain wall, drawn in the HOST model of Snowdon Towers
+    Sample HVAC and selected. Drawn rather than found because the sample''s own walls are
+    in a LINKED model and the executor skips links deliberately. returned curtainWallsFound
+    1, emptyCells 0, findings 5 item(s) [1 curtain wall(s): 6 panel cell(s), 0 mullion(s),
+    0 empty ce..., ''Exterior Glazing'' (id 1543791):,     6 curtain panel(s), ...], mullionCount
+    0, notCurtain 0 item(s), panelCount 6. inputs came elements from the selection (1). on
+    Snowdon Towers Sample HVAC'
+  negative_case: '28 duct taps selected in the same model - none of which is a wall at all,
+    so the answer had to be empty. returned curtainWallsFound 0, emptyCells 0, findings 1
+    item(s) [0 curtain wall(s): 0 panel cell(s), 0 mullion(s), 0 empty ce...], mullionCount
+    0, notCurtain 28 item(s) [''Taps'' is not a wall, ''1.5 D'' is not a wall, ''Taps'' is
+    not a wall, ...], panelCount 0. inputs came elements from the selection (28). on Snowdon
+    Towers Sample HVAC'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d2fccdc4fd587dc7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
