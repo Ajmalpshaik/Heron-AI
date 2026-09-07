@@ -56,20 +56,52 @@ foreach (var element in elements)
     // finding, not an empty result.
     if (space == null) { notSpaces.Add(element.Id); continue; }
 
+    // THESE SIX PROPERTIES THROW, AND THE HANDLER FOR IT WAS UNREACHABLE.
+    //
+    // Found 2026-09-07 by running this against 16 spaces in Snowdon Towers: the
+    // whole fragment died with Revit's own `Not Computed!`. That is what
+    // DesignHeatingLoad and its siblings raise when the model's Areas and
+    // Volumes computation is off, or the space is unbounded.
+    //
+    // The bitter part is that the `noLoad` branch twenty lines below already
+    // says "the space is unbounded and has no volume to load" - the right
+    // answer, written, and never once printed, because the read threw before
+    // any value existed. A guard placed after the thing it guards against.
+    //
+    // So the reads are guarded and a throw routes into that same `noLoad`
+    // list, which is where it was always meant to end up. One space with
+    // volumes off costs that space, not the report for the other fifteen -
+    // the rule this file already applies everywhere else.
+    double designHeat, calcHeat, designCool, calcCool, designAir, calcAir;
+    try
+    {
+        designHeat = space.DesignHeatingLoad;
+        calcHeat = space.CalculatedHeatingLoad;
+        designCool = space.DesignCoolingLoad;
+        calcCool = space.CalculatedCoolingLoad;
+        designAir = space.DesignSupplyAirflow;
+        calcAir = space.CalculatedSupplyAirflow;
+    }
+    catch (Autodesk.Revit.Exceptions.ApplicationException)
+    {
+        noLoad.Add(space.Id);
+        findings.Add(string.Format(
+            "{0}  - NO LOAD READABLE. Revit refused the figures, which it does when "
+            + "the model's Areas and Volumes computation is off or the space is "
+            + "unbounded. Turn on Area and Volume Computations, or bound the space, "
+            + "and ask again",
+            string.Format("{0} {1}", space.Number ?? "", space.Name ?? "").Trim()));
+        continue;
+    }
+
     // Design overrides calculated where somebody has entered one, which is what
     // Revit itself does. Zero means nothing was entered.
-    var designHeat = space.DesignHeatingLoad;
-    var calcHeat = space.CalculatedHeatingLoad;
     var heatIsDesign = designHeat > 1e-9;
     var heat = heatIsDesign ? designHeat : calcHeat;
 
-    var designCool = space.DesignCoolingLoad;
-    var calcCool = space.CalculatedCoolingLoad;
     var coolIsDesign = designCool > 1e-9;
     var cool = coolIsDesign ? designCool : calcCool;
 
-    var designAir = space.DesignSupplyAirflow;
-    var calcAir = space.CalculatedSupplyAirflow;
     var airIsDesign = designAir > 1e-9;
     var air = airIsDesign ? designAir : calcAir;
 

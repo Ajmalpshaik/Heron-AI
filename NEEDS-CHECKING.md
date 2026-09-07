@@ -485,10 +485,9 @@ sentence has never once been printed. **A guard placed after the thing it guards
 instead of *"the analysis has not been run"* you get a crash. That is the difference between a fragment
 that tells a modeller what to fix and one that looks broken.
 
-**The fix is a `try` around the six property reads**, routing a throw into the existing `noLoad` list
-with the reason. It is not made here: this session was proving fragments, and changing an
-implementation mid-proof is how a proof stops meaning anything. **Recorded as a finding, unproven and
-unfixed.**
+**FIXED 2026-09-08.** A `try` around the six reads, routing a throw into the existing `noLoad` list with the reason - which is where it was always meant to end up. Re-run against 18 spaces in the same model: **`ok`, all 18 reported, none lost**, each one saying *"NO LOAD READABLE. Revit refused the figures, which it does when the model's Areas and Volumes computation is off or the space is unbounded. Turn on Area and Volume Computations, or bound the space, and ask again."* A crash became instructions.
+
+**STILL UNPROVEN, and the reason is worth keeping.** A D-30 proof needs a POSITIVE case and this model cannot supply one: every space returns `noLoad`, because volume computation is off and no design figure has been typed on any of them. To prove it somebody must either turn on Area and Volume Computations and run the analysis, or type a **Design Heating Load** on one space in Properties - a value a person enters, which is then exactly what the fragment reads back. **The fix is verified; the fragment is not proved.**
 
 `MEASURE_ROOM_DIMENSIONS`, proved earlier the same day, gets this right — it carries a
 `volumeComputationOff` flag and reports it. The two fragments read the same models and only one of them
