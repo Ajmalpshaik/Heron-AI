@@ -494,6 +494,35 @@ unfixed.**
 `volumeComputationOff` flag and reports it. The two fragments read the same models and only one of them
 survives a model with volumes switched off.
 
+### `REPORT_SCHEDULE_DEFINITION` cannot be reached by any route a person has — 2026-09-08
+
+**The owner placed a schedule on a sheet and clicked it. The fragment skipped it.**
+
+`Heat Recovery Unit Summary` selected → `skippedNotSchedules: 1`, `fieldNames: 0`. Not a fault in the
+selection and not a fault in the fragment's logic. Clicking a schedule on a sheet selects a
+**`ScheduleSheetInstance`** — the PLACEMENT — and the implementation does `element as ViewSchedule`,
+which is a different object, so the cast fails and the row is skipped.
+
+**There is no other way in.**
+
+- **A view cannot be selected as an element.** Opening the schedule selects its rows, not the schedule.
+  The Project Browser is not a model selection.
+- **No fragment provides one.** Searched the whole library: the only provides mentioning a schedule are
+  `notASchedule` and `skippedNotSchedules` — both counts of things that were NOT schedules. **Nothing in
+  349 fragments hands a `ViewSchedule` to anything**, so the chain route does not exist either.
+
+So the fragment is correct in isolation and **unusable in practice**: the only way a person points at a
+schedule is by clicking it on a sheet, and that is the one input it refuses.
+
+**The fix is three lines and belongs in the fragment**, not in the proof method: accept a
+`ScheduleSheetInstance` and resolve it through its `ScheduleId` before the cast, so that clicking the
+thing on the sheet does what a modeller means by it. Not made here — this session was proving
+fragments, and editing an implementation mid-proof is how a proof stops meaning anything.
+
+**`READ_SCHEDULE_CONTENTS` declares the same `skippedNotSchedules` and will have the same problem.**
+It has not been run, so that is a prediction rather than a finding, and it should be checked when this
+one is fixed.
+
 ## Group C — the gate, before anything can move
 
 **Do not skip to D.** C3 is what proves the write path cannot fire by accident; testing the move before
