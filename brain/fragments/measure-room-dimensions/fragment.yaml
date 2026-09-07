@@ -102,6 +102,28 @@ contract:
     - name: unmeasurable
       type: IList<ElementId>
 
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,628 elements), Revit 2024, session 42676
+  positive_case: 16 spaces selected in Snowdon Towers Sample HVAC (Residential Lobby 106,
+    Two Story Studio Unit 204, and others) - run as it would normally be run. returned areas
+    16 entry(ies), boundaryOptions SpatialElementBoundaryOptions, irregular 16 entry(ies),
+    lengths 16 entry(ies), roomsSeen 0, roomsWithZeroVolume 0, rotations 16 entry(ies), unmeasurable
+    0 item(s), unplaced 0 item(s), volumeComputationOff false, volumes 16 entry(ies), widths
+    16 entry(ies). inputs came elements from the selection (16). on Snowdon Towers Sample
+    HVAC
+  negative_case: 28 duct taps selected in Snowdon Towers Sample HVAC - none of which is what
+    this fragment reports, so the answer had to be empty. returned areas 0 entry(ies), boundaryOptions
+    SpatialElementBoundaryOptions, irregular 0 entry(ies), lengths 0 entry(ies), roomsSeen
+    0, roomsWithZeroVolume 0, rotations 0 entry(ies), unmeasurable 28 item(s) [1383647, 1383653,
+    1384651, ...], unplaced 0 item(s), volumeComputationOff false, volumes 0 entry(ies), widths
+    0 entry(ies). inputs came elements from the selection (28). on Snowdon Towers Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2c24cecec0b4ab9e
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

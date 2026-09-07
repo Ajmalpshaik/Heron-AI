@@ -2824,3 +2824,57 @@ result rather than a note in some fragment, that fragment's negative case can no
 of its other counts alone. Nothing in the docs says `findings` is narration — it is a convention read
 off 134 files, not a rule anybody wrote down. Writing it down is what this entry is for.
 
+## D-52 — A count of what was turned down is not a count of what was found
+
+**Status:** Accepted · **Date:** 2026-09-07 · **Found during:** proving seven fragments from two selections
+**Affects:** [`heron_validate.py`](../brain/heron_validate.py) `looks_empty`, [D-30](DECISIONS.md), [D-51](DECISIONS.md)
+
+### Context
+
+Seven fragments were run twice against `Snowdon Towers Sample HVAC` — once with 28 duct taps selected,
+once with 16 spaces. `READ_MEP_SYSTEM` returned `systemName: 28` for the taps and `systemName: 0` for
+the spaces. That is a fragment reading the model.
+
+It was flagged, because the same negative run also returned **`noSystem: 16`** — and 16 is not 0.
+
+But `noSystem: 16` does not mean sixteen systems were found. It means **sixteen elements were examined
+and none of them had one.** The same shape appears throughout the library: `notSpatial: 28`,
+`unmeasurable: 28`, `noConnectors: 16`, `noPhase: 16`.
+
+### The decision
+
+**Fields that count what the fragment was GIVEN and could not report on are excluded from the emptiness
+test.** Identified by a camelCase prefix — `no`, `not` or `un` followed by a **capital** — plus three
+observed single words (`unmeasurable`, `unplaced`, `unenclosed`). The capital matters: `notes` and
+`nodes` stay ordinary result fields.
+
+**The argument is not convenience, it is that this evidence is STRONGER than silence.** A negative case
+where every field is zero cannot distinguish *"it looked at sixteen spaces and none had a system"* from
+*"it never looked"*. `noSystem: 16` proves it looked. Requiring the fragment to go quiet would reward
+the less informative behaviour.
+
+### Two things fixed alongside, which were bugs rather than judgements
+
+1. **`entry(ies)` was unreadable.** `_as_count` matched `"3 item(s)"` but the executor renders a
+   dictionary as `"3 entry(ies)"`, so `"0 entry(ies)"` fell through as unparseable and blocked the
+   verdict. Same family as the string-`"0"` bug in [D-51](DECISIONS.md).
+2. **Helper objects blocked the verdict.** `RevitFragment.Describe` falls back to `GetType().Name`, so
+   `boundaryOptions` arrived as `SpatialElementBoundaryOptions` and `flow` as `` Func`3 ``. Those are
+   helpers the fragment left in scope, identical in both runs, saying nothing about what was found. A
+   bare type name is not a quantity that could have been zero.
+
+### The risk being accepted, stated plainly
+
+**This is the second standard relaxed in one evening, both to let fragments through, and that pattern is
+worth naming rather than hiding.** [D-51](DECISIONS.md) excluded prose; this excludes rejection counts.
+Each is defensible on its own and the direction is the same one, so the next one deserves more
+suspicion than this one got.
+
+**A fragment could now pass a negative case by naming its results `noFoo`.** Nothing prevents it. The
+protection is that a person still reads the draft and still signs it, and that the positive case must
+still find something — `looks_empty` returning True on a POSITIVE run is itself a finding.
+
+**Seven fragments were proved under this rule the day it was written**, which is exactly the
+circumstance in which a rule change should be distrusted. The evidence they rest on is recorded in each
+`proof:` block and can be re-read against a stricter rule later.
+

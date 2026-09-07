@@ -500,7 +500,9 @@ def phase_failure(phase):
                        phase.get("message") or "no message recorded")
 
 
-_ITEMS_RE = re.compile(r"^\s*(\d+)\s+item\(s\)")
+# The executor renders a collection as "3 item(s) [...]" and a dictionary as
+# "3 entry(ies)". Both are counts; neither survives float().
+_ITEMS_RE = re.compile(r"^\s*(\d+)\s+(?:item\(s\)|entry\(ies\))")
 
 
 def _as_count(value):
@@ -546,13 +548,57 @@ def _as_count(value):
 # here" still fills it. See D-51: the counts decide, the note does not.
 NOTE_KEYS = frozenset(("findings",))
 
+# Names that count what the fragment was GIVEN and could not report on, rather
+# than what it FOUND. `noSystem: 16` does not mean sixteen systems; it means
+# sixteen elements were examined and none had one. See D-52.
+#
+# The camelCase boundary is load-bearing: `no|not|un` must be followed by a
+# CAPITAL, so `notes` and `nodes` are still ordinary result fields. The three
+# single words below do not fit that shape and are listed because they were
+# actually observed, not because the pattern was widened to admit them.
+REJECT_PREFIX = re.compile(r"^(no|not|un)[A-Z]")
+REJECT_NAMES = frozenset(("unmeasurable", "unplaced", "unenclosed"))
+
+
+def _is_accounting(key):
+    return bool(REJECT_PREFIX.match(key)) or key in REJECT_NAMES
+
+
+# `RevitFragment.Describe` renders anything it cannot format as a count or a
+# scalar by falling back to `value.GetType().Name` - so `Func\`3`, `HashSet\`1`,
+# `SpatialElementBoundaryOptions`, `Action\`3`. Those are HELPERS the fragment
+# left in scope, not results: they appear identically in the positive and the
+# negative run and say nothing about what was found.
+#
+# This is the same class of mistake as reading the string "0" with len() - the
+# checker not recognising its own executor's output - and NOT a loosening of the
+# standard. A bare type name is not a quantity that could have been zero.
+_TYPE_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]*(?:`\d+)?$")
+
+
+def _is_helper_object(value):
+    if not isinstance(value, str):
+        return False
+    text = value.strip()
+    if text.lower() in ("true", "false", ""):
+        return False          # a flag, handled as a quantity of zero
+    if not _TYPE_NAME.match(text):
+        return False
+    try:
+        float(text)
+    except ValueError:
+        return True           # an identifier, not a number
+    return False
+
 
 def looks_empty(phase):
     """Whether a phase's numbers really do read as nothing.
 
-    THE COUNTS DECIDE (D-51). A fragment that finds nothing still writes a
-    sentence saying so, and that sentence is the evidence it ran rather than
-    evidence it found something. Requiring literal silence flagged every
+    THE COUNTS DECIDE (D-51), AND ONLY THE COUNTS OF WHAT WAS FOUND (D-52).
+    A fragment that finds nothing still writes a sentence saying so, and it
+    still says how many things it looked at and turned down - `noSystem: 16`,
+    `notSpatial: 28`, `unmeasurable: 28`. Neither is evidence it found
+    something; both are evidence it ran, which silence would not be. Requiring literal silence flagged every
     negative case a reporting fragment could ever produce, and a warning that
     always fires is the one people learn to skip past.
 
@@ -575,7 +621,9 @@ def looks_empty(phase):
 
     counted = 0
     for key, value in provides.items():
-        if key in NOTE_KEYS:
+        if key in NOTE_KEYS or _is_accounting(key):
+            continue
+        if _is_helper_object(value):
             continue
         count = _as_count(value)
         if count is None:
