@@ -874,6 +874,83 @@ def heron_lookup(request: str) -> str:
     return "\n".join(lines)
 
 
+@server.tool()
+def heron_gaps(days: int = 0) -> str:
+    """
+    What Heron has been asked to do lately, what failed, and what is slow.
+
+    Reads Heron's own record of past work - not the model. Use it to answer
+    "what keeps going wrong?", "what should we build next?", "which tools are
+    actually used?", "why is Heron slow?". Pass days to look at a shorter
+    window, e.g. days=7 for the last week. Needs no Revit.
+    """
+    result = brain.gaps(days or None)
+    found, wanted = result["found"], result["wanted"]
+
+    if not found["requests"]:
+        return ("Heron has no record of doing anything yet, so there is "
+                "nothing to report. That is not the same as having no gaps - "
+                "it means nobody has asked it for anything.")
+
+    lines = ["%d request(s) between %s and %s, across %d Revit session(s). "
+             "%d were refused or failed."
+             % (found["requests"], found["first"], found["last"],
+                found["sessions"], found["failed"]), ""]
+
+    # The split is the whole value of this report, so it leads. A refusal
+    # counted as a gap sends somebody off to build a fragment that already
+    # exists and behaved correctly.
+    if result["defects"]:
+        lines.append("Things Heron could not do - these are the real gaps:")
+        for row in result["defects"]:
+            lines.append("  %4d x  %s" % (row["count"], row["says"]))
+    else:
+        lines.append("Nothing failed for a reason Heron should have handled. "
+                     "Every failure below was a refusal it was right to make.")
+    lines.append("")
+
+    if result["refusals"]:
+        lines.append("Things Heron declined on purpose - do NOT build for these:")
+        for row in result["refusals"]:
+            lines.append("  %4d x  %s" % (row["count"], row["says"]))
+        lines.append("")
+
+    if result["unclassified"]:
+        lines.append("Failures nobody has classified yet - somebody must decide "
+                     "whether each is a fault or a correct refusal:")
+        for row in result["unclassified"]:
+            lines.append("  %4d x  %s" % (row["count"], row["code"]))
+        lines.append("")
+
+    ranked = sorted(found["per_fragment"].items(),
+                    key=lambda kv: (-kv[1]["failed"], -len(kv[1]["ms"])))
+    if ranked:
+        lines.append("Most trouble, by tool:")
+        for name, bucket in ranked[:8]:
+            worst = max(bucket["ms"]) if bucket["ms"] else None
+            lines.append("  %-32s %d run(s), %d failed%s"
+                         % (name, bucket["runs"], bucket["failed"],
+                            "" if worst is None else ", slowest %d ms" % worst))
+        lines.append("")
+
+    if found["unnamed_fragment_runs"]:
+        lines.append("%d older run(s) cannot be attributed to a tool: Heron did "
+                     "not record which one until 2026-09-07. They are counted, "
+                     "not blamed." % found["unnamed_fragment_runs"])
+        lines.append("")
+
+    if wanted:
+        lines.append("Written down as needed, with nothing to do it:")
+        for name, why in wanted:
+            lines.append("  %-30s %s" % (name, why))
+    else:
+        lines.append("Nothing is recorded as wanted-but-unprovided. That is "
+                     "only what somebody wrote down, so it is not proof that "
+                     "nothing is missing.")
+
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
     if os.name != "nt":
         # The bridge is a Windows named pipe, and Revit is Windows-only.

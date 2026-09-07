@@ -68,6 +68,20 @@ TOOLS = {
     "heron_capabilities":       (READ,    None),
     "heron_resolve":            (READ,    None),
     "heron_lookup":             (READ,    None),
+
+    # The Capability Gap report (HERON-AHR-GAP-001, docs/06 s6). READ, and the
+    # operation is None for the same reason as the three above - it sends
+    # nothing to Revit. What it reads is Heron's OWN audit trail, which is a
+    # file under the user's data.
+    #
+    # Worth stating because the trail is not shipped content like the others:
+    # it carries document names, and docs/12 s5 says it "contains project
+    # information and must obey the same egress rules as everything else". It
+    # stays READ rather than rising a level because naming the model an answer
+    # came from is already this repository's rule, not a new exposure - but a
+    # future field carrying element ids or parameter values would change that
+    # judgement, and whoever adds one should revisit this line.
+    "heron_gaps":               (READ,    None),
 }
 
 

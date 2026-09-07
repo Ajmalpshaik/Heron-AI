@@ -53,12 +53,26 @@ namespace Heron.Core
         /// Records one request. Never throws: an audit failure must not take
         /// down the operation being audited, and a Revit session must not die
         /// because a disk was full.
+        ///
+        /// NUMBERS ARE A SEPARATE ARGUMENT BECAUSE JSON HAS TWO KINDS OF
+        /// SCALAR AND ONLY ONE OF THEM SORTS. Every field used to arrive as a
+        /// string, so a duration was written as "27" rather than 27, and any
+        /// reader that did not remember to convert compared them as text -
+        /// where "9" is larger than "6620". A report built on that is not
+        /// slightly wrong, it is confidently wrong, which is worse in a file
+        /// whose whole job is evidence.
+        ///
+        /// Old lines keep the quotes: this log is append-only and NEVER
+        /// PRUNED, so both shapes are in it for good and every reader has to
+        /// accept either. That cost is the reason to stop adding to the pile
+        /// now rather than later.
         /// </summary>
         public static void Record(
             string workflowId,
             string operation,
             bool succeeded,
-            IEnumerable<KeyValuePair<string, string>> fields)
+            IEnumerable<KeyValuePair<string, string>> fields,
+            IEnumerable<KeyValuePair<string, long>> numbers = null)
         {
             try
             {
@@ -78,6 +92,15 @@ namespace Heron.Core
                         if (field.Value == null) continue;
                         line.Append(", ");
                         Append(line, field.Key, field.Value);
+                    }
+                }
+
+                if (numbers != null)
+                {
+                    foreach (var number in numbers)
+                    {
+                        line.Append(", ");
+                        AppendNumber(line, number.Key, number.Value);
                     }
                 }
                 line.Append('}');
@@ -107,6 +130,17 @@ namespace Heron.Core
         private static void Append(StringBuilder sb, string name, string value)
         {
             sb.Append('"').Append(Escape(name)).Append("\": \"").Append(Escape(value)).Append('"');
+        }
+
+        /// <summary>
+        /// A number, unquoted, and always in the invariant culture. A machine
+        /// reading this file must never meet a decimal comma because the
+        /// modeller who produced it works in a locale that uses one.
+        /// </summary>
+        private static void AppendNumber(StringBuilder sb, string name, long value)
+        {
+            sb.Append('"').Append(Escape(name)).Append("\": ")
+              .Append(value.ToString(CultureInfo.InvariantCulture));
         }
 
         private static string Escape(string value)

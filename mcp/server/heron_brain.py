@@ -343,3 +343,55 @@ def lookup(request, revit=None):
             "excluded": [{"id": e.id, "reason": e.reason} for e in excluded],
             "revit": revit,
         }
+
+
+def gaps(days=None):
+    """
+    What Heron was asked for and could not do - HERON-AHR-GAP-001.
+
+    Two halves that answer different questions and must not be merged. The
+    audit trail knows what was ATTEMPTED and how it went; the capability
+    registry knows what somebody DECLARED a need for and nobody provides. A
+    thing can be missing without ever having been attempted, and a thing can
+    fail constantly while being perfectly well provided - so the report keeps
+    them apart and says which is which.
+
+    The trail half needs no knowledge store, so it survives a missing PyYAML:
+    the whole point of this report is being readable on the day something is
+    already wrong. A store that will not open costs the registry half only.
+    """
+    import heron_gaps as GAPS
+
+    entries, skipped = GAPS.read()
+    entries = GAPS.since(entries, days)
+    found = GAPS.analyse(entries)
+
+    wanted = []
+    try:
+        _S, CAP, _SK, _SE, _E, _R = _brain()
+        with _Open() as store:
+            wanted = CAP.gaps(store)
+    except Exception:
+        # Broad on purpose, and the docstring above says why: the trail half
+        # is the deliverable. Reporting nothing because the knowledge store is
+        # unavailable would withhold the evidence at the moment it is wanted.
+        wanted = []
+
+    # The error CODES stay in heron_gaps, and so does the sentence explaining
+    # each one. Resolved here rather than in the server because the server is
+    # not allowed to import a brain module - that is what this file is for,
+    # and a second import would put brain vocabulary in the file that talks to
+    # the user.
+    def explain(counter, glossary):
+        return [{"code": code, "count": count, "says": glossary[code]}
+                for code, count in counter.most_common()]
+
+    return {
+        "found": found,
+        "wanted": wanted,
+        "skipped": skipped,
+        "defects": explain(found["defects"], GAPS.DEFECTS),
+        "refusals": explain(found["refusals"], GAPS.CORRECT_REFUSALS),
+        "unclassified": [{"code": code, "count": count}
+                         for code, count in found["unclassified"].most_common()],
+    }

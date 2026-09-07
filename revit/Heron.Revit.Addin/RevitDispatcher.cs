@@ -234,6 +234,21 @@ namespace Heron.Revit.Addin
 
                 // One line per request, whatever happened. A trail that only
                 // records successes answers the wrong question later.
+                //
+                // THE FRAGMENT IS NAMED, because without it this trail cannot
+                // answer the question it exists to answer. Every fragment run
+                // was logged as "run_fragment_read" and nothing else, so 564
+                // entries said a fragment ran and not one said WHICH - and the
+                // Capability Gap report (docs/06 s6) is precisely a ranking by
+                // which. It could see that something took 37 seconds against
+                // a 7 ms median and could not say what.
+                //
+                // Read from the REQUEST rather than the response: a run that
+                // failed to compile has no answer to name itself in, and those
+                // are the entries the report most needs. Guarded by the op so
+                // the field means one thing - a later operation carrying its
+                // own identity adds its own line here rather than borrowing
+                // this one, which is how a field ends up meaning two things.
                 HeronAudit.Record(job.WorkflowId, op,
                     failure == null,
                     new[]
@@ -241,8 +256,12 @@ namespace Heron.Revit.Addin
                         new KeyValuePair<string, string>("session", _session),
                         new KeyValuePair<string, string>("document", Json.ReadString(response, "document")),
                         new KeyValuePair<string, string>("error", Json.ReadString(response, "error")),
-                        new KeyValuePair<string, string>("ms",
-                            clock.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture)),
+                        new KeyValuePair<string, string>("fragment",
+                            op == "run_fragment_read" ? Json.ReadString(job.Request, "name") : null),
+                    },
+                    new[]
+                    {
+                        new KeyValuePair<string, long>("ms", clock.ElapsedMilliseconds),
                     });
 
                 job.Finish(response);

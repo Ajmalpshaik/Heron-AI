@@ -259,7 +259,7 @@ at all. This department closes that.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-AHR-GAP-001` | **Capability Gap Agent** | *"X is needed repeatedly and no capability covers it."* A read-only report over the audit log | T1 | READ | — |
+| `HERON-AHR-GAP-001` | **Capability Gap Agent** | *"X is needed repeatedly and no capability covers it."* A read-only report over the audit log. **Built 2026-09-07** - `brain/heron_gaps.py`, served as the `heron_gaps` MCP tool. It splits failures into DEFECTS and CORRECT REFUSALS, because the loudest error in the trail (`needs_unbound`, 38 of 176) is the executor behaving correctly, and counting it as a gap would commission a fragment that already exists. Its first run found 131 `compile_failed` on 2026-09-06 and none on 2026-09-07 | T1 | READ | — |
 | `HERON-AHR-WFP-015` | **Workforce Planning Agent** | The agent that says **no**. Before anything is hired: does a capability already cover this, can an existing agent be extended, is this a fragment rather than an agent? **This is the guard against agent explosion** ↗ | T2 | SUGGEST | — |
 | `HERON-AHR-SBX-016` | **Agent Sandbox Agent** | Runs a newly built agent in isolation — never against a live model, never able to write production knowledge — before it is allowed anywhere near real work ↗ | T1 | READ | — |
 | `HERON-AHR-CON-017` | **Agent Contract Agent** | Owns the interface between agents: input and output schema, permissions, allowed tools, timeout, failure states, retry rules, version. Detects breaking contract changes across 249 agents ↗ | T1 | READ | — |
