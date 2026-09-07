@@ -1,0 +1,114 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-098
+semantic-identity: "where in this model has somebody typed a date, and in which view"
+kind: action
+domain: revit.views
+capability: FIND_DATES_IN_VIEWS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds every date typed into a text note ANYWHERE in the model and reports it
+  with the view it was typed in. Read-only, and it scans the whole document
+  rather than a selection.
+
+  **IT EXISTS BECAUSE `EXTRACT_DATES_FROM_TEXT` ANSWERS A DIFFERENT QUESTION,
+  and answering this one with that fragment would invent dates.** That one reads
+  the notes ON a sheet and attributes each date TO that sheet, which is right
+  for revision work. But a plan can be placed on five sheets, and a date typed
+  inside that plan belongs to the plan. Rolled up to sheets it becomes five
+  dates that nobody wrote. So every date here carries the view it was found in,
+  and nothing is attributed upward.
+
+  **THE ANSWER IS "WHERE", NOT JUST "WHAT".** A date on its own is not useful -
+  the question behind it is always which drawing is out of date, or which view
+  still says last month. So a date that appears in four views is reported once
+  with all four named, rather than four times.
+
+  **A SHEET IS A VIEW AND IS INCLUDED, and labelled as one.** Leaving sheets out
+  would make this an incomplete answer to "where is this date written", and
+  mixing them in unlabelled would make it a confusing one. A sheet reads as
+  `M102 - Plan HVAC L2  (SHEET)`, a view as `Level 1  (FloorPlan)`.
+
+  **A NUMERIC MONTH IS REFUSED, and that is the same rule the other fragment
+  uses on purpose.** `03-04-2026` is 3 April in Qatar and 4 March in America.
+  Two fragments reading one note and reporting different dates would be worse
+  than either being wrong alone, because nothing would say which to believe. The
+  parser here is the same one, and the finding says so when nothing is found.
+
+  **A DATE IN A PARAMETER IS NOT THIS FRAGMENT'S BUSINESS.** Revit can already
+  schedule and filter those. `READ_ELEMENT_PARAMETERS` reads them. What is
+  invisible to every schedule in the model - and so worth turning into data - is
+  the date somebody typed by hand.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: datesFound
+      type: IDictionary<string, IList<ElementId>>
+    - name: viewNames
+      type: IDictionary<ElementId, string>
+    - name: viewsWithDates
+      type: int
+    - name: findings
+      type: IList<string>
+    - name: notesRead
+      type: int
+      # How many text notes were examined. The evidence it looked, not a date
+      # it found - a model with 400 notes and no date is a real answer.
+      role: accounting
+    - name: viewsScanned
+      type: int
+      # How many distinct views held any text note at all.
+      role: accounting
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `TextNote`, `TextNote.Text`,
+  `Element.OwnerViewId`, `View.Name`, `View.ViewType`, `ViewSheet.SheetNumber`
+  and `FilteredElementCollector(Document)` are present and unchanged 2020
+  through 2027.
+
+  **No ElementId is ever read as a number**, so 2024's move to 64-bit ids does
+  not reach this. Ids are used as dictionary keys and compared to
+  `ElementId.InvalidElementId`, both of which are unchanged across the range.
+
+  **No units call is made anywhere.** The date reading is plain string work with
+  no dependence on any Revit type, which is what keeps this one implementation
+  rather than two.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "where is this date typed"           -> here
+#   "which views still say last month"   -> here
+#   "find every typed date in the model" -> here
+#   "what dates are on these sheets"     -> EXTRACT_DATES_FROM_TEXT. That one
+#                                           attributes a date TO a sheet, which
+#                                           is what revision work needs and what
+#                                           this one deliberately does not do
+#   "which sheets carry this date"       -> EXTRACT_DATES_FROM_TEXT, same reason
+#   "read the date parameter"            -> READ_ELEMENT_PARAMETERS, for a date
+#                                           that IS a parameter and is already
+#                                           schedulable
+#   "change the text in a note"          -> EDIT_TEXT_VALUES
+#   "which views show this element"      -> FIND_VIEWS_SHOWING_ELEMENT, a
+#                                           different question about views that
+#                                           sounds alike
+
+utterances:
+  - where has somebody typed a date in this model
+  - find every date written in a text note
+  - which views still have the old date on them
+  - where is this date written
+  - show me the typed dates and which view they are in

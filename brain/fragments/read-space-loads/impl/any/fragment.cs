@@ -82,7 +82,15 @@ foreach (var element in elements)
         designAir = space.DesignSupplyAirflow;
         calcAir = space.CalculatedSupplyAirflow;
     }
-    catch (Autodesk.Revit.Exceptions.ApplicationException)
+    // `catch (Exception)` rather than Revit's own exception type, and not by
+    // preference. Revit's exceptions namespace is not among the ones the
+    // executor imports (HeronFragmentImports), so the type cannot be named
+    // unqualified - and naming it in full would put a vendor namespace inside
+    // `brain/`, which check-structure refuses on sight, comments included: the
+    // adapter boundary in docs/16 section 4. It is also what every other
+    // fragment in this library does. The catch is narrow in REACH even if broad
+    // in TYPE: it wraps six property reads and nothing else.
+    catch (Exception)
     {
         noLoad.Add(space.Id);
         findings.Add(string.Format(

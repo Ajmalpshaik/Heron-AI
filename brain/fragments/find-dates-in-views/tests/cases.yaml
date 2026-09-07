@@ -1,0 +1,66 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a text note reading "09 SEP 2026" typed into a floor plan, and another
+      reading "22 JUL 2025" typed onto a sheet
+    expect: >
+      two dates, each named with the view it was typed in - the plan by its own
+      name and view type, the sheet as "M102 - Plan HVAC L2  (SHEET)". A sheet
+      is a view and belongs in the answer; leaving it out would make "where is
+      this date written" an incomplete answer
+
+  - given: >
+      one plan carrying "09 SEP 2026", placed on three sheets
+    expect: >
+      ONE date against ONE view. This is the whole reason the fragment exists -
+      EXTRACT_DATES_FROM_TEXT would report it against three sheets, which is
+      right for revision work and would here invent two dates nobody typed
+
+  - given: >
+      "22 Jul 2025" in one view and "22/JUL/25" in another
+    expect: >
+      ONE date with both views named. Separators and a two-digit year are the
+      same day written differently, and reporting two has somebody chasing a
+      revision that never happened
+
+  - given: >
+      MAY in one view and May in another
+    expect: >
+      one date, not two. Case does not make a different day
+
+negative:
+  - given: >
+      a model whose only text notes read "2 OFF 300" and "SFGSFDGSDFG"
+    expect: >
+      no dates, and notesRead reporting that both notes WERE examined. A count
+      of zero with no evidence of looking cannot be told from a fragment that
+      never ran
+
+  - given: >
+      a note reading "09-09-2026"
+    expect: >
+      NO date, and the finding saying why - a numeric month is refused because
+      03-04-2026 is 3 April in Qatar and 4 March in America. Reading it would
+      make this fragment disagree with EXTRACT_DATES_FROM_TEXT on the same note,
+      which is worse than either being wrong alone
+
+  - given: >
+      a note reading "31 SEP 2026"
+    expect: >
+      no date. There is no 31st of September, and a three-letter word between
+      two numbers is not a date
+
+  - given: >
+      a model with no text notes at all
+    expect: >
+      no dates, notesRead 0, and a finding pointing at READ_ELEMENT_PARAMETERS
+      for a date held in a title block parameter - which is a different thing
+      and already schedulable
+
+  - given: >
+      a date held only in the title block's "Sheet Issue Date" parameter
+    expect: >
+      NOTHING found. That date is already data Revit can schedule and filter.
+      What this fragment exists for is the one typed by hand, which is invisible
+      to every schedule in the model
