@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,6 +69,33 @@ contract:
       type: int
       # How many distinct views held any text note at all.
       role: accounting
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,704 elements), Revit 2024, session 42676
+  positive_case: 'Snowdon Towers Sample HVAC with one text note reading ''09 SEP 2026'' typed
+    on sheet M102. No selection: this fragment takes the document and scans it. It read 65
+    text notes across 20 views and reported ONE date, 09-SEP-2026, against the one view holding
+    it - labelled as a SHEET so it cannot be mistaken for a date inside a drawing. returned
+    datesFound 1 entry(ies), datesIn Func`2, findings 3 item(s) [1 date(s) typed in 1 view(s),
+    from 65 text note(s) read., 09-SEP-2026  - in 1: M102 - Plan HVAC L2  (SHEET), Each date
+    is reported against the view it was TYPED IN. A vi...], months 12 entry(ies), names 12
+    item(s) [jan, feb, mar, ...], notesRead 65, seenViews HashSet`1, viewNames 1 entry(ies),
+    viewsScanned 20, viewsWithDates 1. on Snowdon Towers Sample HVAC'
+  negative_case: 'the same model with that one note changed to ''09-09-2026'' - a NUMERIC
+    month, which is deliberately refused because 03-04-2026 is 3 April in Qatar and 4 March
+    in America. Nothing else in the model changed: the SAME 65 notes across the SAME 20 views
+    were read and none yielded a date. A fragment ignoring the model, or answering from a
+    previous run, could not have moved from 1 to 0 on a single edited note while its counts
+    stayed identical. returned datesFound 0 entry(ies), datesIn Func`2, findings 1 item(s)
+    [65 text note(s) read across 20 view(s), and none carries a d...], months 12 entry(ies),
+    names 12 item(s) [jan, feb, mar, ...], notesRead 65, seenViews HashSet`1, viewNames 0
+    entry(ies), viewsScanned 20, viewsWithDates 0. on Snowdon Towers Sample HVAC'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 48c31046ca8fdf8e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
