@@ -98,7 +98,7 @@ real defects**, which is the only reason it was worth doing:
 
 | Found | |
 |---|---|
-| **One malformed `fragment.yaml` took down all 343 fragments** | `load()` promised `ValueError`; `yaml.YAMLError` is not one. Measured, not read — one good, one broken, one good returned *nothing*. **The owner named this shape before the code was looked at** ([D-48](docs/DECISIONS.md)) |
+| **One malformed `fragment.yaml` took down all 343 fragments** | `load()` promised `ValueError`; `yaml.YAMLError` is not one. Measured, not read — one good, one broken, one good returned *nothing*. **The owner named this shape before the code was looked at** ([D-48](DECISIONS.md)) |
 | **The same bug in the SKILL loader, by a different route** | A *directory* named `x.yaml` reached `io.open` because the loader filtered on the extension and never asked whether the entry was a file. Every skill lost |
 | **`D-04` still said the scripting runtime was open** | `D-28` closed it ten days earlier. A sub-decision closed in a NEW entry leaves the old entry's text saying otherwise |
 | **Part 2 required a stop control that no longer existed** | `D-46` removed the button. Resolved by the owner in the same conversation: the Heron button calls `bridge.Stop()`, which is **stronger** than the flag it replaced |
@@ -115,8 +115,8 @@ loop**. An import costing 1.0 s in a fresh process, still running at 40 s there.
 > and the failure lived only in their combination.** This file's register is deliberately a list of
 > independent rows worked down in order, and **nothing in it can express *these two are fine apart and
 > broken together***. No numbering fixes that; only re-running earlier rows after a later one changes the
-> machine. First time it has bitten. [D-49](docs/DECISIONS.md), and
-> [`tests/test_mcp_stdio.py`](tests/test_mcp_stdio.py) is the check made permanent — a real subprocess
+> machine. First time it has bitten. [D-49](DECISIONS.md), and
+> [`tests/test_mcp_stdio.py`](../tests/test_mcp_stdio.py) is the check made permanent — a real subprocess
 > over real stdio, with a **deadline** on every reply, because a test that waits forever cannot tell a
 > slow answer from no answer.
 
@@ -308,12 +308,12 @@ bottom of this entry — read that first if you are here to prove more fragments
 
 ### Three decisions, and one of them replaced the guessing for good
 
-- **[D-51](docs/DECISIONS.md)** — a negative case is judged by its COUNTS, not by whether the fragment
+- **[D-51](DECISIONS.md)** — a negative case is judged by its COUNTS, not by whether the fragment
   went silent. `findings` is prose; 134 of the 350 provide one.
-- **[D-52](docs/DECISIONS.md)** — a count of what was TURNED DOWN is not a count of what was FOUND.
+- **[D-52](DECISIONS.md)** — a count of what was TURNED DOWN is not a count of what was FOUND.
   `noSystem: 16` means sixteen were examined and none had one, which is **stronger** evidence than
   silence. Amended the same evening to cover work counters (`scanned`, `jointsChecked`).
-- **[D-53](docs/DECISIONS.md)** — a fragment that CANNOT come back empty is proved by **tracking**:
+- **[D-53](DECISIONS.md)** — a fragment that CANNOT come back empty is proved by **tracking**:
   `count-elements` returned 28, 16, 4, 12, 37 against selections of 28, 16, 4, 12, 37. Eleven fragments
   went through on that.
 
@@ -376,9 +376,9 @@ Revit**: the chat got a sentence and the screen showed nothing at all.
 
 `HERON-REVIT-UI-022` had been reserved for this since the registry was written, deferred with the note
 *"waits for Step 6, when something is finally slow enough to need it."* Step 6 shipped and the executor
-arrived, so it is built now — [`HeronActivityBanner.cs`](revit/Heron.Revit.Addin/HeronActivityBanner.cs),
-raised and lowered by [`RevitDispatcher`](revit/Heron.Revit.Addin/RevitDispatcher.cs), decided in
-[D-50](docs/DECISIONS.md).
+arrived, so it is built now — [`HeronActivityBanner.cs`](../revit/Heron.Revit.Addin/HeronActivityBanner.cs),
+raised and lowered by [`RevitDispatcher`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), decided in
+[D-50](DECISIONS.md).
 
 **Three things decide the whole design, and the first is not obvious:**
 
@@ -407,7 +407,7 @@ real work.
 `apt-get install dotnet-sdk-8.0 dotnet-sdk-10.0`, about a minute, and `check-compile.py` runs. The
 **10.0** package carries the WindowsDesktop targets and is what builds 2025–2027; 8.0 alone stops at
 2024. `pip install --break-system-packages mcp` works too, which takes the suite from 20 passing to
-23 of 24. [docs/30](docs/30-compiling-away-from-windows.md) had already established all of this and it
+23 of 24. [docs/30](30-compiling-away-from-windows.md) had already established all of this and it
 was re-learned from scratch — **a blocked download is not an absent toolchain.** The one test still
 failing, `test_fragment_store`, fails identically on the base commit in a clean worktree and is the
 fragment library's business, not this branch's.
@@ -659,7 +659,7 @@ path exists to run it at all.
 > the only way to demonstrate it is to change somebody's model on purpose:
 >
 > - `run_fragment_read` is declared `HeronRisk.Analyze` in
->   [`platform/Heron.Core/HeronOperationRegistry.cs`](platform/Heron.Core/HeronOperationRegistry.cs)
+>   [`platform/Heron.Core/HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs)
 > - the emergency stop only blocks `risk >= HeronRisk.Modify`, so **the stop does not cover it**
 > - `HeronPermissions.Explain(risk)` at Analyze returns nothing, so **`write.enabled = false` does not
 >   cover it either**
@@ -937,7 +937,7 @@ memory rather than from the store. The fix is the same every time — open it.
 |---|---|---|
 | **1** | **Fragment Validation** ⭐ | PART 6's executor. It could not have existed last week |
 | **2** | **Failure Analysis** | 135 recorded failures, unread. Named, tested, unimplemented |
-| **3** | **Capability Gap** | 331 audit entries. [ROADMAP](docs/ROADMAP.md) says explicitly to build it *"much earlier than this phase"* |
+| **3** | **Capability Gap** | 331 audit entries. [ROADMAP](ROADMAP.md) says explicitly to build it *"much earlier than this phase"* |
 | **4** | **Regression Testing** | `tests/test_golden.py` already detects STALE proofs; some are stale now |
 | **5** | **Intent** | retrieval by meaning already works underneath it |
 
@@ -953,7 +953,7 @@ worth nothing today.
 fragments is the failure mode to avoid.
 
 > **IT MUST NEVER SET `heron-status: PROVEN` ITSELF.** It gathers evidence and DRAFTS; a person
-> confirms. [D-30](docs/DECISIONS.md) exists because an unproven claim quietly ages into a believed one,
+> confirms. [D-30](DECISIONS.md) exists because an unproven claim quietly ages into a believed one,
 > and an agent stamping 333 fragments is the fastest machine ever built for doing exactly that. **The
 > analogy that fixes it: clash detection finds the clashes and lists them; the engineer decides which are
 > real and the engineer signs the drawing. The machine never signs.**
@@ -1311,7 +1311,7 @@ must be strengthened on its OWN ground. That is the third session this trap has 
 - `NEEDS-CHECKING.md` says *59 items, 6 done, 53 left*. The rows say **60, 6 done, 54 left** — the
   drift this file warns about, for the fourth time.
 - **The build order stops at Step 14, and 180 fragments claim Steps 15, 16 and 17.** Those steps are
-  named nowhere in [27](docs/27-build-order.md). The library build happened without being written into
+  named nowhere in [27](27-build-order.md). The library build happened without being written into
   the plan it was supposedly following.
 - **Agents: 250 registered, 82 implemented, and every agent that was DUE is built.** 49 carry a build
   step, all in Steps 1–6; 4 of those are host-provided and the other 45 have source files, so **nothing
@@ -1393,7 +1393,7 @@ weeks ago.** The seventh re-authored the fragment library; the eighth is below.
 fragment library into this one.** The sixth wired the brain to the host, which was the last thing here
 that could be *built* without a machine; the seventh is doing the thing that can still be done without
 one — **writing fragments**, from 7 to **32** so far, each studied and rewritten rather than copied
-([D-44](docs/DECISIONS.md): none of them inherits the earlier library's proven status). For whoever picks
+([D-44](DECISIONS.md): none of them inherits the earlier library's proven status). For whoever picks
 this up next: a fresh Claude session, a person, or the owner on his phone.
 
 ---
@@ -1432,7 +1432,7 @@ first run is the reason the next paragraph exists.
 ### Four things that were wrong and are now not
 
 **Phase 0/1 was never four agents short.** A build-state summary said it was and recommended building
-the Orchestrator. `HERON-ORC-MAIN/INT/PER/SUM` are **host-provided by [D-01](docs/DECISIONS.md)** and
+the Orchestrator. `HERON-ORC-MAIN/INT/PER/SUM` are **host-provided by [D-01](DECISIONS.md)** and
 `check-metadata.py` had said so all along. The register carries three states now — BUILT, HOST, LEFT —
 because collapsing HOST into LEFT produces a to-do list with four items nobody will ever do.
 **45 built, 4 host-provided, 0 outstanding.**
@@ -1623,7 +1623,7 @@ Neither guess exists on any release.
 
 **How much of the owner's earlier library is left, measured rather than guessed (2026-09-05).** Of its
 398 scripts, **68 are not fragments at all** — 44 `recipes/` become skills, 12 `context/` are the host's
-job ([D-46](docs/DECISIONS.md)), 8 `commands/` are native Revit commands, 4 are examples and the prelude.
+job ([D-46](DECISIONS.md)), 8 `commands/` are native Revit commands, 4 are examples and the prelude.
 That leaves **330 fragment-eligible**, of which roughly **60 are still worth adding**. It is not a
 subtraction: the library is re-authored, several sources fold into one fragment, and some Heron fragments
 have no source at all. The biggest remaining blocks are **tag and dimension placement** (~10: auto-arrange
@@ -1703,7 +1703,7 @@ the proxy answers `403` to the CONNECT for `builds.dotnet.microsoft.com` and nam
 1. **`python tools/check-gaps.py` first.** Computed from disk; it wins over every sentence here.
 2. **On any machine with the .NET SDK: `python tools/check-fragments-compile.py`.** **Eighty**
    fragments now owe a real compile. This is `A9` and it is still the largest thing needing no Revit.
-3. **With Revit open: start proving.** All 218 are `DRAFT`. [D-30](docs/DECISIONS.md) means a proof needs
+3. **With Revit open: start proving.** All 218 are `DRAFT`. [D-30](DECISIONS.md) means a proof needs
    a case that comes back EMPTY, not just one that works.
 4. **To carry the library build on:** [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start).
    Run the lookup sweep first. Un-mined source areas left are the rest of `actions/reporting/`,
@@ -1770,7 +1770,7 @@ cannot be created. Each is a routing row that says so and names the Revit route 
 1. **`python tools/check-gaps.py` first.** It is computed from disk and wins over every sentence here.
 2. **On any machine with the .NET SDK: `python tools/check-fragments-compile.py`.** Sixty-four fragments
    owe a real compile. This is `A9`, and it is the largest thing that needs no Revit.
-3. **With Revit open: start proving.** Every one of the 202 is `DRAFT`. [D-30](docs/DECISIONS.md) means a
+3. **With Revit open: start proving.** Every one of the 202 is `DRAFT`. [D-30](DECISIONS.md) means a
    proof needs a case that comes back EMPTY, not just one that works.
 4. **To carry the library build on instead:** [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start),
    and run the lookup sweep first — the un-mined source areas left are `actions/sheets-views/`,
@@ -1813,7 +1813,7 @@ buildable thing is built, and not one fragment has touched a real model.
 ### The one thing that matters next, and it needs the PC
 
 `D3` and the fragment library. **Every fragment is `DRAFT` and stays there until it is run against a
-real model with a case that comes back EMPTY** ([D-30](docs/DECISIONS.md)) — `python
+real model with a case that comes back EMPTY** ([D-30](DECISIONS.md)) — `python
 tools/check-gaps.py` counts them, and no number is typed here for the reason the rest of this file
 keeps re-learning. That is the owner's job and
 it is the largest remaining piece of work in the project. Everything else waiting is smaller:
@@ -1869,10 +1869,10 @@ package**, and the MCP SDK is pure Python. Installing it took ten minutes and pr
 
 **A real SDK now serves all ten tools** — names, descriptions and argument schemas — and the three brain
 tools answer through its own dispatch with both refusals intact. That is the half `test_brain_reachable.py`
-could only ever read *as text*, and it is now [`tests/test_mcp_serves.py`](tests/test_mcp_serves.py).
+could only ever read *as text*, and it is now [`tests/test_mcp_serves.py`](../tests/test_mcp_serves.py).
 
 **And installing it revealed that Heron's MCP server would not start at all on a fresh machine.**
-`pip install --user mcp` — the exact line [`tools/HeronRevit.ps1`](tools/HeronRevit.ps1) hands the user —
+`pip install --user mcp` — the exact line [`tools/HeronRevit.ps1`](../tools/HeronRevit.ps1) hands the user —
 now resolves to SDK **2.x**, which **deleted `mcp.server.fastmcp`**: `FastMCP` was renamed `MCPServer`.
 The server's import was written against 1.x, so it raised `ImportError` before registering a single tool.
 **Every Heron tool absent from the host, on any machine installing today, with no Revit and no Windows
@@ -1898,7 +1898,7 @@ existed and never asked whether anything called them. The check that catches it 
 
 | | What | Where it happens |
 |---|---|---|
-| **1** | ~~`R1`~~ **DONE 2026-08-29 — all 21 read back, all 21 confirmed, nothing moved.** What is left of the review is **`R1b`**: show him the trust model working with his own fragments in it, because [D-14](docs/DECISIONS.md) stays *Proposed* until he has seen it | Needs a screen |
+| **1** | ~~`R1`~~ **DONE 2026-08-29 — all 21 read back, all 21 confirmed, nothing moved.** What is left of the review is **`R1b`**: show him the trust model working with his own fragments in it, because [D-14](DECISIONS.md) stays *Proposed* until he has seen it | Needs a screen |
 | **2** | **`B1` to `B4`** — open Revit 2020, look for the **Heron AI** tab, press **Heron**, then `ping` and `count` | Needs Revit |
 | **3** | **`C3`** — with `write.enabled` still **false**, ask for a move and watch it be **refused, by name**. Prove the gate before testing the write, or a passing move proves nothing | Needs Revit |
 | **4** | **`D1`–`D3`** — *"move the ducts up 200 mm"*, say yes, then **MEASURE ONE**. The single most important line in the whole register | Needs Revit |
@@ -1915,7 +1915,7 @@ dependency order on purpose: nothing in group D can be attempted before group A 
   `ProxyError: 403 Forbidden`. **So the precondition is not "a working network", it is reaching
   huggingface.co**, and the register row now names the host instead of saying "a model host" — a
   sentence anyone with a working network would reasonably read as already satisfied. Until it runs,
-  search finds words and not meaning, and [`tests/test_embed.py`](tests/test_embed.py) says so in
+  search finds words and not meaning, and [`tests/test_embed.py`](../tests/test_embed.py) says so in
   measured numbers. **One thing it did prove**: with the package actually installed, the fallback ran
   against a *failed download* rather than a missing import — a branch that had never once executed —
   and it degraded to `lexical` and said so on its first line.
@@ -1931,7 +1931,7 @@ dependency order on purpose: nothing in group D can be attempted before group A 
 
 **The brain was wired to nothing, and now it is wired.** Eight modules, seven fragments and ten skills
 were on disk, tested and passing, with **no MCP tool reaching any of them.** The host talks to Heron only
-through the tools in [`mcp/server/heron_tools.py`](mcp/server/heron_tools.py), and every one of them went
+through the tools in [`mcp/server/heron_tools.py`](../mcp/server/heron_tools.py), and every one of them went
 straight to the bridge. That left Phase 2's third definition-of-done clause open for **no external reason
 at all**, which is why it was worth doing on a machine with no Revit.
 
@@ -1939,16 +1939,16 @@ at all**, which is why it was worth doing on a machine with no Revit.
 
 | | |
 |---|---|
-| [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py) | The one seam between the MCP side and `brain/`. Opens the store, rebuilds it if the machine is fresh, indexes if stale, and hands back rows. **It holds no knowledge of its own** |
+| [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) | The one seam between the MCP side and `brain/`. Opens the store, rebuilds it if the machine is fresh, indexes if stale, and hands back rows. **It holds no knowledge of its own** |
 | `heron_capabilities` | What Heron knows how to do: ten jobs, which have every part provided, and the seven capabilities nothing provides |
 | `heron_resolve` | Who can do one capability, at what risk, on which releases — **asked for by capability, never by fragment id** |
 | `heron_lookup` | The user's own sentence resolved to a **capability**, with the provider underneath as evidence rather than as the answer |
-| [`tests/test_brain_reachable.py`](tests/test_brain_reachable.py) | Step 12's acceptance test re-run through the seam: add a better provider and the call site is the same line; delete the original and it still answers |
+| [`tests/test_brain_reachable.py`](../tests/test_brain_reachable.py) | Step 12's acceptance test re-run through the seam: add a better provider and the call site is the same line; delete the original and it still answers |
 
 **Two things it deliberately does not do, and every answer says both out loud:**
 
 - **Resolving is not running.** A fragment carries C# in `impl/`, the bridge speaks a fixed set of
-  operations, and none of them compiles one — [D-28](docs/DECISIONS.md)'s in-process Roslyn is unbuilt.
+  operations, and none of them compiles one — [D-28](DECISIONS.md)'s in-process Roslyn is unbuilt.
   So the host can now learn *what would do the job* and still cannot have it done. A tool that let that
   be inferred would be worse than no tool, because a plan built on it fails at the last step.
 - **Nothing underneath is proven.** Every skill and every fragment is still `DRAFT`.
@@ -1982,8 +1982,8 @@ earlier library's proven status, however well proven it is there:
 > *"Even in the aj ai proven fragment dont mark in heron this is proven because we will check each and
 > everyone again in heron ai so mark it as a not proven in heron."*
 
-That is [D-44](docs/DECISIONS.md), and it is **enforced rather than remembered** —
-[`brain/heron_fragment.py`](brain/heron_fragment.py) refuses a status above `DRAFT` whose proof does not
+That is [D-44](DECISIONS.md), and it is **enforced rather than remembered** —
+[`brain/heron_fragment.py`](../brain/heron_fragment.py) refuses a status above `DRAFT` whose proof does not
 match the implementation in front of it. The gate had existed and nothing stood on it: a fragment
 declaring `PROVEN` on another model's proof passed every check in this repository, which was measured by
 writing one.
@@ -2789,11 +2789,11 @@ eight were sentences answered by a fragment that does something else entirely.
 MEP owner is `HERON-REVIT-SYS-030`, and `-012` is the Family Agent. All six now point at the real one.
 
 **The reason it survived is the interesting half, and it is a gap between two checks that each look
-complete.** [`tools/check-metadata.py`](tools/check-metadata.py) *does* audit agent ids against the
+complete.** [`tools/check-metadata.py`](../tools/check-metadata.py) *does* audit agent ids against the
 registry, and *deliberately* skips `brain/fragments` — its own comment gives the reason, and the reason
 is good: a fragment's metadata standard is its `fragment.yaml`, and adding a `Heron-` header beside it
 would give two places to update and one that goes stale. So fragments sat outside the only check that
-looks, and [`brain/heron_fragment.py`](brain/heron_fragment.py) — the one that *does* read them — was
+looks, and [`brain/heron_fragment.py`](../brain/heron_fragment.py) — the one that *does* read them — was
 not looking. Neither was wrong on its own. The gap was between them.
 
 `heron_fragment.py` now parses the registry (it does not copy it — adding an agent there is enough) and
@@ -2875,9 +2875,9 @@ not among the namespaces the harness supplied. The alternative was hand-rolling 
 boundary segments, **which is precisely how an L-shaped room gets answered wrongly**, and that is the case
 the fragment exists to get right.
 
-> **The `USINGS` list in [`tools/check-fragments-compile.py`](tools/check-fragments-compile.py) is a
+> **The `USINGS` list in [`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py) is a
 > contract with unbuilt work.** It declares what a fragment may assume is in scope, so
-> [D-28](docs/DECISIONS.md)'s Roslyn executor must supply the same set. A namespace added here and not
+> [D-28](DECISIONS.md)'s Roslyn executor must supply the same set. A namespace added here and not
 > there compiles green and fails at the PC — the second obligation this library has placed on that
 > executor, after the `REVIT20xx` compile symbols.
 
@@ -2940,7 +2940,7 @@ three MEP capabilities and three drawing-production ones.
 
 **`check-structure` caught a house-rule break the compiler was happy with.** The insulation fragment
 used fully-qualified `Autodesk.Revit...` type names, which crosses the adapter boundary
-([docs/16 §4](docs/16-version-support-strategy.md)) — every other fragment relies on the harness's own
+([docs/16 §4](16-version-support-strategy.md)) — every other fragment relies on the harness's own
 `using` lines. It compiled perfectly on all eight releases; only the structure rule saw it.
 
 > **And then the fix's own comment failed the same check**, because the rule matches on TEXT and the
@@ -3070,7 +3070,7 @@ renamed or measured correctly.
 
 **What it did:** took the library from **32 to 39**, chosen by evidence rather than by picking from the
 owner's earlier library in order. All 39 compile on all eight releases; all 39 are `DRAFT`
-([D-44](docs/DECISIONS.md)).
+([D-44](DECISIONS.md)).
 
 **How the seven were chosen.** The brain was asked the sentences the owner actually says, and the
 answers were read. Some were not near misses but opposites: *"how many metres of pipe"* returned
@@ -3098,7 +3098,7 @@ implementation splits on a compile symbol. This is the owner's own named problem
 Revit"* — caught before the machine instead of mid-job.
 
 > **It puts a requirement on unbuilt work.** This is the first fragment in the library to need a
-> `REVIT20xx` compile symbol, so [D-28](docs/DECISIONS.md)'s in-process Roslyn executor **must define the
+> `REVIT20xx` compile symbol, so [D-28](DECISIONS.md)'s in-process Roslyn executor **must define the
 > same symbols MSBuild does**. A host defining none takes the `#else` branch and breaks on 2020 and 2021
 > only — which is the release the owner actually runs.
 
@@ -3113,7 +3113,7 @@ answers a real question of its own: *"which ducts have not been tagged"*.
 worse.** `RENUMBER_SEQUENTIAL` was answering *"set the room number"*, which is
 `WRITE_ELEMENT_PARAMETERS`' own declared utterance and a plain single write. The fix written first added
 a disclaimer to `purpose` quoting that sentence — **and `purpose` is indexed**
-([`heron_search.py`](brain/heron_search.py) puts it in the searchable text), so the fragment was handed
+([`heron_search.py`](../brain/heron_search.py) puts it in the searchable text), so the fragment was handed
 one more copy of the words it was losing on and did not move.
 
 > **The general rule, and it applies to every routing table in the library: a disclaimer written into an
@@ -3140,7 +3140,7 @@ whether a duct is measured in millimetres or feet.
 start at all on a machine installing today.**
 
 **The defect, and why nothing here could see it.** `pip install --user mcp` — the line
-[`tools/HeronRevit.ps1`](tools/HeronRevit.ps1) hands the user, unpinned — resolved to 1.x when the server
+[`tools/HeronRevit.ps1`](../tools/HeronRevit.ps1) hands the user, unpinned — resolved to 1.x when the server
 was written and resolves to **2.x** now. 2.x **deleted `mcp.server.fastmcp`**: `FastMCP` was renamed
 `MCPServer`. The import was written against 1.x, so the server raised `ImportError` before registering a
 single tool — **every Heron tool absent from the host**, with no Revit and no Windows anywhere in the
@@ -3149,8 +3149,8 @@ one technique nobody had used was the obvious one: install the dependency and st
 
 | | |
 |---|---|
-| **The fix** | The import, and nothing else. The class is looked up **newest first**, because 2.x's `MCPServer` takes the same `@server.tool()` decorator and the same `run()` — measured, not assumed, with both SDKs installed side by side. This is [D-05](docs/DECISIONS.md)'s rule about Revit releases applied to a Python dependency: an unlisted version must fail **loudly**, so the last `except` re-raises naming the install line rather than leaving an `ImportError` about a module the user never typed |
-| **The check that would have caught it** | [`tests/test_mcp_serves.py`](tests/test_mcp_serves.py) — the SDK's own registry against the source text, every description, every argument schema, and the three brain tools called through the SDK's own dispatch. **Validated by putting the defect back** and watching it fail under 2.x, which is the standard this repository already holds `check-api-surface.py` to |
+| **The fix** | The import, and nothing else. The class is looked up **newest first**, because 2.x's `MCPServer` takes the same `@server.tool()` decorator and the same `run()` — measured, not assumed, with both SDKs installed side by side. This is [D-05](DECISIONS.md)'s rule about Revit releases applied to a Python dependency: an unlisted version must fail **loudly**, so the last `except` re-raises naming the install line rather than leaving an `ImportError` about a module the user never typed |
+| **The check that would have caught it** | [`tests/test_mcp_serves.py`](../tests/test_mcp_serves.py) — the SDK's own registry against the source text, every description, every argument schema, and the three brain tools called through the SDK's own dispatch. **Validated by putting the defect back** and watching it fail under 2.x, which is the standard this repository already holds `check-api-surface.py` to |
 | **`heron_version` now reports the SDK** | *"Heron stopped working"* and *"the SDK moved underneath it"* are indistinguishable from the user's side, and this tool's stated job is what to say when something is wrong |
 
 **A skipped suite is now WAITING, not `ok`.** The SDK is an optional dependency, so on a machine without
@@ -3191,8 +3191,8 @@ download** instead of a missing import — a branch that had never once executed
 ## The seventh session, 2026-08-30 — the library, and two bugs it found
 
 **What it did:** took the fragment library from 7 to **32**, re-authored from the owner's earlier Brain
-under [D-25](docs/DECISIONS.md) — studied and rewritten, never copied, split where a 243-line original
-was really two jobs. All 32 compile on all eight releases. All 32 are `DRAFT` ([D-44](docs/DECISIONS.md)).
+under [D-25](DECISIONS.md) — studied and rewritten, never copied, split where a 243-line original
+was really two jobs. All 32 compile on all eight releases. All 32 are `DRAFT` ([D-44](DECISIONS.md)).
 
 **Two real bugs came out of the studying, and they are the same bug wearing different clothes.** Both are
 this project's defining failure: **reporting the number that was ASKED FOR as the number that HAPPENED.**
@@ -3211,7 +3211,7 @@ second home, because a name lookup for *"Width"* finds nothing on a French insta
 
 **A new tool, and it earned itself on its first run.** Adding a fragment can make an **existing one
 unfindable**, silently, and nothing here would have noticed. It had already happened twice.
-[`tools/check-routing.py`](tools/check-routing.py) asks every fragment its own declared words back to the
+[`tools/check-routing.py`](../tools/check-routing.py) asks every fragment its own declared words back to the
 search. It found sixteen contested sentences; **three were real errors** — a filter claiming two of
 `TRACE_CONNECTIVITY`'s sentences, and an override fragment claiming the grayout **skill's**. Fixing those
 took the words route to **100% in the top three**. The other thirteen are genuine English ambiguities and
@@ -3227,7 +3227,7 @@ wrong: greying every wall one at a time gives the right drawing today and a wron
 wall drawn afterwards keeps its normal graphics and nobody finds out until it prints. The skill now greys
 the background **by category**. Whether he wants that, or wants it selection-scoped so he can grey some
 walls and not others, is a modelling preference the API does not settle — it is written into
-[`brain/skills/mep-grayout.yaml`](brain/skills/mep-grayout.yaml) as a decision for him, not a default
+[`brain/skills/mep-grayout.yaml`](../brain/skills/mep-grayout.yaml) as a decision for him, not a default
 someone chose quietly.
 
 **And four tools were found answering when they should have declined** — retrieval printing `nothing
@@ -3242,7 +3242,7 @@ All four would have corrupted a later one.
 >
 > **The C# compiles.** Revit 2020 through **2027**, every project, zero warnings — and the Revit-free bridge
 > host *runs*, all 32 checks passing including the whole lease. It caught two real defects on its first
-> run, both of which reading had already missed twice ([docs/30](docs/30-compiling-away-from-windows.md)).
+> run, both of which reading had already missed twice ([docs/30](30-compiling-away-from-windows.md)).
 >
 > **Every open question is answered — 41 of 41**, and **24 decisions** were taken (D-20 to D-43). Nothing
 > gates any phase. Several were settled by *looking* rather than deciding: at a system already doing the
@@ -3254,7 +3254,7 @@ All four would have corrupted a later one.
 > **PHASE 2 STARTED, 2026-08-28.** The owner has **no Revit for about a week** and said so plainly:
 > *"checking in Revit is not possible within 1 week, so keep the checking process as a document and
 > start Phase 2 — we need to finish that."* [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is now a **record
-> rather than a gate**, and [27 — Build Order](docs/27-build-order.md) carries **Steps 7 to 14**, written
+> rather than a gate**, and [27 — Build Order](27-build-order.md) carries **Steps 7 to 14**, written
 > that day because Phase 2 had never been broken into steps. Seven of the eight need no Revit; only
 > Step 14's proof does.
 >
@@ -3273,7 +3273,7 @@ All four would have corrupted a later one.
 > `identity` (one lookup, no search), `cache` (this wording was resolved before), `keywords` (FTS5).
 > **Only a `PROVEN` fragment may run off an exact match without asking**, and two fragments claiming one
 > sentence is a *miss* rather than a coin toss. It found a real gap in Step 7 on its first run: fragments
-> had no `utterances`, so `OST_DuctCurves` matched nothing — [09 §2](docs/09-skills-and-fragments.md) had
+> had no `utterances`, so `OST_DuctCurves` matched nothing — [09 §2](09-skills-and-fragments.md) had
 > asked for them and Step 7 had not built them. Now required.
 > `python tests/test_search.py`.
 >
@@ -3310,7 +3310,7 @@ All four would have corrupted a later one.
 > keep in step.
 >
 > Its one real design decision: **almost everything is derived rather than stored**, which is
-> [D-40](docs/DECISIONS.md) applied. Risk in particular — it already has two homes (the tool registry
+> [D-40](DECISIONS.md) applied. Risk in particular — it already has two homes (the tool registry
 > and each fragment) and a third declaration would guarantee that one day two disagree and nobody knows
 > which is true. So a capability's risk is the **highest among its providers**, computed — and providers
 > that disagree about it are **reported as a defect**, because a thing that reads and a thing that
@@ -3366,8 +3366,8 @@ All four would have corrupted a later one.
 > **What still works away from Revit:** [§5](#5-what-you-can-and-cannot-do-without-revit).
 > **What must be re-tested on return:** [§6](#6-the-return-to-the-machine-checklist) — keep it up to date.
 
-Then read [docs/README.md](docs/README.md) for the map and
-[docs/27-build-order.md](docs/27-build-order.md) for what to build.
+Then read [docs/README.md](README.md) for the map and
+[docs/27-build-order.md](27-build-order.md) for what to build.
 
 ---
 
@@ -3393,14 +3393,14 @@ repository at all, and the guarantee needed no trust. Now there is, and the guar
 been through a real Revit.** [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is how that happens.
 
 **Four things arrived after the write path, because auditing found them missing rather than anybody
-remembering them.** The **lease** ([D-22](docs/DECISIONS.md)) — Step 5 deferred it to *"Phase 1 with
+remembering them.** The **lease** ([D-22](DECISIONS.md)) — Step 5 deferred it to *"Phase 1 with
 writes"* and Step 6 is that write; a second chat is now refused instead of cutting the first off mid-job.
 The **Failure Analysis Agent**, which never blind-retries and fails closed. The **tool registry**, so risk
 is declared in a table rather than as a literal buried in the write path. And **configuration and health**,
 which between them exposed two silent bugs — `write.enabled` could never have been switched on, and the
 two halves disagreed about how long to wait.
 
-**All 21 Golden Rules are now official** ([Q-19](docs/OPEN-QUESTIONS.md), accepted 2026-08-28) — including
+**All 21 Golden Rules are now official** ([Q-19](OPEN-QUESTIONS.md), accepted 2026-08-28) — including
 the four Step 6 was built to obey. They were accepted *before* Step 6 is proven, deliberately: a rule that
 only binds once the code passes is not a rule the code was ever held to.
 
@@ -3421,33 +3421,33 @@ covered by reasoning, and **neither has been witnessed.**
 **PHASE 2 IS BUILT — all eight steps, 7 to 14, on 2026-08-28 and 2026-08-29.** It was unblocked by the
 twenty-four decisions taken on 2026-08-28 (D-20 to D-43), which closed **every open question in the
 project, 41 of 41**, and then it was built. What is on disk: eight Python modules under `brain/`, seven
-fragments, ten skills, **nine** new test suites, and [`tools/check-gaps.py`](tools/check-gaps.py) — the
+fragments, ten skills, **nine** new test suites, and [`tools/check-gaps.py`](../tools/check-gaps.py) — the
 sweep that looks for what is missing rather than waiting to be told. The ninth suite is
-[`tests/test_brain_reachable.py`](tests/test_brain_reachable.py), and it arrived last with the seam that
+[`tests/test_brain_reachable.py`](../tests/test_brain_reachable.py), and it arrived last with the seam that
 made any of the other eight reachable from a conversation.
 
 **Phase 2's own definition of done is NOT met, and only two thirds of the reason is the missing Revit.**
-The [build order](docs/27-build-order.md) states it as three clauses: *ten real skills work, none
+The [build order](27-build-order.md) states it as three clauses: *ten real skills work, none
 hard-coded; a re-authored capability carries its own proof; and the Orchestrator resolves through
 capabilities rather than agent names.* The first two need a model — all ten skills and all seven
-fragments are `DRAFT`, and [D-30](docs/DECISIONS.md) promotes on a proof containing a negative case.
+fragments are `DRAFT`, and [D-30](DECISIONS.md) promotes on a proof containing a negative case.
 
 > ### The third clause was not blocked by anything — and is now done
 >
-> **RESOLVED 2026-08-29, later the same day.** [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py)
+> **RESOLVED 2026-08-29, later the same day.** [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py)
 > is the seam and three read-only tools stand on it — `heron_capabilities`, `heron_resolve`,
 > `heron_lookup` — each asking for a **capability** and never for a fragment. `check-gaps.py` now reports
 > **nothing unfinished**. What follows is the finding as it stood, kept because the *way* it was missed
 > matters more than the fix, and because two limits it names are still true: **resolving is not running**
-> (there is no executor, [D-28](docs/DECISIONS.md) is unbuilt), and the tools have **never been served by
+> (there is no executor, [D-28](DECISIONS.md) is unbuilt), and the tools have **never been served by
 > a real `FastMCP`** — that is `A8` in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md).
 >
 > **The brain is wired to nothing.** Found on 2026-08-29 by running `tools/check-metadata.py` and
 > following what it said. The Orchestrator is **the host's job, not Heron's** — `HERON-ORC-MAIN-001` is
-> listed as host-provided under [D-01](docs/DECISIONS.md) and
-> [docs/02 §7](docs/02-architecture-overview.md), which is correct and deliberate. But the host reaches
+> listed as host-provided under [D-01](DECISIONS.md) and
+> [docs/02 §7](02-architecture-overview.md), which is correct and deliberate. But the host reaches
 > Heron **only through MCP tools**, and the seven tools in
-> [`mcp/server/heron_tools.py`](mcp/server/heron_tools.py) are all `revit_*` — every one goes straight
+> [`mcp/server/heron_tools.py`](../mcp/server/heron_tools.py) are all `revit_*` — every one goes straight
 > to the bridge. **Nothing outside `brain/` and `tests/` imports the brain at all:**
 >
 > ```bash
@@ -3497,8 +3497,8 @@ fragments are `DRAFT`, and [D-30](docs/DECISIONS.md) promotes on a proof contain
 **`R1` is done — 2026-08-29, and it covered D-23 to D-43 rather than the five it asked for.** All
 twenty-one were read back and confirmed; the three carrying real consequence (D-33's boundary, D-26,
 D-32) were put to him one at a time and none moved. **`R1b` still needs a screen**, since
-[D-14](docs/DECISIONS.md) stays *Proposed* until he has seen the trust model working. They are Accepted and are being built on; the review confirms each still says what he meant
-and fills in detail left out. See the block at the top of [DECISIONS.md](docs/DECISIONS.md).
+[D-14](DECISIONS.md) stays *Proposed* until he has seen the trust model working. They are Accepted and are being built on; the review confirms each still says what he meant
+and fills in detail left out. See the block at the top of [DECISIONS.md](DECISIONS.md).
 
 **Two were reversed within hours of being recorded**, D-26 three times and D-32 once. Neither was a
 mistake — each was a first answer sharpened once its consequence was visible, which is the whole argument
@@ -3550,7 +3550,7 @@ now that the next stretch of work happens where Revit cannot be reached.
 | The bridge answers `ping` | Revit 2020 and 2024 |
 | One button connects **and** disconnects; the icon shows which | Toggled repeatedly, every transition logged |
 | Per-session token, minted per connect | 2024's token on the 2020 pipe → `unauthorized` |
-| Newest connection wins — **the pipe only, since Step 6** | *"A newer connection took the session"*, older one dropped. Still true of the transport; a lease now decides who may actually send anything ([D-22](docs/DECISIONS.md)). **The lease itself is unproven** |
+| Newest connection wins — **the pipe only, since Step 6** | *"A newer connection took the session"*, older one dropped. Still true of the transport; a lease now decides who may actually send anything ([D-22](DECISIONS.md)). **The lease itself is unproven** |
 | Two Revits at once, separate pipes | `heron.2024.*` and `heron.2020.*` together |
 | **The thread hop** | `5,844 elements` from 2024, `3,167` from 2020 |
 | **"Revit is busy" instead of a hang** | Dialog open → clean refusal after 10s, recovers by itself |
@@ -3588,17 +3588,17 @@ now that the next stretch of work happens where Revit cannot be reached.
 | | |
 |---|---|
 | **The eight `brain/` modules** | Each has its own suite and each passes — the fragment store, the scope store, exact-word search, nearness, fusion, the capability registry, the graph, and skills. What they are proven to do is **behave as specified against fixtures**. Not one of them has been handed a real Revit's answer |
-| **The whole fragment library, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](docs/DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are why `check-gaps` carries them under *needs a real Revit*; read the count off the tool rather than from here. **Most of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](tools/check-fragments-compile.py)) — which means those will not fail at the PC for a reason a compiler could have found. **The eight written on 2026-09-02 are the exception and have never been compiled at all**, because that container could not install the .NET SDK. That is `A9`, and it is the first thing to run on a machine that has one |
+| **The whole fragment library, all `DRAFT`** | `DRAFT` is not a shortcut — it is [D-30](DECISIONS.md) being obeyed. A fragment is promoted by one recorded proof **containing a negative case**, and a negative case needs a model. They stay DRAFT until then, and they are why `check-gaps` carries them under *needs a real Revit*; read the count off the tool rather than from here. **Most of them at least COMPILE** — on all eight releases, 2020 to 2027 ([`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py)) — which means those will not fail at the PC for a reason a compiler could have found. **The eight written on 2026-09-02 are the exception and have never been compiled at all**, because that container could not install the .NET SDK. That is `A9`, and it is the first thing to run on a machine that has one |
 | **10 skills, all `DRAFT`** | Each names **capabilities and never fragments**, and each carries the words Ajmal actually says rather than the words the technique is named after. Whether any of them does what it says is unknown |
-| **The trained embedding backend** | **The highest-value item that needs no Revit, and 2026-08-30 sharpened what it buys.** [`brain/retrieval-history.md`](brain/retrieval-history.md) tracks one query across eight library sizes (7 → 32) *and* now measures a second way: every fragment's own declared words asked back to the search — 169 sentences, **words 92% first and 100% in the top three, nearness 60% and 82%**. That corrects the older headline in this file's own history: the nearness route has **not** collapsed in general. It handles **vocabulary overlap** and fails at **disambiguation**, which is why the tracked query — a sentence several fragments fairly claim — sits mid-library while a sentence naming one fragment comes back first. So `A7` should be expected to change the **contested** lookups, not every lookup. Never run — `huggingface.co` is refused by this container, and by a second one on 2026-08-31, where the package installed cleanly from PyPI and only the **weights** download was refused (`ProxyError: 403`). The backend that *is* running is character n-grams, which measurably does not do synonyms (`diffuser`/`grille` scored −0.136). Needs no Revit and no Windows |
-| **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](mcp/server/heron_brain.py). **A real MCP SDK has now served them** (2026-08-31): all ten tools registered with their descriptions and argument schemas, and all three answering through the SDK's own dispatch with both refusals surviving the round trip — [`tests/test_mcp_serves.py`](tests/test_mcp_serves.py). That is no longer a text read. **It is still not a host**: nothing here shows Claude Code connecting over stdio, rendering a docstring or choosing a tool from it, and that is what is left of `A8`. **Doing it found that the server would not have started at all** on a machine installing today — see the eighth session below |
+| **The trained embedding backend** | **The highest-value item that needs no Revit, and 2026-08-30 sharpened what it buys.** [`brain/retrieval-history.md`](../brain/retrieval-history.md) tracks one query across eight library sizes (7 → 32) *and* now measures a second way: every fragment's own declared words asked back to the search — 169 sentences, **words 92% first and 100% in the top three, nearness 60% and 82%**. That corrects the older headline in this file's own history: the nearness route has **not** collapsed in general. It handles **vocabulary overlap** and fails at **disambiguation**, which is why the tracked query — a sentence several fragments fairly claim — sits mid-library while a sentence naming one fragment comes back first. So `A7` should be expected to change the **contested** lookups, not every lookup. Never run — `huggingface.co` is refused by this container, and by a second one on 2026-08-31, where the package installed cleanly from PyPI and only the **weights** download was refused (`ProxyError: 403`). The backend that *is* running is character n-grams, which measurably does not do synonyms (`diffuser`/`grille` scored −0.136). Needs no Revit and no Windows |
+| **The three brain MCP tools** | `heron_capabilities`, `heron_resolve`, `heron_lookup` — and the seam under them, [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py). **A real MCP SDK has now served them** (2026-08-31): all ten tools registered with their descriptions and argument schemas, and all three answering through the SDK's own dispatch with both refusals surviving the round trip — [`tests/test_mcp_serves.py`](../tests/test_mcp_serves.py). That is no longer a text read. **It is still not a host**: nothing here shows Claude Code connecting over stdio, rendering a docstring or choosing a tool from it, and that is what is left of `A8`. **Doing it found that the server would not have started at all** on a machine installing today — see the eighth session below |
 
 ### Does not exist at all
 
 | | |
 |---|---|
 | ~~Any way for the host to reach the brain~~ | **BUILT 2026-08-29.** Three read-only tools on one seam. Moved to the table above, which is where an untested thing belongs |
-| **Any way to RUN a fragment** | **The gap that wiring the brain up revealed rather than closed.** A fragment carries C# under `impl/`, the bridge speaks a fixed set of operations, and **none of them compiles or executes one** — [D-28](docs/DECISIONS.md) chose Roslyn in-process and it is not built. So a request now resolves all the way to *this capability, provided by that fragment*, and then stops. Every brain tool says so on every answer, because a host that inferred otherwise would build a plan that fails at its last step |
+| **Any way to RUN a fragment** | **The gap that wiring the brain up revealed rather than closed.** A fragment carries C# under `impl/`, the bridge speaks a fixed set of operations, and **none of them compiles or executes one** — [D-28](DECISIONS.md) chose Roslyn in-process and it is not built. So a request now resolves all the way to *this capability, provided by that fragment*, and then stops. Every brain tool says so on every answer, because a host that inferred otherwise would build a plan that fails at its last step |
 | ~~Seven capabilities the skills ask for~~ | **WRITTEN 2026-08-29**, taking the library to 14 that day and to **32** by 2026-08-30. **All ten skills have every capability provided** — `python brain/heron_skill.py` shows no gaps. Each one compiles on all eight releases and each carries proof cases with a negative case, **and not one has met a model**: they are `DRAFT`, which is what makes them the seven newest rows of Revit-checking debt rather than seven finished things |
 
 > Nothing here is known-broken. Several things are **untested**, which is different and more honest.
@@ -3615,20 +3615,20 @@ Each of these cost real time. They are in the order they were learned.
 
 1. **The Revit API can only be called from Revit's own thread, inside an API context.** An MCP server is
    a separate process and cannot call it at all. Everything marshals through one `ExternalEvent`.
-   [docs/03 §4](docs/03-heron-revit.md)
+   [docs/03 §4](03-heron-revit.md)
 
 2. **A named pipe needs `CreateNewInstance`, not just `ReadWrite`.** Without it only the *first*
    listener can be created and every retry fails with "access denied".
 
 3. **The discovery file must never carry the document name.** Storing it produced the stale-name trap in
-   the owner's earlier work. [docs/25 §2a](docs/25-multi-session-and-binding.md)
+   the owner's earlier work. [docs/25 §2a](25-multi-session-and-binding.md)
 
 4. **"No reply" does not mean "dead".** Test the *process*, not the reply — and check it is still the
    right *program*, because Windows reuses process ids.
 
 5. **An assumption is not a choice.** If one Revit was open, Heron *assumed* it. If the user answered,
    they *chose*. Conflate the two and a second Revit opening mid-chat silently sends everything to the
-   first one. [docs/25](docs/25-multi-session-and-binding.md), and `tests/test_session_binding.py`.
+   first one. [docs/25](25-multi-session-and-binding.md), and `tests/test_session_binding.py`.
 
 6. **Naming the document is not always enough.** Two sessions can both have `Project1` open — it
    happened. Name the session too.
@@ -3659,7 +3659,7 @@ Each of these cost real time. They are in the order they were learned.
 13. **Revit's move call returns normally and moves nothing, for a group member.** No exception, no
     return value, no warning. Counting *"it did not throw"* as *"it moved"* reports **"Moved 5,
     skipped 0"** for five air terminals that have not shifted a millimetre — the "succeeded and did
-    nothing" failure [D-30](docs/DECISIONS.md) exists to catch, in the one place Heron can actually
+    nothing" failure [D-30](DECISIONS.md) exists to catch, in the one place Heron can actually
     change a model. Heron skipped **pinned** elements, which is one half of the case; a group member
     is not pinned and went straight through. `RevitWrite` now probes each position before and after
     and reports four outcomes — moved, partly, blocked, unverified — instead of the count it asked
@@ -3694,7 +3694,7 @@ Copy the message. Note which element, which view, which document. Then investiga
 | A count higher than what is standing on site | Nested families and insulation. An AHU with a nested fan, coil and filter is four instances and one unit — `GROUP_BY_ASSEMBLY` |
 | A painted finish reports zero area | Paint and geometry are two separate material sets and the area call needs the same flag it was listed with — `REPORT_MATERIAL_TAKEOFF` |
 | A ceiling-height answer says *"no ceiling"* for a room that plainly has one | The room's **Upper Limit**. A room's solid stops there, so a solid test intersects nothing. `MEASURE_CEILING_HEIGHT` avoids it by design |
-| You asked a **question** and the model **changed** | `python tools/check-routing.py` — the ladder-crossing list at the top. A read sentence can rank below a fragment that writes. [D-47](docs/DECISIONS.md) |
+| You asked a **question** and the model **changed** | `python tools/check-routing.py` — the ladder-crossing list at the top. A read sentence can rank below a fragment that writes. [D-47](DECISIONS.md) |
 | A fragment "does not exist", or ranks nowhere | The store is **stale**, not the library broken. `check-routing.py` rebuilds when its count disagrees with disk and says so |
 | It hangs, with no error | **Two waits, not one.** *"Did Revit pick it up?"* and *"having started, did it finish?"* are different questions. §4 note 7 |
 | *"Access denied"* opening the bridge | `CreateNewInstance` on the pipe. §4 note 2 |
@@ -3737,12 +3737,12 @@ Four steps, in order, and step 1 is the one that gets skipped.
    |---|---|
    | Needs a real Revit, or Windows, to settle | A new row in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — the single register |
    | A Revit behaviour worth never re-learning | §4 above, numbered, in the order learned |
-   | A choice that could reasonably have gone the other way | [`docs/DECISIONS.md`](docs/DECISIONS.md), with what was rejected and why |
+   | A choice that could reasonably have gone the other way | [`docs/DECISIONS.md`](DECISIONS.md), with what was rejected and why |
    | Something a tool could have caught and did not | A checker in `tools/` — that is how §4 note 11 and the risk ladder both became permanent |
    | A defect in one fragment | That fragment, plus a **negative case** in its `tests/cases.yaml` |
 
 4. **If it needs Revit and Revit is not in front of you, it becomes a register row — not a half-fix.**
-   That is [D-45](docs/DECISIONS.md): build it all out now, prove it in one concentrated pass later. A
+   That is [D-45](DECISIONS.md): build it all out now, prove it in one concentrated pass later. A
    speculative fix to something nobody has watched fail is a change with no evidence behind it, and it
    costs more to unpick than to write.
 
@@ -3823,7 +3823,7 @@ two**: every word was prefix-matched, so `in*`, `me*` and `the*` outvoted the on
 that carried meaning.
 
 **And two more things that were believed to need Windows, and do not** (2026-08-28,
-[docs/30](docs/30-compiling-away-from-windows.md)):
+[docs/30](30-compiling-away-from-windows.md)):
 
 ```bash
 python tools/check-compile.py                  # Revit 2020-2027, all four projects, 0 warnings
@@ -3878,7 +3878,7 @@ targets are a property of **the installed SDK package**, not of the operating sy
 `dotnet-sdk-10.0` ships them and its `dotnet-sdk-8.0` does not, and `check-compile.py` was passing
 `-p:EnableWindowsTargeting=true` — the flag whose whole purpose is the non-Windows case — **only on
 Windows**. With the .NET 10 SDK installed, **all eight releases compile here**, add-in included, 0
-warnings. [docs/30 §2a](docs/30-compiling-away-from-windows.md) has the account and the two-directional
+warnings. [docs/30 §2a](30-compiling-away-from-windows.md) has the account and the two-directional
 validation that was done before the eight greens were believed.
 
 - **All documentation, decisions, specifications and open questions.**
@@ -3963,7 +3963,7 @@ connected being invisible is a safety property. **Put it back afterwards.**
 >   [AJ-AI-Brain#47](https://github.com/Ajmalpshaik/AJ-AI-Brain/pull/47) is open on purpose. **It is not a
 >   precedent.** If you find yourself about to add a second one, the answer is no.
 > - **Read them freely** — they solve overlapping problems and their scars are worth more than their
->   features. [PROPOSALS Part E](docs/PROPOSALS.md) is what that study produced.
+>   features. [PROPOSALS Part E](PROPOSALS.md) is what that study produced.
 > - **Never copy code or text out of them.** Understand the mechanism, then write it for Heron, in
 >   Heron's shape, with Heron's reasoning. His words: *"study and use and make it part of our heron,
 >   blindly copy paste dont do it."*
@@ -3971,14 +3971,14 @@ connected being invisible is a safety property. **Put it back afterwards.**
 >   whose argument is *"go read that other repository"* becomes worthless on that day. State the
 >   reasoning here, in full, so it stands on its own.
 
-Twenty-two are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-bearing ones:
+Twenty-two are in [docs/DECISIONS.md](DECISIONS.md). These are the load-bearing ones:
 
 | | |
 |---|---|
 | **D-01** | Heron runs as a **Claude Code plugin** |
 | **D-02** | **Named pipes**, per-PID. Local-only by construction — the add-in has *no network code at all* |
 | **D-05** | **Revit 2020 → latest.** Never extrapolate the runtime table forward; an unlisted release is a build error |
-| **D-06** | **C# for Revit, Python for everything outside it.** Settled again on evidence in [Q-39](docs/OPEN-QUESTIONS.md) |
+| **D-06** | **C# for Revit, Python for everything outside it.** Settled again on evidence in [Q-39](OPEN-QUESTIONS.md) |
 | **D-09** | One `ExternalEvent`, one queue, one handler |
 | **D-15** | **Where the field notes disagree with a specification, the field notes win.** Observed beats designed |
 | **D-17** | Runtime state is machine-local; user data roams; the audit log stays with the data because it is evidence |
@@ -3998,9 +3998,9 @@ Twenty-two are in [docs/DECISIONS.md](docs/DECISIONS.md). These are the load-bea
 | **D-39** | Shadow mode is approved on an **analysed disagreement**, never a count of agreements. Agreement is weak evidence; a thing that does nothing agrees with everything |
 | **D-43** | **The Constitution is binding** — all 30 Articles. Its own Amendment clause applies: never weakened silently, and never by an agent |
 
-**Golden Rules** — **21, all official** — are in [docs/14](docs/14-golden-rules.md). 16–21 cover undo,
+**Golden Rules** — **21, all official** — are in [docs/14](14-golden-rules.md). 16–21 cover undo,
 preview-before-modify, sandboxing, permission escalation, document pinning and stale reads, and were
-**accepted on 2026-08-28** ([Q-19](docs/OPEN-QUESTIONS.md)) *while Step 6 remained unproven*. That order
+**accepted on 2026-08-28** ([Q-19](OPEN-QUESTIONS.md)) *while Step 6 remained unproven*. That order
 was deliberate: a rule that only binds once the code passes is not a rule the code was ever held to.
 **They are exactly what Step 6 builds.**
 
@@ -4016,7 +4016,7 @@ line was the last outstanding confirmation and it was given on 2026-08-28.
 | | |
 |---|---|
 | ~~`R1` — read the day's decisions back~~ | **DONE 2026-08-29.** All twenty-one read back, all confirmed. It happened in conversation rather than at the PC, and **after** Phase 2 was built rather than before — both recorded rather than smoothed over. What that cost turned out to be **nothing measurable**: the two that had been reversed within hours did not move a fourth time, and no missing detail surfaced. `R2` went with it — D-26 and D-32 were the two put to him individually |
-| **`R1b` — show him the trust model working** | [D-14](docs/DECISIONS.md) stays **Proposed**. He agreed the direction and said *"show me it working at the PC first."* Use the framing that landed: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
+| **`R1b` — show him the trust model working** | [D-14](DECISIONS.md) stays **Proposed**. He agreed the direction and said *"show me it working at the PC first."* Use the framing that landed: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
 | ~~Copyright~~ | **CONFIRMED 2026-08-28 — Ajmal PS is correct.** Checked consistent in all four places it appears: the Apache appendix in `LICENSE`, `NOTICE`, `<Company>` in `Directory.Build.props`, and `README.md`. The Apache appendix is filled in rather than left as the `[name of copyright owner]` placeholder, which is the one that is usually missed |
 
 **And two choices that did not exist until Phase 2 was built.** Neither is a question the code is stuck
@@ -4028,8 +4028,8 @@ on — both are the owner's to make, and both were deliberately left rather than
 | ~~Wire the brain to the host now, or after the Revit checks?~~ | **DECIDED AND DONE 2026-08-29 — he chose to wire it now.** Three read-only tools on one seam; `check-gaps.py` reports nothing unfinished. It cost the register one new row (`A8`, two minutes at the PC) and moved no other row, so his standing instruction that *only Revit-checking should remain outstanding* holds: what remains is 47 Revit rows, 3 Windows, 1 network, 3 conversations |
 
 **Two things were answered by NOT answering them, and both are publication tasks rather than gaps:**
-[Q-38](docs/OPEN-QUESTIONS.md) — the public install command — and the Autodesk App Store requirements in
-[D-38](docs/DECISIONS.md). Both need **current documentation read at the time**, and writing either from
+[Q-38](OPEN-QUESTIONS.md) — the public install command — and the Autodesk App Store requirements in
+[D-38](DECISIONS.md). Both need **current documentation read at the time**, and writing either from
 memory is the failure this repository has already had twice. `tools\setup.ps1` is the proven route
 meanwhile.
 
@@ -4057,7 +4057,7 @@ makes `D3` any more true."*
 
 **`R1` is no longer the first thing at the PC — it is done** (2026-08-29, all twenty-one confirmed).
 What remains of the review is `R1b`: show him the trust model
-working, because [D-14](docs/DECISIONS.md) is still *Proposed*. His instruction — *"now we just recorded,
+working, because [D-14](DECISIONS.md) is still *Proposed*. His instruction — *"now we just recorded,
 but we will do it one more time"*.
 
 **It was meant to happen before Phase 2 was built, and it did not.** The owner overrode it — his to do —
@@ -4071,7 +4071,7 @@ question was asked again an hour later. Neither was a mistake — each was a fir
 consequence became visible, which is exactly what a read-back is for.
 
 **Then the register, and a compiler is no longer what is missing.** `A1`, `A2` and `A3` are done — see
-[docs/30](docs/30-compiling-away-from-windows.md) for how, in one command:
+[docs/30](30-compiling-away-from-windows.md) for how, in one command:
 
 ```bash
 python tools/check-compile.py     # 2020-2027, all four projects, no Windows and no Revit needed
@@ -4181,7 +4181,7 @@ never edit it, never commit to it.** His instruction on how to use it, in his ow
 | `actions/visibility/` | 17 | barely started — 3 done |
 | `actions/move-copy-rotate/` | 13 | mostly done |
 | `filters/` | 51 | a few done |
-| `context/` | 12 | see [D-46](docs/DECISIONS.md) — most are the host's job, not fragments |
+| `context/` | 12 | see [D-46](DECISIONS.md) — most are the host's job, not fragments |
 | `recipes/` | 44 | **these become SKILLS, not fragments** — a recipe is a whole job |
 
 **Check what already exists before writing anything**, because the names do not match one to one — this
@@ -4207,7 +4207,7 @@ rest.
    - `fragment.yaml` — metadata, contract, `purpose`, `compatibility-note`, `utterances`
    - `impl/any/fragment.cs` — the C#, **non-standalone**: it assumes its `needs` are in scope and
      leaves its `provides` behind. No `using`, no class, no method wrapper.
-   - `tests/cases.yaml` — `positive`, `negative`, `second_route`. **[D-30](docs/DECISIONS.md): a proof
+   - `tests/cases.yaml` — `positive`, `negative`, `second_route`. **[D-30](DECISIONS.md): a proof
      without a negative case does not count**, because the defect being guarded against is the fragment
      that succeeds while doing nothing.
 4. **Compile it on all eight releases.** This is the gate that has caught every real mistake so far:
@@ -4219,7 +4219,7 @@ rest.
    python tools/check-routing.py
    python tools/check-intrusion.py     # optional; the shortlist view
    ```
-6. **Answer every ladder-crossing.** [D-47](docs/DECISIONS.md) removes the option of leaving one alone:
+6. **Answer every ladder-crossing.** [D-47](DECISIONS.md) removes the option of leaving one alone:
    say which fragment should win, or say the sentence names a composition and belongs to a skill. Where
    two fragments fairly claim one sentence, **put the same cross-reference table in BOTH** — written
    one way it only routes whoever lands on the newer file.
@@ -4236,9 +4236,9 @@ rest.
 | Rule | What it means here |
 |---|---|
 | **Golden Rule 16** | A fragment **assumes an open transaction and never opens one**. A batch is one undo entry. This is why a read fragment may not change-and-roll-back to measure something — see `MEASURE_CEILING_HEIGHT` |
-| **[D-44](docs/DECISIONS.md)** | A re-authored fragment starts `DRAFT` whatever its status was in the earlier library. Nothing here inherits proven |
-| **[D-45](docs/DECISIONS.md)** | Build it all out now, prove it against Revit later in one pass. Do **not** stop to half-prove something |
-| **Units** | mm → internal feet by `/ 304.8`, plain arithmetic. **Never a units API** — that is what breaks at Revit 2021. Hand values on in feet; [D-20](docs/DECISIONS.md) keeps the conversion at the edge |
+| **[D-44](DECISIONS.md)** | A re-authored fragment starts `DRAFT` whatever its status was in the earlier library. Nothing here inherits proven |
+| **[D-45](DECISIONS.md)** | Build it all out now, prove it against Revit later in one pass. Do **not** stop to half-prove something |
+| **Units** | mm → internal feet by `/ 304.8`, plain arithmetic. **Never a units API** — that is what breaks at Revit 2021. Hand values on in feet; [D-20](DECISIONS.md) keeps the conversion at the edge |
 | **ElementId** | Never read one as a number. Compare `ElementId` to `ElementId` — `IntegerValue` is gone by 2026 and the type went 64-bit at 2024 |
 | **Namespaces** | The wrapper imports the base DB namespace only. `Room`, `Space`, `Ceiling` and friends are **not** available as types — tell them apart by **category** |
 | **No outside sources** | Never name another person's repo, tool, product, website or name — anywhere. His instruction, 2026-08-20. A re-authored technique is written in our own words as this project's own knowledge |
@@ -4413,7 +4413,7 @@ its id areas, its branch and its folder, and the rules bind all three. Nothing e
 ### What is not fragment work
 
 `recipes/` (44 files) become **skills**, not fragments — a recipe is a whole job. `context/` (12) is
-mostly the host's, per [D-46](docs/DECISIONS.md). The real remaining pool is about **330** source files,
+mostly the host's, per [D-46](DECISIONS.md). The real remaining pool is about **330** source files,
 not 379.
 
 ---
@@ -4462,11 +4462,11 @@ not 379.
   was not that retrieval got worse: that sentence is filter-**then**-select, a composition, which is
   what a **skill** names. The assertion was asking the wrong layer. Deleting it without that paragraph
   would have looked identical and taught nobody anything.
-- **"Studied, not copied" fails silently unless somebody checks.** [D-25](docs/DECISIONS.md) was being
+- **"Studied, not copied" fails silently unless somebody checks.** [D-25](DECISIONS.md) was being
   obeyed in intent and broken in fact — a level lookup was verbatim with one variable renamed, under a
   commit message that said *"written fresh"*. It surfaced only because the owner asked outright. The
   answer was yes, and both pieces were rewritten. **Do the side-by-side yourself before the commit**,
-  not when asked; the method is in [docs/31](docs/31-studying-the-existing-libraries.md).
+  not when asked; the method is in [docs/31](31-studying-the-existing-libraries.md).
 - **A scanner that scans itself finds itself.** `check-gaps.py` reported its own regex as two undeclared
   agents on its first run. Funny once; worth remembering as the general shape — a tool that reads the
   repository is part of the repository.
@@ -4477,7 +4477,7 @@ not 379.
 *Phase 0 is finished and proven. Step 6 and the whole of Phase 2 are finished and proven of nothing —
 built carefully, obeying rules that are now binding, tested where testing was possible, and compiled on
 every release from 2020 to 2027. **Every fragment and all ten skills** sit at `DRAFT`, which is not a shortcut
-but [D-30](docs/DECISIONS.md) being obeyed: promotion needs one proof containing a negative case, and a
+but [D-30](DECISIONS.md) being obeyed: promotion needs one proof containing a negative case, and a
 negative case needs a model. `python tools/check-gaps.py` is now the file that answers "what is left",
 because it is computed from disk and this one is not — and where they disagree, believe the tool. It
 currently says **nothing** here is unfinished and **55 are waiting: 49 on a Revit — `A9`, the uncompiled

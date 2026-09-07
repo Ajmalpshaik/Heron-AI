@@ -70,7 +70,7 @@ the 330 above. Ten claims were raised; one was refuted; **nine stand:**
 covered materials and group definitions, which share no mechanism and no sentence: a material is
 proved unused by walking every element, every type and every painted face, and a group definition by
 asking whether anything is placed. They are `FIND_UNUSED_MATERIALS` and `FIND_UNUSED_GROUP_TYPES`.
-Splitting is what [`HANDOVER.md` §9a](../HANDOVER.md) step 2 asks for; folding them together would
+Splitting is what [`HANDOVER.md` §9a](HANDOVER.md) step 2 asks for; folding them together would
 have meant a mode string, and a mode string is the shape that hands a whole list to a delete on a
 typo.
 
@@ -189,7 +189,7 @@ Fifteen of 317 is a sample, not a proof. **Closing this needs the covered claims
 way the missing ones were**, and until that runs the honest statement is *nine were found and nine
 are built*, never *nine were all there were*.
 
-**Why this needed doing at all.** [`HANDOVER.md`](../HANDOVER.md) had recorded the library as
+**Why this needed doing at all.** [`HANDOVER.md`](HANDOVER.md) had recorded the library as
 **EXHAUSTED of fragment-shaped work**. That was an estimate standing in for a count: roughly 60 were
 judged worth adding, 55 were built, and 60 minus 55 was treated as "finished". **Nobody read the
 remaining files.** The denominators were right; the conclusion was not.
@@ -362,7 +362,7 @@ Where one read fragment is really two jobs joined:
   that are proven, composable and used beat three hundred that are none of those.
 - **Not one-directional.** A mechanism understood well enough to re-author is usually understood well
   enough to improve, and the improvement stays here — the other library is **read-only**, permanently
-  ([HANDOVER §7](../HANDOVER.md)).
+  ([HANDOVER §7](HANDOVER.md)).
 
 ---
 

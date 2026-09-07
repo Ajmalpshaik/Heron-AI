@@ -25,7 +25,7 @@
 **Written 2026-09-07. Paste the block below into a fresh session.** It is written to be started from
 cold — it names the files, the numbers, the one rule that must not be broken, and how to know it worked.
 
-Background for a human reading this first: [HANDOVER.md PART 7](../HANDOVER.md) is the survey this came
+Background for a human reading this first: [HANDOVER.md PART 7](HANDOVER.md) is the survey this came
 from. Twelve agents are named in [`08-agent-catalog.md`](08-agent-catalog.md), none are built, five are
 buildable now, and this is the one worth doing first because it attacks the measured bottleneck —
 **333 DRAFT fragments against 16 PROVEN**, proved by hand, one at a time.

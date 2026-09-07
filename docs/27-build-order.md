@@ -149,7 +149,7 @@ that already assumes it can just write.
 
 Step 6 is written, compiles on all eight Revit releases, and has **never loaded into Revit**. Phase 1's
 own definition of done — *one Ctrl+Z puts it back, a failure leaves the model untouched* — has not been
-witnessed. [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) is that debt, in full.
+witnessed. [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is that debt, in full.
 
 **Phase 2 starts anyway, on the owner's instruction (2026-08-28):** *"checking in Revit is not possible
 within 1 week, so keep the checking process as a document and start Phase 2."* The register is therefore
@@ -325,7 +325,7 @@ own proof with a negative case** ([D-30](DECISIONS.md)).
 > **This is the one step in Phase 2 that needs a real Revit**, and only for the last word. The skills can
 > be written, composed, validated and unit-tested without one; what cannot be faked is the proof that
 > each actually does what it says against a model. Until then they are `DRAFT`, and
-> [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) carries the debt like every other unproven thing here.
+> [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) carries the debt like every other unproven thing here.
 
 **Phase 2's definition of done:** ten real skills work, none hard-coded; a capability re-authored from an
 existing library carries its own proof; and the Orchestrator resolves through capabilities rather than
@@ -356,7 +356,7 @@ cheaper than discovering it in week two.
 > A fragment carries C# in `impl/` and there is no executor — the bridge speaks a fixed set of
 > operations and none of them compiles one, because [D-28](DECISIONS.md)'s in-process Roslyn is not
 > built. So the host can now learn *what would do the job* and still cannot have it done.
-> `A8` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) carried the other half: the tools were written
+> `A8` in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) carried the other half: the tools were written
 > where no MCP SDK is installed, so an SDK had never actually served them. **That half was closed on
 > 2026-08-31 by installing the SDK** — a missing pip package, not the missing Windows machine the row
 > claimed — and doing so found that the server would not have started at all against the current SDK
@@ -438,7 +438,7 @@ This section used to read *"Steps 7+ follow ROADMAP Phase 2"* and end with **"bu
 until Step 6 works."** The second half was overtaken by events rather than proved wrong: Step 6 still
 does not *work* in the sense that sentence meant, and Phase 2 began anyway because the owner has no
 Revit for a week and there is a phase's worth of work that does not need one. The debt did not go away —
-it moved to [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) and stayed there.
+it moved to [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) and stayed there.
 
 ---
 

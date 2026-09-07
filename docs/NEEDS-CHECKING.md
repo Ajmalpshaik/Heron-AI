@@ -7,12 +7,12 @@
 >
 > So: **no Revit until roughly 2026-09-04.** Nothing below has changed status, nothing has been
 > downgraded, and nothing has been quietly assumed to pass. What changed is only this — **work no longer
-> waits here.** Phase 2 began on that instruction ([27 — Build Order](docs/27-build-order.md), Steps 7
+> waits here.** Phase 2 began on that instruction ([27 — Build Order](27-build-order.md), Steps 7
 > to 14), and Steps 7 to 13 were chosen and ordered so that none of them needs a Revit.
 >
 > **Two things this does NOT license:**
 >
-> - **`write.enabled` stays `false`.** [D-19](docs/DECISIONS.md) is untouched. No Phase 2 step asks for
+> - **`write.enabled` stays `false`.** [D-19](DECISIONS.md) is untouched. No Phase 2 step asks for
 >   it, and a step that started asking would be the wrong step.
 > - **A parked item is still unproven.** The single failure this file exists to prevent is an untested
 >   claim ageing into a believed one. A week of not looking at it does not make `D3` any more true.
@@ -28,7 +28,7 @@ precisely rather than generally.
 
 It was written on a machine with no Revit, no Windows and no .NET SDK. Two of those three turned out
 to be avoidable: **the C# now compiles, and the bridge now runs** — on Linux, from NuGet, in about five
-minutes ([docs/30](docs/30-compiling-away-from-windows.md)). Group A below records what that settled and
+minutes ([docs/30](30-compiling-away-from-windows.md)). Group A below records what that settled and
 what it did not.
 
 **Most of what is left needs a real Revit on a real Windows machine** — 48 of the 53 remaining items, and
@@ -40,7 +40,7 @@ and read rather than the total trusted. **And 19 closed does not mean 19 proved:
 (`A1`, `A2`, `A3`, `A4`, `A5`, `A6`, `A7`, `A8`, `A9`, `R1`, `R2`, `B2`, `B2a`, `B2b`, `B3`) and **4 are
 RETIRED unproven** —
 `C1`, `C2`, `C4` and `C6` cannot be run at all since the Emergency Stop button was removed
-([D-46](docs/DECISIONS.md)). A struck row is not automatically a passed one, and a single "done" figure
+([D-46](DECISIONS.md)). A struck row is not automatically a passed one, and a single "done" figure
 cannot say which.
 
 Of the 44 left: **43 need Revit**, and **1 needs a screen in front of him** (`R1b` — seeing the trust
@@ -134,7 +134,7 @@ the rows in this section rather than believing the sentence over them.)*
 **`A8` is the one that earned its place.** It did not pass on the first attempt: it exposed a hang that no
 existing test could see, because every one of them called the tools **in this process**, where the failing
 import is harmless. Only a real subprocess over real stdio shows it. **And the hang was created by closing
-`A7` an hour earlier** — see that row, and [D-49](docs/DECISIONS.md). The fourth, **`A9`,
+`A7` an hour earlier** — see that row, and [D-49](DECISIONS.md). The fourth, **`A9`,
 needs only a machine with the .NET SDK on it** - it is the batches of fragments written on 2026-09-02,
 2026-09-04 and 2026-09-05 in containers where the SDK could not be installed, so for the first time in
 this library some C# has never been near a compiler. `A8` arrived on
@@ -152,7 +152,7 @@ to be a fact about **which SDK package was installed**, not about the operating 
 `dotnet-sdk-10.0` carries those targets; its `dotnet-sdk-8.0` does not. **All eight releases now compile
 here**, and the lesson is the one this project keeps re-learning: an environment-specific block belongs
 in a sentence that names the environment, or it hardens into a fact about the project. See
-[docs/30 §2a](docs/30-compiling-away-from-windows.md), and run it yourself with one command:
+[docs/30 §2a](30-compiling-away-from-windows.md), and run it yourself with one command:
 
 ```bash
 apt-get install -y dotnet-sdk-10.0     # the .NET 8 package builds 2020-2024 only
@@ -173,12 +173,12 @@ python tools/check-compile.py          # 2020 through 2027, all four projects, 0
 | ~~**A1**~~ | ~~`dotnet --version`~~ | **DONE 2026-08-28.** SDK 8.0.130. Still worth one run on the owner's PC, where `tools/setup.ps1` checks it anyway and stops with the download link |
 | ~~**A2**~~ | ~~`dotnet build -p:RevitVersion=2020`~~ | **DONE 2026-08-28.** Compiles, 0 warnings, after the `CreationGUID` fix above. The other five spots this row used to warn about — `WorksharingUtils.GetCheckoutStatus`, `IFailuresPreprocessor`, `TransactionGroup.GetStatus`, `BuiltInCategory.INVALID`, `UIDocument.RefreshActiveView` — are all **clean on 2020 and 2024** |
 | ~~**A3**~~ | ~~`dotnet build -p:RevitVersion=2024`~~ | **DONE 2026-08-28.** So are 2021, 2022 and 2023 — all four projects, 0 warnings each |
-| ~~**A4**~~ | ~~`python tests/test_bridge_roundtrip.py` — **on Windows**~~ | **DONE 2026-09-06 on the owner's PC. All 32 checks pass against a REAL Windows named pipe** — `heron.2024.21512` — which is the one thing the Linux runs could never touch: the pipe's actual naming, its security descriptor, and the `CreateNewInstance` flag from [HANDOVER](HANDOVER.md) §4 note 2. Framing, the JSON parser, the token, newest-connection-wins, the toggle cycle and **the whole lease** all behave on Windows exactly as they did on Linux, so the shim was faithful. **One result is worth naming separately:** *"disconnect stops it and withdraws the announcement"* passes — which is the control the owner named as his stop when [D-46](docs/DECISIONS.md) was read back to him, now proven on the platform it has to work on. The Emergency Stop button it replaced never had a passing test. **What this still does NOT touch is Revit**: the host is a test host, no model is open, and `D3` is untouched by all of it |
-| ~~**A5**~~ | ~~`python tools/check-compile.py 2025 2026 2027`~~ | **DONE 2026-08-28, and it did not need Windows either.** All four projects compile on 2025, 2026 and 2027 — `net8.0-windows` and `net10.0-windows`, 0 warnings — on Linux, with the .NET 10 SDK and `-p:EnableWindowsTargeting=true`. This row assumed the Windows Desktop SDK was a property of the operating system; it is a property of the **SDK package**, and Ubuntu's `dotnet-sdk-10.0` ships it while its `dotnet-sdk-8.0` does not. The script had the right MSBuild flag and applied it **only on Windows**, where it does nothing. Full account and the validation in [docs/30 §2a](docs/30-compiling-away-from-windows.md). `python tools/check-api-surface.py` still runs and still adds something a compile cannot — it reads the **shipped** assemblies, where a compile reads the NuGet reference packages |
+| ~~**A4**~~ | ~~`python tests/test_bridge_roundtrip.py` — **on Windows**~~ | **DONE 2026-09-06 on the owner's PC. All 32 checks pass against a REAL Windows named pipe** — `heron.2024.21512` — which is the one thing the Linux runs could never touch: the pipe's actual naming, its security descriptor, and the `CreateNewInstance` flag from [HANDOVER](HANDOVER.md) §4 note 2. Framing, the JSON parser, the token, newest-connection-wins, the toggle cycle and **the whole lease** all behave on Windows exactly as they did on Linux, so the shim was faithful. **One result is worth naming separately:** *"disconnect stops it and withdraws the announcement"* passes — which is the control the owner named as his stop when [D-46](DECISIONS.md) was read back to him, now proven on the platform it has to work on. The Emergency Stop button it replaced never had a passing test. **What this still does NOT touch is Revit**: the host is a test host, no model is open, and `D3` is untouched by all of it |
+| ~~**A5**~~ | ~~`python tools/check-compile.py 2025 2026 2027`~~ | **DONE 2026-08-28, and it did not need Windows either.** All four projects compile on 2025, 2026 and 2027 — `net8.0-windows` and `net10.0-windows`, 0 warnings — on Linux, with the .NET 10 SDK and `-p:EnableWindowsTargeting=true`. This row assumed the Windows Desktop SDK was a property of the operating system; it is a property of the **SDK package**, and Ubuntu's `dotnet-sdk-10.0` ships it while its `dotnet-sdk-8.0` does not. The script had the right MSBuild flag and applied it **only on Windows**, where it does nothing. Full account and the validation in [docs/30 §2a](30-compiling-away-from-windows.md). `python tools/check-api-surface.py` still runs and still adds something a compile cannot — it reads the **shipped** assemblies, where a compile reads the NuGet reference packages |
 | ~~**A6**~~ | ~~On **Windows**, run `python tools/check-compile.py 2025` and read the first lines of output~~ | **DONE 2026-09-06, on the owner's PC — the probe reads the SDK correctly on Windows.** Output: *"Compiling with .NET SDK 10.0.303 on Windows. WindowsDesktop targets found in the .NET 10 SDK"*, then all four projects **ok** on Revit 2025. This row existed because `check-compile.py` decides whether it can build the WPF releases by **looking for** `Sdks/Microsoft.NET.Sdk.WindowsDesktop` under each installed SDK rather than by asking whether it is on Windows — and **that probe had only ever run on Linux**, where a false negative costs nothing. On Windows a false negative would have **silently skipped 2025-2027 on the one machine where they used to build**, which is why a five-minute check was worth keeping. It did not misread, so the fallback path (attempt the build anyway when the SDK list cannot be read at all) is **still unproven** — it was never reached |
-| ~~**A8**~~ | ~~On the PC, with the Heron MCP server configured in Claude Code, ask it *"what can you do?"*~~ | **DONE 2026-09-06 on the owner's PC — and it FAILED first, which is the only reason the row was worth keeping.** A real host over stdio: `initialize` 1.7 s, **all ten tools offered**, `heron_capabilities` **6.1 s** — *"10 jobs Heron knows by name. 10 have every part they need, 0 are waiting on something nobody has built"*, 343 capabilities with a provider, 0 unprovided — and `heron_lookup` 4.4 s naming `SELECT_BY_CATEGORIES` via `FRG-SEL-024`. Every answer still says plainly it cannot RUN any of them. **Before the fix, `heron_capabilities` never replied at all**: a real Claude Code tool call sat on it for **thirty minutes**. The stack, taken with `faulthandler` rather than guessed, was `heron_capabilities → catalogue → index → backend → _load_model → import model2vec → import numpy → loading numpy's native extension`, **on the asyncio event loop** — an import costing **1.0 s** in a fresh process and still running **40 s** later there. **Closing `A7` is what broke this**: until model2vec was installed the import failed instantly and Heron degraded to `lexical`, so the handler always answered. Two rows, each correct alone, never run together — **a register of independent rows cannot see that, and this is the first time it has bitten.** Fixed by loading the encoder on a background thread at startup ([D-49](docs/DECISIONS.md)); until it is ready every answer is lexical and says so. `tests/test_mcp_stdio.py` is the check made permanent, and it holds the reply to a **deadline** — a test that waits forever cannot tell a slow answer from no answer |
+| ~~**A8**~~ | ~~On the PC, with the Heron MCP server configured in Claude Code, ask it *"what can you do?"*~~ | **DONE 2026-09-06 on the owner's PC — and it FAILED first, which is the only reason the row was worth keeping.** A real host over stdio: `initialize` 1.7 s, **all ten tools offered**, `heron_capabilities` **6.1 s** — *"10 jobs Heron knows by name. 10 have every part they need, 0 are waiting on something nobody has built"*, 343 capabilities with a provider, 0 unprovided — and `heron_lookup` 4.4 s naming `SELECT_BY_CATEGORIES` via `FRG-SEL-024`. Every answer still says plainly it cannot RUN any of them. **Before the fix, `heron_capabilities` never replied at all**: a real Claude Code tool call sat on it for **thirty minutes**. The stack, taken with `faulthandler` rather than guessed, was `heron_capabilities → catalogue → index → backend → _load_model → import model2vec → import numpy → loading numpy's native extension`, **on the asyncio event loop** — an import costing **1.0 s** in a fresh process and still running **40 s** later there. **Closing `A7` is what broke this**: until model2vec was installed the import failed instantly and Heron degraded to `lexical`, so the handler always answered. Two rows, each correct alone, never run together — **a register of independent rows cannot see that, and this is the first time it has bitten.** Fixed by loading the encoder on a background thread at startup ([D-49](DECISIONS.md)); until it is ready every answer is lexical and says so. `tests/test_mcp_stdio.py` is the check made permanent, and it holds the reply to a **deadline** — a test that waits forever cannot tell a slow answer from no answer |
 | ~~**A7**~~ | ~~`pip install --user model2vec` then `python brain/heron_embed.py "stop the air going the wrong way"`~~ | **DONE 2026-09-06 on the owner's PC. `Backend: model`, 343 fragments embedded** — the weights host is reachable from here, which it was not from either container. **The check was not stopped at that line**, because *the model loaded* and *the model helps* are different claims. Scored against candidates sharing **no word** with the query: the model ranks `check flow direction` **first at 0.391** and `rename a sheet` at **0.001**; the built-in `lexical` backend ranks the same correct answer **LAST at 0.038**, below `rename a sheet` at 0.048. **The old engine's best guess was `find dead ends` and its worst was the right answer** — which is what *tolerant of spelling but not of meaning* costs, in numbers. **Two things recorded rather than smoothed over.** In the full index `find-dead-ends` (0.478) edged `check-flow-direction` (0.475) by **0.003** — too close to call, and both are defensible readings of that sentence, so this row proves the backend understands meaning and does **not** prove any particular ordering. And **this row's PASS wording is retired with its reasoning**: it asked for *"the duct fragment"*, written when the library held seven and no damper/flow fragment existed. At 343 the honest form is *a flow-direction fragment ranks top-2 with no shared words*, which is what happened |
-| ~~**A9**~~ | ~~On any machine with the .NET SDK, run `python tools/check-fragments-compile.py`~~ | **DONE 2026-09-06, on the owner's PC, at 343 fragments — `Every fragment compiles on every release it claims`, all eight, 2020 through 2027.** This row had been run green once before at **329** and left open because the library kept growing; it is closed now because the machine that can re-run it in minutes is the owner's own, so it stops being a row and becomes a command. **What it proves is the API surface agreeing and the contract being kept** — each fragment leaving what it promised at the declared type. **It proves nothing about behaviour**, which needs a real model and a proof carrying a negative case ([D-30](docs/DECISIONS.md)). The nine version defects this check caught before they were written are recorded in the git history of this row rather than repeated here |
+| ~~**A9**~~ | ~~On any machine with the .NET SDK, run `python tools/check-fragments-compile.py`~~ | **DONE 2026-09-06, on the owner's PC, at 343 fragments — `Every fragment compiles on every release it claims`, all eight, 2020 through 2027.** This row had been run green once before at **329** and left open because the library kept growing; it is closed now because the machine that can re-run it in minutes is the owner's own, so it stops being a row and becomes a command. **What it proves is the API surface agreeing and the contract being kept** — each fragment leaving what it promised at the declared type. **It proves nothing about behaviour**, which needs a real model and a proof carrying a negative case ([D-30](DECISIONS.md)). The nine version defects this check caught before they were written are recorded in the git history of this row rather than repeated here |
 
 ## Group J — the executor's inputs (needs Revit, and something selected)
 
@@ -200,7 +200,7 @@ Each row here needs Revit open **and something selected**, which no earlier grou
 |---|---|---|
 | ~~**J1**~~ | ~~Select a few ducts, then `prove count-elements`~~ | **DONE 2026-09-07.** Five ducts selected; `<- elements from the selection (5)`, `count 5`, `countedNothing false`. The number matched the selection and the answer said where it came from. **The first fragment needing an input ever to run in this project** |
 | ~~**J2**~~ | ~~Select nothing, then run J1 again~~ | **DONE 2026-09-07 — the row that mattered most, and it held.** `needs_unbound`: *"'elements (IList&lt;Element&gt;)' was never supplied. Nothing is selected in Revit, and no earlier fragment in this session left a value of that name. Running anyway would report 0 results, which reads as 'there was nothing to find' rather than 'nobody was asked'."* **Exit code 1**, so a script cannot read it as success either. It did NOT report `count 0` |
-| ~~**J3**~~ | ~~`prove <a filter> count-elements`~~ | **DONE 2026-09-07, with `list-levels` rather than `filter-elements-by-category`** — the latter needs caller values and is `J5`. `list-levels` found 2 levels; `count-elements` then read `<- elements from list-levels (2)`, `count 2`. **Five ducts were selected at the time and it did not use them**, which is the part worth having: the chain takes precedence over the selection and says which it used. [D-29](docs/DECISIONS.md)'s filter-feeding-action, running for the first time |
+| ~~**J3**~~ | ~~`prove <a filter> count-elements`~~ | **DONE 2026-09-07, with `list-levels` rather than `filter-elements-by-category`** — the latter needs caller values and is `J5`. `list-levels` found 2 levels; `count-elements` then read `<- elements from list-levels (2)`, `count 2`. **Five ducts were selected at the time and it did not use them**, which is the part worth having: the chain takes precedence over the selection and says which it used. [D-29](DECISIONS.md)'s filter-feeding-action, running for the first time |
 | ~~**J4**~~ | ~~`prove unjoin-geometry` with a selection~~ | **DONE 2026-09-07.** `needs_unbound` naming both `first (IList<Element>)` and `second (IList<Element>)`: *"There is a selection, but this fragment needs 2 separate sets of elements and one selection cannot say which is which."* It counted the ambiguity rather than picking one |
 | ~~**J5**~~ | ~~`prove` a fragment needing a category or a name~~ | **DONE 2026-09-07.** `filter-elements-by-category` refused with `needs_request_values`, naming **both** `category (BuiltInCategory)` and `levelId (ElementId)` with their types. **278 fragments are behind this**, and it is the next unlock — bigger than this one was |
 | ~~**J6**~~ | ~~Run a batch, then run another, and check it does not inherit~~ | **DONE 2026-09-07, and run the sharper way round.** After the `J3` batch left 2 levels carried, a FRESH `prove count-elements` returned `<- elements from the selection (5)` — the five ducts, **not** the two carried levels. Had `chain: reset` not fired it would have said `from list-levels (2)`, so the two outcomes are distinguishable rather than both plausible |
@@ -208,7 +208,7 @@ Each row here needs Revit open **and something selected**, which no earlier grou
 | **J8** | Break a fragment's C# deliberately, with a bound need, and run it | **NOT RUN.** It would mean damaging a library fragment to see the message, and no fragment happened to fail on its own. The compile error is written to say how many **generated lines** sit in front of the snippet; **that wording has never been seen** |
 
 **None of this proves any fragment does the right thing**, and the six ticks above must not be read as if
-it did. It proves the inputs arrive, or are refused with a reason. [D-30](docs/DECISIONS.md) still wants a
+it did. It proves the inputs arrive, or are refused with a reason. [D-30](DECISIONS.md) still wants a
 proof with a negative case, per fragment, and that is 335 rows this group does not touch.
 
 **`COUNT_ELEMENTS` in particular is still `DRAFT`.** It returned 5 for 5 and 2 for 2, which is evidence
@@ -224,7 +224,7 @@ here because this file is what gets opened at the PC, and a review nobody is rem
 | ID | Do this | Done looks like |
 |---|---|---|
 | ~~**R1**~~ | ~~Read **D-23 to D-27** back to Ajmal~~ | **DONE 2026-08-29 — and it covered D-23 to D-43, not just the five.** All twenty-one were read back and he confirmed them. **In conversation rather than at the PC**, which is worth recording: the instruction said *at the PC*, and what that was for — him sitting with them rather than tapping yes — did happen. Three were put to him individually because they carried real consequence, and all three came back unchanged: **D-33's boundary** (Heron never invents a Revit number and does decide its own code — the line the decision file itself flagged as never actually stated by him), **D-26** (the model file never leaves; names, counts, sizes and reasoning are fine), and **D-32** (v1 both reads and writes, reading first, writing off by default). The remaining eighteen were confirmed as a block |
-| **R1b** | Show him **[D-14](docs/DECISIONS.md), the trust model**, working on a screen with his own fragments in it | He agreed the direction on 2026-08-28 — *"yes, but show me it working at the PC first"* — so D-14 stays **Proposed** until he has seen it. Use the framing that worked: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
+| **R1b** | Show him **[D-14](DECISIONS.md), the trust model**, working on a screen with his own fragments in it | He agreed the direction on 2026-08-28 — *"yes, but show me it working at the PC first"* — so D-14 stays **Proposed** until he has seen it. Use the framing that worked: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
 | ~~**R2**~~ | ~~Pay particular attention to **D-26 and D-32**~~ | **DONE 2026-08-29.** Both were put to him as separate questions with their reversal history stated, and both were confirmed as they stand. The reason this row existed — that a first answer sharpened once its consequence was visible — held up: neither moved a fourth time |
 
 **R1 and R2 are done; R1b needs a screen.** The review happened *after* Phase 2 was built rather than
@@ -240,14 +240,14 @@ during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **B1** | Start Revit 2020 | The **Heron AI** tab is there |
-| ~~**B2**~~ | ~~Look at the panel~~ | **DONE 2026-09-06, twice.** First as *two* controls. Re-checked after Emergency Stop was removed ([D-46](docs/DECISIONS.md)): the panel showed **one** control, as intended. Revit 2020 and 2024 were both open at that moment and which one was looked at was not established — the two carry the same source, so this proves the ribbon is right, not which release it is right on |
+| ~~**B2**~~ | ~~Look at the panel~~ | **DONE 2026-09-06, twice.** First as *two* controls. Re-checked after Emergency Stop was removed ([D-46](DECISIONS.md)): the panel showed **one** control, as intended. Revit 2020 and 2024 were both open at that moment and which one was looked at was not established — the two carry the same source, so this proves the ribbon is right, not which release it is right on |
 | ~~**B2a**~~ | ~~Click the arrow under Heron~~ | **DONE 2026-09-06.** The list opens with Bridge Status in it |
 | ~~**B2b**~~ | ~~Pick Bridge Status, then look at the top of the split button~~ | **DONE 2026-09-06.** Top stayed **Heron**, icon intact. `IsSynchronizedWithCurrentItem = false` does take effect in a real Revit, which a compile could not have told us. **The release it was run on was not recorded** — re-run on the other two before this counts for all of 2020-2027 |
 | ~~**B3**~~ | ~~Press Heron~~ | **DONE 2026-09-06.** Connects, icon lights, goes dark again on the second press. The state indicator survived the move into a split button — which is what `IsSynchronizedWithCurrentItem = false` was there to protect, now proven from the user's side rather than from the flag |
 | **B3a** | Press Heron again to disconnect, then re-open the arrow and pick Bridge Status | Says **Not connected** — the item inside the list still runs its own command, it did not become part of the toggle |
 | **B4** | `python mcp/client/heron_bridge_client.py ping` then `count` | Both answer, as they did before Step 6 |
 
-### The activity banner — [D-50](docs/DECISIONS.md). IT HAS BEEN SEEN — 2026-09-07
+### The activity banner — [D-50](DECISIONS.md). IT HAS BEEN SEEN — 2026-09-07
 
 **It compiles on all eight releases, 2020 through 2027, every project, 0 warnings** — `B5`, closed
 2026-09-07. That was the API surface agreeing and nothing more.
@@ -275,7 +275,7 @@ move seconds earlier stayed blue. Read and write are told apart correctly.
 because `dot.net`'s installer script is blocked by the egress proxy — but **Ubuntu packages it**, and
 `apt-get install dotnet-sdk-8.0 dotnet-sdk-10.0` puts it on the PATH in about a minute. The 10.0
 package is the one that carries the WindowsDesktop targets, so it is what builds 2025–2027; 8.0 alone
-stops at 2024. That is [docs/30](docs/30-compiling-away-from-windows.md)'s own finding, re-proved from
+stops at 2024. That is [docs/30](30-compiling-away-from-windows.md)'s own finding, re-proved from
 a different container — **do not conclude "no compiler here" from a failed download again.**
 
 | ID | Do this | Pass looks like |
@@ -292,7 +292,7 @@ a different container — **do not conclude "no compiler here" from a failed dow
 | ~~**B13**~~ | ~~Put `ui.activityBanner = false` in `%APPDATA%\Heron\config\heron.config`, restart Revit, ask for a count~~ | **PASSED 2026-09-07.** Revit restarted at 18:47:09, ten minutes after the setting was written, so it is a genuine cold read of the value. The count answered normally - **3,435 elements in `Project1 work_ajmal.al`, 339 ms** - and **no card appeared**. Checked by scanning **all 359 captured frames** for the card's own colours: **0 blue, 0 amber, 0 green, 0 red pixels** anywhere in the banner region. The only frames that differed were the ribbon redrawing. Proves both halves: the switch is read, and the banner is not on the answer's path. Setting removed afterwards, so the default `true` applies again |
 
 **A trap this session walked into, worth writing down.** `CLIENT_ID` in
-[`heron_bridge_client.py`](mcp/client/heron_bridge_client.py) is `HERON_CLIENT_ID` **or a fresh
+[`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) is `HERON_CLIENT_ID` **or a fresh
 `uuid4()` per process**. So running the CLI five times in a row is **five different chats**, and the
 second one is refused with *"This Revit is in use by another chat"* while the first one's lease is
 still alive. That is the lease working exactly as designed, not a bug — but it makes a batch look
@@ -313,11 +313,11 @@ and not a Revit problem. The same JSON key means two different things at two dif
 
 | Where | Line | Reads `token` as |
 |---|---|---|
-| [`BridgeServer.cs`](revit/Heron.Bridge/BridgeServer.cs) | 349 | the **session** token, from the discovery file — the auth gate, checked **before anything else** |
-| [`RevitWrite.cs`](revit/Heron.Revit.Addin/RevitWrite.cs) | 103 | the **approval** token, minted by `preview_move` |
+| [`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs) | 349 | the **session** token, from the discovery file — the auth gate, checked **before anything else** |
+| [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs) | 103 | the **approval** token, minted by `preview_move` |
 
-[`heron_mcp_server.py`](mcp/server/heron_mcp_server.py) line 464 sends the approval token as
-`op_args={"token": token}`, and [`heron_bridge_client.py`](mcp/client/heron_bridge_client.py) line 240
+[`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) line 464 sends the approval token as
+`op_args={"token": token}`, and [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) line 240
 does `body.update(op_args)` — so the approval token **overwrites** the session token that line 239 had
 just put in the body. `BridgeServer` then sees a token that is not the session's and refuses.
 
@@ -445,7 +445,7 @@ here. "The negative case must come back empty" cannot express that, because the 
 
 **Nothing was relaxed to accommodate this.** Four rules were already loosened on 2026-09-07 and the
 fourth was flagged as a habit forming; a fifth on the same day, for the same reason, is exactly what
-[D-52](docs/DECISIONS.md) warns about. **This is a gap in the PROOF METHOD, not in the fragment**, and
+[D-52](DECISIONS.md) warns about. **This is a gap in the PROOF METHOD, not in the fragment**, and
 it wants deciding cold: does D-30's negative case mean "every output empty", or "the fault signal
 absent while the fragment demonstrably ran"?
 
@@ -470,7 +470,7 @@ drawn in the model**, which is a different and slower job.
 **"Not Computed!" is Revit's own exception**, raised by `Space.DesignHeatingLoad`,
 `CalculatedHeatingLoad`, `DesignSupplyAirflow` and their siblings when the model's Areas and Volumes
 computation is off, or the space is unbounded. [The implementation reads all six of those properties
-with no `try`](brain/fragments/read-space-loads/impl/any/fragment.cs) around them.
+with no `try`](../brain/fragments/read-space-loads/impl/any/fragment.cs) around them.
 
 **The bitter part is that the fragment already knows about this case and cannot reach its own handler.**
 Twenty lines further down it writes:
@@ -537,10 +537,10 @@ useless.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| ~~**C1**~~ | ~~Press Emergency Stop~~ | **CANNOT BE RUN from 2026-09-06.** The button was removed ([D-46](docs/DECISIONS.md)). `HeronStop` and both gates survive, but nothing can switch the stop on, so this step has no way to start |
+| ~~**C1**~~ | ~~Press Emergency Stop~~ | **CANNOT BE RUN from 2026-09-06.** The button was removed ([D-46](DECISIONS.md)). `HeronStop` and both gates survive, but nothing can switch the stop on, so this step has no way to start |
 | ~~**C2**~~ | ~~Press it again~~ | **CANNOT BE RUN.** Same reason |
 | **C3** | With `write.enabled` still **false** (the default — do not change it yet), ask to move ducts | **Refuses**, and names `write.enabled` and the config file path. Nothing goes to Revit |
-| ~~**C4**~~ | ~~Press Emergency Stop on, then ask to move ducts~~ | **CANNOT BE RUN.** The two refusals are still written and still distinct in the code ([RevitOperations.cs](revit/Heron.Revit.Addin/RevitOperations.cs)), but with no way to set the stop, only the permission refusal can be reached. **Untested from here on** |
+| ~~**C4**~~ | ~~Press Emergency Stop on, then ask to move ducts~~ | **CANNOT BE RUN.** The two refusals are still written and still distinct in the code ([RevitOperations.cs](../revit/Heron.Revit.Addin/RevitOperations.cs)), but with no way to set the stop, only the permission refusal can be reached. **Untested from here on** |
 | **C5** | With `write.enabled` still false, ask to **select** ducts | **Works.** The gate blocks MODIFY, not READ or EXECUTE — if selecting is refused, the levels are wrong |
 | ~~**C6**~~ | ~~Press Emergency Stop on, then ask to **count** elements~~ | **CANNOT BE RUN.** Same reason. The rule it proved — the stop blocks changes only, never reads — is still in the code and is now **unproven by test** |
 | **C7** | Now set `write.enabled = true` in `%APPDATA%\Heron\config\heron.config`. **No restart** — `HeronPermissions.Allows` reads that file fresh on every check, so the change lands on the next request. The instruction to restart was here, and in the refusal message, until 2026-09-06; both said it, neither needed it | — |
@@ -623,7 +623,7 @@ button releasing it, and two Revits not interfering.
 | **H7** | First chat holding it, press the **Heron button** to disconnect, then ask from the second | Granted immediately. Pressing the button releases it rather than making anyone wait out the timer |
 | **H8** | Two chats, **different** Revits (2020 and 2024) | No interference at all. The lease is per process |
 | **H9** | `revit_health` from a chat holding **nothing**, with a free Revit open. Then ask from a *second* chat | The second chat is **granted**. A health check must NOT have claimed the free Revit — that bug existed for one commit: it called `count_elements` on every session, which is not lease-exempt |
-| **H10** | First chat mid-request, second chat connects and is refused. Watch the FIRST chat | It loses that one reply and recovers on the next. Known limitation, [docs/25](docs/25-multi-session-and-binding.md): the pipe is displaced at connect, before the lease can speak. If a **write** was in flight it must report the outcome as *unknown*, never as failed |
+| **H10** | First chat mid-request, second chat connects and is refused. Watch the FIRST chat | It loses that one reply and recovers on the next. Known limitation, [docs/25](25-multi-session-and-binding.md): the pipe is displaced at connect, before the lease can speak. If a **write** was in flight it must report the outcome as *unknown*, never as failed |
 
 ## Group G — hard to force, do last
 
@@ -644,7 +644,7 @@ Not blocking. Listed so they are not mistaken for tested.
 Step 6 is finished, and not before. At that point:
 
 1. Change the default in `HeronPermissions` **only if you want writing on by default** — and
-   [D-19](docs/DECISIONS.md) says why the answer is probably still no.
+   [D-19](DECISIONS.md) says why the answer is probably still no.
 2. Delete the "never run" banners in `RevitWrite.cs` and `heron_mcp_server.py`.
 3. Move the proven rows into [`HANDOVER.md`](HANDOVER.md) §3, under *proven against a real Revit*.
 4. Delete this file.

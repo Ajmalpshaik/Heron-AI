@@ -39,7 +39,7 @@ accepted them after reading ([D-43](DECISIONS.md)). The Constitution is binding.
 
 **`Q-34` counts as answered here but is not closed.** Ajmal agreed the direction on 2026-08-28 and asked
 to see it working at the PC first, so [D-14](DECISIONS.md) stays **Proposed** and the confirmation is
-`R1b` in [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md). The count above cannot express *agreed but not
+`R1b` in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md). The count above cannot express *agreed but not
 signed off*; this sentence is where that lives.
 
 Everything else was answered on 2026-08-28. The last four — `Q-29`, `Q-31`, `Q-32`, `Q-38` — are
@@ -540,7 +540,7 @@ agreed immediately.
 That is the argument for the proposal in one sentence, and it belongs in
 [24](24-trust-model.md) rather than in this file: **a vocabulary that answers two questions at once will
 keep splitting**, and it split six times here. Added to `R1` in
-[`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md).
+[`NEEDS-CHECKING.md`](NEEDS-CHECKING.md).
 
 ---
 
@@ -576,7 +576,7 @@ earlier the same day; **eight Articles cited a "Proposed" Golden Rule** that was
 it said an agent receives *"not all 27"* Articles when there are **30**. All corrected on acceptance.
 
 **Accepting the Articles does not make them true.** 8, 9, 11, 12a, 12b and 12c are precisely what groups
-`C`, `D` and `E` of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) exist to test.
+`C`, `D` and `E` of [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) exist to test.
 
 ---
 
@@ -864,7 +864,7 @@ before there is any code with an interest in the answer. → [14](14-golden-rule
 
 ### ✅ Q-14 — How is testing against real Revit done? → **A written register, in dependency order**
 
-[`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) — every unproven claim as a numbered item (`A1`, `D3`), in
+[`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — every unproven claim as a numbered item (`A1`, `D3`), in
 dependency order, each stating what PASS actually looks like. Items are added whenever something is built
 away from Revit, and deleted only when they have actually passed.
 
@@ -874,7 +874,7 @@ Three things make it work rather than being a to-do list:
   of around is what stops a "pass" that was never really tested.
 - **What needs Revit is separated from what does not.** Group A needs Windows and the SDK only — and the
   round-trip test proves the bridge *and* most of the lease there, before Revit is ever opened.
-- **One register, not one per document.** [HANDOVER](../HANDOVER.md) §6 points at it rather than keeping
+- **One register, not one per document.** [HANDOVER](HANDOVER.md) §6 points at it rather than keeping
   a copy, because two lists of the same thing drift.
 
 **What it does not answer:** automated testing against a real Revit, in CI. That needs a machine with

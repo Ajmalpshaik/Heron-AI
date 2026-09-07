@@ -6,7 +6,7 @@
 >
 > **Do not trust this paragraph over the tool.** `python tools/check-gaps.py` is computed from disk on
 > every run and sorts everything into *unfinished* and *waiting*; this sentence is typed. Where they
-> disagree, the tool is right. Then pick up from [**../HANDOVER.md**](../HANDOVER.md).
+> disagree, the tool is right. Then pick up from [**HANDOVER.md**](HANDOVER.md).
 
 ## Decided so far
 
@@ -34,7 +34,7 @@ work in progress). Three questions touched Step 6 at the time, and one of them m
 |---|---|
 | **Q-36** — lease or takeover | **Answered.** Built as `HeronLease` in Step 6 ([D-22](DECISIONS.md)) |
 | **Q-19** — accept Golden Rules 16–21? | **Answered 2026-08-28 — accepted.** They are the rules Step 6 was built to obey (16, 17, 20, 21), and they are now binding rather than proposed |
-| **Q-14** — how is testing against real Revit done? | **Answered 2026-08-28** — [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md), **52 items in dependency order as it stood that day** — it has grown since, and `python tools/check-gaps.py` is what knows the current figure — with what needs Revit separated from what does not. `A1`–`A3` passed the same day: the compile gate turned out not to need Windows ([30](30-compiling-away-from-windows.md)) |
+| **Q-14** — how is testing against real Revit done? | **Answered 2026-08-28** — [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), **52 items in dependency order as it stood that day** — it has grown since, and `python tools/check-gaps.py` is what knows the current figure — with what needs Revit separated from what does not. `A1`–`A3` passed the same day: the compile gate turned out not to need Windows ([30](30-compiling-away-from-windows.md)) |
 
 **Nothing now blocks Phase 1 except Revit itself.**
 
@@ -55,7 +55,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 
 | If you want to… | Read |
 |---|---|
-| **Pick up where the last session stopped** | [**../HANDOVER.md**](../HANDOVER.md) |
+| **Pick up where the last session stopped** | [**HANDOVER.md**](HANDOVER.md) |
 | Understand what Heron AI is | [01 — Vision & Principles](01-vision-and-principles.md) |
 | See the original specification, unaltered | [00 — Master Specification](00-master-specification.md) |
 | Know what is missing or risky | [PROPOSALS.md](PROPOSALS.md) |
@@ -132,8 +132,10 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 
 | Document | Purpose |
 |---|---|
+| [**HANDOVER.md**](HANDOVER.md) | Where the last session stopped — what exists, what is **proven** rather than merely built, and what to say to carry on |
+| [**NEEDS-CHECKING.md**](NEEDS-CHECKING.md) | The proving register — every unproven claim as a numbered item, grouped by what it needs. `python tools/check-gaps.py` reads this file |
 | [PROPOSALS.md](PROPOSALS.md) | Gaps found in review, feature ideas, strategic questions |
-| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | 38 questions, prioritised, with answer slots |
+| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | 42 questions, prioritised, with answer slots |
 | [ROADMAP.md](ROADMAP.md) | Phase 0 → Phase 7, and what is deliberately deferred |
 | [DECISIONS.md](DECISIONS.md) | Append-only log of decisions actually made |
 | [../tools/](../tools/README.md) | Scripts that keep these documents honest — link checker, count recomputer, map generator |

@@ -3,8 +3,16 @@
 Thank you for considering it. Heron AI is a platform for BIM professionals, and contributions from
 people who actually do BIM work are worth more than contributions from people who only write code.
 
-> **Current stage: specification and planning.** There is no implementation yet, so the most useful
-> contributions right now are to the architecture — see [Open Questions](docs/OPEN-QUESTIONS.md).
+> **Current stage: built far ahead of what is proven.** Phase 0 — the whole path from a sentence to a
+> selection changing on screen — is proven in real Revit 2020 and 2024. Step 6 (the first write) and
+> the whole of Phase 2 are **built and compiled on every supported release, and have never loaded into
+> Revit.** Almost every fragment and every skill is still `DRAFT`.
+>
+> So the most useful contributions are **proof** rather than more code, and the architecture questions
+> that are genuinely still open — see [Open Questions](docs/OPEN-QUESTIONS.md).
+> `python tools/check-gaps.py` is computed from disk on every run and prints what is truly unfinished
+> separately from what is only waiting on a machine with Revit on it. Where it and any sentence in
+> this repository disagree, the tool is right.
 
 ---
 
@@ -84,16 +92,35 @@ If you commit any of these by accident, **report it privately** via
 4. **Never break a working version** (Golden Rule 4). If your change affects Revit version support,
    say which versions you tested and how.
 5. **Tests, written to fail before your fix.**
-6. **Be ready to discuss.** Review here is about design fit, not gatekeeping.
+6. **Run the checks.** These three need nothing but Python 3 — no Revit, no Windows, no .NET SDK —
+   and all three must exit 0:
+
+   ```
+   python tools/check-structure.py    # parts in place, no layering violation
+   python tools/check-docs.py         # every link and every stated count
+   python tools/check-metadata.py     # headers, and the registry against the code
+   ```
+
+   `python tools/check-gaps.py` exits non-zero while real work is outstanding, which is its job — read
+   it, but do not expect a 0. [tools/README.md](tools/README.md) explains the rest.
+7. **Be ready to discuss.** Review here is about design fit, not gatekeeping.
 
 ---
 
 ## Code style
 
-To be defined once implementation starts. Until then:
+Most of this is enforced by a script rather than left to review, so run the checks before you open a
+pull request — see below.
 
-- **C#** — standard .NET conventions. Nothing touching Revit outside the add-in.
+- **C#** — standard .NET conventions. `Autodesk.Revit` types may appear **only inside `revit/`**;
+  `check-structure.py` fails the moment one appears anywhere else, because the brain has to stay
+  runnable and testable on a machine with no Revit on it.
 - **Python** — standard formatting and type hints. Nothing touching the Revit API.
+- **Every `.cs`, `.py` and `.ps1` file carries the five-field Heron header** — agent, step, status,
+  since, layer ([docs/29-metadata-standard.md](docs/29-metadata-standard.md)). `check-metadata.py`
+  rejects a missing or malformed one, and checks the agent id against the registry in both
+  directions. Fragments under `brain/fragments/` are the exception: their metadata lives in their
+  own `fragment.yaml`, so that one fact has one home.
 - Version-conditional code lives **only in adapters**, never in core logic
   ([docs/16-version-support-strategy.md](docs/16-version-support-strategy.md)).
 
@@ -101,8 +128,10 @@ To be defined once implementation starts. Until then:
 
 ## A note on scale
 
-The [agent catalogue](docs/08-agent-catalog.md) lists ~150 agents. That is a **target organisation
-chart**, not a to-do list. Please do not open a pull request implementing forty of them.
+The [agent registry](docs/28-agent-registry.md) lists **250 agents**, of which about 70 are built.
+That is a **target organisation chart**, not a to-do list — `python tools/agent-count.py` reconciles
+it against the code and prints what is genuinely left. Please do not open a pull request implementing
+forty of them.
 
 The project is built one working vertical slice at a time — see [docs/ROADMAP.md](docs/ROADMAP.md).
 A contribution that makes one real thing work end-to-end is worth more than one that adds ten
