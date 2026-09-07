@@ -120,8 +120,16 @@ def test_reachability():
     counters = [f for f in library if f.slug == "count-elements"]
     if counters:
         route, _ = HV.route_for(counters[0], table)
-        check(route == HV.FROM_SELECTION,
-              "count-elements takes one set of elements, so a selection can feed it")
+        # PROVED and RE_PROVE are accepted for the same reason list-levels
+        # accepts them above: `route_for` answers "what is worth doing to this
+        # fragment NEXT", and a fragment carrying a proof is answered PROVED
+        # before its inputs are ever considered. Asserting FROM_SELECTION here
+        # was really asserting that count-elements is still unproven, which
+        # stopped being true on 2026-09-07 (D-53) and turned a passing suite
+        # red on somebody else's good news.
+        check(route in (HV.FROM_SELECTION, HV.PROVED, HV.RE_PROVE),
+              "count-elements takes one set of elements, so a selection can "
+              "feed it - unless it is already proved")
 
 
 def test_plan_is_ordered_and_honest():
