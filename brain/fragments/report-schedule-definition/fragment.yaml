@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -68,6 +68,32 @@ contract:
       # Handed in and not a schedule - a wall has no columns or sort order.
       # A count of what was passed over, not of anything described.
       role: accounting
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,702 elements), Revit 2024, session 42676
+  positive_case: 'the ''Heat Recovery Unit Summary'' schedule, placed on a sheet in Snowdon
+    Towers Sample HVAC and clicked - which is the only way a person can point at a schedule.
+    It read 6 columns (Space: Number, Space: Name, Mark and three more), 1 filter and 2 sort
+    fields. BOTH LEGS WERE RUN AFTER the ScheduleSheetInstance fix, on the same implementation
+    the fingerprint below covers. returned fieldNames 6 item(s) [Space: Number, Space: Name,
+    Mark, ...], filterCount 1, findings 5 item(s) [1 schedule(s) described. 6 column(s) in
+    total, 0 of them hid..., ''Heat Recovery Unit Summary''  - 6 column(s), in this order:
+    ...,     sorted by: Level ascending with footer + blank line, the..., ...], hiddenFieldNames
+    0 item(s), skippedNotSchedules 0, sortFieldCount 2. inputs came elements from the selection
+    (1). on Snowdon Towers Sample HVAC'
+  negative_case: 28 elements in the same model that are not schedules and not placements of
+    one - a section box and link instances among them - so the answer had to be empty. All
+    28 were accounted for as skippedNotSchedules rather than returning a bare zero. returned
+    fieldNames 0 item(s), filterCount 0, findings 2 item(s) [0 schedule(s) described. 0 column(s)
+    in total, 0 of them hid..., 28 of what was handed in was not a schedule and was skipped],
+    hiddenFieldNames 0 item(s), skippedNotSchedules 28, sortFieldCount 0. inputs came elements
+    from the selection (28). on Snowdon Towers Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 368ebe95d0df13b7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

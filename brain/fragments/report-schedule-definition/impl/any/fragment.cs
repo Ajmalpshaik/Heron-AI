@@ -21,6 +21,21 @@
 //
 // EVERY SCHEDULE IS GUARDED SEPARATELY. One schedule that refuses to describe
 // itself must not take the report for the other twelve down with it.
+//
+// A SCHEDULE ON A SHEET IS A ScheduleSheetInstance, NOT A ViewSchedule, AND
+// CLICKING IT IS THE ONLY WAY A PERSON CAN POINT AT ONE.
+//
+// Found 2026-09-08 by the owner doing exactly that: he placed 'Heat Recovery
+// Unit Summary' on a sheet, selected it, and this fragment answered
+// skippedNotSchedules 1. A view cannot be selected as an element - opening the
+// schedule selects its ROWS - and nothing in the 349 fragments provides a
+// ViewSchedule to chain from. So the cast below refused the only input that
+// could ever reach it, and the fragment was correct in isolation and unusable
+// in practice.
+//
+// The placement carries the id of the schedule it draws, so it is resolved
+// here rather than refused. `skippedNotSchedules` now means what it says: the
+// thing was neither a schedule nor a placement of one.
 
 var findings = new List<string>();
 var fieldNames = new List<string>();
@@ -32,6 +47,19 @@ var skippedNotSchedules = 0;
 foreach (var element in elements)
 {
     var schedule = element as ViewSchedule;
+
+    if (schedule == null)
+    {
+        var placed = element as ScheduleSheetInstance;
+        if (placed != null)
+        {
+            // Guarded like everything else here: a placement whose schedule has
+            // been deleted under it should cost one row, not the report.
+            try { schedule = doc.GetElement(placed.ScheduleId) as ViewSchedule; }
+            catch { schedule = null; }
+        }
+    }
+
     if (schedule == null)
     {
         skippedNotSchedules++;

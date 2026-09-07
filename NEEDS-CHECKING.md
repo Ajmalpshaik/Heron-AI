@@ -507,21 +507,24 @@ which is a different object, so the cast fails and the row is skipped.
 
 - **A view cannot be selected as an element.** Opening the schedule selects its rows, not the schedule.
   The Project Browser is not a model selection.
-- **No fragment provides one.** Searched the whole library: the only provides mentioning a schedule are
-  `notASchedule` and `skippedNotSchedules` — both counts of things that were NOT schedules. **Nothing in
-  349 fragments hands a `ViewSchedule` to anything**, so the chain route does not exist either.
+- **~~No fragment provides one.~~ THAT WAS WRONG, and correcting it matters more than the claim did.**
+  `FIND_SCHEDULES` provides them — as `elements: IList<Element>`, which is why a search for provides
+  *named* or *typed* schedule found nothing. **A grep for the word missed a fragment whose own routing
+  note names it**: *"which schedules are there → FIND_SCHEDULES, which is what hands the schedules to
+  here."* The chain route exists for a real request. What does not exist is an AUTOMATED one, because
+  `FIND_SCHEDULES` needs `nameContains`, a value only a caller's sentence carries.
 
 So the fragment is correct in isolation and **unusable in practice**: the only way a person points at a
 schedule is by clicking it on a sheet, and that is the one input it refuses.
 
-**The fix is three lines and belongs in the fragment**, not in the proof method: accept a
+**FIXED 2026-09-08, and proved.** Selecting the placed schedule now reads it: 6 columns, 1 filter, 2 sort fields. The fix was three lines and belonged in the fragment, not in the proof method: accept a
 `ScheduleSheetInstance` and resolve it through its `ScheduleId` before the cast, so that clicking the
 thing on the sheet does what a modeller means by it. Not made here — this session was proving
 fragments, and editing an implementation mid-proof is how a proof stops meaning anything.
 
-**`READ_SCHEDULE_CONTENTS` declares the same `skippedNotSchedules` and will have the same problem.**
-It has not been run, so that is a prediction rather than a finding, and it should be checked when this
-one is fixed.
+**`READ_SCHEDULE_CONTENTS` had the same problem and got the same fix.** It cannot be proved the same
+way: it needs `maxRows`, a value the caller supplies, so it refuses with `needs_request_values` rather
+than running. Fixed and compiling on all eight releases; **unproven**.
 
 ## Group C — the gate, before anything can move
 

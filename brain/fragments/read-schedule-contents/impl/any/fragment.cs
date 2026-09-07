@@ -18,6 +18,13 @@
 //
 // EVERY SCHEDULE IS GUARDED SEPARATELY, and so is every cell. A schedule with
 // one unreadable cell must still report its other four hundred.
+//
+// A SCHEDULE ON A SHEET IS A ScheduleSheetInstance, NOT A ViewSchedule, AND
+// CLICKING IT IS THE ONLY WAY A PERSON CAN POINT AT ONE. Same fix and same
+// reason as REPORT_SCHEDULE_DEFINITION, where it was found on 2026-09-08: a
+// view cannot be selected as an element, and nothing in the library provides a
+// ViewSchedule to chain from, so refusing the placement refused the only input
+// that could ever arrive.
 
 var findings = new List<string>();
 var rows = new List<string>();
@@ -30,6 +37,17 @@ var cap = maxRows > 0 ? maxRows : 50;
 foreach (var element in elements)
 {
     var schedule = element as ViewSchedule;
+
+    if (schedule == null)
+    {
+        var placed = element as ScheduleSheetInstance;
+        if (placed != null)
+        {
+            try { schedule = doc.GetElement(placed.ScheduleId) as ViewSchedule; }
+            catch { schedule = null; }
+        }
+    }
+
     if (schedule == null)
     {
         skippedNotSchedules++;
