@@ -61,6 +61,22 @@ contract:
     - name: allowed
       type: bool
 
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,436 elements), Revit 2024, session 42676
+  positive_case: run as it would normally be run. returned allowed true, findings 2 item(s)
+    [1 global parameter(s) in this project. A global is ONE value..., 'Length' = 0.6562 ft  (200
+    mm)  - typed in  - drives 0 dimen...], globalCount 1. on Project1 work_ajmal.al
+  negative_case: run after the state was arranged by hand so the answer had to be empty. returned
+    allowed true, findings 2 item(s) [0 global parameter(s) in this project. A global is ONE
+    value..., this project has no global parameters. Nothing here is drive...], globalCount
+    0. on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 38c7a2284811eb6b
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
