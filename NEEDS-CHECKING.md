@@ -460,6 +460,40 @@ both set to `Out`, joined**. The equipment selection reached `jointsChecked: 57`
 carry direction; none of them was wrong. **The fault has to be built into a family's connectors, not
 drawn in the model**, which is a different and slower job.
 
+### `READ_SPACE_LOADS` throws on the one selection it exists for — found 2026-09-07
+
+**It is the only fragment of the 36 that FAILED rather than answered.** Against 16 spaces in
+`Snowdon Towers Sample HVAC` it returned `fragment_threw`:
+
+> `'read-space-loads' threw while running: Not Computed!`
+
+**"Not Computed!" is Revit's own exception**, raised by `Space.DesignHeatingLoad`,
+`CalculatedHeatingLoad`, `DesignSupplyAirflow` and their siblings when the model's Areas and Volumes
+computation is off, or the space is unbounded. [The implementation reads all six of those properties
+with no `try`](brain/fragments/read-space-loads/impl/any/fragment.cs) around them.
+
+**The bitter part is that the fragment already knows about this case and cannot reach its own handler.**
+Twenty lines further down it writes:
+
+> *"NO LOAD. Either the heating and cooling analysis has never been run, or **the space is unbounded and
+> has no volume to load**"*
+
+That branch tests the values for zero — but the property access throws before any value exists, so the
+sentence has never once been printed. **A guard placed after the thing it guards against.**
+
+**What it means in use:** ask Heron about space loads on a model where volume computation is off, and
+instead of *"the analysis has not been run"* you get a crash. That is the difference between a fragment
+that tells a modeller what to fix and one that looks broken.
+
+**The fix is a `try` around the six property reads**, routing a throw into the existing `noLoad` list
+with the reason. It is not made here: this session was proving fragments, and changing an
+implementation mid-proof is how a proof stops meaning anything. **Recorded as a finding, unproven and
+unfixed.**
+
+`MEASURE_ROOM_DIMENSIONS`, proved earlier the same day, gets this right — it carries a
+`volumeComputationOff` flag and reports it. The two fragments read the same models and only one of them
+survives a model with volumes switched off.
+
 ## Group C — the gate, before anything can move
 
 **Do not skip to D.** C3 is what proves the write path cannot fire by accident; testing the move before
