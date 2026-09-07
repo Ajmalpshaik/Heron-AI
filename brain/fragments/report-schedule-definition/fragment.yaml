@@ -65,6 +65,9 @@ contract:
       type: int
     - name: skippedNotSchedules
       type: int
+      # Handed in and not a schedule - a wall has no columns or sort order.
+      # A count of what was passed over, not of anything described.
+      role: accounting
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

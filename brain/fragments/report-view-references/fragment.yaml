@@ -46,8 +46,14 @@ contract:
       type: IDictionary<ElementId, string>
     - name: notOnASheet
       type: IList<ElementId>
+      # The referenced view exists but is not placed. A qualification on a
+      # finding, not a finding.
+      role: accounting
     - name: referencesNothing
       type: IList<ElementId>
+      # Handed in and not a view reference at all - a duct is not a section
+      # mark. A count of what could not be answered about.
+      role: accounting
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

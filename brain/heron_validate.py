@@ -614,8 +614,9 @@ def draft_from_record(frag, record):
         # which is the stricter behaviour and the right default.
         try:
             declaration = frag.provides() if callable(frag.provides) else frag.provides
-            declared = set(d.get("name") for d in (declaration or [])
-                           if isinstance(d, dict) and d.get("name"))
+            declared = dict((d.get("name"), HF.provide_role(d))
+                            for d in (declaration or [])
+                            if isinstance(d, dict) and d.get("name"))
         except Exception:
             declared = None
         if not looks_empty(negative, declared):
@@ -836,6 +837,11 @@ def looks_empty(phase, declared=None):
     #
     # The contract is the authority on which names are results, and using it
     # replaces guesswork about leftovers with the fragment's own declaration.
+    # `declared` may be a SET of names (judge only these) or a MAPPING of
+    # name -> role (judge only the results). The mapping is what a fragment that
+    # has declared `role:` produces, and it beats every naming pattern below
+    # because the fragment states it rather than this file inferring it.
+    roles = declared if isinstance(declared, dict) else None
     if declared:
         provides = dict((k, v) for k, v in provides.items() if k in declared)
         if not provides:
@@ -843,7 +849,15 @@ def looks_empty(phase, declared=None):
 
     counted = 0
     for key, value in provides.items():
-        if key in NOTE_KEYS or _is_accounting(key):
+        # DECLARED BEATS GUESSED. A fragment that says a name is accounting is
+        # believed; only one that has not said anything falls through to the
+        # naming patterns.
+        if roles is not None and key in roles:
+            if roles[key] == "accounting":
+                continue
+        elif key in NOTE_KEYS or _is_accounting(key):
+            continue
+        if key in NOTE_KEYS:
             continue
         if _is_helper_object(value):
             continue

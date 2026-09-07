@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -42,6 +42,28 @@ contract:
       type: IDictionary<ElementId, ICollection<ElementId>>
     - name: nowhere
       type: IList<ElementId>
+      # Elements that were looked at and appear in no view. Not a finding about
+      # views - a count of what was handed in and had nothing to report.
+      role: accounting
+
+proof:
+  date: '2026-09-07'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,628 elements), Revit 2024, session 42676
+  positive_case: 28 duct taps selected in Snowdon Towers Sample HVAC - modelled things that
+    appear in views and on sheets - run as it would normally be run. returned inViews 28 entry(ies),
+    nowhere 0 item(s), onSheets 28 entry(ies), sheetOf 23 entry(ies), wanted HashSet`1. inputs
+    came elements from the selection (28). on Snowdon Towers Sample HVAC
+  negative_case: 12 sheets selected in the same model. A sheet is not drawn INSIDE a view
+    - it is the thing views are placed on - so there is nothing for this fragment to find,
+    and it accounted for all 12 as nowhere rather than returning a bare zero. returned inViews
+    0 entry(ies), nowhere 12 item(s) [1363532, 1363547, 1363562, ...], onSheets 0 entry(ies),
+    sheetOf 23 entry(ies), wanted HashSet`1. inputs came elements from the selection (12).
+    on Snowdon Towers Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: f46a619cbd6673f8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

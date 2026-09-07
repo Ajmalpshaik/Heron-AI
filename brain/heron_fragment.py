@@ -151,6 +151,39 @@ AMBIENT = {
 # from the question" makes every parameterised fragment look broken.
 SOURCES = ("fragment", "ambient", "request")
 
+# WHAT A PROVIDED NAME IS FOR. A fragment returns two different kinds of thing
+# and only it knows which is which:
+#
+#   result      what it FOUND        systemName, areas, joins, curtainWallsFound
+#   accounting  what it was HANDED   noSystem, notSpatial, unmeasurable,
+#               and could not use    withoutJoins, scanned, jointsChecked
+#
+# The difference decides whether a negative case came back empty. `noSystem: 16`
+# is not sixteen systems - it is sixteen elements examined and none had one,
+# which is the evidence the fragment RAN and the opposite of a reason to doubt
+# it (D-52).
+#
+# Until 2026-09-07 that was guessed from the field NAME, and the guessing needed
+# widening four times in one day: no/not/un prefixes, then three single words,
+# then scanned/checked, then elementsWithNoMaterial and withoutJoins one at a
+# time. It was also becoming unsafe - `missingFamilies` in
+# REPORT_ROUTING_PREFERENCES really is a finding, so a blanket `missing*` rule
+# would have swallowed a real answer.
+#
+# So a fragment says it itself. OPTIONAL, and ABSENT MEANS `result`: 349
+# fragments do not have to be edited, and the name-guessing stays as the
+# fallback for anything that has not declared. Declaring beats guessing wherever
+# both are present.
+ROLES = ("result", "accounting")
+
+
+def provide_role(entry):
+    """What a provided name is for. Absent means `result` - the stricter read,
+    since a result counts toward "did this come back empty" and accounting does
+    not."""
+    declared = (entry or {}).get("role")
+    return declared if declared in ROLES else "result"
+
 
 def need_source(entry):
     """Where this need comes from. Ambient names are recognised by name, so a
@@ -631,6 +664,21 @@ def _check_contract_side(side, entries, problems, where):
             problems.append(
                 "%s: contract.%s[%d] source %r is not one of %s"
                 % (where, side, i, entry["source"], ", ".join(SOURCES)))
+
+        # `role` says whether a PROVIDED name is a finding or a count of what
+        # the fragment could not use. Checked rather than tolerated, because a
+        # typo would silently fall back to `result` and quietly make a negative
+        # case look like it returned content.
+        if entry.get("role"):
+            if side != "provides":
+                problems.append(
+                    "%s: contract.%s[%d] has `role`, which only means something "
+                    "on a PROVIDE - a need is not a finding or a count"
+                    % (where, side, i))
+            elif entry["role"] not in ROLES:
+                problems.append(
+                    "%s: contract.%s[%d] role %r is not one of %s"
+                    % (where, side, i, entry["role"], ", ".join(ROLES)))
 
         # `binds` names the PROVIDED name that fills a need - see need_binds.
         # It is meaningless on the provides side: a provide IS the name.
