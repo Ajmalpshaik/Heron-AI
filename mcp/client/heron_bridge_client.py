@@ -1039,8 +1039,21 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None)
 
     opening = bridge.request("count_elements")
     if opening is None or not opening.get("ok"):
-        print("Could not identify the active model. Refusing to record evidence")
-        print("about a model that will not name itself.")
+        # SAY WHAT REVIT ACTUALLY SAID. This used to print only the sentence
+        # below, which reads as "the model is the problem" - and on 2026-09-07
+        # it sent a session hunting the model for a while when the real answer
+        # was `session_in_use`: another chat held the lease. The generic line is
+        # still right about what will not be recorded, but the reason has to
+        # come first or it points at the wrong thing.
+        if opening is None:
+            reason = "Revit did not answer at all."
+        else:
+            reason = (opening.get("message")
+                      or opening.get("error")
+                      or "Revit refused, and said nothing about why.")
+        print("Could not identify the active model:")
+        print("  %s" % reason)
+        print("Refusing to record evidence about a model that will not name itself.")
         bridge.close()
         return 1
 
