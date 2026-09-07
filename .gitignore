@@ -127,3 +127,10 @@ temp/
 # Revit reference assemblies fetched by tools/check-api-surface.py.
 # Autodesk's, cached locally, never committed.
 tools/api-surface/.assemblies/
+
+# Generated pages. Both are rebuilt from the repository in a second, both are
+# several hundred KB, and tools/README says the reason neither is committed -
+# which was true of the intent and not of the rules until 2026-09-08.
+agent-map.html
+fragment-catalog.html
+build/compile-results.json

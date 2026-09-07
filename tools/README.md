@@ -300,6 +300,31 @@ member. A checker that finds nothing is evidence about the checker until it has 
 
 ---
 
+## `generate-fragment-catalog.py` — the library, readable
+
+```bash
+python tools/generate-fragment-catalog.py
+HERON_CATALOG_OUT=somewhere.html python tools/generate-fragment-catalog.py
+```
+
+Every fragment on one searchable page: what it is, what it needs, what it leaves behind, what it is
+allowed to touch, the phrases somebody would say to reach it, its declared cases, and its proof if it
+has one. Filter by status, risk, domain, or whether a proof exists.
+
+**It answers a question that was being answered with throwaway Python.** `heron_capabilities` says what
+Heron can DO, at the level of jobs — the right answer to that question and not to this one. Nothing
+showed the library itself. Over one session *"what have we got"* was answered five times by writing a
+script over the yaml files, which is a missing page rather than five scripts.
+
+**It carries one judgement, and that is why it has a test** ([`tests/test_catalog.py`](../tests/test_catalog.py))
+where [`generate-agent-map.py`](generate-agent-map.py) has none. It decides whether a fragment's declared
+negative case can actually be run — and got that wrong on its first run, reporting **0** stranded cases
+across a library holding **18**. A generator that only draws needs no test; one that concludes does.
+
+The working prototype of `HERON-DOC-FRG-004`.
+
+---
+
 ## `generate-agent-map.py` — the visual map
 
 ```bash

@@ -449,7 +449,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-DOC-API-001` | API Documentation Agent | Generated from tool schemas | T1 | — | — |
 | `HERON-DOC-AGT-002` | Agent Documentation Agent | Generated from the agent registry | T1 | — | — |
 | `HERON-DOC-SKL-003` | Skill Documentation Agent | Generated from skill metadata | T1 | — | — |
-| `HERON-DOC-FRG-004` | Fragment Documentation Agent | Generated from fragment metadata | T1 | — | — |
+| `HERON-DOC-FRG-004` | Fragment Documentation Agent | Generated from fragment metadata. **Built 2026-09-08** — `tools/generate-fragment-catalog.py`, the parallel to the agent map one layer up. Every fragment on one searchable page, including whether its declared negative case can actually be run. It reported 0 stranded cases on its first run against a library holding 18, which is why a generator acquired a test | T1 | — | — |
 | `HERON-DOC-REL-005` | Release Notes Agent | Structured notes per release | T2 | — | — |
 | `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries | T2 | — | — |
 | `HERON-DOC-RDM-007` | README Agent | Keeps the README current | T2 | — | — |
