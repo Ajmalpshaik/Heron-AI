@@ -247,11 +247,21 @@ during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is
 | **B3a** | Press Heron again to disconnect, then re-open the arrow and pick Bridge Status | Says **Not connected** — the item inside the list still runs its own command, it did not become part of the toggle |
 | **B4** | `python mcp/client/heron_bridge_client.py ping` then `count` | Both answer, as they did before Step 6 |
 
-### The activity banner — [D-50](docs/DECISIONS.md). It compiles; it has never been SEEN
+### The activity banner — [D-50](docs/DECISIONS.md). IT HAS BEEN SEEN — 2026-09-07
 
 **It compiles on all eight releases, 2020 through 2027, every project, 0 warnings** — `B5`, closed
-2026-09-07. That is the API surface agreeing and nothing more: **the banner has still never appeared
-on a screen.** Every row below needs Revit open, and `B8` is the one that matters.
+2026-09-07. That was the API surface agreeing and nothing more.
+**On 2026-09-07 it was finally put on a screen** — Revit 2024, `Snowdon Towers Sample HVAC`,
+on the non-primary monitor — and **B6, B7, B9, B11 passed, B12 half-passed.** It appears where it
+should, says the right words, holds for the right time, does not strobe across a batch, and
+cannot eat a click.
+
+**What that does NOT settle, and the distinction is the whole point of this file:** every job
+measured took **3–12 ms**, so *nothing was ever frozen*. The reading card was proved to appear
+**before** the finished card — which is what the pre-`Raise` ordering rests on — but "a card
+visible through a long freeze" is still untested, because no job here was slow. And
+**`B8` remains the one that matters**: no write has ever raised this banner, so the amber
+CHANGING card has never been seen either. `B8`, `B10`, `B13` and half of `B12` are untouched.
 
 **The compiler was there all along.** This work was written believing the container had no .NET SDK,
 because `dot.net`'s installer script is blocked by the egress proxy — but **Ubuntu packages it**, and
@@ -264,14 +274,29 @@ a different container — **do not conclude "no compiler here" from a failed dow
 |---|---|---|
 | ~~**B5**~~ | ~~`python tools/check-compile.py`~~ | **DONE 2026-09-07, on Linux, all eight releases.** `Heron.Core`, `Heron.Bridge`, `Heron.Revit.Addin` and `Heron.Bridge.TestHost` — **ok on 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027**, and the add-in builds **0 warnings, 0 errors** on 2024. The first WPF-heavy file in the add-in does not break the build on any release it claims. **It says nothing about whether the banner appears, where, or in the right colour** |
 | ~~**B5b**~~ | ~~Build on Windows and deploy into Revit~~ | **DONE 2026-09-07, on the owner's PC.** `dotnet build -c Debug -p:RevitVersion=2024` — **0 warnings, 0 errors**, the first time the banner has been compiled by the **Windows** toolchain rather than Linux/NuGet reference assemblies. Deployed with `tools/deploy-addin.ps1 -RevitVersion 2024` while Revit was closed, and the **deployed** `Heron.Revit.Addin.dll` (68,608 bytes, was 53,760) was read back off disk to confirm it carries `HeronActivityBanner` and the literals `is reading your model`, `is changing your model`, `READING`, `CHANGING`. `ui.activityBanner` is absent from `%APPDATA%\Heron\config\heron.config`, so the **default `true`** applies and the banner is armed. **The bits Revit will load are now on disk — that is all this says. It still has never appeared on a screen; B6-B13 are untouched** |
-| **B6** | Connect, then ask for a count | A dark card at the **top centre of the Revit window**, saying **"Heron AI is reading your model"** with the job under it and a **blue READING** chip. It must appear *while* Revit is frozen, **not after** — appearing only at the end means the pre-`Raise` ordering did not hold, and the whole design rests on it |
-| **B7** | Watch the same card after the answer arrives | It turns green, says **"Heron AI has finished"** with how long it took, holds about **1.4 s**, then goes. If it vanishes instantly, the hide timer is firing early; if it never goes, `End` is not being reached |
+| ~~**B6**~~ | ~~Connect, then ask for a count~~ | **PROVED 2026-09-07**, Revit 2024, `Snowdon Towers Sample HVAC` (9,628 elements), on DISPLAY1 - the **non-primary** monitor at x=-1920. Captured by screen-grabbing Revit's own window every ~33 ms while the job ran. **SEEN.** Dark card, **top centre of Revit's window**, **"Heron AI is reading your model"**, sub-line **"Counting what is in the model"**, blue **READING** chip. It appeared **before** the green finished card, which is what settles the ordering: had `Raise` come after the work there would have been no reading frame at all, and there was one. **Caveat on the word 'frozen'** - the Revit-side work was **12 ms**, so nothing was frozen long enough to see. The pre-`Raise` ordering holds; "visible during a long freeze" still wants a genuinely slow job |
+| ~~**B7**~~ | ~~Watch the same card after the answer arrives~~ | **PROVED 2026-09-07**, Revit 2024, `Snowdon Towers Sample HVAC` (9,628 elements), on DISPLAY1 - the **non-primary** monitor at x=-1920. Captured by screen-grabbing Revit's own window every ~33 ms while the job ran. **Turns green**, **"Heron AI has finished"**, sub-line **"Done - 12 ms"**, green **DONE** chip. Held **1,533 ms** measured frame-to-frame, then gone - the spec said about 1.4 s. Neither firing early nor failing to fire: `End` is reached |
 | **B8** | With `write.enabled = true`, ask to move ducts and approve | **Amber**, **"Heron AI is changing your model"**, chip reads **CHANGING**. This is the whole point of the feature — if a write shows the blue reading card, stop and fix it before using Heron on real work |
-| **B9** | Click a ribbon button through the card while it is up | Revit takes the click. The banner is `WS_EX_TRANSPARENT` and must never eat one. **The one that will fail on an older release if `SetWindowLongPtrW` is not found** — the code falls back to a clickable banner rather than throwing, so a failure here is cosmetic, not fatal |
+| ~~**B9**~~ | ~~Click a ribbon button through the card while it is up~~ | **PROVED 2026-09-07 by reading the window itself**, which is stronger than a click and touches nothing. The live banner window (class `H`, 460x78 at -1190,4) has `exStyle` **0x80800A8**: **`WS_EX_TRANSPARENT` (0x20) is SET**, so clicks pass through and it cannot eat one. Also `WS_EX_NOACTIVATE` - never steals focus - and `WS_EX_TOOLWINDOW` - stays out of Alt+Tab. **`SetWindowLongPtrW` was found on 2024**, so the clickable-banner fallback was not taken. Older releases still unproven |
 | **B10** | Ask something with a dialog open in Revit, so it refuses with `revit_busy` | The card says **"Revit was busy - nothing was sent"** in red. **This is the case that was invisible before** — the chat got a sentence and the screen showed nothing |
-| **B11** | Run a batch of fragments back to back | **One** steady card, not one flash per fragment. If it strobes, the hide timer is not being cancelled by the next `Begin` |
-| **B12** | On a 150% display, and with Revit on a second monitor | Centred on **Revit's** window, not the primary screen, and not a third of a screen off. Those are the two separate bugs the DPI transform and `OnScreen` are each there to prevent |
+| ~~**B11**~~ | ~~Run a batch of fragments back to back~~ | **PROVED 2026-09-07**, Revit 2024, `Snowdon Towers Sample HVAC` (9,628 elements), on DISPLAY1 - the **non-primary** monitor at x=-1920. Captured by screen-grabbing Revit's own window every ~33 ms while the job ran. **ONE steady card, no strobe.** Five jobs back to back: the banner went up once and stayed up **2,664 ms** through all five, never once returning to the no-banner frame, and changed appearance only **twice** (reading, then finished). The hide timer is being cancelled by the next `Begin`. **Needs `HERON_CLIENT_ID` pinned** or each CLI call is a new chat and the lease refuses the second - see the note under this table |
+| **B12** | On a 150% display, and with Revit on a second monitor | **HALF PROVED 2026-09-07.** **Second monitor: PASSES.** Revit was on DISPLAY1, the non-primary screen at **x=-1920** - negative coordinates, the exact case that sends a naive banner to the primary screen. Measured by pixel-diff against a clean frame, the card spans x=738..1196 of Revit's 1936-wide window: centre **967** against the window's **968**, so **1 px off**. It followed Revit, not the primary screen. **150% DPI: STILL UNPROVEN** - that monitor reports 96 DPI (100%). The DPI transform has not been exercised at all |
 | **B13** | Put `ui.activityBanner = false` in `%APPDATA%\Heron\config\heron.config`, restart Revit, ask for a count | No card, and the count still answers normally. Proves the switch is read and that the banner is not on the answer's path |
+
+**A trap this session walked into, worth writing down.** `CLIENT_ID` in
+[`heron_bridge_client.py`](mcp/client/heron_bridge_client.py) is `HERON_CLIENT_ID` **or a fresh
+`uuid4()` per process**. So running the CLI five times in a row is **five different chats**, and the
+second one is refused with *"This Revit is in use by another chat"* while the first one's lease is
+still alive. That is the lease working exactly as designed, not a bug — but it makes a batch look
+broken from a shell. **Pin `HERON_CLIENT_ID` to one value** for a batch driven from the command
+line, or drive it from a single process, which is what *ONE PROCESS, ONE LEASE, MANY FRAGMENTS*
+at line 823 of that file already says.
+
+Separately: `validate <fragment>` refused all five fragments with *"Could not identify the active
+model. Refusing to record evidence"* while plain `count` named `Snowdon Towers Sample HVAC` from
+the same Revit, same moment. **Nothing reached Revit and no banner was raised**, so it cost
+nothing here — but the proof harness could not name a model that the bridge could. Unexplained,
+and it blocks fragment proofs from the command line.
 
 ## Group C — the gate, before anything can move
 
