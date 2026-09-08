@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -59,7 +59,30 @@ contract:
     - name: withTemplate
       type: int
     - name: withoutTemplate
+      # How many of the views handed in carry no template at all. The evidence
+      # it looked, not a controlled parameter it found.
+      role: accounting
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: 'run as it would normally be run. returned controlledParameters 21 item(s)
+    [Depth Clipping, Detail Level, Discipline, ...], describeTemplate Action`2, findings 3
+    item(s) [''L2'': follows the template ''Mechanical Plan''. Anything in th...,   ''Mechanical
+    Plan'' HOLDS 21 setting(s): Depth Clipping, Det...,   ''Mechanical Plan'' LEAVES FREE
+    7 setting(s): Color Scheme, ...], nameThem Func`3, withTemplate 1, withoutTemplate 0.
+    inputs came views as given (1). on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with views=Model Linking instead - chosen because it should not contain
+    what this fragment reports. returned controlledParameters 0 item(s), describeTemplate
+    Action`2, findings 1 item(s) [''Model Linking'': no view template. Every setting on it
+    is it...], nameThem Func`3, withTemplate 0, withoutTemplate 1. inputs came views as given
+    (1). on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: f79442f2eaafc178
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

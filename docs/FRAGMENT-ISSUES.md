@@ -87,6 +87,7 @@ Ran correctly and returned the honest empty answer. The model simply has none of
 | Fragment | What was tried | What came back |
 |---|---|---|
 | `select-openings` | `inViewOnly=FloorPlan: L3` | `elements 0` — there are no openings in that view. Needs a view with a wall or floor opening in it, or one drawn on purpose |
+| `report-areas` | `schemeNameContains=` (everything) | `areas 0` — the model has no Area scheme with placed areas. The negative returned 0 too, so the two cases are identical and nothing separates working from doing nothing |
 
 ---
 

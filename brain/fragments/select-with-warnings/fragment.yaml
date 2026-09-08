@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-WRN-016
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -56,6 +56,28 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned considered 145, elements 87 item(s)
+    [Cafe 101, Mezzanine Dining M100, Heat Recovery Unit (HRU), ...], errorsOnly false, findings
+    2 item(s) [87 element(s) named by 145 of the model's warnings. Each ele..., These are
+    Revit's own warnings. A clash, a wrong size, a mis...], phrase , seen 87 item(s) [1422594,
+    1492963, 1365188, ...], unresolved 0. inputs came errorsOnly as given; descriptionContains
+    as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with errorsOnly=false, descriptionContains=ZZZNOTHINGHERE instead - chosen
+    because it should not contain what this fragment reports. returned considered 0, elements
+    0 item(s), errorsOnly false, findings 3 item(s) [0 element(s) named by 0 of the model's
+    warnings, description..., No warning matched that filter - the model may still have ot...,
+    These are Revit's own warnings. A clash, a wrong size, a mis...], phrase ZZZNOTHINGHERE,
+    seen 0 item(s), unresolved 0. inputs came errorsOnly as given; descriptionContains as
+    given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ae32cc403dd2ec1d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
