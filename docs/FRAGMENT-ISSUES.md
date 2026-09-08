@@ -574,6 +574,70 @@ exactly the gap `HERON-KRN-WFL-007` exists to fill.
 
 ---
 
+## 3h. FOUR THINGS THAT WOULD IMPROVE THIS, RANKED — 2026-09-09
+
+Asked for by the owner at the end of two days of proving. Ranked by what they would have saved
+**today**, not by how interesting they are.
+
+### 1. MAKE SILENCE ILLEGAL — do this one first
+
+A fragment handed something it cannot use reports **`0`** instead of refusing. `0 changed` and *"I could
+not see what you gave me"* are then the same sentence.
+
+| Fragment | Given | Answered |
+|---|---|---|
+| the eight schedule fragments in §3e | a schedule on a sheet | `added 0`, `changed 0`, `sorted 0` — no refusal |
+| `measure-run-quantities` | `measure=ZZZNOTHINGHERE` | identical to a valid mode |
+| `color-by-parameter` | a parameter that does not exist | coloured 22 elements anyway |
+| `edit-text-values` | `field=text` | all seven notes reported `absent` |
+
+**This cost more time today than anything else**, because every one of them looks exactly like a
+fragment correctly finding nothing — which is also why none of them can be proved: both legs come back
+identical.
+
+**And on a real project it is worse than slow. It is a confident wrong answer.** A modeller who asks for
+the wrong measure gets a number, not a question.
+
+> **A fragment that cannot use its input must REFUSE and say why. It must never report zero.**
+
+Every fragment already has a `refused` output, and 117 of them now declare it as accounting. The
+machinery is there; the discipline is not.
+
+### 2. Finish declaring the roles
+
+**40 provides across 39 fragments** still do not say whether they are an ANSWER or BOOKKEEPING, so both
+the judge and the batch runner have to guess — and on 2026-09-09 the runner guessed wrong twice and came
+within one step of banking a proof for a fragment that had done nothing (`remove-parameter-value`,
+`set-mep-slope`).
+
+`already*` was done today across 21 fragments. `both*`, `without*`, `outside*` and the rest remain, and
+each needs a decision rather than a pattern — `bothIn`/`bothOut` on `check-flow-direction` match the
+shape and ARE the answer.
+
+### 3. Ask the model once, not six times
+
+Six throwaway probe scripts were written today asking the same kinds of question: what views exist, how
+many ducts per view, what connector sizes, which categories hold anything. Every one a round trip.
+
+One command answering *"describe this model"* — views by type, categories by count, the sizes actually
+present — removes all six, and it is the same gap as the missing `LIST_*` fragments in §3d.
+
+### 4. Generate the job file
+
+`tools/batch-prove.py` takes a hand-written job list. Most of that list is derivable: which fragments are
+still DRAFT and untried, whether `--write` is needed, the setup chain, and **the exact input names** —
+six were mistyped today, `widthMm` for `width` and `sortByFields` for `sortFieldNames` among them.
+
+It must leave the category and the view **blank rather than guessing**. A wrong category produces a
+confident meaningless result, which happened eleven times in one batch.
+
+### Why the order matters
+
+Two, three and four make the PROVING faster. **One makes HERON honest**, and a tool that quietly gives
+wrong answers is worse than a slow one.
+
+---
+
 ## 4. FIXED during proving — kept because the shape returns
 
 | Fragment | What was wrong |
