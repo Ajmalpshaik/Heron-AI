@@ -1,0 +1,59 @@
+positive:
+  - given: a duct and the elbow on its end, both selected
+    expect: >
+      the joint between them broken, both elements still present, and the elbow's
+      OTHER end still attached to whatever is beyond it
+
+  - given: a run of five joined elements, all selected
+    expect: >
+      every joint between them broken and counted, nothing deleted
+
+  - given: a duct and its elbow with withinSelectionOnly FALSE
+    expect: >
+      the elbow's far end broken too. The flag has to actually change the answer,
+      and this is the larger act it exists to allow
+
+  - given: a pair already disconnected
+    expect: >
+      nothing done and nothing counted, without an error. There was no joint to
+      break
+
+negative:
+  - given: a duct selected alone, joined to a fitting that was NOT selected
+    expect: >
+      NOTHING BROKEN, and the pair recorded in `untouched` with the reason. THIS
+      IS THE CASE THAT MATTERS. Breaking a connection to something nobody
+      selected is a much larger act than was asked for, and doing it by default
+      would take a run apart from a click meant to separate two things
+
+  - given: any run at all
+    expect: >
+      NOTHING DELETED. Every fitting is still in the model afterwards, with an
+      open end. A disconnect that swept up fittings would be a delete wearing a
+      smaller word
+
+  - given: elements whose connector references include system membership
+    expect: >
+      ONLY the physical ends broken. Breaking a system reference would quietly
+      remove elements from their system with nothing on the drawing to show it
+
+  - given: an empty element list
+    expect: >
+      "nothing was disconnected" with the instruction to select first, not a
+      quiet success over nothing
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and one
+      operation is one undo entry
+
+second_route:
+  - >
+    TRACE_CONNECTIVITY over the same run before and after. The joints it lists
+    should drop by exactly the number reported, and the open ends should rise by
+    the same
+
+  - >
+    Revit's own connector display on the two elements, and a count of elements in
+    the model before and after. The count must be IDENTICAL - if it dropped, this
+    deleted something it must never delete

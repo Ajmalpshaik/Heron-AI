@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-055
+semantic-identity: "put this face-based family on that face, hosted to it properly"
+kind: action
+domain: revit.elements
+capability: PLACE_FAMILY_ON_FACE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a FACE-BASED family onto explicit faces, so each instance is genuinely
+  HOSTED by the thing it sits on.
+
+  **PLACE_FAMILY_INSTANCES CANNOT DO THIS, AND THE DIFFERENCE IS NOT COSMETIC.**
+  That one places at a point on a level. A diffuser placed that way sits at a
+  height that happens to look right and knows nothing about the ceiling; move
+  the ceiling and it stays behind. Placed here it is hosted, so it moves with its
+  host and is deleted with it. Same picture on day one, different model.
+
+  **THE PLACEMENT TYPE IS CHECKED FIRST, BECAUSE THE WRONG FAMILY THROWS.** The
+  face overload requires a work-plane-based family. Handing it a level-based one
+  raises an exception from inside Revit that says nothing a modeller can act on,
+  so the family is checked and refused by name instead.
+
+  **A REFERENCE INTO A LINKED MODEL IS REFUSED.** You cannot host an element in
+  this project on a face that belongs to another file - the host would be a thing
+  this document does not own. Revit's own error for it is obscure, and the
+  mistake is easy: the ceiling you clicked may well be in the architectural link.
+
+  **THE HOST IS VERIFIED AFTER PLACING, NOT ASSUMED.** An instance that came back
+  with no host is reported as a problem even though Revit did not complain,
+  because an unhosted instance is exactly the failure this fragment exists to
+  prevent and it looks completely correct on screen.
+
+  **THE SYMBOL IS ACTIVATED IF IT IS NOT ALREADY.** An unactivated symbol places
+  nothing and raises nothing - the most silent failure in the Revit API.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo entry,
+  and the caller owns it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # RESOLVED, never an id. Building an ElementId from an integer is what
+    # breaks in Revit 2024 (D-05); taking the object makes the trap unreachable.
+    - name: symbol
+      type: FamilySymbol
+      source: request
+    # Paired by position with `points`. A face nobody named cannot be guessed.
+    - name: faces
+      type: IList<Reference>
+      source: request
+    - name: points
+      type: IList<XYZ>
+      source: request
+    # The direction the instance faces on the host.
+    - name: direction
+      type: XYZ
+      source: request
+  provides:
+    - name: created
+      type: IList<FamilyInstance>
+    - name: placed
+      type: int
+    - name: refused
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.Create.NewFamilyInstance(Reference,
+  XYZ, XYZ, FamilySymbol)`, `Family.FamilyPlacementType`, `FamilySymbol.IsActive` /
+  `.Activate()`, `FamilyInstance.Host` and `Reference.ElementId` are unchanged
+  2020 to 2027 - checked by compiling this fragment against the reference
+  assemblies for all eight.
+
+# ROUTING - cross-referenced in PLACE_FAMILY_INSTANCES and SELECT_BY_HOST.
+#
+#   "put diffusers on that ceiling"    -> here, when they must be HOSTED
+#   "place these on the wall face"     -> here
+#   "place a family at these points"   -> PLACE_FAMILY_INSTANCES, which is
+#                                         point-and-level and NOT hosted
+#   "what is hosted on this"           -> SELECT_BY_HOST
+
+utterances:
+  - place diffusers hosted on that ceiling
+  - put this family on the wall face
+  - place face-based families properly hosted

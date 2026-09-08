@@ -1,0 +1,62 @@
+positive:
+  - given: a mixed duct selection and a request for 230 by 230 within 1 mm
+    expect: >
+      only the ducts whose CONNECTOR measures that, and the count stated with the
+      tolerance. The plan's own acceptance case
+
+  - given: a 400 by 230 duct and a request for 230 by 400, either orientation on
+    expect: >
+      it matches. The same duct rotated is the same duct, and that is what
+      somebody asking for "230 by 400" almost always means
+
+  - given: the same pair with either-orientation OFF
+    expect: >
+      it does NOT match. The policy is the caller's and must actually change the
+      answer, or it is decoration
+
+  - given: a reducer with a 300 connector at one end and 200 at the other, asking 200
+    expect: >
+      it matches. ANY connector matching is enough - requiring all of them would
+      return nothing on every reducer, which is the fitting most worth finding
+
+  - given: a request for 200 diameter round on a selection of pipe
+    expect: >
+      the 200s matched off connector radius doubled, not off any size parameter
+
+negative:
+  - given: a selection containing walls and generic models
+    expect: >
+      they land in `noConnectors`, NOT in the misses. THIS IS ONE OF THE TWO
+      THAT MATTER. There was nothing to measure on them, and counting that as a
+      failed match would hide a wrong selection behind a plausible number
+
+  - given: a tolerance of zero
+    expect: >
+      REFUSED with the reason, nothing filtered. THIS IS THE OTHER ONE. 230 mm is
+      0.75459... feet in Revit's store, so an exact comparison matches nothing -
+      and a filter returning zero looks like a correct answer
+
+  - given: an element whose only connectors are a shape this cannot measure
+    expect: >
+      counted in `unknownShape` and reported apart. A size filter that quietly
+      drops what it could not read is a filter you cannot trust
+
+  - given: a shape word that is not round, rectangular or any
+    expect: >
+      refused and named, rather than silently treated as "any"
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION AND NOTHING CHANGED. This filters a list that was handed to
+      it and touches no model
+
+second_route:
+  - >
+    Revit's own connector display: hover a matched element and read the size off
+    the connector in the status bar. Three spot checks catch a units error, which
+    is the failure this fragment is most exposed to
+
+  - >
+    A schedule of duct size over the same selection - useful as a CONTRAST rather
+    than a confirmation. Where the schedule and this disagree on equipment, this
+    is the one measuring the joint and the schedule is reading a parameter

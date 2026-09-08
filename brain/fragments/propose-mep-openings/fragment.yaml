@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-031
+semantic-identity: "where the services go through, and how big the hole needs to be"
+kind: action
+domain: revit.qa
+capability: PROPOSE_MEP_OPENINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds where MEP runs pass through walls and floors, and PROPOSES an opening at
+  each one - position, size and the host it belongs to. **It creates nothing.**
+
+  **PROPOSING AND CREATING ARE DELIBERATELY TWO OPERATIONS.** Cutting holes in
+  somebody's structure is not a thing to do as a side effect of looking for them.
+  The list this produces is meant to be read, argued with, and only then acted
+  on - by a separate write that somebody approved. That split is the plan's own
+  recommendation and it is the right way round: an audit that quietly modifies is
+  not an audit.
+
+  **AUDIT_MEP_OPENINGS AND CHECK_SLEEVE_SIZE INSPECT WHAT EXISTS. THIS PROPOSES
+  WHAT DOES NOT.** They answer *"are the openings there right"*; this answers
+  *"where do openings need to be"*. On a model with no openings drawn yet, they
+  have nothing to report and this has everything.
+
+  **THE ALLOWANCE IS REQUIRED, NOT ASSUMED.** How much bigger than the duct a
+  hole must be is a project decision - it varies by trade, by fire rating and by
+  who is paying for the sleeve. Assuming a number would produce a schedule of
+  holes that look authoritative and match nobody's specification.
+
+  **IT MEASURES THE REAL INTERSECTION, NOT A BOUNDING BOX.** A duct crossing a
+  wall at an angle needs a bigger hole than its own width, and a bounding-box
+  answer would be right only for a perpendicular crossing. The solid is
+  intersected with the run's centre line, so an oblique penetration reports the
+  length it really cuts.
+
+  **A RUN THROUGH TWO WALLS IS TWO OPENINGS.** Each intersected segment is
+  reported separately, with its own host, because that is how many holes have to
+  be cut.
+
+  Reads only. Opens no transaction and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The services. MEP curves - duct, pipe, tray, conduit.
+    - name: elements
+      type: IList<Element>
+    # The things they pass through - walls, floors, roofs. A REQUEST input, the
+    # same shape FIND_CLASHES uses for its second set: the structure to check
+    # against is named by the caller, not produced by an earlier fragment. Left
+    # host-sourced it made this an orphan, because nothing in the library
+    # provides a name called `hosts` and so no workflow could ever reach it.
+    - name: hosts
+      type: IList<Element>
+      source: request
+    # Millimetres added to each side of the service size. A project decision.
+    - name: allowanceMm
+      type: double
+      source: request
+  provides:
+    - name: proposals
+      type: IList<string>
+    - name: hostIds
+      type: IList<ElementId>
+    - name: runIds
+      type: IList<ElementId>
+    - name: unmeasured
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Element.get_Geometry(Options)`,
+  `Solid.IntersectWithCurve`, `SolidCurveIntersectionOptions`,
+  `SolidCurveIntersection.SegmentCount` / `.GetCurveSegment`, and
+  `MEPCurve.Width` / `.Height` / `.Diameter` are unchanged 2020 to 2027 - checked
+  by compiling this fragment against the reference assemblies for all eight.
+
+  `MEPCurve.Width`, `.Height` and `.Diameter` THROW for the wrong profile rather
+  than returning zero, so each is read inside its own guard.
+
+# ROUTING - cross-referenced in AUDIT_MEP_OPENINGS, CHECK_SLEEVE_SIZE and FIND_CLASHES.
+#
+#   "where do I need holes"            -> here
+#   "propose the sleeves"              -> here
+#   "what penetrates this wall"        -> here
+#   "are the openings the right size"  -> CHECK_SLEEVE_SIZE. That inspects what
+#                                         EXISTS; this proposes what does not
+#   "audit the openings"               -> AUDIT_MEP_OPENINGS, same distinction
+#   "what clashes"                     -> FIND_CLASHES, which reports a problem
+#                                         rather than a hole to cut
+
+utterances:
+  - where do the services need holes
+  - propose openings for these ducts
+  - what penetrates these walls and how big
+  - list the sleeves needed

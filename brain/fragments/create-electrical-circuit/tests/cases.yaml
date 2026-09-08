@@ -1,0 +1,60 @@
+positive:
+  - given: six sockets selected, "power", and a panel
+    expect: >
+      one circuit created, its number reported, six devices listed as members,
+      and the panel name stated. The circuit appears on that panel's schedule
+
+  - given: the same six with NO panel given
+    expect: >
+      the circuit created and reported as UNASSIGNED in words. A valid state
+      Revit allows, and one nobody should have to discover from an empty schedule
+
+  - given: fire alarm devices and "fire alarm"
+    expect: >
+      a fire alarm circuit, not a power one. The mapping is explicit for exactly
+      this reason
+
+  - given: a selection where two devices do not suit the system type
+    expect: >
+      the circuit created from the rest, AND the shortfall stated - given six,
+      four joined. Revit lists the ones it left out nowhere else
+
+negative:
+  - given: a system type word that is not in the supported list
+    expect: >
+      REFUSED by name and NOTHING CREATED. THIS IS THE CASE THAT MATTERS. Falling
+      back to "power" would put a fire alarm device on a power circuit, and that
+      is a drawing that passes review and is wrong
+
+  - given: devices that are ALREADY on a circuit
+    expect: >
+      whatever Revit does, reported in Revit's own words - refusal, duplicate or
+      move. THIS NEEDS A REAL MODEL TO ESTABLISH and is deliberately not guessed
+      at in the implementation. Run it twice on the same devices and record what
+      actually happens
+
+  - given: an empty device list
+    expect: >
+      "nothing was created" with the instruction to select first, not a quiet
+      success over nothing
+
+  - given: a circuit created but a panel Revit refuses
+    expect: >
+      the circuit reported as existing AND UNASSIGNED, with Revit's reason. Half
+      a result described as a whole one is the worst outcome available here
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and one
+      operation is one undo entry
+
+second_route:
+  - >
+    The panel schedule itself. The circuit should appear on it with the reported
+    number and the reported device count - and if the schedule is empty, the
+    assignment did not happen whatever this said
+
+  - >
+    SELECT_BY_ELECTRICAL_CIRCUIT on the created circuit. It should return exactly
+    the members listed here, and a difference means the membership reported was
+    read at the wrong moment

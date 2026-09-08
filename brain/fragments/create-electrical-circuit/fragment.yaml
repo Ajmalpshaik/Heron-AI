@@ -1,0 +1,102 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-045
+semantic-identity: "put these devices on one circuit, and tell me which panel it landed on"
+kind: action
+domain: revit.mep
+capability: CREATE_ELECTRICAL_CIRCUIT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates ONE electrical circuit from the devices given, and optionally assigns it
+  to a panel.
+
+  **CREATE_ELECTRICAL_RUN IS CONTAINMENT, NOT A CIRCUIT.** That one draws cable
+  tray and conduit - the physical route. A circuit is the electrical
+  relationship: which devices are fed from which way, what the load is, what
+  appears on the panel schedule. A model can have every tray drawn and no circuit
+  in it, and it will look finished.
+
+  **THE PANEL IS OPTIONAL AND IS REPORTED EITHER WAY.** A circuit with no panel
+  is a real, valid, unassigned circuit - Revit allows it and a designer often
+  wants it. What must never happen is one that is quietly unassigned while the
+  answer sounds complete, so the panel name is stated even when it is empty.
+
+  **RUNNING IT TWICE IS A QUESTION THIS FRAGMENT HAS NOT ANSWERED.** Whether Revit
+  refuses a second circuit over the same devices, creates a duplicate, or moves
+  them, is behaviour that needs a real model to establish. It is written as a
+  test case rather than guessed at here, and anything Revit refuses is reported
+  with its own words rather than swallowed.
+
+  **THE SYSTEM TYPE IS NAMED IN WORDS AND CHECKED.** "power", "data",
+  "fire alarm" and the rest are mapped explicitly; anything else is refused by
+  name rather than silently becoming a power circuit, because a fire alarm device
+  landing on a power circuit is a drawing that passes review and is wrong.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo entry,
+  and the caller owns it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "power", "data", "fire alarm", "security", "telephone", "nurse call",
+    # "controls", "communication".
+    - name: systemType
+      type: string
+      source: request
+    # RESOLVED, never an id, and optional - empty leaves the circuit unassigned.
+    - name: panel
+      type: FamilyInstance
+      source: request
+  provides:
+    - name: created
+      type: ElectricalSystem
+    - name: circuitNumber
+      type: string
+    - name: panelName
+      type: string
+    - name: memberIds
+      type: IList<ElementId>
+    - name: refused
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElectricalSystem.Create(Document,
+  IList<ElementId>, ElectricalSystemType)`, `.SelectPanel`, `.PanelName`,
+  `.CircuitNumber`, `.Elements` and the `ElectricalSystemType` members used here
+  are unchanged 2020 to 2027 - checked by compiling this fragment against the
+  reference assemblies for all eight.
+
+  `Create` takes `IList<ElementId>` and NOT `ICollection<ElementId>`; the first
+  attempt at this fragment assumed the latter and the compiler refused it on
+  every release. `ElementSet` is not generic, so the loop variable is typed.
+
+# ROUTING - cross-referenced in CREATE_ELECTRICAL_RUN and SELECT_BY_ELECTRICAL_CIRCUIT.
+#
+#   "circuit these sockets"            -> here
+#   "put these on one circuit"         -> here
+#   "assign them to panel DB-1"        -> here, with the panel given
+#   "draw the cable tray"              -> CREATE_ELECTRICAL_RUN. That is
+#                                         CONTAINMENT and not a circuit
+#   "what is on circuit 3"             -> SELECT_BY_ELECTRICAL_CIRCUIT
+
+utterances:
+  - put these devices on one circuit
+  - circuit these sockets to the panel
+  - create a power circuit from this selection
+  - make a fire alarm circuit

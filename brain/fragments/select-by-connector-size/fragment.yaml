@@ -1,0 +1,116 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-031
+semantic-identity: "the ones whose connector is actually 230 by 230, not the ones whose name says so"
+kind: filter
+domain: revit.selection
+capability: SELECT_BY_CONNECTOR_SIZE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Keeps the elements that have a CONNECTOR of the size asked for, measured off
+  the connector itself. It changes nothing.
+
+  **A PARAMETER FILTER CANNOT ASK THIS QUESTION.** Size parameters describe the
+  duct or the pipe; a connector is where it JOINS, and on a piece of equipment
+  those are different numbers. An AHU whose type is called `AHU-01` has a supply
+  connector of some size, and nothing in its parameters is that size. Filtering
+  on a name is filtering on what somebody typed.
+
+  **MILLIMETRES IN, FEET INSIDE.** Revit stores connector dimensions in decimal
+  feet. The sizes here are given in **millimetres**, because that is what a
+  drawing says, and are converted once at 304.8 mm per foot. A tolerance is
+  required rather than optional: 230 mm is 0.75459... feet and no stored value
+  will equal a typed one exactly.
+
+  **ORIENTATION IS A POLICY, NOT A DETAIL.** A 400 x 230 duct and a 230 x 400
+  duct are the same duct rotated. Whether that counts as a match is the caller's
+  decision, so it is a flag - and it defaults to matching either way round,
+  because that is what somebody asking for "230 by 400" almost always means.
+
+  **AN ELEMENT MATCHES IF ANY ONE OF ITS CONNECTORS MATCHES.** A fitting has
+  several and they differ; requiring all of them would return nothing on every
+  reducer, which is the fitting most worth finding.
+
+  **THREE OUTCOMES, NOT TWO.** Matched, and then two kinds of miss that are not
+  the same thing: an element with NO connectors at all (a wall, a generic model -
+  the filter has nothing to measure) and an element whose connector shape is one
+  this cannot measure. Merging them into "did not match" would hide a wrong
+  selection behind a plausible number.
+
+  Reads only. Opens no transaction and needs none.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    # "round", "rectangular", or "any".
+    - name: shape
+      type: string
+      source: request
+    # Millimetres. Round connectors only; 0 means do not test the diameter.
+    - name: diameterMm
+      type: double
+      source: request
+    # Millimetres. Rectangular and oval; 0 means do not test that side.
+    - name: widthMm
+      type: double
+      source: request
+    - name: heightMm
+      type: double
+      source: request
+    # Millimetres. Required - an exact comparison of stored feet never matches.
+    - name: toleranceMm
+      type: double
+      source: request
+    # true also matches width and height the other way round.
+    - name: eitherOrientation
+      type: bool
+      source: request
+  provides:
+    - name: matched
+      type: IList<Element>
+    - name: matchedIds
+      type: IList<ElementId>
+    - name: noConnectors
+      type: IList<ElementId>
+    - name: unknownShape
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `MEPCurve.ConnectorManager`,
+  `FamilyInstance.MEPModel.ConnectorManager`, `ConnectorManager.Connectors`,
+  and `Connector.Shape` / `.Radius` / `.Width` / `.Height` / `.Domain` are
+  unchanged 2020 to 2027 - checked by compiling this fragment against the
+  reference assemblies for all eight.
+
+  `ConnectorSet` is not generic, so the loop variable is typed rather than `var`.
+
+# ROUTING - cross-referenced in REPORT_CONNECTORS and SELECT_BY_PARAMETER_VALUE.
+#
+#   "select the 230 by 230 ones"       -> here
+#   "which have a 200 dia connector"   -> here
+#   "find equipment with that spigot"  -> here
+#   "what connectors does this have"   -> REPORT_CONNECTORS, which DESCRIBES
+#                                         rather than filters
+#   "select by size parameter"         -> SELECT_BY_PARAMETER_VALUE. That reads
+#                                         the duct's own size, which on a piece
+#                                         of equipment is not its connector size
+
+utterances:
+  - select the ones with a 230 by 230 connector
+  - which elements have a 200 diameter connection
+  - find everything with that spigot size
+  - filter by actual connector size

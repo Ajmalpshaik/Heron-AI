@@ -3,7 +3,7 @@
 **Prepared by: ChatGPT (Codex)**  
 **Date: 7 September 2026**  
 **Project: Heron AI**  
-**Status: partly implemented on 2026-09-08. C03, C04 and C09 are done; everything else is still plan only.**
+**Status: implemented on 2026-09-08 except the contract work. C03, C04, C09 and all nine new capabilities N01 to N09 are done; C01, C02, C05 to C08 and the S01 to S05 splits remain plan only.**
 
 > ## Implementation note — 2026-09-08, added by Claude
 >
@@ -14,7 +14,28 @@
 > | **C03** — exact pattern matching | **Done.** Reproduced first: a rule `Supply Diffuser` was accepting `Supply Diffuser OLD`. A pattern with no `*` is now an equality test. 16 logic cases pass, wildcards unchanged |
 > | **C04** — CSV records across line boundaries | **Done.** The importer read the file with `ReadAllLines` before it read it as CSV, so one Alt+Enter cell became three rows. It now splits records honouring quotes, and refuses a file with an unclosed quote without writing anything. 8 cases pass |
 > | **C09** — library documentation | **Done.** `brain/README.md` said *thirty-two fragments, every one DRAFT* and *the executor is not built*. Both were false. Corrected, with the recomputing command named beside the numbers so the next drift is visible |
-> | C01, C02, C05–C08 · S01–S05 · N01–N09 | **Not started.** Each needs a live model, a contract decision, or both. Unchanged below |
+> | **N01–N09** — the nine new capabilities | **Done.** All nine exist, all `DRAFT`, all compiling on eight releases. Listed below |
+> | C01, C02, C05–C08 · S01–S05 | **Not started.** Each needs a live model or a contract decision. Unchanged below |
+>
+> **The nine new capabilities, added 2026-09-08:**
+>
+> | | Capability | Fragment | Risk |
+> |---|---|---|---|
+> | N01 | `SELECT_BY_CONNECTOR_SIZE` | `select-by-connector-size` | READ |
+> | N02 | `PLACE_FAMILY_ON_FACE` | `place-family-on-face` | MODIFY |
+> | N03 | `CREATE_FLEX_DUCT` | `create-flex-duct` | MODIFY |
+> | N04 | `CREATE_ELECTRICAL_CIRCUIT` | `create-electrical-circuit` | MODIFY |
+> | N05 | `PROPOSE_MEP_OPENINGS` | `propose-mep-openings` | **READ** — proposes, creates nothing, as the plan asked |
+> | N06 | `DISCONNECT_CONNECTORS` | `disconnect-connectors` | MODIFY |
+> | N07 | `SWITCH_ACTIVE_PROJECT` | `switch-active-project` | EXECUTE |
+> | N08 | `OPEN_VIEW` | `open-view` | EXECUTE |
+> | N09 | `CLOSE_VIEW_TABS` | `close-view-tabs` | EXECUTE |
+>
+> A tenth, `REPORT_OPEN_DOCUMENTS`, was added as the read N07 depends on: you cannot switch to a project without first naming one unambiguously.
+>
+> **N01 did NOT wait for C08.** The plan sequenced it behind structured connector data, but it does not need `report-connectors` to be redesigned first - it reads the connectors itself. The dependency was on the report's *string* output, and not consuming that removes it.
+>
+> **Every Revit API member used was verified against the reference assemblies before a line was written**, by compiling probes on 2020 and 2027. That caught one wrong assumption: `ElectricalSystem.Create` takes `IList<ElementId>`, not `ICollection<ElementId>`.
 >
 > **Verified:** all 350 fragments compile on **all eight releases, 2020 to 2027** (`tools/check-fragments-compile.py`, exit 0); `brain/heron_fragment.py` reports 350 well-formed; `brain/heron_skill.py` reports 10 skills with every capability provided. Compiling is not proof that any of it does the right thing — that still needs a model (D-30).
 >
@@ -250,9 +271,9 @@ The discussion decisions below record agreement on direction, separately from au
 | C06–C08 | Ownership uncertainty, grouped holes, structured connectors | Directions agreed in principle; implementation not requested |
 | C09 | Refresh the library documentation | **DONE 2026-09-08.** `brain/README.md` corrected on all three stale claims — the count, the statuses, and the missing executor |
 | S01–S05 | Apply only with the related approved change and verified consumers | Discussion pending; S02 wording aligned with bulk-execution decision |
-| N01–N02 | Best first additions for existing workflows | Accepted into plan; tackle individually when requested |
-| N03–N06 | Flex connections, openings/sleeves, circuits/panels and disconnection | Accepted into plan; tackle individually in the recommended sequence above or Ajmal's chosen order |
-| N07–N08 | Switch open projects and open/activate existing views | Explicitly requested for the plan; implementation not started |
-| N09 | Close one or more requested open view tabs without deleting saved views | Explicitly requested for the plan; implementation not started |
+| N01–N02 | Best first additions for existing workflows | **DONE 2026-09-08.** N01 reads connectors directly and so did not need C08 first |
+| N03–N06 | Flex connections, openings/sleeves, circuits/panels and disconnection | **DONE 2026-09-08.** N05 is READ and proposes only, as the plan recommended |
+| N07–N08 | Switch open projects and open/activate existing views | **DONE 2026-09-08**, plus `REPORT_OPEN_DOCUMENTS` as the read they depend on |
+| N09 | Close one or more requested open view tabs without deleting saved views | **DONE 2026-09-08.** It never closes the last tab, because that would close the project |
 
 **Author: ChatGPT (Codex). This is a planning report, not authorization to change the fragments.**
