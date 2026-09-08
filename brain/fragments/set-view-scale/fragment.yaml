@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -44,6 +44,10 @@ contract:
       source: request
   provides:
     - name: wasScale
+      # What each view's scale WAS before this ran. The evidence it
+      # looked, never a change it made - it is filled in identically
+      # whether `apply` was set or not (D-52).
+      role: accounting
       type: IDictionary<ElementId, int>
     - name: changed
       type: int
@@ -55,6 +59,24 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run - run inside a transaction and ROLLED BACK,
+    so the model was left exactly as it was. returned alreadyThatScale 0, apply true, changed
+    1, refused 0 item(s), scale 50, wasScale 1 entry(ies). inputs came views as given (1);
+    scale as given; apply as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with views=Model Linking, scale=50, apply=false instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction and ROLLED
+    BACK, so the model was left exactly as it was. returned alreadyThatScale 0, apply false,
+    changed 0, refused 0 item(s), scale 50, wasScale 1 entry(ies). inputs came views as given
+    (1); scale as given; apply as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ff7ef3f36693b6d2
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
