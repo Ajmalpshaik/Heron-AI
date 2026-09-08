@@ -36,6 +36,16 @@ Func<string, string, bool> matches = (text, pattern) =>
     text = text ?? "";
     if (string.IsNullOrEmpty(pattern)) return true;
 
+    // A pattern with no '*' is a whole-name rule, and it has to be checked as
+    // one. Without this line the loop below runs its first-part branch, which
+    // tests only StartsWith, and then falls through to `return true` - so the
+    // rule "Supply Diffuser" quietly ACCEPTED "Supply Diffuser OLD". A
+    // standards check that passes the thing it exists to catch is worse than
+    // no check, because somebody trusts it. Wildcards keep their old
+    // behaviour: "Supply Diffuser*" still allows the suffix.
+    if (pattern.IndexOf('*') < 0)
+        return string.Equals(text, pattern, StringComparison.OrdinalIgnoreCase);
+
     var parts = pattern.Split('*');
     var position = 0;
 

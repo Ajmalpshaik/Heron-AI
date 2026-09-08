@@ -3,9 +3,24 @@
 **Prepared by: ChatGPT (Codex)**  
 **Date: 7 September 2026**  
 **Project: Heron AI**  
-**Status: Plan revised after discussion with Ajmal — implementation not started.**
+**Status: partly implemented on 2026-09-08. C03, C04 and C09 are done; everything else is still plan only.**
 
-No existing fragment, contract, implementation, test, or lifecycle status was changed. This report is the requested planning deliverable.
+> ## Implementation note — 2026-09-08, added by Claude
+>
+> The plan was checked against the code rather than taken on trust, and the findings that were spot-checked all held. **Three items have since been implemented — the three that need no Revit and no design decision.** No lifecycle status was changed by that work: a code fix is not a proof, and both fragments touched stay `DRAFT`.
+>
+> | Item | State |
+> |---|---|
+> | **C03** — exact pattern matching | **Done.** Reproduced first: a rule `Supply Diffuser` was accepting `Supply Diffuser OLD`. A pattern with no `*` is now an equality test. 16 logic cases pass, wildcards unchanged |
+> | **C04** — CSV records across line boundaries | **Done.** The importer read the file with `ReadAllLines` before it read it as CSV, so one Alt+Enter cell became three rows. It now splits records honouring quotes, and refuses a file with an unclosed quote without writing anything. 8 cases pass |
+> | **C09** — library documentation | **Done.** `brain/README.md` said *thirty-two fragments, every one DRAFT* and *the executor is not built*. Both were false. Corrected, with the recomputing command named beside the numbers so the next drift is visible |
+> | C01, C02, C05–C08 · S01–S05 · N01–N09 | **Not started.** Each needs a live model, a contract decision, or both. Unchanged below |
+>
+> **Verified:** all 350 fragments compile on **all eight releases, 2020 to 2027** (`tools/check-fragments-compile.py`, exit 0); `brain/heron_fragment.py` reports 350 well-formed; `brain/heron_skill.py` reports 10 skills with every capability provided. Compiling is not proof that any of it does the right thing — that still needs a model (D-30).
+>
+> **The baseline numbers in section 2 below were already stale when this note was written**, and are corrected there: the proving track went 16 `PROVEN` to 52 on the night of 2026-09-07, hours after this plan was filed. Any argument below that leans on *"only 16 are proven"* is weaker than it reads. The defects it names are unaffected.
+
+No existing contract or lifecycle status was changed when this report was written. This report is the requested planning deliverable.
 
 ## 1. Recommendation
 
@@ -30,9 +45,9 @@ The review inventoried all fragment manifests, capabilities, status declarations
 
 | Check | Result |
 |---|---|
-| Fragment folders/manifests | 349 |
-| Metadata validator | All 349 well-formed |
-| Declared lifecycle status | 333 DRAFT; 16 PROVEN |
+| Fragment folders/manifests | 349 *(**350** on 2026-09-08)* |
+| Metadata validator | All 349 well-formed *(**all 350** on 2026-09-08)* |
+| Declared lifecycle status | 333 DRAFT; 16 PROVEN *(**298 DRAFT; 52 PROVEN** on 2026-09-08 — the proving track moved the night this was filed)* |
 | Duplicate capability names | None |
 | Fragment-local test directories | All 349 present |
 | Files in those test directories | 349 YAML files; these are not proof that executable tests ran |
@@ -229,10 +244,11 @@ The discussion decisions below record agreement on direction, separately from au
 |---|---|---|
 | C01 | Preserve room holes or refuse creation | No specific decision recorded |
 | C02 | Automatic validation, authorized bulk sizing, consolidated report | Revised direction agreed; implementation not requested |
-| C03 | Exact match unless wildcard supplied | Direction agreed; implementation not requested |
-| C04 | Preserve multiline cells; automatic validation and bulk import | Explained and understood; implementation not requested; optional identity extension pending |
+| C03 | Exact match unless wildcard supplied | **DONE 2026-09-08.** Implemented and compiled on all eight releases; regression cases recorded in the fragment |
+| C04 | Preserve multiline cells; automatic validation and bulk import | **Record reader DONE 2026-09-08**, with an unclosed quote now refused before any write. The wider bulk-import validation and the optional export-identity extension are still pending |
 | C05 | Nearest compatible duct within limit; verify physical connection | Direction agreed; implementation not requested |
-| C06–C09 | Ownership uncertainty, grouped holes, structured connectors and documentation | Directions agreed in principle; implementation not requested |
+| C06–C08 | Ownership uncertainty, grouped holes, structured connectors | Directions agreed in principle; implementation not requested |
+| C09 | Refresh the library documentation | **DONE 2026-09-08.** `brain/README.md` corrected on all three stale claims — the count, the statuses, and the missing executor |
 | S01–S05 | Apply only with the related approved change and verified consumers | Discussion pending; S02 wording aligned with bulk-execution decision |
 | N01–N02 | Best first additions for existing workflows | Accepted into plan; tackle individually when requested |
 | N03–N06 | Flex connections, openings/sleeves, circuits/panels and disconnection | Accepted into plan; tackle individually in the recommended sequence above or Ajmal's chosen order |

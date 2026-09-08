@@ -10,6 +10,15 @@ positive:
       the non-MEP sheets reported as not matching. That is the correct answer for
       the rule given - the rule, not the model, is the thing to argue with
 
+  - given: a view pattern of "Level 1" with no wildcard, over a view called "Level 1"
+    expect: >
+      it passes. A pattern carrying no "*" is a whole-name rule and the name is
+      the whole name, so there is nothing to report
+
+  - given: a view pattern of "Level 1*" over a view called "Level 1 - OLD"
+    expect: >
+      it passes. The wildcard is what licenses the suffix, and it still does
+
   - given: the suspect list containing "copy of" and no pattern at all
     expect: >
       the copies found, AND the section saying no pattern was given so a
@@ -27,6 +36,16 @@ negative:
       "NOT CHECKED" FOR SHEETS, with the number present, and the section counted
       as not checked. THIS IS THE CASE THAT MATTERS. A zero here would read as
       every sheet passing when nobody looked at one
+
+  - given: a pattern of "Supply Diffuser" with no wildcard, over a type called
+      "Supply Diffuser OLD"
+    expect: >
+      REPORTED AS BREAKING THE RULE. THIS IS THE CASE THAT MATTERS, and until
+      2026-09-08 it did not: with no "*" in the pattern the matcher checked only
+      that the name STARTED with it and then returned true, so every rule written
+      without a wildcard silently behaved as a prefix rule. A standards check that
+      passes the exact thing it was written to catch is worse than no check,
+      because somebody stops looking. An exact rule is now an equality test
 
   - given: a required parameter that is not on the category at all
     expect: >

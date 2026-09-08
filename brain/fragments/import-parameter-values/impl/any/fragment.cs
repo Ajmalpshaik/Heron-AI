@@ -55,6 +55,51 @@ Func<string, List<string>> splitRow = line =>
     return cells;
 };
 
+// A CSV RECORD IS NOT A LINE. Alt+Enter inside an Excel cell is written out as
+// a real newline INSIDE the quotes, so reading the file line by line tears one
+// parameter value into two rows: the first row gets half the text and the
+// second is rejected as having the wrong number of cells. A note typed on
+// three lines came back as one line and a complaint.
+//
+// So records are split here, honouring the same quoting splitRow honours, and
+// splitRow is left to do the cells - it already keeps a newline that arrives
+// inside a quoted field. Nothing is unescaped at this level: a doubled "" is
+// copied through as both characters so splitRow still sees what the file said.
+var quotingIsBroken = false;
+Func<string, List<string>> splitRecords = text =>
+{
+    var records = new List<string>();
+    var current = new System.Text.StringBuilder();
+    var inQuotes = false;
+
+    for (var i = 0; i < text.Length; i++)
+    {
+        var ch = text[i];
+        if (ch == '"')
+        {
+            if (inQuotes && i + 1 < text.Length && text[i + 1] == '"')
+            {
+                current.Append('"').Append('"');
+                i++;
+                continue;
+            }
+            inQuotes = !inQuotes;
+            current.Append(ch);
+        }
+        else if (!inQuotes && (ch == '\n' || ch == '\r'))
+        {
+            if (ch == '\r' && i + 1 < text.Length && text[i + 1] == '\n') i++;
+            records.Add(current.ToString());
+            current.Length = 0;
+        }
+        else current.Append(ch);
+    }
+
+    records.Add(current.ToString());
+    quotingIsBroken = inQuotes;   // a quote opened and never closed
+    return records;
+};
+
 var byId = new Dictionary<string, Element>();
 foreach (var element in elements)
 {
@@ -73,27 +118,33 @@ else if (byId.Count == 0)
 }
 else
 {
-    string[] lines = null;
-    try { lines = System.IO.File.ReadAllLines(csvPath); }
+    string fileText = null;
+    try { fileText = System.IO.File.ReadAllText(csvPath); }
     catch (Exception ex)
     {
         findings.Add("That file could not be read: " + ex.Message + ". Nothing was written");
     }
 
     var rows = new List<string>();
-    if (lines != null)
+    if (fileText != null)
     {
-        foreach (var line in lines)
+        foreach (var record in splitRecords(fileText))
         {
-            if (!string.IsNullOrEmpty(line) && line.Trim().Length > 0) rows.Add(line);
+            if (!string.IsNullOrEmpty(record) && record.Trim().Length > 0) rows.Add(record);
         }
     }
 
-    if (lines != null && rows.Count < 2)
+    if (fileText != null && quotingIsBroken)
+    {
+        findings.Add("'" + csvPath + "' has a quotation mark that is opened and never closed, so the "
+            + "rows after it cannot be read as the file meant them. NOTHING was written. Look for a "
+            + "stray \" in one of the values");
+    }
+    else if (fileText != null && rows.Count < 2)
     {
         findings.Add("'" + csvPath + "' has a header and no data rows, so nothing was written");
     }
-    else if (lines != null)
+    else if (fileText != null)
     {
         var header = splitRow(rows[0]);
         if (header.Count < 2)

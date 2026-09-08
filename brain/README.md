@@ -6,8 +6,10 @@
 [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) was written — complete, tested, and invisible
 to any conversation. Three MCP tools now stand on that seam: `heron_capabilities`, `heron_resolve` and
 `heron_lookup`. **They ask for a capability and never for a fragment**, which is what keeps everything in
-here replaceable. What they still cannot do is **run** one: a fragment's C# has no route to Revit, and
-[D-28](../docs/DECISIONS.md)'s in-process Roslyn is not built.
+here replaceable. They can now also **run** one: [D-28](../docs/DECISIONS.md)'s in-process Roslyn
+landed on 2026-09-06 as [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), and it runs a
+fragment **READ ONLY** — it opens no transaction, so Revit itself refuses any change. Running a fragment
+that WRITES is a separate operation that still does not exist.
 
 | | |
 |---|---|
@@ -20,7 +22,7 @@ here replaceable. What they still cannot do is **run** one: a fragment's C# has 
 | | |
 |---|---|
 | [`heron_fragment.py`](heron_fragment.py) | **Step 7.** What a fragment IS on disk, and the validator that will not let it lie. Identity is not the filename; the contract is data, not prose; a proof without a negative case is refused |
-| [`fragments/`](fragments/) | The library. **Thirty-two**, every one `DRAFT` — and **not one has met a real model**. All thirty-two do now **compile**, on all eight releases, via [`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py) (2026-08-30). Its first run found one that never could have: `FRG-QA-001` had a value called `checked`, a reserved C# keyword |
+| [`fragments/`](fragments/) | The library. **350 as of 2026-09-08 — 298 `DRAFT`, 52 `PROVEN`.** Do not trust those three numbers over the tools: `python brain/heron_fragment.py` counts and validates them from disk, and it is right where this line has gone stale. This row once said *thirty-two, every one DRAFT*, and stayed saying it for a week after neither half was true. Every one **compiles**, on all eight releases, via [`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py). Its first run found one that never could have: `FRG-QA-001` had a value called `checked`, a reserved C# keyword |
 | [`heron_search.py`](heron_search.py) | **Step 9.** Finding a fragment by exact words. Three routes and it says which answered: `identity` (one lookup, no search), `cache` (this wording was resolved before), `keywords` (FTS5, ranked). Only a **PROVEN** fragment may run off an exact match without asking |
 | [`heron_skill.py`](heron_skill.py) · [`skills/`](skills/) | **Step 14.** What the user can *ask for*, in their own words. A skill names **capabilities, never fragments** — so a fragment can be replaced without editing a skill, and a skill can be written **before** the fragment that will serve it. Ten of them, all `DRAFT` |
 | [`heron_graph.py`](heron_graph.py) | **Step 13.** *What breaks if this changes.* Every edge but one is **computed from the fragments on demand** (D-40) — the only stored edge is a skill's requirement, which no artifact underneath carries. Names the dangerous case out loud: a **sole provider**, because whatever asked for its capability never named it |
@@ -40,15 +42,17 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, and a way to run any of it.** Every fragment and every skill here is `DRAFT`. Phase 2's
+**Proof, mostly.** **52 fragments are `PROVEN`; the other 298 and all ten skills are `DRAFT`.** Phase 2's
 definition of done is *"ten real skills **work**"* — ten are written, and the word that needs a Revit is
-the last one.
+still the last one. The 52 are what one night with a real model bought; the arithmetic on the rest has
+not changed, only the size of it.
 
-**And an executor, which nothing has yet.** A fragment carries C# under `impl/`, the bridge speaks a
-fixed set of operations, and none of them compiles one. So a request can now be resolved all the way to
-*this capability, provided by that fragment* and then stop. That is not a gap in this folder — it is
-[D-28](../docs/DECISIONS.md), Roslyn in-process, unbuilt — but it is the reason no answer here may imply
-it can act.
+**And a WRITE path for the executor.** Reading a model through a fragment works: the executor is built
+and runs one read-only. What does not exist is running a fragment that CHANGES anything — that is a
+separate operation, deliberately, and `write.enabled` defaults to `false` until a real Revit has been
+through [NEEDS-CHECKING.md](../docs/NEEDS-CHECKING.md). So a request resolves to *this capability,
+provided by that fragment*, and can be READ all the way through — and no answer here may imply more
+than that.
 
 **The queue the skills produced has been worked.** Writing the skills first ordered it by real demand
 rather than by guessing, and on 2026-08-29 all seven were written — so `python brain/heron_skill.py` now
