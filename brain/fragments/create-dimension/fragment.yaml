@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -53,6 +53,36 @@ contract:
       type: IList<ElementId>
     - name: notLinear
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned accepted 139 item(s)
+    [1395899, 1395935, 1396164, ...], anchors 139 item(s) [(-11.000000000, 27.819602745, 29.666666667),
+    (-9.333333333, 26.420976278, 29.666666667), (-13.927083333, 20.729375229, 29.666666667),
+    ...], centrelines 307 item(s) [[1395899, Autodesk.Revit.DB.Line], [1395935, Autodesk.Revit.DB.Line],
+    [1395946, Autodesk.Revit.DB.Line], ...], created ElementId, notLinear 0 item(s), offset
+    1.64041994750656, offsetMm 500, options Options, positions 139 item(s) [10.9999999999997,
+    9.33333333333305, 13.9270833333333, ...], references 139 item(s) [Autodesk.Revit.DB.Reference,
+    Autodesk.Revit.DB.Reference, Autodesk.Revit.DB.Reference, ...], refused 168 item(s) [1395946,
+    1396156, 1396211, ...], runDirection XYZ. inputs came view as given; elements from the
+    selection (307); offsetMm as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: L3, view=FloorPlan:
+    L3, offsetMm=500 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values - run inside a transaction and ROLLED BACK, so the model
+    was left exactly as it was. returned accepted 0 item(s), anchors 0 item(s), centrelines
+    0 item(s), created (null), notLinear 73 item(s) [1491274, 1491277, 1491289, ...], offset
+    1.64041994750656, offsetMm 500, options Options, positions 0 item(s), references 0 item(s),
+    refused 0 item(s), runDirection (null). inputs came view as given; elements from the selection
+    (73); offsetMm as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b8cbaf194e14e982
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -95,6 +95,44 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned MmToFeet 0.00328083989501312,
+    anyLeft true, atX 73 entry(ies), atY 73 entry(ies), bothHadToMove 73 item(s) [1491274,
+    1491277, 1491301, ...], fallbackTagHeightMm 6, fallbackTagWidthMm 20, freeEnds 0 entry(ies),
+    gap 16.4041994750656, halfHeight 0.00984251968503937, halfWidth 0.0328083989501312, heads
+    73 entry(ies), maxPasses 3, measuredFrom 0, measuredHeights 0 item(s), measuredWidths
+    0 item(s), medianOf Func`2, minGapMm 5000, moved 73, needX 16.4698162729659, needY 16.4238845144357,
+    notTags 0 item(s), refused 0 item(s), right XYZ, separate Func`2, stillOverlapping 71
+    item(s) [1491274, 1491277, 1491301, ...], straight 73 entry(ies), tags 73 item(s) [Duct
+    Size Tag, Duct Size Tag, Duct Size Tag, ...], up XYZ, working 73 item(s) [1491274, 1491277,
+    1491289, ...]. inputs came view as given; elements from the selection (73); minGapMm as
+    given; maxPasses as given; fallbackTagWidthMm as given; fallbackTagHeightMm as given.
+    on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: L3, view=FloorPlan:
+    L3, minGapMm=0, maxPasses=3, fallbackTagWidthMm=20, fallbackTagHeightMm=6 instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running select-by-category-name, set-selection with this phase''s own values
+    - run inside a transaction and ROLLED BACK, so the model was left exactly as it was. returned
+    MmToFeet 0.00328083989501312, anyLeft false, atX 73 entry(ies), atY 73 entry(ies), bothHadToMove
+    0 item(s), fallbackTagHeightMm 6, fallbackTagWidthMm 20, freeEnds 0 entry(ies), gap 0,
+    halfHeight 0.00984251968503937, halfWidth 0.0328083989501312, heads 73 entry(ies), maxPasses
+    3, measuredFrom 0, measuredHeights 0 item(s), measuredWidths 0 item(s), medianOf Func`2,
+    minGapMm 0, moved 0, needX 0.0656167979002625, needY 0.0196850393700787, notTags 0 item(s),
+    refused 0 item(s), right XYZ, separate Func`2, stillOverlapping 0 item(s), straight 73
+    entry(ies), tags 73 item(s) [Duct Size Tag, Duct Size Tag, Duct Size Tag, ...], up XYZ,
+    working 73 item(s) [1491274, 1491277, 1491289, ...]. inputs came view as given; elements
+    from the selection (73); minGapMm as given; maxPasses as given; fallbackTagWidthMm as
+    given; fallbackTagHeightMm as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4c99d3e3071584b0
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

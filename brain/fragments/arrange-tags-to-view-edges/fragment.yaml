@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -59,10 +59,16 @@ contract:
     - name: parked
       type: int
     - name: perSide
+      # How the parked tags were split between the view's edges. A
+      # breakdown of the answer, filled in whether anything moved or not.
+      role: accounting
       type: IDictionary<string, int>
     - name: usedTagExtent
       type: bool
     - name: notTags
+      # What was handed in that is not a tag at all. The evidence it
+      # looked, never a tag it parked (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -70,6 +76,34 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 17356
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned MmToFeet 0.00328083989501312,
+    cropped true, gap 15.748031496063, gapMm 50, headOf Func`2, leftEdge -115.331935161094,
+    margin 31.496062992126, marginMm 100, notTags 0 item(s), parked 73, perSide 2 entry(ies),
+    refused 0 item(s), right XYZ, rightEdge 88.8521438567533, scale 96, tags 73 item(s) [Duct
+    Size Tag, Duct Size Tag, Duct Size Tag, ...], up XYZ, usedTagExtent false. inputs came
+    view as given; elements from the selection (73); marginMm as given; gapMm as given. on
+    Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: L3, view=FloorPlan: L3,
+    marginMm=100, gapMm=50 instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values - run inside a transaction and ROLLED BACK, so the model
+    was left exactly as it was. returned MmToFeet 0.00328083989501312, cropped true, gap 15.748031496063,
+    gapMm 50, headOf Func`2, leftEdge -115.331935161094, margin 31.496062992126, marginMm
+    100, notTags 307 item(s) [1395899, 1395935, 1395946, ...], parked 0, perSide 2 entry(ies),
+    refused 0 item(s), right XYZ, rightEdge 88.8521438567533, scale 96, tags 0 item(s), up
+    XYZ, usedTagExtent false. inputs came view as given; elements from the selection (307);
+    marginMm as given; gapMm as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: e803b478da078c60
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
