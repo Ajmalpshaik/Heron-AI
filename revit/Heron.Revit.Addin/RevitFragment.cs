@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Autodesk.Revit.DB;
@@ -160,6 +161,39 @@ namespace Heron.Revit.Addin
             // the fragment.
             var needs = Json.ReadObjectArray(request, "needs");
 
+            // THE CALLER'S HALF. A contract may declare a need as
+            // `source: request` - a view, a category, a name to match, a
+            // distance - and nothing could supply one, so 288 of the 308
+            // unproven fragments could not be run at all. The refusal below
+            // said so in as many words: "until there is a way to pass them".
+            // This is that way.
+            //
+            // SENT AS {name, value} PAIRS rather than as one object, because
+            // that reuses the reader `needs` already goes through. A second
+            // JSON shape would need a second parser, and a second parser is a
+            // second thing to get wrong on a wire that is already parsed by
+            // hand.
+            //
+            // EVERY VALUE CROSSES AS TEXT and becomes its declared type in
+            // here, where the model is. A view NAME is not a view: only this
+            // side can look one up, and only this side can tell that two
+            // views answer to the same name.
+            var supplied = new Dictionary<string, string>(StringComparer.Ordinal);
+            var givenValues = Json.ReadObjectArray(request, "values");
+            if (givenValues != null)
+            {
+                foreach (var pair in givenValues)
+                {
+                    string givenName, givenText;
+                    if (pair.TryGetValue("name", out givenName)
+                        && !string.IsNullOrEmpty(givenName)
+                        && pair.TryGetValue("value", out givenText))
+                    {
+                        supplied[givenName] = givenText;
+                    }
+                }
+            }
+
             // WHICH CHAT IS ASKING. The bridge puts this on every request and
             // HeronLease already reads it the same way; the chain has to know
             // it too, because what one fragment leaves for the next is that
@@ -190,7 +224,7 @@ namespace Heron.Revit.Addin
             {
                 string binding;
                 var refusal = BindNeeds(needs, globals, target, uidoc, bound, client,
-                                        out prologue, out binding);
+                                        supplied, out prologue, out binding);
                 if (refusal != null) return refusal;
                 Note = binding;
             }
@@ -526,6 +560,7 @@ namespace Heron.Revit.Addin
                                         UIDocument uidoc,
                                         HashSet<string> bound,
                                         string client,
+                                        Dictionary<string, string> supplied,
                                         out string prologue,
                                         out string binding)
         {
@@ -618,7 +653,31 @@ namespace Heron.Revit.Addin
                 // against the wrong category and reports success.
                 if (source == "request")
                 {
-                    fromRequest.Add(name + " (" + type + ")");
+                    string givenText;
+                    if (supplied == null || !supplied.TryGetValue(name, out givenText))
+                    {
+                        fromRequest.Add(name + " (" + type + ")");
+                        continue;
+                    }
+
+                    // A VALUE THAT CANNOT BECOME ITS DECLARED TYPE STOPS THE
+                    // RUN. It is the caller's mistake and it is fixable at the
+                    // keyboard - a misspelt view name, a distance typed with a
+                    // unit on it - so it is named rather than dropped. Falling
+                    // back to "unbound" here would report a missing value the
+                    // caller can see they supplied.
+                    string problem;
+                    var given = FromRequest(givenText, type, target, out problem);
+                    if (problem != null) return Json.Error("bad_request_value", problem);
+
+                    globals.__heron[name] = given;
+                    bound.Add(name);
+
+                    lines.Append(type).Append(" ").Append(name)
+                         .Append(" = (").Append(type).Append(")__heron[\"")
+                         .Append(name).Append("\"];\n");
+
+                    how.Add(name + " as given" + Size(given));
                     continue;
                 }
 
@@ -665,14 +724,19 @@ namespace Heron.Revit.Addin
 
             if (fromRequest.Count > 0)
             {
+                // NOT "there is no way to pass these" any more - there is,
+                // and saying otherwise sent the reader looking for work that
+                // is already done. What is missing now is the value itself.
                 return Json.Error("needs_request_values",
                     "'" + string.Join("', '", fromRequest.ToArray()) + "' " +
                     (fromRequest.Count == 1 ? "is a value the CALLER supplies" :
                                               "are values the CALLER supplies") +
-                    ", not something the model holds - a category, a name to match, a " +
-                    "distance. Heron cannot run this fragment until there is a way to " +
-                    "pass them, and guessing one is how a job runs against the wrong " +
-                    "thing and reports success.");
+                    ", not something the model holds - a view, a category, a name to " +
+                    "match, a distance. Say which " +
+                    (fromRequest.Count == 1 ? "one is meant" : "ones are meant") +
+                    " and this will run; guessing " +
+                    (fromRequest.Count == 1 ? "it" : "them") +
+                    " is how a job runs against the wrong thing and reports success.");
             }
 
             if (unmet.Count > 0)
@@ -749,6 +813,435 @@ namespace Heron.Revit.Addin
         /// the document, so an element deleted since it was collected is gone
         /// rather than throwing later on a property nobody expected to fail.
         /// </summary>
+        /// <summary>
+        /// Every view carrying one name. Name throws on a handful of view
+        /// kinds rather than returning empty, and one unreadable name must
+        /// not stop the search for a view sitting right there.
+        /// </summary>
+        private static List<View> ViewsNamed(Document doc, string text)
+        {
+            var found = new List<View>();
+            foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(View)))
+            {
+                var candidate = element as View;
+                if (candidate == null) continue;
+                string readable;
+                try { readable = candidate.Name; } catch { continue; }
+                if (string.Equals(readable, text, StringComparison.Ordinal))
+                    found.Add(candidate);
+            }
+            return found;
+        }
+
+        /// <summary>
+        /// One view, by name, or a refusal that says how to name it uniquely.
+        ///
+        /// A NAME THAT MATCHES TWICE IS NEVER CHOSEN FROM. Revit lets a floor
+        /// plan and a ceiling plan share a name, and the sample model this was
+        /// built against does exactly that for nine of its eleven levels - so
+        /// this is the common case, not the corner one. Taking the first is a
+        /// wrong answer that looks exactly like a right one.
+        ///
+        /// SO THERE IS A WAY TO SAY WHICH: "FloorPlan: L2". The plain name is
+        /// tried FIRST and wins outright when it is unique, which keeps a view
+        /// genuinely called "FloorPlan: L2" reachable by its own name. Only
+        /// when the plain name cannot decide is the prefix read as a type.
+        ///
+        /// The refusal lists what is actually there, because a message telling
+        /// somebody to be more specific without saying what the choices are
+        /// makes them go and look it up.
+        /// </summary>
+        private static object OneView(Document doc, string text, out string problem)
+        {
+            problem = null;
+
+            var found = ViewsNamed(doc, text);
+            if (found.Count == 1) return found[0];
+
+            var mark = text.IndexOf(':');
+            if (mark > 0)
+            {
+                var kind = text.Substring(0, mark).Trim();
+                var rest = text.Substring(mark + 1).Trim();
+                if (rest.Length > 0)
+                {
+                    var narrowed = new List<View>();
+                    foreach (var candidate in ViewsNamed(doc, rest))
+                    {
+                        if (string.Equals(candidate.ViewType.ToString(), kind,
+                                          StringComparison.OrdinalIgnoreCase))
+                            narrowed.Add(candidate);
+                    }
+                    if (narrowed.Count == 1) return narrowed[0];
+                    if (narrowed.Count > 1)
+                    {
+                        problem = narrowed.Count + " views in " + doc.Title + " are called \""
+                                + rest + "\" and are all " + kind + ", so even the type does "
+                                + "not say which is meant. Rename one.";
+                        return null;
+                    }
+                }
+            }
+
+            if (found.Count == 0)
+            {
+                problem = "No view called \"" + text + "\" in " + doc.Title
+                        + ". The name has to match the Project Browser exactly, capitals "
+                        + "included. Two views may share a name, and then it is written "
+                        + "\"FloorPlan: L2\".";
+                return null;
+            }
+
+            var choices = new List<string>();
+            var templates = 0;
+            foreach (var view in found)
+            {
+                if (view.IsTemplate) templates++;
+                var option = view.ViewType + ": " + text;
+                if (!choices.Contains(option)) choices.Add(option);
+            }
+
+            problem = found.Count + " views in " + doc.Title + " are called \"" + text
+                    + "\", so the name does not say which one is meant"
+                    + (templates > 0
+                          ? " (" + templates + " of them "
+                            + (templates == 1 ? "is a view template" : "are view templates") + ")"
+                          : "")
+                    + ". Say which: " + string.Join(", or ", choices.ToArray()) + ".";
+            return null;
+        }
+
+        /// <summary>One level, by name, on the same rule as a view.</summary>
+        private static object OneLevel(Document doc, string text, out string problem)
+        {
+            problem = null;
+            var found = new List<Level>();
+            foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Level)))
+            {
+                var candidate = element as Level;
+                if (candidate == null) continue;
+                string readable;
+                try { readable = candidate.Name; } catch { continue; }
+                if (string.Equals(readable, text, StringComparison.Ordinal))
+                    found.Add(candidate);
+            }
+
+            if (found.Count == 1) return found[0];
+            if (found.Count == 0)
+            {
+                problem = "No level called \"" + text + "\" in " + doc.Title
+                        + ". The name has to match the Project Browser exactly.";
+                return null;
+            }
+            problem = found.Count + " levels in " + doc.Title + " are called \"" + text
+                    + "\". A level name has to be unique to be usable as one.";
+            return null;
+        }
+
+        /// <summary>
+        /// One category name to its BuiltInCategory, WITHOUT touching ElementId.
+        ///
+        /// The obvious route - read the Category's Id and cast it - crosses the
+        /// 32-to-64-bit ElementId change at Revit 2024, and nothing in this
+        /// add-in carries a version #if today. Matching the enum by name, then
+        /// by the display name Revit gives it, reaches the same answer and
+        /// compiles identically on all eight releases.
+        /// </summary>
+        private static bool OneBuiltInCategory(Document doc, string text, out BuiltInCategory found)
+        {
+            found = BuiltInCategory.INVALID;
+            var trimmed = (text ?? "").Trim();
+            if (trimmed.Length == 0) return false;
+
+            foreach (var attempt in new[] { trimmed, "OST_" + trimmed })
+            {
+                try
+                {
+                    found = (BuiltInCategory)Enum.Parse(typeof(BuiltInCategory), attempt, true);
+                    return true;
+                }
+                catch { }
+            }
+
+            // What a modeller actually types - "Ducts", "Mechanical Equipment".
+            foreach (Category category in doc.Settings.Categories)
+            {
+                if (category == null) continue;
+                string readable;
+                try { readable = category.Name; } catch { continue; }
+                if (!string.Equals(readable, trimmed, StringComparison.OrdinalIgnoreCase)) continue;
+
+                foreach (BuiltInCategory candidate in Enum.GetValues(typeof(BuiltInCategory)))
+                {
+                    Category resolved = null;
+                    try { resolved = Category.GetCategory(doc, candidate); } catch { }
+                    if (resolved == null) continue;
+                    string other;
+                    try { other = resolved.Name; } catch { continue; }
+                    if (string.Equals(other, readable, StringComparison.Ordinal))
+                    {
+                        found = candidate;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /// <summary>One category object, by the name Revit shows.</summary>
+        private static Category OneCategory(Document doc, string text)
+        {
+            var trimmed = (text ?? "").Trim();
+            foreach (Category category in doc.Settings.Categories)
+            {
+                if (category == null) continue;
+                string readable;
+                try { readable = category.Name; } catch { continue; }
+                if (string.Equals(readable, trimmed, StringComparison.OrdinalIgnoreCase))
+                    return category;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// A list value, split on commas.
+        ///
+        /// An empty entry is dropped rather than passed on: "Ducts,,Pipes" is a
+        /// typing slip, and a blank name resolves to nothing useful in every
+        /// branch below.
+        /// </summary>
+        private static List<string> Parts(string text)
+        {
+            var parts = new List<string>();
+            foreach (var piece in (text ?? "").Split(','))
+            {
+                var trimmed = piece.Trim();
+                if (trimmed.Length > 0) parts.Add(trimmed);
+            }
+            return parts;
+        }
+
+        /// <summary>
+        /// Turn one caller-supplied string into the type the contract declares.
+        ///
+        /// TEXT IS ALL THAT CROSSES THE WIRE, deliberately. The client has no
+        /// Document and cannot resolve a view name, so resolution belongs where
+        /// the model is. It also means the client never has to know which Revit
+        /// release it is talking to.
+        ///
+        /// WHAT IS DELIBERATELY NOT HERE, and why - because an absent type
+        /// looks identical to an overlooked one:
+        ///
+        ///   XYZ            a point. The Revit API works in FEET internally and
+        ///                  this library talks millimetres; which unit a typed
+        ///                  number is in has to be decided, not guessed, and a
+        ///                  units error is the one mistake this repository has
+        ///                  already written a check for - D3 in NEEDS-CHECKING.
+        ///   ElementId      its constructor changed from int to long at Revit
+        ///                  2024. Nothing in this add-in carries a version #if,
+        ///                  and the first one should not arrive as a side effect
+        ///                  of a proving session.
+        ///
+        /// Both are refused BY NAME below, saying so.
+        ///
+        /// Returns null with `problem` set. Every message says what to type
+        /// instead, because every one of these is fixable at the keyboard.
+        /// </summary>
+        private static object FromRequest(string text, string type, Document doc,
+                                          out string problem)
+        {
+            problem = null;
+            var wanted = (type ?? "").Replace(" ", "");
+
+            if (wanted == "string" || wanted == "String") return text;
+
+            if (wanted == "int" || wanted == "Int32")
+            {
+                int whole;
+                if (int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture,
+                                 out whole))
+                    return whole;
+                problem = "\"" + text + "\" is not a whole number, and this value is declared "
+                        + "as one. Type digits only - 250, not 250mm.";
+                return null;
+            }
+
+            if (wanted == "double" || wanted == "Double")
+            {
+                double number;
+                if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture,
+                                    out number))
+                    return number;
+                problem = "\"" + text + "\" is not a number, and this value is declared as "
+                        + "one. Type digits only - 250 or 250.5, not 250mm.";
+                return null;
+            }
+
+            if (wanted == "bool" || wanted == "Boolean")
+            {
+                bool flag;
+                if (bool.TryParse(text, out flag)) return flag;
+                problem = "\"" + text + "\" is not true or false, and this value is declared "
+                        + "as one.";
+                return null;
+            }
+
+            if (wanted == "View") return OneView(doc, text, out problem);
+            if (wanted == "Level") return OneLevel(doc, text, out problem);
+
+            if (wanted == "Category")
+            {
+                var single = OneCategory(doc, text);
+                if (single != null) return single;
+                problem = "No category called \"" + text + "\" in " + doc.Title + ".";
+                return null;
+            }
+
+            if (wanted == "BuiltInCategory")
+            {
+                BuiltInCategory one;
+                if (OneBuiltInCategory(doc, text, out one)) return one;
+                problem = "\"" + text + "\" is not a category Revit knows. Type what the "
+                        + "Visibility/Graphics list shows - Ducts, Mechanical Equipment - "
+                        + "or the API name, OST_DuctCurves.";
+                return null;
+            }
+
+            // ---- lists, comma separated -------------------------------------
+
+            if (wanted == "IList<string>" || wanted == "List<string>"
+                || wanted == "ICollection<string>" || wanted == "IEnumerable<string>")
+                return Parts(text);
+
+            if (wanted == "IList<int>" || wanted == "List<int>")
+            {
+                var numbers = new List<int>();
+                foreach (var part in Parts(text))
+                {
+                    int whole;
+                    if (!int.TryParse(part, NumberStyles.Integer, CultureInfo.InvariantCulture,
+                                      out whole))
+                    {
+                        problem = "\"" + part + "\" is not a whole number, and this is a list "
+                                + "of them. Separate them with commas - 1,2,3.";
+                        return null;
+                    }
+                    numbers.Add(whole);
+                }
+                return numbers;
+            }
+
+            if (wanted == "IList<double>" || wanted == "List<double>")
+            {
+                var numbers = new List<double>();
+                foreach (var part in Parts(text))
+                {
+                    double number;
+                    if (!double.TryParse(part, NumberStyles.Float, CultureInfo.InvariantCulture,
+                                         out number))
+                    {
+                        problem = "\"" + part + "\" is not a number, and this is a list of "
+                                + "them. Separate them with commas - 100,250.5,400.";
+                        return null;
+                    }
+                    numbers.Add(number);
+                }
+                return numbers;
+            }
+
+            if (wanted == "IList<View>" || wanted == "List<View>"
+                || wanted == "ICollection<View>" || wanted == "IEnumerable<View>")
+            {
+                var views = new List<View>();
+                foreach (var part in Parts(text))
+                {
+                    string trouble;
+                    var one = OneView(doc, part, out trouble) as View;
+                    if (one == null) { problem = trouble; return null; }
+                    views.Add(one);
+                }
+                if (views.Count == 0)
+                {
+                    problem = "No views were named. Separate them with commas - "
+                            + "\"L2, L3, Model Linking\".";
+                    return null;
+                }
+                return views;
+            }
+
+            if (wanted == "IList<BuiltInCategory>" || wanted == "List<BuiltInCategory>"
+                || wanted == "ICollection<BuiltInCategory>")
+            {
+                var categories = new List<BuiltInCategory>();
+                foreach (var part in Parts(text))
+                {
+                    BuiltInCategory one;
+                    if (!OneBuiltInCategory(doc, part, out one))
+                    {
+                        problem = "\"" + part + "\" is not a category Revit knows. Type what "
+                                + "Visibility/Graphics shows - Ducts, Mechanical Equipment - "
+                                + "and separate several with commas.";
+                        return null;
+                    }
+                    categories.Add(one);
+                }
+                if (categories.Count == 0)
+                {
+                    problem = "No categories were named. Separate them with commas - "
+                            + "\"Ducts, Duct Fittings\".";
+                    return null;
+                }
+                return categories;
+            }
+
+            if (wanted == "IList<Category>" || wanted == "List<Category>"
+                || wanted == "ICollection<Category>")
+            {
+                var categories = new List<Category>();
+                foreach (var part in Parts(text))
+                {
+                    var one = OneCategory(doc, part);
+                    if (one == null)
+                    {
+                        problem = "No category called \"" + part + "\" in " + doc.Title + ".";
+                        return null;
+                    }
+                    categories.Add(one);
+                }
+                if (categories.Count == 0)
+                {
+                    problem = "No categories were named. Separate them with commas.";
+                    return null;
+                }
+                return categories;
+            }
+
+            // ---- named refusals, so an absent type is not read as an oversight
+
+            if (wanted == "XYZ" || wanted.IndexOf("<XYZ>", StringComparison.Ordinal) >= 0)
+            {
+                problem = "A point cannot be typed in yet. The Revit API works in feet and "
+                        + "this library talks millimetres, so which unit the number is in has "
+                        + "to be settled before one can be accepted - guessing it is exactly "
+                        + "the mistake D3 exists to catch.";
+                return null;
+            }
+
+            if (wanted.IndexOf("ElementId", StringComparison.Ordinal) >= 0)
+            {
+                problem = "An element id cannot be typed in yet. Its type changed size at "
+                        + "Revit 2024 and this add-in builds for 2020 to 2027 from one source, "
+                        + "so accepting one needs that handled deliberately. Name the thing "
+                        + "instead, or select it.";
+                return null;
+            }
+
+            problem = "Heron can be handed a view, a level, a category, a name, a number, or "
+                    + "true/false - and lists of those. \"" + type + "\" is not one of them "
+                    + "yet, so this fragment still has no way to receive it.";
+            return null;
+        }
+
         private static object Shape(object value, string type, Document doc)
         {
             var ids = value as IList<ElementId>;

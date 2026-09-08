@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,27 @@ contract:
       type: bool
     - name: filterCount
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,628 elements), Revit 2024, session 9668
+  positive_case: run as it would normally be run. returned blankOverride 4 item(s) [576429,
+    576430, 727741, ...], disabled 0 item(s), filterCount 4, findings 9 item(s) [The view
+    template 'Mechanical Plan' owns the filters on this..., 'Domestic' has its VISIBILITY
+    off, so everything it matches ..., 'Domestic' has an EMPTY override - nothing is set on
+    it. Add..., ...], hidden 4 item(s) [576429, 576430, 727741, ...], isBlank Func`2, nothingToActOn
+    0 item(s), overridesAllowed true, templateOwned true. inputs came view as given. on Snowdon
+    Towers Sample HVAC
+  negative_case: run with view=How to use this project 1 instead - chosen because it should
+    not contain what this fragment reports. returned blankOverride 0 item(s), disabled 0 item(s),
+    filterCount 0, findings 1 item(s) [No filters are applied to 'How to use this project
+    1' at all...], hidden 0 item(s), isBlank Func`2, nothingToActOn 0 item(s), overridesAllowed
+    true, templateOwned false. inputs came view as given. on Snowdon Towers Sample HVAC
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6b03045dc1fa4019
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

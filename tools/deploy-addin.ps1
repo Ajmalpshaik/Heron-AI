@@ -85,6 +85,35 @@ if (-not $buildOut) {
 }
 Write-Host "  from $buildOut"
 
+# THE BUILD OUTPUT IS SHARED BETWEEN ALL EIGHT RELEASES, and the newest one
+# wins the search above. tools/check-compile.py builds 2020 through 2027 into
+# this same folder, so running it leaves 2027's assemblies sitting there - and
+# deploying those into Revit 2024 produced exactly one symptom: "Revit cannot
+# run the external application Heron AI", with nothing to say why. Found by
+# doing it, 2026-09-08.
+#
+# 2020-2024 are .NET Framework and have no deps.json. 2025+ are .NET and
+# always do, naming the runtime they need. That one file separates them.
+$depsFile = Join-Path $buildOut "Heron.Revit.Addin.deps.json"
+$isDotNet = Test-Path $depsFile
+$wantsDotNet = [int]$RevitVersion -ge 2025
+
+if ($isDotNet -ne $wantsDotNet) {
+    $found = if ($isDotNet) { ".NET (Revit 2025 and later)" } else { ".NET Framework (Revit 2024 and earlier)" }
+    $need  = if ($wantsDotNet) { ".NET (Revit 2025 and later)" } else { ".NET Framework (Revit 2024 and earlier)" }
+    throw "The build in $buildOut is $found, but Revit $RevitVersion needs $need. Revit would refuse to load it and would not say why. Rebuild first:`n  dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion"
+}
+
+# 2025 and 2026 are .NET 8; 2027 moved to .NET 10. Both have a deps.json, so
+# the check above passes either way and this is what separates them.
+if ($isDotNet) {
+    $wantedRuntime = if ([int]$RevitVersion -ge 2027) { "v10.0" } else { "v8.0" }
+    $runtimeName = (Get-Content $depsFile -Raw | ConvertFrom-Json).runtimeTarget.name
+    if ($runtimeName -notlike "*$wantedRuntime*") {
+        throw "The build in $buildOut targets $runtimeName, but Revit $RevitVersion needs $wantedRuntime. Rebuild first:`n  dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion"
+    }
+}
+
 New-Item -ItemType Directory -Force -Path $addinDir | Out-Null
 
 # Assemblies only. Never the Revit API DLLs - they are Autodesk's, are not

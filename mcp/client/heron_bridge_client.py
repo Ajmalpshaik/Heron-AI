@@ -766,7 +766,74 @@ def needs_for(root, name):
     return needs
 
 
-def cmd_fragment(name):
+def pull_values(rest):
+    """
+    Lift `--set name=value` and `--view NAME` out, leaving the rest in order.
+
+    ORDER IS PRESERVED because the callers that follow still read their own
+    flags positionally - `prove --in "Project1"` looks at the front of what is
+    left. Pulling these two out anywhere in the line lets a value be typed
+    where it reads naturally, after the fragment it belongs to.
+
+    `--view X` is shorthand for `--set view=X` and nothing more. It exists
+    because `view` is the value 53 fragments in this library ask for, which is
+    more than any other by a factor of two.
+
+    The `--negative-` forms are the same values for the NEGATIVE case, kept in
+    their own list. A proof's negative case is an arrangement in which the
+    answer must be empty, and for a fragment that reads a view the arrangement
+    IS a different view - there is nothing to clear at the keyboard.
+    """
+    kept, pairs, negatives, index = [], [], [], 0
+    while index < len(rest):
+        token = rest[index]
+        if token in ("--set", "--view", "--negative-set", "--negative-view"):
+            if index + 1 >= len(rest):
+                print("%s needs a value after it" % token)
+                return None, None, None
+            value = rest[index + 1]
+            written = value if token.endswith("set") else "view=" + value
+            (negatives if token.startswith("--negative") else pairs).append(written)
+            index += 2
+            continue
+        kept.append(token)
+        index += 1
+    return kept, pairs, negatives
+
+
+def caller_values(pairs):
+    """
+    Turn `--set view=Level 1` into what the executor reads.
+
+    THE CALLER'S HALF, TYPED BY A PERSON. A contract may declare a need as
+    `source: request` - a view, a category, a name to match, a distance - and
+    Revit refuses to guess one, because guessing is how a job runs against the
+    wrong thing and reports success. This is how it gets said instead.
+
+    SPLIT ON THE FIRST '=' ONLY. View names contain equals signs about as
+    often as they contain anything else, and a name silently truncated at one
+    would resolve to nothing with no clue why.
+
+    Sent as {name, value} pairs rather than one object so the add-in reads
+    them with the parser `needs` already uses. Everything crosses as text:
+    only Revit can turn "Level 1" into a view, and only Revit can tell that
+    two views answer to that name.
+    """
+    values = []
+    for pair in pairs:
+        if "=" not in pair:
+            print("'%s' is not name=value - e.g. --set view=\"Level 1\"" % pair)
+            return None
+        key, value = pair.split("=", 1)
+        key = key.strip()
+        if not key:
+            print("'%s' has no name before the '='" % pair)
+            return None
+        values.append({"name": key, "value": value})
+    return values
+
+
+def cmd_fragment(name, values=None):
     """
     Run one fragment's C# against the open model - D-28's executor, reached.
 
@@ -805,9 +872,12 @@ def cmd_fragment(name):
 
     failures = 0
     for bridge in live:
-        reply = bridge.request("run_fragment_read",
-                               op_args={"name": name, "source": source,
-                                        "needs": needs, "chain": "reset"},
+        args = {"name": name, "source": source, "needs": needs,
+                "chain": "reset"}
+        if values:
+            args["values"] = values
+
+        reply = bridge.request("run_fragment_read", op_args=args,
                                response_timeout=120.0)
 
         if reply is None:
@@ -837,7 +907,7 @@ def cmd_fragment(name):
     return 1 if failures else 0
 
 
-def cmd_prove(names, in_document=None):
+def cmd_prove(names, in_document=None, values=None):
     """
     Run several fragments against the open model in ONE process.
 
@@ -918,6 +988,8 @@ def cmd_prove(names, in_document=None):
     failures = 0
     for index, (name, source, needs) in enumerate(sources):
         args = {"name": name, "source": source, "needs": needs}
+        if values:
+            args["values"] = values
 
         # THE FIRST FRAGMENT OPENS A CHAIN; the rest continue it. Revit holds
         # what each one leaves behind so the next can consume it - a filter's
@@ -981,7 +1053,8 @@ def cmd_prove(names, in_document=None):
     return 1 if failures else 0
 
 
-def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None):
+def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
+                 values=None, negative_values=None):
     """
     Run ONE fragment through the phases a proof needs, and record what came back.
 
@@ -1065,8 +1138,15 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None)
 
     phases = []
 
-    def run_fragment(phase, document, arranged, reset):
+    def run_fragment(phase, document, arranged, reset, using=None):
         args = {"name": name, "source": source, "needs": needs}
+        # `using` is the negative phase asking for DIFFERENT caller values -
+        # the same fragment aimed at a view that does not have the thing. None
+        # means "the ones this run was given"; an empty list would mean "none",
+        # and the two must not collapse.
+        chosen = values if using is None else using
+        if chosen:
+            args["values"] = chosen
         if reset:
             args["chain"] = "reset"
         if document:
@@ -1096,6 +1176,20 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None)
         run_fragment("negative", negative_in,
                      "run against '%s', which should not contain what this "
                      "reports" % negative_in, True)
+    elif negative_values:
+        # THE NEGATIVE CASE FOR A VIEW FRAGMENT IS ANOTHER VIEW, and until this
+        # existed there was no way to say so: `validate` could change the
+        # document between phases but not the caller's values, so anything
+        # taking a view could only be proved by a person clearing a selection
+        # that was never bound in the first place. 53 fragments take a view.
+        #
+        # It is the arrangement, stated in the record, exactly as a cleared
+        # selection would be - not a second opinion about the same run.
+        described = ", ".join("%s=%s" % (v["name"], v["value"]) for v in negative_values)
+        run_fragment("negative", in_document,
+                     "run with %s instead - chosen because it should not contain "
+                     "what this fragment reports" % described,
+                     True, using=negative_values)
     else:
         print("")
         print("NEGATIVE CASE. Arrange an answer that must come back empty -")
@@ -1332,7 +1426,9 @@ def main(argv):
     if argv[1] == "release":
         return cmd_release()
     if argv[1] == "prove":
-        rest = argv[2:]
+        rest, pairs, _ = pull_values(argv[2:])
+        if rest is None:
+            return 2
         # prove --in "Project1" list-levels ...  reads a model that is open
         # but not necessarily the one in front.
         in_document = None
@@ -1343,14 +1439,25 @@ def main(argv):
             print("Which fragments? e.g. prove list-levels list-grids")
             print("               or  prove --in \"Project1\" list-levels")
             return 2
-        return cmd_prove(rest, in_document)
-    if argv[1] == "fragment":
-        if len(argv) < 3:
-            print("Which fragment? e.g. list-levels")
+        values = caller_values(pairs)
+        if values is None:
             return 2
-        return cmd_fragment(argv[2])
+        return cmd_prove(rest, in_document, values)
+    if argv[1] == "fragment":
+        rest, pairs, _ = pull_values(argv[2:])
+        if rest is None or not rest:
+            print("Which fragment? e.g. list-levels")
+            print("  --view \"Level 1\"        a view the fragment asks the caller for")
+            print("  --set name=value        any other value it asks for")
+            return 2
+        values = caller_values(pairs)
+        if values is None:
+            return 2
+        return cmd_fragment(rest[0], values)
     if argv[1] == "validate":
-        rest = argv[2:]
+        rest, pairs, negatives = pull_values(argv[2:])
+        if rest is None:
+            return 2
         options = {"in_document": None, "cross": None, "negative_in": None,
                    "out": None}
         flags = {"--in": "in_document", "--cross": "cross",
@@ -1363,8 +1470,20 @@ def main(argv):
             print("  --in \"Doc\"           run against a model that is open but not in front")
             print("  --negative-in \"Doc\"  take the negative case from a second model")
             print("  --cross count_elements | duct")
+            print("  --view \"Level 1\"     a view the fragment asks the caller for")
+            print("  --set name=value     any other value it asks for")
+            print("  --negative-view \"X\"  the view for the NEGATIVE case - one that")
+            print("                       should NOT have what this reports")
+            print("  --negative-set n=v    any other value for the negative case")
             return 2
-        return cmd_validate(rest[0], **options)
+        values = caller_values(pairs)
+        if values is None:
+            return 2
+        negative_values = caller_values(negatives)
+        if negative_values is None:
+            return 2
+        return cmd_validate(rest[0], values=values,
+                            negative_values=negative_values, **options)
 
     print(__doc__.strip())
     return 2

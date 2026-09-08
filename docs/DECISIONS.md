@@ -2956,3 +2956,63 @@ What makes it different in kind, and the only reason it is defensible: **the fou
 things from a check. This one replaces a check that cannot run with a different check that can** — and
 five exact matches against five different inputs is more evidence than one empty answer, not less.
 
+
+---
+
+## D-54 — The caller's half arrives as text, and Revit is what turns it into a view
+
+**Status:** Accepted · **Date:** 2026-09-08 · **Found during:** the owner asking to prove a lot of fragments in one day
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) `BindNeeds`/`FromRequest`, [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) `pull_values`/`caller_values`, [D-28](DECISIONS.md), [D-29](DECISIONS.md)
+
+### Context
+
+A day set aside for proving fragments reached its ceiling in about twenty minutes. Two fragments ran.
+The rest refused, and the refusal was correct:
+
+> *"'view (View)' is a value the CALLER supplies, not something the model holds — a category, a name to
+> match, a distance. Heron cannot run this fragment until there is a way to pass them."*
+
+Derived rather than guessed: **288 of the 308 unproven fragments** declare at least one need as
+`source: request`, and **only 16** could be fed at all. `view` alone accounts for **53** of them, more
+than twice the next value (`categories`, 22). The executor was complete; the sentence *"until there is
+a way to pass them"* was the whole gap, and it had been sitting in the code as a description of
+something nobody had built.
+
+### Decision
+
+**Values cross as text, as `{name, value}` pairs, and become their declared type inside Revit.**
+
+Three things follow from that, and each was a live alternative:
+
+1. **The client does not resolve anything.** It has no `Document`, so it cannot turn `"Level 1"` into a
+   view, and giving it one would mean holding a Revit object across a wire — the same thing
+   [D-29](DECISIONS.md) already refuses for chained values. It also keeps the client ignorant of which
+   Revit release it is talking to.
+2. **The pairs reuse the reader `needs` already goes through.** A flat object would have been the
+   obvious JSON shape and would have needed a second hand-written parser in
+   [`Json.cs`](../revit/Heron.Bridge/Json.cs). A second parser is a second thing to get wrong on a wire
+   that is already parsed by hand.
+3. **A name that matches twice is refused, never chosen from.** Revit lets two views share a name when
+   their types differ, and a view template can carry the name of a view. Taking the first match is a
+   wrong answer that looks exactly like a right one — the same failure the selection rule in
+   `BindNeeds` already exists to prevent, and the same rule this repository states generally: an
+   identifier is only an identifier if it is unique among the things it has to distinguish.
+
+Supported today: `View`, `string`, `int`, `double`, `bool`. Anything else is refused **by name**, saying
+that type has no way to be received yet — rather than failing somewhere inside generated code.
+
+### What this does NOT do
+
+**It unlocks nine fragments outright**, the ones whose only caller value is a view. The other 279 want
+a category, a parameter name, a level, a point — and each of those needs its own resolution rule, which
+is the same argument as above repeated per type. `Category` and `Level` are the obvious next two.
+
+**And it proves nothing.** A fragment that now RUNS is a fragment that has finally reached the starting
+line. [D-30](DECISIONS.md) is unchanged: a positive case, a negative case, and a fingerprint.
+
+### The stale sentence
+
+The refusal quoted at the top said *"until there is a way to pass them"* — true when written, false the
+moment this landed, and it would have sent the next reader looking for work already done. It now names
+the missing **value** instead. A message that describes a gap has to be corrected when the gap closes,
+or it becomes the most convincing wrong documentation in the codebase.

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -60,6 +60,23 @@ contract:
       type: IList<ElementId>
     - name: tagCount
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon Towers Sample HVAC (9,628 elements), Revit 2024, session 9668
+  positive_case: run as it would normally be run. returned linkNames 6 entry(ies), linkedTags
+    0 entry(ies), multiTags 0 item(s), orphanTags 0 item(s), tagCount 88, tagTargets 88 entry(ies),
+    tags 88 item(s) [Mechanical Equipment Tag, Mechanical Equipment Tag, Duct Size Tag, ...].
+    inputs came view as given. on Snowdon Towers Sample HVAC
+  negative_case: 'run with view=FloorPlan: Parking instead - chosen because it should not
+    contain what this fragment reports. returned linkNames 6 entry(ies), linkedTags 0 entry(ies),
+    multiTags 0 item(s), orphanTags 0 item(s), tagCount 0, tagTargets 0 entry(ies), tags 0
+    item(s). inputs came view as given. on Snowdon Towers Sample HVAC'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 63181d5ac00df9d1
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
