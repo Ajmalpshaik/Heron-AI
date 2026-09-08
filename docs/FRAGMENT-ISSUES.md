@@ -79,6 +79,15 @@ exception is worse than a guarantee that is qualified.
 - **whether any completed proof from today is affected.** The element count was checked after the
   earlier batch and matched, so probably not — but "probably" is not the standard this file uses
 
+### It never reached disk, and that is checked rather than hoped
+
+The model was closed **without saving** and reopened: **9,628 placed elements**, exactly what it held
+this morning. So the failure is confined to the live session — a rollback that does not undo everything,
+not a file that ends up wrong. That is the difference between a bug and a data-loss bug, and it is worth
+stating plainly next to the finding rather than leaving the reader to fear the worse one.
+
+It also means the recovery is known and cheap: **close without saving**.
+
 ### Until it is understood
 
 Run the two dialog-raising transfers **only on a model you are willing to throw away**, and check the
