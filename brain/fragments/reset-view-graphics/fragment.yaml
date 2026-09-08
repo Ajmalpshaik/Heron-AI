@@ -65,6 +65,10 @@ contract:
     - name: notOverridable
       type: int
     - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward
+      # "did this come back empty" (D-52).
+      role: accounting
       type: IList<string>
     - name: stillOverriding
       type: IList<string>

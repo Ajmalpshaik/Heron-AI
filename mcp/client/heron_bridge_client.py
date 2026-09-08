@@ -1074,7 +1074,7 @@ def cmd_prove(names, in_document=None, values=None):
 
 
 def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
-                 values=None, negative_values=None):
+                 values=None, negative_values=None, writing=False):
     """
     Run ONE fragment through the phases a proof needs, and record what came back.
 
@@ -1171,8 +1171,21 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
             args["chain"] = "reset"
         if document:
             args["document"] = document
-        reply = bridge.request("run_fragment_read", op_args=args,
-                               response_timeout=180.0)
+
+        # A MODIFY FRAGMENT IS PROVED WITHOUT KEEPING ANYTHING. `apply` is never
+        # sent from here, so both phases run for real inside a transaction and
+        # are rolled back: the record is what the fragment DID, and the model
+        # ends untouched. A proof that required damaging a model to obtain would
+        # not get run.
+        #
+        # Sending a MODIFY fragment down the READ path instead does not fail
+        # loudly - Revit refuses the change with "Modifying is forbidden", the
+        # fragment reports `refused` like any other declined request, and the
+        # run looks exactly like a fragment that decided not to act. That is
+        # what this line looked like for one commit, and it read as intermittent
+        # worksharing behaviour rather than as a wrong operation name.
+        reply = bridge.request("run_fragment_write" if writing else "run_fragment_read",
+                               op_args=args, response_timeout=180.0)
         if reply is None:
             record = {"phase": phase, "ok": False, "error": "no_reply",
                       "message": "Revit did not answer", "arranged": arranged}
@@ -1181,11 +1194,19 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
                       "error": reply.get("error"),
                       "message": reply.get("message"), "arranged": arranged}
         else:
+            # THE RECORD SAYS IT WAS ROLLED BACK. A proof whose text implies a
+            # change was kept, on a model where it was not, is worse than no
+            # proof: the next person reads it as evidence the model now holds
+            # something it does not.
+            told = arranged
+            if writing:
+                told += (" - run inside a transaction and ROLLED BACK, so the model "
+                         "was left exactly as it was")
             record = {"phase": phase, "ok": True,
                       "provides": reply.get("provides") or {},
                       "bound": reply.get("bound"),
                       "document": reply.get("document"),
-                      "arranged": arranged}
+                      "arranged": told}
         phases.append(record)
         print("%-14s %s" % (phase, "ok" if record["ok"] else record.get("error")))
         return record
@@ -1490,6 +1511,11 @@ def main(argv):
         rest, pairs, negatives = pull_values(argv[2:])
         if rest is None:
             return 2
+        # --write proves a MODIFY fragment. `apply` is never sent from here, so
+        # both phases run for real and are rolled back: the record is what the
+        # fragment DID, and the model ends untouched.
+        writing = "--write" in rest
+        rest = [r for r in rest if r != "--write"]
         options = {"in_document": None, "cross": None, "negative_in": None,
                    "out": None}
         flags = {"--in": "in_document", "--cross": "cross",
@@ -1507,6 +1533,8 @@ def main(argv):
             print("  --negative-view \"X\"  the view for the NEGATIVE case - one that")
             print("                       should NOT have what this reports")
             print("  --negative-set n=v    any other value for the negative case")
+            print("  --write               a MODIFY fragment - both phases run inside a")
+            print("                        transaction and are ROLLED BACK, keeping nothing")
             return 2
         values = caller_values(pairs)
         if values is None:
@@ -1515,7 +1543,7 @@ def main(argv):
         if negative_values is None:
             return 2
         return cmd_validate(rest[0], values=values,
-                            negative_values=negative_values, **options)
+                            negative_values=negative_values, writing=writing, **options)
 
     print(__doc__.strip())
     return 2
