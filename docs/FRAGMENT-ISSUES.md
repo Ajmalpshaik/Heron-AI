@@ -104,6 +104,29 @@ the boundary is size, cascade depth, or Revit committing something of its own is
 Until it is: **run write proofs on a model you are willing to throw away, and check the element count
 after every batch.** Both incidents were caught by that check and nothing else.
 
+### `delete-elements` IS BLOCKED, not merely untested — 2026-09-09
+
+Three attempts, three different failures, and **the fragment was correct every time**:
+
+| Negative case chosen | What happened |
+|---|---|
+| `Levels` (11) | `alsoWent 5625` — 5,636 gone, rollback failed, 9,628 → 3,966 |
+| `Duct Systems` (148) | Revit stopped answering. Forced close |
+| — | (no third choice attempted) |
+
+**In an MEP model almost everything is hosted on, or belongs to, something else.** A level carries its
+views; a duct system carries its ducts. There is no category here that can be deleted in isolation, so
+there is no safe negative case to find — the problem is not that the right one has not been picked yet.
+
+It stays `DRAFT` and should not be attempted again **until the rollback is understood**. Running it is
+how both of today's model wipes happened, and the second one hung Revit hard enough to need a forced
+close.
+
+`alsoWent` is worth keeping in mind for its own sake: the fragment reports the cascade in the same
+answer, and both times it was right and was read too late.
+
+### It never reached disk, and that is checked rather than hoped
+
 ### It never reached disk, and that is checked rather than hoped
 
 The model was closed **without saving** and reopened: **9,628 placed elements**, exactly what it held
