@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -43,6 +43,9 @@ contract:
     - name: changed
       type: int
     - name: alreadySet
+      # Elements that were ALREADY in the state asked for. The evidence it
+      # looked and had nothing to do, never a pin it changed (D-52).
+      role: accounting
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -50,6 +53,26 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 17356
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned alreadySet 0, changed
+    307, pinned true, refused 0 item(s). inputs came elements from the selection (307); pinned
+    as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: L3, pinned=false instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase''s own
+    values - run inside a transaction and ROLLED BACK, so the model was left exactly as it
+    was. returned alreadySet 307, changed 0, pinned false, refused 0 item(s). inputs came
+    elements from the selection (307); pinned as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 87d2700946930b34
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

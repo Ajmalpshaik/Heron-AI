@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -63,6 +63,9 @@ contract:
     - name: readOnly
       type: IList<ElementId>
     - name: absent
+      # Elements that do not carry the parameter at all. The evidence it
+      # looked, never a value it wrote (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -70,6 +73,29 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 17356
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned absent 0 item(s), asked
+    0 item(s), numericValue Func`2, pending 0 item(s), readOnly 0 item(s), refused 0 item(s),
+    snapped 0 item(s), unverified 0 item(s), written 307. inputs came elements from the selection
+    (307); parameterName as given; value as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: L3, parameterName=ZZZNOTHINGHERE,
+    value=HERON Z9 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values - run inside a transaction and ROLLED BACK, so the model
+    was left exactly as it was. returned absent 307 item(s) [1395899, 1395935, 1395946, ...],
+    asked 0 item(s), numericValue Func`2, pending 0 item(s), readOnly 0 item(s), refused 0
+    item(s), snapped 0 item(s), unverified 0 item(s), written 0. inputs came elements from
+    the selection (307); parameterName as given; value as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 98078fd6d898377b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
