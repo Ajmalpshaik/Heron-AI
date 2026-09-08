@@ -532,6 +532,31 @@ ten minutes and costs nothing.
 *"select all ducts"* is eleven steps long — so multi-fragment work is not an edge case in this
 architecture, it is the ordinary case.
 
+### The ORDER is already computed — asked 2026-09-09, and the answer is better than expected
+
+*"For arranging the correct order, is there something?"*
+
+**Yes, and it works today.** `brain/heron_graph.py` (`HERON-KRN-DEP-013`) derives the edges from the
+contracts — *"fragment → fragment, from the contracts: A provides what B needs"*:
+
+```
+$ python brain/heron_graph.py FRG-SEL-001          # set-selection
+  could run after it   nothing
+  could run before it  FRG-SEL-002, FRG-ELE-001, FRG-MEP-030 … 50 fragments
+```
+
+It says so itself: *"Every line above was computed just now from the fragments themselves. Nothing here
+is stored, so nothing here is stale."* That is [D-40](DECISIONS.md) — an edge is derived, never written
+down twice.
+
+**So ordering is not a missing capability. It is a missing COMMAND.** The graph answers *"what can run
+before this one"* for a single fragment. What a bulk runner needs is the other shape: *"here are five
+fragments — what order?"*, which is a topological sort over edges that already exist.
+
+`HERON-DEV-PLN-002` **Planning Agent — "Sequences the work"** is the registry slot for the judgement
+part, and is unbuilt. But the hard half — knowing which fragment can feed which, across all 360 — is
+done.
+
 ### Three different things, worth not confusing
 
 | Thing | For | State |
