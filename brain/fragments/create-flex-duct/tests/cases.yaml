@@ -1,0 +1,53 @@
+positive:
+  - given: two points 900 mm apart, a supply system type, a flex type and a level
+    expect: >
+      one flexible duct created along them, the length reported in millimetres,
+      and the finding saying plainly that it is connected to NOTHING
+
+  - given: four points forming a dropped S route
+    expect: >
+      the duct following them in the order given, with no sorting or
+      simplification. The order given IS the route
+
+  - given: a route measured just under the limit
+    expect: >
+      it is created, and the length and the limit both stated so the margin is
+      visible
+
+negative:
+  - given: a route of 2,400 mm with a 1,500 mm limit
+    expect: >
+      REFUSED before anything is created, with both numbers stated. THIS IS THE
+      CASE THAT MATTERS. Flex over its limit is exceeded by accident - two points
+      further apart than they looked in plan - and a length found afterwards is
+      one that ships
+
+  - given: a maximum length of zero
+    expect: >
+      refused. The limit is asked for rather than assumed, because assuming one
+      would be inventing a specification
+
+  - given: a single point
+    expect: >
+      refused. Two is the minimum and there is no route to guess from one
+
+  - given: a piping system type with a duct type
+    expect: >
+      Revit's refusal caught and reported with the incompatibility named, and
+      NOTHING created
+
+  - given: any run at all
+    expect: >
+      NO CONNECTION MADE AND NO TRANSACTION OPENED. This makes flex. Joining it
+      is CONNECT_OPEN_ENDS, and undo is the caller's
+
+second_route:
+  - >
+    TRACE_CONNECTIVITY on the diffuser afterwards. It should report the terminal
+    still OPEN - if it reads as connected, something other than this fragment
+    joined it and the wording here is wrong
+
+  - >
+    Revit's own length parameter on the created duct against the reported
+    millimetres. They must agree, and a disagreement is a units error - the
+    failure this fragment is most exposed to

@@ -1,0 +1,67 @@
+positive:
+  - given: a 400 x 250 duct crossing one wall, allowance 50 mm
+    expect: >
+      one proposal of 500 x 350 mm, the host named, and the thickness it passes
+      through stated. Allowance is applied all round, so 50 adds 100 to each
+      dimension
+
+  - given: a duct crossing a wall at 45 degrees
+    expect: >
+      the through-thickness reported LONGER than the wall's own thickness. THIS
+      IS WHAT THE SOLID INTERSECTION BUYS - a bounding box would be right only
+      for a perpendicular crossing, and an oblique hole cut to the wrong length
+      is one that gets found on site
+
+  - given: a single pipe passing through two separate walls
+    expect: >
+      TWO proposals, one per host. That is how many holes have to be cut
+
+  - given: 200 services against 50 walls in a real model
+    expect: >
+      it COMPLETES in a reasonable time. Host geometry is extracted once per
+      host, not once per service - the first version asked Revit for the same 50
+      solids 200 times over, and geometry extraction is among the most expensive
+      calls in the API. That is not a slow fragment, it is one that looks like a
+      hang and gets abandoned
+
+  - given: a round pipe of 150 diameter with 25 allowance
+    expect: >
+      200 x 200 mm proposed, and the squaring-off said out loud so nobody thinks
+      a round core was specified
+
+negative:
+  - given: a model where no service crosses any host
+    expect: >
+      zero proposals and it said plainly, not an error. Nothing needing a hole is
+      a real and good answer
+
+  - given: an element that is not a duct, pipe, tray or conduit
+    expect: >
+      counted in `unmeasured` and NOT silently skipped. THIS IS THE CASE THAT
+      MATTERS. A hole schedule that quietly omits what it could not read is one
+      that gets built from, and the missing hole is discovered on site
+
+  - given: a service whose size cannot be read
+    expect: >
+      the same - reported apart, no proposal invented for it
+
+  - given: a negative allowance
+    expect: >
+      refused, nothing proposed. A hole smaller than the duct is not a project
+      decision, it is a typo
+
+  - given: any run at all
+    expect: >
+      NOTHING CREATED, NO OPENING CUT, NO TRANSACTION. This proposes. Creating is
+      a separate operation somebody has to approve
+
+second_route:
+  - >
+    FIND_CLASHES over the same services and hosts. Every proposal here should
+    correspond to a clash there - a proposal with no clash means the intersection
+    found something that is not really a penetration
+
+  - >
+    A tape measure on one oblique crossing in a section view, against the
+    reported through-thickness. That single check is what proves the solid
+    intersection is doing what a bounding box could not

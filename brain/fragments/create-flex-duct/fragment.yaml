@@ -1,0 +1,100 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-044
+semantic-identity: "run the flexible drop from the branch to the diffuser, along the points I give"
+kind: action
+domain: revit.mep
+capability: CREATE_FLEX_DUCT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates ONE flexible duct along the points given. Rigid duct and direct tapping
+  cannot express a flexible drop, and that is the gap this fills.
+
+  **IT GUESSES NO ROUTE, DELIBERATELY.** Every point is given. A first version
+  that invented a path would produce flex that looks plausible, passes a clash
+  check, and is not what anybody would have drawn - and the person reviewing it
+  has no way to tell which parts were asked for and which were imagined.
+
+  **THE LENGTH LIMIT IS ENFORCED, NOT SUGGESTED.** Flexible duct has a maximum
+  run in most specifications, and it is exceeded by accident rather than on
+  purpose - two points further apart than they looked in plan. The limit is a
+  required input and a route over it is REFUSED before anything is created,
+  because a length that has to be found afterwards is one that ships.
+
+  **IT MAKES FLEX, NOT A CONNECTION.** The duct is created along the points; it
+  does not attach itself to whatever is at either end. Two things sharing an
+  endpoint are not connected in Revit, and this fragment does not claim otherwise
+  - CONNECT_OPEN_ENDS is what joins them and TRACE_CONNECTIVITY is what proves
+  it happened. A drop that reads correctly on a drawing and is open at both ends
+  is exactly the failure this wording exists to prevent.
+
+  **TWO POINTS ARE THE MINIMUM AND THE ORDER IS THE ROUTE.** Points are used as
+  given, in order, without sorting or simplification.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo entry,
+  and the caller owns it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # RESOLVED OBJECTS, never ids. An ElementId built from an integer is what
+    # breaks in Revit 2024 (D-05); taking the objects makes the trap unreachable.
+    - name: systemType
+      type: MEPSystemType
+      source: request
+    - name: flexDuctType
+      type: FlexDuctType
+      source: request
+    - name: level
+      type: Level
+      source: request
+    - name: points
+      type: IList<XYZ>
+      source: request
+    # Millimetres. A route longer than this is refused before anything is made.
+    - name: maxLengthMm
+      type: double
+      source: request
+  provides:
+    - name: created
+      type: FlexDuct
+    - name: lengthMm
+      type: double
+    - name: refused
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FlexDuct.Create(Document, ElementId,
+  ElementId, ElementId, IList<XYZ>)` is unchanged 2020 to 2027 - checked by
+  compiling this fragment against the reference assemblies for all eight.
+
+  It takes ids, so the resolved objects handed in are asked for their `.Id` here
+  rather than an integer being turned into one at the call site.
+
+# ROUTING - cross-referenced in CREATE_DUCT and CONNECT_AIR_TERMINALS.
+#
+#   "run flex to that diffuser"        -> here
+#   "make the flexible drop"           -> here
+#   "draw duct along these points"     -> CREATE_DUCT, which makes RIGID duct
+#   "connect the terminal to the duct" -> CONNECT_AIR_TERMINALS. This one makes
+#                                         the flex and does NOT join it up
+#   "is it actually connected"         -> TRACE_CONNECTIVITY
+
+utterances:
+  - run a flexible duct along these points
+  - make the flex drop to that diffuser
+  - create flexible ductwork on this route

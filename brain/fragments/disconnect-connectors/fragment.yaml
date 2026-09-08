@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-043
+semantic-identity: "break the joint between these two, and leave everything else alone"
+kind: action
+domain: revit.mep
+capability: DISCONNECT_CONNECTORS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Breaks the physical connections BETWEEN the elements handed to it. Nothing is
+  deleted, moved or resized - only the joint is undone.
+
+  **IT DELETES NOTHING, AND THAT IS DELIBERATE.** Disconnecting an elbow leaves
+  the elbow sitting there, connected to nothing. That looks untidy and it is the
+  correct behaviour: deciding a fitting is now rubbish is a judgement about the
+  design, and DELETE_ELEMENTS is where a judgement like that is made explicitly.
+  A disconnect that silently swept up fittings would be a delete wearing a
+  smaller word.
+
+  **BY DEFAULT IT ONLY BREAKS JOINTS INSIDE THE SELECTION.** Given a duct and the
+  fitting on its end, it separates those two and leaves the fitting's OTHER end
+  attached to whatever is beyond. Breaking every connection an element has,
+  including to things nobody selected, is a much larger act - it is available,
+  but it is a flag the caller has to set, not the default.
+
+  **A LOGICAL CONNECTION IS NOT A PHYSICAL ONE.** Revit's connector references
+  include system membership as well as end-to-end joints. Only the physical ones
+  are broken here; treating a system reference as a joint would quietly remove
+  elements from their system and the drawing would not change to show it.
+
+  **DISCONNECTING IS NOT A NO-OP ON THE SYSTEM.** Breaking a joint can split one
+  system into two, or orphan the far side entirely. That is what was asked for,
+  and it is reported rather than smoothed over - TRACE_CONNECTIVITY afterwards is
+  what shows the shape that resulted.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo entry,
+  and the caller owns it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # false breaks EVERY connection these elements have, including to things
+    # that were never selected. A much larger act, so it is not the default.
+    - name: withinSelectionOnly
+      type: bool
+      source: request
+  provides:
+    - name: disconnected
+      type: int
+    - name: pairs
+      type: IList<string>
+    - name: untouched
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Connector.IsConnectedTo`,
+  `.DisconnectFrom`, `.AllRefs`, `.Owner`, `.ConnectorType`,
+  `MEPCurve.ConnectorManager` and `FamilyInstance.MEPModel.ConnectorManager` are
+  unchanged 2020 to 2027 - checked by compiling this fragment against the
+  reference assemblies for all eight.
+
+  `ConnectorSet` is not generic, so the loop variable is typed rather than `var`.
+
+# ROUTING - cross-referenced in CONNECT_OPEN_ENDS and DELETE_ELEMENTS.
+#
+#   "disconnect these two"             -> here
+#   "break that joint"                 -> here
+#   "unhook the terminal from the duct" -> here
+#   "connect these"                    -> CONNECT_OPEN_ENDS or
+#                                         CONNECT_AIR_TERMINALS
+#   "remove that fitting"              -> DELETE_ELEMENTS. This one leaves it
+#                                         sitting there on purpose
+#   "what is connected to what"        -> TRACE_CONNECTIVITY, and it is what to
+#                                         run afterwards to see the shape left
+
+utterances:
+  - disconnect these two elements
+  - break the connection between them
+  - unhook this fitting from the duct
+  - separate these without deleting anything

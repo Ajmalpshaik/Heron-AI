@@ -1,0 +1,55 @@
+positive:
+  - given: a face-based diffuser family and six ceiling faces with points
+    expect: >
+      six instances placed, each reporting a real host. Move the ceiling
+      afterwards and they move with it - that is the whole difference from
+      PLACE_FAMILY_INSTANCES
+
+  - given: a family type that has never been used in this project
+    expect: >
+      it is activated first and said so. An unactivated symbol places nothing and
+      raises nothing, which is the most silent failure in the Revit API
+
+  - given: faces on a wall rather than a ceiling
+    expect: >
+      the same result. Any real face in this document can host
+
+negative:
+  - given: a LEVEL-BASED family passed to this
+    expect: >
+      REFUSED by name, with its placement type stated, and nothing placed. THIS
+      IS ONE OF THE TWO THAT MATTER. The face overload throws from inside Revit
+      for this, and the message says nothing a modeller can act on
+
+  - given: a face reference that belongs to a LINKED architectural model
+    expect: >
+      REFUSED with the link named as the reason. THIS IS THE OTHER ONE. It is the
+      easy mistake - the ceiling you clicked is usually in the link - and Revit's
+      own error for it is obscure
+
+  - given: five faces and three points
+    expect: >
+      NOTHING PLACED, with the mismatch stated. They are paired by position, so
+      placing three and stopping would leave a half-done job somebody has to
+      unpick
+
+  - given: a placement that returns an instance with no host
+    expect: >
+      counted as REFUSED even though Revit raised nothing. An unhosted instance
+      looks completely correct on screen and is exactly what this prevents
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and one
+      operation is one undo entry
+
+second_route:
+  - >
+    Move or delete the host afterwards. A properly hosted instance moves with it
+    or goes with it; one that stays behind was never hosted, whatever this
+    reported
+
+  - >
+    SELECT_BY_HOST over the host element. It should return exactly the instances
+    this placed, and a count that disagrees means the host verification here is
+    reading something other than the real relationship
