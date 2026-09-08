@@ -134,3 +134,10 @@ tools/api-surface/.assemblies/
 agent-map.html
 fragment-catalog.html
 build/compile-results.json
+
+# Proof drafts and run records. A draft is evidence waiting for a person, and
+# `accept` DELETES it as it writes the proof into the fragment - so a draft in
+# a commit is either unjudged evidence or evidence already banked elsewhere.
+# Neither belongs in history. Only the README explaining the folder is tracked.
+brain/proof-drafts/*.yaml
+brain/proof-drafts/runs/

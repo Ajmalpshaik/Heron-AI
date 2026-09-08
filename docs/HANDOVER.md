@@ -17,11 +17,14 @@ that day**:
   and is **read-only reference**.
 
 **To carry the PROVING on in a fresh session, say:** *"Read the PROVING track entry in HANDOVER.md and
-carry on proving fragments."* That entry holds the whole method — two contrasting selections, why
-clearing the selection proves nothing, which things have to be DRAWN in the host because the model's
-content is linked, and the three shapes of proof. **It went 16 to 52 in one night; the method is why,
-not the hours.** Have Revit open with a rich model — `Snowdon Towers Sample HVAC` is the one it was
-worked out on — and expect to be asked for one selection at a time.
+carry on proving fragments."* There are TWO proving entries now and the newer one
+(2026-09-09) supersedes the older on method: chain `select-by-category-name` into `set-selection`
+rather than selecting by hand, and use SMALL views. Between them they hold everything — the three
+shapes of proof, why clearing the selection proves nothing, which things have to be DRAWN in the host
+because the model's content is linked, and how to arrange a case without getting the positive and the
+negative backwards. **16 to 52 in one night, then 52 to 142 the next; the method is why, not the
+hours.** Have Revit open with a rich model — `Snowdon Towers Sample HVAC` is the one it was worked out
+on — and read [`docs/FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md) before starting, because it is the queue.
 
 **To carry the library build on in a fresh session, say:** *"Read HANDOVER.md §9a in Heron-AI and carry
 on building fragments."* [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start)
@@ -40,8 +43,9 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**360 fragments. 52 `PROVEN`. 308 below.** D-28's executor is built, and fragments now run against a
-real model. That is new as of 2026-09-06 and it is the thing every earlier handover was waiting for.
+**360 fragments. 142 `PROVEN`. 218 below.** D-28's executor is built, fragments run against a real
+model, and since 2026-09-09 they can also CHANGE one. That is the thing every earlier handover was
+waiting for.
 **Proving is live and these two numbers move hourly — run
 `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` rather than trusting the
 line above.**
@@ -51,16 +55,16 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | | |
 |---|---|
 | Fragments | **360** — every fragment-shaped job in the earlier library, five cross-project transfers from PART 5, `CREATE_GLOBAL_PARAMETER` (2026-09-07), `FIND_DATES_IN_VIEWS`, built AND proved 2026-09-08, and **ten added 2026-09-08 for the review's N01–N09 plus the read they depend on** — see the entry below. All ten are `DRAFT` and NONE has met a model |
-| Proven | **52** as of 2026-09-08, each on a recorded proof with a negative case and a staleness fingerprint (D-30). **16 → 52 in one night** — see the proving-track entry below for the method, which is the reusable part. Moving hourly — derive it, do not read it here |
+| Proven | **142** as of 2026-09-09, each on a recorded proof with a negative case and a staleness fingerprint (D-30). **16 → 52 one night, 52 → 142 the next** — the method is the reusable part and it is in the proving-track entries below. Moving hourly — derive it, do not read it here |
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, docs, gaps, agent-count, **structure** — all green. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
 | Tests | **all pass**, `test_embed` and `test_retrieve` included — they were re-based against the model backend in PART 5, not edited until green. See the note where the warning used to be |
 | Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
-| Add-in | deployed to Revit 2024, built from `main` at `538bf55`. **STALE as of 2026-09-08** — the dispatcher now records which fragment ran and writes durations as numbers, and neither reaches the trail until it is rebuilt and redeployed |
+| Add-in | **rebuilt and redeployed to Revit 2024 on 2026-09-09**, carrying the write engine and the caller-value resolver. Rebuild it after ANY change under `revit/` — and check the framework first: `check-compile.py` builds 2020–2027 into one folder and the newest wins, so a run of it leaves .NET 10 binaries that Revit 2024 refuses with *"Revit cannot run the external application"*. `deploy-addin.ps1` now guards this rather than trusting the operator |
 | Agents | **70 of 250 have code**, 4 host-provided by D-01, 176 left — `python tools/agent-count.py`. Phase 0/1's agent list is COMPLETE |
 | MCP tools | **13** — `heron_gaps`, `heron_compatibility` and `heron_diagnose` added 2026-09-07/08 |
-| Bindable inputs | **70 of 349** — PART 6 binds every need a fragment's contract declares, from the on-screen selection and from what the previous fragment left behind. **278 still want a caller's half** — a category, a name, a distance — and that is now the largest unlock left |
-| Branches | `main` only. Everything from 2026-09-08 is merged: PRs #39 to #42, `main` at `c6bb38e` |
+| Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them |
+| Branches | `main` only, and it is the only branch that exists — `claude/folder-structure-review-0wpu2y` was fully merged and deleted on 2026-09-09. Everything through PR #43 is in |
 
 **EVERY REGISTER ROW THAT DID NOT NEED REVIT IS NOW CLOSED.** `A4`, `A6`, `A7`, `A8` and `A9` all fell on
 2026-09-06 on the owner's own PC — rows parked for months on *"a machine"*, closed in one afternoon by
@@ -265,6 +269,95 @@ counts what is left; believe it over this file.
 > claimed the two sentences return identical shortlists, which holds in the full library and not in that
 > test's smaller fixture. Measured in one place and asserted in another. The corrected one says what is
 > true there, with the reason.
+
+---
+
+## HANDOVER — 2026-09-09 (the PROVING track, day two): 52 → 142, and Heron can now change a model
+
+**Ninety fragments proved in one day, against `Snowdon Towers Sample HVAC` in Revit 2024 on the owner's
+PC.** Two things were built to make that possible and both are bigger than the day's count: fragments
+can now be handed **the caller's half of their inputs**, and fragments that CHANGE a model can now
+**run at all**. Before this morning, **287 of the 360** could not be given so much as a category name,
+and the **184** carrying `risk: MODIFY` could not execute a single line.
+
+**If you are here to prove more, read [the method](#the-method-that-made-it-fast--this-is-the-part-that-transfers)
+and [`docs/FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md) first.** The issues file is the sit-down list — 107
+rows of what failed, what is missing, what should be split and what should be edited. It is not a bug
+list; it is the work queue.
+
+### What was built
+
+| | What it does | Why it mattered today |
+|---|---|---|
+| **Caller values** (D-54) | `--set categoryName=Ducts` crosses the bridge **as text** and is resolved into a `View`, `Level`, `Category` or `BuiltInCategory` **inside Revit**, where the document is | **287 fragments** declare a need the selection cannot fill — 675 such needs in all. It refuses `XYZ` and `ElementId` **by name**, with a reason, rather than half-resolving them |
+| **The write engine** (D-55) | `run_fragment_write` — a second operation, `MODIFY` in the registry, wrapping the run in a `TransactionGroup` that is **assimilated only on `apply=true`** and rolled back otherwise | **184 fragments carry `risk: MODIFY`** and not one had a path to execute. A preview is now the run itself, undone — nothing is simulated, so nothing can lie |
+| **Risk by name** (Golden Rule 19) | The caller says which fragment; **the registry says what it costs.** `--write` on a `READ` fragment is refused | A caller that could declare its own risk could declare `MODIFY` work to be `READ` |
+| **`tools/batch-prove.py`** | Runs 10–20 fragments per pass and hands back only the failures | One-at-a-time was the real bottleneck, and the failures only make sense **read together** |
+| **`tests/test_caller_values.py`** | 21 cases over the resolver, **no Revit needed** | The resolver is the piece most likely to rot silently |
+
+### The method that made it fast — this is the part that transfers
+
+Four things, in the order they were learned. All four are written up properly in
+[`docs/FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md), under *How to arrange a case*.
+
+1. **Never select by hand. Chain the fragments.** The owner asked *"why do I need to select — you have
+   fragments for selecting, use that"*, and he was right. `select-by-category-name` → `set-selection`
+   as a `--setup` chain arranges every case, repeatably, and it is faster than clicking.
+2. **Small selections.** Also the owner's: *"try with a small number of ducts, like 2 or 3."*
+   `FloorPlan: M1` has **22 ducts**; `FloorPlan: L3` has **307**. Two proofs that had been failing on
+   time alone passed immediately on the small view. A slow case does not prove more than a fast one.
+3. **Get the positive and the negative the right way round** — this was got **WRONG FIVE TIMES** in one
+   day, which is why it is now rule #2 in the arranging guide. The POSITIVE is the case where the
+   fragment has something to find. The NEGATIVE is where it must come back empty. Writing them the
+   other way produces a run that passes and means nothing.
+4. **Read the positive, not just the negative.** `heron_validate` judges whether the negative came back
+   empty. A fragment that does **nothing at all** satisfies that trivially. Every silent failure found
+   today was caught by reading the positive by hand, so `batch-prove.py` now checks **both halves**.
+
+### The two model wipes — read this before you run a write
+
+**The model was destroyed twice today, and both times it was the choice of test data, not the code.**
+`transfer-views` over 60 elements, and `delete-elements` over the 5,636 elements under `Levels`. In
+both cases **the rollback did not fully undo the write**, and the model was recovered only by closing
+it **without saving**.
+
+> **The boundary is not known.** Small writes roll back cleanly — dozens were proved today. Something
+> between 22 elements and 5,636 does not. Nobody has found where, and **guessing at it is worse than
+> saying it is unknown**, which is why §1c of the issues file says so in those words and
+> `delete-elements` is marked BLOCKED rather than untested.
+
+Until it is understood: **write against small selections, on a scrap model, and never save.**
+
+### Ten defects, and where they came from
+
+| Found in | What it was |
+|---|---|
+| The chain | A fragment's own output was overwriting the value handed to it, **matched by NAME**. Fixed by identity — `ReferenceEquals` against what was handed in. It hit 4 filter fragments, not "every filter fragment" as first claimed |
+| `validate` | Was sending **writes down the read path**. A lost patch. It first read as *"intermittent worksharing behaviour"* and was written up as such, and only `prove` — which has no write path — failing identically exposed it |
+| The batch runner | Passed a fragment whose only real result was **0 in both legs**, because an unreadable value counted as work. *"I cannot read this"* and *"this is a result"* must not collapse |
+| The batch runner | Counted **accounting fields** as results — `check-flow-direction`, `remove-parameter-value`, `set-mep-slope`. `role: result` vs `role: accounting` exists for exactly this, and 40 fragments still do not declare it |
+| The batch runner | Re-proved **15 of 16 already-`PROVEN`** fragments in its first run, because the names came off a capability list and nothing filtered by status |
+| `Describe` | Renders a **valid and an invalid `ElementId` identically**. Two proofs are blocked on this and cannot be arranged around it |
+| Schedules | The `Schedule Graphics` door was found — a schedule can be selected without clicking it — but **eight schedule fragments never got the fix** and fail silently |
+| `--setup` | **Cannot run a step that writes.** So any case needing a written setup cannot be arranged at all |
+| The deploy script | Deployed **.NET 10 binaries into Revit 2024**, which refuses them with *"Revit cannot run the external application"*. `check-compile.py` builds 2020–2027 into one folder and the newest wins. Now guarded in `deploy-addin.ps1` rather than left to memory |
+| The CLI | Every invocation was a **new chat** taking a five-minute lease, so the second call was always refused. `HERON_CLIENT_ID` fixes it, set once |
+
+**The activity banner was NOT one of them.** A whole morning was lost to `switch-active-project`
+appearing to hang; a fix was guessed at, did not help, and **was reverted**. Another session then
+proved the cause was the banner's own threading. *The fragment is innocent* — and reverting the guess
+is the reason that could be established at all.
+
+### What tomorrow starts with
+
+1. **The sit-down list.** [`docs/FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md), and specifically §3h — the
+   four improvements, already ranked. Do **§3h.1 first**: make silence illegal. A fragment that returns
+   nothing and reports success is the failure mode that has cost the most time, twice over.
+2. **The eight schedule fragments** that never got the `ScheduleSheetInstance` fix.
+3. **The rollback boundary.** Find where it breaks, on a scrap model, deliberately — it is the only
+   thing standing between the write engine and a real project.
+4. **Then keep proving.** 218 `DRAFT` remain, and roughly 100 of them cannot run for reasons §6 of the
+   issues file lists by cause.
 
 ---
 
