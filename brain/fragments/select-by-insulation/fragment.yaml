@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,27 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned collectHosts Action`1, collector
+    FilteredElementCollector, countLiningAsInsulated false, covered 0 item(s), elements 1053
+    item(s) [Tees, Tees, Tees, ...], findings 2 item(s) [1053 of 1053 scanned element(s) are
+    BARE - nothing wrapping ..., This is what has nothing on it, not a work list. Fittings,
+    f...], scanned 1053, wantInsulated false. inputs came categories as given (1); wantInsulated
+    as given; countLiningAsInsulated as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with categories=Ducts, wantInsulated=true, countLiningAsInsulated=false
+    instead - chosen because it should not contain what this fragment reports. returned collectHosts
+    Action`1, collector FilteredElementCollector, countLiningAsInsulated false, covered 0
+    item(s), elements 0 item(s), findings 1 item(s) [0 of 1053 scanned element(s) are INSULATED.
+    0 host(s) in thi...], scanned 1053, wantInsulated true. inputs came categories as given
+    (1); wantInsulated as given; countLiningAsInsulated as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: fc09985ddbd5dbb5
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -63,6 +63,10 @@ contract:
     - name: changed
       type: int
     - name: wasPinned
+      # What it was BEFORE this ran. Filled in identically whether the
+      # change was applied or not, so it is the evidence it looked -
+      # never a change it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: unsupported
       type: IList<ElementId>
