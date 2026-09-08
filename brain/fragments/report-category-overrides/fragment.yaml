@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -50,6 +50,23 @@ contract:
       type: IList<string>
     - name: overriddenCategories
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 1680
+  positive_case: 'run as it would normally be run. returned findings 2 item(s) [1 of 42 category(ies)
+    present in ''L3_SD'' carry an override. ..., Furniture: halftone], overriddenCategories
+    1 item(s) [-2000080]. inputs came view as given. on Snowdon Towers Sample Architectural'
+  negative_case: run against 'Snowdon-scratch_ajmal.al' with view=Model Linking instead -
+    chosen because it should not contain what this fragment reports. returned findings 2 item(s)
+    [0 of 15 category(ies) present in 'Model Linking' carry an ov..., nothing is overridden
+    at CATEGORY level here. If something s...], overriddenCategories 0 item(s). inputs came
+    view as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 8741a4654ec4ccfa
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

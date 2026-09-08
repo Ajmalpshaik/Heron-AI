@@ -1283,24 +1283,29 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
 
     run_fragment("positive", in_document, "run as it would normally be run", True)
 
-    if negative_in:
-        run_fragment("negative", negative_in,
-                     "run against '%s', which should not contain what this "
-                     "reports" % negative_in, True)
-    elif negative_values:
+    if negative_in or negative_values:
         # THE NEGATIVE CASE FOR A VIEW FRAGMENT IS ANOTHER VIEW, and until this
         # existed there was no way to say so: `validate` could change the
         # document between phases but not the caller's values, so anything
         # taking a view could only be proved by a person clearing a selection
         # that was never bound in the first place. 53 fragments take a view.
         #
-        # It is the arrangement, stated in the record, exactly as a cleared
-        # selection would be - not a second opinion about the same run.
-        described = ", ".join("%s=%s" % (v["name"], v["value"]) for v in negative_values)
-        run_fragment("negative", in_document,
-                     "run with %s instead - chosen because it should not contain "
-                     "what this fragment reports" % described,
-                     True, using=negative_values)
+        # THE TWO COMBINE, and they have to. A view that carries an override
+        # exists only in one of the two models open here, and a view that
+        # carries none only in the other - so the arrangement is "that model,
+        # and this view in it", and neither half alone can say it. They were
+        # an if/elif for one commit and the second was unreachable whenever a
+        # document was named.
+        parts = []
+        if negative_in:
+            parts.append("against '%s'" % negative_in)
+        if negative_values:
+            parts.append("with " + ", ".join("%s=%s" % (v["name"], v["value"])
+                                             for v in negative_values))
+        run_fragment("negative", negative_in or in_document,
+                     "run %s instead - chosen because it should not contain what "
+                     "this fragment reports" % " ".join(parts),
+                     True, using=negative_values or None)
     else:
         print("")
         print("NEGATIVE CASE. Arrange an answer that must come back empty -")
