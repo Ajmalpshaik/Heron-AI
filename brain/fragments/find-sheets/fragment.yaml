@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -60,6 +60,22 @@ contract:
       type: IList<ElementId>
     - name: matchedOnName
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned elements 14 item(s) [Plan HVAC
+    L0 Parking, Plan HVAC L1, Plan HVAC L2, ...], matchedOnName 14, placeholders 0 item(s),
+    wanted HVAC. inputs came numberOrNameContains as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with numberOrNameContains=ZZZNOTHINGHERE instead - chosen because it
+    should not contain what this fragment reports. returned elements 0 item(s), matchedOnName
+    0, placeholders 0 item(s), wanted ZZZNOTHINGHERE. inputs came numberOrNameContains as
+    given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 63117e5f309b93a9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

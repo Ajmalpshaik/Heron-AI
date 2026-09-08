@@ -80,6 +80,16 @@ These ran correctly and gave one honest half of a proof. The other half does not
 
 ---
 
+## 3b. NO POSITIVE CASE IN THIS MODEL — found 2026-09-08, second round
+
+Ran correctly and returned the honest empty answer. The model simply has none of the thing.
+
+| Fragment | What was tried | What came back |
+|---|---|---|
+| `select-openings` | `inViewOnly=FloorPlan: L3` | `elements 0` — there are no openings in that view. Needs a view with a wall or floor opening in it, or one drawn on purpose |
+
+---
+
 ## 4. FIXED during proving — kept because the shape returns
 
 | Fragment | What was wrong |
@@ -98,7 +108,8 @@ These ran correctly and gave one honest half of a proof. The other half does not
 | 4 | `"(null)"` unreadable, so **every creator's** negative case was flagged | Fixed |
 | 5 | `deploy-addin.ps1` installed a build for the wrong Revit release. Symptom was *"Revit cannot run the external application"* and nothing else | Fixed — the script refuses it now |
 | 6 | `validate` sent writes down the READ path for one commit. Revit refused politely, the fragment reported `refused` like any decline, and it read as intermittent worksharing behaviour | Fixed — the line carries why |
-| **7** | **`Describe` renders a valid `ElementId` and `ElementId.InvalidElementId` as the same word, `"ElementId"`.** A negative case that correctly created nothing reads as though it created something, and only the fragment's source settles it — which is how `duplicate-view-template` was judged | **OPEN.** One line, but it needs the add-in rebuilt and redeployed, which costs a Revit restart |
+| 7 | **The naming heuristics were dead code.** `provide_role()` answers `"result"` for an entry with no `role:` key, and that default went into the map the judge consults - so every declared name looked explicitly declared, and D-51/D-52's patterns never ran. **102 names across 134 fragments** (`scanned`, `unplaced`, `noConnectors`, `notASheet`) were judged as findings. Found proving `select-scope-boxes`, whose negative had every result at zero and `scanned: 5` | Fixed - the judge-set and the role-map are separate arguments now |
+| **8** | **`Describe` renders a valid `ElementId` and `ElementId.InvalidElementId` as the same word, `"ElementId"`.** A negative case that correctly created nothing reads as though it created something, and only the fragment's source settles it — which is how `duplicate-view-template` was judged | **OPEN.** One line, but it needs the add-in rebuilt and redeployed, which costs a Revit restart |
 
 ---
 

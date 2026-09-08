@@ -614,12 +614,27 @@ def draft_from_record(frag, record):
         # which is the stricter behaviour and the right default.
         try:
             declaration = frag.provides() if callable(frag.provides) else frag.provides
-            declared = dict((d.get("name"), HF.provide_role(d))
+            # ONLY WHAT THE FRAGMENT ACTUALLY WROTE DOWN. provide_role() answers
+            # "result" for an entry with no `role:` key, which is the right
+            # default for reading one entry and the wrong thing to put in this
+            # map: a name mapped to "result" is indistinguishable from a name
+            # the author DECLARED as a result, and the judge below skips its
+            # naming patterns for anything it finds here.
+            #
+            # Every fragment declares its provides, so that map was total, so
+            # the patterns never ran. 102 names across 134 fragments - `scanned`,
+            # `unplaced`, `noConnectors`, `notASheet` - were judged as findings
+            # while D-51 and D-52 sat there unable to speak. Found 2026-09-08,
+            # proving select-scope-boxes, whose negative case came back with
+            # every result at zero and `scanned: 5`.
+            declared = dict((d.get("name"), d["role"])
                             for d in (declaration or [])
-                            if isinstance(d, dict) and d.get("name"))
+                            if isinstance(d, dict) and d.get("name") and d.get("role"))
+            declared_names = set(d.get("name") for d in (declaration or [])
+                                 if isinstance(d, dict) and d.get("name"))
         except Exception:
             declared = None
-        if not looks_empty(negative, declared):
+        if not looks_empty(negative, declared, declared_names):
             negative_text += ("\n\nWARNING: this did NOT come back empty. A "
                               "negative case that returns content is a "
                               "FINDING, not a proof - the fragment may be "
@@ -810,7 +825,7 @@ def _is_helper_object(value):
     return False
 
 
-def looks_empty(phase, declared=None):
+def looks_empty(phase, declared=None, declared_names=None):
     """Whether a phase's numbers really do read as nothing.
 
     THE COUNTS DECIDE (D-51), AND ONLY THE COUNTS OF WHAT WAS FOUND (D-52).
@@ -846,13 +861,17 @@ def looks_empty(phase, declared=None):
     #
     # The contract is the authority on which names are results, and using it
     # replaces guesswork about leftovers with the fragment's own declaration.
-    # `declared` may be a SET of names (judge only these) or a MAPPING of
-    # name -> role (judge only the results). The mapping is what a fragment that
-    # has declared `role:` produces, and it beats every naming pattern below
-    # because the fragment states it rather than this file inferring it.
+    #
+    # TWO DIFFERENT QUESTIONS, AND THEY WERE ONE ARGUMENT UNTIL 2026-09-08.
+    # `declared_names` is WHAT TO JUDGE - every name the contract lists, so the
+    # fragment's working values are dropped. `declared` is only the names
+    # carrying an EXPLICIT `role:`, so a name the author said nothing about
+    # still reaches the naming patterns below. Collapsing the two made the map
+    # total (every fragment declares its provides) and the patterns unreachable.
     roles = declared if isinstance(declared, dict) else None
-    if declared:
-        provides = dict((k, v) for k, v in provides.items() if k in declared)
+    judge = declared_names if declared_names else declared
+    if judge:
+        provides = dict((k, v) for k, v in provides.items() if k in judge)
         if not provides:
             return False
 

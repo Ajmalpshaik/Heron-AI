@@ -98,6 +98,10 @@ contract:
     - name: failed
       type: IList<string>
     - name: skipped
+      # What it passed over. The evidence it looked, never a thing it
+      # FOUND - so it must not count toward "did this come back empty"
+      # (D-52).
+      role: accounting
       type: IList<string>
     - name: findings
       type: IList<string>

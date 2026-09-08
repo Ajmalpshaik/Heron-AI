@@ -70,6 +70,10 @@ contract:
     - name: typesTouched
       type: IList<ElementId>
     - name: skippedInGroup
+      # What it passed over. The evidence it looked, never a thing it
+      # FOUND - so it must not count toward "did this come back empty"
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: findings
       type: IList<string>

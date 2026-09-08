@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -59,6 +59,21 @@ contract:
       type: int
     - name: found
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned elements 3 item(s) [Block 35, Block
+    37, Block 43], found 3, matchedNames 3 item(s) [Block 35, Block 37, Block 43], needle
+    Block, scanned 5. inputs came nameContains as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with nameContains=ZZZNOTHINGHERE instead - chosen because it should not
+    contain what this fragment reports. returned elements 0 item(s), found 0, matchedNames
+    0 item(s), needle ZZZNOTHINGHERE, scanned 5. inputs came nameContains as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d931e670ef031562
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

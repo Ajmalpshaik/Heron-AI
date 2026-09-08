@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -63,11 +63,33 @@ contract:
     - name: elements
       type: IList<Element>
     - name: skippedTemplates
+      # Schedule templates passed over. How many it looked at and set
+      # aside, never a schedule it found.
+      role: accounting
       type: int
     - name: skippedInternal
+      # Revit's own internal schedules - revision schedules and the like.
+      # Evidence it looked, not a match.
+      role: accounting
       type: int
     - name: matchedButExcluded
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned elements 1 item(s) [Space Schedule],
+    found 1 item(s) [Space Schedule], matchedButExcluded 0, skippedInternal 16, skippedTemplates
+    1, wanted Space. inputs came nameContains as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with nameContains=ZZZNOTHINGHERE instead - chosen because it should not
+    contain what this fragment reports. returned elements 0 item(s), found 0 item(s), matchedButExcluded
+    0, skippedInternal 16, skippedTemplates 1, wanted ZZZNOTHINGHERE. inputs came nameContains
+    as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3ac903c817acc461
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
