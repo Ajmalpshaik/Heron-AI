@@ -128,6 +128,43 @@ question. Five fragments, one family, two of them written the other way.
 
 ---
 
+## 1d. A ROLLED-BACK WRITE CLEARS THE SELECTION — and that blocks 100 proofs
+
+Established by running it, 2026-09-08:
+
+| Step | Selection afterwards |
+|---|---|
+| `select-by-category-name` chained into `set-selection` | **307** |
+| a READ fragment | 307 |
+| the same READ fragment again | 307 |
+| **a WRITE fragment with no `apply`** — so nothing was kept | **gone** — `needs_unbound` |
+
+Reads leave it alone. The rollback takes it with them.
+
+### Why this is not a small thing
+
+**100 fragments need a selection AND a caller value** — that combination is the whole remaining
+population of provable work, and the negative case for every one of them is a second run with a
+different value. `validate` runs both phases in one go, so the second phase always arrives at an empty
+selection and refuses. `create-selection-filter` proved its positive this afternoon and could not reach
+its negative for exactly this reason.
+
+**It is arguably correct behaviour.** The selected elements were deleted and recreated by the rollback,
+so the ids Revit was holding no longer exist; clearing is safer than pointing at ghosts. But correct or
+not, it means no selection-based write fragment can be proved by the current tooling.
+
+### The fix belongs in the tooling, not the fragments
+
+`validate` needs to re-establish the arrangement before EACH phase, not once at the start — the same
+way it already sends different caller values per phase. A `--setup` chain naming fragments to run first
+(`select-by-category-name`, `set-selection`) would do it, and the machinery already exists: `prove` runs
+a chain in one lease, and D-29's chaining carried `elements` between those two fragments correctly on
+the first try.
+
+Until then, a selection-based write fragment can be RUN once and its positive recorded, but not proved.
+
+---
+
 ## 2. CANNOT PROVE — Revit itself declines
 
 None of these looks like a fragment defect. Each asked Revit to do something and Revit said no, for a
