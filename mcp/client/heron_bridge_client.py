@@ -833,7 +833,7 @@ def caller_values(pairs):
     return values
 
 
-def cmd_fragment(name, values=None):
+def cmd_fragment(name, values=None, writing=False, apply_it=False):
     """
     Run one fragment's C# against the open model - D-28's executor, reached.
 
@@ -843,8 +843,15 @@ def cmd_fragment(name, values=None):
     the check and the run. The client reads the file it just checked and sends
     exactly that text.
 
-    READ ONLY. The operation opens no transaction, so Revit refuses anything
-    that would change the model - the guarantee is Revit's rather than ours.
+    READ BY DEFAULT. `run_fragment_read` opens no transaction, so Revit
+    refuses anything that would change the model - the guarantee is Revit's
+    rather than ours.
+
+    `writing` switches to `run_fragment_write`, which is the same executor
+    inside a TransactionGroup, and is what lets a fragment at risk: MODIFY run
+    at all. It still keeps nothing unless `apply_it` is set: the default runs
+    the change for real and rolls it back, which is a record of what happened
+    rather than a prediction of what would.
     """
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     source_path = os.path.join(root, "brain", "fragments", name, "impl", "any", "fragment.cs")
@@ -876,9 +883,13 @@ def cmd_fragment(name, values=None):
                 "chain": "reset"}
         if values:
             args["values"] = values
+        # A STRING, because Heron's own JSON reader reads strings and nothing
+        # else - the same reason a distance crosses as one. See ReadDistance.
+        if writing and apply_it:
+            args["apply"] = "true"
 
-        reply = bridge.request("run_fragment_read", op_args=args,
-                               response_timeout=120.0)
+        reply = bridge.request("run_fragment_write" if writing else "run_fragment_read",
+                               op_args=args, response_timeout=180.0)
 
         if reply is None:
             print("No reply from Revit %s (session %s)." % (bridge.revit_version, bridge.pid))
@@ -895,6 +906,15 @@ def cmd_fragment(name, values=None):
             continue
 
         print("%s - ran on Revit %s (session %s)" % (name, bridge.revit_version, bridge.pid))
+
+        # WHETHER THE MODEL WAS LEFT CHANGED. A rolled-back write and a kept
+        # one report identical counts, because the fragment did the work in
+        # both cases. Printing it first means it cannot be missed under a list
+        # of results that look the same either way.
+        verdict = reply.get("verdict")
+        if verdict:
+            print("    %s  %s" % ("APPLIED" if reply.get("applied") else "ROLLED BACK", verdict))
+
         provides = reply.get("provides") or {}
         if not provides:
             print("    left nothing behind")
@@ -1445,15 +1465,27 @@ def main(argv):
         return cmd_prove(rest, in_document, values)
     if argv[1] == "fragment":
         rest, pairs, _ = pull_values(argv[2:])
+        # --write runs it inside a transaction so a MODIFY fragment can run.
+        # --apply is the separate, deliberate act of KEEPING what it did; on
+        # its own --apply means nothing, because a read has nothing to keep.
+        writing = rest is not None and "--write" in rest
+        apply_it = rest is not None and "--apply" in rest
+        if rest is not None:
+            rest = [r for r in rest if r not in ("--write", "--apply")]
         if rest is None or not rest:
             print("Which fragment? e.g. list-levels")
             print("  --view \"Level 1\"        a view the fragment asks the caller for")
             print("  --set name=value        any other value it asks for")
+            print("  --write                 run a MODIFY fragment, in a transaction")
+            print("  --write --apply         ...and KEEP what it did (one Ctrl+Z undoes it)")
+            return 2
+        if apply_it and not writing:
+            print("--apply only means something with --write. A read leaves nothing to keep.")
             return 2
         values = caller_values(pairs)
         if values is None:
             return 2
-        return cmd_fragment(rest[0], values)
+        return cmd_fragment(rest[0], values, writing, apply_it)
     if argv[1] == "validate":
         rest, pairs, negatives = pull_values(argv[2:])
         if rest is None:

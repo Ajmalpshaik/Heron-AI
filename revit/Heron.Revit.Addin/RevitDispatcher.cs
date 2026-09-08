@@ -257,7 +257,8 @@ namespace Heron.Revit.Addin
                         new KeyValuePair<string, string>("document", Json.ReadString(response, "document")),
                         new KeyValuePair<string, string>("error", Json.ReadString(response, "error")),
                         new KeyValuePair<string, string>("fragment",
-                            op == "run_fragment_read" ? Json.ReadString(job.Request, "name") : null),
+                            op == "run_fragment_read" || op == "run_fragment_write"
+                                ? Json.ReadString(job.Request, "name") : null),
                     },
                     new[]
                     {
@@ -297,6 +298,19 @@ namespace Heron.Revit.Addin
                 case "run_fragment_read":
                     var name = Clean(Json.ReadString(request, "name"));
                     return name.Length == 0 ? "Running a job" : "Running a job: " + name;
+
+                // THE BANNER MUST NOT SAY THE SAME THING FOR BOTH. Its colour
+                // already differs - amber, from the tool registry - but the
+                // words are what somebody actually reads, and "Running a job"
+                // over a model being changed is the wrong sentence. Whether it
+                // will be KEPT is not decided here: the caller says `apply`,
+                // and a trial that rolls back is still Revit doing the work.
+                case "run_fragment_write":
+                    var writing = Clean(Json.ReadString(request, "name"));
+                    var keeping = string.Equals(Json.ReadString(request, "apply"), "true",
+                                                StringComparison.OrdinalIgnoreCase);
+                    var verb = keeping ? "Changing the model" : "Trying a change";
+                    return writing.Length == 0 ? verb : verb + ": " + writing;
             }
 
             var readable = Clean(op);

@@ -59,6 +59,26 @@ namespace Heron.Revit.Addin
 
         public static string Run(UIApplication app, string request)
         {
+            return Run(app, request, false);
+        }
+
+        /// <summary>
+        /// The same executor, optionally inside a transaction so a fragment at
+        /// risk: MODIFY can run at all.
+        ///
+        /// WHY THIS IS ONE METHOD AND NOT TWO. Everything before the script
+        /// runs - choosing the document, binding the contract, compiling - is
+        /// identical, and 130 write fragments were unrunnable precisely because
+        /// that work had no second entry point. Two copies of it would drift,
+        /// and the half that drifts is the half nobody exercises.
+        ///
+        /// The write is gated before it reaches here: `run_fragment_write` is
+        /// declared at Modify in the tool registry, and RevitOperations refuses
+        /// on risk BEFORE routing. This method never decides its own risk -
+        /// Golden Rule 19.
+        /// </summary>
+        public static string Run(UIApplication app, string request, bool writing)
+        {
             var source = Json.ReadString(request, "source");
             var name = Json.ReadString(request, "name") ?? "(unnamed)";
 
@@ -237,25 +257,67 @@ namespace Heron.Revit.Addin
             var compileError = Compile(prologue + source, PrologueLines(prologue), out script);
             if (compileError != null) return compileError;
 
-            ScriptState<object> state;
-            try
+            // APPLY IS THE DELIBERATE ACT. Absent means run it and roll back,
+            // which is this path's preview: not a prediction of what would
+            // happen, but a record of what DID, undone. A caller that forgets
+            // the flag gets the safe half.
+            var apply = writing
+                && string.Equals(Json.ReadString(request, "apply"), "true",
+                                 StringComparison.OrdinalIgnoreCase);
+
+            ScriptState<object> state = null;
+            string threw = null;
+
+            if (!writing)
             {
-                // The fragments never await, so this completes inline on the
-                // Revit API thread - which is where it has to run. If a
-                // fragment ever does await, this is the line that will deadlock
-                // and the reason will not be obvious.
-                state = script.RunAsync(globals).GetAwaiter().GetResult();
+                threw = RunScript(script, globals, name, out state);
             }
-            catch (Exception failure)
+            else
             {
-                // A fragment that throws is a finding, not a crash. The
-                // message is Revit's own and is far more use than "it failed".
-                return Json.Error("fragment_threw",
-                    "'" + name + "' threw while running: " + Innermost(failure).Message);
+                // ONE TRANSACTION GROUP, so one Ctrl+Z puts the model back -
+                // Golden Rule 16. Named for the fragment, so Revit's own undo
+                // history reads as something a person did.
+                var label = "Heron: " + name;
+                using (var group = new TransactionGroup(target, label))
+                {
+                    group.Start();
+                    using (var transaction = new Transaction(target, label))
+                    {
+                        transaction.Start();
+                        threw = RunScript(script, globals, name, out state);
+
+                        if (threw != null)
+                        {
+                            SafeRollBack(transaction);
+                            SafeRollBack(group);
+                            return threw;
+                        }
+
+                        if (transaction.Commit() != TransactionStatus.Committed)
+                        {
+                            SafeRollBack(group);
+                            return Json.Error("operation_failed",
+                                "'" + name + "' ran but Revit did not accept the change, so "
+                                + "nothing was altered. The model is exactly as it was.");
+                        }
+                    }
+
+                    // ASSIMILATE, so the whole group collapses to ONE undo step
+                    // rather than leaving the inner transaction visible as its
+                    // own. Rolling back instead is what makes the default a
+                    // preview.
+                    if (apply) group.Assimilate();
+                    else SafeRollBack(group);
+                }
             }
 
-            Remember(name, state, target, bound, client);
-            return Report(name, state, target, uidoc, app.ActiveUIDocument, bound);
+            if (threw != null) return threw;
+
+            Remember(name, state, target, bound, client, globals.__heron);
+            var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
+                                globals.__heron);
+
+            return writing ? WithVerdict(answer, apply, name) : answer;
         }
 
         /// <summary>
@@ -342,7 +404,8 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string Report(string name, ScriptState<object> state,
                                      Document target, UIDocument uidoc, UIDocument active,
-                                     HashSet<string> bound)
+                                     HashSet<string> bound,
+                                     IDictionary<string, object> handedIn)
         {
             // THE ANSWER ALWAYS NAMES THE DOCUMENT, and the model it ran
             // against is the first thing on it. A bare result is how somebody
@@ -397,16 +460,133 @@ namespace Heron.Revit.Addin
                 // the host had just handed IN came back OUT under `provides`,
                 // reported as something the fragment produced - a filter that
                 // did nothing would have looked identical to one that worked.
-                // The set is now whatever was actually bound for this run.
-                if (bound != null && bound.Contains(variable.Name)) continue;
+                // The set is whatever was actually bound for this run - unless
+                // the fragment REPLACED it, which is the one case where a bound
+                // name is genuinely an output. See StillTheHosts.
+                object current = null;
+                try { current = variable.Value; } catch { continue; }
 
-                left.Add(Json.Str(variable.Name, Describe(variable.Value)));
+                if (bound != null && bound.Contains(variable.Name)
+                    && StillTheHosts(handedIn, variable.Name, current)) continue;
+
+                left.Add(Json.Str(variable.Name, Describe(current)));
             }
 
             parts.Add("\"provides\":{" + string.Join(",", left) + "}");
             parts.Add(Json.Num("providesCount", left.Count));
 
             return Json.Ok(parts.ToArray());
+        }
+
+        /// <summary>
+        /// Is this variable STILL the object the host handed in?
+        ///
+        /// THE TEST IS IDENTITY, NOT NAME, and that is the whole point. Both
+        /// the answer and the chain skip what the host put in - echoing a
+        /// Document back is useless, and a filter that did nothing must not
+        /// look like one that worked by handing its own input back as output.
+        ///
+        /// But skipping by NAME made the opposite mistake, and it was worse.
+        /// A filter fragment narrows by REASSIGNING its input - `elements =
+        /// remaining;` is how all 31 of them end. Skipping the name threw that
+        /// away: find-untagged-elements narrowed 625 to 560, and the next
+        /// fragment in the chain counted 625, having fallen back to the raw
+        /// selection. Silently. A chain of "find the untagged ones, then tag
+        /// them" would have tagged all 625, including the 65 already tagged.
+        /// Found by running two fragments in one chain, 2026-09-08.
+        ///
+        /// Identity separates the two cases exactly: untouched means the same
+        /// object, so it is still the host's and is skipped; replaced means a
+        /// new one, which is precisely what the fragment produced.
+        /// </summary>
+        private static bool StillTheHosts(IDictionary<string, object> handedIn,
+                                          string name, object value)
+        {
+            if (handedIn == null) return false;
+            object original;
+            if (!handedIn.TryGetValue(name, out original)) return false;
+            return ReferenceEquals(original, value);
+        }
+
+        /// <summary>
+        /// Run the compiled script, or return the refusal. Pulled out because
+        /// the write path needs it INSIDE a transaction and the read path
+        /// needs it outside one, and a second copy would be the half that
+        /// drifts.
+        /// </summary>
+        private static string RunScript(Script<object> script, HeronFragmentGlobals globals,
+                                        string name, out ScriptState<object> state)
+        {
+            state = null;
+            try
+            {
+                // The fragments never await, so this completes inline on the
+                // Revit API thread - which is where it has to run. If a
+                // fragment ever does await, this is the line that will deadlock
+                // and the reason will not be obvious.
+                state = script.RunAsync(globals).GetAwaiter().GetResult();
+                return null;
+            }
+            catch (Exception failure)
+            {
+                // A fragment that throws is a finding, not a crash. The message
+                // is Revit's own and is far more use than "it failed".
+                return Json.Error("fragment_threw",
+                    "'" + name + "' threw while running: " + Innermost(failure).Message);
+            }
+        }
+
+        /// <summary>
+        /// Roll back without letting the rollback itself become the failure.
+        ///
+        /// The same hazard RevitWrite.SafeRollBack exists for, and for the same
+        /// reason: rolling back something already rolled back throws, and it
+        /// throws from the catch block where the real error is still being
+        /// handled - so the useful message is lost and replaced by a confusing
+        /// one, at the worst possible moment.
+        /// </summary>
+        private static void SafeRollBack(TransactionGroup group)
+        {
+            try
+            {
+                if (group.GetStatus() == TransactionStatus.Started) group.RollBack();
+            }
+            catch { }
+        }
+
+        private static void SafeRollBack(Transaction transaction)
+        {
+            try
+            {
+                if (transaction.GetStatus() == TransactionStatus.Started) transaction.RollBack();
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Say, on the answer itself, whether the model was left changed.
+        ///
+        /// A WRITE THAT WAS ROLLED BACK LOOKS EXACTLY LIKE ONE THAT WAS KEPT -
+        /// same counts, same findings, same everything, because the fragment
+        /// genuinely did the work both times. The only difference is whether it
+        /// survived, and nothing else on the reply says so. Somebody reading
+        /// "renamed 47 views" and finding 47 unrenamed views would be right to
+        /// distrust every number Heron has ever given them.
+        /// </summary>
+        private static string WithVerdict(string answer, bool applied, string name)
+        {
+            if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
+                return answer;
+
+            var verdict = applied
+                ? "the model was CHANGED and this is one undo step - Ctrl+Z in Revit puts it back"
+                : "NOTHING WAS KEPT. '" + name + "' ran for real and was then rolled back, so the "
+                  + "counts above are what it actually did rather than a guess. Send it again with "
+                  + "apply to keep it.";
+
+            return answer.Substring(0, answer.Length - 1)
+                 + "," + Json.Bool("applied", applied)
+                 + "," + Json.Str("verdict", verdict) + "}";
         }
 
         /// <summary>How many generated lines sit in front of the snippet.</summary>
@@ -771,7 +951,8 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static void Remember(string name, ScriptState<object> state,
                                      Document target, HashSet<string> bound,
-                                     string client)
+                                     string client,
+                                     IDictionary<string, object> handedIn)
         {
             // A caller that did not say who it is gets no chain - see ChainFor.
             var chain = ChainFor(client, true);
@@ -784,11 +965,14 @@ namespace Heron.Revit.Addin
 
             foreach (var variable in state.Variables)
             {
-                if (bound != null && bound.Contains(variable.Name)) continue;
-
                 object value = null;
                 try { value = variable.Value; } catch { continue; }
                 if (value == null) continue;
+
+                // Untouched host input - not this fragment's to leave behind.
+                // Replaced, and it IS: see StillTheHosts.
+                if (bound != null && bound.Contains(variable.Name)
+                    && StillTheHosts(handedIn, variable.Name, value)) continue;
 
                 // ELEMENTS ARE KEPT AS IDS. An Element is a handle into an
                 // open document and goes stale - a regenerate, an undo, or

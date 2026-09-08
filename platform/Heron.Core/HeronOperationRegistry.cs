@@ -86,14 +86,29 @@ namespace Heron.Core
                 // change made outside one. The guarantee is Revit's, not a
                 // check of ours that could be forgotten.
                 //
-                // Running a fragment that WRITES is a different operation that
-                // does not exist yet, and it will belong beside move_elements
-                // at Modify with a preview the user accepted.
+                // Running a fragment that WRITES is the row below. This one
+                // stays at Analyze on the same structural grounds: no
+                // transaction, so Revit itself refuses any change.
                 { "run_fragment_read",  HeronRisk.Analyze },
 
-                // MODIFY - and this is the only row in the table that does.
-                // It needs a preview the user accepted, and writing must be
-                // switched on (HeronPermissions, D-19).
+                // MODIFY - the same executor, inside a TransactionGroup, so a
+                // fragment at risk: MODIFY can finally run. 130 of them had no
+                // engine at all: written, compiling on eight releases, and
+                // unable to execute a single line.
+                //
+                // THE PREVIEW IS THE RUN ITSELF, ROLLED BACK. move_elements
+                // predicts its change before making it, which works because
+                // moving a duct 200mm is describable in advance. A fragment is
+                // arbitrary C# and is not. So this executes for real inside a
+                // TransactionGroup, reports exactly what happened, and then
+                // rolls back unless the caller said apply - which is a STRONGER
+                // guarantee than a prediction, because nothing is being guessed
+                // at. Rolling back is the default; committing is the deliberate
+                // act, and the caller has to say so in as many words.
+                { "run_fragment_write", HeronRisk.Modify },
+
+                // MODIFY. It needs a preview the user accepted, and writing
+                // must be switched on (HeronPermissions, D-19).
                 { "move_elements",      HeronRisk.Modify },
             };
 

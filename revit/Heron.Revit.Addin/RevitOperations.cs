@@ -71,6 +71,19 @@ namespace Heron.Revit.Addin
                 case "run_fragment_read":
                     return RevitFragment.Run(app, request);
 
+                // THE WRITE PATH FOR FRAGMENTS. It stays in RevitFragment
+                // rather than moving to RevitWrite.cs, and that is the one
+                // place this repository's "all writes in one file" rule is
+                // deliberately not followed. Splitting it would mean a second
+                // copy of the document choice, the contract binding and the
+                // compile - identical work, exercised half as often, drifting
+                // from the half that is proven. The transaction is what makes
+                // it a write, and it is nine lines; the executor is four
+                // hundred. The gate is unchanged and sits above this switch:
+                // the risk comes from the tool registry, by name.
+                case "run_fragment_write":
+                    return RevitFragment.Run(app, request, true);
+
                 default:
                     // Step 6 added the write path. It lives in its own file so
                     // that everything able to change a model is in one place a

@@ -120,14 +120,30 @@ def main():
               "the routed operation '%s' has a declaration in the registry" % op)
 
     print()
-    print("Exactly one thing here can change the model")
+    print("What can change the model is a SHORT, NAMED list")
+    # This was "exactly one thing" until 2026-09-08, and the number is not the
+    # point - the list being written down here is. Every addition to it has to
+    # be typed into this test by somebody who meant to, which is the whole
+    # value: an operation that quietly becomes a write fails here rather than
+    # in a model.
     writers = sorted(t for t in tools.TOOLS if tools.writes(t))
     check(writers == ["revit_apply_move"],
           "the only writing tool is revit_apply_move - found: %s" % (writers or "none"))
 
     cs_writers = sorted(op for op, level in declared_cs.items() if level == "MODIFY")
-    check(cs_writers == ["move_elements"],
-          "the only MODIFY operation is move_elements - found: %s" % (cs_writers or "none"))
+    check(cs_writers == ["move_elements", "run_fragment_write"],
+          "the MODIFY operations are exactly move_elements and run_fragment_write "
+          "- found: %s" % (cs_writers or "none"))
+
+    # THE READ EXECUTOR MUST NEVER BECOME A WRITE ONE. They share every line
+    # up to the transaction, so the thing that separates them is this pair of
+    # declarations and nothing else.
+    check(declared_cs.get("run_fragment_read") == "ANALYZE",
+          "run_fragment_read is ANALYZE - it opens no transaction, so Revit itself refuses "
+          "any change")
+    check(declared_cs.get("run_fragment_write") == "MODIFY",
+          "run_fragment_write is MODIFY - it opens one, so the permission gate and the amber "
+          "banner both have to know")
 
     print()
     print("The preview really is declared as changing nothing")
