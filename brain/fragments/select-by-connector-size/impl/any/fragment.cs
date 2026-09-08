@@ -40,6 +40,17 @@ else if (toleranceMm <= 0)
         + "Revit stores these in feet: 230 mm is 0.75459... feet, and an exact comparison "
         + "against a typed number matches nothing at all.");
 }
+else if (diameterMm <= 0 && widthMm <= 0 && heightMm <= 0)
+{
+    // REFUSED RATHER THAN RUN. With no size asked for, every comparison below is
+    // skipped and the filter returns an empty list - which is indistinguishable
+    // from "nothing in this model is that size". A filter that answers zero to a
+    // question nobody asked is the trap this fragment warns about elsewhere, and
+    // it would be dishonest to guard the tolerance against it and not this.
+    findings.Add("No size was asked for - diameter, width and height are all zero, so NOTHING "
+        + "WAS FILTERED. Give at least one of them. Left to run, this would return an empty "
+        + "list that looks exactly like \"nothing in the model is that size\".");
+}
 else
 {
     // A local rather than a lambda, because a fragment's scope is generated and

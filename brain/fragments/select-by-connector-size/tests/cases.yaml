@@ -30,6 +30,13 @@ negative:
       THAT MATTER. There was nothing to measure on them, and counting that as a
       failed match would hide a wrong selection behind a plausible number
 
+  - given: no size at all - diameter, width and height all zero
+    expect: >
+      REFUSED with the reason, nothing filtered. Left to run it would skip every
+      comparison and return an empty list, which is indistinguishable from
+      "nothing in this model is that size" - the same trap as the zero tolerance
+      below, and it would be dishonest to guard one and not the other
+
   - given: a tolerance of zero
     expect: >
       REFUSED with the reason, nothing filtered. THIS IS THE OTHER ONE. 230 mm is

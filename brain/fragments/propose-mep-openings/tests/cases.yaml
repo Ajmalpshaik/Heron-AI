@@ -16,6 +16,14 @@ positive:
     expect: >
       TWO proposals, one per host. That is how many holes have to be cut
 
+  - given: 200 services against 50 walls in a real model
+    expect: >
+      it COMPLETES in a reasonable time. Host geometry is extracted once per
+      host, not once per service - the first version asked Revit for the same 50
+      solids 200 times over, and geometry extraction is among the most expensive
+      calls in the API. That is not a slow fragment, it is one that looks like a
+      hang and gets abandoned
+
   - given: a round pipe of 150 diameter with 25 allowance
     expect: >
       200 x 200 mm proposed, and the squaring-off said out loud so nobody thinks

@@ -34,6 +34,34 @@ else
 
     var intersectOptions = new SolidCurveIntersectionOptions();
 
+    // HOST GEOMETRY IS EXTRACTED ONCE, NOT ONCE PER RUN. It used to sit inside
+    // the loop below, which reads correctly and is unusable: 200 services
+    // against 50 walls asked Revit for the same 50 solids 200 times over.
+    // Geometry extraction is among the most expensive calls in the API, so that
+    // is not a slow fragment, it is one that looks like a hang on a real model.
+    var hostSolids = new List<KeyValuePair<Element, Solid>>();
+
+    foreach (var host in hosts)
+    {
+        if (host == null || !host.IsValidObject) continue;
+
+        GeometryElement hostGeometry = null;
+        try { hostGeometry = host.get_Geometry(options); } catch { }
+
+        if (hostGeometry == null)
+        {
+            unmeasured.Add(host.Id + " has no geometry this could read");
+            continue;
+        }
+
+        foreach (GeometryObject shape in hostGeometry)
+        {
+            var hostSolid = shape as Solid;
+            if (hostSolid == null || hostSolid.Volume <= 0) continue;
+            hostSolids.Add(new KeyValuePair<Element, Solid>(host, hostSolid));
+        }
+    }
+
     foreach (var run in elements)
     {
         if (run == null || !run.IsValidObject) continue;
@@ -75,24 +103,12 @@ else
             continue;
         }
 
-        foreach (var host in hosts)
+        foreach (var hostPair in hostSolids)
         {
-            if (host == null || !host.IsValidObject) continue;
+            var host = hostPair.Key;
+            var solid = hostPair.Value;
 
-            GeometryElement geometry = null;
-            try { geometry = host.get_Geometry(options); } catch { }
-
-            if (geometry == null)
             {
-                unmeasured.Add(host.Id + " has no geometry this could read");
-                continue;
-            }
-
-            foreach (GeometryObject shape in geometry)
-            {
-                var solid = shape as Solid;
-                if (solid == null || solid.Volume <= 0) continue;
-
                 SolidCurveIntersection crossing = null;
                 try { crossing = solid.IntersectWithCurve(location.Curve, intersectOptions); }
                 catch { continue; }
