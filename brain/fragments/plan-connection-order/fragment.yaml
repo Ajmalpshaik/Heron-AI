@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -115,6 +115,33 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 17356
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values. returned findings
+    2 item(s) [Total 39836 mm over 22 element(s), mode chain, heuristic. Me..., Routed as
+    ONE group. Nothing here knows a wall exists, so th...], guarantee heuristic, links 21
+    item(s) [1447716 - 1448482 (1967 mm), 1448482 - 1505508 (1187 mm), 1505508 - 1448425 (586
+    mm), ...], mmPerFoot 304.8, noLocation 0 item(s), order 22 item(s) [1447716, 1448482,
+    1505508, ...], orthogonalDistance false, totalLengthMm 39836.4871332015, wanted chain.
+    inputs came elements from the selection (22); mode as given; groupKeys as given (0); orthogonalDistance
+    as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, mode=chain, groupKeys=,
+    orthogonalDistance=false instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values. returned findings 2 item(s) [Fewer than two elements have
+    a location, so there is nothing..., 9 element(s) have no readable location and are not
+    in the ro...], guarantee none, links 0 item(s), mmPerFoot 304.8, noLocation 9 item(s)
+    [1491217, 1491220, 1491225, ...], order 0 item(s), orthogonalDistance false, totalLengthMm
+    0, wanted chain. inputs came elements from the selection (9); mode as given; groupKeys
+    as given (0); orthogonalDistance as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6a9527e671d16d4a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
