@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -70,6 +70,30 @@ contract:
       # (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 17356
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned cap 10,
+    findings 6 item(s) [3 schedule(s) read, 144 row(s) in total - CUT OFF at 10 row(..., ''Heat
+    Recovery Unit Summary''  - 55 row(s) x 6 column(s) as p...,     ... 45 more row(s) not
+    shown - 10 of 55 read, ...], maxRows 10, rows 21 item(s) [Space: Number | Space: Name
+    | Mark | Family | Type | Level,  |  |  |  |  | , 102 | Cafe Kitchen | HRU102 | HeatRecoveryUnit
+    | Heat Recove..., ...], skippedNotSchedules 0, totalBodyRows 144, truncated true. inputs
+    came elements from the selection (3); maxRows as given. on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: L3, maxRows=10 instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase''s own
+    values. returned cap 10, findings 2 item(s) [0 schedule(s) read, 0 row(s) in total, 307
+    of what was handed in was not a schedule and was skipped], maxRows 10, rows 0 item(s),
+    skippedNotSchedules 307, totalBodyRows 0, truncated false. inputs came elements from the
+    selection (307); maxRows as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d39e23d846bbacd9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

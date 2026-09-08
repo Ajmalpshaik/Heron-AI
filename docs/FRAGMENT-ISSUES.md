@@ -310,7 +310,6 @@ and the obvious one turned out not to be.
 | `trim-extend-elements` | **None.** `moved 0` against ducts AND against tags | Nothing in the selection needed squaring up — the ducts here already meet cleanly. Needs two elements deliberately left short of each other |
 | `create-assembly-views` | **None.** `created 0`, `notAnAssembly 307` | Ducts are not assemblies. Nothing in this model is — needs an Assembly created first, which is itself a Revit command with no fragment behind it |
 | `zoom-to-elements` | Zoomed to 307 ducts | The negative selection — Duct Tags in a drafting view — does not exist, so the setup found nothing. Any category present in BOTH a plan and a drafting view would do; there may not be one |
-| `add-schedule-fields` | **None.** `added 0`, `availableFields 0` | It needs a SCHEDULE in the selection, and a schedule is a view — it cannot be selected as an element in another view. This is the same wall HANDOVER.md hit on 2026-09-07: *"both schedule fragments refused the only object a person can select… a view cannot be selected as an element."* Selecting by category does not get round it either |
 | `check-vertical-clearance` | 18 services too close at a 99999 mm required gap | `clashing` stayed at **5 in both runs** — it counts services actually touching, which does not vary with the gap asked for. So the fragment has two results and only one answers the question put to it. Either `clashing` is a separate finding that belongs in its own fragment, or the negative has to be arranged some other way |
 | `set-category-visibility` | Hid Ducts in `Model Linking` — `changed 1` | Showing them again is also `changed 1`. The same two-position needle as `set-crop-box-settings`, and the same fix would serve both |
 | `set-view-template-control` | 19 parameters held by the template, 9 freed | `nowHeld`/`nowFree` are the template's WHOLE state, so they are never empty whatever is asked. The result worth judging is *how many changed*, which the fragment does not report |
@@ -390,6 +389,38 @@ of the same idea, are on opposite sides.
 | Fragment | Edit |
 |---|---|
 | `set-crop-box-settings` | Its three settings accept `on`/`off`/`true`/`false`/`yes`/`no` — every value is a change. There is no way to say **leave this one alone**, so a caller wanting to turn the crop on without touching the annotation crop cannot. It also means the fragment has no empty case: both `on` and `off` report `changed 1`. Add a `leave` value, and make it the default |
+
+---
+
+## 3e. THE SCHEDULE WALL HAS A DOOR — found 2026-09-09
+
+**Ten fragments read or edit a schedule by looking for one in the selection**, and a schedule is a
+VIEW — it cannot be selected as an element. HANDOVER.md hit this on 2026-09-07: *"both schedule
+fragments refused the only object a person can select… a view cannot be selected as an element."*
+
+**The way through was already in the library and nobody had written it down.**
+`report-schedule-definition` was proved on 2026-09-08 against *"the 'Heat Recovery Unit Summary'
+schedule, placed on a sheet and clicked"* — a `ScheduleSheetInstance`, which IS an element.
+
+**And it can be done without clicking.** The category is called **`Schedule Graphics`**:
+
+```
+prove select-by-category-name set-selection   --set categoryName="Schedule Graphics"   --set inViewOnly="Notes, Symbols & Schedules"
+```
+
+Three instances on that sheet. `read-schedule-contents` — listed as *"fixed and UNPROVEN"* since
+2026-09-07 — was proved through it immediately: 3 schedules, 144 body rows, against 307 non-schedules
+skipped.
+
+| Still to try through this door | |
+|---|---|
+| `add-schedule-fields` · `add-schedule-combined-field` · `remove-schedule-fields` | field editing |
+| `set-schedule-appearance` · `set-schedule-filters` · `set-schedule-sort-group` | schedule settings |
+| `place-schedule-on-sheet` · `add-revision-cloud` · `export-schedule-to-csv` | the rest |
+
+`set-schedule-sort-group` was tried and `sorted 0` on both legs with `sortFieldNames=Mark` — a field
+the schedules do have, since `read-schedule-contents` listed it. So the door opens but that fragment
+needs its own look; the selection is no longer the reason.
 
 ---
 
