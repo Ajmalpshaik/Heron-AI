@@ -464,6 +464,20 @@ arrived, is the shape the library wants.
 
 ---
 
+## 3f. PROVED, BUT QUERIED — worth a second look at the sit-down
+
+Marked `PROVEN` and standing, but the owner raised a doubt on the day and it is recorded rather than
+argued away. A proof nobody questions is not the same as a proof that survived being questioned.
+
+| Fragment | Proved on | The doubt |
+|---|---|---|
+| `set-view-section-box` | 22 elements enclosed in `3D HVAC Layout`; the same call on `FloorPlan: M1` returned `viewRefused true`, `applied false`, 0 enclosed | **The negative may be testing Revit rather than the fragment.** A plan view *cannot* have a section box, so the empty answer is guaranteed by the view type and not by anything the fragment decided. A stronger negative would be a 3D view where the selection has no geometry to enclose — then the fragment has to reach the same conclusion by its own work |
+
+**If the doubt is upheld, the remedy is to re-run it, not to un-prove it by argument** — and D-30's
+fingerprint means the record says exactly what was run, so a better arrangement can replace it cleanly.
+
+---
+
 ## 4. FIXED during proving — kept because the shape returns
 
 | Fragment | What was wrong |
