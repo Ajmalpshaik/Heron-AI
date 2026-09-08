@@ -149,6 +149,35 @@ def run():
           (["report-tags-and-targets"],
            [{"name": "view", "value": "01 - Mech Plan"}]))
 
+    # ---- the risk guard ----------------------------------------------------
+    #
+    # HeronPermissions says Publish and Admin are out of reach for Phase 0 and
+    # Phase 1. That held by accident until run_fragment_write existed: the gate
+    # reads the OPERATION's risk (Golden Rule 19, and right), and that operation
+    # is declared Modify - so a fragment declaring ADMIN ran under it. Twelve
+    # fragments are above Modify and create-workset created one on the first try.
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    check("an ADMIN fragment is refused before anything is sent",
+          client.risk_refusal(root, "create-workset") is not None, True)
+    check("a PUBLISH fragment is refused too",
+          client.risk_refusal(root, "export-families") is not None, True)
+    check("the refusal says nothing reached Revit",
+          "Nothing was sent to Revit" in (client.risk_refusal(root, "create-workset") or ""),
+          True)
+
+    for ok in ("list-levels", "set-view-scale", "open-view", "count-elements"):
+        check("%s (%s) is allowed to run"
+              % (ok, client.fragment_risk(os.path.join(root, "brain", "fragments",
+                                                       ok, "fragment.yaml"))),
+              client.risk_refusal(root, ok), None)
+
+    # AN UNREADABLE RISK IS REFUSED TOO. "I could not tell" and "it is fine"
+    # must not collapse into one answer on a path where being wrong is costly.
+    check("a fragment whose risk cannot be read is refused, not assumed safe",
+          client.risk_refusal(root, "no-such-fragment-anywhere") is not None, True)
+
     for line in passes:
         print("  PASS  " + line)
 

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -55,13 +55,42 @@ contract:
     - name: opened
       type: bool
     - name: viewBefore
+      # Which view was in front BEFORE this ran, so the answer can say what
+      # changed. Filled in identically whether anything opened or not.
+      role: accounting
       type: string
     - name: requestedView
+      # The name that was asked for, echoed back. The caller's own words, not
+      # a thing this fragment found.
+      role: accounting
       type: string
     - name: matches
+      # Everything the name matched, carried so a refusal can say WHY -
+      # "[view template, cannot be opened]". It is filled in identically
+      # whether the view opened or not, so it is the evidence it looked
+      # rather than the answer (D-52).
+      role: accounting
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned asked Model Linking, findings 1
+    item(s) ["Model Linking" is already the view on screen. Nothing was c...], matches 1 item(s)
+    [Model Linking  -  FloorPlan], opened true, requestedView Model Linking, viewBefore Model
+    Linking. inputs came viewName as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with viewName=Mechanical Plan instead - chosen because it should not
+    contain what this fragment reports. returned asked Mechanical Plan, findings 1 item(s)
+    ["Mechanical Plan" names 1 thing(s) in this project and none ...], matches 1 item(s) [Mechanical
+    Plan  -  FloorPlan  [view template, cannot be ope...], opened false, requestedView Mechanical
+    Plan, viewBefore Model Linking. inputs came viewName as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cc31a7cd4123b951
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

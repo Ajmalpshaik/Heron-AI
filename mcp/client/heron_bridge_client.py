@@ -666,6 +666,40 @@ def cmd_count(pid=None):
     return 1 if failures else 0
 
 
+# THE RISK LEVELS A FRAGMENT MAY CARRY AND STILL BE RUN FROM HERE.
+#
+# HeronPermissions says Publish and Admin "are not reachable in Phase 0 or
+# Phase 1 at all". That was true by accident until 2026-09-08: the gate reads
+# the OPERATION's risk from the tool registry - Golden Rule 19, and right - and
+# `run_fragment_write` is declared Modify. So a fragment declaring ADMIN or
+# PUBLISH ran under a Modify gate and nobody was consulted. `create-workset`
+# (ADMIN) created a workset on the first try. Twelve fragments are above Modify.
+#
+# BE HONEST ABOUT WHAT THIS IS. It is a client-side guard against a MISTAKE,
+# not a boundary against malice - a caller that skips this client is unaffected,
+# and Golden Rule 19 forbids fixing that by sending the risk over the wire,
+# because then the caller decides how dangerous its own request is. The real
+# boundary stays where it is; this stops the accident that is actually likely,
+# which is somebody proving fragments alphabetically and reaching `export-*`.
+RUNNABLE_RISKS = ("READ", "ANALYZE", "EXECUTE", "MODIFY", "SUGGEST")
+
+
+def fragment_risk(path):
+    """The `risk:` a fragment declares, or None if it cannot be read.
+
+    Read the same hand-rolled way as the needs block, and for the same reason:
+    this client is stdlib only. `risk:` sits at the top level, unindented.
+    """
+    try:
+        with io.open(path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("risk:"):
+                    return line.split(":", 1)[1].strip().strip("\"'")
+    except (OSError, UnicodeDecodeError):
+        return None
+    return None
+
+
 def fragment_needs(path):
     """
     The `contract.needs` of one fragment, as a list of dicts. None if it cannot
@@ -801,6 +835,29 @@ def pull_values(rest):
     return kept, pairs, negatives
 
 
+def risk_refusal(root, name):
+    """The refusal for a fragment nothing here may run, or None.
+
+    An UNREADABLE risk is refused too. The alternative is running a fragment
+    whose danger nobody could establish, and this file's own needs reader takes
+    the same line for the same reason: on a path where being wrong is expensive,
+    "I could not tell" and "it is fine" must not collapse into one answer.
+    """
+    path = os.path.join(root, "brain", "fragments", name, "fragment.yaml")
+    risk = fragment_risk(path)
+
+    if risk is None:
+        return ("%s does not say what risk it carries, so it will not be run. "
+                "Add a `risk:` line to %s." % (name, path))
+
+    if risk not in RUNNABLE_RISKS:
+        return ("%s is declared risk: %s, and Heron does not run those yet - "
+                "HeronPermissions puts Publish and Admin out of reach for Phase 0 "
+                "and Phase 1. Nothing was sent to Revit." % (name, risk))
+
+    return None
+
+
 def caller_values(pairs):
     """
     Turn `--set view=Level 1` into what the executor reads.
@@ -858,6 +915,12 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False):
 
     if not os.path.isfile(source_path):
         print("No fragment called '%s' - looked for %s" % (name, source_path))
+        return 2
+
+    # WHAT IT IS ALLOWED TO BE, before anything is read or sent.
+    refusal = risk_refusal(root, name)
+    if refusal is not None:
+        print(refusal)
         return 2
 
     with io.open(source_path, "r", encoding="utf-8") as fh:
@@ -949,6 +1012,13 @@ def cmd_prove(names, in_document=None, values=None):
         path = os.path.join(root, "brain", "fragments", name, "impl", "any", "fragment.cs")
         if not os.path.isfile(path):
             print("No fragment called '%s'" % name)
+            return 2
+
+        # WHAT IT IS ALLOWED TO BE. Refused before it is read, so a batch that
+        # names one cannot send it and then discover the problem.
+        refusal = risk_refusal(root, name)
+        if refusal is not None:
+            print(refusal)
             return 2
         with io.open(path, "r", encoding="utf-8") as fh:
             source = fh.read()
