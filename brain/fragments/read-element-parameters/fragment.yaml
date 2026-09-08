@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -52,11 +52,34 @@ contract:
     - name: values
       type: IDictionary<ElementId, string>
     - name: blank
+      # Elements that carry it and hold nothing. Also evidence it looked -
+      # an empty value is not a value found.
+      role: accounting
       type: IList<ElementId>
     - name: absent
+      # Elements handed in that do NOT carry the parameter at all. The
+      # evidence it looked, never a value it read (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: resolvedFrom
       type: IDictionary<ElementId, string>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  positive_case: run as it would normally be run. returned absent 0 item(s), askingForLevel
+    false, blank 0 item(s), readValue Func`2, resolvedFrom 307 entry(ies), values 307 entry(ies).
+    inputs came elements from the selection (307); parameterName as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with parameterName=ZZZNOTHINGHERE instead - chosen because it should
+    not contain what this fragment reports. returned absent 307 item(s) [1395899, 1395935,
+    1395946, ...], askingForLevel false, blank 0 item(s), readValue Func`2, resolvedFrom 0
+    entry(ies), values 0 entry(ies). inputs came elements from the selection (307); parameterName
+    as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 85a606210e00a7df
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
