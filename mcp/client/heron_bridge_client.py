@@ -1228,7 +1228,7 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
 
     phases = []
 
-    def arrange(document):
+    def arrange(document, using=None):
         """Re-make the arrangement before a phase, and say if it could not be.
 
         WHY THIS IS PER PHASE AND NOT ONCE. A rolled-back write CLEARS the
@@ -1239,10 +1239,15 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
         which is 100 fragments - the whole remaining population of provable
         work.
 
-        The setup runs with the POSITIVE values, always. It is the
-        arrangement, not the question: "these elements, selected" is what
-        both phases are asked about, and only the question changes between
-        them.
+        THE SETUP RUNS WITH THE PHASE'S OWN VALUES. That was "always the
+        positive values" for one commit, on the reasoning that the setup is
+        the arrangement rather than the question - and it is wrong for the
+        commonest shape there is. A fragment needing ONLY a selection has
+        nothing else to vary, so its negative case IS a different selection:
+        remove-tags against ducts removes tags, against sheets removes none.
+        Fixing the arrangement to the positive makes those unprovable.
+        Passing the phase's own values costs nothing when both phases name
+        the same selection, because then they are the same values.
         """
         for position, step in enumerate(setup or []):
             step_path = os.path.join(root, "brain", "fragments", step,
@@ -1264,10 +1269,11 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
             # missing selection rather than a discarded one.
             step_args = {"name": step, "source": step_source,
                          "needs": step_needs}
+            chosen_setup = values if using is None else using
+            if chosen_setup:
+                step_args["values"] = chosen_setup
             if position == 0:
                 step_args["chain"] = "reset"
-            if values:
-                step_args["values"] = values
             if document:
                 step_args["document"] = document
             reply = bridge.request("run_fragment_read", op_args=step_args,
@@ -1279,7 +1285,7 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
         return True
 
     def run_fragment(phase, document, arranged, reset, using=None):
-        if setup and not arrange(document):
+        if setup and not arrange(document, using):
             phases.append({"phase": phase, "ok": False, "error": "setup_failed",
                            "message": "the arrangement could not be re-made",
                            "arranged": arranged})
@@ -1328,7 +1334,7 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
             told = arranged
             if setup:
                 told += (" - the arrangement was re-made first by running "
-                         + ", ".join(setup))
+                         + ", ".join(setup) + " with this phase's own values")
             if writing:
                 told += (" - run inside a transaction and ROLLED BACK, so the model "
                          "was left exactly as it was")
