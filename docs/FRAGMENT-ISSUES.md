@@ -104,7 +104,63 @@ and the obvious one turned out not to be.
 | `create-sheet-list` | Created a sheet list with 2 fields | Same as the two above — asked for `Sheet Index`, a name already taken, it added the fields and made the schedule anyway. `refused` names the clash; `fieldsAdded 2` says it proceeded |
 | `check-family-standards` | 97 family types reported off standard | **No negative exists in this model.** `namePattern=*`, which everything matches, still reports 97 — because "off standard" also counts families with `(0 placed)`. Needs a model whose families all pass, or a narrower question |
 | `select-unenclosed-rooms` | **None.** Examined 67 rooms, `elements 0` | Every room in Snowdon is properly enclosed. Needs a room with a wall deleted |
+| `set-crop-box-settings` | Turned the crop on in `Model Linking` — `changed 1` | Turning it OFF is also a change: `changed 1` again. The needle has only two positions and both move it. Needs a run that asks for the state the view is ALREADY in |
+| `set-section-mark-visibility` | **None.** `hidden 0`, `shown 0` | There are no section marks in `L3` to make visible or hide. Needs a view containing one |
 | `remove-view-filter` | **None.** `removed 0`, `deleted 0` | *"'L2' is governed by template 'Mechanical Plan', which owns its filters"* — a filter cannot be removed from a template-driven view at all. Needs a view whose filters are its own |
+
+---
+
+## 3d. GAPS — what proving showed is MISSING, not broken
+
+Opened 2026-09-08 on the owner's instruction: *"if you find a gap also mention that, and new fragments
+we need, we need to split this fragment, add new, edit — like that also mention in that list."*
+
+Everything here was met by needing it, not by imagining it.
+
+### New fragments the library wants
+
+`list-levels`, `list-worksets`, `list-grids`, `list-sheets`, `list-revisions` and `list-linked-models`
+all exist. The gaps below are the same shape and were each hit by having to write a throwaway probe
+instead — several times in one session.
+
+| Wanted | Why it was missed | How often today |
+|---|---|---|
+| **`LIST_VIEWS`** | `find-views` needs a `viewType` AND a `nameContains` before it answers. There is no way to ask *"what views are there"* — which is the first question of every proof that takes a view, and **53 fragments take one** | Every single view-based proof. The most-needed missing fragment of the day |
+| `LIST_VIEW_TEMPLATES` | `select-view-templates` selects; nothing lists. Needed the names of all 18 before anything could be done with a template | 3 times |
+| `LIST_LINE_STYLES` | `remap-line-styles` takes two style names and there is no way to discover one | 1 |
+| `LIST_MEP_SYSTEM_TYPES` | `create-mep-system-type` takes `copyFromName` and nothing lists the 14 that exist | 1 |
+| `LIST_MATERIALS` | `find-unused-materials` reports only the unused ones. There is no list of the materials that ARE used | 1 |
+
+**The pattern is one sentence: every fragment that takes a NAME needs a sibling that lists the names.**
+A caller who cannot discover a value cannot supply one, and [D-54](DECISIONS.md) made supplying them
+possible without making them findable.
+
+### One fragment to SPLIT
+
+| Fragment | Why |
+|---|---|
+| `check-family-standards` | It answers two unrelated questions under one word. `namePattern=*`, which everything matches, still reported **97 off standard** — because "off standard" also counts families with `(0 placed)`. *"This family is named wrongly"* and *"this family is loaded and never used"* are different findings with different fixes, and `find-unused-families` already owns the second one. Merged, neither can be proved: there is no arrangement that empties both at once |
+
+### A decision to make, then edits to follow
+
+**A name clash refuses in some creators and renames in others**, and nothing says which is right:
+
+| Refuses | Renames anyway |
+|---|---|
+| `create-level` | `create-levels` |
+| `create-drafting-view` | `create-view-template-from-view` |
+| | `create-sheet-list` |
+
+Both behaviours are defensible. What is not defensible is that a caller cannot predict which they will
+get, and it cost three failed negative cases today before the pattern was visible. **Decide once, then
+edit the minority to match** — and note that `create-level` and `create-levels`, the singular and plural
+of the same idea, are on opposite sides.
+
+### One edit, small and specific
+
+| Fragment | Edit |
+|---|---|
+| `set-crop-box-settings` | Its three settings accept `on`/`off`/`true`/`false`/`yes`/`no` — every value is a change. There is no way to say **leave this one alone**, so a caller wanting to turn the crop on without touching the annotation crop cannot. It also means the fragment has no empty case: both `on` and `off` report `changed 1`. Add a `leave` value, and make it the default |
 
 ---
 
