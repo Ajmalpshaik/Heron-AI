@@ -129,7 +129,6 @@ These ran correctly and gave one honest half of a proof. The other half does not
 |---|---|---|---|
 | `read-graphic-overrides` | The empty answer — 0 of 625 elements | A positive | Select ducts → Override Graphics in View → By Element → red |
 | `diagnose-visibility` | 625 visible, 0 reasons | Something invisible | Select one element → HH |
-| `report-category-visibility` | Real answers — 18 hidden in `L2`, 7 in `Model Linking` | A view with **zero** hidden | **Checked in BOTH open models on 2026-09-08 — 121 views in `Snowdon Towers Sample Architectural` and 68 in the HVAC one, and not one has zero.** Every Revit view hides something by default (Sun Path, Internal Origin, Automatic Sketch Dimensions). Either make such a view on purpose, or accept that this fragment cannot come back empty and prove it by TRACKING ([D-53](DECISIONS.md)) — which is what that decision exists for |
 | `find-unused-materials` | 56 found | A model with none | A second, clean model — or accept tracking |
 | `find-unused-families` | 64 found | A model with none | Same |
 

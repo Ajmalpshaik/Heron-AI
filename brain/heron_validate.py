@@ -592,20 +592,33 @@ def draft_from_record(frag, record):
     # match five different counts exactly.
     tracking = record.get("tracking")
     if tracking:
-        rows = "\n".join("      %s selected -> %s %s"
-                         % (t.get("selected"), t.get("field"), t.get("value"))
-                         for t in tracking)
+        # WHAT WAS VARIED IS NOT ALWAYS A SELECTION. D-53 was written while
+        # proving COUNT_ELEMENTS, where it always was, so the wording said
+        # "selections" and each row read "28 selected -> count 28". A fragment
+        # that reads a VIEW cannot come back empty either - every Revit view
+        # hides something by default, so REPORT_CATEGORY_VISIBILITY has no
+        # empty case in ANY model, checked across 189 views in two - and its
+        # rows vary by view, not by selection.
+        #
+        # A row saying "selected" about a view would describe an arrangement
+        # nobody made, which is the one thing a proof may never do. So a row
+        # may carry `input` instead, and the wording follows it.
+        varied = "input" if any(t.get("input") for t in tracking) else "selection"
+        rows = "\n".join(
+            "      %s -> %s %s" % (t.get("input") or ("%s selected" % t.get("selected")),
+                                   t.get("field"), t.get("value"))
+            for t in tracking)
         negative_text = (
             "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). "
             "%s describes whatever it is given, so no arrangement makes its answer "
             "empty. What D-30's negative case exists to catch - a fragment that "
             "succeeds while doing nothing, or answers about a set it was not given "
             "- is caught here by the answer following the input exactly across "
-            "%d different selections:\n\n%s\n\n"
+            "%d different %ss:\n\n%s\n\n"
             "    Different inputs, exact matches every time. A fragment falling back "
             "to the active view, the whole model, or a previous run could not do "
             "that."
-            % (frag.slug, len(tracking), rows))
+            % (frag.slug, len(tracking), varied, rows))
     elif negative and negative.get("ok"):
         negative_text = describe_phase(negative)
         # `provides` is a method on Fragment; a stub in the tests may expose it

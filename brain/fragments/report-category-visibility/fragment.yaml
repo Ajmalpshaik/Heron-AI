@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -47,6 +47,30 @@ contract:
       type: IList<string>
     - name: hiddenCategories
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,688 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned asked 68, byTemplate true, findings
+    20 item(s) [18 of 68 category(ies) present in this model are switched of..., Levels -
+    SWITCHED OFF, Elevations - SWITCHED OFF, ...], hiddenCategories 18 item(s) [-2000240,
+    -2000535, -2009609, ...], populated 68 entry(ies), templateOwned 68. inputs came view
+    as given. on Snowdon-scratch_ajmal.al
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-category-visibility\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 6 different inputs:\n\n      view \"FloorPlan: L2\" -> hiddenCategories 18\n\
+    \      view \"CeilingPlan: L2\" -> hiddenCategories 12\n      view \"Model Linking\" ->\
+    \ hiddenCategories 7\n      view \"{3D}\" -> hiddenCategories 5\n      view \"How to use\
+    \ this project 1\" -> hiddenCategories 2\n      view \"Cover Sheet\" -> hiddenCategories\
+    \ 1\n\n    Different inputs, exact matches every time. A fragment falling back to the\
+    \ active view, the whole model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ad5a2e5603213cc9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
