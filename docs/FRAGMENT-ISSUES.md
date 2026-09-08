@@ -153,7 +153,25 @@ its negative for exactly this reason.
 so the ids Revit was holding no longer exist; clearing is safer than pointing at ghosts. But correct or
 not, it means no selection-based write fragment can be proved by the current tooling.
 
-### The fix belongs in the tooling, not the fragments
+### FIXED, 2026-09-08 — `validate --setup`
+
+`--setup <fragment>` names a fragment to run before **each** phase, repeatable and in order. It runs
+with the POSITIVE values always, because it is the arrangement rather than the question: *"these
+elements, selected"* is what both phases are asked about, and only the question changes.
+
+```
+validate create-selection-filter --write   --setup select-by-category-name --setup set-selection   --set categoryName=Ducts --set "inViewOnly=FloorPlan: L3"   --set filterName="HERON SEL Z9"   --negative-set filterName=Domestic ...
+```
+
+**`create-selection-filter` was the first selection-based WRITE ever proved** — 307 elements saved to a
+new filter, 0 when the name was already taken. `assign-location-data` followed.
+
+One thing had to be got right and was got wrong first: **only the first setup step resets the chain.**
+The whole point is that step two consumes what step one left — `select-by-category-name` leaves
+`elements`, `set-selection` needs them — and resetting between them threw that away. The symptom read
+as a missing selection rather than a discarded one.
+
+### The reasoning that led there, kept because it generalises
 
 `validate` needs to re-establish the arrangement before EACH phase, not once at the start — the same
 way it already sends different caller values per phase. A `--setup` chain naming fragments to run first
@@ -235,6 +253,7 @@ and the obvious one turned out not to be.
 | `report-parameter-inventory` | 71 parameters across 10 elements | `sampleOnly=true` reads ONE element and still returns 32 parameters. It narrows the sample, it does not empty the answer — the same shape as `report-bounding-box` and `report-geometry-complexity`, and the third fragment today whose only input controls how much is shown rather than what is found |
 | `read-space-loads` | **None.** All 17 spaces return `noLoad` — *"Revit refused the f…"* | Exactly what HANDOVER.md predicted: *"every space in the model returns noLoad; a positive needs Areas and Volumes on with the analysis run, or a Design Heating Load typed on one space."* Confirmed against the model today rather than carried forward on trust |
 | `find-overlapping-lines` | **None.** `overlapping 0` on 9 real detail lines, all straight | Nothing overlaps in the drafting view even at a 99,999 mm tolerance — which is itself worth a look, since at that tolerance almost any two lines in one view should qualify. Either the tolerance governs collinearity rather than distance, or it is not in millimetres. Read it before arranging a case |
+| `copy-parameter-value` | **None.** `copied 0`, `typeMismatch true` | Copying `System Type` into `Comments` is refused because one is a type parameter and the other an instance one — correct behaviour, and not a positive. Needs two instance parameters of the same kind where the source actually holds something. `Comments` is blank on every duct in this model, which is what made it look like an easy choice |
 | `check-vertical-clearance` | 18 services too close at a 99999 mm required gap | `clashing` stayed at **5 in both runs** — it counts services actually touching, which does not vary with the gap asked for. So the fragment has two results and only one answers the question put to it. Either `clashing` is a separate finding that belongs in its own fragment, or the negative has to be arranged some other way |
 | `set-category-visibility` | Hid Ducts in `Model Linking` — `changed 1` | Showing them again is also `changed 1`. The same two-position needle as `set-crop-box-settings`, and the same fix would serve both |
 | `set-view-template-control` | 19 parameters held by the template, 9 freed | `nowHeld`/`nowFree` are the template's WHOLE state, so they are never empty whatever is asked. The result worth judging is *how many changed*, which the fragment does not report |

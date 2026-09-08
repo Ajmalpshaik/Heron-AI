@@ -1144,7 +1144,7 @@ def cmd_prove(names, in_document=None, values=None):
 
 
 def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
-                 values=None, negative_values=None, writing=False):
+                 values=None, negative_values=None, writing=False, setup=None):
     """
     Run ONE fragment through the phases a proof needs, and record what came back.
 
@@ -1228,7 +1228,64 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
 
     phases = []
 
+    def arrange(document):
+        """Re-make the arrangement before a phase, and say if it could not be.
+
+        WHY THIS IS PER PHASE AND NOT ONCE. A rolled-back write CLEARS the
+        Revit selection - established 2026-09-08 by doing it: select 307
+        ducts, run a read twice and the selection survives, run one write
+        with no `apply` and it is gone. So the second phase of every
+        selection-based write arrived at an empty selection and refused,
+        which is 100 fragments - the whole remaining population of provable
+        work.
+
+        The setup runs with the POSITIVE values, always. It is the
+        arrangement, not the question: "these elements, selected" is what
+        both phases are asked about, and only the question changes between
+        them.
+        """
+        for position, step in enumerate(setup or []):
+            step_path = os.path.join(root, "brain", "fragments", step,
+                                     "impl", "any", "fragment.cs")
+            if not os.path.isfile(step_path):
+                print("  setup: no fragment called '%s'" % step)
+                return False
+            with io.open(step_path, "r", encoding="utf-8") as fh:
+                step_source = fh.read()
+            step_needs = needs_for(root, step)
+            if step_needs is None:
+                return False
+            # ONLY THE FIRST STEP RESETS THE CHAIN. The whole point of a
+            # setup chain is that step two consumes what step one left -
+            # select-by-category-name leaves `elements`, set-selection needs
+            # them - and resetting between them throws that away. Sent as
+            # "reset" for every step for one commit, and set-selection
+            # refused with "elements was never supplied", which reads as a
+            # missing selection rather than a discarded one.
+            step_args = {"name": step, "source": step_source,
+                         "needs": step_needs}
+            if position == 0:
+                step_args["chain"] = "reset"
+            if values:
+                step_args["values"] = values
+            if document:
+                step_args["document"] = document
+            reply = bridge.request("run_fragment_read", op_args=step_args,
+                                   response_timeout=180.0)
+            if reply is None or not reply.get("ok"):
+                print("  setup: %s did not run - %s"
+                      % (step, (reply or {}).get("message", "no reply")[:70]))
+                return False
+        return True
+
     def run_fragment(phase, document, arranged, reset, using=None):
+        if setup and not arrange(document):
+            phases.append({"phase": phase, "ok": False, "error": "setup_failed",
+                           "message": "the arrangement could not be re-made",
+                           "arranged": arranged})
+            print("%-14s %s" % (phase, "setup_failed"))
+            return phases[-1]
+
         args = {"name": name, "source": source, "needs": needs}
         # `using` is the negative phase asking for DIFFERENT caller values -
         # the same fragment aimed at a view that does not have the thing. None
@@ -1269,6 +1326,9 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
             # proof: the next person reads it as evidence the model now holds
             # something it does not.
             told = arranged
+            if setup:
+                told += (" - the arrangement was re-made first by running "
+                         + ", ".join(setup))
             if writing:
                 told += (" - run inside a transaction and ROLLED BACK, so the model "
                          "was left exactly as it was")
@@ -1591,6 +1651,24 @@ def main(argv):
         # fragment DID, and the model ends untouched.
         writing = "--write" in rest
         rest = [r for r in rest if r != "--write"]
+        # --setup names a fragment to run BEFORE each phase, repeatable and in
+        # order. It re-makes the arrangement - typically select-by-category-name
+        # then set-selection - because a rolled-back write clears the selection.
+        setup = []
+        cleaned, skip = [], False
+        for index, token in enumerate(rest):
+            if skip:
+                skip = False
+                continue
+            if token == "--setup":
+                if index + 1 >= len(rest):
+                    print("--setup needs a fragment name after it")
+                    return 2
+                setup.append(rest[index + 1])
+                skip = True
+                continue
+            cleaned.append(token)
+        rest = cleaned
         options = {"in_document": None, "cross": None, "negative_in": None,
                    "out": None}
         flags = {"--in": "in_document", "--cross": "cross",
@@ -1610,6 +1688,11 @@ def main(argv):
             print("  --negative-set n=v    any other value for the negative case")
             print("  --write               a MODIFY fragment - both phases run inside a")
             print("                        transaction and are ROLLED BACK, keeping nothing")
+            print("  --setup <fragment>    run this BEFORE each phase to re-make the")
+            print("                        arrangement. Repeatable, in order. A rolled-back")
+            print("                        write clears the selection, so a selection-based")
+            print("                        write needs it: --setup select-by-category-name")
+            print("                        --setup set-selection")
             return 2
         values = caller_values(pairs)
         if values is None:
@@ -1618,7 +1701,8 @@ def main(argv):
         if negative_values is None:
             return 2
         return cmd_validate(rest[0], values=values,
-                            negative_values=negative_values, writing=writing, **options)
+                            negative_values=negative_values, writing=writing,
+                            setup=setup, **options)
 
     print(__doc__.strip())
     return 2
