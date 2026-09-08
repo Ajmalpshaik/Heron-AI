@@ -49,6 +49,52 @@ session — so that if Revit complains again it is unambiguous which one did it.
 
 ---
 
+## 1a. THE ACTIVITY BANNER CAN BE LEFT UP AFTER THE JOB ENDS — 2026-09-08
+
+The owner's screen showed **"Heron AI is reading your model — Running a job: switch-active-project —
+READING"** long after that job had returned. At the same moment `ping` answered in **2 ms** and
+`count_elements` read 34,509 elements: Revit was healthy and idle, and the banner said it was working.
+
+**This is the exact failure [D-50](DECISIONS.md) was designed to prevent.** Its own reasoning:
+
+> *"It comes down when Revit truly finishes, not when the caller gives up. Two threads can both think a
+> job is theirs to end, so one interlocked flag on the job decides it."*
+
+`B6`–`B13` in [NEEDS-CHECKING.md](NEEDS-CHECKING.md) were closed on 2026-09-07 — *"the banner works, in
+every colour"* — so this is a case those checks did not cover, not a claim that was never tested.
+
+**What is NOT known yet**, and must not be guessed:
+
+- whether it is specific to `switch-active-project`, which asks Revit to do something **after** the
+  operation ends (`RequestViewChange`), so the job may end in a state the banner's flag does not expect
+- whether an exception path skips the lowering
+- whether a later job clears it, or it stays until Revit restarts
+
+**Worse than a cosmetic bug, and the reason it is first on this list:** a banner that lies about Revit
+being busy is worse than no banner, because the next person to see a real one will not believe it.
+
+---
+
+## 1b. NEEDS A HUMAN AT THE KEYBOARD — Revit opens a dialog Heron cannot answer
+
+| Fragment | What happened |
+|---|---|
+| `transfer-materials-between-documents` | Copying materials from `Snowdon Towers Sample Architectural` into the scratch model, Revit raised **"Duplicate Types — Material Assets : Steel"** and waited. The run returned `still_running` after 60 s, and the next request was refused with `revit_busy`. The owner pressed OK and Revit carried on |
+
+**THE BRIDGE DID EXACTLY THE RIGHT THING and that half is a pass.** Both messages were the ones
+[docs/03](03-heron-revit.md) asks for — *"Revit started the request but has not finished within 60
+seconds. It is still working; do not repeat the request"*, then *"A dialog may be open... Finish what is
+open in Revit and ask again"*. No hang, no wrong answer, and it named the cure.
+
+**What cannot be fixed by trying harder:** a transfer that collides with an existing type stops and
+waits for a person, every time. Heron cannot dismiss a Revit dialog and must not learn to — the dialog
+is Revit asking a question only the modeller can answer, and the two choices produce different models.
+
+Worth deciding at the sit-down: whether these fragments should **detect the collision first and refuse**,
+naming what would clash, rather than starting a paste they cannot finish alone.
+
+---
+
 ## 2. CANNOT PROVE — Revit itself declines
 
 None of these looks like a fragment defect. Each asked Revit to do something and Revit said no, for a
