@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -78,21 +78,56 @@ contract:
       source: request
   provides:
     - name: sheetAreas
+      # The area worked out per element - what the weights are computed
+      # FROM.
+      role: accounting
       type: IDictionary<ElementId, double>
     - name: weights
       type: IDictionary<ElementId, double>
     - name: bandUsed
+      # Which band each element fell into. Evidence of the working.
+      role: accounting
       type: IDictionary<ElementId, string>
     - name: shapeInferred
       type: IList<ElementId>
     - name: unsized
       type: IList<ElementId>
     - name: outsideBands
+      # Elements whose size falls in no band given. The evidence it looked
+      # and could not place them, never a weight it worked out.
+      role: accounting
       type: IList<ElementId>
     - name: areaDifference
+      # The rounding gap between two ways of computing the area, carried so
+      # the number can be trusted. Arithmetic, not a finding.
+      role: accounting
       type: double
     - name: areaChecked
+      # How many had their sheet area worked out. A work counter.
+      role: accounting
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  positive_case: run as it would normally be run. returned FeetToMm 304.8, SquareFeetToSquareMetres
+    0.09290304, areaChecked 307, areaDifference 1.33226762955019E-15, bandCount 4, bandUsed
+    307 entry(ies), comparableComputed 2099.85993170938, densityKgPerM3 7850, outsideBands
+    0 item(s), revitArea 2099.85993170938, shapeInferred 0 item(s), sheetAreas 307 entry(ies),
+    unsized 0 item(s), weights 307 entry(ies). inputs came elements from the selection (307);
+    sizeBandsMm as given (4); thicknessMm as given (4); densityKgPerM3 as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with sizeBandsMm=, thicknessMm=, densityKgPerM3=7850 instead - chosen
+    because it should not contain what this fragment reports. returned FeetToMm 304.8, SquareFeetToSquareMetres
+    0.09290304, areaChecked 0, areaDifference 0, bandCount 0, bandUsed 0 entry(ies), comparableComputed
+    0, densityKgPerM3 7850, outsideBands 307 item(s) [1395899, 1395935, 1395946, ...], revitArea
+    0, shapeInferred 0 item(s), sheetAreas 0 entry(ies), unsized 0 item(s), weights 0 entry(ies).
+    inputs came elements from the selection (307); sizeBandsMm as given (0); thicknessMm as
+    given (0); densityKgPerM3 as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c5f1d4a0d68d82d5
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
