@@ -63,6 +63,10 @@ contract:
     - name: changed
       type: int
     - name: alreadyRight
+      # Elements that were ALREADY in the state asked for, so there was
+      # nothing to do. The evidence it looked, never a change it made
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: wouldNot
       type: IList<string>

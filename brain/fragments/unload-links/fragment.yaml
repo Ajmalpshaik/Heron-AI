@@ -44,6 +44,10 @@ contract:
     - name: unloaded
       type: IList<ElementId>
     - name: alreadyUnloaded
+      # Elements that were ALREADY in the state asked for, so there was
+      # nothing to do. The evidence it looked, never a change it made
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notALink
       type: IList<ElementId>

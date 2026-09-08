@@ -43,6 +43,10 @@ contract:
     - name: applied
       type: int
     - name: alreadyOnIt
+      # Elements that were ALREADY in the state asked for, so there was
+      # nothing to do. The evidence it looked, never a change it made
+      # (D-52).
+      role: accounting
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

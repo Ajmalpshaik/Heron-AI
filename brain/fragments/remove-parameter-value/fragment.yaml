@@ -53,6 +53,9 @@ contract:
     - name: cleared
       type: int
     - name: alreadyEmpty
+      # Elements whose parameter was ALREADY empty, so there was nothing to
+      # clear. The evidence it looked (D-52).
+      role: accounting
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

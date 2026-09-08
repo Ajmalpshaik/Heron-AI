@@ -80,8 +80,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: risers
+      # Vertical runs, which have no slope to set. Also evidence.
+      role: accounting
       type: IList<ElementId>
     - name: bothEndsConnected
+      # Runs with both ends connected, which cannot be sloped without moving
+      # what they join. The evidence it looked, never a slope it set.
+      role: accounting
       type: IList<ElementId>
     - name: inGroup
       type: IList<ElementId>

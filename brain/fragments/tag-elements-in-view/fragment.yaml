@@ -82,6 +82,10 @@ contract:
     - name: tagged
       type: int
     - name: alreadyTagged
+      # Elements that were ALREADY in the state asked for, so there was
+      # nothing to do. The evidence it looked, never a change it made
+      # (D-52).
+      role: accounting
       type: int
     - name: typeCorrections
       type: int

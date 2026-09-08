@@ -61,6 +61,10 @@ contract:
     - name: nameRefused
       type: IList<ElementId>
     - name: alreadyThere
+      # Elements that were ALREADY in the state asked for, so there was
+      # nothing to do. The evidence it looked, never a change it made
+      # (D-52).
+      role: accounting
       type: IList<double>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
