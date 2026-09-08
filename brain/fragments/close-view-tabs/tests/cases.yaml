@@ -1,0 +1,59 @@
+positive:
+  - given: five tabs open and three of them named
+    expect: >
+      three closed, two still open, and the count of each reported. The three
+      views remain in the Project Browser - closing a tab removes nothing
+
+  - given: a name differing only in capitals from an open tab
+    expect: >
+      it still matches and closes. A modeller types the name they remember
+
+  - given: two tabs open and one of them named
+    expect: >
+      it closes, leaving one. One survivor is the floor, and this is the case
+      that sits just above it
+
+  - given: a request naming a view that is open twice (two tabs on one view)
+    expect: >
+      both tabs closed, subject to the last-tab guard, and both counted. Revit
+      allows the same view in two tabs and closing "the view" means both
+
+negative:
+  - given: three tabs open and all three named for closing
+    expect: >
+      TWO CLOSED, ONE KEPT BACK, and the reason said out loud. THIS IS THE CASE
+      THAT MATTERS. Closing the last open view of a project closes the PROJECT,
+      and that project may hold unsaved work - tidying tabs must never cost
+      somebody their modelling
+
+  - given: exactly one tab open, and that tab named for closing
+    expect: >
+      NOTHING CLOSED, kept back with the reason. The floor holds even when the
+      request is a single view
+
+  - given: a view name that has no open tab
+    expect: >
+      counted as "not open" and NOT as a failure, and reported separately from
+      the ones that closed. "Six asked, six done" and "six asked, four were
+      open" are different facts
+
+  - given: an empty list of names
+    expect: >
+      nothing closed and the instruction to name some. Closing everything by
+      default would be the worst possible reading of an empty request
+
+  - given: any run at all
+    expect: >
+      NO VIEW DELETED, NO TRANSACTION, NO PROJECT CLOSED, REVIT STILL RUNNING.
+      This closes tabs. DELETE_ELEMENTS is what removes a view, and nothing here
+      closes a model
+
+second_route:
+  - >
+    The Project Browser after the run. Every view named as closed must still be
+    listed there - if one has gone, this did something it must never do
+
+  - >
+    The tab bar itself, counted before and after. The drop should equal `closed`
+    exactly, and anything kept back should still be visible with its name
+    matching what was reported

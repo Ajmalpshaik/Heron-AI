@@ -1,0 +1,98 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-100
+semantic-identity: "close the view tabs I have finished with, without losing the views"
+kind: action
+domain: revit.views
+capability: CLOSE_VIEW_TABS
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+purpose: >
+  Closes open view TABS in the active project. It deletes nothing: the views
+  themselves stay in the Project Browser and can be reopened at any time.
+
+  **CLOSING A TAB IS NOT DELETING A VIEW, AND THE WORDING HAS TO CARRY THAT.**
+  *"Close the view"* and *"delete the view"* are one keystroke apart in a chat and
+  a world apart in a model. This closes tabs only. DELETE_ELEMENTS is what removes
+  a view, and it is a different, MODIFY-risk operation on purpose.
+
+  **IT WILL NEVER CLOSE THE LAST OPEN TAB, AND THAT IS THE WHOLE SAFETY OF IT.**
+  In Revit, closing the last open view of a project closes the PROJECT - and a
+  project very likely has unsaved work in it. A request that would empty the tab
+  bar is honoured as far as it safely can be and then stops, with the kept-back
+  tab named. Losing somebody's unsaved model to tidy up their tabs is not a
+  trade this fragment will make.
+
+  **THE ACTIVE TAB IS THE ONE KEPT BACK** when the request would otherwise close
+  everything, because leaving the user looking at the view they were already in
+  is the least surprising place to stop.
+
+  **A TAB THAT IS ALREADY CLOSED IS NOT A FAILURE.** It is reported separately
+  from the ones that were closed, because "I asked for six and six happened" and
+  "I asked for six, four were open" are different facts and merging them hides
+  the second.
+
+  Opens no transaction and needs none: it acts on the session, not the building.
+  That is why it is EXECUTE rather than MODIFY.
+
+contract:
+  needs:
+    - name: uidoc
+      type: UIDocument
+    - name: doc
+      type: Document
+    # The view names whose tabs should close. Empty closes nothing, deliberately.
+    - name: viewNames
+      type: IList<string>
+      source: request
+  provides:
+    - name: closed
+      type: int
+    - name: closedNames
+      type: IList<string>
+    - name: notOpen
+      type: IList<string>
+    - name: keptBack
+      type: IList<string>
+    - name: remaining
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `UIDocument.GetOpenUIViews()`,
+  `UIView.ViewId`, `UIView.Close()`, `UIDocument.ActiveView` and
+  `Document.GetElement(ElementId)` are unchanged 2020 to 2027 - checked by
+  compiling this fragment against the reference assemblies for all eight.
+
+  `GetOpenUIViews` returns the tabs of THIS UIDocument only. Tabs belonging to
+  another open project are not visible here and are not touched.
+
+# ROUTING - cross-referenced in OPEN_VIEW and DELETE_ELEMENTS.
+#
+#   "close that view"                  -> here. It closes the TAB
+#   "close the tabs I am done with"    -> here
+#   "tidy up my open views"            -> here
+#   "delete that view"                 -> DELETE_ELEMENTS. THAT REMOVES IT FROM
+#                                         THE PROJECT. One keystroke apart in a
+#                                         chat, a world apart in a model
+#   "open the Level 2 plan"            -> OPEN_VIEW
+#   "close the project"                -> NOT HERE, AND NOWHERE. Heron does not
+#                                         close a model or Revit
+
+utterances:
+  - close that view tab
+  - close the views I am finished with
+  - tidy up my open tabs
+  - close all the plans except this one
+  - I have too many views open

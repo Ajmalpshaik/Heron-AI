@@ -1,0 +1,54 @@
+positive:
+  - given: three projects open, one of them the active one
+    expect: >
+      all three listed with title and full path, the active one marked, and the
+      count saying three. The path is the column that makes the list actionable
+
+  - given: two open projects both called "Project1", saved in different folders
+    expect: >
+      BOTH listed, their differing paths visible, and a finding naming the
+      collision out loud. This is the case the fragment exists for - a title
+      alone would name neither
+
+  - given: a project that has never been saved
+    expect: >
+      listed, with the empty path said in words rather than left blank. A blank
+      column reads as a bug, and such a project can only be matched by title
+
+  - given: a project with unsaved changes
+    expect: >
+      marked as such. Anything that might later close a view or switch away is
+      worth knowing about before it happens
+
+negative:
+  - given: a session with two links loaded inside one project
+    expect: >
+      ONE project listed and the links COUNTED SEPARATELY, not listed as
+      projects. THIS IS THE CASE THAT MATTERS. Application.Documents returns
+      links too, so counting them as projects would offer a switch to something
+      that has no tab to switch to
+
+  - given: a family document open for editing alongside a project
+    expect: >
+      the family counted apart from the projects, for the same reason - it is
+      edited in its own editor and is not a project to switch to
+
+  - given: a session with no project open at all
+    expect: >
+      an empty list, a count of zero, and it said plainly - not an error, and
+      not a silent empty result
+
+  - given: any run at all
+    expect: >
+      NOTHING OPENED, NOTHING CLOSED, NO TRANSACTION. This reports. Acting on
+      what it returns is SWITCH_ACTIVE_PROJECT's job
+
+second_route:
+  - >
+    Revit's own Window tab and the title bar. What is listed here should match
+    what the user can see and click, one for one - and the links and families
+    that are counted rather than listed should be the ones with no tab
+
+  - >
+    The Manage Links dialog, for the linked models this fragment only counts.
+    Two numbers that disagree mean the split between project and link is wrong

@@ -1,0 +1,58 @@
+positive:
+  - given: the exact name of a floor plan that exists and is not on screen
+    expect: >
+      the change requested, the view type named, and the finding saying plainly
+      that Revit has not performed it yet
+
+  - given: the name of a sheet
+    expect: >
+      it opens the same way. A sheet is a view, and "show me that sheet" is the
+      same request as "open that plan"
+
+  - given: the name of the view already on screen
+    expect: >
+      success having moved nothing, and said so. Re-opening the current view
+      would be a visible flicker for no reason
+
+  - given: a name differing only in capitals from a real view
+    expect: >
+      it still matches. A modeller types the name they remember, not the one
+      stored
+
+negative:
+  - given: the name of a VIEW TEMPLATE
+    expect: >
+      REFUSED, naming the template as the reason, and "NOTHING HAS BEEN SENT TO
+      REVIT". THIS IS THE CASE THAT MATTERS. A template shares the name list and
+      is the most likely wrong answer to "open the ceiling plan" - failing
+      obscurely inside Revit instead would look like a broken tool
+
+  - given: a view name that does not exist in this project
+    expect: >
+      refused, nothing sent, AND NOTHING CREATED. Creating a view for a mistyped
+      name would leave a stray in the project for every typo
+
+  - given: two openable views sharing the same name
+    expect: >
+      refused with both listed and their types shown, rather than one picked.
+      Guessing which was meant puts the user somewhere they did not ask to be
+
+  - given: an empty view name
+    expect: >
+      refused with the instruction to name one, not a silent no-op
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION, NOTHING CREATED, NOTHING CLOSED. This puts an existing view
+      on screen and does nothing else
+
+second_route:
+  - >
+    The view tab bar in Revit after the operation completes. The requested view
+    should be the active tab - and if it is not, the request was refused rather
+    than silently ignored
+
+  - >
+    The Project Browser, for the refusals. A name that this reported as missing
+    should be missing there too, and a name it called a template should show as
+    one
