@@ -201,6 +201,20 @@ its negative for exactly this reason.
 so the ids Revit was holding no longer exist; clearing is safer than pointing at ghosts. But correct or
 not, it means no selection-based write fragment can be proved by the current tooling.
 
+### …and `--setup` cannot run a step that WRITES — found 2026-09-09
+
+Setup steps go through `run_fragment_read`, which opens no transaction, so a `MODIFY` fragment used as
+setup throws *"Attempt to modify the model outside of transaction"*.
+
+`show-elements` is the fragment that needs it: to prove it, something must be hidden **and stay
+hidden**, so its arrangement is `hide-elements` — a write. And a write in the setup would have to be
+APPLIED to survive into the phase, which is the one thing the whole rollback design exists to avoid.
+
+**A genuine chicken-and-egg, worth deciding rather than patching:** either the setup gets its own
+applied-then-undone bracket around both phases, or fragments that need a written arrangement are proved
+by TRACKING instead. It is the same shape as `update-saved-set`, which needs a saved set that another
+fragment creates and rolls back.
+
 ### FIXED, 2026-09-08 — `validate --setup`
 
 `--setup <fragment>` names a fragment to run before **each** phase, repeatable and in order. It runs
@@ -321,6 +335,7 @@ and the obvious one turned out not to be.
 | `set-view-crop` | Cropped around 307 ducts | And around 73 tags in the negative — `enclosed 73`, `applied true`. It crops around whatever it is handed, so it CANNOT come back empty. Same family as `count-elements` and `isolate-elements`: prove it by TRACKING ([D-53](DECISIONS.md)) across selections of different sizes |
 | `update-saved-set` | **None.** *"No saved set called…"* on both legs | The set it was pointed at was created by `create-selection-filter` in an earlier run — which rolled back, taking the set with it. **A fragment that edits what another fragment creates cannot be proved while both roll back.** Needs a saved set that already exists in the model |
 | `edit-text-values` | **None.** `changed 0`, `absent 7` on the positive | Handed 7 text notes with `field=text` it reported all seven as `absent` — so `text` is not the field name it wants. The valid values are not written anywhere findable; `mode` accepts prefix/replace/suffix, but `field` was not discoverable from the source. **Another instance of the LIST_ gap in §3d** — a fragment taking a name with no way to learn the names |
+| `compare-elements` | 29 differing parameters across 8 compared ducts | Handed tags instead it still found **1** differing — an empty negative needs elements that are genuinely identical, or fewer than two so `tooFewToCompare` fires. `select-by-category-name` cannot narrow to one, so this needs a way to select exactly one element |
 | `check-vertical-clearance` | 18 services too close at a 99999 mm required gap | `clashing` stayed at **5 in both runs** — it counts services actually touching, which does not vary with the gap asked for. So the fragment has two results and only one answers the question put to it. Either `clashing` is a separate finding that belongs in its own fragment, or the negative has to be arranged some other way |
 | `set-category-visibility` | Hid Ducts in `Model Linking` — `changed 1` | Showing them again is also `changed 1`. The same two-position needle as `set-crop-box-settings`, and the same fix would serve both |
 | `set-view-template-control` | 19 parameters held by the template, 9 freed | `nowHeld`/`nowFree` are the template's WHOLE state, so they are never empty whatever is asked. The result worth judging is *how many changed*, which the fragment does not report |
