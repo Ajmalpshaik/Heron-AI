@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -71,6 +71,26 @@ contract:
       type: IList<ElementId>
     - name: titleBlockNotFound
       type: bool
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run - run inside a transaction and ROLLED BACK,
+    so the model was left exactly as it was. returned created 1 item(s) [1542917], namedAs
+    1 entry(ies), numberTaken 0 item(s), numberedAs 1 entry(ies), refused 0 item(s), titleBlockId
+    ElementId, titleBlockNotFound false. inputs came numbers as given (1); names as given
+    (1); titleBlockName as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with numbers=HZ-902, names=HERON TEST SHEET, titleBlockName=NoSuchTitleBlockAnywhere
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction and ROLLED BACK, so the model was left exactly as it was. returned created
+    0 item(s), namedAs 0 entry(ies), numberTaken 0 item(s), numberedAs 0 entry(ies), refused
+    0 item(s), titleBlockId ElementId, titleBlockNotFound true. inputs came numbers as given
+    (1); names as given (1); titleBlockName as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 545f7e2ebffc3517
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -712,6 +712,15 @@ def _as_count(value):
     text = value.strip()
     if text == "":
         return 0
+    if text == "(null)":
+        # NOTHING IS THE CLEAREST POSSIBLE EMPTY, and it read as unreadable.
+        # RevitFragment.Describe renders a null as "(null)", which is what a
+        # creator leaves behind when it declined to create - `created` is an
+        # ElementId or a string on 56 fragments, not a list, so it never
+        # arrives as "0 item(s)". This returned None, looks_empty refused to
+        # judge, and every one of those negative cases was flagged as content.
+        # Found 2026-09-08 proving create-level and create-drafting-view.
+        return 0
     if text.lower() in ("true", "false"):
         return 0                      # a flag, not a quantity - see below
     match = _ITEMS_RE.match(text)
