@@ -79,6 +79,31 @@ exception is worse than a guarantee that is qualified.
 - **whether any completed proof from today is affected.** The element count was checked after the
   earlier batch and matched, so probably not — but "probably" is not the standard this file uses
 
+### IT HAPPENED AGAIN, MUCH LARGER — 2026-09-09
+
+`delete-elements` was run with `--write` and **no `apply`**. Its negative case selected `Levels`, and
+this is what the record holds:
+
+```
+askedFor  11        the eleven levels
+deleted   5636
+alsoWent  5625      everything hosted on them, and their views
+```
+
+Afterwards: **9,628 → 3,966 placed elements, and every floor plan gone.** The rollback did not undo it.
+
+**THE FRAGMENT DID NOTHING WRONG.** `alsoWent` exists to report exactly this and reported it. The
+choice of Levels as a "harmless" contrast was mine, made without thinking about what a level carries in
+Revit — and the fragment's own output is what said so.
+
+**Two failures now, and the shape is the same both times:** a large operation (60 elements, then 5,636)
+run with no `apply`, and the model left changed. Small writes roll back correctly — that has been
+checked after every batch all day, and the `create-level` proof was verified element-by-element. Whether
+the boundary is size, cascade depth, or Revit committing something of its own is **not known**.
+
+Until it is: **run write proofs on a model you are willing to throw away, and check the element count
+after every batch.** Both incidents were caught by that check and nothing else.
+
 ### It never reached disk, and that is checked rather than hoped
 
 The model was closed **without saving** and reopened: **9,628 placed elements**, exactly what it held
@@ -259,6 +284,9 @@ and the obvious one turned out not to be.
 | `center-room-tags` | **None.** `centred 0`, `notRoomTags 17` | It wants ROOM tags. This is an MEP model — it has Spaces and Space Tags, not Rooms — so every tag in it is `notRoomTags`. Needs the architectural model, or a room placed in this one |
 | `maximize-datum-extents` | **None.** The selector found no Levels in `FloorPlan: L3` | A level does not appear in its own plan view. It needs a section or elevation, where datums are visible — `Elevation: North - Mech` is the obvious candidate |
 | `isolate-elements` | 307 isolated in a plan | 307 isolated in a drafting view too — `viewRefused false` both times. It isolates whatever it is handed, so it CANNOT come back empty; the drafting view was expected to refuse and did not. Same case as `count-elements`: prove it by TRACKING ([D-53](DECISIONS.md)) across selections of different sizes |
+| `trim-extend-elements` | **None.** `moved 0` against ducts AND against tags | Nothing in the selection needed squaring up — the ducts here already meet cleanly. Needs two elements deliberately left short of each other |
+| `create-assembly-views` | **None.** `created 0`, `notAnAssembly 307` | Ducts are not assemblies. Nothing in this model is — needs an Assembly created first, which is itself a Revit command with no fragment behind it |
+| `zoom-to-elements` | Zoomed to 307 ducts | The negative selection — Duct Tags in a drafting view — does not exist, so the setup found nothing. Any category present in BOTH a plan and a drafting view would do; there may not be one |
 | `check-vertical-clearance` | 18 services too close at a 99999 mm required gap | `clashing` stayed at **5 in both runs** — it counts services actually touching, which does not vary with the gap asked for. So the fragment has two results and only one answers the question put to it. Either `clashing` is a separate finding that belongs in its own fragment, or the negative has to be arranged some other way |
 | `set-category-visibility` | Hid Ducts in `Model Linking` — `changed 1` | Showing them again is also `changed 1`. The same two-position needle as `set-crop-box-settings`, and the same fix would serve both |
 | `set-view-template-control` | 19 parameters held by the template, 9 freed | `nowHeld`/`nowFree` are the template's WHOLE state, so they are never empty whatever is asked. The result worth judging is *how many changed*, which the fragment does not report |
