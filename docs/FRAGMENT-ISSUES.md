@@ -92,6 +92,19 @@ Ran correctly and returned the honest empty answer. The model simply has none of
 
 ---
 
+## 3c. THE NEGATIVE CASE HAS NOT BEEN FOUND YET — 2026-09-08, third round
+
+These have a **working positive**. What is missing is an arrangement in which the answer MUST be empty,
+and the obvious one turned out not to be.
+
+| Fragment | Positive | Why the obvious negative fails |
+|---|---|---|
+| `create-levels` | Created 2 levels at 45000 and 46000 | A **name clash does not stop it** — asked for `L2,L3`, which both exist, it created 2 levels anyway. Revit renames rather than refusing. Try an ELEVATION that already carries a level, so `alreadyThere` fires |
+| `create-view-template-from-view` | Created template "HERON TPL Z9" from `Model Linking` | Same shape: *"the template was created and could NOT be called 'Mechanical Plan'"* — it made one under another name. The clash is reported, not obeyed |
+| `remove-view-filter` | **None.** `removed 0`, `deleted 0` | *"'L2' is governed by template 'Mechanical Plan', which owns its filters"* — a filter cannot be removed from a template-driven view at all. Needs a view whose filters are its own |
+
+---
+
 ## 4. FIXED during proving — kept because the shape returns
 
 | Fragment | What was wrong |
