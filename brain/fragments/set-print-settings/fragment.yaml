@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -58,6 +58,10 @@ contract:
       source: request
   provides:
     - name: availableSizes
+      # Every paper size the print driver offers. A fact about the driver,
+      # offered so a refusal can name the alternatives - never a setting
+      # this fragment applied.
+      role: accounting
       type: IList<string>
     - name: applied
       type: IList<string>
@@ -69,6 +73,28 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run - run inside a transaction and ROLLED BACK,
+    so the model was left exactly as it was. returned applied 3 item(s) [paper size, orientation,
+    fit], availableSizes 79 item(s) [Arch A, Envelope C5, PS_420x294, ...], printManager PrintManager,
+    refused , savedAs HERON PRINT Z9, zoomToFit true. inputs came paperSizeName as given;
+    orientation as given; zoomToFit as given; saveAsName as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with paperSizeName=ZZZNOTHINGHERE, orientation=Landscape, zoomToFit=true,
+    saveAsName=HERON PRINT Z9 instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction and ROLLED BACK, so the model was left exactly as it
+    was. returned applied 0 item(s), availableSizes 79 item(s) [Legal, RA4, A4 Small, ...],
+    printManager PrintManager, refused This print driver has no paper size called 'ZZZNOTHINGHERE'.
+    What it does have is in availableSizes - the sizes come from the driver, not from Revit.,
+    savedAs , zoomToFit true. inputs came paperSizeName as given; orientation as given; zoomToFit
+    as given; saveAsName as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7574903a5961f237
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

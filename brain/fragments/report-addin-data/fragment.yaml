@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,13 +74,43 @@ contract:
     - name: findings
       type: IList<string>
     - name: schemaNames
+      # Every schema REGISTERED in this Revit session, which is a fact about
+      # the add-ins loaded and not about this model. Identical run to run.
+      role: accounting
       type: IList<string>
     - name: schemasRegistered
+      # How many of those there are. Same reason - the session's, not the
+      # model's.
+      role: accounting
       type: int
     - name: schemasUsedHere
       type: int
     - name: carriersFound
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned carriersFound 756, countCarriers
+    true, findings 120 item(s) [20 schema(s) registered in this Revit session; 4 of them hol...,
+    ResultsAccess  [vendor ADSK]  read Public / write Public  ,     id 4fae6fe4-671f-4819-ac11-330b36d080f2,
+    ...], schemaNames 20 item(s) [ResultsAccess, ScatterGroupStorage, CoefficientFromTable,
+    ...], schemas 20 item(s) [Autodesk.Revit.DB.ExtensibleStorage.Schema, Autodesk.Revit.DB.ExtensibleStorage.Schema,
+    Autodesk.Revit.DB.ExtensibleStorage.Schema, ...], schemasRegistered 20, schemasUsedHere
+    4, showFields true. inputs came countCarriers as given; showFields as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with countCarriers=false, showFields=false instead - chosen because it
+    should not contain what this fragment reports. returned carriersFound 0, countCarriers
+    false, findings 45 item(s) [20 schema(s) registered in this Revit session; carriers were...,
+    ResultsAccess  [vendor ADSK]  read Public / write Public  ,     id 4fae6fe4-671f-4819-ac11-330b36d080f2,
+    ...], schemaNames 20 item(s) [ResultsAccess, ScatterGroupStorage, CoefficientFromTable,
+    ...], schemas 20 item(s) [Autodesk.Revit.DB.ExtensibleStorage.Schema, Autodesk.Revit.DB.ExtensibleStorage.Schema,
+    Autodesk.Revit.DB.ExtensibleStorage.Schema, ...], schemasRegistered 20, schemasUsedHere
+    0, showFields false. inputs came countCarriers as given; showFields as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0e8a47af6ef7af4b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

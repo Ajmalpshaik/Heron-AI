@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PHS-032
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,26 @@ contract:
       type: ElementId
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned allOptions 0 item(s), elements
+    1053 item(s) [Tees, Tees, Tees, ...], findings 1 item(s) [1053 element(s) in the Main
+    Model (no design option), within...], optionId ElementId, resolved true, setNameOf Func`2,
+    target (null), wantOption , wantSet . inputs came optionName as given; optionSetName as
+    given; categories as given (1). on Snowdon-scratch_ajmal.al
+  negative_case: 'run with optionName=ZZZNOTHINGHERE, optionSetName=, categories=Ducts instead
+    - chosen because it should not contain what this fragment reports. returned allOptions
+    0 item(s), elements 0 item(s), findings 1 item(s) [No design option called ''ZZZNOTHINGHERE''.
+    This model has: no...], optionId ElementId, resolved false, setNameOf Func`2, target (null),
+    wantOption ZZZNOTHINGHERE, wantSet . inputs came optionName as given; optionSetName as
+    given; categories as given (1). on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a53a42b56c3be1d9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -104,6 +104,13 @@ and the obvious one turned out not to be.
 | `create-sheet-list` | Created a sheet list with 2 fields | Same as the two above — asked for `Sheet Index`, a name already taken, it added the fields and made the schedule anyway. `refused` names the clash; `fieldsAdded 2` says it proceeded |
 | `check-family-standards` | 97 family types reported off standard | **No negative exists in this model.** `namePattern=*`, which everything matches, still reports 97 — because "off standard" also counts families with `(0 placed)`. Needs a model whose families all pass, or a narrower question |
 | `select-unenclosed-rooms` | **None.** Examined 67 rooms, `elements 0` | Every room in Snowdon is properly enclosed. Needs a room with a wall deleted |
+| `create-key-schedule` | Created a key schedule | A name already taken does not stop it — **the fourth creator today to rename instead of refusing**. See the decision in §3d |
+| `select-by-material` | **None.** `0 of 1053 scanned` | No duct in Snowdon carries a named material, so no material name gives a positive. Needs a category that does |
+| `set-view-underlay` | Set an underlay between L2 and L3 | An EMPTY `baseLevel` is refused by Heron before the fragment sees it, so "clear the underlay" cannot be expressed. That is arguably a gap in the value passing, not the fragment |
+| `set-category-visibility` | Hid Ducts in `Model Linking` — `changed 1` | Showing them again is also `changed 1`. The same two-position needle as `set-crop-box-settings`, and the same fix would serve both |
+| `set-view-template-control` | 19 parameters held by the template, 9 freed | `nowHeld`/`nowFree` are the template's WHOLE state, so they are never empty whatever is asked. The result worth judging is *how many changed*, which the fragment does not report |
+| `create-workset-3d-views` | Created one 3D view per workset (2) | An empty `namePrefix` still creates 2. There is no input that makes it create nothing |
+| `select-by-electrical-circuit` | **None.** `elements 0`, `panels 0` | An HVAC model has no electrical circuits. Needs `Snowdon Towers Sample Electrical` |
 | `set-crop-box-settings` | Turned the crop on in `Model Linking` — `changed 1` | Turning it OFF is also a change: `changed 1` again. The needle has only two positions and both move it. Needs a run that asks for the state the view is ALREADY in |
 | `set-section-mark-visibility` | **None.** `hidden 0`, `shown 0` | There are no section marks in `L3` to make visible or hide. Needs a view containing one |
 | `remove-view-filter` | **None.** `removed 0`, `deleted 0` | *"'L2' is governed by template 'Mechanical Plan', which owns its filters"* — a filter cannot be removed from a template-driven view at all. Needs a view whose filters are its own |
