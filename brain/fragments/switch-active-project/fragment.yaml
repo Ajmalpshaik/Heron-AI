@@ -1,0 +1,110 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-027
+semantic-identity: "work in the other project I already have open"
+kind: action
+domain: revit.document
+capability: SWITCH_ACTIVE_PROJECT
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+purpose: >
+  Makes one of the projects ALREADY OPEN in this Revit the active one, so the
+  next operation lands in it. It changes nothing in any model.
+
+  **IT SWITCHES BY CHANGING THE VIEW, BECAUSE THAT IS WHAT REVIT OFFERS.** There
+  is no *"activate this document"* call. `UIDocument.RequestViewChange` takes a
+  view, and a view belongs to exactly one document - so asking for a view in the
+  other project is what brings that project forward. The view it used is reported,
+  because the user will see it and would otherwise wonder why they landed there.
+
+  **THE SWITCH IS REQUESTED, NOT CONFIRMED, AND THIS FRAGMENT WILL NOT PRETEND
+  OTHERWISE.** `RequestViewChange` is a request: Revit performs it when the current
+  API context ends, which is after this fragment has finished. So nothing here can
+  read back the new active document - anything claiming to have verified it would
+  be reading the state from BEFORE the switch. Verification is a separate read
+  afterwards, and REPORT_OPEN_DOCUMENTS is that read. **Do not chain a write onto
+  this in one breath and assume it landed in the new project.**
+
+  **A TITLE IS NOT AN IDENTIFIER, SO THE PATH IS TRIED FIRST.** Two open projects
+  can be called `Project1`. The target is matched against full paths first and
+  titles second, and **two matches is a refusal, not a guess** - picking either
+  would be choosing somebody's model for them. The candidates are returned so the
+  next attempt can name a path.
+
+  **ALREADY BEING THERE IS A SUCCESS.** Asking to switch to the project you are
+  already in returns success having done nothing, rather than an error or a
+  pointless view change.
+
+  **IT NEVER OPENS A FILE FROM DISK.** Only projects already open in this session
+  are candidates. Opening a model is a heavier, slower act with its own
+  consequences - unsaved work, worksharing, upgrade prompts - and it is not this.
+
+  Opens no transaction and needs none: this acts on the session, not the building.
+  That is why it is EXECUTE rather than MODIFY.
+
+contract:
+  needs:
+    - name: uidoc
+      type: UIDocument
+    - name: app
+      type: Application
+    # A full path, or a title when that is unambiguous.
+    - name: target
+      type: string
+      source: request
+    # Optional. The view to land on in the target project; empty means let this
+    # fragment choose one and say which.
+    - name: viewName
+      type: string
+      source: request
+  provides:
+    - name: switched
+      type: bool
+    - name: activeBefore
+      type: string
+    - name: requestedTitle
+      type: string
+    - name: viewUsed
+      type: string
+    - name: candidates
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `UIDocument.RequestViewChange(View)`,
+  `Application.Documents`, `Document.PathName` / `.Title` / `.IsLinked` /
+  `.IsFamilyDocument`, `View.IsTemplate` and `View.ViewType` are unchanged 2020 to
+  2027 - checked by compiling this fragment against the reference assemblies for
+  all eight.
+
+  `DocumentSet` is not generic, so the loop variable is typed rather than `var`.
+
+# ROUTING - cross-referenced in REPORT_OPEN_DOCUMENTS and OPEN_VIEW.
+#
+#   "switch to the MEP project"        -> here
+#   "work in the other model now"      -> here
+#   "go to the architecture file"      -> here
+#   "what is open"                     -> REPORT_OPEN_DOCUMENTS, and it is also
+#                                         how you CHECK this one landed
+#   "open the Level 2 plan"            -> OPEN_VIEW, which moves within the
+#                                         project you are already in
+#   "open this file from disk"         -> NOT HERE. Nothing in Heron opens a
+#                                         model from disk
+
+utterances:
+  - switch to the other project
+  - make the MEP model active
+  - work in the architecture project now
+  - change to my other open model
+  - go back to the first project

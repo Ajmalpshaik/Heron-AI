@@ -1,0 +1,60 @@
+positive:
+  - given: two projects open and the full path of the second one
+    expect: >
+      the switch requested, the view it landed on named, and the finding saying
+      plainly that Revit has not performed it yet. The tab changes after the
+      operation finishes, not during it
+
+  - given: the title of a project when only one project has that title
+    expect: >
+      the same, with the finding recording that it matched on title rather than
+      path. Title is the convenience; path is the answer
+
+  - given: a target that is already the active project
+    expect: >
+      success having done nothing, and said so. Switching to where you already
+      are is not an error and must not move the view
+
+  - given: a target project and an explicit view name that exists in it
+    expect: >
+      that view used, and the finding saying it was named rather than chosen.
+      The distinction matters: a chosen view is an assumption and is labelled
+
+negative:
+  - given: two open projects both called "Project1" and the title as the target
+    expect: >
+      REFUSED, with "NOTHING HAS BEEN SENT TO REVIT" and both candidates listed
+      with their paths. THIS IS THE CASE THAT MATTERS. Picking either would be
+      choosing somebody's model for them, and the wrong one is where a later
+      write would land
+
+  - given: a target naming a file that is NOT open in this session
+    expect: >
+      refused, nothing sent, and the open projects listed. This never opens a
+      model from disk - that is a heavier act with its own consequences
+
+  - given: a target project whose only views are view templates
+    expect: >
+      refused with the reason, because switching IS opening one of its views and
+      a template cannot be opened
+
+  - given: a linked model's title as the target
+    expect: >
+      no match, because links are excluded from the candidates. A link has no tab
+      to switch to, so offering one would be offering something impossible
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION AND NO MODEL CHANGE. This moves the session, not the
+      building. It also never closes anything
+
+second_route:
+  - >
+    Revit's own Window tab, and the title bar after the operation completes. The
+    project named in `requestedTitle` should be the one in front - and if it is
+    not, the request was refused rather than silently ignored
+
+  - >
+    REPORT_OPEN_DOCUMENTS run immediately afterwards. It is the only honest
+    confirmation that the switch happened, because this fragment finishes before
+    Revit performs it

@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-099
+semantic-identity: "put the Level 2 ceiling plan on screen"
+kind: action
+domain: revit.views
+capability: OPEN_VIEW
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+purpose: >
+  Opens an EXISTING view in the active project and makes it the one on screen.
+  It changes nothing in the model and it creates nothing.
+
+  **IT OPENS, IT NEVER CREATES.** A view name that does not exist is a refusal,
+  not an invitation to make one. Creating a view because the name was mistyped
+  would leave a stray view in somebody's project for every typo, and CREATE_PLAN_VIEW
+  and its siblings are how a view is meant to come into being.
+
+  **THE CHANGE IS REQUESTED, NOT CONFIRMED, AND THIS FRAGMENT WILL NOT PRETEND
+  OTHERWISE.** `UIDocument.RequestViewChange` is a request: Revit performs it when
+  the current API context ends, which is after this fragment has finished. Reading
+  `ActiveView` back here would report the view from BEFORE the change and call it
+  proof. What is on screen afterwards is checked afterwards.
+
+  **A VIEW TEMPLATE IS NOT A VIEW YOU CAN OPEN**, and it is refused by name rather
+  than by failing obscurely. Templates appear in the same list and are the most
+  likely wrong answer to *"open the ceiling plan"*.
+
+  **ALREADY BEING THERE IS A SUCCESS.** Asking for the view already on screen
+  returns success having moved nothing.
+
+  **FINDING IS A DIFFERENT JOB.** This takes a name and opens it. FIND_VIEWS is
+  what answers *"which views are there"*, and it is what to run first when the
+  name is not already known.
+
+  Opens no transaction and needs none: it acts on the session, not the building.
+  That is why it is EXECUTE rather than MODIFY.
+
+contract:
+  needs:
+    - name: uidoc
+      type: UIDocument
+    - name: doc
+      type: Document
+    - name: viewName
+      type: string
+      source: request
+  provides:
+    - name: opened
+      type: bool
+    - name: viewBefore
+      type: string
+    - name: requestedView
+      type: string
+    - name: matches
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `UIDocument.RequestViewChange(View)`,
+  `UIDocument.ActiveView`, `View.IsTemplate`, `View.ViewType` and
+  `FilteredElementCollector` are unchanged 2020 to 2027 - checked by compiling
+  this fragment against the reference assemblies for all eight.
+
+# ROUTING - cross-referenced in FIND_VIEWS, SWITCH_ACTIVE_PROJECT and ZOOM_TO_ELEMENTS.
+#
+#   "open the Level 2 ceiling plan"    -> here
+#   "go to the section"                -> here
+#   "show me that sheet"               -> here, when a SHEET is named. A sheet is
+#                                         a view and opens the same way
+#   "which views are there"            -> FIND_VIEWS. Run it first when the exact
+#                                         name is not known - this one needs the
+#                                         name
+#   "switch to the other project"      -> SWITCH_ACTIVE_PROJECT. This one moves
+#                                         inside the project already active
+#   "take me to these elements"        -> ZOOM_TO_ELEMENTS, which lets Revit pick
+#                                         a view that can SEE them rather than
+#                                         opening one you named
+#   "make a new plan view"             -> CREATE_PLAN_VIEW. This one never creates
+
+utterances:
+  - open the Level 2 ceiling plan
+  - go to that view
+  - switch to the section view
+  - put the sheet on screen
+  - open view by name

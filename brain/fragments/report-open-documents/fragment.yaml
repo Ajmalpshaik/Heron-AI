@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-APP-003
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-026
+semantic-identity: "which projects are open in this Revit, and how to tell two of the same name apart"
+kind: action
+domain: revit.document
+capability: REPORT_OPEN_DOCUMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the projects open in this Revit session, with enough identity to act on
+  one. It changes nothing.
+
+  **THIS EXISTS BECAUSE A TITLE IS NOT AN IDENTIFIER.** Two projects called
+  `Project1` can be open at once, and then *"switch to Project1"* names nothing.
+  Revit's own tab bar has the same problem and solves it by making you look. So
+  the full **path** is reported beside every title, and it is the path
+  SWITCH_ACTIVE_PROJECT matches on first - a title match is the convenience, a
+  path match is the answer.
+
+  **LINKS AND FAMILIES ARE OPEN DOCUMENTS AND ARE NOT PROJECTS.** `Application.Documents`
+  returns every Document the session has loaded, which includes each linked model
+  and every family being edited. A modeller asking what is open means the things
+  with tabs. Counting a link as a project would offer to switch to something that
+  has no tab to switch to, so links and families are separated out and counted
+  rather than listed - the count is what tells you the list is shorter than you
+  expected on purpose.
+
+  **AN UNSAVED PROJECT HAS NO PATH, AND THAT IS NOT AN ERROR.** A new model that
+  has never been saved reports an empty `PathName`. It is said out loud rather
+  than left blank, because a blank column reads as a bug and because such a
+  project can only ever be matched by title.
+
+  Reads only. Opens no transaction and needs none.
+
+contract:
+  needs:
+    - name: app
+      type: Application
+    - name: doc
+      type: Document
+  provides:
+    - name: documents
+      type: IList<string>
+    - name: paths
+      type: IList<string>
+    - name: titles
+      type: IList<string>
+    - name: activeTitle
+      type: string
+    - name: count
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Application.Documents`, and
+  `Document.Title`, `.PathName`, `.IsLinked`, `.IsFamilyDocument`, `.IsValidObject`
+  and `.IsModified` are unchanged 2020 to 2027 - checked by compiling this
+  fragment against the reference assemblies for all eight.
+
+  `DocumentSet` is not generic, so the loop variable is typed rather than `var`.
+
+# ROUTING - cross-referenced in SWITCH_ACTIVE_PROJECT and LIST_LINKED_MODELS.
+#
+#   "what projects are open"           -> here
+#   "which models do I have open"      -> here
+#   "how many Revit files are open"    -> here
+#   "what links are loaded"            -> LIST_LINKED_MODELS. This one COUNTS
+#                                         links and does not describe them
+#   "what file is this"                -> READ_MODEL_FILE_INFO, which is about
+#                                         the ONE active model in depth
+#   "switch to the other project"      -> SWITCH_ACTIVE_PROJECT, which needs
+#                                         what this returns
+
+utterances:
+  - what projects are open
+  - which models are open right now
+  - list the open Revit files
+  - how many projects do I have open
+  - which one is active
