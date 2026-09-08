@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -66,6 +66,25 @@ contract:
       type: int
     - name: noBox
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned findings 7 item(s) [View 'L3' at
+    1:96 - 108 annotation element(s) compared, 6 cl..., tag 'Mechanical Equipment Tag' over
+    tag 'Flex Duct Tag Round..., tag 'Duct Size Tag' over tag 'Space Tag'  - 2.4 mm on paper,
+    ...], minOverlapMm 1, mmPerFoot 304.8, noBox 0, overlapping 12 item(s) [1491352, 1491622,
+    1491493, ...], pairs 6. inputs came view as given; minOverlapMm as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with view=How to use this project 1, minOverlapMm=1 instead - chosen
+    because it should not contain what this fragment reports. returned findings 1 item(s)
+    [View 'How to use this project 1' at 1:1 - 7 annotation eleme...], minOverlapMm 1, mmPerFoot
+    304.8, noBox 0, overlapping 0 item(s), pairs 0. inputs came view as given; minOverlapMm
+    as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3fc6142d24e54307
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

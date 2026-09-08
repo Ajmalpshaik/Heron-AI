@@ -71,6 +71,9 @@ contract:
     - name: blocked
       type: IList<ElementId>
     - name: unreadable
+      # What it was handed and could NOT read. The evidence it tried,
+      # never a thing it found (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
