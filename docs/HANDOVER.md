@@ -40,7 +40,7 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**350 fragments. 52 `PROVEN`. 298 below.** D-28's executor is built, and fragments now run against a
+**360 fragments. 52 `PROVEN`. 308 below.** D-28's executor is built, and fragments now run against a
 real model. That is new as of 2026-09-06 and it is the thing every earlier handover was waiting for.
 **Proving is live and these two numbers move hourly — run
 `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` rather than trusting the
@@ -50,7 +50,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 
 | | |
 |---|---|
-| Fragments | **350** — every fragment-shaped job in the earlier library, five cross-project transfers from PART 5, `CREATE_GLOBAL_PARAMETER` (2026-09-07), and `FIND_DATES_IN_VIEWS`, built AND proved 2026-09-08 for a question the owner asked that the sheets fragment answers wrongly |
+| Fragments | **360** — every fragment-shaped job in the earlier library, five cross-project transfers from PART 5, `CREATE_GLOBAL_PARAMETER` (2026-09-07), `FIND_DATES_IN_VIEWS`, built AND proved 2026-09-08, and **ten added 2026-09-08 for the review's N01–N09 plus the read they depend on** — see the entry below. All ten are `DRAFT` and NONE has met a model |
 | Proven | **52** as of 2026-09-08, each on a recorded proof with a negative case and a staleness fingerprint (D-30). **16 → 52 in one night** — see the proving-track entry below for the method, which is the reusable part. Moving hourly — derive it, do not read it here |
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, docs, gaps, agent-count, **structure** — all green. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
@@ -60,7 +60,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | Agents | **70 of 250 have code**, 4 host-provided by D-01, 176 left — `python tools/agent-count.py`. Phase 0/1's agent list is COMPLETE |
 | MCP tools | **13** — `heron_gaps`, `heron_compatibility` and `heron_diagnose` added 2026-09-07/08 |
 | Bindable inputs | **70 of 349** — PART 6 binds every need a fragment's contract declares, from the on-screen selection and from what the previous fragment left behind. **278 still want a caller's half** — a category, a name, a distance — and that is now the largest unlock left |
-| Branches | `main`, plus `verify/proofs-re-run-and-executor-triage` — this session's, merged with `main` at PART 6 |
+| Branches | `main` only. Everything from 2026-09-08 is merged: PRs #39 to #42, `main` at `c6bb38e` |
 
 **EVERY REGISTER ROW THAT DID NOT NEED REVIT IS NOW CLOSED.** `A4`, `A6`, `A7`, `A8` and `A9` all fell on
 2026-09-06 on the owner's own PC — rows parked for months on *"a machine"*, closed in one afternoon by
@@ -265,6 +265,50 @@ counts what is left; believe it over this file.
 > claimed the two sentences return identical shortlists, which holds in the full library and not in that
 > test's smaller fixture. Measured in one place and asserted in another. The corrected one says what is
 > true there, with the reason.
+
+---
+
+## HANDOVER — 2026-09-08 (the fragment-review track): ten new fragments, none proved
+
+**READ THIS FIRST IF YOU ARE SITTING DOWN AT THE PC.** Ten fragments were added today and **not one of
+them has been near a real model.** They compile on all eight releases, which proves only that the API
+surface agrees. Everything below is what to test, and roughly in what order.
+
+### What was added, and what each one needs from you
+
+| Capability | Fragment | Risk | The one thing to check |
+|---|---|---|---|
+| `REPORT_OPEN_DOCUMENTS` | `report-open-documents` | READ | Two projects open with the SAME title. Both must be listed with their paths, and the collision said out loud |
+| `SWITCH_ACTIVE_PROJECT` | `switch-active-project` | EXECUTE | It only REQUESTS the switch. Revit performs it after the operation ends, so check the tab bar afterwards - and never chain a write onto it assuming it landed |
+| `OPEN_VIEW` | `open-view` | EXECUTE | Ask it for a VIEW TEMPLATE by name. It must refuse, not fail obscurely |
+| `CLOSE_VIEW_TABS` | `close-view-tabs` | EXECUTE | Ask it to close EVERY open tab. It must keep one - the ACTIVE one - because closing the last view closes the project |
+| `SELECT_BY_CONNECTOR_SIZE` | `select-by-connector-size` | READ | An exact 230 × 230 selection, then hover a match and read the size off the connector. This is the fragment most exposed to a units error |
+| `PLACE_FAMILY_ON_FACE` | `place-family-on-face` | MODIFY | Place on a ceiling, then MOVE THE CEILING. If the instances stay behind they were never hosted, whatever it reported |
+| `CREATE_FLEX_DUCT` | `create-flex-duct` | MODIFY | A route over the length limit must create NOTHING. Then TRACE_CONNECTIVITY: the diffuser must still read as OPEN, because this makes flex and does not join it |
+| `CREATE_ELECTRICAL_CIRCUIT` | `create-electrical-circuit` | MODIFY | **Run it TWICE on the same devices.** What Revit does then is the one thing that was deliberately not guessed at |
+| `PROPOSE_MEP_OPENINGS` | `propose-mep-openings` | READ | A duct crossing a wall at 45°. The through-thickness must read LONGER than the wall - that is what the solid intersection buys over a bounding box |
+| `DISCONNECT_CONNECTORS` | `disconnect-connectors` | MODIFY | Count the elements before and after. The count must be IDENTICAL - it disconnects and deletes nothing |
+
+### What else changed today
+
+- **`HANDOVER.md` and `NEEDS-CHECKING.md` moved into `docs/`.** The root now holds entry-point files
+  only. Every link was repointed, including the one place that READS the register rather than linking
+  it (`tools/check-gaps.py`).
+- **Two real defects fixed in existing fragments.** `check-model-standards` treated a pattern with no
+  wildcard as a PREFIX, so the rule `Supply Diffuser` accepted `Supply Diffuser OLD` - every exact rule
+  in every project was silently a prefix rule. `import-parameter-values` read the file line by line
+  before parsing it as CSV, so an Alt+Enter cell became three rows.
+- **Stale documentation corrected.** `brain/README.md` claimed thirty-two fragments all `DRAFT` and
+  that the executor was not built. `CONTRIBUTING.md` said there was no implementation yet.
+
+### The thing worth carrying forward
+
+**Four mistakes were made today and reading the code caught none of them.** The compiler refused
+`ElectricalSystem.Create` with the wrong collection type; `heron_graph.py --orphans` found a fragment
+nothing could ever reach; and a deliberate second pass over the finished diff found one fragment
+answering an empty list to a question nobody asked, and another doing two hundred times the geometry
+work it needed. The tools earned their keep, and so did re-reading the diff after believing it was
+done.
 
 ---
 
