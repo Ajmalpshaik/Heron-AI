@@ -49,6 +49,44 @@ session — so that if Revit complains again it is unambiguous which one did it.
 
 ---
 
+## 1c. A WRITE INTERRUPTED BY A DIALOG DOES NOT FULLY ROLL BACK — 2026-09-08
+
+**The most important thing found today, and the least expected.**
+
+`transfer-views-between-documents` was run with `--write` and **no** `apply`, so the whole run should
+have been undone. It raised a stream of Revit "Duplicate Types" dialogs, the owner answered OK to each,
+and the run timed out at 60 s (`still_running`, then `revit_busy`).
+
+**Afterwards the model held 60 more placed elements than it started with — 9,628 → 9,688.**
+
+What was checked, and is clean: levels 11 (unchanged), worksets 2 with `Workset1` still named that,
+drafting views 2 (unchanged), legends 0, **nothing named HERON anywhere**. Nothing any fragment
+*created by name* survived. The 60 came in with the paste itself.
+
+### Why this matters more than the count
+
+The rollback is the whole basis of proving writes safely — every write proof recorded today says *"run
+inside a transaction and ROLLED BACK, so the model was left exactly as it was."* **That sentence is
+true for the 20-odd fragments that completed, and was not true here.** A guarantee with an unstated
+exception is worse than a guarantee that is qualified.
+
+### What is NOT known, and must not be guessed
+
+- whether the `TransactionGroup` rolled back at all, or rolled back and the paste sat outside it
+  (`Document.Paste`-style operations can commit their own transaction)
+- whether the timeout is involved, or only the dialog
+- whether the same happens with `transfer-materials-between-documents`, which failed identically
+- **whether any completed proof from today is affected.** The element count was checked after the
+  earlier batch and matched, so probably not — but "probably" is not the standard this file uses
+
+### Until it is understood
+
+Run the two dialog-raising transfers **only on a model you are willing to throw away**, and check the
+element count afterwards. The right fix is the one in §1b — collide-detect first, so no paste starts
+that Revit has to interrupt — and it removes this failure as a side effect.
+
+---
+
 ## 1b. NEEDS A HUMAN AT THE KEYBOARD — Revit opens a dialog Heron cannot answer
 
 | Fragment | What happened |
