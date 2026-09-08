@@ -11,6 +11,15 @@ positive:
       spreadsheet writes that quoting and a parser that ignores it silently
       shifts every column after it
 
+  - given: a Comments column whose cell was typed on three lines with Alt+Enter,
+      so the exported file has real newlines inside the quotes
+    expect: >
+      ONE value written on ONE element, with all three lines and their breaks
+      intact. Until 2026-09-08 the file was read line by line before it was read
+      as CSV, so that one cell became three rows: the first element got a third
+      of the note and the other two rows were rejected for having too few
+      columns. A record is not a line, and a note is not damaged by being long
+
   - given: a numeric column exported as "450" from a project showing millimetres
     expect: >
       450 mm on the way back in, through Revit's own parsing. Nothing here
@@ -28,6 +37,13 @@ negative:
       WRITTEN. THIS IS THE CASE THAT MATTERS. Resolving rows against the whole
       document instead would apply a stale file to whatever happened to share an
       id
+
+  - given: a file with a quotation mark that is opened and never closed
+    expect: >
+      NOTHING WRITTEN, and the stray quote named as the reason. Everything after
+      an unclosed quote is one runaway value, so the rows no longer mean what the
+      file meant - and half an import applied from a file nobody can read back is
+      the worst of the outcomes available
 
   - given: a row whose parameter is read-only
     expect: >
