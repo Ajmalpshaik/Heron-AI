@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CAT-009
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -77,6 +77,34 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run - run inside a transaction and ROLLED BACK,
+    so the model was left exactly as it was. returned clashed 21 item(s) [<Insulation Batting
+    Lines> (already here, left as it was), <Demolished> (already here, left as it was), <Beyond>
+    (already here, left as it was), ...], created 8 item(s) [Fire Rated, Guidelines Wide,
+    Fire Rated 1 HR, ...], filterText , hereLines Category, openTitles 8 item(s) [Snowdon-scratch_ajmal.al,
+    Snowdon Towers Sample Structural, Snowdon Towers Sample HVAC, ...], refused , source Document,
+    sourceLines Category, wantedTitle Snowdon Towers Sample Architectural, weakened 0 item(s).
+    inputs came sourceDocumentTitle as given; nameContains as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with sourceDocumentTitle=ZZZNOTHINGHERE, nameContains= instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction and
+    ROLLED BACK, so the model was left exactly as it was. returned clashed 0 item(s), created
+    0 item(s), filterText , hereLines Category, openTitles 8 item(s) [Snowdon-scratch_ajmal.al,
+    Snowdon Towers Sample Structural, Snowdon Towers Sample HVAC, ...], refused No open project
+    matching ''ZZZNOTHINGHERE''. Both projects have to be open in the same Revit - open now:
+    Snowdon-scratch_ajmal.al, Snowdon Towers Sample Structural, Snowdon Towers Sample HVAC,
+    Snowdon Towers Sample Facades, Snowdon Towers Sample Site, Snowdon Towers Sample Plumbing,
+    Snowdon Towers Sample Electrical, Snowdon Towers Sample Architectural., source (null),
+    sourceLines (null), wantedTitle ZZZNOTHINGHERE, weakened 0 item(s). inputs came sourceDocumentTitle
+    as given; nameContains as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ed92bc65ecad8306
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

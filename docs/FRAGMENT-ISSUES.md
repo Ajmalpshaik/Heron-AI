@@ -90,8 +90,18 @@ open in Revit and ask again"*. No hang, no wrong answer, and it named the cure.
 waits for a person, every time. Heron cannot dismiss a Revit dialog and must not learn to — the dialog
 is Revit asking a question only the modeller can answer, and the two choices produce different models.
 
-Worth deciding at the sit-down: whether these fragments should **detect the collision first and refuse**,
-naming what would clash, rather than starting a paste they cannot finish alone.
+**ITS THREE SIBLINGS ALREADY DO THE RIGHT THING, which settles the argument.** Proved the same
+afternoon, against the same two models, with no dialog at all:
+
+| Fragment | Clashes it met | What it did |
+|---|---|---|
+| `transfer-view-filters-between-documents` | 1 — *"Interior (already here)"* | Copied 54, **reported** the clash |
+| `transfer-line-styles-between-documents` | 21 | Created 8, **reported** the 21 |
+| `transfer-object-styles-between-documents` | — | Created 73, changed 124, weakened 15, skipped 1 |
+
+So the fix for `transfer-materials-between-documents` is not a new idea to invent — it is the shape the
+other three already use: **look for the collision first, decide it in the fragment, and report it**,
+rather than starting a paste Revit has to interrupt with a question.
 
 ---
 
