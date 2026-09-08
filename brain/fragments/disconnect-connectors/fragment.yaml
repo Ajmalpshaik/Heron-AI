@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -63,6 +63,31 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 17356
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned disconnected 614, findings
+    2 item(s) [Broke 614 joint(s) on the elements given, including to thing..., Breaking a
+    joint can split one system into two or orphan the...], pairs 614 item(s) [1395899 to 1395996,
+    1395899 to 1397652, 1395935 to 1366299, ...], selected HashSet`1, untouched 0 item(s),
+    withinSelectionOnly false. inputs came elements from the selection (307); withinSelectionOnly
+    as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: L3, withinSelectionOnly=false
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase''s
+    own values - run inside a transaction and ROLLED BACK, so the model was left exactly as
+    it was. returned disconnected 0, findings 1 item(s) [Broke 0 joint(s) on the elements
+    given, including to things ...], pairs 0 item(s), selected HashSet`1, untouched 0 item(s),
+    withinSelectionOnly false. inputs came elements from the selection (73); withinSelectionOnly
+    as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 28b5dad0a32d6d56
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

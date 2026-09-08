@@ -310,6 +310,8 @@ and the obvious one turned out not to be.
 | `trim-extend-elements` | **None.** `moved 0` against ducts AND against tags | Nothing in the selection needed squaring up — the ducts here already meet cleanly. Needs two elements deliberately left short of each other |
 | `create-assembly-views` | **None.** `created 0`, `notAnAssembly 307` | Ducts are not assemblies. Nothing in this model is — needs an Assembly created first, which is itself a Revit command with no fragment behind it |
 | `zoom-to-elements` | Zoomed to 307 ducts | The negative selection — Duct Tags in a drafting view — does not exist, so the setup found nothing. Any category present in BOTH a plan and a drafting view would do; there may not be one |
+| `flip-elements` | **None.** `flipped 0`, `cannotFlip 144` | Air terminals in this model cannot be flipped — Revit refuses all 144. Needs a family that is flippable, which is a property of the family rather than of the fragment |
+| `hide-elements` | Hid 307 ducts in `L3` | The negative selection — duct tags on the schedules sheet — does not exist there, so the setup found nothing. A category present in two different views is needed, and tags are view-specific by nature |
 | `check-vertical-clearance` | 18 services too close at a 99999 mm required gap | `clashing` stayed at **5 in both runs** — it counts services actually touching, which does not vary with the gap asked for. So the fragment has two results and only one answers the question put to it. Either `clashing` is a separate finding that belongs in its own fragment, or the negative has to be arranged some other way |
 | `set-category-visibility` | Hid Ducts in `Model Linking` — `changed 1` | Showing them again is also `changed 1`. The same two-position needle as `set-crop-box-settings`, and the same fix would serve both |
 | `set-view-template-control` | 19 parameters held by the template, 9 freed | `nowHeld`/`nowFree` are the template's WHOLE state, so they are never empty whatever is asked. The result worth judging is *how many changed*, which the fragment does not report |
@@ -378,6 +380,12 @@ fragments only because that is how the library already answers this question els
 | `create-level` | `create-levels` |
 | `create-drafting-view` | `create-view-template-from-view` |
 | | `create-sheet-list` |
+| | `create-key-schedule` |
+| | `duplicate-type` — *"'Tees' duplicated as 'Tees'"* |
+
+**Five against two now**, so the majority behaviour is renaming. If the decision goes that way it is two
+fragments to change, not five — but it also means a caller cannot rely on a clash being refused
+anywhere, which is the more important half.
 
 Both behaviours are defensible. What is not defensible is that a caller cannot predict which they will
 get, and it cost three failed negative cases today before the pattern was visible. **Decide once, then
