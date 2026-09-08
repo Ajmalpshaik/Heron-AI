@@ -499,6 +499,56 @@ fingerprint means the record says exactly what was run, so a better arrangement 
 
 ---
 
+## 3g. RUNNING FRAGMENTS IN BULK IS A WORKING NEED, NOT A TESTING ONE
+
+Raised by the owner, 2026-09-09: *"maybe sometimes while we are working we need to run fragments in
+bulk — is there an option?"*
+
+**There is, and today depended on it.** `prove` runs several fragments in ONE process, ONE lease, with
+D-29's chain carrying values between them:
+
+```
+prove select-by-category-name set-selection --set categoryName=Ducts --set "inViewOnly=FloorPlan: M1"
+```
+
+Two fragments, one job: the first finds 22 ducts, the second selects them. Every selection-based proof
+today went through that, and the binding note on the answer says where the elements came from —
+*"elements from select-by-category-name (22)"*.
+
+### The name is the problem
+
+**`prove` is a working command wearing a testing name.** Nobody doing real work would think to reach for
+it, and that alone hides the capability the library already has. Renaming or aliasing it to `run` is
+ten minutes and costs nothing.
+
+### The real version is designed and unbuilt
+
+| | |
+|---|---|
+| `HERON-KRN-WFL-007` **Workflow Engine** | *"Ordering, retries, timeouts, rollback, checkpoints, resume. Never decides…"* |
+| `HERON-ORC-MAIN-001` **Orchestrator** | Understands the request, selects capability, builds and runs the work |
+
+[docs/11](11-orchestration-and-workflows.md) is the whole design, and its own reference workflow for
+*"select all ducts"* is eleven steps long — so multi-fragment work is not an edge case in this
+architecture, it is the ordinary case.
+
+### Three different things, worth not confusing
+
+| Thing | For | State |
+|---|---|---|
+| `prove` | Run several fragments now, in a line | **Works today**, misnamed |
+| `tools/batch-prove.py` | Run many PROOFS and judge them | Being built by a separate session |
+| Workflow Engine | Real work: retries, rollback, resume | **Designed, not built** |
+
+### What today showed is missing, concretely
+
+**When a chain half-succeeded there was no resume.** `select-by-category-name` would run, `set-selection`
+would refuse because the category was not in that view, and the only option was to re-run both. On a
+two-step chain that is trivial. On the eleven-step workflow docs/11 describes, it is not — and that is
+exactly the gap `HERON-KRN-WFL-007` exists to fill.
+
+---
+
 ## 4. FIXED during proving — kept because the shape returns
 
 | Fragment | What was wrong |
