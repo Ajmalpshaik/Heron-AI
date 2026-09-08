@@ -3202,5 +3202,26 @@ anything. Case 3 matters especially: the `still_running` path — the one D-50 d
 banner up for — was **not** the leak, and an earlier reading that said it was came from running the
 cases in one process and inheriting case 2's stuck count.
 
+**And then in Revit itself**, which is the only place the claim finally counts. Deployed to Revit 2024
+and 2020, and driven from the bridge client: two `run_fragment_read` requests **back to back on one
+connection**, which is the pair pattern the audit shows for every fragment run — a cold first run that
+holds Revit's thread inside `Execute`, and a cached second one that arrives while that pass is still
+open. The banner window was located inside `Revit.exe` by title and read with `IsWindowVisible` every
+100 ms, so the verdict is scanned rather than eyeballed.
+
+| Pair (session 2024/32312) | Shot 1 | Shot 2 | Banner |
+|---|---|---|---|
+| `find-views`, cold compile | 5,193 ms | 3 ms | up 0.2 s → **down 7.1 s**, still down after 20 s idle |
+| `find-sheets` | 757 ms | 3 ms | up 0.3 s → **down 2.7 s** |
+| `report-category-overrides`, refused `bad_request_value` | 5 ms | 3 ms | up 7.6 s → **down 9.1 s** |
+| `find-views`, both cached | 3 ms | 3 ms | up 13.9 s → **down 15.5 s** |
+
+Every cycle settles about 1.4 s after the work — the `OutcomeHold` — and nothing is left up. The
+refusal pair matters as much as the successful ones: a job Revit turned down lowers the banner too. So
+does the last row, where both shots take 3 ms: that is the tightest window of all, and it still settles.
+
+The audit for those runs shows the pairs landing **3 to 65 ms apart**, which is the same fingerprint as
+the 2026-09-08 entries that stranded it.
+
 **Every project compiles on all eight releases, 2020 through 2027** (`python tools/check-compile.py`,
 2026-09-08).
