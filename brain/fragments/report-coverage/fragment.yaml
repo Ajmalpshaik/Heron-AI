@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PRF-017
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -49,15 +49,47 @@ contract:
       source: request
   provides:
     - name: areaEach
+      # The circle area for the radius asked for. Arithmetic on the input,
+      # not a fact about the model.
+      role: accounting
       type: double
     - name: areaTotal
+      # The same multiplied by how many there are. Also arithmetic on the
+      # input.
+      role: accounting
       type: double
     - name: nearestNeighbour
+      # The distance from each element to its closest neighbour. Measured
+      # for every one regardless of the radius, so it is what the answer is
+      # computed FROM, never the answer (D-52).
+      role: accounting
       type: IDictionary<ElementId, double>
     - name: gapSuspects
       type: IList<ElementId>
     - name: noPoint
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  positive_case: run as it would normally be run. returned areaEach 0, areaTotal 0, coverageRadius
+    0, gapSuspects 307 item(s) [1395899, 1395935, 1395946, ...], nearestNeighbour 307 entry(ies),
+    noPoint 0 item(s), placed 307 item(s) [[1395899, (-11.000000000, 33.120289512, 29.666666667)],
+    [1395935, (-9.333333333, 27.670976278, 29.666666667)], [1395946, (-3.583333333, 29.920976278,
+    29.666666667)], ...]. inputs came elements from the selection (307); coverageRadius as
+    given. on Snowdon-scratch_ajmal.al
+  negative_case: run with coverageRadius=99999 instead - chosen because it should not contain
+    what this fragment reports. returned areaEach 31415298220.5088, areaTotal 9644496553696.2,
+    coverageRadius 99999, gapSuspects 0 item(s), nearestNeighbour 307 entry(ies), noPoint
+    0 item(s), placed 307 item(s) [[1395899, (-11.000000000, 33.120289512, 29.666666667)],
+    [1395935, (-9.333333333, 27.670976278, 29.666666667)], [1395946, (-3.583333333, 29.920976278,
+    29.666666667)], ...]. inputs came elements from the selection (307); coverageRadius as
+    given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: f1c285fe73f8c679
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

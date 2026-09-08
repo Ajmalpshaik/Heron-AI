@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -84,6 +84,32 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  positive_case: run as it would normally be run. returned diaFt 0.666010498687664, diameterMm
+    203, eitherOrientation false, findings 1 item(s) [153 of 307 element(s) have a connector
+    matching round at 203...], heightFt 0, heightMm 0, matched 153 item(s) [Tees, Tees, Tees,
+    ...], matchedIds 153 item(s) [1395899, 1395935, 1395946, ...], mmPerFoot 304.8, noConnectors
+    0 item(s), tolFt 0.00656167979002625, toleranceMm 2, unknownShape 0 item(s), wantAny false,
+    wantRect false, wantRound true, widthFt 0, widthMm 0. inputs came elements from the selection
+    (307); shape as given; diameterMm as given; widthMm as given; heightMm as given; toleranceMm
+    as given; eitherOrientation as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with shape=round, diameterMm=999, widthMm=0, heightMm=0, toleranceMm=2,
+    eitherOrientation=false instead - chosen because it should not contain what this fragment
+    reports. returned diaFt 3.27755905511811, diameterMm 999, eitherOrientation false, findings
+    1 item(s) [0 of 307 element(s) have a connector matching round at 999 m...], heightFt
+    0, heightMm 0, matched 0 item(s), matchedIds 0 item(s), mmPerFoot 304.8, noConnectors
+    0 item(s), tolFt 0.00656167979002625, toleranceMm 2, unknownShape 0 item(s), wantAny false,
+    wantRect false, wantRound true, widthFt 0, widthMm 0. inputs came elements from the selection
+    (307); shape as given; diameterMm as given; widthMm as given; heightMm as given; toleranceMm
+    as given; eitherOrientation as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 9b438eeed5bcbb55
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

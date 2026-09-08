@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -82,6 +82,29 @@ contract:
       type: int
     - name: unplaced
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  positive_case: 'run as it would normally be run. returned findings 13 item(s) [307 element(s)
+    counted by space: 296 landed in one, 11 did n...,   Office Unit 301 301                            63,   Live/Work
+    Unit 306 306                         41, ...], groupCounts 12 item(s) [24, 35, 11, ...],
+    groupFor Func`2, groupNames 12 item(s) [Two Story Studio Unit 204 204, Studio Unit 203
+    203, (in no space), ...], kind space, placed 296, pointOf Func`2, rooms 0 item(s), skippedContainers
+    0, spaces 67 item(s) [Electrical 201, Corridor 200, Live/Work Unit 202, ...], unplaced
+    11. inputs came elements from the selection (307); containerKind as given. on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with containerKind=ZZZNOTHINGHERE instead - chosen because it should
+    not contain what this fragment reports. returned findings 2 item(s) [0 element(s) counted
+    by (nothing): 0 landed in one, 0 did no..., ''ZZZNOTHINGHERE'' is not a container this
+    fragment knows. It ...], groupCounts 0 item(s), groupFor Func`2, groupNames 0 item(s),
+    kind zzznothinghere, placed 0, pointOf Func`2, rooms 0 item(s), skippedContainers 0, spaces
+    0 item(s), unplaced 0. inputs came elements from the selection (307); containerKind as
+    given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 37193344d5cc0654
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
