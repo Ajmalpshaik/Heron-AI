@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -60,6 +60,25 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: 'run as it would normally be run - run inside a transaction and ROLLED BACK,
+    so the model was left exactly as it was. returned changed 1, findings 1 item(s) [1 of
+    1 view(s) changed in some way: scale set on 1, detail l...], scale 75. inputs came views
+    as given (1); scale as given; detailLevel as given; visualStyle as given. on Snowdon-scratch_ajmal.al'
+  negative_case: run with views=Model Linking, scale=0, detailLevel=, visualStyle= instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned changed 0, findings
+    1 item(s) [Nothing was asked for - give a scale, a detail level or a vi...], scale 0.
+    inputs came views as given (1); scale as given; detailLevel as given; visualStyle as given.
+    on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a49cc089d5151844
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

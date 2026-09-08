@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,13 +57,44 @@ contract:
     - name: closedNames
       type: IList<string>
     - name: notOpen
+      # The views asked for that had no tab to close. The evidence it
+      # looked and found nothing to do, never a tab it closed.
+      role: accounting
       type: IList<string>
     - name: keptBack
+      # Tabs deliberately NOT closed, because closing the last view closes
+      # the project. A refusal this fragment makes on purpose.
+      role: accounting
       type: IList<string>
     - name: remaining
+      # How many tabs are still open afterwards. It can NEVER be zero - that
+      # is the whole safety rule above - so it cannot be part of an empty
+      # answer, and judging it as one made every negative case look full.
+      role: accounting
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
+  positive_case: run as it would normally be run. returned activeId ElementId, closed 1, closedNames
+    1 item(s) [3D HVAC Layout], findings 1 item(s) [Closed 1 tab(s). 3 still open. THE VIEWS
+    THEMSELVES ARE UNTO...], keptBack 0 item(s), notOpen 0 item(s), openCount 4, remaining
+    3, tabs 4 item(s) [Autodesk.Revit.UI.UIView, Autodesk.Revit.UI.UIView, Autodesk.Revit.UI.UIView,
+    ...], wanted 1 item(s) [3D HVAC Layout]. inputs came viewNames as given (1). on Snowdon-scratch_ajmal.al
+  negative_case: 'run with viewNames=L2,L3,L4 instead - chosen because it should not contain
+    what this fragment reports. returned activeId ElementId, closed 0, closedNames 0 item(s),
+    findings 2 item(s) [Closed 0 tab(s). 3 still open. THE VIEWS THEMSELVES ARE UNTO..., 3
+    requested view(s) had no open tab and were left alone: "L2...], keptBack 0 item(s), notOpen
+    3 item(s) [L2, L3, L4], openCount 3, remaining 3, tabs 3 item(s) [Autodesk.Revit.UI.UIView,
+    Autodesk.Revit.UI.UIView, Autodesk.Revit.UI.UIView], wanted 3 item(s) [L2, L3, L4]. inputs
+    came viewNames as given (3). on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a03cf1290d18aa2d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
