@@ -11,6 +11,7 @@ no individual, and assume no knowledge of any other project.
 | [revit-version-support](revit-version-support/SKILL.md) | Which Revit release needs which .NET runtime, how to build for one, and every API break from 2020 to the latest supported release |
 | [revit-addin-conventions](revit-addin-conventions/SKILL.md) | Where code goes, the metadata header, the path rule, the Revit threading constraint, transactions and undo, how to word a message, and the checks to run |
 | [revit-ribbon-and-windows](revit-ribbon-and-windows/SKILL.md) | Ribbon buttons, why one fails to appear, and the `ExternalEvent` pattern a modeless window must use to reach the Revit API without crashing Revit |
+| [fragment-proving](fragment-proving/SKILL.md) | How to arrange a fragment's proof so the answer means something, the five mistakes that account for nearly every failed one, and how to run a batch of them |
 
 ## What belongs here
 

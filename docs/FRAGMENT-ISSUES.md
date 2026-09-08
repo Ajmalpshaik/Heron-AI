@@ -620,6 +620,12 @@ Not failures. Heron has no way to receive these inputs yet, so they have never e
 Not a list of problems — the working method, written down because most of today's misses were the
 arrangement rather than the fragment.
 
+**This section is the evidence; the operative version is
+[`.claude/skills/fragment-proving/SKILL.md`](../.claude/skills/fragment-proving/SKILL.md).** The two say
+the same five things and are deliberately not the same document: here is what was observed, with the
+values that were passed and what came back; there is what to do about it, next to the job file that
+does it. Fix the skill when a rule turns out to be wrong, and add the observation here.
+
 **PROVE ON A SMALL SELECTION.** The owner's instruction, 2026-09-09, after `set-mep-size` timed out on
 307 ducts: *"a lot of items change, it will affect slow process… you can try with a small number of
 ducts like 2 or 3."* Retried on the 22 ducts in `FloorPlan: M1` it sized all 22 immediately, and

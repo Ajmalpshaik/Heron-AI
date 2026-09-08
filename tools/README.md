@@ -422,3 +422,62 @@ own tests, and therefore unusable from a conversation. The `THE BRAIN` section w
 that, and was validated in both directions before its result was believed: with an import present it
 reports the call site, with none it reports the gap. **The general lesson is worth more than the fix —
 a checker written from a build order can only ever ask whether the build order was followed.**
+
+---
+
+## `batch-prove.py` — many fragments proved in one pass, and neither half taken on trust
+
+```bash
+python tools/batch-prove.py tools/jobs/example.yaml --dry-run   # read it, run nothing
+python tools/batch-prove.py my-jobs.yaml                        # run it against Revit
+python tools/batch-prove.py my-jobs.yaml --only set-mep-size
+```
+
+Proving fragments one at a time costs a round trip each. On 2026-09-09 a throwaway script proved
+fourteen in one pass, then lived in a temp folder and was retyped twice. This is that script, with the
+two holes it had **closed rather than noted** — the working half of `HERON-DEV-RVT-013`, whose judging
+half is [`brain/heron_validate.py`](../brain/heron_validate.py).
+
+It takes a job file, runs `validate` per job, drafts what came back, judges it, and reports
+one verdict per fragment - `PASS`, `POSITIVE EMPTY`,
+`NEG NOT EMPTY`, `TIMEOUT` and the rest, each printed with what it means and what to do about it.
+
+**It never accepts and never promotes**, and that is checked rather than promised: it reads every
+fragment's `heron-status` before the batch and again after, and stops if one moved. Accepting a draft
+is [`heron_validate.py accept`](../brain/heron_validate.py) and it takes a person's name, because that
+name is the signature.
+
+**Hole 1 — it re-proved finished work.** The first batch was 15 of 16 fragments already `PROVEN`,
+because the names were picked off a capability list rather than filtered by status, and it cheerfully
+reported six passes for it. A fragment at `PROVEN` or `PRODUCTION` is now refused, reported `ALREADY`,
+and never sent to Revit. There is deliberately **no flag to override that** — re-proving after the code
+changes is a staleness question, and [`tests/test_golden.py`](../tests/test_golden.py) already answers
+it by recomputing fingerprints.
+
+**Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
+came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
+satisfies without trying. So the POSITIVE is judged too, by one rule: **a declared result has to have
+moved off zero.** `read-graphic-overrides` leaves an `OverrideGraphicSettings` **object**, and reading
+that as *"not a count, therefore non-zero, therefore it did something"* passed a fragment whose only
+real result was `0` in both legs. **Unreadable is not evidence of work** — the rule `_as_count` already
+follows for the negative, applied to the positive.
+
+`looks_empty` is **imported** from the validation agent, not copied. The runner and the drafter have to
+agree about what empty means, and two copies of that judgement is exactly the drift this folder exists
+to prevent. `generate-fragment-catalog.py` keeps its own regex on purpose and the difference is the
+point: a page that *draws* may; a tool that *concludes* may not.
+
+**The arrangement is not the tool's job, and the arrangement is where every failure came from** — a
+selection of 307 where 22 would do, a positive case the model cannot fill, a category invisible in the
+view chosen, a width given for a round duct. That is a brief rather than code:
+[`.claude/skills/fragment-proving/SKILL.md`](../.claude/skills/fragment-proving/SKILL.md), with a job
+file to start from in [`jobs/example.yaml`](jobs/example.yaml).
+
+It concludes, so it has a test — [`tests/test_batch_prove.py`](../tests/test_batch_prove.py), which
+runs both judgements against the records that fooled the original script, and dry-runs **every** fragment
+the library currently holds at `PROVEN` to check each one is refused. That list is derived from the
+library rather than typed, so it cannot go stale.
+
+**The exit code follows the batch, not the fragments.** Fourteen failures is the output — the thing it
+was run to find out — and exiting non-zero on them would make a successful proving run
+indistinguishable from a broken one. What earns a non-zero code is a job file that cannot be run.

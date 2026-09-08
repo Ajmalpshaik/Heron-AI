@@ -1,0 +1,73 @@
+# A batch-prove job file. Copy it, change the values, keep the shape.
+#
+#     python tools/batch-prove.py tools/jobs/example.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/example.yaml
+#
+# THE VALUES BELOW ARE ARRANGED FOR ONE MODEL and will be wrong for yours. They
+# are written out rather than left blank because a template with placeholders in
+# it teaches nothing about the part that is hard - and the part that is hard is
+# choosing them. `.claude/skills/fragment-proving/SKILL.md` is the five rules
+# that decide these values, and every one of them was learned by getting it
+# wrong in front of a model.
+#
+# What `--dry-run` will tell you before Revit is touched: whether every fragment
+# exists, whether any is already PROVEN, whether the setup chain is real, whether
+# `expect:` names something the fragment actually provides, and whether the
+# negative case is arranged at all.
+
+# Recorded, never enforced. The run record carries what Revit actually said the
+# model was; this line is so a reader knows what these values were chosen for.
+model: Snowdon Towers Sample HVAC, Revit 2024
+
+defaults:
+  # A rolled-back write clears the Revit selection, so the arrangement is re-made
+  # before EACH phase. Only the first step resets the chain: step two consumes
+  # what step one left - select-by-category-name leaves `elements`, set-selection
+  # needs them.
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Ducts
+    # PROVE ON A SMALL SELECTION. M1 holds 22 ducts; L3 holds 307, and 307 is
+    # where set-mep-size timed out. A timeout says nothing about a fragment.
+    inViewOnly: "FloorPlan: M1"
+
+  negative-set:
+    # The negative case is a DIFFERENT SELECTION, not a cleared one. Clearing it
+    # leaves `elements` unbound and the executor refuses, which proves nothing.
+    # Structural framing is in this plan view and has no ducting in it.
+    categoryName: Structural Framing
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  # A fragment that takes a caller value as well as a selection. The value is
+  # part of the arrangement: ask for a tolerance the model can actually meet, or
+  # the POSITIVE comes back empty and the fragment gets blamed for it.
+  - fragment: find-overlapping-lines
+    set:
+      toleranceMm: 25
+    negative-set:
+      toleranceMm: 25
+    note: >
+      This one answered on a stale selection of ten equipment items once, and
+      only "elements from the selection (10)" on the reply gave it away. Read
+      the binding note on the answer.
+
+  # ASK FOR WHAT THE MODEL HAS. Spaces carry loads; ducts do not - so the two
+  # selections are the right way round here and would prove nothing reversed.
+  - fragment: read-space-loads
+    set:
+      categoryName: Spaces
+      inViewOnly: "FloorPlan: M1"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+
+  # `expect:` is where a person's knowledge of the fragment goes. Without it the
+  # runner judges every declared result, and `comparedCount` moving off zero
+  # would read as work - it is a count of what was LOOKED AT. Naming `differing`
+  # says what actually finding something looks like.
+  - fragment: compare-elements
+    expect: differing
