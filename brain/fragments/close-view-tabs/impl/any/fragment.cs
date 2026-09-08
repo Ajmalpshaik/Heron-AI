@@ -64,6 +64,12 @@ else
         byName.Add(new KeyValuePair<string, UIView>(view.Name ?? "", tab));
     }
 
+    // Resolve every requested name to its open tab BEFORE closing any of them,
+    // so the closing ORDER can be chosen rather than inherited from the order
+    // the names were asked in. The order is the whole correctness of the guard
+    // below, and it cannot be chosen while already half way through closing.
+    var toClose = new List<KeyValuePair<string, UIView>>();
+
     foreach (var name in wanted)
     {
         var found = byName
@@ -78,35 +84,41 @@ else
             continue;
         }
 
-        foreach (var pair in found)
+        toClose.AddRange(found);
+    }
+
+    // THE ACTIVE TAB IS HANDLED LAST, AND THAT IS WHAT MAKES THE GUARD KEEP THE
+    // RIGHT ONE. The floor below keeps back whatever it reaches once a single
+    // tab is left, so which tab survives is decided entirely by this ordering.
+    // Sorting the active one to the end leaves the user looking at the view they
+    // were already in; without it the survivor is whichever name happened to
+    // come last in the request, which is a view they did not choose.
+    //
+    // OrderBy is a STABLE sort, so every other tab keeps the order it was asked
+    // in and only the active one moves.
+    var ordered = toClose.OrderBy(p => p.Value.ViewId == activeId ? 1 : 0).ToList();
+
+    foreach (var pair in ordered)
+    {
+        // THE FLOOR. One tab must survive, or Revit closes the project - and
+        // that project may hold unsaved work.
+        if (remaining <= 1)
         {
-            // THE GUARD. One tab must survive, or Revit closes the project.
-            if (remaining <= 1)
-            {
-                keptBack.Add(pair.Key);
-                continue;
-            }
+            keptBack.Add(pair.Key);
+            continue;
+        }
 
-            // Keep the active tab back in preference to any other, so the user
-            // is left looking at the view they were already in.
-            if (pair.Value.ViewId == activeId && remaining <= wanted.Count && remaining <= 2)
-            {
-                keptBack.Add(pair.Key);
-                continue;
-            }
-
-            try
-            {
-                pair.Value.Close();
-                closed++;
-                remaining--;
-                closedNames.Add(pair.Key);
-            }
-            catch (Exception ex)
-            {
-                findings.Add("Revit refused to close the tab \"" + pair.Key + "\": " + ex.Message
-                    + ". It is still open and the view itself is untouched.");
-            }
+        try
+        {
+            pair.Value.Close();
+            closed++;
+            remaining--;
+            closedNames.Add(pair.Key);
+        }
+        catch (Exception ex)
+        {
+            findings.Add("Revit refused to close the tab \"" + pair.Key + "\": " + ex.Message
+                + ". It is still open and the view itself is untouched.");
         }
     }
 

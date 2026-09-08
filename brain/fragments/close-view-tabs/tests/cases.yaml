@@ -26,6 +26,15 @@ negative:
       and that project may hold unsaved work - tidying tabs must never cost
       somebody their modelling
 
+  - given: three tabs named for closing WITH THE ACTIVE ONE FIRST in the request
+    expect: >
+      THE ACTIVE TAB IS THE ONE LEFT OPEN, not whichever name came last. The
+      first attempt at this fragment kept back the last tab it happened to reach,
+      so asking to close everything left the user staring at a view they had not
+      chosen while the one they were working in was shut. Which tab survives is
+      decided by the closing ORDER, so the order is chosen rather than inherited
+      from the request
+
   - given: exactly one tab open, and that tab named for closing
     expect: >
       NOTHING CLOSED, kept back with the reason. The floor holds even when the
