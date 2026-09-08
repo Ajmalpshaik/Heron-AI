@@ -412,15 +412,38 @@ Three instances on that sheet. `read-schedule-contents` — listed as *"fixed an
 2026-09-07 — was proved through it immediately: 3 schedules, 144 body rows, against 307 non-schedules
 skipped.
 
-| Still to try through this door | |
-|---|---|
-| `add-schedule-fields` · `add-schedule-combined-field` · `remove-schedule-fields` | field editing |
-| `set-schedule-appearance` · `set-schedule-filters` · `set-schedule-sort-group` | schedule settings |
-| `place-schedule-on-sheet` · `add-revision-cloud` · `export-schedule-to-csv` | the rest |
+### …and behind the door, EIGHT fragments never got the fix
 
-`set-schedule-sort-group` was tried and `sorted 0` on both legs with `sortFieldNames=Mark` — a field
-the schedules do have, since `read-schedule-contents` listed it. So the door opens but that fragment
-needs its own look; the selection is no longer the reason.
+Tried through it, four of them, and every one did **nothing** — `added 0`, `changed 0`, `sorted 0`, and
+tellingly `availableFields 0` and `presentFields 0`, meaning they never saw the schedule at all.
+
+The reason is exact. **Only four fragments in the library understand `ScheduleSheetInstance`:**
+
+| Understands it | Status |
+|---|---|
+| `report-schedule-definition` | PROVEN |
+| `read-schedule-contents` | PROVEN 2026-09-09 |
+| `place-schedule-on-sheet` | DRAFT |
+| `find-unplaced-views` | — |
+
+**Eight cast to `ViewSchedule` and nothing else**, so a schedule on a sheet slides straight past them:
+
+`add-schedule-fields` · `add-schedule-combined-field` · `remove-schedule-fields` ·
+`set-schedule-appearance` · `set-schedule-filters` · `set-schedule-sort-group` ·
+`add-revision-cloud` · `export-schedule-to-csv`
+
+The 2026-09-07 fix HANDOVER.md describes — *"they demanded a `ViewSchedule`; clicking a schedule on a
+sheet gives a `ScheduleSheetInstance`"* — was applied to the two READ fragments and not to the eight
+that edit.
+
+**AND THEY FAIL SILENTLY.** Handed a schedule on a sheet they report `0 changed` with no refusal, which
+reads as *"there was nothing to do"* rather than *"I could not see what you gave me"*. That is the
+failure D-30's negative case exists to catch, and it is why none of them can be proved: both legs come
+back identical because both legs did nothing.
+
+**The fix is one line each and already written twice.** Do it once for all eight rather than per
+fragment — a shared helper that resolves a selection to the `ViewSchedule` behind it, whichever form
+arrived, is the shape the library wants.
 
 ---
 
