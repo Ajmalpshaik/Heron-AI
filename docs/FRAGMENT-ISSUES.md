@@ -109,6 +109,7 @@ and the obvious one turned out not to be.
 | `set-view-underlay` | Set an underlay between L2 and L3 | An EMPTY `baseLevel` is refused by Heron before the fragment sees it, so "clear the underlay" cannot be expressed. That is arguably a gap in the value passing, not the fragment |
 | `reset-view-graphics` | Cleared 109 element overrides in `Model Linking` | The drafting view chosen as the negative had **8 overrides of its own** and cleared them. Not a failure — a real answer. Needs a view with none, and no view in Snowdon has none |
 | `switch-active-project` | Reported `switched true` | Only ONE project is open, so it switched to the model it was already in. The handover's real question — *"check the tab bar afterwards, and never chain a write onto it assuming it landed"* — needs a second project open |
+| `export-views-to-dwg` | **None.** `created 0` | *"name the DWG export setup"* — it will not use Revit's default, and this model has no named setup to give it. Needs one created in Export Setups first |
 | `set-category-visibility` | Hid Ducts in `Model Linking` — `changed 1` | Showing them again is also `changed 1`. The same two-position needle as `set-crop-box-settings`, and the same fix would serve both |
 | `set-view-template-control` | 19 parameters held by the template, 9 freed | `nowHeld`/`nowFree` are the template's WHOLE state, so they are never empty whatever is asked. The result worth judging is *how many changed*, which the fragment does not report |
 | `create-workset-3d-views` | Created one 3D view per workset (2) | An empty `namePrefix` still creates 2. There is no input that makes it create nothing |
@@ -139,10 +140,27 @@ instead — several times in one session.
 | `LIST_LINE_STYLES` | `remap-line-styles` takes two style names and there is no way to discover one | 1 |
 | `LIST_MEP_SYSTEM_TYPES` | `create-mep-system-type` takes `copyFromName` and nothing lists the 14 that exist | 1 |
 | `LIST_MATERIALS` | `find-unused-materials` reports only the unused ones. There is no list of the materials that ARE used | 1 |
+| `LIST_DWG_EXPORT_SETUPS` | `export-views-to-dwg` refuses without a named setup — *"Revit's default is not used"* — and nothing lists the setups a project has. It could not be proved at all for want of one name | 1 |
 
-**The pattern is one sentence: every fragment that takes a NAME needs a sibling that lists the names.**
+**The pattern is one sentence: every fragment that takes a NAME needs a way to discover the names.**
 A caller who cannot discover a value cannot supply one, and [D-54](DECISIONS.md) made supplying them
 possible without making them findable.
+
+### …and two fragments already show the cheaper fix
+
+**A new `LIST_*` fragment is not the only answer, and may not be the best one.** Two fragments proved
+today already solve it for themselves, by handing back the alternatives **in the refusal**:
+
+| Fragment | What it returns when it cannot match the name |
+|---|---|
+| `set-print-settings` | `availableSizes` — all 79 the print driver offers |
+| `open-view` | `matches` — what the name DID match, and why it was refused: *"[view template, cannot be opened]"* |
+
+One round trip instead of two, and the list arrives exactly when it is wanted — at the moment somebody
+got the name wrong. **Deciding between the two shapes is part of the sit-down**, because doing both
+means the same list is maintained in two places. The five `LIST_*` rows above are written as new
+fragments only because that is how the library already answers this question elsewhere
+(`list-levels`, `list-worksets`, `list-grids`); the convention below may be the better trade.
 
 ### One fragment to SPLIT
 
