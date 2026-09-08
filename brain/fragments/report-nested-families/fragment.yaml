@@ -69,28 +69,25 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-07'
+  date: '2026-09-09'
   by: Ajmal PS
-  model: Snowdon Towers Sample HVAC (9,641 elements), Revit 2024, session 42676
-  positive_case: 37 mechanical equipment items selected in Snowdon Towers Sample HVAC - run
-    as it would normally be run. returned assemblyParts 37 entry(ies), cycles 0 item(s), given
-    HashSet`1, roots 37 entry(ies), rootsOutsideSet 0 item(s), unitCount 37. inputs came elements
-    from the selection (37). on Snowdon Towers Sample HVAC
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 17356
+  positive_case: run as it would normally be run. returned assemblyParts 17 entry(ies), cycles
+    0 item(s), given HashSet`1, roots 17 entry(ies), rootsOutsideSet 0 item(s), unitCount
+    17. inputs came elements from the selection (17). on Snowdon-scratch_ajmal.al
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-nested-families\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 5 different selections:\n\n      28 (28 duct taps) selected -> roots 28 entry(ies)\n\
-    \      16 (16 spaces) selected -> roots 16 entry(ies)\n      4 (4 walls) selected -> roots\
-    \ 4 entry(ies)\n      12 (12 sheets) selected -> roots 12 entry(ies)\n      37 (37 mechanical\
-    \ equipment items) selected -> roots 37 entry(ies)\n\n    Different inputs, exact matches\
-    \ every time. A fragment falling back to the active view, the whole model, or a previous\
-    \ run could not do that."
+    \ across 5 different inputs:\n\n      22 ducts in M1 -> roots 22 entry(ies)\n      air\
+    \ terminals in M1 -> roots 10 entry(ies)\n      mechanical equipment in L3 -> roots 10\
+    \ entry(ies)\n      duct tags in M1 -> roots 9 entry(ies)\n      spaces in L3 -> roots\
+    \ 17 entry(ies)\n\n    Different inputs, exact matches every time. A fragment falling\
+    \ back to the active view, the whole model, or a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   fingerprint: 1e5a656f274b27a4
-
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

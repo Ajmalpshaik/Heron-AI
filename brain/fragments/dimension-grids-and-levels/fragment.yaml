@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -86,6 +86,30 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 17356
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned created ElementId,
+    findings 0 item(s), grids 0 item(s), levels 11 item(s) [L1 - Block 43, L2, L1 - Block
+    35, ...], notADatum 0 item(s), notVisibleInView 0 item(s), offset 1.64041994750656, offsetMm
+    500, refused 0 item(s), visibleDatumIds HashSet`1. inputs came view as given; elements
+    from the selection (11); offsetMm as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1, view=Elevation: North
+    - Mech, offsetMm=500 instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values - run inside a transaction and ROLLED BACK, so the model
+    was left exactly as it was. returned created (null), findings 0 item(s), grids 0 item(s),
+    levels 0 item(s), notADatum 22 item(s) [1447716, 1447725, 1447768, ...], notVisibleInView
+    0 item(s), offset 1.64041994750656, offsetMm 500, refused 0 item(s), visibleDatumIds HashSet`1.
+    inputs came view as given; elements from the selection (22); offsetMm as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: dd6812ba02d37f0d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

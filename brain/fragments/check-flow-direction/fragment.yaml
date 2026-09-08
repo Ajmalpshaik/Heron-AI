@@ -61,8 +61,14 @@ contract:
     - name: bothIn
       type: IList<string>
     - name: jointsChecked
+      # How many joints were examined. A work counter - D-52 amended on
+      # 2026-09-07 to cover exactly these.
+      role: accounting
       type: int
     - name: bidirectionalSkipped
+      # Joints where both connectors are bidirectional, so direction cannot
+      # be judged. The evidence it looked, never a fault it found (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

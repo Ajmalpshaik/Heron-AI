@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -64,6 +64,34 @@ contract:
       type: IList<string>
     - name: combinedSizeMm
       type: string
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 17356
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned cap 5,
+    combinedSizeMm 13750 x 10414 x 3454 mm, findings 8 item(s) [22 of 22 element(s) measured,
+    Tees (id 1447716): 457 x 203 x 203 mm, lowest corner at (-26..., Tees (id 1447725): 203
+    x 3048 x 203 mm, lowest corner at (-2..., ...], haveCombined true, listed 5, maxRows 5,
+    maxX -50.8040722861924, maxY 42.7708333333337, maxZ 16.5833333333371, measured 22, minX
+    -95.9166666666666, minY 8.60416667874048, minZ 5.24999999999997, noBoundingBox 0 item(s).
+    inputs came elements from the selection (22); maxRows as given. on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, maxRows=5 instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase''s own
+    values. returned cap 5, combinedSizeMm , findings 3 item(s) [0 of 9 element(s) measured,
+    Nothing handed in has a bounding box, so there is no combine..., 9 element(s) have no
+    bounding box and are NOT in the combine...], haveCombined false, listed 0, maxRows 5,
+    maxX 0, maxY 0, maxZ 0, measured 0, minX 0, minY 0, minZ 0, noBoundingBox 9 item(s) [Duct
+    Size Tag (id 1491217) - no bounding box; a view-specifi..., Duct Size Tag (id 1491220)
+    - no bounding box; a view-specifi..., Duct Size Tag (id 1491225) - no bounding box; a
+    view-specifi..., ...]. inputs came elements from the selection (9); maxRows as given.
+    on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b3740483c023df38
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

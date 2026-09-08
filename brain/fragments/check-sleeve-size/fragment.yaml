@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -71,6 +71,36 @@ contract:
       # never a thing it found (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 17356
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned SERVICE_CATEGORIES
+    4 item(s) [OST_PipeCurves, OST_DuctCurves, OST_CableTray, ...], SIZE_NAMES 9 item(s) [Diameter,
+    Sleeve Diameter, Nominal Diameter, ...], annularClearance 99999, findings 23 item(s) [22
+    sleeve(s) checked: 22 undersized, 0 with nothing through ..., sleeve 1447716 (Diameter
+    = 203.2 mm) round Ducts 203.2 mm (n..., sleeve 1447725 (Diameter = 203.2 mm) round Ducts
+    203.2 mm (n..., ...], maxOversize 0, orphaned 0 item(s), readNamed Func`3, services 1053
+    item(s) [Tees, Tees, Tees, ...], undersized 22 item(s) [1447716, 1447725, 1447768, ...],
+    unreadable 0. inputs came sleeves from the selection (22); annularClearance as given;
+    maxOversize as given. on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, annularClearance=99999,
+    maxOversize=0 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values. returned SERVICE_CATEGORIES 4 item(s) [OST_PipeCurves,
+    OST_DuctCurves, OST_CableTray, ...], SIZE_NAMES 9 item(s) [Diameter, Sleeve Diameter,
+    Nominal Diameter, ...], annularClearance 99999, findings 10 item(s) [9 sleeve(s) checked:
+    0 undersized, 0 with nothing through th..., sleeve 1491217: no readable geometry - not
+    checked, sleeve 1491220: no readable geometry - not checked, ...], maxOversize 0, orphaned
+    0 item(s), readNamed Func`3, services 1053 item(s) [Tees, Tees, Tees, ...], undersized
+    0 item(s), unreadable 9. inputs came sleeves from the selection (9); annularClearance
+    as given; maxOversize as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 9746f3214ac65785
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -68,6 +68,32 @@ contract:
       type: IList<ElementId>
     - name: outOfReach
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 17356
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned ceilingIds
+    0 item(s), envelope 99999, findings 12 item(s) [10 accessory(ies): 10 obstructed, 0 needing
+    an access panel,..., no ceilings in the HOST model. If the architecture is a LINK...,
+    Heat Recovery Unit (HRU) (id 1366299) - ROOM: BLOCKED by Mec..., ...], maxReachHeight
+    0, needAccessPanel 0 item(s), obstructed 10 item(s) [1366299, 1367115, 1367128, ...],
+    outOfReach 10 item(s) [1366299, 1367115, 1367128, ...], rayView View3D. inputs came accessories
+    from the selection (10); envelope as given; maxReachHeight as given. on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, envelope=99999,
+    maxReachHeight=0 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values. returned ceilingIds 0 item(s), envelope 99999, findings
+    11 item(s) [9 accessory(ies): 0 obstructed, 0 needing an access panel, 0..., no ceilings
+    in the HOST model. If the architecture is a LINK..., Duct Size Tag (id 1491217): no readable
+    geometry - not check..., ...], maxReachHeight 0, needAccessPanel 0 item(s), obstructed
+    0 item(s), outOfReach 0 item(s), rayView View3D. inputs came accessories from the selection
+    (9); envelope as given; maxReachHeight as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 225851a57f051cfc
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
