@@ -9,6 +9,7 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
@@ -53,6 +54,22 @@ namespace Heron.Revit.Addin
     /// a sentence and the screen showed nothing at all. The outcome line
     /// holds for a moment after the work so the answer is where the person is
     /// looking.
+    ///
+    /// THE COUNT IS KEPT OFF THE DISPATCHER, and that is not a detail. Begin
+    /// is always called from a listener thread, so it is POSTED and waits its
+    /// turn; End is called from Revit's own thread inside Execute, so it runs
+    /// INLINE, immediately. While Revit is inside Execute it cannot pump, so a
+    /// Begin posted during that window sits behind the very work it announces
+    /// - and the End of that same job overtakes it. Counting inside the posted
+    /// action therefore let a job be ended before it was begun: the stranded
+    /// Begin then raised a banner nothing was left to lower, and it stayed up
+    /// over an idle Revit until Revit was restarted - D-56, seen 2026-09-08.
+    ///
+    /// So the count is the truth and the drawing merely follows it. Begin and
+    /// End move the count with Interlocked ON THE CALLER'S THREAD, before the
+    /// hop; the posted action only RENDERS whatever the count says at the
+    /// moment it finally runs. An action that arrives late is then a no-op,
+    /// which is exactly what it should be.
     ///
     /// NOTHING HERE MAY THROW. A cosmetic fault must never cost a request, so
     /// every entry point swallows and logs. The banner failing means no
@@ -112,7 +129,23 @@ namespace Heron.Revit.Addin
         private DoubleAnimation _travel;
         private DispatcherTimer _hideTimer;
 
+        /// <summary>
+        /// How many jobs are in flight. Written from listener threads AND from
+        /// Revit's thread, read on Revit's thread when drawing - so it moves
+        /// with Interlocked, never with a plain ++ or --.
+        /// </summary>
         private int _active;
+
+        /// <summary>The newest job raised, and how the last one ended.</summary>
+        private Raised _raised;
+        private Ended _ended;
+
+        /// <summary>
+        /// Is the outcome already on screen with its hold running? Without
+        /// this, a render arriving late would show the same answer again and
+        /// restart the hold.
+        /// </summary>
+        private bool _holding;
 
         /// <summary>Revit's own top-level window - what the banner centres on.</summary>
         private IntPtr _host;
@@ -141,13 +174,14 @@ namespace Heron.Revit.Addin
         public void Begin(string job, bool changesModel)
         {
             if (!_enabled) return;
-            OnUi(delegate
-            {
-                _active++;
-                StopHideTimer();
-                if (!Show()) return;
-                Paint(changesModel, job);
-            });
+
+            // COUNTED HERE, on the caller's thread, before the hop - see the
+            // class comment. Counting inside the posted action is what let an
+            // End overtake its own Begin.
+            Interlocked.Increment(ref _active);
+            Volatile.Write(ref _raised, new Raised(job, changesModel));
+
+            OnUi(Render);
         }
 
         /// <summary>
@@ -165,14 +199,66 @@ namespace Heron.Revit.Addin
         public void End(bool ok, string outcome, long milliseconds)
         {
             if (!_enabled) return;
-            OnUi(delegate
-            {
-                if (_active > 0) _active--;
-                if (_active != 0 || _window == null) return;
 
-                ShowOutcome(ok, outcome, milliseconds);
-                StartHideTimer(OutcomeHold);
-            });
+            // The outcome is published BEFORE the count drops, so a render
+            // caused by that drop cannot find the count settled and the answer
+            // still missing.
+            Volatile.Write(ref _ended, new Ended(ok, outcome, milliseconds));
+            Release();
+
+            OnUi(Render);
+        }
+
+        /// <summary>
+        /// One job less in flight, and never fewer than none.
+        ///
+        /// Every Begin is matched by exactly one End - RevitJob.TakeBannerEnd
+        /// is what guarantees the one - and Begin now counts before the job
+        /// can be queued, so the floor cannot be reached. It is here because
+        /// being wrong costs differently in each direction: a count stuck
+        /// BELOW zero is one silent banner, a count stuck ABOVE zero is a
+        /// banner that never comes down, which is the whole of D-56.
+        /// </summary>
+        private void Release()
+        {
+            while (true)
+            {
+                var now = Volatile.Read(ref _active);
+                if (now <= 0) return;
+                if (Interlocked.CompareExchange(ref _active, now - 1, now) == now) return;
+            }
+        }
+
+        /// <summary>
+        /// Revit's thread. Draws what the count says NOW, rather than what was
+        /// true when this was posted.
+        /// </summary>
+        private void Render()
+        {
+            if (Volatile.Read(ref _active) > 0)
+            {
+                var job = Volatile.Read(ref _raised);
+                if (job == null) return;
+
+                StopHideTimer();
+                if (!Show()) return;
+
+                _holding = false;
+                Paint(job.ChangesModel, job.Job);
+                return;
+            }
+
+            // Nothing is in flight. Say how it ended and start the hold - but
+            // only once, so a render arriving after the answer is already up
+            // leaves the hold running instead of restarting it.
+            if (_holding || _window == null) return;
+
+            var end = Volatile.Read(ref _ended);
+            _holding = true;
+            ShowOutcome(end == null || end.Ok,
+                        end == null ? null : end.Outcome,
+                        end == null ? -1 : end.Milliseconds);
+            StartHideTimer(OutcomeHold);
         }
 
         /// <summary>Revit is closing. Take the window down with it.</summary>
@@ -181,7 +267,7 @@ namespace Heron.Revit.Addin
             OnUi(delegate
             {
                 StopHideTimer();
-                _active = 0;
+                Interlocked.Exchange(ref _active, 0);
                 Destroy();
             });
         }
@@ -598,7 +684,7 @@ namespace Heron.Revit.Addin
 
             // A job that started while the outcome was on screen owns the
             // banner now - hiding it here would take away a live one.
-            if (_active != 0) return;
+            if (Volatile.Read(ref _active) > 0) return;
 
             try { if (_window != null) _window.Hide(); }
             catch (Exception ex) { _log("Activity banner would not hide: " + ex.Message); }
@@ -639,6 +725,9 @@ namespace Heron.Revit.Addin
 
         private void Forget()
         {
+            // The next window starts blank, so it is free to show an outcome.
+            _holding = false;
+
             _window = null;
             _title = null;
             _detail = null;
@@ -648,6 +737,39 @@ namespace Heron.Revit.Addin
             _sweep = null;
             _track = null;
             _travel = null;
+        }
+
+        // ----- what to draw --------------------------------------------------
+
+        /// <summary>
+        /// What a raise asked for. Immutable, so it crosses threads on a
+        /// single reference write and cannot be read half-changed.
+        /// </summary>
+        private sealed class Raised
+        {
+            public Raised(string job, bool changesModel)
+            {
+                Job = job;
+                ChangesModel = changesModel;
+            }
+
+            public string Job { get; private set; }
+            public bool ChangesModel { get; private set; }
+        }
+
+        /// <summary>How the last job ended.</summary>
+        private sealed class Ended
+        {
+            public Ended(bool ok, string outcome, long milliseconds)
+            {
+                Ok = ok;
+                Outcome = outcome;
+                Milliseconds = milliseconds;
+            }
+
+            public bool Ok { get; private set; }
+            public string Outcome { get; private set; }
+            public long Milliseconds { get; private set; }
         }
 
         // ----- Win32 --------------------------------------------------------

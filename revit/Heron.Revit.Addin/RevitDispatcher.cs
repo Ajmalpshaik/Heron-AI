@@ -121,7 +121,6 @@ namespace Heron.Revit.Addin
             }
 
             var job = new RevitJob(request, HeronAudit.NewWorkflowId());
-            lock (_queueLock) { _queue.Enqueue(job); }
 
             // THE BANNER GOES UP HERE, BEFORE Raise, AND THAT ORDER IS THE
             // WHOLE TRICK. Revit draws on the same thread it works on, so the
@@ -130,11 +129,20 @@ namespace Heron.Revit.Addin
             // Posting it first puts it in the queue ahead of the idle pass
             // that runs the ExternalEvent.
             //
+            // AND BEFORE THE ENQUEUE, which is the half that was missing. A
+            // queued job can be taken by an Execute already running for an
+            // earlier Raise, so between the enqueue and this line the job
+            // could be finished and ENDED before it had ever been begun. The
+            // banner counts what is in flight, and a count that goes down
+            // before it goes up leaves a banner over an idle Revit (D-56).
+            //
             // The read/change word comes from the tool registry, looked up by
             // operation name (Golden Rule 19). Nothing in the request decides
             // it, so a write can never wear the reading colour.
             var op = Json.ReadString(request, "op");
             _banner.Begin(DescribeJob(op, request), HeronOperationRegistry.Writes(op));
+
+            lock (_queueLock) { _queue.Enqueue(job); }
 
             try
             {
@@ -206,66 +214,97 @@ namespace Heron.Revit.Addin
                 if (job.IsAbandoned) continue;   // the caller already gave up
 
                 job.MarkStarted();
-                var op = Json.ReadString(job.Request, "op") ?? "(none)";
                 var clock = Stopwatch.StartNew();
-                string response;
+                string response = null;
                 try
                 {
-                    response = RevitOperations.Run(app, job.Request);
+                    var op = Json.ReadString(job.Request, "op") ?? "(none)";
+                    try
+                    {
+                        response = RevitOperations.Run(app, job.Request);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Never let one bad request throw out of here: this
+                        // runs on Revit's own thread, and an escaping
+                        // exception is Revit's problem, not just Heron's.
+                        _log("Operation failed: " + ex);
+                        response = Json.Error("operation_failed", ex.Message);
+                    }
+                    clock.Stop();
+
+                    // THE HONEST END OF THE WORK, and the reason End is not
+                    // called back in Dispatch: this is the moment Revit is
+                    // free again. A caller that already gave up ("still
+                    // running") is not the same event as the job finishing,
+                    // and the screen must follow the model, not the client.
+                    var failure = Json.ReadString(response, "error");
+                    if (job.TakeBannerEnd())
+                        _banner.End(failure == null, Explain(failure), clock.ElapsedMilliseconds);
+
+                    // One line per request, whatever happened. A trail that
+                    // only records successes answers the wrong question later.
+                    //
+                    // THE FRAGMENT IS NAMED, because without it this trail
+                    // cannot answer the question it exists to answer. Every
+                    // fragment run was logged as "run_fragment_read" and
+                    // nothing else, so 564 entries said a fragment ran and not
+                    // one said WHICH - and the Capability Gap report (docs/06
+                    // s6) is precisely a ranking by which. It could see that
+                    // something took 37 seconds against a 7 ms median and
+                    // could not say what.
+                    //
+                    // Read from the REQUEST rather than the response: a run
+                    // that failed to compile has no answer to name itself in,
+                    // and those are the entries the report most needs. Guarded
+                    // by the op so the field means one thing - a later
+                    // operation carrying its own identity adds its own line
+                    // here rather than borrowing this one, which is how a
+                    // field ends up meaning two things.
+                    HeronAudit.Record(job.WorkflowId, op,
+                        failure == null,
+                        new[]
+                        {
+                            new KeyValuePair<string, string>("session", _session),
+                            new KeyValuePair<string, string>("document", Json.ReadString(response, "document")),
+                            new KeyValuePair<string, string>("error", Json.ReadString(response, "error")),
+                            new KeyValuePair<string, string>("fragment",
+                                op == "run_fragment_read" || op == "run_fragment_write"
+                                    ? Json.ReadString(job.Request, "name") : null),
+                        },
+                        new[]
+                        {
+                            new KeyValuePair<string, long>("ms", clock.ElapsedMilliseconds),
+                        });
                 }
-                catch (Exception ex)
+                finally
                 {
-                    // Never let one bad request throw out of here: this runs on
-                    // Revit's own thread, and an escaping exception is Revit's
-                    // problem, not just Heron's.
-                    _log("Operation failed: " + ex);
-                    response = Json.Error("operation_failed", ex.Message);
+                    // THE TWO PROMISES OF A JOB, kept whatever went wrong
+                    // above. Only Run is wrapped in a catch of its own; the
+                    // audit write and the reads around it are not, and
+                    // anything throwing there escaped this loop entirely -
+                    // leaving the banner up over an idle Revit and the caller
+                    // waiting out its whole timeout for an answer that was
+                    // never coming.
+                    //
+                    // Both are safe to reach twice, which is why they can sit
+                    // here as well as above. TakeBannerEnd is the one
+                    // interlocked flag from D-50, and on the normal path it
+                    // has already been taken, so this says nothing; Finish on
+                    // an answered job re-sets an event that is already set.
+                    clock.Stop();
+                    if (response == null)
+                    {
+                        response = Json.Error("operation_failed",
+                            "The job ended without an answer. Nothing came back from Revit, " +
+                            "and nothing further was done to the model.");
+                    }
+
+                    if (job.TakeBannerEnd())
+                        _banner.End(false, "The job ended without an answer", clock.ElapsedMilliseconds);
+
+                    job.Finish(response);
                 }
-                clock.Stop();
-
-                // THE HONEST END OF THE WORK, and the reason End is not called
-                // back in Dispatch: this is the moment Revit is free again.
-                // A caller that already gave up ("still running") is not the
-                // same event as the job finishing, and the screen must follow
-                // the model rather than the client.
-                var failure = Json.ReadString(response, "error");
-                if (job.TakeBannerEnd())
-                    _banner.End(failure == null, Explain(failure), clock.ElapsedMilliseconds);
-
-                // One line per request, whatever happened. A trail that only
-                // records successes answers the wrong question later.
-                //
-                // THE FRAGMENT IS NAMED, because without it this trail cannot
-                // answer the question it exists to answer. Every fragment run
-                // was logged as "run_fragment_read" and nothing else, so 564
-                // entries said a fragment ran and not one said WHICH - and the
-                // Capability Gap report (docs/06 s6) is precisely a ranking by
-                // which. It could see that something took 37 seconds against
-                // a 7 ms median and could not say what.
-                //
-                // Read from the REQUEST rather than the response: a run that
-                // failed to compile has no answer to name itself in, and those
-                // are the entries the report most needs. Guarded by the op so
-                // the field means one thing - a later operation carrying its
-                // own identity adds its own line here rather than borrowing
-                // this one, which is how a field ends up meaning two things.
-                HeronAudit.Record(job.WorkflowId, op,
-                    failure == null,
-                    new[]
-                    {
-                        new KeyValuePair<string, string>("session", _session),
-                        new KeyValuePair<string, string>("document", Json.ReadString(response, "document")),
-                        new KeyValuePair<string, string>("error", Json.ReadString(response, "error")),
-                        new KeyValuePair<string, string>("fragment",
-                            op == "run_fragment_read" || op == "run_fragment_write"
-                                ? Json.ReadString(job.Request, "name") : null),
-                    },
-                    new[]
-                    {
-                        new KeyValuePair<string, long>("ms", clock.ElapsedMilliseconds),
-                    });
-
-                job.Finish(response);
             }
         }
 

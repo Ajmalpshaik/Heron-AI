@@ -3087,3 +3087,120 @@ On `Snowdon-scratch_ajmal.al` (workshared local, 9,628 elements), Revit 2024:
 
 Revit's undo list showed **`Heron: create-level`** as a single named entry. `create-drafting-view`,
 `create-revision` and `rename-workset` then ran the same way — the last on a workshared model.
+
+---
+
+## D-56 — The banner counts in flight off the dispatcher, because an End can arrive before its own Begin
+
+**Status:** Accepted · **Date:** 2026-09-08 · **Found during:** the owner watching his own screen
+**Affects:** [`HeronActivityBanner.cs`](../revit/Heron.Revit.Addin/HeronActivityBanner.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [D-50](#d-50--revit-says-out-loud-what-heron-is-doing-to-it-and-whether-it-is-reading-or-changing)
+
+### Context
+
+The owner's screen read **"Heron AI is reading your model — Running a job: switch-active-project —
+READING"** long after that job had returned. At the same moment `ping` answered in 2 ms and
+`count_elements` read 34,509 elements. Revit was healthy and idle, and the banner said it was working.
+
+That is precisely what [D-50](#d-50--revit-says-out-loud-what-heron-is-doing-to-it-and-whether-it-is-reading-or-changing)
+was built to prevent — *"it comes down when Revit truly finishes, not when the caller gives up"* — and
+`B6`–`B13` in [NEEDS-CHECKING.md](NEEDS-CHECKING.md) had been closed the day before with *"the banner
+works, in every colour"*. So this was a case those checks did not cover, not an untested claim.
+
+**A banner that lies about Revit being busy is worse than no banner**, because the next person to see a
+real one will not believe it.
+
+### What it actually was — and what it was not
+
+The first suspicion was `switch-active-project`, which calls `UIDocument.RequestViewChange` — something
+Revit performs *after* the operation ends, so the job might finish in a state the lowering did not
+expect. **That was wrong, and checking it first was still right.** The cause has nothing to do with
+view changes, and the fragment was innocent.
+
+**`Begin` is posted and `End` runs inline, so the end of a job can overtake its own beginning.**
+
+`Begin` is always called from a bridge listener thread, so `OnUi` posts it with `BeginInvoke` and it
+waits its turn on Revit's dispatcher. `End` is called from `Execute`, which runs on Revit's *own*
+thread, so `CheckAccess` is true and it runs **immediately, inline**. While Revit is inside `Execute`
+nothing can be pumped — that is the whole reason the banner has to be raised early — so a `Begin` posted
+during that window sits behind the very work it announces.
+
+One `ExternalEvent.Execute` drains the **whole queue**, and the proving harness dispatches every
+fragment as a pair of requests milliseconds apart. So both halves of a pair run inside one pass on
+Revit's thread:
+
+| | on Revit's thread | posted, still waiting | `_active` |
+|---|---|---|---|
+| 1 | — | `Begin(A)` runs | 1 |
+| 2 | `Execute` starts A (890 ms) | | 1 |
+| 3 | | `Begin(B)` **queued** | 1 |
+| 4 | `End(A)` **inline** | `Begin(B)` still queued | 0 → outcome shown, hide timer started |
+| 5 | `Execute` drains B, `End(B)` **inline** | `Begin(B)` still queued | 0 (the `> 0` guard swallows it) |
+| 6 | `Execute` returns, dispatcher pumps | **`Begin(B)` finally runs** | **1** — hide timer cancelled, banner repainted |
+
+At step 6 the banner is raised for a job that finished at step 5, and `RevitJob.TakeBannerEnd` — the
+interlocked flag from D-50 — has already been spent. **Nothing is left that can ever lower it.**
+
+Every later job then made it worse in a way that looks like the opposite: a new `Begin` took the count
+to 2 and its `End` brought it back to 1, never to 0, so the card **repainted itself to whatever ran
+last and stayed up**. Caught live on 2026-09-08 in Revit 2024 pid 1680 — the same session as the audit
+trail — reading `transfer-object-styles-between-documents`, then `Counting what is in the model`, then
+`report-category-overrides`, over an idle Revit each time.
+
+That answers the three things the report said must not be guessed:
+
+- **Not specific to `switch-active-project`,** and not about `RequestViewChange`. It needs only two jobs
+  close enough together that the second is dispatched while Revit is inside `Execute`. That fragment was
+  where it was *seen* because its 890 ms first run held the thread open long enough.
+- **A later job does not clear it.** It repaints it. It stays until Revit is restarted.
+- **No exception path skips the lowering.** All four paths reach `End`. The lowering was never missed —
+  it was **delivered out of order**, before the raising it was meant to cancel.
+
+### The decision
+
+**The count is the truth, and the drawing merely follows it.**
+
+1. **`Begin` and `End` move `_active` with `Interlocked` on the caller's own thread, before the hop.**
+   Counting inside the posted action is what allowed a job to be ended before it was begun.
+
+2. **The posted action only renders whatever the count says at the moment it finally runs.** An action
+   that arrives late is then a no-op, which is exactly what it should be. `> 0` draws the working state,
+   `0` draws the outcome and starts the hold — once, so a late render leaves a running hold alone
+   instead of restarting it.
+
+3. **`Dispatch` raises the banner before the job is enqueued, not after.** A queued job can be taken by
+   an `Execute` already running for an earlier `Raise`, so between the enqueue and the raise the job
+   could be finished and ended before it had ever been begun. `Begin` before `Enqueue` makes the
+   increment happen-before anything that could decrement it, and the floor in `Release` can then never
+   be reached.
+
+4. **`Execute` guarantees both of a job's promises in a `finally`.** Only `RevitOperations.Run` had a
+   catch of its own; the audit write and the reads around it did not, and anything throwing there
+   escaped the loop — leaving the banner up *and* the caller waiting out its whole timeout for an answer
+   that was never coming. Both are safe to reach twice: `TakeBannerEnd` is D-50's interlocked flag, and
+   `Finish` re-sets an event that is already set. This closes a second, real hole that had not yet been
+   hit.
+
+### Proved, not asserted
+
+`HeronActivityBanner.cs` has no Revit dependency, so the **real file** was compiled into a WPF harness
+that drives it with the exact call pattern `RevitDispatcher` uses — `Begin` from a listener thread,
+`End` inline from a blocked dispatcher — and read back the window's visibility four seconds after the
+work, well past the 1400 ms hold. The same five cases were run against the file as it stood at `HEAD`
+and against the fix, each case in **its own process**, so no verdict could inherit the previous one's
+leak.
+
+| Case | Before | After |
+|---|---|---|
+| 1 — one job on its own (control) | down, 0 in flight | down, 0 |
+| 2 — a pair drained in one `Execute` | **STILL UP, 1 in flight** | down, 0 |
+| 3 — caller gives up, four refusals, then the real end | down, 0 | down, 0 |
+| 4 — twelve jobs from four listener threads | **STILL UP, 12 in flight** | down, 0 |
+| 5 — a stray `End` with no `Begin` | down, 0 | down, 0 |
+
+Three of the five are controls and stayed green throughout, which is what makes the other two mean
+anything. Case 3 matters especially: the `still_running` path — the one D-50 deliberately leaves the
+banner up for — was **not** the leak, and an earlier reading that said it was came from running the
+cases in one process and inheriting case 2's stuck count.
+
+**Every project compiles on all eight releases, 2020 through 2027** (`python tools/check-compile.py`,
+2026-09-08).
