@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -64,6 +64,30 @@ contract:
       type: IList<ElementId>
     - name: notMepCurve
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 17356
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned connectorsNear Func`3,
+    created 8 item(s) [1544276, 1544278, 1544280, ...], distance 3.28083989501312, distanceMm
+    1000, halvesJoined 8 item(s) [1447725, 1447768, 1448439, ...], halvesLeftOpen 0 item(s),
+    notMepCurve 0 item(s), refused 14 item(s) [1447716, 1448416, 1448425, ...]. inputs came
+    elements from the selection (22); distanceMm as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, distanceMm=1000
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase''s
+    own values - run inside a transaction and ROLLED BACK, so the model was left exactly as
+    it was. returned connectorsNear Func`3, created 0 item(s), distance 3.28083989501312,
+    distanceMm 1000, halvesJoined 0 item(s), halvesLeftOpen 0 item(s), notMepCurve 9 item(s)
+    [1491217, 1491220, 1491225, ...], refused 0 item(s). inputs came elements from the selection
+    (9); distanceMm as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 111b5e51bf6e5573
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

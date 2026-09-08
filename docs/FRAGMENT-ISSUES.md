@@ -316,9 +316,8 @@ and the obvious one turned out not to be.
 | `connect-open-ends` | **None.** `openEnds 0`, `connected 0` | Nothing here has an open end. `select-by-connection-status` proved that this morning — third fragment blocked by it, after `find-dead-ends` |
 | `fillet-lines` | **None.** `created 0` on both legs | The nine detail lines in that drafting view do not meet at an angle a fillet can round. Needs two lines drawn to cross |
 | `disallow-join` | **None.** `changed 0`, `unsupported 307` | Disallow-join is a WALL and beam idea; ducts do not support it. Needs walls, and Snowdon's are in the architectural link |
-| `set-mep-size` | **None.** `sized 0`, `notApplicable 307` | Given a width and height for ducts that are ROUND — every one in this model is dia 102, 152 or 203. Retried with a diameter and Revit took over 60 s on 307 ducts, so it timed out rather than answered. Worth retrying on a smaller selection |
 | `add-revision-cloud` | Not run | It needs `revisionId` as an **ElementId**, which Heron deliberately refuses to accept — see defect 8's neighbour in §6. The first fragment blocked by that decision rather than by the model, and a fair cost to weigh against it |
-| `set-mep-justification` | **None.** `set 0` on both legs | It reports *"0 run(s) set"* across 309 findings. Justification applies to a duct RUN, and a flat selection of 307 individual ducts is not a run — the fragment needs whatever it counts as one |
+| `set-mep-justification` | **None.** `set 0` on both legs | *"0 run(s) set"*. Retried on 22 ducts as well as 307 — the same. Justification applies to a duct RUN and a flat selection of individual ducts is not one, whatever its size. The fragment needs whatever it counts as a run |
 | `set-view-crop` | Cropped around 307 ducts | And around 73 tags in the negative — `enclosed 73`, `applied true`. It crops around whatever it is handed, so it CANNOT come back empty. Same family as `count-elements` and `isolate-elements`: prove it by TRACKING ([D-53](DECISIONS.md)) across selections of different sizes |
 | `check-vertical-clearance` | 18 services too close at a 99999 mm required gap | `clashing` stayed at **5 in both runs** — it counts services actually touching, which does not vary with the gap asked for. So the fragment has two results and only one answers the question put to it. Either `clashing` is a separate finding that belongs in its own fragment, or the negative has to be arranged some other way |
 | `set-category-visibility` | Hid Ducts in `Model Linking` — `changed 1` | Showing them again is also `changed 1`. The same two-position needle as `set-crop-box-settings`, and the same fix would serve both |
@@ -501,6 +500,36 @@ Not failures. Heron has no way to receive these inputs yet, so they have never e
 | element/id collections | 9 | Same as the two above |
 | `OverrideGraphicSettings` | 3 | A structured value, not a name |
 | everything else | 26 | One rule each |
+
+---
+
+## How to arrange a case, learned by getting it wrong all day
+
+Not a list of problems — the working method, written down because most of today's misses were the
+arrangement rather than the fragment.
+
+**PROVE ON A SMALL SELECTION.** The owner's instruction, 2026-09-09, after `set-mep-size` timed out on
+307 ducts: *"a lot of items change, it will affect slow process… you can try with a small number of
+ducts like 2 or 3."* Retried on the 22 ducts in `FloorPlan: M1` it sized all 22 immediately, and
+`split-mep-run` passed in the same batch. **A heavy write on a big selection is not a stronger test, it
+is a slower one** — and a timeout tells you nothing at all about the fragment.
+
+`select-by-category-name --set inViewOnly="FloorPlan: M1"` gives 22 ducts. `FloorPlan: L3` gives 307.
+
+**ASK FOR WHAT THE MODEL HAS.** Five times today the POSITIVE case was the empty one, because D-30 is
+written about the negative and the positive quietly goes unarranged. `select-by-connection-status` was
+asked for open ends in a model with none; `measure-mep-slope` for a minimum nothing falls below;
+`report-coverage` for gaps at a radius that leaves none; `check-family-standards` for a pattern nothing
+matches, which makes MORE findings not fewer.
+
+**CHECK THE CATEGORY IS VISIBLE WHERE YOU SELECT.** Sheets do not appear in a floor plan; levels do not
+appear in their own plan. Twice the setup found nothing and the answer read as a missing selection.
+
+**MATCH THE INPUT TO THE MODEL'S OWN UNITS AND SHAPES.** `set-mep-size` was handed a width and height
+for ducts that are round. Every duct here is dia 102, 152 or 203 — an imperial model.
+
+**READ THE BINDING NOTE ON THE ANSWER.** `find-overlapping-lines` ran on a stale selection of ten
+equipment items and answered anyway; only `elements from the selection (10)` on the reply gave it away.
 
 ---
 
