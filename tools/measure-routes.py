@@ -79,7 +79,11 @@ FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 # The routes heron_search.ask() can return, in pipeline order. Named here so
 # an unrecognised one is reported rather than silently dropped into a total.
 DETERMINISTIC = ("identity", "cache")
-THINKING = ("keywords",)
+# `hybrid` is what find() calls its fused keyword-and-nearness answer; `keywords`
+# is what ask() calls its unfused one. Both are named so a change of entry point
+# cannot silently turn a thinking answer into an UNRECOGNISED ROUTE, and both
+# mean the same thing here: a ranked guess rather than a lookup.
+THINKING = ("hybrid", "keywords")
 NEITHER = ("nothing",)
 
 
@@ -174,6 +178,7 @@ def main(argv):
 
     import heron_scope as SCOPE
     import heron_search as SEARCH
+    import heron_retrieve as RETRIEVE
 
     said = utterances()
     if not said:
@@ -204,7 +209,11 @@ def main(argv):
         counted = {}
         wrong = {}
         for fragment_id, phrase in said:
-            answer = SEARCH.ask(store, phrase)
+            # find(), not ask(), because find() is what production runs:
+            # mcp/server/heron_brain.py `lookup()` calls it, and it is the only
+            # one that applies the Revit version wall to the SHORT CIRCUIT too.
+            # Measuring ask() would report a share no user can ever get.
+            answer = RETRIEVE.find(store, phrase, revit=revit)
             counted[answer.route] = counted.get(answer.route, 0) + 1
             # A short circuit that lands on ANOTHER fragment is worse than a
             # miss: it is route 1 answering confidently and wrongly, and the

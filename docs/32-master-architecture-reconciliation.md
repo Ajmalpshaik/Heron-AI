@@ -159,7 +159,47 @@ handed and a record of what each stage cost.
 is exactly the failure [05 §4](05-heron-brain.md) built the keyword layer to avoid. **Any compression
 must be forbidden from touching the exact-match corpus.**
 
-**Verdict: ADOPT, and it needs the baseline in §4.2 first.**
+**Verdict: ADOPTED, and the Context Manager half is BUILT** —
+[`brain/heron_context.py`](../brain/heron_context.py), 2026-09-09, against the baseline §4.2 put in
+place first.
+
+**What it does is refuse.** Gathering was never the hard part; every piece already existed. Each of
+[19 §2](19-context-and-cost.md)'s four paths carries a **declared list of parts**, and a part outside it
+raises rather than slipping in — because docs/19 says exceeding a budget is *"a bug in retrieval, not a
+reason to raise the budget"*, and a caller that silently got less cannot tell that from a caller that
+asked for less.
+
+| Path | May carry | Measured on this library |
+|---|---|---|
+| `cached` | request, situation, capability | **240 characters, 3 parts** |
+| `simple` | + what the walls excluded | 249 characters |
+| `standards` | + the clauses cited | **refused — no clause store exists** |
+| `generation` | + the closest fragment, its cases, its API surface | 5,433 characters, 6 parts |
+
+**Four decisions in it are worth carrying forward, because each had a live alternative:**
+
+1. **The budget is a parts list, not a token count.** Heron has no tokeniser and would have to invent
+   one; the host counts tokens ([D-58](DECISIONS.md)). A parts list is *checkable* — *"this packet
+   contains a `neighbour` and SIMPLE does not allow one"* is a fact, where *"this packet is 3,400
+   tokens"* is a measurement waiting for a threshold somebody will raise. **Size is reported and never
+   enforced.**
+2. **No compression, deliberately.** [05 §4](05-heron-brain.md) is the reason: `OST_DuctCurves`,
+   `RBS_DUCT_BOTTOM_ELEVATION`, a shared-parameter GUID — a compressor shortens exactly the part of a
+   BIM sentence that was load-bearing. The request crosses **byte for byte**, and
+   [`tests/test_context.py`](../tests/test_context.py) asserts it so a future compressor cannot quietly
+   be pointed at it.
+3. **It does not classify what the user meant.** [D-01](DECISIONS.md) puts that in the host. The only
+   thing derived is structural — a short circuit hit *is* the `cached` path — and an assumed path is
+   **marked assumed**, so a default is never read as a decision.
+4. **A path whose source does not exist is refused by name.** A scope store holds `fragments` and `meta`
+   and no clause table, read from [`heron_scope.py`](../brain/heron_scope.py) rather than assumed. So
+   `standards` raises and says which source is missing, instead of returning a packet that is silently
+   three quarters of what it claims.
+
+**What is still missing from [19](19-context-and-cost.md):** the Model Router, Fallback, Cost
+Optimisation and Caching sections. Caching is now [`Q-43`](OPEN-QUESTIONS.md) rather than unbuilt work —
+the table exists and nothing writes it. The router and fallback belong with the host that makes the
+calls, on [D-58](DECISIONS.md)'s reasoning, and that should be settled before either is built here.
 
 ### 4.2 🔴 A baseline for the brain — the Revit side already has one
 
