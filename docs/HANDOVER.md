@@ -26,6 +26,14 @@ negative backwards. **16 to 52 in one night, then 52 to 142 the next; the method
 hours.** Have Revit open with a rich model — `Snowdon Towers Sample HVAC` is the one it was worked out
 on — and read [`docs/FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md) before starting, because it is the queue.
 
+**To do the work that has been WAITING FOR YOUR PC since 2026-09-09, say:** *"Read the
+open-questions entry in HANDOVER.md and do the link contracts."* Four items are queued there in order,
+the biggest being **62 reading fragments that must be able to look inside linked models when you ask
+them to** — which in Qatar MEP work is most of the time, because the architecture is a link, the
+structure is a link, and often the MEP you are checking is a link too. Every rule is already checked by
+a gate; none of the edits was guessed, because this container has no Revit and no `dotnet` and writing
+62 collector rewrites nobody could compile would have been worse than leaving a list.
+
 **To carry the library build on in a fresh session, say:** *"Read HANDOVER.md §9a in Heron-AI and carry
 on building fragments."* [§9a](#9a-continuing-the-library-build--the-recipe-so-another-session-can-just-start)
 holds the whole recipe — where the sources are, the eight steps per fragment, the commands, and the
@@ -57,14 +65,24 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | Fragments | **360** — every fragment-shaped job in the earlier library, five cross-project transfers from PART 5, `CREATE_GLOBAL_PARAMETER` (2026-09-07), `FIND_DATES_IN_VIEWS`, built AND proved 2026-09-08, and **ten added 2026-09-08 for the review's N01–N09 plus the read they depend on** — see the entry below. All ten are `DRAFT` and NONE has met a model |
 | Proven | **142** as of 2026-09-09, each on a recorded proof with a negative case and a staleness fingerprint (D-30). **16 → 52 one night, 52 → 142 the next** — the method is the reusable part and it is in the proving-track entries below. Moving hourly — derive it, do not read it here |
 | Compile gate | green, Revit 2020–2027 |
-| Other gates | metadata, docs, gaps, agent-count, **structure** — all green. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
-| Tests | **all pass**, `test_embed` and `test_retrieve` included — they were re-based against the model backend in PART 5, not edited until green. See the note where the warning used to be |
+| Other gates | metadata, docs, gaps, agent-count, **structure** — all green. **`check-licence` added 2026-09-09 and it EXITS 1 on a finding**, unlike the other reports; 370 units, all clean today ([D-66](DECISIONS.md)). `check-revit-gate` and `check-reachable` are reports and exit 0, so their findings are questions and two of them are now worklists. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
+| Tests | **40 suites. 37 pass in a plain Linux container and the three failures are the MACHINE, with two causes not one** — `test_mcp_serves` and `test_served_claims` need the MCP SDK, `test_bridge_roundtrip` needs a built .NET test host. On a machine with both, all 40 should. **Do not fix them by editing the tests.** `test_embed` and `test_retrieve` were re-based against the model backend in PART 5, not edited until green |
 | Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | **rebuilt and redeployed to Revit 2024 on 2026-09-09**, carrying the write engine and the caller-value resolver. Rebuild it after ANY change under `revit/` — and check the framework first: `check-compile.py` builds 2020–2027 into one folder and the newest wins, so a run of it leaves .NET 10 binaries that Revit 2024 refuses with *"Revit cannot run the external application"*. `deploy-addin.ps1` now guards this rather than trusting the operator |
 | Agents | **71 of 250 have code**, 4 host-provided by D-01, 175 left — `python tools/agent-count.py`. The 71st is `HERON-RAG-CTX-007`, the Context Manager, on 2026-09-09. Phase 0/1's agent list is COMPLETE |
 | MCP tools | **14** — `heron_gaps`, `heron_compatibility` and `heron_diagnose` added 2026-09-07/08; **`heron_context` added 2026-09-09** (the Context Manager, [32 §4.1](32-master-architecture-reconciliation.md)). Derive it: `grep -c '^@server.tool()' mcp/server/heron_mcp_server.py` |
+| Open questions | **52 answered, 1 open, nothing gating any phase.** `Q-51` — what guards retrieval-into-context on the day Heron indexes text it did not write — stays open **on purpose**, with [`tests/test_carried_sources.py`](../tests/test_carried_sources.py) watching for the day it becomes real. Derived by `python tools/check-docs.py`, never read from a sentence |
+| Tools | **21** in `tools/`, and **14** MCP tools. Derive both rather than trusting a line |
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them |
-| Branches | `main`, plus **`claude/heron-ai-master-architecture-6t03c9` — open as draft PR #44** and not merged. `claude/folder-structure-review-0wpu2y` was fully merged and deleted on 2026-09-09. Everything through PR #43 is in `main`; **nothing from #44 is** |
+| Branches | `main`, plus **`claude/heron-ai-master-architecture-6t03c9` — PR #44, open for review and NOT to be merged until it has had one**. It now carries the master-architecture audit, the repository study, and [D-59](DECISIONS.md)–[D-66](DECISIONS.md). `claude/folder-structure-review-0wpu2y` was fully merged and deleted on 2026-09-09. Everything through PR #43 is in `main`; **nothing from #44 is** |
+
+**QUEUED FOR THE PC, AND THE OWNER HAS SEEN THE LIST.** Four items, all of them needing Revit or
+`dotnet`, all of them CHECKED by a gate that runs without either: **62 link contracts**
+([D-59](DECISIONS.md)), **59 dropped-counts** ([D-64](DECISIONS.md)), the **preview selection** in
+`RevitWrite.cs` ([D-60](DECISIONS.md)), and the **workflow id across the seam**
+([D-61](DECISIONS.md)/[D-62](DECISIONS.md)) which is small and unlocks three things at once. The lists
+and the order are in
+[the open-questions entry](#handover--2026-09-09-the-open-questions-track-44--52-answered-and-the-rest-needs-the-pc).
 
 **EVERY REGISTER ROW THAT DID NOT NEED REVIT IS NOW CLOSED.** `A4`, `A6`, `A7`, `A8` and `A9` all fell on
 2026-09-06 on the owner's own PC — rows parked for months on *"a machine"*, closed in one afternoon by
@@ -269,6 +287,87 @@ counts what is left; believe it over this file.
 > claimed the two sentences return identical shortlists, which holds in the full library and not in that
 > test's smaller fixture. Measured in one place and asserted in another. The corrected one says what is
 > true there, with the reason.
+
+---
+
+## HANDOVER — 2026-09-09 (the open-questions track): 44 → 52 answered, and the rest needs the PC
+
+**Nine questions were open at the start of this track and one is open now.** `Q-51` stays open on
+purpose. Everything else became [D-59](DECISIONS.md) to [D-66](DECISIONS.md).
+
+**The owner answered two himself and handed the other six over** with *"this you can decide and when
+you decide do the best only."* So six of the eight are my decisions, and every one of them is written
+up with what it rejected and why — read the decision, not this summary, before changing any of them.
+
+### WHAT IS LEFT, AND ALL OF IT NEEDS A WINDOWS PC WITH REVIT AND `dotnet`
+
+**This container has no `dotnet` and no Revit.** Every rule below is CHECKED by a gate that runs here;
+none of the edits was guessed. **Writing 62 collector rewrites nobody could compile would have been the
+opposite of production-ready**, and that is the reason the lists are lists.
+
+**The owner said the link work waits for the PC. It is item 1 and it is the biggest.**
+
+| # | What | How many | Where the list is |
+|---|---|---|---|
+| **1** | **The link contracts** ([D-59](DECISIONS.md)). Each reading fragment gains `includeLinks` in `needs` (`source: request`) and `linksSearched` in `provides`, and its collector spans `RevitLinkInstance` when asked. **Absent means host only**, so nothing already proved changes | **62** | `python tools/check-revit-gate.py --list links` |
+| **2** | **The dropped-counts** ([D-64](DECISIONS.md)). Each declares a field in `provides` naming what it dropped — the rule is that ONE EXISTS, not that a particular word does. The marker rides **only on the empty answer**, capped | **59** | `python tools/check-revit-gate.py --list reporting` |
+| **3** | **The preview selection** ([D-60](DECISIONS.md)) in [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs). Select `preview.Ids` and `preview.Skipped`, **500 per set** as a setting's default, save the modeller's own selection first and put it back — except on accept | one file | D-60 |
+| **4** | **The workflow id across the seam** ([D-61](DECISIONS.md), [D-62](DECISIONS.md)). The add-in mints one per request; the brain never sees one | one seam | below |
+
+**Item 4 is small and it unlocks three things at once**, which is why it is worth doing early rather
+than last:
+
+- the utterance cache **fills** — `remember()` already refuses anything but a completed run, and the
+  only reason nothing calls it is that no run result reaches the brain
+- [`measure-routes.py`](../tools/measure-routes.py) gets its **LIVE** half instead of only the
+  structural one
+- [`brain/heron_audit.py`](../brain/heron_audit.py) can finally claim `HERON-MCP-LOG-010`, whose row
+  says *keyed by Workflow ID* and is the only reason its header still says `Heron-Agent: none`
+
+### Two things that must be re-checked on the PC before item 1 is called done
+
+**Nested links.** [D-59](DECISIONS.md) does not say whether `linksSearched` counts a link inside a
+link. It is a real Revit case and **the first implementation answers it against a real federated
+model**, not from here. Write the answer back into D-59 when you have it.
+
+**Item 2 moves house when it is finished.** The rule lives in
+[`check-revit-gate.py`](../tools/check-revit-gate.py) today because putting it in
+[`heron_fragment.validate()`](../brain/heron_fragment.py) now would make 59 fragments invalid and fail
+every gate in the repository on a library that is not broken. **Moving it into `validate()` is how the
+worklist is declared finished** — do that, do not just close the list.
+
+### What is new in the tree, and what each is for
+
+| | |
+|---|---|
+| [`tools/check-licence.py`](../tools/check-licence.py) | **Exits 1 on a finding**, unlike the other reports. Reads the FILES, not the landing page ([D-66](DECISIONS.md)). 370 units, all clean today |
+| [`tests/test_licence_check.py`](../tests/test_licence_check.py) | Proves that checker **fires** — a clean run on a clean library proves nothing |
+| [`brain/heron_audit.py`](../brain/heron_audit.py) | The brain's half of the trail ([D-62](DECISIONS.md)). Writes `audit-brain-YYYYMM.jsonl` beside the add-in's file; `heron_gaps.read()` already merged by `at`, so **no C# and no reader changed**. Never writes the user's sentence |
+| [`tests/test_carried_sources.py`](../tests/test_carried_sources.py) | The `Q-51` tripwire. Fails the day Heron first carries text it did not write |
+| [`tools/measure-graph.py`](../tools/measure-graph.py) | The `Q-52` measurement — six settings, six losses |
+| [`.claude/skills/heron-guard/`](../.claude/skills/heron-guard/) | A PreToolUse hook. Deny-tier, fails closed, `HERON_GUARD=off` to disable |
+| [`.claude/skills/heron-ship/`](../.claude/skills/heron-ship/) | What to run before pushing, and which failures are the machine rather than the change |
+
+### The three test failures are the machine, and they have TWO causes not one
+
+`tests/test_mcp_serves.py` and `tests/test_served_claims.py` need the **MCP SDK**.
+`tests/test_bridge_roundtrip.py` needs a **built .NET test host**. **37 of 40 pass here**, and on a
+machine with both, all 40 should. Do not "fix" them by editing the tests.
+
+Six checks also need tools this container has not got: `check-compile`, `check-fragments-compile` and
+`check-api-surface` need `dotnet`; `check-routing` and `check-intrusion` need `HERON_KNOWLEDGE` set.
+
+### One measurement worth carrying, because the slow version looked fine
+
+`remember()` first called `FRAG.load_all()` — reading all 360 fragment files to use one — putting
+**1,522 ms** on a path a modeller waits on. The store already knew the folder. It is **5.5 ms** now.
+**Nothing about the slow version looked wrong**: `load_all()` is what `index()` calls, it was already
+imported, and the cost only appears if somebody times it. Time the thing on the waiting path.
+
+### Still needing one line from the owner
+
+**§10.15 of [33](33-external-repository-research.md), "Claude CEO"** — the repository was never
+identified. A link, or drop the row. It is the only entry in that document that names nothing.
 
 ---
 
