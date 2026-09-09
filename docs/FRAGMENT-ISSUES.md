@@ -96,13 +96,51 @@ Afterwards: **9,628 → 3,966 placed elements, and every floor plan gone.** The 
 choice of Levels as a "harmless" contrast was mine, made without thinking about what a level carries in
 Revit — and the fragment's own output is what said so.
 
-**Two failures now, and the shape is the same both times:** a large operation (60 elements, then 5,636)
-run with no `apply`, and the model left changed. Small writes roll back correctly — that has been
-checked after every batch all day, and the `create-level` proof was verified element-by-element. Whether
-the boundary is size, cascade depth, or Revit committing something of its own is **not known**.
+**Two failures at this point, and the shape looked the same both times:** a large operation (60 elements,
+then 5,636) run with no `apply`, and the model left changed. It was believed then that small writes roll
+back correctly — checked after every batch that day, with the `create-level` proof verified
+element-by-element. **A third incident on 2026-09-09 disproved that**, below: seventeen sheets, a rename,
+nothing created, and the rollback still did not hold. Whether the boundary is size, cascade depth, or
+Revit committing something of its own is **not known** — but it is now known that it is NOT size.
 
 Until it is: **run write proofs on a model you are willing to throw away, and check the element count
 after every batch.** Both incidents were caught by that check and nothing else.
+
+### AND A THIRD TIME, ON A WRITE THAT WAS NOT LARGE AT ALL — 2026-09-09
+
+**Seventeen sheets. A rename. Nothing created, nothing deleted, no cascade, no dialog.** The rollback
+still did not hold, and this is the incident that says the boundary is not size.
+
+`edit-text-values` was proved through `tools/jobs/refusal-paths.yaml` with `--write` and **no `apply`**.
+Its positive put a `HERON ` prefix on `Sheet Name` across all 17 sheets and reported `changed 17`,
+`blank 0`, `untouched 0` — a clean, correct, small write. The transaction was rolled back.
+
+Afterwards `list-sheets` still read:
+
+```
+M000  HERON Cover Sheet
+M001  HERON Learn about this project
+M002  HERON Notes, Symbols & Schedules
+```
+
+**The element count did not move — 9,628 before and after — and that is the trap.** Both earlier
+incidents were caught by counting elements, and this one is invisible to that check: a rename creates
+nothing. The count was read, came back correct, and the model was still wrong. It was found only by
+re-reading the values that had been written.
+
+> **Checking the element count is not enough.** It catches a write that CREATES or DELETES. A write that
+> EDITS — a rename, a parameter, a type change — passes that check while still standing in the model.
+> After a write proof, re-read the thing that was written.
+
+Sheet NUMBERS were untouched, so nothing became ambiguous. **The disk file was NOT verified the way the
+2026-09-08 incident was** — that one was closed without saving and reopened to a confirmed 9,628. Here
+the session reported *unsaved changes* and nothing was saved, so the damage should be confined to the
+live session on the same reasoning as before — but it is an inference, and it is written down as one
+rather than as a check that was made. Recovery is the known one: **close without saving**.
+
+**What this rules out.** Not size (17), not cascade (a name has no dependents), not a dialog (§1b —
+none was raised), not deletion. What the three incidents still share is only `--write` with no `apply`
+— which is to say, the rollback path itself, and nothing about what was asked of it.
 
 ### `delete-elements` IS BLOCKED, not merely untested — 2026-09-09
 
@@ -124,8 +162,6 @@ close.
 
 `alsoWent` is worth keeping in mind for its own sake: the fragment reports the cascade in the same
 answer, and both times it was right and was read too late.
-
-### It never reached disk, and that is checked rather than hoped
 
 ### It never reached disk, and that is checked rather than hoped
 
@@ -491,8 +527,9 @@ arrived, is the shape the library wants.
 
 ## 3f. PROVED, BUT QUERIED — worth a second look at the sit-down
 
-Marked `PROVEN` and standing, but the owner raised a doubt on the day and it is recorded rather than
-argued away. A proof nobody questions is not the same as a proof that survived being questioned.
+Marked `PROVEN` and standing when this section was opened, but the owner raised a doubt on the day and
+it is recorded rather than argued away. A proof nobody questions is not the same as a proof that
+survived being questioned.
 
 | Fragment | Proved on | The doubt |
 |---|---|---|
@@ -500,6 +537,22 @@ argued away. A proof nobody questions is not the same as a proof that survived b
 
 **If the doubt is upheld, the remedy is to re-run it, not to un-prove it by argument** — and D-30's
 fingerprint means the record says exactly what was run, so a better arrangement can replace it cleanly.
+
+### SETTLED, and not by argument — 2026-09-09
+
+The doubt was upheld, and the fix in §4 is what settled it: `viewRefused` now means only that the VIEW
+refused, so the stronger negative the owner asked for — a 3D view whose selection has nothing to
+enclose — is finally distinguishable from the weak one a plan view guarantees.
+
+**`set-view-section-box` is back at `DRAFT`, and the reason matters more than the fact.** It was not
+un-proved because the argument won. It was un-proved because the CODE MOVED: fixing the doubt changed
+the implementation, the fingerprint stopped matching, and a proof is evidence about the bytes it was
+taken against. Set back by the owner on 2026-09-09; the `proof:` block is kept as the record of what
+was run.
+
+> Un-proving by argument is what this section refuses. Un-proving because the implementation changed
+> under the proof is not an argument at all — it is the fingerprint doing its job, and the only
+> correct response to it is to run the fragment again.
 
 ---
 
@@ -730,7 +783,7 @@ Three of the five were held up by an arrangement fault rather than by the fragme
 | `dimension-rooms` | `created 0` with `view` correctly supplied | CONFIRM the L3 Spaces are bounded and that `measureTo=finish` is a mode it knows |
 | `place-flow-arrows` | `placed 0` in both legs | The arrow family loaded. Both legs empty is the family missing, not the fragment failing |
 | `create-legend-view` | *"No view called `Legend: Mechanical Legend`"* — a good refusal | The real legend name. Nothing lists them (§3d again) |
-| `set-element-workset` | `moved 0` with `worksetId=0` | A workset id. `report-element-ownership` reports `owners 1 entry(ies)` and no id, so nothing in the library can supply one |
+| `set-element-workset` | `moved 0` with `worksetId=0` | A workset **id**, and the gap is narrower than first written here. `list-worksets` is PROVEN and reports the names and the count — this model has two, *Shared Levels and Grids* and *Workset1*, both open — but **not the integer ids**, and the fragment reads `ELEM_PARTITION_PARAM` as an integer, so a name cannot stand in. One field added to `list-worksets` closes it |
 | `place-views-on-sheet` | `placed 0`, and the negative was not empty either | Views selected, which is the sheet/view wall above |
 | `align-viewports-across-sheets` | `aligned 0`, but `scaleMismatch 10` and `ambiguous 6` of 17 sheets | Sheets at one scale carrying one viewport each. Blocked on model content, not code — and the fragment said exactly why, which is the behaviour §3h.1 wants |
 | `set-section-mark-visibility` | `setup_failed` twice — `categoryName: Sections`, model-wide and scoped to a plan | **Nothing in the library reaches section marks.** `select-by-category-name` cannot, and there is no `list-sections`. A gap row, not a defect |
@@ -1084,14 +1137,21 @@ that has not been re-checked since it was made.**
 
 ### What this says about where the proving goes next
 
-The MODIFY pool is not blocked on the write engine any more — three fragments proved through it today
-and rolled back cleanly. It is blocked on **two resolvers and one list**:
+**142 to 160 on 2026-09-09.** The write engine is not the constraint — fragments proved through it all
+day and rolled back cleanly. What is left is blocked on three things, in this order:
 
-1. A resolver for named Revit objects — `FamilySymbol`, `Material`, and the view-like ones.
-2. `LIST_*` fragments for sheets, views, legends, worksets and global parameters, so a job file can be
-   written against what the model actually holds instead of a guess.
+0. **Naming what already exists.** Three separate capabilities were proved and invisible today — the
+   `list-*` fragments as a setup chain, `views` resolving from one name, and fifteen selectors narrower
+   than a category. Nothing needs building for these; they need to reach the person writing the job
+   file. This is the cheapest item on the list and it outranks the rest.
+1. **`LIST_*` fragments**, above. This stopped more batches today than anything else, and the route is
+   already proved: `list-sheets` as a setup step proved five fragments in an hour.
+2. **A resolver for named Revit objects** — `FamilySymbol`, `Material`, and the view-like ones. Half of
+   the never-run MODIFY fragments wait on it.
+3. **A way to bind TWO sets of elements**, which no job file can express today.
 
-Both are offline work. Neither needs Revit to build.
+All three are offline work and none needs Revit to build. **Making silence illegal (§3h.1) still comes
+first**, because everything above makes proving faster while that one makes Heron honest.
 
 ---
 
@@ -1111,11 +1171,11 @@ Both are offline work. Neither needs Revit to build.
 | `set-schedule-sort-group` | Same cast, answering `sorted 0` — which reads as "already in that order". Resolution added, plus a refusal when nothing handed in was a schedule and when no sort field was named. As with the filter fragment, `cannotSortBy` stays a finding about the schedule and `refused` is the fragment declining. Fixed 2026-09-09 |
 | `export-schedule-to-csv` | Same cast. A missing export folder and a selection holding no schedule both came back as "nothing came out"; only the first said why. Resolution added, and the second now refuses too. Fixed 2026-09-09 |
 | `add-revision-cloud` | **The `ViewSchedule` §3e lists it for is a view-type guard** (`view is ViewSchedule`), not a cast of a selected element — it never consumes a schedule as input, so the placement fix does not apply and was not made. **What was wrong is next to it: `viewRefused` was one bool covering two causes**, *"the view will not take a cloud"* **and** *"that revision does not exist"*, and the file's own comment admitted the conflation. Those have opposite fixes — change the view, or make the revision — and a caller told only `viewRefused true` goes looking at the drawing when the revision is what is missing. `viewRefused` now means exactly its name; a missing revision is its own sentence; and a new `refusalReasons` carries the words for both, naming **which** of the five view types refused and why. The three ways a single element misses out (not visible in this view, too small to cloud, Revit declined the rectangle) each get a sentence carrying a **count** rather than one line per element. An empty `elements` with a good view and a real revision — four zeroes that read as "nothing to cloud" — is refused too. Fixed 2026-09-09 |
-| `set-view-section-box` | **`viewRefused` meant two opposite things.** It was set when the VIEW could not carry a section box — a plan, a section, a template — and again when the view was a perfectly good 3D view and **nothing handed in had any geometry**. Opposite fixes: open a 3D view, or hand over something measurable. **This is also §3f's recorded doubt, and it could not be settled while the two shared a word:** the stronger negative the owner asked for — a 3D view whose selection has nothing to enclose — reported `viewRefused true` exactly like the weak one. It now leaves `viewRefused` **false** and says in words that the view was fine and the selection was not. `viewRefused` means only its name; a new `refusalReasons` carries the words and names **which** view type refused. One further silence closed while in there: an **empty** `elements` in a good 3D view answered `applied false`, `enclosed 0`, `noGeometry 0`, `viewRefused true` — blaming the view for an empty selection. `heron-status` and the `proof:` block are untouched — **but the proof of 2026-09-09 is now stale**: the fragment leaves an output it did not have, so the fingerprint no longer matches. Nothing it recorded is contradicted. Fixed 2026-09-09 |
+| `set-view-section-box` | **`viewRefused` meant two opposite things.** It was set when the VIEW could not carry a section box — a plan, a section, a template — and again when the view was a perfectly good 3D view and **nothing handed in had any geometry**. Opposite fixes: open a 3D view, or hand over something measurable. **This is also §3f's recorded doubt, and it could not be settled while the two shared a word:** the stronger negative the owner asked for — a 3D view whose selection has nothing to enclose — reported `viewRefused true` exactly like the weak one. It now leaves `viewRefused` **false** and says in words that the view was fine and the selection was not. `viewRefused` means only its name; a new `refusalReasons` carries the words and names **which** view type refused. Two further silences closed while in there: an **empty** `elements` in a good 3D view answered `applied false`, `enclosed 0`, `noGeometry 0`, `viewRefused true` — blaming the view for an empty selection; and **a margin negative enough to turn the box inside out** was applied and reported `applied true`, cutting the view to an empty screen, which reads as though the model had been deleted. **The proof of 2026-09-09 went stale the moment this was fixed** — the fragment leaves outputs it did not have, so the fingerprint no longer matches — and `heron-status` was set back to `DRAFT` on the owner's instruction the same day. The `proof:` block is KEPT: nothing it recorded is contradicted, it is the record of what was actually run, and `can_promote` refuses to carry a stale proof back to PROVEN, so keeping it costs nothing and re-proving it starts from a written arrangement rather than a blank page. Fixed 2026-09-09 |
 
 ---
 
-## 5. HERON'S OWN DEFECTS found by proving — one still open
+## 5. HERON'S OWN DEFECTS found by proving — two still open
 
 | # | Defect | State |
 |---|---|---|
@@ -1128,6 +1188,7 @@ Both are offline work. Neither needs Revit to build.
 | 7 | **The naming heuristics were dead code.** `provide_role()` answers `"result"` for an entry with no `role:` key, and that default went into the map the judge consults - so every declared name looked explicitly declared, and D-51/D-52's patterns never ran. **102 names across 134 fragments** (`scanned`, `unplaced`, `noConnectors`, `notASheet`) were judged as findings. Found proving `select-scope-boxes`, whose negative had every result at zero and `scanned: 5` | Fixed - the judge-set and the role-map are separate arguments now |
 | 9 | **A fragment's OWN risk level was never enforced.** The gate reads the OPERATION's risk from the tool registry — Golden Rule 19, and right — and `run_fragment_write` is declared Modify. So a fragment declaring `risk: ADMIN` or `PUBLISH` ran under a Modify gate and nobody was consulted, though `HeronPermissions` says those *"are not reachable in Phase 0 or Phase 1 at all"*. **12 fragments are above Modify**, and `create-workset` (ADMIN) created one on the first try. The hole existed before `run_fragment_write` and was harmless — no transaction, so nothing could happen. Building the write path made it real | Fixed — the client refuses to SEND one. Be honest about what that is: a guard against a mistake, not a boundary against malice. A caller skipping this client is unaffected, and Golden Rule 19 forbids closing that by sending the risk over the wire, because then the caller decides how dangerous its own request is |
 | **8** | **`Describe` renders a valid `ElementId` and `ElementId.InvalidElementId` as the same word, `"ElementId"`.** Real, and still worth fixing — an answer that cannot say whether a thing was created is a poor answer. **But it has NO named victims, and this row claimed two it did not have.** `dimension-mep-runs` and `dimension-family-instances` were listed here as unprovable because of it. Both were **proved on 2026-09-09** with `dimensionId` still reading as `ElementId` in all four phases. An unreadable value is SKIPPED by the judge, not counted as content — the opposite of what this row asserted. What actually blocked them was `problem`, an explanation field, undeclared and therefore judged as a finding; `role: accounting` on `problem` and `noReference` proved both in one run. **The lesson is the one in §3h.2, not this one:** an undeclared role is more likely to be the blocker than a defect in the renderer | **OPEN, and no longer urgent.** One line, still needing a rebuild and a Revit restart — but nothing is waiting on it |
+| **10** | **A proof draft claims the model was left unchanged, and nothing ever checks.** Every write phase's record ends *“run inside a transaction and ROLLED BACK, so the model was left exactly as it was”* — appended in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) from the `writing` FLAG alone, never from anything Revit said back and never by re-reading the model. On 2026-09-09 it was false: `edit-text-values` renamed 17 sheets, the rollback did not hold (§1c), and both the run record and the draft assert the model is untouched. **The reply carries an `applied` field and consulting it would NOT have helped** — `applied` records the INTENT, keep or discard, not whether the discard worked. Nothing in the chain verifies the outcome. This is the same defect the whole of §3h.1 is about, in Heron's own voice rather than a fragment's: a confident sentence with no evidence under it, and this one is written into the permanent record of a proof | **OPEN.** The honest short fix is to soften the wording to what is actually known — *“rolled back was REQUESTED”* — and the real one is to re-read what was written and say so |
 
 ---
 
