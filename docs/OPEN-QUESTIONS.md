@@ -474,7 +474,34 @@ window.
 **What is not in doubt:** a retrieved clause is data. The question is only whether Heron says so, and to
 whom.
 
-**Answer:**
+**NOT NOW — and there is now a tripwire that says when. Owner's call, 2026-09-09.**
+
+**The guard stays unbuilt, deliberately.** Every part Heron carries today comes from a source Heron
+wrote: the caller's own request, the fragment library, its test cases, the executor's import list. A
+scanner written against no corpus is a scanner written against a guess — and the same day supplied the
+evidence rather than the opinion, when [`Q-52`](OPEN-QUESTIONS.md)'s +31.4 from somebody else's corpus
+lost at all six settings against Heron's own.
+
+**What was built instead is [`tests/test_carried_sources.py`](../tests/test_carried_sources.py)** — a
+tripwire, not a guard. It asserts that **every part, on every path, at every depth, has a source that is
+one of Heron's own labels or a file inside this repository.** 2,160 parts checked; all of them Heron's.
+
+**It fires the day that stops being true**, and its failure message says so in as many words: *this is
+probably not a bug, it is Q-51 becoming live — decide the guard now, with the index rather than after
+it.* It also watches the two places the change would show first: the `STANDARDS` path still refusing for
+want of a clause store, and `heron_context.py` still carrying the countdown comment
+`STANDARD = "standard"  # the clauses cited - source does not exist yet`.
+
+**Checked against what it will actually meet**, rather than assumed: a QCS clause reference, an imported
+community package, a specification PDF on the user's disk, and text read out of a Revit model are all
+classified **foreign**; the request, the capability, a fragment and the import list are all classified
+**Heron's**. Eight of eight. **A tripwire that cannot trip is decoration.**
+
+**It reads no part's body and looks for no pattern in one.** It cannot tell a safe clause from a hostile
+one and does not pretend to. It answers one question — *is Heron still only carrying its own words?* —
+which is the question whose answer changing is what makes this one urgent.
+
+**So this question stays open on purpose**, and it is no longer something anybody has to remember.
 
 ---
 
