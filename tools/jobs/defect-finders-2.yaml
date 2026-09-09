@@ -1,0 +1,83 @@
+# The rest of the defect-finder family, on the arrangement that proved three:
+# a rich selection with a demanding threshold for the positive, and Duct Tags -
+# no geometry at all - for the negative.
+#
+# See tools/jobs/defect-finders.yaml for why the negative is a selection rather
+# than a gentler threshold: a value only empties the results that DEPEND on the
+# value, and these fragments report several kinds of finding at once.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: false
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: L3"
+  negative-set:
+    categoryName: Duct Tags
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  - fragment: check-minimum-clearance
+    set:
+      defaultClearance: 99999
+      includeInsulation: true
+    negative-set:
+      defaultClearance: 99999
+      includeInsulation: true
+    expect: tooClose
+    note: >
+      A clearance nothing can meet, against a selection with no geometry to
+      measure. `rules` is a dictionary and is left unset - if the fragment
+      demands it, that is a D-54 gap worth recording rather than working around.
+
+  - fragment: check-flow-direction
+    set:
+      categoryName: Mechanical Equipment
+      inViewOnly: "FloorPlan: L3"
+    negative-set: {}
+    expect: bothOut
+    note: >
+      No caller values at all, so the selection is the only contrast available.
+      Recorded earlier with bothIn and bothOut at 0 on equipment - if that holds
+      the model simply has no contradictory joints and it belongs in §3b.
+
+  - fragment: check-room-mep-completeness
+    set:
+      categoryName: Spaces
+      inViewOnly: "FloorPlan: L3"
+      ruleRoomNames: "Office,Plant,Corridor"
+      ruleCategories: "Air Terminals"
+      ruleMinimums: "99"
+    negative-set:
+      ruleRoomNames: "Office,Plant,Corridor"
+      ruleCategories: "Air Terminals"
+      ruleMinimums: "99"
+    expect: shortRooms
+    note: >
+      Demanding 99 air terminals per room makes every room short; duct tags are
+      not rooms at all, so no rule applies to them. The minimum is the demanding
+      threshold here rather than a distance.
+
+  - fragment: find-nearest-elements
+    set:
+      metric: "centre"
+    negative-set:
+      metric: "centre"
+    expect: nearest
+    note: >
+      `targets (IList<Element>)` is left to bind from the chain the way `views`
+      turned out to. If it refuses, that is the Element-shaped wall in §3i and
+      one run records it as observed.
+
+  - fragment: audit-mep-openings
+    set: {}
+    negative-set: {}
+    expect: stale
+    note: >
+      `openings (IList<Element>)` has the same question over it. Recorded earlier
+      with stale, combined and unhosted all 0 against 22 ducts - this run is on
+      307 in L3, which is the richer selection the pattern asks for.

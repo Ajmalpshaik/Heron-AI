@@ -956,16 +956,52 @@ not from the selection — which is D-29's job, and is exactly what the two-set 
 - `audit-mep-openings` — `stale 0`, `combined 0`, `unhosted 0` on 307 ducts in L3, the richer
   selection. Consistent with the earlier run on 22, so it is content rather than scale.
 
+### THE MISSING `LIST_*` FRAGMENTS ARE NOW THE BINDING CONSTRAINT — 2026-09-09
+
+§3d has listed the missing `LIST_*` capabilities as a gap since 2026-09-08. After a full day of proving
+they are no longer a gap among others: **they are what stops the next batch**, and the count is
+concrete.
+
+| Blocked fragment | The value it wants | Why guessing failed |
+|---|---|---|
+| `set-element-workset` | a workset **id** | `list-worksets` gives the names — *Shared Levels and Grids*, *Workset1* — and not the integers. The fragment reads `ELEM_PARTITION_PARAM` as an int, so a name cannot stand in |
+| `set-category-visibility`, `set-view-crop`, `reset-view-graphics`, `set-crop-box-settings` | a view carrying **no template** | Every V/G fragment must be proved on one — a templated view answers "changed 0" because the template owns visibility (§4). `3D View: {3D}` was a guess and the model has no such view. **Nothing lists views**, so there is no way to find a template-free one except by asking a person |
+| `create-legend-view` | a legend's exact name | *"No view called Legend: Mechanical Legend"* — a good refusal against a name nothing could have supplied |
+| `set-section-mark-visibility` | any way to reach section marks | `select-by-category-name` answers `setup_failed` for `Sections` model-wide and in a plan. There is no `list-sections` |
+| `select-by-material` | a material name | Ducts and mechanical equipment both answer `noMaterial` — **this model assigns no materials to MEP elements at all**, which is also why `find-unused-materials` finds 56 unused. Content, but nothing would have told a job-file author that without running a fragment to find out |
+
+**The pattern is the same every time: the fragment is fine, the arrangement needs a name, and the name
+can only be got by asking a person or by guessing.** Guessing is what D-54 refuses to do on the
+caller's behalf, and it is right to refuse — so the missing half is a way to ASK the model.
+
+`list-sheets`, `list-levels`, `list-grids`, `list-revisions`, `list-worksets` and `list-linked-models`
+already exist and are PROVEN, and using `list-sheets` as a setup step proved five fragments in an hour
+(§3i). **The route works. There are simply not enough of them**, and two of the ones that exist are one
+field short:
+
+1. **`list-views`** — name, type, and whether it carries a template. Unblocks four V/G fragments at
+   once and would have saved three wrong guesses today.
+2. **`list-worksets` needs the id**, not only the name.
+3. **`list-materials`** — the names, and whether anything uses them.
+4. **`list-sections`**, or any route to a section mark.
+
+Ranked against §3h, this now sits above everything except making silence illegal. §3h.3 asked for one
+command answering *"describe this model"*; this is the same argument arriving from the proving side,
+and it is the cheaper half of it.
+
 ### What this says about where the proving goes next
 
-The MODIFY pool is not blocked on the write engine any more — three fragments proved through it today
-and rolled back cleanly. It is blocked on **two resolvers and one list**:
+**142 to 160 on 2026-09-09.** The write engine is not the constraint — fragments proved through it all
+day and rolled back cleanly. What is left is blocked on three things, in this order:
 
-1. A resolver for named Revit objects — `FamilySymbol`, `Material`, and the view-like ones.
-2. `LIST_*` fragments for sheets, views, legends, worksets and global parameters, so a job file can be
-   written against what the model actually holds instead of a guess.
+1. **`LIST_*` fragments**, above. This stopped more batches today than anything else, and the route is
+   already proved: `list-sheets` as a setup step proved five fragments in an hour.
+2. **A resolver for named Revit objects** — `FamilySymbol`, `Material`, and the view-like ones. Half of
+   the never-run MODIFY fragments wait on it.
+3. **A way to bind TWO sets of elements**, which no job file can express today.
 
-Both are offline work. Neither needs Revit to build.
+All three are offline work and none needs Revit to build. **Making silence illegal (§3h.1) still comes
+first**, because everything above makes proving faster while that one makes Heron honest.
 
 ---
 
