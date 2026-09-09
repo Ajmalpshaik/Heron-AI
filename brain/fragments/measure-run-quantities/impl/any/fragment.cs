@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `elements` and `measure` are in scope, and leaves
-// `quantities`, `lengths`, `areas`, `areaUnknown` and `lengthUnknown` behind.
+// `quantities`, `lengths`, `areas`, `areaUnknown`, `lengthUnknown` and
+// `refused` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -39,11 +40,53 @@
 // serve length, area, insulation, tray weight and concrete rather than being
 // rewritten per material. Both are still returned separately.
 //
-// An unrecognised `measure` falls to length rather than throwing, because
-// length is the only one every linear element has - but it is recognised
-// generously rather than matched exactly, so "area", "areas" and "surface
-// area" all mean the same thing.
-bool wantArea = (measure ?? "").IndexOf("area", StringComparison.OrdinalIgnoreCase) >= 0;
+// It is recognised GENEROUSLY rather than matched exactly, so "area", "areas"
+// and "surface area" all mean the same thing.
+//
+// AND A WORD IT DOES NOT RECOGNISE IS REFUSED, NOT QUIETLY READ AS LENGTH.
+//
+// Until 2026-09-09 an unrecognised `measure` fell through to length. Proving
+// it in front of a model showed what that costs: `measure=ZZZNOTHINGHERE`
+// produced an answer IDENTICAL to a valid mode, which means the input had no
+// effect at all and nothing about the fragment could be tested by varying it.
+//
+// On a real project it is worse than untestable. Somebody who asks for the
+// wrong measure - "weight", "volume", "insulation" - gets a confident column
+// of numbers in the wrong unit rather than a question, and every one of them
+// is a length pretending to be something else. Refusing costs one round trip.
+// Answering the wrong question costs whatever was billed against it.
+//
+// AN ABSENT `measure` IS STILL LENGTH, deliberately and narrowly: length is
+// the only measure every linear element has, and an input nobody supplied is a
+// different thing from an input somebody got wrong. A WORD that means nothing
+// here is the one that gets refused.
+var wantedMeasure = (measure ?? "").Trim().ToLowerInvariant();
+
+string refused = null;
+bool wantArea = false;
+
+if (wantedMeasure.IndexOf("area", StringComparison.Ordinal) >= 0
+    || wantedMeasure == "sheet metal" || wantedMeasure == "m2" || wantedMeasure == "sqm")
+{
+    wantArea = true;
+}
+else if (wantedMeasure.Length == 0
+    || wantedMeasure == "length" || wantedMeasure == "lengths" || wantedMeasure == "long"
+    || wantedMeasure == "linear" || wantedMeasure == "run" || wantedMeasure == "runs"
+    || wantedMeasure == "distance" || wantedMeasure == "metres" || wantedMeasure == "meters"
+    || wantedMeasure == "m" || wantedMeasure == "mm")
+{
+    wantArea = false;
+}
+else
+{
+    refused = string.Format(
+        "'{0}' is not a measure this fragment takes, so NOTHING WAS MEASURED. It knows two: "
+        + "LENGTH (length, linear, run, metres - or leave it out) and AREA (area, surface "
+        + "area, sheet metal). Reading an unknown word as length would hand back a column of "
+        + "confident numbers in the wrong unit. If what you want is weight, volume or "
+        + "insulation, that is a different fragment", measure);
+}
 
 var quantities = new Dictionary<ElementId, double>();
 var lengths = new Dictionary<ElementId, double>();
@@ -53,6 +96,9 @@ var lengthUnknown = new List<ElementId>();
 
 foreach (var element in elements)
 {
+    // Nothing is measured at all when the measure was not understood. A
+    // partial answer here would be indistinguishable from a whole one.
+    if (refused != null) break;
     if (element == null) continue;
 
     Parameter lengthParameter = null;

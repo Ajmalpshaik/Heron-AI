@@ -1,6 +1,12 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `filterFieldName`, `filterValue`
 // and `matchType` are in scope; leaves `filtered`, `replacedRules`,
-// `cannotFilterBy`, `notPresent` and `appliedRules` behind.
+// `cannotFilterBy`, `notPresent`, `appliedRules` and `refused` behind.
+//
+// `cannotFilterBy` AND `refused` ARE DIFFERENT SENTENCES, and separating them
+// is the point of `refused`. The first is a finding ABOUT THE SCHEDULE - Revit
+// will not filter on that field. The second is this fragment saying it could
+// not use what it was handed, which is not a finding about anything and must
+// not read as one. Section 3h.1 of docs/FRAGMENT-ISSUES.md, 2026-09-09.
 //
 // ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 //
@@ -21,11 +27,39 @@
 // READ FIRST, WRITE, READ BACK. `appliedRules` is a second read of what the
 // schedule now filters on.
 
+// A SCHEDULE ON A SHEET IS A ScheduleSheetInstance, NOT A ViewSchedule, AND
+// CLICKING IT IS THE ONLY WAY A PERSON CAN POINT AT ONE. The same fix and the
+// same reason as REPORT_SCHEDULE_DEFINITION, where it was found on 2026-09-08:
+// a schedule is a VIEW, a view cannot be selected as an element, opening one
+// selects its ROWS, and nothing in this library provides a ViewSchedule to
+// chain from. So a bare cast refuses the only input that could ever arrive.
+//
+// The placement carries the id of the schedule it draws, so it is resolved
+// here rather than passed over.
+Func<Element, ViewSchedule> scheduleBehind = candidate =>
+{
+    var direct = candidate as ViewSchedule;
+    if (direct != null) return direct;
+
+    var placed = candidate as ScheduleSheetInstance;
+    if (placed == null) return null;
+
+    // Guarded like everything else: a placement whose schedule was deleted
+    // under it should cost one element, not the whole run.
+    try { return doc.GetElement(placed.ScheduleId) as ViewSchedule; }
+    catch { return null; }
+};
+
 var filtered = 0;
 var replacedRules = new List<string>();
 var cannotFilterBy = new List<string>();
 var notPresent = new List<string>();
 var appliedRules = new List<string>();
+var refused = new List<string>();
+
+var handed = 0;
+var schedulesSeen = 0;
+var requestUnusable = false;
 
 // The match type, resolved once. Unrecognised is a refusal, not a default.
 var wantedMatch = (matchType ?? "").Trim().ToLowerInvariant();
@@ -56,18 +90,32 @@ var wantsAValue = filterType != ScheduleFilterType.HasValue
 
 if (!matchIsKnown)
 {
-    cannotFilterBy.Add(string.Format("'{0}' is not a match type this fragment writes. Use one of: "
-        + "equals, not equals, contains, does not contain, begins with, ends with, has value, "
-        + "has no value. Guessing one from the value is how a schedule quietly includes Level 20 "
-        + "when somebody asked for Level 2", matchType));
+    // A REFUSAL, not a finding. It was in `cannotFilterBy` until 2026-09-09,
+    // where it made an unusable request look like something learnt about the
+    // schedule - so a negative case could never come back empty.
+    requestUnusable = true;
+    refused.Add(string.Format("'{0}' is not a match type this fragment writes, so NOTHING WAS "
+        + "FILTERED. Use one of: equals, not equals, contains, does not contain, begins with, "
+        + "ends with, has value, has no value. Guessing one from the value is how a schedule "
+        + "quietly includes Level 20 when somebody asked for Level 2", matchType));
+}
+
+if (string.IsNullOrEmpty((filterFieldName ?? "").Trim()))
+{
+    requestUnusable = true;
+    refused.Add("no column was named to filter on, so NOTHING WAS FILTERED. Name the field or "
+        + "the heading as it prints");
 }
 
 foreach (var element in elements)
 {
-    if (!matchIsKnown) break;
+    if (requestUnusable) break;
+    if (element == null) continue;
+    handed++;
 
-    var schedule = element as ViewSchedule;
+    var schedule = scheduleBehind(element);
     if (schedule == null) continue;
+    schedulesSeen++;
 
     ScheduleDefinition definition;
     try { definition = schedule.Definition; }
@@ -147,4 +195,17 @@ foreach (var element in elements)
         cannotFilterBy.Add(string.Format("'{0}' - one filter was written and a read back finds {1}",
             schedule.Name, after.Count));
     }
+}
+
+// Decided after the loop, and safe there: an element that is not a schedule
+// `continue`s before anything is cleared or added.
+if (!requestUnusable && handed > 0 && schedulesSeen == 0)
+{
+    refused.Add(string.Format(
+        "not one of the {0} element(s) handed in is a schedule, so NOTHING WAS FILTERED. "
+        + "A schedule is a VIEW and cannot be selected in the model; what CAN be "
+        + "selected is a schedule PLACED ON A SHEET, which this now reads through to "
+        + "the schedule behind it. Click the schedule on the sheet, or select the "
+        + "category 'Schedule Graphics'",
+        handed));
 }
