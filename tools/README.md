@@ -629,3 +629,48 @@ it is a proof — [D-30](../docs/DECISIONS.md) needs a real model, a negative ca
 A count of 100+ is printed as a count, not a list: 114 whole-document collectors is the shape of the
 library, and a tool that dumps 143 rows teaches people to scroll past it. `--list` names them when
 somebody actually wants them.
+
+---
+
+## `check-reachable.py` — built, tested, and called by nothing but a test
+
+```bash
+python tools/check-reachable.py
+python tools/check-reachable.py --all     # including what is already explained
+```
+
+**Twice on 2026-09-09 the same defect was found by hand, hours apart.**
+`heron_search.remember()` writes the utterance cache that
+[docs/19 §5](../docs/19-context-and-cost.md) makes step 1 of the whole pipeline, and it is called from
+one test and nowhere else, so the cache can never fill ([`Q-43`](../docs/OPEN-QUESTIONS.md)). Then
+`heron_context.assemble()` was built the same day and reachable only from a command line, until it was
+put on the MCP seam. Neither is a bug — both are complete, tested code no production path touches, which
+[`heron_brain.py`](../mcp/server/heron_brain.py)'s own docstring already names: *complete, tested, and
+invisible to any conversation is not what "built" was meant to mean.* **Nothing was looking for the
+shape.**
+
+**A hit is a candidate, not a defect**, and that has its own flag. Some are deliberate and written down
+— the Workflow Engine most clearly, where `HANDOVER.md` says *"nothing calls it yet, and that is
+deliberate"* because its customer is a later phase. Those are separated so the top of the report is only
+what nobody has explained. It found **12**, of which **5** were already recorded and one —
+[`Q-47`](../docs/OPEN-QUESTIONS.md), `heron_capability.want()` — was not.
+
+### Why it parses instead of searching, learned three times in one night
+
+A CLI subcommand is reached by name, not by a `foo()` in the source, so a naive check calls every one of
+them dead. The precise test is a **dict literal whose value is the function** (`{"accept": accept}`) or
+a **`getattr` with a literal name** — structures, which prose cannot produce.
+
+That precision was arrived at by getting it wrong three times, and all three are the same failure:
+
+| | |
+|---|---|
+| `check-revit-gate.py` | compared a **space-stripped haystack** against a needle that still had spaces, and reported a confident **0** where the answer is 114 |
+| `measure-routes.py` | grepped for the text `remember(` and matched **its own docstring**, which describes the problem — then printed the opposite conclusion in the one line it exists to be right about |
+| this tool, first version | treated any string literal `"remember"` as dispatch. `measure-routes.py` contains one, in the `ast` comparison that finds callers of `remember`. **The tool written to find the problem made the problem invisible to the next tool** |
+
+Three heuristics, three times fooled by text *about* the thing rather than the thing.
+
+**What it cannot see:** a function reached through `globals()`, a registry built at run time, a plugin
+loader, or a name assembled from parts. Absent from the source is not the same as unreachable, and it
+says so. Not a gate; exits 0.

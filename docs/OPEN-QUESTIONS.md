@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 42 answered · 4 open · nothing blocking any phase**
+**Progress: 42 answered · 5 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -304,6 +304,44 @@ A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
 ---
 
 ## Tier 3 — Needed soon
+
+### 🟡 Q-47 — There are two capability-gap paths and only one of them can ever fire *(new, 2026-09-09)*
+
+[`tools/check-reachable.py`](../tools/check-reachable.py) found it, and the shape is `Q-43`'s exactly:
+**`heron_capability.want()` is called from two tests and from no production code.**
+
+It is the only writer of the `capabilities_wanted` table. Its own docstring says what that costs:
+
+> This is what turns *"we have no fragment for that"* from a **silence** into a **finding**.
+
+So the table is always empty, and `heron_capability.gaps(store)` can only ever return what its caller
+passes in `required=`.
+
+**The live path is a different one, and it works.** `heron_brain.catalogue()` computes gaps from the
+**skills' own declared `missing` capabilities**, never from `capabilities_wanted`. That is what
+`heron_capabilities` reports and what `tests/test_brain_reachable.py` checks, and it is sound —
+this entry originally suspected that test of passing for the wrong reason, and it does not.
+
+**So the question is which path is the real one.** Two mechanisms answer *"what does somebody need
+that nobody provides"*, one derived from skills and one stored on request. [D-40](DECISIONS.md) is the
+rule they are measured against: *an edge is derived before it is stored; store one only when it cannot
+be computed from an artifact on demand.* A skill's requirement is computable and is computed. A
+**request** for something no skill declares is not computable from any artifact — which is the case
+`want()` exists for, and the one that never happens because nothing calls it.
+
+Three ways out, and they are genuinely different:
+
+1. **Wire `want()` up** — a lookup that resolves to nothing records what was asked for. That makes the
+   stored half real, and makes `heron_gaps`'s *"things Heron could not do"* answerable from wants as
+   well as from failures.
+2. **Delete it** — accept that the derived path is the whole answer and stop carrying a table nothing
+   fills. Cheapest, and it loses the case above.
+3. **Leave it** — and then it should be written down as deliberate, the way the Workflow Engine's
+   is in [`HANDOVER.md`](HANDOVER.md), so the next tool that finds it does not raise it again.
+
+**Answer:**
+
+---
 
 ### 🟡 Q-44 — Should the brain record its own answers in the audit trail? *(new, 2026-09-09)*
 
