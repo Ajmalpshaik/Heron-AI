@@ -697,12 +697,25 @@ clean after `heron_bridge_client.py release`, with no other change.
 > Release before batching. And distrust a batch where *every* job fails the same way — that is the
 > environment, not the arrangement.
 
-**SHEETS AND VIEWS CANNOT BE SELECTED BY CATEGORY.** `manage-sheet-sets` and `duplicate-views` both
-answered `setup_failed: the arrangement could not be re-made`, with and without `inViewOnly`. Rule 3
-says a category has to be visible where you select — but a sheet is not *in* a view, it **is** one, and
-so is a legend. There is no arrangement using `select-by-category-name` that reaches them, which
-blocks every sheet and view fragment from batch proving. **This is the same gap as the missing `LIST_*`
-fragments in §3d**: nothing enumerates sheets, views, legends, worksets or global parameters by name.
+**SHEETS AND VIEWS CANNOT BE SELECTED BY CATEGORY — BUT THEY CAN BE SELECTED.** `manage-sheet-sets`
+and `duplicate-views` both answered `setup_failed: the arrangement could not be re-made`, with and
+without `inViewOnly`. Rule 3 says a category has to be visible where you select, and a sheet is not
+*in* a view, it **is** one — so `select-by-category-name` cannot reach it.
+
+**The conclusion first written here — that this blocks every sheet and view fragment — was wrong, and
+it was wrong for an hour.** [`list-sheets`](../brain/fragments/list-sheets) is already `PROVEN`, needs
+nothing but the document, and provides `elements`, which is exactly what `set-selection` consumes:
+
+```yaml
+    setup:
+      - list-sheets
+      - set-selection
+```
+
+That arranges all 17 sheets in one step. `list-levels`, `list-grids`, `list-revisions` and
+`list-linked-models` do the same for their own kinds, and **every one of them is already PROVEN and was
+sitting unused.** The §3d gap was never *"nothing lists these"* — it was that nothing named them where
+somebody writing a job file would look. `tools/jobs/list-as-setup.yaml` is the worked example.
 
 ### The rest of the eighteen, by what they need
 
@@ -711,7 +724,7 @@ fragments in §3d**: nothing enumerates sheets, views, legends, worksets or glob
 | `dimension-rooms` | `created 0` with `view` correctly supplied | CONFIRM the L3 Spaces are bounded and that `measureTo=finish` is a mode it knows |
 | `place-flow-arrows` | `placed 0` in both legs | The arrow family loaded. Both legs empty is the family missing, not the fragment failing |
 | `create-legend-view` | *"No view called `Legend: Mechanical Legend`"* — a good refusal | The real legend name. Nothing lists them (§3d again) |
-| `set-element-workset` | `moved 0` with `worksetId=0` | A workset id. `report-element-ownership` reports `owners 1 entry(ies)` and no id, so nothing in the library can supply one |
+| `set-element-workset` | `moved 0` with `worksetId=0` | A workset **id**, and the gap is narrower than first written here. `list-worksets` is PROVEN and reports the names and the count — this model has two, *Shared Levels and Grids* and *Workset1*, both open — but **not the integer ids**, and the fragment reads `ELEM_PARTITION_PARAM` as an integer, so a name cannot stand in. One field added to `list-worksets` closes it |
 | `place-views-on-sheet` | `placed 0`, and the negative was not empty either | Views selected, which is the sheet/view wall above |
 
 ### Reading the 196 run records was worth more than running anything — 2026-09-09
@@ -801,6 +814,7 @@ Both are offline work. Neither needs Revit to build.
 | `set-schedule-sort-group` | Same cast, answering `sorted 0` — which reads as "already in that order". Resolution added, plus a refusal when nothing handed in was a schedule and when no sort field was named. As with the filter fragment, `cannotSortBy` stays a finding about the schedule and `refused` is the fragment declining. Fixed 2026-09-09 |
 | `export-schedule-to-csv` | Same cast. A missing export folder and a selection holding no schedule both came back as "nothing came out"; only the first said why. Resolution added, and the second now refuses too. Fixed 2026-09-09 |
 | `add-revision-cloud` | **The `ViewSchedule` §3e lists it for is a view-type guard** (`view is ViewSchedule`), not a cast of a selected element — it never consumes a schedule as input, so the placement fix does not apply and was not made. **What was wrong is next to it: `viewRefused` was one bool covering two causes**, *"the view will not take a cloud"* **and** *"that revision does not exist"*, and the file's own comment admitted the conflation. Those have opposite fixes — change the view, or make the revision — and a caller told only `viewRefused true` goes looking at the drawing when the revision is what is missing. `viewRefused` now means exactly its name; a missing revision is its own sentence; and a new `refusalReasons` carries the words for both, naming **which** of the five view types refused and why. The three ways a single element misses out (not visible in this view, too small to cloud, Revit declined the rectangle) each get a sentence carrying a **count** rather than one line per element. An empty `elements` with a good view and a real revision — four zeroes that read as "nothing to cloud" — is refused too. Fixed 2026-09-09 |
+| `set-view-section-box` | **`viewRefused` meant two opposite things.** It was set when the VIEW could not carry a section box — a plan, a section, a template — and again when the view was a perfectly good 3D view and **nothing handed in had any geometry**. Opposite fixes: open a 3D view, or hand over something measurable. **This is also §3f's recorded doubt, and it could not be settled while the two shared a word:** the stronger negative the owner asked for — a 3D view whose selection has nothing to enclose — reported `viewRefused true` exactly like the weak one. It now leaves `viewRefused` **false** and says in words that the view was fine and the selection was not. `viewRefused` means only its name; a new `refusalReasons` carries the words and names **which** view type refused. Two further silences closed while in there: an **empty** `elements` in a good 3D view answered `applied false`, `enclosed 0`, `noGeometry 0`, `viewRefused true` — blaming the view for an empty selection; and **a margin negative enough to turn the box inside out** was applied and reported `applied true`, cutting the view to an empty screen, which reads as though the model had been deleted. `heron-status` and the `proof:` block are untouched — **but the proof of 2026-09-09 is now stale**: the fragment leaves an output it did not have, so the fingerprint no longer matches. Nothing it recorded is contradicted. Fixed 2026-09-09 |
 
 ---
 
