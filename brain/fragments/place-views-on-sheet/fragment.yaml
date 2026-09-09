@@ -53,12 +53,24 @@ contract:
       source: request
   provides:
     - name: placed
+      role: result
       type: int
     - name: distinctPositions
+      # How many viewports landed in DIFFERENT places, read back after
+      # creation. WHEN PLACED IS 3 AND DISTINCTPOSITIONS IS 1 THE ANSWER SAYS
+      # OUT LOUD WHAT THE DRAWING WOULD OTHERWISE HAVE TO - a count of
+      # placements cannot tell a populated sheet from a pile.
+      role: result
       type: int
     - name: notPlaced
+      # Views no viewport came back for. The evidence it looked and could not,
+      # never a thing it did (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: sheetProblem
+      # What was wrong with the sheet asked for. A refusal, never a view it
+      # placed (D-52).
+      role: accounting
       type: string
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

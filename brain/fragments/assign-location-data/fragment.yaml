@@ -59,8 +59,12 @@ contract:
       source: request
   provides:
     - name: written
+      role: result
       type: int
     - name: noRoomFound
+      # Elements sitting in no room or space, so it could not be written. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

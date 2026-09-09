@@ -72,8 +72,10 @@ contract:
     - name: findings
       type: IList<string>
     - name: bound
+      role: result
       type: bool
     - name: boundCategories
+      role: result
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

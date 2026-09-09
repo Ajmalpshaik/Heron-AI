@@ -83,12 +83,22 @@ contract:
     - name: findings
       type: IList<string>
     - name: tooClose
+      role: result
       type: IList<ElementId>
     - name: violations
+      role: result
       type: int
     - name: insulatedCount
+      # How many of the services carried insulation. The size of what it
+      # measured, never a clearance it failed (D-52).
+      role: accounting
       type: int
     - name: bareCount
+      # AN ELEMENT WITH NO INSULATION MODELLED IS THE SILENT PROBLEM, SO IT IS
+      # COUNTED AND SAID FIRST - if the specification calls for insulation and
+      # the model carries none, this check otherwise reads exactly like a
+      # pass.
+      role: result
       type: int
 
 proof:

@@ -44,6 +44,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: ElementId
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -52,6 +53,10 @@ contract:
       role: accounting
       type: string
     - name: notMepCurve
+      # Handed in but not duct or pipe, so there was nothing here to act on. A
+      # count of what it was GIVEN and could not use, never a thing it found
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

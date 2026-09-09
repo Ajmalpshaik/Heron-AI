@@ -46,10 +46,13 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: byKind
+      role: result
       type: IDictionary<string, int>
     - name: found
+      role: result
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

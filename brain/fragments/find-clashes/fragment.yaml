@@ -46,10 +46,15 @@ contract:
       source: request
   provides:
     - name: clashes
+      role: result
       type: IDictionary<ElementId, ICollection<ElementId>>
     - name: clashing
+      role: result
       type: int
     - name: clear
+      # How many did not intersect anything. The evidence it looked; `clashes`
+      # is what it found (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -64,10 +64,17 @@ contract:
       source: request
   provides:
     - name: layersChanged
+      role: result
       type: int
     - name: parametersChanged
+      role: result
       type: int
     - name: typesTouched
+      # Types the swap reached, COUNTED SEPARATELY FROM ELEMENTS HANDED IN
+      # because editing a type changes every instance of it in the project.
+      # The reach of the change, which is Revit working correctly and still
+      # surprises people.
+      role: result
       type: IList<ElementId>
     - name: skippedInGroup
       # What it passed over. The evidence it looked, never a thing it

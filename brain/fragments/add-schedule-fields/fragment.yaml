@@ -53,6 +53,7 @@ contract:
       source: request
   provides:
     - name: added
+      role: result
       type: int
     - name: alreadyPresent
       # Elements that were ALREADY in the state asked for, so there was
@@ -61,8 +62,16 @@ contract:
       role: accounting
       type: int
     - name: unknownField
+      # Field names the category does not have. Given and unusable, never a
+      # column it added (D-52).
+      role: accounting
       type: IList<string>
     - name: availableFields
+      # The fields that ARE schedulable here - the answer to the question the
+      # caller is about to ask, and reference data rather than a finding. It
+      # is filled in whether anything was added or not, so it must never read
+      # as work (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

@@ -49,16 +49,28 @@ contract:
       source: ambient
   provides:
     - name: owners
+      role: result
       type: IDictionary<ElementId, string>
     - name: creators
+      role: result
       type: IDictionary<ElementId, string>
     - name: lastChangedBy
+      role: result
       type: IDictionary<ElementId, string>
     - name: ownedByOthers
+      role: result
       type: IList<ElementId>
     - name: editable
+      # Elements nobody has checked out. NOT OWNED MEANS PROBABLY FREE, NEVER
+      # GUARANTEED FREE, because checkout status reflects the last sync - the
+      # evidence it looked, and `ownedByOthers` is the finding (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notWorkshared
+      # Reported when the model is not workshared at all, so there is no
+      # ownership to read. The evidence it looked, never a thing it found
+      # (D-52).
+      role: accounting
       type: bool
 
 proof:

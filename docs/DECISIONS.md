@@ -2896,6 +2896,33 @@ still find something — `looks_empty` returning True on a POSITIVE run is itsel
 circumstance in which a rule change should be distrusted. The evidence they rest on is recorded in each
 `proof:` block and can be re-read against a stricter rule later.
 
+### Amended 2026-09-09 — the naming is gone, the fragment says it itself
+
+**The risk named directly above is now closed.** *"A fragment could now pass a negative case by naming
+its results `noFoo`. Nothing prevents it."* Something does: nothing reads a name any more.
+
+`REJECT_PREFIX`, `REJECT_NAMES` and `WORK_COUNTER` have been **deleted** from
+[`heron_validate.py`](../brain/heron_validate.py), along with `_is_accounting` and its two call sites in
+[`batch-prove.py`](../tools/batch-prove.py). All **1,192** provides in the library now carry an explicit
+`role`, declared by reading what each fragment is FOR rather than what its output is called.
+
+**That reading disagreed with these patterns 166 times, in both directions**, which is why they were
+removed rather than kept as a fallback:
+
+| Direction | Example | What the pattern did |
+|---|---|---|
+| an ANSWER read as bookkeeping | `select-unenclosed-rooms` `unplaced`, `unenclosed` | `REJECT_NAMES` swallowed the two faults the fragment exists to find |
+| bookkeeping read as an ANSWER | `set-mep-slope.inGroup`, `flip-elements.cannotFlip` | no pattern could see them, and a non-zero one banks a proof for a run that changed nothing |
+
+**`role` is REQUIRED now, not optional.** With nothing left to guess, an undeclared provide would fall
+to `result`, so `check_contract` refuses one — the omission is a validation error somebody fixes rather
+than a silent default nobody sees. `findings` is the single exemption, because [D-51](DECISIONS.md) is
+a different rule and `NOTE_KEYS` still carries it.
+
+**What is NOT claimed:** this does not make a negative case honest. A fragment can still declare a
+finding as `accounting` and slip through. The difference is that it is now a sentence somebody wrote in
+the contract and can be read back, rather than an accident of what the field was called.
+
 ## D-53 — A fragment that cannot come back empty is proved by TRACKING instead
 
 **Status:** Accepted · **Date:** 2026-09-07 · **Found during:** the owner asking to carry on proving fragments
@@ -2998,8 +3025,24 @@ Three things follow from that, and each was a live alternative:
    `BindNeeds` already exists to prevent, and the same rule this repository states generally: an
    identifier is only an identifier if it is unique among the things it has to distinguish.
 
-Supported today: `View`, `string`, `int`, `double`, `bool`. Anything else is refused **by name**, saying
-that type has no way to be received yet — rather than failing somewhere inside generated code.
+Supported today: `View`, `Level`, `Category`, `BuiltInCategory`, `Element`, `string`, `int`, `double`,
+`bool`, and comma-separated lists of most of those. Anything else is refused **by name**, saying that
+type has no way to be received yet — rather than failing somewhere inside generated code.
+
+**`Element` is the one with a boundary inside it, and the boundary is the interesting part.** It
+resolves to an element **TYPE**, by name, written the way the Properties palette writes it — `Basic
+Wall: Generic - 200mm`, or the bare type name when that is unique. It refuses a particular wall or
+duct, and it has to: **an instance has no name of its own.** `Element.Name` on one returns its
+*type's* name, so a search over instances would match every element of that type — turning a missing
+rule into a wrong answer, which is the one trade this whole decision exists to refuse. *"Which duct"*
+is a question text cannot answer; the selection is the mechanism that can.
+
+**The remaining imprecision is in the contracts, not here.** Twenty fragments declare a need as
+`Element`, and six of them mean an element type (`wallType`, `floorType`, `ceilingType`, `regionType`,
+`runType`, `hostType`) while the rest mean *that one there* — or something narrower again: `phase` is
+a `Phase` and `filter` is a `ParameterFilterElement`, each declared as the base class. A contract that
+said what it meant would resolve exactly, the way `Level` already does, and would not need this method
+to work out which half was intended.
 
 ### What this does NOT do
 

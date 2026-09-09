@@ -65,10 +65,18 @@ contract:
       source: request
   provides:
     - name: copied
+      role: result
       type: IList<string>
     - name: clashed
+      # Names already in this project, which is left alone. Given and not
+      # acted on, never a material it copied (D-52).
+      role: accounting
       type: IList<string>
     - name: weakened
+      # Materials that landed but did not match the source property by
+      # property. USUALLY IS NOT A WORD THIS LIBRARY ACCEPTS, so each is read
+      # back and anything short is named here rather than reported as copied.
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

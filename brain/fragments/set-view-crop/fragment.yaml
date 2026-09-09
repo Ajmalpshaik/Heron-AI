@@ -45,12 +45,21 @@ contract:
       source: request
   provides:
     - name: applied
+      role: result
       type: bool
     - name: enclosed
+      role: result
       type: int
     - name: noGeometry
+      # Elements with no geometry to crop around, so it could not be enclosed.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: viewRefused
+      # The view declined the change - a template owns the slot, or the view
+      # cannot take it at all. The evidence it looked and said no, never a
+      # change it made (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

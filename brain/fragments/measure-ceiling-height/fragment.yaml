@@ -80,16 +80,27 @@ contract:
       source: ambient
   provides:
     - name: mainCeiling
+      role: result
       type: IDictionary<ElementId, ElementId>
     - name: mainHeight
+      role: result
       type: IDictionary<ElementId, double>
     - name: ceilingsOver
+      role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: heights
+      role: result
       type: IDictionary<ElementId, double>
     - name: coverage
+      # How much of the room each ceiling covers, returned per ceiling SO A
+      # CLOSE CALL IS VISIBLE INSTEAD OF DECIDED IN SILENCE - it is what says
+      # whether "the main ceiling" was the right pick.
+      role: result
       type: IDictionary<ElementId, double>
     - name: noCeiling
+      # Rooms with no ceiling over them, so it could not be measured. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

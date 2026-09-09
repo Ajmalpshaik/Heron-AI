@@ -57,12 +57,24 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: foundIn
+      # IT REPORTS WHERE THEY ACTUALLY ARE - knowing eleven are miscategorised
+      # is half an answer, knowing seven are generic models and four are
+      # casework is the other half.
+      role: result
       type: IDictionary<string, int>
     - name: correctlyCategorised
+      # How many were in the right category after all. The evidence it looked,
+      # never a mismatch it found (D-52).
+      role: accounting
       type: int
     - name: scanned
+      # How many elements were examined. A count of work DONE, not of things
+      # found - the evidence it ran, which is the opposite of a reason to
+      # doubt it (D-52).
+      role: accounting
       type: int
 
 proof:

@@ -53,10 +53,13 @@ contract:
       source: request
   provides:
     - name: straightMm
+      role: result
       type: double
     - name: horizontalMm
+      role: result
       type: double
     - name: verticalMm
+      role: result
       type: double
     - name: findings
       type: IList<string>

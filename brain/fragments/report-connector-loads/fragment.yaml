@@ -50,12 +50,24 @@ contract:
       type: IList<Element>
   provides:
     - name: loads
+      role: result
       type: IDictionary<ElementId, IDictionary<string, double>>
     - name: unset
+      # Connectors carrying a zero that IS a hole in the model - a fixture
+      # nobody gave a demand to. The half of the split this fragment exists to
+      # make.
+      role: result
       type: IList<ElementId>
     - name: noConnectors
+      # Elements with no connectors to read loads off, so it could not be
+      # reported on. The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: expectedEmpty
+      # Connectors whose zero is NORMAL - a duct or pipe carries no demand of
+      # its own, the demand belongs to the fixture at the end of the run. The
+      # other half of the split, and never a finding (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

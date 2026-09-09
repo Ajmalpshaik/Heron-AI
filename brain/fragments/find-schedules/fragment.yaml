@@ -61,6 +61,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: skippedTemplates
       # Schedule templates passed over. How many it looked at and set
@@ -73,6 +74,10 @@ contract:
       role: accounting
       type: int
     - name: matchedButExcluded
+      # Schedules that matched the name but are templates or Revit's own
+      # internal ones - TWO KINDS OF SCHEDULE THAT ARE NOT SCHEDULES A PERSON
+      # MEANS. Deliberately not in the answer (D-52).
+      role: accounting
       type: int
 
 proof:

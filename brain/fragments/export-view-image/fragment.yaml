@@ -55,6 +55,7 @@ contract:
       source: request
   provides:
     - name: exported
+      role: result
       type: int
     - name: findings
       type: IList<string>

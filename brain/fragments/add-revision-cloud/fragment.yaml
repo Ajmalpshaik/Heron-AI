@@ -45,6 +45,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: refused
       # The elements that got NO cloud, whatever the cause. The evidence it
@@ -57,6 +58,8 @@ contract:
       # THE VIEW cannot carry a cloud - a template, a 3D view, a schedule or
       # a sheet. It says nothing about the revision: a missing revision is
       # its own sentence in `refusalReasons`, because the fix is different.
+      # The evidence it looked and said no, never a cloud it drew (D-52).
+      role: accounting
       type: bool
     - name: refusalReasons
       # WHY it declined, in the user's words - one sentence per cause, and

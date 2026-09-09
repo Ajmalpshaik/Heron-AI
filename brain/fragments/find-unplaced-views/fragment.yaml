@@ -40,10 +40,15 @@ contract:
       type: Document
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: byType
+      role: result
       type: IDictionary<string, int>
     - name: placedCount
+      # How many views ARE on a sheet. The evidence it looked; the unplaced
+      # ones are the answer (D-52).
+      role: accounting
       type: int
 
 proof:

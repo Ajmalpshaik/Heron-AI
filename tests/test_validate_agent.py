@@ -24,6 +24,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -362,6 +363,25 @@ def test_restamp_refuses_a_genuinely_stale_proof():
               "a proof with no date cannot be shown to still hold")
     finally:
         shutil.rmtree(workspace)
+
+    # SAME DAY COUNTS AS AFTER, which is the hole this guard had until
+    # 2026-09-09. A proof carries a date and no time, so a change committed
+    # hours after its own proof used to read as "did not move" - which is
+    # exactly how set-view-section-box kept a PROVEN status against code that
+    # had changed. Derived from git rather than hard-coded, so it cannot rot.
+    tracked = "brain/heron_fragment.py"
+    same_day = subprocess.run(
+        ["git", "log", "-1", "--format=%ad", "--date=short", "--", tracked],
+        cwd=HV.ROOT, capture_output=True, text=True).stdout.strip()
+    if same_day:
+        class SameDay(object):
+            proof = {"date": same_day}
+            def proof_files(self):
+                return [tracked]
+        check(HV.implementation_changed_after(SameDay()),
+              "a change committed the SAME DAY as the proof counts as after "
+              "(%s), because a date cannot be ordered against an hour"
+              % same_day)
 
 
 def test_the_fingerprint_is_about_content_only():

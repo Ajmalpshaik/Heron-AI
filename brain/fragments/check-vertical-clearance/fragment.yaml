@@ -57,10 +57,14 @@ contract:
     - name: findings
       type: IList<string>
     - name: tooClose
+      role: result
       type: int
     - name: clashing
+      role: result
       type: int
     - name: slopedOrVertical
+      # Pairs a vertical test cannot judge, because one of them is not running
+      # level. The evidence it looked (D-52).
       role: accounting
       type: int
 

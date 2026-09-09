@@ -62,8 +62,12 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: withoutGeometry
+      # Elements with no solid geometry, which the exact test cannot judge.
+      # The evidence it looked; `elements` is the answer (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

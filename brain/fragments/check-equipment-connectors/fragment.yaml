@@ -56,8 +56,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: mismatched
+      role: result
       type: IList<ElementId>
     - name: unconnectedSpigots
+      # IT REPORTS THE UNCONNECTED SPIGOTS TOO, AND THOSE ARE USUALLY THE
+      # BIGGER FINDING - a gap no clash test and no connectivity walk will
+      # flag, because the system that IS connected traces perfectly.
+      role: result
       type: int
 
 proof:

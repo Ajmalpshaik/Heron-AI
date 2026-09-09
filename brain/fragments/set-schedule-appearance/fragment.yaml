@@ -80,8 +80,12 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: int
     - name: notPresent
+      # Field names the schedule does not carry, so it could not be restyled.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -90,6 +94,7 @@ contract:
       role: accounting
       type: IList<string>
     - name: appliedAppearance
+      role: result
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -68,12 +68,22 @@ contract:
       source: ambient
   provides:
     - name: tooClose
+      role: result
       type: IList<string>
     - name: gaps
+      role: result
       type: IDictionary<string, double>
     - name: judgedBy
+      # Which rule judged each pair, reported so a wrong threshold is visible
+      # rather than buried. Filled in for compliant pairs too, so it must
+      # never read as a finding (D-52).
+      role: accounting
       type: IDictionary<string, string>
     - name: pairsChecked
+      # How many pairs were examined. A count of work DONE, not of things
+      # found - the evidence it ran, which is the opposite of a reason to
+      # doubt it (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

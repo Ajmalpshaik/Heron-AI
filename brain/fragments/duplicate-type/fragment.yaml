@@ -51,10 +51,17 @@ contract:
     - name: findings
       type: IList<string>
     - name: createdTypeId
+      role: result
       type: ElementId
     - name: sourceTypeName
+      # The name of the type it copied from. Context for the answer, filled in
+      # whether anything was created or not (D-52).
+      role: accounting
       type: string
     - name: noType
+      # Elements with no type behind them, so it could not be duplicated. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -55,10 +55,18 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: placeholders
+      # Placeholder sheets - real rows in the drawing register with no view
+      # behind them, which is a distinct thing to know about rather than a
+      # reject.
+      role: result
       type: IList<ElementId>
     - name: matchedOnName
+      # How many matched on the sheet NAME rather than its number. Which half
+      # of the match ran, never a sheet it found (D-52).
+      role: accounting
       type: int
 
 proof:

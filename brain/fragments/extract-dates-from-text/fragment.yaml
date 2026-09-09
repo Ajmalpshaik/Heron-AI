@@ -47,6 +47,7 @@ contract:
       type: IList<Element>
   provides:
     - name: datesFound
+      role: result
       type: IDictionary<string, IList<ElementId>>
     - name: sheetsWithNoDate
       type: IList<ElementId>

@@ -58,10 +58,16 @@ contract:
       source: request
   provides:
     - name: highlighted
+      role: result
       type: int
     - name: greyed
+      role: result
       type: int
     - name: wrapsFollowed
+      # Insulation and lining coloured with their hosts. Without it a greyed
+      # drawing shows a coloured duct inside a grey jacket, so these are part
+      # of what it drew.
+      role: result
       type: int
     - name: findings
       type: IList<string>

@@ -45,8 +45,12 @@ contract:
     - name: findings
       type: IList<string>
     - name: unusedFilters
+      role: result
       type: IList<ElementId>
     - name: filterCount
+      # How many filters exist in the project. The size of the sweep, never an
+      # unused one it found (D-52).
+      role: accounting
       type: int
 
 proof:

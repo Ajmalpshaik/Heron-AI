@@ -49,12 +49,24 @@ contract:
       source: request
   provides:
     - name: aligned
+      role: result
       type: int
     - name: scaleMismatch
+      # Sheets whose viewport is at a different scale, so the centres cannot
+      # line up. A MISMATCHED SHEET IS SKIPPED AND NAMED - never a sheet it
+      # aligned (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: titleBlockMoved
+      # Sheets whose title block sits at a different origin, so copying the
+      # centre would land the plan in the wrong place on the paper. Skipped
+      # and named (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: ambiguous
+      # Sheets with several viewports, where which one is the plan is not a
+      # question this can answer. LEFT ALONE, never aligned (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

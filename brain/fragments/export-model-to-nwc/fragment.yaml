@@ -53,10 +53,18 @@ contract:
       source: request
   provides:
     - name: exportedPath
+      role: result
       type: string
     - name: exporterMissing
+      # That Revit does not have the NWC exporter installed - ITS OWN OUTCOME
+      # RATHER THAN A FAILURE, since it is a machine fact, not a model one.
+      # Never a file it wrote (D-52).
+      role: accounting
       type: bool
     - name: problem
+      # The sentence saying what stopped it. The evidence it looked and could
+      # not (D-52).
+      role: accounting
       type: string
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

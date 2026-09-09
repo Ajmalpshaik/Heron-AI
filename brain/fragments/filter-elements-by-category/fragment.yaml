@@ -43,8 +43,14 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: unresolvedLevel
+      # How many had NO level found at all, so a broken level lookup reads as
+      # "12 found, 12 with no level" instead of as a plausible zero. The
+      # pattern SELECT_BY_PHASE names as the reason it counts the same way
+      # (D-52).
+      role: accounting
       type: int
 
 # An explicit list, never a range. ">=2020" would claim 2028 and every release

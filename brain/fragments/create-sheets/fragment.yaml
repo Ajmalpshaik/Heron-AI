@@ -56,12 +56,19 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: numberedAs
+      role: result
       type: IDictionary<ElementId, string>
     - name: namedAs
+      role: result
       type: IDictionary<ElementId, string>
     - name: numberTaken
+      # Numbers already in the register, checked BEFORE anything is created so
+      # no sheet is made for them. Given and unusable, never a sheet it made
+      # (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -70,6 +77,9 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: titleBlockNotFound
+      # That the title block asked for is not loaded. A refusal, never a sheet
+      # it made (D-52).
+      role: accounting
       type: bool
 
 proof:

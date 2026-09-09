@@ -75,8 +75,13 @@ contract:
       source: request
   provides:
     - name: bound
+      role: result
       type: IList<string>
     - name: clashed
+      # Parameters already bound here, so this project is left alone -
+      # including when the source binds them to more categories. Never a
+      # binding it made (D-52).
+      role: accounting
       type: IList<string>
     - name: skipped
       # What it passed over. The evidence it looked, never a thing it
@@ -85,6 +90,11 @@ contract:
       role: accounting
       type: IList<string>
     - name: regrouped
+      # Parameters that landed under Data because their source group could not
+      # be resolved. A PARAMETER THAT LANDED IN A DIFFERENT PART OF THE
+      # PROPERTIES PALETTE IS SOMETHING YOU ARE TOLD RATHER THAN SOMETHING YOU
+      # FIND.
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

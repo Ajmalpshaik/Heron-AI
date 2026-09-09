@@ -62,10 +62,18 @@ contract:
       source: request
   provides:
     - name: hits
+      role: result
       type: IDictionary<ElementId, IList<string>>
     - name: nothingHit
+      # Elements whose rays hit nothing. Indistinguishable from a 3D view
+      # with the categories switched off, which the purpose names as the
+      # first thing to check - evidence it ran, never a hit (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: noOrigin
+      # Elements with no origin to fire a ray from, so it could not be probed.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

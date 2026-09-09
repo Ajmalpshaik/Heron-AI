@@ -72,12 +72,20 @@ contract:
       source: request
   provides:
     - name: edited
+      role: result
       type: int
     - name: typesEdited
+      role: result
       type: IList<ElementId>
     - name: unchanged
+      # Elements whose value did not move - already carrying the prefix, or
+      # the write did not take. Never an edit it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: absent
+      # Elements not carrying the parameter on the instance or the type. Given
+      # and unusable, never an edit it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

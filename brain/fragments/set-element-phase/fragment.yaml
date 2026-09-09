@@ -47,6 +47,7 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -55,6 +56,9 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: readOnly
+      # Elements whose phase parameter will not take a write. Given and
+      # unusable, never a change it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: alreadySet
       # Elements that were ALREADY in the state asked for, so there was

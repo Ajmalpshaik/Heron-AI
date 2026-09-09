@@ -63,10 +63,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: obstructed
+      role: result
       type: IList<ElementId>
     - name: needAccessPanel
+      role: result
       type: IList<ElementId>
     - name: outOfReach
+      role: result
       type: IList<ElementId>
 
 proof:

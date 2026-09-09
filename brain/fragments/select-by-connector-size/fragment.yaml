@@ -75,12 +75,20 @@ contract:
       source: request
   provides:
     - name: matched
+      role: result
       type: IList<Element>
     - name: matchedIds
+      role: result
       type: IList<ElementId>
     - name: noConnectors
+      # *THREE OUTCOMES, NOT TWO* - and this is one of the two kinds of MISS:
+      # an element the filter has nothing to measure. Never a match (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: unknownShape
+      # Elements whose connector shape this cannot measure - the second of the
+      # TWO KINDS OF MISS. Never a match (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: findings
       type: IList<string>

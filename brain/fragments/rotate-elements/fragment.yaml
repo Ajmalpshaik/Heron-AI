@@ -42,10 +42,19 @@ contract:
       source: request
   provides:
     - name: rotated
+      role: result
       type: int
     - name: blocked
+      # Elements that did not turn at all. Revit's rotate call returns
+      # normally and turns nothing on a group member - five grouped terminals
+      # stayed at 0.00 degrees while an earlier version reported "rotated 5"
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: unverified
+      # Elements whose new angle could not be read back to confirm. The
+      # evidence it could not check, never a confirmed rotation (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

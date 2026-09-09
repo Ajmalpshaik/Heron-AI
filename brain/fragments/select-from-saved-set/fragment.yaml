@@ -52,8 +52,13 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: missing
+      # Saved ids that no longer resolve - the difference between a set that
+      # has shrunk and a set that was always this size. Never an element it
+      # found (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

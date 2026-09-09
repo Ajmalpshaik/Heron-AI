@@ -53,8 +53,13 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: withoutConnectors
+      # Elements that cannot answer the question at all. The purpose notes a
+      # large count here usually means the CATEGORY is wrong - evidence about
+      # the arrangement, never a finding about the model (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

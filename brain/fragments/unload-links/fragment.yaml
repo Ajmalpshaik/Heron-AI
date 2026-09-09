@@ -42,6 +42,7 @@ contract:
       type: IList<Element>
   provides:
     - name: unloaded
+      role: result
       type: IList<ElementId>
     - name: alreadyUnloaded
       # Elements that were ALREADY in the state asked for, so there was
@@ -50,6 +51,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: notALink
+      # Handed in but not a linked model, so there was nothing here to act on.
+      # A count of what it was GIVEN and could not use, never a thing it found
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

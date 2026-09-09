@@ -51,14 +51,24 @@ contract:
       source: request
   provides:
     - name: tagTargets
+      role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: linkedTags
+      # Tags whose target lives inside a LINKED model. HALF THE TAGS ON A
+      # COORDINATION DRAWING ARE INVISIBLE TO THE OBVIOUS CALL, because on an
+      # MEP job the architecture is a link.
+      role: result
       type: IDictionary<ElementId, string>
     - name: orphanTags
+      role: result
       type: IList<ElementId>
     - name: multiTags
+      role: result
       type: IList<ElementId>
     - name: tagCount
+      # How many tags are in the view. The size of the sweep, never a target
+      # it resolved (D-52).
+      role: accounting
       type: int
 
 proof:

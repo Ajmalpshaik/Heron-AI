@@ -53,10 +53,12 @@ contract:
       type: IList<Element>
   provides:
     - name: overrides
+      role: result
       type: OverrideGraphicSettings
     - name: findings
       type: IList<string>
     - name: withOverride
+      role: result
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

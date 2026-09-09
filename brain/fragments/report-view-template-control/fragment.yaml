@@ -55,8 +55,12 @@ contract:
     - name: findings
       type: IList<string>
     - name: controlledParameters
+      role: result
       type: IList<string>
     - name: withTemplate
+      # How many of the views follow a template at all. The size of what could
+      # be answered, never a locked setting it found (D-52).
+      role: accounting
       type: int
     - name: withoutTemplate
       # How many of the views handed in carry no template at all. The evidence

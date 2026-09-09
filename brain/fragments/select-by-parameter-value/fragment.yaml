@@ -64,8 +64,13 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: withoutParameter
+      # Elements that do not carry the parameter, counted and NEVER matched.
+      # What makes a mistyped name come back as 0 matched, 4,812 do not carry
+      # it rather than as a plausible zero - never a match (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

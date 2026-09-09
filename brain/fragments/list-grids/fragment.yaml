@@ -34,10 +34,15 @@ contract:
       type: Document
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: findings
       type: IList<string>
     - name: notLinear
+      # Handed in but not linear grids, so there was nothing here to act on. A
+      # count of what it was GIVEN and could not use, never a thing it found
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

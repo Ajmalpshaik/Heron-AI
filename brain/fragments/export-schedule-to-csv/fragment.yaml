@@ -60,8 +60,12 @@ contract:
       source: request
   provides:
     - name: written
+      role: result
       type: IList<string>
     - name: missingAfterExport
+      # Paths that were not on disk when it read back - a file it failed to
+      # deliver. `written` is what it wrote (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -70,6 +74,10 @@ contract:
       role: accounting
       type: IList<string>
     - name: rowsWritten
+      # How many rows the file actually holds. IT WRITES WHAT THE SCHEDULE
+      # PRINTS, INCLUDING ITS FILTERS, so this is what tells somebody
+      # exporting the duct schedule why they got a third of the ducts.
+      role: result
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

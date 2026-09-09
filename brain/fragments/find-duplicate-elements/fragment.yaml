@@ -42,10 +42,14 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: findings
       type: IList<string>
     - name: noPoint
+      # Elements with no point to compare, so it could not be judged a
+      # duplicate. The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

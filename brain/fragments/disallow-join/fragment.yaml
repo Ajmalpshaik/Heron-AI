@@ -61,6 +61,7 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: int
     - name: wasPinned
       # What it was BEFORE this ran. Filled in identically whether the
@@ -69,6 +70,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: unsupported
+      # Anything that is neither a wall nor structural framing, NAMED RATHER
+      # THAN QUIETLY SKIPPED because a selection is usually mixed. Given and
+      # unusable (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

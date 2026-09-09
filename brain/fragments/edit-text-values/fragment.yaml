@@ -62,16 +62,35 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: IList<ElementId>
     - name: untouched
+      # Elements whose text did not contain the search term. The purpose is
+      # explicit that counting these as successes would report work that did
+      # not happen (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: blank
+      # Elements whose value was empty - NOTHING IS DONE TO AN EMPTY VALUE,
+      # because a prefix on a blank would create data where the modeller had
+      # none. Never an edit it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: readOnly
+      # Elements whose parameter will not take a write. Given and unusable,
+      # never an edit it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: absent
+      # Elements not carrying that field at all. Given and unusable, never an
+      # edit it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: unverified
+      # Elements Revit accepted and then altered, so the read-back does not
+      # match what was intended. The evidence it could not confirm, never a
+      # confirmed edit (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

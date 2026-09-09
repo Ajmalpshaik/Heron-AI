@@ -47,10 +47,19 @@ contract:
       source: request
   provides:
     - name: snapped
+      role: result
       type: int
     - name: notPointBased
+      # Handed in but not point-based, so there was nothing here to act on. A
+      # count of what it was GIVEN and could not use, never a thing it found
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: blocked
+      # Elements that would not move - pinned, grouped, or owned by somebody
+      # else. Never a thing it snapped, and a run that moved nothing must not
+      # read as work because of it (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

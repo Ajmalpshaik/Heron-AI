@@ -59,10 +59,19 @@ contract:
       source: request
   provides:
     - name: aligned
+      role: result
       type: int
     - name: noSize
+      # Runs whose size parameter could not be read, so it could not be
+      # aligned to a face. The evidence it looked, never a thing it found
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notCurveBased
+      # Handed in but not curve-based, so there was nothing here to act on. A
+      # count of what it was GIVEN and could not use, never a thing it found
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

@@ -52,6 +52,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: string
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -60,6 +61,9 @@ contract:
       role: accounting
       type: string
     - name: overwrote
+      # That a file already there was replaced. A warning about the write,
+      # never a measure of it (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

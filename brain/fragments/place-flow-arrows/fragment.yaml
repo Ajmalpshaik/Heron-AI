@@ -66,10 +66,19 @@ contract:
       source: request
   provides:
     - name: placed
+      role: result
       type: int
     - name: noDirection
+      # Runs whose connectors carry no direction, so they are *LEFT ALONE*.
+      # Plenty of ductwork is modelled without a system. Never an arrow it
+      # placed (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: tooVertical
+      # Near-vertical runs. RISERS GET NOTHING, ON PURPOSE - the flow is
+      # towards or away from the reader, so they are counted and skipped
+      # rather than given a nonsense direction (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

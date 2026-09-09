@@ -59,14 +59,23 @@ contract:
       source: request
   provides:
     - name: quantities
+      role: result
       type: IDictionary<ElementId, double>
     - name: lengths
+      role: result
       type: IDictionary<ElementId, double>
     - name: areas
+      role: result
       type: IDictionary<ElementId, double>
     - name: areaUnknown
+      # Elements Revit carries no surface area for. Given and unmeasurable,
+      # never a quantity it read (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: lengthUnknown
+      # Elements Revit carries no length for. Given and unmeasurable, never a
+      # quantity it read (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

@@ -69,10 +69,15 @@ contract:
       source: request
   provides:
     - name: capped
+      role: result
       type: IList<ElementId>
     - name: endsCapped
+      role: result
       type: int
     - name: stillOpen
+      # Ends that were still open when it finished. What it could NOT cap,
+      # never one it did (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: alreadyClosed
       # Elements that were ALREADY in the state asked for, so there was
@@ -81,6 +86,9 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: notPipes
+      # Handed in but not pipes, so there was nothing here to act on. A count
+      # of what it was GIVEN and could not use, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: findings
       type: IList<string>

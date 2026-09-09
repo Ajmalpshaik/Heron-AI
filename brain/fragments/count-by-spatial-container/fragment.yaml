@@ -75,12 +75,20 @@ contract:
     - name: findings
       type: IList<string>
     - name: groupNames
+      role: result
       type: IList<string>
     - name: groupCounts
+      role: result
       type: IList<int>
     - name: placed
+      role: result
       type: int
     - name: unplaced
+      # Containers that are unplaced or unbounded. *SKIPPED, NOT ASKED* - a
+      # room with no area cannot answer a containment test, and asking anyway
+      # is how an element gets filed under a room that is not on the drawing
+      # (D-52).
+      role: accounting
       type: int
 
 proof:

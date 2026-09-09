@@ -67,6 +67,7 @@ contract:
       source: request
   provides:
     - name: connected
+      role: result
       type: int
     - name: findings
       type: IList<string>
@@ -77,6 +78,9 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: noDuctNear
+      # Terminals with no duct within reach, so it could not be tapped in. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

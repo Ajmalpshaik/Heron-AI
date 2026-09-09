@@ -48,12 +48,22 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: resolvedTo
+      # Which internal category the plain name actually resolved to. A
+      # statement about the LOOKUP, filled in whether anything was found or
+      # not - and the guard against a near miss picking a different category
+      # silently (D-52).
+      role: accounting
       type: string
     - name: nearMisses
+      # Category names that nearly matched, so a wrong resolution is visible.
+      # About the lookup, never an element it found (D-52).
+      role: accounting
       type: IList<string>
     - name: found
+      role: result
       type: int
 
 proof:

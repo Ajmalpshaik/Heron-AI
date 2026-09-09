@@ -49,6 +49,7 @@ contract:
       source: request
   provides:
     - name: placed
+      role: result
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

@@ -93,10 +93,14 @@ contract:
       source: request
   provides:
     - name: sized
+      role: result
       type: int
     - name: findings
       type: IList<string>
     - name: noFlow
+      # Pipes carrying no flow figure, so it could not be sized. The evidence
+      # it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -105,6 +109,9 @@ contract:
       role: accounting
       type: IList<string>
     - name: velocityIsApproximate
+      # A caveat on the velocity reported, not a measurement of its own. Never
+      # a pipe it sized (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

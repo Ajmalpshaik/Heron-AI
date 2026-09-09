@@ -37,14 +37,25 @@ contract:
       source: request
   provides:
     - name: spacingX
+      role: result
       type: double
     - name: spacingY
+      role: result
       type: double
     - name: anchor
+      role: result
       type: XYZ
     - name: anchorIsGuessed
+      # Whether the starting point was read from the ceiling or guessed. IT
+      # REPORTS THIS AS ITS OWN ANSWER, AND THAT FLAG IS THE WHOLE REASON THIS
+      # IS A SEPARATE FRAGMENT - a guessed anchor lays out a grid that looks
+      # right and is not.
+      role: result
       type: bool
     - name: found
+      # That a surface pattern was there to read at all. The evidence it
+      # looked, never a spacing it found (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

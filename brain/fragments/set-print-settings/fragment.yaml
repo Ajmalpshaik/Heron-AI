@@ -64,8 +64,10 @@ contract:
       role: accounting
       type: IList<string>
     - name: applied
+      role: result
       type: IList<string>
     - name: savedAs
+      role: result
       type: string
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

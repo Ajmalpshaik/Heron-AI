@@ -49,6 +49,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: perCategory
       # One entry per category ASKED FOR, with what each contributed. Its
@@ -57,6 +58,7 @@ contract:
       role: accounting
       type: IDictionary<string, int>
     - name: found
+      role: result
       type: int
 
 proof:

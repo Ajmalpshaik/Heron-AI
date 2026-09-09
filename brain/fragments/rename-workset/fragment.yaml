@@ -52,6 +52,7 @@ contract:
       source: request
   provides:
     - name: renamed
+      role: result
       type: bool
     - name: refused
       # Why it declined, in the user's words. The evidence it looked and said

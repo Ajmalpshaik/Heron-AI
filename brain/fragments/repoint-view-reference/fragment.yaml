@@ -47,6 +47,7 @@ contract:
       source: request
   provides:
     - name: repointed
+      role: result
       type: int
     - name: alreadyThere
       # Elements that were ALREADY in the state asked for, so there was
@@ -55,6 +56,9 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: referencesNothing
+      # Marks whose reference resolves to no view at all, so there was nothing
+      # to re-point. Given and unusable, never a mark it changed (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

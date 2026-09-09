@@ -43,6 +43,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: skippedTemplates
       # What it passed over. The evidence it looked, never a thing it
@@ -57,6 +58,10 @@ contract:
       role: accounting
       type: int
     - name: matchedButExcluded
+      # Views that matched the name but are templates or non-drawing views -
+      # COUNTED AND REPORTED RATHER THAN SILENTLY DROPPED. Deliberately not in
+      # the answer (D-52).
+      role: accounting
       type: int
 
 proof:

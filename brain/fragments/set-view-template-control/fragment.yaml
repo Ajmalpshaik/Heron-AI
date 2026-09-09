@@ -69,12 +69,22 @@ contract:
       source: request
   provides:
     - name: nowHeld
+      role: result
       type: IList<string>
     - name: nowFree
+      role: result
       type: IList<string>
     - name: notOnTemplate
+      # Settings this template does not carry, so it could not be held or
+      # freed. The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<string>
     - name: viewsFollowing
+      # How many views this template governs, and therefore how many this call
+      # just changed. THIS CHANGES THE TEMPLATE, SO IT CHANGES EVERY VIEW
+      # FOLLOWING IT - THAT IS THE WHOLE HAZARD and it must be read before the
+      # call, not after.
+      role: result
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

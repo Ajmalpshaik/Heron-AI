@@ -44,6 +44,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: ElementId
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -52,6 +53,10 @@ contract:
       role: accounting
       type: string
     - name: missingFields
+      # Field names asked for that the category does not carry. A count of
+      # what it was GIVEN and could not use - `created` is the schedule
+      # (D-52).
+      role: accounting
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

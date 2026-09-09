@@ -59,8 +59,10 @@ contract:
       source: request
   provides:
     - name: marker
+      role: result
       type: Element
     - name: created
+      role: result
       type: IList<Element>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

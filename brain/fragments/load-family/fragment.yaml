@@ -37,6 +37,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: ElementId
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -45,6 +46,7 @@ contract:
       role: accounting
       type: string
     - name: typeNames
+      role: result
       type: IList<string>
 
 proof:
