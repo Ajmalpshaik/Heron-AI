@@ -733,6 +733,18 @@ That precision was arrived at by getting it wrong three times, and all three are
 
 Three heuristics, three times fooled by text *about* the thing rather than the thing.
 
+**It went 12 hits → 4, and the cuts were its own false positives.** It reported a **nested closure**
+(`heron_bridge_client.reader`, handed to `threading.Thread`) and a **class method**
+(`heron_health.worst`) as *"called by NOTHING AT ALL"* — neither is a module's public surface, and a
+method reached through an instance cannot be attributed by name at all. It now looks at module-level
+definitions only. It also counts a **qualified reference** as a use: `SEARCH.remember` handed to
+something else is a use, not a call.
+
+**One of those fixes broke it in the permissive direction and the difference matters.** Counting *every*
+bare name as a use lost `want()` — [`Q-47`](../docs/OPEN-QUESTIONS.md)'s whole subject — to **local
+variables called `want`** in three unrelated modules. A bare name counts only where the file imported
+it. A check that is wrong permissively reports nothing, which is the worse direction.
+
 **An excuse that no longer applies is reported as stale.** A `RECORDED` entry that is no longer a hit
 means something now calls it, and the excuse has outlived its reason — [D-54](../docs/DECISIONS.md)'s
 lesson applied to this tool's own record. Without it, `remember()` would go on being excused for ever

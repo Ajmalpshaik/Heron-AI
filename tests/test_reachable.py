@@ -150,6 +150,44 @@ def main():
               "never an artefact of a file nobody could read")
 
         print()
+        print("6b. A nested closure and a class method are not module surface")
+        print("-" * 66)
+        write(work, "brain/nested.py",
+              "import threading\n"
+              "def outer(handle):\n"
+              "    def reader():\n        return handle.read()\n"
+              "    return threading.Thread(target=reader)\n")
+        write(work, "brain/methods.py",
+              "class Health(object):\n"
+              "    def worst(self):\n        return 1\n")
+        got = names(tool)
+        check("reader" not in got,
+              "a closure handed to threading.Thread is not a module's public "
+              "surface - heron_bridge_client.reader was reported as called by "
+              "NOTHING AT ALL")
+        check("worst" not in got,
+              "and neither is a class method - one reached through an "
+              "instance cannot be attributed by name at all")
+
+        print()
+        print("6c. A reference passed as a VALUE is a use, but only qualified")
+        print("-" * 66)
+        write(work, "brain/passed.py", "def handler(x):\n    return x\n")
+        write(work, "brain/uses.py",
+              "import passed\ndef go(t):\n    return t(passed.handler)\n")
+        check("handler" not in names(tool),
+              "`passed.handler` without calling it IS a use - a callback "
+              "handed to something else")
+
+        write(work, "brain/lonely.py", "def wanted(x):\n    return x\n")
+        write(work, "brain/haslocal.py",
+              "def go():\n    wanted = 3\n    return wanted + 1\n")
+        check("wanted" in names(tool),
+              "a LOCAL VARIABLE of the same name is NOT a use - counting "
+              "bare names lost want(), which is Q-47's whole subject, to "
+              "locals called `want` in three other modules")
+
+        print()
         print("7. tests/ and tools/ are searched but never reported")
         print("-" * 66)
         write(work, "tests/helper_only.py", "def only_in_tests():\n    return 1\n")

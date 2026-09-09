@@ -85,14 +85,21 @@ PRODUCTION = ("brain/", "mcp/", "platform/")
 # comment so the report can say WHY it is not a finding, and so an entry that
 # stops being true is one edit rather than a re-read.
 RECORDED = {
-    ("mcp/server/heron_workflow.py", "finish"):
-        "the Workflow Engine - HANDOVER.md: nothing calls it yet, and that is "
-        "deliberate. Its customer is Phase 2's 18-stage pipeline",
-    ("mcp/server/heron_workflow.py", "rollback"): "same - the Workflow Engine",
-    ("mcp/server/heron_workflow.py", "done_stages"): "same - the Workflow Engine",
+    # The Workflow Engine's finish/rollback/done_stages were listed here until
+    # 2026-09-09 and are gone: they are METHODS on the Workflow class, and this
+    # tool no longer reports a method at all - one reached through an instance
+    # cannot be attributed by name. HANDOVER.md still records that nothing
+    # calls that engine yet and that it is deliberate; the tool simply has
+    # nothing to say about it. Removed after its own stale-record check named
+    # all three, one day after that check was written.
     ("brain/heron_fragment.py", "can_promote"):
         "DECISIONS.md already says it: 'that gate existed and nothing stood "
         "on it'",
+    ("brain/heron_fragment.py", "provide_role"):
+        "calling it was the BUG. FRAGMENT-ISSUES item 7 and the comment in "
+        "heron_validate.py: it answers 'result' for an entry with no role, so "
+        "every declared name looked explicitly declared and D-51/D-52's "
+        "patterns never ran - 102 names across 134 fragments misjudged",
     ("brain/heron_search.py", "remember"):
         "Q-43 - what may be written into the utterance cache is an open "
         "question, not an oversight",
@@ -115,9 +122,10 @@ def python_files():
 
 
 def survey():
-    """(definitions, calls, dispatched, decorated, unreadable)."""
+    """(definitions, calls, referenced, dispatched, decorated, unreadable)."""
     definitions = {}
     calls = collections.defaultdict(set)
+    referenced = collections.defaultdict(set)
     dispatched = collections.defaultdict(set)
     decorated = set()
     unreadable = []
@@ -132,12 +140,31 @@ def survey():
             unreadable.append(rel)
             continue
 
-        for node in ast.walk(tree):
+        # MODULE LEVEL ONLY. `ast.walk` also finds nested closures and class
+        # METHODS, and neither is a module's public surface:
+        #
+        #   heron_bridge_client.reader   a closure handed to threading.Thread
+        #   heron_health.worst           a method, called through an instance
+        #
+        # Both were reported as "called by NOTHING AT ALL". A method reached
+        # through an instance cannot be attributed by name at all, and a
+        # closure belongs to the function that defines it.
+        for node in tree.body:
             if isinstance(node, ast.FunctionDef):
                 definitions[(rel, node.name)] = node
                 if node.decorator_list:
                     decorated.add(node.name)
-            elif isinstance(node, ast.Call):
+
+        # Names this file imported BY NAME. Only those may match a bare Name -
+        # see referenced() below.
+        imported = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                for alias in node.names:
+                    imported.add(alias.asname or alias.name)
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
                 fn = node.func
                 name = (fn.attr if isinstance(fn, ast.Attribute)
                         else fn.id if isinstance(fn, ast.Name) else None)
@@ -147,6 +174,19 @@ def survey():
                         and isinstance(node.args[-1], ast.Constant)
                         and isinstance(node.args[-1].value, str)):
                     dispatched[node.args[-1].value].add(rel)
+            elif isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Load):
+                # `SEARCH.remember` without calling it - handed to a thread,
+                # stored in a table, passed as a callback. A use, not a call.
+                referenced[node.attr].add(rel)
+            elif (isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
+                  and node.id in imported):
+                # A BARE name counts ONLY where the file imported it. Counting
+                # every bare name lost `want()` - Q-47's whole subject - to
+                # LOCAL VARIABLES called `want` in heron_fragment, heron_embed
+                # and check-fragments-compile, and `worst` to locals in
+                # heron_gaps and the MCP server. A permissive check that
+                # reports nothing is the worse direction to be wrong in.
+                referenced[node.id].add(rel)
             elif isinstance(node, ast.Dict):
                 for key, value in zip(node.keys, node.values):
                     if (isinstance(key, ast.Constant)
@@ -154,18 +194,19 @@ def survey():
                             and isinstance(value, ast.Name)):
                         dispatched[key.value].add(rel)
 
-    return definitions, calls, dispatched, decorated, unreadable
+    return definitions, calls, referenced, dispatched, decorated, unreadable
 
 
 def hits():
-    definitions, calls, dispatched, decorated, unreadable = survey()
+    definitions, calls, referenced, dispatched, decorated, unreadable = survey()
     found = []
     for (rel, name) in sorted(definitions):
         if not rel.startswith(PRODUCTION):
             continue
         if name.startswith("_") or name == "main" or name in decorated:
             continue
-        callers = calls.get(name, set())
+        # A CALL or a qualified REFERENCE both count as being used.
+        callers = calls.get(name, set()) | referenced.get(name, set())
         if rel in callers:
             continue
         if any(c.startswith(PRODUCTION) for c in callers):
@@ -220,9 +261,13 @@ def main(argv):
     if stale:
         print("THE RECORD IS OUT OF DATE  (%d)" % len(stale))
         print("-" * 70)
-        print("  These are excused below and are NO LONGER unreached - something")
-        print("  now calls them. Remove them from RECORDED, or the excuse goes")
-        print("  on standing after the reason for it has gone (D-54).")
+        print("  These are excused below and are NO LONGER reported as hits.")
+        print("  Either something now uses them, or this check stopped")
+        print("  classifying them as hits at all - the second is what happened")
+        print("  to three Workflow Engine METHODS the day the definition rule")
+        print("  narrowed to module level. Remove them from RECORDED either")
+        print("  way, or the excuse goes on standing after its reason has")
+        print("  gone (D-54).")
         for rel, name in stale:
             print("  %-34s %s" % (rel, name))
         print("")
