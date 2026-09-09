@@ -660,16 +660,31 @@ the wrong measure gets a number, not a question.
 Every fragment already has a `refused` output, and 117 of them now declare it as accounting. The
 machinery is there; the discipline is not.
 
-### 2. Finish declaring the roles
+### 2. Finish declaring the roles — **DONE 2026-09-09, and it was bigger than this**
 
-**40 provides across 39 fragments** still do not say whether they are an ANSWER or BOOKKEEPING, so both
-the judge and the batch runner have to guess — and on 2026-09-09 the runner guessed wrong twice and came
-within one step of banking a proof for a fragment that had done nothing (`remove-parameter-value`,
-`set-mep-slope`).
+This asked for 40. **The library held 989**, and the section could not see the other 949 because it was
+counting by name shape.
 
-`already*` was done today across 21 fragments. `both*`, `without*`, `outside*` and the rest remain, and
-each needs a decision rather than a pattern — `bothIn`/`bothOut` on `check-flow-direction` match the
-shape and ARE the answer.
+| Tranche | What it was | Count |
+|---|---|---|
+| bookkeeping-shaped, the patterns MISS them → guessed `result` | what this item counted | 40 |
+| the patterns CATCH them → guessed `accounting` | invisible to this item | 150 |
+| match no pattern at all → defaulted to `result` | invisible to this item | 799 |
+
+**All 1,201 provides now declare a role**, read off what each fragment is FOR rather than what its
+output is called. The reading disagreed with the naming patterns **166 times, in both directions** —
+`select-unenclosed-rooms` declares `unplaced` and `unenclosed`, the two faults it exists to find, and
+`REJECT_NAMES` swallowed both; `set-mep-slope.inGroup` and `flip-elements.cannotFlip` are bookkeeping no
+pattern could see, and a non-zero one of those banks a proof for a run that changed nothing.
+
+So `REJECT_PREFIX`, `REJECT_NAMES` and `WORK_COUNTER` were **deleted** rather than kept as a fallback
+that is wrong one time in seven, and `check_contract` now REFUSES a provide with no `role` — the
+omission is a validation error somebody fixes instead of a silent default nobody sees. `findings` is the
+one exemption (D-51). **Nothing reads a name any more.**
+
+The original two victims are declared: `remove-parameter-value.alreadyEmpty` and
+`set-mep-slope.bothEndsConnected` are `accounting`, and `bothIn`/`bothOut` on `check-flow-direction` are
+`result` — which is the example this item was written around.
 
 ### 3. Ask the model once, not six times
 
