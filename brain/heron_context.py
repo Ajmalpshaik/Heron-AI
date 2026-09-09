@@ -131,6 +131,44 @@ NEIGHBOUR = "neighbour"      # the closest existing fragment
 TESTS = "tests"              # that fragment's declared cases
 API = "api"                  # the API surface it uses
 
+# ---------------------------------------------------------------------------
+# Depth - how much of a part is carried, as opposed to which parts
+# ---------------------------------------------------------------------------
+#
+# TWO PATTERNS FROM docs/33 s5, ADAPTED RATHER THAN COPIED (D-25).
+#
+# OpenViking (33 s5.4) processes every entry into three tiers on write - an
+# abstract, an overview, and the full body - and loads only as deep as the task
+# needs. Heron's fragment library ALREADY has those three: `semantic-identity`
+# is the abstract, the rest of fragment.yaml is the overview, and the .cs is the
+# body. What was missing was a VOCABULARY: BUDGET names which parts a path may
+# carry and had no way to say how much of one.
+#
+# Headroom (33 s5.14) supplies the rule that makes tiering safe: compress what
+# came BACK, never what was ASKED. That rule was already written here - in a
+# docstring. FULL_ONLY makes it a branch instead, because a rule in code beats a
+# rule in prose (33 s5.1 and s5.8, learned from two projects in opposite
+# directions).
+ABSTRACT = 0                 # one line. What this is, and nothing else
+OVERVIEW = 1                 # the shape: purpose, contract, counts
+FULL = 2                     # the whole body, as read from disk
+
+DEPTH_NAMES = {ABSTRACT: "abstract", OVERVIEW: "overview", FULL: "full"}
+
+# PARTS THAT MAY NEVER BE SHALLOWER THAN FULL.
+#
+# The request is the whole reason for the Headroom row in docs/33 s1: a Revit
+# token - OST_DuctCurves, a shared-parameter GUID - is the load-bearing half of
+# a BIM sentence and is exactly what a shortener takes first. tests/test_context
+# already asserts the request crosses byte for byte; this makes the assertion
+# unnecessary rather than merely true, because the code path that would break it
+# does not exist.
+#
+# SITUATION is here for a different reason and it is not symmetry: it is three
+# short lines that a shorter form could only make ambiguous, and one of them is
+# which Revit release the answer is filtered for.
+FULL_ONLY = (REQUEST, SITUATION)
+
 # docs/19 s2's table, made enforceable. Order is the order a reader gets them.
 BUDGET = {
     CACHED:     (REQUEST, SITUATION, CAPABILITY_PART),
@@ -150,6 +188,17 @@ WHY = {
     GENERATION: "code generation - the above plus the closest fragment, its "
                 "tests, and the API surface it uses",
 }
+
+
+class TooDeep(Exception):
+    """A part was carried deeper than the caller's depth cap allowed.
+
+    Separate from OverBudget on purpose. Over budget means retrieval chose a
+    part this path may not carry at all - a bug in retrieval, per docs/19 s2.
+    Too deep means the right part arrived in a fuller form than was asked for,
+    which is a bug in whoever built the part. Same discipline, different author,
+    and one sentence should not have to describe both.
+    """
 
 
 class OverBudget(Exception):
@@ -179,12 +228,34 @@ class Part(object):
     it. A part that cannot say is a part nobody can check.
     """
 
-    def __init__(self, kind, name, body, source, why):
+    def __init__(self, kind, name, body, source, why,
+                 depth=FULL, cut=None, tierable=False):
         self.kind = kind
         self.name = name
         self.body = body
         self.source = source
         self.why = why
+        # TIERABLE MEANS "A SHALLOWER FORM OF THIS EXISTS", AND MOST PARTS ARE
+        # NOT. The capability part and the excluded list are DERIVED summaries -
+        # a few lines built here from the store, with no fuller version anywhere
+        # to be a reduction of. Calling them `full` and then refusing them under
+        # a cap would be the tool inventing a problem: they are not deep, they
+        # are complete.
+        #
+        # The first version of this got that wrong and refused the capability
+        # part at overview depth. The distinction that fixes it is not "how big
+        # is this" but "is there more of it somewhere" - and only a part read
+        # from a file on disk can answer yes.
+        self.tierable = tierable and kind not in FULL_ONLY
+        self.depth = FULL if kind in FULL_ONLY else depth
+        # WHAT WAS LEFT OUT, AND ONLY WHEN SOMETHING WAS.
+        #
+        # code-review-graph's uncertainty.py (docs/33 s5.6) is the pattern:
+        # a marker attached ONLY to the case that could mislead, so every part
+        # that carries everything stays byte-identical to before. A part
+        # silently reduced is a smaller answer that reads exactly like a
+        # complete one - the plausible zero (D-52) arriving in a new place.
+        self.cut = cut if self.depth != FULL else None
 
     @property
     def size(self):
@@ -192,16 +263,18 @@ class Part(object):
         return len(self.body if isinstance(self.body, str) else repr(self.body))
 
     def __repr__(self):
-        return "<Part %s %s %dch>" % (self.kind, self.name, self.size)
+        return "<Part %s %s %s %dch>" % (self.kind, self.name,
+                                         DEPTH_NAMES[self.depth], self.size)
 
 
 class Context(object):
     """What one agent is given for one request, and nothing else."""
 
-    def __init__(self, request, path, assumed_path):
+    def __init__(self, request, path, assumed_path, depth=FULL):
         self.request = request
         self.path = path
         self.assumed_path = assumed_path
+        self.depth = depth
         self.parts = []
         self.refused = []
 
@@ -213,8 +286,28 @@ class Context(object):
                 "only %s. docs/19 s2: exceeding the budget is a bug in "
                 "retrieval, not a reason to raise the budget."
                 % (part.kind, self.path, ", ".join(BUDGET[self.path])))
+        # The depth cap never applies to a part that may not be shortened.
+        # Otherwise a caller asking for an abstract packet would be refused the
+        # request itself, which is the one thing every path must carry.
+        if part.tierable and part.depth > self.depth:
+            raise TooDeep(
+                "the '%s' part arrived at %s and this packet is capped at %s. "
+                "Build it shallower rather than raising the cap: the cap is "
+                "what the caller asked to be spared."
+                % (part.kind, DEPTH_NAMES[part.depth], DEPTH_NAMES[self.depth]))
         self.parts.append(part)
         return part
+
+    @property
+    def reduced(self):
+        """Every part that is carrying less than all of itself, and what it lost.
+
+        Empty when nothing was cut, which is the point (docs/33 s5.6): a packet
+        that carries everything says nothing extra, and a packet that does not
+        says so once.
+        """
+        return [(p.kind, p.name, DEPTH_NAMES[p.depth], p.cut)
+                for p in self.parts if p.tierable and p.depth != FULL]
 
     def note_refused(self, kind, reason):
         """Something the budget allows but this request did not need or have."""
@@ -361,7 +454,8 @@ def _indexed(store):
         raise
 
 
-def assemble(store, request, path=None, revit=None, project=None, scope=None):
+def assemble(store, request, path=None, revit=None, project=None, scope=None,
+             depth=FULL):
     """Build the packet for one request.
 
     `path` is the caller's - D-01. Passing None derives only the structural
@@ -401,7 +495,7 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None):
             "'%s' is not a path. docs/19 s2 defines %s."
             % (path, ", ".join(sorted(BUDGET))))
 
-    ctx = Context(request, path, assumed)
+    ctx = Context(request, path, assumed, depth=depth)
 
     # 1. What the user said. Verbatim, first, and never touched.
     ctx.add(Part(REQUEST, "the request", request, "the caller",
@@ -562,6 +656,131 @@ def _api_surface():
     return "\n".join(found), FRAG.repo_relative(IMPORTS)
 
 
+def _at_depth(whole, depth, tiers):
+    """(body, what was cut) for one part at one depth.
+
+    `tiers` returns the abstract and the overview for this kind of text. It is
+    passed in rather than branched on here, because a part's shape is knowledge
+    about that part - a fragment yaml, a cases file, an import list - and a
+    single function that knew all three would have to be edited every time a
+    part kind is added.
+
+    THE CUT SENTENCE IS BUILT HERE AND NOWHERE ELSE, so it cannot be forgotten
+    at one call site and present at the other two. docs/33 s5.6: the marker goes
+    on the case that could mislead, and on no other.
+    """
+    if depth >= FULL:
+        return whole, None
+    abstract, overview = tiers(whole)
+    body = abstract if depth <= ABSTRACT else (overview or abstract)
+    if body is None:
+        # Nothing shallower could be derived, so the whole thing is carried
+        # rather than an empty part - and it is NOT marked as cut, because
+        # nothing was.
+        return whole, None
+    kept, lost = len(body), len(whole) - len(body)
+    return body, ("%d of %d characters, %d not carried" % (kept, len(whole), lost))
+
+
+def _yaml_tiers(text):
+    """(abstract, overview) for a fragment.yaml.
+
+    The abstract is `semantic-identity`, which is what OpenViking would call L0
+    and what this library has called it since Step 7 - one sentence saying what
+    the fragment is for, and the exact text the identity route matches on.
+
+    The overview keeps the contract - `purpose`, `needs`, `provides`, `risk`,
+    `capability` - and drops the rest. Those are the fields somebody writing a
+    NEIGHBOURING fragment actually reads; the metadata header and the version
+    list are about this fragment's own history.
+    """
+    ident = re.search(r'^semantic-identity:\s*"?(.+?)"?\s*$', text, re.M)
+    abstract = ("semantic-identity: %s" % ident.group(1)) if ident else None
+
+    keep = ("id:", "capability:", "kind:", "domain:", "risk:",
+            "semantic-identity:", "purpose:", "contract:")
+    lines, keeping = [], False
+    for line in text.split("\n"):
+        if line[:1] not in (" ", "\t", "-", ""):
+            keeping = line.startswith(keep)
+        if keeping:
+            lines.append(line)
+    overview = "\n".join(lines).strip() or None
+    return abstract, overview
+
+
+def _cases_tiers(text):
+    """(abstract, overview) for a tests/cases.yaml.
+
+    THE ABSTRACT IS THE POSITIVE AND NEGATIVE COUNTS, NOT A TOTAL, and that is
+    a Heron-shaped choice rather than a generic one. D-30 makes the negative
+    case the load-bearing half of a proof - "the case that catches 'succeeded
+    and did nothing'" - so "3 positive, 0 negative" and "2 positive, 1 negative"
+    describe two completely different kinds of neighbour, and a single total
+    would hide exactly the difference worth knowing.
+
+    A neighbour with no negative case is SAID so, in the abstract, because
+    writing a new fragment modelled on one is how a missing negative case
+    spreads.
+
+    The overview keeps each case's `given:` line and drops its expectation.
+
+    THE FIRST VERSION MATCHED `- name:`, WHICH THIS LIBRARY DOES NOT USE. It
+    returned nothing for all 360 files, and _at_depth's fallback carried the
+    whole body - correctly, and silently. Caught by reading the measurement:
+    the tests part was the one part whose size did not move between depths.
+    """
+    groups, current = {"positive": [], "negative": []}, None
+    for line in text.split("\n"):
+        head = re.match(r'^(positive|negative)\s*:', line)
+        if head:
+            current = head.group(1)
+            continue
+        given = re.match(r'^\s*-\s*given:\s*(.+?)\s*$', line)
+        if given and current:
+            groups[current].append(given.group(1))
+    pos, neg = len(groups["positive"]), len(groups["negative"])
+    if not pos and not neg:
+        return None, None
+
+    abstract = "%d positive, %d negative case(s)" % (pos, neg)
+    if not neg:
+        abstract += " - NO NEGATIVE CASE, so D-30 is not satisfied by this one"
+
+    lines = [abstract]
+    for name in ("positive", "negative"):
+        for given in groups[name]:
+            lines.append("  %s: %s" % (name, given))
+    return abstract, "\n".join(lines)
+
+
+def _surface_tiers(text):
+    """(abstract, overview) for the executor's import list.
+
+    The abstract is the count. The overview is the namespace ROOTS - the first
+    dotted segment of each - which answers *what kind of thing is already in
+    scope* without listing every one. The roots are computed from the file, so
+    no vendor namespace is written down here.
+
+    AND THAT IS NOT A STYLE CHOICE. check-structure.py refuses the Revit
+    vendor namespace anywhere outside revit/, because a list of vendor names is
+    Revit knowledge wherever it is stored. The first version of this docstring
+    tried to EXPLAIN that rule, quoted the very string the rule forbids, and
+    failed the gate on its next run - a comment asserting the file did not
+    contain something, which contained it. docs/32 s8 already records that
+    class twice: a tool matching its own docstring, and a string literal that
+    made its own subject invisible. This is the third, and the gate found it in
+    under a minute.
+    """
+    names = [n for n in text.split("\n") if n.strip()]
+    if not names:
+        return None, None
+    roots = sorted(set(n.split(".")[0] for n in names))
+    return ("%d namespace(s) already in scope" % len(names),
+            "%d namespace(s) already in scope, rooted at: %s"
+            % (len(names), ", ".join(roots)))
+
+
 def _generation_parts(ctx, store, fragment_id, revit):
     """The closest fragment, its declared cases, and the API surface it uses.
 
@@ -586,26 +805,34 @@ def _generation_parts(ctx, store, fragment_id, revit):
     yaml_path = os.path.join(folder, "fragment.yaml")
     if os.path.exists(yaml_path):
         with open(yaml_path, encoding="utf-8") as fh:
-            ctx.add(Part(NEIGHBOUR, fragment_id, fh.read(),
-                         FRAG.repo_relative(yaml_path),
-                         "the closest existing fragment - what to write like"))
+            whole = fh.read()
+        body, cut = _at_depth(whole, ctx.depth, _yaml_tiers)
+        ctx.add(Part(NEIGHBOUR, fragment_id, body,
+                     FRAG.repo_relative(yaml_path),
+                     "the closest existing fragment - what to write like",
+                     depth=ctx.depth, cut=cut, tierable=True))
     else:
         ctx.note_refused(NEIGHBOUR, "%s has no fragment.yaml" % fragment_id)
 
     cases = os.path.join(folder, "tests", "cases.yaml")
     if os.path.exists(cases):
         with open(cases, encoding="utf-8") as fh:
-            ctx.add(Part(TESTS, "%s cases" % fragment_id, fh.read(),
-                         FRAG.repo_relative(cases),
-                         "what the neighbour is checked against"))
+            whole = fh.read()
+        body, cut = _at_depth(whole, ctx.depth, _cases_tiers)
+        ctx.add(Part(TESTS, "%s cases" % fragment_id, body,
+                     FRAG.repo_relative(cases),
+                     "what the neighbour is checked against",
+                     depth=ctx.depth, cut=cut, tierable=True))
     else:
         ctx.note_refused(TESTS, "%s declares no cases.yaml" % fragment_id)
 
     surface, where = _api_surface()
     if surface:
-        ctx.add(Part(API, "what is already in scope", surface, where,
+        body, cut = _at_depth(surface, ctx.depth, _surface_tiers)
+        ctx.add(Part(API, "what is already in scope", body, where,
                      "a fragment body is NOT STANDALONE - the executor supplies "
-                     "these, so generated code must NOT re-import them"))
+                     "these, so generated code must NOT re-import them",
+                     depth=ctx.depth, cut=cut, tierable=True))
     else:
         ctx.note_refused(API, "the executor's import list could not be read "
                               "from %s" % where)
@@ -628,15 +855,35 @@ def report(ctx, out=None, full=False):
     write("budget    %s\n" % ", ".join(BUDGET[ctx.path]))
     write("carried   %s\n" % (", ".join(ctx.kinds()) or "nothing"))
     write("size      %d characters, %d part(s)\n" % (ctx.size, len(ctx.parts)))
+    if ctx.depth != FULL:
+        write("depth     %s - parts that have a shallower form are carrying it\n"
+              % DEPTH_NAMES[ctx.depth])
     write("\n")
 
     for part in ctx.parts:
-        write("-- %s: %s  (%d ch)\n" % (part.kind, part.name, part.size))
+        write("-- %s: %s  (%d ch%s)\n"
+              % (part.kind, part.name, part.size,
+                 ", %s" % DEPTH_NAMES[part.depth]
+                 if part.tierable and part.depth != FULL else ""))
         write("   from   %s\n" % part.source)
         write("   why    %s\n" % part.why)
+        if part.cut:
+            # ONLY WHEN SOMETHING WAS CUT. docs/33 s5.6: a packet carrying
+            # everything stays byte-identical to one written before depth
+            # existed, so the marker means something when it appears.
+            write("   CUT    %s\n" % part.cut)
         if full:
             for line in str(part.body).splitlines():
                 write("   | %s\n" % line)
+        write("\n")
+
+    if ctx.reduced:
+        write("CARRYING LESS THAN ALL OF ITSELF\n")
+        write("-" * 70 + "\n")
+        for kind, name, depth, cut in ctx.reduced:
+            write("  %-12s %s - %s\n" % (kind, depth, cut or "nothing was cut"))
+        write("  The request is never in this list. It crosses byte for byte,\n")
+        write("  because OST_DuctCurves is what a shortener takes first.\n")
         write("\n")
 
     if ctx.refused:
@@ -657,14 +904,25 @@ def main(argv):
         print()
         print('  python brain/heron_context.py "select all ducts" --revit 2024')
         print("  --path cached|simple|standards|generation   --full")
+        print("  --depth abstract|overview|full              "
+              "how much of each part to carry")
         return 2
 
     revit = path = None
     full = "--full" in argv
+    depth = FULL
     if "--revit" in argv:
         revit = argv[argv.index("--revit") + 1]
     if "--path" in argv:
         path = argv[argv.index("--path") + 1]
+    if "--depth" in argv:
+        wanted = argv[argv.index("--depth") + 1]
+        by_name = dict((v, k) for k, v in DEPTH_NAMES.items())
+        if wanted not in by_name:
+            print("'%s' is not a depth. There are three: %s."
+                  % (wanted, ", ".join(sorted(by_name))))
+            return 2
+        depth = by_name[wanted]
 
     words = []
     skip = False
@@ -672,7 +930,7 @@ def main(argv):
         if skip:
             skip = False
             continue
-        if token in ("--revit", "--path"):
+        if token in ("--revit", "--path", "--depth"):
             skip = True
             continue
         if token == "--full":
@@ -684,7 +942,8 @@ def main(argv):
     try:
         SEARCH.index(store)
         try:
-            ctx = assemble(store, request, path=path, revit=revit)
+            ctx = assemble(store, request, path=path, revit=revit,
+                           depth=depth)
         except (SourceMissing, OverBudget) as why:
             print("REFUSED - %s" % why)
             return 1

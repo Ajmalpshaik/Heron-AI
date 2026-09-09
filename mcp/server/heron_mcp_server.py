@@ -877,7 +877,8 @@ def heron_lookup(request: str) -> str:
 
 
 @server.tool()
-def heron_context(request: str, path: str = "", full: bool = False) -> str:
+def heron_context(request: str, path: str = "", full: bool = False,
+                  depth: str = "") -> str:
     """
     Show what an agent would be given for a request - and what it may not carry.
 
@@ -885,12 +886,17 @@ def heron_context(request: str, path: str = "", full: bool = False) -> str:
     the job needs. `path` is yours to set: cached, simple, standards or
     generation (docs/19). Leave it empty and Heron derives only the structural
     case and says it assumed the rest - it does not guess what you meant.
-    Pass full=True to see each part's body. Touches nothing in the model.
+    Pass full=True to see each part's body. `depth` is yours too: abstract,
+    overview, or left empty for the whole of every part. A shallower depth
+    shortens only what was RETRIEVED - the request itself always crosses
+    verbatim, and any part carrying less says by how much. Touches nothing in
+    the model.
     """
     revit, how = _revit_version()
 
     try:
-        got = brain.context(request, path=path or None, revit=revit, full=full)
+        got = brain.context(request, path=path or None, revit=revit, full=full,
+                            depth=depth or None)
     except brain.BrainUnavailable as why:
         return str(why)
     except ValueError as why:

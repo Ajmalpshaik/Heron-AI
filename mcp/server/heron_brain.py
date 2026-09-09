@@ -384,7 +384,7 @@ def _context_module():
     return CONTEXT
 
 
-def context(request, path=None, revit=None, full=False):
+def context(request, path=None, revit=None, full=False, depth=None):
     """
     What one agent would be given for one request, and nothing else.
 
@@ -408,10 +408,27 @@ def context(request, path=None, revit=None, full=False):
     from a conversation is not what "built" was meant to mean.
     """
     CONTEXT = _context_module()
+
+    # DEPTH IS THE HOST'S TOO, for the same reason `path` is (D-01). How much
+    # of a neighbour a host needs depends on what it is about to do with it,
+    # and that is a judgement about the task - which is the host's half of the
+    # boundary. Passing nothing means full, so a caller written before depth
+    # existed gets byte-identical packets.
+    wanted = CONTEXT.FULL
+    if depth:
+        by_name = dict((v, k) for k, v in CONTEXT.DEPTH_NAMES.items())
+        if depth not in by_name:
+            raise ValueError(
+                "'%s' is not a depth. There are three: %s. Leave it out for "
+                "the whole of every part." % (depth, ", ".join(sorted(by_name))))
+        wanted = by_name[depth]
+
     with _Open() as store:
         try:
-            ctx = CONTEXT.assemble(store, request, path=path, revit=revit)
-        except (CONTEXT.OverBudget, CONTEXT.SourceMissing) as why:
+            ctx = CONTEXT.assemble(store, request, path=path, revit=revit,
+                                   depth=wanted)
+        except (CONTEXT.OverBudget, CONTEXT.TooDeep,
+                CONTEXT.SourceMissing) as why:
             raise ContextRefused(str(why))
         return {
             "request": ctx.request,
@@ -421,8 +438,13 @@ def context(request, path=None, revit=None, full=False):
             "budget": list(CONTEXT.BUDGET[ctx.path]),
             "carried": ctx.kinds(),
             "size": ctx.size,
+            "depth": CONTEXT.DEPTH_NAMES[ctx.depth],
             "parts": [{"kind": p.kind, "name": p.name, "source": p.source,
                        "why": p.why, "size": p.size,
+                       "depth": CONTEXT.DEPTH_NAMES[p.depth],
+                       # Present only when something was actually left out.
+                       # A part carrying all of itself says nothing extra.
+                       "cut": p.cut,
                        "body": p.body if full else None}
                       for p in ctx.parts],
             "not_carried": [{"kind": k, "reason": r} for k, r in ctx.refused],

@@ -294,6 +294,99 @@ def main():
             check(raised, "'whatever' is not a path and raises ValueError")
 
             print()
+            print("7a. DEPTH shortens what was retrieved and never the request")
+            print("-" * 62)
+            # docs/33 s5.4 (OpenViking's L0/L1/L2) adapted, with docs/33 s5.14
+            # (Headroom) supplying the rule that makes it safe: compress what
+            # came BACK, never what was ASKED. That rule used to live in a
+            # docstring; FULL_ONLY makes it a branch.
+            sizes, requests = {}, {}
+            for level in (CONTEXT.FULL, CONTEXT.OVERVIEW, CONTEXT.ABSTRACT):
+                got = CONTEXT.assemble(store, "select all ducts",
+                                       path=CONTEXT.GENERATION, revit="2024",
+                                       depth=level)
+                sizes[level] = got.size
+                said = [p for p in got.parts if p.kind == CONTEXT.REQUEST]
+                requests[level] = said[0].body if said else None
+            check(sizes[CONTEXT.ABSTRACT] < sizes[CONTEXT.OVERVIEW]
+                  < sizes[CONTEXT.FULL],
+                  "each depth carries strictly less: %d < %d < %d characters"
+                  % (sizes[CONTEXT.ABSTRACT], sizes[CONTEXT.OVERVIEW],
+                     sizes[CONTEXT.FULL]))
+            check(len(set(requests.values())) == 1
+                  and requests[CONTEXT.ABSTRACT] == "select all ducts",
+                  "THE REQUEST IS BYTE FOR BYTE IDENTICAL AT EVERY DEPTH - it "
+                  "is what a shortener would take first, and it is the one "
+                  "thing that may never be shortened")
+
+            deep = CONTEXT.assemble(store, "select all ducts",
+                                    path=CONTEXT.GENERATION, revit="2024")
+            check(deep.reduced == [],
+                  "a full packet reports NOTHING as reduced, so the marker "
+                  "means something when it appears (docs/33 s5.6)")
+            shallow = CONTEXT.assemble(store, "select all ducts",
+                                       path=CONTEXT.GENERATION, revit="2024",
+                                       depth=CONTEXT.ABSTRACT)
+            check(len(shallow.reduced) >= 2,
+                  "a shortened packet names every part that lost something "
+                  "(%d of them)" % len(shallow.reduced))
+            check(all(cut for _k, _n, _d, cut in shallow.reduced),
+                  "and each says HOW MUCH it lost, not merely that it did")
+            check(not any(k == CONTEXT.REQUEST
+                          for k, _n, _d, _c in shallow.reduced),
+                  "the request is never in that list")
+
+            print()
+            print("7a2. A part with no shallower form is complete, not deep")
+            print("-" * 62)
+            # The capability part is DERIVED here from the store - a few lines
+            # with no fuller version anywhere to be a reduction of. The first
+            # version of the depth cap refused it, which was the cap inventing
+            # a problem. `tierable` is the distinction: not "how big is this"
+            # but "is there more of it somewhere".
+            caps = [p for p in shallow.parts
+                    if p.kind == CONTEXT.CAPABILITY_PART]
+            check(len(caps) == 1 and not caps[0].tierable,
+                  "the capability part crosses an abstract packet untouched, "
+                  "because it is complete rather than deep")
+            raised = None
+            try:
+                bad = CONTEXT.Context("x", CONTEXT.GENERATION, False,
+                                      depth=CONTEXT.ABSTRACT)
+                bad.add(CONTEXT.Part(CONTEXT.NEIGHBOUR, "n", "body", "s", "w",
+                                     depth=CONTEXT.FULL, tierable=True))
+            except CONTEXT.TooDeep as why:
+                raised = str(why)
+            check(raised is not None,
+                  "but a TIERABLE part built deeper than the cap RAISES, so a "
+                  "call site that forgets to pass the depth is found")
+            check(raised and "raising the cap" in raised,
+                  "and it says to build it shallower rather than raise the cap")
+
+            print()
+            print("7a3. The cases abstract counts POSITIVE and NEGATIVE apart")
+            print("-" * 62)
+            # D-30 makes the negative case the load-bearing half of a proof, so
+            # a single total would hide the one difference worth knowing. The
+            # first version matched `- name:`, which this library does not use,
+            # and returned nothing for all 360 files.
+            import glob as _glob
+            files = _glob.glob(os.path.join(CONTEXT.ROOT, "brain", "fragments",
+                                            "*", "tests", "cases.yaml"))
+            undecipherable = [f for f in files
+                              if CONTEXT._cases_tiers(
+                                  io.open(f, encoding="utf-8").read())[0] is None]
+            check(files and not undecipherable,
+                  "every one of the %d cases.yaml files yields an abstract "
+                  "(%d did not)" % (len(files), len(undecipherable)))
+            sample = CONTEXT._cases_tiers(io.open(
+                os.path.join(CONTEXT.ROOT, "brain", "fragments",
+                             "filter-elements-by-category", "tests",
+                             "cases.yaml"), encoding="utf-8").read())[0]
+            check(sample and "positive" in sample and "negative" in sample,
+                  "and it names both counts: %r" % sample)
+
+            print()
             print("7b. An UNINDEXED store is named as the cause, not the wording")
             print("-" * 62)
             # THE REFUSAL USED TO LIE, and this is the one case where nothing
