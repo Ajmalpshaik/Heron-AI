@@ -77,7 +77,7 @@ python tools/agent-count.py
 | Incoming § | What it asks for | Heron already has | Verdict |
 |---|---|---|---|
 | **6.1** Context Engine | task-aware retrieval, ranking, dedup, version awareness, traceability | [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) — structured filter first, then keywords + vectors over the survivors, fused by reciprocal rank, and it reports what was excluded and why | **Built** |
-| **6.1** …token budgeting, compression | — | **[19 — Context & Cost](19-context-and-cost.md) specifies seven pieces and there is no Context Manager, no budget, no compression, no model router, no fallback and no token or cost accounting.** `grep -rl "ContextManager\|context_manager\|heron_context"` over the whole repository returns nothing. Two of the seven are partly covered by accident of other work — `heron_search` has a `cache` route, and `heron_gaps` reports Revit-side latency (§4.2) | **GAP — the largest real one** |
+| **6.1** …token budgeting, compression | [`brain/heron_context.py`](../brain/heron_context.py) — **built the same day this row was written**, and served as the `heron_context` MCP tool | **At audit time this read:** *"[19](19-context-and-cost.md) specifies seven pieces and there is no Context Manager, no budget, no compression, no model router, no fallback and no token or cost accounting. `grep -rl "heron_context"` over the whole repository returns nothing."* **That grep now returns eight files.** Three of the seven pieces are now real — the Context Manager, its per-path parts budget, and the traceability [19 §1](19-context-and-cost.md) asks for. **Four remain absent on purpose:** compression ([§4.1](#41--the-context-manager--specified-then-built-the-same-day)), and the router, fallback and cost accounting, which [D-58](DECISIONS.md) placed in the **host** | **GAP, CLOSED IN PART** — see [§4.1](#41--the-context-manager--specified-then-built-the-same-day) |
 | **6.2** Repository code graph (project→file→class→method→calls) | Roslyn-grade code intelligence over the Heron source | [`brain/heron_graph.py`](../brain/heron_graph.py) is a **fragment and capability** graph, not a source-code graph. Different object entirely | **Rejected for now — §5** |
 | **6.3** Memory Engine, categories, no full-history storage | [`brain/heron_scope.py`](../brain/heron_scope.py) — one store per scope as one file each, [Golden Rule 5](14-golden-rules.md) made physical; a cross-scope query is impossible to *write*, not merely absent. [10](10-memory-and-knowledge.md), [20](20-knowledge-trust-and-conflict.md) | **Built, and stricter** |
 | **6.4** Revit Knowledge Engine, version awareness | 360 fragments, [`brain/heron_matrix.py`](../brain/heron_matrix.py) (`CLAIMED` / `COMPILES` / … never merged), [16 — Version Support](16-version-support-strategy.md), the compile gate over 2020–2027 | **Built, and stricter** |
@@ -141,15 +141,23 @@ one, and an agent able to stamp 218 fragments is the fastest machine ever built 
 
 Each is put through the incoming document's own §22 decision standard before it is called work.
 
-### 4.1 🔴 The Context Manager — specified in [19](19-context-and-cost.md), never built
+### 4.1 ✅ The Context Manager — specified, then built the same day
 
 **What problem it solves.** Every retrieval today returns what it returns. Nothing budgets tokens,
 nothing compresses, nothing caches a resolved wording, nothing records what a request cost.
 
-**Does Heron already solve it?** No. Seven sections of [19](19-context-and-cost.md) — Context Manager,
-Compression, Model Router, Fallback, Cost Optimisation, Caching, Observability — have **no
-implementation of any kind**. This is the largest specified-but-absent area in the repository, and
-until now nothing said so in one place.
+**Does Heron already solve it?** It did not, and this was the largest specified-but-absent area in the
+repository. Seven sections of [19](19-context-and-cost.md) — Context Manager, Compression, Model Router,
+Fallback, Cost Optimisation, Caching, Observability — had **no implementation of any kind**, and until
+this audit nothing said so in one place.
+
+**It does now, in part**, and the rest of this section is kept as it was written because a design
+recorded before it was built is worth more than one written afterwards.
+[`brain/heron_context.py`](../brain/heron_context.py) implements the Context Manager and the parts
+budget; the `heron_context` MCP tool serves it. **Four of the seven are still absent, three of them on
+purpose:** the model router, the fallback and cost accounting belong to the host
+([D-58](DECISIONS.md)), and compression is deliberately unbuilt until
+[19 §2](19-context-and-cost.md)'s budgets are agreed — for the reason in the paragraph below.
 
 **Simplest Heron-native design.** Not a framework. `heron_search.py` already has a `cache` route and
 `heron_retrieve.py` already reports what it excluded — the missing piece is a budget the retriever is
@@ -255,7 +263,7 @@ Optimisation and Caching sections. Caching is now [`Q-43`](OPEN-QUESTIONS.md) ra
 the table exists and nothing writes it. The router and fallback belong with the host that makes the
 calls, on [D-58](DECISIONS.md)'s reasoning, and that should be settled before either is built here.
 
-### 4.2 🔴 A baseline for the brain — the Revit side already has one
+### 4.2 ✅ A baseline for the brain — the Revit side already had one
 
 > *"Without a baseline, improvement cannot be proven."*
 
@@ -313,12 +321,13 @@ for the impossible is worse than a row asking for nothing, and quietly claiming 
 a real Claude Code tool call sat on it for **thirty minutes** — found with `faulthandler`, not by
 reasoning ([D-49](DECISIONS.md)). It was in the retrieval stack: the unmeasured half.
 
-### 4.3 🟠 The Revit Validation Gate as a checklist an agent runs
+### 4.3 ✅ The Revit Validation Gate as a checklist an agent runs
 
 The fourteen questions in incoming §14 are already Heron's rules — but they are spread across
 [03](03-heron-revit.md), the [fragment-proving skill](../.claude/skills/fragment-proving/SKILL.md),
 [D-51](DECISIONS.md), [D-53](DECISIONS.md) and [`FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md). **Nothing
-runs them as a list.** The five mistakes the proving skill names as *nearly every failed proof* are
+ran them as a list** — [`tools/check-revit-gate.py`](../tools/check-revit-gate.py) now does, and its
+findings became `Q-46` and `Q-48`. The five mistakes the proving skill names as *nearly every failed proof* are
 five of those fourteen questions, which is evidence the checklist form would pay.
 
 **Verdict: ADAPTED, and BUILT** — [`tools/check-revit-gate.py`](../tools/check-revit-gate.py),
@@ -394,13 +403,13 @@ never updated — so the top-level file, the one a new reader opens first, has b
 rules *proposals*. **That is the actual finding here**, and it is fixed in the same commit as this
 entry.
 
-### 4.5 🟡 The external repository research matrix — incoming §10 and §11
+### 4.5 ✅ The external repository research matrix — incoming §10 and §11
 
 Fifteen repositories, of which the document itself says five need their exact repository identified
 first. [26 — Prior Art](26-prior-art-revit-mcp.md) is the only research of this kind here, and it
 covers Revit MCP servers only.
 
-**This is legitimate and unstarted work.** It is ranked last deliberately: nine of the modules those
+**This was legitimate and unstarted work, and it is now done twice** — [33](33-external-repository-research.md) is the matrix, first from fifteen project pages and then from **cloning and reading every one of them**, which disagreed with the page-level reading in ten of the fifteen entries ([33 §4a](33-external-repository-research.md)). It was ranked last deliberately: nine of the modules those
 repositories would be studied *for* already exist here (§2), so the matrix's realistic yield is
 narrower than the list implies — and [D-25](DECISIONS.md) plus
 [31 — Studying The Existing Libraries](31-studying-the-existing-libraries.md) already fix the method,
@@ -491,9 +500,14 @@ queues, and this document does not move anything to the front of the other one.
 ## 8. What this cost, and the one habit that paid for itself
 
 **Five counts were sharpened after being measured against the library, and every time the answer was
-that the check asked a broader question than the one worth asking.** 42 → 0, 114 → 6, 310 → 62, 7 → 0,
-143 → 59. Not one of those cuts came from thinking harder about the rule; all five came from **printing
-the list and reading it.**
+that the check asked a broader question than the one worth asking.** 42 → 0, **114 → 1**, 310 → 62,
+7 → 0, 143 → 59. Not one of those cuts came from thinking harder about the rule; all five came from
+**printing the list and reading it.**
+
+*(This line said `114 → 6` until 2026-09-09, when a re-read found it disagreeing with §7's own table
+four hundred lines above — 6 was an intermediate value the summary stopped at while the table went on to
+1. `python tools/check-revit-gate.py` prints the live number, which is the only reason the disagreement
+could be settled rather than argued.)*
 
 **And five heuristics were fooled by text about the thing rather than the thing** — a space-stripped
 haystack, a tool matching its own docstring, a string literal that made its own subject invisible, a

@@ -88,6 +88,7 @@ smaller answer than it asked for.
 
 import os
 import re
+import sqlite3
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -328,6 +329,38 @@ def _capability_part(store, fragment_id, revit, why):
                 "derived from the fragment store", why)
 
 
+def _indexed(store):
+    """Has anything been indexed into this store, or are the tables just empty?
+
+    `ensure_tables` CREATES the identity and text tables and fills neither.
+    Only `heron_search.index()` fills them, and a caller that has not run it
+    gets a store where `short_circuit` misses every single time - including on
+    a fragment's own declared phrasing, which is the one input it exists to
+    answer.
+
+    THIS EXISTS BECAUSE THE REFUSAL BELOW USED TO LIE. On an unindexed store
+    the CACHED path refused with "this wording is not a fragment's declared
+    phrasing", which on 360 declared phrasings out of 360 was false: the
+    wording was one, and the index was empty. A confident explanation that
+    names the wrong cause is the exact failure this module was written to
+    avoid, and it was sitting inside it.
+
+    Production is not affected - heron_brain._Open indexes on every open, and
+    this module's own CLI indexes before it assembles. A direct library caller
+    is the exposed one, and it is the one that was told something untrue.
+    """
+    try:
+        return store.execute(
+            "SELECT 1 FROM identities LIMIT 1").fetchone() is not None
+    except sqlite3.OperationalError as exc:
+        # Only the "the table is not there" case. Anything else is a broken
+        # store and must not read as a merely empty one - the same narrowing
+        # heron_search.live_cache needed for the same reason.
+        if "no such table" in str(exc):
+            return False
+        raise
+
+
 def assemble(store, request, path=None, revit=None, project=None, scope=None):
     """Build the packet for one request.
 
@@ -336,6 +369,7 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None):
     recording that it was assumed.
     """
     SEARCH.ensure_tables(store)
+    indexed = _indexed(store)
 
     # THE VERSION WALL APPLIES TO THE SHORT CIRCUIT TOO, and the first version
     # of this file did not apply it - which is the one bug here that mattered.
@@ -396,6 +430,16 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None):
             "%s. The version filter is a wall and it has no door in it for a "
             "good match: an incompatible fragment is absent, not demoted."
             % revit)
+    elif not indexed:
+        # NAME THE REAL CAUSE. The wording may well BE a declared phrasing -
+        # on an unindexed store all 360 of them miss - so blaming the wording
+        # here would be a confident sentence about the wrong thing.
+        raise SourceMissing(
+            "the CACHED path was asked for, but nothing has been indexed into "
+            "this store: `identities` is empty, so no wording can match, "
+            "including a fragment's own. Run heron_search.index(store) - or "
+            "reach this through heron_brain, which indexes on every open - and "
+            "ask again.")
     else:
         raise SourceMissing(
             "the CACHED path was asked for, but this wording is not a "
@@ -410,6 +454,13 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None):
             ctx.note_refused(CAPABILITY_PART,
                              "%s was matched but the store does not hold it"
                              % fragment_id)
+    elif not indexed:
+        # Same lie, the other path. "Nothing matched these words" is a claim
+        # about the words; on an unindexed store it is a claim about the store.
+        ctx.note_refused(CAPABILITY_PART,
+                         "nothing has been indexed into this store, so both "
+                         "routes searched an empty index. This is not a "
+                         "statement about the request")
     else:
         ctx.note_refused(CAPABILITY_PART, "nothing matched these words")
 
@@ -417,10 +468,23 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None):
     #    left hunting for a fragment that is sitting right there.
     if EXCLUDED in BUDGET[path]:
         # Reusing the pass taken above for the wall, rather than taking a
-        # second one. Two calls would be two answers to one question - cheap
-        # here and wrong in principle, since a store changing between them
+        # second one HERE. Two calls would be two answers to one question -
+        # cheap and wrong in principle, since a store changing between them
         # would produce a packet whose `excluded` list disagrees with the
         # filter its own capability was chosen through.
+        #
+        # BE HONEST ABOUT WHAT THAT DOES AND DOES NOT BUY. This module takes
+        # one pass; the assembly as a whole takes THREE on every non-cached
+        # request, and an earlier version of this comment implied otherwise.
+        # Measured 2026-09-09: eligible() at ~1.1 ms over 360 fragments, called
+        # from here, from heron_retrieve.find() and from heron_retrieve.
+        # retrieve() beneath it - about 2.2 ms of repeated work per assembly.
+        #
+        # Not fixed, deliberately. Removing the other two means passing an
+        # already-computed filter into find(), which changes the signature of
+        # the production retrieval entry point that everything else calls, to
+        # save two milliseconds. The measurement is written down instead, so
+        # the trade is a decision rather than an oversight.
         excluded = excluded_by_the_walls
         if excluded:
             # Grouped by WHY, not listed one by one. eligible() excludes on

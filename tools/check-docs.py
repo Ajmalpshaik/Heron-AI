@@ -6,7 +6,7 @@
 # Heron-Layer:  tool
 # See docs/29-metadata-standard.md
 
-import io, os, re, sys
+import glob, io, os, re, sys
 
 root = '.'
 md = []
@@ -283,13 +283,43 @@ else:
                     drift.append((p, i, 'the Constitution is pending confirmation',
                                   'ACCEPTED - the Constitution says so itself'))
 
+    # THE COUNTS THAT DRIFT BECAUSE THE WORK ITSELF MOVES THEM.
+    #
+    # A question count drifts when somebody edits a document. These drift when
+    # somebody adds a FILE - which is the more dangerous kind, because the
+    # person adding the file is not reading the sentence that counts it.
+    #
+    # Both were wrong on 2026-09-09 and neither was caught: README.md said
+    # "33 test suites" while four had been added in the same week by the same
+    # hand, and the MCP tool count moved 13 -> 14 the day heron_context was
+    # served. Deriving them costs one glob each.
+    countable = [
+        (os.path.join(root, 'tests'), 'test_*.py',
+         r'(\d+)\s+test\s+suites\b', 'test suites'),
+        (os.path.join(root, 'tools'), '*.py',
+         r"(\d+)\s+tools\s+mentions\b", 'tools'),
+    ]
+    for folder, pattern, claim, label in countable:
+        real = len(glob.glob(os.path.join(folder, pattern)))
+        if not real:
+            continue
+        for p in md:
+            for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
+                if HISTORY.search(line):
+                    continue
+                for m in re.finditer(claim, line):
+                    if int(m.group(1)) != real:
+                        drift.append((p, i, '%s %s' % (m.group(1), label),
+                                      '%d (ls %s)' % (real, pattern)))
+
     if drift:
         for p, i, said, real in drift:
             out("  DRIFT: %s:%d says '%s'; the source says %s\n" % (p, i, said, real))
         out("  A stated count is a claim; a derived count is a fact. Fix the claim.\n")
         failed = True
     else:
-        out("  %d markdown file(s): every question count and every Constitution\n" % len(md))
-        out("  status claim agrees with the document that owns it\n")
+        out("  %d markdown file(s): every question count, every file count that\n" % len(md))
+        out("  can be derived, and every Constitution status claim agrees with\n")
+        out("  the source that owns it\n")
 
 sys.exit(1 if failed else 0)

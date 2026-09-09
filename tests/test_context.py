@@ -294,6 +294,65 @@ def main():
             check(raised, "'whatever' is not a path and raises ValueError")
 
             print()
+            print("7b. An UNINDEXED store is named as the cause, not the wording")
+            print("-" * 62)
+            # THE REFUSAL USED TO LIE, and this is the one case where nothing
+            # else would catch it. `ensure_tables` creates the identity table
+            # and fills nothing; only heron_search.index() fills it. On an
+            # unindexed store short_circuit misses EVERY declared phrasing -
+            # 360 of 360 - and the CACHED path refused with "this wording is
+            # not a fragment's declared phrasing", which was false about the
+            # wording and silent about the store.
+            #
+            # A declared phrasing is used deliberately: the sentence being
+            # refused IS one, so a refusal that blames the wording is provably
+            # wrong rather than merely unhelpful.
+            import heron_scope as _SCOPE
+            bare_home = os.path.join(home, "bare")
+            os.makedirs(bare_home, exist_ok=True)
+            was = os.environ.get("HERON_KNOWLEDGE")
+            os.environ["HERON_KNOWLEDGE"] = bare_home
+            try:
+                _SCOPE.rebuild(_SCOPE.GLOBAL)
+                bare = _SCOPE.open_scope(_SCOPE.GLOBAL)
+                try:
+                    declared = None
+                    for row in bare.fragments():
+                        if row["semantic_identity"]:
+                            declared = row["semantic_identity"]
+                            break
+                    check(declared is not None,
+                          "the bare store still holds fragments (%d)"
+                          % bare.count())
+                    said = None
+                    try:
+                        CONTEXT.assemble(bare, declared, path=CONTEXT.CACHED)
+                    except CONTEXT.SourceMissing as why:
+                        said = str(why)
+                    check(said is not None,
+                          "an unindexed store still refuses the CACHED path")
+                    check(said and "indexed" in said,
+                          "and it names the INDEX as the cause: %s"
+                          % (said or "-")[:70])
+                    check(said and "not a fragment's declared phrasing" not in said,
+                          "it does NOT blame the wording, which in this case "
+                          "IS a declared phrasing")
+                    simple = CONTEXT.assemble(bare, declared,
+                                              path=CONTEXT.SIMPLE)
+                    notes = [r[1] for r in simple.refused
+                             if r[0] == CONTEXT.CAPABILITY_PART]
+                    check(any("indexed" in n for n in notes),
+                          "and the SIMPLE path says the same rather than "
+                          "'nothing matched these words' (%s)" % (notes or "-"))
+                finally:
+                    bare.close()
+            finally:
+                if was is None:
+                    os.environ.pop("HERON_KNOWLEDGE", None)
+                else:
+                    os.environ["HERON_KNOWLEDGE"] = was
+
+            print()
             print("8. The budgets are docs/19 s2's, and nest as it describes")
             check(set(CONTEXT.BUDGET[CONTEXT.CACHED])
                   < set(CONTEXT.BUDGET[CONTEXT.SIMPLE]),

@@ -42,7 +42,7 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 **Phase 1 is BUILT AND UNPROVEN, and Phase 2 is built and barely proven — those are different words
 on purpose.** The C# —
 the write path, and the fragment bodies — compiles on all eight releases from 2020 to 2027 with zero
-warnings. The Python that reasons about it has 33 test suites (`ls tests/test_*.py | wc -l`), all passing bar three that want an optional dependency this machine has not got. A compiler proves the
+warnings. The Python that reasons about it has 37 test suites (`ls tests/test_*.py | wc -l`), all passing bar three, and the three do not share a reason: two want the MCP SDK (`pip install --user mcp`) and one wants a built .NET test host (`dotnet build tests/Heron.Bridge.TestHost`). A compiler proves the
 API surface agrees; a test proves the logic agrees with itself; neither says whether a duct moves 200
 millimetres or 200 feet.
 

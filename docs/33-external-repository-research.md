@@ -393,8 +393,10 @@ operation passes cannot be forgotten at all.
 **One thing worth saying plainly, because the file-level read is what showed it.**
 [`heron_tools.py`](../mcp/server/heron_tools.py) has the right shape — `risk_of()` raises `NotDeclared`
 rather than defaulting, and its own message says *"being absent is a refusal, not a risk of zero."* But
-at runtime it is consulted in exactly **one** place, `heron_mcp_server.py:486`, to classify a failure,
-with the tool name written as a string literal. **It is a declaration and a cross-check, not a gate**,
+at runtime it is consulted in **two** places and neither refuses anything: `heron_mcp_server.py:486`
+classifies a failure with the tool name written as a **string literal**, and the served `heron_diagnose`
+tool counts *"%d declared, %d of them able to change a model"* by iterating `TOOLS`. **It is a
+declaration and a cross-check, not a gate**,
 and the gate is in the add-in where it belongs — the only side that can see the model is the only side
 whose refusal means anything. That is right. It is worth writing down so nobody later mistakes the
 Python registry for the thing that stops something.
@@ -640,7 +642,11 @@ it and asks Heron again. **Not a gap.**
 cross-encoder — `@huggingface/transformers`, `Xenova/ms-marco-MiniLM-L-6-v2`, `dtype: "q8"` — off by
 default behind `RERANK_ENABLED`. Local, offline, no account, quantised: that is
 [D-24](DECISIONS.md) and [D-26](DECISIONS.md) satisfied, and the same shape as
-[`heron_embed.py`](../brain/heron_embed.py)'s model2vec backend. Heron has no reranker at all.
+[`heron_embed.py`](../brain/heron_embed.py)'s model2vec backend. **Heron has no reranker.** The one
+thing that reorders anything after fusion is the status nudge in
+[`heron_retrieve.py`](../brain/heron_retrieve.py), and it is deliberately sized smaller than one rank of
+fusion — 0.000264 at `K=60` — precisely so it *cannot* reorder: it settles a dead heat and nothing else.
+A reranker re-scores the top of the list with a second model, and nothing here does that.
 
 **With one scar attached.** [D-49](DECISIONS.md) is a thirty-minute hang caused by importing the trained
 encoder on the asyncio event loop. A cross-encoder is a **second** model load on the same path, and
