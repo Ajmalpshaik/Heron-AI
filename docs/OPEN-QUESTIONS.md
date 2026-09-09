@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 42 answered · 0 open · nothing blocking any phase**
+**Progress: 42 answered · 1 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -304,6 +304,45 @@ A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
 ---
 
 ## Tier 3 — Needed soon
+
+### 🟡 Q-43 — What may be written into the utterance cache, and by what? *(new, 2026-09-09)*
+
+**Found by building, not by reading.** [`tools/measure-routes.py`](../tools/measure-routes.py) parses
+the tree for real calls to `heron_search.remember()` — the only function that writes the utterance
+cache — and finds exactly one, in [`tests/test_search.py`](../tests/test_search.py). **No production
+code calls it.** Not `ask()`, not `find()`, not any MCP tool.
+
+So route 2 can never fire for a real user. The cache is built, tested, indexed, and permanently empty.
+
+That matters because of where the specification puts it. [19 §5](19-context-and-cost.md) makes it
+**step 1** of the pipeline that must run before any model is invoked, and [19 §6](19-context-and-cost.md)
+calls it *"the one that pays for itself faster than any of the others"*.
+
+**Why this is a question and not a patch.** The obvious wiring — have `find()` call `remember()` with
+whatever it just returned — is the dangerous one:
+
+| | |
+|---|---|
+| A keyword answer is a **candidate**, not a decision | `heron_search.py` says so in its own words: *"a candidate, never a decision"* |
+| Caching it makes the guess **permanent** | the next identical wording returns by route 2 and **never searches at all** |
+| The wrong answer then looks like the fast answer | which is the confident-wrong-retrieval failure [05 §4](05-heron-brain.md) built the keyword layer to avoid |
+
+**So the real question is what counts as confirmed.** Candidates, none of them obviously right:
+
+1. **The fragment actually ran and returned a result.** Strongest evidence, and it only exists after
+   execution — so nothing is cached for a request that was merely resolved.
+2. **The user accepted the candidate** — but [D-01](DECISIONS.md) puts that conversation in the host,
+   which does not call back into the brain today.
+3. **The identity route resolved it** — safe, and worthless: those already answer in one lookup, so
+   caching them saves nothing.
+
+**Also unanswered: what invalidates it.** [19 §6](19-context-and-cost.md) names `SkillCreated`,
+`FragmentApproved` and project change. `recall()` already deletes a row whose fragment has vanished,
+which is the *deleted* case only — a fragment that is **edited** keeps its id and its stale cache entry.
+
+**Answer:**
+
+---
 
 ### 🟡 Q-16 — Which existing repositories are imported first?
 

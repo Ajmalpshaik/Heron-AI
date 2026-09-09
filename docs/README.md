@@ -26,8 +26,12 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**All 42 questions are answered — 42 answered · 0 open — and nothing gates any phase.** `Q-41` was both
-asked and answered by the owner on 2026-09-06, during the decision read-back rather than by a specification.
+**42 answered · 1 open, and nothing gates any phase.** `Q-43` was opened on 2026-09-09 —
+[`tools/measure-routes.py`](../tools/measure-routes.py) parsed the tree for real calls to
+`heron_search.remember()` and found one, in a test. The utterance cache that [19 §5](19-context-and-cost.md)
+makes step 1 of the pipeline is **never written in production**, and what may safely be written into it is
+a decision rather than a patch. `Q-41` before it was both asked and answered by the owner on 2026-09-06,
+during the decision read-back rather than by a specification.
 
 **Phase 1, assessed 2026-08-28** (it had not been, and the count above had quietly stopped covering the
 work in progress). Three questions touched Step 6 at the time, and one of them mattered:

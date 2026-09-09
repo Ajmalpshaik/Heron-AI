@@ -525,3 +525,55 @@ what `retrieve()` costs.
 Every run prints the machine, the Python, the embedding backend and the fragment count, because a
 number from a Linux container and a number from the owner's PC are not comparable and a table that did
 not say which is which would be used as though they were.
+
+---
+
+## `measure-routes.py` — how often Heron answers without thinking
+
+```bash
+python tools/measure-routes.py
+```
+
+**The metric [D-58](../docs/DECISIONS.md) put in the registry**, replacing one Heron cannot see.
+`HERON-OPS-OBS-011` asked for *model calls per request*; [D-01](../docs/DECISIONS.md) puts every model
+call in the host, so Heron cannot count them. It can count how often **no model was needed at all** —
+which is what [docs/19 §5](../docs/19-context-and-cost.md) actually cares about:
+
+> Steps 1 and 2 must be tried **before** any model is invoked, structurally — not as an optimisation
+> added later.
+
+*Model calls per request* was a proxy for that rule holding. **The share answered by the identity or
+cache route measures it directly**, from Heron's own side of the wire, with nothing to configure.
+
+**Two numbers that must never be added together.** STRUCTURAL asks the library its own declared
+phrasings and reports the routes — a **ceiling**, because real requests are phrased worse than the
+phrasings a fragment writes for itself. LIVE reports what the utterance cache actually holds, which is
+the only half that says anything about what people type.
+
+**A short circuit that lands on a different fragment is named, not counted as a saving.** Route 1
+answering confidently and wrongly costs more than a search;
+[`check-routing.py`](#check-routingpy--did-a-new-fragment-make-an-old-one-unfindable) is the tool that
+says which.
+
+### What its first run found — and why it is parsed rather than grepped
+
+**`remember()`, the only function that writes the utterance cache, is called from
+[`tests/test_search.py`](../tests/test_search.py) and from no production code.** Not `ask()`, not
+`find()`, not any MCP tool. So route 2 can never fire for a real user: the cache is built, tested,
+indexed and permanently empty — the one [docs/19 §6](../docs/19-context-and-cost.md) calls *"the one
+that pays for itself faster than any of the others"*.
+
+**The first version of that check grepped for the text `remember(` and matched this tool's own
+docstring**, which describes the problem — then printed *"the cache fills with use"*, the exact opposite
+of the truth, in the one place the tool exists to be right about. It parses with `ast` now, and
+[`tests/test_measure_routes.py`](../tests/test_measure_routes.py) holds that case along with prose in a
+comment, `remembers()`, the definition itself, `__pycache__`, and a file that will not parse — which is
+**reported** rather than skipped, because *"no production caller"* must never be an artefact of a file
+nobody could read.
+
+**Where `remember()` should be called from is [`Q-43`](../docs/OPEN-QUESTIONS.md), not a patch.** Caching
+whatever the keyword route ranked first makes a **guess permanent**: the next identical wording returns
+by route 2 and never searches at all.
+
+Not a gate; exits 0. There is no agreed target to miss, and setting one from a first run would make
+today's library the standard.
