@@ -170,7 +170,7 @@ about the code — every recorded value reproduces exactly by hashing the same b
 and CRLF line endings, and git shows every implementation predating its own proof date.
 
 `fingerprint()` now normalises both, and the sixteen were re-recorded once with
-`heron_validate.py restamp --apply`, which **refuses** any fragment whose code genuinely moved after its
+`heron_validate.py restamp --apply`, which **refuses** any fragment whose code moved ON OR AFTER its
 proof was taken. Only the fingerprint line changed in each file; no proof, author, date or status was
 touched.
 

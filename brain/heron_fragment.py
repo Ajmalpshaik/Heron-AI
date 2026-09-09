@@ -540,7 +540,8 @@ class Fragment(object):
 
         The sixteen values recorded under the old rule need re-recording once:
         `python brain/heron_validate.py restamp --apply`, which refuses any
-        fragment whose implementation genuinely moved after its proof date.
+        fragment whose implementation moved on or after its proof date - same day
+        included, because a date cannot be ordered against an hour.
         """
         paths = self.proof_files()
         if not paths:
