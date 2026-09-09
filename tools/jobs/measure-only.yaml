@@ -1,0 +1,15 @@
+model: Snowdon-scratch_ajmal.al, Revit 2024
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+jobs:
+  - fragment: measure-run-quantities
+    set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      measure: area
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      measure: ZZZNOTHINGHERE
