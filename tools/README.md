@@ -726,6 +726,11 @@ That precision was arrived at by getting it wrong three times, and all three are
 
 Three heuristics, three times fooled by text *about* the thing rather than the thing.
 
+**An excuse that no longer applies is reported as stale.** A `RECORDED` entry that is no longer a hit
+means something now calls it, and the excuse has outlived its reason — [D-54](../docs/DECISIONS.md)'s
+lesson applied to this tool's own record. Without it, `remember()` would go on being excused for ever
+after somebody wired it up.
+
 **What it cannot see:** a function reached through `globals()`, a registry built at run time, a plugin
 loader, or a name assembled from parts. Absent from the source is not the same as unreachable, and it
 says so. Not a gate; exits 0.

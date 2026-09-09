@@ -162,6 +162,38 @@ def main():
         shutil.rmtree(work, ignore_errors=True)
 
     print()
+    print("7b. An excuse that no longer applies is reported as stale")
+    print("-" * 66)
+    # D-54's lesson applied to this tool's own record: a sentence describing a
+    # gap has to be corrected when the gap closes. Without this, RECORDED would
+    # go on excusing remember() for ever after somebody wired it up.
+    import io as _io
+    import sys as _sys
+    tool = load()
+    tool.RECORDED = dict(tool.RECORDED)
+    tool.RECORDED[("brain/nowhere.py", "gone")] = "an excuse for a non-hit"
+    buf = _io.StringIO()
+    keep, _sys.stdout = _sys.stdout, buf
+    try:
+        tool.main([])
+    finally:
+        _sys.stdout = keep
+    out = buf.getvalue()
+    check("THE RECORD IS OUT OF DATE" in out,
+          "an excuse for something that is no longer unreached is reported")
+    check("nowhere.py" in out, "and it is named, so it can be removed")
+
+    tool = load()
+    buf = _io.StringIO()
+    keep, _sys.stdout = _sys.stdout, buf
+    try:
+        tool.main([])
+    finally:
+        _sys.stdout = keep
+    check("THE RECORD IS OUT OF DATE" not in buf.getvalue(),
+          "and the section is silent when every excuse still applies")
+
+    print()
     print("8. The real tree, reported not asserted")
     print("-" * 66)
     tool = load()

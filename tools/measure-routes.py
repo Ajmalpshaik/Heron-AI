@@ -115,12 +115,20 @@ def live_cache(store):
     Returns (None, None) if the table has never been created, which is a
     different thing from a table with no rows and is reported as such.
     """
+    import sqlite3
     try:
         row = store.execute(
             "SELECT COUNT(*) AS rows, COALESCE(SUM(hits), 0) AS hits "
             "FROM utterances").fetchone()
-    except Exception:
-        return None, None
+    except sqlite3.OperationalError as why:
+        # ONLY "no such table" is an answer. Catching every exception here
+        # would report a corrupt store, a locked file or a schema change as
+        # "the table does not exist yet" - a sentence about a fresh machine,
+        # printed on a broken one. The same failure the heron_context MCP tool
+        # had this morning, where every exception was called a refusal.
+        if "no such table" in str(why).lower():
+            return None, None
+        raise
     return row["rows"], row["hits"]
 
 

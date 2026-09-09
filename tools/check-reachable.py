@@ -186,6 +186,14 @@ def main(argv):
     new = [h for h in found if (h[0], h[1]) not in RECORDED]
     known = [h for h in found if (h[0], h[1]) in RECORDED]
 
+    # A RECORDED entry that is no longer a hit is a STALE RECORD, and saying so
+    # is the whole of D-54's lesson: a sentence describing a gap has to be
+    # corrected when the gap closes, or it becomes the most convincing wrong
+    # documentation in the repository. Without this the list below would go on
+    # excusing `remember()` for ever after somebody wired it up.
+    reached = set((rel, name) for rel, name, _t in found)
+    stale = sorted(k for k in RECORDED if k not in reached)
+
     print("BUILT, AND NO PRODUCTION CODE CALLS IT")
     print("=" * 70)
     print("A hit is a CANDIDATE, not a defect. Some are deliberate and are")
@@ -208,6 +216,16 @@ def main(argv):
         print("       %s" % ("called by " + ", ".join(tests) if tests
                              else "called by NOTHING AT ALL, not even a test"))
     print("")
+
+    if stale:
+        print("THE RECORD IS OUT OF DATE  (%d)" % len(stale))
+        print("-" * 70)
+        print("  These are excused below and are NO LONGER unreached - something")
+        print("  now calls them. Remove them from RECORDED, or the excuse goes")
+        print("  on standing after the reason for it has gone (D-54).")
+        for rel, name in stale:
+            print("  %-34s %s" % (rel, name))
+        print("")
 
     print("ALREADY RECORDED  (%d)%s"
           % (len(known), "" if show_all else " - `--all` to list"))
