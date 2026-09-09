@@ -140,7 +140,7 @@ def test_the_shapes_d54_refuses_are_refused_here():
     for kind in ("XYZ", "IList<XYZ>", "IList<IList<XYZ>>",
                  "ElementId", "IList<ElementId>", "ICollection<ElementId>",
                  "IDictionary<ElementId, string>",
-                 "Element", "IList<Element>",
+                 "IList<Element>",
                  "FamilySymbol", "OverrideGraphicSettings",
                  "View3D", "Color", "Material", "ForgeTypeId"):
         ok, why = GJ.receivable(kind)
@@ -154,6 +154,32 @@ def test_the_shapes_d54_refuses_are_refused_here():
     _, ident = GJ.receivable("ElementId")
     check("millimetres" in point, "a point says which decision it waits on")
     check("2024" in ident, "an id says which change it waits on")
+
+
+def test_an_element_is_a_type_and_a_list_of_them_is_still_refused():
+    print("`Element` resolves to a TYPE; the instance boundary stays")
+
+    # `Element` became receivable when OneElement landed. It resolves to an
+    # element TYPE by name and refuses a particular wall or duct, because an
+    # instance has no name of its own - Element.Name on one returns its TYPE's
+    # name, so "Generic - 200mm" would match every wall in the model.
+    ok, _ = GJ.receivable("Element")
+    check(ok, "a single Element can be typed in")
+
+    # AND THE LIST FORM DID NOT COME WITH IT. The three fragments declaring
+    # `IList<Element>` as a caller value want instances, and a comma-separated
+    # list of type names is not what they are asking for. Letting it through on
+    # the strength of the singular would bind the wrong thing quietly.
+    refused, why = GJ.receivable("IList<Element>")
+    check(not refused, "a list of them is not")
+    check(why and "not one of them yet" in why,
+          "and says so rather than half-accepting it")
+
+    # The hint a person reads beside the blank names the boundary, so they meet
+    # it while filling the file in rather than after a run against a model.
+    hint = GJ.how_to_type("Element")
+    check("TYPE" in hint and "cannot be typed in" in hint,
+          "the hint says a type is wanted and an instance cannot be given")
 
 
 def test_spaces_in_a_type_do_not_change_the_answer():
@@ -521,6 +547,7 @@ def test_the_blocked_are_listed_with_a_reason_each():
 def main():
     for test in (test_receivable_agrees_with_the_add_in,
                  test_the_shapes_d54_refuses_are_refused_here,
+                 test_an_element_is_a_type_and_a_list_of_them_is_still_refused,
                  test_spaces_in_a_type_do_not_change_the_answer,
                  test_the_write_threshold_comes_from_the_registry,
                  test_a_broken_registry_stops_the_run_rather_than_guessing,

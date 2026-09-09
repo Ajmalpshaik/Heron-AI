@@ -141,7 +141,13 @@ RECEIVABLE = frozenset([
     "double", "Double",
     "bool", "Boolean",
     # Resolved inside Revit, by name, and refused when the name matches twice.
-    "View", "Level", "Category", "BuiltInCategory",
+    # `Element` is the odd one: it resolves to an element TYPE and refuses a
+    # specific instance, because an instance has no name of its own. So a
+    # fragment wanting `wallType` can be arranged and one wanting `reference`
+    # cannot, and both declare the same type - which this file cannot tell apart
+    # and does not try to. It emits the job; Revit refuses the instance by name,
+    # saying to select it instead.
+    "View", "Level", "Category", "BuiltInCategory", "Element",
     # Lists, comma separated.
     "IList<string>", "List<string>", "ICollection<string>", "IEnumerable<string>",
     "IList<int>", "List<int>",
@@ -443,6 +449,12 @@ def how_to_type(declared):
       twice is refused rather than chosen from. These are also the values this
       tool will not guess at all: which view holds a small number of the thing
       is the judgement the whole file is arranged around.
+
+      AN `Element` IS AN ELEMENT TYPE and never a particular one in the model.
+      Both meanings are written `Element` in a contract, so a job may be emitted
+      for a fragment that turns out to want "that duct there" - and Revit says so
+      by name rather than binding the wrong thing. The hint is here so a person
+      meets that boundary while filling the blank in, not after a run.
     """
     wanted = (declared or "").replace(" ", "")
     hints = []
@@ -450,6 +462,9 @@ def how_to_type(declared):
         hints.append("comma separated")
     if re.search(r"\b(View|Category|BuiltInCategory|Level)\b", wanted):
         hints.append("resolved BY NAME in Revit; a name matching twice is refused")
+    if re.search(r"\bElement\b", wanted):
+        hints.append('an element TYPE by name - "Basic Wall: Generic - 200mm". A '
+                     'particular wall or duct cannot be typed in')
     return ", ".join(hints)
 
 
