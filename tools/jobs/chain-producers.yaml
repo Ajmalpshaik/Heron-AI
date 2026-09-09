@@ -1,0 +1,73 @@
+# The two FROM_CHAIN fragments the run plan named on 2026-09-10.
+#
+#     python tools/batch-prove.py tools/jobs/chain-producers.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/chain-producers.yaml
+#
+# Both need VALUES, and a selection cannot supply them - so the producer runs
+# inside the setup chain and the fragment under test consumes what it left.
+# read-element-parameters and measure-run-quantities are both PROVEN, so the
+# thing being tested here is the consumer and nothing else.
+#
+# THE NEGATIVE IS VALUE-DRIVEN, and that is deliberate. Both fragments declare
+# their empty case as "an empty values dictionary" - not a different selection.
+# read-element-parameters' own recorded proof empties itself on
+# parameterName=ZZZNOTHINGHERE (values 0 entry(ies), absent 307), so the
+# producer still RUNS and still hands something over; it just hands over
+# nothing. That is the only arrangement that asks the real question:
+# does the consumer report 0, or does it fall back to the whole model?
+#
+# A different selection would NOT test that. It would empty the input the same
+# way for both legs and never put the fallback under load.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  # PROVE ON A SMALL SELECTION (rule 1). FloorPlan: M1 holds 22 ducts; L3 holds
+  # 307, and 307 is where set-mep-size timed out. measure-run-quantities was
+  # proved on exactly this arrangement on 2026-09-09.
+  setup:
+    - select-by-category-name
+    - set-selection
+    - read-element-parameters
+
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+    parameterName: Size
+
+  negative-set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+    parameterName: ZZZNOTHINGHERE
+
+jobs:
+  # groups is the only declared result, but naming it costs nothing and says
+  # out loud what finding something looks like.
+  - fragment: group-and-count
+    expect: groups
+
+  # Needs a SECOND producer: values are strings, quantities are doubles, and
+  # read-element-parameters supplies only the first. measure knows two words,
+  # length and area - anything else is refused by name.
+  #
+  # expect: totals matters here. `incomplete` is declared role: result and is a
+  # BOOL - it says a total rests on partial data. A bool that is false in both
+  # legs is not a result moving off zero, and judging every declared result
+  # would drag it in.
+  - fragment: sum-by-group
+    setup:
+      - select-by-category-name
+      - set-selection
+      - read-element-parameters
+      - measure-run-quantities
+    set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      parameterName: Size
+      measure: area
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      parameterName: ZZZNOTHINGHERE
+      measure: area
+    expect: totals

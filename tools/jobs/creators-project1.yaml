@@ -1,0 +1,115 @@
+# The creators, against a purpose-built scratch model - 2026-09-10.
+#
+# WHY A SCRATCH MODEL. Rule 2 says ask for what the model has, and the usual
+# answer is to hunt for content. Here the content is BUILT on purpose, so the
+# positive case is guaranteed and the negative can be arranged honestly. It
+# also removes the objection that kept MODIFY fragments out of every batch so
+# far: section 1c's rollback has failed three times, and in a throwaway project
+# a rollback that does not hold costs nothing.
+#
+# UNITS - THE THING TO GET RIGHT (rule 4). The two are NOT the same:
+#   XYZ / IList<XYZ>  MILLIMETRES. OnePoint converts to feet in the resolver.
+#   a bare double     INTERNAL FEET, raw. Every creator header says so:
+#                     "Lengths are internal FEET."
+# The name carries it: a `...Mm` suffix means millimetres, a plain name means
+# feet. So `points` are mm and `height` is feet, in the same fragment.
+#
+# THE NEGATIVE IS DEGENERATE GEOMETRY, and it is the honest one for a creator.
+# A wall between two identical points has no length; a floor needs three points
+# to bound anything. Each fragment already declares what it does with that -
+# create-wall has `tooShort`, create-grid refuses under 1 mm - so the empty
+# answer is the fragment's own stated behaviour rather than something invented
+# for a proof.
+
+model: Project1 (3,410 elements), Revit 2024 - Level 1 at 0 mm, Level 2 at 4000 mm
+
+defaults:
+  # risk: MODIFY on all five. WITHOUT THIS THEY GO DOWN THE READ PATH,
+  # where Revit refuses the change politely and the fragment reports
+  # `refused` like any decline - section 5 row 6, which read as
+  # intermittent worksharing behaviour for a whole commit. batch-prove
+  # defaults it to false and does NOT derive it from the fragment's risk.
+  # Without `apply` the run is wrapped in a TransactionGroup and rolled
+  # back (D-55), so nothing here is kept.
+  write: true
+  setup: []
+
+jobs:
+  # A 6 m x 4 m room, closed. Five points because the run returns to its start.
+  # height 10 is FEET (~3048 mm) - typing 3000 here would ask for a wall three
+  # thousand feet tall.
+  - fragment: create-wall
+    setup: []
+    set:
+      level:      "Level 1"
+      wallType:   "Generic - 200mm"
+      points:     "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0; 0,0,0"
+      height:     10
+      structural: false
+    negative-set:
+      level:      "Level 1"
+      wallType:   "Generic - 200mm"
+      points:     "0,0,0; 0,0,0"
+      height:     10
+      structural: false
+    expect: created
+
+  # SPACINGS ARE GAPS, NOT POSITIONS - two spacings make three grids. In feet,
+  # so 20 is a ~6 m bay. The model has NO grids at all, so nothing can collide.
+  - fragment: create-grids
+    setup: []
+    set:
+      origin:         "0,0,0"
+      spacingsAcross: "20,20"
+      spacingsUp:     "20,20"
+      firstLetter:    "A"
+      firstNumber:    1
+    negative-set:
+      origin:         "0,0,0"
+      spacingsAcross: ""
+      spacingsUp:     ""
+      firstLetter:    "A"
+      firstNumber:    1
+    expect: created
+
+  # from == to is refused by the fragment itself: it checks
+  # from.DistanceTo(to) < 1.0/304.8 - one millimetre, in feet.
+  - fragment: create-grid
+    setup: []
+    set:
+      from:     "0,0,0"
+      to:       "20000,0,0"
+      gridName: "HERON-TEST-1"
+    negative-set:
+      from:     "0,0,0"
+      to:       "0,0,0"
+      gridName: "HERON-TEST-2"
+    expect: created
+
+  # Two points cannot bound a slab. Three or more can.
+  - fragment: create-floor
+    setup: []
+    set:
+      level:     "Level 1"
+      floorType: "Generic 300mm"
+      boundary:  "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0"
+    negative-set:
+      level:     "Level 1"
+      floorType: "Generic 300mm"
+      boundary:  "0,0,0; 6000,0,0"
+    expect: created
+
+  # heightAboveLevel is a bare double, so FEET - 9 is about 2743 mm.
+  - fragment: create-ceiling
+    setup: []
+    set:
+      level:            "Level 1"
+      ceilingType:      "Generic"
+      boundary:         "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0"
+      heightAboveLevel: 9
+    negative-set:
+      level:            "Level 1"
+      ceilingType:      "Generic"
+      boundary:         "0,0,0; 6000,0,0"
+      heightAboveLevel: 9
+    expect: created

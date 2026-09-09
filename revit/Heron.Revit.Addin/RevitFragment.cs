@@ -1927,7 +1927,35 @@ namespace Heron.Revit.Addin
             if (value is int || value is long || value is double)
                 return Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture);
 
-            if (value is ElementId) return "ElementId";
+            // A CREATED ELEMENT'S ID AND THE ABSENCE OF ONE MUST NOT RENDER THE
+            // SAME WORD. They did, and it cost fifteen fragments. `created` is
+            // a bare ElementId on 29 fragments and the ONLY declared result on
+            // 15 DRAFT ones - create-sheet, create-floor, create-text-note,
+            // create-schedule and the rest - so "ElementId" is what the judge
+            // saw for both a creator that built something and one that refused.
+            //
+            // Measured 2026-09-10 proving the creators against Project1:
+            // create-ceiling's NEGATIVE case reported `created ElementId` while
+            // its own findings said "A ceiling needs at least three boundary
+            // points and 2 were given". Nothing was created; the id was
+            // InvalidElementId; the two were indistinguishable in the record.
+            //
+            // NO IntegerValue AND NO CONSTRUCTOR. IntegerValue is deprecated at
+            // 2024 and the constructor changed from int to long there, and
+            // nothing in this file carries a version #if. ToString() and
+            // InvalidElementId are on every release 2020-2027.
+            //
+            // "(null)" for the invalid one because heron_validate._as_count
+            // already reads that as zero - so the empty case needs no new rule
+            // at the other end, and the "N item(s)" shape is the one it already
+            // parses for a quantity.
+            if (value is ElementId)
+            {
+                var id = (ElementId)value;
+                return id == ElementId.InvalidElementId
+                    ? "(null)"
+                    : "1 item(s) [id " + id + "]";
+            }
 
             var dictionary = value as IDictionary;
             if (dictionary != null) return dictionary.Count + " entry(ies)";
