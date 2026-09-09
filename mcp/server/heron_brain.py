@@ -345,6 +345,27 @@ def lookup(request, revit=None):
         }
 
 
+class ContextRefused(Exception):
+    """The Context Manager declined to assemble, and why.
+
+    A REFUSAL IS NOT A FAULT, and the server could not tell them apart until
+    this existed. `heron_context.assemble()` raises `OverBudget` when a part
+    falls outside the path's budget and `SourceMissing` when a path needs
+    something this installation has not got - both are ANSWERS. Anything else
+    coming out of it is a bug.
+
+    Catching `Exception` in the tool and calling all of it a refusal was the
+    first shape, and it is the failure this whole night kept finding in other
+    people's code: a message that misdescribes what happened. A TypeError would
+    have been reported to the caller as *"Heron refused to assemble that
+    context"*, which is a sentence about a decision Heron never made.
+
+    The server cannot name `OverBudget` itself without importing heron_context,
+    which would put brain internals back in the file that talks to the user -
+    the split this seam exists to keep. So the seam translates.
+    """
+
+
 def _context_module():
     """heron_context, or BrainUnavailable saying what to install.
 
@@ -388,7 +409,10 @@ def context(request, path=None, revit=None, full=False):
     """
     CONTEXT = _context_module()
     with _Open() as store:
-        ctx = CONTEXT.assemble(store, request, path=path, revit=revit)
+        try:
+            ctx = CONTEXT.assemble(store, request, path=path, revit=revit)
+        except (CONTEXT.OverBudget, CONTEXT.SourceMissing) as why:
+            raise ContextRefused(str(why))
         return {
             "request": ctx.request,
             "path": ctx.path,

@@ -894,12 +894,18 @@ def heron_context(request: str, path: str = "", full: bool = False) -> str:
     except brain.BrainUnavailable as why:
         return str(why)
     except ValueError as why:
+        # An unknown path. The caller's, and it names the four that exist.
         return str(why)
-    except Exception as why:
-        # assemble() refuses by raising - OverBudget when a part is outside the
-        # path's budget, SourceMissing when a path needs something this
-        # installation has not got. Both are ANSWERS rather than faults, and a
-        # stack trace would hide the sentence the caller needs to read.
+    except brain.ContextRefused as why:
+        # A DECISION, not a fault: a part outside the budget, or a path whose
+        # source this installation has not got. The sentence is the answer, and
+        # a stack trace would hide it.
+        #
+        # Catching `Exception` here and calling all of it a refusal was the
+        # first shape. A TypeError would then have been reported as "Heron
+        # refused", which is a sentence about a decision Heron never made - the
+        # same failure this session kept finding elsewhere. Anything that is
+        # not one of the three above is a bug and is left to surface as one.
         return "Heron refused to assemble that context:\n  %s" % why
 
     lines = ['"%s"' % got["request"],

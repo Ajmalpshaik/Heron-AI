@@ -180,11 +180,28 @@ def main():
         refused = None
         try:
             BRAIN.context("check this against our standard", path="standards")
-        except Exception as why:
+        except BRAIN.ContextRefused as why:
             refused = str(why)
         check(refused is not None and "clause" in refused,
-              "a path whose source does not exist is refused BY NAME, rather "
-              "than returning a packet three quarters of what it claims")
+              "a path whose source does not exist raises ContextRefused, "
+              "naming the source rather than returning a packet three quarters "
+              "of what it claims")
+
+        # A REFUSAL IS NOT A FAULT, and until ContextRefused existed the tool
+        # caught Exception and called all of it a refusal - so a TypeError
+        # would have been reported to the caller as "Heron refused", a
+        # sentence about a decision Heron never made.
+        wrong_path = None
+        try:
+            BRAIN.context("anything", path="nonsense")
+        except BRAIN.ContextRefused:
+            wrong_path = "refused"
+        except ValueError as why:
+            wrong_path = str(why)
+        check(wrong_path and "not a path" in str(wrong_path),
+              "an unknown path is a ValueError naming the four that exist, "
+              "NOT a refusal - the caller made a mistake, Heron did not "
+              "decline")
 
         # --- 4. THE ACCEPTANCE TEST, and it MUTATES the library --------------
         # Deliberately last of the brain checks: it adds a provider and
