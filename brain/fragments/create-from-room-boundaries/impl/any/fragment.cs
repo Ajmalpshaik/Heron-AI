@@ -2,7 +2,9 @@
 // are in scope, and leaves `created`, `withHoles`, `unenclosed` and `refused`
 // behind.
 //
-// ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
+// ASSUMES AN OPEN TRANSACTION (Golden Rule 16). `heightAboveLevel` is
+// internal FEET - it is Set() straight into CEILING_HEIGHTABOVELEVEL_PARAM,
+// which takes internal units and accepts a millimetre figure silently.
 //
 // THE HOLES ARE THE POINT.
 //

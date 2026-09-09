@@ -577,3 +577,55 @@ by route 2 and never searches at all.
 
 Not a gate; exits 0. There is no agreed target to miss, and setting one from a first run would make
 today's library the standard.
+
+---
+
+## `check-revit-gate.py` — the fourteen questions, run as a list
+
+```bash
+python tools/check-revit-gate.py                    # the whole library
+python tools/check-revit-gate.py FRG-ELE-001        # one fragment, all fourteen
+python tools/check-revit-gate.py --list units       # the names behind a count
+```
+
+**The questions are already this project's rules.** They are spread across [docs/03](../docs/03-heron-revit.md),
+the [fragment-proving skill](../.claude/skills/fragment-proving/SKILL.md), [D-51](../docs/DECISIONS.md),
+[D-53](../docs/DECISIONS.md) and [FRAGMENT-ISSUES.md](../docs/FRAGMENT-ISSUES.md), and **nothing ran
+them as a list** ([docs/32 §4.3](../docs/32-master-architecture-reconciliation.md)). The proving skill
+names five mistakes that account for nearly every failed proof; five of them are five of these fourteen,
+which is the evidence that asking them in order pays.
+
+**Four verdicts, and they describe evidence rather than lifecycle** — [docs/24](../docs/24-trust-model.md)
+collapsed six status vocabularies into two axes and this adds no third: `ANSWERED` (read from declared
+data or the compile record) · `BY DESIGN` (the architecture answers it for every fragment, and the
+reason is named) · `LOOK` (a person should look, with why) · `NEEDS A RUN` (only a real model can say,
+and which tool asks it).
+
+### What it found, and what it proved it cannot do
+
+**One real defect in 360 fragments.** `create-from-room-boundaries` took `heightAboveLevel` and never
+said what the number meant. It is `Set()` straight into `CEILING_HEIGHTABOVELEVEL_PARAM`, which takes
+Revit's internal **feet** and accepts a millimetre figure silently — so a caller who read *"how far
+above the room's level"* and passed `2700` would get a ceiling 2,700 feet up and no error. That is
+`D3`'s failure shape exactly. Fixed in the same commit; the check now reports zero.
+
+**It cannot decide whether a fragment writes, and the attempt is recorded because the failure is
+instructive:**
+
+| Attempt | Result |
+|---|---|
+| search for `.Create(` | flagged three `READ` fragments — **all three wrong.** `CurveLoop.Create`, `Line.CreateBound` and `GeometryCreationUtilities.CreateExtrusionGeometry` build geometry in **memory**. In the Revit API *"Create"* is not a write signal |
+| narrow to calls taking `doc` | found **zero** mislabelled fragments, and missed **76** `MODIFY` ones — Revit writes through typed methods on typed objects: `view.HideElements(ids)`, `view.Scale = 2`, `param.Set(v)` |
+
+**The write surface is the API, and no word list is the API.** The real answer already exists and is
+better than any text search: `RevitFragment.Run` opens **no transaction** for a read, so Revit itself
+refuses the change — enforced by the host rather than asserted by a checker. The tool says so instead of
+competing with it, and question 13 answers differently for a reader and a writer.
+
+**Not a gate; exits 0.** A finding is a question for a person, and a tool that failed a build over
+*"this collector has no view"* would teach people to write worse collectors to buy a green tick. None of
+it is a proof — [D-30](../docs/DECISIONS.md) needs a real model, a negative case and a fingerprint.
+
+A count of 100+ is printed as a count, not a list: 114 whole-document collectors is the shape of the
+library, and a tool that dumps 143 rows teaches people to scroll past it. `--list` names them when
+somebody actually wants them.

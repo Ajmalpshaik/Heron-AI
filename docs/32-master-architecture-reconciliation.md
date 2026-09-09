@@ -267,8 +267,29 @@ The fourteen questions in incoming §14 are already Heron's rules — but they a
 runs them as a list.** The five mistakes the proving skill names as *nearly every failed proof* are
 five of those fourteen questions, which is evidence the checklist form would pay.
 
-**Verdict: ADAPT.** Not a new agent — a checklist [`heron_validate.py`](../brain/heron_validate.py)
-already has the evidence to answer, restated as questions it must answer before drafting a proof.
+**Verdict: ADAPTED, and BUILT** — [`tools/check-revit-gate.py`](../tools/check-revit-gate.py),
+2026-09-09. Not a new agent: the fourteen questions read against every fragment's own declared data and
+compile record, with four verdicts that describe **evidence** rather than lifecycle, so
+[24](24-trust-model.md)'s two axes gain no third vocabulary.
+
+**It found one real defect in 360 fragments.** `create-from-room-boundaries` took `heightAboveLevel` and
+never said what the number meant — it is `Set()` into `CEILING_HEIGHTABOVELEVEL_PARAM`, which takes
+internal **feet** and accepts a millimetre figure silently. A caller reading *"how far above the room's
+level"* and passing `2700` gets a ceiling 2,700 feet up and no error. That is `D3`'s failure shape, and
+it was invisible until something asked. Fixed in the same commit.
+
+**And it proved what a checklist cannot do**, which is worth more than the finding. Two attempts to
+decide statically whether a fragment writes:
+
+| Attempt | Result |
+|---|---|
+| search for `.Create(` | flagged three `READ` fragments — **all three wrong**. `CurveLoop.Create` and `Line.CreateBound` build geometry in memory; in the Revit API *"Create"* is not a write signal |
+| narrow to calls taking `doc` | **zero** mislabelled, and **76** `MODIFY` fragments missed — Revit writes through typed methods: `view.HideElements(ids)`, `view.Scale = 2` |
+
+**The write surface is the API, and no word list is the API.** The real answer already exists and is
+stronger: `RevitFragment.Run` opens no transaction for a read, so Revit itself refuses the change. The
+tool states that instead of competing with it — and question 13 now answers differently for a reader
+and a writer, which it did not until this was written.
 
 ### 4.4 ~~Repository content is data, not instructions~~ — NOT A GAP, and this draft said it was
 
