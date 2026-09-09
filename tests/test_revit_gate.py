@@ -327,6 +327,34 @@ def main():
               "null rather than throwing")
 
         print()
+        print("3f. Question 14 asks whether it could drop something silently")
+        print("-" * 66)
+        make(work, "handedcount", BASE % ("FRG-T-020", "READ", ""),
+             "var count = elements.Count;\n")
+        got = verdicts_for(tool, work, "handedcount")[13]
+        check(got[0] == tool.ANSWERED,
+              "a fragment that counts what it was handed cannot drop anything, "
+              "however silent it is - asking every fragment raised 143 of 360")
+
+        make(work, "dropssilently", BASE % ("FRG-T-021", "READ", ""),
+             "var found = new List<Element>();\n"
+             "foreach (var c in new FilteredElementCollector(doc)) {\n"
+             "  if (c == null) continue;\n  found.Add(c);\n}\n")
+        got = verdicts_for(tool, work, "dropssilently")[13]
+        check(got[0] == tool.LOOK,
+              "one that collects and drops in its loop, naming none of them, "
+              "IS raised - that is the plausible zero D-52 is about")
+
+        make(work, "dropsandsays", BASE % ("FRG-T-022", "READ", ""),
+             "var found = new List<Element>();\nvar skipped = 0;\n"
+             "foreach (var c in new FilteredElementCollector(doc)) {\n"
+             "  if (c == null) { skipped++; continue; }\n  found.Add(c);\n}\n")
+        got = verdicts_for(tool, work, "dropsandsays")[13]
+        check(got[0] == tool.ANSWERED,
+              "and one that counts what it skipped is fine - which is what "
+              "FILTER_ELEMENTS_BY_CATEGORY does with unresolvedLevel")
+
+        print()
         print("4. Question 13 knows a reader from a writer")
         print("-" * 66)
         reader = verdicts_for(tool, work, "nodouble")[12]

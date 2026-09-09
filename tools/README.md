@@ -627,6 +627,15 @@ the shape of the library. What is an **inconsistency** rather than a design is a
 LOOK. The 114 has not been thrown away: it is said in the answer, because it is what makes a **proof**
 slow — `set-mep-size` timed out on 307 ducts and sized 22 immediately in a smaller view.
 
+**Question 14 went 143 → 59, and the rule came from the library rather than from reasoning.** A
+fragment that **writes** names what it refused **172** times out of 202; one that **reads** does it 45
+times out of 158. **85% against 28%** — the norm exists and is not uniform, and reading is where both
+the silence and the plausible zero live. So it asks the shape [D-52](../docs/DECISIONS.md) is actually
+about: a fragment that **goes looking** and can **drop** something on the way. `filter-elements-by-type`
+returns `found: 0` when its exemplar has no type and nothing separates that from *"there are none of
+this type"* — which is exactly why `FILTER_ELEMENTS_BY_CATEGORY` reports `unresolvedLevel`. One
+fragment already solved this; 59 have not. [`Q-46`](../docs/OPEN-QUESTIONS.md).
+
 **Question 12 went 7 → 0.** It asked *does it guard against null* and raised seven fragments that
 touch nothing nullable — `count-elements` counts a list it was handed, `set-selection` selects one,
 `group-and-count` groups one. It asks now whether the code dereferences something **Revit can hand back

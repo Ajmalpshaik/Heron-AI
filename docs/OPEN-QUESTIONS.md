@@ -442,10 +442,32 @@ of what was found.* And the library's own best fragments treat it as load-bearin
 `FILTER_ELEMENTS_BY_CATEGORY` reports `unresolvedLevel` precisely so a broken level lookup reads as
 *"12 found, 12 with no level"* instead of as a plausible zero.
 
-**143 is too many to be a defect list and too many to dismiss.** Some fragments genuinely turn nothing
-down. Others are the plausible-zero failure waiting to happen, and the difference cannot be read off a
-count. What is needed is a rule for which kinds MUST report a refusal — a filter, surely; a setter,
-probably; a pure reader, perhaps not — so the checklist can ask a sharp question instead of a broad one.
+**143 was too many to be a defect list and too many to dismiss**, so the rule was looked for in the
+library's own practice rather than reasoned about — and it is there, clearly:
+
+| | reports a refusal | silent |
+|---|---|---|
+| a fragment that **WRITES** | **172** | 30 |
+| a fragment that **READS** | 45 | **113** |
+
+**85% against 28%.** The norm exists and it is not uniform: naming what you refused is already what a
+writing fragment does. Reading is where the silence lives, and reading is where the plausible zero does
+too.
+
+**So the question was narrowed to the shape [D-52](DECISIONS.md) is actually about — a fragment that
+GOES LOOKING and can DROP something on the way — and it is now 59.** One that counts a list it was
+handed cannot skip anything, however silent it is.
+
+**A worked example from those 59, and it is not hypothetical.** `filter-elements-by-type` returns
+`found: 0` when its exemplar has no type, and **nothing in the answer separates that from "there are
+none of this type."** That is exactly why `FILTER_ELEMENTS_BY_CATEGORY` reports `unresolvedLevel` — so
+a broken lookup reads as *"12 found, 12 with no level"* rather than as a plausible zero. One fragment in
+the library already solved this; 59 have not.
+
+**What is left to decide is the rule, not the list:** must every fragment that collects and drops name
+what it dropped, and does that become a validator rule the way the contract's shape is
+([`heron_fragment.py`](../brain/heron_fragment.py)), or guidance? A validator rule means 59 edits and
+every future fragment held to it.
 
 `python tools/check-revit-gate.py --list reporting` names them.
 

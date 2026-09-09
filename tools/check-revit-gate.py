@@ -202,6 +202,19 @@ def _nullable_calls(code):
     return [label for pattern, label in NULLABLE if re.search(pattern, body)]
 
 
+def _can_drop(code):
+    """Whether the code can pass over a candidate inside a loop.
+
+    A `continue` or a conditional `.Add(` is what turns a search into something
+    that can come back short without saying so. Comments stripped, as
+    everywhere else in this file.
+    """
+    body = "\n".join(line for line in (code or "").splitlines()
+                     if not line.strip().startswith("//"))
+    body = re.sub(r"/\*.*?\*/", "", body, flags=re.S)
+    return bool(re.search(r"\bcontinue\s*;", body)) or ".Add(" in body
+
+
 def ask(fid, name, doc, raw, code):
     """The fourteen answers for one fragment, in order."""
     answers = []
@@ -407,18 +420,33 @@ def ask(fid, name, doc, raw, code):
                  "which no word list is.")
     answers[-1] = (answers[-1][0], answers[-1][1] + ". " + say_extra)
 
-    # 14 - reporting
-    if code and any(w in code.lower()
-                    for w in ("refused", "skipped", "unresolved", "weakened")):
+    # 14 - reporting. Asking "does it report a refusal" raised 143 of 360, and
+    # the library's own practice says why that is too broad: a fragment that
+    # WRITES names what it refused 172 times out of 202 (85%), and one that
+    # READS does it 45 times out of 158 (28%). The norm is real and it is not
+    # uniform, so the question has to be narrower than the count.
+    #
+    # It is narrowed to the shape D-52 is actually about: a fragment that GOES
+    # LOOKING and can DROP something on the way. One that counts a list it was
+    # handed cannot skip anything, however silent it is.
+    if not code:
+        say(LOOK, "no code to read")
+    elif any(w in code.lower()
+             for w in ("refused", "skipped", "unresolved", "weakened")):
         say(ANSWERED, "reports what it turned down as well as what it did "
                       "(D-52)")
-    elif code:
+    elif "filteredelementcollector" in squashed and _can_drop(code):
         say(LOOK,
-            "reports no refusals. D-52: a count of what was turned down is not "
-            "a count of what was found, and a fragment that silently skips "
-            "looks identical to one that found nothing")
+            "collects, drops candidates in its loop, and names none of them. "
+            "D-52: a count of what was turned down is not a count of what was "
+            "found. filter-elements-by-type returns `found: 0` when its "
+            "exemplar has no type, and nothing in the answer separates that "
+            "from 'there are none of this type' - which is the whole reason "
+            "FILTER_ELEMENTS_BY_CATEGORY reports `unresolvedLevel`")
     else:
-        say(LOOK, "no code to read")
+        say(ANSWERED,
+            "names no refusals, and does not go looking - it works on what it "
+            "was handed, so there is nothing it could silently drop")
 
     return answers
 

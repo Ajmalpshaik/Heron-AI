@@ -308,6 +308,7 @@ could do nothing about being on the list:**
 | **8** linked documents | 310 → 107 | **62** | only fragments that **collect**, and only those that **read** — a linked element belongs to another document and cannot be changed through the host |
 | **11** units | 1 | **0** | the one real defect, fixed |
 | **12** null handling | 7 | **0** | it asked *is there a guard*; all 7 touch nothing nullable. It asks whether something **Revit can hand back as null** is dereferenced unchecked |
+| **14** refusal reporting | 143 | **59** | the rule came from the library: writers name refusals **85%** of the time, readers **28%**. It asks the [D-52](DECISIONS.md) shape — a fragment that **goes looking** and can **drop** something |
 
 **Two of the three cuts were false positives that looked exactly like findings**, and both were the
 same shape as the write-detection failure: a header comment saying *"Assumes `doc` … are in scope"*,
@@ -317,8 +318,14 @@ merely looks like its subject.
 
 **What is left is exactly two things, and both are open questions rather than defects:** 62 reading
 fragments that count only the host document ([`Q-48`](OPEN-QUESTIONS.md) — the one finding here about
-what a modeller sees) and 143 that name nothing they turned down ([`Q-46`](OPEN-QUESTIONS.md)), plus 6
-collectors worth a glance. **Every other question answers clean across all 360.**
+what a modeller sees) and 59 that go looking, drop candidates, and name none of them
+([`Q-46`](OPEN-QUESTIONS.md)), plus 6 collectors worth a glance. **Every other question answers clean
+across all 360.**
+
+**Both remaining findings are the same failure in two places**, and it is the one this repository
+legislates against harder than any other: an answer that is quietly smaller than the truth. A count that
+omits a link, and a count that omits what it skipped. Neither can be fixed without a decision, which is
+why both are questions.
 
 **And it proved what a checklist cannot do**, which is worth more than the finding. Two attempts to
 decide statically whether a fragment writes:
