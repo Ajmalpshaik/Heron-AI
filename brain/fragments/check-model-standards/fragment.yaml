@@ -83,6 +83,7 @@ contract:
     - name: findings
       type: IList<string>
     - name: failures
+      role: result
       type: int
     - name: sectionsChecked
       # How many rule sections were examined. A count of work DONE, not of
@@ -99,6 +100,7 @@ contract:
       role: accounting
       type: int
     - name: offenders
+      role: result
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

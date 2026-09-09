@@ -55,10 +55,16 @@ contract:
       source: request
   provides:
     - name: templateId
+      role: result
       type: ElementId
     - name: templateName
+      role: result
       type: string
     - name: appliedToSource
+      # Whether the new template was put back onto the view it came from,
+      # which makes every setting on that view read-only. A consequence the
+      # caller chose and has to see.
+      role: result
       type: bool
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

@@ -52,12 +52,20 @@ contract:
       source: request
   provides:
     - name: commonParameters
+      role: result
       type: IDictionary<ElementId, string>
     - name: perCategory
+      role: result
       type: IDictionary<ElementId, int>
     - name: filterableCategories
+      role: result
       type: IList<ElementId>
     - name: unfilterableCategories
+      # Categories that cannot be filtered at all - links, some annotation and
+      # view-specific ones. IT ANSWERS THE TWO WAYS CREATING A FILTER FAILS,
+      # BEFORE IT FAILS, and one bad category loses the whole filter with an
+      # exception naming none of them.
+      role: result
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -46,6 +46,7 @@ contract:
     - name: findings
       type: IList<string>
     - name: hiddenCategories
+      role: result
       type: IList<ElementId>
 
 proof:

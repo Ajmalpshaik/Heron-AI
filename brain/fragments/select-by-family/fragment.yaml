@@ -59,8 +59,10 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: matchedFamilies
+      role: result
       type: IDictionary<string, int>
     - name: scannedWholeModel
       # Whether the sweep was bounded by category or walked the whole
@@ -69,6 +71,7 @@ contract:
       role: accounting
       type: bool
     - name: found
+      role: result
       type: int
 
 proof:

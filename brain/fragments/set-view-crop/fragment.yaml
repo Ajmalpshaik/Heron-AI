@@ -45,8 +45,10 @@ contract:
       source: request
   provides:
     - name: applied
+      role: result
       type: bool
     - name: enclosed
+      role: result
       type: int
     - name: noGeometry
       # Elements with no geometry to crop around, so it could not be enclosed.

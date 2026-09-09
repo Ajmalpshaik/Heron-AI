@@ -37,8 +37,10 @@ contract:
       type: IList<Element>
   provides:
     - name: inViews
+      role: result
       type: IDictionary<ElementId, ICollection<ElementId>>
     - name: onSheets
+      role: result
       type: IDictionary<ElementId, ICollection<ElementId>>
     - name: nowhere
       type: IList<ElementId>

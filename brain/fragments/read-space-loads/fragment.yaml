@@ -43,10 +43,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: heatingW
+      role: result
       type: IDictionary<ElementId, double>
     - name: coolingW
+      role: result
       type: IDictionary<ElementId, double>
     - name: airflowLs
+      role: result
       type: IDictionary<ElementId, double>
     - name: notSpaces
       # Rooms handed in where Spaces were needed. *A Room carries no load -

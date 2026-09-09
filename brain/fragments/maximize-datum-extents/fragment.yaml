@@ -57,8 +57,10 @@ contract:
       type: IList<Element>
   provides:
     - name: maximized
+      role: result
       type: int
     - name: lengthsAfter
+      role: result
       type: IDictionary<ElementId, double>
     - name: unchanged
       # Datums that already reached the extent, so there was nothing to
@@ -66,6 +68,11 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: hiddenByViewExtent
+      # Datums whose end is on a view-specific extent, which OVERRIDES the
+      # shared one - so this fix changes nothing in exactly the view somebody
+      # is looking at, and reads as broken. Found and named rather than left
+      # to be discovered.
+      role: result
       type: IList<ElementId>
     - name: notADatum
       # Handed in but not a grid or a level, so there was nothing here to act

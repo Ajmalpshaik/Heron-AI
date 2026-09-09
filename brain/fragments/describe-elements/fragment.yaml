@@ -34,6 +34,7 @@ contract:
       type: IList<Element>
   provides:
     - name: described
+      role: result
       type: IDictionary<ElementId, string>
     - name: noType
       # Elements with no type to read, so it could not be described. The

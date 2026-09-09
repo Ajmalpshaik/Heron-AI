@@ -51,6 +51,7 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: reasons
+      role: result
       type: IDictionary<ElementId, string>
 
 proof:

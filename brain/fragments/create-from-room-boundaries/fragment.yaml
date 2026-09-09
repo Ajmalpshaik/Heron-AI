@@ -60,8 +60,13 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IDictionary<ElementId, ElementId>
     - name: withHoles
+      # THE HOLES ARE THE REASON THIS EXISTS - the rooms whose ceiling was
+      # built with its shafts and columns cut out. What it made, not what it
+      # turned away.
+      role: result
       type: IList<ElementId>
     - name: unenclosed
       # Rooms with no usable boundary, so nothing could be built on them. *No

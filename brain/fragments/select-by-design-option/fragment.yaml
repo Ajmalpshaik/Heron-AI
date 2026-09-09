@@ -57,8 +57,13 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: optionId
+      # Which option the name resolved to. TWO DESIGN OPTIONS CAN HAVE THE
+      # SAME NAME AND THAT IS THE NORMAL CASE, so this says which one was read
+      # - about the lookup, never an element it found (D-52).
+      role: accounting
       type: ElementId
     - name: findings
       type: IList<string>

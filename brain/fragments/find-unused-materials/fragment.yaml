@@ -63,8 +63,10 @@ contract:
       type: Document
   provides:
     - name: unusedMaterials
+      role: result
       type: IList<ElementId>
     - name: unusedNames
+      role: result
       type: IList<string>
     - name: scannedInstances
       # How many instances were examined. A count of work DONE, not of things

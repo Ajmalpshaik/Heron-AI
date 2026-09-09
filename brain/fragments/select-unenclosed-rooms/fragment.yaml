@@ -53,6 +53,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: unplaced
       # One of the TWO FAULTS this fragment exists to find. *The faulty

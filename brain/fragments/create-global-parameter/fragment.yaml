@@ -69,8 +69,10 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: bool
     - name: parameterId
+      role: result
       type: ElementId
     - name: findings
       type: IList<string>

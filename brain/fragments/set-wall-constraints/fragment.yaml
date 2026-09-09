@@ -58,10 +58,19 @@ contract:
       source: request
   provides:
     - name: rehosted
+      role: result
       type: int
     - name: elevationChanged
+      # Walls that ACTUALLY MOVED, found by measuring every wall again
+      # afterwards and comparing. The fault this fragment exists to prevent,
+      # and the only place it would show.
+      role: result
       type: IList<ElementId>
     - name: unconnectedTop
+      # Walls whose top is unconnected, so giving them a top level would be a
+      # design change rather than a re-host. NAMED AND SKIPPED unless the
+      # caller says otherwise (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notAWall
       # Handed in but not walls, so there was nothing here to act on. A count

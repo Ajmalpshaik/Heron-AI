@@ -94,8 +94,12 @@ contract:
       source: request
   provides:
     - name: upgraded
+      role: result
       type: IDictionary<string, string>
     - name: failed
+      # Files that would not open, convert or save. Never a file it upgraded
+      # (D-52).
+      role: accounting
       type: IList<string>
     - name: skipped
       # What it passed over. The evidence it looked, never a thing it

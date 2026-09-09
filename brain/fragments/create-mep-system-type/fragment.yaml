@@ -54,8 +54,13 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: Element
     - name: classification
+      # What the new type inherited - supply, return, sanitary - from the one
+      # it was copied from. It CANNOT BE CHANGED AFTERWARDS, so it is the fact
+      # that decides whether the right parent was chosen.
+      role: result
       type: string
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

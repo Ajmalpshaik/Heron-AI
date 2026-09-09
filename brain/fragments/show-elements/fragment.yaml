@@ -41,6 +41,7 @@ contract:
       source: request
   provides:
     - name: shown
+      role: result
       type: int
     - name: notHidden
       # Elements that were not hidden, so there was nothing to bring back.
@@ -48,6 +49,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: temporaryModeCleared
+      # That the temporary hide/isolate mode was left entirely, WHICH BRINGS
+      # BACK EVERYTHING ANYBODY HID TEMPORARILY, not just the elements named
+      # here. A consequence far wider than the request.
+      role: result
       type: bool
     - name: viewRefused
       # The view declined the change - a template owns the slot, or the view

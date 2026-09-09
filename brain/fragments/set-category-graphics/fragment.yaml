@@ -42,6 +42,7 @@ contract:
       source: request
   provides:
     - name: overridden
+      role: result
       type: int
     - name: notControllable
       # Categories this view will not let be overridden. The evidence it

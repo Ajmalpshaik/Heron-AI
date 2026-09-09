@@ -59,6 +59,7 @@ contract:
     - name: findings
       type: IList<string>
     - name: measured
+      role: result
       type: int
     - name: noBoundingBox
       # Elements Revit gives no bounding box for, so it could not be measured.
@@ -66,6 +67,7 @@ contract:
       role: accounting
       type: IList<string>
     - name: combinedSizeMm
+      role: result
       type: string
 
 proof:

@@ -56,10 +56,16 @@ contract:
       source: request
   provides:
     - name: saved
+      role: result
       type: int
     - name: savedAs
+      role: result
       type: IDictionary<string, string>
     - name: nameCollisions
+      # Families whose cleaned file names collide, so one would quietly
+      # overwrite another. What it did NOT write, never a file it saved
+      # (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

@@ -50,6 +50,7 @@ contract:
       source: request
   provides:
     - name: values
+      role: result
       type: IDictionary<ElementId, string>
     - name: blank
       # Elements that carry it and hold nothing. Also evidence it looked -
@@ -62,6 +63,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: resolvedFrom
+      # Whether each value came off the instance or off its type. "THEY SHARE
+      # ONE VALUE" AND "THEY EACH CARRY THE SAME VALUE" ARE DIFFERENT FINDINGS
+      # WITH DIFFERENT FIXES, and this is what tells them apart.
+      role: result
       type: IDictionary<ElementId, string>
 
 proof:

@@ -80,6 +80,7 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: int
     - name: notPresent
       # Field names the schedule does not carry, so it could not be restyled.
@@ -93,6 +94,7 @@ contract:
       role: accounting
       type: IList<string>
     - name: appliedAppearance
+      role: result
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

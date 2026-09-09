@@ -49,6 +49,7 @@ contract:
     - name: findings
       type: IList<string>
     - name: overriddenCategories
+      role: result
       type: IList<ElementId>
 
 proof:

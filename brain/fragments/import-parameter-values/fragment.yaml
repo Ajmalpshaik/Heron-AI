@@ -75,12 +75,22 @@ contract:
     - name: findings
       type: IList<string>
     - name: valuesWritten
+      role: result
       type: int
     - name: rowsMatched
+      # How many CSV rows resolved to an element in this model. The size of
+      # what it could act on, never a value it wrote (D-52).
+      role: accounting
       type: int
     - name: rowsUnmatched
+      # CSV rows whose id resolves to nothing here - usually the wrong model.
+      # Given and unusable (D-52).
+      role: accounting
       type: int
     - name: valuesRejected
+      # Values Revit accepted and then read back different. EVERY VALUE
+      # WRITTEN IS RE-READ, and these are the ones that did not take (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -61,8 +61,10 @@ contract:
     - name: findings
       type: IList<string>
     - name: overlapping
+      role: result
       type: IList<ElementId>
     - name: pairs
+      role: result
       type: int
     - name: noBox
       # Tags with no bounding box, so it could not be tested for overlap. The

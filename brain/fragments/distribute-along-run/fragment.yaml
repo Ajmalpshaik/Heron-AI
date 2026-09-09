@@ -59,8 +59,13 @@ contract:
       source: request
   provides:
     - name: placed
+      role: result
       type: IList<ElementId>
     - name: leftoverMm
+      # The length left over at the end of the run, stated so the decision
+      # stays with whoever asked. It is the WHOLE run length when nothing
+      # could be placed, so it must never read as work (D-52).
+      role: accounting
       type: double
     - name: findings
       type: IList<string>

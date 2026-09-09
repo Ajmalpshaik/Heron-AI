@@ -61,6 +61,7 @@ contract:
       source: request
   provides:
     - name: cleared
+      role: result
       type: int
     - name: notOverridable
       # Categories this view will not accept an override on -
@@ -75,6 +76,11 @@ contract:
       role: accounting
       type: IList<string>
     - name: stillOverriding
+      # What is STILL colouring the view - overrides on individual elements,
+      # and overrides carried by the view's filters, both of which survive
+      # this untouched. IT DOES NOT MAKE THE VIEW NORMAL, AND SAYING SO IS THE
+      # POINT.
+      role: result
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

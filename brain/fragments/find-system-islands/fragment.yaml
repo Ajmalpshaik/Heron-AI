@@ -55,12 +55,19 @@ contract:
       source: ambient
   provides:
     - name: islandOf
+      role: result
       type: IDictionary<ElementId, int>
     - name: islandSizes
+      role: result
       type: IDictionary<int, int>
     - name: sourceless
+      role: result
       type: IList<int>
     - name: islandCount
+      # How many separate networks there are. AN ISLAND WITH NO SOURCE IS THE
+      # FINDING, NOT THE ISLAND COUNT - two networks is perfectly normal,
+      # supply and return are two (D-52).
+      role: accounting
       type: int
 
 proof:

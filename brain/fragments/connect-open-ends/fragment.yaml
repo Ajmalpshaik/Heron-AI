@@ -61,10 +61,14 @@ contract:
       source: request
   provides:
     - name: connected
+      role: result
       type: int
     - name: findings
       type: IList<string>
     - name: openEnds
+      # How many open connectors were considered at all. The size of the
+      # sweep, never a joint it made (D-52).
+      role: accounting
       type: int
     - name: notPaired
       # Open ends that failed one of the four tests - domain, size, distance,

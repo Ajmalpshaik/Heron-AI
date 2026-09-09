@@ -66,8 +66,10 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<FamilyInstance>
     - name: placed
+      role: result
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

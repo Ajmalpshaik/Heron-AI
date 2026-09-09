@@ -35,10 +35,15 @@ contract:
       type: Document
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: findings
       type: IList<string>
     - name: warningCount
+      # How many warnings there are. THE ELEMENTS ARE THE POINT, NOT THE COUNT
+      # - a number was what COUNT_ELEMENTS already answered, about something
+      # else entirely (D-52).
+      role: accounting
       type: int
     - name: notInThisModel
       # Warning elements that do not resolve in this document. Given and

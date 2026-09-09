@@ -84,18 +84,31 @@ contract:
       source: ambient
   provides:
     - name: lengths
+      role: result
       type: IDictionary<ElementId, double>
     - name: widths
+      role: result
       type: IDictionary<ElementId, double>
     - name: rotations
+      role: result
       type: IDictionary<ElementId, double>
     - name: irregular
+      # The gap between the room's own rectangle and its real area - large
+      # here means genuinely not rectangular, and that room needs splitting
+      # rather than quoting.
+      role: result
       type: IDictionary<ElementId, double>
     - name: areas
+      role: result
       type: IDictionary<ElementId, double>
     - name: volumes
+      role: result
       type: IDictionary<ElementId, double>
     - name: volumeComputationOff
+      # That Area and Volume Computations is not set to volumes, WHICH MAKES
+      # EVERY ROOM REPORT ZERO - a plausible number, and the same one an
+      # unbounded room gives. It explains every volume in the answer at once.
+      role: result
       type: bool
     - name: unplaced
       # Rooms never placed in the model, so it could not be measured. The

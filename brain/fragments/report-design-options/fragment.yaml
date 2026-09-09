@@ -43,8 +43,10 @@ contract:
     - name: findings
       type: IList<string>
     - name: optionCount
+      role: result
       type: int
     - name: activeOption
+      role: result
       type: string
 
 proof:

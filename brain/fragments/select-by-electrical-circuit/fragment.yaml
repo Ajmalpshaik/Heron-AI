@@ -53,8 +53,14 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: panels
+      # The panels the circuits feed from, REPORTED SEPARATELY RATHER THAN
+      # LEFT AS AN APPARENT OMISSION - a circuit's elements are its loads and
+      # the panel is not among them, so "1 element on a circuit between two
+      # pieces of equipment" would read as a broken filter.
+      role: result
       type: IList<string>
     - name: findings
       type: IList<string>

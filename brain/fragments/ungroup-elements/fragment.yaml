@@ -41,8 +41,10 @@ contract:
       type: IList<Element>
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: ungrouped
+      role: result
       type: int
     - name: notGroups
       # Handed in but not groups, so there was nothing here to act on. A count

@@ -93,6 +93,7 @@ contract:
       source: request
   provides:
     - name: sized
+      role: result
       type: int
     - name: findings
       type: IList<string>
@@ -108,6 +109,9 @@ contract:
       role: accounting
       type: IList<string>
     - name: velocityIsApproximate
+      # A caveat on the velocity reported, not a measurement of its own. Never
+      # a pipe it sized (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

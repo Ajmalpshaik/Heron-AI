@@ -55,12 +55,24 @@ contract:
       source: ambient
   provides:
     - name: differing
+      role: result
       type: IDictionary<string, IList<string>>
     - name: identicalCount
+      # How many parameters were checked and matched. A count of what was
+      # LOOKED AT - `differing` is what finding something looks like, and this
+      # is named in tools/jobs/example.yaml as the reason that job file says
+      # `expect: differing` (D-52).
+      role: accounting
       type: int
     - name: comparedCount
+      # How many parameters were compared at all. A count of what was LOOKED
+      # AT, never a difference it found (D-52).
+      role: accounting
       type: int
     - name: tooFewToCompare
+      # That fewer than two elements arrived, so there was nothing to compare.
+      # The evidence it looked and declined (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

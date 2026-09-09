@@ -62,6 +62,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: withoutGeometry
       # Elements with no solid geometry, which the exact test cannot judge.

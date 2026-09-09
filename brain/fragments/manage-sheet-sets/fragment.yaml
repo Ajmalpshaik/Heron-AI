@@ -58,8 +58,10 @@ contract:
       source: request
   provides:
     - name: memberCount
+      role: result
       type: int
     - name: done
+      role: result
       type: bool
     - name: notASheet
       # Handed in but not sheets, so there was nothing here to act on. A count

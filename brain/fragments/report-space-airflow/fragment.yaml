@@ -47,16 +47,22 @@ contract:
       type: IList<Element>
   provides:
     - name: designSupply
+      role: result
       type: IDictionary<ElementId, double>
     - name: actualSupply
+      role: result
       type: IDictionary<ElementId, double>
     - name: designReturn
+      role: result
       type: IDictionary<ElementId, double>
     - name: actualReturn
+      role: result
       type: IDictionary<ElementId, double>
     - name: designExhaust
+      role: result
       type: IDictionary<ElementId, double>
     - name: actualExhaust
+      role: result
       type: IDictionary<ElementId, double>
     - name: noDesignFigure
       # Spaces with no design figure to check the actual against. THE HEADLINE

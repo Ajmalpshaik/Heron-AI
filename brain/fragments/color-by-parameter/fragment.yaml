@@ -64,8 +64,10 @@ contract:
       source: request
   provides:
     - name: coloured
+      role: result
       type: int
     - name: legend
+      role: result
       type: IList<string>
     - name: noValue
       # Elements with nothing in that parameter. They ARE coloured - *a blank

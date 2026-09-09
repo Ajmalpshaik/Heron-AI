@@ -64,8 +64,13 @@ contract:
       source: request
   provides:
     - name: added
+      role: result
       type: int
     - name: partMissing
+      # Parts of the combined name that did not resolve to a real parameter. A
+      # PART THAT DOES NOT RESOLVE STOPS THE WHOLE COLUMN, so nothing was
+      # added for these - what it was GIVEN and could not use (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notASchedule
       # Handed in but not a schedule, so there was nothing here to act on. A

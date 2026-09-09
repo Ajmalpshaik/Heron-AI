@@ -49,8 +49,13 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: nestedGroups
+      # How many members are themselves groups. NESTED GROUPS COME BACK AS
+      # GROUPS, ONE ELEMENT EACH, NOT FLATTENED - so this is what says the set
+      # is shallower than it looks.
+      role: result
       type: int
     - name: findings
       type: IList<string>

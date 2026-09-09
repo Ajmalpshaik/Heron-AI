@@ -41,6 +41,7 @@ contract:
       source: request
   provides:
     - name: applied
+      role: result
       type: int
     - name: alreadyOnIt
       # Elements that were ALREADY in the state asked for, so there was

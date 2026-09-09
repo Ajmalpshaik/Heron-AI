@@ -59,10 +59,19 @@ contract:
     - name: findings
       type: IList<string>
     - name: rows
+      role: result
       type: IList<string>
     - name: totalBodyRows
+      # THE ROW COUNT IS THE ANSWER TO THE MISSING-ELEMENT QUESTION - somebody
+      # saying a duct is missing has a schedule whose filters or phase exclude
+      # it.
+      role: result
       type: int
     - name: truncated
+      # That the schedule was too large to return whole. A LARGE SCHEDULE IS
+      # TRUNCATED AND SAYS SO, because silently returning the first fifty
+      # would be a wrong answer wearing a right one's clothes.
+      role: result
       type: bool
     - name: skippedNotSchedules
       # What it passed over. The evidence it looked, never a thing it

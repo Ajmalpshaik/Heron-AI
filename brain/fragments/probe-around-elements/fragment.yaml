@@ -62,6 +62,7 @@ contract:
       source: request
   provides:
     - name: hits
+      role: result
       type: IDictionary<ElementId, IList<string>>
     - name: nothingHit
       # Elements whose rays hit nothing. Indistinguishable from a 3D view

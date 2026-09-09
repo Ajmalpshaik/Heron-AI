@@ -48,10 +48,13 @@ contract:
       source: request
   provides:
     - name: minMm
+      role: result
       type: XYZ
     - name: maxMm
+      role: result
       type: XYZ
     - name: scopeBoxId
+      role: result
       type: ElementId
     - name: findings
       type: IList<string>

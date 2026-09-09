@@ -67,6 +67,7 @@ contract:
       source: request
   provides:
     - name: connected
+      role: result
       type: int
     - name: findings
       type: IList<string>

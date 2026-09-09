@@ -39,6 +39,7 @@ contract:
       type: IList<Element>
   provides:
     - name: isolated
+      role: result
       type: int
     - name: viewRefused
       # The view declined the change - a template owns the slot, or the view

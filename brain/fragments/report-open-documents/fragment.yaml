@@ -47,14 +47,22 @@ contract:
       type: Document
   provides:
     - name: documents
+      role: result
       type: IList<string>
     - name: paths
+      role: result
       type: IList<string>
     - name: titles
+      role: result
       type: IList<string>
     - name: activeTitle
+      role: result
       type: string
     - name: count
+      # How many are real projects. LINKS AND FAMILIES ARE OPEN DOCUMENTS AND
+      # ARE NOT PROJECTS, so this is what tells you the list is shorter than
+      # you expected on purpose.
+      role: result
       type: int
     - name: findings
       type: IList<string>

@@ -57,6 +57,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: scanned
       # How many elements were examined. A count of work DONE, not of things

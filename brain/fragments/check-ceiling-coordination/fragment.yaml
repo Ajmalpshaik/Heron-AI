@@ -63,6 +63,7 @@ contract:
     - name: findings
       type: IList<string>
     - name: outOfPlane
+      role: result
       type: IList<ElementId>
     - name: noCeilingAbove
       # Devices with no ceiling over them at all. THE FIRST OF THE TWO

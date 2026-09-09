@@ -53,8 +53,13 @@ contract:
       source: request
   provides:
     - name: sheetsChanged
+      role: result
       type: int
     - name: cloudDriven
+      # Sheets whose revision comes from a cloud, which this list cannot
+      # remove - A SHEET CARRIES REVISIONS TWO WAYS AND THIS IS THE OTHER ONE.
+      # Never a sheet it changed (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notASheet
       # Handed in but not sheets, so there was nothing here to act on. A count
@@ -62,6 +67,11 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: revisionsRemaining
+      # How many revisions the project still has afterwards. WRITING THIS LIST
+      # CAN MAKE REVIT PURGE AN UNUSED REVISION - one on no sheet and in no
+      # cloud can vanish project-wide, and this is the only number that shows
+      # it.
+      role: result
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -104,12 +104,19 @@ contract:
       source: request
   provides:
     - name: order
+      role: result
       type: IList<ElementId>
     - name: links
+      role: result
       type: IList<string>
     - name: totalLengthMm
+      role: result
       type: double
     - name: guarantee
+      # Which guarantee the answer carries - the tree IS the shortest total,
+      # the chain is a heuristic never guaranteed. A statement about the
+      # method, not about the model (D-52).
+      role: accounting
       type: string
     - name: noLocation
       # Elements with no location, so it could not be put in the order. The

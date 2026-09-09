@@ -55,6 +55,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: scanned
       # How many were swept, reported *so a small answer can be read against

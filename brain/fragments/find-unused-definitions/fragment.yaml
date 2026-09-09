@@ -58,10 +58,16 @@ contract:
       type: Document
   provides:
     - name: unusedTemplates
+      role: result
       type: IDictionary<ElementId, string>
     - name: unusedFilters
+      role: result
       type: IDictionary<ElementId, string>
     - name: filtersUsedOnlyByUnusedTemplates
+      # Filters whose only user is a template nothing uses - held alive by
+      # something that is itself dead. A second-order finding, and the row
+      # that decides whether removing a template frees anything.
+      role: result
       type: IList<ElementId>
     - name: findings
       type: IList<string>

@@ -32,10 +32,20 @@ contract:
     - name: findings
       type: IList<string>
     - name: worksetCount
+      role: result
       type: int
     - name: closedCount
+      # A CLOSED WORKSET IS WHY A COUNT COMES BACK LOW, AND NOTHING ELSE SAYS
+      # SO - elements on one are not loaded at all, so no view draws them and
+      # no collector returns them. The finding behind half the "where did they
+      # go" questions.
+      role: result
       type: int
     - name: workshared
+      # NOT WORKSHARED IS A THIRD ANSWER, NOT AN EMPTY ONE - a single-user
+      # file has no worksets to have, which is a different condition from
+      # having none open.
+      role: result
       type: bool
 
 proof:

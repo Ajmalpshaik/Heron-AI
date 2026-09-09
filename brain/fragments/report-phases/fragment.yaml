@@ -40,10 +40,13 @@ contract:
       source: ambient
   provides:
     - name: phaseNames
+      role: result
       type: IList<string>
     - name: phaseIds
+      role: result
       type: IDictionary<string, ElementId>
     - name: phaseCount
+      role: result
       type: int
 
 proof:

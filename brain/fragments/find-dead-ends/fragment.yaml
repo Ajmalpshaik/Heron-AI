@@ -51,14 +51,30 @@ contract:
       source: request
   provides:
     - name: deadEnds
+      role: result
       type: IList<ElementId>
     - name: stubs
+      # Very short open ends - usually a deliberate future connection,
+      # REPORTED QUIETLY rather than dropped. One of the classes this fragment
+      # exists to separate.
+      role: result
       type: IList<ElementId>
     - name: served
+      # Open ends sitting at a terminal, fixture or equipment - FINE, and
+      # classified so they never reach the finding. The evidence it looked
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: capped
+      # Open ends closed by a cap fitting - FINE, and classified so they never
+      # reach the finding. The evidence it looked (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: openEndsFound
+      # How many open ends were classified at all. The size of the sweep -
+      # MOST OPEN ENDS ARE MEANT TO BE THERE, which is why the raw number is
+      # not the answer (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

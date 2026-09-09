@@ -43,6 +43,7 @@ contract:
       type: IList<Element>
   provides:
     - name: locations
+      role: result
       type: IList<string>
     - name: withoutLocation
       # Elements with none of the three kinds of position. A count of what

@@ -51,8 +51,12 @@ contract:
     - name: findings
       type: IList<string>
     - name: createdTypeId
+      role: result
       type: ElementId
     - name: sourceTypeName
+      # The name of the type it copied from. Context for the answer, filled in
+      # whether anything was created or not (D-52).
+      role: accounting
       type: string
     - name: noType
       # Elements with no type behind them, so it could not be duplicated. The

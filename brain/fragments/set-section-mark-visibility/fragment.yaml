@@ -53,10 +53,15 @@ contract:
       source: request
   provides:
     - name: hidden
+      role: result
       type: int
     - name: shown
+      role: result
       type: int
     - name: unmatched
+      # Marks whose referenced view could not be matched, so neither hiding
+      # nor showing could be decided. Given and unusable (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

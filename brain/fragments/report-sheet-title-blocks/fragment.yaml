@@ -48,6 +48,9 @@ contract:
     - name: findings
       type: IList<string>
     - name: withTitleBlock
+      # How many sheets have one. The evidence it looked; the sheets WITHOUT
+      # are the finding (D-52).
+      role: accounting
       type: int
     - name: withoutTitleBlock
       # A SHEET WITH NO TITLE BLOCK IS A REAL FINDING, not a blank row - it
@@ -56,6 +59,7 @@ contract:
       role: result
       type: IList<string>
     - name: typesInUse
+      role: result
       type: IList<string>
 
 proof:

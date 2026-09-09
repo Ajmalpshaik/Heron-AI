@@ -32,8 +32,10 @@ contract:
       type: IList<Element>
   provides:
     - name: materials
+      role: result
       type: IDictionary<ElementId, ICollection<string>>
     - name: volumeM3
+      role: result
       type: IDictionary<string, double>
     - name: noMaterial
       # Elements carrying no material, so it could not be reported on. The

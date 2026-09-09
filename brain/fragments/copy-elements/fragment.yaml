@@ -38,6 +38,7 @@ contract:
       source: request
   provides:
     - name: copies
+      role: result
       type: IList<ElementId>
     - name: notCopied
       # Elements Revit returned no copy for. The evidence it looked and could

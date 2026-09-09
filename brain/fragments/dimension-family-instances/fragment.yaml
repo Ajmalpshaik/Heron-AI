@@ -80,8 +80,10 @@ contract:
       source: request
   provides:
     - name: dimensionId
+      role: result
       type: ElementId
     - name: dimensionedCount
+      role: result
       type: int
     - name: noReference
       # Instances publishing no centre reference, so there was nothing to
@@ -90,6 +92,9 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: problem
+      # The sentence saying what stopped it. The evidence it looked and could
+      # not, never a dimension it made (D-52).
+      role: accounting
       type: string
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

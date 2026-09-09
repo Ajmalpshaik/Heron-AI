@@ -62,10 +62,18 @@ contract:
     - name: findings
       type: IList<string>
     - name: systemsCalculated
+      # How many systems carried a calculation to read. The size of the sweep,
+      # never a pressure it found (D-52).
+      role: accounting
       type: int
     - name: uncalculated
+      # Systems Revit has never calculated, LISTED SEPARATELY AND NAMED
+      # UNCALCULATED, NEVER FOLDED INTO THE TABLE AS ZEROS - a zero pressure
+      # drop and an uncalculated system look identical and are not.
+      role: result
       type: IList<string>
     - name: criticalPathTotals
+      role: result
       type: IList<string>
 
 proof:

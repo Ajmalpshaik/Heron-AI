@@ -57,6 +57,7 @@ contract:
     - name: findings
       type: IList<string>
     - name: done
+      role: result
       type: int
     - name: notLinks
       # Handed in but not linked models, so there was nothing here to act on.

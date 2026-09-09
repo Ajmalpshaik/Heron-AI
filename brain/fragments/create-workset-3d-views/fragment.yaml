@@ -46,6 +46,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IDictionary<string, ElementId>
     - name: alreadyExisted
       # Elements that were ALREADY in the state asked for, so there was

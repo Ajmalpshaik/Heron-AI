@@ -70,6 +70,7 @@ contract:
       source: request
   provides:
     - name: overridden
+      role: result
       type: int
     - name: notALink
       # Handed in but not a linked model, so there was nothing here to act on.
@@ -84,6 +85,7 @@ contract:
       role: accounting
       type: IList<string>
     - name: appliedTo
+      role: result
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

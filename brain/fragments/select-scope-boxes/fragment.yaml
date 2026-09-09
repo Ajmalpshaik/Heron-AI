@@ -52,8 +52,10 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: matchedNames
+      role: result
       type: IList<string>
     - name: scanned
       # How many were walked. THE NAME THAT EXPOSED THE DEAD HEURISTICS on
@@ -62,6 +64,7 @@ contract:
       role: accounting
       type: int
     - name: found
+      role: result
       type: int
 
 proof:

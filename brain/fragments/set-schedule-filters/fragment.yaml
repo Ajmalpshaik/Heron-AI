@@ -72,10 +72,18 @@ contract:
       source: request
   provides:
     - name: filtered
+      role: result
       type: int
     - name: replacedRules
+      # The rules that were there BEFORE - THE FILTERS ARE REPLACED, NOT ADDED
+      # TO, and what was there is reported before it goes. The prior state,
+      # never a rule it applied (D-52).
+      role: accounting
       type: IList<string>
     - name: cannotFilterBy
+      # Fields Revit will not filter on - CanFilterByValue is its own answer
+      # and is asked before anything is written. Given and unusable (D-52).
+      role: accounting
       type: IList<string>
     - name: notPresent
       # Field names the schedule does not carry, so it could not be filtered
@@ -83,6 +91,7 @@ contract:
       role: accounting
       type: IList<string>
     - name: appliedRules
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

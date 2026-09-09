@@ -66,8 +66,10 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: matchedNames
+      role: result
       type: IList<string>
     - name: scanned
       # How many elements were examined. A count of work DONE, not of things
@@ -76,6 +78,7 @@ contract:
       role: accounting
       type: int
     - name: found
+      role: result
       type: int
 
 proof:

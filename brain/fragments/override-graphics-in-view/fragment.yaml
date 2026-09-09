@@ -37,6 +37,7 @@ contract:
       source: request
   provides:
     - name: overridden
+      role: result
       type: int
     - name: skipped
       # What it passed over. The evidence it looked, never a thing it

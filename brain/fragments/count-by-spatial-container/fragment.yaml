@@ -75,10 +75,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: groupNames
+      role: result
       type: IList<string>
     - name: groupCounts
+      role: result
       type: IList<int>
     - name: placed
+      role: result
       type: int
     - name: unplaced
       # Containers that are unplaced or unbounded. *SKIPPED, NOT ASKED* - a

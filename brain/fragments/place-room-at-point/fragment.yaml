@@ -53,6 +53,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: unenclosed
       # Rooms this fragment PLACED that came back with no area. *Every one

@@ -42,8 +42,13 @@ contract:
       source: request
   provides:
     - name: deleted
+      role: result
       type: bool
     - name: renumbered
+      # DELETING ONE RENUMBERS EVERY LATER REVISION, AND THAT IS THE PART THAT
+      # CATCHES PEOPLE - every note and every drawing referring to the old
+      # numbers is now wrong. The consequence, not the bookkeeping.
+      role: result
       type: IDictionary<int, string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

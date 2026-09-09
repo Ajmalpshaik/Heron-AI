@@ -57,6 +57,7 @@ contract:
       source: request
   provides:
     - name: parked
+      role: result
       type: int
     - name: perSide
       # How the parked tags were split between the view's edges. A
@@ -64,6 +65,9 @@ contract:
       role: accounting
       type: IDictionary<string, int>
     - name: usedTagExtent
+      # Whether the crop was used or the tagged elements' own extent stood in
+      # for it. Which method ran, never a tag it parked (D-52).
+      role: accounting
       type: bool
     - name: notTags
       # What was handed in that is not a tag at all. The evidence it

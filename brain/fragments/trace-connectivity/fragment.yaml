@@ -44,10 +44,19 @@ contract:
       source: request
   provides:
     - name: reached
+      role: result
       type: IList<Element>
     - name: openEnds
+      # How many ends the walk stopped at. The shape of the sweep, never an
+      # element it reached (D-52).
+      role: accounting
       type: int
     - name: joinedByGeometry
+      # Joints the declared connections do not carry but the geometry does.
+      # Both Connector.IsConnected and the system name HAVE BEEN WRONG IN REAL
+      # WORK ON THE SAME MODEL AT THE SAME TIME, and this number is the
+      # difference between them.
+      role: result
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

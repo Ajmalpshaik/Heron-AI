@@ -37,8 +37,12 @@ contract:
       type: IList<Element>
   provides:
     - name: cleared
+      role: result
       type: int
     - name: hadNothing
+      # Elements that carried no override to clear. The evidence it looked,
+      # never a clear it made (D-52).
+      role: accounting
       type: int
     - name: viewRefused
       # The view declined the change - a template owns the slot, or the view

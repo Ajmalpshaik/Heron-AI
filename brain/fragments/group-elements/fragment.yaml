@@ -39,8 +39,10 @@ contract:
       type: IList<Element>
   provides:
     - name: groupId
+      role: result
       type: ElementId
     - name: grouped
+      role: result
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

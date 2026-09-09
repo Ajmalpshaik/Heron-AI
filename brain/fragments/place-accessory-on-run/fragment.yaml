@@ -59,8 +59,13 @@ contract:
       source: request
   provides:
     - name: placed
+      role: result
       type: IList<ElementId>
     - name: leftSevered
+      # Runs cut in two where the accessory then failed to place - REPORTED
+      # PER RUN WITH BOTH IDS, NOT SWALLOWED. A failure that left damage
+      # behind, never a placement (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notARun
       # Handed in but not a duct or pipe run, so there was nothing here to act

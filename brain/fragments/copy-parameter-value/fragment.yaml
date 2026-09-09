@@ -44,8 +44,12 @@ contract:
       source: request
   provides:
     - name: copied
+      role: result
       type: int
     - name: sourceEmpty
+      # Elements whose source parameter held nothing, so there was nothing to
+      # copy. Given and unusable, never a write it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -54,6 +58,9 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: typeMismatch
+      # That the two parameters store different types, which stops the whole
+      # batch before anything is written. A refusal, never a copy (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -55,8 +55,12 @@ contract:
       source: request
   provides:
     - name: detached
+      role: result
       type: int
     - name: hadNoTemplate
+      # Views that were carrying no template, so there was nothing to detach.
+      # The evidence it looked (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -65,6 +69,7 @@ contract:
       role: accounting
       type: IList<string>
     - name: detachedFrom
+      role: result
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

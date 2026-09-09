@@ -73,10 +73,18 @@ contract:
       source: request
   provides:
     - name: sorted
+      role: result
       type: int
     - name: replacedRules
+      # The sort rules that were there BEFORE - THE SORT IS REPLACED, NOT
+      # APPENDED TO, and the existing rules are reported before they go. The
+      # prior state, never a rule it applied (D-52).
+      role: accounting
       type: IList<string>
     - name: cannotSortBy
+      # Fields Revit will not sort by - CanSortByField is its own answer,
+      # asked before anything is tried. Given and unusable (D-52).
+      role: accounting
       type: IList<string>
     - name: notPresent
       # Field names the schedule does not carry, so it could not be sorted on.
@@ -84,6 +92,7 @@ contract:
       role: accounting
       type: IList<string>
     - name: appliedOrder
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

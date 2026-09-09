@@ -41,12 +41,25 @@ contract:
       source: request
   provides:
     - name: moved
+      role: result
       type: int
     - name: partly
+      # Elements that moved, but not the whole offset - a constraint took up
+      # the rest. One of the FOUR OUTCOMES this fragment reports because "it
+      # did not throw" is not the same as "it moved", and a partial move is a
+      # real change somebody has to see.
+      role: result
       type: int
     - name: blocked
+      # Elements that did not move at all. Revit's move call returns normally
+      # and moves nothing on a group member, so this is what stops that
+      # reading as success (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: unverified
+      # Elements whose new position could not be read back to confirm. The
+      # evidence it could not check, never a confirmed move (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
