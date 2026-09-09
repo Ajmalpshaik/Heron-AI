@@ -70,7 +70,7 @@ Research further.**
 | [`alibaba/open-code-review`](https://github.com/alibaba/open-code-review) | code review at scale | **deterministic pipeline first, agent second**; line-level findings; a built-in ruleset | the split is [19 §5](19-context-and-cost.md)'s. The line-level shape is what [`check-revit-gate.py`](../tools/check-revit-gate.py) does per question | its rulesets are NPE, thread-safety, XSS, SQL injection — a web/Java surface. Heron's ruleset is the Revit API, and none of theirs transfers | Read the repository's own licence before any reuse | **Adopt concept** — already held; the ruleset itself does not transfer |
 | [`alibaba/aacr-bench`](https://github.com/alibaba/aacr-bench) | no way to measure a review agent | a **benchmark with expert-verified answers** for repository-level review | [18](18-agent-operating-system.md) and the incoming §18 both ask for an evaluation suite and Heron has none. This is the shape one takes | its dataset is general code. A Heron benchmark has to be Revit tasks, which only the owner can author | Read before any reuse | **Adapt concept** — the *shape* of a benchmark, never its cases |
 | [`volcengine/OpenViking`](https://github.com/volcengine/OpenViking) — [§5.4](#54-volcengineopenviking) | context organisation for agents | **tiered loading** — L0 abstract, L1 overview, L2 details, loaded only as needed, and **built on write**; observable retrieval paths | [§5.4](#54-volcengineopenviking): Heron's fragments **already are** L0/L1/L2 — `semantic-identity`, the yaml, the `.cs` — and `BUDGET` already loads by depth. What is missing is the *vocabulary* and a per-folder abstract | **the main project is AGPLv3** — see §3. Idea only, and it was taken from the README, so no source was opened | **AGPL-3.0** — 1,116 files carry that SPDX header against 18 Apache. Apache covers **`crates/ov_cli`** (the Rust CLI, *not* `openviking_cli/`), `examples/`, and the TS/npm SDKs; `bot/` is MIT | **Adapt concept, code strictly off-limits** |
-| [`karpathy/llm-council`](https://github.com/karpathy/llm-council) | one model reviewing its own work | first opinions → **anonymised** peer review → a Chairman synthesises | [D-39](DECISIONS.md) already requires an *analysed disagreement*. **Anonymising which agent produced which answer is a genuine sharpening** of Shadow Mode | it is N model calls per question, which [19 §5](19-context-and-cost.md) exists to avoid. Only for the high-risk path the incoming §6.9 describes | MIT — compatible | **Adapt concept** — take the anonymising, not the council |
+| [`karpathy/llm-council`](https://github.com/karpathy/llm-council) — [§5.12](#512-karpathyllm-council) | one model reviewing its own work | first opinions → **anonymised** peer review → a Chairman synthesises | [D-39](DECISIONS.md) already requires an *analysed disagreement*. **Anonymising which agent produced which answer is a genuine sharpening** of Shadow Mode — but [§5.12](#512-karpathyllm-council) found the labels are **not shuffled**, so anonymise *and* shuffle | it is N model calls per question, which [19 §5](19-context-and-cost.md) exists to avoid. Only for the high-risk path the incoming §6.9 describes | **NO LICENCE — all rights reserved by default.** [§5.12](#512-karpathyllm-council) corrects the *MIT* this row assumed. Idea only, transcribe nothing | **Adapt concept** — take the anonymising, not the council |
 | [`obra/superpowers`](https://github.com/obra/superpowers) — [§5.8](#58-obrasuperpowers) | agents coding before understanding | brainstorm → design → plan → execute, with review checkpoints; skills as the unit | the discipline is [27](27-build-order.md)'s and this repository's practice | its skills are general software workflows; Heron's name **capabilities**, deliberately ([09](09-skills-and-fragments.md)) | MIT — compatible | **Adopt concept** — already held |
 | [`garrytan/gstack`](https://github.com/garrytan/gstack) — [§5.7](#57-garrytangstack) | solo developer without a team | **not 23 roles** — 54 skills and one agent file. Three of them (`careful`, `freeze`, `guard`) declare a **PreToolUse hook in the skill's own frontmatter** | the 54 workflow skills are a developer's and transfer to nobody here. **The hook-in-the-skill shape is the fourth and best answer to [Q-49](OPEN-QUESTIONS.md)** — the guard installs with the capability | [§5.7](#57-garrytangstack) names three traps that silently turn such a hook into decoration. `ETHOS.md` measures itself in lines of code per day, which is [D-57](DECISIONS.md)'s frame exactly | MIT — compatible | **Reject the workflow, adopt the packaging** *(changed at file level — the row's 23-roles premise was not there)* |
 | [`affaan-m/ECC`](https://github.com/affaan-m/ECC) — [§5.1](#51-affaan-mecc) | plans lost in chat, standards forgotten | **the plan as an artifact the human points at**, not chat history; hooks that **block the tool call** rather than checks a person remembers to run | the artifact idea is [23](23-heron-kernel.md)'s checkpoints and [`heron_workflow.py`](../mcp/server/heron_workflow.py). `tools/check-*.py` hold the same *rules* but **nothing runs them automatically** — [§5.1](#51-affaan-mecc) corrects the page-level claim that they are the equivalent | 68 agents, 286 skills, 94 commands. The scale IS the thing being rejected — [D-01](DECISIONS.md) gives the host the commands and [09](09-skills-and-fragments.md) gives skills capabilities | MIT — but [§5.1](#51-affaan-mecc) names a second project inside it | **Adopt the artifact principle, reject the scale.** File-level pass added two items — see [§5.1](#51-affaan-mecc) |
@@ -137,6 +137,10 @@ visible from a project page. That is [Q-53](OPEN-QUESTIONS.md).
    sharpest new idea, and it is small: when Shadow Mode compares a candidate against production, hide
    which is which from whatever judges them. [D-39](DECISIONS.md) already demands an *analysed*
    disagreement; anonymising removes the one bias that analysis cannot see.
+   **Sharpened at file level ([§5.12](#512-karpathyllm-council)): anonymise *and* shuffle.** Their labels
+   are assigned by position and never shuffled, so the candidate would always be `Response B` — and a
+   position bias in whatever judges them would stop being noise and become a systematic bias in favour
+   of production, which is the exact bias Shadow Mode exists to detect.
 3. **Tiered loading** (OpenViking, idea only) is the second, and it belongs to
    [`heron_context.py`](../brain/heron_context.py): a part could carry an abstract, an overview and a
    full body, and a path's budget could name the tier rather than only the part.
@@ -1039,3 +1043,53 @@ reading rule in [§3](#3-the-licence-finding-which-is-the-one-that-could-have-co
 **Decision: changed — from *Research further* to *nothing to take, and the shape confirms
 [D-01](DECISIONS.md)*.** Session survival stays [23](23-heron-kernel.md)'s, with the pin constraint
 written down.
+
+---
+
+### 5.12 `karpathy/llm-council`
+
+**Read at** `92e1fccb1bdcf1bab7221aa9ed90f9dc72529131`, committed **2025-11-22**.
+
+**Opened:** `README.md`, `backend/council.py`, and a search of the whole tree for a licence.
+
+#### The licence cell was wrong, and this is the one row where that was worth catching
+
+**There is no licence.** No `LICENSE` file, nothing in `pyproject.toml`, nothing in the README. The
+matrix said *"MIT — compatible"* and that was assumed, not read.
+
+**No licence means all rights reserved by default.** The author's own framing is generous —
+
+> I'm not going to support it in any way, it's provided here as is **for other people's inspiration**
+> and I don't intend to improve it.
+
+— but *"for inspiration"* is a statement of intent, not a grant. **So the same discipline applied to
+OpenViking applies here for the opposite reason:** read it to understand it, take the idea, transcribe
+nothing. Which is what the row's decision already said — *"take the anonymising, not the council"* — so
+the plan survives the correction. **The cell did not.**
+
+**It is also nearly a year old and explicitly unmaintained** — last commit 2025-11-22, and *"99% vibe
+coded as a fun Saturday hack."* Nothing here depends on it, so nothing follows; recorded because a
+matrix row that ages quietly is the failure this whole document keeps finding elsewhere.
+
+#### The idea is confirmed, and it is incomplete in a way that matters to Heron
+
+`council.py` does exactly what the README says. Each response is relabelled `Response A`, `Response B`,
+`Response C`, the judge sees only the labels, and a `label_to_model` map is kept on the side and never
+shown.
+
+**But the labels are assigned by position, and nothing shuffles them.** The list is zipped straight
+against `A, B, C…` in the order the responses arrive. **Anonymised, yes — positionally stable, also
+yes.**
+
+That is a real gap and it lands precisely on what [§4](#4-what-actually-comes-out-of-this-ranked) ranked
+as the sharpest new idea. Heron's use would be **Shadow Mode** — comparing a candidate against
+production ([D-39](DECISIONS.md)). If the candidate is always `Response B`, then any **position bias** in
+whatever judges them — and preferring the first option is a well-known one — stops being noise and
+becomes a **systematic bias in favour of production**, which is the exact bias Shadow Mode exists to
+detect.
+
+**So §4's item 2 is sharpened rather than confirmed: anonymise *and* shuffle.** Hiding the name removes
+one bias and leaves another sitting in the same place. Recorded in §4.
+
+**Decision: unchanged in substance — Adapt concept, take the anonymising.** The licence cell is
+corrected from *MIT* to **no licence, all rights reserved**, and the idea now carries the shuffle.
