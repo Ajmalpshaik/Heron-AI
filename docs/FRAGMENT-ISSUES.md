@@ -669,9 +669,9 @@ Not failures. Heron has no way to receive these inputs yet, so they have never e
 | Waiting on | Fragments | Why not done |
 |---|---|---|
 | `ElementId` | 21 | Its constructor changed from `int` to `long` at Revit 2024, and nothing in the add-in carries a version `#if` |
-| `Element` (one, not a list) | 20 | **Half done, 2026-09-09.** A TYPE now resolves by name — `Basic Wall: Generic - 200mm` — which is the 6 `*Type` needs. An INSTANCE still cannot be typed in and never will be: `Element.Name` on one returns its type's name, so searching instances matches every element of that type. The other 14 want *that one there* and need the selection, not text |
+| `Element` (one, not a list) | 20 | **Half done, 2026-09-09.** A TYPE resolves by name — `Basic Wall: Generic - 200mm` — and **eight contracts were narrowed off `Element` the same day** so the search is confined to the kind actually wanted. An INSTANCE still cannot be typed in and never will be: `Element.Name` on one returns its type's name, so searching instances matches every element of that type. The other 14 want *that one there* and need the selection, not text |
 | `XYZ` | 14 | The API works in feet, the library talks millimetres. Which unit a typed number is in has to be decided, not guessed — a units error is what `D3` exists to catch |
-| `FamilySymbol` | 4 | Needs a family-and-type lookup rule |
+| `FamilySymbol` | 4 | **Done, 2026-09-09.** Resolved by name among family types, on the same mechanism as `Element` — no rule of its own was needed. `set-sheet-title-block` and `distribute-along-run` were the two waiting on it |
 | `View3D` | 3 | A narrower view lookup |
 | element/id collections | 9 | Same as the two above |
 | `OverrideGraphicSettings` | 3 | A structured value, not a name |

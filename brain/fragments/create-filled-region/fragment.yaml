@@ -39,7 +39,7 @@ contract:
       type: View
       source: request
     - name: regionType
-      type: Element
+      type: FilledRegionType
       source: request
     # Internal units, in the view's own plane.
     - name: boundary

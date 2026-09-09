@@ -1096,42 +1096,110 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// Every element TYPE whose name matches, read the way Revit writes it.
+        /// Every element of a given CLASS whose name matches, read the way Revit
+        /// writes it.
         ///
-        /// Two spellings, because Revit's own interface uses both: the type name
-        /// on its own ("Generic - 200mm") and the family and type together
-        /// ("Basic Wall: Generic - 200mm"), which is what the Properties palette
-        /// and every type selector show. The second exists because the first is
-        /// not unique - "Standard" is the type name of a dozen unrelated
-        /// families in an ordinary project.
+        /// TWO SPELLINGS, because Revit's own interface uses both: the name on
+        /// its own ("Generic - 200mm") and the family and type together ("Basic
+        /// Wall: Generic - 200mm"), which is what the Properties palette and
+        /// every type selector show. The second exists because the first is not
+        /// unique - "Standard" is the type name of a dozen unrelated families in
+        /// an ordinary project. Only types have a family, so only they get it.
+        ///
+        /// WHY THE CLASS IS TESTED IN .NET RATHER THAN GIVEN TO REVIT'S FILTER.
+        /// OfClass would be the obvious route and it is not used, because four
+        /// of the classes this has to accept are ABSTRACT - HostObjAttributes,
+        /// MEPCurveType, FilterElement, ElementType - and which abstract classes
+        /// ElementClassFilter accepts is a runtime question this file cannot
+        /// answer at compile time on eight releases. IsInstanceOfType is plain
+        /// .NET, means exactly the same thing, and cannot throw. The two coarse
+        /// collectors below narrow the walk to the right half of the model
+        /// first, so the cost is one type test per candidate.
         /// </summary>
-        private static List<ElementType> TypesNamed(Document doc, string text)
+        private static List<Element> ElementsNamed(Document doc, Type wanted, string text)
         {
-            var found = new List<ElementType>();
-            foreach (var element in new FilteredElementCollector(doc).WhereElementIsElementType())
+            var collector = typeof(ElementType).IsAssignableFrom(wanted)
+                ? new FilteredElementCollector(doc).WhereElementIsElementType()
+                : new FilteredElementCollector(doc).WhereElementIsNotElementType();
+
+            var found = new List<Element>();
+            foreach (var element in collector)
             {
-                var candidate = element as ElementType;
-                if (candidate == null) continue;
+                if (element == null || !wanted.IsInstanceOfType(element)) continue;
 
-                string readable, family;
-                try { readable = candidate.Name; } catch { continue; }
-                try { family = candidate.FamilyName; } catch { family = null; }
+                string readable;
+                try { readable = element.Name; } catch { continue; }
+                if (string.Equals(readable, text, StringComparison.Ordinal))
+                {
+                    found.Add(element);
+                    continue;
+                }
 
-                if (string.Equals(readable, text, StringComparison.Ordinal)
-                    || (!string.IsNullOrEmpty(family)
-                        && string.Equals(family + ": " + readable, text,
-                                         StringComparison.Ordinal)))
-                    found.Add(candidate);
+                var type = element as ElementType;
+                if (type == null) continue;
+                string family;
+                try { family = type.FamilyName; } catch { continue; }
+                if (!string.IsNullOrEmpty(family)
+                    && string.Equals(family + ": " + readable, text, StringComparison.Ordinal))
+                    found.Add(element);
             }
             return found;
+        }
+
+        /// <summary>
+        /// One element of a named class, or a refusal that says how to name it.
+        ///
+        /// `kind` is what to call it in the message - "wall type", "phase" - and
+        /// it is passed rather than derived from the class name because the
+        /// reader is a modeller. "No HostObjAttributes called ..." names the
+        /// class this file happens to filter on; "No wall, floor, ceiling or
+        /// roof type called ..." is the sentence that says what to type next.
+        /// </summary>
+        private static object OneOfClass(Document doc, Type wanted, string kind,
+                                         string text, out string problem)
+        {
+            problem = null;
+
+            var found = ElementsNamed(doc, wanted, text);
+            if (found.Count == 1) return found[0];
+
+            var areTypes = typeof(ElementType).IsAssignableFrom(wanted);
+
+            if (found.Count == 0)
+            {
+                problem = "No " + kind + " called \"" + text + "\" in " + doc.Title
+                        + ". The name has to match what Revit shows, capitals included"
+                        + (areTypes
+                              ? " - the Properties palette writes it \"Basic Wall: Generic "
+                                + "- 200mm\", and either that or just \"Generic - 200mm\" "
+                                + "works when the short name is unique."
+                              : ".");
+                return null;
+            }
+
+            var choices = new List<string>();
+            foreach (var element in found)
+            {
+                var type = element as ElementType;
+                string family = null;
+                if (type != null) { try { family = type.FamilyName; } catch { family = null; } }
+                var option = string.IsNullOrEmpty(family) ? text : family + ": " + text;
+                if (!choices.Contains(option)) choices.Add(option);
+            }
+
+            problem = found.Count + " " + kind + "s in " + doc.Title + " are called \""
+                    + text + "\", so the name does not say which one is meant."
+                    + (choices.Count > 1
+                          ? " Say which: " + string.Join(", or ", choices.ToArray()) + "."
+                          : " Rename one.");
+            return null;
         }
 
         /// <summary>
         /// One element, by name, or a refusal that says how to name it.
         ///
         /// AN `Element` HERE MEANS AN ELEMENT TYPE, AND THAT IS THE WHOLE RULE.
-        /// Twenty-three fragments declare a need as `Element`, and they mean two
-        /// different things by it:
+        /// Fragments declare a need as `Element` meaning two different things:
         ///
         ///   a TYPE to build with     wallType, floorType, ceilingType,
         ///                            regionType, runType, hostType
@@ -1151,49 +1219,15 @@ namespace Heron.Revit.Addin
         /// wants "that duct there" have different problems, and one message
         /// cannot serve both.
         ///
-        /// THE BETTER FIX IS IN THE CONTRACTS, NOT HERE. wallType is a WallType,
-        /// phase is a Phase, filter is a ParameterFilterElement - each declared
-        /// as the base class instead. A contract that said what it meant would
-        /// resolve exactly, the way Level and View already do, and this method
-        /// would not have to work out which half of Element was intended. That
-        /// is a change to brain/fragments/, which this file does not own.
-        ///
-        /// The "Family: Type" spelling is the shape OneView uses for
-        /// "FloorPlan: L2", for the same reason and with the same precedence:
-        /// the plain name is tried first and wins outright when it is unique.
+        /// THE NARROWER DECLARATIONS ARE BETTER, AND ARE NOW AVAILABLE. A
+        /// contract saying WallType resolves among wall types alone, where
+        /// "Generic - 200mm" is unique; the same name against every element type
+        /// in the model may not be. This branch stays for the needs that really
+        /// are "some type", and for contracts nobody has narrowed yet.
         /// </summary>
         private static object OneElement(Document doc, string text, out string problem)
         {
-            problem = null;
-
-            var found = TypesNamed(doc, text);
-            if (found.Count == 1) return found[0];
-
-            if (found.Count == 0)
-            {
-                problem = "No element type called \"" + text + "\" in " + doc.Title
-                        + ". Heron can be handed an element TYPE by name, written the way "
-                        + "the Properties palette writes it - \"Basic Wall: Generic - "
-                        + "200mm\", or just \"Generic - 200mm\" when that is unique. A "
-                        + "particular wall or duct in the model cannot be typed in: it has "
-                        + "no name of its own, and its type's name belongs to every other "
-                        + "element of that type. Select it instead.";
-                return null;
-            }
-
-            var choices = new List<string>();
-            foreach (var type in found)
-            {
-                string family;
-                try { family = type.FamilyName; } catch { family = null; }
-                var option = string.IsNullOrEmpty(family) ? text : family + ": " + text;
-                if (!choices.Contains(option)) choices.Add(option);
-            }
-
-            problem = found.Count + " element types in " + doc.Title + " are called \""
-                    + text + "\", so the name does not say which one is meant. Say which: "
-                    + string.Join(", or ", choices.ToArray()) + ".";
-            return null;
+            return OneOfClass(doc, typeof(ElementType), "element type", text, out problem);
         }
 
         /// <summary>One level, by name, on the same rule as a view.</summary>
@@ -1381,6 +1415,53 @@ namespace Heron.Revit.Addin
             if (wanted == "Level") return OneLevel(doc, text, out problem);
             if (wanted == "Element") return OneElement(doc, text, out problem);
 
+            // THE NARROWED ONES. Each row is a deliberate act of declaring a
+            // type receivable, and the list is short because it is exactly the
+            // set some contract actually asks for - not everything that could
+            // in principle be looked up by name.
+            //
+            // WHY typeof(...) AND NOT A STRING. These are compiled on all eight
+            // releases, so a class that does not exist on one of them is a build
+            // failure here rather than a refusal in front of a model. A
+            // reflection lookup by name would compile everywhere and fail
+            // nowhere until it mattered.
+            //
+            // THREE OF THEM ARE DELIBERATELY A BASE CLASS, because the fragment
+            // asking is deliberately polymorphic and narrowing further would
+            // break it:
+            //
+            //   HostObjAttributes  CREATE_FROM_ROOM_BOUNDARIES branches on
+            //                      `hostType is CeilingType` / `is FloorType`
+            //   MEPCurveType       CREATE_ELECTRICAL_RUN builds a cable tray or
+            //                      a conduit from the same value
+            //   FilterElement      APPLY_VIEW_FILTER says it in its own comment:
+            //                      a rule filter and a selection filter share a
+            //                      base class and a view does not care which
+            //
+            // Narrower than Element is the point; narrower than the fragment can
+            // use is a regression dressed as precision.
+            if (wanted == "WallType")
+                return OneOfClass(doc, typeof(WallType), "wall type", text, out problem);
+            if (wanted == "FloorType")
+                return OneOfClass(doc, typeof(FloorType), "floor type", text, out problem);
+            if (wanted == "CeilingType")
+                return OneOfClass(doc, typeof(CeilingType), "ceiling type", text, out problem);
+            if (wanted == "FilledRegionType")
+                return OneOfClass(doc, typeof(FilledRegionType), "filled region type",
+                                  text, out problem);
+            if (wanted == "HostObjAttributes")
+                return OneOfClass(doc, typeof(HostObjAttributes),
+                                  "wall, floor, ceiling or roof type", text, out problem);
+            if (wanted == "MEPCurveType")
+                return OneOfClass(doc, typeof(MEPCurveType),
+                                  "duct, pipe, cable tray or conduit type", text, out problem);
+            if (wanted == "FamilySymbol")
+                return OneOfClass(doc, typeof(FamilySymbol), "family type", text, out problem);
+            if (wanted == "Phase")
+                return OneOfClass(doc, typeof(Phase), "phase", text, out problem);
+            if (wanted == "FilterElement")
+                return OneOfClass(doc, typeof(FilterElement), "view filter", text, out problem);
+
             if (wanted == "Category")
             {
                 var single = OneCategory(doc, text);
@@ -1528,10 +1609,11 @@ namespace Heron.Revit.Addin
                 return null;
             }
 
-            problem = "Heron can be handed a view, a level, a category, an element type, a "
-                    + "name, a number, or true/false - and lists of those. \"" + type
-                    + "\" is not one of them yet, so this fragment still has no way to "
-                    + "receive it.";
+            problem = "Heron can be handed a view, a level, a category, an element type - "
+                    + "including a wall, floor, ceiling, filled region, MEP curve or family "
+                    + "type - a phase, a view filter, a name, a number, or true/false, and "
+                    + "lists of most of those. \"" + type + "\" is not one of them yet, so "
+                    + "this fragment still has no way to receive it.";
             return null;
         }
 

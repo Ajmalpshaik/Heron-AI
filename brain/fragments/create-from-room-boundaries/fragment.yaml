@@ -45,7 +45,7 @@ contract:
       type: IList<Element>
     # A FloorType or a CeilingType - which one decides what gets built.
     - name: hostType
-      type: Element
+      type: HostObjAttributes
       source: request
     # Ceilings only: how far above the room's level the ceiling sits, in
     # INTERNAL FEET. It goes straight into CEILING_HEIGHTABOVELEVEL_PARAM via

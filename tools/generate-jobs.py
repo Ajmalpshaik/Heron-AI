@@ -148,6 +148,15 @@ RECEIVABLE = frozenset([
     # and does not try to. It emits the job; Revit refuses the instance by name,
     # saying to select it instead.
     "View", "Level", "Category", "BuiltInCategory", "Element",
+    # THE NARROWED ONES. A contract that says WallType where it means one
+    # resolves among wall types alone, where "Generic - 200mm" is unique - the
+    # same name against every element type in the model may not be. Three are
+    # deliberately a base class because the fragment asking is polymorphic:
+    # HostObjAttributes branches to ceiling or floor, MEPCurveType to cable tray
+    # or conduit, FilterElement to a rule filter or a selection filter.
+    "WallType", "FloorType", "CeilingType", "FilledRegionType",
+    "HostObjAttributes", "MEPCurveType", "FamilySymbol",
+    "Phase", "FilterElement",
     # Lists, comma separated.
     "IList<string>", "List<string>", "ICollection<string>", "IEnumerable<string>",
     "IList<int>", "List<int>",
@@ -465,6 +474,11 @@ def how_to_type(declared):
     if re.search(r"\bElement\b", wanted):
         hints.append('an element TYPE by name - "Basic Wall: Generic - 200mm". A '
                      'particular wall or duct cannot be typed in')
+    elif re.search(r"(Type|Symbol|Phase|FilterElement|HostObjAttributes)$", wanted):
+        # A narrowed declaration says which kind, so the search is confined to
+        # that kind and the ambiguity the bare `Element` hint warns about
+        # largely goes away. What is left worth saying is how to write it.
+        hints.append('by name, as Revit writes it')
     return ", ".join(hints)
 
 

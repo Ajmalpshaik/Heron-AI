@@ -141,7 +141,7 @@ def test_the_shapes_d54_refuses_are_refused_here():
                  "ElementId", "IList<ElementId>", "ICollection<ElementId>",
                  "IDictionary<ElementId, string>",
                  "IList<Element>",
-                 "FamilySymbol", "OverrideGraphicSettings",
+                 "OverrideGraphicSettings",
                  "View3D", "Color", "Material", "ForgeTypeId"):
         ok, why = GJ.receivable(kind)
         check(not ok and why, "%s is refused, with a reason" % kind)
@@ -180,6 +180,43 @@ def test_an_element_is_a_type_and_a_list_of_them_is_still_refused():
     hint = GJ.how_to_type("Element")
     check("TYPE" in hint and "cannot be typed in" in hint,
           "the hint says a type is wanted and an instance cannot be given")
+
+
+def test_the_narrowed_declarations_resolve():
+    print("A contract that says which type it wants can be handed one")
+
+    # Eight contracts were narrowed off `Element` on 2026-09-09, and the point of
+    # narrowing is that the search is confined: "Generic - 200mm" is unique among
+    # WALL types where it may not be among every element type in the model.
+    for kind in ("WallType", "FloorType", "CeilingType", "FilledRegionType",
+                 "Phase", "FilterElement", "HostObjAttributes", "MEPCurveType"):
+        ok, why = GJ.receivable(kind)
+        check(ok, "%s can be typed in (%s)" % (kind, why or "yes"))
+
+    # FamilySymbol was not narrowed off anything - it came with the same
+    # mechanism, and it is what set-sheet-title-block and distribute-along-run
+    # were waiting on. FRAGMENT-ISSUES section 6 counted four fragments on it.
+    ok, _ = GJ.receivable("FamilySymbol")
+    check(ok, "and so can a family type, which nothing had to be narrowed for")
+
+    # THE LIBRARY IS THE REAL CHECK. Whatever was narrowed, every one of those
+    # needs has to be something Revit can now receive - a contract narrowed to a
+    # type with no rule would be a REGRESSION dressed as precision.
+    found, _ = HF.load_all()
+    stranded = []
+    for frag in found.values():
+        for need in frag.needs():
+            declared = (need.get("type") or "")
+            if HF.need_source(need) != "request":
+                continue
+            if declared in ("WallType", "FloorType", "CeilingType",
+                            "FilledRegionType", "Phase", "FilterElement",
+                            "HostObjAttributes", "MEPCurveType"):
+                ok, why = GJ.receivable(declared)
+                if not ok:
+                    stranded.append("%s %s (%s)" % (frag.slug, need.get("name"), declared))
+    check(not stranded, "no fragment was narrowed onto a type Revit cannot take (%s)"
+          % ("; ".join(stranded[:3]) or "none"))
 
 
 def test_spaces_in_a_type_do_not_change_the_answer():
@@ -548,6 +585,7 @@ def main():
     for test in (test_receivable_agrees_with_the_add_in,
                  test_the_shapes_d54_refuses_are_refused_here,
                  test_an_element_is_a_type_and_a_list_of_them_is_still_refused,
+                 test_the_narrowed_declarations_resolve,
                  test_spaces_in_a_type_do_not_change_the_answer,
                  test_the_write_threshold_comes_from_the_registry,
                  test_a_broken_registry_stops_the_run_rather_than_guessing,

@@ -2998,8 +2998,10 @@ Three things follow from that, and each was a live alternative:
    `BindNeeds` already exists to prevent, and the same rule this repository states generally: an
    identifier is only an identifier if it is unique among the things it has to distinguish.
 
-Supported today: `View`, `Level`, `Category`, `BuiltInCategory`, `Element`, `string`, `int`, `double`,
-`bool`, and comma-separated lists of most of those. Anything else is refused **by name**, saying that
+Supported today: `View`, `Level`, `Category`, `BuiltInCategory`, `Element` and the narrower element
+classes some contract actually asks for — `WallType`, `FloorType`, `CeilingType`,
+`FilledRegionType`, `HostObjAttributes`, `MEPCurveType`, `FamilySymbol`, `Phase`, `FilterElement` —
+plus `string`, `int`, `double`, `bool`, and comma-separated lists of most of those. Anything else is refused **by name**, saying that
 type has no way to be received yet — rather than failing somewhere inside generated code.
 
 **`Element` is the one with a boundary inside it, and the boundary is the interesting part.** It
@@ -3010,12 +3012,25 @@ duct, and it has to: **an instance has no name of its own.** `Element.Name` on o
 rule into a wrong answer, which is the one trade this whole decision exists to refuse. *"Which duct"*
 is a question text cannot answer; the selection is the mechanism that can.
 
-**The remaining imprecision is in the contracts, not here.** Twenty fragments declare a need as
-`Element`, and six of them mean an element type (`wallType`, `floorType`, `ceilingType`, `regionType`,
-`runType`, `hostType`) while the rest mean *that one there* — or something narrower again: `phase` is
-a `Phase` and `filter` is a `ParameterFilterElement`, each declared as the base class. A contract that
-said what it meant would resolve exactly, the way `Level` already does, and would not need this method
-to work out which half was intended.
+**Eight contracts were then narrowed to say what they meant** — 2026-09-09, the same day. `wallType`
+is a `WallType`, `phase` is a `Phase`, and a declaration that says which kind confines the search:
+*"Generic - 200mm"* is unique among **wall** types where the same name against every element type in
+the model may not be. Each narrowed type was read out of the fragment's own body rather than guessed
+from the need's name, and three of the eight are deliberately a **base class**, because the fragment
+asking is polymorphic and narrowing further would break it:
+
+| Declared | Because |
+|---|---|
+| `HostObjAttributes` | `CREATE_FROM_ROOM_BOUNDARIES` branches on `hostType is CeilingType` / `is FloorType` |
+| `MEPCurveType` | `CREATE_ELECTRICAL_RUN` builds a cable tray **or** a conduit from the same value |
+| `FilterElement` | `APPLY_VIEW_FILTER` says so in its own comment: a rule filter and a selection filter share a base class, and a view does not care which |
+
+**Narrower than `Element` is the point; narrower than the fragment can use is a regression dressed as
+precision.** `ParameterFilterElement` was the obvious reading of `filter` and it is the wrong one.
+
+The classes are named with `typeof(...)` rather than looked up by string, so a class missing on one of
+the eight releases is a **build failure** rather than a refusal in front of a model. `Element` itself
+stays, for the needs that really are *"some type"* and for contracts nobody has narrowed yet.
 
 ### What this does NOT do
 

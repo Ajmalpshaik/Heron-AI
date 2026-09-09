@@ -48,7 +48,7 @@ contract:
     # RESOLVED type object, never an id. Building an ElementId from an integer
     # is what breaks at Revit 2024 (D-05).
     - name: runType
-      type: Element
+      type: MEPCurveType
       source: request
     - name: level
       type: Level
