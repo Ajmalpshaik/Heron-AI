@@ -67,8 +67,8 @@ Research further.**
 | [`rohitg00/agentmemory`](https://github.com/rohitg00/agentmemory) — [§5.5](#55-rohitg00agentmemory) | agent amnesia between sessions | **four memory tiers** — working, episodic, semantic, procedural — and hybrid retrieval fused by RRF | retrieval is **already this**. The four tiers are a sharper cut than [10](10-memory-and-knowledge.md)'s categories and worth comparing against them | its value is in the tiering, which is a re-organisation of something Heron already has and would cost a migration | Apache-2.0 — compatible | **Adapt concept** — compare the four tiers against [10](10-memory-and-knowledge.md)'s list, adopt only a difference that names a real gap |
 | [`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) — [§5.6](#56-tirth8205code-review-graph) | whole-repository context sent to a model for review | **blast-radius analysis** before loading anything; Tree-sitter → SQLite; incremental by SHA-256 | the *principle* is [D-40](DECISIONS.md) and [`heron_graph.py`](../brain/heron_graph.py). The *implementation* is a source-code graph, which [32 §5](32-master-architecture-reconciliation.md) rejects for Heron | adopting the tool means adopting Tree-sitter and a code graph over `revit/` — the off-mission build | MIT — compatible | **Reject the implementation, principle already held** |
 | [`headroomlabs-ai/headroom`](https://github.com/headroomlabs-ai/headroom) | token cost of tool output and RAG chunks | compress **what came back**, never what was asked; reversible compression so the original can be retrieved | this is the missing half of [19 §2](19-context-and-cost.md). [`heron_context.py`](../brain/heron_context.py) declares the boundary and implements no compression | a compressor that ever touches a Revit token destroys the only load-bearing part of the sentence | MIT — compatible | **Research further** — the reversible-retrieval idea is the one worth taking; nothing before [19 §2](19-context-and-cost.md)'s budgets are agreed |
-| [`alibaba/open-code-review`](https://github.com/alibaba/open-code-review) | code review at scale | **deterministic pipeline first, agent second**; line-level findings; a built-in ruleset | the split is [19 §5](19-context-and-cost.md)'s. The line-level shape is what [`check-revit-gate.py`](../tools/check-revit-gate.py) does per question | its rulesets are NPE, thread-safety, XSS, SQL injection — a web/Java surface. Heron's ruleset is the Revit API, and none of theirs transfers | Read the repository's own licence before any reuse | **Adopt concept** — already held; the ruleset itself does not transfer |
-| [`alibaba/aacr-bench`](https://github.com/alibaba/aacr-bench) | no way to measure a review agent | a **benchmark with expert-verified answers** for repository-level review | [18](18-agent-operating-system.md) and the incoming §18 both ask for an evaluation suite and Heron has none. This is the shape one takes | its dataset is general code. A Heron benchmark has to be Revit tasks, which only the owner can author | Read before any reuse | **Adapt concept** — the *shape* of a benchmark, never its cases |
+| [`alibaba/open-code-review`](https://github.com/alibaba/open-code-review) — [§5.13](#513-alibabaopen-code-review-and-alibabaaacr-bench) | code review at scale | **deterministic pipeline first, agent second**; line-level findings; a built-in ruleset | the split is [19 §5](19-context-and-cost.md)'s. The line-level shape is what [`check-revit-gate.py`](../tools/check-revit-gate.py) does per question | its rulesets are NPE, thread-safety, XSS, SQL injection — a web/Java surface. Heron's ruleset is the Revit API, and none of theirs transfers | **Apache-2.0** — read at file level, including `extensions/vscode/`. Compatible | **Adopt concept** — already held; the ruleset itself does not transfer |
+| [`alibaba/aacr-bench`](https://github.com/alibaba/aacr-bench) — [§5.13](#513-alibabaopen-code-review-and-alibabaaacr-bench) | no way to measure a review agent | a **benchmark with expert-verified answers** for repository-level review | [18](18-agent-operating-system.md) and the incoming §18 both ask for an evaluation suite and Heron has none. This is the shape one takes | its dataset is general code. A Heron benchmark has to be Revit tasks, which only the owner can author. **Its `dataset/` is two files — `positive_samples.json` and `negative_samples.json`**, which is [D-30](DECISIONS.md)'s shape | **Apache-2.0** — read at file level. Compatible | **Adapt concept** — the *shape* of a benchmark, never its cases |
 | [`volcengine/OpenViking`](https://github.com/volcengine/OpenViking) — [§5.4](#54-volcengineopenviking) | context organisation for agents | **tiered loading** — L0 abstract, L1 overview, L2 details, loaded only as needed, and **built on write**; observable retrieval paths | [§5.4](#54-volcengineopenviking): Heron's fragments **already are** L0/L1/L2 — `semantic-identity`, the yaml, the `.cs` — and `BUDGET` already loads by depth. What is missing is the *vocabulary* and a per-folder abstract | **the main project is AGPLv3** — see §3. Idea only, and it was taken from the README, so no source was opened | **AGPL-3.0** — 1,116 files carry that SPDX header against 18 Apache. Apache covers **`crates/ov_cli`** (the Rust CLI, *not* `openviking_cli/`), `examples/`, and the TS/npm SDKs; `bot/` is MIT | **Adapt concept, code strictly off-limits** |
 | [`karpathy/llm-council`](https://github.com/karpathy/llm-council) — [§5.12](#512-karpathyllm-council) | one model reviewing its own work | first opinions → **anonymised** peer review → a Chairman synthesises | [D-39](DECISIONS.md) already requires an *analysed disagreement*. **Anonymising which agent produced which answer is a genuine sharpening** of Shadow Mode — but [§5.12](#512-karpathyllm-council) found the labels are **not shuffled**, so anonymise *and* shuffle | it is N model calls per question, which [19 §5](19-context-and-cost.md) exists to avoid. Only for the high-risk path the incoming §6.9 describes | **NO LICENCE — all rights reserved by default.** [§5.12](#512-karpathyllm-council) corrects the *MIT* this row assumed. Idea only, transcribe nothing | **Adapt concept** — take the anonymising, not the council |
 | [`obra/superpowers`](https://github.com/obra/superpowers) — [§5.8](#58-obrasuperpowers) | agents coding before understanding | brainstorm → design → plan → execute, with review checkpoints; skills as the unit | the discipline is [27](27-build-order.md)'s and this repository's practice | its skills are general software workflows; Heron's name **capabilities**, deliberately ([09](09-skills-and-fragments.md)) | MIT — compatible | **Adopt concept** — already held |
@@ -1093,3 +1093,83 @@ one bias and leaves another sitting in the same place. Recorded in §4.
 
 **Decision: unchanged in substance — Adapt concept, take the anonymising.** The licence cell is
 corrected from *MIT* to **no licence, all rights reserved**, and the idea now carries the shuffle.
+
+---
+
+### 5.13 `alibaba/open-code-review` and `alibaba/aacr-bench`
+
+**Read at** `14b84f08a3af7f042d702c721f21f7952d841970` (2026-09-09) and
+`68a569759289a83654a59d06db2a72910edf0a4a` (2026-08-24).
+
+**Both licence cells said *"read the repository's own licence before any reuse."* Done: both are
+Apache-2.0**, the same licence as Heron ([D-08](DECISIONS.md)), so both are compatible. Applying
+§3's per-directory rule found one more licence file — `extensions/vscode/LICENSE` — **also Apache-2.0**.
+Two cells that were open questions are now answers.
+
+**Opened:** `ASSURANCE_CASE.md`, `README.md` §*Core Design*, and `aacr-bench`'s `dataset/` and
+`evaluation/`.
+
+#### The row's principle is confirmed, in better words than the row used
+
+> For review steps that **must not go wrong**, engineering logic — not the language model — guarantees
+> correctness.
+
+That is [19 §5](19-context-and-cost.md) and [02 §6](02-architecture-overview.md), said more sharply than
+either. And one of its four deterministic pieces is a claim Heron acts on without having stated:
+*"template-engine-based rule matching is **more stable and predictable** than purely language-driven
+rule guidance."* Heron's rules are the fragment contract and
+[`heron_context.py`](../brain/heron_context.py)'s budget — matched in code, never described to a model
+and hoped for.
+
+#### `ASSURANCE_CASE.md` is the finding, and it has already been acted on
+
+Its first table is not a lifecycle. It is a list of **actors with trust levels** — and one row is
+Heron's open question written as a trust level rather than as a guard:
+
+> **Git repository — Semi-trusted — diffs may contain adversarial content.**
+
+**Heron has a trust model and it answers a different question.** [24](24-trust-model.md) collected six
+competing vocabularies and replaced them with two axes — *how proven is this artifact* and *where did it
+come from*. **Neither asks how much Heron may believe whatever is talking to it right now**, which is
+why [Q-51](OPEN-QUESTIONS.md) was hard to phrase: there was no vocabulary for *the source of this text*.
+
+**So this one was built rather than parked.** [24 §7](24-trust-model.md) is a new table of **who is
+speaking** — the modeller, the host, the pipe, the model's own content, a linked document, the API's
+answer, an imported package, an indexed standard, the network. **Every row is derived from a rule that
+already exists**, and it is explicitly *not* a third vocabulary: an artifact has a lifecycle and a
+source, a speaker has neither.
+
+Two things the table makes visible that the prose did not:
+
+- **Exactly one cell is undecided** — the indexed standard, which is [Q-51](OPEN-QUESTIONS.md), opening
+  on the day the RAG index exists.
+- **The last row is a strength that could be traded away by accident.** Most of their assurance case —
+  TLS, a semi-trusted provider API, DNS rebinding against a local viewer — is attack surface **Heron
+  does not have**, because it makes no model calls and needs no network. Any future feature that puts
+  Heron on the network is not adding a feature; it is adding that whole table's worth of rows.
+
+#### `aacr-bench` answers *"what shape does a benchmark take"* — and its shape is D-30's
+
+`dataset/` holds exactly two files:
+
+```
+positive_samples.json
+negative_samples.json
+```
+
+**A benchmark split into positive and negative cases**, which is [D-30](DECISIONS.md)'s structure
+arriving for the **fourth** time in this pass — after `superpowers` ([§5.8](#58-obrasuperpowers)),
+AgentLens ([§5.10](#510-ai-boostawesome-harness-engineering)), and Heron's own proof format.
+
+Its build process is the other half of the answer: **200 real pull requests, 50 projects, 10
+languages**, quality assured by *"GitHub human comments → LLM enhancement → expert multi-round
+cross-annotation → consistency validation."*
+
+**The row already said the cases must be real Revit tasks that only the owner can author, and that is
+unchanged.** What is new is that the *process* is nameable: an expert annotates, more than once, and
+the annotations are checked against each other. For Heron that is proving fragments against a real
+model — which is the critical path, and which the row correctly refuses to put anything in front of.
+
+**Decision: both unchanged.** `open-code-review` — *Adopt concept, already held*. `aacr-bench` — *Adapt
+the shape of a benchmark, never its cases*. Two open licence cells are now answered, and the assurance
+case produced [24 §7](24-trust-model.md).
