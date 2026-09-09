@@ -1,5 +1,30 @@
 # Heron AI — Master Architecture, Research & Implementation Specification
 
+> ## ⚠️ Where this document stands — added 2026-09-09, [D-57](docs/DECISIONS.md)
+>
+> **This is a research brief. It is not part of the Heron AI specification and supersedes nothing.**
+> The specification is the four parts — [00](docs/00-master-specification.md),
+> [00b](docs/00b-master-specification-agent-os.md), [00c](docs/00c-master-handover-baseline.md),
+> [00d](docs/00d-additional-requirements.md) — plus the
+> [Constitution](HERON_CONSTITUTION.md) and the [Golden Rules](docs/14-golden-rules.md).
+>
+> **Read [32 — the Master Architecture document, reconciled](docs/32-master-architecture-reconciliation.md)
+> before building anything from this file.** The audit this document demands of itself — its §3, §17
+> Phase 1 and §21 — has been done, and it found that **nine of the platform modules in §6 already exist
+> here, four of them stricter than this document asks for.** §32 §5 lists what is rejected and why, so
+> the same proposals are not made again.
+>
+> **One correction matters more than the rest.** The header below states this document's purpose as
+> *"AI engineering system for the existing Heron/Revit development codebase"* — a harness for
+> developers working on this repository. **Heron AI is a BIM-modeller-facing platform**
+> ([01 — Vision & Principles](docs/01-vision-and-principles.md)): somebody types *"select all ducts"*
+> and never learns that any of this exists. Where this document's framing and the specification
+> disagree, the specification wins.
+>
+> **The text below is unedited on purpose**, the same way the Master Specification is never edited to
+> fix it. The disagreements are the useful part, and an edited brief stops showing what was proposed.
+
+
 **Project:** Heron AI  
 **Purpose:** AI engineering system for the existing Heron/Revit development codebase  
 **Primary stack:** C#, Python, Revit API, .NET  

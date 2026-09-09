@@ -98,6 +98,28 @@ def _brain():
     return SCOPE, CAP, SKILL, SEARCH, EMBED, RETRIEVE
 
 
+class _NoAudit(object):
+    """What the brain records when heron_audit cannot be imported at all.
+
+    A trail is evidence, never a dependency. If brain/ is not importable the
+    tools above are already failing for a better reason than logging, and a
+    logger that can break a request it was only supposed to describe has the
+    priority backwards.
+    """
+
+    def __getattr__(self, _name):
+        return lambda *a, **k: False
+
+
+def _audit():
+    """heron_audit, or a no-op that swallows the call. Never raises."""
+    try:
+        import heron_audit
+        return heron_audit
+    except ImportError:
+        return _NoAudit()
+
+
 def warm():
     """Start loading the trained encoder, off the request path. Never raises.
 
@@ -246,10 +268,17 @@ def catalogue():
             for capability in entry["missing"]:
                 wanted.setdefault(capability, []).append(entry["id"])
 
+        gap_list = sorted((name, sorted(who))
+                          for name, who in wanted.items())
+        # D-62. Declared in heron_audit and unwired until Codex noticed on
+        # PR #44 that heron_capabilities left no trace at all - so the "brain
+        # side of the trail" was two of its four operations.
+        _audit().catalogue(skills=len(skills), capabilities=len(capabilities),
+                           gaps=len(gap_list))
         return {
             "skills": skills,
             "capabilities": capabilities,
-            "gaps": sorted((name, sorted(who)) for name, who in wanted.items()),
+            "gaps": gap_list,
             "problems": problems + CAP.problems(store),
         }
 
@@ -278,14 +307,43 @@ def resolve(capability, revit=None):
             # Two different absences, and telling them apart is the whole
             # value of the answer.
             anywhere = CAP.resolve(store, capability) if revit else None
+            known = capability in provided
+
+            # D-63. THE WANT IS RECORDED HERE AND NOWHERE ELSE, and the reason
+            # is the distinction this branch already draws.
+            #
+            # `blocked_by_version` is NOT a missing capability. A provider
+            # exists; this release is not on its list. Recording that as a want
+            # would put a capability on the gap report that ALREADY EXISTS, and
+            # commissioning a fragment to build it again is the exact failure
+            # heron_gaps.py was corrected for - its loudest error, needs_unbound
+            # at 38 of 176, is the executor behaving correctly.
+            #
+            # A capability NOBODY provides is the other case, and it is the one
+            # D-40 cannot derive: no artifact declares it, so no pass over the
+            # library can compute it. Only somebody asking reveals it. That is
+            # what want() was written for and why it is not deleted.
+            if not known and not anywhere:
+                CAP.want(store, capability,
+                         "asked for by name and no fragment provides it")
+
+            # D-62. A capability nobody provides is exactly the line the
+            # Capability Gap Agent reads, so it is recorded as ok=false rather
+            # than left out. A trail holding only the successes makes a gap
+            # look like something nobody ever asked for.
+            _audit().resolve(capability=capability, provider=None, ok=False,
+                             revit=revit)
             return {
                 "capability": capability,
                 "providers": [],
-                "known": capability in provided,
+                "known": known,
                 "blocked_by_version": bool(anywhere),
                 "revit": revit,
             }
 
+        _audit().resolve(capability=capability,
+                         provider=got.rows[0]["id"] if got.rows else None,
+                         ok=True, revit=revit)
         return {
             "capability": capability,
             "known": True,
@@ -332,6 +390,20 @@ def lookup(request, revit=None):
                                "why": c["why"]})
 
         _rows, excluded = RETRIEVE.eligible(store, revit)
+
+        # D-62. The trail only ever knew what reached Revit, so a request the
+        # brain answered on its own left no record and the LIVE route share was
+        # unmeasurable. THE SENTENCE IS NOT RECORDED - the route is what the
+        # report reads, and `request` would put the user's own words into a
+        # file that is append-only and never pruned.
+        #
+        # `excluded` goes in because D-52 is the rule this trail would break in
+        # its own turn: a line naming what was found and nothing about what the
+        # version wall removed is a count of the wrong thing.
+        _audit().lookup(route=answer.route, capability=capability,
+                        provider=answer.fragment_id,
+                        candidates=len(candidates), excluded=len(excluded))
+
         return {
             "request": request,
             "route": answer.route,
@@ -341,6 +413,135 @@ def lookup(request, revit=None):
             "autorun": bool(getattr(answer, "autorun", False)),
             "candidates": candidates,
             "excluded": [{"id": e.id, "reason": e.reason} for e in excluded],
+            "revit": revit,
+        }
+
+
+class ContextRefused(Exception):
+    """The Context Manager declined to assemble, and why.
+
+    A REFUSAL IS NOT A FAULT, and the server could not tell them apart until
+    this existed. `heron_context.assemble()` raises `OverBudget` when a part
+    falls outside the path's budget and `SourceMissing` when a path needs
+    something this installation has not got - both are ANSWERS. Anything else
+    coming out of it is a bug.
+
+    Catching `Exception` in the tool and calling all of it a refusal was the
+    first shape, and it is the failure this whole night kept finding in other
+    people's code: a message that misdescribes what happened. A TypeError would
+    have been reported to the caller as *"Heron refused to assemble that
+    context"*, which is a sentence about a decision Heron never made.
+
+    The server cannot name `OverBudget` itself without importing heron_context,
+    which would put brain internals back in the file that talks to the user -
+    the split this seam exists to keep. So the seam translates.
+    """
+
+
+def _context_module():
+    """heron_context, or BrainUnavailable saying what to install.
+
+    A SEPARATE helper rather than a seventh member of _brain()'s tuple, and the
+    reason is mechanical: six call sites unpack that tuple POSITIONALLY, and a
+    positional unpack that is one short raises at run time in whichever tool
+    happened to be called first - not at import, where it would be found. One
+    more function is cheaper than six edits that all have to be right.
+    """
+    try:
+        import heron_context as CONTEXT
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's Context Manager needs PyYAML and it is not installed: %s\n"
+            "Install it with:  pip install --user pyyaml" % exc)
+    return CONTEXT
+
+
+def context(request, path=None, revit=None, full=False, depth=None,
+            project=None):
+    """
+    What one agent would be given for one request, and nothing else.
+
+    docs/19 sections 1 and 2 reaching the host. The host asks for a request to
+    be assembled; Heron decides what may be carried and REFUSES anything
+    outside the path's budget, which is the half worth having - docs/19 s1:
+    an over-fed agent does not fail loudly, it attends to the wrong thing and
+    returns a confident, plausible, wrong answer.
+
+    `path` IS THE HOST'S TO CHOOSE. D-01 puts intent classification there, and
+    this call does not second-guess it. Passing None derives only the
+    structural case - a request that is a fragment's own declared phrasing IS
+    the cached path - and says it assumed the rest.
+
+    THIS EXISTS BECAUSE OF WHAT ITS OWN TOOLING FOUND. On 2026-09-09
+    tools/measure-routes.py established that heron_search.remember() is called
+    from a test and from nowhere else, so the utterance cache can never fill
+    (Q-43). A Context Manager reachable only from a command line would have
+    been the same shape of mistake in the same week, and this file's own
+    docstring already says what that costs: complete, tested, and unreachable
+    from a conversation is not what "built" was meant to mean.
+    """
+    CONTEXT = _context_module()
+
+    # DEPTH IS THE HOST'S TOO, for the same reason `path` is (D-01). How much
+    # of a neighbour a host needs depends on what it is about to do with it,
+    # and that is a judgement about the task - which is the host's half of the
+    # boundary. Passing nothing means full, so a caller written before depth
+    # existed gets byte-identical packets.
+    wanted = CONTEXT.FULL
+    if depth:
+        by_name = dict((v, k) for k, v in CONTEXT.DEPTH_NAMES.items())
+        if depth not in by_name:
+            raise ValueError(
+                "'%s' is not a depth. There are three: %s. Leave it out for "
+                "the whole of every part." % (depth, ", ".join(sorted(by_name))))
+        wanted = by_name[depth]
+
+    with _Open() as store:
+        try:
+            # `project` is the pinned document's name and it comes from the
+            # SERVER, which is the only side that knows it. Without it the
+            # situation part said "project: none named" on every single
+            # request, while the add-in had known the name since the first
+            # count_elements - a packet quietly less true than it could be.
+            # Found by Codex on PR #44, 2026-09-09.
+            #
+            # `scope` is NOT passed and that is deliberate rather than
+            # forgotten: _Open always opens the GLOBAL store, so a project
+            # scope would change how every brain tool resolves knowledge, not
+            # just this one. That belongs with a real project store to test
+            # against - see HANDOVER.
+            ctx = CONTEXT.assemble(store, request, path=path, revit=revit,
+                                   project=project, depth=wanted)
+        except (CONTEXT.OverBudget, CONTEXT.TooDeep,
+                CONTEXT.SourceMissing) as why:
+            # A REFUSAL IS RECORDED, not dropped. A trail holding only the
+            # assemblies makes a path that refuses every time - STANDARDS, on
+            # every installation today - look like a path nobody used.
+            _audit().context(path=path, depth=depth, parts=0, characters=0,
+                             refused=str(why))
+            raise ContextRefused(str(why))
+
+        _audit().context(path=ctx.path,
+                         depth=CONTEXT.DEPTH_NAMES[ctx.depth],
+                         parts=len(ctx.parts), characters=ctx.size)
+        return {
+            "request": ctx.request,
+            "path": ctx.path,
+            "assumed_path": ctx.assumed_path,
+            "why": CONTEXT.WHY[ctx.path],
+            "budget": list(CONTEXT.BUDGET[ctx.path]),
+            "carried": ctx.kinds(),
+            "size": ctx.size,
+            "depth": CONTEXT.DEPTH_NAMES[ctx.depth],
+            "parts": [{"kind": p.kind, "name": p.name, "source": p.source,
+                       "why": p.why, "size": p.size,
+                       "depth": CONTEXT.DEPTH_NAMES[p.depth],
+                       # Present only when something was actually left out.
+                       # A part carrying all of itself says nothing extra.
+                       "cut": p.cut,
+                       "body": p.body if full else None}
+                      for p in ctx.parts],
+            "not_carried": [{"kind": k, "reason": r} for k, r in ctx.refused],
             "revit": revit,
         }
 

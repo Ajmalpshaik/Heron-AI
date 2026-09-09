@@ -6,6 +6,10 @@ heron-layer: brain
 id: select-elements
 name: Show me these on screen
 domain: revit.selection
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
 risk: EXECUTE
 
 purpose: >

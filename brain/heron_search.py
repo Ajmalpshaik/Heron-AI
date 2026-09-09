@@ -51,6 +51,7 @@ it may never be the reason an answer is right.
 
 import os
 import re
+import sqlite3
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -137,13 +138,24 @@ def ensure_tables(store):
         CREATE TABLE IF NOT EXISTS utterances (
             utterance   TEXT PRIMARY KEY,
             fragment_id TEXT NOT NULL,
-            hits        INTEGER NOT NULL DEFAULT 1
+            hits        INTEGER NOT NULL DEFAULT 1,
+            fingerprint TEXT
         );
         CREATE TABLE IF NOT EXISTS identities (
             phrase      TEXT PRIMARY KEY,
             fragment_id TEXT NOT NULL
         );
     """)
+    # A store built before D-61 has the table without the column. ADD COLUMN is
+    # the whole migration: an existing row keeps a NULL fingerprint, and
+    # forget_stale() treats NULL as "written before anyone was checking" and
+    # drops it. Losing a cache row costs one lookup; keeping one that no longer
+    # matches its fragment is the failure this column exists to stop.
+    try:
+        store.db.execute("ALTER TABLE utterances ADD COLUMN fingerprint TEXT")
+    except sqlite3.OperationalError as exc:
+        if "duplicate column" not in str(exc):
+            raise
     store.db.commit()
 
 
@@ -159,6 +171,18 @@ def index(store):
     store.execute("DELETE FROM identities")
 
     on_disk, _ = FRAG.load_all()
+
+    # D-61. The searchable text is rebuilt from the files every time, so a
+    # fragment whose purpose changed is searched correctly the moment this
+    # runs. The CACHE is the one thing that would survive that unchanged, and
+    # it is the one thing that answers WITHOUT SEARCHING. Forgetting the rows
+    # written against bytes that have since changed belongs here, in the same
+    # pass, for the same reason.
+    #
+    # on_disk is handed over rather than reloaded: load_all() is the expensive
+    # part and D-24 says re-indexing must stay free.
+    forget_stale(store, on_disk)
+
     indexed = 0
 
     for row in store.fragments():
@@ -251,15 +275,133 @@ def recall(store, text):
     return row["fragment_id"], row["hits"]
 
 
-def remember(store, text, fragment_id):
-    """Record that this wording resolved to this fragment."""
+# WHAT COUNTS AS EVIDENCE THAT A WORDING RESOLVED CORRECTLY. D-61 answers
+# Q-43, and this tuple is the answer rather than a description of it.
+#
+# THE ONLY ONE ACCEPTED IS `RAN`. A keyword hit is a CANDIDATE, never a
+# decision - this file says so in its own header and in ask()'s note - and
+# caching a candidate makes the guess permanent: the next identical wording
+# returns by route 2 and never searches at all, so a wrong answer becomes the
+# FAST answer. That is precisely the confident-wrong-retrieval failure the
+# keyword layer was built to avoid, and wiring find() to remember() would have
+# built it in one line.
+#
+# The identity route is not here either, for the opposite reason: it already
+# answers in one lookup, so caching it saves nothing and only adds a row that
+# can go stale.
+RAN = "ran"
+
+
+class NotEvidence(Exception):
+    """Something tried to cache a guess."""
+
+
+def remember(store, text, fragment_id, evidence):
+    """
+    Record that this wording resolved to this fragment. Requires evidence.
+
+    `evidence` HAS NO DEFAULT ON PURPOSE. A default would make the safe call
+    and the dangerous call look identical at the call site, and the dangerous
+    one is the one somebody reaches for when they are wiring this up in a
+    hurry. Every caller has to say what it knows, out loud, in the argument.
+
+    The fingerprint of the fragment's implementation is stored with the row.
+    recall() does not check it - route 2 is the fast route and hashing files on
+    it would be the wrong trade - forget_stale(), which index() calls, does.
+    """
+    if evidence != RAN:
+        raise NotEvidence(
+            "the utterance cache takes %r and nothing else, and %r is not it. "
+            "A wording may be remembered once the fragment it resolved to has "
+            "RUN AND COME BACK - not because retrieval ranked it first. "
+            "Caching a candidate turns a guess into the fast path (D-61, "
+            "Q-43)." % (RAN, evidence))
+
     ensure_tables(store)
     key = normalise(text)
+    mark = _fingerprint_of(store, fragment_id)
+
     store.execute(
-        "INSERT INTO utterances (utterance, fragment_id) VALUES (?,?) "
-        "ON CONFLICT(utterance) DO UPDATE SET hits = hits + 1, fragment_id = ?",
-        (key, fragment_id, fragment_id))
+        "INSERT INTO utterances (utterance, fragment_id, fingerprint) "
+        "VALUES (?,?,?) "
+        "ON CONFLICT(utterance) DO UPDATE SET hits = hits + 1, "
+        "fragment_id = ?, fingerprint = ?",
+        (key, fragment_id, mark, fragment_id, mark))
     store.db.commit()
+
+
+def _fingerprint_of(store, fragment_id):
+    """
+    The hash of one fragment's implementation, loading ONE folder.
+
+    MEASURED, not assumed. The first version called FRAG.load_all() here, which
+    reads all 360 fragment files to use one of them: remember() took 1,522 ms.
+    The store already knows this fragment's folder, and loading that one folder
+    costs 3.6 ms with the hash itself at 0.2 - so remember() now takes 5.5 ms,
+    277 times less, on a path a modeller is waiting on.
+
+    The saving is not why this is written down. The obvious version LOOKED
+    fine: load_all() is what index() calls, it was already imported, and the
+    cost only appears if somebody times it. That is the shape worth keeping.
+    """
+    row = store.execute("SELECT folder FROM fragments WHERE id = ?",
+                        (fragment_id,)).fetchone()
+    if not row or not row["folder"]:
+        return None
+    folder = row["folder"]
+    if not os.path.isabs(folder):
+        folder = os.path.join(FRAG.ROOT, folder)
+    try:
+        frag = FRAG.load(folder)
+    except Exception:
+        # A fragment the store lists and the disk has lost. recall() already
+        # refuses to serve one whose row is gone from `fragments`; this is the
+        # other half - remember nothing rather than remember it unmarked, which
+        # forget_stale() would drop on the next index anyway.
+        return None
+    return frag.fingerprint() if frag else None
+
+
+def forget_stale(store, on_disk=None):
+    """
+    Drop every cached wording whose fragment is no longer what it was.
+
+    recall() already handles the DELETED fragment - a cache must never
+    resurrect one. This is the case it could not see: a fragment that is
+    EDITED KEEPS ITS ID, so the row still points at something real and still
+    answers, with the wording somebody confirmed against code that has since
+    changed underneath it.
+
+    Re-indexing is when Heron re-reads the files, so re-indexing is when a row
+    written against the old bytes should die. The hash is Fragment.fingerprint()
+    - the same one D-30 uses to call a proof stale - because a cached wording
+    and a recorded proof go out of date for exactly the same reason and should
+    not be able to disagree about when.
+
+    A NULL fingerprint is a row from before this existed. It is dropped rather
+    than trusted: one lookup is a cheap price for never serving a row nobody
+    was checking.
+    """
+    ensure_tables(store)
+    rows = store.execute(
+        "SELECT utterance, fragment_id, fingerprint FROM utterances").fetchall()
+    if not rows:
+        return 0
+
+    if on_disk is None:
+        on_disk, _ = FRAG.load_all()
+
+    dropped = 0
+    for row in rows:
+        frag = on_disk.get(row["fragment_id"])
+        now = frag.fingerprint() if frag else None
+        if row["fingerprint"] is None or now is None or now != row["fingerprint"]:
+            store.execute("DELETE FROM utterances WHERE utterance = ?",
+                          (row["utterance"],))
+            dropped += 1
+    if dropped:
+        store.db.commit()
+    return dropped
 
 
 def keywords(store, text, limit=5):

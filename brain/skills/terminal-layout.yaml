@@ -6,6 +6,10 @@ heron-layer: brain
 id: terminal-layout
 name: How many air terminals, and where
 domain: revit.hvac
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
 risk: MODIFY
 
 purpose: >

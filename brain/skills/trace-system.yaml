@@ -6,6 +6,10 @@ heron-layer: brain
 id: trace-system
 name: What connects to what
 domain: revit.mep
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
 risk: ANALYZE
 
 purpose: >

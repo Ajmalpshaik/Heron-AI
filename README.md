@@ -42,16 +42,23 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 **Phase 1 is BUILT AND UNPROVEN, and Phase 2 is built and barely proven — those are different words
 on purpose.** The C# —
 the write path, and the fragment bodies — compiles on all eight releases from 2020 to 2027 with zero
-warnings. The Python that reasons about it has sixteen test suites, all passing. A compiler proves the
+warnings. The Python that reasons about it has 40 test suites (`ls tests/test_*.py | wc -l`), all passing bar three, and the three do not share a reason: two want the MCP SDK (`pip install --user mcp`) and one wants a built .NET test host (`dotnet build tests/Heron.Bridge.TestHost`). A compiler proves the
 API surface agrees; a test proves the logic agrees with itself; neither says whether a duct moves 200
 millimetres or 200 feet.
 
 **Until 2026-09-06 this paragraph went on to say none of it had ever loaded into Revit and no fragment
 had met a model. Both have now happened.** The add-in is deployed in Revit 2024 and D-28's executor
 compiles a fragment's C# inside Revit's own process against the assemblies Revit has actually loaded.
-**16 of the 349 fragments are `PROVEN`** — each on a recorded proof against a named model, with a
-negative case and a staleness fingerprint ([D-30](docs/DECISIONS.md)). **The other 333 have still never
-met a model**, and the write path is still unproven.
+**142 of the 360 fragments are `PROVEN` as of 2026-09-09** — each on a recorded proof against a named
+model, with a negative case and a staleness fingerprint ([D-30](docs/DECISIONS.md)). **The other 218 have
+still never met a model.**
+
+**Do not trust those two numbers — derive them.** They move hourly while a proving session runs, and this
+line read *"16 of 349"* for two days after neither half was true:
+
+```bash
+grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
+```
 [`NEEDS-CHECKING.md`](docs/NEEDS-CHECKING.md) carries that debt item by item, and
 `python tools/check-gaps.py` prints what is genuinely unfinished versus what is only waiting on a
 machine.
@@ -61,7 +68,7 @@ machine.
 | Specification | ✅ Complete in 4 parts — [platform](docs/00-master-specification.md) · [Agent OS](docs/00b-master-specification-agent-os.md) · [baseline](docs/00c-master-handover-baseline.md) · [additional requirements](docs/00d-additional-requirements.md) |
 | Architecture review | ✅ Complete — [gaps, ideas, tensions](docs/PROPOSALS.md) across all four parts |
 | Constitution | ✅ **Accepted 2026-08-28** — all [30 Articles](HERON_CONSTITUTION.md), confirmed after every one was read out rather than tapped through. Reading them aloud found three stale statements inside |
-| Open questions | ✅ **42 answered · 0 open** — `Q-41` was raised *and* answered by the owner on 2026-09-06 — nothing gates any phase — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
+| Open questions | **52 answered · 1 open** — `Q-43` to `Q-48` were opened 2026-09-09 **by tools asking questions nobody had asked**, and `Q-49` to `Q-53` the same day by **reading someone else's repository at file level** ([33 §5](docs/33-external-repository-research.md)). **Eleven of the twelve closed that day.** The owner took three — links are read **only when the modeller asks** and the answer says how many it read ([D-59](docs/DECISIONS.md)), a preview **selects what it would change and what it would skip** capped at 500 ([D-60](docs/DECISIONS.md)) — and handed the rest over: the cache takes **only a run that came back** ([D-61](docs/DECISIONS.md)), the brain writes **its own audit file** into a directory the reader already merges ([D-62](docs/DECISIONS.md)), a want is stored **only for a capability nobody provides** ([D-63](docs/DECISIONS.md)), a dropped-count rides **only on the empty answer** ([D-64](docs/DECISIONS.md)), routing goes to the host while the **degraded-result rule stays** ([D-65](docs/DECISIONS.md)), and a licence gate **reads the files, not the landing page** ([D-66](docs/DECISIONS.md)). **`Q-51` stays open on purpose**, with a tripwire watching for the day it becomes real. **Nothing gates any phase** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
 | Licence & safety files | ✅ Complete — Apache 2.0, security policy, disclaimer, contribution guide |
 | Roadmap | ✅ Drafted — [Phase 0 → 7](docs/ROADMAP.md) |
 | Step 1 — the bridge | ✅ **Proven.** One button connects and disconnects, per-session token, newest connection takes the pipe. Two Revits at once, each with its own pipe. **Since Step 6 a lease decides who may actually send anything** ([D-22](docs/DECISIONS.md)) — taking the pipe is no longer taking the right to use it, and that half is unproven |
@@ -72,7 +79,7 @@ machine.
 | ⛔ **Phase 0 ends here** | Everything above is **read-only**. Nothing can change a model |
 | Step 6 — the first write | ⚠️ **Built and compiled. Never run.** The rails came first as the [build order](docs/27-build-order.md) requires — one `TransactionGroup`, preview, re-count, document pinning, permission gate, emergency stop, then the move. The chat half is tested, and a compiler has now read every line on **all eight releases, zero warnings** — which cost one 2020-only defect to discover. It has still **never loaded into Revit and has never moved anything.** Writing stays off until it has ([D-19](docs/DECISIONS.md), [`NEEDS-CHECKING.md`](docs/NEEDS-CHECKING.md)) |
 | ⛔ **Phase 1 ends here, unproven** | `write.enabled` defaults to **`false`** and stays there until a real Revit has been through the register. Heron can no longer be read-only by construction, so it is read-only by default instead — a real weakening, made deliberately and written down rather than smoothed over |
-| Steps 7–14 — Phase 2 | ✅ **Built in full, and almost none of it proven.** The fragment store, one knowledge store per scope, exact-word search, local offline embeddings, the two fused behind a hard Revit-version filter, the capability registry, the dependency graph, and ten skills that name capabilities rather than fragments. **All ten skills and 333 of the 349 fragments are `DRAFT`; 16 fragments are `PROVEN` as of 2026-09-07** — a fragment re-authored from an earlier library arrives here unproven whatever it was there ([D-44](docs/DECISIONS.md)), and that rule is enforced in code rather than remembered |
+| Steps 7–14 — Phase 2 | ✅ **Built in full, and almost none of it proven.** The fragment store, one knowledge store per scope, exact-word search, local offline embeddings, the two fused behind a hard Revit-version filter, the capability registry, the dependency graph, and ten skills that name capabilities rather than fragments. **All ten skills are `DRAFT`. 218 of the 360 fragments are `DRAFT` and 142 are `PROVEN` as of 2026-09-09** — derive both with the `grep` above rather than reading them here — a fragment re-authored from an earlier library arrives here unproven whatever it was there ([D-44](docs/DECISIONS.md)), and that rule is enforced in code rather than remembered |
 | The brain, reachable | ✅ Three read-only MCP tools resolve a request through a **capability**, never a fragment id. **Resolving is not running** — and nothing could run a fragment at all until D-28's executor landed on 2026-09-06. It runs one **READ-ONLY**: it opens no transaction, so Revit itself refuses any model change. Running a fragment that WRITES is a separate operation that still does not exist |
 
 **What is proven and what is only built are different things.**
@@ -146,7 +153,9 @@ Full index: **[docs/README.md](docs/README.md)**
 14. Every important autonomous operation must be auditable.
 15. The platform must be modular enough that agents, skills and fragments can be replaced without redesigning the system.
 
-*(Six more are [proposed](docs/14-golden-rules.md): undo, preview-before-modify, sandboxing generated code, permission escalation from untrusted text — plus two learned in the field, **bind the document not just the session** and **a preview expires**.)*
+*(There are **21**, not 15. Rules 16–21 were **accepted on 2026-08-28** and are official and binding on the same footing as 1–15 — undo, preview-before-modify, sandboxing generated code, no permission escalation from untrusted text, plus two learned in the field: **bind the document not just the session** and **a preview expires**. [docs/14](docs/14-golden-rules.md) is the list.)*
+
+> **This line said *"six more are proposed"* until 2026-09-09 — eight days after they stopped being proposals, in the file a new reader opens first.** It was found while reconciling [`HERON_AI_MASTER_ARCHITECTURE.md`](HERON_AI_MASTER_ARCHITECTURE.md), by an entry that used it as a source and got the answer wrong ([32 §4.4](docs/32-master-architecture-reconciliation.md)). `tools/check-docs.py` verifies that every `Golden Rule N` reference points at a rule that **exists**; nothing checks a sentence *about* their status.
 
 ---
 

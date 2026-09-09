@@ -877,6 +877,107 @@ def heron_lookup(request: str) -> str:
 
 
 @server.tool()
+def heron_context(request: str, path: str = "", full: bool = False,
+                  depth: str = "") -> str:
+    """
+    Show what an agent would be given for a request - and what it may not carry.
+
+    Use before planning anything substantial, to see the minimum Heron thinks
+    the job needs. `path` is yours to set: cached, simple, standards or
+    generation (docs/19). Leave it empty and Heron derives only the structural
+    case and says it assumed the rest - it does not guess what you meant.
+    Pass full=True to see each part's body. `depth` is yours too: abstract,
+    overview, or left empty for the whole of every part. A shallower depth
+    shortens only what was RETRIEVED - the request itself always crosses
+    verbatim, and any part carrying less says by how much. Touches nothing in
+    the model.
+    """
+    revit, how = _revit_version()
+
+    try:
+        got = brain.context(request, path=path or None, revit=revit, full=full,
+                            depth=depth or None, project=pinned.title)
+    except brain.BrainUnavailable as why:
+        return str(why)
+    except ValueError as why:
+        # An unknown path. The caller's, and it names the four that exist.
+        return str(why)
+    except brain.ContextRefused as why:
+        # A DECISION, not a fault: a part outside the budget, or a path whose
+        # source this installation has not got. The sentence is the answer, and
+        # a stack trace would hide it.
+        #
+        # Catching `Exception` here and calling all of it a refusal was the
+        # first shape. A TypeError would then have been reported as "Heron
+        # refused", which is a sentence about a decision Heron never made - the
+        # same failure this session kept finding elsewhere. Anything that is
+        # not one of the three above is a bug and is left to surface as one.
+        return "Heron refused to assemble that context:\n  %s" % why
+
+    lines = ['"%s"' % got["request"],
+             "  path       %s%s" % (got["path"],
+                                    "   (ASSUMED - you did not say, and Heron "
+                                    "does not classify intent)"
+                                    if got["assumed_path"] else ""),
+             "             %s" % got["why"],
+             "  may carry  %s" % ", ".join(got["budget"]),
+             "  carries    %s" % (", ".join(got["carried"]) or "nothing"),
+             "  size       %d characters, %d part(s)"
+             % (got["size"], len(got["parts"])),
+             ""]
+
+    # THE CUT MARKER HAS TO REACH THE CALLER WHO ASKED FOR THE CUT.
+    #
+    # The seam returned `depth` and a per-part `cut` from the day depth was
+    # built, and this loop printed neither - so the CLI told a person what had
+    # been left out and the MCP tool told the host nothing. That is the
+    # plausible zero (D-52) reappearing at the one surface where it matters
+    # most: a shorter packet that reads exactly like a complete one.
+    #
+    # Found by a security review of the depth change, as the one non-security
+    # note in an otherwise clean report. heron_brain.py's own docstring already
+    # says the shape of this mistake: complete, tested, and unreachable from a
+    # conversation is not what "built" was meant to mean.
+    if got.get("depth") and got["depth"] != "full":
+        lines.insert(-1, "  depth      %s - parts with a shallower form are "
+                         "carrying it" % got["depth"])
+
+    for part in got["parts"]:
+        lines.append("  %s: %s  (%d ch%s)"
+                     % (part["kind"], part["name"], part["size"],
+                        ", %s" % part["depth"]
+                        if part.get("cut") else ""))
+        lines.append("     from  %s" % part["source"])
+        lines.append("     why   %s" % part["why"])
+        if part.get("cut"):
+            # Only when something was actually left out. A part carrying all of
+            # itself adds no line, so this one means something when it appears.
+            lines.append("     CUT   %s" % part["cut"])
+        if full and part["body"] is not None:
+            for line in str(part["body"]).splitlines():
+                lines.append("     | %s" % line)
+        lines.append("")
+
+    if got["not_carried"]:
+        lines.append("  Allowed but not carried:")
+        for entry in got["not_carried"]:
+            lines.append("    %-12s %s" % (entry["kind"], entry["reason"]))
+        lines.append("")
+
+    if revit is None:
+        lines.append("No Revit is connected, so the version filter did not run.")
+    else:
+        lines.append("Filtered to Revit %s (%s)." % (revit, how))
+
+    # Size is a fact here and never a limit - Heron has no tokeniser and the
+    # host counts tokens (D-58). What IS enforced is the parts list.
+    lines.append("Size is reported, not enforced. The budget that IS enforced "
+                 "is the list of parts.")
+    lines.append(_not_proven())
+    return "\n".join(lines)
+
+
+@server.tool()
 def heron_gaps(days: int = 0) -> str:
     """
     What Heron has been asked to do lately, what failed, and what is slow.

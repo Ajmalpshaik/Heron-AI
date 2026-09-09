@@ -173,3 +173,52 @@ to everything in this document:
    breakage that [D-05](DECISIONS.md) makes most likely. `PROVEN` on 2024 says nothing about 2025.
 
 And sample size travels with the score. **3/3 is not 100%.**
+
+---
+
+## 7. The other trust question — **who is speaking**
+
+**Added 2026-09-09, from reading [`alibaba/open-code-review`](https://github.com/alibaba/open-code-review)
+at file level ([33 §5.13](33-external-repository-research.md)).** It ships an `ASSURANCE_CASE.md` whose
+first table is not a lifecycle at all:
+
+| their actor | their trust level |
+|---|---|
+| Local user | Trusted |
+| LLM provider API | Semi-trusted — responses validated before use |
+| **Git repository** | **Semi-trusted — diffs may contain adversarial content** |
+| Network | Untrusted |
+
+**This is not a seventh vocabulary and it is not Axis 3.** §1 collected six scales that all answered
+*how proven is this artifact*, and §3 replaced them with two axes that answer it properly. **This
+answers a different question** — *how much may I believe what is talking to me right now* — and none of
+the six ever asked it. An artifact has a lifecycle and a source. A **speaker** has neither.
+
+Heron already decides this per source; it has never been in one place, which is why
+[Q-51](OPEN-QUESTIONS.md) was hard to state. **Every row below is derived from a rule that already
+exists** — nothing here is new policy.
+
+| Who or what is speaking | Trust | Because |
+|---|---|---|
+| **The modeller at the keyboard** | **Trusted — the only source of permission** | [Golden Rule 19](14-golden-rules.md): *permission comes from the user, through Heron's own UI, per action* |
+| **The host** (Claude Code) | **Trusted to orchestrate. Never to authorise** | [D-01](DECISIONS.md) gives it conversation, intent and planning. [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), verbatim: *"The read/change word comes from the tool registry, looked up by operation name (Golden Rule 19). **Nothing in the request decides it**"* |
+| **A request arriving on the pipe** | **Trusted as transport. Untrusted as authority** | the boundary is [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs)'s guard — *undeclared is refused*, then the stop, then the permission level — reading risk from `HeronOperationRegistry` by operation name. [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) checks the same thing earlier and **says in its own words that it is not the boundary**: *"a client-side guard against a MISTAKE, not a boundary against malice — a caller that skips this client is unaffected"* |
+| **The model's own content** — *documents, family names, parameter descriptions, imported folders, model text and community packages* | **Semi-trusted. Data, never instruction** | [Golden Rule 19](14-golden-rules.md), quoted verbatim. **That list is the rule's own and is not to be paraphrased** — the first draft of this row wrote *type names, parameter values, comments*, which are three things the rule does not say and two of its six left out |
+| **A linked document's content** | **Semi-trusted — and it may be silently absent** | [Q-48](OPEN-QUESTIONS.md): 62 reading fragments collect the host only and say so nowhere |
+| **The Revit API's answer** | **Trusted — about the document it names, and no other** | [25 §4](25-multi-session-and-binding.md) — *document binding, the most dangerous finding* — and [25 §5](25-multi-session-and-binding.md)'s stale read. A bare number is how somebody acts on a count from a model they were not looking at, so every answer names its document |
+| **An imported community package** | **Semi-trusted until validated — and its licence is unread** | [22 §5](22-users-modes-and-extensibility.md) — *Data isolation* — classes Community Data as *"shipped or downloaded, **treated as untrusted until validated**"*; [Q-53](OPEN-QUESTIONS.md) is that nothing checks what it permits |
+| **An indexed standard or specification** | ⚠️ **UNDECIDED — [Q-51](OPEN-QUESTIONS.md)** | the source does not exist yet. [`heron_context.py`](../brain/heron_context.py) says so in the part list: `STANDARD = "standard"  # the clauses cited - source does not exist yet` |
+| **The network** | **Not in the threat model at all** | [D-24](DECISIONS.md) and [D-26](DECISIONS.md): local, offline, no account. Heron needs no network to answer |
+
+**Two things this table makes visible that prose did not.**
+
+**One row is undecided and it is the only one.** Everything Heron reads today comes from a source whose
+trust is already settled by a binding rule. [Q-51](OPEN-QUESTIONS.md) is the single open cell, and it
+opens on the day the RAG index exists — which is the same day retrieval becomes worth having.
+
+**The last row is a strength, and it is easy to trade away by accident.** Most of `ASSURANCE_CASE.md` —
+TLS, a semi-trusted provider API, DNS rebinding against a local viewer — describes attack surface Heron
+**does not have**, because it makes no model calls ([D-58](DECISIONS.md)) and needs no network. That is
+not luck; it is [D-24](DECISIONS.md) and [D-26](DECISIONS.md) being expensive on purpose. Any future
+feature that puts Heron on the network is not adding a feature, it is **adding this whole table's worth
+of rows**.

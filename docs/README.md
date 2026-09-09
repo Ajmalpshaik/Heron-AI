@@ -2,7 +2,9 @@
 
 > **Status:** **Phase 0 is complete** — Steps 1 to 5, proven in real Revit 2020 and 2024. **Step 6 (the
 > first write) and the whole of Phase 2 (Steps 7 to 14) are built, compile on all eight releases, and
-> have never loaded into Revit.** Every fragment and every skill is `DRAFT`.
+> have never loaded into Revit.** **All ten skills are `DRAFT`; 142 of the 360 fragments are `PROVEN`
+> as of 2026-09-09** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
+> derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
 > **Do not trust this paragraph over the tool.** `python tools/check-gaps.py` is computed from disk on
 > every run and sorts everything into *unfinished* and *waiting*; this sentence is typed. Where they
@@ -24,8 +26,27 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**All 42 questions are answered — 42 answered · 0 open — and nothing gates any phase.** `Q-41` was both
-asked and answered by the owner on 2026-09-06, during the decision read-back rather than by a specification.
+**52 answered · 1 open, and nothing gates any phase.** `Q-43` to `Q-48` were all opened on
+2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
+than by reading. `Q-49` and `Q-50` followed the same day from reading someone else's repository at file
+level ([33 §5](33-external-repository-research.md)):
+
+| | |
+|---|---|
+| `Q-43` | [`measure-routes.py`](../tools/measure-routes.py) parsed the tree for real calls to `heron_search.remember()` and found one, in a **test**. The utterance cache [19 §5](19-context-and-cost.md) makes step 1 of the pipeline is **never written in production** |
+| `Q-44` | the audit trail is written by the add-in, so a request answered entirely by the brain leaves **no record at all** — and [19 §7](19-context-and-cost.md) asks for one file, which would mean two processes appending to it |
+| `Q-45` | [D-58](DECISIONS.md) established that Heron makes no model calls, so [19 §3–§4](19-context-and-cost.md)'s router and fallback may belong wholly to the host — except the *mark the result degraded* clause, which is trust and therefore Heron's |
+| `Q-46` | [`check-revit-gate.py`](../tools/check-revit-gate.py) found **59 fragments** that go looking, can drop a candidate on the way, and name nothing they refused or skipped, against [D-52](DECISIONS.md). It was 143 until the rule was derived from the library's own practice — writers name refusals 172/202, readers 45/158 |
+| `Q-47` | [`check-reachable.py`](../tools/check-reachable.py) found `heron_capability.want()` called from two tests and no production code — so the `capabilities_wanted` table is always empty and **two gap paths exist of which only the derived one can fire** |
+| `Q-48` | ✅ [`check-revit-gate.py`](../tools/check-revit-gate.py) found **62 reading fragments** that collect from the host document and say nothing about links. In federated MEP work that is a **confident smaller number**. Closed by the owner: reading spans links **only when the modeller asks**, and the answer reports how many links it read ([D-59](DECISIONS.md)) |
+| `Q-49` | 🟡 Heron has **no hooks of any kind** — no `.claude/settings.json`. Every `check-*.py` gate runs only when a person types it, and this repository has already paid for that once ([32 §4](32-master-architecture-reconciliation.md)) |
+| `Q-50` | ✅ the preview **told** the modeller what would change; everything needed to **show** it — `preview.Ids`, `preview.Skipped`, [`set-selection`](../brain/fragments/set-selection/) — was already in memory when the question was asked. Closed by the owner: it selects **both** sets, capped at 500 ([D-60](DECISIONS.md)) |
+| `Q-51` | 🟠 Rule 19 stops text **authorising**; nothing yet governs text **travelling**. Every part Heron assembles comes from a source Heron wrote — until the RAG index exists, which is the same event that makes retrieval useful |
+| `Q-52` | 🟡 `agentmemory` fuses three retrieval streams at the same `RRF_K = 60` Heron chose independently; Heron fuses two. [`heron_graph.py`](../brain/heron_graph.py) is the third — but it is a **composition** graph, not an entity graph, so the obvious repair is probably wrong |
+| `Q-53` | ✅ a skill library whose README says *"MIT, use freely"* ships four skills marked **all rights reserved** — and its own scanner never looks at a licence. Heron plans community packages and **no Heron tool mentions a licence** |
+
+`Q-41` before them was both asked and answered by the owner on 2026-09-06, during the decision read-back
+rather than by a specification.
 
 **Phase 1, assessed 2026-08-28** (it had not been, and the count above had quietly stopped covering the
 work in progress). Three questions touched Step 6 at the time, and one of them mattered:
@@ -127,6 +148,9 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 29 | [Metadata Standard](29-metadata-standard.md) | The five fields every artefact carries — and how they tie the code back to the registry |
 | 30 | [Compiling Away From Windows](30-compiling-away-from-windows.md) | **The compile gate runs anywhere.** All eight releases, 2020–2027, from NuGet on Linux; what a pass proves; the 2020-only defect it caught on its first run; and why three releases were skipped for a reason that was about the SDK package, not the operating system |
 | 31 | [Studying The Existing Libraries](31-studying-the-existing-libraries.md) | **How a fragment is studied and re-authored, never imported.** What travels (the mechanism, the scar) and what cannot (the code, the words, the proof); the owner's three rules — check and edit, add, split; and why 221 verified fragments arrive here as 221 unproven ones |
+| 32 | [**The Master Architecture document, reconciled**](32-master-architecture-reconciliation.md) | **Read this before building anything from [`HERON_AI_MASTER_ARCHITECTURE.md`](../HERON_AI_MASTER_ARCHITECTURE.md).** The audit that document demands of itself, done against this repository: **nine of its platform modules already exist here, four of them stricter than it asks for.** What is genuinely missing, ranked — the Context Manager and the six things beside it in [19](19-context-and-cost.md) have **no implementation of any kind**. And what is rejected, with reasons, so the same proposals are not made again. [D-57](DECISIONS.md) |
+| 33 | [The External Repository Research Matrix](33-external-repository-research.md) | **The fifteen projects [`HERON_AI_MASTER_ARCHITECTURE.md`](../HERON_AI_MASTER_ARCHITECTURE.md) §10 asks about — read twice: from their pages, then by cloning and reading every one.** The file-level pass **disagreed with the page-level one in ten of the fifteen entries** (§4a), corrected five licence cells and three of this document's own claims, and changed two decisions. **Six projects agree with Heron** — §1 separates the three that are shared convention from the four that are a design that could have gone otherwise. **Nothing is adopted as code**, and one project is **AGPLv3** against Heron's Apache 2.0 |
+| 34 | [The Patterns, Adapted](34-patterns-adapted.md) | **Not *what* those projects are — *how* they get their result, and what that is worth to a modeller.** Fourteen patterns. **Two built** — tiered depth and the cut marker, which together take a generation packet from **5,737 characters to 372 with the request byte-identical**; six already held, four waiting on the owner, two rejected. The lesson three of them taught from different directions: **a rule in code beats a rule in prose** |
 
 ## Working documents
 

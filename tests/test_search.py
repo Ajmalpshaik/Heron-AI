@@ -101,16 +101,43 @@ def main():
             check(a.route in ("keywords", "nothing"),
                   "an unusual wording does not match an identity")
 
-            SEARCH.remember(store, odd, "FRG-ELE-001")
+            SEARCH.remember(store, odd, "FRG-ELE-001", SEARCH.RAN)
             a = SEARCH.ask(store, odd)
             check(a.route == "cache", "after remembering, it takes the cache route")
             check(a.fragment_id == "FRG-ELE-001", "and returns what was learned")
             check(not a.autorun,
                   "a cached answer is a CANDIDATE - it never runs unasked")
 
-            SEARCH.remember(store, odd, "FRG-ELE-001")
+            SEARCH.remember(store, odd, "FRG-ELE-001", SEARCH.RAN)
             _fid, hits = SEARCH.recall(store, odd)
             check(hits == 2, "and the hit count rises (%d)" % hits)
+
+            print()
+            print("  ..and a GUESS cannot be remembered at all (D-61)")
+            for guess in ("keywords", "hybrid", "identity", "cache", None, ""):
+                try:
+                    SEARCH.remember(store, "another wording", "FRG-ELE-001",
+                                    guess)
+                    check(False, "%r was accepted as evidence" % (guess,))
+                except SEARCH.NotEvidence:
+                    pass
+            check(SEARCH.recall(store, "another wording")[0] is None,
+                  "none of the six non-evidence values wrote a row")
+
+            print()
+            print("  ..an EDITED fragment forgets its cached wordings")
+            store.execute(
+                "UPDATE utterances SET fingerprint = 'stale' "
+                "WHERE utterance = ?", (SEARCH.normalise(odd),))
+            store.db.commit()
+            dropped = SEARCH.forget_stale(store)
+            check(dropped >= 1, "forget_stale() dropped %d row(s)" % dropped)
+            check(SEARCH.recall(store, odd)[0] is None,
+                  "the wording confirmed against the old bytes is gone")
+
+            SEARCH.remember(store, odd, "FRG-ELE-001", SEARCH.RAN)
+            check(SEARCH.forget_stale(store) == 0,
+                  "and a row written against the CURRENT bytes survives")
 
             print()
             print("  ..a cache never resurrects a fragment that has gone")

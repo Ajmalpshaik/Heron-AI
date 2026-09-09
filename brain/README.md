@@ -4,12 +4,22 @@
 
 **And since 2026-08-29 it is reachable.** Everything here was imported by nothing but its own tests until
 [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) was written — complete, tested, and invisible
-to any conversation. Three MCP tools now stand on that seam: `heron_capabilities`, `heron_resolve` and
-`heron_lookup`. **They ask for a capability and never for a fragment**, which is what keeps everything in
-here replaceable. They can now also **run** one: [D-28](../docs/DECISIONS.md)'s in-process Roslyn
-landed on 2026-09-06 as [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), and it runs a
-fragment **READ ONLY** — it opens no transaction, so Revit itself refuses any change. Running a fragment
-that WRITES is a separate operation that still does not exist.
+to any conversation. **Four** MCP tools now stand on that seam: `heron_capabilities`, `heron_resolve`,
+`heron_lookup` and, since 2026-09-09, `heron_context`. **They ask for a capability and never for a
+fragment**, which is what keeps everything in here replaceable.
+
+**Running one is a bridge operation rather than an MCP tool**, and the two are not the same door.
+[D-28](../docs/DECISIONS.md)'s in-process Roslyn landed on 2026-09-06 as
+[`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs). `run_fragment_read` opens no
+transaction, so Revit itself refuses any change. **`run_fragment_write` exists too** — declared `MODIFY`
+in [`HeronOperationRegistry`](../platform/Heron.Core/HeronOperationRegistry.cs), gated by
+`write.enabled` which defaults to false ([D-19](../docs/DECISIONS.md)), and rolled back unless the
+caller passes `apply` ([D-55](../docs/DECISIONS.md)).
+
+> This paragraph said *"running a fragment that WRITES is a separate operation that still does not
+> exist"* until 2026-09-09. It did exist by then, and had for a day. Found while wiring `heron_context`
+> onto the same seam — which is the pattern: a sentence about a gap has to be corrected when the gap
+> closes, or it becomes the most convincing wrong documentation in the repository ([D-54](../docs/DECISIONS.md)).
 
 | | |
 |---|---|
@@ -31,6 +41,7 @@ that WRITES is a separate operation that still does not exist.
 | [`retrieval-history.md`](retrieval-history.md) | **What was measured, and at what library size.** Quote this file, never a remembered figure — the owner's earlier library once had three accuracy numbers in circulation at once because the early scores recorded no corpus size. It currently records the built-in backend **collapsing as the library grows**, which is the evidence for `A7` |
 | [`heron_embed.py`](heron_embed.py) | **Step 10.** Finding a fragment by something other than its exact words. **Two backends**: `lexical` is built in, offline, needs nothing installed — and is measured, in numbers, as *not meaning*; `model` is a trained encoder used when one is present, and **has never run** (`A7`). Content-hashed, so re-indexing unchanged files costs nothing |
 | [`heron_scope.py`](heron_scope.py) | **Step 8.** One knowledge store per scope, as one file each. A cross-scope query is impossible to *write*: the API takes one scope and `ATTACH` is refused by name. The stores are **derived** — delete them all and `--rebuild` puts them back |
+| [`heron_context.py`](heron_context.py) | **The Context Manager** — [docs/19 §1–§2](../docs/19-context-and-cost.md), specified and never implemented until 2026-09-09 ([32 §4.1](../docs/32-master-architecture-reconciliation.md)). Four paths, each with a **declared list of parts it may carry**, and a part outside it **raises** — docs/19: *exceeding a budget is a bug in retrieval, not a reason to raise the budget*. The budget is a parts list rather than a token count because Heron has no tokeniser and the host counts tokens ([D-58](../docs/DECISIONS.md)); size is reported and never enforced. **The request crosses byte for byte** — `OST_DuctCurves` is the load-bearing half of a BIM sentence and is what a compressor damages first, and since 2026-09-09 that is a **branch** (`FULL_ONLY`) rather than a promise. **Depth** — `abstract` / `overview` / `full` — says how much of each part is carried, taking a generation packet from **5,737 characters to 372** with the request unchanged; a part that lost something says **how much**, and a part that carried all of itself says nothing extra ([34 §2.1–2.2](../docs/34-patterns-adapted.md)). **It does not classify what the user meant** ([D-01](../docs/DECISIONS.md)); an assumed path says it was assumed. A path whose source does not exist — `STANDARDS` wants clauses and no clause store exists — is **refused by name rather than quietly degraded** |
 
 ```bash
 python brain/heron_fragment.py                              # validate the library

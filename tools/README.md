@@ -481,3 +481,331 @@ library rather than typed, so it cannot go stale.
 **The exit code follows the batch, not the fragments.** Fourteen failures is the output — the thing it
 was run to find out — and exiting non-zero on them would make a successful proving run
 indistinguishable from a broken one. What earns a non-zero code is a job file that cannot be run.
+
+---
+
+## `measure-brain.py` — how long the brain takes, stage by stage
+
+```bash
+python tools/measure-brain.py
+python tools/measure-brain.py --revit 2024 --requests 40
+```
+
+**The Revit side has been measured since Step 4 and the brain has never been measured at all.**
+`HeronAudit` writes a duration per request and [`heron_gaps.py`](../brain/heron_gaps.py) reports median
+and worst milliseconds per fragment and per operation. A grep for `perf_counter` or `monotonic` over
+`heron_search.py`, `heron_embed.py` and `heron_retrieve.py` returns **nothing**, and none of them writes
+to the trail. [docs/32 §4.2](../docs/32-master-architecture-reconciliation.md) is where that gap is
+recorded.
+
+**It is the half where the only real latency disaster has happened.** [D-49](../docs/DECISIONS.md):
+closing register row `A7` installed a trained embedding backend, its import ran on the asyncio event
+loop, and a Claude Code tool call sat on `heron_capabilities` for **thirty minutes**. An import costing
+1.0 s in a fresh process, still running at 40 s there. It was found with `faulthandler`, by somebody who
+noticed a hang.
+
+So the import is timed **first and on its own** — and as **two lines**, which it was not until it was
+re-read. `import heron_embed` is the module and is cheap everywhere. **`backend()` is where the trained
+encoder actually loads** (`_load_model()`), and that is the 1.0 s that became 40 and then thirty
+minutes. The first version timed only the module and called it the D-49 measurement; the cost happened
+on the next line, **untimed**. Invisible on a machine without `model2vec` — which is not the machine
+that matters. The report says which of the two cases it is looking at.
+
+**Three things it refuses to do:**
+
+| | |
+|---|---|
+| **It does not claim `HERON-OPS-OBS-011`** | The registry defines the Observability Agent as *"latency, token usage, model calls per request, cost per request"*. [D-01](../docs/DECISIONS.md) put every model call in the host and `heron_embed` runs a local model — no tokens, no account, no cost ([D-24](../docs/DECISIONS.md), [D-26](../docs/DECISIONS.md)). Three of those four fields are things Heron cannot see from here, so the header says `Heron-Agent: none` rather than letting `check-metadata.py` report the agent BUILT with three quarters of its job impossible. **The registry row wants correcting**, and that is the owner's call |
+| **It is not a gate and exits 0** | A timing is not a pass or a fail, and there is no agreed budget to breach — [docs/19 §2](../docs/19-context-and-cost.md) proposes one and nothing implements it. A threshold taken from the first run would make whatever machine ran it the standard |
+| **It will not report over the wrong library** | Same rule as `check-routing.py` and for the reason that tool learned the hard way: one store at `%APPDATA%\Heron\knowledge` serves every checkout on the machine, so a **count** can match while the store holds another session's fragments. It compares the **ids** |
+
+**The first run already found something worth saying out loud.** `find()` came back in about a
+millisecond and `retrieve()` took seven — because the questions are the fragments' **own declared
+utterances**, so all twelve took Step 9's identity short circuit. That is the best case by construction
+and the tool says so, with the count, under the table. A request phrased in somebody else's words costs
+what `retrieve()` costs.
+
+Every run prints the machine, the Python, the embedding backend and the fragment count, because a
+number from a Linux container and a number from the owner's PC are not comparable and a table that did
+not say which is which would be used as though they were.
+
+---
+
+## `measure-routes.py` — how often Heron answers without thinking
+
+```bash
+python tools/measure-routes.py
+```
+
+**The metric [D-58](../docs/DECISIONS.md) put in the registry**, replacing one Heron cannot see.
+`HERON-OPS-OBS-011` asked for *model calls per request*; [D-01](../docs/DECISIONS.md) puts every model
+call in the host, so Heron cannot count them. It can count how often **no model was needed at all** —
+which is what [docs/19 §5](../docs/19-context-and-cost.md) actually cares about:
+
+> Steps 1 and 2 must be tried **before** any model is invoked, structurally — not as an optimisation
+> added later.
+
+*Model calls per request* was a proxy for that rule holding. **The share answered by the identity or
+cache route measures it directly**, from Heron's own side of the wire, with nothing to configure.
+
+**Two numbers that must never be added together.** STRUCTURAL asks the library its own declared
+phrasings and reports the routes — a **ceiling**, because real requests are phrased worse than the
+phrasings a fragment writes for itself. LIVE reports what the utterance cache actually holds, which is
+the only half that says anything about what people type.
+
+**A short circuit that lands on a different fragment is named, not counted as a saving.** Route 1
+answering confidently and wrongly costs more than a search;
+[`check-routing.py`](#check-routingpy--did-a-new-fragment-make-an-old-one-unfindable) is the tool that
+says which.
+
+### What its first run found — and why it is parsed rather than grepped
+
+**`remember()`, the only function that writes the utterance cache, is called from
+[`tests/test_search.py`](../tests/test_search.py) and from no production code.** Not `ask()`, not
+`find()`, not any MCP tool. So route 2 can never fire for a real user: the cache is built, tested,
+indexed and permanently empty — the one [docs/19 §6](../docs/19-context-and-cost.md) calls *"the one
+that pays for itself faster than any of the others"*.
+
+**The first version of that check grepped for the text `remember(` and matched this tool's own
+docstring**, which describes the problem — then printed *"the cache fills with use"*, the exact opposite
+of the truth, in the one place the tool exists to be right about. It parses with `ast` now, and
+[`tests/test_measure_routes.py`](../tests/test_measure_routes.py) holds that case along with prose in a
+comment, `remembers()`, the definition itself, `__pycache__`, and a file that will not parse — which is
+**reported** rather than skipped, because *"no production caller"* must never be an artefact of a file
+nobody could read.
+
+**Where `remember()` should be called from is [`Q-43`](../docs/OPEN-QUESTIONS.md), not a patch.** Caching
+whatever the keyword route ranked first makes a **guess permanent**: the next identical wording returns
+by route 2 and never searches at all.
+
+Not a gate; exits 0. There is no agreed target to miss, and setting one from a first run would make
+today's library the standard.
+
+---
+
+## `check-revit-gate.py` — the fourteen questions, run as a list
+
+```bash
+python tools/check-revit-gate.py                    # the whole library
+python tools/check-revit-gate.py FRG-ELE-001        # one fragment, all fourteen
+python tools/check-revit-gate.py --list units       # the names behind a count
+```
+
+**The questions are already this project's rules.** They are spread across [docs/03](../docs/03-heron-revit.md),
+the [fragment-proving skill](../.claude/skills/fragment-proving/SKILL.md), [D-51](../docs/DECISIONS.md),
+[D-53](../docs/DECISIONS.md) and [FRAGMENT-ISSUES.md](../docs/FRAGMENT-ISSUES.md), and **nothing ran
+them as a list** ([docs/32 §4.3](../docs/32-master-architecture-reconciliation.md)). The proving skill
+names five mistakes that account for nearly every failed proof; five of them are five of these fourteen,
+which is the evidence that asking them in order pays.
+
+**Four verdicts, and they describe evidence rather than lifecycle** — [docs/24](../docs/24-trust-model.md)
+collapsed six status vocabularies into two axes and this adds no third: `ANSWERED` (read from declared
+data or the compile record) · `BY DESIGN` (the architecture answers it for every fragment, and the
+reason is named) · `LOOK` (a person should look, with why) · `NEEDS A RUN` (only a real model can say,
+and which tool asks it).
+
+### What it found, and what it proved it cannot do
+
+**One real defect in 360 fragments.** `create-from-room-boundaries` took `heightAboveLevel` and never
+said what the number meant. It is `Set()` straight into `CEILING_HEIGHTABOVELEVEL_PARAM`, which takes
+Revit's internal **feet** and accepts a millimetre figure silently — so a caller who read *"how far
+above the room's level"* and passed `2700` would get a ceiling 2,700 feet up and no error. That is
+`D3`'s failure shape exactly. Fixed in the same commit; the check now reports zero.
+
+**Question 3 was crying wolf on 42 fragments and now raises none.** It first asked *"does the contract
+declare a document"* — and every one of the 42 that declares none was correct: `apply-view-template`
+takes `views` and a `templateId` and needs no document at all. The question it asks now is *"does the
+**code** use one the contract does **not** declare"*, which raises zero today and would still catch a
+real undeclared need. Two refinements were needed to get there, and both were false positives that
+looked exactly like findings:
+
+| | |
+|---|---|
+| a header **comment** | almost every fragment says *"Assumes `doc` … are in scope"*, so a check reading comments finds `doc` everywhere and means nothing |
+| a **local** | `zoom-to-elements` declares `uidoc` and writes `var doc = uidoc.Document;` — correct code, and reported as an undeclared need it would have sent somebody to edit a working contract |
+
+**Question 7 went 114 → 6 → 1**, and the last cut came from opening all six. Five collect something
+**project-level** — a fill pattern, a parameter filter, a family symbol, a view — which does not live in
+a view at all, so a view-scoped collector would return **nothing**. Raising them asked somebody to make
+a change that would break the fragment. The one that remains collects *instances* and is a genuine
+judgement call.
+
+**Question 7 went 114 → 6.** A whole-model collector is usually the job, so raising all 114 was raising
+the shape of the library. What is an **inconsistency** rather than a design is a fragment handed a
+`view` that never scopes to it — 6 of them, and even those are sometimes right, which is why they are a
+LOOK. The 114 has not been thrown away: it is said in the answer, because it is what makes a **proof**
+slow — `set-mep-size` timed out on 307 ducts and sized 22 immediately in a smaller view.
+
+**All three of these tools load fragments through
+[`heron_fragment.load_all()`](../brain/heron_fragment.py)**, not their own `yaml.safe_load`. Each parsed
+the library itself at first, with `except Exception: continue` — so a malformed `fragment.yaml` vanished
+from a report that counts fragments and nothing said so. [D-48](../docs/DECISIONS.md) settled that one
+broken part costs one part **and is named**; `load_all()` returns its problems and each tool prints them
+above everything else.
+
+**Question 14 went 143 → 59, and the rule came from the library rather than from reasoning.** A
+fragment that **writes** names what it refused **172** times out of 202; one that **reads** does it 45
+times out of 158. **85% against 28%** — the norm exists and is not uniform, and reading is where both
+the silence and the plausible zero live. So it asks the shape [D-52](../docs/DECISIONS.md) is actually
+about: a fragment that **goes looking** and can **drop** something on the way. `filter-elements-by-type`
+returns `found: 0` when its exemplar has no type and nothing separates that from *"there are none of
+this type"* — which is exactly why `FILTER_ELEMENTS_BY_CATEGORY` reports `unresolvedLevel`. One
+fragment already solved this; 59 have not. [`Q-46`](../docs/OPEN-QUESTIONS.md).
+
+**Question 12 went 7 → 0.** It asked *does it guard against null* and raised seven fragments that
+touch nothing nullable — `count-elements` counts a list it was handed, `set-selection` selects one,
+`group-and-count` groups one. It asks now whether the code dereferences something **Revit can hand back
+as null** — `GetElement`, `get_Parameter`, `LookupParameter`, a cast with `as`, `.Level` — without
+checking, and names which one.
+
+**Question 8 went 310 → 107 → 62, and the last cut is an API fact rather than a judgement.** It first
+asked every fragment about links and raised 310 of 360 — the shape of the library, not a finding; a
+fragment that sets a view's scale has no link question to get wrong. Narrowed to fragments that
+**collect**, it raised 107. Narrowed again to those that **read**, 62 — because a **linked element
+belongs to another document and cannot be changed through the host**, so a writer collecting the host
+only is not under-reaching the way a reader is, and 45 fragments were on a list they could do nothing
+about.
+
+**Those 62 are the one finding on the whole list that is about what a modeller sees.** In federated MEP
+work — the normal case — a fragment that collects only the host returns a **confident smaller number**
+and nothing in the answer says a link was skipped. That is [`Q-48`](../docs/OPEN-QUESTIONS.md), and it is
+a design question with three genuinely different answers, not a defect with a fix.
+
+**It cannot decide whether a fragment writes, and the attempt is recorded because the failure is
+instructive:**
+
+| Attempt | Result |
+|---|---|
+| search for `.Create(` | flagged three `READ` fragments — **all three wrong.** `CurveLoop.Create`, `Line.CreateBound` and `GeometryCreationUtilities.CreateExtrusionGeometry` build geometry in **memory**. In the Revit API *"Create"* is not a write signal |
+| narrow to calls taking `doc` | found **zero** mislabelled fragments, and missed **76** `MODIFY` ones — Revit writes through typed methods on typed objects: `view.HideElements(ids)`, `view.Scale = 2`, `param.Set(v)` |
+
+**The write surface is the API, and no word list is the API.** The real answer already exists and is
+better than any text search: `RevitFragment.Run` opens **no transaction** for a read, so Revit itself
+refuses the change — enforced by the host rather than asserted by a checker. The tool says so instead of
+competing with it, and question 13 answers differently for a reader and a writer.
+
+**Not a gate; exits 0.** A finding is a question for a person, and a tool that failed a build over
+*"this collector has no view"* would teach people to write worse collectors to buy a green tick. None of
+it is a proof — [D-30](../docs/DECISIONS.md) needs a real model, a negative case and a fingerprint.
+
+A count of 100+ is printed as a count, not a list: 114 whole-document collectors is the shape of the
+library, and a tool that dumps 143 rows teaches people to scroll past it. `--list` names them when
+somebody actually wants them.
+
+---
+
+## `check-reachable.py` — built, tested, and called by nothing but a test
+
+```bash
+python tools/check-reachable.py
+python tools/check-reachable.py --all     # including what is already explained
+```
+
+**Twice on 2026-09-09 the same defect was found by hand, hours apart.**
+`heron_search.remember()` writes the utterance cache that
+[docs/19 §5](../docs/19-context-and-cost.md) makes step 1 of the whole pipeline, and it is called from
+one test and nowhere else, so the cache can never fill ([`Q-43`](../docs/OPEN-QUESTIONS.md)). Then
+`heron_context.assemble()` was built the same day and reachable only from a command line, until it was
+put on the MCP seam. Neither is a bug — both are complete, tested code no production path touches, which
+[`heron_brain.py`](../mcp/server/heron_brain.py)'s own docstring already names: *complete, tested, and
+invisible to any conversation is not what "built" was meant to mean.* **Nothing was looking for the
+shape.**
+
+**A hit is a candidate, not a defect**, and that has its own flag. Some are deliberate and written down
+— the Workflow Engine most clearly, where `HANDOVER.md` says *"nothing calls it yet, and that is
+deliberate"* because its customer is a later phase. Those are separated so the top of the report is only
+what nobody has explained. It found **12**, of which **5** were already recorded and one —
+[`Q-47`](../docs/OPEN-QUESTIONS.md), `heron_capability.want()` — was not.
+
+### Why it parses instead of searching, learned three times in one night
+
+A CLI subcommand is reached by name, not by a `foo()` in the source, so a naive check calls every one of
+them dead. The precise test is a **dict literal whose value is the function** (`{"accept": accept}`) or
+a **`getattr` with a literal name** — structures, which prose cannot produce.
+
+That precision was arrived at by getting it wrong three times, and all three are the same failure:
+
+| | |
+|---|---|
+| `check-revit-gate.py` | compared a **space-stripped haystack** against a needle that still had spaces, and reported a confident **0** where the answer is 114 |
+| `measure-routes.py` | grepped for the text `remember(` and matched **its own docstring**, which describes the problem — then printed the opposite conclusion in the one line it exists to be right about |
+| this tool, first version | treated any string literal `"remember"` as dispatch. `measure-routes.py` contains one, in the `ast` comparison that finds callers of `remember`. **The tool written to find the problem made the problem invisible to the next tool** |
+
+Three heuristics, three times fooled by text *about* the thing rather than the thing.
+
+**It went 12 hits → 4, and the cuts were its own false positives.** It reported a **nested closure**
+(`heron_bridge_client.reader`, handed to `threading.Thread`) and a **class method**
+(`heron_health.worst`) as *"called by NOTHING AT ALL"* — neither is a module's public surface, and a
+method reached through an instance cannot be attributed by name at all. It now looks at module-level
+definitions only. It also counts a **qualified reference** as a use: `SEARCH.remember` handed to
+something else is a use, not a call.
+
+**One of those fixes broke it in the permissive direction and the difference matters.** Counting *every*
+bare name as a use lost `want()` — [`Q-47`](../docs/OPEN-QUESTIONS.md)'s whole subject — to **local
+variables called `want`** in three unrelated modules. A bare name counts only where the file imported
+it. A check that is wrong permissively reports nothing, which is the worse direction.
+
+**An excuse that no longer applies is reported as stale.** A `RECORDED` entry that is no longer a hit
+means something now calls it, and the excuse has outlived its reason — [D-54](../docs/DECISIONS.md)'s
+lesson applied to this tool's own record. Without it, `remember()` would go on being excused for ever
+after somebody wired it up.
+
+**What it cannot see:** a function reached through `globals()`, a registry built at run time, a plugin
+loader, or a name assembled from parts. Absent from the source is not the same as unreachable, and it
+says so. Not a gate; exits 0.
+
+---
+
+## `measure-graph.py` — does the graph help retrieval? It does not
+
+`Q-52`, run rather than argued. [33 §5.16](../docs/33-external-repository-research.md) records
+`gbrain` reporting **+31.4 points P@5** from a graph retrieval stream. Heron's graph is a different
+object — `composes_into` / `composes_from`, derived from the contracts — so the direction was evidence
+and the magnitude was nothing. **This is Heron's own number.**
+
+```bash
+python tools/measure-graph.py           # one setting
+python tools/measure-graph.py --sweep   # six, which is the point
+```
+
+**The answer key is the library itself.** Every fragment declares a `semantic-identity` — one sentence
+that should return it. 360 questions whose right answer is known because **nobody wrote it to make
+retrieval look good**: it has been the matching text since Step 7.
+
+**It is also easy**, so three degraded shapes are measured beside the exact one — the first word
+dropped, only words of four or more characters, the first half of the sentence. **Those are where a
+graph could earn its place**, because they are the cases where the right answer is not already first.
+
+### What it found
+
+| shape | P@1 today | with the graph | |
+|---|---|---|---|
+| `exact` | **95.6%** | 94.4% | −1.1 |
+| `no-first` | **93.1%** | 92.2% | −0.8 |
+| `content` | **90.4%** | 89.0% | −1.4 |
+| `half` | **70.8%** | 69.2% | −1.7 |
+
+**Six settings, six losses** — weights 0.05 / 0.10 / 0.30 against 1, 3 and 5 seeds. The gentlest costs
+1.1 points of P@1, the strongest 14, and **P@5 never improves at any of them.**
+
+**The reason is one line of the output:**
+
+> neighbours per fragment: **median 50, worst 230**, none at all for 68 of them.
+
+**A dense graph is not a retrieval signal.** A page mentions three people; a fragment providing
+`IList<Element>` composes with most of the library. *"The neighbours of the best hit"* is a large slice
+of the library added as competitors.
+
+### Two things it does on purpose
+
+**It writes its prediction down before the run** — *a gain must come from the degraded shapes, and a
+loss will show first in P@1 on the exact one* — so the result cannot be read as whatever was hoped for.
+**A tool that can only report good news is not a measurement.**
+
+**It computes the neighbour map once.** The first run called `composes_into()` per seed per query and
+took **275 seconds**; the map takes **fifteen**. That is what made a six-setting sweep affordable, and a
+sweep is the difference between *"the graph lost"* and *"the graph lost at every setting tried"*.
+
+**Not a gate; exits 0.** It measures whether the fragment whose own sentence was typed comes back
+first — a proxy chosen because it is honest and available, not because it is the question.
+[D-30](../docs/DECISIONS.md) needs a real model, and nothing here has met one.

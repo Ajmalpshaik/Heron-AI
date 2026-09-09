@@ -228,6 +228,18 @@ class DocumentPin(object):
                 "or say 'use this model' to move this chat onto %s deliberately."
                 % (was, now, was, now))
 
+    @property
+    def title(self):
+        """The pinned document's name, or None when nothing is pinned.
+
+        Public because the Context Manager needs it: docs/19 s1 lists "what
+        project is active" as part of the situation, and the packet said
+        "project: none named" on every request until this existed - while the
+        add-in had known the name since the first count_elements. Read-only, so
+        reading it can never move the pin.
+        """
+        return self._title
+
     def repin(self, reply):
         """Move the pin, deliberately, because the user said so."""
         self._key = self.key_of(reply)

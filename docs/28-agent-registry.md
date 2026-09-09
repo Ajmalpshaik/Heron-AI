@@ -440,7 +440,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-OPS-SAF-008` | Safe Mode Agent | Disables recent components, returns to last-known-good | T1 | ADMIN | — |
 | `HERON-OPS-FLG-009` | Feature Flag Agent | Flags for staged rollout and shadow running | T1 | ADMIN | — |
 | `HERON-OPS-UPD-010` | Update Agent | Detects, downloads, migrates, validates, **rolls back** | T1 | ADMIN | — |
-| `HERON-OPS-OBS-011` | Observability Agent | Latency, token usage, **model calls per request**, cost per request | T1 | READ | — |
+| `HERON-OPS-OBS-011` | Observability Agent | **Latency, and the share of requests answered with no thinking at all.** Corrected 2026-09-09 ([D-58](DECISIONS.md)): this row used to read *"latency, token usage, model calls per request, cost per request"* and three of those four are things Heron cannot see — [D-01](DECISIONS.md) puts every model call in the host, and `heron_embed` runs locally with no tokens and no cost. **Token usage and cost per request are host-provided**, like the four orchestrator agents. **Model calls per request is replaced** by the number Heron can see and that [19 §5](19-context-and-cost.md) actually cares about: how often the cache or identity route answered, so no model was needed. The latency half is measured today by [`tools/measure-brain.py`](../tools/measure-brain.py) for the brain and `heron_gaps.py` for the Revit side | T1 | READ | — |
 
 ## 17. Documentation — 9
 
@@ -486,7 +486,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | **Total** | **250** | **167** | **63** | **20** |
 
 **[NOTE]** The distribution is the point. **167 of 250 agents never call a model** — they are ordinary
-classes with a method or two. Of the rest, 64 make one scoped call and 20 run a real agentic loop.
+classes with a method or two. Of the rest, 63 make one scoped call and 20 run a real agentic loop.
 
 Read that way, the platform is a normal application with about 167 services, 63 narrow model calls, and
 20 genuine agentic workflows. That is a tractable system, not an intimidating one.
@@ -601,8 +601,8 @@ concept is precisely the six-competing-vocabularies problem that
 
 | Company role | Heron | Count | What it means in practice |
 |---|---|---|---|
-| **Worker** | **T1** — deterministic service | 166 | Does one job, the same way every time. No judgement, no model call, no cost |
-| **Pro / skilled** | **T2** — one scoped model call | 64 | One judgement over ambiguous input, then out of the way |
+| **Worker** | **T1** — deterministic service | 167 | Does one job, the same way every time. No judgement, no model call, no cost |
+| **Pro / skilled** | **T2** — one scoped model call | 63 | One judgement over ambiguous input, then out of the way |
 | **Senior / lead** | **T3** — agentic loop | 20 | Owns a hard problem end to end, decides its own steps |
 | **Manager** | **Orchestrator** + **Workflow Engine** | 2 | Decides *what* happens and ensures it *happens correctly*. Deliberately **not** one manager per department — [Part 2 §83](00b-master-specification-agent-os.md) forbids the extra hops |
 | **Researcher** | `Research Agent` | 1 | Finds out what is already known. Everything it returns carries a citation |

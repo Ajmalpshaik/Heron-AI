@@ -149,6 +149,104 @@ def main():
               "and it says which route answered (%s), because an exact "
               "phrasing and a ranked guess are not the same claim" % ok["route"])
 
+        # --- 3b. the Context Manager, through the same seam -----------------
+        # It is here because of what its own tooling found on the day it was
+        # built: measure-routes.py established that heron_search.remember() is
+        # called from a test and nowhere else, so the utterance cache can never
+        # fill (Q-43). A Context Manager reachable only from a command line
+        # would be that mistake again, in the same week. This check is what
+        # says it is reachable.
+        print()
+        print("The Context Manager, through the seam")
+        packet = BRAIN.context("select all ducts", revit="2024")
+        check(packet["carried"] == packet["budget"][:len(packet["carried"])]
+              and set(packet["carried"]) <= set(packet["budget"]),
+              "every part carried is inside the path's budget (%s)"
+              % ", ".join(packet["carried"]))
+        check(packet["parts"] and all(p["source"] for p in packet["parts"]),
+              "every part says where it came from - docs/19 s1 asks for that "
+              "and a part that cannot say cannot be checked when it is wrong")
+        check(packet["parts"][0]["kind"] == "request",
+              "the request comes first, always")
+        check(all(p["body"] is None for p in packet["parts"]),
+              "bodies are withheld unless full=True - the packet's SHAPE is "
+              "cheap to look at and its contents are not")
+
+        assumed = BRAIN.context("some wording nobody ever declared")
+        check(assumed["assumed_path"],
+              "an unclassified request is MARKED assumed - D-01 puts intent "
+              "in the host and a default must never read as a decision")
+
+        # DEPTH, AND THE MARKER THAT HAS TO REACH THE CALLER WHO ASKED FOR IT.
+        #
+        # The seam returned `depth` and a per-part `cut` from the day depth was
+        # built and the MCP tool's render loop printed NEITHER - so the CLI
+        # told a person what had been left out and the host was told nothing.
+        # A shorter packet that reads exactly like a complete one is D-52's
+        # plausible zero at the surface where it matters most. Found by a
+        # security review of the depth change, as its one non-security note.
+        check(packet["depth"] == "full"
+              and not any(p["cut"] for p in packet["parts"]),
+              "a full packet reports depth 'full' and NO cut on any part, so "
+              "the marker means something when it does appear")
+
+        shallow = BRAIN.context("select all ducts", revit="2024",
+                                path="generation", depth="abstract")
+        deep = BRAIN.context("select all ducts", revit="2024",
+                             path="generation")
+        check(shallow["size"] < deep["size"],
+              "an abstract packet is smaller than a full one (%d < %d "
+              "characters)" % (shallow["size"], deep["size"]))
+        cuts = [p for p in shallow["parts"] if p["cut"]]
+        check(shallow["depth"] == "abstract" and cuts,
+              "and it says so, per part: %d part(s) report what they lost"
+              % len(cuts))
+        check(all("of" in p["cut"] and "not carried" in p["cut"] for p in cuts),
+              "each cut says HOW MUCH was left out, not merely that some was")
+
+        said = [p for p in shallow["parts"] if p["kind"] == "request"]
+        deep_said = [p for p in deep["parts"] if p["kind"] == "request"]
+        check(said and deep_said and said[0]["size"] == deep_said[0]["size"]
+              and not said[0]["cut"],
+              "THE REQUEST IS THE SAME SIZE AT EVERY DEPTH AND IS NEVER CUT - "
+              "it is what a shortener takes first and the one thing that may "
+              "never be shortened")
+
+        bad_depth = None
+        try:
+            BRAIN.context("select all ducts", depth="tiny")
+        except ValueError as why:
+            bad_depth = str(why)
+        check(bad_depth is not None and "not a depth" in bad_depth,
+              "an unknown depth is a ValueError naming the three that exist, "
+              "not a silently ignored argument")
+
+        refused = None
+        try:
+            BRAIN.context("check this against our standard", path="standards")
+        except BRAIN.ContextRefused as why:
+            refused = str(why)
+        check(refused is not None and "clause" in refused,
+              "a path whose source does not exist raises ContextRefused, "
+              "naming the source rather than returning a packet three quarters "
+              "of what it claims")
+
+        # A REFUSAL IS NOT A FAULT, and until ContextRefused existed the tool
+        # caught Exception and called all of it a refusal - so a TypeError
+        # would have been reported to the caller as "Heron refused", a
+        # sentence about a decision Heron never made.
+        wrong_path = None
+        try:
+            BRAIN.context("anything", path="nonsense")
+        except BRAIN.ContextRefused:
+            wrong_path = "refused"
+        except ValueError as why:
+            wrong_path = str(why)
+        check(wrong_path and "not a path" in str(wrong_path),
+              "an unknown path is a ValueError naming the four that exist, "
+              "NOT a refusal - the caller made a mistake, Heron did not "
+              "decline")
+
         # --- 4. THE ACCEPTANCE TEST, and it MUTATES the library --------------
         # Deliberately last of the brain checks: it adds a provider and
         # deletes another, so anything reading the library as it ships has
@@ -265,9 +363,15 @@ def main():
         print("resolves through a CAPABILITY rather than through the name of")
         print("whatever happens to serve it today.")
         print()
-        print("It says NOTHING about whether any of it works. Every skill and")
-        print("every fragment is DRAFT, nothing can execute one, and the")
-        print("proof D-30 asks for needs a real model. See NEEDS-CHECKING.md.")
+        print("It says NOTHING about whether any of it works. Every skill is")
+        print("DRAFT, most fragments are, and the proof D-30 asks for needs a")
+        print("real model. See NEEDS-CHECKING.md.")
+        print()
+        print("This paragraph read 'every fragment is DRAFT, nothing can")
+        print("execute one' until 2026-09-09. Both halves had been false since")
+        print("2026-09-06 - D-28's executor runs fragments and 142 are PROVEN.")
+        print("A passing test printing a false sentence is the same defect")
+        print("test_served_claims.py exists to catch in the MCP replies.")
         return 0
     finally:
         shutil.rmtree(home, ignore_errors=True)

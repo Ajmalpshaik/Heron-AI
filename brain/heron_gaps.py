@@ -110,6 +110,23 @@ CORRECT_REFUSALS = {
         "the model it was pointed at was not open",
     "unknown_op":
         "asked for an operation Heron does not declare",
+    # THE BRAIN'S OWN REFUSALS (D-62). Added 2026-09-09 after Codex pointed
+    # out on PR #44 that brain_lookup and brain_resolve wrote ok=false with
+    # NO error at all - so a request Heron correctly could not answer landed
+    # in `unclassified` under the code "(none)" and inflated the failure
+    # count. That is this file's own founding mistake repeated: its loudest
+    # error was the executor behaving correctly, and counting it as a gap
+    # would have commissioned work already done.
+    "no_capability":
+        "the words matched no capability Heron provides - the honest answer "
+        "to a request outside what it can do",
+    "no_provider":
+        "the capability is known and no fragment provides it on this "
+        "release - D-63 records it as a WANT rather than a failure",
+    "context_refused":
+        "the Context Manager declined to assemble - a part outside the "
+        "path's budget, or a path whose source this installation has not "
+        "got. docs/19 s1: refusing is the half worth having",
     "not_permitted":
         "the permission gate declined it",
 }
