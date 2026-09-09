@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 7
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -29,6 +29,28 @@ contract:
     - name: selectedCount
       role: result
       type: int
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 17356
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name with this phase's own values - run inside a transaction and ROLLED
+    BACK, so the model was left exactly as it was. returned ids 9 item(s) [1491217, 1491220,
+    1491225, ...], selectedCount 9. inputs came elements from the selection (9). on Snowdon-scratch_ajmal.al
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). set-selection\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 5 different inputs:\n\n      22 ducts in M1 -> selectedCount 22\n      the duct\
+    \ tags in M1 -> selectedCount 9\n      the air terminals in M1 -> selectedCount 10\n \
+    \     the mechanical equipment in L3 -> selectedCount 10\n      the ducts in L3 -> selectedCount\
+    \ 307\n\n    Different inputs, exact matches every time. A fragment falling back to the\
+    \ active view, the whole model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6ba8ea08aad3b693
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

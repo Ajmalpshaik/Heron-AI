@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -60,6 +60,30 @@ contract:
       # (D-52).
       role: accounting
       type: ICollection<ElementId>
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  positive_case: run as it would normally be run. returned alreadyTagged 72 item(s) [1395899,
+    1395946, 1396164, ...], elements 235 item(s) [Tees, Tees, Tees, ...], remaining 235 item(s)
+    [Tees, Tees, Tees, ...], tagged HashSet`1, tags <CastIterator>d__97`1. inputs came view
+    as given; elements from the selection (307). on Snowdon-scratch_ajmal.al
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). find-untagged-elements\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 5 different inputs:\n\n      22 ducts in M1 -> elements 14 item(s) [Tees, Tees,\
+    \ Tees, ...]\n      the duct tags in M1 -> elements 9 item(s) [Duct Size Tag, Duct Size\
+    \ Tag,\n      the air terminals in M1 -> elements 10 item(s) [16x4 Connection 8 Diameter\
+    \ D\n      the mechanical equipment in L3 -> elements 10 item(s) [Heat Recovery Unit (HRU),\
+    \ He\n      the ducts in L3 -> elements 307 item(s) [Tees, Tees, Tees, ...]\n\n    Different\
+    \ inputs, exact matches every time. A fragment falling back to the active view, the whole\
+    \ model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 1c318b4432088dce
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

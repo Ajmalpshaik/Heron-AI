@@ -1117,8 +1117,10 @@ def accept(slug, by, library=None):
 # heron_fragment.fingerprint() now normalises both, so the number is a fact about
 # the content alone. The sixteen recorded values were taken under the old rule
 # and have to be re-recorded once - `restamp` does that, and REFUSES any fragment
-# whose implementation changed after its proof date, because that one really is
-# stale and re-stamping it would erase the only signal saying so.
+# whose implementation changed ON OR AFTER its proof date, because that one
+# really is stale and re-stamping it would erase the only signal saying so. The
+# same day counts as after: a proof records a date, not a time, so a change made
+# hours after the signature cannot be told from one made hours before it.
 
 def restamp(library=None, apply_changes=False):
     """Re-record fingerprints that differ only because of the platform.

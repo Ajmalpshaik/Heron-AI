@@ -1,0 +1,161 @@
+# Round two, after the first eleven ran on 2026-09-09.
+#
+# WHAT THE FIRST ROUND SETTLED:
+#   PASS            set-element-level, array-elements-radial - both promoted
+#   POSITIVE EMPTY  set-element-workset (needs a workset id nothing lists),
+#                   place-views-on-sheet (needs VIEWS selected, not ducts)
+#   DID NOT RUN     four wanted `view (View)`, which was simply not supplied -
+#                   an arrangement fault, fixed below
+#   DID NOT RUN     three wanted an Element-shaped value D-54 refuses by name
+#
+# THE ELEMENT-SHAPED WALL. D-54 resolves a View, a Level, a Category and the
+# scalars. It refuses FamilySymbol, Material, OverrideGraphicSettings, Curve and
+# bare Element - correctly, because guessing one is how a job runs against the
+# wrong thing. Of the 24 MODIFY fragments never yet run, MORE THAN HALF cannot be
+# arranged at all for that reason. That is the next unlock after D-54, and it is
+# recorded in FRAGMENT-ISSUES rather than worked around here.
+#
+#     python tools/batch-prove.py tools/jobs/modify-round-2.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/modify-round-2.yaml
+#
+# RELEASE THE LEASE FIRST. The first run of round one failed all eleven jobs
+# because a `count` check was still holding a five-minute lease under a different
+# client id. batch-prove pins its own id, so any hand-run command before it must
+# be released:  python mcp/client/heron_bridge_client.py release
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+
+  negative-set:
+    categoryName: Duct Tags
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  # ---- fixed: `view` was never supplied ------------------------------------
+
+  - fragment: dimension-rooms
+    set:
+      categoryName: Spaces
+      inViewOnly: "FloorPlan: L3"
+      view: "FloorPlan: L3"
+      measureTo: "finish"
+      offsetMm: 500
+    negative-set:
+      view: "FloorPlan: L3"
+      measureTo: "finish"
+      offsetMm: 500
+    expect: created
+    note: >
+      Round one: "'view (View)' is a value the CALLER supplies". It was not in
+      the job file at all - the fragment was right and the arrangement was wrong.
+
+  - fragment: place-flow-arrows
+    set:
+      view: "FloorPlan: M1"
+      arrowFamilyName: "Flow Arrow"      # CONFIRM the family is loaded
+      arrowTypeName: "Standard"          # CONFIRM
+      spacingMm: 2000
+    negative-set:
+      view: "FloorPlan: M1"
+      arrowFamilyName: "Flow Arrow"
+      arrowTypeName: "Standard"
+      spacingMm: 2000
+    expect: placed
+    note: >
+      Duct tags have no flow direction, so the negative empties on the selection.
+      If the family is absent BOTH legs come back empty - that reads as POSITIVE
+      EMPTY and means the family is missing, not that the fragment failed.
+
+  # ---- fixed: sheets are not IN a view, they ARE views ---------------------
+
+  - fragment: manage-sheet-sets
+    set:
+      categoryName: Sheets
+      inViewOnly: ""
+      setName: "HERON SET Z1"
+      mode: "add"
+    negative-set:
+      setName: "HERON SET Z1"
+      mode: "add"
+    expect: memberCount
+    note: >
+      Round one said setup_failed. `inViewOnly` was pointed at a sheet view, but
+      a sheet does not appear inside another view - rule 3 read the wrong way
+      round. Selecting sheets model-wide is the arrangement that exists.
+
+  # ---- fixed: the missing collection ---------------------------------------
+
+  - fragment: renumber-sequential
+    set:
+      parameterName: Mark
+      prefix: "HZ"
+      startAt: 1
+      existingValues: ""
+    negative-set:
+      parameterName: ZZZNOTHINGHERE
+      prefix: "HZ"
+      startAt: 1
+      existingValues: ""
+    expect: renumbered
+    note: >
+      `existingValues` is the set of numbers already taken, so an empty one is
+      the honest arrangement here - nothing is reserved. The negative is driven
+      by the VALUE: a parameter no element carries must renumber nothing.
+
+  # ---- fresh, and arrangeable now that `view` is understood ----------------
+
+  - fragment: create-legend-view
+    set:
+      sourceLegend: "Legend: Mechanical Legend"   # CONFIRM this legend exists
+      newName: "HERON LEGEND Z1"
+      withContents: true
+    negative-set:
+      sourceLegend: "ZZZNOTHINGHERE"
+      newName: "HERON LEGEND Z2"
+      withContents: true
+    expect: created
+    note: >
+      A View resolved by name is exactly what D-54 does, so this is arrangeable
+      where the FamilySymbol ones are not. The negative names a legend the model
+      has not got, which must create nothing.
+
+  - fragment: duplicate-views
+    set:
+      categoryName: Views
+      inViewOnly: ""
+      duplicateOption: "Duplicate"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      duplicateOption: "Duplicate"
+    expect: duplicated
+    note: >
+      Round one on 2026-09-09 got a clean NEGATIVE from this - handed 307 ducts
+      it duplicated 0 and listed all 307 as notDuplicated - and failed only on
+      the positive, where the arrangement could not be re-made. Selecting Views
+      model-wide rather than inside a plan is the fix being tested.
+
+  - fragment: set-global-parameter
+    set:
+      parameterName: "ZZZNOTHINGHERE"
+      newValue: "1"
+    negative-set:
+      parameterName: "ZZZNOTHINGHERE"
+      newValue: "1"
+    expect: changed
+    note: >
+      `newValue (ParameterValue)` may be refused the way FamilySymbol is - if so
+      this run records that refusal as observed rather than assumed, which is the
+      standard every row in FRAGMENT-ISSUES is held to. CONFIRM whether this
+      model has any global parameters at all; if it has none, neither leg can
+      move and that is content missing, not a defect.

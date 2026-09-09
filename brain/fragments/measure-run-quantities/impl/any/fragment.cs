@@ -41,7 +41,24 @@
 // rewritten per material. Both are still returned separately.
 //
 // It is recognised GENEROUSLY rather than matched exactly, so "area", "areas"
-// and "surface area" all mean the same thing.
+// and "surface area" all mean the same thing - AND SO DO "length", "lengths"
+// and "total length". Both sides are matched the same way, which they were not
+// until 2026-09-09: area was tested by substring and length against a closed
+// list of single words, so "surface area" was understood and "total length"
+// was REFUSED. A fragment that accepts a phrase for one of its two modes and
+// demands a bare word for the other teaches nobody anything; it just fails on
+// the half of the requests that were phrased naturally.
+//
+// AND IT IS MATCHED BY WORD, NOT BY SUBSTRING. "diameter" contains "meter" and
+// "volume" contains "m", so a raw substring test hands back a length for two of
+// the commonest wrong asks in this library - silently, which is the exact
+// failure this fragment was fixed for in the first place. The words are split
+// out and compared whole.
+//
+// AREA IS TESTED FIRST, AND THE ORDER IS THE WHOLE REASON IT IS SAFE. "square
+// metres" is an area request carrying a length word inside it, and asking the
+// length question first would answer it in millimetres. Anything naming an area
+// wins outright, so a phrase carrying both reads as area.
 //
 // AND A WORD IT DOES NOT RECOGNISE IS REFUSED, NOT QUIETLY READ AS LENGTH.
 //
@@ -65,16 +82,40 @@ var wantedMeasure = (measure ?? "").Trim().ToLowerInvariant();
 string refused = null;
 bool wantArea = false;
 
-if (wantedMeasure.IndexOf("area", StringComparison.Ordinal) >= 0
-    || wantedMeasure == "sheet metal" || wantedMeasure == "m2" || wantedMeasure == "sqm")
+// Split on the punctuation a person actually types between words. Anything
+// left is compared WHOLE, so "diameter" is never read as "meter".
+var measureWords = new List<string>(wantedMeasure.Split(
+    new[] { ' ', '\t', ',', '-', '/', '.', '_', '(', ')', ';', ':' },
+    StringSplitOptions.RemoveEmptyEntries));
+
+Func<string[], bool> namesOneOf = accepted =>
+{
+    foreach (var word in measureWords)
+    {
+        foreach (var candidate in accepted)
+        {
+            if (word == candidate) return true;
+        }
+    }
+    return false;
+};
+
+var areaWords = new[] { "area", "areas", "sqm", "m2", "sq" };
+var lengthWords = new[] { "length", "lengths", "long", "linear", "run", "runs",
+                          "distance", "metre", "metres", "meter", "meters", "m", "mm" };
+
+// "sheet metal" and "square metres" are PHRASES - neither word means area on
+// its own, and "metal" and "metres" must not be read as length because of it.
+var saysSheetMetal = wantedMeasure.IndexOf("sheet metal", StringComparison.Ordinal) >= 0;
+var saysSquareMetres = namesOneOf(new[] { "square", "sq" })
+    && namesOneOf(new[] { "metre", "metres", "meter", "meters", "m" });
+
+// AREA FIRST. See the header: a phrase naming both reads as area.
+if (namesOneOf(areaWords) || saysSheetMetal || saysSquareMetres)
 {
     wantArea = true;
 }
-else if (wantedMeasure.Length == 0
-    || wantedMeasure == "length" || wantedMeasure == "lengths" || wantedMeasure == "long"
-    || wantedMeasure == "linear" || wantedMeasure == "run" || wantedMeasure == "runs"
-    || wantedMeasure == "distance" || wantedMeasure == "metres" || wantedMeasure == "meters"
-    || wantedMeasure == "m" || wantedMeasure == "mm")
+else if (wantedMeasure.Length == 0 || namesOneOf(lengthWords))
 {
     wantArea = false;
 }
@@ -82,10 +123,11 @@ else
 {
     refused = string.Format(
         "'{0}' is not a measure this fragment takes, so NOTHING WAS MEASURED. It knows two: "
-        + "LENGTH (length, linear, run, metres - or leave it out) and AREA (area, surface "
-        + "area, sheet metal). Reading an unknown word as length would hand back a column of "
-        + "confident numbers in the wrong unit. If what you want is weight, volume or "
-        + "insulation, that is a different fragment", measure);
+        + "LENGTH (length, linear, run, distance, metres - or leave it out) and AREA (area, "
+        + "surface area, sheet metal, square metres). Either may be part of a longer phrase, "
+        + "so 'total length' and 'surface area' both read. Reading an unknown word as length "
+        + "would hand back a column of confident numbers in the wrong unit. If what you want "
+        + "is weight, volume or insulation, that is a different fragment", measure);
 }
 
 var quantities = new Dictionary<ElementId, double>();

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -100,6 +100,42 @@ contract:
       # pass.
       role: result
       type: int
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32940
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned assumeThicknessMm
+    50, assumedFeet 0.164041994750656, assumedFlags 307 item(s) [True, True, True, ...], bareCount
+    307, boxes 307 item(s) [Autodesk.Revit.DB.BoundingBoxXYZ, Autodesk.Revit.DB.BoundingBoxXYZ,
+    Autodesk.Revit.DB.BoundingBoxXYZ, ...], connectedTo Func`2, findings 54 item(s) [46971
+    violation(s) at 99999 mm between the OUTSIDE faces of ..., 307 element(s) measurable:
+    0 insulated in the model, 307 wit..., Lining is deliberately NOT counted - it sits inside
+    the duct..., ...], gapBetween Func`3, ignoreConnected false, insulatedCount 0, insulationFeetOf
+    Func`2, jackets 307 item(s) [0.164041994750656, 0.164041994750656, 0.164041994750656,
+    ...], maxRows 50, requiredClearanceMm 99999, requiredFeet 328.080708661417, subjects 307
+    item(s) [Tees, Tees, Tees, ...], thickestJacket 0.164041994750656, thicknessOf Func`2,
+    tooClose 307 item(s) [1395899, 1395935, 1395946, ...], violations 46971, withoutBox 0.
+    inputs came elements from the selection (307); requiredClearanceMm as given; assumeThicknessMm
+    as given; ignoreConnected as given; maxRows as given. on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, requiredClearanceMm=99999,
+    assumeThicknessMm=50, ignoreConnected=false, maxRows=50 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned assumeThicknessMm
+    50, assumedFeet 0.164041994750656, assumedFlags 0 item(s), bareCount 0, boxes 0 item(s),
+    connectedTo Func`2, findings 5 item(s) [0 violation(s) at 99999 mm between the OUTSIDE
+    faces of the ..., 0 element(s) measurable: 0 insulated in the model, 0 with no..., Lining
+    is deliberately NOT counted - it sits inside the duct..., ...], gapBetween Func`3, ignoreConnected
+    false, insulatedCount 0, insulationFeetOf Func`2, jackets 0 item(s), maxRows 50, requiredClearanceMm
+    99999, requiredFeet 328.080708661417, subjects 0 item(s), thickestJacket 0, thicknessOf
+    Func`2, tooClose 0 item(s), violations 0, withoutBox 9. inputs came elements from the
+    selection (9); requiredClearanceMm as given; assumeThicknessMm as given; ignoreConnected
+    as given; maxRows as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: da58004729dcc319
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

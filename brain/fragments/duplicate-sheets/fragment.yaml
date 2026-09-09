@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,6 +74,28 @@ contract:
       # same batch. Given and unusable, never a sheet it made (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32940
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    list-sheets, set-selection with this phase's own values - run inside a transaction and
+    ROLLED BACK, so the model was left exactly as it was. returned collidedNumbers 0 item(s),
+    newSheetIds 17 item(s) [1542989, 1542995, 1543001, ...], notDuplicated 0 item(s), prefix
+    HERON, suffix -HZ1, takenNumbers HashSet`1. inputs came elements from the selection (17);
+    numberSuffix as given; namePrefix as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with namePrefix=, numberSuffix= instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running list-sheets,
+    set-selection with this phase's own values - run inside a transaction and ROLLED BACK,
+    so the model was left exactly as it was. returned collidedNumbers 17 item(s) [M100, M101,
+    M102, ...], newSheetIds 0 item(s), notDuplicated 17 item(s) [1363532, 1363547, 1363562,
+    ...], prefix , suffix , takenNumbers HashSet`1. inputs came elements from the selection
+    (17); numberSuffix as given; namePrefix as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bad891a34cc94c87
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

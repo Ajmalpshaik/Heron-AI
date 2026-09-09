@@ -283,6 +283,10 @@ Ran correctly and returned the honest empty answer. The model simply has none of
 | `select-openings` | `inViewOnly=FloorPlan: L3` | `elements 0` — there are no openings in that view. Needs a view with a wall or floor opening in it, or one drawn on purpose |
 | `select-from-saved-set` | `filterName=Domestic`, `view=FloorPlan: L2` | `elements 0` — *"'Domestic' is a RULE. It matches 0 element(s) in view"*. Consistent with `audit-view-filters`, which found all four filters on the Mechanical Plan template are switched off AND carry an empty override. **The filters in this model do nothing**, so nothing here can prove a fragment that reads them |
 | `report-areas` | `schemeNameContains=` (everything) | `areas 0` — the model has no Area scheme with placed areas. The negative returned 0 too, so the two cases are identical and nothing separates working from doing nothing |
+| `check-ceiling-coordination` | 307 ducts in L3, `tolerance=99999` | `outOfPlane 0`. A tolerance nothing can satisfy still found nothing, because the ceilings are in the architectural LINK and the executor skips linked documents by design. Needs a ceiling drawn in the host |
+| `check-fixture-connectivity` | air terminals in M1, three services required | `missingService 0`. Demanding Supply, Return AND Exhaust of every terminal still found none incomplete. Needs a terminal with a service genuinely absent |
+| `find-overlapping-lines` | 307 ducts, `toleranceMm=99999` | `overlapping 0`. **Not a tolerance defect — it works on model LINES, and a duct is not one.** Needs detail or model lines, which this selection never contained |
+| `find-dead-ends` | 307 ducts, `stubLength=99999` | `deadEnds 0`, confirming the earlier run rather than resting on it. `select-by-connection-status` proved every duct end in this model is connected, so there is nothing to find at any stub length |
 
 ---
 
@@ -638,6 +642,271 @@ wrong answers is worse than a slow one.
 
 ---
 
+## 3i. THE ELEMENT-SHAPED WALL — found 2026-09-09, second sitting
+
+Eighteen MODIFY fragments were run in two rounds against `Snowdon-scratch_ajmal.al`, chosen because
+they had **no run record at all** — they had never been in front of a model. Three proved.
+`tools/jobs/modify-never-run.yaml` and `tools/jobs/modify-round-2.yaml` are the arrangements, kept so
+the next round starts from what was learned rather than from the fragment list.
+
+| Proved | Positive | Negative |
+|---|---|---|
+| `set-element-level` | `moved 1`, `alreadyThere 21` — 21 of the 22 ducts were already on L2 | `moved 0`, `refused 9` |
+| `array-elements-radial` | `count=2` → `created 22`, `copiesEach 1` | `count=1` → `created 0`, and it says why: *"a count of 1 asks for no copies at all"* |
+| `renumber-sequential` | `renumbered 22`, planned HZ1–HZ22, `collisions 0` | `renumbered 0`, `refused 9` |
+
+`array-elements-radial` is the best-shaped proof of the three: **both legs are the same selection** and
+differ only in the value, so it tests the input rather than the arrangement. Where a fragment allows
+that, prefer it.
+
+`set-element-level` is the first fragment that **needed [D-54](DECISIONS.md) to exist** — it was run
+earlier the same day, with no value, and refused by name rather than guessing.
+
+### The wall itself
+
+[D-54](DECISIONS.md) resolves a **view, a level, a category, a name, a number, or true/false — and
+lists of those.** It refuses everything else by name, with a reason. `set-global-parameter` states the
+boundary better than this file can:
+
+> *"Heron can be handed a view, a level, a category, a name, a number, or true/false - and lists of
+> those. `ParameterValue` is not one of them yet, so this fragment still has no way to receive it."*
+
+**That refusal is correct and must not be softened.** Guessing which `FamilySymbol` was meant is how a
+job runs against the wrong thing and reports success. But it is now the binding constraint: of the
+**24** MODIFY fragments with only simple caller values and no run record, **more than half cannot be
+arranged at all** because they want one of these:
+
+| Shape wanted | Fragments blocked on it |
+|---|---|
+| `FamilySymbol` | `set-sheet-title-block`, `distribute-along-run`, `place-accessory-on-run` |
+| `OverrideGraphicSettings` | `override-graphics-in-view`, `set-link-graphics`, `apply-view-filter` — and `read-graphic-overrides` already returns this type *unreadably*, so it is one finding about one type, not four |
+| `Element` / `Material` / `Curve` | `align-elements`, `join-geometry`, `match-element-type`, `replace-material`, `set-view-crop-to-shape`, `create-from-room-boundaries` |
+| `ParameterValue` | `set-global-parameter` |
+
+**This is the next unlock after D-54, and it is the same shape of unlock.** D-54 took the caller's half
+across as text and resolved it inside Revit where the document is. The same argument applies here: a
+type name, a material name, a title-block name are all things Revit can look up — what is missing is
+the resolver, not the possibility. The three that genuinely cannot work this way are
+`OverrideGraphicSettings`, `Curve` and bare `Element`, because there is no name to look up.
+
+### Two traps that cost a round each
+
+**A HAND-RUN COMMAND'S LEASE FAILS THE WHOLE BATCH, AND LIES ABOUT WHY.** Round one failed **all
+eleven jobs** immediately after a `count` check. `batch-prove` pins its own client id, the hand-run
+command had pinned another, and the lease is per chat and lasts five minutes. The failures did not say
+`session_in_use` — they said `needs_request_values` on the first two and *"Could not identify the
+active model"* on the other nine, which reads exactly like an arrangement fault. The same job file ran
+clean after `heron_bridge_client.py release`, with no other change.
+
+> Release before batching. And distrust a batch where *every* job fails the same way — that is the
+> environment, not the arrangement.
+
+**SHEETS AND VIEWS CANNOT BE SELECTED BY CATEGORY — BUT THEY CAN BE SELECTED.** `manage-sheet-sets`
+and `duplicate-views` both answered `setup_failed: the arrangement could not be re-made`, with and
+without `inViewOnly`. Rule 3 says a category has to be visible where you select, and a sheet is not
+*in* a view, it **is** one — so `select-by-category-name` cannot reach it.
+
+**The conclusion first written here — that this blocks every sheet and view fragment — was wrong, and
+it was wrong for an hour.** [`list-sheets`](../brain/fragments/list-sheets) is already `PROVEN`, needs
+nothing but the document, and provides `elements`, which is exactly what `set-selection` consumes:
+
+```yaml
+    setup:
+      - list-sheets
+      - set-selection
+```
+
+That arranges all 17 sheets in one step. `list-levels`, `list-grids`, `list-revisions` and
+`list-linked-models` do the same for their own kinds, and **every one of them is already PROVEN and was
+sitting unused.** The §3d gap was never *"nothing lists these"* — it was that nothing named them where
+somebody writing a job file would look. `tools/jobs/list-as-setup.yaml` is the worked example, and **five fragments proved through that route on the same day** — `edit-revision`, `duplicate-sheets`, `select-view-templates`, `manage-sheet-sets` and `remove-view-template`.
+
+Three of the five were held up by an arrangement fault rather than by the fragment, and **each one named its own fault**: *"Mode 'add' is not one of create, rename, delete"*, *"No revision with sequence number 99. LIST_REVISIONS is where that number comes from"*, *"No sheet set called 'ZZZNOTHINGHERE'"*. A fragment that refuses in those words costs one run to correct. One that answers `0` costs a morning — which is the whole argument of §3h.1, seen from the other side.
+
+### The rest of the eighteen, by what they need
+
+| Fragment | What came back | What it needs |
+|---|---|---|
+| `dimension-rooms` | `created 0` with `view` correctly supplied | CONFIRM the L3 Spaces are bounded and that `measureTo=finish` is a mode it knows |
+| `place-flow-arrows` | `placed 0` in both legs | The arrow family loaded. Both legs empty is the family missing, not the fragment failing |
+| `create-legend-view` | *"No view called `Legend: Mechanical Legend`"* — a good refusal | The real legend name. Nothing lists them (§3d again) |
+| `set-element-workset` | `moved 0` with `worksetId=0` | A workset id. `report-element-ownership` reports `owners 1 entry(ies)` and no id, so nothing in the library can supply one |
+| `place-views-on-sheet` | `placed 0`, and the negative was not empty either | Views selected, which is the sheet/view wall above |
+| `align-viewports-across-sheets` | `aligned 0`, but `scaleMismatch 10` and `ambiguous 6` of 17 sheets | Sheets at one scale carrying one viewport each. Blocked on model content, not code — and the fragment said exactly why, which is the behaviour §3h.1 wants |
+| `set-section-mark-visibility` | `setup_failed` twice — `categoryName: Sections`, model-wide and scoped to a plan | **Nothing in the library reaches section marks.** `select-by-category-name` cannot, and there is no `list-sections`. A gap row, not a defect |
+
+### Reading the 196 run records was worth more than running anything — 2026-09-09
+
+Every run record was re-read against its fragment's own contract. **80 DRAFT fragments have both
+phases recorded**, and the shape of what stops them is now known rather than guessed:
+
+| | |
+|---|---|
+| **25** | positive moved, negative **not** empty |
+| **51** | positive never moved |
+| **4** | already satisfied D-30 and nobody had noticed |
+
+Two of the four were proved the same hour. **A run record is evidence that keeps**, and re-reading the
+pile found more than the next batch did.
+
+### How the judge decides "empty", exactly — because two rows of this file guessed at it
+
+`looks_empty` in [`heron_validate.py`](../brain/heron_validate.py) filters to the contract's declared
+names, drops anything declared `role: accounting`, and then, per value:
+
+1. `_is_helper_object(value)` → **skipped**. A bare type name like `"ElementId"` or `"Func\`2"` is a
+   rendering artefact, not an answer.
+2. `_as_count(value)` returns `None` → **`return False` immediately.** Unreadable is not empty, and
+   saying so is the whole point.
+3. A non-zero count → not empty.
+4. Nothing countable at all → not empty. There was no number here to have been zero.
+
+**Step 1 is why `dimension-mep-runs` and `dimension-family-instances` proved** with `dimensionId`
+reading as `"ElementId"` in all four phases: it is skipped, never reaching step 2. §5 row 8 assumed it
+reached step 2 and blocked them. It did not.
+
+**Step 2 is real, though, and it bites a NAME.** `report-geometry-complexity` returns
+`heaviestTypeName: "Duct Size Tag: Duct Size Tag"` in its negative — a genuine string, not a helper
+object, so it stops at step 2 and the negative can never be judged empty. Declaring the two work
+counters (`typesMeasured`, `typesUnmeasured`) as accounting was right and is kept, but it does not
+unblock it, and no role change should: **the fragment describes whatever it is handed**, so it has no
+empty case at all. It belongs with the D-53 tracking group in §3c, not here.
+
+> A declared result that is a NAME cannot carry the negative leg. Either the fragment has a countable
+> result beside it, or it is a describer and D-53 is the route.
+
+### Four more for "make silence illegal" (§3h.1)
+
+All four create something **in both legs**, which is why none can be proved — and all four are worse
+on a real project than in a proof:
+
+| Fragment | Positive | Negative |
+|---|---|---|
+| `create-view-template-from-view` | created `HERON TPL Z9` | asked for a name it could not use, **created `Model Linking Copy 1` anyway** and reported the refusal beside it |
+| `duplicate-type` | `'Tees' duplicated as 'HERON TYPE Z9'` | given no new name, **`'Tees' duplicated as 'Tees'`** |
+| `create-key-schedule` | created `HERON KEY Z9` | created `Duct Style Schedule` |
+| `create-levels` | `created 2`, `nameRefused 0` | **`created 2` AND `nameRefused 2`** — it rejected both names and made both levels anyway |
+
+A fragment that cannot use the name it was given should refuse it, not invent one. `duplicate-type`
+producing a second type called `Tees` is the clearest case: nothing downstream can tell the two apart.
+
+**`create-levels` is the most costly of the four**, because a level is not a type. It reports
+`nameRefused 2` and `created 2` in the same breath — it rejected both names and built both levels
+regardless, leaving two default-named levels in the model. Levels are what the 5,636-element rollback
+failure of 2026-09-09 was about (§1c), so a fragment that creates them when it has already decided it
+cannot do the job is the one to fix first of the four.
+
+**And the counter-example is in this same file.** `duplicate-sheets`, given no prefix and no suffix,
+duplicated NOTHING and named all 17 numbers that would have collided. Same situation, same kind of
+fragment, opposite behaviour. It is worth reading before touching any of the four, because it shows the
+refusal already has a shape in this library — it is not being invented.
+
+**The first three are also obscured by the `Describe` defect** — each returns its new element as
+`"ElementId"` — but fixing that would not prove any of them, because the negative would still have
+created something. The naming defect is the one that matters.
+
+`create-levels` is the exception, and it is worth knowing why: it returns `created` as a **list**, so
+`Describe` renders a count rather than the bare word. Nothing is hiding its behaviour. It reports
+`created 2` and `nameRefused 2` in plain sight, and it is still wrong.
+
+### Value-driven negatives: four tried, none proved, three findings — 2026-09-09
+
+Thirty DRAFT fragments have both legs recorded with a positive that moved and a negative that did not
+come back empty. Re-reading them showed the contrast was usually in the wrong place: the negative was a
+different *selection*, and a fragment that acts on whatever it is handed acts on that too.
+`isolate-elements` isolated 307 either way; `group-elements` grouped whatever arrived.
+
+So four were re-run with the negative driven by the **value** instead —
+[`tools/jobs/value-driven-negatives.yaml`](../tools/jobs/value-driven-negatives.yaml). None proved, and
+three of the four produced something better.
+
+| Fragment | Positive | Negative | What it means |
+|---|---|---|---|
+| `check-equipment-connectors` | `sizeTolerance=0` → `mismatched 22` | `sizeTolerance=99999` → `mismatched 21` | **The tolerance barely does anything.** A tolerance of 99999 should make every connector size acceptable; it removed one. This is the `measure-run-quantities` shape — a number the caller supplies that does not change the answer — and a modeller setting a tolerance would get a confident wrong list |
+| `isolate-elements` | `view=FloorPlan: M1` → `isolated 22` | `view=Cover Sheet` → `isolated 22`, `viewRefused false` | **Identical answers from different views.** Either `view` is not being honoured or a sheet really can take a temporary isolate. Worth settling: the same shape as `color-by-parameter`, which coloured 22 elements by a parameter that does not exist |
+| `set-crop-box-settings` | `changed 1` | `views="Cover Sheet"` → `changed 1` | Changed a crop setting on a sheet. Same count both legs |
+| `set-category-visibility` | `changed 0` | `changed 0` | **Not a defect — and the explanation is already in this file.** M1 follows the `Mechanical Plan` view template (`remove-view-template` reported it in the same session), so the view cannot change category visibility at all: the template owns it. This is the trap that `report-category-visibility` was fixed for in §4 — *a view driven by a template answers false to everything*. Any V/G fragment must be proved on a view carrying NO template |
+
+### `--write` serves EXECUTE, not only MODIFY
+
+`isolate-elements` first answered `fragment_threw: Attempt to modify the model outside of transaction`,
+and the job file was the reason: it carried `write: false` because the fragment is `risk: EXECUTE`
+rather than `MODIFY`. That was a guess and it was wrong.
+
+Temporary Hide/Isolate changes no model data — the fragment says so itself, *"nothing here is saved
+into the view"* — but Revit still requires a transaction to call it. Re-run with `--write` both legs ran.
+
+> **`write:` follows whether the fragment needs a TRANSACTION, not whether its risk is `MODIFY`.**
+> Only `READ` is refused the write path. An `EXECUTE` fragment that touches the document needs
+> `write: true` exactly like a `MODIFY` one.
+
+Four of the six `EXECUTE` fragments are still DRAFT — `isolate-elements`, `set-selection`,
+`switch-active-project`, `zoom-to-elements` — and `set-selection` runs in every setup chain without a
+transaction, so the need is per-fragment rather than per-risk.
+
+### Tracking (D-53) proved five, and the harness nearly proved a sixth wrongly — 2026-09-09
+
+`set-selection` was still DRAFT while running in **every setup chain in every job file** — everything
+proved this week leaned on it. It provides one thing, `selectedCount`, and it is the count of whatever
+it was handed, so no arrangement makes it empty and D-53 is the route. It now tracks 22, 9, 10, 10, 307
+across five selections.
+
+| Proved by tracking | Field | Answers across five inputs |
+|---|---|---|
+| `set-selection` | `selectedCount` | 22, 9, 10, 10, 307 |
+| `report-geometry-complexity` | `totalTriangles` | 2024, 0, 1320, 3920, 28244 |
+| `report-parameter-inventory` | `parameterNames` | 93, 22, 86, 71, 93 |
+| `find-untagged-elements` | `elements` | 14, 9, 10, 10, 307 |
+
+`compare-elements` was proved the ordinary way instead, and the reason matters: tracking showed duct
+tags giving `differing 0`, so it **can** come back empty. D-53 is for fragments that cannot. Given a
+real negative it answered `differing 29` against `differing 0`.
+
+### A harness bug that reads like a clean proof
+
+The tracking runner drives a CHAIN — `select-by-category-name` → `set-selection` → the fragment — and
+`prove` prints one provides block per fragment. The first version searched the whole output for the
+field name. `elements` is declared by the selector as well as by most fragments under test, so it read
+the **selector's** copy and produced five rows that tracked the input perfectly, because they *were*
+the input.
+
+**`find-untagged-elements` was promoted on that evidence and had to be reverted.** Its real answer for
+the L3 ducts is 235 untagged, not the 307 it was handed. Two guards now, because the first alone is not
+enough:
+
+1. Find the fragment's own block by slug, then the field inside it.
+2. **Refuse to write any rows unless at least one agrees with what `validate` recorded for that
+   fragment running alone.** This is the guard that would have caught it: not one of 22, 9, 10, 10, 307
+   matched the recorded 235 or 307.
+
+> Rows that match the input exactly are the thing to distrust. A real describer's answer *differs* from
+> what it was given — 22 ducts, 14 untagged.
+
+### Two counters that were not defects, checked before filing
+
+- `compare-elements` answered `comparedCount 8` for every input including 307 ducts. The code is
+  `elements.Take(8)` and the comment says *"comparedCount says how many were actually looked at"*.
+  Deliberate and documented. Declared `accounting`, along with `identicalCount`.
+- `select-subcomponents` answered `elements 0` for all five, agreeing with its own recorded run.
+  Nothing in this model has nested components. Content, not code.
+
+**The naming patterns catch a shape, not a meaning.** `comparedCount` ends in `Count`, not `Compared`,
+so the work-counter scan missed it entirely. That is the argument for §3h.2 doing the declarations
+explicitly rather than leaving the patterns to guess.
+
+### What this says about where the proving goes next
+
+The MODIFY pool is not blocked on the write engine any more — three fragments proved through it today
+and rolled back cleanly. It is blocked on **two resolvers and one list**:
+
+1. A resolver for named Revit objects — `FamilySymbol`, `Material`, and the view-like ones.
+2. `LIST_*` fragments for sheets, views, legends, worksets and global parameters, so a job file can be
+   written against what the model actually holds instead of a guess.
+
+Both are offline work. Neither needs Revit to build.
+
+---
+
 ## 4. FIXED during proving — kept because the shape returns
 
 | Fragment | What was wrong |
@@ -670,7 +939,7 @@ wrong answers is worse than a slow one.
 | 6 | `validate` sent writes down the READ path for one commit. Revit refused politely, the fragment reported `refused` like any decline, and it read as intermittent worksharing behaviour | Fixed — the line carries why |
 | 7 | **The naming heuristics were dead code.** `provide_role()` answers `"result"` for an entry with no `role:` key, and that default went into the map the judge consults - so every declared name looked explicitly declared, and D-51/D-52's patterns never ran. **102 names across 134 fragments** (`scanned`, `unplaced`, `noConnectors`, `notASheet`) were judged as findings. Found proving `select-scope-boxes`, whose negative had every result at zero and `scanned: 5` | Fixed - the judge-set and the role-map are separate arguments now |
 | 9 | **A fragment's OWN risk level was never enforced.** The gate reads the OPERATION's risk from the tool registry — Golden Rule 19, and right — and `run_fragment_write` is declared Modify. So a fragment declaring `risk: ADMIN` or `PUBLISH` ran under a Modify gate and nobody was consulted, though `HeronPermissions` says those *"are not reachable in Phase 0 or Phase 1 at all"*. **12 fragments are above Modify**, and `create-workset` (ADMIN) created one on the first try. The hole existed before `run_fragment_write` and was harmless — no transaction, so nothing could happen. Building the write path made it real | Fixed — the client refuses to SEND one. Be honest about what that is: a guard against a mistake, not a boundary against malice. A caller skipping this client is unaffected, and Golden Rule 19 forbids closing that by sending the risk over the wire, because then the caller decides how dangerous its own request is |
-| **8** | **`Describe` renders a valid `ElementId` and `ElementId.InvalidElementId` as the same word, `"ElementId"`.** **It now has TWO named victims — `dimension-mep-runs` and `dimension-family-instances` — neither of which can be proved because of it** — its negative is perfect (`dimensionedCount 0`, `noReference 73`, *"fewer than two of these"*) but `dimensionId` reads as `ElementId` in both legs, and `_as_count` returns None for that, so the judge refuses to call it empty. A negative case that correctly created nothing reads as though it created something, and only the fragment's source settles it — which is how `duplicate-view-template` was judged | **OPEN.** One line, but it needs the add-in rebuilt and redeployed, which costs a Revit restart |
+| **8** | **`Describe` renders a valid `ElementId` and `ElementId.InvalidElementId` as the same word, `"ElementId"`.** Real, and still worth fixing — an answer that cannot say whether a thing was created is a poor answer. **But it has NO named victims, and this row claimed two it did not have.** `dimension-mep-runs` and `dimension-family-instances` were listed here as unprovable because of it. Both were **proved on 2026-09-09** with `dimensionId` still reading as `ElementId` in all four phases. An unreadable value is SKIPPED by the judge, not counted as content — the opposite of what this row asserted. What actually blocked them was `problem`, an explanation field, undeclared and therefore judged as a finding; `role: accounting` on `problem` and `noReference` proved both in one run. **The lesson is the one in §3h.2, not this one:** an undeclared role is more likely to be the blocker than a defect in the renderer | **OPEN, and no longer urgent.** One line, still needing a rebuild and a Revit restart — but nothing is waiting on it |
 
 ---
 

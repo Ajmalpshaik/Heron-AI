@@ -1,0 +1,96 @@
+# Fragments whose negative comes from the VALUE, not from a second selection.
+#
+# WHY THIS SHAPE. Thirty DRAFT fragments have both legs recorded with a positive
+# that moved and a negative that did not come back empty. Re-reading them shows
+# most were handed a different SELECTION as the negative - and a fragment that
+# acts on whatever it is given will act on that too. `isolate-elements` isolated
+# 307 either way; `group-elements` grouped whatever arrived. Nothing about the
+# fragment is wrong; the contrast was in the wrong place.
+#
+# Where a fragment takes a value that can turn its own answer off, that is the
+# stronger negative - it tests the input rather than the arrangement, and it is
+# what proved `array-elements-radial` (count=2 against count=1) and
+# `duplicate-sheets` (a suffix against none).
+#
+#     python tools/batch-prove.py tools/jobs/value-driven-negatives.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/value-driven-negatives.yaml
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+  negative-set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  - fragment: check-equipment-connectors
+    write: false                       # risk READ
+    set:
+      categoryName: Mechanical Equipment
+      inViewOnly: "FloorPlan: L3"
+      sizeTolerance: 0
+    negative-set:
+      categoryName: Mechanical Equipment
+      inViewOnly: "FloorPlan: L3"
+      sizeTolerance: 99999
+    expect: mismatched
+    note: >
+      The cleanest value-driven pair available. A tolerance of zero makes every
+      connector size a mismatch; a tolerance of 99999 makes none of them one.
+      Same equipment, same view, opposite answers - and if the tolerance is
+      ignored both legs will match, which is a finding of the
+      `measure-run-quantities` shape rather than a proof.
+
+  - fragment: set-category-visibility
+    set:
+      view: "FloorPlan: M1"
+      categories: "Ducts"
+      visible: false
+    negative-set:
+      view: "FloorPlan: M1"
+      categories: "Ducts"
+      visible: true
+    expect: changed
+    note: >
+      Ducts are visible in M1 - 22 of them were selected there all day. Hiding
+      them changes something; asking for them to be visible when they already
+      are must change nothing. `categories (IList<Category>)` from one name is
+      the same D-54 case `views` turned out to satisfy.
+
+  - fragment: isolate-elements
+    write: false                       # risk EXECUTE, not MODIFY
+    set:
+      view: "FloorPlan: M1"
+    negative-set:
+      view: "Cover Sheet"
+    expect: isolated
+    note: >
+      A sheet is a View that cannot isolate anything, so `viewRefused` is the
+      route the negative should take. CONFIRM by reading the result: if
+      `viewRefused` comes back as a bare true/false the judge may not be able to
+      read it, and that is worth recording either way.
+
+  - fragment: set-crop-box-settings
+    set:
+      views: "FloorPlan: M1"
+      cropActive: "true"
+      cropVisible: "true"
+      annotationCrop: "false"
+    negative-set:
+      views: "Cover Sheet"
+      cropActive: "true"
+      cropVisible: "true"
+      annotationCrop: "false"
+    expect: changed
+    note: >
+      CONFIRM the direction: if M1 already has its crop active this changes
+      nothing and the POSITIVE is the empty half - the mistake made five times
+      on 2026-09-09 and now rule 2 of the proving skill. If that happens, invert
+      the three flags rather than blaming the fragment.

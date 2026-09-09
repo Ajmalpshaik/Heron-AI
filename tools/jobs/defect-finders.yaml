@@ -1,0 +1,112 @@
+# The defect-finder pattern, worked out on check-vertical-clearance and
+# check-insulation-clearance on 2026-09-09 and applied to the rest of the family.
+#
+# THE ARRANGEMENT THAT WORKS, after four wrong ones:
+#
+#   POSITIVE  a rich selection AND a demanding threshold, so the fragment has
+#             something to find. The threshold alone is not enough - a huge
+#             requiredGap made check-vertical-clearance skip everything as
+#             "sloped or vertical" and answer zero.
+#   NEGATIVE  Duct Tags. Not a gentler threshold, and not a cleared selection -
+#             a selection with NO GEOMETRY AT ALL, so every geometric result
+#             empties together. A gentler threshold leaves the gap-independent
+#             results behind: `clashing 5` survived every value because a
+#             physical overlap is an overlap whatever gap you ask for.
+#
+# That last point is the whole lesson. A value-driven negative is stronger where
+# it works, but it only empties the results that DEPEND on the value. Where a
+# fragment reports several kinds of finding, only a selection with nothing in it
+# empties them all at once.
+#
+#     python tools/batch-prove.py tools/jobs/defect-finders.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/defect-finders.yaml
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: false                      # every one of these is risk READ
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: L3"     # 307 ducts - the rich selection
+  negative-set:
+    categoryName: Duct Tags
+    inViewOnly: "FloorPlan: M1"     # 9 tags, no geometry to judge
+
+jobs:
+  - fragment: check-ceiling-coordination
+    set:
+      tolerance: 99999
+    negative-set:
+      tolerance: 99999
+    expect: outOfPlane
+    note: >
+      A tolerance nothing can satisfy makes every device out of plane; tags have
+      no plane at all. Held identical across the legs so the SELECTION is what
+      varies.
+
+  - fragment: check-equipment-connectors
+    set:
+      categoryName: Mechanical Equipment
+      inViewOnly: "FloorPlan: L3"
+      sizeTolerance: 0
+    negative-set:
+      sizeTolerance: 0
+    expect: mismatched
+    note: >
+      Recorded separately as a FINDING - sizeTolerance 0 gave mismatched 22 and
+      99999 gave 21, so the value barely does anything. That is why the negative
+      here is the selection rather than the tolerance: proving it on a value that
+      does not work would prove nothing.
+
+  - fragment: check-fixture-connectivity
+    set:
+      categoryName: Air Terminals
+      inViewOnly: "FloorPlan: M1"
+      requiredServices: "Supply Air,Return Air,Exhaust Air"
+    negative-set:
+      requiredServices: "Supply Air,Return Air,Exhaust Air"
+    expect: missingService
+    note: >
+      Demanding THREE services makes a terminal carrying one incomplete. Tags
+      have no connectors, so nothing is missing because nothing is required.
+
+  - fragment: check-sleeve-size
+    set:
+      annularClearance: 99999
+      maxOversize: 0
+    negative-set:
+      annularClearance: 99999
+      maxOversize: 0
+    expect: findings
+    note: >
+      An annular clearance nothing can meet with no oversize allowed. CONFIRM
+      this model has sleeves at all - if both legs come back empty that is
+      content missing, and it belongs in §3b rather than being blamed on the
+      fragment.
+
+  - fragment: find-overlapping-lines
+    set:
+      toleranceMm: 99999
+    negative-set:
+      toleranceMm: 99999
+    expect: overlapping
+    note: >
+      Recorded earlier with overlapping 0 on a 25 mm tolerance. A tolerance this
+      large should make any two parallel runs overlap - and if it still finds
+      none, the tolerance is being ignored, which is the `measure-run-quantities`
+      shape and worth more than the proof.
+
+  - fragment: find-dead-ends
+    set:
+      stubLength: 99999
+    negative-set:
+      stubLength: 99999
+    expect: deadEnds
+    note: >
+      §3 records that select-by-connection-status proved every duct end in this
+      model is connected, so this is expected to stay empty and to stay BLOCKED
+      on content. It is here to confirm that with a stub length nothing can
+      exceed, rather than on the strength of the earlier run alone.
