@@ -421,13 +421,24 @@ set alone — the 2024 32-to-64-bit change), `Element` as a specific instance (1
 not text), `OverrideGraphicSettings`, `Color`, `Material`, `View3D`. **Generate the list rather than
 trusting this sentence:** `python tools/generate-jobs.py`.
 
-**The `enclosed = 0;` guard must NOT be added to main, and this is the one thing here somebody is likely
-to get wrong.** It reads like an obvious outstanding fix — the REVIEW track's own handover lists it as a
-defect it found. It belonged to the inside-out-margin guard, which was removed on the owner's
-instruction. On main's shape it is provably dead: `enclosed++` is reached only after a non-null bounding
-box, and reaching it is what sets `any = true`, so `!any` implies `enclosed == 0` already. **And in the
-one remaining path where `applied` ends false — `applied = view3D.IsSectionBoxActive;` returning false —
-zeroing would be WRONG**, because those elements really were enclosed in the box that was computed.
+**The `enclosed = 0;` guard — and the question it turned into. Read this before touching
+`set-view-section-box`.**
+
+This entry first said the guard must NOT be re-added, and the reasoning was right when written: it lives
+inside the **inside-out-margin guard**, that guard was removed before #50 merged, and without it the
+line is dead — `enclosed++` is reached only after a non-null bounding box, and reaching it is what sets
+`any = true`, so `!any` already implies `enclosed == 0`.
+
+**Both came back the same evening, in `40915d6`, and on main today the guard is CORRECT where it sits.**
+Verified: `shrinks the box past nothing` is absent at `531f47e` and present at `8f44133`.
+
+**That leaves a question only the owner can settle, and it is the reason this paragraph is still here.**
+The margin guard was described as removed *on his instruction* before #50 merged. It is back, restored
+by a merge whose message carefully documents its choices for every `fragment.yaml`, for
+`heron_validate.py` and for `FRAGMENT-ISSUES.md` — **and says nothing about this `.cs` file.** So it is
+not clear whether it was restored deliberately or carried back by a conflict resolved per-side. **Ask
+before removing it again**: it is good code, and the only thing wrong with it may be that nobody chose
+it.
 
 **That last path is silent, and that IS a real finding.** If `IsSectionBoxActive` comes back false the
 fragment reports `applied false`, `enclosed 22` and **adds nothing to `refusalReasons`** — a count on a
@@ -446,10 +457,21 @@ separator, and that is a decision for when a second fragment wants one.
 
 ### Two things about the tooling that cost time here
 
-**`check-docs.py` does not catch a duplicate decision number.** D-67 was first written as **D-56, which
-already exists** — the checker verifies that a *referenced* `D-NN` exists, not that a number is used
-once. It passed on a file with two `## D-56` headings. That is a cheap addition to a script whose whole
-job is derived facts.
+**`check-docs.py` could not see a duplicate decision number — FIXED the same day, and it now fails the
+run.** D-67 was first written as **D-56, which already existed**, and the checker passed on a file with
+two `## D-56` headings. The cause was one character of intent: every registry was read with
+`set(re.findall(...))`, and a set is precisely the thing that makes a duplicate invisible. The same line
+was written three times, so **rules, decisions and questions are all checked now**, not just the case
+that was caught.
+
+**It fails the run where a broken link only prints, and that asymmetry is deliberate.** A dead link
+announces itself the moment somebody clicks it; a duplicate id is silent and makes every reference to
+that number ambiguous — both entries look correct in isolation. Verified by breaking it on purpose once
+per registry, and the unmodified repository still exits 0.
+
+**What is still owed there: `check-docs.py` gates the build and has no test at all**, unlike every other
+tool in `tools/` that concludes. That gap is older than this session and closing it moves the derived
+test count, so it wants its own commit.
 
 **A stale local `main` makes a verification gate lie.** The rebase brief's gate said
 `git diff main...HEAD`, and the local `main` ref was 175 commits behind `origin/main`. The gate printed
