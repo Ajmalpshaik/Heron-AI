@@ -75,8 +75,10 @@ contract:
     - name: heaviestTypeName
       type: string
     - name: typesMeasured
+      role: accounting
       type: int
     - name: typesUnmeasured
+      role: accounting
       type: int
     - name: totalTriangles
       type: long

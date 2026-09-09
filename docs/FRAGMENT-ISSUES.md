@@ -714,6 +714,64 @@ fragments in §3d**: nothing enumerates sheets, views, legends, worksets or glob
 | `set-element-workset` | `moved 0` with `worksetId=0` | A workset id. `report-element-ownership` reports `owners 1 entry(ies)` and no id, so nothing in the library can supply one |
 | `place-views-on-sheet` | `placed 0`, and the negative was not empty either | Views selected, which is the sheet/view wall above |
 
+### Reading the 196 run records was worth more than running anything — 2026-09-09
+
+Every run record was re-read against its fragment's own contract. **80 DRAFT fragments have both
+phases recorded**, and the shape of what stops them is now known rather than guessed:
+
+| | |
+|---|---|
+| **25** | positive moved, negative **not** empty |
+| **51** | positive never moved |
+| **4** | already satisfied D-30 and nobody had noticed |
+
+Two of the four were proved the same hour. **A run record is evidence that keeps**, and re-reading the
+pile found more than the next batch did.
+
+### How the judge decides "empty", exactly — because two rows of this file guessed at it
+
+`looks_empty` in [`heron_validate.py`](../brain/heron_validate.py) filters to the contract's declared
+names, drops anything declared `role: accounting`, and then, per value:
+
+1. `_is_helper_object(value)` → **skipped**. A bare type name like `"ElementId"` or `"Func\`2"` is a
+   rendering artefact, not an answer.
+2. `_as_count(value)` returns `None` → **`return False` immediately.** Unreadable is not empty, and
+   saying so is the whole point.
+3. A non-zero count → not empty.
+4. Nothing countable at all → not empty. There was no number here to have been zero.
+
+**Step 1 is why `dimension-mep-runs` and `dimension-family-instances` proved** with `dimensionId`
+reading as `"ElementId"` in all four phases: it is skipped, never reaching step 2. §5 row 8 assumed it
+reached step 2 and blocked them. It did not.
+
+**Step 2 is real, though, and it bites a NAME.** `report-geometry-complexity` returns
+`heaviestTypeName: "Duct Size Tag: Duct Size Tag"` in its negative — a genuine string, not a helper
+object, so it stops at step 2 and the negative can never be judged empty. Declaring the two work
+counters (`typesMeasured`, `typesUnmeasured`) as accounting was right and is kept, but it does not
+unblock it, and no role change should: **the fragment describes whatever it is handed**, so it has no
+empty case at all. It belongs with the D-53 tracking group in §3c, not here.
+
+> A declared result that is a NAME cannot carry the negative leg. Either the fragment has a countable
+> result beside it, or it is a describer and D-53 is the route.
+
+### Three more for "make silence illegal" (§3h.1)
+
+All three create something **in both legs**, which is why none can be proved — and all three are worse
+on a real project than in a proof:
+
+| Fragment | Positive | Negative |
+|---|---|---|
+| `create-view-template-from-view` | created `HERON TPL Z9` | asked for a name it could not use, **created `Model Linking Copy 1` anyway** and reported the refusal beside it |
+| `duplicate-type` | `'Tees' duplicated as 'HERON TYPE Z9'` | given no new name, **`'Tees' duplicated as 'Tees'`** |
+| `create-key-schedule` | created `HERON KEY Z9` | created `Duct Style Schedule` |
+
+A fragment that cannot use the name it was given should refuse it, not invent one. `duplicate-type`
+producing a second type called `Tees` is the clearest case: nothing downstream can tell the two apart.
+
+**These three are also obscured by the `Describe` defect** — each returns its new element as
+`"ElementId"` — but fixing that would not prove any of them, because the negative would still have
+created something. The naming defect is the one that matters.
+
 ### What this says about where the proving goes next
 
 The MODIFY pool is not blocked on the write engine any more — three fragments proved through it today
