@@ -31,7 +31,7 @@ projects below are the second thing, and the useful part of them is the mechanis
 
 ---
 
-## 1. The most valuable finding is that five of them agree with Heron
+## 1. The most valuable finding is that six of them agree with Heron
 
 This exercise was expected to produce ideas to adopt. What it mostly produced is **independent
 confirmation**, and that is worth more than an adoption, because it is evidence about a design that is
@@ -44,13 +44,16 @@ already built rather than a plan for one that is not.
 | **Headroom** | compresses **tool outputs, logs, files and RAG chunks** — not the user's question | the rule written into [`heron_context.py`](../brain/heron_context.py) on the same day, for [05 §4](05-heron-brain.md)'s reason: compression may touch retrieved parts and **never** the request, because `OST_DuctCurves` is the load-bearing half of a BIM sentence |
 | **code-review-graph** | SQLite, **incremental by content hash**, and *"blast radius"* — what a change reaches | [`heron_embed.py`](../brain/heron_embed.py) is content-hashed so re-indexing unchanged files costs nothing; [`heron_graph.py`](../brain/heron_graph.py) answers *"what breaks if this changes"*; [D-40](DECISIONS.md) derives before storing |
 | **code-review-graph**, again — [§5.6](#56-tirth8205code-review-graph) | *"a bare `result_count: 0` is ambiguous… it can mean **this graph cannot see that relationship**"* — and a marker attached **only** to the empty case | [D-52](DECISIONS.md) exactly, and `FILTER_ELEMENTS_BY_CATEGORY` reporting `unresolvedLevel` so a broken lookup reads as *"12 found, 12 with no level"*. **Found only at file level**, and it is direct evidence for [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md) |
+| **superpowers** — [§5.8](#58-obrasuperpowers) | *"NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE"*, and **a regression test that has only ever passed is not evidence** — the red-green cycle must have been seen | [D-30](DECISIONS.md)'s negative case, exactly. **Found only at file level**, and Heron's version is the stronger one: theirs is prose addressed to a model, Heron's is a proof *format* a tool checks |
 
-**Five projects, five different problems, five teams that did not talk to each other.** None of this
+**Six projects, six different problems, six teams that did not talk to each other.** None of this
 makes Heron right, and it is not treated as evidence that it works — nothing here has met a Revit model.
-What it does mean is that the five designs most likely to be wrong by being unusual are not unusual.
+What it does mean is that the six designs most likely to be wrong by being unusual are not unusual.
 
-**The fifth was found only by the file-level pass**, and it is the one that matters most today: it lands
-on [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md), which are still unanswered.
+**The fifth and sixth were found only by the file-level pass.** The fifth is the one that matters most
+today: it lands on [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md), which are still unanswered.
+The sixth is the one that matters most **next**, because it is the discipline the 218 DRAFT fragments are
+waiting on.
 
 ---
 
@@ -68,7 +71,7 @@ Research further.**
 | [`alibaba/aacr-bench`](https://github.com/alibaba/aacr-bench) | no way to measure a review agent | a **benchmark with expert-verified answers** for repository-level review | [18](18-agent-operating-system.md) and the incoming §18 both ask for an evaluation suite and Heron has none. This is the shape one takes | its dataset is general code. A Heron benchmark has to be Revit tasks, which only the owner can author | Read before any reuse | **Adapt concept** — the *shape* of a benchmark, never its cases |
 | [`volcengine/OpenViking`](https://github.com/volcengine/OpenViking) — [§5.4](#54-volcengineopenviking) | context organisation for agents | **tiered loading** — L0 abstract, L1 overview, L2 details, loaded only as needed, and **built on write**; observable retrieval paths | [§5.4](#54-volcengineopenviking): Heron's fragments **already are** L0/L1/L2 — `semantic-identity`, the yaml, the `.cs` — and `BUDGET` already loads by depth. What is missing is the *vocabulary* and a per-folder abstract | **the main project is AGPLv3** — see §3. Idea only, and it was taken from the README, so no source was opened | **AGPL-3.0** — 1,116 files carry that SPDX header against 18 Apache. Apache covers **`crates/ov_cli`** (the Rust CLI, *not* `openviking_cli/`), `examples/`, and the TS/npm SDKs; `bot/` is MIT | **Adapt concept, code strictly off-limits** |
 | [`karpathy/llm-council`](https://github.com/karpathy/llm-council) | one model reviewing its own work | first opinions → **anonymised** peer review → a Chairman synthesises | [D-39](DECISIONS.md) already requires an *analysed disagreement*. **Anonymising which agent produced which answer is a genuine sharpening** of Shadow Mode | it is N model calls per question, which [19 §5](19-context-and-cost.md) exists to avoid. Only for the high-risk path the incoming §6.9 describes | MIT — compatible | **Adapt concept** — take the anonymising, not the council |
-| [`obra/superpowers`](https://github.com/obra/superpowers) | agents coding before understanding | brainstorm → design → plan → execute, with review checkpoints; skills as the unit | the discipline is [27](27-build-order.md)'s and this repository's practice | its skills are general software workflows; Heron's name **capabilities**, deliberately ([09](09-skills-and-fragments.md)) | MIT — compatible | **Adopt concept** — already held |
+| [`obra/superpowers`](https://github.com/obra/superpowers) — [§5.8](#58-obrasuperpowers) | agents coding before understanding | brainstorm → design → plan → execute, with review checkpoints; skills as the unit | the discipline is [27](27-build-order.md)'s and this repository's practice | its skills are general software workflows; Heron's name **capabilities**, deliberately ([09](09-skills-and-fragments.md)) | MIT — compatible | **Adopt concept** — already held |
 | [`garrytan/gstack`](https://github.com/garrytan/gstack) — [§5.7](#57-garrytangstack) | solo developer without a team | **not 23 roles** — 54 skills and one agent file. Three of them (`careful`, `freeze`, `guard`) declare a **PreToolUse hook in the skill's own frontmatter** | the 54 workflow skills are a developer's and transfer to nobody here. **The hook-in-the-skill shape is the fourth and best answer to [Q-49](OPEN-QUESTIONS.md)** — the guard installs with the capability | [§5.7](#57-garrytangstack) names three traps that silently turn such a hook into decoration. `ETHOS.md` measures itself in lines of code per day, which is [D-57](DECISIONS.md)'s frame exactly | MIT — compatible | **Reject the workflow, adopt the packaging** *(changed at file level — the row's 23-roles premise was not there)* |
 | [`affaan-m/ECC`](https://github.com/affaan-m/ECC) — [§5.1](#51-affaan-mecc) | plans lost in chat, standards forgotten | **the plan as an artifact the human points at**, not chat history; hooks that **block the tool call** rather than checks a person remembers to run | the artifact idea is [23](23-heron-kernel.md)'s checkpoints and [`heron_workflow.py`](../mcp/server/heron_workflow.py). `tools/check-*.py` hold the same *rules* but **nothing runs them automatically** — [§5.1](#51-affaan-mecc) corrects the page-level claim that they are the equivalent | 68 agents, 286 skills, 94 commands. The scale IS the thing being rejected — [D-01](DECISIONS.md) gives the host the commands and [09](09-skills-and-fragments.md) gives skills capabilities | MIT — but [§5.1](#51-affaan-mecc) names a second project inside it | **Adopt the artifact principle, reject the scale.** File-level pass added two items — see [§5.1](#51-affaan-mecc) |
 | [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) — [§5.2](#52-ruvnetruflo) | orchestrating many agents | swarm coordination; **Raft, Byzantine and Gossip consensus**; 100+ agents. **Under it, a security programme the landing page does not advertise** — a guard between retrieval and context assembly | almost none of the swarm. Heron has **one Revit, one pipe, one queue, one handler** ([D-09](DECISIONS.md)) — but the retrieval guard is aimed at the exact path Heron's RAG work will create ([§5.2](#52-ruvnetruflo)) | consensus answers *"which of my disagreeing replicas is right"*. Heron has no replicas. **314 MCP tools against Heron's 14** | MIT — compatible | **Reject the swarm** — and [§5.2](#52-ruvnetruflo) takes one question from underneath it |
@@ -751,3 +754,65 @@ through the host's mechanism, which is the correct one. Named here so the absenc
 **Decision: changed — from *Reject* to *Reject the workflow, adopt the packaging*.** The 54 workflow
 skills stay rejected on mission. The **hook-in-the-skill-frontmatter shape** becomes the recommended
 answer to [Q-49](OPEN-QUESTIONS.md) should the owner want one, and the three traps come with it.
+
+---
+
+### 5.8 `obra/superpowers`
+
+**Read at** `b36e0829c6d0140e93cfef2ca599b1b07d4a7797`, committed 2026-08-12. MIT.
+
+**Opened:** `skills/verification-before-completion/SKILL.md`, `skills/systematic-debugging/SKILL.md`,
+`README.md`, and the tree — **14 skills, 3.2 MB.** After ECC's 286 and gstack's 54, the smallest and
+the most disciplined of the three, which is itself the point the project is making.
+
+**The row said *"Adopt concept — already held"* and that is confirmed.** What the file-level read adds is
+a **sixth independent agreement**, and it is on the discipline Heron's whole proving pass rests on.
+
+#### `verification-before-completion` is D-30, from a different direction
+
+```
+NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
+```
+
+> If you haven't run the verification command in this message, you cannot claim it passes.
+
+And in its failures table, one row that is [D-30](DECISIONS.md)'s negative case exactly:
+
+| Claim | Requires | **Not sufficient** |
+|---|---|---|
+| Regression test works | **Red-green cycle verified** | **Test passes once** |
+
+**A test that has only ever passed is not evidence.** It has to have been seen to fail for the right
+reason. That is why [D-30](DECISIONS.md) demands a negative case beside every positive one, and it was
+reached here by somebody debugging web software, not Revit fragments.
+
+**Two more rows transfer without translation**, and both are about this exercise rather than about
+Revit:
+
+- *Bug fixed* requires **testing the original symptom**, not *"code changed, assumed fixed"*.
+- *Agent completed* requires **a VCS diff showing changes**, not *"agent reports success"*.
+
+`systematic-debugging` carries the companion rule — *"ALWAYS find root cause before attempting fixes.
+Symptom fixes are failure"* — which is why `"flake"` is not a root cause and why the five heuristic
+false positives in [32 §4](32-master-architecture-reconciliation.md) were each traced rather than
+patched.
+
+#### Where Heron's version is stronger, and it is the same lesson as §5.1
+
+**Superpowers' rule is prose addressed to a model.** It is well written, it is emphatic — *"Skip any
+step = lying, not verifying"* — and it depends entirely on the model reading it and choosing to comply.
+
+[D-30](DECISIONS.md) is enforced by a tool. A proof is a **format**: a positive case, a negative case,
+a named model and a staleness fingerprint, checked by
+[`batch-prove.py`](../tools/batch-prove.py) rather than remembered. A fragment without one stays
+`DRAFT`, and no amount of confidence changes the field.
+
+**That is §5.1's finding again from the other side.** ECC showed Heron a rule it holds in prose that
+somebody else holds in code (the hooks). This shows Heron a rule it holds in code that somebody else
+holds in prose. **Both directions are the same lesson: a rule in code beats a rule in prose**, and the
+score across the two projects is one each.
+
+**Nothing is adopted.** The failures table is a good checklist and Heron's proof format already
+encodes the rows that apply to it.
+
+**Decision: unchanged — Adopt concept, already held.** Promoted into §1 as the **sixth** agreement.
