@@ -894,6 +894,194 @@ enough:
 so the work-counter scan missed it entirely. That is the argument for §3h.2 doing the declarations
 explicitly rather than leaving the patterns to guess.
 
+### ONE SELECTION CANNOT ARRANGE A TWO-SET FRAGMENT — found 2026-09-09
+
+`find-nearest-elements` refused, and the refusal is the clearest statement of a structural gap that
+nothing else in this file names:
+
+> *"Cannot run: `elements (IList<Element>)`, `targets (IList<Element>)` were never supplied. There is a
+> selection, but this fragment needs 2 separate sets of elements and one selection cannot say which is
+> which. Run the fragments that produce them first. Running anyway would report 0 results, which reads
+> as 'there was nothing to find' rather than 'nobody was asked'."*
+
+The setup chain leaves exactly one `elements` behind, and `set-selection` consumes exactly one. A
+fragment comparing **two** sets — nearest-to, clashes-against, this-versus-that — has no arrangement at
+all in a job file today, however its inputs are typed.
+
+**This is a job-file and chaining gap, not a D-54 one.** D-54 carries the caller's half across as text;
+a second set of elements is not text. Closing it means either a chain that can bind two named sets, or
+a `--set-b` alongside `--set`. Neither exists.
+
+Named so far: `find-nearest-elements`, `find-clashes` (`against`), `measure-distance` (`first`,
+`second`), `compare-elements` would have been one had it not taken its pair from a single selection.
+
+### Two more shapes D-54 refuses, and one that does NOT bind from the chain
+
+§3i lists `FamilySymbol`, `Material`, `OverrideGraphicSettings`, `Curve`, `ParameterValue` and bare
+`Element`. Two more, both met on 2026-09-09:
+
+| Shape | Fragment | What it said |
+|---|---|---|
+| `IDictionary<string, double>` | `check-minimum-clearance` | `rules` is a value the caller supplies. A dictionary has no name to look up, so this belongs with `OverrideGraphicSettings` rather than with the resolvable names |
+| `IList<Element>` **as a named need** | `check-room-mep-completeness` | `devices` was never supplied, even with a selection present |
+
+**That second row corrects an assumption made earlier the same day.** `remove-view-template` showed
+`views (IList<View>)` resolving from a single name, and it was reasonable to expect `IList<Element>` to
+bind from the chain the same way. It does not. A `View` has a name Revit can look up; an arbitrary
+element list has none, so a *named* element need has to come from a previous fragment's `provides` and
+not from the selection — which is D-29's job, and is exactly what the two-set gap above blocks.
+
+### Two more with no positive case in this model
+
+- `check-flow-direction` — `bothOut 0`, `bothIn 0` on mechanical equipment. No contradictory joints
+  exist here. Its two results are also the clearest example in §3h.2 of names that LOOK like
+  bookkeeping and are the answer.
+- `audit-mep-openings` — `stale 0`, `combined 0`, `unhosted 0` on 307 ducts in L3, the richer
+  selection. Consistent with the earlier run on 22, so it is content rather than scale.
+
+### THE MISSING `LIST_*` FRAGMENTS ARE NOW THE BINDING CONSTRAINT — 2026-09-09
+
+§3d has listed the missing `LIST_*` capabilities as a gap since 2026-09-08. After a full day of proving
+they are no longer a gap among others: **they are what stops the next batch**, and the count is
+concrete.
+
+| Blocked fragment | The value it wants | Why guessing failed |
+|---|---|---|
+| `set-element-workset` | a workset **id** | `list-worksets` gives the names — *Shared Levels and Grids*, *Workset1* — and not the integers. The fragment reads `ELEM_PARTITION_PARAM` as an int, so a name cannot stand in |
+| `set-category-visibility`, `set-view-crop`, `reset-view-graphics`, `set-crop-box-settings` | a view carrying **no template** | Every V/G fragment must be proved on one — a templated view answers "changed 0" because the template owns visibility (§4). `3D View: {3D}` was a guess and the model has no such view. **Nothing lists views**, so there is no way to find a template-free one except by asking a person |
+| `create-legend-view` | a legend's exact name | *"No view called Legend: Mechanical Legend"* — a good refusal against a name nothing could have supplied |
+| `set-section-mark-visibility` | any way to reach section marks | `select-by-category-name` answers `setup_failed` for `Sections` model-wide and in a plan. There is no `list-sections` |
+| `select-by-material` | a material name | Ducts and mechanical equipment both answer `noMaterial` — **this model assigns no materials to MEP elements at all**, which is also why `find-unused-materials` finds 56 unused. Content, but nothing would have told a job-file author that without running a fragment to find out |
+
+**The pattern is the same every time: the fragment is fine, the arrangement needs a name, and the name
+can only be got by asking a person or by guessing.** Guessing is what D-54 refuses to do on the
+caller's behalf, and it is right to refuse — so the missing half is a way to ASK the model.
+
+`list-sheets`, `list-levels`, `list-grids`, `list-revisions`, `list-worksets` and `list-linked-models`
+already exist and are PROVEN, and using `list-sheets` as a setup step proved five fragments in an hour
+(§3i). **The route works. There are simply not enough of them**, and two of the ones that exist are one
+field short:
+
+1. **`list-views`** — name, type, and whether it carries a template. Unblocks four V/G fragments at
+   once and would have saved three wrong guesses today.
+2. **`list-worksets` needs the id**, not only the name.
+3. **`list-materials`** — the names, and whether anything uses them.
+4. **`list-sections`**, or any route to a section mark.
+
+Ranked against §3h, this now sits above everything except making silence illegal. §3h.3 asked for one
+command answering *"describe this model"*; this is the same argument arriving from the proving side,
+and it is the cheaper half of it.
+
+### `batch-prove` REPORTS A VERDICT ON A RUN THAT NEVER HAPPENED — found 2026-09-09, OPEN
+
+A batch of six MODIFY fragments came back **6 for 6 `POSITIVE EMPTY`**. Six independent content
+problems in one batch is not a pattern that happens, so the records were read rather than the summary,
+and none of the six had run at all.
+
+Every one had been refused for the lease:
+
+> *"This Revit is in use by another chat, so Heron has refused rather than taking it over mid-job.
+> Nothing was sent to Revit. **Refusing to record evidence about a model that will not name itself.**"*
+
+**Heron behaved perfectly.** It refused, it said nothing was sent, and it declined to write a record —
+which is exactly right. The defect is that `batch-prove` then judged **the record already on disk from
+an earlier run**, and reported verdicts about it as though they were this batch's.
+
+The evidence it judged was not merely old, it was about a **different arrangement**. `flip-elements`
+reported `POSITIVE EMPTY` from a record whose negative reads *"run with categoryName=Ducts,
+inViewOnly=FloorPlan: L3"* — while the job file asked for duct tags in M1.
+
+**A date check would not catch this.** Both records say `2026-09-09`. What gives it away is the session
+id inside the `model` line: `session 17356` against the live `session 32940`.
+
+> A verdict about a run that did not happen is worse than a crash, because it is filed as a finding.
+> This is the same family as the `ALREADY` hole closed earlier — reporting on something that is not
+> this run — and it wants the same kind of fix.
+
+**The fix, and it is small:** `validate` already stamps `model` with the session id. Read the record's
+mtime or its session before judging, and refuse to report on one this invocation did not write.
+`NO RECORD` and `REFUSED` verdicts already exist for exactly this shape of answer.
+
+Confirmed: **fourteen of the eighteen fragments proved on 2026-09-09 came from the live session.** The
+other four were proved by TRACKING, where the D-53 evidence *is* the tracking rows and those were run
+fresh — but their positive phase came from the earlier session, so they are being re-run rather than
+argued for.
+
+### ONE PERSON, ONE `HERON_CLIENT_ID`
+
+The lease identifies a **chat**, not a person. Four ids were in use for one afternoon's work —
+`proving-2026-09-09b` by hand, `tracking-run` and `tracking-set-selection` by two scripts, and
+`heron-batch-prove` chosen by the runner itself — and to Heron that is four chats competing for one
+Revit. Each refusal reads exactly like a fragment failing.
+
+> Pick one id for a working session and put it in every script and every command. A second id is a
+> second chat, and the lease is doing its job when it refuses the second one.
+
+This also explains the round-one wipe-out earlier the same day, when eleven jobs failed immediately
+after a hand-run `count` — the same collision, differently dressed, and it was misread then as an
+arrangement fault.
+
+### Six MODIFY fragments, six honest refusals — 2026-09-09
+
+Run on the tags-negative pattern. None proved, none is defective, and **every one said in words why
+not** — which is the behaviour §3h.1 is asking the twelve silent ones for.
+
+| Fragment | What it answered | What it needs |
+|---|---|---|
+| `rename-elements` | `planned 22`, **`collisions 21`**, `renamed 0` | Every duct here is a `Tees`, so a global find/replace makes 21 duplicate names — and it refused rather than creating them. **This fragment may not be provable by find/replace at all** on same-typed elements: the arrangement has to produce unique names, which `find`/`replaceWith` cannot |
+| `trim-extend-elements` | *"This squares off exactly TWO elements — 22 were given. Nothing…"* | Exactly two elements. `select-by-category-name` cannot narrow to two, so this is the two-set problem above wearing a different coat |
+| `remove-parameter-value` | `alreadyEmpty 22`, and *"0 cleared, 22 already empty. **An empty field and a zero are different.**"* | A populated WRITABLE parameter. `System Type` and `Comments` are both blank on every duct in this model |
+| `flip-elements` | `cannotFlip 10` on air terminals | A family with a hand to flip. The flippable ones here — doors, windows — are in the architectural link |
+| `set-design-option` | `available 0`, *"Nothing was copied into a design option"* | Design options. This model has none |
+| `set-mep-justification` | `0 run(s) set to 100 mm horizontal and 100 mm vertical` | Ran and moved nothing. Worth a second look at the sit-down — justification should apply to a duct run |
+
+**Read the `remove-parameter-value` refusal twice.** *"An empty field and a zero are different"* is the
+whole of §3h.1 in seven words, written by a fragment that already gets it right.
+
+### FIFTEEN NARROWER SELECTORS WERE ALREADY PROVED, AND EVERY JOB FILE USED ONE — 2026-09-09
+
+Four fragments refused within an hour of each other, each perfectly clearly, and each for the same
+reason:
+
+| Fragment | What it said |
+|---|---|
+| `rename-family` | *"The selection covers 4 different families, and one name cannot…"* |
+| `place-mep-fitting` | *"a fitting joins two, three or four runs — 22 were given. Two makes an elbow, a union or a transition, three a tee, four a cross"* |
+| `rename-elements` | `planned 22`, `collisions 21` — every duct in this model is a `Tees` |
+| `trim-extend-elements` | *"This squares off exactly TWO elements — 22 were given"* |
+
+**The conclusion first drawn from this was that the library cannot select more narrowly than a
+category. That is wrong, and it was one edit away from being written into this file as a gap.**
+
+`select-by-category-name` hands over every element of a category in a view, and it is the only selector
+any job file had used. The library also has, all `PROVEN` and all usable as a setup step:
+
+`select-by-family`, `select-by-connection-status`, `select-by-parameter-value`,
+`select-by-numeric-parameter`, `select-types`, `select-by-workset`, `select-by-mep-system`,
+`select-by-pin-state`, `select-by-phase`, `select-by-design-option`, `select-by-insulation`,
+`select-from-link`, `select-visible-in-view`, `select-with-warnings`, `select-scope-boxes`,
+`select-by-categories`.
+
+> **This is the third time in one day the same shape has appeared:** a capability existed, was proved,
+> and was invisible because nothing named it where somebody writing a job file would look. First the
+> `list-*` fragments as a setup chain (§3i), then `views (IList<View>)` resolving from a single name,
+> now the narrow selectors. **The library is further ahead than the job files are.**
+
+That is an argument for §3h.4 — generating the job file from the fragment library rather than typing
+it — considerably stronger than the six mistyped input names it was first written about. A generator
+reading `contract.needs` would have offered `select-by-family` for a fragment that renames a family,
+because the contract says what it wants.
+
+### The contradiction this exposes, still open
+
+§3 records *"every duct end in this model is connected"*, and `find-dead-ends` was set aside twice on
+that basis. But `place-mep-fitting`, run on 2026-09-09, reported **`openEnds 22 item(s)`** against the
+same 22 ducts in M1.
+
+Both cannot be true. `select-by-connection-status` — itself `PROVEN`, taking `wantOpenEnds` — asks the
+model the question directly, and until it answers, **`find-dead-ends` is recorded as blocked on a claim
+that has not been re-checked since it was made.**
+
 ### What this says about where the proving goes next
 
 The MODIFY pool is not blocked on the write engine any more — three fragments proved through it today

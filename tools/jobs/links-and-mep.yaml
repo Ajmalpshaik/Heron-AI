@@ -1,0 +1,95 @@
+# Link fragments through `list-linked-models`, and three MEP writes.
+#
+# `list-linked-models` is PROVEN and provides `elements`, so it feeds
+# `set-selection` exactly as `list-sheets` did - the route that proved five
+# fragments in an hour (§3i). Nothing else in the library reaches a link
+# instance: `select-by-category-name` needs the category "RVT Links" to be
+# visible in a view, and a link that is unloaded is not.
+#
+# ONE CLIENT ID. Every command in this session uses `heron-batch-prove`,
+# including hand-run ones. Four different ids earlier today were four competing
+# chats, and every lease refusal read like a fragment failing (§3i).
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: true
+  setup:
+    - list-linked-models
+    - set-selection
+  negative-set:
+    # ducts are not links, and reaching them needs the ordinary selector
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  - fragment: unload-links
+    setup:
+      - list-linked-models
+      - set-selection
+    set: {}
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+    expect: unloaded
+    note: >
+      The negative needs a DIFFERENT setup chain to reach ducts, so it is spelled
+      out per phase. A duct is not a link instance and `notALink` is the route it
+      should take.
+
+  - fragment: reload-links
+    setup:
+      - list-linked-models
+      - set-selection
+    set:
+      unload: false
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      unload: false
+    expect: done
+    note: >
+      CONFIRM before trusting a pass: reloading a link that is already loaded may
+      legitimately report zero. If both legs come back empty the arrangement
+      needs a link that is unloaded first - which `unload-links` could do, except
+      that `--setup` cannot run a step that writes (§1d).
+
+  # ---- MEP writes, ordinary selector -------------------------------------
+
+  - fragment: rename-family
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: Air Terminals
+      inViewOnly: "FloorPlan: M1"
+      newName: "HERON FAM Z9"
+    negative-set:
+      categoryName: Air Terminals
+      inViewOnly: "FloorPlan: M1"
+      newName: ""
+    expect: renamed
+    note: >
+      VALUE-DRIVEN and the same selection both legs - an empty new name cannot
+      rename anything. Watch for the `rename-elements` trap: if all ten terminals
+      share one family, ten rename requests to one name is nine collisions, and
+      a refusal there is correct rather than a failure.
+
+  - fragment: place-mep-fitting
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      toleranceMm: 99999
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      toleranceMm: 0
+    expect: created
+    note: >
+      A tolerance nothing can satisfy against one nothing can miss, on the same
+      22 ducts. §3 records that every duct end in this model is already
+      connected, so this may find nothing to fit - content rather than defect,
+      and the same wall `connect-open-ends` and `find-dead-ends` hit.
