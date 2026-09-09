@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -63,6 +63,32 @@ contract:
       type: IList<ElementId>
     - name: collisions
       type: IList<string>
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32940
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned collisions 0 item(s),
+    current 22 entry(ies), next 23, planned 22 item(s) [[Autodesk.Revit.DB.Mechanical.Duct,
+    HZ1], [Autodesk.Revit.DB.Mechanical.Duct, HZ2], [Autodesk.Revit.DB.Mechanical.Duct, HZ3],
+    ...], refused 0 item(s), renumbered 22, startAt 1, taken HashSet`1, withinBatch HashSet`1.
+    inputs came elements from the selection (22); parameterName as given; prefix as given;
+    startAt as given; existingValues as given (0). on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Duct Tags, existingValues=, inViewOnly=FloorPlan:
+    M1, parameterName=ZZZNOTHINGHERE, prefix=HZ, startAt=1 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned collisions 0 item(s),
+    current 0 entry(ies), next 1, planned 0 item(s), refused 9 item(s) [1491217, 1491220,
+    1491225, ...], renumbered 0, startAt 1, taken HashSet`1, withinBatch HashSet`1. inputs
+    came elements from the selection (9); parameterName as given; prefix as given; startAt
+    as given; existingValues as given (0). on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 13e1d35080271f5b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -321,7 +321,7 @@ under Apache 2.0 ([D-08](DECISIONS.md)); [09](09-skills-and-fragments.md) plans 
 which [Golden Rule 19](14-golden-rules.md) already names as a source Heron reads. So Heron will import
 knowledge somebody else wrote, and Heron's users will redistribute what Heron ships.
 
-**None of Heron's 21 tools mentions a licence.** `check-metadata.py` checks headers,
+**At the time this was asked, none of Heron's tools mentioned a licence.** `check-metadata.py` checks headers,
 `check-structure.py` checks boundaries, `check-docs.py` checks claims. Nothing checks what an imported
 package permits.
 
