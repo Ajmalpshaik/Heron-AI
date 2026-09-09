@@ -164,6 +164,15 @@ else
                 + "screen, which reads as though the model had been deleted. A negative margin "
                 + "is allowed - it boxes tighter than the elements - but not one whose size "
                 + "reaches half the smallest side of what was selected", marginMm));
+
+            // A REFUSAL REPORTS NOTHING FOUND. `enclosed` was counted while
+            // measuring, before this branch could be decided - and left
+            // standing it says "22 enclosed" beside `applied false` on a run
+            // that changed nothing. Nothing was enclosed: the box was never
+            // set. A count on a refused run is the confident wrong answer this
+            // whole section exists to stop, and `noGeometry` is left alone
+            // because those elements really were found to have none.
+            enclosed = 0;
         }
         else
         {
