@@ -426,15 +426,47 @@ the incoming document and re-propose every one of them.
 
 ## 7. What a session picking this up should do, in order
 
-1. **Read §1.** If the next thing you are about to build helps a developer edit `revit/`, stop.
-2. ~~**§4.2 — the baseline.**~~ **Done** — [`tools/measure-brain.py`](../tools/measure-brain.py).
-   Re-run it on the owner's PC, and again with the trained backend installed, because the figures above
-   are a Linux container on `lexical` and neither is the machine Heron runs on.
-3. **§4.1 — the Context Manager**, against that baseline, with compression forbidden from the
-   exact-match corpus.
-4. **§4.3** — small, blocked by nothing. **§4.4 is struck**; there was nothing there.
-5. **§4.5** last, and only against a named Heron requirement.
+**Everything §4 named is built.** What is left is not more building — it is four decisions and one
+machine, and none of it can be done from here.
 
-**None of that competes with the proving pass.** Proving fragments needs Revit open and is the
-project's critical path; everything in §4 runs on any machine. They are different queues, and this
-document does not move anything to the front of the other one.
+1. **Read §1.** If the next thing you are about to build helps a developer edit `revit/`, stop. That is
+   the one sentence in this document that stays useful after the rest is finished.
+2. **The two findings the checklist left, and they are the same failure twice.** An answer quietly
+   smaller than the truth: [`Q-48`](OPEN-QUESTIONS.md), 62 reading fragments that count only the host
+   document in a world where models are federated; and [`Q-46`](OPEN-QUESTIONS.md), 59 that go looking,
+   drop candidates, and name none of them. **Both need the owner**, and `Q-48` is the one that changes
+   what a modeller sees.
+3. **The three questions the tools raised about Heron's own plumbing** —
+   [`Q-43`](OPEN-QUESTIONS.md) (nothing writes the utterance cache),
+   [`Q-44`](OPEN-QUESTIONS.md) (the brain records none of its own answers),
+   [`Q-45`](OPEN-QUESTIONS.md) (the model router may be wholly the host's), and
+   [`Q-47`](OPEN-QUESTIONS.md) (two capability-gap paths, one dead).
+4. **Re-run the measurements on the owner's PC.** Every figure in §4.1 and §4.2 is a Linux container on
+   the `lexical` backend, and neither is the machine Heron runs on. `measure-brain.py` and
+   `measure-routes.py` take seconds and the numbers will be different.
+5. **Nothing here is proven.** [D-30](DECISIONS.md) is untouched: a positive case, a negative case and a
+   fingerprint, against a real model. Two new tools, a new brain module and a new MCP tool have been
+   built tonight and **not one of them has been near Revit.**
+
+**None of that competes with the proving pass.** 218 fragments have never met a model, that is the
+project's critical path, and everything above runs on any machine at any time. They are different
+queues, and this document does not move anything to the front of the other one.
+
+---
+
+## 8. What this cost, and the one habit that paid for itself
+
+**Five counts were sharpened after being measured against the library, and every time the answer was
+that the check asked a broader question than the one worth asking.** 42 → 0, 114 → 6, 310 → 62, 7 → 0,
+143 → 59. Not one of those cuts came from thinking harder about the rule; all five came from **printing
+the list and reading it.**
+
+**And five heuristics were fooled by text about the thing rather than the thing** — a space-stripped
+haystack, a tool matching its own docstring, a string literal that made its own subject invisible, a
+header comment every fragment carries, and a local variable derived from a declared one. Every one
+looked like a finding. Every one was found by opening the file it named.
+
+> **A count is a claim until somebody reads the rows.** This repository already knew that about its own
+> documentation — `tools/README.md` says so about its own opening sentence. It turns out to be just as
+> true of a tool's output as of a typed number, and a tool that is confidently wrong is worse than the
+> sentence it replaced, because nobody re-reads a number a machine produced.
