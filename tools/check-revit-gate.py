@@ -179,6 +179,29 @@ def _document_names_used(code):
     return used
 
 
+# Calls whose result Revit can hand back as null. A fragment that uses one
+# without a guard is the question; a fragment that uses none has nothing to
+# guard against, however guard-free it looks.
+NULLABLE = (
+    (r"\.GetElement\(", "GetElement"),
+    (r"\.get_Parameter\(", "get_Parameter"),
+    (r"\.LookupParameter\(", "LookupParameter"),
+    (r"\bas\s+[A-Z][A-Za-z]*\b", "a cast with `as`"),
+    (r"\.Level\b", ".Level"),
+    (r"\.GetLinkDocument\(", "GetLinkDocument"),
+    (r"\.Symbol\b", ".Symbol"),
+)
+
+
+def _nullable_calls(code):
+    """Which nullable calls the CODE uses. Comments stripped, for the fourth
+    time in this file and for the same reason."""
+    body = "\n".join(line for line in code.splitlines()
+                     if not line.strip().startswith("//"))
+    body = re.sub(r"/\*.*?\*/", "", body, flags=re.S)
+    return [label for pattern, label in NULLABLE if re.search(pattern, body)]
+
+
 def ask(fid, name, doc, raw, code):
     """The fourteen answers for one fragment, in order."""
     answers = []
@@ -336,16 +359,28 @@ def ask(fid, name, doc, raw, code):
             "millimetres gets 2700 feet, and nothing refuses it. This is D3's "
             "failure shape" % ", ".join(doubles))
 
-    # 12 - null and invalid
-    if code and any(g in code for g in ("!= null", "== null", "??", "?.")):
-        say(ANSWERED, "guards against null")
-    elif code:
-        say(LOOK,
-            "contains no null guard of any kind. Revit hands back null for a "
-            "deleted element, an absent parameter and a level that is not "
-            "there")
-    else:
+    # 12 - null and invalid. Asking "does it guard" raised 7 fragments that
+    # never touch anything nullable: count-elements counts a list it was
+    # handed, set-selection selects one, group-and-count groups one. The
+    # question is whether it dereferences something REVIT CAN HAND BACK NULL
+    # FOR without checking, which is a different question with a different
+    # answer.
+    if not code:
         say(LOOK, "no code to read")
+    elif any(g in code for g in ("!= null", "== null", "??", "?.")):
+        say(ANSWERED, "guards against null")
+    else:
+        nullable = _nullable_calls(code)
+        if nullable:
+            say(LOOK,
+                "no null guard of any kind, and it uses %s. Revit hands back "
+                "null for a deleted element, an absent parameter, a level that "
+                "is not there and a cast that does not hold"
+                % ", ".join(nullable))
+        else:
+            say(ANSWERED,
+                "no null guard, and none needed - it touches nothing Revit can "
+                "hand back as null, only what it was given")
 
     # 13 - unexpected modification
     risk = doc.get("risk")

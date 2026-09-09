@@ -627,6 +627,12 @@ the shape of the library. What is an **inconsistency** rather than a design is a
 LOOK. The 114 has not been thrown away: it is said in the answer, because it is what makes a **proof**
 slow — `set-mep-size` timed out on 307 ducts and sized 22 immediately in a smaller view.
 
+**Question 12 went 7 → 0.** It asked *does it guard against null* and raised seven fragments that
+touch nothing nullable — `count-elements` counts a list it was handed, `set-selection` selects one,
+`group-and-count` groups one. It asks now whether the code dereferences something **Revit can hand back
+as null** — `GetElement`, `get_Parameter`, `LookupParameter`, a cast with `as`, `.Level` — without
+checking, and names which one.
+
 **Question 8 went 310 → 107 → 62, and the last cut is an API fact rather than a judgement.** It first
 asked every fragment about links and raised 310 of 360 — the shape of the library, not a finding; a
 fragment that sets a view's scale has no link question to get wrong. Narrowed to fragments that

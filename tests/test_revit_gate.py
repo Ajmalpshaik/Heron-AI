@@ -296,6 +296,37 @@ def main():
               "all - asking every fragment raised 310 of 360")
 
         print()
+        print("3e. Question 12 asks what is nullable, not whether a guard exists")
+        print("-" * 66)
+        make(work, "handedlist", BASE % ("FRG-T-016", "READ", ""),
+             "var count = elements.Count;\nvar countedNothing = count == 0;\n")
+        got = verdicts_for(tool, work, "handedlist")[11]
+        check(got[0] == tool.ANSWERED,
+              "a fragment that counts a list it was handed needs no guard - "
+              "count-elements, set-selection and group-and-count are all real "
+              "and all were raised by the first version")
+
+        make(work, "unguarded", BASE % ("FRG-T-017", "READ", ""),
+             "var e = doc.GetElement(id);\nvar n = e.Name;\n")
+        got = verdicts_for(tool, work, "unguarded")[11]
+        check(got[0] == tool.LOOK,
+              "one that calls GetElement and never checks IS raised")
+        check("GetElement" in got[1],
+              "and the message names WHICH call can hand back null")
+
+        make(work, "guarded", BASE % ("FRG-T-018", "READ", ""),
+             "var e = doc.GetElement(id);\nif (e != null) { var n = e.Name; }\n")
+        got = verdicts_for(tool, work, "guarded")[11]
+        check(got[0] == tool.ANSWERED, "and one that checks is fine")
+
+        make(work, "castonly", BASE % ("FRG-T-019", "READ", ""),
+             "var w = e as Wall;\nvar n = w.LevelId;\n")
+        got = verdicts_for(tool, work, "castonly")[11]
+        check(got[0] == tool.LOOK,
+              "`as Wall` is nullable too - a cast that does not hold gives "
+              "null rather than throwing")
+
+        print()
         print("4. Question 13 knows a reader from a writer")
         print("-" * 66)
         reader = verdicts_for(tool, work, "nodouble")[12]
