@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -71,6 +71,20 @@ contract:
       role: accounting
       type: IList<string>
 
+# BACK TO DRAFT ON 2026-09-09, AND THE PROOF BELOW IS KEPT AS THE RECORD OF WHY.
+#
+# The proof was taken, and then the implementation was changed by the commit
+# that split `viewRefused` in two - "set-view-section-box: viewRefused meant two
+# opposite things". The negative case recorded below is precisely what that
+# commit set out to fix: it used a PLAN VIEW and reported `viewRefused true`,
+# which is the weak negative the owner objected to, because a plan view cannot
+# carry a section box at all. The new code answers that case differently - the
+# strong negative leaves `viewRefused` FALSE and says in words that the view was
+# fine and the selection was not.
+#
+# So this proof is evidence about code that no longer exists. It is not stale in
+# the platform-skew sense and MUST NOT be re-stamped: re-taking it against a
+# model is the only thing that can make this PROVEN again (D-30).
 proof:
   date: '2026-09-09'
   by: Ajmal PS

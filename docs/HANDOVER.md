@@ -51,7 +51,7 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**360 fragments. 142 `PROVEN`. 218 below.** D-28's executor is built, fragments run against a real
+**360 fragments. 141 `PROVEN`. 219 below.** D-28's executor is built, fragments run against a real
 model, and since 2026-09-09 they can also CHANGE one. That is the thing every earlier handover was
 waiting for.
 **Proving is live and these two numbers move hourly — run
@@ -63,7 +63,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | | |
 |---|---|
 | Fragments | **360** — every fragment-shaped job in the earlier library, five cross-project transfers from PART 5, `CREATE_GLOBAL_PARAMETER` (2026-09-07), `FIND_DATES_IN_VIEWS`, built AND proved 2026-09-08, and **ten added 2026-09-08 for the review's N01–N09 plus the read they depend on** — see the entry below. All ten are `DRAFT` and NONE has met a model |
-| Proven | **142** as of 2026-09-09, each on a recorded proof with a negative case and a staleness fingerprint (D-30). **16 → 52 one night, 52 → 142 the next** — the method is the reusable part and it is in the proving-track entries below. Moving hourly — derive it, do not read it here |
+| Proven | **141** as of 2026-09-09 - 142 were stamped, and `set-view-section-box` went back to `DRAFT` when its implementation changed after its proof - each on a recorded proof with a negative case and a staleness fingerprint (D-30). **16 → 52 one night, 52 → 142 the next** — the method is the reusable part and it is in the proving-track entries below. Moving hourly — derive it, do not read it here |
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, docs, gaps, agent-count, **structure** — all green. **`check-licence` added 2026-09-09 and it EXITS 1 on a finding**, unlike the other reports; 370 units, all clean today ([D-66](DECISIONS.md)). `check-revit-gate` and `check-reachable` are reports and exit 0, so their findings are questions and two of them are now worklists. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
 | Tests | **40 suites. 37 pass in a plain Linux container and the three failures are the MACHINE, with two causes not one** — `test_mcp_serves` and `test_served_claims` need the MCP SDK, `test_bridge_roundtrip` needs a built .NET test host. On a machine with both, all 40 should. **Do not fix them by editing the tests.** `test_embed` and `test_retrieve` were re-based against the model backend in PART 5, not edited until green |
@@ -507,7 +507,7 @@ is the reason that could be established at all.
 2. **The eight schedule fragments** that never got the `ScheduleSheetInstance` fix.
 3. **The rollback boundary.** Find where it breaks, on a scrap model, deliberately — it is the only
    thing standing between the write engine and a real project.
-4. **Then keep proving.** 218 `DRAFT` remain, and roughly 100 of them cannot run for reasons §6 of the
+4. **Then keep proving.** 219 `DRAFT` remain, and roughly 100 of them cannot run for reasons §6 of the
    issues file lists by cause.
 
 ---

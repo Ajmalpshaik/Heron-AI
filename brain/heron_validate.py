@@ -1124,7 +1124,7 @@ def restamp(library=None, apply_changes=False):
     """Re-record fingerprints that differ only because of the platform.
 
     Returns (rows, refused). A row is (slug, old, new). `refused` names the
-    fragments whose code genuinely moved after the proof was taken; those are
+    fragments whose code moved on or after the day the proof was taken; those are
     stale in the way the mechanism exists to catch and are left exactly as they
     are.
     """
@@ -1160,12 +1160,31 @@ def restamp(library=None, apply_changes=False):
 
 
 def implementation_changed_after(frag):
-    """Did the code move after the proof was taken? Unknown counts as YES.
+    """Did the code move on or after the day the proof was taken? Unknown
+    counts as YES, and so does the SAME DAY.
 
     Asked of git, because the alternative is trusting the fingerprint - which is
     the thing under suspicion. No git, no answer, and no answer means refuse:
     the whole point of this guard is that a genuinely stale proof must not be
     re-stamped back into looking fresh.
+
+    SAME DAY COUNTS AS AFTER, and that is not pedantry - it is the hole this
+    guard actually had. A proof carries a DATE and no time, so `2026-09-09`
+    cannot be ordered against a commit made at some hour of `2026-09-09`. The
+    comparison was `>`, so a change made hours after its own proof read as "did
+    not move".
+
+    `set-view-section-box` went through it on 2026-09-09: the proof was taken,
+    then the implementation was changed the same day by the commit that split
+    `viewRefused` in two - altering the very negative case the proof recorded -
+    and `restamp` was willing to stamp the new bytes with the old proof still
+    attached. This library proves and fixes within a single day as a matter of
+    routine, so same-day is the COMMON case here, not the edge.
+
+    The cost is that a genuine platform-skew re-stamp done on the day of the
+    last code commit is now refused too. That is the safe direction, it is the
+    one this function already takes for every other unknown, and the remedy is
+    the honest one: set the status back to DRAFT and re-prove.
     """
     proof_date = str((frag.proof or {}).get("date") or "").strip()
     if not proof_date:
@@ -1182,7 +1201,7 @@ def implementation_changed_after(frag):
     last = result.stdout.strip()
     if not last:
         return True
-    return last > proof_date
+    return last >= proof_date        # same day is unorderable - refuse
 
 
 # ---------------------------------------------------------------------------
