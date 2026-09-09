@@ -26,6 +26,16 @@ heron_capabilities for THIRTY MINUTES. An import costing 1.0 s in a fresh
 process was still running at 40 s there. It was found with faulthandler by
 somebody who noticed a hang - not by anything that measures.
 
+TWO LINES FOR THAT, NOT ONE, AND THE SECOND IS THE ONE THAT MATTERS.
+`import heron_embed` is the module and is cheap everywhere. `backend()` calls
+`_load_model()`, which is where the TRAINED ENCODER is imported - the 1.0 s
+that became 40 and then thirty minutes. The first version of this tool timed
+only the first and called it the D-49 measurement; the cost happened on the
+next line, untimed. On this container it is invisible either way because
+model2vec is not installed and _load_model() returns None at once. On the
+machine where it matters it would have hidden the whole thing, in the tool
+written to catch exactly that.
+
 The incoming master architecture document puts it plainly and it is right:
 "without a baseline, improvement cannot be proven."
 
@@ -198,14 +208,25 @@ def main(argv):
     # per process. Rolling it into the first request would hide it inside a
     # figure that then looks like a slow search.
     clock = Timer()
-    clock.time("import the embedding backend", lambda: __import__("heron_embed"))
+    clock.time("import heron_embed", lambda: __import__("heron_embed"))
 
     import heron_scope as SCOPE
     import heron_search as SEARCH
     import heron_embed as EMBED
     import heron_retrieve as RETRIEVE
 
-    backend, _why = EMBED.backend()
+    # TIMED, AND IT WAS NOT UNTIL 2026-09-09. `backend()` calls `_load_model()`,
+    # which is where the trained encoder is imported - the 1.0 s that became 40
+    # and then thirty minutes on an event loop (D-49). The line above times only
+    # the MODULE import, which is cheap on every machine.
+    #
+    # So the first version of this tool reported "import the embedding backend:
+    # 6.6 ms" and called it the D-49 measurement, while the cost D-49 is about
+    # happened on the next line, untimed. On this container it is invisible
+    # because model2vec is not installed and _load_model() returns None at once.
+    # On the machine where it matters it would have hidden the whole thing -
+    # in the tool written to catch exactly that.
+    backend, _why = clock.time("load the trained encoder", EMBED.backend)
 
     store = clock.time("open the scope", lambda: SCOPE.open_scope(SCOPE.GLOBAL))
     store_ids = set(row["id"] for row in store.fragments())
@@ -266,6 +287,17 @@ def main(argv):
     print("")
     print("Read the WORST column first. D-49's thirty-minute hang was one call,")
     print("and a median would have called that afternoon healthy.")
+    print("")
+    if backend == "lexical":
+        print("  `load the trained encoder` MEANS NOTHING ON THIS RUN. The backend")
+        print("  is `lexical`, so _load_model() returns None immediately and there")
+        print("  is no encoder to load. That line is the D-49 measurement and it")
+        print("  only measures anything where model2vec is installed - which is")
+        print("  the machine that matters and is not this one.")
+    else:
+        print("  `load the trained encoder` IS the D-49 measurement. It is the")
+        print("  import that reached thirty minutes on an asyncio event loop, and")
+        print("  heron_brain.warm() exists to keep it off a request thread.")
     print("")
     if short_circuited:
         print("  find() IS FLATTERED HERE AND THE NUMBER MUST NOT BE QUOTED ALONE.")

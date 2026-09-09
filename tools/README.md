@@ -504,9 +504,12 @@ loop, and a Claude Code tool call sat on `heron_capabilities` for **thirty minut
 1.0 s in a fresh process, still running at 40 s there. It was found with `faulthandler`, by somebody who
 noticed a hang.
 
-So the backend import is timed **first and on its own**, before anything else, because it happens once
-per process and rolling it into the first request would hide it inside a figure that then reads as a
-slow search.
+So the import is timed **first and on its own** — and as **two lines**, which it was not until it was
+re-read. `import heron_embed` is the module and is cheap everywhere. **`backend()` is where the trained
+encoder actually loads** (`_load_model()`), and that is the 1.0 s that became 40 and then thirty
+minutes. The first version timed only the module and called it the D-49 measurement; the cost happened
+on the next line, **untimed**. Invisible on a machine without `model2vec` — which is not the machine
+that matters. The report says which of the two cases it is looking at.
 
 **Three things it refuses to do:**
 

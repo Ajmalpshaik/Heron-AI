@@ -218,6 +218,7 @@ answer is correct, and not by any gate. By reading `assemble()` line by line aft
 | | |
 |---|---|
 | the MCP tool called **every** exception a refusal | `assemble()` has exactly two — a part outside the budget, and a path whose source is missing. Both are answers. A `TypeError` would have reached the caller as *"Heron refused"*, a sentence about a decision Heron never made. The seam owns a `ContextRefused` now and translates only those two |
+| `measure-brain.py` timed the wrong import | `import heron_embed` is the module and is cheap; **`backend()` is where the trained encoder loads**, and that is D-49's 1.0 s that became thirty minutes. The tool timed the first, called it the D-49 measurement, and left the second untimed — invisible on a machine without `model2vec`, which is not the machine that matters |
 | the `generation` path cost **435 ms** against 3 ms | `_fragment_dir()` parsed **every one of the 360** `fragment.yaml` files to find one folder by id. [`heron_scope`](../brain/heron_scope.py) has stored a repo-relative `folder` on every row since Step 8 — one lookup. **4.7 ms now, 92× faster**, and the same six parts |
 
 **That last one was found with [`tools/measure-brain.py`](../tools/measure-brain.py), written earlier the
