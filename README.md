@@ -42,16 +42,23 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 **Phase 1 is BUILT AND UNPROVEN, and Phase 2 is built and barely proven — those are different words
 on purpose.** The C# —
 the write path, and the fragment bodies — compiles on all eight releases from 2020 to 2027 with zero
-warnings. The Python that reasons about it has sixteen test suites, all passing. A compiler proves the
+warnings. The Python that reasons about it has 33 test suites (`ls tests/test_*.py | wc -l`), all passing bar three that want an optional dependency this machine has not got. A compiler proves the
 API surface agrees; a test proves the logic agrees with itself; neither says whether a duct moves 200
 millimetres or 200 feet.
 
 **Until 2026-09-06 this paragraph went on to say none of it had ever loaded into Revit and no fragment
 had met a model. Both have now happened.** The add-in is deployed in Revit 2024 and D-28's executor
 compiles a fragment's C# inside Revit's own process against the assemblies Revit has actually loaded.
-**16 of the 349 fragments are `PROVEN`** — each on a recorded proof against a named model, with a
-negative case and a staleness fingerprint ([D-30](docs/DECISIONS.md)). **The other 333 have still never
-met a model**, and the write path is still unproven.
+**142 of the 360 fragments are `PROVEN` as of 2026-09-09** — each on a recorded proof against a named
+model, with a negative case and a staleness fingerprint ([D-30](docs/DECISIONS.md)). **The other 218 have
+still never met a model.**
+
+**Do not trust those two numbers — derive them.** They move hourly while a proving session runs, and this
+line read *"16 of 349"* for two days after neither half was true:
+
+```bash
+grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
+```
 [`NEEDS-CHECKING.md`](docs/NEEDS-CHECKING.md) carries that debt item by item, and
 `python tools/check-gaps.py` prints what is genuinely unfinished versus what is only waiting on a
 machine.
@@ -72,7 +79,7 @@ machine.
 | ⛔ **Phase 0 ends here** | Everything above is **read-only**. Nothing can change a model |
 | Step 6 — the first write | ⚠️ **Built and compiled. Never run.** The rails came first as the [build order](docs/27-build-order.md) requires — one `TransactionGroup`, preview, re-count, document pinning, permission gate, emergency stop, then the move. The chat half is tested, and a compiler has now read every line on **all eight releases, zero warnings** — which cost one 2020-only defect to discover. It has still **never loaded into Revit and has never moved anything.** Writing stays off until it has ([D-19](docs/DECISIONS.md), [`NEEDS-CHECKING.md`](docs/NEEDS-CHECKING.md)) |
 | ⛔ **Phase 1 ends here, unproven** | `write.enabled` defaults to **`false`** and stays there until a real Revit has been through the register. Heron can no longer be read-only by construction, so it is read-only by default instead — a real weakening, made deliberately and written down rather than smoothed over |
-| Steps 7–14 — Phase 2 | ✅ **Built in full, and almost none of it proven.** The fragment store, one knowledge store per scope, exact-word search, local offline embeddings, the two fused behind a hard Revit-version filter, the capability registry, the dependency graph, and ten skills that name capabilities rather than fragments. **All ten skills and 333 of the 349 fragments are `DRAFT`; 16 fragments are `PROVEN` as of 2026-09-07** — a fragment re-authored from an earlier library arrives here unproven whatever it was there ([D-44](docs/DECISIONS.md)), and that rule is enforced in code rather than remembered |
+| Steps 7–14 — Phase 2 | ✅ **Built in full, and almost none of it proven.** The fragment store, one knowledge store per scope, exact-word search, local offline embeddings, the two fused behind a hard Revit-version filter, the capability registry, the dependency graph, and ten skills that name capabilities rather than fragments. **All ten skills are `DRAFT`. 218 of the 360 fragments are `DRAFT` and 142 are `PROVEN` as of 2026-09-09** — derive both with the `grep` above rather than reading them here — a fragment re-authored from an earlier library arrives here unproven whatever it was there ([D-44](docs/DECISIONS.md)), and that rule is enforced in code rather than remembered |
 | The brain, reachable | ✅ Three read-only MCP tools resolve a request through a **capability**, never a fragment id. **Resolving is not running** — and nothing could run a fragment at all until D-28's executor landed on 2026-09-06. It runs one **READ-ONLY**: it opens no transaction, so Revit itself refuses any model change. Running a fragment that WRITES is a separate operation that still does not exist |
 
 **What is proven and what is only built are different things.**

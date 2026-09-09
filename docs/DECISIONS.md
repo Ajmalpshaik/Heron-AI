@@ -3297,3 +3297,71 @@ already expressible as lifecycle × source plus the matrix's `CLAIMED`/`COMPILES
 **That is the shape of most of this reconciliation:** the incoming idea is not wrong, it is *already
 here under a different name and with a harder edge* — and adopting it a second time would soften the
 edge.
+
+---
+
+## D-58 — Heron measures what it can see, and the cost meter belongs to the host
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** the owner asking whether token cost could be read from the cloud, or the function removed
+**Affects:** [`HERON-OPS-OBS-011`](28-agent-registry.md), [19 §7](19-context-and-cost.md), [`tools/measure-brain.py`](../tools/measure-brain.py), [D-01](DECISIONS.md)
+
+### Context
+
+[28](28-agent-registry.md) defined the Observability Agent as *"latency, token usage, model calls per
+request, cost per request"*. Building the latency half
+([32 §4.2](32-master-architecture-reconciliation.md)) made the rest impossible to ignore: **Heron makes
+no model calls at all.** [D-01](DECISIONS.md) put conversation, intent, planning and summarisation in
+Claude Code, and `heron_embed` runs a local model with no tokens, no account and no cost
+([D-24](DECISIONS.md), [D-26](DECISIONS.md)).
+
+So three of the four fields describe something Heron cannot see, and a file claiming that agent id
+would have made [`check-metadata.py`](../tools/check-metadata.py) report the Observability Agent
+**BUILT** while three quarters of its declared job stayed impossible.
+
+**The owner asked the right question: could it be read from the cloud instead?** It cannot, and the
+reason is not a policy one. A provider's usage API reports an **account total for a period**, not
+*this request cost this much*. The per-request attribution — the only shape
+[19 §7](19-context-and-cost.md) asks for, and the only shape that makes the visible cost meter
+possible — exists solely inside the process that made the call. That is the host.
+
+[D-26](DECISIONS.md) is **not** what blocks it, and saying so matters: project names, content and
+reasoning may go to the cloud, only the RVT and RFA files may not. This is an arithmetic limit, not a
+confidentiality one.
+
+### Decision
+
+**The row is split three ways rather than deleted.**
+
+| Field | Owner |
+|---|---|
+| **Latency** | **Heron.** Measured today — [`measure-brain.py`](../tools/measure-brain.py) for the brain, `heron_gaps.py` for the Revit side |
+| **Token usage · cost per request** | **Host-provided**, on the same footing as the four orchestrator agents [`check-metadata.py`](../tools/check-metadata.py) already prints every run |
+| **Model calls per request** | **Replaced.** Heron cannot count the host's calls. It can count how often it answered with **no model needed at all** — the identity and cache routes of [`heron_search.py`](../brain/heron_search.py) |
+
+**That third line is the substance and not a consolation.** [19 §5](19-context-and-cost.md) sets the
+rule the original metric existed to protect:
+
+> Steps 1 and 2 must be tried **before** any model is invoked, structurally — not as an optimisation
+> added later. If step 4 is ever reached for *"select all ducts"* after the first time, something is
+> broken.
+
+*Model calls per request* was a proxy for that rule holding. **The share of requests Heron answered
+deterministically measures the same rule directly**, from Heron's own side of the wire, with no
+telemetry and nothing to configure. It is the better metric, and it was available all along.
+
+### What this does NOT do
+
+**It does not remove the cost meter.** [PROPOSALS](PROPOSALS.md) keeps it and
+`HERON-KRN-TOK-015` keeps its budget job. What changed is where the number comes from: a host that
+knows, rather than a Heron that would have to guess.
+
+**It does not let `measure-brain.py` claim the agent.** The row still covers more than that tool does,
+so its header stays `Heron-Agent: none` until the deterministic-answer share is served too.
+
+### The shape of this, which has happened before here
+
+A registry row asked for something the architecture had already made impossible, and nothing noticed
+because **nothing had tried to build it.** [D-49](DECISIONS.md) has the same shape from the other
+direction: two register rows, each correct alone, broken only in combination, found only by running
+them. **A specification is checked by implementation, and a row nobody has implemented is a row nobody
+has checked.**
