@@ -1,0 +1,183 @@
+# The eleven fragments changed by PR #50, re-proved against a model.
+#
+# WHAT MAKES THIS BATCH DIFFERENT FROM AN ORDINARY ONE.
+#
+# The change under test is the REFUSAL path, so for most of these the negative
+# case is not a different selection - it is the SAME selection with a value the
+# fragment cannot use. That is the best-shaped proof there is: both legs are the
+# same arrangement and differ only in the input, so what is tested is the
+# fragment rather than the arrangement (the shape `array-elements-radial` set on
+# 2026-09-09).
+#
+# Where the change was the SCHEDULE resolution rather than a value, the negative
+# is a selection holding no schedule at all - which is exactly the section 3e
+# failure: those fragments used to answer `added 0` to that and say nothing.
+#
+# EVERY WRITE HERE IS SMALL, deliberately. Section 1c: rollback is reliable on
+# small writes and has twice failed on large ones. Nothing here touches more
+# than three schedules, twenty-two ducts or seven notes, and the element count
+# is checked either side of the batch.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024, session 32940
+
+defaults:
+  # Re-made before EACH phase: a rolled-back write clears the Revit selection
+  # (section 1d). Only the first step resets the chain - set-selection consumes
+  # what select-by-category-name leaves.
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+
+  # ---------------------------------------------------------------- values
+  # Both legs are the same 22 ducts. Only the value differs.
+
+
+
+  - fragment: add-schedule-fields
+    write: true
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: "Notes, Symbols & Schedules"
+      fieldNames: Comments
+    negative-set:
+      categoryName: Title Blocks
+      inViewOnly: "Notes, Symbols & Schedules"
+      fieldNames: Comments
+
+  - fragment: add-schedule-combined-field
+    write: true
+    expect: added
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: "Notes, Symbols & Schedules"
+      columnName: AJ Combined
+      partFields: Mark,Comments
+      partSeparators: " - "
+    negative-set:
+      categoryName: Title Blocks
+      inViewOnly: "Notes, Symbols & Schedules"
+      columnName: AJ Combined
+      partFields: Mark,Comments
+      partSeparators: " - "
+    note: >
+      `expect: added` because `notASchedule` is a declared RESULT on this
+      fragment and correctly fills on the negative - it is naming what it could
+      not use, which is bookkeeping. `added` is the answer. The contract would
+      be better with `notASchedule` at role: accounting; that is the roles
+      session's call, not this batch's.
+
+  - fragment: remove-schedule-fields
+    write: true
+    expect: hidden
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: "Notes, Symbols & Schedules"
+      fieldNames: Mark
+      hideOnly: true
+      removeDependentRules: false
+    negative-set:
+      categoryName: Title Blocks
+      inViewOnly: "Notes, Symbols & Schedules"
+      fieldNames: Mark
+      hideOnly: true
+      removeDependentRules: false
+    note: >
+      hideOnly deliberately. Hiding is reversible and keeps the schedule's sorts
+      and filters working; removing the field takes them with it. A proof should
+      not need the stronger of two operations.
+
+  - fragment: set-schedule-appearance
+    write: true
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: "Notes, Symbols & Schedules"
+      fieldName: Mark
+      newHeading: AJ Heading
+      columnWidthMm: 0
+      alignment: ""
+      headingSideways: false
+      hideOrShow: ""
+    negative-set:
+      categoryName: Title Blocks
+      inViewOnly: "Notes, Symbols & Schedules"
+      fieldName: Mark
+      newHeading: AJ Heading
+      columnWidthMm: 0
+      alignment: ""
+      headingSideways: false
+      hideOrShow: ""
+    note: >
+      Only the heading is changed. Width 0 and empty alignment/visibility mean
+      "leave it alone" in this fragment, so the edit is one reversible thing.
+
+  - fragment: set-schedule-filters
+    write: true
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: "Notes, Symbols & Schedules"
+      filterFieldName: Mark
+      filterValue: ""
+      matchType: has value
+    negative-set:
+      categoryName: Title Blocks
+      inViewOnly: "Notes, Symbols & Schedules"
+      filterFieldName: Mark
+      filterValue: ""
+      matchType: has value
+    note: >
+      matchType "has value" needs no filterValue, so the positive does not
+      depend on knowing what is IN the column - only that the column exists.
+
+  - fragment: set-schedule-sort-group
+    write: true
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: "Notes, Symbols & Schedules"
+      sortFieldNames: Mark
+      descending: false
+      showHeader: false
+      showFooter: false
+      showGrandTotal: false
+      itemized: true
+    negative-set:
+      categoryName: Title Blocks
+      inViewOnly: "Notes, Symbols & Schedules"
+      sortFieldNames: Mark
+      descending: false
+      showHeader: false
+      showFooter: false
+      showGrandTotal: false
+      itemized: true
+
+  # ------------------------------------------------------------ text notes
+  # The negative here DOUBLES AS THE PROBE. Section 3c records that `field` was
+  # "not discoverable from the source" - the run that found `field=text` wrong
+  # had no way to learn the right name. PR #50 changed exactly that: a field on
+  # not one element handed in is refused, and the refusal NAMES what the first
+  # element does carry. So if the positive below is wrong, the negative says
+  # what to put there instead.
+
+  - fragment: edit-text-values
+    write: true
+    expect: changed
+    set:
+      categoryName: Text Notes
+      inViewOnly: "Notes, Symbols & Schedules"
+      field: Text
+      mode: prefix
+      text: "AJ-"
+      replacement: ""
+    negative-set:
+      categoryName: Text Notes
+      inViewOnly: "Notes, Symbols & Schedules"
+      field: ZZZNOTHINGHERE
+      mode: prefix
+      text: "AJ-"
+      replacement: ""
+    note: >
+      `expect: changed` because `blank`, `untouched`, `readOnly` and `absent`
+      are all declared results on this fragment and any of them can legitimately
+      fill on a positive run. `changed` is the answer. Both legs are the SAME
+      seven notes and differ only in `field`.
