@@ -491,8 +491,9 @@ arrived, is the shape the library wants.
 
 ## 3f. PROVED, BUT QUERIED — worth a second look at the sit-down
 
-Marked `PROVEN` and standing, but the owner raised a doubt on the day and it is recorded rather than
-argued away. A proof nobody questions is not the same as a proof that survived being questioned.
+Marked `PROVEN` and standing when this section was opened, but the owner raised a doubt on the day and
+it is recorded rather than argued away. A proof nobody questions is not the same as a proof that
+survived being questioned.
 
 | Fragment | Proved on | The doubt |
 |---|---|---|
@@ -500,6 +501,22 @@ argued away. A proof nobody questions is not the same as a proof that survived b
 
 **If the doubt is upheld, the remedy is to re-run it, not to un-prove it by argument** — and D-30's
 fingerprint means the record says exactly what was run, so a better arrangement can replace it cleanly.
+
+### SETTLED, and not by argument — 2026-09-09
+
+The doubt was upheld, and the fix in §4 is what settled it: `viewRefused` now means only that the VIEW
+refused, so the stronger negative the owner asked for — a 3D view whose selection has nothing to
+enclose — is finally distinguishable from the weak one a plan view guarantees.
+
+**`set-view-section-box` is back at `DRAFT`, and the reason matters more than the fact.** It was not
+un-proved because the argument won. It was un-proved because the CODE MOVED: fixing the doubt changed
+the implementation, the fingerprint stopped matching, and a proof is evidence about the bytes it was
+taken against. Set back by the owner on 2026-09-09; the `proof:` block is kept as the record of what
+was run.
+
+> Un-proving by argument is what this section refuses. Un-proving because the implementation changed
+> under the proof is not an argument at all — it is the fingerprint doing its job, and the only
+> correct response to it is to run the fragment again.
 
 ---
 
@@ -894,6 +911,51 @@ enough:
 so the work-counter scan missed it entirely. That is the argument for §3h.2 doing the declarations
 explicitly rather than leaving the patterns to guess.
 
+### ONE SELECTION CANNOT ARRANGE A TWO-SET FRAGMENT — found 2026-09-09
+
+`find-nearest-elements` refused, and the refusal is the clearest statement of a structural gap that
+nothing else in this file names:
+
+> *"Cannot run: `elements (IList<Element>)`, `targets (IList<Element>)` were never supplied. There is a
+> selection, but this fragment needs 2 separate sets of elements and one selection cannot say which is
+> which. Run the fragments that produce them first. Running anyway would report 0 results, which reads
+> as 'there was nothing to find' rather than 'nobody was asked'."*
+
+The setup chain leaves exactly one `elements` behind, and `set-selection` consumes exactly one. A
+fragment comparing **two** sets — nearest-to, clashes-against, this-versus-that — has no arrangement at
+all in a job file today, however its inputs are typed.
+
+**This is a job-file and chaining gap, not a D-54 one.** D-54 carries the caller's half across as text;
+a second set of elements is not text. Closing it means either a chain that can bind two named sets, or
+a `--set-b` alongside `--set`. Neither exists.
+
+Named so far: `find-nearest-elements`, `find-clashes` (`against`), `measure-distance` (`first`,
+`second`), `compare-elements` would have been one had it not taken its pair from a single selection.
+
+### Two more shapes D-54 refuses, and one that does NOT bind from the chain
+
+§3i lists `FamilySymbol`, `Material`, `OverrideGraphicSettings`, `Curve`, `ParameterValue` and bare
+`Element`. Two more, both met on 2026-09-09:
+
+| Shape | Fragment | What it said |
+|---|---|---|
+| `IDictionary<string, double>` | `check-minimum-clearance` | `rules` is a value the caller supplies. A dictionary has no name to look up, so this belongs with `OverrideGraphicSettings` rather than with the resolvable names |
+| `IList<Element>` **as a named need** | `check-room-mep-completeness` | `devices` was never supplied, even with a selection present |
+
+**That second row corrects an assumption made earlier the same day.** `remove-view-template` showed
+`views (IList<View>)` resolving from a single name, and it was reasonable to expect `IList<Element>` to
+bind from the chain the same way. It does not. A `View` has a name Revit can look up; an arbitrary
+element list has none, so a *named* element need has to come from a previous fragment's `provides` and
+not from the selection — which is D-29's job, and is exactly what the two-set gap above blocks.
+
+### Two more with no positive case in this model
+
+- `check-flow-direction` — `bothOut 0`, `bothIn 0` on mechanical equipment. No contradictory joints
+  exist here. Its two results are also the clearest example in §3h.2 of names that LOOK like
+  bookkeeping and are the answer.
+- `audit-mep-openings` — `stale 0`, `combined 0`, `unhosted 0` on 307 ducts in L3, the richer
+  selection. Consistent with the earlier run on 22, so it is content rather than scale.
+
 ### What this says about where the proving goes next
 
 The MODIFY pool is not blocked on the write engine any more — three fragments proved through it today
@@ -923,7 +985,7 @@ Both are offline work. Neither needs Revit to build.
 | `set-schedule-sort-group` | Same cast, answering `sorted 0` — which reads as "already in that order". Resolution added, plus a refusal when nothing handed in was a schedule and when no sort field was named. As with the filter fragment, `cannotSortBy` stays a finding about the schedule and `refused` is the fragment declining. Fixed 2026-09-09 |
 | `export-schedule-to-csv` | Same cast. A missing export folder and a selection holding no schedule both came back as "nothing came out"; only the first said why. Resolution added, and the second now refuses too. Fixed 2026-09-09 |
 | `add-revision-cloud` | **The `ViewSchedule` §3e lists it for is a view-type guard** (`view is ViewSchedule`), not a cast of a selected element — it never consumes a schedule as input, so the placement fix does not apply and was not made. **What was wrong is next to it: `viewRefused` was one bool covering two causes**, *"the view will not take a cloud"* **and** *"that revision does not exist"*, and the file's own comment admitted the conflation. Those have opposite fixes — change the view, or make the revision — and a caller told only `viewRefused true` goes looking at the drawing when the revision is what is missing. `viewRefused` now means exactly its name; a missing revision is its own sentence; and a new `refusalReasons` carries the words for both, naming **which** of the five view types refused and why. The three ways a single element misses out (not visible in this view, too small to cloud, Revit declined the rectangle) each get a sentence carrying a **count** rather than one line per element. An empty `elements` with a good view and a real revision — four zeroes that read as "nothing to cloud" — is refused too. Fixed 2026-09-09 |
-| `set-view-section-box` | **`viewRefused` meant two opposite things.** It was set when the VIEW could not carry a section box — a plan, a section, a template — and again when the view was a perfectly good 3D view and **nothing handed in had any geometry**. Opposite fixes: open a 3D view, or hand over something measurable. **This is also §3f's recorded doubt, and it could not be settled while the two shared a word:** the stronger negative the owner asked for — a 3D view whose selection has nothing to enclose — reported `viewRefused true` exactly like the weak one. It now leaves `viewRefused` **false** and says in words that the view was fine and the selection was not. `viewRefused` means only its name; a new `refusalReasons` carries the words and names **which** view type refused. Two further silences closed while in there: an **empty** `elements` in a good 3D view answered `applied false`, `enclosed 0`, `noGeometry 0`, `viewRefused true` — blaming the view for an empty selection; and **a margin negative enough to turn the box inside out** was applied and reported `applied true`, cutting the view to an empty screen, which reads as though the model had been deleted. `heron-status` and the `proof:` block are untouched — **but the proof of 2026-09-09 is now stale**: the fragment leaves an output it did not have, so the fingerprint no longer matches. Nothing it recorded is contradicted. Fixed 2026-09-09 |
+| `set-view-section-box` | **`viewRefused` meant two opposite things.** It was set when the VIEW could not carry a section box — a plan, a section, a template — and again when the view was a perfectly good 3D view and **nothing handed in had any geometry**. Opposite fixes: open a 3D view, or hand over something measurable. **This is also §3f's recorded doubt, and it could not be settled while the two shared a word:** the stronger negative the owner asked for — a 3D view whose selection has nothing to enclose — reported `viewRefused true` exactly like the weak one. It now leaves `viewRefused` **false** and says in words that the view was fine and the selection was not. `viewRefused` means only its name; a new `refusalReasons` carries the words and names **which** view type refused. Two further silences closed while in there: an **empty** `elements` in a good 3D view answered `applied false`, `enclosed 0`, `noGeometry 0`, `viewRefused true` — blaming the view for an empty selection; and **a margin negative enough to turn the box inside out** was applied and reported `applied true`, cutting the view to an empty screen, which reads as though the model had been deleted. **The proof of 2026-09-09 went stale the moment this was fixed** — the fragment leaves outputs it did not have, so the fingerprint no longer matches — and `heron-status` was set back to `DRAFT` on the owner's instruction the same day. The `proof:` block is KEPT: nothing it recorded is contradicted, it is the record of what was actually run, and `can_promote` refuses to carry a stale proof back to PROVEN, so keeping it costs nothing and re-proving it starts from a written arrangement rather than a blank page. Fixed 2026-09-09 |
 
 ---
 
