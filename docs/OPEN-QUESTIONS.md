@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 42 answered · 8 open · nothing blocking any phase**
+**Progress: 42 answered · 9 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -304,6 +304,54 @@ A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
 ---
 
 ## Tier 3 — Needed soon
+
+### 🟠 Q-51 — What guards the path from retrieval to context, on the day Heron indexes text it did not write? *(new, 2026-09-09)*
+
+Found by reading [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) at file level
+([33 §5.2](33-external-repository-research.md)). Its `agentdb-retrieval-guard.ts` scans every chunk
+coming back from vector search **before** it is assembled into a prompt, and reports 93–100% undefended
+attack success against poisoned memory entries.
+
+**Heron already enforces [Golden Rule 19](14-golden-rules.md) where it counts, and that half is done.**
+Risk comes from the operation registry inside the add-in, never from the request — no text arriving on
+the pipe can raise Heron's permission level.
+
+**The half not yet faced.** Rule 19 governs what text may *authorise*; it says nothing about the text
+itself travelling upward. Heron makes no model calls ([D-01](DECISIONS.md), [D-58](DECISIONS.md)), so
+Heron cannot be injected — **Heron is the carrier**. [`heron_context.py`](../brain/heron_context.py)
+assembles parts, stamps each with `source`, and hands them to the host.
+
+Today that is safe for a reason with an expiry date: **every source is Heron's own** — the request, the
+fragment library, its tests, the API surface. The exception is already written into the part list:
+
+```python
+STANDARD = "standard"        # the clauses cited - source does not exist yet
+```
+
+**That source is exactly what the RAG work creates** — project standards, specifications, family
+descriptions, imported packages. Retrieval becoming useful and Heron carrying text it did not write are
+the same event, so the guard belongs in the design of the index rather than bolted on after it.
+
+**Three shapes, and they are not equivalent:**
+
+1. **Mark, do not scan.** Every part already carries `source`; a part from an indexed document is
+   labelled untrusted and the host decides. Cheapest, honest, and it puts the judgement where
+   [D-01](DECISIONS.md) already puts the model.
+2. **Scan and flag.** Heron screens retrieved text and annotates what looks like an instruction. Needs a
+   pattern library Heron would have to own and keep current.
+3. **Scan and refuse.** Strict mode. A false positive silently drops the clause a modeller needed, which
+   is the plausible-zero failure this repository legislates against.
+
+**One detail worth keeping whatever is chosen**, because it is not obvious: ruflo **flags oversized
+chunks rather than truncating them** — truncating lets an attacker pad a payload past the scanner's own
+window.
+
+**What is not in doubt:** a retrieved clause is data. The question is only whether Heron says so, and to
+whom.
+
+**Answer:**
+
+---
 
 ### 🟠 Q-50 — Should a preview select the elements it is about to change? *(new, 2026-09-09)*
 

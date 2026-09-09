@@ -67,7 +67,7 @@ Research further.**
 | [`obra/superpowers`](https://github.com/obra/superpowers) | agents coding before understanding | brainstorm → design → plan → execute, with review checkpoints; skills as the unit | the discipline is [27](27-build-order.md)'s and this repository's practice | its skills are general software workflows; Heron's name **capabilities**, deliberately ([09](09-skills-and-fragments.md)) | MIT — compatible | **Adopt concept** — already held |
 | [`garrytan/gstack`](https://github.com/garrytan/gstack) | solo developer without a team | a seven-stage cycle and 23 named specialist roles | [28](28-agent-registry.md) already defines 250 agents by department | adding 23 more roles creates a **second registry**, which is [32 §5](32-master-architecture-reconciliation.md)'s rejection of the incoming §6.7 repeated | MIT — compatible | **Reject** |
 | [`affaan-m/ECC`](https://github.com/affaan-m/ECC) — [§5.1](#51-affaan-mecc) | plans lost in chat, standards forgotten | **the plan as an artifact the human points at**, not chat history; hooks that **block the tool call** rather than checks a person remembers to run | the artifact idea is [23](23-heron-kernel.md)'s checkpoints and [`heron_workflow.py`](../mcp/server/heron_workflow.py). `tools/check-*.py` hold the same *rules* but **nothing runs them automatically** — [§5.1](#51-affaan-mecc) corrects the page-level claim that they are the equivalent | 68 agents, 286 skills, 94 commands. The scale IS the thing being rejected — [D-01](DECISIONS.md) gives the host the commands and [09](09-skills-and-fragments.md) gives skills capabilities | MIT — but [§5.1](#51-affaan-mecc) names a second project inside it | **Adopt the artifact principle, reject the scale.** File-level pass added two items — see [§5.1](#51-affaan-mecc) |
-| [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) | orchestrating many agents | swarm coordination; **Raft, Byzantine and Gossip consensus**; 100+ agents | almost none. Heron has **one Revit, one pipe, one queue, one handler** ([D-09](DECISIONS.md)) | consensus answers *"which of my disagreeing replicas is right"*. Heron has no replicas. The incoming §10.2 says it itself: *avoid unnecessary agent complexity* | MIT — compatible | **Reject** |
+| [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) — [§5.2](#52-ruvnetruflo) | orchestrating many agents | swarm coordination; **Raft, Byzantine and Gossip consensus**; 100+ agents. **Under it, a security programme the landing page does not advertise** — a guard between retrieval and context assembly | almost none of the swarm. Heron has **one Revit, one pipe, one queue, one handler** ([D-09](DECISIONS.md)) — but the retrieval guard is aimed at the exact path Heron's RAG work will create ([§5.2](#52-ruvnetruflo)) | consensus answers *"which of my disagreeing replicas is right"*. Heron has no replicas. **314 MCP tools against Heron's 14** | MIT — compatible | **Reject the swarm** — and [§5.2](#52-ruvnetruflo) takes one question from underneath it |
 | [`thedotmack/claude-mem`](https://github.com/thedotmack/claude-mem) | context lost at compaction | capture the session, **compress it**, inject relevant context next time | the *lifecycle* is [10](10-memory-and-knowledge.md)'s. The *capture everything* half is the opposite of Heron's rule | it captures whole sessions and stores them in ChromaDB, and part of it is a paid subscription. [D-24](DECISIONS.md) and [D-26](DECISIONS.md) require local, free, offline and no account | Apache-2.0 — compatible | **Reject the mechanism**; the selective-memory principle is already held |
 | [`PrimeIntellect-ai/prime-agent`](https://github.com/PrimeIntellect-ai/prime-agent) | long-running autonomous work | **bounded autonomous mode** — explicit token and time budgets; sessions that survive a disconnect | the budget idea belongs beside [19 §2](19-context-and-cost.md)'s. Session survival is [23](23-heron-kernel.md)'s checkpoints | its bounds are for unattended running. Heron's [Golden Rule 9](14-golden-rules.md) puts a person in front of a high-risk action instead | MIT — compatible | **Research further** — only the *bound*, and only once [19 §2](19-context-and-cost.md)'s budgets are agreed |
 | [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) | domain skills scattered across documentation | a **domain skill library** with per-skill metadata and host auto-discovery | the shape is [`brain/skills/`](../brain/skills/) and [09](09-skills-and-fragments.md) | **individual skills carry their own licences**, which the repository says explicitly. A library whose entries are separately licensed is a supply-chain question, not a reading question | MIT for the repository; **per-skill otherwise** | **Adopt concept** — already held. Its licence structure is a warning worth carrying |
@@ -242,3 +242,106 @@ a tidy-up.
 
 **Decision: unchanged.** Adopt the artifact principle, reject the scale. The file-level pass adds two
 questions ([Q-49](OPEN-QUESTIONS.md), [Q-50](OPEN-QUESTIONS.md)) and corrects one claim.
+
+---
+
+### 5.2 `ruvnet/ruflo`
+
+**Read at** `e341ec8c4aba8ea616499180dee53035af7e295c`, committed 2026-09-08. MIT.
+
+**Opened:** `.harness/mcp-policy.json`, `.harness/README.md`,
+`v3/@claude-flow/memory/src/agentdb-retrieval-guard.ts`,
+`v3/@claude-flow/hooks/src/workers/memory-poison-forensics.ts`, `README.md`, and the tree —
+2,154 TypeScript files, 1,886 markdown, 39 Rust.
+
+**The rejection stands and now has a number.** The matrix said *"almost none"* applies to Heron. Its own
+README says a user need not *"learn 314 MCP tools or 26 CLI commands"*. **Heron has 14 MCP tools.** That
+is not a difference of degree.
+
+**But the rejection was pointed at the wrong thing, and the repository is worth more than its row.**
+Under the swarm is a security programme, and two of its files are directly about the problem Heron is
+walking towards.
+
+#### The finding that matters most, and it is about RAG
+
+`agentdb-retrieval-guard.ts` puts a guard **between retrieval and context assembly**: every chunk coming
+back from the vector search is scanned before it is allowed into the prompt. Its reasoning, from the
+file:
+
+> AgentDB's retrieval path has zero certified defenses against poisoned memory entries — SMSR shows
+> 93-100% undefended attack success, reduced to 0% behind a certified content guard.
+
+And one engineering detail that is worth the whole read:
+
+> Oversized chunks are flagged (or dropped in strict mode) **rather than truncated** — truncation would
+> let an attacker pad a payload past the guardrail's own scan window.
+
+**Heron enforces [Golden Rule 19](14-golden-rules.md) where it counts today, and that half is done
+properly.** Risk comes from the operation registry inside the add-in, never from the request
+([`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs): *"Nothing in the request decides
+the operation name"*). **No text arriving on the pipe can raise Heron's permission level**, which is
+exactly what Rule 19 says and exactly where a rule of that kind has to live.
+
+**The other half has not arrived yet, and the code already says so.** Rule 19 governs what text may
+*authorise*. It says nothing about what happens to the text itself on the way up. Heron makes no model
+calls ([D-01](DECISIONS.md), [D-58](DECISIONS.md)) — so Heron is not the thing that can be injected. It
+is the thing that **carries**. [`heron_context.py`](../brain/heron_context.py) assembles parts and hands
+them to the host, and every part is stamped with `source`, which the rendered context prints.
+
+Today that is safe for a reason that is about to expire: **every source is Heron's own** — the caller's
+request, the fragment library, its tests, the API surface. There is one exception and it is already
+written down, in the part list itself:
+
+```python
+STANDARD = "standard"        # the clauses cited - source does not exist yet
+```
+
+**The day that source exists is the day Heron carries text it did not write** — a project standard, a
+specification, a family description, an imported package. That is the same day the RAG work makes
+Heron's retrieval useful, so the two arrive together and the guard has to be designed with the index
+rather than added after it.
+
+Recorded as **[Q-51](OPEN-QUESTIONS.md)**. Nothing is built: there is nothing to guard yet, and a
+scanner written against no corpus is a scanner written against a guess.
+
+`memory-poison-forensics.ts` is the same programme's second phase — anomaly detection on write
+*sequences* rather than content. It does not transfer: it exists because *"AgentDB accepts writes from
+any swarm agent"*, and Heron has one writer, one pipe, one queue ([D-09](DECISIONS.md)). Recorded here
+only so the reason is a reason and not an omission.
+
+#### Default-deny: Heron's is the stronger one, and one half of it is not a gate
+
+`.harness/mcp-policy.json` declares `"defaultDeny": true`, `allowShell: false`, `auditLog: true`,
+`requireApprovalForDangerous: true`, a dangerous-pattern list and `maxToolCallsPerTurn: 200`.
+
+Heron holds four of those five, and holds them better, because **ruflo's is a JSON file a scanner
+reads and Heron's is a branch in the one code path every operation passes**
+([`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs)):
+
+> UNDECLARED IS REFUSED, never assumed harmless. The list of what IS available comes from the registry
+> rather than being typed here.
+
+Same guard, in order: undeclared refused → emergency stop for anything at `MODIFY` or above → permission
+level. A config file cannot be forgotten by a code path that does not consult it; a code path every
+operation passes cannot be forgotten at all.
+
+**One thing worth saying plainly, because the file-level read is what showed it.**
+[`heron_tools.py`](../mcp/server/heron_tools.py) has the right shape — `risk_of()` raises `NotDeclared`
+rather than defaulting, and its own message says *"being absent is a refusal, not a risk of zero."* But
+at runtime it is consulted in exactly **one** place, `heron_mcp_server.py:486`, to classify a failure,
+with the tool name written as a string literal. **It is a declaration and a cross-check, not a gate**,
+and the gate is in the add-in where it belongs — the only side that can see the model is the only side
+whose refusal means anything. That is right. It is worth writing down so nobody later mistakes the
+Python registry for the thing that stops something.
+
+**The fifth, `maxToolCallsPerTurn`, is not Heron's.** Bounding a loop is the host's job
+([D-01](DECISIONS.md)). Named here so its absence is a decision.
+
+#### Licence
+
+MIT, and clean at the top level. Nothing is taken.
+
+**Decision: unchanged — Reject.** The swarm, the consensus and the 314 tools are the thing being
+rejected and the file-level pass makes the rejection sharper, not softer. **One question comes out of
+it** ([Q-51](OPEN-QUESTIONS.md)), and it is the most valuable single item the whole research programme
+has produced, because it lands on work that has not been done yet rather than on work already finished.
