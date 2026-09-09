@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -73,6 +73,33 @@ contract:
       type: int
     - name: elementsRead
       type: int
+
+proof:
+  date: '2026-09-08'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  positive_case: 'run as it would normally be run. returned elementsRead 10, findings 74 item(s)
+    [71 parameter(s): 32 on the instance, 39 on the type. Read fr..., INSTANCE parameters,
+    from ''Heat Recovery Unit (HRU)'' (id 136...,   Critical Path                            Integer   built-i...,
+    ...], includeTypeParameters true, instanceCount 32, kindOf Func`2, parameterNames 71 item(s)
+    [Critical Path, Image, Category, ...], readOne Action`2, sampleOnly false, seen HashSet`1,
+    typeCount 39, valueOf Func`2. inputs came elements from the selection (10); sampleOnly
+    as given; includeTypeParameters as given. on Snowdon-scratch_ajmal.al'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-parameter-inventory\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 5 different inputs:\n\n      22 ducts in M1 -> parameterNames 93 item(s) [Critical\
+    \ Path, Image, System\n      the duct tags in M1 -> parameterNames 22 item(s) [Category,\
+    \ Design Option, Ang\n      the air terminals in M1 -> parameterNames 86 item(s) [Image,\
+    \ System Abbreviation, \n      the mechanical equipment in L3 -> parameterNames 71 item(s)\
+    \ [Critical Path, Image, Catego\n      the ducts in L3 -> parameterNames 93 item(s) [Critical\
+    \ Path, Image, System\n\n    Different inputs, exact matches every time. A fragment falling\
+    \ back to the active view, the whole model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 405912eb30113453
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

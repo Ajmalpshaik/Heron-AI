@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PRF-017
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -82,6 +82,35 @@ contract:
       type: int
     - name: totalTriangles
       type: long
+
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 17356
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned cappedOut
+    0, findings 3 item(s) [1 type(s) measured, 22 instance(s) between them, 2024 triang...,   family:
+    type                                             c...,   Round Duct: Tees                                          ...],
+    heaviestCost 2024, heaviestTypeName Round Duct: Tees, instancesPerType 1 entry(ies), levelNames
+    3 item(s) [coarse, medium, fine], levels 3 item(s) [Coarse, Medium, Fine], listTop 5,
+    maxTypes 5, ordered 1 item(s) [  Round Duct: Tees                                          ...],
+    rankByCost 1 item(s) [2024], rankByName 1 item(s) [  Round Duct: Tees                                          ...],
+    rows 0 item(s), taken 1 item(s) [True], totalTriangles 2024, trianglesAt Func`3, typeOrder
+    1 item(s) [139186], typesMeasured 1, typesUnmeasured 0, withoutType 0. inputs came elements
+    from the selection (22); maxTypes as given; listTop as given. on Snowdon-scratch_ajmal.al'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-geometry-complexity\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 5 different inputs:\n\n      22 ducts in M1 -> totalTriangles 2024\n      the\
+    \ duct tags in M1 -> totalTriangles 0\n      the air terminals in M1 -> totalTriangles\
+    \ 1320\n      the mechanical equipment in L3 -> totalTriangles 3920\n      the ducts in\
+    \ L3 -> totalTriangles 28244\n\n    Different inputs, exact matches every time. A fragment\
+    \ falling back to the active view, the whole model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6b2b8e978eb11a40
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

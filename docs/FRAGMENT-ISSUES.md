@@ -836,6 +836,56 @@ Four of the six `EXECUTE` fragments are still DRAFT — `isolate-elements`, `set
 `switch-active-project`, `zoom-to-elements` — and `set-selection` runs in every setup chain without a
 transaction, so the need is per-fragment rather than per-risk.
 
+### Tracking (D-53) proved five, and the harness nearly proved a sixth wrongly — 2026-09-09
+
+`set-selection` was still DRAFT while running in **every setup chain in every job file** — everything
+proved this week leaned on it. It provides one thing, `selectedCount`, and it is the count of whatever
+it was handed, so no arrangement makes it empty and D-53 is the route. It now tracks 22, 9, 10, 10, 307
+across five selections.
+
+| Proved by tracking | Field | Answers across five inputs |
+|---|---|---|
+| `set-selection` | `selectedCount` | 22, 9, 10, 10, 307 |
+| `report-geometry-complexity` | `totalTriangles` | 2024, 0, 1320, 3920, 28244 |
+| `report-parameter-inventory` | `parameterNames` | 93, 22, 86, 71, 93 |
+| `find-untagged-elements` | `elements` | 14, 9, 10, 10, 307 |
+
+`compare-elements` was proved the ordinary way instead, and the reason matters: tracking showed duct
+tags giving `differing 0`, so it **can** come back empty. D-53 is for fragments that cannot. Given a
+real negative it answered `differing 29` against `differing 0`.
+
+### A harness bug that reads like a clean proof
+
+The tracking runner drives a CHAIN — `select-by-category-name` → `set-selection` → the fragment — and
+`prove` prints one provides block per fragment. The first version searched the whole output for the
+field name. `elements` is declared by the selector as well as by most fragments under test, so it read
+the **selector's** copy and produced five rows that tracked the input perfectly, because they *were*
+the input.
+
+**`find-untagged-elements` was promoted on that evidence and had to be reverted.** Its real answer for
+the L3 ducts is 235 untagged, not the 307 it was handed. Two guards now, because the first alone is not
+enough:
+
+1. Find the fragment's own block by slug, then the field inside it.
+2. **Refuse to write any rows unless at least one agrees with what `validate` recorded for that
+   fragment running alone.** This is the guard that would have caught it: not one of 22, 9, 10, 10, 307
+   matched the recorded 235 or 307.
+
+> Rows that match the input exactly are the thing to distrust. A real describer's answer *differs* from
+> what it was given — 22 ducts, 14 untagged.
+
+### Two counters that were not defects, checked before filing
+
+- `compare-elements` answered `comparedCount 8` for every input including 307 ducts. The code is
+  `elements.Take(8)` and the comment says *"comparedCount says how many were actually looked at"*.
+  Deliberate and documented. Declared `accounting`, along with `identicalCount`.
+- `select-subcomponents` answered `elements 0` for all five, agreeing with its own recorded run.
+  Nothing in this model has nested components. Content, not code.
+
+**The naming patterns catch a shape, not a meaning.** `comparedCount` ends in `Count`, not `Compared`,
+so the work-counter scan missed it entirely. That is the argument for §3h.2 doing the declarations
+explicitly rather than leaving the patterns to guess.
+
 ### What this says about where the proving goes next
 
 The MODIFY pool is not blocked on the write engine any more — three fragments proved through it today
