@@ -323,7 +323,23 @@ narrower than the list implies — and [D-25](DECISIONS.md) plus
 [31 — Studying The Existing Libraries](31-studying-the-existing-libraries.md) already fix the method,
 which is the part that usually goes wrong.
 
-**Verdict: RESEARCH FURTHER.** Not before §4.1 and §4.2.
+**Verdict: DONE** — [33 — the external repository research matrix](33-external-repository-research.md),
+2026-09-09, after §4.1 and §4.2 as this entry required.
+
+**The prediction above held, and more strongly than expected.** Nine of the fifteen needed no action.
+**Four of them independently arrived at designs Heron already has** — hybrid retrieval fused by
+reciprocal rank, deterministic-pipeline-before-model, compress what came back and never what was asked,
+and incremental indexing by content hash. That convergence is worth more than any adoption, because it
+is evidence about a design already built.
+
+**Nothing is adopted as code**, from any of them. Three ideas survive: **anonymised** peer review from
+`llm-council` (a real sharpening of [D-39](DECISIONS.md)), **tiered loading** from OpenViking, and the
+*shape* of a review benchmark from `aacr-bench`.
+
+**And one licence finding that could have cost something.** OpenViking — the most interesting project in
+the list — is **AGPLv3** against Heron's Apache 2.0 ([D-08](DECISIONS.md)). Its idea is taken; its code
+must never be read for transcription. §10.15's *"Claude CEO"* **could not be identified**, so nothing was
+studied and nothing is claimed.
 
 ---
 
