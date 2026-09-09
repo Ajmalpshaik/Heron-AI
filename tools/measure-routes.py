@@ -74,6 +74,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+import heron_fragment as FRAG                      # noqa: E402
+
 FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 
 # The routes heron_search.ask() can return, in pipeline order. Named here so
@@ -88,25 +90,20 @@ NEITHER = ("nothing",)
 
 
 def utterances():
-    """(fragment id, declared phrasing) for the whole library."""
-    try:
-        import yaml
-    except ImportError:
-        sys.stderr.write("This needs PyYAML: pip install --user pyyaml\n")
-        raise SystemExit(2)
+    """((fragment id, declared phrasing) pairs, problems) for the whole library.
 
+    Through heron_fragment.load_all() rather than parsing here. The first
+    version did its own `yaml.safe_load` and skipped anything malformed in
+    silence, so a broken fragment would simply have been absent from a share
+    computed over "the library" - D-48's failure, in a report rather than a
+    loader. load_all names each one and main() prints them.
+    """
+    found, problems = FRAG.load_all(FRAGMENTS)
     out = []
-    for name in sorted(os.listdir(FRAGMENTS)):
-        path = os.path.join(FRAGMENTS, name, "fragment.yaml")
-        if not os.path.exists(path):
-            continue
-        with open(path, encoding="utf-8") as fh:
-            doc = yaml.safe_load(fh)
-        if not doc or not doc.get("id"):
-            continue
-        for said in doc.get("utterances") or []:
-            out.append((doc["id"], said))
-    return out
+    for frag in found.values():
+        for said in (frag.data.get("utterances") or []):
+            out.append((frag.id, said))
+    return out, problems
 
 
 def live_cache(store):
@@ -188,7 +185,13 @@ def main(argv):
     import heron_search as SEARCH
     import heron_retrieve as RETRIEVE
 
-    said = utterances()
+    said, problems = utterances()
+    if problems:
+        print("FRAGMENTS THAT COULD NOT BE READ  (%d) - D-48: named, never "
+              "skipped in silence" % len(problems))
+        for line in problems:
+            print("  %s" % line)
+        print("")
     if not said:
         print("No fragment declares an utterance, so there is nothing to ask.")
         return 0

@@ -95,6 +95,8 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+import heron_fragment as FRAG                      # noqa: E402
+
 FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 
 # How many requests to time. Small enough to run in seconds, large enough that
@@ -102,33 +104,27 @@ FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 DEFAULT_REQUESTS = 30
 
 
-def load_yaml():
-    try:
-        import yaml
-    except ImportError:
-        sys.stderr.write("This needs PyYAML: pip install --user pyyaml\n")
-        raise SystemExit(2)
-    return yaml
-
-
 def library():
-    """(fragment ids, utterances) from disk. The ids, because a count is not
-    an identity - see check-routing.py."""
-    yaml = load_yaml()
-    ids = set()
+    """(fragment ids, declared utterances) - through the canonical loader.
+
+    THE PARSE IS heron_fragment.load_all()'s. The first version read and
+    parsed each fragment.yaml here with its own `except Exception: continue`,
+    which skipped a malformed one in silence - so the "library" line would have
+    been short by one and nothing would have said why. D-48 settled that one
+    broken part costs one part and that the part is NAMED; load_all() returns
+    its problems and main() prints them.
+
+    THE IDS AND NOT THE COUNT - a count is not an identity, which
+    check-routing.py learned when three sessions each had exactly 226
+    fragments and the store held another session's library.
+    """
+    found, problems = FRAG.load_all(FRAGMENTS)
+    ids = set(found)
     said = []
-    for name in sorted(os.listdir(FRAGMENTS)):
-        path = os.path.join(FRAGMENTS, name, "fragment.yaml")
-        if not os.path.exists(path):
-            continue
-        with open(path, encoding="utf-8") as fh:
-            doc = yaml.safe_load(fh)
-        if not doc or not doc.get("id"):
-            continue
-        ids.add(doc["id"])
-        for phrase in doc.get("utterances") or []:
+    for frag in found.values():
+        for phrase in (frag.data.get("utterances") or []):
             said.append(phrase)
-    return ids, said
+    return ids, said, problems
 
 
 def sample(phrases, count):
@@ -198,7 +194,13 @@ def main(argv):
     if "--requests" in argv:
         requests = int(argv[argv.index("--requests") + 1])
 
-    disk_ids, phrases = library()
+    disk_ids, phrases, problems = library()
+    if problems:
+        print("FRAGMENTS THAT COULD NOT BE READ  (%d) - D-48: named, never "
+              "skipped in silence" % len(problems))
+        for line in problems:
+            print("  %s" % line)
+        print("")
     if not phrases:
         print("No fragment declares an utterance, so there is nothing to ask.")
         return 0

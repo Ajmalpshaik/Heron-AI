@@ -67,6 +67,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+import heron_fragment as FRAG                      # noqa: E402
+
 FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 
 ANSWERED = "ANSWERED"
@@ -101,39 +103,48 @@ UNIT_WORDS = ("internal feet", "internal unit", "feet", "millimet", " mm",
               "normalis", "normaliz")
 
 
-def load_yaml():
-    try:
-        import yaml
-    except ImportError:
-        sys.stderr.write("This needs PyYAML: pip install --user pyyaml\n")
-        raise SystemExit(2)
-    return yaml
-
-
 def library():
-    """Every fragment as (id, folder, doc, source-or-None)."""
-    yaml = load_yaml()
+    """Every fragment as (id, folder name, parsed doc, raw yaml text, code).
+
+    THE PARSE IS heron_fragment.load_all()'s, NOT THIS FILE'S. The first
+    version read and parsed each fragment.yaml itself with a bare
+    `except Exception: continue`, which silently skipped anything malformed -
+    so a broken fragment would have been absent from a report that counts
+    fragments, and nothing would have said so.
+
+    D-48 is exactly that failure, from the other direction: one malformed
+    fragment.yaml once took down all 343 because a YAMLError is not a
+    ValueError. The rule it settled is "one broken part costs one part, NEVER
+    the whole library" - and the second half of it is that the part is NAMED.
+    load_all() returns its problems; this returns them too, and main() prints
+    them above everything else.
+
+    The RAW TEXT is read separately and deliberately: `safe_load` discards
+    comments, and question 11 looks for a unit stated in one.
+    """
+    found, problems = FRAG.load_all(FRAGMENTS)
     out = []
-    for name in sorted(os.listdir(FRAGMENTS)):
-        folder = os.path.join(FRAGMENTS, name)
-        path = os.path.join(folder, "fragment.yaml")
-        if not os.path.exists(path):
-            continue
-        with open(path, encoding="utf-8") as fh:
-            raw = fh.read()
+    for frag in sorted(found.values(), key=lambda f: f.id):
+        folder = frag.folder
+        name = os.path.basename(folder)
+        raw = ""
         try:
-            doc = yaml.safe_load(raw)
-        except Exception:
-            continue
-        if not doc or not doc.get("id"):
-            continue
+            with open(os.path.join(folder, "fragment.yaml"), encoding="utf-8") as fh:
+                raw = fh.read()
+        except (OSError, UnicodeDecodeError):
+            problems.append("%s: fragment.yaml could not be re-read for its "
+                            "comments" % name)
         impl = os.path.join(folder, "impl", "any", "fragment.cs")
         code = None
         if os.path.exists(impl):
-            with open(impl, encoding="utf-8") as fh:
-                code = fh.read()
-        out.append((doc["id"], name, doc, raw, code))
-    return out
+            try:
+                with open(impl, encoding="utf-8") as fh:
+                    code = fh.read()
+            except (OSError, UnicodeDecodeError):
+                problems.append("%s: impl/any/fragment.cs could not be read"
+                                % name)
+        out.append((frag.id, name, frag.data, raw, code))
+    return out, problems
 
 
 def needs_of(doc):
@@ -561,7 +572,15 @@ KEYS = {
 
 
 def main(argv):
-    entries = library()
+    entries, problems = library()
+    if problems:
+        print("FRAGMENTS THAT COULD NOT BE READ  (%d)" % len(problems))
+        print("-" * 70)
+        for line in problems:
+            print("  %s" % line)
+        print("  D-48: one broken part costs one part, never the whole")
+        print("  library - and the part is NAMED rather than skipped.")
+        print("")
     if not entries:
         print("No fragments found under brain/fragments.")
         return 2

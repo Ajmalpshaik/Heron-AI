@@ -504,7 +504,7 @@ looked like a finding. Every one was found by opening the file it named.
 ### And then the same discipline was turned on tonight's own code, which found seven more
 
 Everything above had already passed a 120-request sweep, three gates and its own tests. A line-by-line
-re-read afterwards — asking of each file *what does it claim, and what does it do* — found **eight
+re-read afterwards — asking of each file *what does it claim, and what does it do* — found **ten
 bugs, and not one of them was found by a test**:
 
 | | |
@@ -516,9 +516,10 @@ bugs, and not one of them was found by a test**:
 | **a measurement of the wrong line** | `measure-brain.py` timed `import heron_embed` and called it the D-49 measurement. `backend()` — where the encoder actually loads — was on the next line, **untimed** |
 | **a broken store reported as a fresh one** | `measure-routes.py` caught every exception and said *"the table does not exist yet"* |
 | **an excuse outliving its reason** | `check-reachable.py` never checked whether a `RECORDED` entry was still a hit, so it would go on excusing `remember()` after somebody wired it up — [D-54](DECISIONS.md) applied to a tool's own record |
+| **three tools swallowing a broken fragment** | each parsed `fragment.yaml` itself with `except Exception: continue`, so a malformed one vanished from a report that counts fragments and **nothing said so**. [D-48](DECISIONS.md) settled that one broken part costs one part *and is named*; [`heron_fragment.load_all()`](../brain/heron_fragment.py) already does both, and all three use it now |
 | **a fragment outside the checkout, lost** | `_fragment_dir()` split the stored folder on `/` before joining it onto `ROOT`. [`repo_relative()`](../brain/heron_fragment.py) returns an **absolute** path when there is no relative form — a library beside the user's data on another drive — and its docstring says callers may join it onto `ROOT` *because `os.path.join` discards everything before an absolute component.* Splitting defeats exactly that, and the packet then says *"in the store but not on disk in this working tree"* about a fragment that is on disk and is fine |
 
-**Six of the eight are one shape:** *a message that describes something other than what happened.* A
+**Seven of the ten are one shape:** *a message that describes something other than what happened.* A
 refusal that was a fault, a fresh machine that was a broken one, an excuse whose reason had gone, a
 measurement of the wrong line, and a count that was the shape of the library rather than a finding.
 

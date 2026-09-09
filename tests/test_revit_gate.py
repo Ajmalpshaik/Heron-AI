@@ -135,7 +135,7 @@ utterances:
 
 
 def verdicts_for(tool, root, slug):
-    entries = tool.library()
+    entries, _problems = tool.library()
     for entry in entries:
         if entry[1] == slug:
             return tool.ask(*entry)
@@ -399,7 +399,7 @@ def main():
         print("-" * 66)
         allowed = {tool.ANSWERED, tool.BY_DESIGN, tool.LOOK, tool.NEEDS_RUN}
         seen = set()
-        for entry in tool.library():
+        for entry in tool.library()[0]:
             for verdict, _detail in tool.ask(*entry):
                 seen.add(verdict)
         check(seen <= allowed,
@@ -412,7 +412,7 @@ def main():
     print("6. The real library, reported not asserted")
     print("-" * 66)
     tool = load()
-    entries = tool.library()
+    entries, problems = tool.library()
     counts = {}
     for entry in entries:
         for i, (verdict, _d) in enumerate(tool.ask(*entry), 1):
@@ -423,6 +423,13 @@ def main():
         print("        Q%-3d %4d worth a look" % (i, counts[i]))
     check(len(entries) > 100,
           "the whole library was read, not a corner of it (%d)" % len(entries))
+    # D-48: a broken fragment costs one fragment and is NAMED. The first
+    # version of library() parsed the yaml itself and skipped a malformed one
+    # in silence, so a report that counts fragments would have been short by
+    # one with nothing said.
+    check(not problems,
+          "every fragment loads through heron_fragment.load_all (%r)"
+          % problems[:3])
     check(counts.get(4, 0) == 0,
           "no fragment opens its own Transaction (%d) - Golden Rule 16 holds"
           % counts.get(4, 0))

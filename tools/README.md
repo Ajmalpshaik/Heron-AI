@@ -636,6 +636,13 @@ the shape of the library. What is an **inconsistency** rather than a design is a
 LOOK. The 114 has not been thrown away: it is said in the answer, because it is what makes a **proof**
 slow — `set-mep-size` timed out on 307 ducts and sized 22 immediately in a smaller view.
 
+**All three of these tools load fragments through
+[`heron_fragment.load_all()`](../brain/heron_fragment.py)**, not their own `yaml.safe_load`. Each parsed
+the library itself at first, with `except Exception: continue` — so a malformed `fragment.yaml` vanished
+from a report that counts fragments and nothing said so. [D-48](../docs/DECISIONS.md) settled that one
+broken part costs one part **and is named**; `load_all()` returns its problems and each tool prints them
+above everything else.
+
 **Question 14 went 143 → 59, and the rule came from the library rather than from reasoning.** A
 fragment that **writes** names what it refused **172** times out of 202; one that **reads** does it 45
 times out of 158. **85% against 28%** — the norm exists and is not uniform, and reading is where both
