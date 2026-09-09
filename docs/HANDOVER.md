@@ -1180,7 +1180,17 @@ python brain/heron_validate.py review add-schedule-fields
 python brain/heron_validate.py accept add-schedule-fields --by "Ajmal PS"
 ```
 
-Read `gaps:` first. All eight carry *no second route was run*.
+All eight in one go, once you have read them:
+
+```bash
+for f in measure-run-quantities color-by-parameter add-schedule-fields          add-schedule-combined-field remove-schedule-fields          set-schedule-appearance set-schedule-filters set-schedule-sort-group; do
+  python brain/heron_validate.py accept $f --by "Ajmal PS"
+done
+```
+
+Read `gaps:` first. All eight carry *no second route was run* — D-30's *"where one exists"* clause,
+undecided rather than failed. **`edit-text-values` is deliberately NOT in that list**; its draft says
+`NOT ESTABLISHED` for both legs.
 
 **2. `edit-text-values` HAS NEVER RUN — not one leg.** `Text Notes` is not selectable on the sheet
 `Notes, Symbols & Schedules`, so the seven notes §3c found live in some other view and **nothing in the
@@ -1259,6 +1269,7 @@ matched. **Pick one and stay on it for the whole run.**
 |---|---|
 | PR #50 | the twelve refusals |
 | PR #67 | §3j — the eight proofs, and the three arrangement findings |
+| PR #69 | the close-out: the duplicate `refused` that stopped main compiling, and the margin guard removed a second time |
 | `tools/jobs/reprove-refusals.yaml` | the schedule arrangement, on the sheet |
 | `tools/jobs/measure-only.yaml` | the duct arrangement, in `FloorPlan: M1` — two files because of finding 2 |
 
