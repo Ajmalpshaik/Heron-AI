@@ -47,7 +47,7 @@ contract:
       type: Level
       source: request
     - name: wallType
-      type: Element
+      type: WallType
       source: request
     # Internal units. Plan points; the Z is taken from the level.
     - name: points

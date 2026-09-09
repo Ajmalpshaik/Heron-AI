@@ -148,10 +148,24 @@ RECEIVABLE = frozenset([
     # and does not try to. It emits the job; Revit refuses the instance by name,
     # saying to select it instead.
     "View", "Level", "Category", "BuiltInCategory", "Element",
+    # THE NARROWED ONES. A contract that says WallType where it means one
+    # resolves among wall types alone, where "Generic - 200mm" is unique - the
+    # same name against every element type in the model may not be. Three are
+    # deliberately a base class because the fragment asking is polymorphic:
+    # HostObjAttributes branches to ceiling or floor, MEPCurveType to cable tray
+    # or conduit, FilterElement to a rule filter or a selection filter.
+    "WallType", "FloorType", "CeilingType", "FilledRegionType",
+    "HostObjAttributes", "MEPCurveType", "FamilySymbol",
+    "Phase", "FilterElement",
     # Lists, comma separated.
     "IList<string>", "List<string>", "ICollection<string>", "IEnumerable<string>",
     "IList<int>", "List<int>",
     "IList<double>", "List<double>",
+    # A POINT IS THREE NUMBERS IN MILLIMETRES, and a list of them is written
+    # with semicolons between and commas within - "0,0,0; 5000,0,0". One comma
+    # separated list cannot express it: "0,0,0,1000,0,0" is two points only if
+    # you already know they come in threes.
+    "XYZ", "IList<XYZ>", "List<XYZ>", "ICollection<XYZ>", "IEnumerable<XYZ>",
     "IList<View>", "List<View>", "ICollection<View>", "IEnumerable<View>",
     "IList<BuiltInCategory>", "List<BuiltInCategory>", "ICollection<BuiltInCategory>",
     "IList<Category>", "List<Category>", "ICollection<Category>",
@@ -167,10 +181,10 @@ RECEIVABLE = frozenset([
 # different problems with different fixes, and neither is "the fragment is bad".
 NAMED_REFUSALS = [
     ("XYZ",
-     lambda t: t == "XYZ" or "<XYZ>" in t,
-     "a point. The Revit API works in feet and this library talks millimetres, "
-     "so which unit a typed number is in has to be settled before one can be "
-     "accepted"),
+     lambda t: "XYZ" in t,
+     "points nested deeper than a list - a point is three millimetre numbers "
+     "and a list of them is written \"0,0,0; 5000,0,0\", but this nests them "
+     "further and there is no way to write that yet"),
     ("ElementId",
      lambda t: "ElementId" in t,
      "an element id. Its type changed size at Revit 2024 and the add-in builds "
@@ -440,6 +454,11 @@ def how_to_type(declared):
     Derived from `FromRequest`'s own branches, and only where the type alone
     would mislead:
 
+      A POINT is three numbers in MILLIMETRES, and that is the one hint that
+      cannot be left out: a point typed in metres is a thousand times wrong and
+      looks exactly like a point typed correctly. Several points are separated
+      by semicolons, because a flat comma list cannot say where one ends.
+
       A LIST arrives as ONE string split on commas. `Parts()` does the splitting
       inside Revit, so `IList<string>` is not "several lines of YAML" - it is
       "Mark, Comments" on one, and a list typed as a single value binds one item
@@ -458,6 +477,12 @@ def how_to_type(declared):
     """
     wanted = (declared or "").replace(" ", "")
     hints = []
+    if "XYZ" in wanted:
+        # THE UNIT FIRST, and on its own, because a point typed in metres looks
+        # exactly like a point typed correctly. Nothing downstream can catch it.
+        return ('MILLIMETRES, "x,y,z"'
+                + ('; several separated by semicolons - "0,0,0; 5000,0,0"'
+                   if "<" in wanted else ""))
     if "<" in wanted:
         hints.append("comma separated")
     if re.search(r"\b(View|Category|BuiltInCategory|Level)\b", wanted):
@@ -465,6 +490,11 @@ def how_to_type(declared):
     if re.search(r"\bElement\b", wanted):
         hints.append('an element TYPE by name - "Basic Wall: Generic - 200mm". A '
                      'particular wall or duct cannot be typed in')
+    elif re.search(r"(Type|Symbol|Phase|FilterElement|HostObjAttributes)$", wanted):
+        # A narrowed declaration says which kind, so the search is confined to
+        # that kind and the ambiguity the bare `Element` hint warns about
+        # largely goes away. What is left worth saying is how to write it.
+        hints.append('by name, as Revit writes it')
     return ", ".join(hints)
 
 

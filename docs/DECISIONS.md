@@ -3025,8 +3025,10 @@ Three things follow from that, and each was a live alternative:
    `BindNeeds` already exists to prevent, and the same rule this repository states generally: an
    identifier is only an identifier if it is unique among the things it has to distinguish.
 
-Supported today: `View`, `Level`, `Category`, `BuiltInCategory`, `Element`, `string`, `int`, `double`,
-`bool`, and comma-separated lists of most of those. Anything else is refused **by name**, saying that
+Supported today: `View`, `Level`, `Category`, `BuiltInCategory`, `Element` and the narrower element
+classes some contract actually asks for — `WallType`, `FloorType`, `CeilingType`,
+`FilledRegionType`, `HostObjAttributes`, `MEPCurveType`, `FamilySymbol`, `Phase`, `FilterElement` —
+plus `string`, `int`, `double`, `bool`, and comma-separated lists of most of those. Anything else is refused **by name**, saying that
 type has no way to be received yet — rather than failing somewhere inside generated code.
 
 **`Element` is the one with a boundary inside it, and the boundary is the interesting part.** It
@@ -3037,12 +3039,25 @@ duct, and it has to: **an instance has no name of its own.** `Element.Name` on o
 rule into a wrong answer, which is the one trade this whole decision exists to refuse. *"Which duct"*
 is a question text cannot answer; the selection is the mechanism that can.
 
-**The remaining imprecision is in the contracts, not here.** Twenty fragments declare a need as
-`Element`, and six of them mean an element type (`wallType`, `floorType`, `ceilingType`, `regionType`,
-`runType`, `hostType`) while the rest mean *that one there* — or something narrower again: `phase` is
-a `Phase` and `filter` is a `ParameterFilterElement`, each declared as the base class. A contract that
-said what it meant would resolve exactly, the way `Level` already does, and would not need this method
-to work out which half was intended.
+**Eight contracts were then narrowed to say what they meant** — 2026-09-09, the same day. `wallType`
+is a `WallType`, `phase` is a `Phase`, and a declaration that says which kind confines the search:
+*"Generic - 200mm"* is unique among **wall** types where the same name against every element type in
+the model may not be. Each narrowed type was read out of the fragment's own body rather than guessed
+from the need's name, and three of the eight are deliberately a **base class**, because the fragment
+asking is polymorphic and narrowing further would break it:
+
+| Declared | Because |
+|---|---|
+| `HostObjAttributes` | `CREATE_FROM_ROOM_BOUNDARIES` branches on `hostType is CeilingType` / `is FloorType` |
+| `MEPCurveType` | `CREATE_ELECTRICAL_RUN` builds a cable tray **or** a conduit from the same value |
+| `FilterElement` | `APPLY_VIEW_FILTER` says so in its own comment: a rule filter and a selection filter share a base class, and a view does not care which |
+
+**Narrower than `Element` is the point; narrower than the fragment can use is a regression dressed as
+precision.** `ParameterFilterElement` was the obvious reading of `filter` and it is the wrong one.
+
+The classes are named with `typeof(...)` rather than looked up by string, so a class missing on one of
+the eight releases is a **build failure** rather than a refusal in front of a model. `Element` itself
+stays, for the needs that really are *"some type"* and for contracts nobody has narrowed yet.
 
 ### What this does NOT do
 
@@ -3945,3 +3960,87 @@ bury the finding that matters under six that do not.
 
 **It is not legal advice and does not read licence text for meaning.** It finds a reservation, a name
 and a holder. That is the check nobody was running.
+
+---
+
+## D-67 — A point crosses as three millimetre numbers
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** the `create-*` family being the largest block of unprovable fragments in the library
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) `OnePoint`/`ManyPoints`, [`HeronUnits`](../platform/Heron.Core/HeronUnits.cs), [`generate-jobs.py`](../tools/generate-jobs.py), [D-54](DECISIONS.md), [D3 in NEEDS-CHECKING](NEEDS-CHECKING.md)
+
+### Context
+
+[D-54](DECISIONS.md) let a caller's value cross as text. `XYZ` was refused by name, and the refusal
+said why:
+
+> *"A point cannot be typed in yet. The Revit API works in feet and this library talks millimetres, so
+> which unit the number is in has to be settled before one can be accepted — guessing it is exactly the
+> mistake D3 exists to catch."*
+
+That was a decision deferred, not a gap in the code, and it had become the **largest single block of
+unprovable work in the library**: 34 needs across the `create-*` geometry family and every transform —
+move, copy, mirror, rotate, array.
+
+### Decision
+
+**A point is three numbers in MILLIMETRES, comma separated. Several points are separated by
+semicolons.**
+
+```
+    XYZ           "5000, 3000, 2800"
+    IList<XYZ>    "0,0,0; 5000,0,0; 5000,3000,0"
+```
+
+**Millimetres, because that is what this library already says.** Nothing here is a new preference:
+
+- [`HeronUnits`](../platform/Heron.Core/HeronUnits.cs) exists for exactly one job — millimetres to
+  Revit's internal feet — and the ratio is exact by definition.
+- **59 caller values** across the fragment library are named `...Mm`.
+- **D3**, called in its own file *the single most important line in it*, is written **"200 mm. Not 200
+  feet"**.
+
+**And it was already decided, by the people who could not pass a point.** `array-elements-radial` takes
+`centreXMm` and `centreYMm`; `place-detail-item` takes `atXMm` and `atYMm`. Those are points, split into
+millimetre scalars because there was no way to send one. **The workaround named the unit; this only
+writes it down.**
+
+### A direction needs no separate rule, and that was checked
+
+Six of the 34 needs are a *direction* rather than a position, and a direction has no unit — so the
+obvious worry is that dividing it by 304.8 is meaningless. It is meaningless, and it is also **harmless**:
+scaling all three components by one number does not change where a vector points.
+
+That was verified rather than assumed. All six were read: `array-elements`, `move-to-ray-hit`,
+`probe-around-elements` and `check-surface-fit` call `Normalize()`; `check-obstructions` hands it to
+`ReferenceIntersector.FindNearest`; `place-family-on-face` uses it as a facing vector. **None uses the
+magnitude.** So one rule covers both, and no contract has to declare which kind it meant — which matters,
+because `XYZ` cannot say.
+
+### Two separators, and why not one
+
+Every other list in `FromRequest` is comma separated. A comma separated list of points is **ambiguous
+the moment it is read**: `"0,0,0,1000,0,0"` is two points only if you already know they come in threes,
+and a list with one number missing silently becomes a different, valid-looking list. A separator that
+cannot express the mistake is worth more than consistency with the flat lists.
+
+`IList<IList<XYZ>>` — one need in the whole library, `pointPairs` — stays refused. It would want a third
+separator, and that is a decision to make when a second fragment wants one.
+
+### The bound
+
+Each ordinate is checked against `HeronUnits.MaxMillimetres` — 100 km — and a number past it is
+**refused rather than converted**. A coordinate that far from the origin is not in any building: it is a
+value that arrived in the wrong unit, or with a digit too many. That is the guard the move path already
+applies to a distance, applied to a coordinate.
+
+### What this does NOT do
+
+**It does not check that a point is where the author meant.** A point typed in metres is a thousand
+times wrong and looks exactly like a right one, and nothing downstream can catch it — which is why D3 is
+a person with a tape measure and stays that way. `generate-jobs.py` therefore prints the unit **on the
+blank line itself**, so somebody meets it while typing rather than after a run.
+
+It unblocks **20 fragments** — the arrangeable library goes from 20 to 40 — and unblocking is not
+proving. [D-30](DECISIONS.md) is unchanged.
+
+---

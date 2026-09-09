@@ -52,7 +52,7 @@ contract:
       type: Level
       source: request
     - name: phase
-      type: Element
+      type: Phase
       source: request
     - name: elements
       type: IList<Element>

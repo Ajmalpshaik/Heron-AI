@@ -45,7 +45,7 @@ contract:
       type: Level
       source: request
     - name: floorType
-      type: Element
+      type: FloorType
       source: request
     - name: boundary
       type: IList<XYZ>
