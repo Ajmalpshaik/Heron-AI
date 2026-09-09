@@ -1,0 +1,194 @@
+# Twenty-eight MODIFY fragments were still DRAFT with only simple caller values
+# after 2026-09-09. Twenty-four of them have NO run record at all - they have
+# never been in front of a model. Four were attempted and failed for a reason the
+# record names, and two of those four failed only because no value was supplied:
+#
+#   set-element-level    "'newLevel (Level)' is a value the CALLER supplies"
+#   set-element-workset  "'worksetId (int)' is a value the CALLER supplies"
+#
+# Those two are arrangeable now and are first in the list.
+#
+#     python tools/batch-prove.py tools/jobs/modify-never-run.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/modify-never-run.yaml
+#
+# VALUES MARKED "CONFIRM" WERE CHOSEN WITHOUT THE MODEL OPEN. Rule 2 of the
+# proving skill says know what the model would answer before writing a value, and
+# Revit was not connected when this was written. Each one is arranged so that
+# getting it wrong reads as POSITIVE EMPTY - a wrong level name is refused, which
+# is the negative's job, not the positive's - so one run settles them.
+
+model: Snowdon Towers Sample HVAC, Revit 2024
+
+defaults:
+  # EVERY job here is risk: MODIFY, so every one needs the write path. The runner
+  # does not infer this from the registry - it only reads it here - and without
+  # it each job is refused as a write sent down the read path, which is exactly
+  # the defect that cost half a morning on 2026-09-09 when `validate` did it
+  # silently. Without `apply`, the run is wrapped in a TransactionGroup and
+  # rolled back: the preview IS the run, undone (D-55).
+  write: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    # 22 ducts. FloorPlan: L3 gives 307 and is where set-mep-size timed out.
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+
+  negative-set:
+    # A DIFFERENT selection, not a cleared one. Nine duct tags in the same view -
+    # confirmed by read-element-level's negative record, which found 9.
+    categoryName: Duct Tags
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  # ---- the two that failed only for want of a value -----------------------
+
+  - fragment: set-element-level
+    set:
+      newLevel: "L2"          # CONFIRM. A name the model does not have is refused
+    negative-set:
+      newLevel: "L2"
+    expect: moved
+    note: >
+      Ran 2026-09-09 with no value and refused by name, correctly: "'newLevel
+      (Level)' is a value the CALLER supplies". D-54 resolves a Level by name
+      inside Revit, so this is the first fragment that needed D-54 to exist.
+
+  - fragment: set-element-workset
+    set:
+      worksetId: 0            # CONFIRM against this worksharing model's worksets
+    negative-set:
+      worksetId: 0
+    expect: moved
+    note: >
+      alreadyThere and refused are both declared accounting, so `moved` is the
+      only real result and expect: names it. Snowdon is a worksharing model,
+      which is why this one can be proved here at all.
+
+  # ---- never run, and arrangeable on scalars alone ------------------------
+
+  - fragment: renumber-sequential
+    set:
+      parameterName: Mark
+      prefix: "HZ"
+      startAt: 1
+    negative-set:
+      parameterName: ZZZNOTHINGHERE
+      prefix: "HZ"
+      startAt: 1
+    expect: renumbered
+    note: >
+      The negative is driven by the VALUE rather than the selection: a parameter
+      no element carries must renumber nothing. If it renumbers anyway it is
+      falling back, which is the same defect colour-by-parameter has.
+
+  - fragment: array-elements-radial
+    set:
+      centreXMm: 0
+      centreYMm: 0
+      totalSweepDegrees: 90
+      count: 2
+    negative-set:
+      centreXMm: 0
+      centreYMm: 0
+      totalSweepDegrees: 90
+      count: 1              # one in the array is no copy at all
+    expect: created
+    note: >
+      Both legs are the same selection and differ only in count, so this tests
+      the VALUE. Keep count low - this writes copies, and rollback is not
+      trusted above some unknown size (FRAGMENT-ISSUES 1c).
+
+  - fragment: dimension-rooms
+    set:
+      categoryName: Spaces
+      inViewOnly: "FloorPlan: L3"
+      measureTo: "finish"
+      offsetMm: 500
+    negative-set:
+      measureTo: "finish"
+      offsetMm: 500
+    expect: created
+    note: >
+      Spaces carry a boundary; ducts do not, so the two selections are the right
+      way round. CONFIRM this model has placed Spaces in L3 - report-space-airflow
+      was arranged against exactly that selection on 2026-09-09.
+
+  - fragment: manage-sheet-sets
+    set:
+      categoryName: Sheets
+      inViewOnly: "Notes, Symbols & Schedules"
+      setName: "HERON SET Z1"
+      mode: "add"
+    negative-set:
+      setName: "HERON SET Z1"
+      mode: "add"
+    expect: memberCount
+    note: >
+      Sheets do not appear in a floor plan (rule 3). The sheet view used here is
+      the one duplicate-sheets was arranged against on 2026-09-09.
+
+  - fragment: place-flow-arrows
+    set:
+      arrowFamilyName: "Flow Arrow"      # CONFIRM the family is loaded
+      arrowTypeName: "Standard"          # CONFIRM
+      spacingMm: 2000
+    negative-set:
+      arrowFamilyName: "Flow Arrow"
+      arrowTypeName: "Standard"
+      spacingMm: 2000
+    expect: placed
+    note: >
+      Duct tags have no flow direction, so the negative empties on the selection.
+      If the family is not loaded BOTH legs come back empty and the run says
+      POSITIVE EMPTY - that is the family missing, not the fragment failing.
+
+  - fragment: set-link-graphics
+    set:
+      categoryName: "RVT Links"
+      inViewOnly: "FloorPlan: M1"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+    expect: overridden
+    note: >
+      notALink is the negative's expected route - ducts are not links. unload-links
+      was arranged against the same RVT Links selection on 2026-09-09, so the
+      positive selection is known to be non-empty.
+
+  - fragment: set-sheet-title-block
+    set:
+      categoryName: Sheets
+      inViewOnly: "Notes, Symbols & Schedules"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+    expect: swappedInPlace
+    note: >
+      needs `symbol (FamilySymbol)`, which D-54 does NOT resolve - it refuses
+      Element-shaped values by name. Expect DID NOT RUN with that message. Kept
+      in deliberately: that refusal is the evidence for a gap row, and it costs
+      one run to record it properly rather than assert it.
+
+  - fragment: place-views-on-sheet
+    set:
+      sheetNumber: "G000"
+    negative-set:
+      sheetNumber: "ZZZNOTHINGHERE"
+    expect: placed
+    note: >
+      G000 is the sheet align-viewports-across-sheets was pointed at on
+      2026-09-09. A sheet number the model has not got must place nothing.
+
+  - fragment: override-graphics-in-view
+    set: {}
+    negative-set: {}
+    expect: overridden
+    note: >
+      needs `overrides (OverrideGraphicSettings)` - another shape D-54 refuses.
+      Same reasoning as set-sheet-title-block: run it to record the refusal.
+      read-graphic-overrides already returns this type unreadably, so the pair
+      of them is one finding about one type, not two.
