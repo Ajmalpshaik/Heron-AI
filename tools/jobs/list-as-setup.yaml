@@ -1,0 +1,107 @@
+# Sheets CAN be selected - just not by category.
+#
+# Round two concluded that sheets and views were unreachable because
+# `select-by-category-name` answered setup_failed for them, with and without a
+# view. That conclusion was too broad. `list-sheets` is PROVEN, needs nothing but
+# the document, and provides `elements` - which is exactly what `set-selection`
+# consumes. The setup chain
+#
+#     - list-sheets
+#     - set-selection
+#
+# arranges all 17 sheets in one step. `list-levels`, `list-grids`, `list-revisions`
+# and `list-linked-models` do the same for their own kinds, and every one of them
+# is already PROVEN. The gap in section 3d was never "nothing lists these" - it
+# was that nothing NAMED them where a job file author would look.
+#
+# WHAT THE MODEL ACTUALLY HOLDS, read 2026-09-09 rather than assumed:
+#   worksets   2 - "Shared Levels and Grids", "Workset1", both open, workshared
+#   revisions  1 - Seq. 1 "Revision 1", on one sheet, M001
+#   sheets    17
+#
+# THE NEGATIVE HAS TO COME FROM THE VALUE HERE. Both legs re-run the same setup
+# chain, so both get the same 17 sheets; there is no second selection to contrast
+# with. That is the stronger shape anyway - it tests the input rather than the
+# arrangement.
+#
+#     python tools/batch-prove.py tools/jobs/list-as-setup.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-as-setup.yaml
+#
+# Release any hand-run lease first.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: true
+  setup:
+    - list-sheets
+    - set-selection
+
+jobs:
+  - fragment: align-viewports-across-sheets
+    set:
+      masterSheetNumber: "M001"          # the sheet the one revision sits on
+    negative-set:
+      masterSheetNumber: "ZZZNOTHINGHERE"
+    expect: aligned
+    note: >
+      Round two answered setup_failed with select-by-category-name. The sheets
+      were never the problem. A master sheet number the model has not got must
+      align nothing.
+
+  - fragment: manage-sheet-sets
+    set:
+      setName: "HERON SET Z1"
+      mode: "add"
+    negative-set:
+      setName: "ZZZNOTHINGHERE"
+      mode: "remove"
+    expect: memberCount
+    note: >
+      Removing from a set that was never created must touch nothing. Adding all
+      17 sheets to a new set must touch 17.
+
+  - fragment: duplicate-sheets
+    set:
+      numberSuffix: "-HZ1"
+      namePrefix: "HERON "
+    negative-set:
+      numberSuffix: ""
+      namePrefix: ""
+    expect: newSheetIds
+    note: >
+      CONFIRM by reading the result rather than assuming: with no suffix and no
+      prefix every duplicate collides with the number it came from, so a fragment
+      that refuses properly duplicates nothing. If it duplicates 17 anyway that is
+      a section 3h.1 finding of exactly the `duplicate-type` shape - 'Tees'
+      duplicated as 'Tees' - and worth more than the proof would have been.
+
+  # ---- revisions, from list-revisions rather than a category --------------
+
+  - fragment: edit-revision
+    setup:
+      - list-revisions
+      - set-selection
+    set:
+      sequenceNumber: 1
+      description: "HERON REV Z1"
+      issuedBy: "Heron"
+      issuedTo: "Proving"
+      issueState: "false"
+      revisionDate: "2026-09-09"
+    negative-set:
+      sequenceNumber: 99
+      description: "HERON REV Z1"
+      issuedBy: "Heron"
+      issuedTo: "Proving"
+      issueState: "false"
+      revisionDate: "2026-09-09"
+    expect: changed
+    note: >
+      The model has exactly one revision, Seq. 1. Sequence 99 does not exist, so
+      the negative must change nothing - a value-driven negative on a model with
+      only one of the thing.
+
+      `delete-revision` is NOT here and stays blocked: section 3 records that
+      Revit refuses to delete revision 1 while a cloud still uses it, and one
+      revision is all this model has.

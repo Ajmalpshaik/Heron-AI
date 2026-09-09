@@ -697,12 +697,27 @@ clean after `heron_bridge_client.py release`, with no other change.
 > Release before batching. And distrust a batch where *every* job fails the same way — that is the
 > environment, not the arrangement.
 
-**SHEETS AND VIEWS CANNOT BE SELECTED BY CATEGORY.** `manage-sheet-sets` and `duplicate-views` both
-answered `setup_failed: the arrangement could not be re-made`, with and without `inViewOnly`. Rule 3
-says a category has to be visible where you select — but a sheet is not *in* a view, it **is** one, and
-so is a legend. There is no arrangement using `select-by-category-name` that reaches them, which
-blocks every sheet and view fragment from batch proving. **This is the same gap as the missing `LIST_*`
-fragments in §3d**: nothing enumerates sheets, views, legends, worksets or global parameters by name.
+**SHEETS AND VIEWS CANNOT BE SELECTED BY CATEGORY — BUT THEY CAN BE SELECTED.** `manage-sheet-sets`
+and `duplicate-views` both answered `setup_failed: the arrangement could not be re-made`, with and
+without `inViewOnly`. Rule 3 says a category has to be visible where you select, and a sheet is not
+*in* a view, it **is** one — so `select-by-category-name` cannot reach it.
+
+**The conclusion first written here — that this blocks every sheet and view fragment — was wrong, and
+it was wrong for an hour.** [`list-sheets`](../brain/fragments/list-sheets) is already `PROVEN`, needs
+nothing but the document, and provides `elements`, which is exactly what `set-selection` consumes:
+
+```yaml
+    setup:
+      - list-sheets
+      - set-selection
+```
+
+That arranges all 17 sheets in one step. `list-levels`, `list-grids`, `list-revisions` and
+`list-linked-models` do the same for their own kinds, and **every one of them is already PROVEN and was
+sitting unused.** The §3d gap was never *"nothing lists these"* — it was that nothing named them where
+somebody writing a job file would look. `tools/jobs/list-as-setup.yaml` is the worked example, and **five fragments proved through that route on the same day** — `edit-revision`, `duplicate-sheets`, `select-view-templates`, `manage-sheet-sets` and `remove-view-template`.
+
+Three of the five were held up by an arrangement fault rather than by the fragment, and **each one named its own fault**: *"Mode 'add' is not one of create, rename, delete"*, *"No revision with sequence number 99. LIST_REVISIONS is where that number comes from"*, *"No sheet set called 'ZZZNOTHINGHERE'"*. A fragment that refuses in those words costs one run to correct. One that answers `0` costs a morning — which is the whole argument of §3h.1, seen from the other side.
 
 ### The rest of the eighteen, by what they need
 
@@ -713,6 +728,8 @@ fragments in §3d**: nothing enumerates sheets, views, legends, worksets or glob
 | `create-legend-view` | *"No view called `Legend: Mechanical Legend`"* — a good refusal | The real legend name. Nothing lists them (§3d again) |
 | `set-element-workset` | `moved 0` with `worksetId=0` | A workset id. `report-element-ownership` reports `owners 1 entry(ies)` and no id, so nothing in the library can supply one |
 | `place-views-on-sheet` | `placed 0`, and the negative was not empty either | Views selected, which is the sheet/view wall above |
+| `align-viewports-across-sheets` | `aligned 0`, but `scaleMismatch 10` and `ambiguous 6` of 17 sheets | Sheets at one scale carrying one viewport each. Blocked on model content, not code — and the fragment said exactly why, which is the behaviour §3h.1 wants |
+| `set-section-mark-visibility` | `setup_failed` twice — `categoryName: Sections`, model-wide and scoped to a plan | **Nothing in the library reaches section marks.** `select-by-category-name` cannot, and there is no `list-sections`. A gap row, not a defect |
 
 ### Reading the 196 run records was worth more than running anything — 2026-09-09
 
