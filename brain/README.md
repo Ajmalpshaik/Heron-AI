@@ -4,12 +4,22 @@
 
 **And since 2026-08-29 it is reachable.** Everything here was imported by nothing but its own tests until
 [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) was written — complete, tested, and invisible
-to any conversation. Three MCP tools now stand on that seam: `heron_capabilities`, `heron_resolve` and
-`heron_lookup`. **They ask for a capability and never for a fragment**, which is what keeps everything in
-here replaceable. They can now also **run** one: [D-28](../docs/DECISIONS.md)'s in-process Roslyn
-landed on 2026-09-06 as [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), and it runs a
-fragment **READ ONLY** — it opens no transaction, so Revit itself refuses any change. Running a fragment
-that WRITES is a separate operation that still does not exist.
+to any conversation. **Four** MCP tools now stand on that seam: `heron_capabilities`, `heron_resolve`,
+`heron_lookup` and, since 2026-09-09, `heron_context`. **They ask for a capability and never for a
+fragment**, which is what keeps everything in here replaceable.
+
+**Running one is a bridge operation rather than an MCP tool**, and the two are not the same door.
+[D-28](../docs/DECISIONS.md)'s in-process Roslyn landed on 2026-09-06 as
+[`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs). `run_fragment_read` opens no
+transaction, so Revit itself refuses any change. **`run_fragment_write` exists too** — declared `MODIFY`
+in [`HeronOperationRegistry`](../platform/Heron.Core/HeronOperationRegistry.cs), gated by
+`write.enabled` which defaults to false ([D-19](../docs/DECISIONS.md)), and rolled back unless the
+caller passes `apply` ([D-55](../docs/DECISIONS.md)).
+
+> This paragraph said *"running a fragment that WRITES is a separate operation that still does not
+> exist"* until 2026-09-09. It did exist by then, and had for a day. Found while wiring `heron_context`
+> onto the same seam — which is the pattern: a sentence about a gap has to be corrected when the gap
+> closes, or it becomes the most convincing wrong documentation in the repository ([D-54](../docs/DECISIONS.md)).
 
 | | |
 |---|---|

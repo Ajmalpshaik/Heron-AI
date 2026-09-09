@@ -877,6 +877,73 @@ def heron_lookup(request: str) -> str:
 
 
 @server.tool()
+def heron_context(request: str, path: str = "", full: bool = False) -> str:
+    """
+    Show what an agent would be given for a request - and what it may not carry.
+
+    Use before planning anything substantial, to see the minimum Heron thinks
+    the job needs. `path` is yours to set: cached, simple, standards or
+    generation (docs/19). Leave it empty and Heron derives only the structural
+    case and says it assumed the rest - it does not guess what you meant.
+    Pass full=True to see each part's body. Touches nothing in the model.
+    """
+    revit, how = _revit_version()
+
+    try:
+        got = brain.context(request, path=path or None, revit=revit, full=full)
+    except brain.BrainUnavailable as why:
+        return str(why)
+    except ValueError as why:
+        return str(why)
+    except Exception as why:
+        # assemble() refuses by raising - OverBudget when a part is outside the
+        # path's budget, SourceMissing when a path needs something this
+        # installation has not got. Both are ANSWERS rather than faults, and a
+        # stack trace would hide the sentence the caller needs to read.
+        return "Heron refused to assemble that context:\n  %s" % why
+
+    lines = ['"%s"' % got["request"],
+             "  path       %s%s" % (got["path"],
+                                    "   (ASSUMED - you did not say, and Heron "
+                                    "does not classify intent)"
+                                    if got["assumed_path"] else ""),
+             "             %s" % got["why"],
+             "  may carry  %s" % ", ".join(got["budget"]),
+             "  carries    %s" % (", ".join(got["carried"]) or "nothing"),
+             "  size       %d characters, %d part(s)"
+             % (got["size"], len(got["parts"])),
+             ""]
+
+    for part in got["parts"]:
+        lines.append("  %s: %s  (%d ch)" % (part["kind"], part["name"],
+                                            part["size"]))
+        lines.append("     from  %s" % part["source"])
+        lines.append("     why   %s" % part["why"])
+        if full and part["body"] is not None:
+            for line in str(part["body"]).splitlines():
+                lines.append("     | %s" % line)
+        lines.append("")
+
+    if got["not_carried"]:
+        lines.append("  Allowed but not carried:")
+        for entry in got["not_carried"]:
+            lines.append("    %-12s %s" % (entry["kind"], entry["reason"]))
+        lines.append("")
+
+    if revit is None:
+        lines.append("No Revit is connected, so the version filter did not run.")
+    else:
+        lines.append("Filtered to Revit %s (%s)." % (revit, how))
+
+    # Size is a fact here and never a limit - Heron has no tokeniser and the
+    # host counts tokens (D-58). What IS enforced is the parts list.
+    lines.append("Size is reported, not enforced. The budget that IS enforced "
+                 "is the list of parts.")
+    lines.append(_not_proven())
+    return "\n".join(lines)
+
+
+@server.tool()
 def heron_gaps(days: int = 0) -> str:
     """
     What Heron has been asked to do lately, what failed, and what is slow.

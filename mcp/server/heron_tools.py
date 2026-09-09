@@ -69,6 +69,14 @@ TOOLS = {
     "heron_resolve":            (READ,    None),
     "heron_lookup":             (READ,    None),
 
+    # The Context Manager (docs/19 s1-s2). READ and no operation for the same
+    # reason as the three above: it assembles what an agent would be GIVEN and
+    # sends nothing to Revit. Worth stating because "context" sounds like it
+    # reaches into the model - it does not. The situation part carries the
+    # release and the project NAME, which are already in every answer Heron
+    # gives, and nothing else about the document.
+    "heron_context":            (READ,    None),
+
     # The Capability Gap report (HERON-AHR-GAP-001, docs/06 s6). READ, and the
     # operation is None for the same reason as the three above - it sends
     # nothing to Revit. What it reads is Heron's OWN audit trail, which is a

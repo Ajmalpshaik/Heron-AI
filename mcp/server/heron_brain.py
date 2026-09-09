@@ -345,6 +345,67 @@ def lookup(request, revit=None):
         }
 
 
+def _context_module():
+    """heron_context, or BrainUnavailable saying what to install.
+
+    A SEPARATE helper rather than a seventh member of _brain()'s tuple, and the
+    reason is mechanical: six call sites unpack that tuple POSITIONALLY, and a
+    positional unpack that is one short raises at run time in whichever tool
+    happened to be called first - not at import, where it would be found. One
+    more function is cheaper than six edits that all have to be right.
+    """
+    try:
+        import heron_context as CONTEXT
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's Context Manager needs PyYAML and it is not installed: %s\n"
+            "Install it with:  pip install --user pyyaml" % exc)
+    return CONTEXT
+
+
+def context(request, path=None, revit=None, full=False):
+    """
+    What one agent would be given for one request, and nothing else.
+
+    docs/19 sections 1 and 2 reaching the host. The host asks for a request to
+    be assembled; Heron decides what may be carried and REFUSES anything
+    outside the path's budget, which is the half worth having - docs/19 s1:
+    an over-fed agent does not fail loudly, it attends to the wrong thing and
+    returns a confident, plausible, wrong answer.
+
+    `path` IS THE HOST'S TO CHOOSE. D-01 puts intent classification there, and
+    this call does not second-guess it. Passing None derives only the
+    structural case - a request that is a fragment's own declared phrasing IS
+    the cached path - and says it assumed the rest.
+
+    THIS EXISTS BECAUSE OF WHAT ITS OWN TOOLING FOUND. On 2026-09-09
+    tools/measure-routes.py established that heron_search.remember() is called
+    from a test and from nowhere else, so the utterance cache can never fill
+    (Q-43). A Context Manager reachable only from a command line would have
+    been the same shape of mistake in the same week, and this file's own
+    docstring already says what that costs: complete, tested, and unreachable
+    from a conversation is not what "built" was meant to mean.
+    """
+    CONTEXT = _context_module()
+    with _Open() as store:
+        ctx = CONTEXT.assemble(store, request, path=path, revit=revit)
+        return {
+            "request": ctx.request,
+            "path": ctx.path,
+            "assumed_path": ctx.assumed_path,
+            "why": CONTEXT.WHY[ctx.path],
+            "budget": list(CONTEXT.BUDGET[ctx.path]),
+            "carried": ctx.kinds(),
+            "size": ctx.size,
+            "parts": [{"kind": p.kind, "name": p.name, "source": p.source,
+                       "why": p.why, "size": p.size,
+                       "body": p.body if full else None}
+                      for p in ctx.parts],
+            "not_carried": [{"kind": k, "reason": r} for k, r in ctx.refused],
+            "revit": revit,
+        }
+
+
 def gaps(days=None):
     """
     What Heron was asked for and could not do - HERON-AHR-GAP-001.
