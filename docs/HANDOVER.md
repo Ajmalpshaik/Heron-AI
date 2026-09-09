@@ -1162,7 +1162,7 @@ eight have been run against a model with both legs (PR #67), and §3j holds the 
 | | |
 |---|---|
 | **12 fragments refuse** | `color-by-parameter`, `measure-run-quantities`, `edit-text-values`, the seven schedule ones, `add-revision-cloud`, `set-view-section-box` |
-| **8 proved, both legs** | signed by Ajmal PS 2026-09-09; `proof:` blocks are in the fragments |
+| **8 proved, both legs** | signed by Ajmal PS and promoted — the library is **167 proven, 193 to go** |
 | **9 new `provides`** | seven `refused`, two `refusalReasons` — §3h.1 was wrong that every fragment already had one |
 | **Model unharmed** | 9,628 elements before and after, unsaved-changes marker cleared |
 
@@ -1172,41 +1172,23 @@ back 256 real field names.
 
 ### What is NOT done, in the order it is worth doing
 
-**1. THE EIGHT ARE SIGNED, AND STILL SAY DRAFT — one act remains.** Ajmal PS accepted all eight on
-2026-09-09, so each fragment now carries a `proof:` block with his name, the model, both cases verbatim
-and a fingerprint. **`accept` deliberately leaves `heron-status` alone**, and the tool says so on every
-run: *"promoting it is a separate, deliberate act, and it is yours."* Until that act, the library counts
-**159** proven and these eight are not among them.
+**1. THE EIGHT ARE DONE — signed and promoted.** Ajmal PS accepted all eight on 2026-09-09, so each
+carries a `proof:` block with his name, the model and session, both cases verbatim and a fingerprint;
+`heron-status` was then moved to `PROVEN` as the separate act `accept` reserves for a person. **The
+library went 159 → 167 proven, 201 → 193 to go.**
+
+Each proof records the gap *no second route was run* — D-30's *"where one exists"* clause, undecided
+rather than failed. Anyone re-reading these should know that is what the signature stood over.
+
+The drafts are gone: `accept` consumes them as it records, so each fact has one home rather than two.
+The commands, for the next batch:
 
 ```bash
-# the remaining act - it moves the library from 159 proven to 167
-for f in measure-run-quantities color-by-parameter add-schedule-fields          add-schedule-combined-field remove-schedule-fields          set-schedule-appearance set-schedule-filters set-schedule-sort-group; do
-  sed -i 's/^heron-status: DRAFT$/heron-status: PROVEN/' brain/fragments/$f/fragment.yaml
-done
+python brain/heron_validate.py review <fragment>
+python brain/heron_validate.py accept <fragment> --by "Ajmal PS"
+# accept does NOT promote - it says so on every run. Afterwards:
+sed -i 's/^heron-status: DRAFT$/heron-status: PROVEN/' brain/fragments/<fragment>/fragment.yaml
 ```
-
-Each carries the gap *no second route was run* — D-30's *"where one exists"* clause, undecided rather
-than failed. That is what promotion would be standing over.
-
-**The drafts are gone**: `accept` consumes them as it records, so the fact now has one home rather than
-two. The original commands, for the next batch:
-
-```
-python brain/heron_validate.py review add-schedule-fields
-python brain/heron_validate.py accept add-schedule-fields --by "Ajmal PS"
-```
-
-All eight in one go, once you have read them:
-
-```bash
-for f in measure-run-quantities color-by-parameter add-schedule-fields          add-schedule-combined-field remove-schedule-fields          set-schedule-appearance set-schedule-filters set-schedule-sort-group; do
-  python brain/heron_validate.py accept $f --by "Ajmal PS"
-done
-```
-
-Read `gaps:` first. All eight carry *no second route was run* — D-30's *"where one exists"* clause,
-undecided rather than failed. **`edit-text-values` is deliberately NOT in that list**; its draft says
-`NOT ESTABLISHED` for both legs.
 
 **2. `edit-text-values` HAS NEVER RUN — not one leg.** `Text Notes` is not selectable on the sheet
 `Notes, Symbols & Schedules`, so the seven notes §3c found live in some other view and **nothing in the
