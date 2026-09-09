@@ -63,6 +63,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: notMepCurve
+      # Handed in but not duct or pipe. Revit exposes a break for those two
+      # and for nothing else, so a wall or a floor is named rather than
+      # attempted. A count of what it was GIVEN and could not use (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

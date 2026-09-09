@@ -98,8 +98,14 @@ contract:
     - name: volumeComputationOff
       type: bool
     - name: unplaced
+      # Rooms never placed in the model, so it could not be measured. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: unmeasurable
+      # Rooms whose own axes could not be established, so it could not be
+      # measured. The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

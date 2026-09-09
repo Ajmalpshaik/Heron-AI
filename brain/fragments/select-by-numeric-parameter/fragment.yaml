@@ -81,6 +81,9 @@ contract:
       role: accounting
       type: int
     - name: notNumeric
+      # Elements carrying the parameter as text rather than as a number, so no
+      # comparison was possible. Given and unusable, never a match (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

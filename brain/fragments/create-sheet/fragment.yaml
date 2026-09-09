@@ -48,6 +48,9 @@ contract:
       role: accounting
       type: string
     - name: noTitleblock
+      # That no title block could be placed. The evidence it looked and could
+      # not, never a thing it did (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

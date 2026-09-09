@@ -85,8 +85,18 @@ contract:
     - name: failures
       type: int
     - name: sectionsChecked
+      # How many rule sections were examined. A count of work DONE, not of
+      # things found - the evidence it ran, which is the opposite of a reason
+      # to doubt it (D-52).
+      role: accounting
       type: int
     - name: sectionsNotChecked
+      # Rule sections that named no pattern, so nobody looked. It matters - *a
+      # rule set naming no pattern for sheets does not mean the sheets are
+      # fine* - but it is the coverage of the RULES, not a fault in the model.
+      # `failures` is the answer, and this must never let a run that checked
+      # nothing look like work.
+      role: accounting
       type: int
     - name: offenders
       type: IList<ElementId>

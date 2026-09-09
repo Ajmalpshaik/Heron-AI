@@ -39,6 +39,11 @@ contract:
     - name: findings
       type: IList<string>
     - name: notLoaded
+      # Whether each link is loaded RIGHT NOW is one of the three things this
+      # fragment reports, established by asking for the document rather than
+      # by reading a status. The answer, however much the name looks like a
+      # reject.
+      role: result
       type: IList<ElementId>
 
 proof:

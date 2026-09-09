@@ -38,6 +38,10 @@ contract:
     - name: systemType
       type: IDictionary<ElementId, string>
     - name: noSystem
+      # Elements on no system. D-52'S OWN WORKED EXAMPLE: `noSystem: 16` does
+      # not mean sixteen systems, it means sixteen were examined and none had
+      # one.
+      role: accounting
       type: IList<ElementId>
 
 proof:

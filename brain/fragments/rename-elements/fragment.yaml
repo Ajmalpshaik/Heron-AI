@@ -45,6 +45,9 @@ contract:
     - name: renamed
       type: int
     - name: notMatched
+      # Elements whose name did not contain the search term, which is the
+      # normal case across a mixed set. Never a rename it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

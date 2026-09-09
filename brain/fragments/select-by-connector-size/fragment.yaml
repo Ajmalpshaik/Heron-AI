@@ -79,6 +79,9 @@ contract:
     - name: matchedIds
       type: IList<ElementId>
     - name: noConnectors
+      # *THREE OUTCOMES, NOT TWO* - and this is one of the two kinds of MISS:
+      # an element the filter has nothing to measure. Never a match (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: unknownShape
       type: IList<ElementId>

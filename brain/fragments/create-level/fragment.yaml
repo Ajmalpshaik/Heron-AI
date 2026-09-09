@@ -46,6 +46,9 @@ contract:
       role: accounting
       type: string
     - name: noViewsMade
+      # That no plan views were made, which is this fragment stating what it
+      # deliberately does NOT do. Never a thing it created (D-52).
+      role: accounting
       type: bool
 
 proof:

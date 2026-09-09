@@ -112,6 +112,9 @@ contract:
     - name: guarantee
       type: string
     - name: noLocation
+      # Elements with no location, so it could not be put in the order. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: findings
       type: IList<string>

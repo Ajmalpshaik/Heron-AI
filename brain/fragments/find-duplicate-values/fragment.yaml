@@ -53,6 +53,9 @@ contract:
     - name: blank
       type: IList<ElementId>
     - name: noSuchParameter
+      # Elements not carrying that parameter, so it could not be compared. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

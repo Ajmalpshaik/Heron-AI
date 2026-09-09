@@ -61,6 +61,10 @@ contract:
     - name: findings
       type: IList<string>
     - name: notDatums
+      # Handed in but not grids or levels, so there was nothing here to act
+      # on. A count of what it was GIVEN and could not use, never a thing it
+      # found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

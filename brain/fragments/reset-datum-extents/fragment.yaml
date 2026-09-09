@@ -58,6 +58,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: notADatum
+      # Handed in but not a grid or a level, so there was nothing here to act
+      # on. A count of what it was GIVEN and could not use, never a thing it
+      # found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

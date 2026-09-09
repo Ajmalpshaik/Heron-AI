@@ -82,6 +82,9 @@ contract:
     - name: changed
       type: int
     - name: notPresent
+      # Field names the schedule does not carry, so it could not be restyled.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

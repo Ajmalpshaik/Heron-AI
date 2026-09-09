@@ -54,6 +54,9 @@ contract:
     - name: paintedMaterials
       type: IList<string>
     - name: elementsWithNoMaterial
+      # Elements carrying no material at all, so it could not be taken off.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

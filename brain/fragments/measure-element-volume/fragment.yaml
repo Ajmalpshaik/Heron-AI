@@ -45,6 +45,9 @@ contract:
     - name: totalAreaM2
       type: double
     - name: noSolid
+      # Elements with no solid geometry, so it could not be measured. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

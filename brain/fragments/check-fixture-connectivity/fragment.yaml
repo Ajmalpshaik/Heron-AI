@@ -59,6 +59,11 @@ contract:
       role: result
       type: IList<ElementId>
     - name: noConnectors
+      # A fixture with no connectors at all is *A DIFFERENT DEFECT* by this
+      # fragment's own words - a family never built to be plumbed, counted
+      # separately because the fix is different. The finding, not the
+      # leftovers.
+      role: result
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

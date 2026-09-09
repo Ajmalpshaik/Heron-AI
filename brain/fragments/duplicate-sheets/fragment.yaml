@@ -64,6 +64,9 @@ contract:
     - name: newSheetIds
       type: IList<ElementId>
     - name: notDuplicated
+      # Sheets no new sheet came back for. The evidence it looked and could
+      # not, never a thing it did (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: collidedNumbers
       type: IList<string>

@@ -55,6 +55,11 @@ contract:
     - name: created
       type: IList<ElementId>
     - name: unenclosed
+      # Rooms this fragment PLACED that came back with no area. *Every one
+      # placed here is measured afterwards and the unenclosed ones are named*
+      # - a fact it established about what it made, not an input it could not
+      # use.
+      role: result
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

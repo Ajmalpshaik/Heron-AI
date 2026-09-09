@@ -56,6 +56,9 @@ contract:
     - name: clear
       type: IList<XYZ>
     - name: notChecked
+      # Points the test could not be run at. The evidence it looked and could
+      # not, never a thing it did (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

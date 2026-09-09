@@ -43,6 +43,9 @@ contract:
     - name: changed
       type: int
     - name: notControllable
+      # Categories this view will not let be switched. The evidence it looked
+      # and could not, never a thing it did (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

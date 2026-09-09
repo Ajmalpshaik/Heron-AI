@@ -63,10 +63,18 @@ contract:
     - name: findings
       type: IList<string>
     - name: doorsChecked
+      # How many doors were examined. A count of work DONE, not of things
+      # found - the evidence it ran, which is the opposite of a reason to
+      # doubt it (D-52).
+      role: accounting
       type: int
     - name: disagreements
       type: IList<string>
     - name: noRoomEitherSide
+      # Doors with no room on either side, so the geometric check had nothing
+      # to compare Revit's answer against. `disagreements` is the finding
+      # (D-52).
+      role: accounting
       type: IList<string>
     - name: phaseUsed
       type: string

@@ -51,6 +51,11 @@ contract:
     - name: exported
       type: IList<string>
     - name: notThreeD
+      # Plans, sections and sheets in the list. *FBX TAKES 3D VIEWS AND
+      # NOTHING ELSE*, so they are separated here and named rather than sent
+      # to Revit to be rejected with an error about the export. Given and
+      # unusable (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

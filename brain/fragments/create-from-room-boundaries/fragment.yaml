@@ -64,6 +64,10 @@ contract:
     - name: withHoles
       type: IList<ElementId>
     - name: unenclosed
+      # Rooms with no usable boundary, so nothing could be built on them. *No
+      # area and no loops* - given and unusable, never a ceiling it made
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

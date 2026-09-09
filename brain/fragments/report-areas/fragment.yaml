@@ -64,6 +64,11 @@ contract:
     - name: placedCount
       type: int
     - name: unplaced
+      # An Area in the schedule that sits nowhere in the model. The purpose
+      # gives it a row in a table of faults WITH ITS OWN FIX - *place it, or
+      # delete the row* - beside `unbounded`, whose fix is different. A
+      # finding.
+      role: result
       type: IList<string>
     - name: unbounded
       type: IList<string>
