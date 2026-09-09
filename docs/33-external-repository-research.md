@@ -78,7 +78,7 @@ Research further.**
 | [`thedotmack/claude-mem`](https://github.com/thedotmack/claude-mem) — [§5.3](#53-thedotmackclaude-mem) | context lost at compaction | capture the session, **compress it**, inject relevant context next time | the *lifecycle* is [10](10-memory-and-knowledge.md)'s. The *capture everything* half is the opposite of Heron's rule | **compression is a model call, and every observation costs quota** — so the store cannot be rebuilt, against [D-24](DECISIONS.md) and [Golden Rule 11](14-golden-rules.md). ([§5.3](#53-thedotmackclaude-mem) corrects the store — **SQLite + FTS5, not ChromaDB** — and finds its retrieval ranks by *recency*, simpler than Heron's) | Apache-2.0 with a `NOTICE` — compatible | **Reject the mechanism**; the selective-memory principle is already held |
 | [`PrimeIntellect-ai/prime-agent`](https://github.com/PrimeIntellect-ai/prime-agent) | long-running autonomous work | **bounded autonomous mode** — explicit token and time budgets; sessions that survive a disconnect | the budget idea belongs beside [19 §2](19-context-and-cost.md)'s. Session survival is [23](23-heron-kernel.md)'s checkpoints | its bounds are for unattended running. Heron's [Golden Rule 9](14-golden-rules.md) puts a person in front of a high-risk action instead | MIT — compatible | **Research further** — only the *bound*, and only once [19 §2](19-context-and-cost.md)'s budgets are agreed |
 | [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) — [§5.9](#59-k-dense-aiscientific-agent-skills) | domain skills scattered across documentation | a **domain skill library** with per-skill metadata and host auto-discovery | the shape is [`brain/skills/`](../brain/skills/) and [09](09-skills-and-fragments.md) | **the repository does NOT say so — [§5.9](#59-k-dense-aiscientific-agent-skills) corrects this.** Its README says *"MIT… use freely"* while four of its 163 skills carry **"© 2025 Anthropic, PBC. All rights reserved."** Only `find -iname LICENSE*` shows it | MIT at the root; **four skills all-rights-reserved, one MIT under another holder** | **Adopt concept** — already held. The licence warning is now demonstrated rather than vague, and becomes [Q-53](OPEN-QUESTIONS.md) |
-| [`ai-boost/awesome-harness-engineering`](https://github.com/ai-boost/awesome-harness-engineering) | no map of the field | an index, and the incoming §10.10 is right that it is one | a reading list for whoever answers `Q-45` and the compression question | an index is not a dependency, and treating it as one is how a list becomes a roadmap | CC0 | **Research further**, as an index only |
+| [`ai-boost/awesome-harness-engineering`](https://github.com/ai-boost/awesome-harness-engineering) — [§5.10](#510-ai-boostawesome-harness-engineering) | no map of the field | an index, and the incoming §10.10 is right that it is one | a reading list for whoever answers `Q-45` and the compression question | an index is not a dependency, and treating it as one is how a list becomes a roadmap | CC0 | **Research further**, as an index only |
 | *Claude CEO / CEO-style agent* (§10.15) | — | — | — | — | — | **NOT IDENTIFIED.** The incoming document says *"first identify the exact repository intended… study only if verified"*, and it could not be. **Nothing was studied and nothing is claimed.** [D-01](DECISIONS.md) already gives Heron the orchestrator-in-the-host pattern this row was reaching for |
 
 ---
@@ -895,3 +895,72 @@ here.
 **Decision: unchanged — Adopt concept, already held.** The library shape is
 [`brain/skills/`](../brain/skills/)'s. The licence warning is upgraded from vague to demonstrated, and
 becomes [Q-53](OPEN-QUESTIONS.md).
+
+---
+
+### 5.10 `ai-boost/awesome-harness-engineering`
+
+**Read at** `3be1ff8dde95dd76facf93e98a71672a1c188edc`, committed 2026-09-09. **CC0** — confirmed from
+the `LICENSE` file, so there is nothing to honour and nothing to carry.
+
+**Opened:** `README.md` (649 lines, **235 unique repository links**), its *Evals & Verification* and
+*Human-in-the-Loop* sections in full, `templates/`, `verify_urls.py`.
+
+**The row said *"Research further, as an index only"*, with the warning that treating an index as a
+dependency is how a list becomes a roadmap. That warning is honoured here literally: of 235 links,
+this pass names three and pursues none.** The other 232 are deliberately not listed — a research
+document that reproduces an index has become the index.
+
+*(One small thing worth noticing in passing: `verify_urls.py` exists to check that every link in their
+README still resolves. That is [`check-docs.py`](../tools/check-docs.py)'s job, done by somebody else,
+for the same reason — a document that quietly stops being true is worse than one that was never
+written.)*
+
+#### The three that touch a named Heron question
+
+**1. "Approve with changes" — and it goes straight to [Q-50](OPEN-QUESTIONS.md).** The entry on the
+Claude Agent SDK's approval mechanics names the pattern:
+
+> The **"approve with changes"** pattern — modifying tool input before execution — is the reference
+> design for safe-by-default harnesses that don't simply block or permit.
+
+**Heron's approval is deliberately binary.** [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs)
+mints a token for one preview, refuses a token that does not match it, and re-counts against the live
+model before writing. That is not an oversight to be relaxed — it is the guarantee. **But binary is
+about the token, not about the conversation.** A modeller who says *"yes, but 150 not 200"* is today
+starting over, and the Heron-shaped version of "approve with changes" is not executing something
+modified: it is **taking the correction and producing a new preview immediately**, with the same
+guarantee intact. Added to [Q-50](OPEN-QUESTIONS.md).
+
+**2. The lucky pass, which is [D-30](DECISIONS.md) for the third time.** *AgentLens* found that **up to
+23.2% of passing runs are "lucky passes"** — regression cycles, blind retries, missing verification —
+and that model rankings move by five positions when scored on *how* the answer was reached rather than
+on whether the test went green. That is why a Heron proof is a positive case, **a negative case**, a
+named model and a fingerprint, rather than *"it worked."*
+
+**3. One eval requirement Heron gets for free, and should know it has.** Anthropic's *eval awareness*
+entry documents a model identifying the benchmark by name and decrypting the answer key, and concludes
+that **evaluating in a network-isolated environment is now a harness requirement rather than hygiene.**
+Heron's proofs run against a local Revit model on a machine that needs no network
+([D-26](DECISIONS.md)). **The isolation other people have to engineer is the environment Heron already
+runs in** — worth writing down so it is defended rather than traded away later.
+
+#### One thing the index frames well and Heron answers differently, on purpose
+
+Martin Fowler's three postures — humans **outside**, **in**, or **on** the loop — with the argument that
+*"humans on the loop"* (maintaining the harness rather than reviewing outputs) is the only one that
+scales with agent throughput.
+
+**Heron puts the human *in* the loop for every write, deliberately** ([Golden Rule 9](14-golden-rules.md),
+[D-32](DECISIONS.md)'s read-only v1), and that is not a failure to scale. Throughput is the wrong
+measure: a modeller approving a change is not reviewing an agent's output, they are **approving a change
+to their own building model**, which is the thing they are professionally responsible for. Recorded so
+the choice reads as a choice.
+
+*(Anthropic's autonomy study in the same section is the honest counterweight: experienced users move
+from per-action approval toward intervention-only oversight as trust builds. It is a real finding and it
+is about developers approving their own tools, not about a coordinator approving a change to a
+federated model at 4pm on an issue day.)*
+
+**Decision: unchanged — Research further, as an index only.** Three entries recorded, none adopted, 232
+deliberately not listed.

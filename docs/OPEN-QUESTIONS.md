@@ -452,6 +452,18 @@ as thirty highlighted ducts.
 3. A preview that highlights 4,000 elements is not a preview, it is a mess. There is a count above which
    showing is worse than telling, and nobody has said what it is.
 
+**A second half arrived the same day**, from the index at
+[33 §5.10](33-external-repository-research.md): the **"approve with changes"** pattern — *"modifying
+tool input before execution… the reference design for safe-by-default harnesses that don't simply block
+or permit."*
+
+**Heron's approval is binary on purpose**, and that stays: the token is minted for one preview, a
+non-matching token is refused, and the set is re-counted against the live model before anything moves.
+**But binary is about the token, not about the conversation.** A modeller who says *"yes, but 150 not
+200"* starts the whole request again today. The Heron-shaped version is not executing something
+modified — it is **taking the correction and producing a new preview at once**, guarantee intact. That
+is a better question than "should the preview select things", and it may be the same answer.
+
 **Answer:**
 
 ---
