@@ -500,3 +500,27 @@ looked like a finding. Every one was found by opening the file it named.
 > documentation — `tools/README.md` says so about its own opening sentence. It turns out to be just as
 > true of a tool's output as of a typed number, and a tool that is confidently wrong is worse than the
 > sentence it replaced, because nobody re-reads a number a machine produced.
+
+### And then the same discipline was turned on tonight's own code, which found seven more
+
+Everything above had already passed a 120-request sweep, three gates and its own tests. A line-by-line
+re-read afterwards — asking of each file *what does it claim, and what does it do* — found **seven
+bugs, and not one of them was found by a test**:
+
+| | |
+|---|---|
+| **a door in the version wall** | `assemble()` trusted the short circuit without filtering it. On Revit 2019 `find()` returned *nothing* and `assemble()` returned a fragment declared for 2020 and later — **the confident-wrong-retrieval failure, inside the module written to prevent it**, in a document whose §3.2 praises the project for refusing it |
+| **every exception called a refusal** | a `TypeError` would have reached the caller as *"Heron refused"* — a sentence about a decision Heron never made |
+| **360 YAML parses to find one folder** | the store has had it as a column since Step 8. 435 ms → 4.7 ms |
+| **one question answered twice** | `eligible()` called twice per assembly; a store changing between them yields a packet that disagrees with itself |
+| **a measurement of the wrong line** | `measure-brain.py` timed `import heron_embed` and called it the D-49 measurement. `backend()` — where the encoder actually loads — was on the next line, **untimed** |
+| **a broken store reported as a fresh one** | `measure-routes.py` caught every exception and said *"the table does not exist yet"* |
+| **an excuse outliving its reason** | `check-reachable.py` never checked whether a `RECORDED` entry was still a hit, so it would go on excusing `remember()` after somebody wired it up — [D-54](DECISIONS.md) applied to a tool's own record |
+
+**Five of the seven are one shape:** *a message that describes something other than what happened.* A
+refusal that was a fault, a fresh machine that was a broken one, an excuse whose reason had gone, a
+measurement of the wrong line, and a count that was the shape of the library rather than a finding.
+
+> **A gate proves a file parses and a test proves the case you thought of.** Neither asks whether what
+> the code *says* matches what it *does*, and in a repository this careful about wording that is where
+> the defects were. The re-read cost an hour and found more than everything else combined.
