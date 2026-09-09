@@ -1,7 +1,13 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `sortFieldNames`, `descending`,
 // `showHeader`, `showFooter`, `showGrandTotal` and `itemized` are in scope;
-// leaves `sorted`, `replacedRules`, `cannotSortBy`, `notPresent` and
-// `appliedOrder` behind.
+// leaves `sorted`, `replacedRules`, `cannotSortBy`, `notPresent`,
+// `appliedOrder` and `refused` behind.
+//
+// `cannotSortBy` AND `refused` ARE DIFFERENT SENTENCES. The first is a finding
+// ABOUT THE SCHEDULE - Revit will not sort on that field. The second is this
+// fragment saying it could not use what it was handed at all, which used to
+// come back as `sorted 0` and read as "already in that order". Section 3h.1 of
+// docs/FRAGMENT-ISSUES.md, 2026-09-09.
 //
 // ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 //
@@ -22,16 +28,63 @@
 // READ FIRST, WRITE, READ BACK. `appliedOrder` is a second read of what the
 // schedule now sorts by, not an echo of what was asked for.
 
+// A SCHEDULE ON A SHEET IS A ScheduleSheetInstance, NOT A ViewSchedule, AND
+// CLICKING IT IS THE ONLY WAY A PERSON CAN POINT AT ONE. The same fix and the
+// same reason as REPORT_SCHEDULE_DEFINITION, where it was found on 2026-09-08:
+// a schedule is a VIEW, a view cannot be selected as an element, opening one
+// selects its ROWS, and nothing in this library provides a ViewSchedule to
+// chain from. So a bare cast refuses the only input that could ever arrive.
+//
+// The placement carries the id of the schedule it draws, so it is resolved
+// here rather than passed over.
+Func<Element, ViewSchedule> scheduleBehind = candidate =>
+{
+    var direct = candidate as ViewSchedule;
+    if (direct != null) return direct;
+
+    var placed = candidate as ScheduleSheetInstance;
+    if (placed == null) return null;
+
+    // Guarded like everything else: a placement whose schedule was deleted
+    // under it should cost one element, not the whole run.
+    try { return doc.GetElement(placed.ScheduleId) as ViewSchedule; }
+    catch { return null; }
+};
+
 var sorted = 0;
 var replacedRules = new List<string>();
 var cannotSortBy = new List<string>();
 var notPresent = new List<string>();
 var appliedOrder = new List<string>();
+string refused = null;
+
+var handed = 0;
+var schedulesSeen = 0;
+
+var askedFor = 0;
+if (sortFieldNames != null)
+{
+    foreach (var wantedName in sortFieldNames)
+    {
+        if (!string.IsNullOrEmpty(wantedName)) askedFor++;
+    }
+}
+
+if (askedFor == 0)
+{
+    refused = "no column was named to sort or group by, so NOTHING WAS SORTED. Name at least "
+        + "one field - clearing the sort instead would be a change nobody asked for";
+}
 
 foreach (var element in elements)
 {
-    var schedule = element as ViewSchedule;
+    if (refused != null) break;
+    if (element == null) continue;
+    handed++;
+
+    var schedule = scheduleBehind(element);
     if (schedule == null) continue;
+    schedulesSeen++;
 
     ScheduleDefinition definition;
     try { definition = schedule.Definition; }
@@ -156,4 +209,17 @@ foreach (var element in elements)
     if (after.Count == wantedIds.Count) sorted++;
     else cannotSortBy.Add(string.Format("'{0}' - asked for {1} sort field(s), a read back finds {2}",
         schedule.Name, wantedIds.Count, after.Count));
+}
+
+// Decided after the loop, and safe there: an element that is not a schedule
+// `continue`s before ClearSortGroupFields is ever reached.
+if (refused == null && handed > 0 && schedulesSeen == 0)
+{
+    refused = string.Format(
+        "not one of the {0} element(s) handed in is a schedule, so NOTHING WAS SORTED. "
+        + "A schedule is a VIEW and cannot be selected in the model; what CAN be "
+        + "selected is a schedule PLACED ON A SHEET, which this now reads through to "
+        + "the schedule behind it. Click the schedule on the sheet, or select the "
+        + "category 'Schedule Graphics'",
+        handed);
 }
