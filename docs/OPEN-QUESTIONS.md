@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 42 answered · 11 open · nothing blocking any phase**
+**Progress: 43 answered · 10 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -468,7 +468,7 @@ is a better question than "should the preview select things", and it may be the 
 
 ---
 
-### 🟡 Q-49 — Should Heron's gates run automatically, or stay checks a person remembers? *(new, 2026-09-09)*
+### ✅ Q-49 — Should Heron's gates run automatically, or stay checks a person remembers? → **YES, as a hook in a skill** *(asked and answered 2026-09-09)*
 
 Found by reading [`affaan-m/ECC`](https://github.com/affaan-m/ECC) at file level
 ([33 §5.1](33-external-repository-research.md)). Its `hooks/hooks.json` registers **PreToolUse** hooks
@@ -512,7 +512,32 @@ decoration. All three are quoted from `freeze/bin/check-freeze.sh`, which learne
   closed)… **a boundary that fails open is not a boundary**."* Their `careful` is ask-tier and fails the
   other way, deliberately.
 
-**Answer:**
+**Answer — the owner, 2026-09-09: *"yes add the hooks"*.** Shape 4, which was the recommendation.
+
+**Built as [`.claude/skills/heron-guard/`](../.claude/skills/heron-guard/SKILL.md)** — one hook, one
+rule: the Revit vendor namespace outside `revit/` is **refused at the moment the edit is proposed**,
+rather than when somebody remembers the sweep.
+
+**One rule and not five, deliberately.** Not metadata headers, not links, not counts. **A hook with
+false positives is a hook somebody turns off**, and then the boundary is gone along with the noise.
+`check-structure.py` still runs the full sweep and still owns everything else it checks.
+
+**All three traps honoured, and each is asserted in
+[`tests/test_heron_guard.py`](../tests/test_heron_guard.py):** the decision is nested under
+`hookSpecificOutput`; **a crash denies** rather than being read as permission; the polarity is deny-tier
+and fails closed. **Plus a fourth thing gstack also ships and the question did not name** — `HERON_GUARD=off`,
+because a fail-closed hook that cannot be turned off is one bad edit from a repository nobody can work
+in.
+
+**Two adaptations rather than a copy** ([D-25](DECISIONS.md)): it is **Python, not bash**, because Heron
+is developed on Windows where a bash hook would simply not run; and the pattern is **built from parts**,
+because `check-structure.py` greps file text and would otherwise fail the hook for containing the string
+it exists to forbid — which is exactly how a docstring in `heron_context.py` broke the same rule the
+same day.
+
+**And it is for developing Heron. It is not part of what a modeller installs** — hooks are the host's
+mechanism, [D-01](DECISIONS.md) gives the host orchestration, and nothing in it reaches a model, a
+fragment, or a user.
 
 ---
 

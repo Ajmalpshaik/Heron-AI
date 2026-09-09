@@ -28,9 +28,9 @@ transfers; the shape almost never does.
 | | |
 |---|---|
 | **Patterns extracted** | **14**, from 16 repositories |
-| **Adopted and built** | **2** — tiered depth, and the cut marker. Both in [`heron_context.py`](../brain/heron_context.py), both tested, both reachable from the MCP tool |
+| **Adopted and built** | **3** — tiered depth, the cut marker, and **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)). All three tested |
 | **Already held** | **6** — Heron had them, and in four cases more strictly |
-| **Blocked on an owner decision** | **4** — `Q-49` to `Q-53` |
+| **Blocked on an owner decision** | **3** — `Q-50` to `Q-53`. `Q-49` was answered on 2026-09-09 and built |
 | **Rejected with a reason** | **2** |
 
 **The two built together cut a generation packet from 5,737 characters to 372 — and the request crosses
@@ -146,13 +146,61 @@ from the other end.
 needed to decide. **That is [D-01](DECISIONS.md) written as a type**, and it is why Heron should not grow
 a bound of its own.
 
-### 2.9 ⏸ OWNER'S CALL — enforce at the moment of the act, not afterwards
+### 2.9 ✅ BUILT — enforce at the moment of the act, not afterwards
 
-**From** [ECC](https://github.com/affaan-m/ECC) and [gstack](https://github.com/garrytan/gstack) —
-[Q-49](OPEN-QUESTIONS.md). Their hooks **block the tool call**; Heron's `check-*.py` hold the same rules
-and run only when a person types them. gstack's shape is the best of the four: **the hook declared in the
-skill's own frontmatter**, so the guard installs with the capability. Three traps come with it, each of
-which silently turns a hook into decoration — they are written into the question.
+**From** [ECC](https://github.com/affaan-m/ECC) and [gstack](https://github.com/garrytan/gstack).
+**[Q-49](OPEN-QUESTIONS.md), asked and answered on 2026-09-09 — the owner said yes.**
+
+Their hooks **block the tool call**; Heron's `check-*.py` held the same rules and ran only when a person
+typed them. gstack's shape was the best of the four offered: **the hook declared in the skill's own
+frontmatter**, so the guard installs with the capability and the two cannot drift apart.
+
+**Built as [`.claude/skills/heron-guard/`](../.claude/skills/heron-guard/SKILL.md)** — one hook, one
+rule: the Revit vendor namespace outside `revit/` is refused **at the moment the edit is proposed**.
+
+**One rule and not five, deliberately.** A hook with false positives is a hook somebody turns off, and
+then the boundary is gone along with the noise. The full sweep still owns everything else.
+
+**The three traps, each asserted in [`tests/test_heron_guard.py`](../tests/test_heron_guard.py):**
+
+| trap | what it costs | |
+|---|---|---|
+| a top-level `permissionDecision` | *"silently no-ops the block"* | the decision is **nested** |
+| a hook that crashes | is read as **permission** | **a crash denies**, and says how to recover |
+| polarity left to chance | *"a boundary that fails open is not a boundary"* | **deny-tier, fails closed** |
+
+**And a fourth gstack ships that the question had not named:** `HERON_GUARD=off`. A fail-closed hook
+that cannot be turned off is one bad edit from a repository nobody can work in, and the person who needs
+the hatch is the one whose tooling is already broken.
+
+**Two adaptations rather than a copy** ([D-25](DECISIONS.md)): **Python, not bash** — Heron is developed
+on Windows, where a bash hook would not run at all — and the pattern is **built from parts**, because
+`check-structure.py` greps file text and would otherwise fail the hook for containing the string it
+exists to forbid. That is not hypothetical: a docstring in `heron_context.py` broke that rule the same
+day, by quoting it in order to explain it.
+
+**The rule now exists twice, and a test holds the copies together.** `check-structure.py` cannot be
+imported — it runs its whole sweep at import — so the test asserts the hook's pattern is character for
+character the one the sweep uses, the same answer `tests/test_fragment_imports.py` already gives for the
+executor's import list.
+
+**It is for developing Heron and is not part of what a modeller installs.** Hooks are the host's
+mechanism ([D-01](DECISIONS.md)); nothing in it reaches a model, a fragment, or a user.
+
+#### And the other 53 gstack skills, read in full — none transfers
+
+All 54 were listed and read at description level, and the three promising ones opened:
+
+| | |
+|---|---|
+| **`benchmark`** | *"Performance regression detection"* — page load, Core Web Vitals, Lighthouse, bundle size. **Heron has no web page.** But its principle is the one thing [`measure-brain.py`](../tools/measure-brain.py) lacks: a baseline nothing compares against is a number, not a check |
+| **`learn`** | *"Review, search, prune and export what has been learned across sessions."* Heron holds this as [DECISIONS.md](DECISIONS.md), [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) and [D-54](DECISIONS.md) — *a message describing a gap must be corrected when the gap closes* — with `check-docs.py` enforcing the counts. **Already held, and enforced rather than remembered** |
+| **`health`** | *"Wraps existing project tools."* That is [`heron_health.py`](../brain/heron_health.py) and the gate set. **Already held** |
+
+**The remaining 50 are a startup founder's workflow** — five iOS skills, four design reviews, seven
+browser-automation skills, deploys, ship, retro, office hours, a CEO-mode plan review. Not one belongs
+to a BIM modeller, and `ETHOS.md` measures its own value in *"10,000+ usable lines of code per day"*,
+which is the developer-harness frame [D-57](DECISIONS.md) rejected outright.
 
 ### 2.10 ⏸ OWNER'S CALL — fact-forcing beats confirming, and pointing beats typing
 
