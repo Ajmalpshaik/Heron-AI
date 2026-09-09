@@ -304,7 +304,7 @@ could do nothing about being on the list:**
 | Question | First | Now | What the cut was |
 |---|---|---|---|
 | **3** document context | 42 | **0** | it asked *does it declare a document*; all 42 that declare none were right. It asks *does the **code** use one it did not declare* |
-| **7** collectors scoped | 114 | **6** | a whole-model scan is usually the job. An **inconsistency** is being handed a `view` and never scoping to it |
+| **7** collectors scoped | 114 | **1** | a whole-model scan is usually the job; and of the 6 handed a `view`, five collect something **project-level** that does not live in a view, so scoping would return nothing |
 | **8** linked documents | 310 → 107 | **62** | only fragments that **collect**, and only those that **read** — a linked element belongs to another document and cannot be changed through the host |
 | **11** units | 1 | **0** | the one real defect, fixed |
 | **12** null handling | 7 | **0** | it asked *is there a guard*; all 7 touch nothing nullable. It asks whether something **Revit can hand back as null** is dereferenced unchecked |

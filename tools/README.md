@@ -621,6 +621,12 @@ looked exactly like findings:
 | a header **comment** | almost every fragment says *"Assumes `doc` … are in scope"*, so a check reading comments finds `doc` everywhere and means nothing |
 | a **local** | `zoom-to-elements` declares `uidoc` and writes `var doc = uidoc.Document;` — correct code, and reported as an undeclared need it would have sent somebody to edit a working contract |
 
+**Question 7 went 114 → 6 → 1**, and the last cut came from opening all six. Five collect something
+**project-level** — a fill pattern, a parameter filter, a family symbol, a view — which does not live in
+a view at all, so a view-scoped collector would return **nothing**. Raising them asked somebody to make
+a change that would break the fragment. The one that remains collects *instances* and is a genuine
+judgement call.
+
 **Question 7 went 114 → 6.** A whole-model collector is usually the job, so raising all 114 was raising
 the shape of the library. What is an **inconsistency** rather than a design is a fragment handed a
 `view` that never scopes to it — 6 of them, and even those are sometimes right, which is why they are a

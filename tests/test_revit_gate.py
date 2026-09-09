@@ -272,6 +272,33 @@ def main():
         check(got[0] == tool.ANSWERED,
               "and one that DOES scope to the view it was handed is fine")
 
+        # Five of the six real hits were this, and it is not a judgement call.
+        # A fill pattern, a parameter filter, a family symbol and a view are
+        # PROJECT-LEVEL: a view-scoped collector returns nothing for them, so
+        # reporting it asked somebody to make a change that would break the
+        # fragment.
+        make(work, "definitions", BASE % ("FRG-T-023", "MODIFY", VIEWNEED),
+             "foreach (var e in new FilteredElementCollector(doc)"
+             ".OfClass(typeof(FillPatternElement))) { var n = e.Name; }\n")
+        got = verdicts_for(tool, work, "definitions")[6]
+        check(got[0] == tool.ANSWERED,
+              "collecting a PROJECT-LEVEL class is not raised - it does not "
+              "live in a view, so scoping would return nothing")
+        check("does not live in a view" in got[1],
+              "and the message says why rather than just staying silent")
+
+        # Only OfClass(typeof(X)) counts. Matching every typeof() in the file
+        # excused create-view-filters-by-value for the wrong reason: it also
+        # writes typeof(string) for unrelated reflection.
+        make(work, "reflects", BASE % ("FRG-T-024", "MODIFY", VIEWNEED),
+             "var m = t.GetMethod(\"X\", new[] { typeof(string) });\n"
+             "foreach (var e in new FilteredElementCollector(doc)"
+             ".WhereElementIsNotElementType()) { var n = e.Id; }\n")
+        got = verdicts_for(tool, work, "reflects")[6]
+        check(got[0] == tool.LOOK,
+              "an unrelated typeof(string) does NOT excuse a fragment that "
+              "collects instances")
+
         print()
         print("3c. Question 8 asks a READER about links, never a writer")
         print("-" * 66)

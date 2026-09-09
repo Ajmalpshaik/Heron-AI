@@ -202,6 +202,37 @@ def _nullable_calls(code):
     return [label for pattern, label in NULLABLE if re.search(pattern, body)]
 
 
+# A class name that names something PROJECT-LEVEL rather than something placed
+# in a view. Suffix-matched rather than listed, because the list would go stale
+# and the naming convention will not.
+DEFINITION_NAME = re.compile(
+    r"(Element|Symbol|Type|View|ViewSchedule|Material|Family|Level|Phase|Workset)$")
+OF_CLASS = re.compile(
+    r"OfClass\(\s*typeof\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\)")
+
+
+def _definition_classes(code):
+    """The project-level classes a collector asks for, or [] if it wants
+    instances.
+
+    ONLY `OfClass(typeof(X))` COUNTS, not every `typeof()` in the file.
+    Matching all of them excused create-view-filters-by-value for the wrong
+    reason - it also writes `typeof(string)` and `typeof(
+    ParameterFilterRuleFactory)` for unrelated reflection, and a rule that
+    reads those as "collects definitions" would excuse a fragment that
+    collects instances the moment it did any reflection at all.
+    """
+    if not code:
+        return []
+    squashed = "".join(code.lower().split())
+    if "whereelementisnotelementtype" in squashed:
+        return []                                  # it wants instances
+    classes = OF_CLASS.findall(code)
+    if not classes or not all(DEFINITION_NAME.search(c) for c in classes):
+        return []
+    return sorted(set(classes))
+
+
 def _can_drop(code):
     """Whether the code can pass over a candidate inside a loop.
 
@@ -291,16 +322,25 @@ def ask(fid, name, doc, raw, code):
     whole = code is not None and "newfilteredelementcollector(doc)" in squashed
     scoped = "newfilteredelementcollector(doc," in squashed
     declares_view = "view" in [n.get("name") for n in needs_of(doc)]
-    if whole and declares_view and not scoped:
-        # 6 of the 114, and the only shape here that is an INCONSISTENCY rather
-        # than a design: the fragment was handed a view and never narrows to
-        # it. Often still correct - a filter's candidate values come from the
-        # whole model - which is why it is a LOOK and not a defect.
+    definitions = _definition_classes(code)
+    if whole and declares_view and not scoped and definitions:
+        # FIVE OF THE SIX WERE THIS, and it is not a judgement call: a fill
+        # pattern, a parameter filter, a family symbol and a view are
+        # PROJECT-LEVEL. They do not live in a view, so a view-scoped collector
+        # would return nothing. Scoping is not merely unnecessary here, it is
+        # wrong, and reporting them asked somebody to consider a change that
+        # would break the fragment.
+        say(ANSWERED,
+            "is handed a `view` and collects the whole document for %s, which "
+            "is project-level and does not live in a view. A view-scoped "
+            "collector would return nothing"
+            % ", ".join(definitions))
+    elif whole and declares_view and not scoped:
         say(LOOK,
-            "is handed a `view` and still collects the WHOLE document, never "
-            "scoping to it. Sometimes right - a view filter's candidate values "
-            "come from the whole model - and worth confirming that is the "
-            "intent rather than an oversight")
+            "is handed a `view` and still collects INSTANCES from the whole "
+            "document, never scoping to it. Sometimes right - reporting which "
+            "categories the model contains needs the model, not the view - and "
+            "worth confirming that is the intent rather than an oversight")
     elif whole:
         # Raising all 114 was raising the shape of the library. A whole-model
         # collector is usually the job. Where it MATTERS is proof speed, and
