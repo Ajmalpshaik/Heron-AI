@@ -29,18 +29,63 @@
 // column - both look like the fragment working.
 //
 // READ FIRST, WRITE, READ BACK. appliedAppearance is a second read.
+//
+// AND A SCHEDULE IT CANNOT SEE IS REFUSED, NOT COUNTED AS `changed 0`. Handed
+// a schedule placed on a sheet this used to change nothing and say nothing,
+// which reads as "the column was already like that". Section 3h.1 of
+// docs/FRAGMENT-ISSUES.md, 2026-09-09.
+
+// A SCHEDULE ON A SHEET IS A ScheduleSheetInstance, NOT A ViewSchedule, AND
+// CLICKING IT IS THE ONLY WAY A PERSON CAN POINT AT ONE. The same fix and the
+// same reason as REPORT_SCHEDULE_DEFINITION, where it was found on 2026-09-08:
+// a schedule is a VIEW, a view cannot be selected as an element, opening one
+// selects its ROWS, and nothing in this library provides a ViewSchedule to
+// chain from. So a bare cast refuses the only input that could ever arrive.
+//
+// The placement carries the id of the schedule it draws, so it is resolved
+// here rather than passed over.
+Func<Element, ViewSchedule> scheduleBehind = candidate =>
+{
+    var direct = candidate as ViewSchedule;
+    if (direct != null) return direct;
+
+    var placed = candidate as ScheduleSheetInstance;
+    if (placed == null) return null;
+
+    // Guarded like everything else: a placement whose schedule was deleted
+    // under it should cost one element, not the whole run.
+    try { return doc.GetElement(placed.ScheduleId) as ViewSchedule; }
+    catch { return null; }
+};
 
 var changed = 0;
 var notPresent = new List<string>();
 var refused = new List<string>();
 var appliedAppearance = new List<string>();
 
+var handed = 0;
+var schedulesSeen = 0;
+
 var wantedAlignment = (alignment ?? "").Trim().ToLowerInvariant();
+
+var requestUnusable = false;
+
+if (string.IsNullOrEmpty((fieldName ?? "").Trim()))
+{
+    requestUnusable = true;
+    refused.Add("no column was named, so there is nothing to restyle. NOTHING WAS CHANGED - "
+        + "name the field or the heading as it prints");
+}
 
 foreach (var element in elements)
 {
-    var schedule = element as ViewSchedule;
+    if (requestUnusable) break;
+    if (element == null) continue;
+    handed++;
+
+    var schedule = scheduleBehind(element);
     if (schedule == null) continue;
+    schedulesSeen++;
 
     ScheduleDefinition definition;
     try { definition = schedule.Definition; }
@@ -172,4 +217,17 @@ foreach (var element in elements)
         refused.Add(string.Format("'{0}' on '{1}' - could not be read back: {2}",
             fieldName, schedule.Name, ex.Message));
     }
+}
+
+// Decided after the loop, and safe there: every element that is not a schedule
+// `continue`s before a definition is reached, so nothing has been written.
+if (handed > 0 && schedulesSeen == 0)
+{
+    refused.Add(string.Format(
+        "not one of the {0} element(s) handed in is a schedule, so NOTHING WAS CHANGED. "
+        + "A schedule is a VIEW and cannot be selected in the model; what CAN be "
+        + "selected is a schedule PLACED ON A SHEET, which this now reads through to "
+        + "the schedule behind it. Click the schedule on the sheet, or select the "
+        + "category 'Schedule Graphics'",
+        handed));
 }

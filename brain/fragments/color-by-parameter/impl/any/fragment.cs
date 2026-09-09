@@ -1,8 +1,33 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `elements`, `parameterName` and
-// `colourBand` are in scope; leaves `coloured`, `legend`, `noValue` and
-// `skipped` behind.
+// `colourBand` are in scope; leaves `coloured`, `legend`, `noValue`, `skipped`
+// and `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
+//
+// ===========================================================================
+// A PARAMETER NOBODY CARRIES IS REFUSED. IT IS NOT COLOURED.
+// ===========================================================================
+//
+// Found in front of a model on 2026-09-09: a parameter name that does not
+// exist coloured 22 elements anyway. `valueOf` below cannot tell "there is no
+// such parameter" from "the parameter is empty" - it answers "" to both - so
+// every element landed in the one "(no value)" group and the view was painted
+// a single colour.
+//
+// That is worse than slow, it is a confident wrong answer. The drawing looks
+// grouped, and it is grouped by nothing. Somebody reads a uniform colour as
+// "these all share a system" when what happened is that the name was mistyped.
+//
+// So the parameter is counted across the whole set, and if NOT ONE element
+// carries it nothing is coloured and `refused` says why - carrying the names
+// that ARE there, which is the answer to the question that comes next. The
+// same courtesy ADD_SCHEDULE_FIELDS pays with `availableFields`.
+//
+// A MIXED SELECTION IS UNCHANGED. Where SOME elements carry the parameter, the
+// ones that do not still join the "(no value)" group and are still coloured -
+// see the note below on why a blank is its own group. Only the case where the
+// parameter is on nothing at all is a refusal, because only then is there no
+// grouping to do.
 //
 // ===========================================================================
 // HUES ARE STEPPED EVENLY. THERE IS NO PALETTE, AND THAT IS THE FIX.
@@ -31,6 +56,7 @@ var coloured = 0;
 var legend = new List<string>();
 var noValue = new List<ElementId>();
 var skipped = new List<ElementId>();
+string refused = null;
 
 // The value as Revit renders it - what a schedule would print. An ElementId
 // parameter is resolved to the referenced element's name, because "Level: 428"
@@ -95,9 +121,22 @@ try
 catch { solid = null; }
 
 var grouped = new Dictionary<string, List<Element>>();
+var handed = 0;
+var carrying = 0;
+
 foreach (var element in elements)
 {
     if (element == null) continue;
+    handed++;
+
+    // ASKED SEPARATELY FROM THE VALUE, and that separation is the whole fix.
+    // `valueOf` answers "" for a parameter that is absent and for one that is
+    // there and empty; only this call tells them apart.
+    var present = false;
+    try { present = element.LookupParameter(parameterName) != null; }
+    catch { present = false; }
+    if (present) carrying++;
+
     var value = valueOf(element).Trim();
     if (value.Length == 0)
     {
@@ -106,6 +145,66 @@ foreach (var element in elements)
     }
     if (!grouped.ContainsKey(value)) grouped[value] = new List<Element>();
     grouped[value].Add(element);
+}
+
+// DECIDED BEFORE ANYTHING IS PAINTED. Grouping reads; the loop below writes.
+// Nothing above this line has changed the model, so a refusal here leaves the
+// view exactly as it was found.
+if (string.IsNullOrEmpty((parameterName ?? "").Trim()))
+{
+    refused = "no parameter name was given, so there is nothing to group by. Nothing was "
+        + "coloured";
+}
+else if (handed == 0)
+{
+    refused = "nothing was handed in to colour";
+}
+else if (carrying == 0)
+{
+    // The names that ARE there. Taken from the first element only: on a mixed
+    // selection the full list is long and no more useful than a real example,
+    // and this is a message a person reads rather than a set to iterate.
+    var available = new List<string>();
+    foreach (var element in elements)
+    {
+        if (element == null) continue;
+        try
+        {
+            foreach (Parameter candidate in element.Parameters)
+            {
+                var definition = candidate.Definition;
+                if (definition == null) continue;
+                var name = definition.Name ?? "";
+                if (name.Length > 0 && !available.Contains(name)) available.Add(name);
+            }
+        }
+        catch { }
+        break;
+    }
+    available.Sort(StringComparer.OrdinalIgnoreCase);
+
+    var shown = available.Count > 12 ? available.GetRange(0, 12) : available;
+    var hint = shown.Count == 0
+        ? "The first element reports no parameters at all"
+        : "The first element carries: " + string.Join(", ", shown)
+            + (available.Count > shown.Count
+                ? string.Format(", and {0} more", available.Count - shown.Count)
+                : "");
+
+    refused = string.Format(
+        "not one of the {0} element(s) handed in carries a parameter called '{1}', so there is "
+        + "nothing to group by and NOTHING WAS COLOURED. Colouring them all one colour would "
+        + "say they share a value they do not have. Check the spelling - a parameter name is "
+        + "case-sensitive here and is not the same as the schedule heading. {2}",
+        handed, parameterName, hint);
+}
+
+if (refused != null)
+{
+    // A refusal reports nothing FOUND. These were filled while reading and
+    // would otherwise read as a finding on a run that did no work.
+    grouped.Clear();
+    noValue.Clear();
 }
 
 // Sorted, so the mapping does not depend on the order elements arrived in.
@@ -150,11 +249,11 @@ for (var i = 0; i < names.Count; i++)
         names[i], colour.Red, colour.Green, colour.Blue, painted));
 }
 
-if (solid == null)
+if (refused == null && solid == null)
     legend.Add("NOTE: this project has no solid fill pattern, so only the LINES are coloured - the "
         + "surfaces are left as they were, and the drawing will read fainter than expected");
 
-if (noValue.Count > 0)
+if (refused == null && noValue.Count > 0)
     legend.Add(string.Format("{0} element(s) have nothing in '{1}' - they are the '(no value)' group, "
         + "coloured on purpose so they are not mistaken for elements outside the set",
         noValue.Count, parameterName));

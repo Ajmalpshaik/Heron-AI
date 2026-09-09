@@ -18,6 +18,9 @@
 // checks a column that is already there. Where a part is missing, that
 // schedule gets nothing and is named.
 //
+// A SCHEDULE ON A SHEET IS READ THROUGH TO THE SCHEDULE BEHIND IT, so
+// `notASchedule` now means what it says. See the resolver below.
+//
 // A COMBINED FIELD JOINS TEXT. IT DOES NOT CALCULATE.
 //
 // Arithmetic on schedule values is a calculated value - a different mechanism,
@@ -26,6 +29,29 @@
 // a version-shaped hole that reads as green, which is the failure this
 // repository is most exposed to.
 
+// A SCHEDULE ON A SHEET IS A ScheduleSheetInstance, NOT A ViewSchedule, AND
+// CLICKING IT IS THE ONLY WAY A PERSON CAN POINT AT ONE. The same fix and the
+// same reason as REPORT_SCHEDULE_DEFINITION, where it was found on 2026-09-08:
+// a schedule is a VIEW, a view cannot be selected as an element, opening one
+// selects its ROWS, and nothing in this library provides a ViewSchedule to
+// chain from. So a bare cast refuses the only input that could ever arrive.
+//
+// The placement carries the id of the schedule it draws, so it is resolved
+// here rather than passed over.
+Func<Element, ViewSchedule> scheduleBehind = candidate =>
+{
+    var direct = candidate as ViewSchedule;
+    if (direct != null) return direct;
+
+    var placed = candidate as ScheduleSheetInstance;
+    if (placed == null) return null;
+
+    // Guarded like everything else: a placement whose schedule was deleted
+    // under it should cost one element, not the whole run.
+    try { return doc.GetElement(placed.ScheduleId) as ViewSchedule; }
+    catch { return null; }
+};
+
 int added = 0;
 var partMissing = new List<ElementId>();
 var notASchedule = new List<ElementId>();
@@ -33,7 +59,7 @@ var refused = new List<ElementId>();
 
 foreach (var element in elements)
 {
-    var schedule = element as ViewSchedule;
+    var schedule = scheduleBehind(element);
     if (schedule == null)
     {
         if (element != null) notASchedule.Add(element.Id);
