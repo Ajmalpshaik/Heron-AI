@@ -30,8 +30,8 @@ transfers; the shape almost never does.
 | **Patterns extracted** | **15**, from **17** repositories — `gbrain` was added by the owner on 2026-09-09 and is the only one that **measured** a question Heron has open |
 | **Adopted and built** | **3** — tiered depth, the cut marker, and **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)). All three tested |
 | **Already held** | **6** — Heron had them, and in four cases more strictly |
-| **Blocked on an owner decision** | **3** — `Q-50` to `Q-53`. `Q-49` was answered on 2026-09-09 and built |
-| **Rejected with a reason** | **2** |
+| **Blocked on an owner decision** | **2** — `Q-50`, `Q-51`, `Q-53`. `Q-49` was answered and built; `Q-52` was answered by **measuring it** |
+| **Rejected with a reason** | **3** — one of them **measured and rejected**, not argued ([§2.13](#213--measured-and-rejected--a-third-retrieval-stream-tried-at-six-settings)) |
 
 **The two built together cut a generation packet from 5,737 characters to 372 — and the request crosses
 byte for byte at every depth**, which is the half that makes the other half safe.
@@ -233,7 +233,7 @@ licence inventory as a build artifact**. Heron's dependency inventory would be n
 inventory Heron needs is of its imported knowledge**, which [24 §7](24-trust-model.md) now records as
 semi-trusted.
 
-### 2.13 ⏸ OWNER'S CALL — a third retrieval stream, and somebody has now measured it
+### 2.13 ❌ MEASURED AND REJECTED — a third retrieval stream, tried at six settings
 
 **From** [`agentmemory`](https://github.com/rohitg00/agentmemory) and, decisively,
 [`gbrain`](https://github.com/garrytan/gbrain) — [Q-52](OPEN-QUESTIONS.md). Heron fuses two streams.
@@ -248,8 +248,25 @@ stream over its own graph-disabled variant. **The closer analogue to Heron's gra
 the large lift.**
 
 **Take the direction, not the magnitude.** Their corpus is prose about people; Heron's is contracts.
-[`measure-routes.py`](../tools/measure-routes.py) holds the before, so this is a measurement to run
-rather than a decision to take on somebody else's corpus.
+**So it was run** — [`tools/measure-graph.py`](../tools/measure-graph.py), 360 questions whose answer is
+each fragment's own declared sentence, across four query shapes.
+
+**All six settings lost.** The gentlest cost 1.1 points of P@1 and the strongest 14; **P@5 never
+improved at any of them**, so the graph did not widen recall either — the one thing it was supposed to
+be good at.
+
+**The reason is the corpus, and it is the thing that does not transfer:**
+
+> neighbours per fragment: **median 50, worst 230**, none at all for 68 of them.
+
+**gbrain's graph is sparse; Heron's is dense.** A page mentions three people. A fragment providing
+`IList<Element>` composes with every fragment that needs one — most of the library. *"The neighbours of
+the best hit"* is not a signal here; it is a large slice of the library added as competitors.
+
+**This is the most useful shape a research finding can take.** A number from somebody else's corpus said
+*probably yes*. Heron's own corpus said *no*, at every setting, and **named the property that decides
+it** — density. Neither could have been reached by reasoning, and the second is only available because
+the first was taken seriously enough to test.
 
 ### 2.14 ❌ REJECTED — the council, and the swarm
 

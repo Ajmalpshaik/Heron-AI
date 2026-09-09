@@ -26,7 +26,7 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**43 answered · 10 open, and nothing gates any phase.** `Q-43` to `Q-48` were all opened on
+**44 answered · 9 open, and nothing gates any phase.** `Q-43` to `Q-48` were all opened on
 2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
 than by reading. `Q-49` and `Q-50` followed the same day from reading someone else's repository at file
 level ([33 §5](33-external-repository-research.md)):

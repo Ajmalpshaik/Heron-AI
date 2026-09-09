@@ -753,3 +753,59 @@ after somebody wired it up.
 **What it cannot see:** a function reached through `globals()`, a registry built at run time, a plugin
 loader, or a name assembled from parts. Absent from the source is not the same as unreachable, and it
 says so. Not a gate; exits 0.
+
+---
+
+## `measure-graph.py` — does the graph help retrieval? It does not
+
+`Q-52`, run rather than argued. [33 §5.16](../docs/33-external-repository-research.md) records
+`gbrain` reporting **+31.4 points P@5** from a graph retrieval stream. Heron's graph is a different
+object — `composes_into` / `composes_from`, derived from the contracts — so the direction was evidence
+and the magnitude was nothing. **This is Heron's own number.**
+
+```bash
+python tools/measure-graph.py           # one setting
+python tools/measure-graph.py --sweep   # six, which is the point
+```
+
+**The answer key is the library itself.** Every fragment declares a `semantic-identity` — one sentence
+that should return it. 360 questions whose right answer is known because **nobody wrote it to make
+retrieval look good**: it has been the matching text since Step 7.
+
+**It is also easy**, so three degraded shapes are measured beside the exact one — the first word
+dropped, only words of four or more characters, the first half of the sentence. **Those are where a
+graph could earn its place**, because they are the cases where the right answer is not already first.
+
+### What it found
+
+| shape | P@1 today | with the graph | |
+|---|---|---|---|
+| `exact` | **95.6%** | 94.4% | −1.1 |
+| `no-first` | **93.1%** | 92.2% | −0.8 |
+| `content` | **90.4%** | 89.0% | −1.4 |
+| `half` | **70.8%** | 69.2% | −1.7 |
+
+**Six settings, six losses** — weights 0.05 / 0.10 / 0.30 against 1, 3 and 5 seeds. The gentlest costs
+1.1 points of P@1, the strongest 14, and **P@5 never improves at any of them.**
+
+**The reason is one line of the output:**
+
+> neighbours per fragment: **median 50, worst 230**, none at all for 68 of them.
+
+**A dense graph is not a retrieval signal.** A page mentions three people; a fragment providing
+`IList<Element>` composes with most of the library. *"The neighbours of the best hit"* is a large slice
+of the library added as competitors.
+
+### Two things it does on purpose
+
+**It writes its prediction down before the run** — *a gain must come from the degraded shapes, and a
+loss will show first in P@1 on the exact one* — so the result cannot be read as whatever was hoped for.
+**A tool that can only report good news is not a measurement.**
+
+**It computes the neighbour map once.** The first run called `composes_into()` per seed per query and
+took **275 seconds**; the map takes **fifteen**. That is what made a six-setting sweep affordable, and a
+sweep is the difference between *"the graph lost"* and *"the graph lost at every setting tried"*.
+
+**Not a gate; exits 0.** It measures whether the fragment whose own sentence was typed comes back
+first — a proxy chosen because it is honest and available, not because it is the question.
+[D-30](../docs/DECISIONS.md) needs a real model, and nothing here has met one.

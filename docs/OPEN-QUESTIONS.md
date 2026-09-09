@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 43 answered · 10 open · nothing blocking any phase**
+**Progress: 44 answered · 9 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -321,7 +321,7 @@ under Apache 2.0 ([D-08](DECISIONS.md)); [09](09-skills-and-fragments.md) plans 
 which [Golden Rule 19](14-golden-rules.md) already names as a source Heron reads. So Heron will import
 knowledge somebody else wrote, and Heron's users will redistribute what Heron ships.
 
-**None of Heron's 19 tools mentions a licence.** `check-metadata.py` checks headers,
+**None of Heron's 20 tools mentions a licence.** `check-metadata.py` checks headers,
 `check-structure.py` checks boundaries, `check-docs.py` checks claims. Nothing checks what an imported
 package permits.
 
@@ -343,7 +343,7 @@ its users cannot honour, and the difference between those two is the whole quest
 
 ---
 
-### 🟡 Q-52 — Should the composition graph become a third retrieval stream? *(new, 2026-09-09)*
+### ✅ Q-52 — Should the composition graph become a third retrieval stream? → **No. Measured.** *(asked and answered 2026-09-09)*
 
 Found by reading [`rohitg00/agentmemory`](https://github.com/rohitg00/agentmemory) at file level
 ([33 §5.5](33-external-repository-research.md)). It fuses **three** streams — BM25, vector and a graph —
@@ -391,7 +391,42 @@ output fits that one's input*. **Take the direction as evidence and the magnitud
 or 3 above is now the more likely answer, and it is still a measurement to run rather than a decision to
 take on somebody else's corpus.
 
-**Answer:**
+**Answer — measured on 2026-09-09 with [`tools/measure-graph.py`](../tools/measure-graph.py). It is
+NO for shape 2, and the measurement does not touch shape 3.**
+
+The answer key is each fragment's own `semantic-identity` — 360 questions whose right answer is known
+because nobody wrote it to make retrieval look good. Four query shapes, three degraded on purpose,
+because a graph can only help where the answer is **not** already first.
+
+| shape | P@1 today | P@1 with the graph | |
+|---|---|---|---|
+| `exact` | **95.6%** | 94.4% | −1.1 |
+| `no-first` | **93.1%** | 92.2% | −0.8 |
+| `content` | **90.4%** | 89.0% | −1.4 |
+| `half` | **70.8%** | 69.2% | −1.7 |
+
+**Six settings were tried and all six lost** — weights 0.05, 0.10 and 0.30 against 1, 3 and 5 seeds.
+The gentlest costs 1.1 points of P@1; the strongest costs 14. **P@5 never improved at any setting**, so
+the graph did not even widen recall, which is the one thing it was supposed to be good at.
+
+**And the reason is in the graph, not in the fusion:**
+
+> neighbours per fragment: **median 50, worst 230**, and none at all for 68 of them.
+
+**gbrain's graph is sparse and Heron's is dense.** A page mentions three people; a fragment providing
+`IList<Element>` composes with every fragment that needs one — most of the library. So *"the neighbours
+of the best hit"* is not a signal here, it is a large slice of the library added as competitors. **That
+is what does not transfer, and it is a property of the corpus rather than of the idea.**
+
+**Two honest limits on this number.** The vector route ran on the `lexical` backend, not the trained
+one — which makes the baseline *weaker*, so a stronger baseline can only make the graph's job harder,
+and the conclusion is robust in the direction that matters. And the answer key is easy: a real modeller
+never types a fragment's declared sentence. **Both point the same way.** A re-run on the owner's PC now
+costs about fifteen seconds.
+
+**Shape 3 is untouched and still open as an idea** — returning *what composes with the best match*,
+labelled, beside the answer rather than fused into the ranking. Nothing measured here bears on it,
+because it changes no ranking. If it is ever wanted it is a separate question, not this one.
 
 ---
 

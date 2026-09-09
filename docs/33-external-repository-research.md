@@ -953,7 +953,7 @@ at a licence at all.**
 names them as a source Heron reads. So Heron will one day import knowledge somebody else wrote, and its
 users will redistribute what Heron ships.
 
-**None of Heron's 19 tools mentions a licence.** `check-metadata.py` checks headers,
+**None of Heron's 20 tools mentions a licence.** `check-metadata.py` checks headers,
 `check-structure.py` checks boundaries, `check-docs.py` checks claims. Nothing checks what an imported
 package permits — which is exactly the position this repository is in, with 163 skills and a scanner
 that looks at everything except the thing that would have caught this.
