@@ -226,8 +226,9 @@ only worth building if it is then pointed at your own work.
 
 **Swept over 120 real requests on three paths — 360 assemblies, zero violations.** The request came back
 byte-identical every time, nothing exceeded its budget, every part named its source, and the request was
-first in every packet. Sizes: median **257** characters, and **14,641** at the worst, which is a
-`generation` packet.
+first in every packet. Sizes: median **257** characters, and **14,945** at the worst, which is a
+`generation` packet. Re-run after every fix below, and still zero. Timings after those fixes: `cached`
+**2.7 ms**, `simple` **2.7 ms**, `generation` **3.6 ms**.
 
 **That sweep found a defect in it that one request never would have.** The `api` part read the
 fragment's own `using` lines and returned *"no using directives"* — **for all 360, every time**. Wrong

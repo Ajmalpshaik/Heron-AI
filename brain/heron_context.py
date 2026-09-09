@@ -333,7 +333,7 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None):
     # That is the confident-wrong-retrieval failure this repository legislates
     # against harder than any other, committed in the module written to prevent
     # an agent being handed the wrong thing.
-    allowed, _excluded_here = RETRIEVE.eligible(store, revit)
+    allowed, excluded_by_the_walls = RETRIEVE.eligible(store, revit)
     offerable = set(row["id"] for row in allowed)
 
     assumed = False
@@ -398,7 +398,12 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None):
     # 4. What the walls removed. Traceability, and the reason a user is not
     #    left hunting for a fragment that is sitting right there.
     if EXCLUDED in BUDGET[path]:
-        _allowed, excluded = RETRIEVE.eligible(store, revit)
+        # Reusing the pass taken above for the wall, rather than taking a
+        # second one. Two calls would be two answers to one question - cheap
+        # here and wrong in principle, since a store changing between them
+        # would produce a packet whose `excluded` list disagrees with the
+        # filter its own capability was chosen through.
+        excluded = excluded_by_the_walls
         if excluded:
             # Grouped by WHY, not listed one by one. eligible() excludes on
             # status as well as release, and an earlier version of this filtered
