@@ -27,7 +27,7 @@ transfers; the shape almost never does.
 
 | | |
 |---|---|
-| **Patterns extracted** | **14**, from 16 repositories |
+| **Patterns extracted** | **15**, from **17** repositories — `gbrain` was added by the owner on 2026-09-09 and is the only one that **measured** a question Heron has open |
 | **Adopted and built** | **3** — tiered depth, the cut marker, and **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)). All three tested |
 | **Already held** | **6** — Heron had them, and in four cases more strictly |
 | **Blocked on an owner decision** | **3** — `Q-50` to `Q-53`. `Q-49` was answered on 2026-09-09 and built |
@@ -233,12 +233,23 @@ licence inventory as a build artifact**. Heron's dependency inventory would be n
 inventory Heron needs is of its imported knowledge**, which [24 §7](24-trust-model.md) now records as
 semi-trusted.
 
-### 2.13 ⏸ OWNER'S CALL — a third retrieval stream, and why the obvious version is wrong
+### 2.13 ⏸ OWNER'S CALL — a third retrieval stream, and somebody has now measured it
 
-**From** [`agentmemory`](https://github.com/rohitg00/agentmemory) — [Q-52](OPEN-QUESTIONS.md). It fuses
-three streams; Heron fuses two. **The obvious repair is probably wrong**: their graph widens recall by
-expanding *entities in the query*, and Heron's is a **composition** graph — *A provides what B needs*.
-Fusing it would let a strong helper outrank the fragment that actually answers.
+**From** [`agentmemory`](https://github.com/rohitg00/agentmemory) and, decisively,
+[`gbrain`](https://github.com/garrytan/gbrain) — [Q-52](OPEN-QUESTIONS.md). Heron fuses two streams.
+
+**The first read said the obvious repair was probably wrong**, because agentmemory's graph widens recall
+by expanding *entities in the query* while Heron's is a **composition** graph — *A provides what B
+needs* — so fusing could let a strong helper outrank the fragment that actually answers.
+
+**gbrain points the other way, with a number.** Its edges are *"extracted from entity refs with **zero
+LLM calls**"* — [D-40](DECISIONS.md) word for word — and it reports **+31.4 points P@5** from the graph
+stream over its own graph-disabled variant. **The closer analogue to Heron's graph is the one reporting
+the large lift.**
+
+**Take the direction, not the magnitude.** Their corpus is prose about people; Heron's is contracts.
+[`measure-routes.py`](../tools/measure-routes.py) holds the before, so this is a measurement to run
+rather than a decision to take on somebody else's corpus.
 
 ### 2.14 ❌ REJECTED — the council, and the swarm
 

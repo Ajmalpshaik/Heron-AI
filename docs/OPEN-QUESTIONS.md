@@ -374,6 +374,23 @@ the fragment that actually answers — `set-selection` beating the filter whose 
 the before, and [D-39](DECISIONS.md) already requires a disagreement to be analysed rather than
 counted.
 
+**AND SOMEBODY HAS MEASURED IT — added 2026-09-09 from
+[`garrytan/gbrain`](https://github.com/garrytan/gbrain)** ([33 §5.16](33-external-repository-research.md)),
+which the owner named the same day. It reports **+31.4 points P@5 from the graph stream** over its own
+graph-disabled variant and over vector-only RAG, on a 240-page corpus.
+
+**It also changes which comparison this question should have been making.** The caution above is about
+`agentmemory`'s graph, which widens recall by expanding *entities in the query*. **gbrain's edges are
+derived from references already in the content, deterministically, with no model call** — which is
+[D-40](DECISIONS.md) word for word, and what [`heron_graph.py`](../brain/heron_graph.py) already does
+from the contracts. **The closer analogue is the one reporting the large lift.**
+
+**What does not transfer is the number.** Their corpus is prose about people and companies, where an
+edge is a cross-reference between documents. Heron's is fragments, where an edge means *this one's
+output fits that one's input*. **Take the direction as evidence and the magnitude as nothing.** Shape 2
+or 3 above is now the more likely answer, and it is still a measurement to run rather than a decision to
+take on somebody else's corpus.
+
 **Answer:**
 
 ---

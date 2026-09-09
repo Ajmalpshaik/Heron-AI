@@ -1314,6 +1314,64 @@ with a NOTICE**.
 
 ---
 
+### 5.16 `garrytan/gbrain` — the seventeenth, and the only one that measured the question Heron is asking
+
+**Read at** `43597b19e50a3abf56409337f248f7966860293c`, committed 2026-09-07. MIT.
+**Not in the incoming document's list** — the owner named it on 2026-09-09, and it is the one addition
+that earns its place: gstack's `setup-gbrain` installs it, and it is a **brain layer**, which is
+[`brain/`](../brain/)'s own territory rather than a developer's workflow.
+
+**Opened:** `README.md`, `DESIGN.md`, the `skills/` inventory, `src/core/` retrieval and facts modules,
+`LICENSE` and `examples/skillpack-reference/LICENSE`.
+
+#### It measured [Q-52](OPEN-QUESTIONS.md), which is open here
+
+> Every page write **extracts entity refs and creates typed edges with zero LLM calls**… The graph is
+> what produces the **+31.4 P@5 lift over vector-only RAG**. Benchmarked: **P@5 49.1%, R@5 97.9%** on a
+> 240-page corpus, over its **graph-disabled variant** and over ripgrep-BM25 + vector-only RAG.
+
+**That is the first number anybody in these seventeen repositories has put on the question Heron has
+open**, and it points the opposite way to the caution written into `Q-52`. It also changes which
+comparison matters:
+
+- **agentmemory's** graph stream expands *entities in the query* — a recall widener, which is why
+  [§5.5](#55-rohitg00agentmemory) judged it a poor match for Heron's.
+- **gbrain's** edges are **derived from explicit references already in the content**, deterministically,
+  with no model call. **That is [D-40](DECISIONS.md) exactly** — *an edge is derived before it is
+  stored* — and it is what [`heron_graph.py`](../brain/heron_graph.py) already does from the contracts:
+  *A provides what B needs.*
+
+**So the closer analogue says the lift is real and large.** What does **not** transfer is the number:
+their corpus is 240 pages of prose about people and companies, where an entity reference is a
+cross-reference between documents. Heron's is 360 fragments where an edge means *this one's output fits
+that one's input*. **The direction is evidence; the magnitude is not.** Recorded in
+[Q-52](OPEN-QUESTIONS.md) as the strongest argument yet for testing it, and
+[`measure-routes.py`](../tools/measure-routes.py) already holds the before.
+
+#### Two more things worth carrying
+
+**They ship the evaluation suite as a separate repository** — `gbrain-evals`, with per-run scorecards.
+[18](18-agent-operating-system.md) asks for an evaluation suite and Heron has none;
+[§5.13](#513-alibabaopen-code-review-and-alibabaaacr-bench) established the *shape* and this establishes
+the *habit*: the benchmark lives beside the thing, not inside it, and its results are published rather
+than claimed.
+
+**And a third licence finding, from applying §3's own rule.** `examples/skillpack-reference/LICENSE`
+reads, in full:
+
+> MIT License (edit me) — Replace with the full license text matching the SPDX id above.
+
+**A placeholder licence file that shipped.** The root is properly MIT and nothing is being taken, so
+nothing turns on it — but it is the fourth repository in this pass whose licence picture is not what the
+top-level file says, and the second where the discrepancy is only visible by listing licence files.
+**§3's rule holds: read the file, not the repository.**
+
+**Decision: Adapt concept — the graph evidence, and nothing else.** No code, no skills, no daemon. Its
+155,795-page brain, its cron jobs and its enrichment pipeline are a personal knowledge system for a
+person who reads prose all day, and Heron is a tool for somebody selecting ducts.
+
+---
+
 ### 5.15 *Claude CEO / CEO-style agent* (§10.15) — searched properly, still not identified
 
 **Nothing was cloned, because nothing could be identified.** The incoming §10.15 says *"first identify
