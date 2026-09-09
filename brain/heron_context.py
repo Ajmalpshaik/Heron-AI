@@ -314,8 +314,28 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None):
     """
     SEARCH.ensure_tables(store)
 
+    # THE VERSION WALL APPLIES TO THE SHORT CIRCUIT TOO, and the first version
+    # of this file did not apply it - which is the one bug here that mattered.
+    #
+    # `short_circuit` answers from the identity table alone and knows nothing
+    # about releases. `heron_retrieve.find()` filters its hit against
+    # `eligible()` for exactly this reason and says why in its own words: the
+    # wall does not have a door in it for convenience. This had one. On Revit
+    # 2019, `find()` returned `nothing` and `assemble()` returned
+    # FILTER_ELEMENTS_BY_CATEGORY - a fragment declared for 2020 and later,
+    # handed over as a confident answer.
+    #
+    # That is the confident-wrong-retrieval failure this repository legislates
+    # against harder than any other, committed in the module written to prevent
+    # an agent being handed the wrong thing.
+    allowed, _excluded_here = RETRIEVE.eligible(store, revit)
+    offerable = set(row["id"] for row in allowed)
+
     assumed = False
     hit, _status = SEARCH.short_circuit(store, request)
+    walled = bool(hit) and hit not in offerable
+    if walled:
+        hit = None
     if path is None:
         path = CACHED if hit else SIMPLE
         assumed = not hit
@@ -346,6 +366,13 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None):
         answer = RETRIEVE.find(store, request, revit=revit)
         fragment_id = answer.fragment_id
         why = "matched by the %s route: %s" % (answer.route, answer.note)
+    elif walled:
+        raise SourceMissing(
+            "the CACHED path was asked for and this wording IS a fragment's "
+            "declared phrasing - but that fragment is not declared for Revit "
+            "%s. The version filter is a wall and it has no door in it for a "
+            "good match: an incompatible fragment is absent, not demoted."
+            % revit)
     else:
         raise SourceMissing(
             "the CACHED path was asked for, but this wording is not a "

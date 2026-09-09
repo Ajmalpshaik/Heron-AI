@@ -111,6 +111,41 @@ def main():
                   "is reported, never enforced")
 
             print()
+            print("2b. THE VERSION WALL APPLIES TO THE SHORT CIRCUIT")
+            print("-" * 62)
+            # The one bug in this module that mattered, and it was found by
+            # re-reading rather than by any test. short_circuit() answers from
+            # the identity table and knows nothing about releases, so on Revit
+            # 2019 heron_retrieve.find() returned `nothing` and assemble()
+            # returned FILTER_ELEMENTS_BY_CATEGORY - a fragment declared for
+            # 2020 and later, handed over as a confident answer.
+            old = CONTEXT.assemble(store, "select all ducts", revit="2019")
+            check(old.path == CONTEXT.SIMPLE,
+                  "on a release the fragment does not support, the exact "
+                  "phrasing does NOT take the cached path")
+            got = [p.name for p in old.parts
+                   if p.kind == CONTEXT.CAPABILITY_PART]
+            check(got == [],
+                  "and no capability is carried - absent, not demoted (%r)"
+                  % got)
+
+            refused = None
+            try:
+                CONTEXT.assemble(store, "select all ducts",
+                                 path=CONTEXT.CACHED, revit="2019")
+            except CONTEXT.SourceMissing as why:
+                refused = str(why)
+            check(refused is not None and "2019" in refused,
+                  "asking for CACHED explicitly is refused, naming the release")
+            check(refused and "no door" in refused,
+                  "and the refusal says why: the wall has no door in it for a "
+                  "good match")
+
+            still = CONTEXT.assemble(store, "select all ducts", revit="2024")
+            check(still.path == CONTEXT.CACHED,
+                  "on a release it DOES support, the short circuit still works")
+
+            print()
             print("3. A missing source is named, not quietly dropped")
             raised = None
             try:

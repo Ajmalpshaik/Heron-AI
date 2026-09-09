@@ -196,6 +196,23 @@ asked for less.
    `standards` raises and says which source is missing, instead of returning a packet that is silently
    three quarters of what it claims.
 
+**The one bug in it that mattered was in the wall, and no test found it — a re-read did.**
+`short_circuit()` answers from the identity table and knows nothing about releases.
+[`heron_retrieve.find()`](../brain/heron_retrieve.py) filters its hit against `eligible()` for exactly
+that reason and says so in its own words: *the wall does not have a door in it for convenience.* This
+module had one. On Revit 2019, `find()` returned **nothing** and `assemble()` returned
+`FILTER_ELEMENTS_BY_CATEGORY` — a fragment declared for 2020 and later, handed over as a confident
+answer.
+
+**That is the confident-wrong-retrieval failure this repository legislates against harder than any
+other** — §3.2 of this document praises the project for refusing it — committed inside the module
+written to stop an agent being handed the wrong thing. It is fixed, the refusal now names the release,
+and [`tests/test_context.py`](../tests/test_context.py) pins all three cases so it cannot come back.
+
+**Worth noting how it was found:** not by the 120-request sweep below, which ran on Revit 2024 where the
+answer is correct, and not by any gate. By reading `assemble()` line by line afterwards and asking what
+`find()` does that it does not.
+
 **Swept over 120 real requests on three paths — 360 assemblies, zero violations.** The request came back
 byte-identical every time, nothing exceeded its budget, every part named its source, and the request was
 first in every packet. Sizes: median **257** characters, and **14,641** at the worst, which is a
