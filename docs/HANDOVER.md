@@ -429,16 +429,23 @@ inside the **inside-out-margin guard**, that guard was removed before #50 merged
 line is dead — `enclosed++` is reached only after a non-null bounding box, and reaching it is what sets
 `any = true`, so `!any` already implies `enclosed == 0`.
 
-**Both came back the same evening, in `40915d6`, and on main today the guard is CORRECT where it sits.**
-Verified: `shrinks the box past nothing` is absent at `531f47e` and present at `8f44133`.
+**Both came back the same evening in `40915d6`, and both were removed again on 2026-09-09 when the
+owner confirmed the removal still stands.** `40915d6` restored them without saying so: its message
+carefully documents its choices for every `fragment.yaml`, for `heron_validate.py` and for
+`FRAGMENT-ISSUES.md`, and **says nothing about this `.cs` file** — a conflict resolved per-side rather
+than a decision taken. `impl/any/fragment.cs` is now byte-identical to `531f47e` again, and the
+`fragment.yaml` beside it keeps the role declarations that merge brought, which were wanted.
 
-**That leaves a question only the owner can settle, and it is the reason this paragraph is still here.**
-The margin guard was described as removed *on his instruction* before #50 merged. It is back, restored
-by a merge whose message carefully documents its choices for every `fragment.yaml`, for
-`heron_validate.py` and for `FRAGMENT-ISSUES.md` — **and says nothing about this `.cs` file.** So it is
-not clear whether it was restored deliberately or carried back by a conflict resolved per-side. **Ask
-before removing it again**: it is good code, and the only thing wrong with it may be that nobody chose
-it.
+**THE SAME MERGE ALSO BROKE THE FRAGMENT COMPILE GATE, and it was red on `main` for hours.**
+`set-schedule-filters` came out of it declaring `refused` **twice** — two byte-identical `provides`
+entries — and the generated code then failed on all eight releases with *"a local variable named
+`__provides_refused` is already defined"*. Removed with the guard.
+
+**The shape of that is worth more than the fix.** A merge resolved per-side duplicated an entry, and
+nothing above the compiler could see it — the same failure that let a duplicate `## D-56` through
+`check-docs.py` the same day. **After a merge that touched contracts, run
+`python tools/check-fragments-compile.py` before trusting the tree**, and read a merge's message for
+what it does NOT mention as carefully as for what it does.
 
 **That last path is silent, and that IS a real finding.** If `IsSectionBoxActive` comes back false the
 fragment reports `applied false`, `enclosed 22` and **adds nothing to `refusalReasons`** — a count on a
