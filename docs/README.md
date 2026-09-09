@@ -26,18 +26,21 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**42 answered · 6 open, and nothing gates any phase.** `Q-43` to `Q-46` were all opened on
+**42 answered · 8 open, and nothing gates any phase.** `Q-43` to `Q-48` were all opened on
 2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
-than by reading:
+than by reading. `Q-49` and `Q-50` followed the same day from reading someone else's repository at file
+level ([33 §5](33-external-repository-research.md)):
 
 | | |
 |---|---|
 | `Q-43` | [`measure-routes.py`](../tools/measure-routes.py) parsed the tree for real calls to `heron_search.remember()` and found one, in a **test**. The utterance cache [19 §5](19-context-and-cost.md) makes step 1 of the pipeline is **never written in production** |
 | `Q-44` | the audit trail is written by the add-in, so a request answered entirely by the brain leaves **no record at all** — and [19 §7](19-context-and-cost.md) asks for one file, which would mean two processes appending to it |
 | `Q-45` | [D-58](DECISIONS.md) established that Heron makes no model calls, so [19 §3–§4](19-context-and-cost.md)'s router and fallback may belong wholly to the host — except the *mark the result degraded* clause, which is trust and therefore Heron's |
-| `Q-46` | [`check-revit-gate.py`](../tools/check-revit-gate.py) found **143 of 360** fragments naming nothing they refused or skipped, against [D-52](DECISIONS.md) |
+| `Q-46` | [`check-revit-gate.py`](../tools/check-revit-gate.py) found **59 fragments** that go looking, can drop a candidate on the way, and name nothing they refused or skipped, against [D-52](DECISIONS.md). It was 143 until the rule was derived from the library's own practice — writers name refusals 172/202, readers 45/158 |
 | `Q-47` | [`check-reachable.py`](../tools/check-reachable.py) found `heron_capability.want()` called from two tests and no production code — so the `capabilities_wanted` table is always empty and **two gap paths exist of which only the derived one can fire** |
 | `Q-48` | 🟠 [`check-revit-gate.py`](../tools/check-revit-gate.py) found **62 reading fragments** that collect from the host document and say nothing about links. In federated MEP work that is a **confident smaller number**, and it is the one finding on that list about what a modeller sees rather than about code |
+| `Q-49` | 🟡 Heron has **no hooks of any kind** — no `.claude/settings.json`. Every `check-*.py` gate runs only when a person types it, and this repository has already paid for that once ([32 §4](32-master-architecture-reconciliation.md)) |
+| `Q-50` | 🟠 the preview **tells** the modeller what would change; everything needed to **show** it — `preview.Ids`, `preview.Skipped`, [`set-selection`](../brain/fragments/set-selection/) — is already in memory when the question is asked |
 
 `Q-41` before them was both asked and answered by the owner on 2026-09-06, during the decision read-back
 rather than by a specification.

@@ -14,9 +14,16 @@ See docs/29-metadata-standard.md
 projects to study, and §17 Phase 2 asks for the result as a matrix. This is that matrix, read on
 2026-09-09.
 
-**Every row was read from the project's own page, not from memory.** Where the incoming document said
-*"first verify the exact repository intended"*, the repository was identified before anything was
+**Every row was first read from the project's own page, not from memory.** Where the incoming document
+said *"first verify the exact repository intended"*, the repository was identified before anything was
 written about it — and one of them **could not be**, which is recorded rather than guessed at.
+
+**Then every repository was cloned and read at file level** — its source, its hooks, its rules, its
+tests — because a landing page describes what a project means to be and only its files say what it is.
+[§5](#5-the-file-level-pass-repository-by-repository) is that second pass, one repository at a time,
+each recorded with the commit it was read at so the reading can be repeated or found stale. **Where the
+file-level pass contradicts the matrix, the matrix row is corrected in place and the correction is
+named in §5** — a claim that quietly changes is worse than one that was wrong out loud.
 
 **Read [32 §1](32-master-architecture-reconciliation.md) before acting on any row.** These are research
 inputs for a **BIM-modeller-facing platform**, not for a developer-assist harness. Several of the
@@ -59,7 +66,7 @@ Research further.**
 | [`karpathy/llm-council`](https://github.com/karpathy/llm-council) | one model reviewing its own work | first opinions → **anonymised** peer review → a Chairman synthesises | [D-39](DECISIONS.md) already requires an *analysed disagreement*. **Anonymising which agent produced which answer is a genuine sharpening** of Shadow Mode | it is N model calls per question, which [19 §5](19-context-and-cost.md) exists to avoid. Only for the high-risk path the incoming §6.9 describes | MIT — compatible | **Adapt concept** — take the anonymising, not the council |
 | [`obra/superpowers`](https://github.com/obra/superpowers) | agents coding before understanding | brainstorm → design → plan → execute, with review checkpoints; skills as the unit | the discipline is [27](27-build-order.md)'s and this repository's practice | its skills are general software workflows; Heron's name **capabilities**, deliberately ([09](09-skills-and-fragments.md)) | MIT — compatible | **Adopt concept** — already held |
 | [`garrytan/gstack`](https://github.com/garrytan/gstack) | solo developer without a team | a seven-stage cycle and 23 named specialist roles | [28](28-agent-registry.md) already defines 250 agents by department | adding 23 more roles creates a **second registry**, which is [32 §5](32-master-architecture-reconciliation.md)'s rejection of the incoming §6.7 repeated | MIT — compatible | **Reject** |
-| [`affaan-m/ECC`](https://github.com/affaan-m/ECC) | plans lost in chat, standards forgotten | **the plan as an editable artifact** rather than chat history; hooks enforcing standards outside the model's context | the artifact idea is [23](23-heron-kernel.md)'s checkpoints and [`heron_workflow.py`](../mcp/server/heron_workflow.py). Enforcement outside the model's context is what `tools/check-*.py` are | 68 agents, 284 skills, 94 commands. The scale IS the thing being rejected — [D-01](DECISIONS.md) gives the host the commands and [09](09-skills-and-fragments.md) gives skills capabilities | MIT — compatible | **Adopt the artifact principle, reject the scale** |
+| [`affaan-m/ECC`](https://github.com/affaan-m/ECC) — [§5.1](#51-affaan-mecc) | plans lost in chat, standards forgotten | **the plan as an artifact the human points at**, not chat history; hooks that **block the tool call** rather than checks a person remembers to run | the artifact idea is [23](23-heron-kernel.md)'s checkpoints and [`heron_workflow.py`](../mcp/server/heron_workflow.py). `tools/check-*.py` hold the same *rules* but **nothing runs them automatically** — [§5.1](#51-affaan-mecc) corrects the page-level claim that they are the equivalent | 68 agents, 286 skills, 94 commands. The scale IS the thing being rejected — [D-01](DECISIONS.md) gives the host the commands and [09](09-skills-and-fragments.md) gives skills capabilities | MIT — but [§5.1](#51-affaan-mecc) names a second project inside it | **Adopt the artifact principle, reject the scale.** File-level pass added two items — see [§5.1](#51-affaan-mecc) |
 | [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) | orchestrating many agents | swarm coordination; **Raft, Byzantine and Gossip consensus**; 100+ agents | almost none. Heron has **one Revit, one pipe, one queue, one handler** ([D-09](DECISIONS.md)) | consensus answers *"which of my disagreeing replicas is right"*. Heron has no replicas. The incoming §10.2 says it itself: *avoid unnecessary agent complexity* | MIT — compatible | **Reject** |
 | [`thedotmack/claude-mem`](https://github.com/thedotmack/claude-mem) | context lost at compaction | capture the session, **compress it**, inject relevant context next time | the *lifecycle* is [10](10-memory-and-knowledge.md)'s. The *capture everything* half is the opposite of Heron's rule | it captures whole sessions and stores them in ChromaDB, and part of it is a paid subscription. [D-24](DECISIONS.md) and [D-26](DECISIONS.md) require local, free, offline and no account | Apache-2.0 — compatible | **Reject the mechanism**; the selective-memory principle is already held |
 | [`PrimeIntellect-ai/prime-agent`](https://github.com/PrimeIntellect-ai/prime-agent) | long-running autonomous work | **bounded autonomous mode** — explicit token and time budgets; sessions that survive a disconnect | the budget idea belongs beside [19 §2](19-context-and-cost.md)'s. Session survival is [23](23-heron-kernel.md)'s checkpoints | its bounds are for unattended running. Heron's [Golden Rule 9](14-golden-rules.md) puts a person in front of a high-risk action instead | MIT — compatible | **Research further** — only the *bound*, and only once [19 §2](19-context-and-cost.md)'s budgets are agreed |
@@ -117,3 +124,121 @@ method, and it applies to an outside project with more force than to one's own.
 
 **None of this goes in front of the proving pass.** 218 fragments have never met a model, that is the
 critical path, and every row above runs on any machine at any time.
+
+---
+
+## 5. The file-level pass, repository by repository
+
+Each repository below was **cloned and read** — not browsed. The commit is recorded so the reading has
+a fingerprint, the way [D-30](DECISIONS.md) requires of a proof: a claim about a moving target is worth
+nothing without the moment it was true.
+
+Each entry says four things and nothing else: **what was actually opened**, **what the mechanism turns
+out to be**, **what it changes about the matrix row**, and **what Heron should do**. Where the answer is
+*nothing*, it says nothing — a repository that confirms what is already built is a good outcome, not a
+row to fill.
+
+---
+
+### 5.1 `affaan-m/ECC`
+
+**Read at** `5064474d4d762dc9640234a41617cccb79185cec`, committed 2026-09-07. MIT.
+
+**Opened:** `hooks/hooks.json`, `hooks/README.md`, `scripts/hooks/gateguard-fact-force.js` (1,175
+lines), `RULES.md`, `WORKING-CONTEXT.md`, `skills/plan-canvas/SKILL.md`, and the tree itself —
+68 agent files, 286 `SKILL.md`, 94 commands, 5 hook entries, 122 rule files.
+
+**Correction to the matrix row.** It said *284 skills*; the tree holds **286**, and the project's
+README agrees. Small, and fixed — but the same paragraph made a larger claim that the file-level read
+does not support, below.
+
+#### The claim that was wrong: Heron has no hooks at all
+
+The row said *"enforcement outside the model's context is what `tools/check-*.py` are."* Half of that is
+true and the half that matters is not.
+
+ECC's `hooks/hooks.json` registers **PreToolUse** entries against `Bash`, `Write`, `Edit|Write`,
+`Bash|PowerShell|Write|Edit|MultiEdit` and `.*`. A PreToolUse hook **runs before the tool does and can
+refuse it**. The enforcement is not a document the model is asked to obey; it is a process the model
+cannot talk its way past.
+
+Heron holds the same *rules* — `check-structure.py` refuses `Autodesk.Revit` outside `revit/`,
+`check-metadata.py` refuses a file without a header, `check-docs.py` refuses a broken link. But **Heron
+has no `.claude/settings.json` and no hooks of any kind.** Every one of those gates runs only when a
+person types it. A gate that has to be remembered is a gate that is skipped on the day it matters, and
+that day is the busy one.
+
+This is not a small difference and it is not a licence question — the mechanism is the host's, not
+ECC's. It is recorded as **[Q-49](OPEN-QUESTIONS.md)**.
+
+#### The idea worth having: fact-forcing is not confirming
+
+`gateguard-fact-force.js` opens with its own reasoning, and it is the sharpest sentence in the
+fifteen repositories:
+
+> Instead of asking "are you sure?" (which LLMs always answer "yes"), this hook demands concrete facts:
+> importers, public API, data schemas. **The act of investigation creates awareness that
+> self-evaluation never did.**
+
+Before an edit it refuses until the agent has listed every file importing the target, named the public
+functions affected, shown any data schema touched, and **quoted the user's instruction verbatim**.
+Before a destructive shell command: list what it will delete, write a one-line rollback, quote the
+instruction.
+
+**Heron already holds the stronger half of this, and does not hold the other half.**
+
+The stronger half is that Heron never asks *"are you sure?"* about a write at all.
+[`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs) builds a preview carrying `willMove`,
+`willSkip`, the category, the distance in the units a modeller said, and the document title — then, at
+execute time, **re-counts against the live model and refuses if the set moved** (`now.SetEquals(preview.Ids)`).
+That is a fact a model cannot produce by being confident, which is exactly ECC's complaint about
+self-evaluation, answered in the one place where it can be answered properly.
+
+The half Heron does not have: **the facts run one way.** Heron shows facts to the *person*. Nothing
+makes the *model* state what it is about to touch before it asks for the write. And the same asymmetry
+is already open under a different name — **[Q-46](OPEN-QUESTIONS.md)**: 59 fragments go looking, drop
+candidates, and name none of them. ECC's sentence is independent evidence that Q-46 is a real defect
+rather than a tidiness complaint: the value of naming what was dropped is not the record, it is the
+looking.
+
+#### The idea worth taking: Heron's plan canvas is Revit
+
+`skills/plan-canvas/SKILL.md` is better than the "editable artifact" line written from the landing
+page. The plan opens **in the human's browser**; they annotate *the element they mean* rather than
+describing it; they return **Approve plan / Request changes**; the agent blocks on one CLI call that
+returns the verdict as JSON. Its own justification: feedback like *"move this, change that"* is easier
+pointed at than typed.
+
+For a BIM modeller that is obviously right and the browser is obviously wrong. **Heron already has the
+canvas: it is the model.** And the add-in already holds what it would need — `preview.Ids` and
+`preview.Skipped` are both in memory when the preview is offered, and
+[`set-selection`](../brain/fragments/set-selection/) already exists as a fragment.
+
+So the Heron-shaped version of plan-canvas is one sentence: **before the modeller answers, select the
+elements the change would touch, so they see them highlighted in the view instead of reading a count.**
+And the second half answers Q-46 in the same motion — selecting the *skipped* set shows what Heron
+decided not to do, which no sentence conveys as well as thirty highlighted ducts.
+
+Recorded as **[Q-50](OPEN-QUESTIONS.md)**. Not built: it changes a confirmation path, and
+[Golden Rule 9](14-golden-rules.md) says that path is gated in code, so it is the owner's call and not
+a tidy-up.
+
+#### Two notes for the licence file
+
+- **There is a second project inside this one.** `gateguard-fact-force.js` names its own origin in its
+  header — `zunoworks/gateguard`, also distributed as a `pip` package. ECC's own `LICENSE` is MIT and
+  says nothing about it. This is the `scientific-agent-skills` warning in §3 appearing a second time,
+  in a repository where nothing on the landing page suggested it: **the licence of a repository is not
+  the licence of everything in it.** Nothing is being taken from either project, so nothing turns on it
+  here — but the reading rule does: *read the file, not the repository, before reuse.*
+- **Their own two documents disagree.** `hooks/README.md` says a PreToolUse hook blocks with **exit
+  code 2**; `RULES.md` says *"exit `1` only when blocking behavior is intentional."* Both cannot be
+  right. It is a small thing in someone else's repository and it is worth naming only because it is the
+  precise failure `tools/check-docs.py` exists to prevent, and because this repository shipped the same
+  class of defect for eight days ([32 §4](32-master-architecture-reconciliation.md) — four binding
+  rules described as proposals). **A large catalogue outgrows its own description.** ECC's
+  `WORKING-CONTEXT.md`, dated 2026-04-08, still calls the catalogue *"47 agents, 79 commands, 181
+  skills"* against a tree holding 68, 94 and 286.
+
+**Decision: unchanged.** Adopt the artifact principle, reject the scale. The file-level pass adds two
+questions ([Q-49](OPEN-QUESTIONS.md), [Q-50](OPEN-QUESTIONS.md)) and corrects one claim.

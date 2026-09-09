@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 42 answered · 6 open · nothing blocking any phase**
+**Progress: 42 answered · 8 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -304,6 +304,67 @@ A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
 ---
 
 ## Tier 3 — Needed soon
+
+### 🟠 Q-50 — Should a preview select the elements it is about to change? *(new, 2026-09-09)*
+
+Found by reading [`affaan-m/ECC`](https://github.com/affaan-m/ECC) at file level
+([33 §5.1](33-external-repository-research.md)). Its `plan-canvas` skill opens a plan **in the human's
+browser** so they can point at the element they mean instead of describing it, and its own reason is
+that *"move this, change that"* is easier pointed at than typed.
+
+**For a modeller the browser is the wrong canvas and the right one is already open.** Heron's preview
+today is a sentence — *"would move 34 ducts up 200 mm in Tower-A, skipping 6."* Everything needed to
+show it instead is already in memory: [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs) holds
+`preview.Ids` and `preview.Skipped` when the preview is offered, and
+[`set-selection`](../brain/fragments/set-selection/) already exists.
+
+**The second half is the better half.** Selecting the *skipped* set shows what Heron decided not to
+touch — which is `Q-46` answered by showing rather than by wording, and no sentence carries it as well
+as thirty highlighted ducts.
+
+**Why it is a question and not a fix.** Three reasons, and each is a real objection:
+
+1. It changes a **confirmation path**, and [Golden Rule 9](14-golden-rules.md) says that path is gated
+   in code, not improved on initiative.
+2. Changing the selection **destroys the selection the modeller had**, which on a busy day is the thing
+   they spent two minutes building. It may need to be offered rather than done.
+3. A preview that highlights 4,000 elements is not a preview, it is a mess. There is a count above which
+   showing is worse than telling, and nobody has said what it is.
+
+**Answer:**
+
+---
+
+### 🟡 Q-49 — Should Heron's gates run automatically, or stay checks a person remembers? *(new, 2026-09-09)*
+
+Found by reading [`affaan-m/ECC`](https://github.com/affaan-m/ECC) at file level
+([33 §5.1](33-external-repository-research.md)). Its `hooks/hooks.json` registers **PreToolUse** hooks
+that run before a tool does and can refuse it. **Heron has no `.claude/settings.json` and no hooks of
+any kind.**
+
+Heron holds the rules — `check-structure.py` refuses `Autodesk.Revit` outside `revit/`,
+`check-metadata.py` refuses a file without a header, `check-docs.py` refuses a broken link — but every
+one of them runs **only when a person types it**. This repository has already paid for that once: four
+binding rules were described as proposals in `README.md` for eight days
+([32 §4](32-master-architecture-reconciliation.md)) because nothing checked the sentence on the day it
+went stale.
+
+**What is not in doubt:** the rules are right and they are cheap. What is in doubt is whether the
+enforcement belongs to Heron at all — hooks are a **host** mechanism, and [D-01](DECISIONS.md) gives the
+host orchestration. A `.claude/settings.json` in this repository is a convenience for whoever develops
+Heron; it is not part of what a modeller installs, and it must never be confused with one.
+
+**Three shapes:**
+
+1. **Nothing.** The gates are run before a push, and the discipline holds because the person is careful.
+   It has held for 34 commits.
+2. **A pre-commit hook**, which is git's and belongs to the repository rather than to any agent.
+3. **A `.claude/settings.json` PreToolUse hook**, which is the host's and only helps whoever uses that
+   host.
+
+**Answer:**
+
+---
 
 ### 🟠 Q-48 — Should a fragment that READS look inside loaded links? *(new, 2026-09-09)*
 
