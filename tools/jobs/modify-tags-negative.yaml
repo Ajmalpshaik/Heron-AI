@@ -56,7 +56,7 @@ jobs:
 
   - fragment: rename-elements
     set:
-      find: "Duct"
+      find: "Tees"
       replaceWith: "HERONDUCT"
     negative-set:
       find: "ZZZNOTHINGHERE"
@@ -64,19 +64,23 @@ jobs:
     expect: renamed
     note: >
       VALUE-DRIVEN, and the same selection in both legs: text that appears in no
-      name must rename nothing. Stronger than a tag negative because it tests
-      the input rather than what was handed in.
+      name must rename nothing. `Tees` rather than `Duct` because that is what
+      these elements are actually called - the first attempt used `Duct` and got
+      notMatched 22, which is the fragment being right about a wrong input.
 
   - fragment: remove-parameter-value
     set:
-      parameterName: "System Type"
+      parameterName: "Comments"
     negative-set:
       parameterName: "ZZZNOTHINGHERE"
     expect: cleared
     note: >
-      Also value-driven. `System Type` is populated on every duct here -
-      read-element-material and the connector work both leaned on it - and a
-      parameter no element carries must clear nothing.
+      CONFIRM there is anything to clear. `System Type` was tried first and came
+      back alreadyEmpty 22 - it is blank on every duct in this model - and the
+      refusal was worth reading: "0 cleared, 22 already empty. An empty field and
+      a zero are different." If Comments is blank too, this fragment needs a
+      populated WRITABLE parameter that this model does not have, and that is a
+      §3b row rather than a defect.
 
   - fragment: set-design-option
     set:

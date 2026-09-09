@@ -1038,6 +1038,23 @@ This also explains the round-one wipe-out earlier the same day, when eleven jobs
 after a hand-run `count` — the same collision, differently dressed, and it was misread then as an
 arrangement fault.
 
+### Six MODIFY fragments, six honest refusals — 2026-09-09
+
+Run on the tags-negative pattern. None proved, none is defective, and **every one said in words why
+not** — which is the behaviour §3h.1 is asking the twelve silent ones for.
+
+| Fragment | What it answered | What it needs |
+|---|---|---|
+| `rename-elements` | `planned 22`, **`collisions 21`**, `renamed 0` | Every duct here is a `Tees`, so a global find/replace makes 21 duplicate names — and it refused rather than creating them. **This fragment may not be provable by find/replace at all** on same-typed elements: the arrangement has to produce unique names, which `find`/`replaceWith` cannot |
+| `trim-extend-elements` | *"This squares off exactly TWO elements — 22 were given. Nothing…"* | Exactly two elements. `select-by-category-name` cannot narrow to two, so this is the two-set problem above wearing a different coat |
+| `remove-parameter-value` | `alreadyEmpty 22`, and *"0 cleared, 22 already empty. **An empty field and a zero are different.**"* | A populated WRITABLE parameter. `System Type` and `Comments` are both blank on every duct in this model |
+| `flip-elements` | `cannotFlip 10` on air terminals | A family with a hand to flip. The flippable ones here — doors, windows — are in the architectural link |
+| `set-design-option` | `available 0`, *"Nothing was copied into a design option"* | Design options. This model has none |
+| `set-mep-justification` | `0 run(s) set to 100 mm horizontal and 100 mm vertical` | Ran and moved nothing. Worth a second look at the sit-down — justification should apply to a duct run |
+
+**Read the `remove-parameter-value` refusal twice.** *"An empty field and a zero are different"* is the
+whole of §3h.1 in seven words, written by a fragment that already gets it right.
+
 ### What this says about where the proving goes next
 
 **142 to 160 on 2026-09-09.** The write engine is not the constraint — fragments proved through it all
