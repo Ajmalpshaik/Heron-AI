@@ -12,6 +12,8 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using Autodesk.Revit.DB;
+
+using Heron.Core;
 using Autodesk.Revit.UI;
 using Heron.Bridge;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
@@ -1096,6 +1098,117 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// One point, from three numbers in MILLIMETRES.
+        ///
+        /// THE UNIT IS THE WHOLE DECISION, and it is millimetres because that is
+        /// what this library already says everywhere else. `HeronUnits` exists
+        /// for one job - millimetres to Revit's internal feet - 59 caller values
+        /// across the fragment library are named `...Mm`, and D3 in
+        /// NEEDS-CHECKING, called there the single most important line in the
+        /// file, is written "200 mm. Not 200 feet".
+        ///
+        /// IT WAS ALREADY DECIDED, BY THE PEOPLE WHO COULD NOT PASS A POINT.
+        /// `array-elements-radial` takes `centreXMm` and `centreYMm`;
+        /// `place-detail-item` takes `atXMm` and `atYMm`. Those are points, split
+        /// into millimetre scalars because there was no way to send one. The
+        /// workaround named the unit; this only writes it down.
+        ///
+        /// A DIRECTION IS SAFE UNDER THE SAME RULE, and that had to be checked
+        /// rather than assumed. Six needs are a direction rather than a
+        /// position, and dividing all three components by one number does not
+        /// change where a vector points. All six were read: `array-elements`,
+        /// `move-to-ray-hit`, `probe-around-elements` and `check-surface-fit`
+        /// call `Normalize()`; `check-obstructions` hands it to
+        /// `ReferenceIntersector.FindNearest` and `place-family-on-face` uses it
+        /// as a facing vector. NONE uses the magnitude. So one rule covers both
+        /// and no fragment has to say which kind it wanted.
+        ///
+        /// THE BOUND IS `HeronUnits.MaxMillimetres` - 100 km. A number past that
+        /// is a transcription error or a value that arrived in the wrong unit,
+        /// and it is refused rather than converted. That is the same guard the
+        /// move path already applies to a distance, applied to a coordinate.
+        /// </summary>
+        private static XYZ OnePoint(string text, out string problem)
+        {
+            problem = null;
+
+            var parts = Parts(text);
+            if (parts.Count != 3)
+            {
+                problem = "A point is three numbers in MILLIMETRES, separated by commas - "
+                        + "\"0, 0, 0\" or \"5000, 3000, 2800\". \"" + text + "\" has "
+                        + parts.Count + " number" + (parts.Count == 1 ? "" : "s") + " in it.";
+                return null;
+            }
+
+            var ordinates = new double[3];
+            for (var index = 0; index < 3; index++)
+            {
+                double millimetres;
+                if (!double.TryParse(parts[index], NumberStyles.Float,
+                                     CultureInfo.InvariantCulture, out millimetres))
+                {
+                    problem = "\"" + parts[index] + "\" is not a number, and a point is three "
+                            + "of them in millimetres. Type digits only - 250 or 250.5, not "
+                            + "250mm.";
+                    return null;
+                }
+
+                if (millimetres > HeronUnits.MaxMillimetres
+                    || millimetres < -HeronUnits.MaxMillimetres)
+                {
+                    problem = "\"" + parts[index] + "\" is further than 100 km from the origin, "
+                            + "which is not a coordinate in any building. Heron reads a point in "
+                            + "MILLIMETRES - a number this size usually means it was typed in "
+                            + "another unit, or has a digit too many.";
+                    return null;
+                }
+
+                ordinates[index] = HeronUnits.MillimetresToFeet(millimetres);
+            }
+
+            return new XYZ(ordinates[0], ordinates[1], ordinates[2]);
+        }
+
+        /// <summary>
+        /// Several points: semicolons BETWEEN points, commas WITHIN one.
+        ///
+        ///     "0,0,0; 5000,0,0; 5000,3000,0"
+        ///
+        /// TWO SEPARATORS BECAUSE ONE CANNOT DO IT. Every other list here is
+        /// comma-separated, and a comma-separated list of points is ambiguous
+        /// the moment it is read: "0,0,0,1000,0,0" is two points only if you
+        /// already know they come in threes, and a list with a number missing
+        /// then silently becomes a different, valid-looking list. A separator
+        /// that cannot express the mistake is worth more than consistency with
+        /// the flat lists.
+        /// </summary>
+        private static List<XYZ> ManyPoints(string text, out string problem)
+        {
+            problem = null;
+
+            var points = new List<XYZ>();
+            foreach (var piece in (text ?? "").Split(';'))
+            {
+                var trimmed = piece.Trim();
+                if (trimmed.Length == 0) continue;
+
+                var point = OnePoint(trimmed, out problem);
+                if (point == null) return null;
+                points.Add(point);
+            }
+
+            if (points.Count == 0)
+            {
+                problem = "No points were given. Separate them with semicolons and their "
+                        + "three millimetre ordinates with commas - "
+                        + "\"0,0,0; 5000,0,0; 5000,3000,0\".";
+                return null;
+            }
+            return points;
+        }
+
+        /// <summary>
         /// Every element of a given CLASS whose name matches, read the way Revit
         /// writes it.
         ///
@@ -1351,17 +1464,18 @@ namespace Heron.Revit.Addin
         /// WHAT IS DELIBERATELY NOT HERE, and why - because an absent type
         /// looks identical to an overlooked one:
         ///
-        ///   XYZ            a point. The Revit API works in FEET internally and
-        ///                  this library talks millimetres; which unit a typed
-        ///                  number is in has to be decided, not guessed, and a
-        ///                  units error is the one mistake this repository has
-        ///                  already written a check for - D3 in NEEDS-CHECKING.
+        ///   XYZ            WAS here, until the unit was settled: a point is
+        ///                  three numbers in MILLIMETRES. See OnePoint. The
+        ///                  refusal that stood in its place said the decision
+        ///                  had not been made, which was true and is not any
+        ///                  more.
+        ///
         ///   ElementId      its constructor changed from int to long at Revit
         ///                  2024. Nothing in this add-in carries a version #if,
         ///                  and the first one should not arrive as a side effect
         ///                  of a proving session.
         ///
-        /// Both are refused BY NAME below, saying so.
+        /// It is refused BY NAME below, saying so.
         ///
         /// AND ONE THAT IS HALF HERE. `Element` resolves to an element TYPE by
         /// name and refuses a specific INSTANCE, because an instance has no name
@@ -1414,6 +1528,13 @@ namespace Heron.Revit.Addin
             if (wanted == "View") return OneView(doc, text, out problem);
             if (wanted == "Level") return OneLevel(doc, text, out problem);
             if (wanted == "Element") return OneElement(doc, text, out problem);
+
+            // A POINT, IN MILLIMETRES. See OnePoint for why that unit and
+            // why a direction needs no separate rule.
+            if (wanted == "XYZ") return OnePoint(text, out problem);
+            if (wanted == "IList<XYZ>" || wanted == "List<XYZ>"
+                || wanted == "ICollection<XYZ>" || wanted == "IEnumerable<XYZ>")
+                return ManyPoints(text, out problem);
 
             // THE NARROWED ONES. Each row is a deliberate act of declaring a
             // type receivable, and the list is short because it is exactly the
@@ -1591,12 +1712,17 @@ namespace Heron.Revit.Addin
 
             // ---- named refusals, so an absent type is not read as an oversight
 
-            if (wanted == "XYZ" || wanted.IndexOf("<XYZ>", StringComparison.Ordinal) >= 0)
+            // WHAT IS LEFT OF THE OLD POINT REFUSAL. A point and a list of points
+            // are accepted above; a list OF LISTS of points is not, and it is one
+            // need in the whole library (`pointPairs`). It would want a third
+            // separator, and a third separator is a decision that should be made
+            // when a second fragment wants one rather than on the strength of
+            // this one.
+            if (wanted.IndexOf("XYZ", StringComparison.Ordinal) >= 0)
             {
-                problem = "A point cannot be typed in yet. The Revit API works in feet and "
-                        + "this library talks millimetres, so which unit the number is in has "
-                        + "to be settled before one can be accepted - guessing it is exactly "
-                        + "the mistake D3 exists to catch.";
+                problem = "A point is three numbers in millimetres and a list of points is "
+                        + "written \"0,0,0; 5000,0,0\", but \"" + type + "\" nests them "
+                        + "deeper than that and there is no way to write it yet.";
                 return null;
             }
 
@@ -1611,8 +1737,8 @@ namespace Heron.Revit.Addin
 
             problem = "Heron can be handed a view, a level, a category, an element type - "
                     + "including a wall, floor, ceiling, filled region, MEP curve or family "
-                    + "type - a phase, a view filter, a name, a number, or true/false, and "
-                    + "lists of most of those. \"" + type + "\" is not one of them yet, so "
+                    + "type - a phase, a view filter, a point in millimetres, a name, a "
+                    + "number, or true/false, and lists of most of those. \"" + type + "\" is not one of them yet, so "
                     + "this fragment still has no way to receive it.";
             return null;
         }
