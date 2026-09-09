@@ -247,26 +247,31 @@ def _situation(revit, project, scope):
 
 
 def _fragment_dir(store, fragment_id):
-    """Where a fragment lives on disk, by its id rather than its folder name.
+    """Where a fragment lives on disk, from the STORE rather than from disk.
 
-    The id is the identity and the folder is not - docs/29 says so, and
-    check-routing.py has already been bitten by treating one as the other.
+    THE FIRST VERSION SCANNED EVERY fragment.yaml IN THE LIBRARY to find one
+    folder by id - 360 YAML parses per call, and it made the `generation` path
+    435 ms against 3 ms for the others. The answer was one SQL lookup away the
+    whole time: `heron_scope` has stored a repo-relative `folder` on every
+    fragment row since Step 8.
+
+    Found with tools/measure-brain.py, which was written earlier the same night
+    for exactly this - and which the first version of this function would have
+    failed on its first run. A tool is only worth building if it is then
+    pointed at your own work.
+
+    Reading it from the store rather than from disk is also the rule
+    check-routing.py already follows and states: the store is what retrieval
+    ranked, so a fragment edited but not re-indexed must be looked up as the
+    search actually saw it.
     """
-    try:
-        import yaml
-    except ImportError:
-        return None
-    for name in sorted(os.listdir(FRAGMENTS)):
-        path = os.path.join(FRAGMENTS, name, "fragment.yaml")
-        if not os.path.exists(path):
-            continue
-        try:
-            with open(path, encoding="utf-8") as fh:
-                doc = yaml.safe_load(fh)
-        except Exception:
-            continue
-        if doc and doc.get("id") == fragment_id:
-            return os.path.join(FRAGMENTS, name)
+    for row in store.fragments():
+        if row["id"] == fragment_id:
+            folder = row["folder"]
+            if not folder:
+                return None
+            full = os.path.join(ROOT, *folder.split("/"))
+            return full if os.path.isdir(full) else None
     return None
 
 

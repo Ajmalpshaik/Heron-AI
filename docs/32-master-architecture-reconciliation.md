@@ -213,6 +213,17 @@ and [`tests/test_context.py`](../tests/test_context.py) pins all three cases so 
 answer is correct, and not by any gate. By reading `assemble()` line by line afterwards and asking what
 `find()` does that it does not.
 
+**The same re-read found two more, and the third is the one worth repeating.**
+
+| | |
+|---|---|
+| the MCP tool called **every** exception a refusal | `assemble()` has exactly two — a part outside the budget, and a path whose source is missing. Both are answers. A `TypeError` would have reached the caller as *"Heron refused"*, a sentence about a decision Heron never made. The seam owns a `ContextRefused` now and translates only those two |
+| the `generation` path cost **435 ms** against 3 ms | `_fragment_dir()` parsed **every one of the 360** `fragment.yaml` files to find one folder by id. [`heron_scope`](../brain/heron_scope.py) has stored a repo-relative `folder` on every row since Step 8 — one lookup. **4.7 ms now, 92× faster**, and the same six parts |
+
+**That last one was found with [`tools/measure-brain.py`](../tools/measure-brain.py), written earlier the
+same night**, and the first version of `_fragment_dir` would have failed it on its first run. A tool is
+only worth building if it is then pointed at your own work.
+
 **Swept over 120 real requests on three paths — 360 assemblies, zero violations.** The request came back
 byte-identical every time, nothing exceeded its budget, every part named its source, and the request was
 first in every packet. Sizes: median **257** characters, and **14,641** at the worst, which is a

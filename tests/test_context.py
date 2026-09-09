@@ -210,6 +210,25 @@ def main():
                       "and it carries more than one namespace")
 
             print()
+            print("6c. The generation path does not re-read the library")
+            print("-" * 62)
+            # It did: _fragment_dir() scanned every fragment.yaml to find one
+            # folder by id, 360 YAML parses per call, and the generation path
+            # took 435 ms against 3 ms for the others. heron_scope has stored a
+            # repo-relative `folder` on every row since Step 8. Guarded by time
+            # rather than by counting parses, because the cost is what mattered
+            # and a future rewrite might reintroduce it another way.
+            import time as _time
+            started = _time.perf_counter()
+            for _ in range(3):
+                CONTEXT.assemble(store, "select all ducts",
+                                 path=CONTEXT.GENERATION, revit="2024")
+            each = (_time.perf_counter() - started) * 1000 / 3
+            check(each < 150,
+                  "a generation packet costs %.0f ms, not the 435 it cost "
+                  "while it scanned the whole library" % each)
+
+            print()
             print("7. An unknown path is refused rather than guessed at")
             raised = False
             try:
