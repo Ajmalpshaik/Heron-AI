@@ -62,7 +62,7 @@ Research further.**
 | [`headroomlabs-ai/headroom`](https://github.com/headroomlabs-ai/headroom) | token cost of tool output and RAG chunks | compress **what came back**, never what was asked; reversible compression so the original can be retrieved | this is the missing half of [19 §2](19-context-and-cost.md). [`heron_context.py`](../brain/heron_context.py) declares the boundary and implements no compression | a compressor that ever touches a Revit token destroys the only load-bearing part of the sentence | MIT — compatible | **Research further** — the reversible-retrieval idea is the one worth taking; nothing before [19 §2](19-context-and-cost.md)'s budgets are agreed |
 | [`alibaba/open-code-review`](https://github.com/alibaba/open-code-review) | code review at scale | **deterministic pipeline first, agent second**; line-level findings; a built-in ruleset | the split is [19 §5](19-context-and-cost.md)'s. The line-level shape is what [`check-revit-gate.py`](../tools/check-revit-gate.py) does per question | its rulesets are NPE, thread-safety, XSS, SQL injection — a web/Java surface. Heron's ruleset is the Revit API, and none of theirs transfers | Read the repository's own licence before any reuse | **Adopt concept** — already held; the ruleset itself does not transfer |
 | [`alibaba/aacr-bench`](https://github.com/alibaba/aacr-bench) | no way to measure a review agent | a **benchmark with expert-verified answers** for repository-level review | [18](18-agent-operating-system.md) and the incoming §18 both ask for an evaluation suite and Heron has none. This is the shape one takes | its dataset is general code. A Heron benchmark has to be Revit tasks, which only the owner can author | Read before any reuse | **Adapt concept** — the *shape* of a benchmark, never its cases |
-| [`volcengine/OpenViking`](https://github.com/volcengine/OpenViking) | context organisation for agents | **tiered loading** — L0 abstract, L1 overview, L2 details, loaded only as needed; observable retrieval paths | the tiering is a real addition to [`heron_context.py`](../brain/heron_context.py)'s parts, and *observable retrieval* is already there as `Part.source` | **the main project is AGPLv3** — see §3. Idea only, and the idea must be re-derived rather than read from its code | **AGPLv3** (CLI and examples Apache-2.0) | **Adapt concept, code strictly off-limits** |
+| [`volcengine/OpenViking`](https://github.com/volcengine/OpenViking) — [§5.4](#54-volcengineopenviking) | context organisation for agents | **tiered loading** — L0 abstract, L1 overview, L2 details, loaded only as needed, and **built on write**; observable retrieval paths | [§5.4](#54-volcengineopenviking): Heron's fragments **already are** L0/L1/L2 — `semantic-identity`, the yaml, the `.cs` — and `BUDGET` already loads by depth. What is missing is the *vocabulary* and a per-folder abstract | **the main project is AGPLv3** — see §3. Idea only, and it was taken from the README, so no source was opened | **AGPL-3.0** — 1,116 files carry that SPDX header against 18 Apache. Apache covers **`crates/ov_cli`** (the Rust CLI, *not* `openviking_cli/`), `examples/`, and the TS/npm SDKs; `bot/` is MIT | **Adapt concept, code strictly off-limits** |
 | [`karpathy/llm-council`](https://github.com/karpathy/llm-council) | one model reviewing its own work | first opinions → **anonymised** peer review → a Chairman synthesises | [D-39](DECISIONS.md) already requires an *analysed disagreement*. **Anonymising which agent produced which answer is a genuine sharpening** of Shadow Mode | it is N model calls per question, which [19 §5](19-context-and-cost.md) exists to avoid. Only for the high-risk path the incoming §6.9 describes | MIT — compatible | **Adapt concept** — take the anonymising, not the council |
 | [`obra/superpowers`](https://github.com/obra/superpowers) | agents coding before understanding | brainstorm → design → plan → execute, with review checkpoints; skills as the unit | the discipline is [27](27-build-order.md)'s and this repository's practice | its skills are general software workflows; Heron's name **capabilities**, deliberately ([09](09-skills-and-fragments.md)) | MIT — compatible | **Adopt concept** — already held |
 | [`garrytan/gstack`](https://github.com/garrytan/gstack) | solo developer without a team | a seven-stage cycle and 23 named specialist roles | [28](28-agent-registry.md) already defines 250 agents by department | adding 23 more roles creates a **second registry**, which is [32 §5](32-master-architecture-reconciliation.md)'s rejection of the incoming §6.7 repeated | MIT — compatible | **Reject** |
@@ -78,7 +78,7 @@ Research further.**
 
 ## 3. The licence finding, which is the one that could have cost something
 
-**[`volcengine/OpenViking`](https://github.com/volcengine/OpenViking)'s main project is AGPLv3.**
+**[`volcengine/OpenViking`](https://github.com/volcengine/OpenViking)'s main project is AGPLv3** — and [§5.4](#54-volcengineopenviking)'s file-level audit found **1,116 files carrying that SPDX header against 18 Apache ones**, with the Apache island being `crates/ov_cli`, *not* the similarly named Python `openviking_cli/`.
 Heron is **Apache 2.0** ([D-08](DECISIONS.md)) and is going public ([17](17-open-source-and-distribution.md)).
 
 AGPL is copyleft and network-triggered. Copying code from it into Heron would place an obligation on
@@ -427,3 +427,82 @@ two questions.
 
 **Decision: unchanged — Reject the mechanism.** The selective-memory principle is already held. The file-level
 pass replaced a weak reason with a strong one and corrected two claims.
+
+---
+
+### 5.4 `volcengine/OpenViking`
+
+**Read at** `39670e7b95a26ab6d562e018c7b8681ae3dba17a`, committed 2026-09-09.
+
+**This is the one where the reading rule matters, so it is stated before the finding.** Two things were
+opened and nothing else: **the licence files** and **the README**. No source file was read for its
+logic. The greps that produced the licence audit below matched `SPDX-License-Identifier` headers and
+filenames — a licence audit is not a transcription.
+
+**And it turned out not to be a sacrifice.** The whole idea worth taking is on the project's own README,
+in plain English, in eleven lines. The AGPL source was never needed.
+
+#### The licence audit, which corrects the row in the direction that could have cost something
+
+The matrix said *"AGPLv3 (CLI and examples Apache-2.0)"*. That is right and **dangerously imprecise**.
+What is actually there:
+
+| | licence | |
+|---|---|---|
+| root, and the Python package | **AGPL-3.0** | `pyproject.toml` declares it; **1,116 files carry the `AGPL-3.0` SPDX header** |
+| `crates/ov_cli` — the **Rust** CLI | Apache-2.0 | this is "the CLI" the row meant |
+| `examples/` | Apache-2.0 | |
+| `sdk/typescript`, `npm/cli` | Apache-2.0 | declared in their `package.json` |
+| `bot/license/` | **MIT** | *"Copyright (c) 2025 nanobot contributors"* — a third project inside the second |
+| `third_party/` | five vendored C/C++ libraries | leveldb, rapidjson, spdlog, croaring, krl, each under its own |
+
+**Eighteen files carry an Apache SPDX header against 1,116 AGPL.** And the Python directory named
+`openviking_cli/` — the one anybody would reach for on hearing *"the CLI is Apache"* — carries **no
+separate licence and is AGPL**. A row saying "the CLI is Apache" is exactly how the incoming §2's
+*"must never happen accidentally"* happens accidentally. **The row is corrected to name the crate.**
+
+#### The idea, taken from the README, and Heron already has three quarters of it
+
+> Content is processed into three tiers — **L0 abstract, L1 overview, L2 details** — and loaded on
+> demand… Each directory carries its own L0/L1 layers, so relevance can be judged before any full file
+> is read.
+
+With sizes: `.abstract` ~100 tokens, `.overview` ~2k, the file itself loaded only when needed. And the
+tiers are built **on write**, not on read.
+
+**Heron's fragment library is already this, and nobody named it:**
+
+| OpenViking | Heron | where it lives |
+|---|---|---|
+| **L0** abstract | `semantic-identity` — *"put these elements in the current selection"* | in the SQLite `fragments` table, so it is what search matches and what `find()` ranks |
+| **L1** overview | the rest of `fragment.yaml` — `purpose`, `contract`, `risk`, `domain` | on disk, reached through the store's `folder` column |
+| **L2** details | `impl/any/fragment.cs` | on disk, read only when generating |
+
+And [`heron_context.py`](../brain/heron_context.py)'s `BUDGET` already loads different depths for
+different paths — `CACHED` gets the capability line, `GENERATION` gets the neighbouring fragment's full
+source and its tests. **That is "loaded only as deep as the task requires", already running.**
+
+**So what is actually missing is two things, and both are small:**
+
+1. **The depth is not a declared, checkable thing.** `BUDGET` names *part kinds*, not tiers. Nothing
+   stops a future path from reaching L2 where L0 would have answered, because there is no vocabulary in
+   which that sentence can be written down — and this module was built precisely so that a budget
+   violation raises rather than passes ([`OverBudget`](../brain/heron_context.py)).
+2. **There is no directory-level abstract.** OpenViking can judge a *folder* before opening anything in
+   it. Heron has no per-domain summary, so nothing can weigh `revit.selection` against `revit.mep`
+   without reading fragments from both.
+
+**And the sharpest detail is the one that decides whether any of it is affordable: the tiers are built
+on write.** Which raises the only question that matters here — *who writes the abstract?* For Heron the
+answer is already settled and it is the good one: `semantic-identity` is **written by a person in the
+yaml and derived into the store**, so it costs nothing to rebuild ([Golden Rule 11](14-golden-rules.md),
+[D-24](DECISIONS.md)). The moment an abstract is produced by a model, the store stops being rebuildable
+and becomes [§5.3](#53-thedotmackclaude-mem)'s problem.
+
+**Not opened as a question.** It is a naming and a small addition to a module built two days ago, it
+belongs with the tiered-loading item already ranked third in §4, and Heron has no second corpus to
+abstract until [Q-51](OPEN-QUESTIONS.md)'s day arrives.
+
+**Decision: unchanged — Adapt concept, code strictly off-limits.** The concept came from the README, so
+"off-limits" cost nothing at all. The licence row is corrected to say `crates/ov_cli` rather than
+"the CLI".
