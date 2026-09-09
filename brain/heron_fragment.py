@@ -170,17 +170,30 @@ SOURCES = ("fragment", "ambient", "request")
 # REPORT_ROUTING_PREFERENCES really is a finding, so a blanket `missing*` rule
 # would have swallowed a real answer.
 #
-# So a fragment says it itself. OPTIONAL, and ABSENT MEANS `result`: 349
-# fragments do not have to be edited, and the name-guessing stays as the
-# fallback for anything that has not declared. Declaring beats guessing wherever
-# both are present.
+# So a fragment says it itself. It was OPTIONAL when it landed, with the
+# name-guessing left as the fallback, so that 349 fragments did not all have to
+# be edited at once.
+#
+# THEY HAVE ALL BEEN EDITED NOW, AND IT IS REQUIRED. All 1,192 provides were
+# declared on 2026-09-09 by reading what each fragment is FOR, and that reading
+# disagreed with the patterns 166 times in both directions - so the patterns
+# were deleted rather than kept as a fallback that is wrong one time in seven.
+# `check_contract` below refuses a provide with no role, because with nothing
+# left to guess, an omission would fall to `result`, and a bookkeeping count
+# read as a result is what banks a proof for a run that changed nothing.
+#
+# `findings` is exempt: prose, never a quantity, dropped by NOTE_KEYS (D-51).
 ROLES = ("result", "accounting")
 
 
 def provide_role(entry):
-    """What a provided name is for. Absent means `result` - the stricter read,
-    since a result counts toward "did this come back empty" and accounting does
-    not."""
+    """What a provided name is for.
+
+    Absent means `result` - the stricter read, since a result counts toward
+    "did this come back empty" and accounting does not. Validation now requires
+    the key, so absent means a contract that never passed `check_contract`, and
+    the stricter reading is the right way to treat one.
+    """
     declared = (entry or {}).get("role")
     return declared if declared in ROLES else "result"
 
@@ -679,6 +692,29 @@ def _check_contract_side(side, entries, problems, where):
                 problems.append(
                     "%s: contract.%s[%d] role %r is not one of %s"
                     % (where, side, i, entry["role"], ", ".join(ROLES)))
+
+        # REQUIRED, NOT OPTIONAL, SINCE 2026-09-09 - and that is a rule change
+        # with a reason. `heron_validate.py` used to guess a missing role from
+        # the NAME: `^(no|not|un)[A-Z]`, five hand-listed singles, and anything
+        # containing `scanned` or `checked`. Those patterns were removed once
+        # all 1,192 provides declared, because reading the fragments found them
+        # wrong 166 times in both directions.
+        #
+        # With the guessing gone, an undeclared name falls to `result` - and a
+        # bookkeeping count read as a result is what banks a proof for a run
+        # that changed nothing. So the omission is caught HERE, where it is a
+        # validation error somebody fixes, instead of there, where it would be
+        # a silent default nobody sees.
+        #
+        # `findings` is the one exemption: it is prose, never a quantity, and
+        # `NOTE_KEYS` in heron_validate.py drops it whatever it says (D-51).
+        elif side == "provides" and entry.get("name") != "findings":
+            problems.append(
+                "%s: contract.provides[%d] %r has no `role` - say whether it is "
+                "a `result` (a thing the fragment FOUND or DID) or `accounting` "
+                "(a count of what it was handed and could not use, or of work "
+                "done). Nothing guesses this from the name any more"
+                % (where, i, entry.get("name") or "?"))
 
         # `binds` names the PROVIDED name that fills a need - see need_binds.
         # It is meaningless on the provides side: a provide IS the name.

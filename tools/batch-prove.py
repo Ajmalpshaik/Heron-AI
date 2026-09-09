@@ -90,8 +90,8 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as HF                                     # noqa: E402
 
-# The underscore names below - `_as_count`, `_is_accounting`, `_is_helper_object`
-# - are reached into deliberately. They are the validation agent's private
+# The underscore names below - `_as_count` and `_is_helper_object` - are
+# reached into deliberately. They are the validation agent's private
 # workings, and normally that would be a reason to leave them alone; here the
 # alternative is a second copy of the reasoning they carry, judging the same run
 # records differently from the drafts written beside them. A private name shared
@@ -309,7 +309,8 @@ def positive_worked(phase, frag, expect=None):
       * **Only what the fragment declared.** The executor reports every variable
         left in scope, including its own working constants, and `MetresPerFoot`
         is never zero.
-      * **Only results, never accounting.** `jointsChecked: 15` and
+      * **Only results, never accounting.** Every provide declares which it
+        is, so nothing here reads a NAME. `jointsChecked: 15` and
         `bidirectionalSkipped: 25` are counts of work done, and
         `check-flow-direction` passed on them while `bothIn` and `bothOut` were 0
         in both legs.
@@ -336,8 +337,8 @@ def positive_worked(phase, frag, expect=None):
                 continue                        # a working value, not a result
             if roles.get(key) == "accounting":
                 continue                        # declared as bookkeeping
-            if key not in roles and (key in HV.NOTE_KEYS or HV._is_accounting(key)):
-                continue                        # named as bookkeeping
+            if key in HV.NOTE_KEYS:
+                continue                        # prose, never a quantity
             if HV._is_helper_object(value):
                 continue                        # a type name, not a quantity
             judged.append((key, value))
@@ -382,7 +383,7 @@ def why_not_empty(phase, roles, names):
             continue
         if roles.get(key) == "accounting":
             continue
-        if key not in roles and (key in HV.NOTE_KEYS or HV._is_accounting(key)):
+        if key in HV.NOTE_KEYS:
             continue
         if HV._is_helper_object(value):
             continue
