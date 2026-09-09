@@ -137,7 +137,7 @@ def test_the_shapes_d54_refuses_are_refused_here():
 
     # The five named in FRAGMENT-ISSUES section 6, plus the collection forms
     # that reach the same refusal by a different route.
-    for kind in ("XYZ", "IList<XYZ>", "IList<IList<XYZ>>",
+    for kind in ("IList<IList<XYZ>>",
                  "ElementId", "IList<ElementId>", "ICollection<ElementId>",
                  "IDictionary<ElementId, string>",
                  "IList<Element>",
@@ -150,10 +150,45 @@ def test_the_shapes_d54_refuses_are_refused_here():
     # A reader learning that a point waits on a UNITS decision and an id on a
     # 2024 TYPE CHANGE has learned two different problems with two different
     # fixes; "unsupported" twice teaches neither.
-    _, point = GJ.receivable("XYZ")
     _, ident = GJ.receivable("ElementId")
-    check("millimetres" in point, "a point says which decision it waits on")
     check("2024" in ident, "an id says which change it waits on")
+
+    _, nested = GJ.receivable("IList<IList<XYZ>>")
+    check("nests them" in nested,
+          "and nested points say it is the nesting, not the point, that is refused")
+
+
+def test_a_point_is_millimetres_and_says_so():
+    print("A point can be typed in, and the blank beside it names the unit")
+
+    for kind in ("XYZ", "IList<XYZ>", "List<XYZ>", "ICollection<XYZ>",
+                 "IEnumerable<XYZ>"):
+        ok, why = GJ.receivable(kind)
+        check(ok, "%s can be typed in (%s)" % (kind, why or "yes"))
+
+    # THE UNIT IS THE WHOLE DECISION, so the hint has to carry it. A point typed
+    # in metres is a thousand times wrong and looks exactly like a right one -
+    # nothing downstream catches that, which is why D3 exists at all.
+    single = GJ.how_to_type("XYZ")
+    check("MILLIMETRES" in single, "the hint names the unit: %r" % single)
+    check("x,y,z" in single, "and the shape of one point")
+
+    many = GJ.how_to_type("IList<XYZ>")
+    check("MILLIMETRES" in many, "a list names the unit too")
+    check("semicolon" in many, "and says what separates two points: %r" % many)
+
+    # A flat comma list must NOT be offered for points - "0,0,0,1000,0,0" is two
+    # points only if you already know they come in threes, and a list with a
+    # number missing becomes a different, valid-looking list.
+    check("comma separated" not in many,
+          "and does not offer the flat comma list every other list uses")
+
+    # Nested deeper is still refused, and the refusal blames the nesting rather
+    # than the point - the unit question is settled and must not read as open.
+    ok, why = GJ.receivable("IList<IList<XYZ>>")
+    check(not ok, "points nested a level deeper are still refused")
+    check(why and "millimetre" in why,
+          "and the refusal states the settled rule rather than reopening it")
 
 
 def test_an_element_is_a_type_and_a_list_of_them_is_still_refused():
@@ -585,6 +620,7 @@ def main():
     for test in (test_receivable_agrees_with_the_add_in,
                  test_the_shapes_d54_refuses_are_refused_here,
                  test_an_element_is_a_type_and_a_list_of_them_is_still_refused,
+                 test_a_point_is_millimetres_and_says_so,
                  test_the_narrowed_declarations_resolve,
                  test_spaces_in_a_type_do_not_change_the_answer,
                  test_the_write_threshold_comes_from_the_registry,
