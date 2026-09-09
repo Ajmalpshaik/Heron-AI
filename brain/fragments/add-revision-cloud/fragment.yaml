@@ -47,13 +47,27 @@ contract:
     - name: created
       type: IList<ElementId>
     - name: refused
-      # Why it declined, in the user's words - the evidence it looked and
-      # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52).
+      # The elements that got NO cloud, whatever the cause. The evidence it
+      # looked and said no, never a cloud it drew, so it must not count
+      # toward "did this come back empty" (D-52). The WORDS are in
+      # `refusalReasons`; this is the list of who missed out.
       role: accounting
       type: IList<ElementId>
     - name: viewRefused
+      # THE VIEW cannot carry a cloud - a template, a 3D view, a schedule or
+      # a sheet. It says nothing about the revision: a missing revision is
+      # its own sentence in `refusalReasons`, because the fix is different.
+      # The evidence it looked and said no, never a change it made (D-52).
+      role: accounting
       type: bool
+    - name: refusalReasons
+      # WHY it declined, in the user's words - one sentence per cause, and
+      # the per-element causes carry their counts rather than repeating
+      # themselves. The evidence it looked and said no, never a thing it
+      # FOUND, so it must not count toward "did this come back empty"
+      # (D-52).
+      role: accounting
+      type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
