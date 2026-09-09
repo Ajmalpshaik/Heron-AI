@@ -37,8 +37,10 @@ contract:
       type: IList<Element>
   provides:
     - name: lengthsMm
+      role: result
       type: IDictionary<ElementId, double>
     - name: totalMm
+      role: result
       type: double
     - name: noLength
       # Fittings, equipment and accessories, which have no length. *Named,

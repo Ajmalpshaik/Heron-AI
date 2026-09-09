@@ -60,6 +60,7 @@ contract:
     - name: findings
       type: IList<string>
     - name: overlapping
+      role: result
       type: IList<ElementId>
     - name: notStraight
       # Handed in but not straight lines, so there was nothing here to act on.

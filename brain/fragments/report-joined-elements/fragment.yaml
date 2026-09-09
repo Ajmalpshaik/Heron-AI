@@ -44,6 +44,7 @@ contract:
       type: IList<Element>
   provides:
     - name: joins
+      role: result
       type: IList<string>
     - name: withoutJoins
       # *An element joined to nothing is a normal answer* - most are. Counted

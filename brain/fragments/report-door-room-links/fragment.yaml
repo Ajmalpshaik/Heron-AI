@@ -69,6 +69,7 @@ contract:
       role: accounting
       type: int
     - name: disagreements
+      role: result
       type: IList<string>
     - name: noRoomEitherSide
       # Doors with no room on either side, so the geometric check had nothing
@@ -77,6 +78,10 @@ contract:
       role: accounting
       type: IList<string>
     - name: phaseUsed
+      # Which phase the FromRoom and ToRoom answers were read at, named in
+      # every row so a reader can see which answer they were given. A
+      # statement about the reading, not about the model (D-52).
+      role: accounting
       type: string
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

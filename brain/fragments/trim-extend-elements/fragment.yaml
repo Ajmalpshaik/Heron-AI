@@ -55,8 +55,10 @@ contract:
       type: IList<Element>
   provides:
     - name: corner
+      role: result
       type: XYZ
     - name: moved
+      role: result
       type: int
     - name: findings
       type: IList<string>

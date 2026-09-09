@@ -60,6 +60,7 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: int
     - name: notPlanViews
       # Handed in but not plan views, so there was nothing here to act on. A

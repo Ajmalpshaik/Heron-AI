@@ -38,6 +38,7 @@ contract:
       source: request
   provides:
     - name: offset
+      role: result
       type: int
     - name: notLinear
       # Handed in but not linear runs, so there was nothing here to act on. A

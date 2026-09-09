@@ -52,8 +52,10 @@ contract:
       source: request
   provides:
     - name: newViewIds
+      role: result
       type: IList<ElementId>
     - name: duplicated
+      role: result
       type: int
     - name: notDuplicated
       # Views Revit said could not be duplicated that particular way. *An id

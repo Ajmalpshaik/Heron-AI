@@ -33,6 +33,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: missing
       # Ids that resolve to nothing. A count of what it was GIVEN and could

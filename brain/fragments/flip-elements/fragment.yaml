@@ -53,8 +53,13 @@ contract:
       source: request
   provides:
     - name: flipped
+      role: result
       type: int
     - name: cannotFlip
+      # Instances whose family carries no flip control to use. Given and
+      # unusable, never a flip it made - and a run that flipped nothing must
+      # not read as work because of it (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notFamilyInstance
       # Handed in but not family instances, so there was nothing here to act

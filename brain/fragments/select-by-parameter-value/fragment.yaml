@@ -64,6 +64,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: withoutParameter
       # Elements that do not carry the parameter, counted and NEVER matched.

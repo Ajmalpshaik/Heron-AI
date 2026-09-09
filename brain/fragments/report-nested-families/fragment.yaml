@@ -58,14 +58,22 @@ contract:
       type: IList<Element>
   provides:
     - name: roots
+      role: result
       type: IDictionary<ElementId, ElementId>
     - name: assemblyParts
+      role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: unitCount
+      role: result
       type: int
     - name: rootsOutsideSet
+      # Hosts that sit outside the set handed in - THE FILTER'S BLIND SPOT
+      # MADE VISIBLE, which is what says the unit count is about pieces the
+      # caller never selected.
+      role: result
       type: IList<ElementId>
     - name: cycles
+      role: result
       type: IList<ElementId>
 
 proof:

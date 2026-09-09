@@ -63,6 +63,7 @@ contract:
       source: request
   provides:
     - name: shown
+      role: result
       type: int
     - name: missing
       # Ids it was asked to show that resolve to nothing. What it was GIVEN
@@ -70,6 +71,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: viewAfter
+      # The view it LANDED ON, which may not be the one that was on screen. IT
+      # CAN CHANGE THE ACTIVE VIEW, AND THAT SURPRISES PEOPLE - so the jump is
+      # explainable rather than mysterious.
+      role: result
       type: string
     - name: findings
       type: IList<string>

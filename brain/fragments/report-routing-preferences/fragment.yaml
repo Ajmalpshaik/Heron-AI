@@ -53,8 +53,15 @@ contract:
     - name: findings
       type: IList<string>
     - name: typesReported
+      # How many types were read. The size of the sweep, never a rule it found
+      # (D-52).
+      role: accounting
       type: int
     - name: emptyGroups
+      # AN EMPTY GROUP IS A REAL ANSWER - a type with no cap rule cannot cap a
+      # run, and reporting only the groups that have rules hides exactly the
+      # one somebody is asking about.
+      role: result
       type: IList<string>
     - name: missingFamilies
       # A rule pointing at a family nobody has loaded is precisely this

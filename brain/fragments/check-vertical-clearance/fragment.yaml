@@ -57,10 +57,15 @@ contract:
     - name: findings
       type: IList<string>
     - name: tooClose
+      role: result
       type: int
     - name: clashing
+      role: result
       type: int
     - name: slopedOrVertical
+      # Pairs a vertical test cannot judge, because one of them is not running
+      # level. The evidence it looked (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

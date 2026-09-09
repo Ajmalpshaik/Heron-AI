@@ -67,10 +67,17 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: values
+      role: result
       type: IDictionary<ElementId, double>
     - name: disagreed
+      # Rooms where the dimension read back does not match a size worked out a
+      # different way - usually a wall whose location line is not its centre.
+      # EVERY DIMENSION IS READ BACK AND CHECKED, and this is what that check
+      # found.
+      role: result
       type: IList<ElementId>
     - name: notRectangular
       # Rooms that WERE dimensioned, to their overall extent, *WHICH MAY NOT

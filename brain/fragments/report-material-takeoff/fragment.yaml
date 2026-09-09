@@ -48,10 +48,16 @@ contract:
       source: ambient
   provides:
     - name: areas
+      role: result
       type: IDictionary<string, double>
     - name: volumes
+      role: result
       type: IDictionary<string, double>
     - name: paintedMaterials
+      # Materials applied face by face with Paint. PAINT AND GEOMETRY ARE TWO
+      # SEPARATE MATERIAL SETS AND ASKING FOR ONE MISSES THE OTHER ENTIRELY -
+      # so these are their own answer, not a footnote.
+      role: result
       type: IList<string>
     - name: elementsWithNoMaterial
       # Elements carrying no material at all, so it could not be taken off.

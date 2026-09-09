@@ -48,8 +48,10 @@ contract:
       source: request
   provides:
     - name: endsReset
+      role: result
       type: int
     - name: datumsChanged
+      role: result
       type: IList<ElementId>
     - name: alreadyShared
       # Elements that were ALREADY in the state asked for, so there was

@@ -53,6 +53,7 @@ contract:
       source: request
   provides:
     - name: opened
+      role: result
       type: bool
     - name: viewBefore
       # Which view was in front BEFORE this ran, so the answer can say what

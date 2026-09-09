@@ -51,8 +51,13 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: unresolved
+      # Warning ids that no longer resolve, COUNTED RATHER THAN DROPPED - a
+      # large figure here means the warning list is stale. About the list,
+      # never an element it found (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

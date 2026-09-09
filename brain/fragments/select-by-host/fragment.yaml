@@ -53,6 +53,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: findings
       type: IList<string>

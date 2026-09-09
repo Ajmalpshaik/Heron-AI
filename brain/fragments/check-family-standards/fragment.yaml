@@ -64,6 +64,7 @@ contract:
     - name: findings
       type: IList<string>
     - name: offStandard
+      role: result
       type: int
     - name: notChecked
       # Types the audit could not reach. The evidence it looked and could not,

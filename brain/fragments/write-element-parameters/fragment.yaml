@@ -51,16 +51,27 @@ contract:
   provides:
     # Written AND read back as the value asked for. Nothing else counts here.
     - name: written
+      role: result
       type: int
     # Accepted, then changed by Revit - almost always a size snapped to the
     # type's size table. Carries ids, because "two were snapped" is a fact
     # nobody can act on.
     - name: snapped
+      # Elements where Revit stored a DIFFERENT value from the one asked for -
+      # a size snapped to the type's table. Named and carrying ids, because
+      # the set returns true and nothing is thrown.
+      role: result
       type: IList<ElementId>
     # The read-back could not be run. Not written, and never assumed away.
     - name: unverified
+      # Elements whose value could not be read back to confirm. The evidence
+      # it could not check, never a confirmed write (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: readOnly
+      # Elements whose parameter will not take a write. Given and unusable,
+      # never a write it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: absent
       # Elements that do not carry the parameter at all. The evidence it

@@ -65,6 +65,7 @@ contract:
       role: accounting
       type: IDictionary<ElementId, double>
     - name: gapSuspects
+      role: result
       type: IList<ElementId>
     - name: noPoint
       # Elements with no point to measure coverage from, so it could not be

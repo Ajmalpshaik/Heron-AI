@@ -59,14 +59,25 @@ contract:
       type: IList<Element>
   provides:
     - name: fittingAreas
+      role: result
       type: IDictionary<ElementId, double>
     - name: grossAreas
+      role: result
       type: IDictionary<ElementId, double>
     - name: partTypes
+      role: result
       type: IDictionary<ElementId, string>
     - name: couplings
+      # Unions and couplings, which carry no sheet of their own - NAMED
+      # SEPARATELY RATHER THAN DROPPED, so a takeoff can be read by kind.
+      role: result
       type: IList<ElementId>
     - name: suspect
+      # Fittings whose openings exceed their surface, so the net area came out
+      # negative. REPORTED, NOT SILENTLY FLOORED - the gross figure is kept
+      # and the id named, because a floored zero would read as a real
+      # measurement.
+      role: result
       type: IList<ElementId>
     - name: noGeometry
       # Fittings with no readable geometry, so it could not be measured. The

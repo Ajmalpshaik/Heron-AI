@@ -53,8 +53,10 @@ contract:
       source: request
   provides:
     - name: closed
+      role: result
       type: int
     - name: closedNames
+      role: result
       type: IList<string>
     - name: notOpen
       # The views asked for that had no tab to close. The evidence it

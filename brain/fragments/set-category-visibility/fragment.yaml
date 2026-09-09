@@ -41,6 +41,7 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: int
     - name: notControllable
       # Categories this view will not let be switched. The evidence it looked

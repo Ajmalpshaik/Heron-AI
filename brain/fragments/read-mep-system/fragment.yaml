@@ -34,8 +34,10 @@ contract:
       type: IList<Element>
   provides:
     - name: systemName
+      role: result
       type: IDictionary<ElementId, string>
     - name: systemType
+      role: result
       type: IDictionary<ElementId, string>
     - name: noSystem
       # Elements on no system. D-52'S OWN WORKED EXAMPLE: `noSystem: 16` does

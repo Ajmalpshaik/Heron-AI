@@ -66,16 +66,25 @@ contract:
       source: ambient
   provides:
     - name: references
+      role: result
       type: IList<Element>
     - name: kinds
+      role: result
       type: IDictionary<ElementId, string>
     - name: savedPaths
+      role: result
       type: IDictionary<ElementId, string>
     - name: resolvedPaths
+      role: result
       type: IDictionary<ElementId, string>
     - name: unresolved
+      role: result
       type: IList<ElementId>
     - name: unloaded
+      # NOT LOADED IS NOT BROKEN, AND THERE ARE THREE WAYS TO BE NOT LOADED -
+      # a distinct state from unresolved, and the split that decides whether
+      # anybody has to go looking for a file.
+      role: result
       type: IList<ElementId>
 
 proof:

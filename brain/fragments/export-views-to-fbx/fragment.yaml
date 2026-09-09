@@ -49,6 +49,7 @@ contract:
       source: request
   provides:
     - name: exported
+      role: result
       type: IList<string>
     - name: notThreeD
       # Plans, sections and sheets in the list. *FBX TAKES 3D VIEWS AND

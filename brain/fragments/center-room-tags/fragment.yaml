@@ -54,12 +54,23 @@ contract:
       type: IList<Element>
   provides:
     - name: centred
+      role: result
       type: int
     - name: landedAt
+      # Where each tag ACTUALLY ended up, read back after the move. The
+      # evidence the move took, and the answer rather than a count of it.
+      role: result
       type: IDictionary<ElementId, XYZ>
     - name: interiorPointUsed
+      # Tags where the true centroid fell outside its own room, so a sampled
+      # interior point stood in. Which method ran, never a tag it centred
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: orphanTags
+      # Tags whose room cannot be resolved. Given and unusable, never a tag it
+      # moved (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notRoomTags
       # Handed in but not room tags, so there was nothing here to act on. A

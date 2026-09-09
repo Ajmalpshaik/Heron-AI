@@ -52,6 +52,7 @@ contract:
     # needs, and TAG_ELEMENTS needs `elements` AND `alreadyTagged`. Providing
     # only the second left it an orphan with a feeder sitting right next to it.
     - name: elements
+      role: result
       type: IList<Element>
     - name: alreadyTagged
       # Elements that were ALREADY in the state asked for, so there was

@@ -58,6 +58,7 @@ contract:
       role: accounting
       type: IDictionary<ElementId, double>
     - name: belowMinimum
+      role: result
       type: IList<ElementId>
     - name: vertical
       # Elements standing vertical, which have no slope to measure. The

@@ -72,8 +72,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: shortRooms
+      role: result
       type: IList<ElementId>
     - name: unbounded
+      # Rooms with no area, EXCLUDED AND COUNTED, NEVER FAILED - every test
+      # against a room with no boundary comes back false and would report it
+      # as missing everything (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: noRule
       # Rooms the rule set says nothing about. *The rules are the input and

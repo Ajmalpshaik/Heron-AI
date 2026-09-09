@@ -45,10 +45,15 @@ contract:
       source: request
   provides:
     - name: copies
+      role: result
       type: IList<ElementId>
     - name: mirrored
+      role: result
       type: int
     - name: degenerate
+      # That the two points given do not define a plane, so there was nothing
+      # to mirror across. A refusal, never a mirror it made (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

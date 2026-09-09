@@ -54,8 +54,14 @@ contract:
       source: request
   provides:
     - name: sized
+      role: result
       type: int
     - name: snapped
+      # Runs whose size Revit changed to the nearest one in the type's size
+      # table - ask for 77 and it comes out 80, THE SET RETURNS TRUE AND
+      # NOTHING IS THROWN. Carries the ids and what each one became, which is
+      # the only place that says so.
+      role: result
       type: IList<ElementId>
     - name: notApplicable
       # Width on a round duct, diameter on a rectangular one. *The wrong size

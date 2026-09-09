@@ -50,10 +50,17 @@ contract:
       source: request
   provides:
     - name: aligned
+      role: result
       type: int
     - name: blocked
+      # Elements that would not move - pinned, owned by somebody else, or
+      # driven by a constraint. Never a thing it aligned (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: unverified
+      # Elements it moved but could not read back to confirm. The evidence it
+      # could not check, never a confirmed alignment (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -54,6 +54,7 @@ contract:
       source: request
   provides:
     - name: renumbered
+      role: result
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -62,6 +63,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: collisions
+      # Intended numbers already held elsewhere in the model, CHECKED BEFORE
+      # WRITING ANYTHING so a clash stops the batch instead of leaving a half-
+      # renumbered set nobody can unpick. Never a renumber it made (D-52).
+      role: accounting
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

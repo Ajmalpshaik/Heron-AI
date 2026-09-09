@@ -52,6 +52,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: missing
       # Saved ids that no longer resolve - the difference between a set that

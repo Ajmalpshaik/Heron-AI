@@ -68,6 +68,7 @@ contract:
       role: accounting
       type: double
     - name: applied
+      role: result
       type: bool
     - name: viewRefused
       # The view declined the change - a template owns the slot, or the view

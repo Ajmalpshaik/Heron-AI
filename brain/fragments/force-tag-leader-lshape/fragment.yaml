@@ -62,6 +62,7 @@ contract:
       source: request
   provides:
     - name: bent
+      role: result
       type: int
     - name: noLeader
       # Tags with no leader, so it could not be bent. The evidence it looked,

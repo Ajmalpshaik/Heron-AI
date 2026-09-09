@@ -42,8 +42,12 @@ contract:
       source: request
   provides:
     - name: hidden
+      role: result
       type: int
     - name: cannotHide
+      # Elements this view will not hide. Given and unusable, never a thing it
+      # hid (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: viewRefused
       # The view declined the change - a template owns the slot, or the view

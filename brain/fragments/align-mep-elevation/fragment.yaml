@@ -59,6 +59,7 @@ contract:
       source: request
   provides:
     - name: aligned
+      role: result
       type: int
     - name: noSize
       # Runs whose size parameter could not be read, so it could not be

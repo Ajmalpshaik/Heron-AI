@@ -49,8 +49,13 @@ contract:
       source: request
   provides:
     - name: copyId
+      role: result
       type: ElementId
     - name: copyName
+      # The name the copy ACTUALLY carries. IT DOES NOT NAME THE COPY - Revit
+      # auto-suffixes it, so 'Mechanical Plan' becomes 'Mechanical Plan 1',
+      # and this is the only place that says so.
+      role: result
       type: string
     - name: findings
       type: IList<string>

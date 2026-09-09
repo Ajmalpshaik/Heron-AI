@@ -53,6 +53,7 @@ contract:
       source: request
   provides:
     - name: renamed
+      role: result
       type: IList<string>
     - name: findings
       type: IList<string>

@@ -57,12 +57,19 @@ contract:
       source: ambient
   provides:
     - name: roots
+      role: result
       type: IList<ElementId>
     - name: partsOf
+      role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: rootOf
+      role: result
       type: IDictionary<ElementId, ElementId>
     - name: cyclic
+      # Elements that appear twice while walking up, which means the nesting
+      # loops. Reported RATHER THAN SILENTLY ATTACHED TO THE WRONG ROOT - a
+      # fault in the model, not a count of the walk.
+      role: result
       type: IList<ElementId>
 
 proof:

@@ -52,6 +52,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: withoutSubComponents
       # Parents that had none, reported so an empty answer cannot be mistaken

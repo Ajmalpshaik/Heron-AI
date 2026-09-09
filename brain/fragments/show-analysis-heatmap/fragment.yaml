@@ -60,6 +60,7 @@ contract:
       source: request
   provides:
     - name: painted
+      role: result
       type: int
     - name: noFaces
       # Elements the view draws as a line, which have no face to paint. Never
@@ -74,6 +75,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: allOneValue
+      # That every value was the same, so the whole model came out one colour.
+      # REPORTED RATHER THAN LEFT TO LOOK LIKE A FAILURE - it reads as broken
+      # and is not.
+      role: result
       type: bool
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

@@ -60,6 +60,7 @@ contract:
       source: request
   provides:
     - name: set
+      role: result
       type: int
     - name: withoutOffsets
       # Elements carrying neither offset - fittings, accessories, flex. A

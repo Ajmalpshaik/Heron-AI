@@ -76,6 +76,7 @@ contract:
       source: request
   provides:
     - name: sloped
+      role: result
       type: int
     - name: findings
       type: IList<string>
@@ -89,6 +90,11 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: inGroup
+      # Group members, REFUSED BEFORE ANYTHING IS ATTEMPTED. A move on a group
+      # member is silently ignored by Revit - no exception, no return value,
+      # no change - so counting it as success is how a report says "sloped 12"
+      # over a model where nothing moved (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

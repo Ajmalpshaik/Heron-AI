@@ -54,6 +54,7 @@ contract:
       type: IList<Element>
   provides:
     - name: changed
+      role: result
       type: int
     - name: findings
       type: IList<string>

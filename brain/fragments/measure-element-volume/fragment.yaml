@@ -37,12 +37,16 @@ contract:
       type: IList<Element>
   provides:
     - name: volumeM3
+      role: result
       type: IDictionary<ElementId, double>
     - name: areaM2
+      role: result
       type: IDictionary<ElementId, double>
     - name: totalVolumeM3
+      role: result
       type: double
     - name: totalAreaM2
+      role: result
       type: double
     - name: noSolid
       # Elements with no solid geometry, so it could not be measured. The

@@ -49,6 +49,7 @@ contract:
       source: request
   provides:
     - name: exported
+      role: result
       type: IList<string>
     - name: notExported
       # Sheets with no file on disk when it read back afterwards. A delivery
@@ -56,6 +57,9 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: folderProblem
+      # What was wrong with the folder asked for. A refusal, never a file it
+      # wrote (D-52).
+      role: accounting
       type: string
 
 revit: ["2022", "2023", "2024", "2025", "2026", "2027"]

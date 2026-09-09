@@ -80,10 +80,17 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: copiesEach
+      role: result
       type: int
     - name: stepDegrees
+      # The angle it stepped by, worked out from the sweep and the count.
+      # Arithmetic done before anything was made - it is non-zero even when a
+      # count of 1 creates nothing, which is exactly this fragment's negative
+      # case (D-52).
+      role: accounting
       type: double
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

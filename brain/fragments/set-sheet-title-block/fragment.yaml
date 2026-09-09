@@ -59,8 +59,13 @@ contract:
       source: request
   provides:
     - name: swappedInPlace
+      role: result
       type: int
     - name: replaced
+      # Sheets whose old title block was DELETED and a new one placed, so
+      # anything typed into it is gone. Named one by one because "48 sheets
+      # updated" hides the four that quietly lost data.
+      role: result
       type: IList<string>
     - name: notASheet
       # Handed in but not sheets, so there was nothing here to act on. A count

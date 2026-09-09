@@ -53,6 +53,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: skippedSolids
       # What it passed over. The evidence it looked, never a thing it

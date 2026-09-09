@@ -58,6 +58,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: withoutPhasing
       # Elements with no phase parameters at all, which is most of a model.

@@ -49,8 +49,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: duplicated
+      role: result
       type: IList<ElementId>
     - name: blank
+      # A BLANK IS NOT A DUPLICATE, and blanks are named as a separate figure
+      # because "180 of these have no mark" is its own finding and often the
+      # more useful one.
+      role: result
       type: IList<ElementId>
     - name: noSuchParameter
       # Elements not carrying that parameter, so it could not be compared. The

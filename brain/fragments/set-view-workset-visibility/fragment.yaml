@@ -57,8 +57,10 @@ contract:
       source: request
   provides:
     - name: shown
+      role: result
       type: int
     - name: hidden
+      role: result
       type: int
     - name: notFound
       # Workset names the model does not have, so it could not be switched.

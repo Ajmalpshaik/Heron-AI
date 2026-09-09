@@ -53,10 +53,13 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: namedAs
+      role: result
       type: IDictionary<ElementId, string>
     - name: elevationOf
+      role: result
       type: IDictionary<ElementId, double>
     - name: nameRefused
       # Levels Revit would not let take the name asked for. The evidence it

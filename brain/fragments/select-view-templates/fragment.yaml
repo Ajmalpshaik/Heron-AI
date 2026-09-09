@@ -64,8 +64,10 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: matchedNames
+      role: result
       type: IList<string>
     - name: findings
       type: IList<string>
@@ -76,6 +78,7 @@ contract:
       role: accounting
       type: int
     - name: found
+      role: result
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

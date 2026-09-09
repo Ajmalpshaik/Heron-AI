@@ -53,12 +53,21 @@ contract:
     - name: findings
       type: IList<string>
     - name: curtainWallsFound
+      # How many curtain walls were read. The size of the sweep, never a panel
+      # or mullion it found (D-52).
+      role: accounting
       type: int
     - name: panelCount
+      role: result
       type: int
     - name: mullionCount
+      role: result
       type: int
     - name: emptyCells
+      # AN EMPTY CELL IS A REAL STATE - a grid cell whose panel has been
+      # deleted returns an id that resolves to nothing, and it looks like
+      # nothing at all on the drawing.
+      role: result
       type: int
     - name: notCurtain
       # Handed in but not curtain walls, so there was nothing here to act on.

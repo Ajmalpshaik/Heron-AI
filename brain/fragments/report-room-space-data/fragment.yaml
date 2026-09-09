@@ -56,10 +56,13 @@ contract:
       type: IList<Element>
   provides:
     - name: identities
+      role: result
       type: IDictionary<ElementId, string>
     - name: areas
+      role: result
       type: IDictionary<ElementId, double>
     - name: volumes
+      role: result
       type: IDictionary<ElementId, double>
     - name: unplaced
       # A room that was never put in the model. Named separately from
@@ -75,6 +78,10 @@ contract:
       role: result
       type: IList<ElementId>
     - name: volumeNotComputed
+      # Rooms with no computed volume, NAMED INSTEAD OF HANDING OVER A COLUMN
+      # OF NOUGHTS - so the answer says which switch to turn on rather than
+      # reporting a building with no volume.
+      role: result
       type: IList<ElementId>
     - name: notSpatial
       # Handed in but not a room or a space, so there was nothing here to act

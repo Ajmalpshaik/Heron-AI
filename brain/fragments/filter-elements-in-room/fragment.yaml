@@ -43,6 +43,7 @@ contract:
       type: IList<Element>
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: outside
       # Elements handed in that the room does not contain - the rejects from

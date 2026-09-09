@@ -40,6 +40,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: View
       # A View rather than an ElementId, because the useful next thing to do
       # with a new section is put it on a sheet and PLACE_VIEW_ON_SHEET works

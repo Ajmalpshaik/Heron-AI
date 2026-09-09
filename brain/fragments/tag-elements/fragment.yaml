@@ -55,6 +55,7 @@ contract:
       type: ICollection<ElementId>
   provides:
     - name: tagged
+      role: result
       type: int
     - name: skipped
       # What it passed over. The evidence it looked, never a thing it

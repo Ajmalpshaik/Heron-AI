@@ -54,10 +54,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: stale
+      role: result
       type: IList<ElementId>
     - name: combined
+      role: result
       type: IList<ElementId>
     - name: unhosted
+      role: result
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

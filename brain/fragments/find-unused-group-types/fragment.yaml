@@ -53,10 +53,16 @@ contract:
       type: Document
   provides:
     - name: unusedGroupTypes
+      role: result
       type: IList<ElementId>
     - name: unusedNames
+      role: result
       type: IList<string>
     - name: usedOnlyAsAttached
+      # AN ATTACHED DETAIL GROUP HAS NO INSTANCES OF ITS OWN AND IS STILL IN
+      # USE, AND THAT IS THE TRAP - these look unused and are not. The row
+      # that stops somebody deleting the detail that annotates a placed group.
+      role: result
       type: IList<ElementId>
     - name: scanned
       # How many group definitions were examined. A count of work DONE, not of

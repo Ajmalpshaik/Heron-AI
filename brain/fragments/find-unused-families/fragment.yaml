@@ -34,10 +34,12 @@ contract:
       type: Document
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: findings
       type: IList<string>
     - name: wholeFamilyUnused
+      role: result
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

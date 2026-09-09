@@ -80,8 +80,13 @@ contract:
       source: request
   provides:
     - name: moved
+      role: result
       type: int
     - name: measuredFrom
+      # How many leaderless tags the size was measured from - zero means the
+      # caller's stated size was used instead. Which of the two happened,
+      # never a tag it moved (D-52).
+      role: accounting
       type: int
     - name: bothHadToMove
       # Tags where the bent-leader preference had to be ABANDONED and both
@@ -91,6 +96,10 @@ contract:
       role: result
       type: IList<ElementId>
     - name: stillOverlapping
+      # Tags still clashing when it ran out of passes. What it could NOT fix,
+      # and a run that moved nothing must not read as work because of it
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notTags
       # Handed in but not tags, so there was nothing here to act on. A count

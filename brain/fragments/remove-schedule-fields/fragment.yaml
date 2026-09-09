@@ -65,8 +65,10 @@ contract:
       source: request
   provides:
     - name: removed
+      role: result
       type: int
     - name: hidden
+      role: result
       type: int
     - name: notPresent
       # Field names the schedule does not carry, so it could not be removed.
@@ -80,8 +82,17 @@ contract:
       role: accounting
       type: IList<string>
     - name: rulesRemoved
+      # Sort and filter rules taken out with the field, which the caller had
+      # to say yes to. A second change to the schedule, and the one that would
+      # otherwise send a drawing out listing every level.
+      role: result
       type: int
     - name: presentFields
+      # The fields on the schedule when it was re-read afterwards. THE FIELD
+      # ORDER IS RE-READ because an absence of exception is not evidence a
+      # field went - the verification, filled in whether anything was removed
+      # or not (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

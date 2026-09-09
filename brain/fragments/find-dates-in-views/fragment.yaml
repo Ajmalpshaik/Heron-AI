@@ -53,10 +53,13 @@ contract:
       type: Document
   provides:
     - name: datesFound
+      role: result
       type: IDictionary<string, IList<ElementId>>
     - name: viewNames
+      role: result
       type: IDictionary<ElementId, string>
     - name: viewsWithDates
+      role: result
       type: int
     - name: findings
       type: IList<string>

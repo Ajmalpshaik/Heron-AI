@@ -51,10 +51,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: disabled
+      role: result
       type: IList<ElementId>
     - name: hidden
+      role: result
       type: IList<ElementId>
     - name: blankOverride
+      role: result
       type: IList<ElementId>
     - name: nothingToActOn
       # ONE OF THE FOUR WAYS a filter can be present and do nothing - its
@@ -64,8 +67,14 @@ contract:
       role: result
       type: IList<ElementId>
     - name: templateOwned
+      # THE ANSWER TO "MY CHANGE DID NOT SAVE" - reported once at the top
+      # because it explains every other row at the same time.
+      role: result
       type: bool
     - name: filterCount
+      # How many filters are on the view at all. The size of what it examined,
+      # never a fault it found (D-52).
+      role: accounting
       type: int
 
 proof:

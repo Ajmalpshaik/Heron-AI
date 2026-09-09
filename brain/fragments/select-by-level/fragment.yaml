@@ -52,8 +52,13 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: unresolvedLevel
+      # How many had no level found at all, so a broken lookup reads as such
+      # instead of as a plausible zero. Shared exactly with
+      # FILTER_ELEMENTS_BY_CATEGORY (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

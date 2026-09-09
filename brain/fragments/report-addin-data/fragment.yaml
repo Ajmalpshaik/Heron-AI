@@ -84,8 +84,14 @@ contract:
       role: accounting
       type: int
     - name: schemasUsedHere
+      role: result
       type: int
     - name: carriersFound
+      # How many elements in THIS model hold data of that shape. SCHEMAS ARE
+      # SESSION-WIDE AND CARRIERS ARE PER-MODEL, WHICH IS THE WHOLE READING OF
+      # THE OUTPUT - zero carriers means an add-in is installed, carriers mean
+      # this model carries its data.
+      role: result
       type: int
 
 proof:

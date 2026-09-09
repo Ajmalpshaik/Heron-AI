@@ -66,12 +66,18 @@ contract:
     - name: findings
       type: IList<string>
     - name: parameterNames
+      role: result
       type: IList<string>
     - name: instanceCount
+      role: result
       type: int
     - name: typeCount
+      role: result
       type: int
     - name: elementsRead
+      # How many elements were inventoried. The size of the sweep, never a
+      # parameter it found (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

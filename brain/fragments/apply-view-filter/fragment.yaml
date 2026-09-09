@@ -58,6 +58,7 @@ contract:
       source: request
   provides:
     - name: applied
+      role: result
       type: bool
     - name: findings
       type: IList<string>

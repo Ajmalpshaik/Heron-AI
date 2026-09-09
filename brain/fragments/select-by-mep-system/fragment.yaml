@@ -59,6 +59,7 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: withoutSystem
       # Elements carrying no system at all. The evidence it looked;

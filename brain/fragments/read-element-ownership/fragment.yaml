@@ -40,10 +40,16 @@ contract:
       type: IList<Element>
   provides:
     - name: editable
+      role: result
       type: IList<ElementId>
     - name: ownedByOthers
+      role: result
       type: IDictionary<ElementId, string>
     - name: workshared
+      # A MODEL THAT IS NOT WORKSHARED IS A DISTINCT ANSWER, NOT "EVERYTHING
+      # IS FREE" - without it a caller cannot tell "checked, all clear" from
+      # "there was nothing to check".
+      role: result
       type: bool
 
 proof:

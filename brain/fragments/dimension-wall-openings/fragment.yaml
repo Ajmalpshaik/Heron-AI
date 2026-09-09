@@ -68,8 +68,14 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: segmentsDisagree
+      # Walls whose segments do not add up to the overall, which means an
+      # extra face became an extra segment. THE CHECK IS BUILT IN, and this is
+      # what it found - a string that still reads as a valid dimension and is
+      # wrong.
+      role: result
       type: IList<ElementId>
     - name: noOpeningFaces
       # Walls whose openings left no readable faces, so it could not be

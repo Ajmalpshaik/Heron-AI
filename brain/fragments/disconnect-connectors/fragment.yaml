@@ -56,8 +56,10 @@ contract:
       source: request
   provides:
     - name: disconnected
+      role: result
       type: int
     - name: pairs
+      role: result
       type: IList<string>
     - name: untouched
       # Joints left alone because they reach outside the selection. What it

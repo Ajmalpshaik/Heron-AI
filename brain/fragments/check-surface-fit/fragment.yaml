@@ -65,8 +65,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: unsafeToMove
+      role: result
       type: IList<ElementId>
     - name: clean
+      # How many sat flat with nothing wrong. The evidence it looked - a clean
+      # run over five thousand elements should print a summary line and
+      # nothing else (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

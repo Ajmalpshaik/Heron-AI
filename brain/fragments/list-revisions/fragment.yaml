@@ -34,10 +34,15 @@ contract:
       type: Document
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: findings
       type: IList<string>
     - name: onNoSheets
+      # Revisions that appear on no sheet at all. THE SHEET LIST IS THE
+      # ANSWER, NOT THE REVISION LIST - a revision nothing carries prints
+      # nowhere, which is what somebody planning an issue needs to know.
+      role: result
       type: IList<ElementId>
 
 proof:

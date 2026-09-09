@@ -55,6 +55,7 @@ contract:
       source: request
   provides:
     - name: stacked
+      role: result
       type: int
     - name: noHead
       # Tags with no head to move, so it could not be stacked. The evidence it

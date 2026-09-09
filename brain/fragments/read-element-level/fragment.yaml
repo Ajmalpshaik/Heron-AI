@@ -35,8 +35,10 @@ contract:
       type: IList<Element>
   provides:
     - name: levelName
+      role: result
       type: IDictionary<ElementId, string>
     - name: offsetMm
+      role: result
       type: IDictionary<ElementId, double>
     - name: noLevel
       # Elements belonging to no level, so it could not be reported on. The

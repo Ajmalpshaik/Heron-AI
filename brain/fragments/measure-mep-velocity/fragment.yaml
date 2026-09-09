@@ -53,8 +53,13 @@ contract:
       role: accounting
       type: IDictionary<ElementId, double>
     - name: overLimit
+      role: result
       type: IList<ElementId>
     - name: disagrees
+      # Ducts where the velocity computed from flow and area does not match
+      # the one Revit is carrying - usually a duct resized after the system
+      # was last calculated. The reason both numbers are reported at all.
+      role: result
       type: IList<ElementId>
     - name: noFlow
       # Ducts carrying no flow figure, so it could not be given a velocity.
