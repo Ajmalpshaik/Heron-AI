@@ -101,6 +101,37 @@ contract:
       role: accounting
       type: string
 
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned askedFor 1, handed
+    3, hidden 1, hideOnly true, notPresent 2 item(s) [''Mark'' on ''Space Schedule'', ''Mark''
+    on ''<Revision Schedule> 15''], presentFields 14 item(s) [Heat Recovery Unit Summary:
+    Space: Number, Heat Recovery Unit Summary: Space: Name, Heat Recovery Unit Summary: Mark
+    [hidden], ...], refused (null), refusedInUse 0 item(s), removeDependentRules false, removed
+    0, rulesRemoved 0, scheduleBehind Func`2, schedulesSeen 3. inputs came elements from the
+    selection (3); fieldNames as given (1); hideOnly as given; removeDependentRules as given.
+    on Snowdon-scratch_ajmal.al'
+  negative_case: run with categoryName=Title Blocks, fieldNames=Mark, hideOnly=True, inViewOnly=Notes,
+    Symbols & Schedules, removeDependentRules=False instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase's own values - run inside a transaction and ROLLED BACK,
+    so the model was left exactly as it was. returned askedFor 1, handed 1, hidden 0, hideOnly
+    true, notPresent 0 item(s), presentFields 0 item(s), refused not one of the 1 element(s)
+    handed in is a schedule, so NOTHING WAS CHANGED. A schedule is a VIEW and cannot be selected
+    in the model; what CAN be selected is a schedule PLACED ON A SHEET, which this now reads
+    through to the schedule behind it. Click the schedule on the sheet, or select the category
+    'Schedule Graphics', refusedInUse 0 item(s), removeDependentRules false, removed 0, rulesRemoved
+    0, scheduleBehind Func`2, schedulesSeen 0. inputs came elements from the selection (1);
+    fieldNames as given (1); hideOnly as given; removeDependentRules as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: de292c01c2ad8618
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

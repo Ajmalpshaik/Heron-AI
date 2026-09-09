@@ -1162,7 +1162,7 @@ eight have been run against a model with both legs (PR #67), and §3j holds the 
 | | |
 |---|---|
 | **12 fragments refuse** | `color-by-parameter`, `measure-run-quantities`, `edit-text-values`, the seven schedule ones, `add-revision-cloud`, `set-view-section-box` |
-| **8 proved, both legs** | drafts in `brain/proof-drafts/`, **unsigned** |
+| **8 proved, both legs** | signed by Ajmal PS 2026-09-09; `proof:` blocks are in the fragments |
 | **9 new `provides`** | seven `refused`, two `refusalReasons` — §3h.1 was wrong that every fragment already had one |
 | **Model unharmed** | 9,628 elements before and after, unsaved-changes marker cleared |
 
@@ -1172,8 +1172,24 @@ back 256 real field names.
 
 ### What is NOT done, in the order it is worth doing
 
-**1. THE EIGHT DRAFTS ARE UNSIGNED, and `heron-status` still says DRAFT on every one.** That is
-deliberate — the machine never signs. They are already in your checkout:
+**1. THE EIGHT ARE SIGNED, AND STILL SAY DRAFT — one act remains.** Ajmal PS accepted all eight on
+2026-09-09, so each fragment now carries a `proof:` block with his name, the model, both cases verbatim
+and a fingerprint. **`accept` deliberately leaves `heron-status` alone**, and the tool says so on every
+run: *"promoting it is a separate, deliberate act, and it is yours."* Until that act, the library counts
+**159** proven and these eight are not among them.
+
+```bash
+# the remaining act - it moves the library from 159 proven to 167
+for f in measure-run-quantities color-by-parameter add-schedule-fields          add-schedule-combined-field remove-schedule-fields          set-schedule-appearance set-schedule-filters set-schedule-sort-group; do
+  sed -i 's/^heron-status: DRAFT$/heron-status: PROVEN/' brain/fragments/$f/fragment.yaml
+done
+```
+
+Each carries the gap *no second route was run* — D-30's *"where one exists"* clause, undecided rather
+than failed. That is what promotion would be standing over.
+
+**The drafts are gone**: `accept` consumes them as it records, so the fact now has one home rather than
+two. The original commands, for the next batch:
 
 ```
 python brain/heron_validate.py review add-schedule-fields

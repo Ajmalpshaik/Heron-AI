@@ -101,6 +101,42 @@ contract:
       role: accounting
       type: string
 
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned appliedOrder 1 item(s)
+    [''Heat Recovery Unit Summary'': Mark ascending; every element ...], askedFor 1, cannotSortBy
+    0 item(s), descending false, handed 3, itemized true, notPresent 2 item(s) [''Mark'' on
+    ''Space Schedule'' - not a column in this schedule, ..., ''Mark'' on ''<Revision Schedule>
+    15'' - not a column in this sc...], refused (null), replacedRules 2 item(s) [''Heat Recovery
+    Unit Summary'' was sorted by Level ascending, ''Heat Recovery Unit Summary'' was sorted
+    by Mark ascending], scheduleBehind Func`2, schedulesSeen 3, showFooter false, showGrandTotal
+    false, showHeader false, sorted 1. inputs came elements from the selection (3); sortFieldNames
+    as given (1); descending as given; showHeader as given; showFooter as given; showGrandTotal
+    as given; itemized as given. on Snowdon-scratch_ajmal.al'
+  negative_case: run with categoryName=Title Blocks, descending=False, inViewOnly=Notes, Symbols
+    & Schedules, itemized=True, showFooter=False, showGrandTotal=False, showHeader=False,
+    sortFieldNames=Mark instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase's own values - run inside a transaction and ROLLED BACK, so the model
+    was left exactly as it was. returned appliedOrder 0 item(s), askedFor 1, cannotSortBy
+    0 item(s), descending false, handed 1, itemized true, notPresent 0 item(s), refused not
+    one of the 1 element(s) handed in is a schedule, so NOTHING WAS SORTED. A schedule is
+    a VIEW and cannot be selected in the model; what CAN be selected is a schedule PLACED
+    ON A SHEET, which this now reads through to the schedule behind it. Click the schedule
+    on the sheet, or select the category 'Schedule Graphics', replacedRules 0 item(s), scheduleBehind
+    Func`2, schedulesSeen 0, showFooter false, showGrandTotal false, showHeader false, sorted
+    0. inputs came elements from the selection (1); sortFieldNames as given (1); descending
+    as given; showHeader as given; showFooter as given; showGrandTotal as given; itemized
+    as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 16a37a01e7dc2e41
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

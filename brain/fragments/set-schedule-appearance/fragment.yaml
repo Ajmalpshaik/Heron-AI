@@ -97,6 +97,36 @@ contract:
       role: result
       type: IList<string>
 
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned appliedAppearance 1
+    item(s) [''Heat Recovery Unit Summary'' / field ''Mark'': prints as ''AJ H...], changed
+    1, columnWidthMm 0, handed 3, headingSideways false, notPresent 2 item(s) [''Mark'' on
+    ''Space Schedule'' - not a column in this schedule, ''Mark'' on ''<Revision Schedule>
+    15'' - not a column in this sc...], refused 0 item(s), requestUnusable false, scheduleBehind
+    Func`2, schedulesSeen 3, wantedAlignment . inputs came elements from the selection (3);
+    fieldName as given; newHeading as given; columnWidthMm as given; alignment as given; headingSideways
+    as given; hideOrShow as given. on Snowdon-scratch_ajmal.al'
+  negative_case: run with alignment=, categoryName=Title Blocks, columnWidthMm=0, fieldName=Mark,
+    headingSideways=False, hideOrShow=, inViewOnly=Notes, Symbols & Schedules, newHeading=AJ
+    Heading instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running select-by-category-name, set-selection with this
+    phase's own values - run inside a transaction and ROLLED BACK, so the model was left exactly
+    as it was. returned appliedAppearance 0 item(s), changed 0, columnWidthMm 0, handed 1,
+    headingSideways false, notPresent 0 item(s), refused 1 item(s) [not one of the 1 element(s)
+    handed in is a schedule, so NOTH...], requestUnusable false, scheduleBehind Func`2, schedulesSeen
+    0, wantedAlignment . inputs came elements from the selection (1); fieldName as given;
+    newHeading as given; columnWidthMm as given; alignment as given; headingSideways as given;
+    hideOrShow as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: dcd8f1b2021fb0b6
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

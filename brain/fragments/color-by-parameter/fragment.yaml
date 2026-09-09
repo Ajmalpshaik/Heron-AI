@@ -88,6 +88,39 @@ contract:
       role: accounting
       type: string
 
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32940
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned band vivid, brightness
+    0.85, carrying 22, coloured 22, fromHue Func`4, grouped 3 entry(ies), handed 22, legend
+    3 item(s) [Exhaust Air  - RGB 217,76,76  (8 element(s)), Return Air  - RGB 76,217,76  (5
+    element(s)), Supply Air  - RGB 76,76,217  (9 element(s))], names 3 item(s) [Exhaust Air,
+    Return Air, Supply Air], noValue 0 item(s), refused (null), saturation 0.65, skipped 0
+    item(s), solid FillPatternElement, step 120, valueOf Func`2. inputs came view as given;
+    elements from the selection (22); parameterName as given; colourBand as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Ducts, colourBand=vivid, inViewOnly=FloorPlan: M1,
+    parameterName=ZZZNOTHINGHERE, view=FloorPlan: M1 instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase''s own values - run inside a transaction and ROLLED BACK,
+    so the model was left exactly as it was. returned band vivid, brightness 0.85, carrying
+    0, coloured 0, fromHue Func`4, grouped 0 entry(ies), handed 22, legend 0 item(s), names
+    0 item(s), noValue 0 item(s), refused not one of the 22 element(s) handed in carries a
+    parameter called ''ZZZNOTHINGHERE'', so there is nothing to group by and NOTHING WAS COLOURED.
+    Colouring them all one colour would say they share a value they do not have. Check the
+    spelling - a parameter name is case-sensitive here and is not the same as the schedule
+    heading. The first element carries: Additional Flow, Area, Category, Comments, Critical
+    Path, Design Option, Diameter, Edited by, End Middle Elevation, Export to IFC, Export
+    to IFC As, Family, and 58 more, saturation 0.65, skipped 0 item(s), solid FillPatternElement,
+    step 0, valueOf Func`2. inputs came view as given; elements from the selection (22); parameterName
+    as given; colourBand as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: f7470fb6e6110822
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
