@@ -27,7 +27,7 @@ hours.** Have Revit open with a rich model — `Snowdon Towers Sample HVAC` is t
 on — and read [`docs/FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md) before starting, because it is the queue.
 
 **To do the work that has been WAITING FOR YOUR PC since 2026-09-09, say:** *"Read the
-open-questions entry in HANDOVER.md and do the link contracts."* Four items are queued there in order,
+open-questions entry in HANDOVER.md and do the link contracts."* Five items are queued there in order,
 the biggest being **62 reading fragments that must be able to look inside linked models when you ask
 them to** — which in Qatar MEP work is most of the time, because the architecture is a link, the
 structure is a link, and often the MEP you are checking is a link too. Every rule is already checked by
@@ -74,15 +74,19 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | Open questions | **52 answered, 1 open, nothing gating any phase.** `Q-51` — what guards retrieval-into-context on the day Heron indexes text it did not write — stays open **on purpose**, with [`tests/test_carried_sources.py`](../tests/test_carried_sources.py) watching for the day it becomes real. Derived by `python tools/check-docs.py`, never read from a sentence |
 | Tools | **21** in `tools/`, and **14** MCP tools. Derive both rather than trusting a line |
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them |
-| Branches | `main`, plus **`claude/heron-ai-master-architecture-6t03c9` — PR #44, open for review and NOT to be merged until it has had one**. It now carries the master-architecture audit, the repository study, and [D-59](DECISIONS.md)–[D-66](DECISIONS.md). `claude/folder-structure-review-0wpu2y` was fully merged and deleted on 2026-09-09. Everything through PR #43 is in `main`; **nothing from #44 is** |
+| Branches | **`main`, and everything is in it.** PR #44 was reviewed by Codex and **merged on 2026-09-09** (`fd1df12`), carrying the master-architecture audit, the file-level repository study, [D-59](DECISIONS.md)–[D-66](DECISIONS.md), and the nine review fixes. `claude/heron-ai-master-architecture-6t03c9` and `claude/folder-structure-review-0wpu2y` are both merged. **Start from `main`** — there is no open branch and nothing is parked outside it |
 
-**QUEUED FOR THE PC, AND THE OWNER HAS SEEN THE LIST.** Four items, all of them needing Revit or
-`dotnet`, all of them CHECKED by a gate that runs without either: **62 link contracts**
+**QUEUED FOR THE PC, AND THE OWNER HAS SEEN THE LIST.** **Five items**, all of them needing Revit
+or `dotnet`, all of them CHECKED by a gate that runs without either: **62 link contracts**
 ([D-59](DECISIONS.md)), **59 dropped-counts** ([D-64](DECISIONS.md)), the **preview selection** in
-`RevitWrite.cs` ([D-60](DECISIONS.md)), and the **workflow id across the seam**
-([D-61](DECISIONS.md)/[D-62](DECISIONS.md)) which is small and unlocks three things at once. The lists
-and the order are in
+`RevitWrite.cs` ([D-60](DECISIONS.md)), the **workflow id across the seam**
+([D-61](DECISIONS.md)/[D-62](DECISIONS.md)) which is small and unlocks three things at once, and
+the **project knowledge scope**, which the Codex review added. The lists and the order are in
 [the open-questions entry](#handover--2026-09-09-the-open-questions-track-44--52-answered-and-the-rest-needs-the-pc).
+
+**Nothing on that list is blocked on a decision.** Every one is a change somebody can sit down
+and make, against a rule that is already written and already checked. That is the difference
+between this list and every earlier one in this file.
 
 **EVERY REGISTER ROW THAT DID NOT NEED REVIT IS NOW CLOSED.** `A4`, `A6`, `A7`, `A8` and `A9` all fell on
 2026-09-06 on the owner's own PC — rows parked for months on *"a machine"*, closed in one afternoon by
@@ -324,6 +328,24 @@ than last:
   structural one
 - [`brain/heron_audit.py`](../brain/heron_audit.py) can finally claim `HERON-MCP-LOG-010`, whose row
   says *keyed by Workflow ID* and is the only reason its header still says `Heron-Agent: none`
+
+### HOW THIS TRACK ENDED, AND WHAT A FRESH SESSION SHOULD DO FIRST
+
+**PR #44 was merged on 2026-09-09** (`fd1df12`) after a Codex review. There is no open branch. **Start
+from `main`.**
+
+**The first five minutes of the next session, in order:**
+
+1. `python tools/check-gaps.py` — it is computed from disk and this file is typed by hand. **Believe
+   the tool.**
+2. `python tools/check-docs.py` — it derives every count claimed in prose and fails on drift. It caught
+   four stale counts during this track, one of them written in the same commit that broke it.
+3. Read the five queued items below. **Not one of them is blocked on a decision** — every rule they need
+   is written and already checked by a gate.
+
+**What this track did NOT touch, so nothing here changes the proving work:** no fragment status moved,
+`D-30` is untouched, no Golden Rule changed, `write.enabled` is as it was, and nothing built here has
+been near Revit. The PROVING track entries below are unaffected and still supersede this one on method.
 
 ### AN AUTOMATED REVIEW FOUND NINE THINGS AND ALL NINE WERE REAL
 
