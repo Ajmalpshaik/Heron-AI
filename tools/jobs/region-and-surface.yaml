@@ -1,0 +1,92 @@
+# Two READ fragments that have never met a model, arranged 2026-09-10.
+#
+#     python tools/batch-prove.py tools/jobs/region-and-surface.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/region-and-surface.yaml
+#
+# Both are risk: READ. Nothing here can change the model, which matters after
+# section 1c - the rollback has failed three times and counting elements cannot
+# see an edit. A READ batch does not depend on the rollback holding.
+#
+# WHY THESE TWO AND NOT THE OTHER EIGHT. `generate-jobs.py` names 39 fragments
+# that can be arranged today; 29 of them are MODIFY. Of the ten that are not,
+# eight need an `Element` as a PARTICULAR INSTANCE - a specific ceiling, a
+# specific group, the two ends of a run - and that is still on the refused list
+# (D-67 widened caller values to an element TYPE by name, never an instance).
+# These two are the only ones whose every value can be typed.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+jobs:
+  # ------------------------------------------------------------------
+  # A VOLUME, NOT A VIEW. This one needs no selection at all - hence
+  # `setup: []`. The box is the whole arrangement.
+  #
+  # THE POSITIVE BOX IS DELIBERATELY HUGE and the CATEGORY is what keeps
+  # the answer small (rule 1). Sizing the box to the building would mean
+  # knowing the building's coordinates, and a box guessed slightly wrong
+  # reads as a fragment that found nothing. A box that certainly contains
+  # the model, narrowed to one category, is small AND certain.
+  #
+  # THE NEGATIVE IS THE SAME BOX MOVED 9 KM AWAY. `elements` depends
+  # entirely on the volume, so moving the volume empties it - and nothing
+  # else about the request changes, which is what makes it a clean
+  # negative rather than a different question.
+  #
+  # exact: false is the BOUNDING BOX test. The fragment says plainly that
+  # the fast test over-reports on sloped and rotated geometry; that is the
+  # right trade for a proof, where the question is whether the volume is
+  # honoured at all.
+  #
+  # Corners are MILLIMETRES and the fragment divides by 304.8 itself
+  # (rule 4). A value handed in already converted shows up as an absurd
+  # box rather than as a quiet zero.
+  - fragment: select-in-region
+    setup: []
+    set:
+      minMm:      "-500000,-500000,-500000"
+      maxMm:      "500000,500000,500000"
+      exact:      false
+      categories: "Mechanical Equipment"
+    negative-set:
+      minMm:      "9000000,9000000,9000000"
+      maxMm:      "9100000,9100000,9100000"
+      exact:      false
+      categories: "Mechanical Equipment"
+    expect: elements
+
+  # ------------------------------------------------------------------
+  # EXPLORATORY, AND IT MAY WELL COME BACK EMPTY. The fragment says so
+  # itself: "LINKED MODELS ARE NOT HIT. If the ceilings and slabs are a
+  # link, every element reports as finding nothing - which looks exactly
+  # like a real finding." This is an HVAC model whose architecture is a
+  # link, so the rays fired down from equipment may hit nothing at all.
+  #
+  # It is run anyway because that question has never been asked of this
+  # model, and the answer is worth having either way. If the positive is
+  # empty it is a rule 2 problem - the model lacks the content - and it
+  # belongs in FRAGMENT-ISSUES.md as an observed row, not as a defect.
+  #
+  # direction is a VECTOR: straight down. maxDistance 3000 mm is a
+  # storey; evenness 25 mm is a fabrication tolerance.
+  - fragment: check-surface-fit
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: Mechanical Equipment
+      inViewOnly:   "FloorPlan: M1"
+      direction:    "0,0,-1"
+      maxDistance:  3000
+      evenness:     25
+    negative-set:
+      # A DIFFERENT SELECTION, not a cleared one. Ducts are in this plan
+      # and are not equipment sitting on a floor.
+      categoryName: Ducts
+      inViewOnly:   "FloorPlan: M1"
+      direction:    "0,0,-1"
+      maxDistance:  3000
+      evenness:     25
+    # `clean` is declared role: accounting and counts what sat flat with
+    # nothing wrong - work looked at, not a finding. unsafeToMove is the
+    # result that has to move off zero.
+    expect: unsafeToMove
