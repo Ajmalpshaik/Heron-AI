@@ -638,6 +638,95 @@ wrong answers is worse than a slow one.
 
 ---
 
+## 3i. THE ELEMENT-SHAPED WALL — found 2026-09-09, second sitting
+
+Eighteen MODIFY fragments were run in two rounds against `Snowdon-scratch_ajmal.al`, chosen because
+they had **no run record at all** — they had never been in front of a model. Three proved.
+`tools/jobs/modify-never-run.yaml` and `tools/jobs/modify-round-2.yaml` are the arrangements, kept so
+the next round starts from what was learned rather than from the fragment list.
+
+| Proved | Positive | Negative |
+|---|---|---|
+| `set-element-level` | `moved 1`, `alreadyThere 21` — 21 of the 22 ducts were already on L2 | `moved 0`, `refused 9` |
+| `array-elements-radial` | `count=2` → `created 22`, `copiesEach 1` | `count=1` → `created 0`, and it says why: *"a count of 1 asks for no copies at all"* |
+| `renumber-sequential` | `renumbered 22`, planned HZ1–HZ22, `collisions 0` | `renumbered 0`, `refused 9` |
+
+`array-elements-radial` is the best-shaped proof of the three: **both legs are the same selection** and
+differ only in the value, so it tests the input rather than the arrangement. Where a fragment allows
+that, prefer it.
+
+`set-element-level` is the first fragment that **needed [D-54](DECISIONS.md) to exist** — it was run
+earlier the same day, with no value, and refused by name rather than guessing.
+
+### The wall itself
+
+[D-54](DECISIONS.md) resolves a **view, a level, a category, a name, a number, or true/false — and
+lists of those.** It refuses everything else by name, with a reason. `set-global-parameter` states the
+boundary better than this file can:
+
+> *"Heron can be handed a view, a level, a category, a name, a number, or true/false - and lists of
+> those. `ParameterValue` is not one of them yet, so this fragment still has no way to receive it."*
+
+**That refusal is correct and must not be softened.** Guessing which `FamilySymbol` was meant is how a
+job runs against the wrong thing and reports success. But it is now the binding constraint: of the
+**24** MODIFY fragments with only simple caller values and no run record, **more than half cannot be
+arranged at all** because they want one of these:
+
+| Shape wanted | Fragments blocked on it |
+|---|---|
+| `FamilySymbol` | `set-sheet-title-block`, `distribute-along-run`, `place-accessory-on-run` |
+| `OverrideGraphicSettings` | `override-graphics-in-view`, `set-link-graphics`, `apply-view-filter` — and `read-graphic-overrides` already returns this type *unreadably*, so it is one finding about one type, not four |
+| `Element` / `Material` / `Curve` | `align-elements`, `join-geometry`, `match-element-type`, `replace-material`, `set-view-crop-to-shape`, `create-from-room-boundaries` |
+| `ParameterValue` | `set-global-parameter` |
+
+**This is the next unlock after D-54, and it is the same shape of unlock.** D-54 took the caller's half
+across as text and resolved it inside Revit where the document is. The same argument applies here: a
+type name, a material name, a title-block name are all things Revit can look up — what is missing is
+the resolver, not the possibility. The three that genuinely cannot work this way are
+`OverrideGraphicSettings`, `Curve` and bare `Element`, because there is no name to look up.
+
+### Two traps that cost a round each
+
+**A HAND-RUN COMMAND'S LEASE FAILS THE WHOLE BATCH, AND LIES ABOUT WHY.** Round one failed **all
+eleven jobs** immediately after a `count` check. `batch-prove` pins its own client id, the hand-run
+command had pinned another, and the lease is per chat and lasts five minutes. The failures did not say
+`session_in_use` — they said `needs_request_values` on the first two and *"Could not identify the
+active model"* on the other nine, which reads exactly like an arrangement fault. The same job file ran
+clean after `heron_bridge_client.py release`, with no other change.
+
+> Release before batching. And distrust a batch where *every* job fails the same way — that is the
+> environment, not the arrangement.
+
+**SHEETS AND VIEWS CANNOT BE SELECTED BY CATEGORY.** `manage-sheet-sets` and `duplicate-views` both
+answered `setup_failed: the arrangement could not be re-made`, with and without `inViewOnly`. Rule 3
+says a category has to be visible where you select — but a sheet is not *in* a view, it **is** one, and
+so is a legend. There is no arrangement using `select-by-category-name` that reaches them, which
+blocks every sheet and view fragment from batch proving. **This is the same gap as the missing `LIST_*`
+fragments in §3d**: nothing enumerates sheets, views, legends, worksets or global parameters by name.
+
+### The rest of the eighteen, by what they need
+
+| Fragment | What came back | What it needs |
+|---|---|---|
+| `dimension-rooms` | `created 0` with `view` correctly supplied | CONFIRM the L3 Spaces are bounded and that `measureTo=finish` is a mode it knows |
+| `place-flow-arrows` | `placed 0` in both legs | The arrow family loaded. Both legs empty is the family missing, not the fragment failing |
+| `create-legend-view` | *"No view called `Legend: Mechanical Legend`"* — a good refusal | The real legend name. Nothing lists them (§3d again) |
+| `set-element-workset` | `moved 0` with `worksetId=0` | A workset id. `report-element-ownership` reports `owners 1 entry(ies)` and no id, so nothing in the library can supply one |
+| `place-views-on-sheet` | `placed 0`, and the negative was not empty either | Views selected, which is the sheet/view wall above |
+
+### What this says about where the proving goes next
+
+The MODIFY pool is not blocked on the write engine any more — three fragments proved through it today
+and rolled back cleanly. It is blocked on **two resolvers and one list**:
+
+1. A resolver for named Revit objects — `FamilySymbol`, `Material`, and the view-like ones.
+2. `LIST_*` fragments for sheets, views, legends, worksets and global parameters, so a job file can be
+   written against what the model actually holds instead of a guess.
+
+Both are offline work. Neither needs Revit to build.
+
+---
+
 ## 4. FIXED during proving — kept because the shape returns
 
 | Fragment | What was wrong |
