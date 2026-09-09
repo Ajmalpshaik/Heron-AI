@@ -146,7 +146,9 @@ Full index: **[docs/README.md](docs/README.md)**
 14. Every important autonomous operation must be auditable.
 15. The platform must be modular enough that agents, skills and fragments can be replaced without redesigning the system.
 
-*(Six more are [proposed](docs/14-golden-rules.md): undo, preview-before-modify, sandboxing generated code, permission escalation from untrusted text — plus two learned in the field, **bind the document not just the session** and **a preview expires**.)*
+*(There are **21**, not 15. Rules 16–21 were **accepted on 2026-08-28** and are official and binding on the same footing as 1–15 — undo, preview-before-modify, sandboxing generated code, no permission escalation from untrusted text, plus two learned in the field: **bind the document not just the session** and **a preview expires**. [docs/14](docs/14-golden-rules.md) is the list.)*
+
+> **This line said *"six more are proposed"* until 2026-09-09 — eight days after they stopped being proposals, in the file a new reader opens first.** It was found while reconciling [`HERON_AI_MASTER_ARCHITECTURE.md`](HERON_AI_MASTER_ARCHITECTURE.md), by an entry that used it as a source and got the answer wrong ([32 §4.4](docs/32-master-architecture-reconciliation.md)). `tools/check-docs.py` verifies that every `Golden Rule N` reference points at a rule that **exists**; nothing checks a sentence *about* their status.
 
 ---
 
