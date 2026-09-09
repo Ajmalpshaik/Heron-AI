@@ -99,6 +99,12 @@ import heron_scope as SCOPE                      # noqa: E402
 import heron_search as SEARCH                    # noqa: E402
 import heron_retrieve as RETRIEVE                # noqa: E402
 import heron_capability as CAPABILITY            # noqa: E402
+# For repo_relative() and nothing else. `os.path.relpath` RAISES on Windows
+# across drives, and a fragment folder is not always inside the checkout - the
+# same case that made _fragment_dir() report a present fragment as missing.
+# heron_fragment already owns the one answer to that question, and heron_scope
+# already imports it, so this adds no dependency and no second implementation.
+import heron_fragment as FRAG                     # noqa: E402
 
 FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 
@@ -489,7 +495,7 @@ def _api_surface():
     found = re.findall(r'"([A-Za-z_][A-Za-z0-9_.]*)"', body)
     if not found:
         return None, IMPORTS
-    return "\n".join(found), os.path.relpath(IMPORTS, ROOT)
+    return "\n".join(found), FRAG.repo_relative(IMPORTS)
 
 
 def _generation_parts(ctx, store, fragment_id, revit):
@@ -517,7 +523,7 @@ def _generation_parts(ctx, store, fragment_id, revit):
     if os.path.exists(yaml_path):
         with open(yaml_path, encoding="utf-8") as fh:
             ctx.add(Part(NEIGHBOUR, fragment_id, fh.read(),
-                         os.path.relpath(yaml_path, ROOT),
+                         FRAG.repo_relative(yaml_path),
                          "the closest existing fragment - what to write like"))
     else:
         ctx.note_refused(NEIGHBOUR, "%s has no fragment.yaml" % fragment_id)
@@ -526,7 +532,7 @@ def _generation_parts(ctx, store, fragment_id, revit):
     if os.path.exists(cases):
         with open(cases, encoding="utf-8") as fh:
             ctx.add(Part(TESTS, "%s cases" % fragment_id, fh.read(),
-                         os.path.relpath(cases, ROOT),
+                         FRAG.repo_relative(cases),
                          "what the neighbour is checked against"))
     else:
         ctx.note_refused(TESTS, "%s declares no cases.yaml" % fragment_id)

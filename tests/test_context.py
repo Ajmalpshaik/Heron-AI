@@ -269,6 +269,21 @@ def main():
                   "and an ordinary relative folder still resolves (%s)"
                   % (os.path.basename(here) if here else None))
 
+            # The REPORTING half had the same bug in the other direction:
+            # os.path.relpath RAISES on Windows across drives, so a part read
+            # from a fragment outside the checkout would have taken the whole
+            # packet down while naming its source. heron_fragment.repo_relative
+            # is the repository's one answer to that and is used now.
+            import heron_fragment as FRAG
+            check(CONTEXT.FRAG is FRAG,
+                  "the module uses heron_fragment.repo_relative rather than a "
+                  "second implementation of the same path rule")
+            sources = [p.source for p in got.parts
+                       if p.kind in (CONTEXT.NEIGHBOUR, CONTEXT.TESTS)]
+            check(all(not os.path.isabs(s) for s in sources),
+                  "and an in-checkout part still reports a repo-relative "
+                  "source (%s)" % sources)
+
             print()
             print("7. An unknown path is refused rather than guessed at")
             raised = False
