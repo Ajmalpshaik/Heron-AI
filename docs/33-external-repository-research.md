@@ -41,7 +41,7 @@ already built rather than a plan for one that is not.
 |---|---|---|
 | **agentmemory** | keyword (BM25) + vector + graph, **fused by weighted Reciprocal Rank Fusion at `RRF_K = 60`** | [`heron_retrieve.py`](../brain/heron_retrieve.py) — FTS5 and nearness fused by weighted RRF, **at `RRF_K = 60`, chosen independently** from [05 §4](05-heron-brain.md). **Two streams, not three** — [§5.5](#55-rohitg00agentmemory) corrects this row: Heron's graph exists and is not one of them |
 | **alibaba/open-code-review** | *"hybrid architecture: **deterministic pipelines + LLM Agent**"* | [19 §5](19-context-and-cost.md) and [02 §6](02-architecture-overview.md): *the common case must be deterministic. The model is for the uncommon case.* Enforced as pipeline order, not as an optimisation |
-| **Headroom** | compresses **tool outputs, logs, files and RAG chunks** — not the user's question | the rule written into [`heron_context.py`](../brain/heron_context.py) on the same day, for [05 §4](05-heron-brain.md)'s reason: compression may touch retrieved parts and **never** the request, because `OST_DuctCurves` is the load-bearing half of a BIM sentence |
+| **Headroom** — [§5.14](#514-headroomlabs-aiheadroom) | compresses **tool outputs, logs, files and RAG chunks** — not the user's question, **and locally** | the rule written into [`heron_context.py`](../brain/heron_context.py) on the same day, for [05 §4](05-heron-brain.md)'s reason: compression may touch retrieved parts and **never** the request, because `OST_DuctCurves` is the load-bearing half of a BIM sentence |
 | **code-review-graph** | SQLite, **incremental by content hash**, and *"blast radius"* — what a change reaches | [`heron_embed.py`](../brain/heron_embed.py) is content-hashed so re-indexing unchanged files costs nothing; [`heron_graph.py`](../brain/heron_graph.py) answers *"what breaks if this changes"*; [D-40](DECISIONS.md) derives before storing |
 | **code-review-graph**, again — [§5.6](#56-tirth8205code-review-graph) | *"a bare `result_count: 0` is ambiguous… it can mean **this graph cannot see that relationship**"* — and a marker attached **only** to the empty case | [D-52](DECISIONS.md) exactly, and `FILTER_ELEMENTS_BY_CATEGORY` reporting `unresolvedLevel` so a broken lookup reads as *"12 found, 12 with no level"*. **Found only at file level**, and it is direct evidence for [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md) |
 | **superpowers** — [§5.8](#58-obrasuperpowers) | *"NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE"*, and **a regression test that has only ever passed is not evidence** — the red-green cycle must have been seen | [D-30](DECISIONS.md)'s negative case, exactly. **Found only at file level**, and Heron's version is the stronger one: theirs is prose addressed to a model, Heron's is a proof *format* a tool checks |
@@ -66,7 +66,7 @@ Research further.**
 |---|---|---|---|---|---|---|
 | [`rohitg00/agentmemory`](https://github.com/rohitg00/agentmemory) — [§5.5](#55-rohitg00agentmemory) | agent amnesia between sessions | **four memory tiers** — working, episodic, semantic, procedural — and hybrid retrieval fused by RRF | retrieval is **already this**. The four tiers are a sharper cut than [10](10-memory-and-knowledge.md)'s categories and worth comparing against them | its value is in the tiering, which is a re-organisation of something Heron already has and would cost a migration | Apache-2.0 — compatible | **Adapt concept** — compare the four tiers against [10](10-memory-and-knowledge.md)'s list, adopt only a difference that names a real gap |
 | [`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) — [§5.6](#56-tirth8205code-review-graph) | whole-repository context sent to a model for review | **blast-radius analysis** before loading anything; Tree-sitter → SQLite; incremental by SHA-256 | the *principle* is [D-40](DECISIONS.md) and [`heron_graph.py`](../brain/heron_graph.py). The *implementation* is a source-code graph, which [32 §5](32-master-architecture-reconciliation.md) rejects for Heron | adopting the tool means adopting Tree-sitter and a code graph over `revit/` — the off-mission build | MIT — compatible | **Reject the implementation, principle already held** |
-| [`headroomlabs-ai/headroom`](https://github.com/headroomlabs-ai/headroom) | token cost of tool output and RAG chunks | compress **what came back**, never what was asked; reversible compression so the original can be retrieved | this is the missing half of [19 §2](19-context-and-cost.md). [`heron_context.py`](../brain/heron_context.py) declares the boundary and implements no compression | a compressor that ever touches a Revit token destroys the only load-bearing part of the sentence | MIT — compatible | **Research further** — the reversible-retrieval idea is the one worth taking; nothing before [19 §2](19-context-and-cost.md)'s budgets are agreed |
+| [`headroomlabs-ai/headroom`](https://github.com/headroomlabs-ai/headroom) — [§5.14](#514-headroomlabs-aiheadroom) | token cost of tool output and RAG chunks | compress **what came back**, never what was asked; reversible compression; **compression runs locally, nothing is sent anywhere**; a `ContentRouter` picks a compressor **by content type** | this is the missing half of [19 §2](19-context-and-cost.md). [`heron_context.py`](../brain/heron_context.py) declares the boundary and implements no compression | a compressor that ever touches a Revit token destroys the only load-bearing part of the sentence | **Apache-2.0 with a `NOTICE`** — [§5.14](#514-headroomlabs-aiheadroom) corrects the *MIT* this row assumed. Compatible, but `NOTICE` travels with any redistribution | **Research further** — the reversible-retrieval idea is the one worth taking; nothing before [19 §2](19-context-and-cost.md)'s budgets are agreed |
 | [`alibaba/open-code-review`](https://github.com/alibaba/open-code-review) — [§5.13](#513-alibabaopen-code-review-and-alibabaaacr-bench) | code review at scale | **deterministic pipeline first, agent second**; line-level findings; a built-in ruleset | the split is [19 §5](19-context-and-cost.md)'s. The line-level shape is what [`check-revit-gate.py`](../tools/check-revit-gate.py) does per question | its rulesets are NPE, thread-safety, XSS, SQL injection — a web/Java surface. Heron's ruleset is the Revit API, and none of theirs transfers | **Apache-2.0** — read at file level, including `extensions/vscode/`. Compatible | **Adopt concept** — already held; the ruleset itself does not transfer |
 | [`alibaba/aacr-bench`](https://github.com/alibaba/aacr-bench) — [§5.13](#513-alibabaopen-code-review-and-alibabaaacr-bench) | no way to measure a review agent | a **benchmark with expert-verified answers** for repository-level review | [18](18-agent-operating-system.md) and the incoming §18 both ask for an evaluation suite and Heron has none. This is the shape one takes | its dataset is general code. A Heron benchmark has to be Revit tasks, which only the owner can author. **Its `dataset/` is two files — `positive_samples.json` and `negative_samples.json`**, which is [D-30](DECISIONS.md)'s shape | **Apache-2.0** — read at file level. Compatible | **Adapt concept** — the *shape* of a benchmark, never its cases |
 | [`volcengine/OpenViking`](https://github.com/volcengine/OpenViking) — [§5.4](#54-volcengineopenviking) | context organisation for agents | **tiered loading** — L0 abstract, L1 overview, L2 details, loaded only as needed, and **built on write**; observable retrieval paths | [§5.4](#54-volcengineopenviking): Heron's fragments **already are** L0/L1/L2 — `semantic-identity`, the yaml, the `.cs` — and `BUDGET` already loads by depth. What is missing is the *vocabulary* and a per-folder abstract | **the main project is AGPLv3** — see §3. Idea only, and it was taken from the README, so no source was opened | **AGPL-3.0** — 1,116 files carry that SPDX header against 18 Apache. Apache covers **`crates/ov_cli`** (the Rust CLI, *not* `openviking_cli/`), `examples/`, and the TS/npm SDKs; `bot/` is MIT | **Adapt concept, code strictly off-limits** |
@@ -1173,3 +1173,77 @@ model — which is the critical path, and which the row correctly refuses to put
 **Decision: both unchanged.** `open-code-review` — *Adopt concept, already held*. `aacr-bench` — *Adapt
 the shape of a benchmark, never its cases*. Two open licence cells are now answered, and the assurance
 case produced [24 §7](24-trust-model.md).
+
+---
+
+### 5.14 `headroomlabs-ai/headroom`
+
+**Read at** `e67b3c8a29443a60d6b0018fb22f525c5cd7e709`, committed 2026-09-06.
+
+**Opened:** `README.md`, `LICENSE`, `NOTICE`, `plugins/headroom-oauth2/LICENSE`,
+`sbom/headroom-python-licenses.csv`.
+
+**Licence correction — the third in this pass.** The row said *"MIT — compatible."* It is
+**Apache-2.0**, with a `NOTICE` file. Still compatible — it is Heron's own licence
+([D-08](DECISIONS.md)) — but Apache 2.0 §4(d) makes `NOTICE` **travel with any redistribution**, which
+MIT does not. A cell that said MIT would have understated an obligation rather than a restriction. Their
+per-plugin licence is exemplary practice worth copying: an **SPDX identifier** plus one line saying it
+matches the upstream licence.
+
+#### `sbom/headroom-python-licenses.csv` is [Q-53](OPEN-QUESTIONS.md)'s mechanism, already built
+
+**330 dependencies, each with `Name, Version, License, URL`, generated as a build artifact.**
+
+That is exactly what [Q-53](OPEN-QUESTIONS.md) is asking whether Heron needs — and it sharpens the
+question usefully, because **Heron's dependency SBOM would be nearly empty.** Heron is local, offline
+and dependency-light on purpose ([D-24](DECISIONS.md), [D-26](DECISIONS.md)). **The inventory Heron needs
+is not of its libraries but of its imported knowledge** — community packages, which
+[Golden Rule 19](14-golden-rules.md) already names as a source Heron reads and
+[24 §7](24-trust-model.md) now records as semi-trusted. Same artifact, different contents.
+
+#### The row's principle is confirmed, and one clause makes it Heron-compatible
+
+> Headroom compresses everything your AI agent reads — tool outputs, logs, RAG results…
+> **Compression runs on your machine; no prompt or file content is sent anywhere to be compressed.**
+
+**Local.** That was the unstated prerequisite: a compressor that phones home is [D-26](DECISIONS.md)
+denied, whatever it saves. Reversibility is confirmed too — *"originals are cached locally and retrieved
+on demand"* — which is the half [§4](#4-what-actually-comes-out-of-this-ranked) already ranked as the
+one worth taking.
+
+And the architecture answers a question the page-level row left vague: **a `ContentRouter` picks a
+compressor by content type** — one for JSON, one for source code (AST-based), one for prose. Not one
+compressor with a threshold. That matters for Heron, where a fragment's `.cs` body, a test case list and
+an API surface are three different kinds of text and only one of them is prose.
+
+#### The idea Heron's own part order sits backwards for
+
+> **CacheAligner** flags volatile content that would bust a provider KV-cache prefix. **It never
+> rewrites prompts.**
+
+**Volatile content early in a prompt destroys the cache for everything after it.** Now look at
+[`heron_context.py`](../brain/heron_context.py)'s budget, whose comment says *"order is the order a
+reader gets them"*:
+
+```
+GENERATION: (REQUEST, SITUATION, CAPABILITY_PART, EXCLUDED, NEIGHBOUR, TESTS, API)
+```
+
+**The two most volatile parts are first.** `REQUEST` changes every single time. `SITUATION` changes the
+moment the modeller clicks another window. The stable material — a neighbouring fragment's source, its
+tests, the API surface — is **last**, behind them.
+
+**For a human reading the rendered context that order is right**, and it was chosen for that reason.
+**For a prefix cache it is the worst possible order.**
+
+**Nothing is changed and no question is opened, and the reason is [D-58](DECISIONS.md).** Heron makes no
+model calls. Whether any cache exists depends entirely on how the **host** assembles its own prompt
+around Heron's blob, and Heron cannot see that. Reordering for a cache Heron cannot observe would be
+optimising against a guess — and it would trade a real property (a reader gets the request first) for a
+speculative one. **Recorded so that if the host ever reports cache behaviour, the cause is already
+written down.** It belongs with [19 §2](19-context-and-cost.md)'s budgets, beside
+[§5.6](#56-tirth8205code-review-graph)'s token-estimate note.
+
+**Decision: unchanged — Research further**, and the prerequisite is unchanged too: nothing before
+[19 §2](19-context-and-cost.md)'s budgets are agreed. The licence cell is corrected **MIT → Apache-2.0
+with a NOTICE**.
