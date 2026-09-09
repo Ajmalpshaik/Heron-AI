@@ -66,10 +66,18 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<string>
     - name: clashed
+      # Names already in this project, left EXACTLY AS THEY WERE. Given and
+      # not acted on, never a style it created (D-52).
+      role: accounting
       type: IList<string>
     - name: weakened
+      # Styles that WERE created but left solid because the source pattern
+      # could not be brought across. NAMED IN WEAKENED RATHER THAN REPORTED AS
+      # CREATED - a real thing made, and made short.
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

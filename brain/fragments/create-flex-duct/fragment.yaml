@@ -65,8 +65,12 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: FlexDuct
     - name: lengthMm
+      # How long the flex actually came out, which is the number the length
+      # limit is about - the answer, not a count of it.
+      role: result
       type: double
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

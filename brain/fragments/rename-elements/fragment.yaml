@@ -43,8 +43,12 @@ contract:
       source: request
   provides:
     - name: renamed
+      role: result
       type: int
     - name: notMatched
+      # Elements whose name did not contain the search term, which is the
+      # normal case across a mixed set. Never a rename it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -53,6 +57,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: collisions
+      # Intended names that clash with each other or with a name already in
+      # use, CHECKED FIRST so a clash stops the whole batch rather than
+      # leaving it half done. Never a rename it made (D-52).
+      role: accounting
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

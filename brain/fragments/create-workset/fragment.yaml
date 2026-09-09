@@ -48,6 +48,7 @@ contract:
       source: request
   provides:
     - name: createdNames
+      role: result
       type: IList<string>
     - name: alreadyThere
       # Elements that were ALREADY in the state asked for, so there was

@@ -55,12 +55,25 @@ contract:
       source: ambient
   provides:
     - name: dependents
+      role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: joined
+      # Neighbours Revit does not delete but DOES re-clean the geometry of.
+      # JOINED AND CUT ARE REPORTED SEPARATELY AND ON PURPOSE - a wall joined
+      # to three others changes shape when one goes, in a drawing nobody was
+      # looking at.
+      role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: undeletable
+      # CAN I DELETE IT IS A SECOND QUESTION AND REVIT ANSWERS IT DIRECTLY -
+      # an element can have zero dependents and still be undeletable: pinned,
+      # the last level, owned by somebody else.
+      role: result
       type: IList<ElementId>
     - name: standalone
+      # Elements nothing goes with. The evidence it looked; the dependents and
+      # the undeletable ones are the answer (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

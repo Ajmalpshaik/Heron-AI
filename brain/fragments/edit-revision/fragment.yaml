@@ -61,8 +61,10 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: IList<string>
     - name: nowIssued
+      role: result
       type: bool
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

@@ -72,10 +72,19 @@ contract:
     - name: findings
       type: IList<string>
     - name: shortRooms
+      role: result
       type: IList<ElementId>
     - name: unbounded
+      # Rooms with no area, EXCLUDED AND COUNTED, NEVER FAILED - every test
+      # against a room with no boundary comes back false and would report it
+      # as missing everything (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: noRule
+      # Rooms the rule set says nothing about. *The rules are the input and
+      # there is no sensible default set*, so an unruled room is not a short
+      # room - it is one nobody asked about. Never a finding (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

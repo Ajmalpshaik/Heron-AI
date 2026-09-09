@@ -63,8 +63,10 @@ contract:
     - name: findings
       type: IList<string>
     - name: undersized
+      role: result
       type: IList<ElementId>
     - name: orphaned
+      role: result
       type: IList<ElementId>
     - name: unreadable
       # What it was handed and could NOT read. The evidence it tried,

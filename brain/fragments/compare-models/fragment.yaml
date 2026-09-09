@@ -87,12 +87,18 @@ contract:
     - name: findings
       type: IList<string>
     - name: added
+      role: result
       type: int
     - name: removed
+      role: result
       type: int
     - name: changed
+      role: result
       type: int
     - name: sameSaveVersion
+      # That both files are the same save of the same model, read BEFORE the
+      # diff. A caveat on the comparison, never a change it found (D-52).
+      role: accounting
       type: bool
 
 proof:

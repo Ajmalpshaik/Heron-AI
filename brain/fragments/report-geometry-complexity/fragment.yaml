@@ -73,14 +73,21 @@ contract:
     - name: findings
       type: IList<string>
     - name: heaviestTypeName
+      role: result
       type: string
     - name: typesMeasured
+      # How many family types were tessellated. The size of the sweep, never a
+      # heavy type it found (D-52).
       role: accounting
       type: int
     - name: typesUnmeasured
+      # Types whose geometry did not come back. A TYPE THAT COULD NOT BE
+      # MEASURED IS NAMED, NEVER SCORED ZERO - the evidence it looked and
+      # could not (D-52).
       role: accounting
       type: int
     - name: totalTriangles
+      role: result
       type: long
 
 proof:

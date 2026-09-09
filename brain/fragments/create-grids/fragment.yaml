@@ -63,8 +63,10 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<Element>
     - name: namedAs
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

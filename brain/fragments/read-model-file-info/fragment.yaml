@@ -66,14 +66,21 @@ contract:
       source: request
   provides:
     - name: savedFormat
+      role: result
       type: IDictionary<string, string>
     - name: isCentral
+      role: result
       type: IDictionary<string, bool>
     - name: owner
+      role: result
       type: IDictionary<string, string>
     - name: savedToCentral
+      # THE ONE THAT PREVENTS A WASTED DAY - false means the model somebody
+      # sent is missing work that still sits in their local.
+      role: result
       type: IDictionary<string, bool>
     - name: isNewerThanThisRevit
+      role: result
       type: IList<string>
     - name: unreadable
       # What it was handed and could NOT read. The evidence it tried,

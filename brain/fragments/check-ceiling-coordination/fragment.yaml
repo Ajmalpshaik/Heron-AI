@@ -63,8 +63,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: outOfPlane
+      role: result
       type: IList<ElementId>
     - name: noCeilingAbove
+      # Devices with no ceiling over them at all. THE FIRST OF THE TWO
+      # QUESTIONS THIS FRAGMENT ASKS - *is there a ceiling above each one at
+      # all*, then is it sitting at it. A `no*` name, and the finding.
+      role: result
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -34,8 +34,12 @@ contract:
       type: IList<Element>
   provides:
     - name: described
+      role: result
       type: IDictionary<ElementId, string>
     - name: noType
+      # Elements with no type to read, so it could not be described. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

@@ -53,12 +53,26 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: unplaced
+      # One of the TWO FAULTS this fragment exists to find. *The faulty
+      # elements are handed on as `elements`, with the two states also named
+      # separately so the report can say which fix each one needs.* The
+      # answer.
+      role: result
       type: IList<ElementId>
     - name: unenclosed
+      # The other of the two faults - placed, but the boundaries do not close.
+      # The answer for the same reason as `unplaced`, and the reason they are
+      # not reported as one list of bad rooms.
+      role: result
       type: IList<ElementId>
     - name: roomsChecked
+      # How many rooms and spaces were examined. A count of work DONE, not of
+      # things found - the evidence it ran, which is the opposite of a reason
+      # to doubt it (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

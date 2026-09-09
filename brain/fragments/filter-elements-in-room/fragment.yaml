@@ -43,10 +43,17 @@ contract:
       type: IList<Element>
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: outside
+      # Elements handed in that the room does not contain - the rejects from
+      # the set it was given. `elements` is the answer (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: noPoint
+      # Elements with no point to test, so it could not be judged inside or
+      # out. The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -41,6 +41,7 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: int
     - name: alreadySet
       # Elements that were ALREADY in the state asked for. The evidence it

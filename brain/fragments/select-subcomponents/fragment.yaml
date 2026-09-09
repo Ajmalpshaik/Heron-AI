@@ -52,8 +52,12 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: withoutSubComponents
+      # Parents that had none, reported so an empty answer cannot be mistaken
+      # for a failed read. Evidence it ran, never a part it found (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

@@ -61,6 +61,7 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: int
     - name: alreadyRight
       # Elements that were ALREADY in the state asked for, so there was
@@ -69,6 +70,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: wouldNot
+      # Pairs Revit will not join - elements that do not actually touch, and
+      # categories it refuses. COUNTED, NOT THROWN, so a batch does not lose
+      # the eleven that worked because the twelfth would not (D-52).
+      role: accounting
       type: IList<string>
     - name: findings
       type: IList<string>

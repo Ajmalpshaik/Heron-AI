@@ -51,12 +51,18 @@ contract:
       source: request
   provides:
     - name: setSize
+      role: result
       type: int
     - name: changed
+      role: result
       type: int
     - name: missing
+      # Ids in the set that no longer resolve, read fresh each time. Never a
+      # change it made (D-52).
+      role: accounting
       type: int
     - name: deleted
+      role: result
       type: bool
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

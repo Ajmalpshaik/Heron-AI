@@ -73,8 +73,10 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: IList<string>
     - name: created
+      role: result
       type: IList<string>
     - name: skipped
       # What it passed over. The evidence it looked, never a thing it
@@ -83,6 +85,10 @@ contract:
       role: accounting
       type: IList<string>
     - name: weakened
+      # Categories that kept their old material because the source's is not in
+      # this project. Named here saying which material is missing and to run
+      # the materials transfer first.
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

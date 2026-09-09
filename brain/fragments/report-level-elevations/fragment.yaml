@@ -58,18 +58,33 @@ contract:
       source: ambient
   provides:
     - name: levels
+      role: result
       type: IList<Element>
     - name: elevations
+      role: result
       type: IDictionary<ElementId, double>
     - name: projectElevations
+      role: result
       type: IDictionary<ElementId, double>
     - name: worstDifference
+      role: result
       type: double
     - name: affected
+      # The one-word verdict: whether this model's two level heights actually
+      # disagree today. What the whole fragment exists to say.
+      role: result
       type: bool
     - name: atRisk
+      # NOT AFFECTED TODAY, BUT AT RISK - the third verdict between the two
+      # obvious ones, reported when the survey point carries a vertical offset
+      # that a single setting change would start applying.
+      role: result
       type: bool
     - name: typesDisagree
+      # That two level TYPES in this model disagree about their Elevation
+      # Base, which is legal. CHECKING ONE LEVEL PROVES NOTHING ABOUT THE
+      # REST, and this is what says so.
+      role: result
       type: bool
 
 proof:

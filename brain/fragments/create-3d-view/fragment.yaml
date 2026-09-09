@@ -45,8 +45,12 @@ contract:
       source: request
   provides:
     - name: viewId
+      role: result
       type: ElementId
     - name: named
+      # Whether the name asked for was accepted. The evidence it tried, never
+      # a view it made (D-52).
+      role: accounting
       type: bool
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

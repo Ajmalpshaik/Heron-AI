@@ -47,7 +47,7 @@ contract:
       type: Level
       source: request
     - name: wallType
-      type: Element
+      type: WallType
       source: request
     # Internal units. Plan points; the Z is taken from the level.
     - name: points
@@ -61,8 +61,12 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<Element>
     - name: tooShort
+      # Point pairs closer together than Revit's own tolerance, so no wall
+      # could exist there. Given and unusable, never a wall it built (D-52).
+      role: accounting
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

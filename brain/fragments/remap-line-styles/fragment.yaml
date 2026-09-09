@@ -58,12 +58,22 @@ contract:
       source: request
   provides:
     - name: moved
+      role: result
       type: int
     - name: placedFound
+      # Lines on the style that a selection CAN reach - model and detail lines
+      # placed in views. Half of the answer to why a style still will not
+      # purge.
+      role: result
       type: int
     - name: sketchFound
+      # Lines inside SKETCHES - a floor boundary, a ceiling edge, a stair
+      # riser - owned by a sketch and selectable in no view. THE USUAL REASON
+      # A STYLE WILL NOT PURGE after somebody moved everything.
+      role: result
       type: int
     - name: regionsSet
+      role: result
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

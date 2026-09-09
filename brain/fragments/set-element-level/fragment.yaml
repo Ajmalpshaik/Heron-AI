@@ -44,6 +44,7 @@ contract:
       source: request
   provides:
     - name: moved
+      role: result
       type: int
     - name: alreadyThere
       # Elements that were ALREADY in the state asked for, so there was
@@ -52,6 +53,11 @@ contract:
       role: accounting
       type: int
     - name: heightChanged
+      # Elements whose ABSOLUTE height moved despite the offset being
+      # recomputed. THIS IS THE FRAGMENT WITH THE TRAP IN IT AND THE TRAP IS
+      # THE WHOLE POINT - height is stored as an offset from the level, so
+      # changing the level alone moves the element.
+      role: result
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

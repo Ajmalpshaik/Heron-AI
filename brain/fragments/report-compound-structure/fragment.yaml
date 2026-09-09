@@ -51,10 +51,18 @@ contract:
     - name: findings
       type: IList<string>
     - name: typesReported
+      # How many distinct types were looked at after de-duplication. The size
+      # of the sweep, never a build-up it read (D-52).
+      role: accounting
       type: int
     - name: withoutStructure
+      # A curtain wall or an in-place element has no compound structure, and
+      # the purpose says that IS AN ANSWER - not an error, not an empty
+      # result, and the row that routes to REPORT_CURTAIN_ELEMENTS.
+      role: result
       type: IList<string>
     - name: totalThicknessMm
+      role: result
       type: IList<string>
 
 proof:

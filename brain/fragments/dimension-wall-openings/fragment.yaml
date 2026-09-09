@@ -68,12 +68,24 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: segmentsDisagree
+      # Walls whose segments do not add up to the overall, which means an
+      # extra face became an extra segment. THE CHECK IS BUILT IN, and this is
+      # what it found - a string that still reads as a valid dimension and is
+      # wrong.
+      role: result
       type: IList<ElementId>
     - name: noOpeningFaces
+      # Walls whose openings left no readable faces, so it could not be
+      # dimensioned. The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notAWall
+      # Handed in but not a wall, so there was nothing here to act on. A count
+      # of what it was GIVEN and could not use, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

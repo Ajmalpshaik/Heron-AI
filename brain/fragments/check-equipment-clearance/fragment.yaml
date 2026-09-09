@@ -69,6 +69,7 @@ contract:
     - name: findings
       type: IList<string>
     - name: blocked
+      role: result
       type: IList<ElementId>
     - name: unreadable
       # What it was handed and could NOT read. The evidence it tried,

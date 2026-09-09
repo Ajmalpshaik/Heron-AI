@@ -33,8 +33,12 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: missing
+      # Ids that resolve to nothing. A count of what it was GIVEN and could
+      # not use, never an element it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

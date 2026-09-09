@@ -43,6 +43,7 @@ contract:
       source: request
   provides:
     - name: moved
+      role: result
       type: int
     - name: alreadyThere
       # Elements that were ALREADY in the state asked for, so there was

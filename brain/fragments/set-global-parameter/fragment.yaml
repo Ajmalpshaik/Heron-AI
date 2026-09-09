@@ -69,10 +69,19 @@ contract:
       source: request
   provides:
     - name: changed
+      role: result
       type: bool
     - name: before
+      # What the global held BEFORE this ran. Filled in identically whether
+      # the change was applied or not, so it is the evidence it looked - never
+      # a change it made (D-52).
+      role: accounting
       type: string
     - name: after
+      # What the model holds AFTERWARDS, read back rather than assumed. A
+      # GLOBAL THAT REFUSES CAN RETURN WITHOUT RAISING, and the whole point of
+      # the fragment is what moved.
+      role: result
       type: string
     - name: findings
       type: IList<string>

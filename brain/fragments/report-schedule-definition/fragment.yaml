@@ -56,12 +56,19 @@ contract:
     - name: findings
       type: IList<string>
     - name: fieldNames
+      role: result
       type: IList<string>
     - name: hiddenFieldNames
+      # A HIDDEN COLUMN IS STILL A COLUMN, and that is the row worth reading -
+      # Revit keeps it in the definition where nothing on the drawing shows
+      # it.
+      role: result
       type: IList<string>
     - name: filterCount
+      role: result
       type: int
     - name: sortFieldCount
+      role: result
       type: int
     - name: skippedNotSchedules
       type: int

@@ -41,8 +41,10 @@ contract:
       type: IList<Element>
   provides:
     - name: referencedViews
+      role: result
       type: IDictionary<ElementId, ElementId>
     - name: viewNames
+      role: result
       type: IDictionary<ElementId, string>
     - name: notOnASheet
       type: IList<ElementId>

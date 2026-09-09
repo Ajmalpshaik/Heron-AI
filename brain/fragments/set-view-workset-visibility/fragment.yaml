@@ -57,10 +57,15 @@ contract:
       source: request
   provides:
     - name: shown
+      role: result
       type: int
     - name: hidden
+      role: result
       type: int
     - name: notFound
+      # Workset names the model does not have, so it could not be switched.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

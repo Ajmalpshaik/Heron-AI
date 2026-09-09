@@ -57,8 +57,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: globalCount
+      role: result
       type: int
     - name: allowed
+      # That the document permits global parameters at all. It reads true in
+      # the positive AND the negative case - heron_validate.py names this
+      # exact output as the reason a boolean is a flag, not a quantity (D-52).
+      role: accounting
       type: bool
 
 proof:

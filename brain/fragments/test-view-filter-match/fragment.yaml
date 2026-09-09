@@ -45,8 +45,14 @@ contract:
       type: IList<Element>
   provides:
     - name: matched
+      role: result
       type: IList<Element>
     - name: outOfScope
+      # Elements the filter COULD NEVER MATCH, because its rule only applies
+      # to the categories it was scoped to. THE THIRD VERDICT IS THE WHOLE
+      # POINT - it is a different answer from failing the rule and has a
+      # different fix.
+      role: result
       type: int
     - name: findings
       type: IList<string>

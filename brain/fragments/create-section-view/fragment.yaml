@@ -40,6 +40,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: View
       # A View rather than an ElementId, because the useful next thing to do
       # with a new section is put it on a sheet and PLACE_VIEW_ON_SHEET works
@@ -55,6 +56,9 @@ contract:
       # put it on the sheet" is two steps the host sequences, not one chain the
       # names join up.
     - name: noGeometry
+      # Elements with no geometry to size the section from, so it could not be
+      # used. The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

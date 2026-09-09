@@ -53,8 +53,13 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: linkTransform
+      # The transform that places the link's elements in host coordinates.
+      # What the caller needs to USE the answer, not part of the answer - and
+      # it is filled in whether anything came back or not (D-52).
+      role: accounting
       type: Transform
     - name: findings
       type: IList<string>

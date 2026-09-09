@@ -60,12 +60,25 @@ contract:
     - name: findings
       type: IList<string>
     - name: schemeTotalsM2
+      role: result
       type: IList<string>
     - name: placedCount
+      # How many Areas are properly placed. The evidence it looked; the
+      # unplaced and unbounded ones are the findings (D-52).
+      role: accounting
       type: int
     - name: unplaced
+      # An Area in the schedule that sits nowhere in the model. The purpose
+      # gives it a row in a table of faults WITH ITS OWN FIX - *place it, or
+      # delete the row* - beside `unbounded`, whose fix is different. A
+      # finding.
+      role: result
       type: IList<string>
     - name: unbounded
+      # An Area that IS placed but whose boundary lines do not close. The
+      # second of the two faults, with its own fix - close the boundary - and
+      # the reason the pair is separated at all.
+      role: result
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

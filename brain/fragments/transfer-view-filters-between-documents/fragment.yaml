@@ -65,10 +65,17 @@ contract:
       source: request
   provides:
     - name: copied
+      role: result
       type: IList<string>
     - name: clashed
+      # Filters whose name is already here, named rather than overwritten.
+      # Never a filter it copied (D-52).
+      role: accounting
       type: IList<string>
     - name: weakened
+      # Filters that arrived with fewer categories than the source had, read
+      # back and counted. Named here rather than reported as copied.
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

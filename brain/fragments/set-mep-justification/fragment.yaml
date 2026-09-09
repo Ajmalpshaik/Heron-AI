@@ -60,8 +60,12 @@ contract:
       source: request
   provides:
     - name: set
+      role: result
       type: int
     - name: withoutOffsets
+      # Elements carrying neither offset - fittings, accessories, flex. A
+      # count of what it was GIVEN and could not set (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

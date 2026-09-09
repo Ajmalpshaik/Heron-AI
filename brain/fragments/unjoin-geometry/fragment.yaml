@@ -55,6 +55,7 @@ contract:
       binds: elements
   provides:
     - name: unjoined
+      role: result
       type: int
     - name: findings
       type: IList<string>

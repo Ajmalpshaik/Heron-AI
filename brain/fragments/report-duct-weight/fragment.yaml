@@ -83,14 +83,22 @@ contract:
       role: accounting
       type: IDictionary<ElementId, double>
     - name: weights
+      role: result
       type: IDictionary<ElementId, double>
     - name: bandUsed
       # Which band each element fell into. Evidence of the working.
       role: accounting
       type: IDictionary<ElementId, string>
     - name: shapeInferred
+      # Ducts whose shape had to be worked out rather than read - THE SHAPE IS
+      # ASKED, NOT INFERRED, AND AN OVAL IS WHY. A caveat on the weight, never
+      # a weight it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: unsized
+      # Ducts carrying no size to develop a sheet area from. Given and
+      # unmeasurable, never a weight it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: outsideBands
       # Elements whose size falls in no band given. The evidence it looked

@@ -52,6 +52,7 @@ contract:
       binds: elements
   provides:
     - name: switched
+      role: result
       type: int
     - name: findings
       type: IList<string>

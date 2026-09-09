@@ -53,8 +53,10 @@ contract:
       optional: true
   provides:
     - name: sheetList
+      role: result
       type: Element
     - name: fieldsAdded
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

@@ -53,12 +53,26 @@ contract:
     - name: findings
       type: IList<string>
     - name: typesReported
+      # How many types were read. The size of the sweep, never a rule it found
+      # (D-52).
+      role: accounting
       type: int
     - name: emptyGroups
+      # AN EMPTY GROUP IS A REAL ANSWER - a type with no cap rule cannot cap a
+      # run, and reporting only the groups that have rules hides exactly the
+      # one somebody is asking about.
+      role: result
       type: IList<string>
     - name: missingFamilies
+      # A rule pointing at a family nobody has loaded is precisely this
+      # finding. Named in heron_validate.py as the reason a blanket
+      # `missing*` pattern was rejected on 2026-09-07.
+      role: result
       type: IList<string>
     - name: notRoutable
+      # Types carrying no routing preferences, so it could not be reported on.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<string>
 
 proof:

@@ -27,6 +27,7 @@ contract:
       type: IList<Element>
   provides:
     - name: selectedCount
+      role: result
       type: int
 
 proof:

@@ -67,12 +67,18 @@ contract:
       source: request
   provides:
     - name: proposals
+      role: result
       type: IList<string>
     - name: hostIds
+      role: result
       type: IList<ElementId>
     - name: runIds
+      role: result
       type: IList<ElementId>
     - name: unmeasured
+      # Penetrations whose size could not be worked out. Given and unusable,
+      # never an opening it proposed (D-52).
+      role: accounting
       type: IList<string>
     - name: findings
       type: IList<string>

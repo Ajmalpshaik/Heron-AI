@@ -65,14 +65,29 @@ contract:
       source: request
   provides:
     - name: switched
+      role: result
       type: bool
     - name: activeBefore
+      # Which project was active BEFORE. Filled in whether the switch was
+      # requested or refused - the evidence it looked (D-52).
+      role: accounting
       type: string
     - name: requestedTitle
+      # The title that was asked for, echoed back. About the request, never a
+      # switch it made (D-52).
+      role: accounting
       type: string
     - name: viewUsed
+      # Which view was used to bring the other project forward - IT SWITCHES
+      # BY CHANGING THE VIEW, BECAUSE THAT IS WHAT REVIT OFFERS. About the
+      # method (D-52).
+      role: accounting
       type: string
     - name: candidates
+      # The open projects it could have switched to, returned SO THE NEXT
+      # ATTEMPT CAN NAME A PATH. Offered when it could not decide, never a
+      # switch it made (D-52).
+      role: accounting
       type: IList<string>
     - name: findings
       type: IList<string>

@@ -51,6 +51,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -59,6 +60,10 @@ contract:
       role: accounting
       type: string
     - name: unbounded
+      # Rooms this fragment PLACED that came back with no area, because the
+      # boundaries there do not close. A fact it established about what it
+      # made - they sit in the schedule looking like real rooms.
+      role: result
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

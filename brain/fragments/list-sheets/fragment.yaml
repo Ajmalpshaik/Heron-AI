@@ -33,10 +33,12 @@ contract:
       type: Document
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: findings
       type: IList<string>
     - name: placeholders
+      role: result
       type: IList<ElementId>
 
 proof:

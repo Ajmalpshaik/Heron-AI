@@ -66,16 +66,28 @@ contract:
     # VERSION 2: the OUTER loop only. Version 1 handed back every loop in one
     # list, which put a shaft's edge in with the room's outline.
     - name: boundary
+      role: result
       type: IList<Curve>
     - name: holes
+      role: result
       type: IList<Curve>
     - name: area
+      role: result
       type: double
     - name: height
+      role: result
       type: double
     - name: unbounded
+      # Reported as ITS OWN FACT RATHER THAN FOLDED INTO A ZERO - an unbounded
+      # room returns an area of 0 from Revit, and a layout that trusts that
+      # number places nothing and reports success.
+      role: result
       type: bool
     - name: heightKnown
+      # Reported as its own fact rather than folded into a zero, for the same
+      # reason as `unbounded` - a height of 0 and a height nobody knows are
+      # different answers.
+      role: result
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

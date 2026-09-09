@@ -52,12 +52,19 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: matchedNames
+      role: result
       type: IList<string>
     - name: scanned
+      # How many were walked. THE NAME THAT EXPOSED THE DEAD HEURISTICS on
+      # 2026-09-08: this fragment's negative case had every result at zero and
+      # `scanned: 5`, and the judge read the 5 as a finding. Work done (D-52).
+      role: accounting
       type: int
     - name: found
+      role: result
       type: int
 
 proof:

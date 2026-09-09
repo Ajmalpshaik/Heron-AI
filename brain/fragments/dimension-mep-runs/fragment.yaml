@@ -61,13 +61,19 @@ contract:
       source: request
   provides:
     - name: dimensionId
+      role: result
       type: ElementId
     - name: dimensionedCount
+      role: result
       type: int
     - name: noReference
+      # Runs whose centreline could not be reached as a reference, so there
+      # was nothing to dimension TO. Given and unusable (D-52).
       role: accounting
       type: IList<ElementId>
     - name: problem
+      # The sentence saying what stopped it. The evidence it looked and could
+      # not, never a dimension it made (D-52).
       role: accounting
       type: string
 

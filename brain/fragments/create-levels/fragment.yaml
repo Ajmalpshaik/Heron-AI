@@ -53,12 +53,19 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: namedAs
+      role: result
       type: IDictionary<ElementId, string>
     - name: elevationOf
+      role: result
       type: IDictionary<ElementId, double>
     - name: nameRefused
+      # Levels Revit would not let take the name asked for. The evidence it
+      # tried and was refused; the name each one ACTUALLY carries is in
+      # `namedAs`, which is the result. Never a level it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: alreadyThere
       # Elements that were ALREADY in the state asked for, so there was

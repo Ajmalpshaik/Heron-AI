@@ -46,12 +46,20 @@ contract:
       type: IDictionary<ElementId, double>
   provides:
     - name: totals
+      role: result
       type: IDictionary<string, double>
     - name: counts
+      role: result
       type: IDictionary<string, int>
     - name: missing
+      # Elements per group with no quantity to add - not skipped, and not
+      # treated as zero. What the total rests on, never part of it (D-52).
+      role: accounting
       type: IDictionary<string, int>
     - name: incomplete
+      # That at least one group had an element with no quantity, so A TOTAL
+      # THAT RESTS ON PARTIAL DATA SAYS SO ON THE SAME LINE AS THE NUMBER.
+      role: result
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

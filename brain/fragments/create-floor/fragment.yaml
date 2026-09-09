@@ -45,13 +45,14 @@ contract:
       type: Level
       source: request
     - name: floorType
-      type: Element
+      type: FloorType
       source: request
     - name: boundary
       type: IList<XYZ>
       source: request
   provides:
     - name: created
+      role: result
       type: ElementId
     - name: findings
       type: IList<string>

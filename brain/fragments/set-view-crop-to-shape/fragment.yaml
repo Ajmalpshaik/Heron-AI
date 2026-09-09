@@ -56,8 +56,12 @@ contract:
       source: request
   provides:
     - name: applied
+      role: result
       type: bool
     - name: worstGap
+      # The largest gap that had to be bridged to close the loop, REPORTED SO
+      # A SHAPE THAT WAS NEVER REALLY CLOSED DOES NOT PASS AS ONE THAT WAS.
+      role: result
       type: double
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

@@ -64,10 +64,16 @@ contract:
     - name: findings
       type: IList<string>
     - name: newElementIds
+      role: result
       type: IList<ElementId>
     - name: copied
+      role: result
       type: int
     - name: wasPossible
+      # Whether Revit's API allowed this at all - Element.DesignOption IS
+      # READ-ONLY, so there is no reassign call. A refusal naming the manual
+      # step, never a thing it moved (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -23,6 +23,7 @@ contract:
       type: IDictionary<ElementId, string>
   provides:
     - name: groups
+      role: result
       type: IList<KeyValuePair<string, int>>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

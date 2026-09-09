@@ -76,10 +76,18 @@ contract:
       source: request
   provides:
     - name: copied
+      role: result
       type: IList<string>
     - name: clashed
+      # Views whose name is already here, named rather than overwritten. Never
+      # a view it copied (D-52).
+      role: accounting
       type: IList<string>
     - name: weakened
+      # Templates that arrived carrying fewer filters than the source, read
+      # back and counted - told to run the view-filter transfer first. Named
+      # here rather than reported as copied.
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

@@ -59,8 +59,12 @@ contract:
       source: request
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: withoutSystem
+      # Elements carrying no system at all. The evidence it looked;
+      # `elements` is the answer (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

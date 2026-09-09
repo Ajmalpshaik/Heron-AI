@@ -56,10 +56,16 @@ contract:
       optional: true
   provides:
     - name: viewsChanged
+      role: result
       type: int
     - name: filtersApplied
+      role: result
       type: int
     - name: blockedByTemplate
+      # Views whose template owns Visibility/Graphics, so they will not take
+      # their own filters - THE CASE A BATCH QUIETLY LOSES. Never a view it
+      # changed (D-52).
+      role: accounting
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

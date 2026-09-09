@@ -68,8 +68,10 @@ contract:
       source: request
   provides:
     - name: phaseSet
+      role: result
       type: IList<ElementId>
     - name: phaseFilterSet
+      role: result
       type: IList<ElementId>
     - name: alreadySet
       # Elements that were ALREADY in the state asked for, so there was
@@ -78,8 +80,14 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: templateControlled
+      # Views whose template holds the phase, so they refuse - A REASON RATHER
+      # THAN A FAILURE, and the commonest one. Never a view it changed (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: unsupported
+      # Views that carry no phase or no phase filter at all - a drafting view,
+      # a legend. Given and unusable (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: findings
       type: IList<string>

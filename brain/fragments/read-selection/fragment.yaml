@@ -37,10 +37,15 @@ contract:
       type: UIDocument
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: selectionCount
+      role: result
       type: int
     - name: vanished
+      # Selected ids that no longer resolve to anything. Given and unusable,
+      # never an element it read (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

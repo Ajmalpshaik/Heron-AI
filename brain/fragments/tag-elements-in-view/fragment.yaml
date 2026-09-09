@@ -80,6 +80,7 @@ contract:
       source: request
   provides:
     - name: tagged
+      role: result
       type: int
     - name: alreadyTagged
       # Elements that were ALREADY in the state asked for, so there was
@@ -88,8 +89,16 @@ contract:
       role: accounting
       type: int
     - name: typeCorrections
+      # Tags moved onto the project's own default tag family. THE TAG FAMILY
+      # MUST COME FROM THE PROJECT'S DEFAULT, NEVER FROM THE FIRST ONE LOADED,
+      # and this is the count of that correction actually happening.
+      role: result
       type: int
     - name: notTagged
+      # *What it could not tag* - the third of the three things this reports,
+      # beside what it tagged and what was already tagged. Never a tag it
+      # placed (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

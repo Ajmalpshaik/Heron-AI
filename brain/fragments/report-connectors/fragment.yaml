@@ -50,14 +50,25 @@ contract:
       type: IList<Element>
   provides:
     - name: connectorFacts
+      role: result
       type: IDictionary<ElementId, IList<string>>
     - name: connections
+      role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: openConnectors
+      role: result
       type: IDictionary<ElementId, int>
     - name: flagDisagrees
+      # Connectors whose IsConnected flag does not match what is physically
+      # joined. ISCONNECTED IS AN INTENT FLAG, NOT A FACT, AND IT HAS BEEN
+      # WRONG IN A REAL MODEL - a run traced from it comes back complete while
+      # the air stops at a gap.
+      role: result
       type: IList<ElementId>
     - name: noConnectors
+      # Elements with no connectors to list, so it could not be reported on.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

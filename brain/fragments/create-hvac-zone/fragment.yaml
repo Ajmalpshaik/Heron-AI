@@ -52,16 +52,22 @@ contract:
       type: Level
       source: request
     - name: phase
-      type: Element
+      type: Phase
       source: request
     - name: elements
       type: IList<Element>
   provides:
     - name: zone
+      role: result
       type: Element
     - name: added
+      role: result
       type: int
     - name: movedFromAnotherZone
+      # A SPACE CAN BELONG TO ONLY ONE ZONE, AND REVIT MOVES IT WITHOUT ASKING
+      # - these spaces silently LEFT another zone when they were added here. A
+      # consequence of what it did, which the caller has to know.
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

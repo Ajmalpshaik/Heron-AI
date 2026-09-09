@@ -51,6 +51,7 @@ contract:
       source: request
   provides:
     - name: cleared
+      role: result
       type: int
     - name: alreadyEmpty
       # Elements whose parameter was ALREADY empty, so there was nothing to

@@ -92,7 +92,10 @@ def well_formed(**over):
         "purpose": "Exists to be validated.",
         "contract": {
             "needs": [{"name": "doc", "type": "Document"}],
-            "provides": [{"name": "elements", "type": "IList<Element>"}],
+            # `role` is REQUIRED on a provide since 2026-09-09, when the
+            # naming patterns that used to guess it were deleted.
+            "provides": [{"name": "elements", "type": "IList<Element>",
+                          "role": "result"}],
         },
         "revit": ["2020", "2024"],
         "runtime": ["net472", "net48"],
@@ -218,7 +221,8 @@ def main():
     base_b, folder_b = scratch(well_formed(
         id="FRG-SEL-002", capability="MAKE_A_CONSUMER",
         contract={"needs": [{"name": "nothingProvidesThis", "type": "int"}],
-                  "provides": [{"name": "x", "type": "int"}]}),
+                  "provides": [{"name": "x", "type": "int",
+                                "role": "result"}]}),
         name="make-a-consumer")
     try:
         consumer = F.load(folder_b)

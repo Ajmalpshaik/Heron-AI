@@ -54,10 +54,13 @@ contract:
       source: request
   provides:
     - name: fallMm
+      role: result
       type: double
     - name: runMm
+      role: result
       type: double
     - name: gradientOneIn
+      role: result
       type: double
     - name: findings
       type: IList<string>

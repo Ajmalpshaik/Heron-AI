@@ -48,7 +48,7 @@ contract:
     # The filter itself, resolved. Looking it up by name here would hide a
     # near-miss behind a silent no-op.
     - name: filter
-      type: Element
+      type: FilterElement
       source: request
     - name: overrides
       type: OverrideGraphicSettings
@@ -58,6 +58,7 @@ contract:
       source: request
   provides:
     - name: applied
+      role: result
       type: bool
     - name: findings
       type: IList<string>

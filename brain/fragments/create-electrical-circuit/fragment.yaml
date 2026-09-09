@@ -59,12 +59,16 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: ElectricalSystem
     - name: circuitNumber
+      role: result
       type: string
     - name: panelName
+      role: result
       type: string
     - name: memberIds
+      role: result
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

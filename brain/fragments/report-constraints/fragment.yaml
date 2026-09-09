@@ -55,12 +55,21 @@ contract:
       source: ambient
   provides:
     - name: constrainedBy
+      role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: lockedTo
+      role: result
       type: IDictionary<ElementId, IList<ElementId>>
     - name: unconstrained
+      # Elements nothing is holding. The evidence it walked every constraint
+      # in the model and found none pointing back (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: constraintsScanned
+      # How many constraints were walked. There is no `wall.Constraints` to
+      # read, so every constraint in the model is checked - a count of work
+      # DONE, never of things found (D-52).
+      role: accounting
       type: int
 
 proof:

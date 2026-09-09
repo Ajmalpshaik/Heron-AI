@@ -39,10 +39,19 @@ contract:
       type: IList<Element>
   provides:
     - name: deleted
+      role: result
       type: ICollection<ElementId>
     - name: askedFor
+      # How many were handed in. The size of the request, never what actually
+      # went - `deleted` is what Document.Delete returned and that is the only
+      # honest number here (D-52).
+      role: accounting
       type: int
     - name: alsoWent
+      # How many MORE went than were asked for. DELETING ONE ELEMENT CAN
+      # DELETE OTHERS AND REVIT WILL NOT WARN FIRST - a wall takes its hosted
+      # doors and windows. The finding this fragment exists to surface.
+      role: result
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

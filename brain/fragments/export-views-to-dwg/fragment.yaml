@@ -43,6 +43,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -51,6 +52,10 @@ contract:
       role: accounting
       type: string
     - name: wouldOverwrite
+      # Files already in the folder that this would replace - REPORTED RATHER
+      # THAN QUIETLY OVERWRITTEN, with no undo behind it. What it did NOT
+      # write (D-52).
+      role: accounting
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -65,12 +65,21 @@ contract:
       source: request
   provides:
     - name: nearest
+      role: result
       type: IDictionary<ElementId, ElementId>
     - name: distances
+      role: result
       type: IDictionary<ElementId, double>
     - name: tied
+      # Elements with two candidates the same distance away, so "the nearest"
+      # is ambiguous. A qualifier on the answer given, not something it turned
+      # away.
+      role: result
       type: IList<ElementId>
     - name: unmeasurable
+      # Elements no distance could be taken from, so it could not be measured.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

@@ -51,7 +51,7 @@ contract:
       type: Level
       source: request
     - name: ceilingType
-      type: Element
+      type: CeilingType
       source: request
     # Internal units. The loop closes itself, so the last point is not repeated.
     - name: boundary
@@ -62,6 +62,7 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: ElementId
     - name: findings
       type: IList<string>

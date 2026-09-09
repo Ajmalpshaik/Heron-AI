@@ -31,13 +31,6 @@
 // docs/FRAGMENT-ISSUES.md: a fragment that cannot use its input must refuse
 // AND SAY WHY.
 //
-// A MARGIN THAT TURNS THE BOX INSIDE OUT IS REFUSED. A large negative margin
-// shrinks past nothing and leaves min beyond max, and a view cut by an
-// inside-out box shows an empty screen - which reads as "everything was
-// deleted", the same failure the null bounding box below is guarded against.
-// `applied true` on a blank view is the confident wrong answer this whole
-// section exists to stop.
-//
 // THE BOX IS BUILT FROM MODEL-COORDINATE BOUNDING BOXES. `get_BoundingBox(null)`
 // asks for the element's extent in model space rather than as cropped by some
 // view, which is what a section box is set in. Passing a view here would ask

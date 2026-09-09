@@ -52,10 +52,16 @@ contract:
       source: request
   provides:
     - name: newViewIds
+      role: result
       type: IList<ElementId>
     - name: duplicated
+      role: result
       type: int
     - name: notDuplicated
+      # Views Revit said could not be duplicated that particular way. *An id
+      # that does not resolve is not a duplicated view* - never one it made
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

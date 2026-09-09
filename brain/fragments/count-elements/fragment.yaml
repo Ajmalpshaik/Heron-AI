@@ -24,8 +24,12 @@ contract:
       type: IList<Element>
   provides:
     - name: count
+      role: result
       type: int
     - name: countedNothing
+      # That the filter matched nothing - an honest zero said out loud. The
+      # evidence it ran, never a count of anything (D-52).
+      role: accounting
       type: bool
 
 proof:

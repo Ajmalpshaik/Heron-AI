@@ -70,8 +70,12 @@ contract:
       source: request
   provides:
     - name: created
+      role: result
       type: IList<ElementId>
     - name: layerCounts
+      # What is on each layer. NAMING NO LAYER SURVEYS; NAMING LAYERS EXTRACTS
+      # - in survey mode this IS the answer and nothing is created at all.
+      role: result
       type: IDictionary<string, int>
     - name: findings
       type: IList<string>

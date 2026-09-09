@@ -57,8 +57,13 @@ contract:
     - name: findings
       type: IList<string>
     - name: done
+      role: result
       type: int
     - name: notLinks
+      # Handed in but not linked models, so there was nothing here to act on.
+      # A count of what it was GIVEN and could not use, never a thing it found
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

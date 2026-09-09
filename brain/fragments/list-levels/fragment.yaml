@@ -36,10 +36,12 @@ contract:
       type: Document
   provides:
     - name: elements
+      role: result
       type: IList<Element>
     - name: findings
       type: IList<string>
     - name: elevationsMm
+      role: result
       type: IDictionary<ElementId, double>
 
 proof:
