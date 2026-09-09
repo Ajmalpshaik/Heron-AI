@@ -270,7 +270,19 @@ def _fragment_dir(store, fragment_id):
             folder = row["folder"]
             if not folder:
                 return None
-            full = os.path.join(ROOT, *folder.split("/"))
+            # JOINED, NOT SPLIT-AND-JOINED, and the difference is a fragment
+            # kept outside the checkout. heron_fragment.repo_relative() returns
+            # an ABSOLUTE path when there is no relative form - a library beside
+            # the user's data while Heron sits on another drive - and its
+            # docstring says callers may join the result back onto ROOT because
+            # os.path.join discards everything before an absolute component.
+            #
+            # Splitting on "/" first defeats exactly that: "/home/x/frag"
+            # becomes ROOT + "/home/x/frag". The folder is then not found, and
+            # the packet reports "in the store but not on disk in this working
+            # tree" - a plausible sentence about a fragment that is on disk and
+            # is fine.
+            full = os.path.join(ROOT, folder)
             return full if os.path.isdir(full) else None
     return None
 

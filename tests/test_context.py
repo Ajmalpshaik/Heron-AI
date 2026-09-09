@@ -44,6 +44,7 @@ any real request. That needs a model on the other end and a person judging the
 answer, which is docs/18's evaluation work and not this.
 """
 
+import io
 import os
 import sys
 import shutil
@@ -227,6 +228,46 @@ def main():
             check(each < 150,
                   "a generation packet costs %.0f ms, not the 435 it cost "
                   "while it scanned the whole library" % each)
+
+            print()
+            print("6d. A fragment kept OUTSIDE the checkout is still found")
+            print("-" * 62)
+            # heron_fragment.repo_relative() returns an ABSOLUTE path when
+            # there is no relative form - a library beside the user's data
+            # while Heron sits on another drive - and its docstring says
+            # callers may join the result onto ROOT because os.path.join
+            # discards everything before an absolute component.
+            #
+            # _fragment_dir() split the stored folder on "/" first, which
+            # defeats exactly that: "/tmp/x/frag" became ROOT + "/tmp/x/frag".
+            # The packet then said "in the store but not on disk in this
+            # working tree" about a fragment that is on disk and is fine.
+            outside = tempfile.mkdtemp(prefix="heron-outside-")
+            try:
+                os.makedirs(os.path.join(outside, "impl", "any"))
+                io.open(os.path.join(outside, "fragment.yaml"), "w",
+                        encoding="utf-8").write("id: FRG-OUT-001\n")
+                store.execute(
+                    "INSERT OR REPLACE INTO fragments (id, capability, "
+                    "semantic_identity, kind, status, domain, risk, folder, "
+                    "revit) VALUES (?,?,?,?,?,?,?,?,?)",
+                    ("FRG-OUT-001", "DO_A_THING", "a thing", "action",
+                     "DRAFT", "revit.x", "READ", outside, "2024"))
+                store.db.commit()
+                found = CONTEXT._fragment_dir(store, "FRG-OUT-001")
+                check(found == outside,
+                      "an ABSOLUTE stored folder resolves to itself, not to "
+                      "ROOT + itself (%r)" % found)
+            finally:
+                shutil.rmtree(outside, ignore_errors=True)
+                store.execute("DELETE FROM fragments WHERE id = ?",
+                              ("FRG-OUT-001",))
+                store.db.commit()
+
+            here = CONTEXT._fragment_dir(store, "FRG-ELE-001")
+            check(here and os.path.isdir(here),
+                  "and an ordinary relative folder still resolves (%s)"
+                  % (os.path.basename(here) if here else None))
 
             print()
             print("7. An unknown path is refused rather than guessed at")
