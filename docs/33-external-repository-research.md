@@ -20,10 +20,15 @@ written about it — and one of them **could not be**, which is recorded rather 
 
 **Then every repository was cloned and read at file level** — its source, its hooks, its rules, its
 tests — because a landing page describes what a project means to be and only its files say what it is.
-[§5](#5-the-file-level-pass-repository-by-repository) is that second pass, one repository at a time,
-each recorded with the commit it was read at so the reading can be repeated or found stale. **Where the
-file-level pass contradicts the matrix, the matrix row is corrected in place and the correction is
-named in §5** — a claim that quietly changes is worse than one that was wrong out loud.
+[§5](#5-the-file-level-pass-repository-by-repository) is that second pass, **complete: all fifteen
+entries and sixteen repositories**, one at a time, each recorded with the commit it was read at so the
+reading can be repeated or found stale. **Where the file-level pass contradicts the matrix, the matrix
+row is corrected in place and the correction is named in §5** — a claim that quietly changes is worse
+than one that was wrong out loud.
+
+**It disagreed with the matrix in ten of the fifteen entries**, changed two decisions, corrected five
+licence cells and three of this document's own claims, promoted two projects into §1, and found two
+stale claims in Heron's own documents. [§4a](#4a-what-the-second-pass-changed-counted) is the tally.
 
 **Read [32 §1](32-master-architecture-reconciliation.md) before acting on any row.** These are research
 inputs for a **BIM-modeller-facing platform**, not for a developer-assist harness. Several of the
@@ -79,7 +84,7 @@ Research further.**
 | [`PrimeIntellect-ai/prime-agent`](https://github.com/PrimeIntellect-ai/prime-agent) — [§5.11](#511-primeintellect-aiprime-agent) | long-running autonomous work | **there is no token or time budget** — [§5.11](#511-primeintellect-aiprime-agent) corrects this row. The mechanism is `shouldStopAfterTurn(context)`, a predicate handed to the embedder. Sessions do survive a disconnect, via a daemon | the predicate **is [D-01](DECISIONS.md)** written as a type: whoever runs the loop decides when it stops. Session survival is [23](23-heron-kernel.md)'s — but a Heron session pins a Revit and a document, so surviving means **re-verifying the pins, not restoring the state** | its daemon is for unattended running. [Golden Rule 9](14-golden-rules.md) puts a person in front of a high-risk action instead | MIT — but the copyright line names an individual, not the publishing organisation (§3) | **Changed: nothing to take.** The absent budget is the finding, and the shape confirms [D-01](DECISIONS.md) |
 | [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) — [§5.9](#59-k-dense-aiscientific-agent-skills) | domain skills scattered across documentation | a **domain skill library** with per-skill metadata and host auto-discovery | the shape is [`brain/skills/`](../brain/skills/) and [09](09-skills-and-fragments.md) | **the repository does NOT say so — [§5.9](#59-k-dense-aiscientific-agent-skills) corrects this.** Its README says *"MIT… use freely"* while four of its 163 skills carry **"© 2025 Anthropic, PBC. All rights reserved."** Only `find -iname LICENSE*` shows it | MIT at the root; **four skills all-rights-reserved, one MIT under another holder** | **Adopt concept** — already held. The licence warning is now demonstrated rather than vague, and becomes [Q-53](OPEN-QUESTIONS.md) |
 | [`ai-boost/awesome-harness-engineering`](https://github.com/ai-boost/awesome-harness-engineering) — [§5.10](#510-ai-boostawesome-harness-engineering) | no map of the field | an index, and the incoming §10.10 is right that it is one | a reading list for whoever answers `Q-45` and the compression question | an index is not a dependency, and treating it as one is how a list becomes a roadmap | CC0 | **Research further**, as an index only |
-| *Claude CEO / CEO-style agent* (§10.15) | — | — | — | — | — | **NOT IDENTIFIED.** The incoming document says *"first identify the exact repository intended… study only if verified"*, and it could not be. **Nothing was studied and nothing is claimed.** [D-01](DECISIONS.md) already gives Heron the orchestrator-in-the-host pattern this row was reaching for |
+| *Claude CEO / CEO-style agent* (§10.15) — [§5.15](#515-claude-ceo--ceo-style-agent-1015--searched-properly-still-not-identified) | — | — | — | — | — | **NOT IDENTIFIED.** The incoming document says *"first identify the exact repository intended… study only if verified"*, and it could not be. **Nothing was studied and nothing is claimed.** [D-01](DECISIONS.md) already gives Heron the orchestrator-in-the-host pattern this row was reaching for |
 
 ---
 
@@ -144,13 +149,46 @@ visible from a project page. That is [Q-53](OPEN-QUESTIONS.md).
 3. **Tiered loading** (OpenViking, idea only) is the second, and it belongs to
    [`heron_context.py`](../brain/heron_context.py): a part could carry an abstract, an overview and a
    full body, and a path's budget could name the tier rather than only the part.
+   **Narrowed at file level ([§5.4](#54-volcengineopenviking)): Heron already has three quarters of it.**
+   `semantic-identity` is the abstract, the yaml is the overview, the `.cs` is the body, and `BUDGET`
+   already loads by depth. What is missing is a *vocabulary* for the depth and a per-folder abstract.
 4. **A benchmark's shape** (`aacr-bench`) is the third, and it is the one with a hard prerequisite —
-   the cases must be real Revit tasks, and only the owner can author them.
-5. **Everything else is already here, correctly, or is rejected with a reason.** Nine of the fifteen
-   needed no action at all.
+   the cases must be real Revit tasks, and only the owner can author them. **Confirmed at file level
+   ([§5.13](#513-alibabaopen-code-review-and-alibabaaacr-bench)): its `dataset/` is exactly two files,
+   `positive_samples.json` and `negative_samples.json`** — [D-30](DECISIONS.md)'s own structure.
+5. **Everything else is already here, correctly, or is rejected with a reason.**
 
 **None of this goes in front of the proving pass.** 218 fragments have never met a model, that is the
 critical path, and every row above runs on any machine at any time.
+
+---
+
+## 4a. What the second pass changed, counted
+
+The page-level matrix ended with *"nine of the fifteen needed no action at all."* **Reading the files
+disagreed with that in ten of fifteen entries**, so the tally is recorded rather than described:
+
+| | |
+|---|---|
+| **Licence cells wrong or unverified** | **5 of 16 rows.** `llm-council` **had no licence at all** where the row said MIT; `headroom` is **Apache-2.0 with a `NOTICE`**, not MIT; `OpenViking`'s Apache island is `crates/ov_cli`, **not** the similarly named `openviking_cli/`; both Alibaba cells said *"read before reuse"* and are now **read** |
+| **Factual corrections** | `claude-mem` stores in **SQLite + FTS5, not ChromaDB**; `gstack` has **54 skills and one agent file**, not *"23 roles"*; `prime-agent` has **no token or time budget**; ECC has 286 skills, not 284 |
+| **Corrections to this document's own claims** | §1 said agentmemory and Heron share *"the same three routes"* — **Heron fuses two** ([§5.5](#55-rohitg00agentmemory)); the ECC row said `tools/check-*.py` are the equivalent of ECC's hooks — **Heron has no hooks at all** ([§5.1](#51-affaan-mecc)) |
+| **Decisions changed** | **2.** `gstack` *Reject* → **Reject the workflow, adopt the packaging**. `prime-agent` *Research further* → **nothing to take** |
+| **Promoted into §1** | **2.** `code-review-graph`'s `uncertainty.py` and `superpowers`' verification rule — **neither visible from a landing page**, and the agreement count went four → six |
+| **New questions for the owner** | **5** — [Q-49](OPEN-QUESTIONS.md) hooks, [Q-50](OPEN-QUESTIONS.md) show don't tell, [Q-51](OPEN-QUESTIONS.md) the retrieval guard, [Q-52](OPEN-QUESTIONS.md) a third stream, [Q-53](OPEN-QUESTIONS.md) imported licences |
+| **Built, not parked** | **[24 §7](24-trust-model.md)** — the *who is speaking* trust table, derived entirely from existing rules, which gives [Q-51](OPEN-QUESTIONS.md) and [Q-53](OPEN-QUESTIONS.md) the vocabulary they were missing |
+| **Stale claims found in Heron's own documents** | **2.** [17 §4](17-open-source-and-distribution.md)'s readiness table had **five wrong rows**, including `LICENSE` marked *pending* a question answered days earlier; and `Q-46`'s count had stayed at 143 after the rule narrowed it to 59 |
+| **Still not identified** | **1** — §10.15, now with a recorded search behind it ([§5.15](#515-claude-ceo--ceo-style-agent-1015--searched-properly-still-not-identified)) |
+
+**The pattern across all sixteen is one sentence: a landing page says what a project means to be, and
+only its files say what it is.** Every correction above was invisible from a project page, and two of
+them — a licence that did not exist and a licence that was stricter than claimed — are the kind that
+cost something later rather than immediately.
+
+**And the second-order finding is the one worth keeping.** Three of the corrections were to *this
+document*, and two of the stale claims were in *Heron's own documents* — found not by auditing Heron but
+by asking somebody else's repository a question and then asking the same question here. **That is the
+cheapest audit method in this exercise**, and it is available any time.
 
 ---
 
@@ -1247,3 +1285,44 @@ written down.** It belongs with [19 §2](19-context-and-cost.md)'s budgets, besi
 **Decision: unchanged — Research further**, and the prerequisite is unchanged too: nothing before
 [19 §2](19-context-and-cost.md)'s budgets are agreed. The licence cell is corrected **MIT → Apache-2.0
 with a NOTICE**.
+
+---
+
+### 5.15 *Claude CEO / CEO-style agent* (§10.15) — searched properly, still not identified
+
+**Nothing was cloned, because nothing could be identified.** The incoming §10.15 says *"first identify
+the exact repository intended… **study only if verified**"*, and the page-level pass recorded that it
+could not be. **The file-level pass owes that row a better answer than "I could not find it", so the
+search is written down instead of the failure.**
+
+**What was searched, and what came back:**
+
+| query | result |
+|---|---|
+| `claude-ceo in:name` | **20 repositories.** Top by stars: `Claudefarid/claude-ceo-skill` — **4 stars** |
+| `ceo in:name claude code agent stars:>10` | **0 results** |
+| `CEO agent orchestrator delegation subagents in:description stars:>50` | **0 results** |
+
+**That is the finding: there is no well-known project of this name.** This was not a failed lookup of
+something obvious — **no repository matching the description has more than ten stars.** The field is
+about twenty small personal projects with no shared referent.
+
+**The closest match by description**, recorded so the owner has something concrete to confirm or reject:
+
+> [`nhangen/claude-ceo`](https://github.com/nhangen/claude-ceo) — *"Autonomous CEO agent for Claude
+> Code. Reads Obsidian vault, prioritizes work, delegates to subagents, learns from corrections."*
+> **2 stars.**
+
+Its description does line up with §10.15's list — *top-level delegation, task ownership, specialist
+routing, progress and state management*. **It is not confirmed and it is not studied**, because a
+description that matches is not the identification the incoming document asked for, and guessing here
+would put an unverified project into a matrix that has just spent fifteen entries correcting verified
+ones.
+
+**This is the one row only the owner can close, and it costs him one line.** Either a link, or *"drop
+it"* — and if it is dropped, nothing is lost: [D-01](DECISIONS.md) already gives Heron the
+orchestrator-in-the-host pattern this row was reaching for, which is what the original row said and
+what fourteen file-level readings have not contradicted.
+
+**Decision: unchanged — NOT IDENTIFIED. Nothing studied, nothing claimed**, and now with a repeatable
+search behind the statement rather than a single failed guess.
