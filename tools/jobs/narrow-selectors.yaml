@@ -1,0 +1,118 @@
+# Narrower selectors as the setup chain.
+#
+# THE MISTAKE THIS FILE CORRECTS. Every job file before it used
+# `select-by-category-name`, which hands over EVERY element of a category in a
+# view. Four fragments then refused for the same reason, each perfectly clearly:
+#
+#   rename-family      "The selection covers 4 different families, and one name
+#                       cannot..."
+#   place-mep-fitting  "a fitting joins two, three or four runs - 22 were given.
+#                       Two makes an elbow, a union or a transition, three a
+#                       tee, four a cross"
+#   rename-elements    planned 22, collisions 21 - every duct is a `Tees`
+#   trim-extend        "This squares off exactly TWO elements - 22 were given"
+#
+# That was read as a granularity gap in the library. **It is not.** There are
+# fifteen PROVEN selectors narrower than a category - `select-by-family`,
+# `select-by-connection-status`, `select-by-parameter-value`,
+# `select-by-numeric-parameter`, `select-types`, `select-by-workset`,
+# `select-by-mep-system`, `select-by-pin-state` and more. Nothing named them
+# where a job-file author would look, which is exactly what happened with
+# `list-sheets` earlier the same day.
+#
+# ONE CLIENT ID: heron-batch-prove, everywhere.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: true
+
+jobs:
+  # ---- one family, so one name is enough ---------------------------------
+
+  - fragment: rename-family
+    setup:
+      - select-by-family
+      - set-selection
+    set:
+      familyName: "Air Terminal-Exhaust Cap-FB"   # one of the four it named
+      exactMatch: true
+      categories: "Air Terminals"
+      newName: "HERON FAM Z9"
+    negative-set:
+      familyName: "Air Terminal-Exhaust Cap-FB"
+      exactMatch: true
+      categories: "Air Terminals"
+      newName: ""
+    expect: renamed
+    note: >
+      The fragment was never wrong - it was handed four families and asked to
+      give them one name. `select-by-family` narrows to one, and the negative is
+      an empty new name against the same selection, so the VALUE is what varies.
+
+  # ---- the ends that are actually open -----------------------------------
+
+  - fragment: connect-open-ends
+    setup:
+      - select-by-connection-status
+      - set-selection
+    set:
+      categories: "Ducts"
+      wantOpenEnds: true
+      maxGapMm: 99999
+      sizeToleranceMm: 99999
+    negative-set:
+      categories: "Ducts"
+      wantOpenEnds: false
+      maxGapMm: 99999
+      sizeToleranceMm: 99999
+    expect: connected
+    note: >
+      §3 records "every duct end in this model is connected", and `find-dead-ends`
+      was set aside on that basis - but `place-mep-fitting` reported `openEnds 22`
+      an hour ago. `select-by-connection-status` settles it: wantOpenEnds true
+      against false is the same selector answering opposite questions, and
+      whichever way it falls, one of the two claims in this file is wrong.
+
+  - fragment: find-dead-ends
+    write: false
+    setup:
+      - select-by-connection-status
+      - set-selection
+    set:
+      categories: "Ducts"
+      wantOpenEnds: true
+      stubLength: 99999
+    negative-set:
+      categories: "Ducts"
+      wantOpenEnds: false
+      stubLength: 99999
+    expect: deadEnds
+    note: >
+      Recorded twice as blocked on content, both times against a plain category
+      selection. Handed only the ends that ARE open, it has something to find -
+      or the §3 claim stands and this is the run that confirms it properly.
+
+  # ---- one type, so a rename stays unique --------------------------------
+
+  - fragment: rename-elements
+    setup:
+      - select-types
+      - set-selection
+    set:
+      categories: "Ducts"
+      familyNameContains: ""
+      typeNameContains: "Tees"
+      find: "Tees"
+      replaceWith: "HERONTEE"
+    negative-set:
+      categories: "Ducts"
+      familyNameContains: ""
+      typeNameContains: "Tees"
+      find: "ZZZNOTHINGHERE"
+      replaceWith: "HERONTEE"
+    expect: renamed
+    note: >
+      `select-types` returns the TYPES rather than every instance, so one rename
+      is one name and the 21 collisions cannot arise. The negative is text no
+      type name contains.

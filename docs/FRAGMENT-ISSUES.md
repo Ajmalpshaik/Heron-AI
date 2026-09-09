@@ -1091,11 +1091,59 @@ not** — which is the behaviour §3h.1 is asking the twelve silent ones for.
 **Read the `remove-parameter-value` refusal twice.** *"An empty field and a zero are different"* is the
 whole of §3h.1 in seven words, written by a fragment that already gets it right.
 
+### FIFTEEN NARROWER SELECTORS WERE ALREADY PROVED, AND EVERY JOB FILE USED ONE — 2026-09-09
+
+Four fragments refused within an hour of each other, each perfectly clearly, and each for the same
+reason:
+
+| Fragment | What it said |
+|---|---|
+| `rename-family` | *"The selection covers 4 different families, and one name cannot…"* |
+| `place-mep-fitting` | *"a fitting joins two, three or four runs — 22 were given. Two makes an elbow, a union or a transition, three a tee, four a cross"* |
+| `rename-elements` | `planned 22`, `collisions 21` — every duct in this model is a `Tees` |
+| `trim-extend-elements` | *"This squares off exactly TWO elements — 22 were given"* |
+
+**The conclusion first drawn from this was that the library cannot select more narrowly than a
+category. That is wrong, and it was one edit away from being written into this file as a gap.**
+
+`select-by-category-name` hands over every element of a category in a view, and it is the only selector
+any job file had used. The library also has, all `PROVEN` and all usable as a setup step:
+
+`select-by-family`, `select-by-connection-status`, `select-by-parameter-value`,
+`select-by-numeric-parameter`, `select-types`, `select-by-workset`, `select-by-mep-system`,
+`select-by-pin-state`, `select-by-phase`, `select-by-design-option`, `select-by-insulation`,
+`select-from-link`, `select-visible-in-view`, `select-with-warnings`, `select-scope-boxes`,
+`select-by-categories`.
+
+> **This is the third time in one day the same shape has appeared:** a capability existed, was proved,
+> and was invisible because nothing named it where somebody writing a job file would look. First the
+> `list-*` fragments as a setup chain (§3i), then `views (IList<View>)` resolving from a single name,
+> now the narrow selectors. **The library is further ahead than the job files are.**
+
+That is an argument for §3h.4 — generating the job file from the fragment library rather than typing
+it — considerably stronger than the six mistyped input names it was first written about. A generator
+reading `contract.needs` would have offered `select-by-family` for a fragment that renames a family,
+because the contract says what it wants.
+
+### The contradiction this exposes, still open
+
+§3 records *"every duct end in this model is connected"*, and `find-dead-ends` was set aside twice on
+that basis. But `place-mep-fitting`, run on 2026-09-09, reported **`openEnds 22 item(s)`** against the
+same 22 ducts in M1.
+
+Both cannot be true. `select-by-connection-status` — itself `PROVEN`, taking `wantOpenEnds` — asks the
+model the question directly, and until it answers, **`find-dead-ends` is recorded as blocked on a claim
+that has not been re-checked since it was made.**
+
 ### What this says about where the proving goes next
 
 **142 to 160 on 2026-09-09.** The write engine is not the constraint — fragments proved through it all
 day and rolled back cleanly. What is left is blocked on three things, in this order:
 
+0. **Naming what already exists.** Three separate capabilities were proved and invisible today — the
+   `list-*` fragments as a setup chain, `views` resolving from one name, and fifteen selectors narrower
+   than a category. Nothing needs building for these; they need to reach the person writing the job
+   file. This is the cheapest item on the list and it outranks the rest.
 1. **`LIST_*` fragments**, above. This stopped more batches today than anything else, and the route is
    already proved: `list-sheets` as a setup step proved five fragments in an hour.
 2. **A resolver for named Revit objects** — `FamilySymbol`, `Material`, and the view-like ones. Half of
