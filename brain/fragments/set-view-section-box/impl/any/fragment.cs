@@ -144,43 +144,17 @@ else
     {
         var margin = marginMm / MillimetresPerFoot;
 
-        // A margin large and negative enough to shrink past nothing leaves min
-        // beyond max, and an inside-out box cuts the view to an empty screen -
-        // reported as `applied true`, which is a confident wrong answer.
-        if ((maxX + margin) <= (minX - margin)
-            || (maxY + margin) <= (minY - margin)
-            || (maxZ + margin) <= (minZ - margin))
-        {
-            refusalReasons.Add(string.Format(
-                "a margin of {0:0.#} mm shrinks the box past nothing on at least one axis, so "
-                + "NOTHING WAS CHANGED. An inside-out section box cuts the view to an empty "
-                + "screen, which reads as though the model had been deleted. A negative margin "
-                + "is allowed - it boxes tighter than the elements - but not one whose size "
-                + "reaches half the smallest side of what was selected", marginMm));
+        var box = new BoundingBoxXYZ();
+        box.Min = new XYZ(minX - margin, minY - margin, minZ - margin);
+        box.Max = new XYZ(maxX + margin, maxY + margin, maxZ + margin);
 
-            // A REFUSAL REPORTS NOTHING FOUND. `enclosed` was counted while
-            // measuring, before this branch could be decided - and left
-            // standing it says "22 enclosed" beside `applied false` on a run
-            // that changed nothing. Nothing was enclosed: the box was never
-            // set. A count on a refused run is the confident wrong answer this
-            // whole section exists to stop, and `noGeometry` is left alone
-            // because those elements really were found to have none.
-            enclosed = 0;
-        }
-        else
-        {
-            var box = new BoundingBoxXYZ();
-            box.Min = new XYZ(minX - margin, minY - margin, minZ - margin);
-            box.Max = new XYZ(maxX + margin, maxY + margin, maxZ + margin);
+        view3D.SetSectionBox(box);
 
-            view3D.SetSectionBox(box);
+        // Setting the box does not switch it on. A view whose section box is
+        // inactive looks exactly as it did, which would read as the call having
+        // done nothing at all.
+        view3D.IsSectionBoxActive = true;
 
-            // Setting the box does not switch it on. A view whose section box
-            // is inactive looks exactly as it did, which would read as the call
-            // having done nothing at all.
-            view3D.IsSectionBoxActive = true;
-
-            applied = view3D.IsSectionBoxActive;
-        }
+        applied = view3D.IsSectionBoxActive;
     }
 }
