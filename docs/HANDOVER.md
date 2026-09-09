@@ -51,7 +51,7 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**360 fragments. 141 `PROVEN`. 219 below.** D-28's executor is built, fragments run against a real
+**360 fragments. 159 `PROVEN`. 201 below.** D-28's executor is built, fragments run against a real
 model, and since 2026-09-09 they can also CHANGE one. That is the thing every earlier handover was
 waiting for.
 **Proving is live and these two numbers move hourly — run
@@ -63,7 +63,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | | |
 |---|---|
 | Fragments | **360** — every fragment-shaped job in the earlier library, five cross-project transfers from PART 5, `CREATE_GLOBAL_PARAMETER` (2026-09-07), `FIND_DATES_IN_VIEWS`, built AND proved 2026-09-08, and **ten added 2026-09-08 for the review's N01–N09 plus the read they depend on** — see the entry below. All ten are `DRAFT` and NONE has met a model |
-| Proven | **141** as of 2026-09-09 - 142 were stamped, and `set-view-section-box` went back to `DRAFT` when its implementation changed after its proof - each on a recorded proof with a negative case and a staleness fingerprint (D-30). **16 → 52 one night, 52 → 142 the next** — the method is the reusable part and it is in the proving-track entries below. Moving hourly — derive it, do not read it here |
+| Proven | **159** as of 2026-09-09 — 142 at the start of the day's second proving track, **+18 from it**, and `set-view-section-box` back to `DRAFT` when its implementation changed after its proof was signed. Each carries a recorded proof with a negative case and a staleness fingerprint (D-30). Moving hourly — derive it, do not read it here |
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, docs, gaps, agent-count, **structure** — all green. **`check-licence` added 2026-09-09 and it EXITS 1 on a finding**, unlike the other reports; 370 units, all clean today ([D-66](DECISIONS.md)). `check-revit-gate` and `check-reachable` are reports and exit 0, so their findings are questions and two of them are now worklists. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
 | Tests | **40 suites. 37 pass in a plain Linux container and the three failures are the MACHINE, with two causes not one** — `test_mcp_serves` and `test_served_claims` need the MCP SDK, `test_bridge_roundtrip` needs a built .NET test host. On a machine with both, all 40 should. **Do not fix them by editing the tests.** `test_embed` and `test_retrieve` were re-based against the model backend in PART 5, not edited until green |
@@ -74,7 +74,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | Open questions | **52 answered, 1 open, nothing gating any phase.** `Q-51` — what guards retrieval-into-context on the day Heron indexes text it did not write — stays open **on purpose**, with [`tests/test_carried_sources.py`](../tests/test_carried_sources.py) watching for the day it becomes real. Derived by `python tools/check-docs.py`, never read from a sentence |
 | Tools | **21** in `tools/`, and **14** MCP tools. Derive both rather than trusting a line |
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them |
-| Branches | **`main`, and everything is in it.** PR #44 was reviewed by Codex and **merged on 2026-09-09** (`fd1df12`), carrying the master-architecture audit, the file-level repository study, [D-59](DECISIONS.md)–[D-66](DECISIONS.md), and the nine review fixes. `claude/heron-ai-master-architecture-6t03c9` and `claude/folder-structure-review-0wpu2y` are both merged. **Start from `main`** — there is no open branch and nothing is parked outside it |
+| Branches | **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. `main` is at `16713ae`. **Start from `main`**; nothing is parked outside it |
 
 **QUEUED FOR THE PC, AND THE OWNER HAS SEEN THE LIST.** **Five items**, all of them needing Revit
 or `dotnet`, all of them CHECKED by a gate that runs without either: **62 link contracts**
@@ -420,6 +420,101 @@ imported, and the cost only appears if somebody times it. Time the thing on the 
 
 **§10.15 of [33](33-external-repository-research.md), "Claude CEO"** — the repository was never
 identified. A link, or drop the row. It is the only entry in that document that names nothing.
+
+---
+
+## HANDOVER — 2026-09-09, the second sitting: 142 → 159, and three capabilities that already existed
+
+**READ THIS FIRST IF THE SCRATCH MODEL IS STILL OPEN.** `Snowdon-scratch_ajmal.al` has been written to
+all day and **at least one rollback did not hold** (see below). **Close it without saving.** Nothing in
+this entry is worth a damaged model, and every proof recorded here was taken on a rolled-back write, so
+none of them needs the file kept.
+
+**Revit was left with a dialog open or a command running** — every request answered *"Revit is busy"*
+for the last half hour of the session, and before that a fifth chat held the lease. Both are worth
+clearing before the next session starts.
+
+### What moved
+
+| | |
+|---|---|
+| Proved | **142 → 159.** Eighteen signed, one (`set-view-section-box`) correctly demoted by a parallel session when its code changed under its proof |
+| Job files | **14** in `tools/jobs/`, each carrying the reasoning for its arrangement in comments |
+| Branches | **`main` only.** Everything merged: PRs #48, #52, #55, #56, #58, #59, #61. Nothing parked |
+| Gates | check-docs, check-metadata, check-structure, bridge-roundtrip — all green on `main` |
+
+### The thing worth carrying forward, said once
+
+**Three separate capabilities existed, were already `PROVEN`, and were invisible — all in one day.**
+
+1. **The `list-*` fragments as a setup chain.** `list-sheets` → `set-selection` arranges all 17 sheets
+   in one step. Five fragments proved on that route within an hour of finding it. `list-levels`,
+   `list-grids`, `list-revisions`, `list-linked-models` do the same for their kinds.
+2. **`views (IList<View>)` resolves from a single name.** D-54 fills a list from one value.
+3. **Fifteen selectors narrower than a category** — `select-by-family`, `select-by-connection-status`,
+   `select-types`, `select-by-parameter-value` and twelve more. **Every job file written that day used
+   `select-by-category-name` and nothing else**, and four fragments refused because they were handed a
+   whole category when they needed one family or exactly two runs.
+
+Each time the fragment was fine, the library was ahead of the job files, and the cost was hours. **This
+is the strongest argument for §3h.4 — generating the job file from the contracts — and much stronger
+than the mistyped field names it was first written about.** A generator reading `contract.needs` would
+have offered `select-by-family` to a fragment that renames a family.
+
+### Two defects found in the tooling, both about evidence
+
+**`batch-prove` reports verdicts on runs that never happened.** Six jobs came back `POSITIVE EMPTY`
+against records from an *earlier Revit session* describing a *different arrangement*. Heron behaved
+correctly throughout — it refused the lease and declined to write a record about *"a model that will
+not name itself"* — and the runner judged the file already on disk. A date check does not catch it;
+both records say `2026-09-09`. The session id in the `model` line does, and `validate` already stamps
+it. **OPEN.**
+
+**A tracking harness read the wrong fragment's block.** `prove` prints one provides block per chained
+fragment, and `elements` is declared by the selector as well as by the fragment under test. Reading the
+selector's copy produced five rows that tracked the input perfectly — because they *were* the input.
+`find-untagged-elements` was promoted on that evidence and had to be reverted and re-proved. Fixed with
+two guards, and the second is the one that matters: **refuse to write rows unless one agrees with what
+`validate` recorded for that fragment alone.**
+
+> Rows that match the input exactly are the thing to distrust. A real describer's answer *differs* from
+> what it was given — 22 ducts, 14 untagged.
+
+### ONE PERSON, ONE `HERON_CLIENT_ID`
+
+The lease identifies a **chat**, not a person. Four ids were in use for one afternoon — one by hand,
+two by scripts, one the runner picks itself — and to Heron that is four chats competing for one Revit.
+**Every refusal reads exactly like a fragment failing.** It cost two batches before it was understood,
+and it explains an eleven-job wipe-out earlier the same day that was written up as an arrangement
+fault.
+
+### The rollback is not reliable, and size is not the boundary
+
+§1c said small writes roll back correctly. **That is now known to be false.** A parallel session renamed
+17 sheets inside a transaction with no `apply`; the rollback did not hold and `list-sheets` afterwards
+still read `M000 HERON Cover Sheet`. Seventeen sheets, one rename, no cascade, no dialog.
+
+**Every write proof signed today carries the sentence** *"run inside a transaction and ROLLED BACK, so
+the model was left exactly as it was"* — and that sentence comes from the `writing` flag in the bridge
+client, **never from anything Revit returns**. It is not evidence. §5 row 10 is the standing record.
+
+### Where the proving goes next
+
+1. **Name what already exists.** Nothing to build — the three capabilities above need to reach whoever
+   writes the next job file. Cheapest item on the list and it outranks the rest.
+2. **`LIST_*` fragments**, §3d. Five fragments could not be arranged for want of a name nothing can
+   supply: a workset **id** (`list-worksets` gives names only — one field closes it), a view carrying
+   no template, a legend name, a route to a section mark, a material name.
+3. **A resolver for named Revit objects** — `FamilySymbol`, `Material`. Half the never-run MODIFY
+   fragments wait on it.
+4. **A way to bind two sets of elements**, which no job file can express today.
+
+**Making silence illegal (§3h.1) still comes first.** Everything above makes proving faster; that one
+makes Heron honest — and twelve fragments still answer `0` where `duplicate-sheets`, `edit-revision`
+and `remove-parameter-value` say plainly what went wrong. The best line written by any fragment all
+day was a refusal:
+
+> *"0 cleared, 22 already empty. An empty field and a zero are different."*
 
 ---
 
