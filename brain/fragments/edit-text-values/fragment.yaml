@@ -99,6 +99,34 @@ contract:
       role: accounting
       type: string
 
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32940
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    list-sheets, set-selection with this phase's own values - run inside a transaction and
+    ROLLED BACK, so the model was left exactly as it was. returned absent 0 item(s), blank
+    0 item(s), changed 17 item(s) [1363532, 1363547, 1363562, ...], editingName false, handed
+    17, how prefix, namesOnHand Func`2, notText 0, readOnly 0 item(s), refused (null), transform
+    Func`2, untouched 0 item(s), unverified 0 item(s). inputs came elements from the selection
+    (17); field as given; mode as given; text as given; replacement as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with field=Sheet Name, mode=transform, replacement=, text=HERON  instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running list-sheets, set-selection with this phase''s own values - run
+    inside a transaction and ROLLED BACK, so the model was left exactly as it was. returned
+    absent 0 item(s), blank 0 item(s), changed 0 item(s), editingName false, handed 0, how
+    transform, namesOnHand Func`2, notText 0, readOnly 0 item(s), refused ''transform'' is
+    not an edit this fragment makes, so NOTHING WAS CHANGED. It makes three: prefix (put text
+    in front), suffix (put text after) and replace (swap one piece of text for another). Carrying
+    on would hand every value straight back and report them all untouched, which reads exactly
+    like an edit that had nothing to do, transform Func`2, untouched 0 item(s), unverified
+    0 item(s). inputs came elements from the selection (17); field as given; mode as given;
+    text as given; replacement as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: f9789f67a49950aa
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
