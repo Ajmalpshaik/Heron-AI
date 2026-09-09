@@ -81,8 +81,16 @@ packet's cap. Measured on the generation path:
 | **What Heron already had** | The doctrine, as [D-52](DECISIONS.md), and one fragment doing it right: `FILTER_ELEMENTS_BY_CATEGORY` reports `unresolvedLevel` so a broken lookup reads as *"12 found, 12 with no level"* |
 
 **Built as** `Part.cut` and `Context.reduced` — a part that carried all of itself reports **nothing**; a
-part that lost something says **how much**. `report()` prints a `CUT` line and a *carrying less than all
-of itself* section, and both are absent from a full packet.
+part that lost something says **how much**. Both the CLI's `report()` and the `heron_context` MCP tool
+print a `CUT` line, and both are absent from a full packet.
+
+**The MCP half was missing for one commit, and a security review of the depth change found it** as its
+one non-security note: the seam returned `depth` and `cut` from the first day and **the tool's render
+loop printed neither**, so a person at the CLI was told what had been left out and the host was told
+nothing. **A shorter packet that reads exactly like a complete one is this very pattern's own failure**,
+at the surface where it matters most. Fixed and locked in
+[`tests/test_brain_reachable.py`](../tests/test_brain_reachable.py) — which is the file that exists
+because *complete, tested, and unreachable from a conversation is not what "built" was meant to mean*.
 
 **And the same pattern is what [Q-46](OPEN-QUESTIONS.md) needs**, which is the owner's to answer: the
 cheapest version of that question is not 59 fragment edits but **one rule that fires only on the empty

@@ -177,6 +177,50 @@ def main():
               "an unclassified request is MARKED assumed - D-01 puts intent "
               "in the host and a default must never read as a decision")
 
+        # DEPTH, AND THE MARKER THAT HAS TO REACH THE CALLER WHO ASKED FOR IT.
+        #
+        # The seam returned `depth` and a per-part `cut` from the day depth was
+        # built and the MCP tool's render loop printed NEITHER - so the CLI
+        # told a person what had been left out and the host was told nothing.
+        # A shorter packet that reads exactly like a complete one is D-52's
+        # plausible zero at the surface where it matters most. Found by a
+        # security review of the depth change, as its one non-security note.
+        check(packet["depth"] == "full"
+              and not any(p["cut"] for p in packet["parts"]),
+              "a full packet reports depth 'full' and NO cut on any part, so "
+              "the marker means something when it does appear")
+
+        shallow = BRAIN.context("select all ducts", revit="2024",
+                                path="generation", depth="abstract")
+        deep = BRAIN.context("select all ducts", revit="2024",
+                             path="generation")
+        check(shallow["size"] < deep["size"],
+              "an abstract packet is smaller than a full one (%d < %d "
+              "characters)" % (shallow["size"], deep["size"]))
+        cuts = [p for p in shallow["parts"] if p["cut"]]
+        check(shallow["depth"] == "abstract" and cuts,
+              "and it says so, per part: %d part(s) report what they lost"
+              % len(cuts))
+        check(all("of" in p["cut"] and "not carried" in p["cut"] for p in cuts),
+              "each cut says HOW MUCH was left out, not merely that some was")
+
+        said = [p for p in shallow["parts"] if p["kind"] == "request"]
+        deep_said = [p for p in deep["parts"] if p["kind"] == "request"]
+        check(said and deep_said and said[0]["size"] == deep_said[0]["size"]
+              and not said[0]["cut"],
+              "THE REQUEST IS THE SAME SIZE AT EVERY DEPTH AND IS NEVER CUT - "
+              "it is what a shortener takes first and the one thing that may "
+              "never be shortened")
+
+        bad_depth = None
+        try:
+            BRAIN.context("select all ducts", depth="tiny")
+        except ValueError as why:
+            bad_depth = str(why)
+        check(bad_depth is not None and "not a depth" in bad_depth,
+              "an unknown depth is a ValueError naming the three that exist, "
+              "not a silently ignored argument")
+
         refused = None
         try:
             BRAIN.context("check this against our standard", path="standards")

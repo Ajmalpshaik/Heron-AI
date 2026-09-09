@@ -926,11 +926,33 @@ def heron_context(request: str, path: str = "", full: bool = False,
              % (got["size"], len(got["parts"])),
              ""]
 
+    # THE CUT MARKER HAS TO REACH THE CALLER WHO ASKED FOR THE CUT.
+    #
+    # The seam returned `depth` and a per-part `cut` from the day depth was
+    # built, and this loop printed neither - so the CLI told a person what had
+    # been left out and the MCP tool told the host nothing. That is the
+    # plausible zero (D-52) reappearing at the one surface where it matters
+    # most: a shorter packet that reads exactly like a complete one.
+    #
+    # Found by a security review of the depth change, as the one non-security
+    # note in an otherwise clean report. heron_brain.py's own docstring already
+    # says the shape of this mistake: complete, tested, and unreachable from a
+    # conversation is not what "built" was meant to mean.
+    if got.get("depth") and got["depth"] != "full":
+        lines.insert(-1, "  depth      %s - parts with a shallower form are "
+                         "carrying it" % got["depth"])
+
     for part in got["parts"]:
-        lines.append("  %s: %s  (%d ch)" % (part["kind"], part["name"],
-                                            part["size"]))
+        lines.append("  %s: %s  (%d ch%s)"
+                     % (part["kind"], part["name"], part["size"],
+                        ", %s" % part["depth"]
+                        if part.get("cut") else ""))
         lines.append("     from  %s" % part["source"])
         lines.append("     why   %s" % part["why"])
+        if part.get("cut"):
+            # Only when something was actually left out. A part carrying all of
+            # itself adds no line, so this one means something when it appears.
+            lines.append("     CUT   %s" % part["cut"])
         if full and part["body"] is not None:
             for line in str(part["body"]).splitlines():
                 lines.append("     | %s" % line)
