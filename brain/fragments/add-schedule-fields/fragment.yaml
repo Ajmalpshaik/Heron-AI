@@ -80,6 +80,33 @@ contract:
       role: accounting
       type: string
 
+proof:
+  date: '2026-09-09'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction
+    and ROLLED BACK, so the model was left exactly as it was. returned added 2, alreadyPresent
+    0, availableFields 256 item(s) [Actual Appliance - Dwelling Unit Load, Actual Cooling
+    Load, Actual Default Load, ...], handed 3, refused (null), scheduleBehind Func`2, schedulesSeen
+    3, unknownField 1 item(s) [Comments], wanted 1 item(s) [Comments]. inputs came elements
+    from the selection (3); fieldNames as given (1). on Snowdon-scratch_ajmal.al
+  negative_case: run with categoryName=Title Blocks, fieldNames=Comments, inViewOnly=Notes,
+    Symbols & Schedules instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase's own values - run inside a transaction and ROLLED BACK, so the model
+    was left exactly as it was. returned added 0, alreadyPresent 0, availableFields 0 item(s),
+    handed 1, refused not one of the 1 element(s) handed in is a schedule, so NOTHING WAS
+    ADDED. A schedule is a VIEW and cannot be selected in the model; what CAN be selected
+    is a schedule PLACED ON A SHEET, which this now reads through to the schedule behind it.
+    Click the schedule on the sheet, or select the category 'Schedule Graphics', scheduleBehind
+    Func`2, schedulesSeen 0, unknownField 0 item(s), wanted 1 item(s) [Comments]. inputs came
+    elements from the selection (1); fieldNames as given (1). on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 881ab120a0a95f58
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
