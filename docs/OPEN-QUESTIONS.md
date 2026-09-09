@@ -444,6 +444,23 @@ Heron; it is not part of what a modeller installs, and it must never be confused
 2. **A pre-commit hook**, which is git's and belongs to the repository rather than to any agent.
 3. **A `.claude/settings.json` PreToolUse hook**, which is the host's and only helps whoever uses that
    host.
+4. **The hook declared in a skill's own frontmatter** — found on 2026-09-09 in
+   [`garrytan/gstack`](https://github.com/garrytan/gstack) ([33 §5.7](33-external-repository-research.md)),
+   whose `careful`, `freeze` and `guard` skills each carry their `PreToolUse` entry inline. **The guard
+   installs with the capability**, so the two cannot drift apart, and
+   [`.claude/skills/`](../.claude/skills/) already exists here. This is the best of the four.
+
+**If the answer is yes, three traps come with it**, each of which silently turns a hook into
+decoration. All three are quoted from `freeze/bin/check-freeze.sh`, which learned them the hard way:
+
+- **The decision must be nested under `hookSpecificOutput`.** *"Claude Code ignores a top-level
+  `permissionDecision`, which silently no-ops the block."*
+- **A hook that dies is read as permission.** *"Any unexpected non-zero death… would otherwise exit with
+  no decision JSON, which Claude Code treats as non-blocking — the edit proceeds."* Their fix is an
+  `EXIT` trap that emits a deny.
+- **Polarity is a decision.** *"freeze is a DENY-tier hook, so an unreadable payload DENIES (fail
+  closed)… **a boundary that fails open is not a boundary**."* Their `careful` is ask-tier and fails the
+  other way, deliberately.
 
 **Answer:**
 

@@ -69,7 +69,7 @@ Research further.**
 | [`volcengine/OpenViking`](https://github.com/volcengine/OpenViking) — [§5.4](#54-volcengineopenviking) | context organisation for agents | **tiered loading** — L0 abstract, L1 overview, L2 details, loaded only as needed, and **built on write**; observable retrieval paths | [§5.4](#54-volcengineopenviking): Heron's fragments **already are** L0/L1/L2 — `semantic-identity`, the yaml, the `.cs` — and `BUDGET` already loads by depth. What is missing is the *vocabulary* and a per-folder abstract | **the main project is AGPLv3** — see §3. Idea only, and it was taken from the README, so no source was opened | **AGPL-3.0** — 1,116 files carry that SPDX header against 18 Apache. Apache covers **`crates/ov_cli`** (the Rust CLI, *not* `openviking_cli/`), `examples/`, and the TS/npm SDKs; `bot/` is MIT | **Adapt concept, code strictly off-limits** |
 | [`karpathy/llm-council`](https://github.com/karpathy/llm-council) | one model reviewing its own work | first opinions → **anonymised** peer review → a Chairman synthesises | [D-39](DECISIONS.md) already requires an *analysed disagreement*. **Anonymising which agent produced which answer is a genuine sharpening** of Shadow Mode | it is N model calls per question, which [19 §5](19-context-and-cost.md) exists to avoid. Only for the high-risk path the incoming §6.9 describes | MIT — compatible | **Adapt concept** — take the anonymising, not the council |
 | [`obra/superpowers`](https://github.com/obra/superpowers) | agents coding before understanding | brainstorm → design → plan → execute, with review checkpoints; skills as the unit | the discipline is [27](27-build-order.md)'s and this repository's practice | its skills are general software workflows; Heron's name **capabilities**, deliberately ([09](09-skills-and-fragments.md)) | MIT — compatible | **Adopt concept** — already held |
-| [`garrytan/gstack`](https://github.com/garrytan/gstack) | solo developer without a team | a seven-stage cycle and 23 named specialist roles | [28](28-agent-registry.md) already defines 250 agents by department | adding 23 more roles creates a **second registry**, which is [32 §5](32-master-architecture-reconciliation.md)'s rejection of the incoming §6.7 repeated | MIT — compatible | **Reject** |
+| [`garrytan/gstack`](https://github.com/garrytan/gstack) — [§5.7](#57-garrytangstack) | solo developer without a team | **not 23 roles** — 54 skills and one agent file. Three of them (`careful`, `freeze`, `guard`) declare a **PreToolUse hook in the skill's own frontmatter** | the 54 workflow skills are a developer's and transfer to nobody here. **The hook-in-the-skill shape is the fourth and best answer to [Q-49](OPEN-QUESTIONS.md)** — the guard installs with the capability | [§5.7](#57-garrytangstack) names three traps that silently turn such a hook into decoration. `ETHOS.md` measures itself in lines of code per day, which is [D-57](DECISIONS.md)'s frame exactly | MIT — compatible | **Reject the workflow, adopt the packaging** *(changed at file level — the row's 23-roles premise was not there)* |
 | [`affaan-m/ECC`](https://github.com/affaan-m/ECC) — [§5.1](#51-affaan-mecc) | plans lost in chat, standards forgotten | **the plan as an artifact the human points at**, not chat history; hooks that **block the tool call** rather than checks a person remembers to run | the artifact idea is [23](23-heron-kernel.md)'s checkpoints and [`heron_workflow.py`](../mcp/server/heron_workflow.py). `tools/check-*.py` hold the same *rules* but **nothing runs them automatically** — [§5.1](#51-affaan-mecc) corrects the page-level claim that they are the equivalent | 68 agents, 286 skills, 94 commands. The scale IS the thing being rejected — [D-01](DECISIONS.md) gives the host the commands and [09](09-skills-and-fragments.md) gives skills capabilities | MIT — but [§5.1](#51-affaan-mecc) names a second project inside it | **Adopt the artifact principle, reject the scale.** File-level pass added two items — see [§5.1](#51-affaan-mecc) |
 | [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) — [§5.2](#52-ruvnetruflo) | orchestrating many agents | swarm coordination; **Raft, Byzantine and Gossip consensus**; 100+ agents. **Under it, a security programme the landing page does not advertise** — a guard between retrieval and context assembly | almost none of the swarm. Heron has **one Revit, one pipe, one queue, one handler** ([D-09](DECISIONS.md)) — but the retrieval guard is aimed at the exact path Heron's RAG work will create ([§5.2](#52-ruvnetruflo)) | consensus answers *"which of my disagreeing replicas is right"*. Heron has no replicas. **314 MCP tools against Heron's 14** | MIT — compatible | **Reject the swarm** — and [§5.2](#52-ruvnetruflo) takes one question from underneath it |
 | [`thedotmack/claude-mem`](https://github.com/thedotmack/claude-mem) — [§5.3](#53-thedotmackclaude-mem) | context lost at compaction | capture the session, **compress it**, inject relevant context next time | the *lifecycle* is [10](10-memory-and-knowledge.md)'s. The *capture everything* half is the opposite of Heron's rule | **compression is a model call, and every observation costs quota** — so the store cannot be rebuilt, against [D-24](DECISIONS.md) and [Golden Rule 11](14-golden-rules.md). ([§5.3](#53-thedotmackclaude-mem) corrects the store — **SQLite + FTS5, not ChromaDB** — and finds its retrieval ranks by *recency*, simpler than Heron's) | Apache-2.0 with a `NOTICE` — compatible | **Reject the mechanism**; the selective-memory principle is already held |
@@ -674,3 +674,80 @@ anything in this area.
 over `revit/` is still the off-mission build. The file-level pass promotes this project into §1 as the
 **fifth** independent agreement and hands [Q-46](OPEN-QUESTIONS.md) a cheaper answer than the one it was
 written with.
+
+---
+
+### 5.7 `garrytan/gstack`
+
+**Read at** `c8f0c4e368fd59ec316c0eb0d1f4ebfa896c2d16`, committed 2026-09-08. MIT.
+
+**Opened:** `freeze/SKILL.md`, `freeze/bin/check-freeze.sh`, `careful/SKILL.md`, `guard/SKILL.md`,
+`ETHOS.md`, and the tree.
+
+**The row's premise was wrong.** It said *"23 named specialist roles"* and rejected the project for
+creating a second registry beside [28](28-agent-registry.md)'s 250 agents.
+
+At file level `agents/` holds **one** file — `openai.yaml`. What the landing page calls roles are **54
+top-level skill directories**, each a `SKILL.md`. **There is no registry to be a second of.** The
+rejection was aimed at something that is not there.
+
+#### Three of the fifty-four are the mechanism [Q-49](OPEN-QUESTIONS.md) is about
+
+`careful`, `freeze` and `guard` are not workflow skills. They are **safety hooks, and the hook is
+declared in the skill's own frontmatter**:
+
+```yaml
+name: freeze
+description: Restrict file edits to a specific directory for the session.
+hooks:
+  PreToolUse:
+    - matcher: "Edit"
+      hooks:
+        - type: command
+          command: "bash $HOME/.claude/skills/gstack/freeze/bin/check-freeze.sh"
+```
+
+`careful` warns before `rm -rf`, `DROP TABLE`, force-push, `git reset --hard`. `freeze` confines edits
+to one directory. `guard` is the two composed — and it **calls the other two skills' scripts rather than
+copying them**.
+
+**This is a fourth shape for [Q-49](OPEN-QUESTIONS.md), and it is the one that fits Heron.** The
+question offered three: nothing, a git pre-commit hook, or a `.claude/settings.json`. gstack's answer is
+better than all three: **the hook travels with the skill**, so installing the capability installs its
+guard and the two cannot drift apart. Heron already has [`.claude/skills/`](../.claude/skills/) — the
+shelf is there and empty of exactly this.
+
+#### And `check-freeze.sh` names three traps that would silently defeat a naive attempt
+
+This is the part no landing page could have given, and each one turns a hook into decoration:
+
+1. **The decision must be nested.** *"The decision MUST be nested under `hookSpecificOutput` — Claude
+   Code ignores a top-level `permissionDecision`, which silently no-ops the block."* A hook written the
+   obvious way blocks nothing and reports no error.
+2. **A hook that dies is read as permission.** *"Any unexpected non-zero death… would otherwise exit
+   with no decision JSON, which Claude Code treats as non-blocking — the edit proceeds."* They install
+   an `EXIT` trap that emits a deny, so a crash cannot become an allow.
+3. **Polarity is a decision, not a default.** *"freeze is a DENY-tier hook, so an unreadable payload
+   DENIES (fail closed)… a boundary that fails open is not a boundary."* `careful` is ask-tier and
+   deliberately fails the other way.
+
+**That third sentence is this repository's own reasoning in someone else's words**, and the first two
+are the kind of thing that is learned by shipping it wrong. All three are now written into
+[Q-49](OPEN-QUESTIONS.md), so if the answer is yes, the first attempt is not the broken one.
+
+#### What is still rejected, and one thing that looks like a gap and is not
+
+The 54 skills are a **solo developer's engineering workflow** — `ios-qa`, `land-and-deploy`,
+`design-review`, `scrape`, `make-pdf`. Not one transfers to a BIM modeller, and
+[32 §1](32-master-architecture-reconciliation.md)'s mission correction applies to every one of them.
+`ETHOS.md` measures its own value in *"10,000+ usable lines of code per day"*, which is the developer-harness
+frame this repository rejected outright ([D-57](DECISIONS.md)).
+
+**`ETHOS.md` is injected into every workflow skill's preamble automatically, and Heron does not inject
+its Golden Rules anywhere.** That looks like a gap and is not: [D-01](DECISIONS.md) gives the host the
+persona and the orchestration, and the host already reads `CLAUDE.md`. Heron's rules reach the model
+through the host's mechanism, which is the correct one. Named here so the absence reads as a decision.
+
+**Decision: changed — from *Reject* to *Reject the workflow, adopt the packaging*.** The 54 workflow
+skills stay rejected on mission. The **hook-in-the-skill-frontmatter shape** becomes the recommended
+answer to [Q-49](OPEN-QUESTIONS.md) should the owner want one, and the three traps come with it.
