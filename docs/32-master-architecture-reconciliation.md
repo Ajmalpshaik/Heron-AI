@@ -77,7 +77,7 @@ python tools/agent-count.py
 | Incoming § | What it asks for | Heron already has | Verdict |
 |---|---|---|---|
 | **6.1** Context Engine | task-aware retrieval, ranking, dedup, version awareness, traceability | [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) — structured filter first, then keywords + vectors over the survivors, fused by reciprocal rank, and it reports what was excluded and why | **Built** |
-| **6.1** …token budgeting, compression | — | **[19 — Context & Cost](19-context-and-cost.md) specifies all seven pieces. None of them exists in code.** `grep -rl "ContextManager\|context_manager\|heron_context"` over the whole repository returns nothing | **GAP — the largest real one** |
+| **6.1** …token budgeting, compression | — | **[19 — Context & Cost](19-context-and-cost.md) specifies seven pieces and there is no Context Manager, no budget, no compression, no model router, no fallback and no token or cost accounting.** `grep -rl "ContextManager\|context_manager\|heron_context"` over the whole repository returns nothing. Two of the seven are partly covered by accident of other work — `heron_search` has a `cache` route, and `heron_gaps` reports Revit-side latency (§4.2) | **GAP — the largest real one** |
 | **6.2** Repository code graph (project→file→class→method→calls) | Roslyn-grade code intelligence over the Heron source | [`brain/heron_graph.py`](../brain/heron_graph.py) is a **fragment and capability** graph, not a source-code graph. Different object entirely | **Rejected for now — §5** |
 | **6.3** Memory Engine, categories, no full-history storage | [`brain/heron_scope.py`](../brain/heron_scope.py) — one store per scope as one file each, [Golden Rule 5](14-golden-rules.md) made physical; a cross-scope query is impossible to *write*, not merely absent. [10](10-memory-and-knowledge.md), [20](20-knowledge-trust-and-conflict.md) | **Built, and stricter** |
 | **6.4** Revit Knowledge Engine, version awareness | 360 fragments, [`brain/heron_matrix.py`](../brain/heron_matrix.py) (`CLAIMED` / `COMPILES` / … never merged), [16 — Version Support](16-version-support-strategy.md), the compile gate over 2020–2027 | **Built, and stricter** |
@@ -88,7 +88,7 @@ python tools/agent-count.py
 | **6.8** Review Engine — requirement, API, version, transaction, performance, dead code | `tools/check-*.py` (`ls tools/*.py \| wc -l`), plus [`brain/heron_validate.py`](../brain/heron_validate.py) and [13 — Testing & Quality](13-testing-and-quality.md) | **Built** |
 | **6.9** Optional council, evidence over majority | Shadow Mode, [18](18-agent-operating-system.md) — and [D-39](DECISIONS.md) already says approval comes from an **analysed disagreement, not a count of agreements** | **Built, and stricter** |
 | **7** Safe self-improvement, with a human gate | [Golden Rule 13](14-golden-rules.md), Article IV of the [Constitution](../HERON_CONSTITUTION.md), and [`heron_validate.py`](../brain/heron_validate.py) whose whole first rule is *it never writes `heron-status`* | **Built, and stricter** |
-| **8** Speed strategy, latency per stage | Nothing measures latency per stage. See **§4** | **GAP** |
+| **8** Speed strategy, latency per stage | **Half of it exists and the halves are not interchangeable.** [`brain/heron_gaps.py`](../brain/heron_gaps.py) reads the audit trail and reports median and worst milliseconds **per fragment and per operation** — the Revit side. **The brain times nothing**: `heron_search`, `heron_embed` and `heron_retrieve` contain no clock at all | **Partial — §4.2** |
 | **9** Evidence-based done | [D-30](DECISIONS.md) — a proof needs a positive case, a negative case and a staleness fingerprint | **Built, and stricter** |
 | **14** Revit Validation Gate, 14 questions | [03 — Heron Revit](03-heron-revit.md), the [fragment-proving skill](../.claude/skills/fragment-proving/SKILL.md), [D-51](DECISIONS.md), [D-53](DECISIONS.md) | **Built — but see §4.3** |
 | **15** Task Execution Contract, phases A–G | [27 — Build Order](27-build-order.md) and this repository's working practice | **Built** |
@@ -159,20 +159,36 @@ must be forbidden from touching the exact-match corpus.**
 
 **Verdict: ADOPT, and it needs the baseline in §4.2 first.**
 
-### 4.2 🔴 A baseline — incoming §17 Phase 0 is right, and it is missing
+### 4.2 🔴 A baseline for the brain — the Revit side already has one
 
 > *"Without a baseline, improvement cannot be proven."*
 
-Nothing here measures latency per stage or context cost per request. That is not a small omission for
-a repository whose culture is *derive it, do not type it* — it means any future claim that Heron got
-faster would be an assertion of exactly the kind the rest of this project refuses.
+**This entry said *"nothing here measures latency"* when it was first written, and that was wrong.**
+It was checked an hour later and corrected, which is the only reason it is not now a believed fact —
+and it is a fair warning about reading either document without opening the files.
 
-**One measured number already exists and shows the value**: closing register row `A7` made
-`heron_capabilities` never reply, and a real Claude Code tool call sat on it for **thirty minutes**.
-It was found with `faulthandler`, not by reasoning ([D-49](DECISIONS.md)). Nothing routinely measures,
-so nothing would have caught it earlier.
+What actually exists, and what does not:
 
-**Verdict: ADOPT. Cheapest item on this list, and it gates §4.1.**
+| | |
+|---|---|
+| **Revit side — measured** | [`brain/heron_gaps.py`](../brain/heron_gaps.py) reads the audit trail and reports **median and worst milliseconds per fragment and per operation**, alongside what failed. [`HeronAudit`](../platform/Heron.Core/HeronAudit.cs) has written a duration per request since Step 4 |
+| **Brain side — not measured at all** | `grep -n "perf_counter\|monotonic"` over [`heron_search.py`](../brain/heron_search.py), [`heron_embed.py`](../brain/heron_embed.py) and [`heron_retrieve.py`](../brain/heron_retrieve.py) returns **nothing**. None of them writes to the audit trail either. The whole retrieval stack — the exact place a Context Manager would be judged — is unmeasured |
+
+**And one part of it is not measurable here at all, which is an architecture finding rather than a gap.**
+[28](28-agent-registry.md) defines `HERON-OPS-OBS-011`, the Observability Agent, as *"latency, token
+usage, model calls per request, cost per request"*. **[D-01](DECISIONS.md) put every model call in the
+host.** Heron makes none — `heron_embed` runs a local model with no tokens and no cost. So three of
+those four fields describe something Heron cannot see, and building an agent to report them would
+produce a meter reading zero and a reader who believed it.
+
+**Verdict: ADOPT, narrowed to the brain's own stage timings**, on the same seam
+[`heron_gaps.py`](../brain/heron_gaps.py) already uses so there is one reader of the trail rather than
+two. The registry row wants correcting at the same time, because a row asking for the impossible is
+worse than a row asking for nothing.
+
+**The value is not hypothetical.** Closing register row `A7` made `heron_capabilities` never reply, and
+a real Claude Code tool call sat on it for **thirty minutes** — found with `faulthandler`, not by
+reasoning ([D-49](DECISIONS.md)). It was in the retrieval stack: the unmeasured half.
 
 ### 4.3 🟠 The Revit Validation Gate as a checklist an agent runs
 
