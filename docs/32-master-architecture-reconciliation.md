@@ -298,6 +298,26 @@ internal **feet** and accepts a millimetre figure silently. A caller reading *"h
 level"* and passing `2700` gets a ceiling 2,700 feet up and no error. That is `D3`'s failure shape, and
 it was invisible until something asked. Fixed in the same commit.
 
+**Every count it raises has since been sharpened against the library, and each cut removed rows that
+could do nothing about being on the list:**
+
+| Question | First | Now | What the cut was |
+|---|---|---|---|
+| **3** document context | 42 | **0** | it asked *does it declare a document*; all 42 that declare none were right. It asks *does the **code** use one it did not declare* |
+| **7** collectors scoped | 114 | **6** | a whole-model scan is usually the job. An **inconsistency** is being handed a `view` and never scoping to it |
+| **8** linked documents | 310 → 107 | **62** | only fragments that **collect**, and only those that **read** — a linked element belongs to another document and cannot be changed through the host |
+| **11** units | 1 | **0** | the one real defect, fixed |
+
+**Two of the three cuts were false positives that looked exactly like findings**, and both were the
+same shape as the write-detection failure: a header comment saying *"Assumes `doc` … are in scope"*,
+which almost every fragment carries; and `var doc = uidoc.Document;`, which is correct code deriving
+one from another. That is four times in one night a text check has been fooled by something that
+merely looks like its subject.
+
+**What is left is worth reading:** 62 reading fragments that count only the host document
+([`Q-48`](OPEN-QUESTIONS.md) — the one finding here about what a modeller sees), 143 that name nothing
+they turned down ([`Q-46`](OPEN-QUESTIONS.md)), 7 with no null guard, and 6 collectors worth a glance.
+
 **And it proved what a checklist cannot do**, which is worth more than the finding. Two attempts to
 decide statically whether a fragment writes:
 

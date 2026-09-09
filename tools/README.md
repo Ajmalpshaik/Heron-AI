@@ -621,6 +621,12 @@ looked exactly like findings:
 | a header **comment** | almost every fragment says *"Assumes `doc` … are in scope"*, so a check reading comments finds `doc` everywhere and means nothing |
 | a **local** | `zoom-to-elements` declares `uidoc` and writes `var doc = uidoc.Document;` — correct code, and reported as an undeclared need it would have sent somebody to edit a working contract |
 
+**Question 7 went 114 → 6.** A whole-model collector is usually the job, so raising all 114 was raising
+the shape of the library. What is an **inconsistency** rather than a design is a fragment handed a
+`view` that never scopes to it — 6 of them, and even those are sometimes right, which is why they are a
+LOOK. The 114 has not been thrown away: it is said in the answer, because it is what makes a **proof**
+slow — `set-mep-size` timed out on 307 ducts and sized 22 immediately in a smaller view.
+
 **Question 8 went 310 → 107 → 62, and the last cut is an API fact rather than a judgement.** It first
 asked every fragment about links and raised 310 of 360 — the shape of the library, not a finding; a
 fragment that sets a view's scale has no link question to get wrong. Narrowed to fragments that

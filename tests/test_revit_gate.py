@@ -245,6 +245,34 @@ def main():
               "doc everywhere and mean nothing")
 
         print()
+        print("3d. Question 7 raises an INCONSISTENCY, not every whole-model scan")
+        print("-" * 66)
+        WHOLE = "var all = new FilteredElementCollector(doc).ToElements();\n"
+        VIEWNEED = ("    - name: view\n      type: View\n"
+                    "      source: request\n")
+        make(work, "scansall", BASE % ("FRG-T-013", "READ", ""), WHOLE)
+        got = verdicts_for(tool, work, "scansall")[6]
+        check(got[0] == tool.ANSWERED,
+              "a whole-model scan on its own is NOT raised - it is usually the "
+              "job, and raising all 114 was raising the shape of the library")
+        check("proof" in got[1].lower() or "slow" in got[1].lower(),
+              "but it still says what it costs a PROOF, which is where it "
+              "actually matters")
+
+        make(work, "hasviewscansall", BASE % ("FRG-T-014", "MODIFY", VIEWNEED),
+             WHOLE)
+        got = verdicts_for(tool, work, "hasviewscansall")[6]
+        check(got[0] == tool.LOOK,
+              "handed a view and never scoping to it IS raised - that is an "
+              "inconsistency rather than a design")
+
+        make(work, "hasviewscopes", BASE % ("FRG-T-015", "MODIFY", VIEWNEED),
+             "var all = new FilteredElementCollector(doc, view.Id).ToElements();\n")
+        got = verdicts_for(tool, work, "hasviewscopes")[6]
+        check(got[0] == tool.ANSWERED,
+              "and one that DOES scope to the view it was handed is fine")
+
+        print()
         print("3c. Question 8 asks a READER about links, never a writer")
         print("-" * 66)
         COLLECTS = "var all = new FilteredElementCollector(doc).ToElements();\n"

@@ -252,12 +252,28 @@ def ask(fid, name, doc, raw, code):
 
     # 7 - collectors
     squashed = "".join((code or "").lower().split())
-    if code and "newfilteredelementcollector(doc)" in squashed:
+    whole = code is not None and "newfilteredelementcollector(doc)" in squashed
+    scoped = "newfilteredelementcollector(doc," in squashed
+    declares_view = "view" in [n.get("name") for n in needs_of(doc)]
+    if whole and declares_view and not scoped:
+        # 6 of the 114, and the only shape here that is an INCONSISTENCY rather
+        # than a design: the fragment was handed a view and never narrows to
+        # it. Often still correct - a filter's candidate values come from the
+        # whole model - which is why it is a LOOK and not a defect.
         say(LOOK,
-            "collects over the WHOLE document. Often right, and it is what "
-            "makes a proof slow: set-mep-size timed out on 307 ducts and sized "
-            "22 immediately in a smaller view (proving skill, rule 1). Worth "
-            "knowing before arranging a case, not necessarily worth changing")
+            "is handed a `view` and still collects the WHOLE document, never "
+            "scoping to it. Sometimes right - a view filter's candidate values "
+            "come from the whole model - and worth confirming that is the "
+            "intent rather than an oversight")
+    elif whole:
+        # Raising all 114 was raising the shape of the library. A whole-model
+        # collector is usually the job. Where it MATTERS is proof speed, and
+        # that is said here rather than counted as a finding.
+        say(ANSWERED,
+            "collects over the whole document, which is usually the job. It is "
+            "what makes a PROOF slow though: set-mep-size timed out on 307 "
+            "ducts and sized 22 immediately in a smaller view (proving skill, "
+            "rule 1). Worth knowing before arranging a case")
     elif code:
         say(ANSWERED, "no unscoped whole-document collector")
     else:
