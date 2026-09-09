@@ -7,6 +7,15 @@
 
 ## 1. Context Manager
 
+**Built 2026-09-09 as [`brain/heron_context.py`](../brain/heron_context.py)**, and served to the host as
+the `heron_context` MCP tool. §2's parts budget is enforced there — a part outside the path's budget
+**raises** rather than being dropped — and every part carries a `source`, which is §1's traceability.
+
+**Three of this document's seven pieces are real; four are not, and only one of those four is
+outstanding.** The model router, the fallback and cost accounting were placed in the **host** by
+[D-58](DECISIONS.md), because Heron makes no model calls and per-request cost exists only inside the
+process that made one. **Compression is the one genuinely unbuilt piece**, deliberately — see §2.
+
 The Context Manager decides what each agent actually receives:
 
 what the user said · what project is active · what Revit version is active · what knowledge is
@@ -27,6 +36,13 @@ another model doubles cost to solve a problem that structured filters solve for 
 ---
 
 ## 2. Context Compression
+
+**The budget below is built and enforced. The compression is not, and that is a decision.**
+[`brain/heron_context.py`](../brain/heron_context.py) implements this table as `BUDGET`, in **parts**
+rather than tokens — Heron has no tokeniser, and inventing a number would be worse than counting a real
+thing ([D-58](DECISIONS.md)). **No compressor exists**, and until [24 §7](24-trust-model.md)'s question
+about what Heron carries is settled, the safest compressor is none: the note at the end of this section
+names what a wrong one costs, and `OST_DuctCurves` is the token it would take first.
 
 With 20,000 fragments, 5,000 skills and 500 agents, nothing can send everything.
 
