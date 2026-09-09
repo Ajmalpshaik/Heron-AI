@@ -49,6 +49,9 @@ contract:
     - name: enclosed
       type: int
     - name: noGeometry
+      # Elements with no geometry to box, so it could not be enclosed. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: viewRefused
       # The view declined the change - a template owns the slot, or the view

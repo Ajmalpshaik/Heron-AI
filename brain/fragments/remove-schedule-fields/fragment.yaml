@@ -69,6 +69,9 @@ contract:
     - name: hidden
       type: int
     - name: notPresent
+      # Field names the schedule does not carry, so it could not be removed.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<string>
     - name: refusedInUse
       # Fields a sort or filter still points at, so the removal was refused

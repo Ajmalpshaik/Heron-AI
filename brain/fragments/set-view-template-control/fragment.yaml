@@ -73,6 +73,9 @@ contract:
     - name: nowFree
       type: IList<string>
     - name: notOnTemplate
+      # Settings this template does not carry, so it could not be held or
+      # freed. The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<string>
     - name: viewsFollowing
       type: int

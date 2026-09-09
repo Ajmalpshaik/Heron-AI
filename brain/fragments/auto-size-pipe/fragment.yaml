@@ -97,6 +97,9 @@ contract:
     - name: findings
       type: IList<string>
     - name: noFlow
+      # Pipes carrying no flow figure, so it could not be sized. The evidence
+      # it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

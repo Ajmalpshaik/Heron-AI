@@ -90,6 +90,10 @@ contract:
     - name: typeCorrections
       type: int
     - name: notTagged
+      # *What it could not tag* - the third of the three things this reports,
+      # beside what it tagged and what was already tagged. Never a tag it
+      # placed (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

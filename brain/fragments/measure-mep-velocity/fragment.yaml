@@ -57,6 +57,9 @@ contract:
     - name: disagrees
       type: IList<ElementId>
     - name: noFlow
+      # Ducts carrying no flow figure, so it could not be given a velocity.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

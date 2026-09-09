@@ -73,10 +73,21 @@ contract:
     - name: disagreed
       type: IList<ElementId>
     - name: notRectangular
+      # Rooms that WERE dimensioned, to their overall extent, *WHICH MAY NOT
+      # BE WHAT IS WANTED*. A qualifier on the answer given, telling the
+      # reader which numbers are an L-shape's whole extent rather than its
+      # legs.
+      role: result
       type: IList<ElementId>
     - name: noReference
+      # Rooms offering no boundary reference, so it could not be dimensioned.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notARoom
+      # Handed in but not a room, so there was nothing here to act on. A count
+      # of what it was GIVEN and could not use, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

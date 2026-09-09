@@ -49,8 +49,17 @@ contract:
     - name: airflowLs
       type: IDictionary<ElementId, double>
     - name: notSpaces
+      # Rooms handed in where Spaces were needed. *A Room carries no load -
+      # loads are the MEP half*, so these could not be asked at all. Given and
+      # unusable.
+      role: accounting
       type: IList<ElementId>
     - name: noLoad
+      # *A ZERO IS NOT AN ANSWER, IT IS A QUESTION* - a space with no load
+      # usually means the analysis was never run. The finding somebody has to
+      # act on, and the reason reporting the three figures alone would
+      # mislead.
+      role: result
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

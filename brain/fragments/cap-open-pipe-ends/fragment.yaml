@@ -81,6 +81,9 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: notPipes
+      # Handed in but not pipes, so there was nothing here to act on. A count
+      # of what it was GIVEN and could not use, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: findings
       type: IList<string>

@@ -59,8 +59,17 @@ contract:
     - name: actualExhaust
       type: IDictionary<ElementId, double>
     - name: noDesignFigure
+      # Spaces with no design figure to check the actual against. THE HEADLINE
+      # FINDING - the semantic identity names it, and without it a space
+      # nobody has designed reads as balanced because zero matches zero.
+      role: result
       type: IList<ElementId>
     - name: unplaced
+      # *AN UNPLACED SPACE IS REPORTED, NOT HIDDEN.* Zero area and no
+      # meaningful flow, which is a fault in the model rather than something
+      # this could not read - and a result is the stricter reading where the
+      # two are close.
+      role: result
       type: IList<ElementId>
 
 proof:

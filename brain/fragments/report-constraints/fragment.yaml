@@ -61,6 +61,10 @@ contract:
     - name: unconstrained
       type: IList<ElementId>
     - name: constraintsScanned
+      # How many constraints were walked. There is no `wall.Constraints` to
+      # read, so every constraint in the model is checked - a count of work
+      # DONE, never of things found (D-52).
+      role: accounting
       type: int
 
 proof:

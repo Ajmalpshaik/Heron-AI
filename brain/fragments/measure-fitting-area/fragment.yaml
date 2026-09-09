@@ -69,6 +69,9 @@ contract:
     - name: suspect
       type: IList<ElementId>
     - name: noGeometry
+      # Fittings with no readable geometry, so it could not be measured. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

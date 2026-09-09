@@ -62,12 +62,25 @@ contract:
     - name: volumes
       type: IDictionary<ElementId, double>
     - name: unplaced
+      # A room that was never put in the model. Named separately from
+      # `unenclosed` *because the first is deleted or placed and the second is
+      # a wall or a room-bounding setting to fix* - two faults, two fixes,
+      # both findings.
+      role: result
       type: IList<ElementId>
     - name: unenclosed
+      # A room placed where its boundaries do not close - the one of the two
+      # that IS a modelling fault. A finding, and the reason the pair is split
+      # at all.
+      role: result
       type: IList<ElementId>
     - name: volumeNotComputed
       type: IList<ElementId>
     - name: notSpatial
+      # Handed in but not a room or a space, so there was nothing here to act
+      # on. A count of what it was GIVEN and could not use, never a thing it
+      # found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

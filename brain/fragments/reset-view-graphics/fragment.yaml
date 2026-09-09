@@ -63,6 +63,10 @@ contract:
     - name: cleared
       type: int
     - name: notOverridable
+      # Categories this view will not accept an override on -
+      # `IsCategoryOverridable` is the real test and it depends on the view.
+      # Never a clear it made (D-52).
+      role: accounting
       type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

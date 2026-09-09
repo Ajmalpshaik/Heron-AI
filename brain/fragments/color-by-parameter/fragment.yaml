@@ -68,6 +68,10 @@ contract:
     - name: legend
       type: IList<string>
     - name: noValue
+      # Elements with nothing in that parameter. They ARE coloured - *a blank
+      # value is its own group and is named as one* - so this is one of the
+      # groups it made and a legend row, not something it turned away.
+      role: result
       type: IList<ElementId>
     - name: skipped
       # What it passed over. The evidence it looked, never a thing it

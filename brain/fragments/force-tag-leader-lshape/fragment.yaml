@@ -64,8 +64,14 @@ contract:
     - name: bent
       type: int
     - name: noLeader
+      # Tags with no leader, so it could not be bent. The evidence it looked,
+      # never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: notTags
+      # Handed in but not tags, so there was nothing here to act on. A count
+      # of what it was GIVEN and could not use, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and

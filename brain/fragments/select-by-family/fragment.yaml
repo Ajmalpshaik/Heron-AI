@@ -63,6 +63,10 @@ contract:
     - name: matchedFamilies
       type: IDictionary<string, int>
     - name: scannedWholeModel
+      # Whether the sweep was bounded by category or walked the whole
+      # document. *AN UNBOUNDED SCAN IS REPORTED AS ONE* - how it ran, never
+      # what it found.
+      role: accounting
       type: bool
     - name: found
       type: int

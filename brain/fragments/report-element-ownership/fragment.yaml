@@ -59,6 +59,10 @@ contract:
     - name: editable
       type: IList<ElementId>
     - name: notWorkshared
+      # Reported when the model is not workshared at all, so there is no
+      # ownership to read. The evidence it looked, never a thing it found
+      # (D-52).
+      role: accounting
       type: bool
 
 proof:

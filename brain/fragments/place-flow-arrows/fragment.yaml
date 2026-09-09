@@ -68,6 +68,10 @@ contract:
     - name: placed
       type: int
     - name: noDirection
+      # Runs whose connectors carry no direction, so they are *LEFT ALONE*.
+      # Plenty of ductwork is modelled without a system. Never an arrow it
+      # placed (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: tooVertical
       type: IList<ElementId>

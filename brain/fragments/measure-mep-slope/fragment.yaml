@@ -65,6 +65,9 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: noGeometry
+      # Runs with no geometry to take a fall from, so it could not be
+      # measured. The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

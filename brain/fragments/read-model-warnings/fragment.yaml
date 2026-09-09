@@ -41,6 +41,9 @@ contract:
     - name: warningCount
       type: int
     - name: notInThisModel
+      # Warning elements that do not resolve in this document. Given and
+      # unusable, never a warning it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

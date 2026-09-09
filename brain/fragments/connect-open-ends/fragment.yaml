@@ -67,8 +67,14 @@ contract:
     - name: openEnds
       type: int
     - name: notPaired
+      # Open ends that failed one of the four tests - domain, size, distance,
+      # facing. Examined and not joined, never a joint it made (D-52).
+      role: accounting
       type: IList<string>
     - name: noConnectors
+      # Elements with no connectors, so it could not be paired. The evidence
+      # it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

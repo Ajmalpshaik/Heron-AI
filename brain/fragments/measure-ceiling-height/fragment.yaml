@@ -90,6 +90,9 @@ contract:
     - name: coverage
       type: IDictionary<ElementId, double>
     - name: noCeiling
+      # Rooms with no ceiling over them, so it could not be measured. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

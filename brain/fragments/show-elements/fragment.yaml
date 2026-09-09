@@ -43,6 +43,9 @@ contract:
     - name: shown
       type: int
     - name: notHidden
+      # Elements that were not hidden, so there was nothing to bring back.
+      # Never a thing it showed (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: temporaryModeCleared
       type: bool

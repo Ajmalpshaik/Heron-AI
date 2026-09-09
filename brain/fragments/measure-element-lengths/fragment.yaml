@@ -41,6 +41,11 @@ contract:
     - name: totalMm
       type: double
     - name: noLength
+      # Fittings, equipment and accessories, which have no length. *Named,
+      # never counted as zero* - scoring them 0 mm makes a total that looks
+      # complete and is short. What the total rests on, never part of it
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
 
 proof:

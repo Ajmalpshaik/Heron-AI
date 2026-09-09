@@ -65,6 +65,9 @@ contract:
     - name: dimensionedCount
       type: int
     - name: noReference
+      # Runs whose centreline could not be reached as a reference, so there
+      # was nothing to dimension TO. Given and unusable (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: problem
       type: string

@@ -57,6 +57,9 @@ contract:
     - name: elements
       type: IList<Element>
     - name: scanned
+      # How many were swept, reported *so a small answer can be read against
+      # the size of the sweep*. Work done, not things found (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

@@ -59,6 +59,10 @@ contract:
     - name: usedOnlyAsAttached
       type: IList<ElementId>
     - name: scanned
+      # How many group definitions were examined. A count of work DONE, not of
+      # things found - the evidence it ran, which is the opposite of a reason
+      # to doubt it (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

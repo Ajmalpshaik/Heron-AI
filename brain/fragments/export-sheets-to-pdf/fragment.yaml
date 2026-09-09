@@ -51,6 +51,9 @@ contract:
     - name: exported
       type: IList<string>
     - name: notExported
+      # Sheets with no file on disk when it read back afterwards. A delivery
+      # that failed, never a file it wrote - `exported` is the answer (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: folderProblem
       type: string

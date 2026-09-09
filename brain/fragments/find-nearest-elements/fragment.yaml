@@ -71,6 +71,9 @@ contract:
     - name: tied
       type: IList<ElementId>
     - name: unmeasurable
+      # Elements no distance could be taken from, so it could not be measured.
+      # The evidence it looked, never a thing it found (D-52).
+      role: accounting
       type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

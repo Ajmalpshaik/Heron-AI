@@ -84,6 +84,10 @@ contract:
     - name: dimensionedCount
       type: int
     - name: noReference
+      # Instances publishing no centre reference, so there was nothing to
+      # dimension TO. *The wrong one returns nothing rather than a worse
+      # dimension* - given and unusable, never a dimension it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: problem
       type: string

@@ -46,6 +46,10 @@ contract:
     - name: joins
       type: IList<string>
     - name: withoutJoins
+      # *An element joined to nothing is a normal answer* - most are. Counted
+      # so an empty list cannot be confused with a failed read: evidence it
+      # ran (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

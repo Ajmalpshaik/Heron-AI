@@ -62,8 +62,16 @@ contract:
     - name: painted
       type: int
     - name: noFaces
+      # Elements the view draws as a line, which have no face to paint. Never
+      # a thing it painted (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: noValue
+      # Elements with no value, so there is nothing to interpolate between the
+      # smallest and the largest. Unlike COLOR_BY_PARAMETER these get no group
+      # of their own - they are simply not painted. Never a thing it painted
+      # (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: allOneValue
       type: bool

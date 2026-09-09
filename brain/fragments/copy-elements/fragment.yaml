@@ -40,6 +40,9 @@ contract:
     - name: copies
       type: IList<ElementId>
     - name: notCopied
+      # Elements Revit returned no copy for. The evidence it looked and could
+      # not, never a thing it did (D-52).
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
