@@ -68,7 +68,7 @@ machine.
 | Specification | ✅ Complete in 4 parts — [platform](docs/00-master-specification.md) · [Agent OS](docs/00b-master-specification-agent-os.md) · [baseline](docs/00c-master-handover-baseline.md) · [additional requirements](docs/00d-additional-requirements.md) |
 | Architecture review | ✅ Complete — [gaps, ideas, tensions](docs/PROPOSALS.md) across all four parts |
 | Constitution | ✅ **Accepted 2026-08-28** — all [30 Articles](HERON_CONSTITUTION.md), confirmed after every one was read out rather than tapped through. Reading them aloud found three stale statements inside |
-| Open questions | **42 answered · 1 open** — `Q-43` was opened 2026-09-09 by a tool finding that the utterance cache is never written in production. **Nothing gates any phase** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
+| Open questions | **42 answered · 4 open** — `Q-43` to `Q-46`, all opened 2026-09-09 by tools finding things nobody had asked: the utterance cache is never written, the brain records none of its own answers, the model router may belong entirely to the host, and 143 fragments name nothing they turned down. **Nothing gates any phase** — [OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) |
 | Licence & safety files | ✅ Complete — Apache 2.0, security policy, disclaimer, contribution guide |
 | Roadmap | ✅ Drafted — [Phase 0 → 7](docs/ROADMAP.md) |
 | Step 1 — the bridge | ✅ **Proven.** One button connects and disconnects, per-session token, newest connection takes the pipe. Two Revits at once, each with its own pipe. **Since Step 6 a lease decides who may actually send anything** ([D-22](docs/DECISIONS.md)) — taking the pipe is no longer taking the right to use it, and that half is unproven |

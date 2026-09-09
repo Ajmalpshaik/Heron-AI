@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 42 answered · 1 open · nothing blocking any phase**
+**Progress: 42 answered · 4 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -304,6 +304,77 @@ A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
 ---
 
 ## Tier 3 — Needed soon
+
+### 🟡 Q-44 — Should the brain record its own answers in the audit trail? *(new, 2026-09-09)*
+
+**The trail only knows what reached Revit.** `HeronAudit` is C# in the add-in, so a request answered
+entirely by the brain — `heron_resolve`, `heron_lookup`, `heron_capabilities` — leaves **no record at
+all**. [`tools/measure-routes.py`](../tools/measure-routes.py) can therefore report the STRUCTURAL route
+share (the library asked its own phrasings) and never the LIVE one (what people actually typed), which
+is the only half that says anything about real use.
+
+[19 §7](19-context-and-cost.md) asks for exactly this and names where it should go:
+
+> written into the same audit log rather than a separate telemetry system — one append-only record,
+> many readers.
+
+**Why it is a question.** That file is written by C# in the add-in and would then also be written by
+Python in the MCP server — **two processes appending to one file that is deliberately never pruned**
+([`HeronAudit`](../platform/Heron.Core/HeronAudit.cs)). Interleaved writes, a partial line, and a
+reader that must survive both are a design, not a patch. The alternatives are a second file the readers
+join (two homes for one fact) or nothing (and the LIVE half stays unmeasurable for ever).
+
+[Golden Rule 14](14-golden-rules.md) — *every important autonomous operation must be auditable* — points
+at doing it. Deciding **which fragment answers a request** is not a small operation.
+
+**Answer:**
+
+---
+
+### 🟡 Q-45 — Do the Model Router and Fallback belong in Heron at all? *(new, 2026-09-09)*
+
+[19 §3](19-context-and-cost.md) and [19 §4](19-context-and-cost.md) specify a Model Router (task →
+model class) and a Fallback (provider unreachable → route elsewhere, and **mark the result degraded**).
+Neither exists.
+
+[D-58](DECISIONS.md) has just established that **Heron makes no model calls** — [D-01](DECISIONS.md)
+puts every one of them in the host, and `heron_embed` runs locally with no tokens and no cost. On that
+reasoning a router here would route nothing.
+
+**But not all of it is the host's.** *"Mark the result degraded, so it never counts as evidence toward
+promotion"* is a **trust** rule, and trust is Heron's ([24](24-trust-model.md), [D-30](DECISIONS.md)).
+`HERON-KRN-MAV-017` in [28](28-agent-registry.md) carries exactly that clause.
+
+So the question is a split, not a yes or no: **does Heron keep the degraded-result rule and hand the
+routing to the host, or do both sections retire?** Answering it decides whether two specified
+components get built or struck — and leaving it open is how a specification quietly accumulates
+sections nobody will ever implement.
+
+**Answer:**
+
+---
+
+### 🟡 Q-46 — Is "reports nothing it turned down" a defect class or a design spread? *(new, 2026-09-09)*
+
+[`tools/check-revit-gate.py`](../tools/check-revit-gate.py) asks question 14 of the fourteen — *is
+rollback/error reporting clear?* — and **143 of 360 fragments name nothing they refused, skipped or
+could not resolve.**
+
+[D-52](DECISIONS.md) is the rule it is measured against: *a count of what was turned down is not a count
+of what was found.* And the library's own best fragments treat it as load-bearing —
+`FILTER_ELEMENTS_BY_CATEGORY` reports `unresolvedLevel` precisely so a broken level lookup reads as
+*"12 found, 12 with no level"* instead of as a plausible zero.
+
+**143 is too many to be a defect list and too many to dismiss.** Some fragments genuinely turn nothing
+down. Others are the plausible-zero failure waiting to happen, and the difference cannot be read off a
+count. What is needed is a rule for which kinds MUST report a refusal — a filter, surely; a setter,
+probably; a pure reader, perhaps not — so the checklist can ask a sharp question instead of a broad one.
+
+`python tools/check-revit-gate.py --list reporting` names them.
+
+**Answer:**
+
+---
 
 ### 🟡 Q-43 — What may be written into the utterance cache, and by what? *(new, 2026-09-09)*
 

@@ -26,12 +26,19 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**42 answered · 1 open, and nothing gates any phase.** `Q-43` was opened on 2026-09-09 —
-[`tools/measure-routes.py`](../tools/measure-routes.py) parsed the tree for real calls to
-`heron_search.remember()` and found one, in a test. The utterance cache that [19 §5](19-context-and-cost.md)
-makes step 1 of the pipeline is **never written in production**, and what may safely be written into it is
-a decision rather than a patch. `Q-41` before it was both asked and answered by the owner on 2026-09-06,
-during the decision read-back rather than by a specification.
+**42 answered · 4 open, and nothing gates any phase.** `Q-43` to `Q-46` were all opened on
+2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
+than by reading:
+
+| | |
+|---|---|
+| `Q-43` | [`measure-routes.py`](../tools/measure-routes.py) parsed the tree for real calls to `heron_search.remember()` and found one, in a **test**. The utterance cache [19 §5](19-context-and-cost.md) makes step 1 of the pipeline is **never written in production** |
+| `Q-44` | the audit trail is written by the add-in, so a request answered entirely by the brain leaves **no record at all** — and [19 §7](19-context-and-cost.md) asks for one file, which would mean two processes appending to it |
+| `Q-45` | [D-58](DECISIONS.md) established that Heron makes no model calls, so [19 §3–§4](19-context-and-cost.md)'s router and fallback may belong wholly to the host — except the *mark the result degraded* clause, which is trust and therefore Heron's |
+| `Q-46` | [`check-revit-gate.py`](../tools/check-revit-gate.py) found **143 of 360** fragments naming nothing they refused or skipped, against [D-52](DECISIONS.md) |
+
+`Q-41` before them was both asked and answered by the owner on 2026-09-06, during the decision read-back
+rather than by a specification.
 
 **Phase 1, assessed 2026-08-28** (it had not been, and the count above had quietly stopped covering the
 work in progress). Three questions touched Step 6 at the time, and one of them mattered:
