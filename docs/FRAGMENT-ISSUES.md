@@ -989,6 +989,55 @@ Ranked against §3h, this now sits above everything except making silence illega
 command answering *"describe this model"*; this is the same argument arriving from the proving side,
 and it is the cheaper half of it.
 
+### `batch-prove` REPORTS A VERDICT ON A RUN THAT NEVER HAPPENED — found 2026-09-09, OPEN
+
+A batch of six MODIFY fragments came back **6 for 6 `POSITIVE EMPTY`**. Six independent content
+problems in one batch is not a pattern that happens, so the records were read rather than the summary,
+and none of the six had run at all.
+
+Every one had been refused for the lease:
+
+> *"This Revit is in use by another chat, so Heron has refused rather than taking it over mid-job.
+> Nothing was sent to Revit. **Refusing to record evidence about a model that will not name itself.**"*
+
+**Heron behaved perfectly.** It refused, it said nothing was sent, and it declined to write a record —
+which is exactly right. The defect is that `batch-prove` then judged **the record already on disk from
+an earlier run**, and reported verdicts about it as though they were this batch's.
+
+The evidence it judged was not merely old, it was about a **different arrangement**. `flip-elements`
+reported `POSITIVE EMPTY` from a record whose negative reads *"run with categoryName=Ducts,
+inViewOnly=FloorPlan: L3"* — while the job file asked for duct tags in M1.
+
+**A date check would not catch this.** Both records say `2026-09-09`. What gives it away is the session
+id inside the `model` line: `session 17356` against the live `session 32940`.
+
+> A verdict about a run that did not happen is worse than a crash, because it is filed as a finding.
+> This is the same family as the `ALREADY` hole closed earlier — reporting on something that is not
+> this run — and it wants the same kind of fix.
+
+**The fix, and it is small:** `validate` already stamps `model` with the session id. Read the record's
+mtime or its session before judging, and refuse to report on one this invocation did not write.
+`NO RECORD` and `REFUSED` verdicts already exist for exactly this shape of answer.
+
+Confirmed: **fourteen of the eighteen fragments proved on 2026-09-09 came from the live session.** The
+other four were proved by TRACKING, where the D-53 evidence *is* the tracking rows and those were run
+fresh — but their positive phase came from the earlier session, so they are being re-run rather than
+argued for.
+
+### ONE PERSON, ONE `HERON_CLIENT_ID`
+
+The lease identifies a **chat**, not a person. Four ids were in use for one afternoon's work —
+`proving-2026-09-09b` by hand, `tracking-run` and `tracking-set-selection` by two scripts, and
+`heron-batch-prove` chosen by the runner itself — and to Heron that is four chats competing for one
+Revit. Each refusal reads exactly like a fragment failing.
+
+> Pick one id for a working session and put it in every script and every command. A second id is a
+> second chat, and the lease is doing its job when it refuses the second one.
+
+This also explains the round-one wipe-out earlier the same day, when eleven jobs failed immediately
+after a hand-run `count` — the same collision, differently dressed, and it was misread then as an
+arrangement fault.
+
 ### What this says about where the proving goes next
 
 **142 to 160 on 2026-09-09.** The write engine is not the constraint — fragments proved through it all

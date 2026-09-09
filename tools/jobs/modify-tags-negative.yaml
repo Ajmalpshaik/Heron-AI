@@ -1,0 +1,103 @@
+# MODIFY fragments on the arrangement that proved the defect-finders: a rich
+# selection for the positive, Duct Tags for the negative.
+#
+# WHY TAGS WORK AS A NEGATIVE FOR WRITES TOO. A duct tag is an annotation. It
+# has no geometry, no connectors, no system, no routing and no MEP parameters -
+# so a fragment that moves, slopes, flips, justifies or renumbers MEP has
+# nothing it can act on, and every geometric result empties together. That is
+# what a value cannot do on its own: it only empties the results that depend on
+# it (see tools/jobs/defect-finders.yaml).
+#
+# WHERE THE VALUE IS THE BETTER CONTRAST, IT IS USED INSTEAD - `find` matching
+# nothing, a parameter no element carries. Those exercise the input rather than
+# the arrangement, which is the stronger proof where it is available.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"      # 22 - keep writes small, rollback is not
+                                     # trusted above an unknown size (§1c)
+  negative-set:
+    categoryName: Duct Tags
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  - fragment: set-mep-justification
+    set:
+      horizontalOffsetMm: 100
+      verticalOffsetMm: 100
+    negative-set:
+      horizontalOffsetMm: 100
+      verticalOffsetMm: 100
+    expect: set
+    note: >
+      Justification is a duct-and-pipe idea. Tags have no curve to justify
+      against, so the same offsets move nothing.
+
+  - fragment: flip-elements
+    set:
+      categoryName: Air Terminals
+      flipHand: true
+      flipFacing: false
+    negative-set:
+      flipHand: true
+      flipFacing: false
+    expect: flipped
+    note: >
+      Air terminals are family instances with a hand to flip; recorded earlier
+      as cannotFlip 144 against ducts, which is the fragment correctly saying a
+      duct has no hand. Terminals are the positive it never had.
+
+  - fragment: rename-elements
+    set:
+      find: "Duct"
+      replaceWith: "HERONDUCT"
+    negative-set:
+      find: "ZZZNOTHINGHERE"
+      replaceWith: "HERONDUCT"
+    expect: renamed
+    note: >
+      VALUE-DRIVEN, and the same selection in both legs: text that appears in no
+      name must rename nothing. Stronger than a tag negative because it tests
+      the input rather than what was handed in.
+
+  - fragment: remove-parameter-value
+    set:
+      parameterName: "System Type"
+    negative-set:
+      parameterName: "ZZZNOTHINGHERE"
+    expect: cleared
+    note: >
+      Also value-driven. `System Type` is populated on every duct here -
+      read-element-material and the connector work both leaned on it - and a
+      parameter no element carries must clear nothing.
+
+  - fragment: set-design-option
+    set:
+      designOptionName: "Main Model"
+    negative-set:
+      designOptionName: "ZZZNOTHINGHERE"
+    expect: copied
+    note: >
+      CONFIRM this model has design options at all. If neither leg moves
+      anything that is content missing and belongs in §3b - the earlier run on
+      2026-09-09 was arranged the same way and is worth re-reading first.
+
+  - fragment: trim-extend-elements
+    set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+    negative-set:
+      categoryName: Duct Tags
+      inViewOnly: "FloorPlan: M1"
+    expect: moved
+    note: >
+      It takes exactly TWO straight elements. 22 ducts is more than two, so
+      expect a refusal naming that - which is the two-set problem in §3i wearing
+      a different coat, and worth recording as observed either way.
