@@ -68,7 +68,7 @@ Research further.**
 | [`garrytan/gstack`](https://github.com/garrytan/gstack) | solo developer without a team | a seven-stage cycle and 23 named specialist roles | [28](28-agent-registry.md) already defines 250 agents by department | adding 23 more roles creates a **second registry**, which is [32 §5](32-master-architecture-reconciliation.md)'s rejection of the incoming §6.7 repeated | MIT — compatible | **Reject** |
 | [`affaan-m/ECC`](https://github.com/affaan-m/ECC) — [§5.1](#51-affaan-mecc) | plans lost in chat, standards forgotten | **the plan as an artifact the human points at**, not chat history; hooks that **block the tool call** rather than checks a person remembers to run | the artifact idea is [23](23-heron-kernel.md)'s checkpoints and [`heron_workflow.py`](../mcp/server/heron_workflow.py). `tools/check-*.py` hold the same *rules* but **nothing runs them automatically** — [§5.1](#51-affaan-mecc) corrects the page-level claim that they are the equivalent | 68 agents, 286 skills, 94 commands. The scale IS the thing being rejected — [D-01](DECISIONS.md) gives the host the commands and [09](09-skills-and-fragments.md) gives skills capabilities | MIT — but [§5.1](#51-affaan-mecc) names a second project inside it | **Adopt the artifact principle, reject the scale.** File-level pass added two items — see [§5.1](#51-affaan-mecc) |
 | [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) — [§5.2](#52-ruvnetruflo) | orchestrating many agents | swarm coordination; **Raft, Byzantine and Gossip consensus**; 100+ agents. **Under it, a security programme the landing page does not advertise** — a guard between retrieval and context assembly | almost none of the swarm. Heron has **one Revit, one pipe, one queue, one handler** ([D-09](DECISIONS.md)) — but the retrieval guard is aimed at the exact path Heron's RAG work will create ([§5.2](#52-ruvnetruflo)) | consensus answers *"which of my disagreeing replicas is right"*. Heron has no replicas. **314 MCP tools against Heron's 14** | MIT — compatible | **Reject the swarm** — and [§5.2](#52-ruvnetruflo) takes one question from underneath it |
-| [`thedotmack/claude-mem`](https://github.com/thedotmack/claude-mem) | context lost at compaction | capture the session, **compress it**, inject relevant context next time | the *lifecycle* is [10](10-memory-and-knowledge.md)'s. The *capture everything* half is the opposite of Heron's rule | it captures whole sessions and stores them in ChromaDB, and part of it is a paid subscription. [D-24](DECISIONS.md) and [D-26](DECISIONS.md) require local, free, offline and no account | Apache-2.0 — compatible | **Reject the mechanism**; the selective-memory principle is already held |
+| [`thedotmack/claude-mem`](https://github.com/thedotmack/claude-mem) — [§5.3](#53-thedotmackclaude-mem) | context lost at compaction | capture the session, **compress it**, inject relevant context next time | the *lifecycle* is [10](10-memory-and-knowledge.md)'s. The *capture everything* half is the opposite of Heron's rule | **compression is a model call, and every observation costs quota** — so the store cannot be rebuilt, against [D-24](DECISIONS.md) and [Golden Rule 11](14-golden-rules.md). ([§5.3](#53-thedotmackclaude-mem) corrects the store — **SQLite + FTS5, not ChromaDB** — and finds its retrieval ranks by *recency*, simpler than Heron's) | Apache-2.0 with a `NOTICE` — compatible | **Reject the mechanism**; the selective-memory principle is already held |
 | [`PrimeIntellect-ai/prime-agent`](https://github.com/PrimeIntellect-ai/prime-agent) | long-running autonomous work | **bounded autonomous mode** — explicit token and time budgets; sessions that survive a disconnect | the budget idea belongs beside [19 §2](19-context-and-cost.md)'s. Session survival is [23](23-heron-kernel.md)'s checkpoints | its bounds are for unattended running. Heron's [Golden Rule 9](14-golden-rules.md) puts a person in front of a high-risk action instead | MIT — compatible | **Research further** — only the *bound*, and only once [19 §2](19-context-and-cost.md)'s budgets are agreed |
 | [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) | domain skills scattered across documentation | a **domain skill library** with per-skill metadata and host auto-discovery | the shape is [`brain/skills/`](../brain/skills/) and [09](09-skills-and-fragments.md) | **individual skills carry their own licences**, which the repository says explicitly. A library whose entries are separately licensed is a supply-chain question, not a reading question | MIT for the repository; **per-skill otherwise** | **Adopt concept** — already held. Its licence structure is a warning worth carrying |
 | [`ai-boost/awesome-harness-engineering`](https://github.com/ai-boost/awesome-harness-engineering) | no map of the field | an index, and the incoming §10.10 is right that it is one | a reading list for whoever answers `Q-45` and the compression question | an index is not a dependency, and treating it as one is how a list becomes a roadmap | CC0 | **Research further**, as an index only |
@@ -345,3 +345,85 @@ MIT, and clean at the top level. Nothing is taken.
 rejected and the file-level pass makes the rejection sharper, not softer. **One question comes out of
 it** ([Q-51](OPEN-QUESTIONS.md)), and it is the most valuable single item the whole research programme
 has produced, because it lands on work that has not been done yet rather than on work already finished.
+
+---
+
+### 5.3 `thedotmack/claude-mem`
+
+**Read at** `8bc631a71a487424b866756e43a6efa4574cc66b`, committed 2026-09-08. Apache-2.0, with a `NOTICE`
+file — which Apache 2.0 requires be carried forward, and which nothing here needs to carry because
+nothing is taken.
+
+**Opened:** `src/storage/sqlite/schema.ts`, `src/storage/sqlite/memory-items.ts`,
+`src/shared/SettingsDefaultsManager.ts`, `src/shared/cmem-gateway.ts`, `src/shared/quota-cooldown.ts`,
+`src/services/telemetry/common.ts`, `src/npx-cli/commands/telemetry.ts`, `ragtime/README.md`, `README.md`.
+
+**The project has been renamed.** Its own README, first line of the body: *"Claude-Mem is now Grok Mem.
+The package is still `claude-mem`."* The repository identified in the matrix is the right one; the name
+in the row is the package, not the product.
+
+#### Two corrections, and the second one goes Heron's way
+
+**It is not ChromaDB.** The matrix row said it *"captures whole sessions and stores them in ChromaDB."*
+The store is **SQLite**, with a Postgres backend beside it. Chroma survives as six configuration keys in
+`SettingsDefaultsManager.ts` and nothing else in the storage path. Written from the landing page,
+believed, and wrong — which is the whole reason for this pass.
+
+**Its retrieval is simpler than Heron's, not richer.** `memory-items.ts` searches an FTS5 virtual table
+and orders the result:
+
+```sql
+WHERE memory_items_fts MATCH ?
+ORDER BY memory_items.updated_at_epoch DESC
+```
+
+**Keyword match, ranked by recency.** Not by relevance, not by nearness, not fused.
+[`heron_retrieve.py`](../brain/heron_retrieve.py) runs FTS5 **and** embedding nearness, fuses them by
+Reciprocal Rank Fusion, and applies the Revit version filter as a hard wall before either route ranks
+anything. The incoming §10.3 sent this project to be studied *for retrieval*. Read at file level, **the
+retrieval is the part Heron should not take.**
+
+#### The reason to reject it is better than the one in the row
+
+The row rejected the mechanism because *"it captures whole sessions"* and because of a paid tier. The
+real reason is one layer down and it is disqualifying on its own:
+
+- `SettingsDefaultsManager.ts`: `CLAUDE_MEM_CLAUDE_AUTH_METHOD: 'subscription'`.
+- `quota-cooldown.ts` describes *"a doomed request per observation, for the rest of the billing cycle."*
+- `cmem-gateway.ts`: *"Once the free trial ends without a subscription, the gateway answers with…"*
+
+**The memory is built by making model calls.** Compression is a model summarising a session, and every
+observation costs quota.
+
+That is not a licence problem and not a pricing complaint. It is a direct collision with
+[D-24](DECISIONS.md) — *re-indexing has to be free or it stops happening* — and with
+[Golden Rule 11](14-golden-rules.md), which makes the store **derived**, so
+[`heron_scope.py`](../brain/heron_scope.py)'s `rebuild()` is always safe to run. **Heron's knowledge
+store can be thrown away and rebuilt offline at no cost. This one cannot be rebuilt at all.** A store
+that is expensive to rebuild is a store nobody rebuilds, and a store nobody rebuilds goes stale — which
+is [D-30](DECISIONS.md)'s staleness fingerprint arriving at the same conclusion from the other end.
+
+**Telemetry, stated fairly.** It ships a PostHog key and a default host and is on unless turned off —
+but it honours `DO_NOT_TRACK`, `CLAUDE_MEM_TELEMETRY=0` and a `telemetry disable` command, and scrubs
+before sending. That is the standard handled properly. It is still the opposite of what
+[D-26](DECISIONS.md) asks of Heron, and it is named here as a difference of purpose rather than a fault.
+
+#### One small technical note, kept because it has a date on it
+
+Their FTS query builder strips every character that is not a letter, digit or underscore, and quotes
+each surviving token. [`heron_search.py`](../brain/heron_search.py) does the same class of thing —
+`_FTS_UNSAFE = [^\w\s]` — and its comment already reasons about why: *"a user typing '300x300 duct?' is
+asking a question, not writing a query."*
+
+Both keep `_`, so `OST_DuctCurves` survives intact. Both split on `-` and `.`, so `EF-01` becomes two
+prefix terms and `M_Single-Flush` becomes two words.
+
+**For Heron's corpus today that is correct and costs nothing** — the text being searched is Heron's own
+fragment library, where nobody types an equipment tag. It stops being correct on exactly the date
+[Q-51](OPEN-QUESTIONS.md) names: when the corpus is project documents and model data, `EF-01` and
+`M_Single-Flush` are the tokens a modeller types most, and `EF*  OR  01*` matches every extract fan on
+the job. Not opened as its own question, because Q-51 already owns that day and one date should not have
+two questions.
+
+**Decision: unchanged — Reject the mechanism.** The selective-memory principle is already held. The file-level
+pass replaced a weak reason with a strong one and corrected two claims.
