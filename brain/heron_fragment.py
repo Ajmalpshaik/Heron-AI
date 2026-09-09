@@ -550,7 +550,19 @@ class Fragment(object):
         for path in paths:
             digest.update(path.replace("\\", "/").encode("utf-8"))
             # ROOT is discarded when path is absolute - see repo_relative().
-            content = io.open(os.path.join(ROOT, path), "rb").read()
+            #
+            # NORMPATH, BECAUSE THE JOIN CAN OUTGROW WINDOWS. A fragment read
+            # from outside the repo - which is what the store's own tests do -
+            # comes back from repo_relative() as a relative path that climbs out
+            # with `..`, and joining that onto ROOT keeps every segment. The
+            # string can then pass 260 characters on a deep checkout and the
+            # open fails with FileNotFoundError on a file that is plainly there.
+            # Measured 2026-09-09: test_fragment_store passed from a worktree
+            # called `m2` and failed from one called `mainonly-long-name`, same
+            # commit, same bytes. Collapsing the `..` costs nothing and cannot
+            # change which file is named.
+            content = io.open(os.path.normpath(os.path.join(ROOT, path)),
+                              "rb").read()
             digest.update(content.replace(b"\r\n", b"\n"))
         return digest.hexdigest()[:16]
 
