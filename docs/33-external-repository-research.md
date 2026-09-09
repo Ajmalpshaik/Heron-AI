@@ -77,7 +77,7 @@ Research further.**
 | [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) — [§5.2](#52-ruvnetruflo) | orchestrating many agents | swarm coordination; **Raft, Byzantine and Gossip consensus**; 100+ agents. **Under it, a security programme the landing page does not advertise** — a guard between retrieval and context assembly | almost none of the swarm. Heron has **one Revit, one pipe, one queue, one handler** ([D-09](DECISIONS.md)) — but the retrieval guard is aimed at the exact path Heron's RAG work will create ([§5.2](#52-ruvnetruflo)) | consensus answers *"which of my disagreeing replicas is right"*. Heron has no replicas. **314 MCP tools against Heron's 14** | MIT — compatible | **Reject the swarm** — and [§5.2](#52-ruvnetruflo) takes one question from underneath it |
 | [`thedotmack/claude-mem`](https://github.com/thedotmack/claude-mem) — [§5.3](#53-thedotmackclaude-mem) | context lost at compaction | capture the session, **compress it**, inject relevant context next time | the *lifecycle* is [10](10-memory-and-knowledge.md)'s. The *capture everything* half is the opposite of Heron's rule | **compression is a model call, and every observation costs quota** — so the store cannot be rebuilt, against [D-24](DECISIONS.md) and [Golden Rule 11](14-golden-rules.md). ([§5.3](#53-thedotmackclaude-mem) corrects the store — **SQLite + FTS5, not ChromaDB** — and finds its retrieval ranks by *recency*, simpler than Heron's) | Apache-2.0 with a `NOTICE` — compatible | **Reject the mechanism**; the selective-memory principle is already held |
 | [`PrimeIntellect-ai/prime-agent`](https://github.com/PrimeIntellect-ai/prime-agent) | long-running autonomous work | **bounded autonomous mode** — explicit token and time budgets; sessions that survive a disconnect | the budget idea belongs beside [19 §2](19-context-and-cost.md)'s. Session survival is [23](23-heron-kernel.md)'s checkpoints | its bounds are for unattended running. Heron's [Golden Rule 9](14-golden-rules.md) puts a person in front of a high-risk action instead | MIT — compatible | **Research further** — only the *bound*, and only once [19 §2](19-context-and-cost.md)'s budgets are agreed |
-| [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) | domain skills scattered across documentation | a **domain skill library** with per-skill metadata and host auto-discovery | the shape is [`brain/skills/`](../brain/skills/) and [09](09-skills-and-fragments.md) | **individual skills carry their own licences**, which the repository says explicitly. A library whose entries are separately licensed is a supply-chain question, not a reading question | MIT for the repository; **per-skill otherwise** | **Adopt concept** — already held. Its licence structure is a warning worth carrying |
+| [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) — [§5.9](#59-k-dense-aiscientific-agent-skills) | domain skills scattered across documentation | a **domain skill library** with per-skill metadata and host auto-discovery | the shape is [`brain/skills/`](../brain/skills/) and [09](09-skills-and-fragments.md) | **the repository does NOT say so — [§5.9](#59-k-dense-aiscientific-agent-skills) corrects this.** Its README says *"MIT… use freely"* while four of its 163 skills carry **"© 2025 Anthropic, PBC. All rights reserved."** Only `find -iname LICENSE*` shows it | MIT at the root; **four skills all-rights-reserved, one MIT under another holder** | **Adopt concept** — already held. The licence warning is now demonstrated rather than vague, and becomes [Q-53](OPEN-QUESTIONS.md) |
 | [`ai-boost/awesome-harness-engineering`](https://github.com/ai-boost/awesome-harness-engineering) | no map of the field | an index, and the incoming §10.10 is right that it is one | a reading list for whoever answers `Q-45` and the compression question | an index is not a dependency, and treating it as one is how a list becomes a roadmap | CC0 | **Research further**, as an index only |
 | *Claude CEO / CEO-style agent* (§10.15) | — | — | — | — | — | **NOT IDENTIFIED.** The incoming document says *"first identify the exact repository intended… study only if verified"*, and it could not be. **Nothing was studied and nothing is claimed.** [D-01](DECISIONS.md) already gives Heron the orchestrator-in-the-host pattern this row was reaching for |
 
@@ -816,3 +816,82 @@ score across the two projects is one each.
 encodes the rows that apply to it.
 
 **Decision: unchanged — Adopt concept, already held.** Promoted into §1 as the **sixth** agreement.
+
+---
+
+### 5.9 `K-Dense-AI/scientific-agent-skills`
+
+**Read at** `9cf7d9aea7d84754db4c167ab04b299d33c444bc`, committed 2026-09-07.
+
+**Opened:** `LICENSE.md`, `README.md`, the five per-skill licence files, `scan_skills.py`, and the
+tree — **163 skills, 495 MB.**
+
+**This row's warning was the vaguest thing in the matrix and it is now the sharpest finding in the
+pass.** The row said *"individual skills carry their own licences, which the repository says
+explicitly."* It does not say it explicitly. It says the opposite.
+
+#### A README that says "use freely" over a tree that says "all rights reserved"
+
+`README.md` §License:
+
+> This project is licensed under the **MIT License**… ✅ **Free for any use** (commercial and
+> noncommercial) ✅ **Open source** — modify, distribute, and use freely
+
+`LICENSE.md` at the root is indeed MIT, K-Dense Inc. But **five of the 163 skills carry their own
+licence file**, and four of them say this:
+
+| skill | its own licence file says |
+|---|---|
+| `skills/docx/LICENSE.txt` | **© 2025 Anthropic, PBC. All rights reserved.** |
+| `skills/xlsx/LICENSE.txt` | **© 2025 Anthropic, PBC. All rights reserved.** |
+| `skills/pptx/LICENSE.txt` | **© 2025 Anthropic, PBC. All rights reserved.** |
+| `skills/pdf/LICENSE.txt` | **© 2025 Anthropic, PBC. All rights reserved.** |
+| `skills/pacsomatic/LICENSE` | MIT — but **a different copyright holder** (Beifang Niu) |
+
+**"All rights reserved" is not MIT and it is not "use freely."** Anybody who read the README, trusted
+it, and vendored one of those four directories would be redistributing an all-rights-reserved work
+while believing they had permission.
+
+This is the incoming document's own §2 — *"code reuse must follow its license and **must never happen
+accidentally**"* — happening in the wild, and **a landing page cannot show it.** The correction to the
+row is not a detail: the repository does not warn you, and the only thing that does is `find . -iname
+"LICENSE*"`.
+
+**And their own tooling cannot see it either.** `scan_skills.py` is a real scanner — findings with
+severity, per-skill reports, results cached by content hash, the same idea as
+[`heron_embed.py`](../brain/heron_embed.py). **It checks security. Nothing in it, or in their CI, looks
+at a licence at all.**
+
+#### What this means for Heron, which is going public with an import path
+
+[17](17-open-source-and-distribution.md) publishes Heron under Apache 2.0 ([D-08](DECISIONS.md)), and
+[09](09-skills-and-fragments.md) plans **community packages** — [Golden Rule 19](14-golden-rules.md)
+names them as a source Heron reads. So Heron will one day import knowledge somebody else wrote, and its
+users will redistribute what Heron ships.
+
+**None of Heron's 19 tools mentions a licence.** `check-metadata.py` checks headers,
+`check-structure.py` checks boundaries, `check-docs.py` checks claims. Nothing checks what an imported
+package permits — which is exactly the position this repository is in, with 163 skills and a scanner
+that looks at everything except the thing that would have caught this.
+
+Recorded as **[Q-53](OPEN-QUESTIONS.md)**.
+
+#### And it found a stale claim in Heron's own documents
+
+Checking whether Heron has a licence gate meant reading [17 §4](17-open-source-and-distribution.md)'s
+*"repository files required before going public"* table. **Five of its eight rows were wrong.**
+`LICENSE` was marked *"⏳ pending Q-27"* — a question answered as [D-08](DECISIONS.md) and read back on
+2026-09-06, over a `LICENSE` file that has been on disk for days. `CONTRIBUTING.md`,
+`CODE_OF_CONDUCT.md`, `SECURITY.md` and `.github/ISSUE_TEMPLATE/` all exist and were all marked pending.
+
+Corrected, with `NOTICE` added — Apache 2.0 makes that file mean something — and the two genuinely
+outstanding rows (`CHANGELOG.md`, `.github/workflows/`) left marked and pointed at
+[Q-49](OPEN-QUESTIONS.md).
+
+**[D-54](DECISIONS.md) for the third time this week**, and worth noticing *how* it was found: not by
+auditing Heron, but by asking someone else's repository a question and then asking the same question
+here.
+
+**Decision: unchanged — Adopt concept, already held.** The library shape is
+[`brain/skills/`](../brain/skills/)'s. The licence warning is upgraded from vague to demonstrated, and
+becomes [Q-53](OPEN-QUESTIONS.md).

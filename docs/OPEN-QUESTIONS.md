@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 42 answered · 10 open · nothing blocking any phase**
+**Progress: 42 answered · 11 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -304,6 +304,44 @@ A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
 ---
 
 ## Tier 3 — Needed soon
+
+### 🟠 Q-53 — What checks the licence of knowledge Heron imports, before Heron's users redistribute it? *(new, 2026-09-09)*
+
+Found by reading [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills)
+at file level ([33 §5.9](33-external-repository-research.md)), and it is not hypothetical — it is a live
+example of the failure.
+
+**Its README says the project is MIT and that you may *"modify, distribute, and use freely."* Four of
+its 163 skills carry `© 2025 Anthropic, PBC. All rights reserved.`** A fifth is MIT under a different
+copyright holder. Nothing on the landing page says so; only listing the licence files does. **Their own
+skill scanner checks security and never looks at a licence.**
+
+**Heron is walking into the same position.** [17](17-open-source-and-distribution.md) publishes Heron
+under Apache 2.0 ([D-08](DECISIONS.md)); [09](09-skills-and-fragments.md) plans **community packages**,
+which [Golden Rule 19](14-golden-rules.md) already names as a source Heron reads. So Heron will import
+knowledge somebody else wrote, and Heron's users will redistribute what Heron ships.
+
+**None of Heron's 19 tools mentions a licence.** `check-metadata.py` checks headers,
+`check-structure.py` checks boundaries, `check-docs.py` checks claims. Nothing checks what an imported
+package permits.
+
+**Three shapes:**
+
+1. **A declared field.** A package manifest names its licence, and `check-metadata.py` refuses one that
+   does not — the same shape as the header rule that already works. Cheapest, and it trusts the
+   declaration.
+2. **A gate with an allow-list.** Only licences compatible with Apache 2.0 may be imported, checked by
+   a tool. Stronger, and it needs a list somebody maintains.
+3. **Nothing, and say so.** Imports are the user's responsibility, stated plainly in
+   [17](17-open-source-and-distribution.md) rather than left unsaid.
+
+**What is not in doubt:** [Golden Rule 12](14-golden-rules.md) already stops Heron publishing private
+knowledge automatically. Nothing yet stops Heron *carrying* somebody else's knowledge under a licence
+its users cannot honour, and the difference between those two is the whole question.
+
+**Answer:**
+
+---
 
 ### 🟡 Q-52 — Should the composition graph become a third retrieval stream? *(new, 2026-09-09)*
 
