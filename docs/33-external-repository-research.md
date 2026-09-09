@@ -38,22 +38,37 @@ projects below are the second thing, and the useful part of them is the mechanis
 
 ## 1. The most valuable finding is that six of them agree with Heron
 
-This exercise was expected to produce ideas to adopt. What it mostly produced is **independent
-confirmation**, and that is worth more than an adoption, because it is evidence about a design that is
-already built rather than a plan for one that is not.
+This exercise was expected to produce ideas to adopt. What it mostly produced is **confirmation** — and
+that is worth more than an adoption, because it is evidence about a design already built rather than a
+plan for one that is not.
 
-| Project | Arrived independently at | Heron already has |
+**Two kinds of agreement, and they are not worth the same.** A re-read on 2026-09-09 found this section
+calling all six *"independent"*, which overstates three of them:
+
+- **Shared convention** — both parties read the same literature, so agreeing means neither got it
+  wrong. `RRF_K = 60` is the technique's documented default and Heron's own comment says so;
+  content-hashing to make indexing incremental is ordinary practice; *see the test fail first* is
+  textbook TDD. **Real, but it is competence, not convergence.**
+- **A design that could have gone the other way** — where the obvious implementation is something else
+  and both rejected it. **Fuse the routes rather than pick one.** **Deterministic pipeline before the
+  model, as an order rather than an optimisation.** **Compress what came back, never the question.**
+  **A zero must say whether it means "none" or "I could not see."** These four are the finding.
+
+The table keeps all six because a convention held is still a check passed; the column says which kind.
+
+| Project | What agrees | Kind | Heron already has |
 |---|---|---|
-| **agentmemory** | keyword (BM25) + vector + graph, **fused by weighted Reciprocal Rank Fusion at `RRF_K = 60`** | [`heron_retrieve.py`](../brain/heron_retrieve.py) — FTS5 and nearness fused by weighted RRF, **at `RRF_K = 60`, chosen independently** from [05 §4](05-heron-brain.md). **Two streams, not three** — [§5.5](#55-rohitg00agentmemory) corrects this row: Heron's graph exists and is not one of them |
-| **alibaba/open-code-review** | *"hybrid architecture: **deterministic pipelines + LLM Agent**"* | [19 §5](19-context-and-cost.md) and [02 §6](02-architecture-overview.md): *the common case must be deterministic. The model is for the uncommon case.* Enforced as pipeline order, not as an optimisation |
-| **Headroom** — [§5.14](#514-headroomlabs-aiheadroom) | compresses **tool outputs, logs, files and RAG chunks** — not the user's question, **and locally** | the rule written into [`heron_context.py`](../brain/heron_context.py) on the same day, for [05 §4](05-heron-brain.md)'s reason: compression may touch retrieved parts and **never** the request, because `OST_DuctCurves` is the load-bearing half of a BIM sentence |
-| **code-review-graph** | SQLite, **incremental by content hash**, and *"blast radius"* — what a change reaches | [`heron_embed.py`](../brain/heron_embed.py) is content-hashed so re-indexing unchanged files costs nothing; [`heron_graph.py`](../brain/heron_graph.py) answers *"what breaks if this changes"*; [D-40](DECISIONS.md) derives before storing |
-| **code-review-graph**, again — [§5.6](#56-tirth8205code-review-graph) | *"a bare `result_count: 0` is ambiguous… it can mean **this graph cannot see that relationship**"* — and a marker attached **only** to the empty case | [D-52](DECISIONS.md) exactly, and `FILTER_ELEMENTS_BY_CATEGORY` reporting `unresolvedLevel` so a broken lookup reads as *"12 found, 12 with no level"*. **Found only at file level**, and it is direct evidence for [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md) |
-| **superpowers** — [§5.8](#58-obrasuperpowers) | *"NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE"*, and **a regression test that has only ever passed is not evidence** — the red-green cycle must have been seen | [D-30](DECISIONS.md)'s negative case, exactly. **Found only at file level**, and Heron's version is the stronger one: theirs is prose addressed to a model, Heron's is a proof *format* a tool checks |
+| **agentmemory** | keyword (BM25) + vector + graph, **fused by weighted Reciprocal Rank Fusion at `RRF_K = 60`** | **design** (fuse, don't pick) + **convention** (the constant) | [`heron_retrieve.py`](../brain/heron_retrieve.py) — FTS5 and nearness fused by weighted RRF, **at `RRF_K = 60`** from [05 §4](05-heron-brain.md). **The agreement is fusing rather than picking, and weighting the streams — not the constant**: 60 is the technique's documented default and Heron's own comment says so. **Two streams, not three** — [§5.5](#55-rohitg00agentmemory) corrects this row: Heron's graph exists and is not one of them |
+| **alibaba/open-code-review** | *"hybrid architecture: **deterministic pipelines + LLM Agent**"* | **design** | [19 §5](19-context-and-cost.md) and [02 §6](02-architecture-overview.md): *the common case must be deterministic. The model is for the uncommon case.* Enforced as pipeline order, not as an optimisation |
+| **Headroom** — [§5.14](#514-headroomlabs-aiheadroom) | compresses **tool outputs, logs, files and RAG chunks** — not the user's question, **and locally** | **design** | the rule written into [`heron_context.py`](../brain/heron_context.py) on the same day, for [05 §4](05-heron-brain.md)'s reason: compression may touch retrieved parts and **never** the request, because `OST_DuctCurves` is the load-bearing half of a BIM sentence |
+| **code-review-graph** | SQLite, **incremental by content hash**, and *"blast radius"* — what a change reaches | **convention** | [`heron_embed.py`](../brain/heron_embed.py) is content-hashed so re-indexing unchanged files costs nothing; [`heron_graph.py`](../brain/heron_graph.py) answers *"what breaks if this changes"*; [D-40](DECISIONS.md) derives before storing |
+| **code-review-graph**, again — [§5.6](#56-tirth8205code-review-graph) | *"a bare `result_count: 0` is ambiguous… it can mean **this graph cannot see that relationship**"* — and a marker attached **only** to the empty case | **design — the strongest one here** | [D-52](DECISIONS.md) exactly, and `FILTER_ELEMENTS_BY_CATEGORY` reporting `unresolvedLevel` so a broken lookup reads as *"12 found, 12 with no level"*. **Found only at file level**, and it is direct evidence for [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md) |
+| **superpowers** — [§5.8](#58-obrasuperpowers) | *"NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE"*, and **a regression test that has only ever passed is not evidence** — the red-green cycle must have been seen | **convention**, applied somewhere new | [D-30](DECISIONS.md)'s negative case, exactly. **Found only at file level**, and Heron's version is the stronger one: theirs is prose addressed to a model, Heron's is a proof *format* a tool checks |
 
-**Six projects, six different problems, six teams that did not talk to each other.** None of this
-makes Heron right, and it is not treated as evidence that it works — nothing here has met a Revit model.
-What it does mean is that the six designs most likely to be wrong by being unusual are not unusual.
+**Six projects, six different problems — and on the four marked *design*, six teams that could each have
+chosen otherwise and did not.** None of this makes Heron right, and it is not treated as evidence that it
+works — nothing here has met a Revit model. What it does mean is that **the designs most likely to be
+wrong by being unusual are not unusual**, and that the three conventions were at least not got wrong.
 
 **The fifth and sixth were found only by the file-level pass.** The fifth is the one that matters most
 today: it lands on [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md), which are still unanswered.
@@ -172,7 +187,7 @@ disagreed with that in ten of fifteen entries**, so the tally is recorded rather
 |---|---|
 | **Licence cells wrong or unverified** | **5 of 16 rows.** `llm-council` **had no licence at all** where the row said MIT; `headroom` is **Apache-2.0 with a `NOTICE`**, not MIT; `OpenViking`'s Apache island is `crates/ov_cli`, **not** the similarly named `openviking_cli/`; both Alibaba cells said *"read before reuse"* and are now **read** |
 | **Factual corrections** | `claude-mem` stores in **SQLite + FTS5, not ChromaDB**; `gstack` has **54 skills and one agent file**, not *"23 roles"*; `prime-agent` has **no token or time budget**; ECC has 286 skills, not 284 |
-| **Corrections to this document's own claims** | §1 said agentmemory and Heron share *"the same three routes"* — **Heron fuses two** ([§5.5](#55-rohitg00agentmemory)); the ECC row said `tools/check-*.py` are the equivalent of ECC's hooks — **Heron has no hooks at all** ([§5.1](#51-affaan-mecc)) |
+| **Corrections to this document's own claims** | §1 said agentmemory and Heron share *"the same three routes"* — **Heron fuses two** ([§5.5](#55-rohitg00agentmemory)); the ECC row said `tools/check-*.py` are the equivalent of ECC's hooks — **Heron has no hooks at all** ([§5.1](#51-affaan-mecc)); and a third, found on a later re-read — §1 called all six agreements **"independent"** when three are **shared convention** (`RRF_K = 60` is the technique's documented default, content-hashing is ordinary practice, red-green is textbook TDD). §1 now separates the two, and **four of the six survive as design agreements** |
 | **Decisions changed** | **2.** `gstack` *Reject* → **Reject the workflow, adopt the packaging**. `prime-agent` *Research further* → **nothing to take** |
 | **Promoted into §1** | **2.** `code-review-graph`'s `uncertainty.py` and `superpowers`' verification rule — **neither visible from a landing page**, and the agreement count went four → six |
 | **New questions for the owner** | **5** — [Q-49](OPEN-QUESTIONS.md) hooks, [Q-50](OPEN-QUESTIONS.md) show don't tell, [Q-51](OPEN-QUESTIONS.md) the retrieval guard, [Q-52](OPEN-QUESTIONS.md) a third stream, [Q-53](OPEN-QUESTIONS.md) imported licences |
@@ -600,10 +615,15 @@ const RRF_K = 60;
 RRF_K = 60
 ```
 
-**The same technique and the same constant, reached by two projects that did not talk to each other.**
-Heron's comment explains the choice from first principles — *"60 is the value the technique is normally
-used with; what it does is stop rank 1 from dwarfing everything"* — and theirs simply uses it. Both
-weight the streams rather than fusing them flat.
+**Be precise about what agrees here, because the constant is the weakest part of it and the first draft
+of this section leaned on it.** `RRF_K = 60` is **the technique's documented default**, and Heron's own
+comment says so in as many words: *"60 is the value the technique is normally used with."* Two projects
+using 60 is two projects reading the same literature, **not** two projects converging.
+
+**What does agree is the design decision above the constant, and it is real:** fuse the routes rather
+than pick one, and **weight** the streams rather than fusing them flat. Picking a route is the obvious
+implementation and both rejected it, for the reason Heron's comment gives — *a fragment both routes
+place 2nd or 3rd can still beat one that only ONE route loved.*
 
 The weighting differs, and Heron's is the better-founded of the two. agentmemory hard-codes
 `bm25Weight = 0.4`, `vectorWeight = 0.6`, `graphWeight = 0.3`. Heron's weight **follows the backend**,
