@@ -87,6 +87,7 @@ smaller answer than it asked for.
 """
 
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -412,6 +413,36 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None):
     return ctx
 
 
+# The executor's import list lives in the add-in, because a list of vendor
+# namespaces is Revit knowledge wherever it is stored and check-structure.py
+# refuses it anywhere else. This reads it rather than restating it: two copies
+# of that list is exactly the drift tests/test_fragment_imports.py exists to
+# prevent between the executor and the compile gate, and a third copy here
+# would be the same mistake a second time.
+IMPORTS = os.path.join(ROOT, "revit", "Heron.Revit.Addin",
+                       "HeronFragmentImports.cs")
+
+
+def _api_surface():
+    """(the namespaces a fragment may assume, where they were read from).
+
+    THE FIRST VERSION OF THIS READ THE FRAGMENT'S OWN `using` LINES and
+    returned "no using directives" for all 360, every time - a part that looked
+    like an answer and carried nothing. It was the wrong source: a fragment
+    body is NOT STANDALONE and declares no imports at all, by design. Found by
+    running the generation path over 120 real requests and noticing the part
+    was 19 characters wide in every single one.
+    """
+    if not os.path.exists(IMPORTS):
+        return None, IMPORTS
+    with open(IMPORTS, encoding="utf-8") as fh:
+        body = fh.read()
+    found = re.findall(r'"([A-Za-z_][A-Za-z0-9_.]*)"', body)
+    if not found:
+        return None, IMPORTS
+    return "\n".join(found), os.path.relpath(IMPORTS, ROOT)
+
+
 def _generation_parts(ctx, store, fragment_id, revit):
     """The closest fragment, its declared cases, and the API surface it uses.
 
@@ -451,21 +482,14 @@ def _generation_parts(ctx, store, fragment_id, revit):
     else:
         ctx.note_refused(TESTS, "%s declares no cases.yaml" % fragment_id)
 
-    impl = os.path.join(folder, "impl", "any", "fragment.cs")
-    if os.path.exists(impl):
-        with open(impl, encoding="utf-8") as fh:
-            body = fh.read()
-        used = sorted(set(
-            line.strip() for line in body.splitlines()
-            if line.strip().startswith("using ")))
-        ctx.add(Part(API, "%s API surface" % fragment_id,
-                     "\n".join(used) or "no using directives",
-                     os.path.relpath(impl, ROOT),
-                     "the namespaces the neighbour actually needs, read from "
-                     "its own source rather than assumed"))
+    surface, where = _api_surface()
+    if surface:
+        ctx.add(Part(API, "what is already in scope", surface, where,
+                     "a fragment body is NOT STANDALONE - the executor supplies "
+                     "these, so generated code must NOT re-import them"))
     else:
-        ctx.note_refused(API, "%s has no impl/any/fragment.cs to read the "
-                              "surface from" % fragment_id)
+        ctx.note_refused(API, "the executor's import list could not be read "
+                              "from %s" % where)
 
 
 # ---------------------------------------------------------------------------

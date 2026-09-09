@@ -196,6 +196,26 @@ asked for less.
    `standards` raises and says which source is missing, instead of returning a packet that is silently
    three quarters of what it claims.
 
+**Swept over 120 real requests on three paths — 360 assemblies, zero violations.** The request came back
+byte-identical every time, nothing exceeded its budget, every part named its source, and the request was
+first in every packet. Sizes: median **257** characters, and **14,641** at the worst, which is a
+`generation` packet.
+
+**That sweep found a defect in it that one request never would have.** The `api` part read the
+fragment's own `using` lines and returned *"no using directives"* — **for all 360, every time**. Wrong
+source: a fragment body is `NOT STANDALONE` and declares no imports by design; the executor supplies
+them from [`HeronFragmentImports.cs`](../revit/Heron.Revit.Addin/HeronFragmentImports.cs), which is a
+contract with the compile gate that [`tests/test_fragment_imports.py`](../tests/test_fragment_imports.py)
+already guards. It reads that list now — and reads it rather than restating it, because a third copy of
+those namespaces is the same drift that test exists to prevent. **A part 19 characters wide in every
+packet looked like an answer and carried nothing**, which is the failure this whole module is about.
+
+**Where the generation packet's size actually goes**, which settles whether tiered loading (§4.5,
+OpenViking) would pay here: `neighbour` **69%**, `tests` **27%** — 96% between them. **Not a candidate
+for compression.** The neighbour is the fragment's own text and its comments are the Revit knowledge —
+the `RBS_START_LEVEL_PARAM` lesson in `FILTER_ELEMENTS_BY_CATEGORY` is exactly the sort of paragraph a
+summariser would drop. 14 KB is cheap against getting a Revit API call wrong.
+
 **What is still missing from [19](19-context-and-cost.md):** the Model Router, Fallback, Cost
 Optimisation and Caching sections. Caching is now [`Q-43`](OPEN-QUESTIONS.md) rather than unbuilt work —
 the table exists and nothing writes it. The router and fallback belong with the host that makes the

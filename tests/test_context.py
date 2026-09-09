@@ -159,6 +159,22 @@ def main():
                   "a part read from disk cites the file (%s)" % (sources or "-"))
 
             print()
+            print("6b. The API part reads the EXECUTOR's list, not the fragment")
+            api = [p for p in got.parts if p.kind == CONTEXT.API]
+            check(len(api) == 1, "the generation path carries one API part")
+            if api:
+                check(api[0].size > 100,
+                      "it is not empty (%d characters). Its first version read "
+                      "the fragment's own `using` lines and returned 'no using "
+                      "directives' for all 360 - a part that looked like an "
+                      "answer and carried nothing" % api[0].size)
+                check("HeronFragmentImports" in api[0].source,
+                      "it cites the executor's list, which is the only place "
+                      "that knows (%s)" % api[0].source)
+                check("System" in api[0].body and "\n" in api[0].body,
+                      "and it carries more than one namespace")
+
+            print()
             print("7. An unknown path is refused rather than guessed at")
             raised = False
             try:
