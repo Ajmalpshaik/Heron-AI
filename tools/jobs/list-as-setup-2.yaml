@@ -1,0 +1,103 @@
+# Round two on the list-* setup route, after it proved edit-revision and
+# duplicate-sheets.
+#
+# WHAT THE FIRST ROUND SETTLED:
+#   PASS            edit-revision   - the negative refused sequence 99 and even
+#                                     named LIST_REVISIONS as where the number
+#                                     comes from
+#   PASS            duplicate-sheets - 17 duplicated with a suffix, 0 without
+#                                     one, and all 17 reported as collisions.
+#                                     It REFUSES properly, which is the shape
+#                                     section 3h.1 is asking every fragment for
+#   POSITIVE EMPTY  align-viewports-across-sheets - aligned 0, but ambiguous 6
+#                                     and scaleMismatch 10 of 17 sheets. Blocked
+#                                     on model content, not on code
+#   DID NOT RUN     manage-sheet-sets - wanted `newName` as well. Fixed below
+#
+# EVERY NEGATIVE HERE IS DRIVEN BY THE VALUE, because both legs re-run the same
+# setup and get the same elements. That is the stronger shape: it tests the
+# input rather than the arrangement.
+#
+#     python tools/batch-prove.py tools/jobs/list-as-setup-2.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-as-setup-2.yaml
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: true
+  setup:
+    - list-sheets
+    - set-selection
+
+jobs:
+  - fragment: manage-sheet-sets
+    set:
+      setName: "HERON SET Z1"
+      mode: "create"
+      newName: "HERON SET Z1"
+    negative-set:
+      setName: "ZZZNOTHINGHERE"
+      mode: "delete"
+      newName: "ZZZNOTHINGHERE"
+    expect: memberCount
+    note: >
+      Two arrangement faults, both mine, both named by the fragment itself.
+      First it wanted `newName` as well. Then it refused with "Mode 'add' is not
+      one of create, rename, delete" - which is a model refusal, exactly the
+      behaviour section 3h.1 asks for. Deleting a set that was never created
+      must touch nothing; creating one from all 17 sheets must touch 17.
+
+  # ---- READ, so no write path ---------------------------------------------
+
+  - fragment: select-view-templates
+    write: false
+    setup:
+      - list-sheets
+      - set-selection
+    set:
+      nameContains: ""
+      usage: "all"
+    negative-set:
+      nameContains: "ZZZNOTHINGHERE"
+      usage: "all"
+    expect: elements
+    note: >
+      risk READ, so `--write` would be refused - the registry says what an
+      operation costs, never the caller. `usage` is held identical across both
+      legs so that `nameContains` is the only thing that varies. A name no
+      template contains must match none of them.
+
+  - fragment: set-section-mark-visibility
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: Sections
+      inViewOnly: "FloorPlan: M1"
+      onSheetsOnly: true
+    negative-set:
+      categoryName: Sections
+      inViewOnly: "FloorPlan: M1"
+      onSheetsOnly: false
+    expect: hidden
+    note: >
+      First attempt selected model-wide with `inViewOnly` empty and answered
+      setup_failed, so it is scoped to a plan here. If that fails too, nothing
+      in the library reaches section marks and that is a gap row, not a defect. onSheetsOnly=false asks
+      it to hide nothing, so `hidden` must be 0 while the same selection with
+      true hides the marks whose view is on no sheet. The value is the only
+      difference.
+
+  - fragment: remove-view-template
+    set:
+      views: "FloorPlan: M1"
+    negative-set:
+      views: "Cover Sheet"
+    expect: detached
+    note: >
+      The first run had the SAME view in both legs, so both detached and it read
+      as NEG NOT EMPTY - my fault, not the fragment's. It did settle two things
+      worth keeping: `views (IList<View>)` resolves from ONE name, so D-54 fills
+      a list from a single value; and M1 was found "following 'Mechanical Plan'"
+      and was BACK on it for the second leg, which is the rollback working.
+      A sheet is a View that can carry no view template, so it is the negative.
