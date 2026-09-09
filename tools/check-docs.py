@@ -106,9 +106,51 @@ for p in md:
     allsrc[p] = io.open(p, encoding='utf-8').read()
 joined = "\n".join(allsrc.values())
 
+failed = False
+
+
 def defined(pattern, path):
     s = allsrc.get(path, '')
     return set(re.findall(pattern, s))
+
+
+# AN ID DEFINED TWICE IS WORSE THAN ONE NEVER DEFINED, and until 2026-09-09
+# this file could not see one. Every registry below was read with
+# `set(re.findall(...))`, and a set is exactly the thing that makes a duplicate
+# invisible: two `## D-56` headings collapse into one entry, "REFERENCED BUT NOT
+# DEFINED" stays empty, and the checker reports a clean file.
+#
+# THAT IS NOT HYPOTHETICAL. D-67 was first written as D-56, which already
+# existed, and this script passed on a DECISIONS.md carrying two of them. The
+# duplicate was found by eye, which is the reading this checker exists to make
+# unnecessary.
+#
+# WHY IT FAILS THE RUN when a broken link only prints. A dead link announces
+# itself the moment somebody clicks it. A duplicate id is SILENT and it makes
+# every reference to that number ambiguous: `[D-56](DECISIONS.md)` now points at
+# two different decisions, and nothing - not this script, not a reader, not the
+# anchor - can say which was meant. Both entries look correct in isolation.
+def repeats(pattern, path, flags=0):
+    """The ids defined more than once in `path`, with their counts."""
+    found = re.findall(pattern, allsrc.get(path, ''), flags)
+    seen, twice = {}, []
+    for one in found:
+        seen[one] = seen.get(one, 0) + 1
+    for one in found:
+        if seen[one] > 1 and one not in [t[0] for t in twice]:
+            twice.append((one, seen[one]))
+    return twice
+
+
+def report_repeats(twice, what, where):
+    """Print any duplicate ids and say the run has failed. Returns True if any."""
+    if not twice:
+        return False
+    for one, count in twice:
+        out("  DEFINED %d TIMES: %s in %s\n" % (count, one, where))
+    out("  An id defined twice makes every reference to it ambiguous, and\n")
+    out("  nothing can say which %s was meant. Renumber one.\n" % what)
+    return True
 
 # Golden rules defined in 14
 gr_def = set(int(x) for x in re.findall(r'^### (\d+)\.', allsrc.get('./docs/14-golden-rules.md', ''), re.M))
@@ -116,21 +158,33 @@ gr_ref = set(int(x) for x in re.findall(r'Golden Rule[s]? (\d+)', joined))
 out("=== 2. GOLDEN RULES ===\n")
 out("  defined in doc 14: %s\n" % sorted(gr_def))
 out("  referenced anywhere: %s\n" % sorted(gr_ref))
-out("  REFERENCED BUT NOT DEFINED: %s\n\n" % sorted(gr_ref - gr_def))
+out("  REFERENCED BUT NOT DEFINED: %s\n" % sorted(gr_ref - gr_def))
+if report_repeats(repeats(r'^### (\d+)\.', './docs/14-golden-rules.md', re.M),
+                  'rule', 'docs/14-golden-rules.md'):
+    failed = True
+out("\n")
 
 # Decisions defined in DECISIONS.md
 d_def = set(re.findall(r'^## (D-\d+)', allsrc.get('./docs/DECISIONS.md', ''), re.M))
 d_ref = set(re.findall(r'\b(D-\d\d)\b', joined))
 out("=== 3. DECISIONS ===\n")
 out("  defined: %s\n" % sorted(d_def))
-out("  REFERENCED BUT NOT DEFINED: %s\n\n" % sorted(d_ref - d_def))
+out("  REFERENCED BUT NOT DEFINED: %s\n" % sorted(d_ref - d_def))
+if report_repeats(repeats(r'^## (D-\d+)', './docs/DECISIONS.md', re.M),
+                  'decision', 'docs/DECISIONS.md'):
+    failed = True
+out("\n")
 
 # Questions defined in OPEN-QUESTIONS.md
 q_def = set(re.findall(r'### (?:[^\n]*?)(Q-\d+[a-z]?)', allsrc.get('./docs/OPEN-QUESTIONS.md', '')))
 q_ref = set(re.findall(r'\b(Q-\d+[a-z]?)\b', joined))
 out("=== 4. QUESTIONS ===\n")
 out("  defined: %s\n" % sorted(q_def))
-out("  REFERENCED BUT NOT DEFINED: %s\n\n" % sorted(q_ref - q_def))
+out("  REFERENCED BUT NOT DEFINED: %s\n" % sorted(q_ref - q_def))
+if report_repeats(repeats(r'### (?:[^\n]*?)(Q-\d+[a-z]?)', './docs/OPEN-QUESTIONS.md'),
+                  'question', 'docs/OPEN-QUESTIONS.md'):
+    failed = True
+out("\n")
 
 # ---------- 5. count claims ----------
 out("=== 5. COUNT CLAIMS - context for the eye. Section 7 is what ENFORCES ===\n")
@@ -191,7 +245,6 @@ if oq:
             open_ids.append(head.group(2))
 
 out("\n=== 6. THE PROGRESS LINE ===\n")
-failed = False
 if answered is None:
     out("  OPEN-QUESTIONS.md not found - nothing to check\n")
 else:

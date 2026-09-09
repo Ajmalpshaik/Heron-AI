@@ -42,9 +42,25 @@ Verifies that:
 - every `Golden Rule N` reference points to a rule defined in [docs/14](../docs/14-golden-rules.md)
 - every `D-NN` reference points to a decision defined in [docs/DECISIONS.md](../docs/DECISIONS.md)
 - every `Q-NN` reference points to a question defined in [docs/OPEN-QUESTIONS.md](../docs/OPEN-QUESTIONS.md)
+- **no rule, decision or question number is defined TWICE** — added 2026-09-09, and it **fails the run**
 
 Run it after any edit that moves or renames a document. It is how the Golden Rule renumbering
 (ten rules to fifteen, [D-12](../docs/DECISIONS.md)) was verified across 31 files.
+
+**An id defined twice is worse than one never defined, and this script could not see one.** Every
+registry was read with `set(re.findall(...))`, and a set is precisely the thing that makes a duplicate
+invisible: two `## D-56` headings collapse to one entry, *"REFERENCED BUT NOT DEFINED"* stays empty, and
+the file is reported clean. **D-67 was first written as D-56, which already existed, and this checker
+passed on it** — the duplicate was found by eye, which is the reading it exists to make unnecessary.
+
+**It is the only thing here that fails the run, and a broken link does not.** That asymmetry is
+deliberate. A dead link announces itself the moment somebody clicks it. A duplicate id is silent, and it
+makes every reference to that number ambiguous — `[D-56](../docs/DECISIONS.md)` now points at two
+different decisions and nothing can say which was meant, not the anchor, not the reader, not this
+script. Both entries look correct in isolation.
+
+Verified by breaking it on purpose, once per registry: a second `## D-56`, a second `### 3.` rule and a
+second `### Q-51` each name themselves and exit 1, and the unmodified repository exits 0.
 
 ---
 
