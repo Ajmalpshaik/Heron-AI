@@ -771,9 +771,9 @@ empty case at all. It belongs with the D-53 tracking group in §3c, not here.
 > A declared result that is a NAME cannot carry the negative leg. Either the fragment has a countable
 > result beside it, or it is a describer and D-53 is the route.
 
-### Three more for "make silence illegal" (§3h.1)
+### Four more for "make silence illegal" (§3h.1)
 
-All three create something **in both legs**, which is why none can be proved — and all three are worse
+All four create something **in both legs**, which is why none can be proved — and all four are worse
 on a real project than in a proof:
 
 | Fragment | Positive | Negative |
@@ -797,9 +797,13 @@ duplicated NOTHING and named all 17 numbers that would have collided. Same situa
 fragment, opposite behaviour. It is worth reading before touching any of the four, because it shows the
 refusal already has a shape in this library — it is not being invented.
 
-**These three are also obscured by the `Describe` defect** — each returns its new element as
+**The first three are also obscured by the `Describe` defect** — each returns its new element as
 `"ElementId"` — but fixing that would not prove any of them, because the negative would still have
 created something. The naming defect is the one that matters.
+
+`create-levels` is the exception, and it is worth knowing why: it returns `created` as a **list**, so
+`Describe` renders a count rather than the bare word. Nothing is hiding its behaviour. It reports
+`created 2` and `nameRefused 2` in plain sight, and it is still wrong.
 
 ### Value-driven negatives: four tried, none proved, three findings — 2026-09-09
 

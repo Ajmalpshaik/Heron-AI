@@ -1123,8 +1123,10 @@ def accept(slug, by, library=None):
 # heron_fragment.fingerprint() now normalises both, so the number is a fact about
 # the content alone. The sixteen recorded values were taken under the old rule
 # and have to be re-recorded once - `restamp` does that, and REFUSES any fragment
-# whose implementation changed after its proof date, because that one really is
-# stale and re-stamping it would erase the only signal saying so.
+# whose implementation changed ON OR AFTER its proof date, because that one
+# really is stale and re-stamping it would erase the only signal saying so. The
+# same day counts as after: a proof records a date, not a time, so a change made
+# hours after the signature cannot be told from one made hours before it.
 
 def restamp(library=None, apply_changes=False):
     """Re-record fingerprints that differ only because of the platform.
@@ -1172,6 +1174,24 @@ def implementation_changed_after(frag):
     the thing under suspicion. No git, no answer, and no answer means refuse:
     the whole point of this guard is that a genuinely stale proof must not be
     re-stamped back into looking fresh.
+
+    THE SAME DAY COUNTS AS AFTER, and that is the whole of the comparison below.
+    A proof records a DATE and git is asked for one, so two edits on 2026-09-09
+    are indistinguishable here - the ordering simply is not in the data. Read
+    strictly, `last > proof_date` answers "the code did not move" for a change
+    made hours after the proof was signed, which is the one answer this function
+    exists to never give.
+
+    Found 2026-09-09 on `set-view-section-box`: proved that morning, its
+    implementation changed that afternoon, its fingerprint genuinely stale - and
+    `restamp` offered to re-record it, refusing nothing. A day is the resolution
+    of the evidence, so a day is what has to be treated as unsafe.
+
+    The cost is a proof re-taken where a re-stamp would have done, on the one
+    day a fragment is both proved and edited. That is the right way round: this
+    is the guard that stops a stale proof looking fresh, and a guard that is
+    wrong in the cheap direction is worth more than one that is occasionally
+    wrong in the expensive one.
     """
     proof_date = str((frag.proof or {}).get("date") or "").strip()
     if not proof_date:
@@ -1188,7 +1208,9 @@ def implementation_changed_after(frag):
     last = result.stdout.strip()
     if not last:
         return True
-    return last > proof_date
+    # `>=`, not `>`. See the docstring: a same-day change cannot be ordered
+    # against a same-day proof, and unknown counts as YES.
+    return last >= proof_date
 
 
 # ---------------------------------------------------------------------------

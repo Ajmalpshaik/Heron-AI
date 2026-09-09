@@ -108,15 +108,22 @@ var notText = 0;
 // same courtesy ADD_SCHEDULE_FIELDS pays with `availableFields`. Read off the
 // FIRST element only: on a mixed selection the full list is long and no more
 // useful than one real example, and this is a sentence a person reads.
+//
+// IT LISTS THE TYPE'S PARAMETERS AS WELL AS THE INSTANCE'S, because the loop
+// below LOOKS AT BOTH - instance first, then the type. Listing only the
+// instance would print a list that omits the very name that would have worked,
+// and send somebody to check the spelling of a parameter that was never
+// missing. A hint narrower than the search it explains is worse than no hint:
+// it is evidence for a wrong conclusion.
 Func<IList<Element>, string> namesOnHand = given =>
 {
     var available = new List<string>();
-    foreach (var element in given)
+    Action<Element> collect = source =>
     {
-        if (element == null) continue;
+        if (source == null) return;
         try
         {
-            foreach (Parameter candidate in element.Parameters)
+            foreach (Parameter candidate in source.Parameters)
             {
                 var definition = candidate.Definition;
                 if (definition == null) continue;
@@ -125,13 +132,27 @@ Func<IList<Element>, string> namesOnHand = given =>
             }
         }
         catch { }
+    };
+
+    foreach (var element in given)
+    {
+        if (element == null) continue;
+        collect(element);
+
+        // Guarded separately: an element with no type, or one whose type will
+        // not answer, should cost the type half of the list and not the hint.
+        Element elementType = null;
+        try { elementType = doc.GetElement(element.GetTypeId()); }
+        catch { elementType = null; }
+        collect(elementType);
         break;
     }
     available.Sort(StringComparer.OrdinalIgnoreCase);
 
-    if (available.Count == 0) return "The first element reports no parameters at all";
+    if (available.Count == 0)
+        return "The first element and its type report no parameters at all";
     var shown = available.Count > 12 ? available.GetRange(0, 12) : available;
-    return "The first element carries: " + string.Join(", ", shown)
+    return "The first element and its type carry: " + string.Join(", ", shown)
         + (available.Count > shown.Count
             ? string.Format(", and {0} more", available.Count - shown.Count)
             : "");
