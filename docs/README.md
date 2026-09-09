@@ -26,7 +26,7 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**44 answered · 9 open, and nothing gates any phase.** `Q-43` to `Q-48` were all opened on
+**52 answered · 1 open, and nothing gates any phase.** `Q-43` to `Q-48` were all opened on
 2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
 than by reading. `Q-49` and `Q-50` followed the same day from reading someone else's repository at file
 level ([33 §5](33-external-repository-research.md)):
@@ -38,12 +38,12 @@ level ([33 §5](33-external-repository-research.md)):
 | `Q-45` | [D-58](DECISIONS.md) established that Heron makes no model calls, so [19 §3–§4](19-context-and-cost.md)'s router and fallback may belong wholly to the host — except the *mark the result degraded* clause, which is trust and therefore Heron's |
 | `Q-46` | [`check-revit-gate.py`](../tools/check-revit-gate.py) found **59 fragments** that go looking, can drop a candidate on the way, and name nothing they refused or skipped, against [D-52](DECISIONS.md). It was 143 until the rule was derived from the library's own practice — writers name refusals 172/202, readers 45/158 |
 | `Q-47` | [`check-reachable.py`](../tools/check-reachable.py) found `heron_capability.want()` called from two tests and no production code — so the `capabilities_wanted` table is always empty and **two gap paths exist of which only the derived one can fire** |
-| `Q-48` | 🟠 [`check-revit-gate.py`](../tools/check-revit-gate.py) found **62 reading fragments** that collect from the host document and say nothing about links. In federated MEP work that is a **confident smaller number**, and it is the one finding on that list about what a modeller sees rather than about code |
+| `Q-48` | ✅ [`check-revit-gate.py`](../tools/check-revit-gate.py) found **62 reading fragments** that collect from the host document and say nothing about links. In federated MEP work that is a **confident smaller number**. Closed by the owner: reading spans links **only when the modeller asks**, and the answer reports how many links it read ([D-59](DECISIONS.md)) |
 | `Q-49` | 🟡 Heron has **no hooks of any kind** — no `.claude/settings.json`. Every `check-*.py` gate runs only when a person types it, and this repository has already paid for that once ([32 §4](32-master-architecture-reconciliation.md)) |
-| `Q-50` | 🟠 the preview **tells** the modeller what would change; everything needed to **show** it — `preview.Ids`, `preview.Skipped`, [`set-selection`](../brain/fragments/set-selection/) — is already in memory when the question is asked |
+| `Q-50` | ✅ the preview **told** the modeller what would change; everything needed to **show** it — `preview.Ids`, `preview.Skipped`, [`set-selection`](../brain/fragments/set-selection/) — was already in memory when the question was asked. Closed by the owner: it selects **both** sets, capped at 500 ([D-60](DECISIONS.md)) |
 | `Q-51` | 🟠 Rule 19 stops text **authorising**; nothing yet governs text **travelling**. Every part Heron assembles comes from a source Heron wrote — until the RAG index exists, which is the same event that makes retrieval useful |
 | `Q-52` | 🟡 `agentmemory` fuses three retrieval streams at the same `RRF_K = 60` Heron chose independently; Heron fuses two. [`heron_graph.py`](../brain/heron_graph.py) is the third — but it is a **composition** graph, not an entity graph, so the obvious repair is probably wrong |
-| `Q-53` | 🟠 a skill library whose README says *"MIT, use freely"* ships four skills marked **all rights reserved** — and its own scanner never looks at a licence. Heron plans community packages and **no Heron tool mentions a licence** |
+| `Q-53` | ✅ a skill library whose README says *"MIT, use freely"* ships four skills marked **all rights reserved** — and its own scanner never looks at a licence. Heron plans community packages and **no Heron tool mentions a licence** |
 
 `Q-41` before them was both asked and answered by the owner on 2026-09-06, during the decision read-back
 rather than by a specification.

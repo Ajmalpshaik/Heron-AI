@@ -391,12 +391,44 @@ def ask(fid, name, doc, raw, code):
             "through this one, so there is nothing here to miss"
             % doc.get("risk"))
     else:
-        say(LOOK,
-            "READS by collecting from the host document and says nothing about "
-            "links. In a federated model the elements a modeller can see are "
-            "frequently in a link, and a fragment that looks only in the host "
-            "returns a confident SMALLER number. Whether that is right is a "
-            "design question, not a defect - see Q-48")
+        # D-59 SETTLED WHAT THIS SHOULD SAY, so it stopped being a design
+        # question and became a worklist. Before 2026-09-09 this branch ended
+        # "whether that is right is a design question, not a defect - see Q-48".
+        # The owner answered: the MODELLER decides, job by job, and the answer
+        # reports how many links were actually read.
+        #
+        # So the check is now specific enough to be wrong, which the old wording
+        # was not. Two fields, and the SECOND is the one that matters - an echo
+        # of the input says what was asked for, a count says what happened.
+        declared = [n.get("name") for n in needs_of(doc)]
+        gives = [n.get("name")
+                 for n in (doc.get("contract") or {}).get("provides") or []]
+        has_in = "includeLinks" in declared
+        has_out = "linksSearched" in gives
+        if has_in and has_out:
+            say(ANSWERED,
+                "takes includeLinks and reports linksSearched, which is D-59")
+        elif has_in or has_out:
+            # HALF IS WORSE THAN NEITHER and this branch exists to say so. A
+            # fragment that takes includeLinks and reports nothing has been
+            # asked to look in the links and cannot say whether it found any to
+            # look in; one that reports linksSearched with no way to ask can
+            # only ever report zero.
+            say(LOOK,
+                "declares %s of D-59's two fields and not the other. Half of "
+                "this contract is worse than neither: %s"
+                % ("includeLinks" if has_in else "linksSearched",
+                   "asked to read links, unable to say whether any were there"
+                   if has_in else
+                   "reports a link count it has no way to be asked for"))
+        else:
+            say(LOOK,
+                "READS by collecting from the host document and says nothing "
+                "about links. In a federated model the elements a modeller can "
+                "see are frequently in a link, and a fragment that looks only "
+                "in the host returns a confident SMALLER number. D-59 settled "
+                "the shape: takes includeLinks (absent means host only), "
+                "reports linksSearched. This one has neither yet")
 
     # 9 - stable ids
     say(NEEDS_RUN,
@@ -487,13 +519,32 @@ def ask(fid, name, doc, raw, code):
         say(ANSWERED, "reports what it turned down as well as what it did "
                       "(D-52)")
     elif "filteredelementcollector" in squashed and _can_drop(code):
-        say(LOOK,
-            "collects, drops candidates in its loop, and names none of them. "
-            "D-52: a count of what was turned down is not a count of what was "
-            "found. filter-elements-by-type returns `found: 0` when its "
-            "exemplar has no type, and nothing in the answer separates that "
-            "from 'there are none of this type' - which is the whole reason "
-            "FILTER_ELEMENTS_BY_CATEGORY reports `unresolvedLevel`")
+        # D-64 settled the SHAPE, so this looks at the contract and not only at
+        # the code. A dropped-count is a declared output - unresolvedLevel,
+        # skipped, refused - and the name varies by fragment because what was
+        # dropped varies. The rule is that ONE OF THEM EXISTS, never that a
+        # particular word does; a rule about the word would be a naming
+        # convention wearing a correctness rule's clothes.
+        dropped = [n.get("name") or "" for n
+                   in (doc.get("contract") or {}).get("provides") or []]
+        names_it = [n for n in dropped
+                    if any(w in n.lower() for w in
+                           ("unresolved", "skipped", "refused", "dropped",
+                            "missing", "failed", "weakened"))]
+        if names_it:
+            say(ANSWERED,
+                "the contract declares %s, so the caller is told what was "
+                "dropped even when the code reads silent (D-64)"
+                % ", ".join(names_it))
+        else:
+            say(LOOK,
+                "collects, drops candidates in its loop, and names none of "
+                "them - not in the code and not in `provides`. D-52: a count "
+                "of what was turned down is not a count of what was found. "
+                "filter-elements-by-type returns `found: 0` when its exemplar "
+                "has no type, and nothing separates that from 'there are none "
+                "of this type'. D-64: declare a dropped-count in `provides`, "
+                "carried only when the result is empty")
     else:
         say(ANSWERED,
             "names no refusals, and does not go looking - it works on what it "

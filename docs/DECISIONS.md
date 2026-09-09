@@ -3365,3 +3365,514 @@ because **nothing had tried to build it.** [D-49](DECISIONS.md) has the same sha
 direction: two register rows, each correct alone, broken only in combination, found only by running
 them. **A specification is checked by implementation, and a row nobody has implemented is a row nobody
 has checked.**
+
+---
+
+## D-59 — Reading spans loaded links only when the modeller asks, and the answer says how many it read
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** [`tools/check-revit-gate.py`](../tools/check-revit-gate.py) asking question 8 of the fourteen of all 360 fragments
+**Affects:** 62 reading fragments, [`check-revit-gate.py`](../tools/check-revit-gate.py), [09 §4](09-skills-and-fragments.md), [D-30](DECISIONS.md), [D-52](DECISIONS.md), [D-54](DECISIONS.md)
+
+### Context
+
+The gate asked *are linked documents handled correctly?* of every fragment and **62 of them collect
+from the host document, declare a reading risk, and say nothing about links anywhere.**
+
+**In Qatar MEP work a model is federated as a matter of course.** The architecture is a link, the
+structure is a link, and frequently the MEP a coordinator is checking is a link too. A fragment that
+collects only the host returns a **confident smaller number** and nothing in the answer says a link was
+skipped. That is the plausible zero this repository already legislates against
+([D-52](DECISIONS.md)) wearing different clothes.
+
+**The 45 fragments that WRITE are correctly excluded, and that is an API fact rather than a judgement.**
+A linked element belongs to another document and cannot be changed through this one; you would have to
+open the linked file. A writer collecting the host only is not under-reaching the way a reader is.
+
+### Decision
+
+**The modeller decides, job by job.** In the owner's words: *"modeller will decide and he know if need
+to check from linked model or this model, they know."*
+
+It arrives as an input, the way [D-54](DECISIONS.md) made a view an input. **Two fields, and the second
+is not optional:**
+
+| Field | Where | What it is |
+|---|---|---|
+| `includeLinks` | `needs`, `source: request` | The modeller's call. **Absent means host only** |
+| `linksSearched` | `provides`, `int` | How many linked documents were actually read |
+
+**`linksSearched` is the field that does the work.** The question's own warning was that *whatever is
+decided, the answer has to say whether links were included.* A boolean echo of the input would not say
+that — it would repeat what was asked for, not what happened. A count says both, and it makes the one
+case that would otherwise be silent loud: **`includeLinks` set and `linksSearched` at 0 means "you asked
+for links and none are loaded"**, which is a different answer from "host only" and must not read the
+same.
+
+### Why not the other two readings
+
+**Not a platform rule spanning links by default.** It would change what **every recorded proof
+measured**. A count taken on the host is not the count the same fragment returns afterwards, so every
+[D-30](DECISIONS.md) fingerprint would be answering a question it was never signed for. Nothing is
+re-proved to add a feature.
+
+**Not a per-fragment declaration either, and this is the less obvious half.** It is honest, and it takes
+the choice away from the person who has the model open. The same fragment is wanted both ways on
+different days — *how many ducts on Level 2* is a host question when a modeller checks their own work
+and a federated one when they check a coordination issue. A fragment that decided once serves one of
+those, and the modeller would have to know which of two fragments to ask for. That is exactly the
+knowledge [09](09-skills-and-fragments.md) exists to stop them needing.
+
+### What this does NOT do
+
+**It does not change what any fragment does today.** Absent input means host only, which is what all 62
+already do and what every existing proof measured. Nothing is invalidated by this decision; the work is
+additive.
+
+**It does not make the 62 edits.** They are contract and implementation changes in C#, and this
+repository cannot compile C# — [`check-compile.py`](../tools/check-compile.py) needs `dotnet` and there
+is none here. **Writing 62 unverified collector rewrites would be the opposite of production-ready.**
+So the rule goes into the gate, where it is checked every run, and the 62 become a tracked worklist
+instead of a paragraph somebody has to remember.
+
+**It does not settle nested links.** A link inside a link is a real Revit case and this decision does
+not say whether `linksSearched` counts it. First implementation answers it against a real federated
+model, not here.
+
+---
+
+## D-60 — A preview selects what it would change and what it would skip, up to 500
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** reading [`affaan-m/ECC`](https://github.com/affaan-m/ECC) at file level ([33 §5.1](33-external-repository-research.md))
+**Affects:** [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs), [`set-selection`](../brain/fragments/set-selection/), [Golden Rule 9](14-golden-rules.md), [Golden Rule 17](14-golden-rules.md), [D-55](DECISIONS.md)
+
+### Context
+
+ECC's `plan-canvas` skill opens a plan **in the human's browser** so they can point at the element they
+mean instead of describing it, because *"move this, change that"* is easier pointed at than typed.
+
+**For a modeller the browser is the wrong canvas and the right one is already open.** Heron's preview
+today is a sentence — *"would move 34 ducts up 200 mm in Tower-A, skipping 6."* Everything needed to
+show it instead is already in memory when the preview is offered:
+[`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs) holds `preview.Ids` and `preview.Skipped`,
+and [`set-selection`](../brain/fragments/set-selection/) already exists.
+
+### Decision
+
+**Yes — both sets, capped at 500 per set.** The owner: *"yes I think it's good."* Asked where showing
+stops being better than telling, he set the number: **500**, roughly one busy MEP level.
+
+**The skipped set is the half that earns this.** *"Skipping 6"* is the clause nobody reads carefully.
+Thirty highlighted ducts and six in a second colour is `Q-46`'s question answered by showing instead of
+by wording, and no sentence carries it as well.
+
+**The cap applies to each set on its own.** A job that skips 4 out of 4,120 can still show the 4. Above
+the cap the preview stays the sentence it is today **and says why** — *"4,120 elements, too many to
+highlight"* — because a preview that silently stopped highlighting would be a plausible zero drawn on
+the screen.
+
+**500 is the default of a setting, not a constant.** The count that is a mess on a laptop on site is not
+the count that is a mess on a workstation.
+
+**The modeller's own selection is saved first and put back.** Nobody asked for this; it is recorded here
+as the safe default so it can be overruled rather than discovered. A selection built over two minutes on
+a busy federated model is work, and destroying it to show a preview trades one annoyance for a worse
+one. It is restored when the preview is declined or expires. **Accepting is the one case where it is not
+restored** — after a change lands, the elements that changed are what the modeller wants selected.
+
+### Why Golden Rule 9 is not touched
+
+Rule 9 gates the **confirmation path** in code: the token is minted for one preview, a non-matching
+token is refused, and the set is re-counted against the live model before anything moves.
+
+**Selecting elements writes nothing and mints nothing.** It changes what the modeller can see while
+deciding, which is the one thing Rule 9 was never guarding. **A preview that highlights and a preview
+that does not must accept and refuse exactly the same tokens** — and that is a test rather than a
+promise.
+
+### What this does NOT do
+
+**It does not answer "approve with changes".** Taking *"yes, but 150 not 200"* and producing a new
+preview at once is a better question than this one and a different change. The guarantee holds only
+because the token is minted fresh, so it is a **new preview**, never a modified execution. That stays
+open and is no part of this decision.
+
+**It does not make the change.** `RevitWrite.cs` is C# and nothing here can compile it. The decision is
+recorded and the shape is fixed; the edit belongs on a machine with `dotnet` and a Revit to prove it
+against.
+
+---
+
+## D-61 — Only a run that came back may be cached, and re-indexing forgets what changed underneath it
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** [`tools/measure-routes.py`](../tools/measure-routes.py) parsing the tree for real callers of `heron_search.remember()` and finding one, in a test
+**Affects:** [`heron_search.py`](../brain/heron_search.py), [`measure-routes.py`](../tools/measure-routes.py), [19 §5–§6](19-context-and-cost.md), [05 §4](05-heron-brain.md), [D-30](DECISIONS.md)
+
+### Context
+
+`remember()` is the only function that writes the utterance cache, and **no production code calls it.**
+Not `ask()`, not `find()`, not any MCP tool. So route 2 can never fire for a real user: the cache is
+built, tested, indexed, and permanently empty — while [19 §5](19-context-and-cost.md) makes it **step 1**
+of the pipeline that must run before any model is invoked, and [19 §6](19-context-and-cost.md) calls it
+*"the one that pays for itself faster than any of the others"*.
+
+**The obvious wiring is the dangerous one.** Have `find()` call `remember()` with whatever it just
+returned, and a keyword hit — which [`heron_search.py`](../brain/heron_search.py) calls *"a candidate,
+never a decision"* in its own words — becomes permanent. The next identical wording returns by route 2
+and **never searches at all**. A wrong answer becomes the *fast* answer, which is exactly the
+confident-wrong-retrieval failure [05 §4](05-heron-brain.md) built the keyword layer to avoid. **One
+line of wiring would have built it.**
+
+### Decision
+
+**A wording may be remembered once the fragment it resolved to has RUN AND COME BACK. Nothing else
+counts, and `remember()` enforces that rather than documenting it.**
+
+```
+remember(store, text, fragment_id, evidence)   # evidence has no default
+```
+
+**The missing default is the design.** A default would make the safe call and the dangerous call look
+identical at the call site, and the dangerous one is what somebody reaches for while wiring this up in a
+hurry. Every caller says what it knows, out loud, in the argument. Anything but `heron_search.RAN`
+raises `NotEvidence`.
+
+**The two rejected candidates, and why each fails on its own terms:**
+
+| Candidate | Why not |
+|---|---|
+| **The user accepted it** | [D-01](DECISIONS.md) puts that conversation in the host, and the host does not call back into the brain. It is not a worse rule — it is a rule nothing can evaluate |
+| **The identity route resolved it** | Safe and worthless. Those already answer in one lookup, so caching them saves nothing and adds a row that can go stale |
+
+### What invalidates a cached wording
+
+`recall()` already drops a row whose fragment has **vanished** — a cache must never resurrect one. It
+could not see the other case: **a fragment that is EDITED keeps its id**, so the row still points at
+something real and still answers, against code that has changed underneath it.
+
+**So the row carries the fragment's `fingerprint()` at the moment it was written, and `index()` calls
+`forget_stale()`.** Re-indexing is when Heron re-reads the files, so re-indexing is when a row written
+against the old bytes dies.
+
+**The hash is the same one [D-30](DECISIONS.md) uses to call a proof stale**, deliberately. A cached
+wording and a recorded proof go out of date for exactly the same reason, and two mechanisms would
+eventually disagree about when. A row with a NULL fingerprint — written before this existed — is
+dropped rather than trusted: one lookup is a cheap price for never serving a row nobody was checking.
+
+The check is in `forget_stale()` and not in `recall()` on purpose. **Route 2 is the fast route**, and
+hashing implementation files on it would spend the saving it exists to make. `on_disk` is handed from
+`index()` rather than reloaded, because [D-24](DECISIONS.md) says re-indexing must stay free.
+
+**And the first version of `remember()` was 277 times slower than it needed to be.** It called
+`FRAG.load_all()` — reading all 360 fragment files to use one — which put **1,522 ms** on a path a
+modeller is waiting on. The store already knows the fragment's folder; loading that one costs 3.6 ms
+with the hash itself at 0.2, so `remember()` now takes 5.5 ms.
+
+**The saving is not the reason this is written down.** The slow version *looked* fine: `load_all()` is
+what `index()` calls, it was already imported, and the cost appears only if somebody times it. That is
+the shape worth keeping — the same one [D-49](DECISIONS.md) records from the other direction, where two
+correct rows were broken only in combination and only a run found it.
+
+### What this does NOT do
+
+**It does not fill the cache.** The evidence only exists after a run, a run happens in the add-in, and
+**no workflow id crosses the seam into the brain** — so nothing can join a wording to a run that
+succeeded. `measure-routes.py` still reports route 2 as unable to fire, and per
+[D-54](DECISIONS.md) its message was corrected in the same change: the reason moved from *"nobody has
+decided"* to *"the evidence cannot reach here yet"*, and those send a reader to different places.
+
+**The remaining work is one seam, now named.** [D-62](DECISIONS.md) built the brain's half of the
+trail; the workflow id is the half that is not built. When it crosses, the cache fills and
+`brain/heron_audit.py` can claim its agent row in the same change.
+
+---
+
+## D-62 — The brain writes its own audit file, and the reader that already merges does the merging
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** [`tools/measure-routes.py`](../tools/measure-routes.py) being able to report the structural route share and never the live one
+**Affects:** [`brain/heron_audit.py`](../brain/heron_audit.py), [`heron_brain.py`](../mcp/server/heron_brain.py), [`heron_gaps.py`](../brain/heron_gaps.py), [19 §7](19-context-and-cost.md), [Golden Rule 14](14-golden-rules.md)
+
+### Context
+
+`HeronAudit` is C# in the add-in, so **the trail only ever knew what reached Revit.** A request answered
+entirely by the brain — `heron_resolve`, `heron_lookup`, `heron_capabilities` — left **no record at
+all**, and the live route share was unmeasurable: the only half that says anything about how people
+actually use Heron.
+
+[Golden Rule 14](14-golden-rules.md) says every important autonomous operation must be auditable, and
+**deciding which fragment answers a request is not a small operation.**
+
+**Why it was a question.** [19 §7](19-context-and-cost.md) asks for *"one append-only record, many
+readers"*, and the literal reading is two processes appending to one file across a C#/Python boundary
+where no lock is shared. That is an interleaving problem with a partial line at the end of it — a
+design, not a patch.
+
+### Decision
+
+**One file per writer, in one directory, merged at read time — because the reader already merges.**
+
+`heron_gaps.read()` globs the audit directory for `audit-*.jsonl`, parses one JSON object per line,
+skips a bad line rather than dying on it, and **sorts every entry by `at`**. It has always merged files
+and does not care how many there are or who wrote them. `audit-brain-YYYYMM.jsonl` matches the glob, so
+**nothing downstream changed** — not `heron_gaps.read()`, not `heron-backup.py`, not
+`heron_validate.py`, and not one line of C#.
+
+**This is not "two homes for one fact".** There is one home — the directory — and two files are how two
+processes write into it without a shared lock.
+
+### What is never written there
+
+**Not the user's sentence.** The trail already carries project information and
+[12 §5](12-security-and-privacy.md) puts it under the same egress rules as everything else. **The live
+route share needs the route and whether it resolved; it does not need the words.** Recording the
+sentence would add a class of content to an append-only, never-pruned file for a report that does not
+read it.
+
+The wording lives in the utterance cache instead — a local SQLite store, a different file, a different
+lifetime, and one a person can delete without losing the trail.
+
+**Numbers are written as numbers.** [`HeronAudit.cs`](../platform/Heron.Core/HeronAudit.cs) carries a
+long comment about the day `ms` went in quoted and a reader compared `"9"` against `"6620"` as text.
+Old lines keep their quotes for ever because the log is never pruned. This writer does not add to that
+pile.
+
+**A refusal is recorded as `ok: false` with its reason, never dropped.** A trail holding only the
+successes makes a capability nobody provides look like one nobody asked for — which is the line the
+Capability Gap Agent reads.
+
+### What this does NOT do
+
+**It does not claim `HERON-MCP-LOG-010`.** That row and `HERON-KRN-LOG-006` both say the trail is
+**keyed by Workflow ID**, and no workflow id reaches the brain — every line goes out with an empty
+`workflow`. [D-58](DECISIONS.md) set the precedent in the same words: a file stays `Heron-Agent: none`
+until it serves the whole row, because `check-metadata.py` reporting an agent BUILT is a claim somebody
+will rely on.
+
+**It cannot break a request.** `heron_brain` reaches it through `_audit()`, which returns a no-op that
+swallows the call if `heron_audit` cannot be imported, and `record()` returns False rather than raising
+when there is nowhere to write. On Linux with no `APPDATA` and no `HERON_AUDIT` that is every call — the
+developer machine writes nothing and pays nothing. **A logger that can break the request it was only
+supposed to describe has the priority backwards.**
+
+---
+
+## D-63 — A want is recorded when a capability is asked for BY NAME and nobody provides it
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** [`tools/check-reachable.py`](../tools/check-reachable.py) finding `heron_capability.want()` called from two tests and no production code
+**Affects:** [`heron_capability.py`](../brain/heron_capability.py), [`heron_brain.py`](../mcp/server/heron_brain.py), [D-40](DECISIONS.md), [06 §6](06-agent-hr.md)
+
+### Context
+
+`want()` is the only writer of `capabilities_wanted`, and nothing called it. Its own docstring says what
+that cost: *"this is what turns 'we have no fragment for that' from a silence into a finding."* So the
+table was always empty.
+
+**The live path is a different one and it works.** `heron_brain.catalogue()` computes gaps from the
+skills' own declared `missing` capabilities, never from `capabilities_wanted`.
+
+**[D-40](DECISIONS.md) is the rule the two are measured against:** *an edge is derived before it is
+stored; store one only when it cannot be computed from an artifact on demand.* A skill's requirement is
+computable and is computed. **A request for something no skill declares is not computable from any
+artifact** — no pass over the library can find it, because it is not in the library. Only somebody
+asking reveals it. That is the case `want()` exists for, and D-40 points at it rather than away.
+
+### Decision
+
+**Wire it up, at `heron_brain.resolve()`, and only for the case that is genuinely missing.**
+
+That function already draws the distinction that matters, and it is the whole reason this is one line
+and not a judgement call:
+
+| What `resolve()` found | Recorded as a want? |
+|---|---|
+| A provider exists, this release is not on its list (`blocked_by_version`) | **No** |
+| Nobody provides it at all | **Yes** |
+
+**The first row is the important one.** A version wall is not a missing capability — a provider exists.
+Recording it would put a capability on the gap report **that already exists**, and Agent HR would
+commission a fragment to build it a second time. That is precisely the failure `heron_gaps.py` was
+corrected for: its loudest error, `needs_unbound` at 38 of 176, is the executor behaving correctly, and
+counting it as a gap would have commissioned work already done.
+
+**The name recorded is Heron's own capability name, never the user's sentence** — the host asked for
+`SET_MEP_SIZE`, so that is what goes in. Nothing about the user's words enters the store on this path,
+which keeps it on the same footing as [D-62](DECISIONS.md).
+
+### What this does NOT do
+
+**It does not make `heron_lookup` record wants.** A lookup that resolves to nothing has no capability
+name — only words — and `capabilities_wanted` is keyed by name. Putting a sentence in that column would
+make it a different table with the same name, and the gap report reads it expecting capabilities.
+**A failed lookup is a real signal and it needs its own shape, which this decision does not invent.**
+
+---
+
+## D-64 — A fragment that goes looking declares what it dropped, and the marker rides only on the empty answer
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** [`tools/check-revit-gate.py`](../tools/check-revit-gate.py) question 14, narrowed from 143 fragments to 59
+**Affects:** 59 reading fragments, [`check-revit-gate.py`](../tools/check-revit-gate.py), [D-52](DECISIONS.md), [D-54](DECISIONS.md)
+
+### Context
+
+Question 14 — *is rollback/error reporting clear?* — raised **143 of 360**. Too many to be a defect list
+and too many to dismiss, so the rule was looked for in the library's own practice instead of reasoned
+about, and it is there: a fragment that **writes** names what it refused 172 times out of 202 (85%); one
+that **reads** does it 45 out of 158 (28%).
+
+Narrowed to the shape [D-52](DECISIONS.md) is actually about — **goes looking, and can drop something on
+the way** — it is **59**. One that counts a list it was handed cannot skip anything, however silent.
+
+`filter-elements-by-type` returns `found: 0` when its exemplar has no type, and nothing separates that
+from *"there are none of this type."* `FILTER_ELEMENTS_BY_CATEGORY` already solved it with
+`unresolvedLevel`. One fragment in the library got there; 59 have not.
+
+### Decision
+
+**A validator rule, not guidance — and the third shape rather than 59 hand-written answers.**
+
+Three parts, and the second is what makes the first affordable:
+
+**1. The dropped-count is a declared output.** A fragment that collects and can drop declares a field in
+`provides` that names what it dropped. **The rule is that one exists, never that a particular word
+does** — `unresolvedLevel`, `skipped`, `refused` all satisfy it, because what was dropped varies by
+fragment. A rule about the word would be a naming convention wearing a correctness rule's clothes.
+
+**2. The marker rides only on the empty answer.** `code-review-graph`'s `uncertainty.py`
+([33 §5.6](33-external-repository-research.md)) measured the cost the other way round from how it
+feels: *"one short sentence on the empty case is a token saving, not a cost — it replaces a
+multi-thousand-token fallback search with roughly thirty tokens of honesty."* Attaching it only when the
+result is empty means **every answer that carries results stays byte-identical to today**. Nothing that
+works gets longer.
+
+**3. Capped.** Honesty with a ceiling cannot grow into a paragraph.
+
+**And the blind-spot list stays data rather than conditionals**, so an entry is deleted when the gap
+closes — [D-54](DECISIONS.md) built into the structure instead of relied on as a discipline.
+
+### Where the rule lives now
+
+`check-revit-gate.py`'s question 14 reads the **contract** as well as the code: a fragment declaring a
+dropped-count in `provides` passes even where its code reads silent, and one declaring neither is named.
+**The 59 are a checked worklist rather than a paragraph somebody has to remember**, and every fragment
+written afterwards is held to the same question on the same run.
+
+It is not in `heron_fragment.validate()` **yet**, and that is deliberate rather than a shortcut: 59
+fragments would become invalid the moment it went in, and every gate in the repository would fail on a
+library that is not broken. `validate()` is where it belongs **once the 59 are cleared** — and moving it
+there is how the worklist is declared finished.
+
+### What this does NOT do
+
+**It does not make the 59 edits.** They are C# and this repository cannot compile C#. The rule is
+checked; the answers are written where there is a `dotnet` and a model to prove them against.
+
+---
+
+## D-65 — Heron keeps the degraded-result rule and hands routing to the host
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** [D-58](DECISIONS.md) establishing that Heron makes no model calls
+**Affects:** [19 §3–§4](19-context-and-cost.md), `HERON-KRN-MAV-017`, [24](24-trust-model.md), [D-01](DECISIONS.md), [D-30](DECISIONS.md)
+
+### Context
+
+[19 §3](19-context-and-cost.md) specifies a Model Router (task → model class) and
+[19 §4](19-context-and-cost.md) a Fallback (provider unreachable → route elsewhere, **and mark the
+result degraded**). Neither exists.
+
+[D-58](DECISIONS.md) established that **Heron makes no model calls at all** — [D-01](DECISIONS.md) puts
+every one of them in the host, and `heron_embed` runs locally with no tokens and no cost. A router here
+would route nothing.
+
+### Decision
+
+**The split, not a yes or a no.**
+
+| Clause | Owner |
+|---|---|
+| Task → model class | **The host.** It makes the calls, so it is the only thing that can choose between them. Retired from Heron's specification |
+| Provider unreachable → route elsewhere | **The host**, for the same reason |
+| **Mark the result degraded, so it never counts as evidence toward promotion** | **Heron.** Kept |
+
+**The kept clause is not a leftover — it is the only one of the three that was ever Heron's.** Routing
+is an operational choice about a resource Heron does not hold. *Never counts as evidence toward
+promotion* is a statement about **what may be believed**, and belief is what [24](24-trust-model.md)
+and [D-30](DECISIONS.md) govern. `HERON-KRN-MAV-017` keeps exactly that clause and loses the rest.
+
+**A degraded run is a run that did not happen, for promotion purposes.** [D-30](DECISIONS.md) needs a
+positive case, a negative case, a named model and a staleness fingerprint. A result produced after a
+provider fell over is missing the one thing a proof is for: the guarantee that what ran is what was
+meant to run. Promoting on it would make the lifecycle decorative, which is the same sentence
+`heron_search.py` uses about running a DRAFT fragment off an exact word match.
+
+### What this does NOT do
+
+**It does not delete two sections and move on.** [19 §3–§4](19-context-and-cost.md) are marked as the
+host's rather than struck, because a reader who finds them missing will re-specify them. **A
+specification that quietly loses a section teaches nothing; one that says who owns it teaches the
+boundary**, which is [D-58](DECISIONS.md)'s own lesson repeated on a second row.
+
+---
+
+## D-66 — Heron checks the licence of what it ships by reading the files, not the landing page
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** reading [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) at file level ([33 §5.9](33-external-repository-research.md))
+**Affects:** [`tools/check-licence.py`](../tools/check-licence.py), [`tests/test_licence_check.py`](../tests/test_licence_check.py), [17](17-open-source-and-distribution.md), [09](09-skills-and-fragments.md), [D-08](DECISIONS.md)
+
+### Context
+
+**It is not hypothetical — it is a live example of the failure.** That project's README says it is MIT
+and that you may *"modify, distribute, and use freely."* **Four of its 163 skills carry
+`© 2025 Anthropic, PBC. All rights reserved.`** A fifth is MIT under a different copyright holder.
+Nothing on the landing page says so; only listing the licence files does. **Their own skill scanner
+checks security and never looks at a licence.**
+
+Heron is walking into the same position. [17](17-open-source-and-distribution.md) publishes Heron under
+Apache 2.0 ([D-08](DECISIONS.md)); [09](09-skills-and-fragments.md) plans **community packages**;
+[Golden Rule 19](14-golden-rules.md) already names imported text as a source Heron reads. So Heron will
+ship other people's words to other people, and **no Heron tool mentioned a licence.**
+
+### Decision
+
+**A gate, and its one rule is: read the files, not the landing page.**
+
+[`tools/check-licence.py`](../tools/check-licence.py) walks every file of every fragment and skill,
+finds the markers **in the content**, and compares them with what the unit **declared**. A declaration
+that agrees with nothing is worth as much as no declaration — which is the entire finding above.
+
+It reports three things and keeps them apart:
+
+| Finding | What it means |
+|---|---|
+| **Reserves rights** | Redistribution is not granted. The one that matters most, and the one the live example carried while its README said the opposite |
+| **An incompatible licence name** | Named, and not on the short compatible list |
+| **A foreign copyright holder in something declared OFFICIAL** | The declaration and the file disagree |
+| **Unmarked** | Reported separately and never merged with clean. *"No evidence of a problem"* and *"evidence of no problem"* are different findings, and a tool that merges them is the tool that project already has |
+
+**It exits 1 on a finding.** Today it finds none: 370 units, all clean.
+
+### A clean run proves nothing, so the checker is proved to fire
+
+[`tests/test_licence_check.py`](../tests/test_licence_check.py) rebuilds the exact failure — a
+reservation of rights in a nested file under a folder declaring `source: OFFICIAL` — plus an
+incompatible name, a compatible one, and Heron's own copyright. **A licence checker that reports nothing
+on a clean library and has never been shown a dirty one is a plausible zero
+([D-52](DECISIONS.md)) wearing a gate's clothes.**
+
+**It also locks a false positive.** The first copyright pattern matched this ordinary C#:
+
+```csharp
+var size = rule.GetCriterion(c) as PrimarySizeCriterion;
+```
+
+and reported `report-routing-preferences` as somebody else's work. `(c)` now counts only next to a year.
+**A licence tool that cries wolf is a tool somebody turns off**, and this one would have been turned off
+over a cast.
+
+### What it deliberately leaves out
+
+**`.claude/skills` is not scanned.** Those are the skills for *developing* Heron; they run on a
+maintainer's machine and are covered by the repository's own `LICENSE` like any other source file.
+Q-53 is about what Heron's **users** redistribute, and scanning the toolbox alongside the cargo would
+bury the finding that matters under six that do not.
+
+**It is not legal advice and does not read licence text for meaning.** It finds a reservation, a name
+and a holder. That is the check nobody was running.

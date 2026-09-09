@@ -98,6 +98,28 @@ def _brain():
     return SCOPE, CAP, SKILL, SEARCH, EMBED, RETRIEVE
 
 
+class _NoAudit(object):
+    """What the brain records when heron_audit cannot be imported at all.
+
+    A trail is evidence, never a dependency. If brain/ is not importable the
+    tools above are already failing for a better reason than logging, and a
+    logger that can break a request it was only supposed to describe has the
+    priority backwards.
+    """
+
+    def __getattr__(self, _name):
+        return lambda *a, **k: False
+
+
+def _audit():
+    """heron_audit, or a no-op that swallows the call. Never raises."""
+    try:
+        import heron_audit
+        return heron_audit
+    except ImportError:
+        return _NoAudit()
+
+
 def warm():
     """Start loading the trained encoder, off the request path. Never raises.
 
@@ -278,14 +300,43 @@ def resolve(capability, revit=None):
             # Two different absences, and telling them apart is the whole
             # value of the answer.
             anywhere = CAP.resolve(store, capability) if revit else None
+            known = capability in provided
+
+            # D-63. THE WANT IS RECORDED HERE AND NOWHERE ELSE, and the reason
+            # is the distinction this branch already draws.
+            #
+            # `blocked_by_version` is NOT a missing capability. A provider
+            # exists; this release is not on its list. Recording that as a want
+            # would put a capability on the gap report that ALREADY EXISTS, and
+            # commissioning a fragment to build it again is the exact failure
+            # heron_gaps.py was corrected for - its loudest error, needs_unbound
+            # at 38 of 176, is the executor behaving correctly.
+            #
+            # A capability NOBODY provides is the other case, and it is the one
+            # D-40 cannot derive: no artifact declares it, so no pass over the
+            # library can compute it. Only somebody asking reveals it. That is
+            # what want() was written for and why it is not deleted.
+            if not known and not anywhere:
+                CAP.want(store, capability,
+                         "asked for by name and no fragment provides it")
+
+            # D-62. A capability nobody provides is exactly the line the
+            # Capability Gap Agent reads, so it is recorded as ok=false rather
+            # than left out. A trail holding only the successes makes a gap
+            # look like something nobody ever asked for.
+            _audit().resolve(capability=capability, provider=None, ok=False,
+                             revit=revit)
             return {
                 "capability": capability,
                 "providers": [],
-                "known": capability in provided,
+                "known": known,
                 "blocked_by_version": bool(anywhere),
                 "revit": revit,
             }
 
+        _audit().resolve(capability=capability,
+                         provider=got.rows[0]["id"] if got.rows else None,
+                         ok=True, revit=revit)
         return {
             "capability": capability,
             "known": True,
@@ -332,6 +383,20 @@ def lookup(request, revit=None):
                                "why": c["why"]})
 
         _rows, excluded = RETRIEVE.eligible(store, revit)
+
+        # D-62. The trail only ever knew what reached Revit, so a request the
+        # brain answered on its own left no record and the LIVE route share was
+        # unmeasurable. THE SENTENCE IS NOT RECORDED - the route is what the
+        # report reads, and `request` would put the user's own words into a
+        # file that is append-only and never pruned.
+        #
+        # `excluded` goes in because D-52 is the rule this trail would break in
+        # its own turn: a line naming what was found and nothing about what the
+        # version wall removed is a count of the wrong thing.
+        _audit().lookup(route=answer.route, capability=capability,
+                        provider=answer.fragment_id,
+                        candidates=len(candidates), excluded=len(excluded))
+
         return {
             "request": request,
             "route": answer.route,

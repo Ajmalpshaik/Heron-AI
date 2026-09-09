@@ -296,9 +296,23 @@ def main(argv):
         print("  faster than any of the others\" and docs/19 s5 makes it step 1")
         print("  of the pipeline. It is built, tested, indexed - and empty.")
         print("")
-        print("  Where remember() should be called from is a real decision, not")
-        print("  an oversight to patch: caching whatever the keyword route")
-        print("  ranked first makes a GUESS permanent. See docs/OPEN-QUESTIONS.md.")
+        # D-54: a message describing a gap must be corrected when the gap
+        # closes. This one said "where remember() should be called from is a
+        # real decision" until 2026-09-09, when D-61 made it. The cache is
+        # still empty, so the FINDING stands - but the reason has changed from
+        # "nobody has decided" to "the evidence cannot reach here yet", and
+        # those send a reader to different places.
+        print("  D-61 SETTLED WHAT MAY BE WRITTEN, and remember() now enforces")
+        print("  it: the only accepted evidence is heron_search.RAN - the")
+        print("  fragment ran and came back. A keyword hit is a candidate, and")
+        print("  caching a candidate makes a GUESS the fast path.")
+        print("")
+        print("  So this is no longer an undecided design. What is missing is")
+        print("  the EVIDENCE ARRIVING: a run happens in the add-in, and no")
+        print("  workflow id crosses the seam into the brain, so nothing here")
+        print("  can join a wording to a run that succeeded. The brain's own")
+        print("  trail (D-62, brain/heron_audit.py) is the half now built; the")
+        print("  workflow id is the half that is not.")
     else:
         print("  remember() is called from production code (%s), so the cache"
               % ", ".join(production))

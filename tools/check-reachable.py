@@ -100,9 +100,15 @@ RECORDED = {
         "heron_validate.py: it answers 'result' for an entry with no role, so "
         "every declared name looked explicitly declared and D-51/D-52's "
         "patterns never ran - 102 names across 134 fragments misjudged",
+    # D-54: this said "Q-43 ... is an open question, not an oversight" until
+    # 2026-09-09, when D-61 answered it. The function is STILL uncalled from
+    # production and the entry stays - what changed is why, and a reader sent
+    # to an open question that has been closed is sent to the wrong place.
     ("brain/heron_search.py", "remember"):
-        "Q-43 - what may be written into the utterance cache is an open "
-        "question, not an oversight",
+        "D-61 answered Q-43: only a completed run may be cached, and evidence "
+        "is a required argument. It stays uncalled because the evidence cannot "
+        "reach the brain - a run happens in the add-in and no workflow id "
+        "crosses the seam. One named seam, not an undecided design",
 }
 
 
