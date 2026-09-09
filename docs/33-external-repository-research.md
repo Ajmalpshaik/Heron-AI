@@ -76,7 +76,7 @@ Research further.**
 | [`affaan-m/ECC`](https://github.com/affaan-m/ECC) — [§5.1](#51-affaan-mecc) | plans lost in chat, standards forgotten | **the plan as an artifact the human points at**, not chat history; hooks that **block the tool call** rather than checks a person remembers to run | the artifact idea is [23](23-heron-kernel.md)'s checkpoints and [`heron_workflow.py`](../mcp/server/heron_workflow.py). `tools/check-*.py` hold the same *rules* but **nothing runs them automatically** — [§5.1](#51-affaan-mecc) corrects the page-level claim that they are the equivalent | 68 agents, 286 skills, 94 commands. The scale IS the thing being rejected — [D-01](DECISIONS.md) gives the host the commands and [09](09-skills-and-fragments.md) gives skills capabilities | MIT — but [§5.1](#51-affaan-mecc) names a second project inside it | **Adopt the artifact principle, reject the scale.** File-level pass added two items — see [§5.1](#51-affaan-mecc) |
 | [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) — [§5.2](#52-ruvnetruflo) | orchestrating many agents | swarm coordination; **Raft, Byzantine and Gossip consensus**; 100+ agents. **Under it, a security programme the landing page does not advertise** — a guard between retrieval and context assembly | almost none of the swarm. Heron has **one Revit, one pipe, one queue, one handler** ([D-09](DECISIONS.md)) — but the retrieval guard is aimed at the exact path Heron's RAG work will create ([§5.2](#52-ruvnetruflo)) | consensus answers *"which of my disagreeing replicas is right"*. Heron has no replicas. **314 MCP tools against Heron's 14** | MIT — compatible | **Reject the swarm** — and [§5.2](#52-ruvnetruflo) takes one question from underneath it |
 | [`thedotmack/claude-mem`](https://github.com/thedotmack/claude-mem) — [§5.3](#53-thedotmackclaude-mem) | context lost at compaction | capture the session, **compress it**, inject relevant context next time | the *lifecycle* is [10](10-memory-and-knowledge.md)'s. The *capture everything* half is the opposite of Heron's rule | **compression is a model call, and every observation costs quota** — so the store cannot be rebuilt, against [D-24](DECISIONS.md) and [Golden Rule 11](14-golden-rules.md). ([§5.3](#53-thedotmackclaude-mem) corrects the store — **SQLite + FTS5, not ChromaDB** — and finds its retrieval ranks by *recency*, simpler than Heron's) | Apache-2.0 with a `NOTICE` — compatible | **Reject the mechanism**; the selective-memory principle is already held |
-| [`PrimeIntellect-ai/prime-agent`](https://github.com/PrimeIntellect-ai/prime-agent) | long-running autonomous work | **bounded autonomous mode** — explicit token and time budgets; sessions that survive a disconnect | the budget idea belongs beside [19 §2](19-context-and-cost.md)'s. Session survival is [23](23-heron-kernel.md)'s checkpoints | its bounds are for unattended running. Heron's [Golden Rule 9](14-golden-rules.md) puts a person in front of a high-risk action instead | MIT — compatible | **Research further** — only the *bound*, and only once [19 §2](19-context-and-cost.md)'s budgets are agreed |
+| [`PrimeIntellect-ai/prime-agent`](https://github.com/PrimeIntellect-ai/prime-agent) — [§5.11](#511-primeintellect-aiprime-agent) | long-running autonomous work | **there is no token or time budget** — [§5.11](#511-primeintellect-aiprime-agent) corrects this row. The mechanism is `shouldStopAfterTurn(context)`, a predicate handed to the embedder. Sessions do survive a disconnect, via a daemon | the predicate **is [D-01](DECISIONS.md)** written as a type: whoever runs the loop decides when it stops. Session survival is [23](23-heron-kernel.md)'s — but a Heron session pins a Revit and a document, so surviving means **re-verifying the pins, not restoring the state** | its daemon is for unattended running. [Golden Rule 9](14-golden-rules.md) puts a person in front of a high-risk action instead | MIT — but the copyright line names an individual, not the publishing organisation (§3) | **Changed: nothing to take.** The absent budget is the finding, and the shape confirms [D-01](DECISIONS.md) |
 | [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) — [§5.9](#59-k-dense-aiscientific-agent-skills) | domain skills scattered across documentation | a **domain skill library** with per-skill metadata and host auto-discovery | the shape is [`brain/skills/`](../brain/skills/) and [09](09-skills-and-fragments.md) | **the repository does NOT say so — [§5.9](#59-k-dense-aiscientific-agent-skills) corrects this.** Its README says *"MIT… use freely"* while four of its 163 skills carry **"© 2025 Anthropic, PBC. All rights reserved."** Only `find -iname LICENSE*` shows it | MIT at the root; **four skills all-rights-reserved, one MIT under another holder** | **Adopt concept** — already held. The licence warning is now demonstrated rather than vague, and becomes [Q-53](OPEN-QUESTIONS.md) |
 | [`ai-boost/awesome-harness-engineering`](https://github.com/ai-boost/awesome-harness-engineering) — [§5.10](#510-ai-boostawesome-harness-engineering) | no map of the field | an index, and the incoming §10.10 is right that it is one | a reading list for whoever answers `Q-45` and the compression question | an index is not a dependency, and treating it as one is how a list becomes a roadmap | CC0 | **Research further**, as an index only |
 | *Claude CEO / CEO-style agent* (§10.15) | — | — | — | — | — | **NOT IDENTIFIED.** The incoming document says *"first identify the exact repository intended… study only if verified"*, and it could not be. **Nothing was studied and nothing is claimed.** [D-01](DECISIONS.md) already gives Heron the orchestrator-in-the-host pattern this row was reaching for |
@@ -100,6 +100,22 @@ against [19 §2](19-context-and-cost.md)'s parts budget — and nothing else.
 That is [D-25](DECISIONS.md)'s rule, which this repository already applies to the owner's own earlier
 library: **studied and re-authored, never imported.** [31](31-studying-the-existing-libraries.md) is the
 method, and it applies to an outside project with more force than to one's own.
+
+**The file-level pass added a reading rule, from three repositories that each proved it:**
+
+> **Read the copyright line, not just the licence name — and read it per directory, not per repository.**
+
+- **ECC** ([§5.1](#51-affaan-mecc)) is MIT, and its fact-forcing gate names `zunoworks/gateguard` as its
+  own origin in the file header. Nothing on the landing page says so.
+- **OpenViking** ([§5.4](#54-volcengineopenviking)) is AGPL-3.0 at the root, with `bot/` under **MIT,
+  "nanobot contributors"** and five vendored C/C++ libraries under their own.
+- **prime-agent** ([§5.11](#511-primeintellect-aiprime-agent)) carries **"Copyright (c) 2025 Mario
+  Zechner"** in a repository published by PrimeIntellect.
+
+And the one that would actually have cost something — **scientific-agent-skills**
+([§5.9](#59-k-dense-aiscientific-agent-skills)), whose README says *"MIT… use freely"* over four skills
+marked **"All rights reserved."** Three of these four are visible only by listing licence files; none is
+visible from a project page. That is [Q-53](OPEN-QUESTIONS.md).
 
 **Two more licence notes worth carrying:**
 
@@ -964,3 +980,62 @@ federated model at 4pm on an issue day.)*
 
 **Decision: unchanged — Research further, as an index only.** Three entries recorded, none adopted, 232
 deliberately not listed.
+
+---
+
+### 5.11 `PrimeIntellect-ai/prime-agent`
+
+**Read at** `bcdcd6e65e10959c9904ec4467747528303493b0`, committed 2026-09-09. MIT.
+
+**Opened:** `packages/agent/src/types.ts`, `packages/agent/src/agent.ts`,
+`packages/coding-agent/src/cli/daemon-command.ts`, `LICENSE`, `README.md`.
+
+**The row's first claim is not in the code.** It said *"bounded autonomous mode — **explicit token and
+time budgets**"* and decided *"Research further — only the **bound**."* There is no such budget. Every
+`maxTokens` in the tree is a **provider parameter**, and `thinkingBudgets` is a model's thinking-token
+setting, not a bound on autonomy.
+
+**What is actually there is better, and it is [D-01](DECISIONS.md) written as a type:**
+
+```ts
+shouldStopAfterTurn?: (context: ShouldStopAfterTurnContext) => boolean | Promise<boolean>;
+```
+
+**The harness refuses to decide when to stop.** It hands the decision to whoever embedded it, with
+everything needed to make it — the turn's assistant message, its tool results, the full context, and the
+messages this invocation produced. There is no number in it because a number would be the harness
+choosing on the caller's behalf.
+
+**For Heron that closes the item rather than advancing it.** [D-01](DECISIONS.md) gives the host the
+loop; a stop predicate belongs to whoever runs the loop; **Heron should not grow a bound.** §4's *"only
+the bound, and only once [19 §2](19-context-and-cost.md)'s budgets are agreed"* is corrected to **there
+is no bound here to take** — and the *shape* of what is here says the same thing Heron already decided.
+
+#### Session survival is real, and it means something different in a Revit process
+
+The daemon is genuine: `owned-session-worker.ts`, and `daemon` commands including `detach` and
+`restart`. A session outlives its client.
+
+**Heron cannot copy that, and the reason is the interesting part.** A Heron session pins **which Revit**
+(Step 5) and **which document inside it** ([Golden Rule 20](14-golden-rules.md)) — and both can change
+while nothing is watching. Revit can be closed. The active document changes the moment somebody clicks
+another window.
+
+So **a Heron session that survives a disconnect is a session whose pins may have expired**, and restoring
+its state faithfully would restore a claim about a model that is no longer true. Survival for Heron
+therefore means **re-verifying the pins, not restoring the state** — which is exactly why
+[`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs) re-counts against the live model instead of
+trusting the preview it holds. [23](23-heron-kernel.md)'s checkpoints are the right shape and this is the
+constraint they have to respect.
+
+#### A provenance note, and it is the third of its kind
+
+`LICENSE` reads **"Copyright (c) 2025 Mario Zechner"** in a repository published by PrimeIntellect. MIT
+either way and nothing turns on it — but it is the **third** repository in this pass whose copyright line
+names somebody other than the organisation publishing it, after ECC carrying `zunoworks/gateguard` and
+OpenViking carrying `nanobot`. That is now a pattern rather than a coincidence, and it is recorded as a
+reading rule in [§3](#3-the-licence-finding-which-is-the-one-that-could-have-cost-something).
+
+**Decision: changed — from *Research further* to *nothing to take, and the shape confirms
+[D-01](DECISIONS.md)*.** Session survival stays [23](23-heron-kernel.md)'s, with the pin constraint
+written down.
