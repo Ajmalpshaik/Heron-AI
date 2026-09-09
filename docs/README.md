@@ -127,6 +127,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 29 | [Metadata Standard](29-metadata-standard.md) | The five fields every artefact carries — and how they tie the code back to the registry |
 | 30 | [Compiling Away From Windows](30-compiling-away-from-windows.md) | **The compile gate runs anywhere.** All eight releases, 2020–2027, from NuGet on Linux; what a pass proves; the 2020-only defect it caught on its first run; and why three releases were skipped for a reason that was about the SDK package, not the operating system |
 | 31 | [Studying The Existing Libraries](31-studying-the-existing-libraries.md) | **How a fragment is studied and re-authored, never imported.** What travels (the mechanism, the scar) and what cannot (the code, the words, the proof); the owner's three rules — check and edit, add, split; and why 221 verified fragments arrive here as 221 unproven ones |
+| 32 | [**The Master Architecture document, reconciled**](32-master-architecture-reconciliation.md) | **Read this before building anything from [`HERON_AI_MASTER_ARCHITECTURE.md`](../HERON_AI_MASTER_ARCHITECTURE.md).** The audit that document demands of itself, done against this repository: **nine of its platform modules already exist here, four of them stricter than it asks for.** What is genuinely missing, ranked — the Context Manager and the six things beside it in [19](19-context-and-cost.md) have **no implementation of any kind**. And what is rejected, with reasons, so the same proposals are not made again. [D-57](DECISIONS.md) |
 
 ## Working documents
 

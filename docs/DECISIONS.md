@@ -3225,3 +3225,75 @@ the 2026-09-08 entries that stranded it.
 
 **Every project compiles on all eight releases, 2020 through 2027** (`python tools/check-compile.py`,
 2026-09-08).
+
+---
+
+## D-57 — The Master Architecture document is a research brief, not a fifth part of the specification
+
+**Status:** Accepted · **Date:** 2026-09-09 · **Found during:** the owner asking for the document to be studied and matched against the project
+**Affects:** [`HERON_AI_MASTER_ARCHITECTURE.md`](../HERON_AI_MASTER_ARCHITECTURE.md), [32 — reconciled](32-master-architecture-reconciliation.md), [docs/README.md](README.md)
+
+### Context
+
+`HERON_AI_MASTER_ARCHITECTURE.md` arrived on 2026-09-09 in one commit, at the repository root, next to
+the [Constitution](../HERON_CONSTITUTION.md) and the [README](../README.md) — the two files a reader
+treats as binding. It references nothing already in this repository: not the four-part specification,
+not a decision, not a Golden Rule, not a file.
+
+**A document in that position, written in that register, will be read as the plan.** It is 24 sections
+of confident architecture, and it describes a system whose purpose it states as *"AI engineering system
+for the existing Heron/Revit development codebase"* — a harness that helps a developer work on this
+codebase. **Heron AI is a BIM-modeller-facing platform.** Those are different products, and the
+document gives a session no way to know which one it is holding.
+
+The audit it demands of itself was then done — its own §3, §17 and §21 all require it before anything
+is built — and the result is [32](32-master-architecture-reconciliation.md). **Nine of the platform
+modules in its §6 already exist here. Four of those are stricter here than it asks for.**
+
+### Decision
+
+**It stays, unedited, as a research brief. It is not a fifth part of the specification and does not
+supersede anything.**
+
+Three things follow, and each had a live alternative:
+
+1. **Its content is not edited to agree with the project.** The same rule the
+   [Master Specification](00-master-specification.md) has always had — *never edited to "fix" it;
+   changes are recorded as decisions* — applies to an incoming document for the same reason: an edited
+   brief no longer shows what was actually proposed, and the disagreements are the useful part.
+   **What it gets instead is a header saying where it stands and pointing at
+   [32](32-master-architecture-reconciliation.md).**
+2. **Its framing of Heron as a developer-assist harness is rejected outright**, not deferred. A session
+   reading it alone would build a Roslyn code graph over `revit/` to help somebody refactor the add-in.
+   That is off-mission and expensive, and *"not now"* would not have stopped it.
+3. **Its engineering discipline is adopted where it is not already practice**, because Heron writes and
+   runs C# against the Revit API **as its product** ([D-28](DECISIONS.md)). Its §14 Revit Validation
+   Gate is about Heron's output, not about Heron's source, and that distinction is what makes most of
+   the document apply after its framing does not.
+
+### What this does NOT do
+
+**It builds nothing.** [32 §4](32-master-architecture-reconciliation.md) names four gaps that are
+genuinely missing, and the largest — the Context Manager and the six things beside it in
+[19](19-context-and-cost.md) — has **no implementation of any kind**, which nothing in this repository
+had said in one place before. Naming a gap is not closing one.
+
+**It adds no row to [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md).** That register is for claims awaiting a
+real Revit. Unbuilt work is a different thing, and the register loses its meaning the moment the two
+are mixed.
+
+**It moves no fragment status and touches no Golden Rule.** Reconciling a document proves nothing about
+a model.
+
+### The rejection worth writing down
+
+The document's §6.4 asks for four API-verification labels — Verified, Project-proven, Version-sensitive,
+Unverified. They are sensible in isolation and they are **refused**, because
+[24 — The Unified Trust Model](24-trust-model.md) exists precisely to collapse six competing status
+vocabularies into two orthogonal axes ([Q-34](OPEN-QUESTIONS.md)). Adding a seventh would undo the
+largest single piece of clean-up in this specification, and everything those four labels carry is
+already expressible as lifecycle × source plus the matrix's `CLAIMED`/`COMPILES` split.
+
+**That is the shape of most of this reconciliation:** the incoming idea is not wrong, it is *already
+here under a different name and with a harder edge* — and adopting it a second time would soften the
+edge.
