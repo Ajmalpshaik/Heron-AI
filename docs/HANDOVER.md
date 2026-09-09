@@ -71,15 +71,15 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | Proven | **159** as of 2026-09-09 — 142 at the start of the day's second proving track, **+18 from it**, and `set-view-section-box` back to `DRAFT` when its implementation changed after its proof was signed. Each carries a recorded proof with a negative case and a staleness fingerprint (D-30). Moving hourly — derive it, do not read it here |
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, docs, gaps, agent-count, **structure** — all green. **`check-licence` added 2026-09-09 and it EXITS 1 on a finding**, unlike the other reports; 370 units, all clean today ([D-66](DECISIONS.md)). `check-revit-gate` and `check-reachable` are reports and exit 0, so their findings are questions and two of them are now worklists. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
-| Tests | **40 suites. 37 pass in a plain Linux container and the three failures are the MACHINE, with two causes not one** — `test_mcp_serves` and `test_served_claims` need the MCP SDK, `test_bridge_roundtrip` needs a built .NET test host. On a machine with both, all 40 should. **Do not fix them by editing the tests.** `test_embed` and `test_retrieve` were re-based against the model backend in PART 5, not edited until green |
+| Tests | **41 suites. 38 pass in a plain Linux container and the three failures are the MACHINE, with two causes not one** — `test_mcp_serves` and `test_served_claims` need the MCP SDK, `test_bridge_roundtrip` needs a built .NET test host. On a machine with both, all 40 should. **Do not fix them by editing the tests.** `test_embed` and `test_retrieve` were re-based against the model backend in PART 5, not edited until green |
 | Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | **rebuilt and redeployed to Revit 2024 on 2026-09-09**, carrying the write engine and the caller-value resolver. Rebuild it after ANY change under `revit/` — and check the framework first: `check-compile.py` builds 2020–2027 into one folder and the newest wins, so a run of it leaves .NET 10 binaries that Revit 2024 refuses with *"Revit cannot run the external application"*. `deploy-addin.ps1` now guards this rather than trusting the operator |
 | Agents | **71 of 250 have code**, 4 host-provided by D-01, 175 left — `python tools/agent-count.py`. The 71st is `HERON-RAG-CTX-007`, the Context Manager, on 2026-09-09. Phase 0/1's agent list is COMPLETE |
 | MCP tools | **14** — `heron_gaps`, `heron_compatibility` and `heron_diagnose` added 2026-09-07/08; **`heron_context` added 2026-09-09** (the Context Manager, [32 §4.1](32-master-architecture-reconciliation.md)). Derive it: `grep -c '^@server.tool()' mcp/server/heron_mcp_server.py` |
 | Open questions | **52 answered, 1 open, nothing gating any phase.** `Q-51` — what guards retrieval-into-context on the day Heron indexes text it did not write — stays open **on purpose**, with [`tests/test_carried_sources.py`](../tests/test_carried_sources.py) watching for the day it becomes real. Derived by `python tools/check-docs.py`, never read from a sentence |
-| Tools | **21** in `tools/`, and **14** MCP tools. Derive both rather than trusting a line |
-| Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them |
-| Branches | **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. `main` is at `16713ae`. **Start from `main`**; nothing is parked outside it |
+| Tools | **22** in `tools/`, and **14** MCP tools. Derive both rather than trusting a line |
+| Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. What is still refused, most-wanted first: `ElementId`, `Element` as a specific instance, `OverrideGraphicSettings`. Derive it with `python tools/generate-jobs.py` |
+| Branches | **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
 **QUEUED FOR THE PC, AND THE OWNER HAS SEEN THE LIST.** **Five items**, all of them needing Revit
 or `dotnet`, all of them CHECKED by a gate that runs without either: **62 link contracts**
@@ -296,6 +296,164 @@ counts what is left; believe it over this file.
 > claimed the two sentences return identical shortlists, which holds in the full library and not in that
 > test's smaller fixture. Measured in one place and asserted in another. The corrected one says what is
 > true there, with the reason.
+
+---
+
+## HANDOVER — 2026-09-09 (the CALLER-INPUTS track): 6 → 40 arrangeable, and a job file nobody types
+
+**The through-line is one question: what can a person hand a fragment?** Four changes answer it, and the
+fifth is a rebase that had to be untangled before any of them could land.
+
+### The measure that matters, taken the same way twice
+
+`tools/generate-jobs.py` reports how many DRAFT fragments with no run record can be arranged as a job.
+Run before and after each change against the **identical** library, it is the only honest number here:
+
+| | Arrangeable |
+|---|---|
+| start of the track | **6** |
+| after `Element` resolves by name | 6 (+2 `FamilySymbol`, which came free) |
+| after eight contracts narrowed | 8 |
+| after a point can be typed in | **40** |
+
+**The units decision did four fifths of it**, and everything before it was groundwork that looked bigger
+than it was. Say that plainly to whoever reads this: narrowing eight contracts unblocked almost nothing
+on its own, because six of the eight were also waiting on `IList<XYZ>`.
+
+### 1. The job file is generated now — `tools/generate-jobs.py`
+
+`batch-prove.py` takes a hand-written job list, and **six input names were mistyped on 2026-09-09
+alone** — `widthMm` for `width`, `sortByFields` for `sortFieldNames`. A mistyped name does not look like
+a typo coming back: the fragment refuses, or binds nothing and reports zero, and both read exactly like
+a broken fragment. This is [FRAGMENT-ISSUES 3h.4](FRAGMENT-ISSUES.md), fourth of the four.
+
+Everything it emits is read out of a file named beside it: DRAFT-and-no-run-record from the library and
+`brain/proof-drafts/runs/`, `write: true` from the fragment's `risk:` against what `run_fragment_write`
+carries in the registry, the setup chain from whether anything a *fragment* provides is needed, and
+**the input names spelled from `contract.needs`** — which is the point of the tool.
+
+**What it refuses to derive is the more important half.** The category and the view are left blank and
+marked `FILL IN`. A wrong category produces a confident meaningless result — eleven times in one batch.
+So does `expect:`; the candidate names are offered as a comment and never chosen. **It removes the
+errors a person makes while typing, not the judgement a person has to make.**
+
+**Nothing is dropped silently.** Every candidate is either a job or a marked one with its reason: a risk
+Heron does not reach (`PUBLISH`/`ADMIN`, refused by the client on the doorstep), a shape D-54 cannot
+receive, a value the setup chain does not leave behind, two needs bound to one chain value, or **nothing
+to vary between the legs** — which makes it [D-53](DECISIONS.md) tracking work rather than batch work.
+
+**There is no generated job file committed, on purpose.** `brain/proof-drafts/runs/` is gitignored, so
+*"never been in front of a model"* is a **local** fact: on a fresh clone every fragment looks untried,
+and on the proving machine the list shrinks after every batch. A committed snapshot is stale by the
+afternoon. **Generate it on the machine that will run it, and generate it fresh.**
+
+### 2, 3, 4. Three type rules, and one of them was a decision nobody had made
+
+| Landed | Rule |
+|---|---|
+| `Element` | resolves to an element **TYPE** by name, `Basic Wall: Generic - 200mm`. An **instance** is refused and always will be: `Element.Name` on one returns its TYPE's name, so searching instances would match every element of that type — a missing rule turned into a wrong answer |
+| nine narrower classes | `WallType`, `FloorType`, `CeilingType`, `FilledRegionType`, `HostObjAttributes`, `MEPCurveType`, `FamilySymbol`, `Phase`, `FilterElement` |
+| `XYZ`, `IList<XYZ>` | **[D-67](DECISIONS.md)** — three numbers in **MILLIMETRES**; several points separated by semicolons |
+
+**D-67 was not a preference, it was already decided and unwritten.** `HeronUnits` converts nothing but
+millimetres to feet; 59 caller values are named `...Mm`; D3 is written *"200 mm. Not 200 feet"*. And
+`array-elements-radial` takes `centreXMm`/`centreYMm` while `place-detail-item` takes `atXMm`/`atYMm` —
+**those are points, split into millimetre scalars because there was no way to send one.** The workaround
+named the unit years before anybody wrote the decision.
+
+Two things about it were checked rather than assumed, and both could have gone the other way:
+
+- **A direction has no unit**, so dividing it by 304.8 looked wrong. It is harmless — scaling all three
+  components alike does not move a vector — but **all six consumers were read** before relying on that.
+  Four call `Normalize()`; `check-obstructions` hands it to `ReferenceIntersector.FindNearest`;
+  `place-family-on-face` uses it as a facing vector. **None uses the magnitude.**
+- **Two separators, not one.** `"0,0,0,1000,0,0"` is two points only if you already know they come in
+  threes, and a list one number short silently becomes a different, valid-looking list.
+
+Each ordinate is bounded by `HeronUnits.MaxMillimetres` (100 km) and a number past it is **refused
+rather than converted** — that is a value that arrived in the wrong unit.
+
+### The eight contracts, and the two that would have been narrowed wrongly
+
+Each type was read out of the fragment's **own body**, never guessed from the need's name:
+
+| Fragment | Was `Element` | Is | Because |
+|---|---|---|---|
+| `create-hvac-zone` | `phase` | `Phase` | the body opened with `var asPhase = phase as Phase` — declaring the base class, then casting back |
+| `create-floor` | `floorType` | `FloorType` | the 2020 overload is reached by reflection as `NewFloor(CurveArray, FloorType, Level, bool)` |
+| `apply-view-filter` | `filter` | **`FilterElement`** | its own comment: a rule filter and a selection filter **share a base class** |
+| `create-from-room-boundaries` | `hostType` | **`HostObjAttributes`** | branches on `hostType is CeilingType` / `is FloorType` |
+| `create-electrical-run` | `runType` | **`MEPCurveType`** | builds a cable tray **or** a conduit from the same value |
+
+`ParameterFilterElement` was the obvious reading of `filter` and it is the **wrong** one.
+**Narrower than `Element` is the point; narrower than the fragment can use is a regression dressed as
+precision.**
+
+The classes are named with `typeof(...)`, not looked up by string, so one missing on a release is a
+build failure rather than a refusal in front of a model. `ElementsNamed` tests the class with
+`IsInstanceOfType` rather than `OfClass`, because four of them are **abstract** and which abstract
+classes `ElementClassFilter` accepts is a runtime question that cannot be settled at compile time on
+eight releases.
+
+### 5. The rebase that had three stale commits in it
+
+`fix/make-silence-illegal` was eleven commits ahead of main. #50 had merged three of them **in rewritten
+form** — three `role: accounting` hunks and the inside-out-margin guard removed before merge — so the
+branch's copies were stale. **Because the content differed the patch-ids differed, and
+`git log --cherry-pick` recognised none of the eleven as upstream**: a plain rebase would have replayed
+all three and put the margin guard back. Eight cherry-picked, three dropped, merged as #55.
+
+**Two resolutions in it were judgement, and a reviewer should know which:**
+
+- The `FRAGMENT-ISSUES` conflict was **not two rows about different things.** Main's paragraph concluded
+  sheets and views are unreachable; the branch's restated every one of its facts and then said that
+  conclusion *"was wrong, and it was wrong for an hour"*. Keeping both would leave the document
+  asserting something the next paragraph calls wrong, so **the branch side was taken.**
+- `731cda4` carried a real `enclosed = 0;` guard for `set-view-section-box`. **Main's side was taken**,
+  and that was right for a reason found later: the guard lived **inside the margin guard**, which the
+  owner had had removed. See below — it must not be re-added.
+
+### WHAT IS NOT FINISHED
+
+**`IList<XYZ>` was the biggest blocker and is gone; the next one is `ElementId`.** Of the fragments
+still marked unarrangeable, the shapes they wait on, most-wanted first: `ElementId` (24 in the MODIFY
+set alone — the 2024 32-to-64-bit change), `Element` as a specific instance (14 — needs the selection,
+not text), `OverrideGraphicSettings`, `Color`, `Material`, `View3D`. **Generate the list rather than
+trusting this sentence:** `python tools/generate-jobs.py`.
+
+**The `enclosed = 0;` guard must NOT be added to main, and this is the one thing here somebody is likely
+to get wrong.** It reads like an obvious outstanding fix — the REVIEW track's own handover lists it as a
+defect it found. It belonged to the inside-out-margin guard, which was removed on the owner's
+instruction. On main's shape it is provably dead: `enclosed++` is reached only after a non-null bounding
+box, and reaching it is what sets `any = true`, so `!any` implies `enclosed == 0` already. **And in the
+one remaining path where `applied` ends false — `applied = view3D.IsSectionBoxActive;` returning false —
+zeroing would be WRONG**, because those elements really were enclosed in the box that was computed.
+
+**That last path is silent, and that IS a real finding.** If `IsSectionBoxActive` comes back false the
+fragment reports `applied false`, `enclosed 22` and **adds nothing to `refusalReasons`** — a count on a
+run that changed nothing, with no reason given. That is §3h.1's exact shape in the fragment §3h.1 was
+written around. **It has been read from the code and never seen happen**, so it is not written into
+FRAGMENT-ISSUES, whose value is that every row was observed. Someone with Revit open should try to make
+it happen before it is recorded as fact.
+
+**Three fragments declare `IList<Element>` as a caller value** — `check-room-mep-completeness`,
+`connect-air-terminals`, `propose-mep-openings`. They want instances, and a comma-separated list of type
+names is not what they are asking for, so the list form was deliberately **not** added alongside the
+singular.
+
+**`IList<IList<XYZ>>` stays refused** — one need in the library, `pointPairs`. It wants a third
+separator, and that is a decision for when a second fragment wants one.
+
+### Two things about the tooling that cost time here
+
+**`check-docs.py` does not catch a duplicate decision number.** D-67 was first written as **D-56, which
+already exists** — the checker verifies that a *referenced* `D-NN` exists, not that a number is used
+once. It passed on a file with two `## D-56` headings. That is a cheap addition to a script whose whole
+job is derived facts.
+
+**A stale local `main` makes a verification gate lie.** The rebase brief's gate said
+`git diff main...HEAD`, and the local `main` ref was 175 commits behind `origin/main`. The gate printed
+a large diff that meant nothing. **Use `origin/main` in any gate written for somebody else to run.**
 
 ---
 
