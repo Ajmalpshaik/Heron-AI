@@ -265,6 +265,7 @@ def ask(fid, name, doc, raw, code):
 
     # 8 - links
     collects = "filteredelementcollector" in squashed
+    reads = doc.get("risk") in ("READ", "ANALYZE", "SUGGEST")
     if "revitlinkinstance" in text or "linked" in text:
         say(ANSWERED, "the fragment names linked documents, so the case was "
                       "considered")
@@ -275,12 +276,24 @@ def ask(fid, name, doc, raw, code):
         # elements can miss the ones in a link.
         say(ANSWERED, "collects nothing from the document, so there is no link "
                       "question here to answer")
+    elif not reads:
+        # A LINKED ELEMENT BELONGS TO ANOTHER DOCUMENT and cannot be changed
+        # through the host - you would have to open the linked file. So a
+        # writer collecting the host only is not under-reaching the way a
+        # reader is, and raising it put 45 fragments on a list they could do
+        # nothing about.
+        say(ANSWERED,
+            "collects and says nothing about links, and is declared %s. A "
+            "linked element belongs to another document and cannot be changed "
+            "through this one, so there is nothing here to miss"
+            % doc.get("risk"))
     else:
         say(LOOK,
-            "collects from the document and says nothing about links. In a "
-            "federated model the elements a modeller can see are frequently in "
-            "a link, and a fragment that reads only the host returns a "
-            "confident smaller number")
+            "READS by collecting from the host document and says nothing about "
+            "links. In a federated model the elements a modeller can see are "
+            "frequently in a link, and a fragment that looks only in the host "
+            "returns a confident SMALLER number. Whether that is right is a "
+            "design question, not a defect - see Q-48")
 
     # 9 - stable ids
     say(NEEDS_RUN,

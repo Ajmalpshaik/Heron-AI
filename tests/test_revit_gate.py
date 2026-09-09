@@ -245,6 +245,29 @@ def main():
               "doc everywhere and mean nothing")
 
         print()
+        print("3c. Question 8 asks a READER about links, never a writer")
+        print("-" * 66)
+        COLLECTS = "var all = new FilteredElementCollector(doc).ToElements();\n"
+        make(work, "readercollects", BASE % ("FRG-T-010", "READ", ""), COLLECTS)
+        got = verdicts_for(tool, work, "readercollects")[7]
+        check(got[0] == tool.LOOK,
+              "a READ fragment that collects and never mentions links IS raised")
+
+        make(work, "writercollects", BASE % ("FRG-T-011", "MODIFY", ""), COLLECTS)
+        got = verdicts_for(tool, work, "writercollects")[7]
+        check(got[0] == tool.ANSWERED,
+              "a MODIFY one is NOT - a linked element belongs to another "
+              "document and cannot be changed through this one, so there is "
+              "nothing for it to miss")
+
+        make(work, "nocollect", BASE % ("FRG-T-012", "READ", ""),
+             "foreach (var v in views) { var n = v.Scale; }\n")
+        got = verdicts_for(tool, work, "nocollect")[7]
+        check(got[0] == tool.ANSWERED,
+              "and a fragment that collects nothing has no link question at "
+              "all - asking every fragment raised 310 of 360")
+
+        print()
         print("4. Question 13 knows a reader from a writer")
         print("-" * 66)
         reader = verdicts_for(tool, work, "nodouble")[12]

@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 42 answered · 5 open · nothing blocking any phase**
+**Progress: 42 answered · 6 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -304,6 +304,45 @@ A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
 ---
 
 ## Tier 3 — Needed soon
+
+### 🟠 Q-48 — Should a fragment that READS look inside loaded links? *(new, 2026-09-09)*
+
+[`tools/check-revit-gate.py`](../tools/check-revit-gate.py) asked question 8 of the fourteen — *are
+linked documents handled correctly?* — of all 360 fragments. **62 of them collect from the host document,
+declare a reading risk, and say nothing about links anywhere.**
+
+**This is the one finding on that list that is about what a modeller sees rather than about code.** In
+Qatar MEP work a model is federated as a matter of course: the architecture is a link, the structure is
+a link, and frequently the MEP a coordinator is checking is a link too. A fragment that collects only
+the host returns a **confident smaller number**, and nothing in the answer says a link was skipped.
+[`HANDOVER.md`](HANDOVER.md) has already hit this from the other side while proving — some cases have to
+be **drawn in the host** because the model's content is linked.
+
+**The 45 fragments that WRITE are correctly excluded and that is an API fact, not a judgement.** A
+linked element belongs to another document and cannot be changed through this one; you would have to
+open the linked file. So a writer collecting the host only is not under-reaching in the way a reader is.
+
+**Why it is a question and not a fix.** Three answers, and they are genuinely different products:
+
+1. **Per fragment.** Each declares whether it reads links. Honest, and it is 62 edits plus a rule for
+   every fragment written afterwards.
+2. **A platform rule.** Reading spans loaded links by default, and a fragment opts out. One decision,
+   but it changes what **every existing recorded proof measured** — a count taken on the host is not the
+   count the same fragment would return afterwards, so [D-30](DECISIONS.md) fingerprints would be
+   answering a different question than the one they were signed for.
+3. **The caller chooses**, as an input the way [D-54](DECISIONS.md) made a view an input. Most flexible,
+   and it adds a need to 62 contracts.
+
+**What is NOT in doubt:** an answer that silently omits linked elements is the plausible-zero failure
+this repository already legislates against — the same shape as `FILTER_ELEMENTS_BY_CATEGORY` reporting
+`unresolvedLevel` so a broken lookup cannot read as a clean count. Whatever is decided, **the answer has
+to say whether links were included.**
+
+`python tools/check-revit-gate.py --list links` names the 62.
+
+**Answer:**
+
+---
 
 ### 🟡 Q-47 — There are two capability-gap paths and only one of them can ever fire *(new, 2026-09-09)*
 

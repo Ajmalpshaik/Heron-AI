@@ -621,6 +621,19 @@ looked exactly like findings:
 | a header **comment** | almost every fragment says *"Assumes `doc` … are in scope"*, so a check reading comments finds `doc` everywhere and means nothing |
 | a **local** | `zoom-to-elements` declares `uidoc` and writes `var doc = uidoc.Document;` — correct code, and reported as an undeclared need it would have sent somebody to edit a working contract |
 
+**Question 8 went 310 → 107 → 62, and the last cut is an API fact rather than a judgement.** It first
+asked every fragment about links and raised 310 of 360 — the shape of the library, not a finding; a
+fragment that sets a view's scale has no link question to get wrong. Narrowed to fragments that
+**collect**, it raised 107. Narrowed again to those that **read**, 62 — because a **linked element
+belongs to another document and cannot be changed through the host**, so a writer collecting the host
+only is not under-reaching the way a reader is, and 45 fragments were on a list they could do nothing
+about.
+
+**Those 62 are the one finding on the whole list that is about what a modeller sees.** In federated MEP
+work — the normal case — a fragment that collects only the host returns a **confident smaller number**
+and nothing in the answer says a link was skipped. That is [`Q-48`](../docs/OPEN-QUESTIONS.md), and it is
+a design question with three genuinely different answers, not a defect with a fix.
+
 **It cannot decide whether a fragment writes, and the attempt is recorded because the failure is
 instructive:**
 

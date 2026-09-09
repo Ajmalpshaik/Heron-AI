@@ -26,7 +26,7 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**42 answered · 5 open, and nothing gates any phase.** `Q-43` to `Q-46` were all opened on
+**42 answered · 6 open, and nothing gates any phase.** `Q-43` to `Q-46` were all opened on
 2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
 than by reading:
 
@@ -37,6 +37,7 @@ than by reading:
 | `Q-45` | [D-58](DECISIONS.md) established that Heron makes no model calls, so [19 §3–§4](19-context-and-cost.md)'s router and fallback may belong wholly to the host — except the *mark the result degraded* clause, which is trust and therefore Heron's |
 | `Q-46` | [`check-revit-gate.py`](../tools/check-revit-gate.py) found **143 of 360** fragments naming nothing they refused or skipped, against [D-52](DECISIONS.md) |
 | `Q-47` | [`check-reachable.py`](../tools/check-reachable.py) found `heron_capability.want()` called from two tests and no production code — so the `capabilities_wanted` table is always empty and **two gap paths exist of which only the derived one can fire** |
+| `Q-48` | 🟠 [`check-revit-gate.py`](../tools/check-revit-gate.py) found **62 reading fragments** that collect from the host document and say nothing about links. In federated MEP work that is a **confident smaller number**, and it is the one finding on that list about what a modeller sees rather than about code |
 
 `Q-41` before them was both asked and answered by the owner on 2026-09-06, during the decision read-back
 rather than by a specification.
