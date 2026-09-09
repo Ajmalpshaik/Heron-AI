@@ -203,7 +203,15 @@ def main(argv):
             findings.append((kind, name,
                              "declares source: OFFICIAL and names another "
                              "copyright holder: %s" % ", ".join(others[:3])))
-        elif source is None and kind == "fragment":
+        elif source is None:
+            # A SKILL COUNTS TOO. This read `and kind == "fragment"` until
+            # 2026-09-09, left over from when .claude/skills was still scanned
+            # and none of those declared a source. Once that folder came out of
+            # units(), the restriction stopped protecting anything and started
+            # hiding something: all ten brain/skills/*.yaml declare no source,
+            # so an IMPORTED skill with no licence would have been counted
+            # clean by a checker whose whole promise is that unmarked and clean
+            # are different findings. Found by Codex on PR #44.
             unmarked.append((kind, name, "declares no source at all"))
         elif source and source != "OFFICIAL" and not licences:
             unmarked.append((kind, name,

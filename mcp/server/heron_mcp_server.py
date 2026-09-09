@@ -896,7 +896,7 @@ def heron_context(request: str, path: str = "", full: bool = False,
 
     try:
         got = brain.context(request, path=path or None, revit=revit, full=full,
-                            depth=depth or None)
+                            depth=depth or None, project=pinned.title)
     except brain.BrainUnavailable as why:
         return str(why)
     except ValueError as why:

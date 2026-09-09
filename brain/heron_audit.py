@@ -95,6 +95,16 @@ CONTEXT = "brain_context"
 CATALOGUE = "brain_catalogue"
 
 
+def catalogue(skills, capabilities, gaps, ms=None, directory=None):
+    """What Heron knows, asked for as a whole. Never fails, so ok is always
+    true - the numbers are the content."""
+    return record(
+        CATALOGUE, ok=True,
+        numbers={"skills": skills, "capabilities": capabilities, "gaps": gaps,
+                 "ms": ms},
+        directory=directory)
+
+
 def current_file(directory=None):
     """One file per month, matching HeronAudit's own rhythm and its glob."""
     target = directory if directory is not None else GAPS.audit_dir()
@@ -150,6 +160,21 @@ def record(op, ok, fields=None, numbers=None, directory=None):
         return False
 
 
+# The refusal codes this writer uses. They are the keys heron_gaps.analyse()
+# classifies by, and every ok=false line MUST carry one.
+#
+# WITHOUT THEM A CORRECT REFUSAL READS AS A FAULT. analyse() buckets a failed
+# row by its `error`, defaulting to "(none)" and landing in `unclassified` - so
+# a request Heron honestly could not answer would have inflated the failure
+# count in the very report built to tell defects from correct refusals apart.
+# Codex found it on PR #44 and it is this file's neighbour's own founding
+# mistake: heron_gaps was corrected because its loudest error was the executor
+# behaving correctly.
+NO_CAPABILITY = "no_capability"     # the words matched nothing Heron provides
+NO_PROVIDER = "no_provider"         # known capability, no fragment for it
+CONTEXT_REFUSED = "context_refused" # over budget, or a source not installed
+
+
 def lookup(route, capability, provider, candidates, excluded, ms=None,
            directory=None):
     """
@@ -162,7 +187,8 @@ def lookup(route, capability, provider, candidates, excluded, ms=None,
     """
     return record(
         LOOKUP, ok=bool(provider),
-        fields={"route": route, "capability": capability, "provider": provider},
+        fields={"route": route, "capability": capability, "provider": provider,
+                "error": None if provider else NO_CAPABILITY},
         numbers={"candidates": candidates, "excluded": excluded, "ms": ms},
         directory=directory)
 
@@ -171,7 +197,8 @@ def resolve(capability, provider, ok, revit=None, ms=None, directory=None):
     """A capability asked for by name. The name is Heron's own, not the user's."""
     return record(
         RESOLVE, ok=ok,
-        fields={"capability": capability, "provider": provider, "revit": revit},
+        fields={"capability": capability, "provider": provider, "revit": revit,
+                "error": None if ok else NO_PROVIDER},
         numbers={"ms": ms}, directory=directory)
 
 
@@ -186,7 +213,13 @@ def context(path, depth, parts, characters, refused=None, ms=None,
     """
     return record(
         CONTEXT, ok=refused is None,
-        fields={"path": path, "depth": depth, "refused": refused},
+        fields={"path": path, "depth": depth, "refused": refused,
+                # A REFUSAL IS NOT A DEFECT, and it is not UNCLASSIFIED either.
+                # `refused` carries the sentence; `error` carries the code, so
+                # heron_gaps files it as a correct refusal rather than under
+                # "(none)". Leaving the code out was the first fix's own
+                # version of the bug it was fixing.
+                "error": None if refused is None else CONTEXT_REFUSED},
         numbers={"parts": parts, "characters": characters, "ms": ms},
         directory=directory)
 

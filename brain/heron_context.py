@@ -790,9 +790,18 @@ def _generation_parts(ctx, store, fragment_id, revit):
     method would give two answers to one question.
     """
     if not fragment_id:
-        for kind in (NEIGHBOUR, TESTS, API):
+        # THE API SURFACE IS NOT THE NEIGHBOUR'S. `_api_surface()` takes no
+        # arguments and reads the executor's own import list; it is available
+        # whether or not retrieval matched anything. Refusing it here dropped
+        # the imports a generated fragment may assume EXACTLY when the request
+        # was novel enough to have no neighbour - the one case where a
+        # generator most needs to be told what it can rely on, and the one
+        # most likely to produce standalone-style code that will not compile.
+        # Found by Codex on PR #44, 2026-09-09.
+        for kind in (NEIGHBOUR, TESTS):
             ctx.note_refused(kind, "nothing matched, so there is no neighbour "
                                    "to carry")
+        _api_part(ctx)
         return
 
     folder = _fragment_dir(store, fragment_id)
@@ -826,6 +835,17 @@ def _generation_parts(ctx, store, fragment_id, revit):
     else:
         ctx.note_refused(TESTS, "%s declares no cases.yaml" % fragment_id)
 
+    _api_part(ctx)
+
+
+def _api_part(ctx):
+    """The imports a generated fragment may assume.
+
+    Its own function because it is reached from TWO places and depends on
+    neither of them: with a neighbour, and without one. `_api_surface()` takes
+    no arguments and reads the executor's import list, so a request that
+    matched nothing still gets told what is already in scope.
+    """
     surface, where = _api_surface()
     if surface:
         body, cut = _at_depth(surface, ctx.depth, _surface_tiers)

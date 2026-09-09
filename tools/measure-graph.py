@@ -155,7 +155,13 @@ def with_graph(store, ranked, weight, seeds, fragments, nbrs=None):
     """
     scored = dict((c.id, c.score) for c in ranked)
     if not ranked:
-        return []
+        # THE SAME SHAPE AS THE NON-EMPTY PATH. Returning a bare [] here raised
+        # ValueError in the caller, which always unpacks `ids, _known`. It
+        # never fired in the recorded run because no query came back empty -
+        # but `--revit 2019` empties the whole library at the version wall, so
+        # the one setting most worth measuring was the one that crashed.
+        # Found by Codex on PR #44, 2026-09-09.
+        return [], {}
 
     # The seeds are the fragments the existing routes were most sure of.
     reached = {}
@@ -240,7 +246,23 @@ def main(argv):
         backend, _why = EMBED.backend()
         fragments = GRAPH._loaded()
 
+        # THE ANSWER KEY MUST OBEY THE SAME VERSION WALL AS RETRIEVAL.
+        # Without this, `--revit 2020` asked about fragments retrieval had
+        # correctly removed and scored their correct absence as a miss,
+        # depressing P@1, P@5 and MRR in BOTH arms. It did not touch the
+        # recorded Q-52 numbers, which were run with no --revit and therefore
+        # no wall - but it would have made any release-specific re-run lie.
+        # Found by Codex on PR #44, 2026-09-09.
         rows = [r for r in store.fragments() if r["semantic_identity"]]
+        if revit:
+            eligible, _excluded = RETRIEVE.eligible(store, revit)
+            allowed = set(r["id"] for r in eligible)
+            before = len(rows)
+            rows = [r for r in rows if r["id"] in allowed]
+            if len(rows) != before:
+                print("  version wall    %d of %d fragments do not support "
+                      "%s, so they are not asked about either"
+                      % (before - len(rows), before, revit))
         print("MEASURING THE GRAPH AS A THIRD RETRIEVAL STREAM")
         print("=" * 70)
         print("Q-52, run rather than argued. docs/33 s5.16.")

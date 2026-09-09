@@ -273,13 +273,51 @@ def main(argv):
     print("  worse than the phrasings a fragment writes for itself.")
     print("")
 
-    print("LIVE - what the utterance cache actually holds")
+    print("LIVE - what real requests actually did")
     print("-" * 70)
-    if rows is None:
-        print("  the cache table does not exist in this scope yet")
+
+    # THE ROUTE SHARE COMES FROM THE TRAIL, NOT FROM THE CACHE. This section
+    # read only the cache until Codex pointed out on PR #44 that a count of
+    # cache rows is inventory, never request-route frequency - and D-62 built
+    # the brain's own audit file precisely so the live share could be read.
+    # Claiming a metric and then reporting a different number is the failure
+    # this repository keeps finding in other people's tools.
+    try:
+        import heron_gaps as GAPS
+        entries, _skipped = GAPS.read()
+    except Exception:
+        entries = []
+
+    live = [e for e in entries if str(e.get("op", "")) == "brain_lookup"]
+    if not live:
+        print("  no brain_lookup entries in the audit trail yet, so there is")
+        print("  no live route share to report. That is not zero traffic - it")
+        print("  is no trail: on a machine with no %APPDATA% and no")
+        print("  HERON_AUDIT there is nowhere to write one (D-62).")
     else:
-        print("  %-34s %6d" % ("cached wordings", rows))
-        print("  %-34s %6d" % ("times they were reused", hits))
+        counted = {}
+        for entry in live:
+            route = str(entry.get("route") or "(none)")
+            counted[route] = counted.get(route, 0) + 1
+        total = len(live)
+        print("  %d real request(s) recorded" % total)
+        for route in sorted(counted, key=lambda r: -counted[r]):
+            print("    %-14s %6d  %5.1f%%"
+                  % (route, counted[route], 100.0 * counted[route] / total))
+        deterministic = sum(counted.get(r, 0) for r in ("identity", "cache"))
+        print("")
+        print("  %-34s %5.1f%%" % ("answered with NO model needed",
+                                   100.0 * deterministic / total))
+        print("  That is docs/19 s5's rule measured directly rather than by")
+        print("  proxy - D-58's replacement for 'model calls per request'.")
+    print("")
+
+    print("  the utterance cache itself")
+    if rows is None:
+        print("    the cache table does not exist in this scope yet")
+    else:
+        print("    %-32s %6d" % ("cached wordings", rows))
+        print("    %-32s %6d" % ("times they were reused", hits))
     print("")
 
     callers = remember_callers()

@@ -72,6 +72,17 @@ credentials.*
 # .NET
 bin/
 obj/
+
+# ...but NOT a skill's own bin/. `bin/` above is for .NET build output and it
+# silently swallowed .claude/skills/heron-guard/bin/heron_guard.py - the hook
+# the skill card advertises. The SKILL.md was committed, the executable it
+# names was not, so every invocation of the hook would have failed before
+# making a permission decision. Found by Codex on PR #44, 2026-09-09.
+#
+# The directory has to be re-included BEFORE the file: git cannot re-include a
+# file whose parent directory is excluded.
+!.claude/skills/*/bin/
+!.claude/skills/*/bin/*.py
 [Dd]ebug/
 [Rr]elease/
 *.user

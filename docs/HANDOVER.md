@@ -313,6 +313,7 @@ opposite of production-ready**, and that is the reason the lists are lists.
 | **2** | **The dropped-counts** ([D-64](DECISIONS.md)). Each declares a field in `provides` naming what it dropped — the rule is that ONE EXISTS, not that a particular word does. The marker rides **only on the empty answer**, capped | **59** | `python tools/check-revit-gate.py --list reporting` |
 | **3** | **The preview selection** ([D-60](DECISIONS.md)) in [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs). Select `preview.Ids` and `preview.Skipped`, **500 per set** as a setting's default, save the modeller's own selection first and put it back — except on accept | one file | D-60 |
 | **4** | **The workflow id across the seam** ([D-61](DECISIONS.md), [D-62](DECISIONS.md)). The add-in mints one per request; the brain never sees one | one seam | below |
+| **5** | **The project knowledge scope.** `heron_context` now carries the pinned project's NAME, but `_Open` still always opens the GLOBAL store, so `knowledge scope: global` on every packet and project-specific knowledge can never take part. Changing it touches every brain tool, so it wants a real project store | one class | `_Open` in [`heron_brain.py`](../mcp/server/heron_brain.py) |
 
 **Item 4 is small and it unlocks three things at once**, which is why it is worth doing early rather
 than last:
@@ -323,6 +324,35 @@ than last:
   structural one
 - [`brain/heron_audit.py`](../brain/heron_audit.py) can finally claim `HERON-MCP-LOG-010`, whose row
   says *keyed by Workflow ID* and is the only reason its header still says `Heron-Agent: none`
+
+### AN AUTOMATED REVIEW FOUND NINE THINGS AND ALL NINE WERE REAL
+
+PR #44 was reviewed by Codex on 2026-09-09. **Nine findings, nine confirmed against the code, all
+fixed.** Worth reading as a class rather than a list, because seven of the nine are the same mistake:
+**a thing declared and then not finished** — and every one of them passed all three gates and the whole
+test suite.
+
+| | What it was |
+|---|---|
+| **The worst one** | **`.claude/skills/heron-guard/bin/heron_guard.py` was not in the repository at all.** `.gitignore`'s `bin/` rule — there for .NET build output — swallowed it. The SKILL.md was committed, the executable it advertises was not, so on any fresh clone the hook would have failed before making a permission decision. **It passed here because the file was on disk.** `.gitignore` now re-includes `.claude/skills/*/bin/*.py`, and the directory has to be re-included before the file or git will not look inside it |
+| **A crash nobody hit** | `measure-graph.py` returned a bare `[]` where the caller unpacks `ids, known`. It never fired in the recorded run — but `--revit 2019` empties the library at the version wall, so **the one setting most worth measuring was the one that raised `ValueError`** |
+| **A measurement that would have lied** | The same tool's answer key was not filtered by `--revit`, so a release-specific re-run would score a fragment's correct absence as a miss. **The recorded Q-52 numbers are unaffected** — they were run with no `--revit` and therefore no wall — but a re-run would not have been |
+| **A hole in a brand-new gate** | `check-licence.py` counted a source-less **skill** as clean, from a restriction left over from when `.claude/skills` was still scanned. All ten `brain/skills/*.yaml` declared no source, so an imported skill with no licence would have passed the checker whose whole promise is that unmarked and clean are different findings. The ten now declare `source: OFFICIAL` |
+| **Two of four unwired** | `heron_audit.context()` and a catalogue recorder were written and never called, so `heron_context` and `heron_capabilities` left no trace. *"The brain side of the trail"* was half the brain |
+| **Correct refusals counted as failures** | Every `ok: false` went out with **no error code**, and `heron_gaps.analyse()` files those under `(none)` in `unclassified`. That is `heron_gaps.py`'s own founding mistake repeated. Three codes now exist and classify as correct refusals |
+| **A claimed metric that was a different number** | `measure-routes.py`'s LIVE section counted **cache rows** — inventory, not route frequency — while D-62 existed to make the live share readable. It reads the trail now |
+| **The packet was quietly less true than it could be** | Every context packet said `project: none named` while the add-in had known the pinned document's name since the first `count_elements` |
+| **The generator lost its imports exactly when it needed them** | `heron_context` refused the API surface along with the neighbour when nothing matched — but `_api_surface()` takes no arguments and reads the executor's import list. **The novel request, which most needs telling what it may assume, was the one told nothing** |
+
+**One half is deliberately not fixed and is queued instead.** The same finding asked for the project
+**knowledge scope** to be passed as well as the name. `_Open` always opens the GLOBAL store, so that
+changes how *every* brain tool resolves knowledge rather than one — and it wants a real project store to
+test against. **Item 5 on the PC list.**
+
+**The lesson, and it is not "run a reviewer".** Every one of the nine passed `check-docs`,
+`check-metadata`, `check-structure` and every test suite that runs in this container. **A gate
+checks what somebody thought to check**, and seven of these were written by the same person who
+wrote the gate an hour earlier.
 
 ### Two things that must be re-checked on the PC before item 1 is called done
 

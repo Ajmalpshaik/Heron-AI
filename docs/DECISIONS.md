@@ -3653,6 +3653,32 @@ when there is nowhere to write. On Linux with no `APPDATA` and no `HERON_AUDIT` 
 developer machine writes nothing and pays nothing. **A logger that can break the request it was only
 supposed to describe has the priority backwards.**
 
+### Corrected on review, 2026-09-09 — three ways this was less than it claimed
+
+An automated review of PR #44 found three, and all three were the same mistake in different clothes:
+**a thing declared and then not finished.**
+
+**1. Two of the four operations were unwired.** `context()` and a catalogue recorder were written and
+never called, so `heron_context` and `heron_capabilities` left no trace at all. *"The brain side of the
+trail"* was half of the brain.
+
+**2. Every failed line was unclassified.** `heron_gaps.analyse()` buckets a failed row by its `error`
+field, defaulting to `(none)`. This writer emitted `ok: false` with **no error at all**, so a request
+Heron honestly could not answer inflated the failure count in the very report built to tell defects
+from correct refusals apart. **That is `heron_gaps.py`'s own founding mistake repeated** — its loudest
+error was the executor behaving correctly, and counting it as a gap would have commissioned work already
+done. Three codes now exist and are classified as correct refusals: `no_capability`, `no_provider`,
+`context_refused`.
+
+**3. `measure-routes.py` claimed a metric it did not compute.** Its LIVE section counted **cache rows**,
+which is inventory, not request-route frequency — while this decision's whole purpose was to make the
+live share readable. It reads the trail now, and reports the deterministic share
+([D-58](DECISIONS.md)'s replacement for *model calls per request*) directly.
+
+**The shape is worth more than the three fixes.** Each was a claim written before the thing it described
+was finished, and every one of them passed all three gates and the whole test suite. **A gate checks
+what somebody thought to check.**
+
 ---
 
 ## D-63 — A want is recorded when a capability is asked for BY NAME and nobody provides it

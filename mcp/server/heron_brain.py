@@ -268,10 +268,17 @@ def catalogue():
             for capability in entry["missing"]:
                 wanted.setdefault(capability, []).append(entry["id"])
 
+        gap_list = sorted((name, sorted(who))
+                          for name, who in wanted.items())
+        # D-62. Declared in heron_audit and unwired until Codex noticed on
+        # PR #44 that heron_capabilities left no trace at all - so the "brain
+        # side of the trail" was two of its four operations.
+        _audit().catalogue(skills=len(skills), capabilities=len(capabilities),
+                           gaps=len(gap_list))
         return {
             "skills": skills,
             "capabilities": capabilities,
-            "gaps": sorted((name, sorted(who)) for name, who in wanted.items()),
+            "gaps": gap_list,
             "problems": problems + CAP.problems(store),
         }
 
@@ -449,7 +456,8 @@ def _context_module():
     return CONTEXT
 
 
-def context(request, path=None, revit=None, full=False, depth=None):
+def context(request, path=None, revit=None, full=False, depth=None,
+            project=None):
     """
     What one agent would be given for one request, and nothing else.
 
@@ -490,11 +498,32 @@ def context(request, path=None, revit=None, full=False, depth=None):
 
     with _Open() as store:
         try:
+            # `project` is the pinned document's name and it comes from the
+            # SERVER, which is the only side that knows it. Without it the
+            # situation part said "project: none named" on every single
+            # request, while the add-in had known the name since the first
+            # count_elements - a packet quietly less true than it could be.
+            # Found by Codex on PR #44, 2026-09-09.
+            #
+            # `scope` is NOT passed and that is deliberate rather than
+            # forgotten: _Open always opens the GLOBAL store, so a project
+            # scope would change how every brain tool resolves knowledge, not
+            # just this one. That belongs with a real project store to test
+            # against - see HANDOVER.
             ctx = CONTEXT.assemble(store, request, path=path, revit=revit,
-                                   depth=wanted)
+                                   project=project, depth=wanted)
         except (CONTEXT.OverBudget, CONTEXT.TooDeep,
                 CONTEXT.SourceMissing) as why:
+            # A REFUSAL IS RECORDED, not dropped. A trail holding only the
+            # assemblies makes a path that refuses every time - STANDARDS, on
+            # every installation today - look like a path nobody used.
+            _audit().context(path=path, depth=depth, parts=0, characters=0,
+                             refused=str(why))
             raise ContextRefused(str(why))
+
+        _audit().context(path=ctx.path,
+                         depth=CONTEXT.DEPTH_NAMES[ctx.depth],
+                         parts=len(ctx.parts), characters=ctx.size)
         return {
             "request": ctx.request,
             "path": ctx.path,
