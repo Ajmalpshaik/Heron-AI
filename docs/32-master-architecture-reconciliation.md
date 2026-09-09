@@ -137,7 +137,7 @@ one, and an agent able to stamp 218 fragments is the fastest machine ever built 
 
 ## 4. What is genuinely missing — ranked by what it costs to leave undone
 
-**This section opened with four entries and closed with three.** §4.4 was checked, found already built in six places, and struck rather than deleted — a rejected gap is worth as much as a real one here, because the next reader would otherwise raise it again.
+**This section opened with four entries and closed with three, one of which is now built.** §4.4 was checked, found already built in six places, and struck rather than deleted — a rejected gap is worth as much as a real one here, because the next reader would otherwise raise it again. §4.2 is closed by [`tools/measure-brain.py`](../tools/measure-brain.py) and left in place with its numbers, because a baseline is only worth having if somebody can find what it was.
 
 Each is put through the incoming document's own §22 decision standard before it is called work.
 
@@ -183,10 +183,37 @@ host.** Heron makes none — `heron_embed` runs a local model with no tokens and
 those four fields describe something Heron cannot see, and building an agent to report them would
 produce a meter reading zero and a reader who believed it.
 
-**Verdict: ADOPT, narrowed to the brain's own stage timings**, on the same seam
-[`heron_gaps.py`](../brain/heron_gaps.py) already uses so there is one reader of the trail rather than
-two. The registry row wants correcting at the same time, because a row asking for the impossible is
-worse than a row asking for nothing.
+**Verdict: ADOPTED, narrowed to the brain's own stage timings — and BUILT.**
+[`tools/measure-brain.py`](../tools/measure-brain.py) times the import of the embedding backend first
+and on its own, then the structured filter, the short circuit, keywords, nearness, `retrieve()` and
+`find()`, over a deterministic sample of the fragments' declared utterances. It touches no production
+file: it calls the existing entry points from outside, the way the other `tools/` scripts do.
+
+**It is not a gate and exits 0.** A timing is not a pass or a fail, and there is no agreed budget to
+breach — [19 §2](19-context-and-cost.md) proposes one and nothing implements it. Taking a threshold
+from the first run would make whichever machine ran it the standard.
+
+**The first run, on the Linux container rather than the owner's PC, and on the `lexical` backend:**
+
+| stage | median | worst |
+|---|---|---|
+| import the embedding backend | 6.6 ms | — (once per process) |
+| index for keywords / for nearness | ≈1.2 s each | — (once) |
+| filter — `eligible()` | 0.8 ms | 0.9 ms |
+| route — keywords | 1.3 ms | 1.6 ms |
+| route — nearness | 4.3 ms | 4.7 ms |
+| the stack — `retrieve()` | 6.6 ms | 6.9 ms |
+| the whole lookup — `find()` | **1.0 ms** | 1.2 ms |
+
+**That last row is flattered and the tool says so under the table.** All twelve requests took Step 9's
+identity short circuit, because the questions asked were fragments' **own** declared utterances — the
+best case by construction. A request phrased in somebody else's words costs what `retrieve()` costs.
+**6.6 ms is the honest figure**, and `nearness` is two thirds of it on the cheapest backend there is.
+
+**The registry row wants correcting**, and the tool declares `Heron-Agent: none` rather than claiming
+`HERON-OPS-OBS-011` while three quarters of that agent's declared job stays impossible. A row asking
+for the impossible is worse than a row asking for nothing, and quietly claiming it would have made
+`check-metadata.py` report the Observability Agent BUILT.
 
 **The value is not hypothetical.** Closing register row `A7` made `heron_capabilities` never reply, and
 a real Claude Code tool call sat on it for **thirty minutes** — found with `faulthandler`, not by
@@ -274,8 +301,9 @@ the incoming document and re-propose every one of them.
 ## 7. What a session picking this up should do, in order
 
 1. **Read §1.** If the next thing you are about to build helps a developer edit `revit/`, stop.
-2. **§4.2 — the baseline.** Cheapest, gates the rest, and this repository already knows the cost of
-   not having it ([D-49](DECISIONS.md)).
+2. ~~**§4.2 — the baseline.**~~ **Done** — [`tools/measure-brain.py`](../tools/measure-brain.py).
+   Re-run it on the owner's PC, and again with the trained backend installed, because the figures above
+   are a Linux container on `lexical` and neither is the machine Heron runs on.
 3. **§4.1 — the Context Manager**, against that baseline, with compression forbidden from the
    exact-match corpus.
 4. **§4.3** — small, blocked by nothing. **§4.4 is struck**; there was nothing there.

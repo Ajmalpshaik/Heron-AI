@@ -481,3 +481,47 @@ library rather than typed, so it cannot go stale.
 **The exit code follows the batch, not the fragments.** Fourteen failures is the output — the thing it
 was run to find out — and exiting non-zero on them would make a successful proving run
 indistinguishable from a broken one. What earns a non-zero code is a job file that cannot be run.
+
+---
+
+## `measure-brain.py` — how long the brain takes, stage by stage
+
+```bash
+python tools/measure-brain.py
+python tools/measure-brain.py --revit 2024 --requests 40
+```
+
+**The Revit side has been measured since Step 4 and the brain has never been measured at all.**
+`HeronAudit` writes a duration per request and [`heron_gaps.py`](../brain/heron_gaps.py) reports median
+and worst milliseconds per fragment and per operation. A grep for `perf_counter` or `monotonic` over
+`heron_search.py`, `heron_embed.py` and `heron_retrieve.py` returns **nothing**, and none of them writes
+to the trail. [docs/32 §4.2](../docs/32-master-architecture-reconciliation.md) is where that gap is
+recorded.
+
+**It is the half where the only real latency disaster has happened.** [D-49](../docs/DECISIONS.md):
+closing register row `A7` installed a trained embedding backend, its import ran on the asyncio event
+loop, and a Claude Code tool call sat on `heron_capabilities` for **thirty minutes**. An import costing
+1.0 s in a fresh process, still running at 40 s there. It was found with `faulthandler`, by somebody who
+noticed a hang.
+
+So the backend import is timed **first and on its own**, before anything else, because it happens once
+per process and rolling it into the first request would hide it inside a figure that then reads as a
+slow search.
+
+**Three things it refuses to do:**
+
+| | |
+|---|---|
+| **It does not claim `HERON-OPS-OBS-011`** | The registry defines the Observability Agent as *"latency, token usage, model calls per request, cost per request"*. [D-01](../docs/DECISIONS.md) put every model call in the host and `heron_embed` runs a local model — no tokens, no account, no cost ([D-24](../docs/DECISIONS.md), [D-26](../docs/DECISIONS.md)). Three of those four fields are things Heron cannot see from here, so the header says `Heron-Agent: none` rather than letting `check-metadata.py` report the agent BUILT with three quarters of its job impossible. **The registry row wants correcting**, and that is the owner's call |
+| **It is not a gate and exits 0** | A timing is not a pass or a fail, and there is no agreed budget to breach — [docs/19 §2](../docs/19-context-and-cost.md) proposes one and nothing implements it. A threshold taken from the first run would make whatever machine ran it the standard |
+| **It will not report over the wrong library** | Same rule as `check-routing.py` and for the reason that tool learned the hard way: one store at `%APPDATA%\Heron\knowledge` serves every checkout on the machine, so a **count** can match while the store holds another session's fragments. It compares the **ids** |
+
+**The first run already found something worth saying out loud.** `find()` came back in about a
+millisecond and `retrieve()` took seven — because the questions are the fragments' **own declared
+utterances**, so all twelve took Step 9's identity short circuit. That is the best case by construction
+and the tool says so, with the count, under the table. A request phrased in somebody else's words costs
+what `retrieve()` costs.
+
+Every run prints the machine, the Python, the embedding backend and the fragment count, because a
+number from a Linux container and a number from the owner's PC are not comparable and a table that did
+not say which is which would be used as though they were.
