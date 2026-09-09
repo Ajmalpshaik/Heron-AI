@@ -319,7 +319,7 @@ merely looks like its subject.
 **What is left is exactly two things, and both are open questions rather than defects:** 62 reading
 fragments that count only the host document ([`Q-48`](OPEN-QUESTIONS.md) — the one finding here about
 what a modeller sees) and 59 that go looking, drop candidates, and name none of them
-([`Q-46`](OPEN-QUESTIONS.md)), plus 6 collectors worth a glance. **Every other question answers clean
+([`Q-46`](OPEN-QUESTIONS.md)), plus **one** collector worth a glance. **Every other question answers clean
 across all 360.**
 
 **Both remaining findings are the same failure in two places**, and it is the one this repository
