@@ -96,13 +96,51 @@ Afterwards: **9,628 → 3,966 placed elements, and every floor plan gone.** The 
 choice of Levels as a "harmless" contrast was mine, made without thinking about what a level carries in
 Revit — and the fragment's own output is what said so.
 
-**Two failures now, and the shape is the same both times:** a large operation (60 elements, then 5,636)
-run with no `apply`, and the model left changed. Small writes roll back correctly — that has been
-checked after every batch all day, and the `create-level` proof was verified element-by-element. Whether
-the boundary is size, cascade depth, or Revit committing something of its own is **not known**.
+**Two failures at this point, and the shape looked the same both times:** a large operation (60 elements,
+then 5,636) run with no `apply`, and the model left changed. It was believed then that small writes roll
+back correctly — checked after every batch that day, with the `create-level` proof verified
+element-by-element. **A third incident on 2026-09-09 disproved that**, below: seventeen sheets, a rename,
+nothing created, and the rollback still did not hold. Whether the boundary is size, cascade depth, or
+Revit committing something of its own is **not known** — but it is now known that it is NOT size.
 
 Until it is: **run write proofs on a model you are willing to throw away, and check the element count
 after every batch.** Both incidents were caught by that check and nothing else.
+
+### AND A THIRD TIME, ON A WRITE THAT WAS NOT LARGE AT ALL — 2026-09-09
+
+**Seventeen sheets. A rename. Nothing created, nothing deleted, no cascade, no dialog.** The rollback
+still did not hold, and this is the incident that says the boundary is not size.
+
+`edit-text-values` was proved through `tools/jobs/refusal-paths.yaml` with `--write` and **no `apply`**.
+Its positive put a `HERON ` prefix on `Sheet Name` across all 17 sheets and reported `changed 17`,
+`blank 0`, `untouched 0` — a clean, correct, small write. The transaction was rolled back.
+
+Afterwards `list-sheets` still read:
+
+```
+M000  HERON Cover Sheet
+M001  HERON Learn about this project
+M002  HERON Notes, Symbols & Schedules
+```
+
+**The element count did not move — 9,628 before and after — and that is the trap.** Both earlier
+incidents were caught by counting elements, and this one is invisible to that check: a rename creates
+nothing. The count was read, came back correct, and the model was still wrong. It was found only by
+re-reading the values that had been written.
+
+> **Checking the element count is not enough.** It catches a write that CREATES or DELETES. A write that
+> EDITS — a rename, a parameter, a type change — passes that check while still standing in the model.
+> After a write proof, re-read the thing that was written.
+
+Sheet NUMBERS were untouched, so nothing became ambiguous. **The disk file was NOT verified the way the
+2026-09-08 incident was** — that one was closed without saving and reopened to a confirmed 9,628. Here
+the session reported *unsaved changes* and nothing was saved, so the damage should be confined to the
+live session on the same reasoning as before — but it is an inference, and it is written down as one
+rather than as a check that was made. Recovery is the known one: **close without saving**.
+
+**What this rules out.** Not size (17), not cascade (a name has no dependents), not a dialog (§1b —
+none was raised), not deletion. What the three incidents still share is only `--write` with no `apply`
+— which is to say, the rollback path itself, and nothing about what was asked of it.
 
 ### `delete-elements` IS BLOCKED, not merely untested — 2026-09-09
 
@@ -124,8 +162,6 @@ close.
 
 `alsoWent` is worth keeping in mind for its own sake: the fragment reports the cascade in the same
 answer, and both times it was right and was read too late.
-
-### It never reached disk, and that is checked rather than hoped
 
 ### It never reached disk, and that is checked rather than hoped
 
@@ -1091,7 +1127,7 @@ first**, because everything above makes proving faster while that one makes Hero
 
 ---
 
-## 5. HERON'S OWN DEFECTS found by proving — one still open
+## 5. HERON'S OWN DEFECTS found by proving — two still open
 
 | # | Defect | State |
 |---|---|---|
@@ -1104,6 +1140,7 @@ first**, because everything above makes proving faster while that one makes Hero
 | 7 | **The naming heuristics were dead code.** `provide_role()` answers `"result"` for an entry with no `role:` key, and that default went into the map the judge consults - so every declared name looked explicitly declared, and D-51/D-52's patterns never ran. **102 names across 134 fragments** (`scanned`, `unplaced`, `noConnectors`, `notASheet`) were judged as findings. Found proving `select-scope-boxes`, whose negative had every result at zero and `scanned: 5` | Fixed - the judge-set and the role-map are separate arguments now |
 | 9 | **A fragment's OWN risk level was never enforced.** The gate reads the OPERATION's risk from the tool registry — Golden Rule 19, and right — and `run_fragment_write` is declared Modify. So a fragment declaring `risk: ADMIN` or `PUBLISH` ran under a Modify gate and nobody was consulted, though `HeronPermissions` says those *"are not reachable in Phase 0 or Phase 1 at all"*. **12 fragments are above Modify**, and `create-workset` (ADMIN) created one on the first try. The hole existed before `run_fragment_write` and was harmless — no transaction, so nothing could happen. Building the write path made it real | Fixed — the client refuses to SEND one. Be honest about what that is: a guard against a mistake, not a boundary against malice. A caller skipping this client is unaffected, and Golden Rule 19 forbids closing that by sending the risk over the wire, because then the caller decides how dangerous its own request is |
 | **8** | **`Describe` renders a valid `ElementId` and `ElementId.InvalidElementId` as the same word, `"ElementId"`.** Real, and still worth fixing — an answer that cannot say whether a thing was created is a poor answer. **But it has NO named victims, and this row claimed two it did not have.** `dimension-mep-runs` and `dimension-family-instances` were listed here as unprovable because of it. Both were **proved on 2026-09-09** with `dimensionId` still reading as `ElementId` in all four phases. An unreadable value is SKIPPED by the judge, not counted as content — the opposite of what this row asserted. What actually blocked them was `problem`, an explanation field, undeclared and therefore judged as a finding; `role: accounting` on `problem` and `noReference` proved both in one run. **The lesson is the one in §3h.2, not this one:** an undeclared role is more likely to be the blocker than a defect in the renderer | **OPEN, and no longer urgent.** One line, still needing a rebuild and a Revit restart — but nothing is waiting on it |
+| **10** | **A proof draft claims the model was left unchanged, and nothing ever checks.** Every write phase's record ends *“run inside a transaction and ROLLED BACK, so the model was left exactly as it was”* — appended in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) from the `writing` FLAG alone, never from anything Revit said back and never by re-reading the model. On 2026-09-09 it was false: `edit-text-values` renamed 17 sheets, the rollback did not hold (§1c), and both the run record and the draft assert the model is untouched. **The reply carries an `applied` field and consulting it would NOT have helped** — `applied` records the INTENT, keep or discard, not whether the discard worked. Nothing in the chain verifies the outcome. This is the same defect the whole of §3h.1 is about, in Heron's own voice rather than a fragment's: a confident sentence with no evidence under it, and this one is written into the permanent record of a proof | **OPEN.** The honest short fix is to soften the wording to what is actually known — *“rolled back was REQUESTED”* — and the real one is to re-read what was written and say so |
 
 ---
 

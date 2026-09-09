@@ -1,0 +1,108 @@
+# The three fragments whose REFUSAL PATH was rewritten on 2026-09-09, proved
+# against the thing the refusal is about.
+#
+#     python tools/batch-prove.py tools/jobs/refusal-paths.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/refusal-paths.yaml --client-id heron-review-proof
+#
+# WHY EVERY NEGATIVE HERE IS A VALUE AND NOT A SECOND SELECTION.
+#
+# All three were changed so that an input they cannot use is REFUSED rather than
+# reported as zero (docs/FRAGMENT-ISSUES.md 3h.1). A negative made by pointing at
+# a different category would prove the old thing - that an empty set gives an
+# empty answer - and would never once enter the code that was written. The value
+# IS the arrangement: same selection in both legs, one input changed to the exact
+# one the fix is about.
+#
+# WHY THERE IS NO `defaults: set:` HERE, though two of the three share a
+# selection. `set:` merges key by key over the defaults and `setup:` REPLACES -
+# so a defaults block holding categoryName and inViewOnly leaks both into the
+# sheets job below, which selects by a different route entirely and needs
+# neither. Three jobs is few enough to say each one out loud.
+#
+# THE MODEL MUST NOT BE SAVED AFTER THIS. Two of the three write, and a
+# rolled-back write has damaged this model before (1c). Close without saving.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+jobs:
+  - fragment: measure-run-quantities
+    write: false                       # READ - opens no transaction
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: Ducts
+      # 22 ducts here; L3 holds 307 and is where a write timed out. Rule 1.
+      inViewOnly: "FloorPlan: M1"
+      measure: total length
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      measure: diameter
+    expect: quantities
+    note: >
+      "total length" is the positive ON PURPOSE. Until this fix, length was
+      matched against a closed list of single words while area was matched by
+      substring, so "surface area" was understood and "total length" was
+      REFUSED. If the positive comes back empty, the symmetry fix did not land.
+
+      "diameter" is the negative ON PURPOSE, and it is the sharper half. It
+      contains the letters "meter". The obvious way to make length generous is a
+      substring test, and that reads a request for diameter as a request for
+      length - silently, in millimetres, which is the exact confident wrong
+      answer this fragment was fixed for. It must REFUSE, not measure.
+
+  - fragment: set-view-section-box
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      view: 3D HVAC Layout
+      marginMm: 500
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      view: 3D HVAC Layout
+      marginMm: -999999
+    expect: enclosed
+    note: >
+      The negative the OWNER ASKED FOR in 3f, at last runnable. The old negative
+      was a plan view, and a plan view cannot have a section box - so the empty
+      answer was guaranteed by Revit and not by anything the fragment decided.
+      Here the view is a good 3D view in BOTH legs and only the margin differs,
+      so the fragment has to reach the empty answer by its own work.
+
+      A margin of -999999 mm shrinks the box past nothing, which used to be
+      APPLIED and reported `applied true` on a view cut to an empty screen.
+
+      `expect: enclosed` is the point of the run. `enclosed` counts what was
+      measured, and the refusal used to leave it standing - `enclosed 22` beside
+      `applied false` on a run that changed nothing. If it is not 0 in the
+      negative, the clearing did not land.
+
+  - fragment: edit-text-values
+    write: true
+    # SHEETS, NOT DUCTS, AND THE PROBE IS WHY. A blank value is left alone
+    # deliberately - a prefix on an empty parameter invents data - so the
+    # positive needs a field that already holds text. read-element-parameters
+    # was run first against 22 ducts asking for Comments and answered
+    # `blank 22, values 0`: that leg would have come back `changed 0` and
+    # looked like a defect, which is rule 2 of the proving skill exactly.
+    # The same probe against `Sheet Name` on the 17 sheets answered
+    # `values 17, blank 0, absent 0`. Ask for what the model has.
+    setup: [list-sheets, set-selection]
+    set:
+      field: Sheet Name
+      mode: prefix
+      text: "HERON "
+      replacement: ""
+    negative-set:
+      field: Sheet Name
+      mode: transform
+      text: "HERON "
+      replacement: ""
+    expect: changed
+    note: >
+      "transform" is not one of prefix/suffix/replace. Before the fix it fell
+      through, every value was handed back unchanged, and all of them landed in
+      `untouched` - which reads exactly like an edit that had nothing to do.
+      It must now refuse before a single element is read.
