@@ -61,6 +61,7 @@ lifecycle - docs/24's two axes are untouched and this adds no third vocabulary:
 """
 
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -140,6 +141,44 @@ def needs_of(doc):
     return contract.get("needs") or []
 
 
+# The names a fragment gets from the executor rather than from its contract.
+DOCUMENT_NAMES = ("doc", "uidoc", "app")
+
+
+def _document_names_used(code):
+    """Which document names the CODE actually uses.
+
+    COMMENTS ARE STRIPPED FIRST, and that is not fussiness. Three checks in
+    this repository have now been fooled by text ABOUT the thing rather than
+    the thing - a space-stripped haystack, a tool matching its own docstring,
+    and a string literal that made its own subject invisible. A fragment's
+    header comment says "Assumes `doc` ... are in scope" in almost every file,
+    so a check that read comments would find `doc` everywhere and mean nothing.
+    """
+    if not code:
+        return []
+    body = "\n".join(line for line in code.splitlines()
+                     if not line.strip().startswith("//"))
+    body = re.sub(r"/\*.*?\*/", "", body, flags=re.S)
+
+    used = []
+    for name in DOCUMENT_NAMES:
+        if not re.search(r"\b%s\b" % name, body):
+            continue
+        # A LOCAL IS NOT AN UNDECLARED NEED, and this cost the check its last
+        # false positive. `zoom-to-elements` declares `uidoc` and then writes
+        #     var doc = uidoc.Document;
+        # which is correct code deriving one from the other. Reported as an
+        # undeclared need it would have sent somebody to edit a working
+        # contract. Fourth time in one night that a text check has been fooled
+        # by something that merely LOOKS like its subject.
+        if re.search(r"\b(?:var|Document|UIDocument|UIApplication)\s+%s\s*="
+                     % name, body):
+            continue
+        used.append(name)
+    return used
+
+
 def ask(fid, name, doc, raw, code):
     """The fourteen answers for one fragment, in order."""
     answers = []
@@ -161,14 +200,33 @@ def ask(fid, name, doc, raw, code):
         "recorded state" if code else
         "there is no impl/any/fragment.cs, so no compiler has read anything")
 
-    # 3 - document context
+    # 3 - document context. The question is not "does it declare one" but
+    # "does it USE one it did not declare", and the difference is 42 rows.
+    #
+    # Asking the first raised all 42 fragments that legitimately work on what
+    # they are handed - apply-view-template takes views and a templateId and
+    # needs no document at all. Every one of the 42 was correct, so the check
+    # was crying wolf on the whole list. Asking the second raises none of them
+    # and would still catch a real undeclared need, which is what D-29 made the
+    # contract DATA in order to make askable.
     names = [n.get("name") for n in needs_of(doc)]
     context = [n for n in names if n in ("doc", "uidoc", "view", "app")]
-    say(ANSWERED if context else LOOK,
-        "the contract declares %s" % ", ".join(context) if context else
-        "the contract declares no doc, uidoc, view or app - either it needs "
-        "none, or the need was never written down. D-29 makes the contract "
-        "data so this question can be asked at all")
+    used = _document_names_used(code)
+    undeclared = [n for n in used if n not in names]
+    if undeclared:
+        say(LOOK,
+            "the code uses %s and the contract declares %s. An undeclared need "
+            "cannot be bound, and D-29 made the contract data so this is "
+            "checkable rather than remembered"
+            % (", ".join(undeclared), ", ".join(names) or "nothing"))
+    elif context:
+        say(ANSWERED, "the contract declares %s" % ", ".join(context))
+    elif code:
+        say(ANSWERED,
+            "declares no document and uses none - it works on what it is "
+            "handed, which is a filter or an action composed after one")
+    else:
+        say(LOOK, "no code to read")
 
     # 4 and 5 - transactions
     opens_own = code is not None and "new transaction(" in code.lower()

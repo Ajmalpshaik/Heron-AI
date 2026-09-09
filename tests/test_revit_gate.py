@@ -93,9 +93,44 @@ utterances:
   - do a thing
 """
 
+# Declares uidoc and not doc - the real zoom-to-elements shape.
+UIDOC_ONLY = """id: %s
+capability: DO_A_THING
+risk: %s
+revit: ["2024"]
+contract:
+  needs:
+    - name: uidoc
+      type: UIDocument
+  provides:
+    - name: done
+      type: int
+utterances:
+  - do a thing
+"""
+
 DOUBLE = """    - name: distance
       type: double
       source: request
+"""
+
+
+# BASE always declares `doc`, which is right for most cases and useless for
+# question 3 - the whole point there is a contract that does NOT declare one.
+NODOC = """id: %s
+capability: DO_A_THING
+risk: %s
+revit: ["2024"]
+contract:
+  needs:
+    - name: views
+      type: IList<View>
+      source: request
+  provides:
+    - name: done
+      type: int
+utterances:
+  - do a thing
 """
 
 
@@ -167,6 +202,47 @@ def main():
         got = verdicts_for(tool, work, "nodouble")[3]
         check(got[0] == tool.BY_DESIGN,
               "a fragment that opens none is BY DESIGN, not merely silent")
+
+        print()
+        print("3b. Question 3 asks about an UNDECLARED need, not a missing one")
+        print("-" * 66)
+        # It asked "does it declare a document" first, and raised all 42
+        # fragments that legitimately work on what they are handed. Every one
+        # was correct, so the check was crying wolf on the whole list.
+        make(work, "handed", NODOC % ("FRG-T-006", "MODIFY"),
+             "foreach (var v in views) { v.Scale = 2; }\n")
+        got = verdicts_for(tool, work, "handed")[2]
+        check(got[0] == tool.ANSWERED,
+              "a fragment that needs no document and uses none is ANSWERED, "
+              "not raised")
+
+        make(work, "undeclared", NODOC % ("FRG-T-007", "MODIFY"),
+             "var n = doc.GetElement(id);\n")
+        got = verdicts_for(tool, work, "undeclared")[2]
+        check(got[0] == tool.LOOK,
+              "a fragment whose CODE uses doc without declaring it IS raised - "
+              "an undeclared need cannot be bound")
+
+        # Shaped like the real zoom-to-elements: uidoc IS declared, and doc is
+        # derived from it. The first version of this case declared neither and
+        # was raised for `uidoc` - correctly. The fixture was wrong, not the
+        # tool, which is worth leaving here: a synthetic case that does not
+        # match the real one proves something about the fixture.
+        make(work, "derived", UIDOC_ONLY % ("FRG-T-008", "MODIFY"),
+             "var doc = uidoc.Document;\nvar n = doc.GetElement(id);\n")
+        got = verdicts_for(tool, work, "derived")[2]
+        check(got[0] == tool.ANSWERED,
+              "`var doc = uidoc.Document` is a LOCAL, not an undeclared need - "
+              "zoom-to-elements is real, correct, and was the last false "
+              "positive this check had")
+
+        make(work, "inacomment", NODOC % ("FRG-T-009", "MODIFY"),
+             "// Assumes `doc` and `elements` are in scope.\nvar n = 0;\n")
+        got = verdicts_for(tool, work, "inacomment")[2]
+        check(got[0] == tool.ANSWERED,
+              "`doc` named in a HEADER COMMENT is not a use - almost every "
+              "fragment has that line, so a check reading comments would find "
+              "doc everywhere and mean nothing")
 
         print()
         print("4. Question 13 knows a reader from a writer")

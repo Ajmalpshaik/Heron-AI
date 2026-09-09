@@ -609,6 +609,18 @@ Revit's internal **feet** and accepts a millimetre figure silently — so a call
 above the room's level"* and passed `2700` would get a ceiling 2,700 feet up and no error. That is
 `D3`'s failure shape exactly. Fixed in the same commit; the check now reports zero.
 
+**Question 3 was crying wolf on 42 fragments and now raises none.** It first asked *"does the contract
+declare a document"* — and every one of the 42 that declares none was correct: `apply-view-template`
+takes `views` and a `templateId` and needs no document at all. The question it asks now is *"does the
+**code** use one the contract does **not** declare"*, which raises zero today and would still catch a
+real undeclared need. Two refinements were needed to get there, and both were false positives that
+looked exactly like findings:
+
+| | |
+|---|---|
+| a header **comment** | almost every fragment says *"Assumes `doc` … are in scope"*, so a check reading comments finds `doc` everywhere and means nothing |
+| a **local** | `zoom-to-elements` declares `uidoc` and writes `var doc = uidoc.Document;` — correct code, and reported as an undeclared need it would have sent somebody to edit a working contract |
+
 **It cannot decide whether a fragment writes, and the attempt is recorded because the failure is
 instructive:**
 
