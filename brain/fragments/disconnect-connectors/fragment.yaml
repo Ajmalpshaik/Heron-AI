@@ -60,6 +60,10 @@ contract:
     - name: pairs
       type: IList<string>
     - name: untouched
+      # Joints left alone because they reach outside the selection. What it
+      # was given and deliberately did not act on, never a joint it broke
+      # (D-52).
+      role: accounting
       type: IList<string>
     - name: findings
       type: IList<string>

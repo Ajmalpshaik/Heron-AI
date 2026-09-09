@@ -57,8 +57,15 @@ contract:
       type: IList<Element>
   provides:
     - name: bothOut
+      # A joint with two connectors both pushing out. THE CONTRADICTION THIS
+      # FRAGMENT EXISTS TO FIND - it matches the bookkeeping shape and is the
+      # ANSWER. A `both*` name is a question, not a verdict.
+      role: result
       type: IList<string>
     - name: bothIn
+      # A joint with two connectors both pulling in. The other half of the
+      # answer, and a result for the same reason as `bothOut`.
+      role: result
       type: IList<string>
     - name: jointsChecked
       # How many joints were examined. A work counter - D-52 amended on

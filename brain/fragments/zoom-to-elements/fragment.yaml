@@ -65,6 +65,9 @@ contract:
     - name: shown
       type: int
     - name: missing
+      # Ids it was asked to show that resolve to nothing. What it was GIVEN
+      # and could not use, never something it showed (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: viewAfter
       type: string

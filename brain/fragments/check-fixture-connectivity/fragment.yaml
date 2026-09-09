@@ -54,6 +54,9 @@ contract:
     - name: findings
       type: IList<string>
     - name: missingService
+      # The report itself - nine WCs with no vent, three basins with no hot
+      # water. Named like bookkeeping, and it is the finding.
+      role: result
       type: IList<ElementId>
     - name: noConnectors
       type: IList<ElementId>

@@ -50,6 +50,9 @@ contract:
     - name: counts
       type: IDictionary<string, int>
     - name: missing
+      # Elements per group with no quantity to add - not skipped, and not
+      # treated as zero. What the total rests on, never part of it (D-52).
+      role: accounting
       type: IDictionary<string, int>
     - name: incomplete
       type: bool

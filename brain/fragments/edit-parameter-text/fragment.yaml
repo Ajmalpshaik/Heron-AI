@@ -76,6 +76,9 @@ contract:
     - name: typesEdited
       type: IList<ElementId>
     - name: unchanged
+      # Elements whose value did not move - already carrying the prefix, or
+      # the write did not take. Never an edit it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: absent
       type: IList<ElementId>

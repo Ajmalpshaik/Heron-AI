@@ -64,6 +64,10 @@ contract:
     - name: changed
       type: IList<ElementId>
     - name: untouched
+      # Elements whose text did not contain the search term. The purpose is
+      # explicit that counting these as successes would report work that did
+      # not happen (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: blank
       type: IList<ElementId>

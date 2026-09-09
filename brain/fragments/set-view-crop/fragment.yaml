@@ -51,6 +51,10 @@ contract:
     - name: noGeometry
       type: IList<ElementId>
     - name: viewRefused
+      # The view declined the change - a template owns the slot, or the view
+      # cannot take it at all. The evidence it looked and said no, never a
+      # change it made (D-52).
+      role: accounting
       type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

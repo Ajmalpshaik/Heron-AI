@@ -57,6 +57,11 @@ contract:
     - name: blankOverride
       type: IList<ElementId>
     - name: nothingToActOn
+      # ONE OF THE FOUR WAYS a filter can be present and do nothing - its
+      # categories are switched off in this view. Telling those four apart
+      # is the whole fragment, so this is the ANSWER, however much the name
+      # reads like bookkeeping.
+      role: result
       type: IList<ElementId>
     - name: templateOwned
       type: bool

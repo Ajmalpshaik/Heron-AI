@@ -55,6 +55,9 @@ contract:
     - name: changed
       type: int
     - name: missing
+      # Ids in the set that no longer resolve, read fresh each time. Never a
+      # change it made (D-52).
+      role: accounting
       type: int
     - name: deleted
       type: bool

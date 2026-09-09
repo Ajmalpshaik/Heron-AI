@@ -61,6 +61,9 @@ contract:
     - name: lengthsAfter
       type: IDictionary<ElementId, double>
     - name: unchanged
+      # Datums that already reached the extent, so there was nothing to
+      # stretch. The evidence it looked, never a change it made (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: hiddenByViewExtent
       type: IList<ElementId>
