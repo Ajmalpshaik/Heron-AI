@@ -1327,17 +1327,44 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
                       "error": reply.get("error"),
                       "message": reply.get("message"), "arranged": arranged}
         else:
-            # THE RECORD SAYS IT WAS ROLLED BACK. A proof whose text implies a
-            # change was kept, on a model where it was not, is worse than no
-            # proof: the next person reads it as evidence the model now holds
-            # something it does not.
+            # WHAT THE RECORD MAY SAY ABOUT THE MODEL, AND WHAT IT MAY NOT.
+            #
+            # This used to append "run inside a transaction and ROLLED BACK, so
+            # the model was left exactly as it was" whenever `writing` was set.
+            # That sentence came from the FLAG THIS PROCESS PASSED IN. Nothing
+            # asked Revit, and nothing re-read the model.
+            #
+            # On 2026-09-09 it was false in a recorded proof: edit-text-values
+            # renamed 17 sheets, the rollback did not hold, and the draft said
+            # the model was untouched (section 1c, section 5 row 10). A proof whose
+            # text implies a change was kept, on a model where it was not, is
+            # worse than no proof - and so is the reverse, which is what this
+            # was.
+            #
+            # `applied` cannot stand in for it either: that is the same INTENT,
+            # keep or discard, not whether the discard worked.
+            #
+            # So the reply is asked, and only what it answers is written down.
+            # `rolledBack` is reported by add-in builds that check the
+            # transaction group's status afterwards; an older build does not
+            # send it, and THAT IS SAID rather than passed over.
             told = arranged
             if setup:
                 told += (" - the arrangement was re-made first by running "
                          + ", ".join(setup) + " with this phase's own values")
             if writing:
-                told += (" - run inside a transaction and ROLLED BACK, so the model "
-                         "was left exactly as it was")
+                rolled = reply.get("rolledBack")
+                if rolled is True:
+                    told += (" - run inside a transaction, and Revit reported the "
+                             "transaction group ROLLED BACK afterwards")
+                elif rolled is False:
+                    told += (" - run inside a transaction whose ROLLBACK DID NOT REPORT "
+                             "SUCCESS, so THE MODEL MAY STILL HOLD THIS CHANGE. Check it "
+                             "before trusting anything here")
+                else:
+                    told += (" - run inside a transaction with a rollback requested. "
+                             "Whether it held was NOT checked: this add-in build does not "
+                             "report the outcome, and nothing here re-read the model")
             record = {"phase": phase, "ok": True,
                       "provides": reply.get("provides") or {},
                       "bound": reply.get("bound"),

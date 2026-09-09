@@ -142,6 +142,36 @@ rather than as a check that was made. Recovery is the known one: **close without
 none was raised), not deletion. What the three incidents still share is only `--write` with no `apply`
 — which is to say, the rollback path itself, and nothing about what was asked of it.
 
+#### And the rollback path could not have told anyone — found by reading it, 2026-09-09
+
+The mechanism was called *not known* three times in this section. Reading `RevitFragment.cs` after the
+third incident gives a concrete candidate, and it is not exotic:
+
+```csharp
+private static void SafeRollBack(TransactionGroup group)
+{
+    try
+    {
+        if (group.GetStatus() == TransactionStatus.Started) group.RollBack();
+    }
+    catch { }
+}
+```
+
+**The inner transaction is COMMITTED first**, and the undo depends entirely on the outer group being
+rolled back afterwards. That call has two silent exits: a group whose status is not `Started` **skips
+the rollback**, and a `RollBack()` that throws is **swallowed**. The method returned `void`, so neither
+reached a caller, and `WithVerdict` then reported *“NOTHING WAS KEPT”* because `apply` was false.
+
+> **A failed rollback and a clean one produced byte-identical output.** That is why three incidents have
+> no explanation: nothing was ever in a position to notice one, let alone report it.
+
+This is not proof that it is what happened on any of the three days — that needs the instrumented
+build in front of a model. It is the reason the failures were INVISIBLE, which is a different claim and
+a checkable one. `SafeRollBack` now returns Revit's status after the attempt and the answer carries
+`rolledBack` (§5 row 10), so the next occurrence says so on the reply instead of being reconstructed
+from renamed sheets a day later.
+
 ### `delete-elements` IS BLOCKED, not merely untested — 2026-09-09
 
 Three attempts, three different failures, and **the fragment was correct every time**:
@@ -1188,7 +1218,7 @@ first**, because everything above makes proving faster while that one makes Hero
 | 7 | **The naming heuristics were dead code.** `provide_role()` answers `"result"` for an entry with no `role:` key, and that default went into the map the judge consults - so every declared name looked explicitly declared, and D-51/D-52's patterns never ran. **102 names across 134 fragments** (`scanned`, `unplaced`, `noConnectors`, `notASheet`) were judged as findings. Found proving `select-scope-boxes`, whose negative had every result at zero and `scanned: 5` | Fixed - the judge-set and the role-map are separate arguments now |
 | 9 | **A fragment's OWN risk level was never enforced.** The gate reads the OPERATION's risk from the tool registry — Golden Rule 19, and right — and `run_fragment_write` is declared Modify. So a fragment declaring `risk: ADMIN` or `PUBLISH` ran under a Modify gate and nobody was consulted, though `HeronPermissions` says those *"are not reachable in Phase 0 or Phase 1 at all"*. **12 fragments are above Modify**, and `create-workset` (ADMIN) created one on the first try. The hole existed before `run_fragment_write` and was harmless — no transaction, so nothing could happen. Building the write path made it real | Fixed — the client refuses to SEND one. Be honest about what that is: a guard against a mistake, not a boundary against malice. A caller skipping this client is unaffected, and Golden Rule 19 forbids closing that by sending the risk over the wire, because then the caller decides how dangerous its own request is |
 | **8** | **`Describe` renders a valid `ElementId` and `ElementId.InvalidElementId` as the same word, `"ElementId"`.** Real, and still worth fixing — an answer that cannot say whether a thing was created is a poor answer. **But it has NO named victims, and this row claimed two it did not have.** `dimension-mep-runs` and `dimension-family-instances` were listed here as unprovable because of it. Both were **proved on 2026-09-09** with `dimensionId` still reading as `ElementId` in all four phases. An unreadable value is SKIPPED by the judge, not counted as content — the opposite of what this row asserted. What actually blocked them was `problem`, an explanation field, undeclared and therefore judged as a finding; `role: accounting` on `problem` and `noReference` proved both in one run. **The lesson is the one in §3h.2, not this one:** an undeclared role is more likely to be the blocker than a defect in the renderer | **OPEN, and no longer urgent.** One line, still needing a rebuild and a Revit restart — but nothing is waiting on it |
-| **10** | **A proof draft claims the model was left unchanged, and nothing ever checks.** Every write phase's record ends *“run inside a transaction and ROLLED BACK, so the model was left exactly as it was”* — appended in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) from the `writing` FLAG alone, never from anything Revit said back and never by re-reading the model. On 2026-09-09 it was false: `edit-text-values` renamed 17 sheets, the rollback did not hold (§1c), and both the run record and the draft assert the model is untouched. **The reply carries an `applied` field and consulting it would NOT have helped** — `applied` records the INTENT, keep or discard, not whether the discard worked. Nothing in the chain verifies the outcome. This is the same defect the whole of §3h.1 is about, in Heron's own voice rather than a fragment's: a confident sentence with no evidence under it, and this one is written into the permanent record of a proof | **OPEN.** The honest short fix is to soften the wording to what is actually known — *“rolled back was REQUESTED”* — and the real one is to re-read what was written and say so |
+| **10** | **A proof draft claims the model was left unchanged, and nothing ever checked.** Every write phase's record ended *“run inside a transaction and ROLLED BACK, so the model was left exactly as it was”*, appended from the `writing` FLAG. On 2026-09-09 it was false: `edit-text-values` renamed 17 sheets, the rollback did not hold (§1c), and both the run record and the draft asserted the model was untouched. **The client was only repeating the add-in.** `RevitFragment.WithVerdict` said *“NOTHING WAS KEPT”* on the strength of `apply` alone — the request, not the result — and `SafeRollBack` was `void`, so the two ways a rollback silently does nothing (**a group whose status is not `Started`, so the call is skipped; a `RollBack()` that throws, so it is swallowed**) left no trace for anyone to report. See §1c: this is the first concrete mechanism for why three rollback failures have no explanation | **OPEN UNTIL THE ADD-IN IS DEPLOYED.** Fixed in code 2026-09-09: `SafeRollBack` returns whether Revit reports the group `RolledBack` afterwards, `WithVerdict` says **THE ROLLBACK DID NOT REPORT SUCCESS** when it does not, a `rolledBack` flag rides on the reply, and the client writes only what the reply says — naming an add-in build that cannot answer rather than assuming. Compiles 2020–2027. **It needs a rebuild and a Revit restart to take effect, so proofs taken before that still carry the old unchecked sentence.** `RevitWrite.SafeRollBack` carries the same defect on its error paths (*“rolled back completely, so the model is as it was”*) and was deliberately NOT changed on the day the model was already damaged |
 
 ---
 

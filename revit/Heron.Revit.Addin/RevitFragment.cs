@@ -270,6 +270,11 @@ namespace Heron.Revit.Addin
             ScriptState<object> state = null;
             string threw = null;
 
+            // Only meaningful on the writing path with apply off. Reported so a
+            // reader never has to infer a rollback from the request that asked
+            // for one - see SafeRollBack.
+            var rolledBack = false;
+
             if (!writing)
             {
                 threw = RunScript(script, globals, name, out state);
@@ -309,7 +314,7 @@ namespace Heron.Revit.Addin
                     // own. Rolling back instead is what makes the default a
                     // preview.
                     if (apply) group.Assimilate();
-                    else SafeRollBack(group);
+                    else rolledBack = SafeRollBack(group);
                 }
             }
 
@@ -319,7 +324,7 @@ namespace Heron.Revit.Addin
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
 
-            return writing ? WithVerdict(answer, apply, name) : answer;
+            return writing ? WithVerdict(answer, apply, name, rolledBack) : answer;
         }
 
         /// <summary>
@@ -547,13 +552,31 @@ namespace Heron.Revit.Addin
         /// handled - so the useful message is lost and replaced by a confusing
         /// one, at the worst possible moment.
         /// </summary>
-        private static void SafeRollBack(TransactionGroup group)
+        private static bool SafeRollBack(TransactionGroup group)
         {
+            // IT RETURNS WHETHER THE MODEL WAS ACTUALLY PUT BACK, and that
+            // return value is the whole point of the 2026-09-09 change.
+            //
+            // This was `void`. Both ways it can fail to roll anything back -
+            // a group whose status is not Started, so the call is SKIPPED, and
+            // a RollBack() that throws, so the call is SWALLOWED - left no
+            // trace whatsoever, and every caller went on to report "nothing was
+            // kept" because that is what it had ASKED for. A failed rollback
+            // and a clean one produced identical output, which is why three
+            // incidents in section 1c have no explained mechanism: nothing was
+            // ever in a position to notice.
+            //
+            // Revit's own status AFTER the attempt is the only evidence there
+            // is, so it is what gets returned. It is not a guarantee the model
+            // is untouched - 2026-09-09 showed Revit's bookkeeping and the
+            // model can disagree - but "Revit says RolledBack" is a fact, and
+            // the sentence it supports is one that was checked.
             try
             {
                 if (group.GetStatus() == TransactionStatus.Started) group.RollBack();
+                return group.GetStatus() == TransactionStatus.RolledBack;
             }
-            catch { }
+            catch { return false; }
         }
 
         private static void SafeRollBack(Transaction transaction)
@@ -575,19 +598,44 @@ namespace Heron.Revit.Addin
         /// "renamed 47 views" and finding 47 unrenamed views would be right to
         /// distrust every number Heron has ever given them.
         /// </summary>
-        private static string WithVerdict(string answer, bool applied, string name)
+        private static string WithVerdict(string answer, bool applied, string name,
+                                          bool rolledBack)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
                 return answer;
 
-            var verdict = applied
-                ? "the model was CHANGED and this is one undo step - Ctrl+Z in Revit puts it back"
-                : "NOTHING WAS KEPT. '" + name + "' ran for real and was then rolled back, so the "
-                  + "counts above are what it actually did rather than a guess. Send it again with "
-                  + "apply to keep it.";
+            // "NOTHING WAS KEPT" USED TO BE SAID ON THE STRENGTH OF `applied`
+            // ALONE, which is the request rather than the result. On
+            // 2026-09-09 a rollback did not hold and this sentence claimed it
+            // had (section 1c). It is now only said when Revit reported the
+            // group RolledBack; when it did not, that is what is said instead,
+            // because a write that may still be standing is the one thing a
+            // reader must not have to guess at.
+            string verdict;
+            if (applied)
+            {
+                verdict = "the model was CHANGED and this is one undo step - Ctrl+Z in Revit "
+                        + "puts it back";
+            }
+            else if (rolledBack)
+            {
+                verdict = "NOTHING WAS KEPT. '" + name + "' ran for real and Revit reported the "
+                        + "transaction group rolled back afterwards, so the counts above are "
+                        + "what it actually did rather than a guess. Send it again with apply "
+                        + "to keep it.";
+            }
+            else
+            {
+                verdict = "THE ROLLBACK DID NOT REPORT SUCCESS. '" + name + "' ran for real, the "
+                        + "rollback was requested, and Revit did not afterwards report the "
+                        + "transaction group as rolled back - so THE MODEL MAY STILL HOLD THIS "
+                        + "CHANGE. Check the thing that was written before trusting anything "
+                        + "here, and do not save until you have.";
+            }
 
             return answer.Substring(0, answer.Length - 1)
                  + "," + Json.Bool("applied", applied)
+                 + "," + Json.Bool("rolledBack", rolledBack)
                  + "," + Json.Str("verdict", verdict) + "}";
         }
 
