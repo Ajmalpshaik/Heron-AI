@@ -228,8 +228,12 @@ only worth building if it is then pointed at your own work.
 **Swept over 120 real requests on three paths — 360 assemblies, zero violations.** The request came back
 byte-identical every time, nothing exceeded its budget, every part named its source, and the request was
 first in every packet. Sizes: median **257** characters, and **14,945** at the worst, which is a
-`generation` packet. Re-run after every fix below, and still zero. Timings after those fixes: `cached`
-**2.7 ms**, `simple` **2.7 ms**, `generation` **3.6 ms**.
+`generation` packet. Re-run after every fix below, and still zero. Timings after those fixes, on this
+container: `cached` and `simple` about **3 ms**, `generation` about **4 ms** — where `generation` was
+**435 ms** before the folder lookup was fixed. Written to one significant figure on purpose: run to run
+they move by tenths, and a number quoted to two decimals invites somebody to treat a tenth as a
+regression. Re-measure rather than read — `python brain/heron_context.py "select all ducts" --path
+generation --revit 2024`.
 
 **That sweep found a defect in it that one request never would have.** The `api` part read the
 fragment's own `using` lines and returned *"no using directives"* — **for all 360, every time**. Wrong
