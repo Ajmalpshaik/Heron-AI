@@ -1,0 +1,82 @@
+# The select-* and read-* drafts that take only simple values.
+#
+# Two shapes of negative here, and the choice is deliberate per fragment:
+#   VALUE   where one input can switch the fragment's own answer off - the
+#           stronger test, because it exercises the input rather than the
+#           arrangement (select-unenclosed-rooms, select-by-material).
+#   SELECTION where several results have to empty together and no single value
+#           reaches them all (read-space-loads).
+# See tools/jobs/defect-finders.yaml for why that distinction matters.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: false
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: read-space-loads
+    set:
+      categoryName: Spaces
+      inViewOnly: "FloorPlan: L3"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+    expect: heatingW
+    note: >
+      Never run against a model. Spaces carry heating, cooling and airflow;
+      ducts carry none of the three, so all of them empty together and no single
+      value would have done that. This is the arrangement the example job file
+      has always suggested and nobody had executed.
+
+  - fragment: select-unenclosed-rooms
+    set:
+      categoryName: Spaces
+      inViewOnly: "FloorPlan: L3"
+      includeRooms: true
+      includeSpaces: true
+    negative-set:
+      categoryName: Spaces
+      inViewOnly: "FloorPlan: L3"
+      includeRooms: false
+      includeSpaces: false
+    expect: elements
+    note: >
+      The same spaces in both legs; only the two switches differ. Asked to
+      include neither rooms nor spaces it must find nothing at all - and if it
+      still reports unenclosed rooms, the switches are decorative, which is the
+      `color-by-parameter` shape and worth more than the proof.
+
+  - fragment: select-by-material
+    set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: L3"
+      materialName: "Steel"          # CONFIRM against this model's materials
+      includePaint: true
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: L3"
+      materialName: "ZZZNOTHINGHERE"
+      includePaint: true
+    expect: elements
+    note: >
+      Same ducts both legs, so the material NAME is the only variable. If the
+      positive comes back empty the name is wrong for this model rather than the
+      fragment being broken - `find-unused-materials` reported 56 unused
+      materials and would name a real one.
+
+  - fragment: select-openings
+    set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: L3"
+    negative-set:
+      categoryName: Duct Tags
+      inViewOnly: "FloorPlan: M1"
+    expect: elements
+    note: >
+      §3b already records `elements 0` in L3 - there are no openings in that
+      view. Re-run here only to confirm it on the richer selection before the
+      row is treated as settled, because a row that was never re-tested is a
+      claim rather than a fact.
