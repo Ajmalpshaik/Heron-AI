@@ -1,0 +1,103 @@
+# Three fragments that already ran BOTH legs cleanly and were never proved.
+#
+# HOW THEY WERE FOUND. Every run record was re-read against the fragment's own
+# contract, asking two questions: did a declared RESULT move off zero in the
+# positive, and did every one come back zero in the negative. 80 DRAFT fragments
+# have both phases recorded; four answer yes to both. Two of those four are real,
+# and they are here.
+#
+# WHY THEY WERE STUCK, AND WHY THIS FIXES IT WITHOUT A REBUILD.
+# FRAGMENT-ISSUES section 5 item 8 lists `dimension-mep-runs` and
+# `dimension-family-instances` as BLOCKED on a defect in Describe, which renders a
+# valid ElementId and ElementId.InvalidElementId as the same word. Their
+# `dimensionId` therefore reads as "ElementId" in BOTH legs, _as_count returns
+# None for it, and the judge will not call the negative empty.
+#
+# But `dimensionId` is not the result. `dimensionedCount` is - and it goes 10 to 0
+# and 307 to 0, which is exactly what D-30 asks for. `expect:` tells the runner to
+# judge that field and nothing else, which is what it is for. The Describe defect
+# is still real and still worth fixing; it just never blocked these two.
+#
+#     python tools/batch-prove.py tools/jobs/expect-unblocks.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/expect-unblocks.yaml
+#
+# RELEASE ANY HAND-RUN LEASE FIRST - see the note in modify-round-2.yaml.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+
+  negative-set:
+    categoryName: Duct Tags
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  - fragment: dimension-mep-runs
+    set:
+      view: "FloorPlan: M1"
+      axis: "X"
+      offsetMm: 500
+    negative-set:
+      view: "FloorPlan: M1"
+      axis: "X"
+      offsetMm: 500
+    expect: dimensionedCount
+    note: >
+      Recorded earlier: positive dimensionedCount 307, negative dimensionedCount 0
+      with "fewer than two of these" - a textbook negative. Only the unreadable
+      dimensionId stood in the way. Run here on M1's 22 ducts rather than L3's 307,
+      because a smaller selection proves the same thing faster (rule 1).
+
+  - fragment: dimension-family-instances
+    set:
+      categoryName: Air Terminals
+      view: "FloorPlan: M1"
+      axis: "X"
+      offsetMm: 500
+    negative-set:
+      view: "FloorPlan: M1"
+      axis: "X"
+      offsetMm: 500
+    expect: dimensionedCount
+    note: >
+      Same shape and the same blocker. Air terminals rather than ducts because
+      this one dimensions family instances; the earlier run got dimensionedCount
+      10 from them.
+
+  # ---- blocked on one integer, and nothing else ---------------------------
+
+  - fragment: check-insulation-clearance
+    # risk: READ. `--write` on a READ fragment is refused, and rightly - the
+    # registry says what an operation costs, never the caller (Golden Rule 19).
+    write: false
+    set:
+      requiredClearanceMm: 99999
+      assumeThicknessMm: 50
+      ignoreConnected: false
+      maxRows: 50
+    negative-set:
+      # THE SAME 22 DUCTS. The defaults would swap in duct tags, and that would
+      # make this a test of the selection instead of the value.
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      requiredClearanceMm: 0
+      assumeThicknessMm: 50
+      ignoreConnected: false
+      maxRows: 50
+    expect: violations
+    note: >
+      The only DRAFT fragment left whose positive failed purely for want of a
+      value D-54 can resolve - it wanted `maxRows (int)` and the earlier job file
+      never supplied one. The negative is driven by the VALUE, not the selection:
+      a required clearance of 0 cannot be violated by anything, so the same 22
+      ducts must produce no violations at all. That is a stronger negative than a
+      different selection, because it tests the input.
