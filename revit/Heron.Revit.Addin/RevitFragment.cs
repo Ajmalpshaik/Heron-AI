@@ -1095,6 +1095,107 @@ namespace Heron.Revit.Addin
             return null;
         }
 
+        /// <summary>
+        /// Every element TYPE whose name matches, read the way Revit writes it.
+        ///
+        /// Two spellings, because Revit's own interface uses both: the type name
+        /// on its own ("Generic - 200mm") and the family and type together
+        /// ("Basic Wall: Generic - 200mm"), which is what the Properties palette
+        /// and every type selector show. The second exists because the first is
+        /// not unique - "Standard" is the type name of a dozen unrelated
+        /// families in an ordinary project.
+        /// </summary>
+        private static List<ElementType> TypesNamed(Document doc, string text)
+        {
+            var found = new List<ElementType>();
+            foreach (var element in new FilteredElementCollector(doc).WhereElementIsElementType())
+            {
+                var candidate = element as ElementType;
+                if (candidate == null) continue;
+
+                string readable, family;
+                try { readable = candidate.Name; } catch { continue; }
+                try { family = candidate.FamilyName; } catch { family = null; }
+
+                if (string.Equals(readable, text, StringComparison.Ordinal)
+                    || (!string.IsNullOrEmpty(family)
+                        && string.Equals(family + ": " + readable, text,
+                                         StringComparison.Ordinal)))
+                    found.Add(candidate);
+            }
+            return found;
+        }
+
+        /// <summary>
+        /// One element, by name, or a refusal that says how to name it.
+        ///
+        /// AN `Element` HERE MEANS AN ELEMENT TYPE, AND THAT IS THE WHOLE RULE.
+        /// Twenty-three fragments declare a need as `Element`, and they mean two
+        /// different things by it:
+        ///
+        ///   a TYPE to build with     wallType, floorType, ceilingType,
+        ///                            regionType, runType, hostType
+        ///   a specific INSTANCE      reference (align to THIS duct), target,
+        ///                            source, run, start, host
+        ///
+        /// The first has a name a modeller already says out loud, and it is the
+        /// name Revit itself prints. THE SECOND HAS NO NAME AT ALL - a wall is
+        /// not called anything, and Element.Name on an instance returns its
+        /// TYPE's name, so "Generic - 200mm" would match every wall in the model
+        /// rather than the one that was meant. Searching instances would turn a
+        /// missing rule into a WRONG ANSWER, which is the trade this file exists
+        /// to refuse.
+        ///
+        /// So instances are refused, and the refusal says which kind of thing
+        /// was asked for. A caller who misspelt a type name and a caller who
+        /// wants "that duct there" have different problems, and one message
+        /// cannot serve both.
+        ///
+        /// THE BETTER FIX IS IN THE CONTRACTS, NOT HERE. wallType is a WallType,
+        /// phase is a Phase, filter is a ParameterFilterElement - each declared
+        /// as the base class instead. A contract that said what it meant would
+        /// resolve exactly, the way Level and View already do, and this method
+        /// would not have to work out which half of Element was intended. That
+        /// is a change to brain/fragments/, which this file does not own.
+        ///
+        /// The "Family: Type" spelling is the shape OneView uses for
+        /// "FloorPlan: L2", for the same reason and with the same precedence:
+        /// the plain name is tried first and wins outright when it is unique.
+        /// </summary>
+        private static object OneElement(Document doc, string text, out string problem)
+        {
+            problem = null;
+
+            var found = TypesNamed(doc, text);
+            if (found.Count == 1) return found[0];
+
+            if (found.Count == 0)
+            {
+                problem = "No element type called \"" + text + "\" in " + doc.Title
+                        + ". Heron can be handed an element TYPE by name, written the way "
+                        + "the Properties palette writes it - \"Basic Wall: Generic - "
+                        + "200mm\", or just \"Generic - 200mm\" when that is unique. A "
+                        + "particular wall or duct in the model cannot be typed in: it has "
+                        + "no name of its own, and its type's name belongs to every other "
+                        + "element of that type. Select it instead.";
+                return null;
+            }
+
+            var choices = new List<string>();
+            foreach (var type in found)
+            {
+                string family;
+                try { family = type.FamilyName; } catch { family = null; }
+                var option = string.IsNullOrEmpty(family) ? text : family + ": " + text;
+                if (!choices.Contains(option)) choices.Add(option);
+            }
+
+            problem = found.Count + " element types in " + doc.Title + " are called \""
+                    + text + "\", so the name does not say which one is meant. Say which: "
+                    + string.Join(", or ", choices.ToArray()) + ".";
+            return null;
+        }
+
         /// <summary>One level, by name, on the same rule as a view.</summary>
         private static object OneLevel(Document doc, string text, out string problem)
         {
@@ -1228,6 +1329,12 @@ namespace Heron.Revit.Addin
         ///
         /// Both are refused BY NAME below, saying so.
         ///
+        /// AND ONE THAT IS HALF HERE. `Element` resolves to an element TYPE by
+        /// name and refuses a specific INSTANCE, because an instance has no name
+        /// of its own - see OneElement. That boundary is a refusal rather than a
+        /// gap: "which duct" is a question a text value cannot answer, and the
+        /// mechanism that can answer it is the selection, not this method.
+        ///
         /// Returns null with `problem` set. Every message says what to type
         /// instead, because every one of these is fixable at the keyboard.
         /// </summary>
@@ -1272,6 +1379,7 @@ namespace Heron.Revit.Addin
 
             if (wanted == "View") return OneView(doc, text, out problem);
             if (wanted == "Level") return OneLevel(doc, text, out problem);
+            if (wanted == "Element") return OneElement(doc, text, out problem);
 
             if (wanted == "Category")
             {
@@ -1420,9 +1528,10 @@ namespace Heron.Revit.Addin
                 return null;
             }
 
-            problem = "Heron can be handed a view, a level, a category, a name, a number, or "
-                    + "true/false - and lists of those. \"" + type + "\" is not one of them "
-                    + "yet, so this fragment still has no way to receive it.";
+            problem = "Heron can be handed a view, a level, a category, an element type, a "
+                    + "name, a number, or true/false - and lists of those. \"" + type
+                    + "\" is not one of them yet, so this fragment still has no way to "
+                    + "receive it.";
             return null;
         }
 

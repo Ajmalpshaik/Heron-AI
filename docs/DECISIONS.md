@@ -3025,8 +3025,24 @@ Three things follow from that, and each was a live alternative:
    `BindNeeds` already exists to prevent, and the same rule this repository states generally: an
    identifier is only an identifier if it is unique among the things it has to distinguish.
 
-Supported today: `View`, `string`, `int`, `double`, `bool`. Anything else is refused **by name**, saying
-that type has no way to be received yet — rather than failing somewhere inside generated code.
+Supported today: `View`, `Level`, `Category`, `BuiltInCategory`, `Element`, `string`, `int`, `double`,
+`bool`, and comma-separated lists of most of those. Anything else is refused **by name**, saying that
+type has no way to be received yet — rather than failing somewhere inside generated code.
+
+**`Element` is the one with a boundary inside it, and the boundary is the interesting part.** It
+resolves to an element **TYPE**, by name, written the way the Properties palette writes it — `Basic
+Wall: Generic - 200mm`, or the bare type name when that is unique. It refuses a particular wall or
+duct, and it has to: **an instance has no name of its own.** `Element.Name` on one returns its
+*type's* name, so a search over instances would match every element of that type — turning a missing
+rule into a wrong answer, which is the one trade this whole decision exists to refuse. *"Which duct"*
+is a question text cannot answer; the selection is the mechanism that can.
+
+**The remaining imprecision is in the contracts, not here.** Twenty fragments declare a need as
+`Element`, and six of them mean an element type (`wallType`, `floorType`, `ceilingType`, `regionType`,
+`runType`, `hostType`) while the rest mean *that one there* — or something narrower again: `phase` is
+a `Phase` and `filter` is a `ParameterFilterElement`, each declared as the base class. A contract that
+said what it meant would resolve exactly, the way `Level` already does, and would not need this method
+to work out which half was intended.
 
 ### What this does NOT do
 

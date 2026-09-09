@@ -484,6 +484,67 @@ indistinguishable from a broken one. What earns a non-zero code is a job file th
 
 ---
 
+## `generate-jobs.py` — the derivable half of a job file, typed by something that cannot misspell
+
+```bash
+python tools/generate-jobs.py                                   # to the screen
+python tools/generate-jobs.py --out tools/jobs/next.yaml
+python tools/generate-jobs.py --risk MODIFY --limit 10 --out tools/jobs/modify.yaml
+python tools/batch-prove.py tools/jobs/next.yaml --dry-run      # after filling the blanks in
+```
+
+`batch-prove.py` takes a **hand-written** job list, and the hand-written part is where the mistakes
+are. **Six input names were mistyped on 2026-09-09 alone** — `widthMm` for `width`, `sortByFields` for
+`sortFieldNames` — and a mistyped input name does not look like a typo when it comes back: the fragment
+refuses, or binds nothing and reports zero, and both read exactly like a fragment that is broken. This
+is [FRAGMENT-ISSUES 3h.4](../docs/FRAGMENT-ISSUES.md), fourth of the four things asked for at the end of
+two days of proving.
+
+Everything it emits is read out of a file, and the file is named in a comment beside it:
+
+| Derived | From |
+|---|---|
+| which fragments to attempt | `heron-status: DRAFT` **and** no run record in `brain/proof-drafts/runs/` — never proved, and never yet in front of a model |
+| `write: true` | the fragment's own `risk:`, against the risk `run_fragment_write` carries in [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), ordered by the `HeronRisk` enum |
+| the setup chain | whether the fragment needs anything a *fragment* provides. If it does not, it gets `setup: []` rather than a selection it never asked for |
+| **the exact input names** | `contract.needs`, spelled out with the type beside each one. **This is the point of the tool** |
+| what cannot be run at all | a need whose shape Revit has no way to receive is **marked with the reason**, not emitted as a job that would refuse the moment it reached the model |
+
+**`write: true` is not a label this tool applies.** [Golden Rule 19](../docs/14-golden-rules.md) says the
+risk of an operation is looked up **by name** in the registry and never supplied by a caller — and this
+tool is a caller. So it reads two declarations and puts them side by side: what the fragment says it
+carries, and what the registry says `run_fragment_write` carries. *"MODIFY needs the write path"* is
+never typed here; it is read out, and if the registry is ever rearranged so the write executor is no
+longer above the read one, **nothing is generated at all** and the refusal says why. A job file that
+sends a write down the read path is the defect that cost half a morning on 2026-09-09, and it arrived
+silently.
+
+**What it refuses to derive is the more important half.** The category and the view are left **blank**,
+marked `FILL IN`, with a comment saying whose job they are. They are judgement — which category this
+model has, which view holds a small number of them — and a wrong category produces a *confident
+meaningless result*, which happened **eleven times in one batch**. So does `expect:`, so does every
+value, and so does the negative case: what is emitted is the **name**, correctly spelled, and the
+names to choose an `expect:` from as a comment. It removes the errors a person makes while **typing**;
+it does not remove the judgement a person has to make, and pretending otherwise would make it worse
+than the hand-written file.
+
+**Nothing is dropped silently.** A run against the library today emits 6 jobs and marks 108 fragments
+that cannot be arranged — waiting on a risk Heron does not reach yet, on a shape
+[D-54](../docs/DECISIONS.md) has no rule for, on a value the setup chain does not leave behind, or
+having nothing to vary between the two legs at all, which makes them
+[D-53](../docs/DECISIONS.md) tracking work rather than batch work. Those numbers move as fragments are
+proved, which is why **there is no generated job file committed here**: a snapshot of a moving library
+is stale by the afternoon, and this repository has already been bitten twice by a number typed into a
+file that then stopped being true. Regenerate it; it costs a second.
+
+It concludes, so it has a test — [`tests/test_generate_jobs.py`](../tests/test_generate_jobs.py). The
+one that matters most reads the accepted types **out of** `RevitFragment.FromRequest` in the add-in and
+fails when this tool's transcription of them disagrees, in either direction. The transcription exists
+because the authority is C# and nothing in Python can call it; the test is what makes it a copy that is
+**checked** rather than one that is remembered.
+
+---
+
 ## `measure-brain.py` — how long the brain takes, stage by stage
 
 ```bash
