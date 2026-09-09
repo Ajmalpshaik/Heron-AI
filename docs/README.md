@@ -26,7 +26,7 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
-**42 answered · 9 open, and nothing gates any phase.** `Q-43` to `Q-48` were all opened on
+**42 answered · 10 open, and nothing gates any phase.** `Q-43` to `Q-48` were all opened on
 2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
 than by reading. `Q-49` and `Q-50` followed the same day from reading someone else's repository at file
 level ([33 §5](33-external-repository-research.md)):
@@ -42,6 +42,7 @@ level ([33 §5](33-external-repository-research.md)):
 | `Q-49` | 🟡 Heron has **no hooks of any kind** — no `.claude/settings.json`. Every `check-*.py` gate runs only when a person types it, and this repository has already paid for that once ([32 §4](32-master-architecture-reconciliation.md)) |
 | `Q-50` | 🟠 the preview **tells** the modeller what would change; everything needed to **show** it — `preview.Ids`, `preview.Skipped`, [`set-selection`](../brain/fragments/set-selection/) — is already in memory when the question is asked |
 | `Q-51` | 🟠 Rule 19 stops text **authorising**; nothing yet governs text **travelling**. Every part Heron assembles comes from a source Heron wrote — until the RAG index exists, which is the same event that makes retrieval useful |
+| `Q-52` | 🟡 `agentmemory` fuses three retrieval streams at the same `RRF_K = 60` Heron chose independently; Heron fuses two. [`heron_graph.py`](../brain/heron_graph.py) is the third — but it is a **composition** graph, not an entity graph, so the obvious repair is probably wrong |
 
 `Q-41` before them was both asked and answered by the owner on 2026-09-06, during the decision read-back
 rather than by a specification.

@@ -6,7 +6,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 42 answered · 9 open · nothing blocking any phase**
+**Progress: 42 answered · 10 open · nothing blocking any phase**
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -304,6 +304,41 @@ A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
 ---
 
 ## Tier 3 — Needed soon
+
+### 🟡 Q-52 — Should the composition graph become a third retrieval stream? *(new, 2026-09-09)*
+
+Found by reading [`rohitg00/agentmemory`](https://github.com/rohitg00/agentmemory) at file level
+([33 §5.5](33-external-repository-research.md)). It fuses **three** streams — BM25, vector and a graph —
+by weighted RRF at `RRF_K = 60`. [`heron_retrieve.py`](../brain/heron_retrieve.py) fuses **two**, at the
+same constant, chosen independently. [`heron_graph.py`](../brain/heron_graph.py) exists and is not one
+of them; its only production caller is [`check-gaps.py`](../tools/check-gaps.py).
+
+**The obvious repair is probably wrong, and that is why this is a question.** agentmemory's graph stream
+expands *entities found in the query* — a recall widener, closer to Heron's keyword route than to
+anything else. Heron's graph answers a different question: `composes_into` / `composes_from`, derived
+from the contracts, *A provides what B needs*.
+
+**That is a composition graph, not an entity graph.** Fusing it into retrieval mixes *"which fragment
+answers this request"* with *"which fragment goes next to that one"*, and a strong helper could outrank
+the fragment that actually answers — `set-selection` beating the filter whose output it selects.
+
+**Three shapes:**
+
+1. **Leave it.** Retrieval answers one question and the graph answers another, and keeping them apart
+   is why neither is confused today.
+2. **A third fused stream**, weighted low, so composition settles near-ties and cannot overturn a
+   clearly better match — which is exactly the reasoning already written into
+   [`heron_retrieve.py`](../brain/heron_retrieve.py)'s status nudge.
+3. **A second answer, not a fused one:** the best match is returned, and *what composes with it* is
+   returned beside it, labelled. No ranking is touched and the modeller gets the next step named.
+
+**This one can be measured rather than argued.** [`measure-routes.py`](../tools/measure-routes.py) gives
+the before, and [D-39](DECISIONS.md) already requires a disagreement to be analysed rather than
+counted.
+
+**Answer:**
+
+---
 
 ### 🟠 Q-51 — What guards the path from retrieval to context, on the day Heron indexes text it did not write? *(new, 2026-09-09)*
 

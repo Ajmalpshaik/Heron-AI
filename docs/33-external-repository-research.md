@@ -39,7 +39,7 @@ already built rather than a plan for one that is not.
 
 | Project | Arrived independently at | Heron already has |
 |---|---|---|
-| **agentmemory** | keyword (BM25) + vector + graph, **fused by Reciprocal Rank Fusion** | [`heron_retrieve.py`](../brain/heron_retrieve.py) — FTS5 and nearness fused by RRF, [D-40](DECISIONS.md)'s derived graph beside it. **The same three routes and the same fusion**, chosen here from [05 §4](05-heron-brain.md) |
+| **agentmemory** | keyword (BM25) + vector + graph, **fused by weighted Reciprocal Rank Fusion at `RRF_K = 60`** | [`heron_retrieve.py`](../brain/heron_retrieve.py) — FTS5 and nearness fused by weighted RRF, **at `RRF_K = 60`, chosen independently** from [05 §4](05-heron-brain.md). **Two streams, not three** — [§5.5](#55-rohitg00agentmemory) corrects this row: Heron's graph exists and is not one of them |
 | **alibaba/open-code-review** | *"hybrid architecture: **deterministic pipelines + LLM Agent**"* | [19 §5](19-context-and-cost.md) and [02 §6](02-architecture-overview.md): *the common case must be deterministic. The model is for the uncommon case.* Enforced as pipeline order, not as an optimisation |
 | **Headroom** | compresses **tool outputs, logs, files and RAG chunks** — not the user's question | the rule written into [`heron_context.py`](../brain/heron_context.py) on the same day, for [05 §4](05-heron-brain.md)'s reason: compression may touch retrieved parts and **never** the request, because `OST_DuctCurves` is the load-bearing half of a BIM sentence |
 | **code-review-graph** | SQLite, **incremental by content hash**, and *"blast radius"* — what a change reaches | [`heron_embed.py`](../brain/heron_embed.py) is content-hashed so re-indexing unchanged files costs nothing; [`heron_graph.py`](../brain/heron_graph.py) answers *"what breaks if this changes"*; [D-40](DECISIONS.md) derives before storing |
@@ -57,7 +57,7 @@ Research further.**
 
 | Repository | Problem solved | Useful principle | Heron fit | Risks | Licence | Decision |
 |---|---|---|---|---|---|---|
-| [`rohitg00/agentmemory`](https://github.com/rohitg00/agentmemory) | agent amnesia between sessions | **four memory tiers** — working, episodic, semantic, procedural — and hybrid retrieval fused by RRF | retrieval is **already this**. The four tiers are a sharper cut than [10](10-memory-and-knowledge.md)'s categories and worth comparing against them | its value is in the tiering, which is a re-organisation of something Heron already has and would cost a migration | Apache-2.0 — compatible | **Adapt concept** — compare the four tiers against [10](10-memory-and-knowledge.md)'s list, adopt only a difference that names a real gap |
+| [`rohitg00/agentmemory`](https://github.com/rohitg00/agentmemory) — [§5.5](#55-rohitg00agentmemory) | agent amnesia between sessions | **four memory tiers** — working, episodic, semantic, procedural — and hybrid retrieval fused by RRF | retrieval is **already this**. The four tiers are a sharper cut than [10](10-memory-and-knowledge.md)'s categories and worth comparing against them | its value is in the tiering, which is a re-organisation of something Heron already has and would cost a migration | Apache-2.0 — compatible | **Adapt concept** — compare the four tiers against [10](10-memory-and-knowledge.md)'s list, adopt only a difference that names a real gap |
 | [`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) | whole-repository context sent to a model for review | **blast-radius analysis** before loading anything; Tree-sitter → SQLite; incremental by SHA-256 | the *principle* is [D-40](DECISIONS.md) and [`heron_graph.py`](../brain/heron_graph.py). The *implementation* is a source-code graph, which [32 §5](32-master-architecture-reconciliation.md) rejects for Heron | adopting the tool means adopting Tree-sitter and a code graph over `revit/` — the off-mission build | MIT — compatible | **Reject the implementation, principle already held** |
 | [`headroomlabs-ai/headroom`](https://github.com/headroomlabs-ai/headroom) | token cost of tool output and RAG chunks | compress **what came back**, never what was asked; reversible compression so the original can be retrieved | this is the missing half of [19 §2](19-context-and-cost.md). [`heron_context.py`](../brain/heron_context.py) declares the boundary and implements no compression | a compressor that ever touches a Revit token destroys the only load-bearing part of the sentence | MIT — compatible | **Research further** — the reversible-retrieval idea is the one worth taking; nothing before [19 §2](19-context-and-cost.md)'s budgets are agreed |
 | [`alibaba/open-code-review`](https://github.com/alibaba/open-code-review) | code review at scale | **deterministic pipeline first, agent second**; line-level findings; a built-in ruleset | the split is [19 §5](19-context-and-cost.md)'s. The line-level shape is what [`check-revit-gate.py`](../tools/check-revit-gate.py) does per question | its rulesets are NPE, thread-safety, XSS, SQL injection — a web/Java surface. Heron's ruleset is the Revit API, and none of theirs transfers | Read the repository's own licence before any reuse | **Adopt concept** — already held; the ruleset itself does not transfer |
@@ -506,3 +506,87 @@ abstract until [Q-51](OPEN-QUESTIONS.md)'s day arrives.
 **Decision: unchanged — Adapt concept, code strictly off-limits.** The concept came from the README, so
 "off-limits" cost nothing at all. The licence row is corrected to say `crates/ov_cli` rather than
 "the CLI".
+
+---
+
+### 5.5 `rohitg00/agentmemory`
+
+**Read at** `e04ba88819c365c9acf9d6661ea802143e728bd6`, committed 2026-08-23. Apache-2.0.
+
+**Opened:** `src/state/hybrid-search.ts`, `src/state/reranker.ts`, `src/functions/query-expansion.ts`,
+`src/types.ts`, `DESIGN.md`, `README.md`.
+
+**This row carries §1's headline claim, so it was the one that most needed checking.** It survives, with
+one correction that is mine rather than theirs.
+
+#### What is confirmed, and it is stronger than the page suggested
+
+`hybrid-search.ts` line 20:
+
+```ts
+const RRF_K = 60;
+```
+
+[`heron_retrieve.py`](../brain/heron_retrieve.py) line 64:
+
+```python
+RRF_K = 60
+```
+
+**The same technique and the same constant, reached by two projects that did not talk to each other.**
+Heron's comment explains the choice from first principles — *"60 is the value the technique is normally
+used with; what it does is stop rank 1 from dwarfing everything"* — and theirs simply uses it. Both
+weight the streams rather than fusing them flat.
+
+The weighting differs, and Heron's is the better-founded of the two. agentmemory hard-codes
+`bm25Weight = 0.4`, `vectorWeight = 0.6`, `graphWeight = 0.3`. Heron's weight **follows the backend**,
+because Step 10 measured what each backend is actually worth — a fixed 0.6 for "the vector route"
+assumes every vector route is equally good, and Heron's `lexical` and `model` backends are not.
+
+#### The correction: Heron has two streams, not three
+
+**§1 said *"the same three routes"*. That is wrong and it is corrected above.**
+
+agentmemory fuses **three**: BM25, vector, and a graph stream. Heron fuses **two** — `keyword_rank` and
+`vector_rank`. [`heron_graph.py`](../brain/heron_graph.py) exists, but `heron_retrieve.py` does not
+import it, and its only production caller is [`check-gaps.py`](../tools/check-gaps.py).
+
+**And the obvious repair is probably wrong**, which is why it is a question rather than a task.
+agentmemory's graph stream expands *entities found in the query* — it is a recall widener, closer in
+spirit to Heron's keyword route than to anything else. Heron's graph answers a different question
+entirely: `composes_into` / `composes_from`, derived from the contracts, *A provides what B needs*.
+
+That is a **composition** graph, not an entity graph. Fusing it into retrieval would mix *"which
+fragment answers this request"* with *"which fragment goes next to that one"*, and a strong helper could
+outrank the fragment that actually answers. The idea is worth testing precisely because copying the
+shape without the semantics is the mistake. Recorded as **[Q-52](OPEN-QUESTIONS.md)**, and Heron can now
+measure the answer rather than argue it — [`measure-routes.py`](../tools/measure-routes.py) gives the
+before.
+
+#### Their two recall boosters, and Heron may have exactly one of them
+
+**Query expansion is a model call.** `query-expansion.ts` opens with a system prompt — *"You are a query
+expansion engine… generate 3-5 reformulations"* — and generates reformulations and temporal
+concretizations before searching. For Heron that is settled, not missing: [D-01](DECISIONS.md) and
+[D-58](DECISIONS.md) put every model call in the host. If a request needs rephrasing, the host rephrases
+it and asks Heron again. **Not a gap.**
+
+**The reranker is not a model call, and it is Heron-shaped.** `reranker.ts` loads a local quantised
+cross-encoder — `@huggingface/transformers`, `Xenova/ms-marco-MiniLM-L-6-v2`, `dtype: "q8"` — off by
+default behind `RERANK_ENABLED`. Local, offline, no account, quantised: that is
+[D-24](DECISIONS.md) and [D-26](DECISIONS.md) satisfied, and the same shape as
+[`heron_embed.py`](../brain/heron_embed.py)'s model2vec backend. Heron has no reranker at all.
+
+**With one scar attached.** [D-49](DECISIONS.md) is a thirty-minute hang caused by importing the trained
+encoder on the asyncio event loop. A cross-encoder is a **second** model load on the same path, and
+[`measure-brain.py`](../tools/measure-brain.py) now times exactly that stage — so the cost is
+measurable before it is paid. Not opened as a question: a reranker reorders a list, and nothing can say
+whether Heron's list needs reordering until there is a corpus and a measurement it fails.
+
+**The four tiers are real** — `types.ts` carries `"episodic" | "semantic" | "procedural"` as a union and
+`ProceduralMemory` as an interface, so the matrix row's *"four memory tiers"* is a structure and not a
+README diagram. The row's decision stands.
+
+**Decision: unchanged — Adapt concept.** Compare the four tiers against [10](10-memory-and-knowledge.md).
+The file-level pass corrects §1's headline, confirms the constant, and adds
+[Q-52](OPEN-QUESTIONS.md).
