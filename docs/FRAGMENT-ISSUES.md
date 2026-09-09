@@ -781,13 +781,60 @@ on a real project than in a proof:
 | `create-view-template-from-view` | created `HERON TPL Z9` | asked for a name it could not use, **created `Model Linking Copy 1` anyway** and reported the refusal beside it |
 | `duplicate-type` | `'Tees' duplicated as 'HERON TYPE Z9'` | given no new name, **`'Tees' duplicated as 'Tees'`** |
 | `create-key-schedule` | created `HERON KEY Z9` | created `Duct Style Schedule` |
+| `create-levels` | `created 2`, `nameRefused 0` | **`created 2` AND `nameRefused 2`** — it rejected both names and made both levels anyway |
 
 A fragment that cannot use the name it was given should refuse it, not invent one. `duplicate-type`
 producing a second type called `Tees` is the clearest case: nothing downstream can tell the two apart.
 
+**`create-levels` is the most costly of the four**, because a level is not a type. It reports
+`nameRefused 2` and `created 2` in the same breath — it rejected both names and built both levels
+regardless, leaving two default-named levels in the model. Levels are what the 5,636-element rollback
+failure of 2026-09-09 was about (§1c), so a fragment that creates them when it has already decided it
+cannot do the job is the one to fix first of the four.
+
+**And the counter-example is in this same file.** `duplicate-sheets`, given no prefix and no suffix,
+duplicated NOTHING and named all 17 numbers that would have collided. Same situation, same kind of
+fragment, opposite behaviour. It is worth reading before touching any of the four, because it shows the
+refusal already has a shape in this library — it is not being invented.
+
 **These three are also obscured by the `Describe` defect** — each returns its new element as
 `"ElementId"` — but fixing that would not prove any of them, because the negative would still have
 created something. The naming defect is the one that matters.
+
+### Value-driven negatives: four tried, none proved, three findings — 2026-09-09
+
+Thirty DRAFT fragments have both legs recorded with a positive that moved and a negative that did not
+come back empty. Re-reading them showed the contrast was usually in the wrong place: the negative was a
+different *selection*, and a fragment that acts on whatever it is handed acts on that too.
+`isolate-elements` isolated 307 either way; `group-elements` grouped whatever arrived.
+
+So four were re-run with the negative driven by the **value** instead —
+[`tools/jobs/value-driven-negatives.yaml`](../tools/jobs/value-driven-negatives.yaml). None proved, and
+three of the four produced something better.
+
+| Fragment | Positive | Negative | What it means |
+|---|---|---|---|
+| `check-equipment-connectors` | `sizeTolerance=0` → `mismatched 22` | `sizeTolerance=99999` → `mismatched 21` | **The tolerance barely does anything.** A tolerance of 99999 should make every connector size acceptable; it removed one. This is the `measure-run-quantities` shape — a number the caller supplies that does not change the answer — and a modeller setting a tolerance would get a confident wrong list |
+| `isolate-elements` | `view=FloorPlan: M1` → `isolated 22` | `view=Cover Sheet` → `isolated 22`, `viewRefused false` | **Identical answers from different views.** Either `view` is not being honoured or a sheet really can take a temporary isolate. Worth settling: the same shape as `color-by-parameter`, which coloured 22 elements by a parameter that does not exist |
+| `set-crop-box-settings` | `changed 1` | `views="Cover Sheet"` → `changed 1` | Changed a crop setting on a sheet. Same count both legs |
+| `set-category-visibility` | `changed 0` | `changed 0` | **Not a defect — and the explanation is already in this file.** M1 follows the `Mechanical Plan` view template (`remove-view-template` reported it in the same session), so the view cannot change category visibility at all: the template owns it. This is the trap that `report-category-visibility` was fixed for in §4 — *a view driven by a template answers false to everything*. Any V/G fragment must be proved on a view carrying NO template |
+
+### `--write` serves EXECUTE, not only MODIFY
+
+`isolate-elements` first answered `fragment_threw: Attempt to modify the model outside of transaction`,
+and the job file was the reason: it carried `write: false` because the fragment is `risk: EXECUTE`
+rather than `MODIFY`. That was a guess and it was wrong.
+
+Temporary Hide/Isolate changes no model data — the fragment says so itself, *"nothing here is saved
+into the view"* — but Revit still requires a transaction to call it. Re-run with `--write` both legs ran.
+
+> **`write:` follows whether the fragment needs a TRANSACTION, not whether its risk is `MODIFY`.**
+> Only `READ` is refused the write path. An `EXECUTE` fragment that touches the document needs
+> `write: true` exactly like a `MODIFY` one.
+
+Four of the six `EXECUTE` fragments are still DRAFT — `isolate-elements`, `set-selection`,
+`switch-active-project`, `zoom-to-elements` — and `set-selection` runs in every setup chain without a
+transaction, so the need is per-fragment rather than per-risk.
 
 ### What this says about where the proving goes next
 
