@@ -61,10 +61,10 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | Tests | **all pass**, `test_embed` and `test_retrieve` included — they were re-based against the model backend in PART 5, not edited until green. See the note where the warning used to be |
 | Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | **rebuilt and redeployed to Revit 2024 on 2026-09-09**, carrying the write engine and the caller-value resolver. Rebuild it after ANY change under `revit/` — and check the framework first: `check-compile.py` builds 2020–2027 into one folder and the newest wins, so a run of it leaves .NET 10 binaries that Revit 2024 refuses with *"Revit cannot run the external application"*. `deploy-addin.ps1` now guards this rather than trusting the operator |
-| Agents | **70 of 250 have code**, 4 host-provided by D-01, 176 left — `python tools/agent-count.py`. Phase 0/1's agent list is COMPLETE |
-| MCP tools | **13** — `heron_gaps`, `heron_compatibility` and `heron_diagnose` added 2026-09-07/08 |
+| Agents | **71 of 250 have code**, 4 host-provided by D-01, 175 left — `python tools/agent-count.py`. The 71st is `HERON-RAG-CTX-007`, the Context Manager, on 2026-09-09. Phase 0/1's agent list is COMPLETE |
+| MCP tools | **14** — `heron_gaps`, `heron_compatibility` and `heron_diagnose` added 2026-09-07/08; **`heron_context` added 2026-09-09** (the Context Manager, [32 §4.1](32-master-architecture-reconciliation.md)). Derive it: `grep -c '^@server.tool()' mcp/server/heron_mcp_server.py` |
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them |
-| Branches | `main` only, and it is the only branch that exists — `claude/folder-structure-review-0wpu2y` was fully merged and deleted on 2026-09-09. Everything through PR #43 is in |
+| Branches | `main`, plus **`claude/heron-ai-master-architecture-6t03c9` — open as draft PR #44** and not merged. `claude/folder-structure-review-0wpu2y` was fully merged and deleted on 2026-09-09. Everything through PR #43 is in `main`; **nothing from #44 is** |
 
 **EVERY REGISTER ROW THAT DID NOT NEED REVIT IS NOW CLOSED.** `A4`, `A6`, `A7`, `A8` and `A9` all fell on
 2026-09-06 on the owner's own PC — rows parked for months on *"a machine"*, closed in one afternoon by
