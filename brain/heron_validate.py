@@ -627,19 +627,21 @@ def draft_from_record(frag, record):
         # which is the stricter behaviour and the right default.
         try:
             declaration = frag.provides() if callable(frag.provides) else frag.provides
-            # ONLY WHAT THE FRAGMENT ACTUALLY WROTE DOWN. provide_role() answers
-            # "result" for an entry with no `role:` key, which is the right
-            # default for reading one entry and the wrong thing to put in this
-            # map: a name mapped to "result" is indistinguishable from a name
-            # the author DECLARED as a result, and the judge below skips its
-            # naming patterns for anything it finds here.
+            # ONLY WHAT THE FRAGMENT ACTUALLY WROTE DOWN, which is now every
+            # provide it has: `heron_fragment.py` requires a role, so this map
+            # is total by validation rather than by accident.
             #
-            # Every fragment declares its provides, so that map was total, so
-            # the patterns never ran. 102 names across 134 fragments - `scanned`,
-            # `unplaced`, `noConnectors`, `notASheet` - were judged as findings
-            # while D-51 and D-52 sat there unable to speak. Found 2026-09-08,
-            # proving select-scope-boxes, whose negative case came back with
-            # every result at zero and `scanned: 5`.
+            # IT WAS ONCE TOTAL BY ACCIDENT, AND THAT WAS A DEFECT. provide_role()
+            # answers "result" for an entry with no `role:` key - right for
+            # reading one entry, wrong in this map, because a name mapped to
+            # "result" was indistinguishable from one the author had DECLARED as
+            # a result, and the judge skipped its naming patterns for anything it
+            # found here. So the patterns never ran at all: 102 names across 134
+            # fragments - `scanned`, `unplaced`, `noConnectors`, `notASheet` -
+            # were judged as findings while D-51 and D-52 sat unable to speak.
+            # Found 2026-09-08 proving select-scope-boxes, whose negative case
+            # came back with every result at zero and `scanned: 5`. The patterns
+            # are gone now; only the declaration decides.
             declared = dict((d.get("name"), d["role"])
                             for d in (declaration or [])
                             if isinstance(d, dict) and d.get("name") and d.get("role"))
@@ -766,49 +768,43 @@ def _as_count(value):
 # here" still fills it. See D-51: the counts decide, the note does not.
 NOTE_KEYS = frozenset(("findings",))
 
-# Names that count what the fragment was GIVEN and could not report on, rather
-# than what it FOUND. `noSystem: 16` does not mean sixteen systems; it means
-# sixteen elements were examined and none had one. See D-52.
+# THE NAMING PATTERNS ARE GONE, AND WHAT THEY WERE IS WORTH KEEPING.
 #
-# The camelCase boundary is load-bearing: `no|not|un` must be followed by a
-# CAPITAL, so `notes` and `nodes` are still ordinary result fields. The three
-# single words below do not fit that shape and are listed because they were
-# actually observed, not because the pattern was widened to admit them.
-REJECT_PREFIX = re.compile(r"^(no|not|un)[A-Z]")
-REJECT_NAMES = frozenset(("unmeasurable", "unplaced", "unenclosed",
-                          "elementsWithNoMaterial", "withoutJoins"))
-
-# THE PATTERN ABOVE HAS REACHED ITS LIMIT, and the next person should know it
-# rather than widen it again. A blanket `without*` or `missing*` rule was
-# considered on 2026-09-07 and REJECTED: `report-routing-preferences` declares
-# `missingFamilies`, and a routing preference pointing at a family nobody has
-# loaded is precisely that fragment's FINDING, not its bookkeeping. Sixteen
-# provides start with without/missing/lacking and they are not all one kind.
+# Three of them guessed D-52 from a name. `REJECT_PREFIX` was `^(no|not|un)[A-Z]`
+# - the camelCase boundary load-bearing, so `notes` and `nodes` stayed ordinary
+# result fields. `REJECT_NAMES` held the five singles that did not fit that
+# shape and had been met one at a time: `unmeasurable`, `unplaced`, `unenclosed`,
+# `elementsWithNoMaterial`, `withoutJoins`. `WORK_COUNTER` was `scanned|checked`,
+# for `jointsChecked` and `constraintsScanned`. Between them they answered, for
+# any name nobody had declared, "is this a count of what it FOUND, or of what it
+# was HANDED and could not use".
 #
-# The names here are listed one at a time as they are met, deliberately, so that
-# adding one is a decision rather than a side effect.
+# This file already said what should replace them, and now it has:
 #
-# THE REAL FIX IS IN THE CONTRACT, NOT HERE. A fragment knows which of its
-# provides are results and which count what it was handed and could not use;
-# nothing but the name carries that today, which is why this list exists at all.
-# A `role: result | accounting` key on each `provides` entry would replace every
-# pattern in this file with something the fragment states about itself.
-
-
-# Names that count WORK DONE rather than things found - `scanned`, `jointsChecked`,
-# `constraintsScanned`, `sectionsNotChecked`. Thirteen such names exist across the
-# library and every one of them is an int. Same principle as the rejection counts
-# above and recorded under the same decision: a count of how many were examined is
-# not a count of how many were found. `scanned: 2` alongside `unusedGroupTypes: 0`
-# means it walked two definitions and none was unused - which is the evidence that
-# it ran at all, and the opposite of a reason to doubt the answer.
-WORK_COUNTER = re.compile(r"(?i)(scanned|checked)")
-
-
-def _is_accounting(key):
-    return (bool(REJECT_PREFIX.match(key))
-            or key in REJECT_NAMES
-            or bool(WORK_COUNTER.search(key)))
+#     THE REAL FIX IS IN THE CONTRACT, NOT HERE. A fragment knows which of its
+#     provides are results and which count what it was handed and could not
+#     use... A `role: result | accounting` key on each `provides` entry would
+#     replace every pattern in this file with something the fragment states
+#     about itself.
+#
+# Every provide in the library now carries an explicit role - 1,192 of them,
+# declared on 2026-09-09 by reading what each fragment is FOR rather than what
+# its output is called. That reading disagreed with these patterns 166 times,
+# IN BOTH DIRECTIONS. `select-unenclosed-rooms` declares `unplaced` and
+# `unenclosed`, the two faults it exists to find, and `REJECT_NAMES` swallowed
+# both. `set-mep-slope.inGroup` and `flip-elements.cannotFlip` are bookkeeping
+# no pattern could see, and a non-zero one of those would have banked a proof
+# for a run that changed nothing.
+#
+# A NAME THAT MATCHES A BOOKKEEPING SHAPE IS A QUESTION, NOT A VERDICT - which
+# is why the guessing had to go rather than be widened once more. The blanket
+# `without*` rule considered on 2026-09-07 was refused for the same reason:
+# `report-routing-preferences.missingFamilies` is that fragment's finding.
+#
+# NOTHING GUESSES NOW, AND NOTHING FALLS THROUGH TO A DEFAULT EITHER.
+# `heron_fragment.py` REQUIRES a role on every provide, so a fragment written
+# tomorrow that forgets one fails validation rather than being read as a result.
+# `findings` is the single exemption and NOTE_KEYS above is where it lives.
 
 
 # `RevitFragment.Describe` renders anything it cannot format as a count or a
@@ -877,10 +873,10 @@ def looks_empty(phase, declared=None, declared_names=None):
     #
     # TWO DIFFERENT QUESTIONS, AND THEY WERE ONE ARGUMENT UNTIL 2026-09-08.
     # `declared_names` is WHAT TO JUDGE - every name the contract lists, so the
-    # fragment's working values are dropped. `declared` is only the names
-    # carrying an EXPLICIT `role:`, so a name the author said nothing about
-    # still reaches the naming patterns below. Collapsing the two made the map
-    # total (every fragment declares its provides) and the patterns unreachable.
+    # fragment's working values are dropped. `declared` is which of those are
+    # ACCOUNTING. They stay two arguments now that the naming patterns are gone,
+    # because they still answer different questions: one drops a `Func` the
+    # fragment left in scope, the other drops a count of what it could not use.
     roles = declared if isinstance(declared, dict) else None
     judge = declared_names if declared_names else declared
     if judge:
@@ -890,13 +886,11 @@ def looks_empty(phase, declared=None, declared_names=None):
 
     counted = 0
     for key, value in provides.items():
-        # DECLARED BEATS GUESSED. A fragment that says a name is accounting is
-        # believed; only one that has not said anything falls through to the
-        # naming patterns.
-        if roles is not None and key in roles:
-            if roles[key] == "accounting":
-                continue
-        elif key in NOTE_KEYS or _is_accounting(key):
+        # THE FRAGMENT'S OWN WORD, AND NOTHING ELSE. There is no fallback to
+        # read a name any more: `heron_fragment.py` requires a role on every
+        # provide, so a name arriving here without one is a contract that never
+        # passed validation - and judging it as a result is the stricter read.
+        if roles is not None and roles.get(key) == "accounting":
             continue
         if key in NOTE_KEYS:
             continue

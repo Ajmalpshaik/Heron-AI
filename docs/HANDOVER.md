@@ -608,8 +608,17 @@ bottom of this entry — read that first if you are here to prove more fragments
 **FOUR RULE CHANGES IN ONE EVENING, ALL IN THE SAME DIRECTION, AND THAT WAS SAID OUT LOUD AT THE TIME.**
 The fifth was refused. What replaced it is the fix that matters: **`role: result | accounting` on a
 `provides` entry**, so a fragment DECLARES which outputs are findings and which count what it was
-handed. Optional, absent means `result`, a typo is a validation error. The naming patterns remain only
-as fallback. **If you find yourself adding a name to `REJECT_NAMES`, add the `role` key instead.**
+handed. It landed optional, with the naming patterns kept as fallback so that 349 fragments did not
+have to be edited at once.
+
+**They were all edited on 2026-09-09, and it is REQUIRED now.** All 1,192 provides declare a role,
+read off what each fragment is FOR rather than what its output is called - and that reading
+disagreed with the patterns **166 times, in both directions**. `select-unenclosed-rooms` declares
+`unplaced` and `unenclosed`, the two faults it exists to find, and `REJECT_NAMES` swallowed both;
+`set-mep-slope.inGroup` is bookkeeping no pattern could see, and a non-zero one would have banked a
+proof for a run that moved nothing. So `REJECT_PREFIX`, `REJECT_NAMES` and `WORK_COUNTER` were
+deleted rather than kept as a fallback that is wrong one time in seven, and `check_contract` now
+refuses a provide with no role. `findings` is the one exemption. **Nothing reads a name any more.**
 
 ### The method — this is the part to reuse
 
