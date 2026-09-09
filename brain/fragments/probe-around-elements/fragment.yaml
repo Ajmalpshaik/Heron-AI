@@ -64,6 +64,10 @@ contract:
     - name: hits
       type: IDictionary<ElementId, IList<string>>
     - name: nothingHit
+      # Elements whose rays hit nothing. Indistinguishable from a 3D view
+      # with the categories switched off, which the purpose names as the
+      # first thing to check - evidence it ran, never a hit (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: noOrigin
       type: IList<ElementId>

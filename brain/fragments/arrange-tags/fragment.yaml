@@ -84,6 +84,11 @@ contract:
     - name: measuredFrom
       type: int
     - name: bothHadToMove
+      # Tags where the bent-leader preference had to be ABANDONED and both
+      # of a clashing pair moved. A real outcome of the run, which the
+      # purpose requires be named rather than silently dropped - not a count
+      # of what it could not use.
+      role: result
       type: IList<ElementId>
     - name: stillOverlapping
       type: IList<ElementId>

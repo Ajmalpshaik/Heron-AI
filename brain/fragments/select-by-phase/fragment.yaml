@@ -60,6 +60,10 @@ contract:
     - name: elements
       type: IList<Element>
     - name: withoutPhasing
+      # Elements with no phase parameters at all, which is most of a model.
+      # Counted so a thing that does nothing cannot look like a thing that
+      # worked - never a match it found (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

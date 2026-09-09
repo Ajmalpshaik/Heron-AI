@@ -45,6 +45,9 @@ contract:
     - name: locations
       type: IList<string>
     - name: withoutLocation
+      # Elements with none of the three kinds of position. A count of what
+      # it was GIVEN and could not report on (D-52).
+      role: accounting
       type: int
     - name: findings
       type: IList<string>

@@ -45,6 +45,9 @@ contract:
     - name: elements
       type: IList<Element>
     - name: outside
+      # Elements handed in that the room does not contain - the rejects from
+      # the set it was given. `elements` is the answer (D-52).
+      role: accounting
       type: IList<ElementId>
     - name: noPoint
       type: IList<ElementId>

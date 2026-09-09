@@ -50,6 +50,10 @@ contract:
     - name: withTitleBlock
       type: int
     - name: withoutTitleBlock
+      # A SHEET WITH NO TITLE BLOCK IS A REAL FINDING, not a blank row - it
+      # prints with nothing round the drawing and looks like every other
+      # sheet in the browser.
+      role: result
       type: IList<string>
     - name: typesInUse
       type: IList<string>

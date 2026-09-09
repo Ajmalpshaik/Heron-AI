@@ -57,6 +57,10 @@ contract:
     - name: emptyGroups
       type: IList<string>
     - name: missingFamilies
+      # A rule pointing at a family nobody has loaded is precisely this
+      # finding. Named in heron_validate.py as the reason a blanket
+      # `missing*` pattern was rejected on 2026-09-07.
+      role: result
       type: IList<string>
     - name: notRoutable
       type: IList<string>
