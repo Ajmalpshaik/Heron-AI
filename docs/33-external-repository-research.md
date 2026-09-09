@@ -31,7 +31,7 @@ projects below are the second thing, and the useful part of them is the mechanis
 
 ---
 
-## 1. The most valuable finding is that four of them agree with Heron
+## 1. The most valuable finding is that five of them agree with Heron
 
 This exercise was expected to produce ideas to adopt. What it mostly produced is **independent
 confirmation**, and that is worth more than an adoption, because it is evidence about a design that is
@@ -43,10 +43,14 @@ already built rather than a plan for one that is not.
 | **alibaba/open-code-review** | *"hybrid architecture: **deterministic pipelines + LLM Agent**"* | [19 §5](19-context-and-cost.md) and [02 §6](02-architecture-overview.md): *the common case must be deterministic. The model is for the uncommon case.* Enforced as pipeline order, not as an optimisation |
 | **Headroom** | compresses **tool outputs, logs, files and RAG chunks** — not the user's question | the rule written into [`heron_context.py`](../brain/heron_context.py) on the same day, for [05 §4](05-heron-brain.md)'s reason: compression may touch retrieved parts and **never** the request, because `OST_DuctCurves` is the load-bearing half of a BIM sentence |
 | **code-review-graph** | SQLite, **incremental by content hash**, and *"blast radius"* — what a change reaches | [`heron_embed.py`](../brain/heron_embed.py) is content-hashed so re-indexing unchanged files costs nothing; [`heron_graph.py`](../brain/heron_graph.py) answers *"what breaks if this changes"*; [D-40](DECISIONS.md) derives before storing |
+| **code-review-graph**, again — [§5.6](#56-tirth8205code-review-graph) | *"a bare `result_count: 0` is ambiguous… it can mean **this graph cannot see that relationship**"* — and a marker attached **only** to the empty case | [D-52](DECISIONS.md) exactly, and `FILTER_ELEMENTS_BY_CATEGORY` reporting `unresolvedLevel` so a broken lookup reads as *"12 found, 12 with no level"*. **Found only at file level**, and it is direct evidence for [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md) |
 
-**Four projects, four different problems, four teams that did not talk to each other.** None of this
+**Five projects, five different problems, five teams that did not talk to each other.** None of this
 makes Heron right, and it is not treated as evidence that it works — nothing here has met a Revit model.
-What it does mean is that the four designs most likely to be wrong by being unusual are not unusual.
+What it does mean is that the five designs most likely to be wrong by being unusual are not unusual.
+
+**The fifth was found only by the file-level pass**, and it is the one that matters most today: it lands
+on [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md), which are still unanswered.
 
 ---
 
@@ -58,7 +62,7 @@ Research further.**
 | Repository | Problem solved | Useful principle | Heron fit | Risks | Licence | Decision |
 |---|---|---|---|---|---|---|
 | [`rohitg00/agentmemory`](https://github.com/rohitg00/agentmemory) — [§5.5](#55-rohitg00agentmemory) | agent amnesia between sessions | **four memory tiers** — working, episodic, semantic, procedural — and hybrid retrieval fused by RRF | retrieval is **already this**. The four tiers are a sharper cut than [10](10-memory-and-knowledge.md)'s categories and worth comparing against them | its value is in the tiering, which is a re-organisation of something Heron already has and would cost a migration | Apache-2.0 — compatible | **Adapt concept** — compare the four tiers against [10](10-memory-and-knowledge.md)'s list, adopt only a difference that names a real gap |
-| [`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) | whole-repository context sent to a model for review | **blast-radius analysis** before loading anything; Tree-sitter → SQLite; incremental by SHA-256 | the *principle* is [D-40](DECISIONS.md) and [`heron_graph.py`](../brain/heron_graph.py). The *implementation* is a source-code graph, which [32 §5](32-master-architecture-reconciliation.md) rejects for Heron | adopting the tool means adopting Tree-sitter and a code graph over `revit/` — the off-mission build | MIT — compatible | **Reject the implementation, principle already held** |
+| [`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) — [§5.6](#56-tirth8205code-review-graph) | whole-repository context sent to a model for review | **blast-radius analysis** before loading anything; Tree-sitter → SQLite; incremental by SHA-256 | the *principle* is [D-40](DECISIONS.md) and [`heron_graph.py`](../brain/heron_graph.py). The *implementation* is a source-code graph, which [32 §5](32-master-architecture-reconciliation.md) rejects for Heron | adopting the tool means adopting Tree-sitter and a code graph over `revit/` — the off-mission build | MIT — compatible | **Reject the implementation, principle already held** |
 | [`headroomlabs-ai/headroom`](https://github.com/headroomlabs-ai/headroom) | token cost of tool output and RAG chunks | compress **what came back**, never what was asked; reversible compression so the original can be retrieved | this is the missing half of [19 §2](19-context-and-cost.md). [`heron_context.py`](../brain/heron_context.py) declares the boundary and implements no compression | a compressor that ever touches a Revit token destroys the only load-bearing part of the sentence | MIT — compatible | **Research further** — the reversible-retrieval idea is the one worth taking; nothing before [19 §2](19-context-and-cost.md)'s budgets are agreed |
 | [`alibaba/open-code-review`](https://github.com/alibaba/open-code-review) | code review at scale | **deterministic pipeline first, agent second**; line-level findings; a built-in ruleset | the split is [19 §5](19-context-and-cost.md)'s. The line-level shape is what [`check-revit-gate.py`](../tools/check-revit-gate.py) does per question | its rulesets are NPE, thread-safety, XSS, SQL injection — a web/Java surface. Heron's ruleset is the Revit API, and none of theirs transfers | Read the repository's own licence before any reuse | **Adopt concept** — already held; the ruleset itself does not transfer |
 | [`alibaba/aacr-bench`](https://github.com/alibaba/aacr-bench) | no way to measure a review agent | a **benchmark with expert-verified answers** for repository-level review | [18](18-agent-operating-system.md) and the incoming §18 both ask for an evaluation suite and Heron has none. This is the shape one takes | its dataset is general code. A Heron benchmark has to be Revit tasks, which only the owner can author | Read before any reuse | **Adapt concept** — the *shape* of a benchmark, never its cases |
@@ -590,3 +594,83 @@ README diagram. The row's decision stands.
 **Decision: unchanged — Adapt concept.** Compare the four tiers against [10](10-memory-and-knowledge.md).
 The file-level pass corrects §1's headline, confirms the constant, and adds
 [Q-52](OPEN-QUESTIONS.md).
+
+---
+
+### 5.6 `tirth8205/code-review-graph`
+
+**Read at** `b58668751ab0c7670c078cf7cbd4d1f5b8e54f81`, committed 2026-08-26. MIT.
+
+**Opened:** `code_review_graph/uncertainty.py`, `incremental.py`, `context_savings.py`, `cli.py`,
+`README.md`.
+
+**The row's claims hold.** `incremental.py` hashes with `hashlib.sha256(raw).hexdigest()` — content
+hashing confirmed, the same choice as [`heron_embed.py`](../brain/heron_embed.py). `cli.py` registers
+`impact` with the help text *"Analyze the blast radius of changes"* — confirmed. **And the row is still
+the least interesting thing in the repository**, because it was written from the landing page and the
+landing page does not mention `uncertainty.py`.
+
+#### `uncertainty.py` is the plausible zero, arrived at independently — the fifth agreement
+
+Its own opening paragraph:
+
+> A bare `result_count: 0` is ambiguous. It can mean "the code really has no such relationship", or it
+> can mean "**this graph cannot see that relationship**": the target was never indexed, the graph is
+> behind the working tree, or the target's language has a known static-analysis blind spot. Reading
+> agents take the first meaning, and then either draw a wrong conclusion or abandon the graph and grep
+> the whole repository.
+
+**That is [D-52](DECISIONS.md), written by somebody who has never seen it.** Heron's version is
+`FILTER_ELEMENTS_BY_CATEGORY` reporting `unresolvedLevel` so a broken lookup reads as *"12 found, 12
+with no level"* rather than as a clean zero. Theirs is a static-analysis blind spot reading as *"this
+relationship does not exist."* **Same failure, same fix, different industry.**
+
+**This is direct evidence for two questions the owner has not yet answered**, and it is evidence rather
+than an opinion because it comes from a project with no stake in Heron:
+
+- **[Q-46](OPEN-QUESTIONS.md)** — 59 fragments go looking, can drop a candidate, and name none of them.
+- **[Q-48](OPEN-QUESTIONS.md)** — 62 reading fragments collect the host document and say nothing about
+  links, which in federated MEP work is a *confident smaller number*.
+
+#### And their engineering answer removes the objection to answering them
+
+The reason to hesitate over Q-46 and Q-48 is cost: every fragment saying what it could not see makes
+every answer longer. **They measured it the other way round**:
+
+> One short sentence on the empty case is therefore a **token saving, not a cost**: it replaces a
+> multi-thousand-token fallback search with roughly thirty tokens of honesty.
+
+With three design choices that make it hold, all three transferable:
+
+1. **The marker is attached only when the result list is empty**, so *"every response that carries
+   results stays byte-identical to before."* Nothing already working gets longer.
+2. **It is hard-capped** — `MAX_CONFIDENCE_CHARS`. Honesty with a ceiling cannot become a paragraph.
+3. **The blind-spot list is data, not scattered conditionals** — *"every entry describes a gap that is
+   real in this codebase today; capabilities that have since been implemented are deliberately
+   absent."* That is [D-54](DECISIONS.md) — *a message describing a gap must be corrected when the gap
+   closes* — as a structural choice rather than a discipline.
+
+**A fragment reporting nothing found is the same sentence with the same ceiling.** The cheapest version
+of Q-46 is now visible: not 59 edits, but one rule that fires only on the empty case.
+
+#### One nuance about D-58, which it does not overturn
+
+`context_savings.py` estimates tokens at **4 characters per token**, labels the number an estimate
+everywhere, and offers `verify_with_tiktoken` to calibrate it.
+
+**[D-58](DECISIONS.md) is untouched by this** and the distinction is worth keeping sharp: D-58 says
+*cost per request* and *token usage* belong to the process that made the call, because per-request
+attribution exists nowhere else. Estimating **the size of what Heron itself assembled** is not that
+claim — Heron wrote those characters and can count them.
+
+Which matters because [`heron_context.py`](../brain/heron_context.py) budgets in **parts**, and
+[19 §2](19-context-and-cost.md) asks for budgets. A part budget cannot say *"this path may spend two
+thousand tokens"*. A labelled estimate can, in about thirty lines, without claiming to know a price.
+**Recorded here rather than opened as a question**, because it belongs to
+[19 §2](19-context-and-cost.md)'s budgets, which the Headroom row already names as the prerequisite for
+anything in this area.
+
+**Decision: unchanged — Reject the implementation, principle already held.** The Tree-sitter code graph
+over `revit/` is still the off-mission build. The file-level pass promotes this project into §1 as the
+**fifth** independent agreement and hands [Q-46](OPEN-QUESTIONS.md) a cheaper answer than the one it was
+written with.

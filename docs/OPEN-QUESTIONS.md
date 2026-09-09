@@ -484,6 +484,13 @@ to say whether links were included.**
 
 `python tools/check-revit-gate.py --list links` names the 62.
 
+**Independent evidence arrived on 2026-09-09**, from
+[`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) read at file level
+([33 §5.6](33-external-repository-research.md)). Its `uncertainty.py` exists because *"a bare
+`result_count: 0` is ambiguous — it can mean **this graph cannot see that relationship**."* Same failure,
+different industry, and they reached it with no knowledge of Heron. A fragment that collects the host
+and stays silent about links is that sentence exactly.
+
 **Answer:**
 
 ---
@@ -614,6 +621,25 @@ what it dropped, and does that become a validator rule the way the contract's sh
 every future fragment held to it.
 
 `python tools/check-revit-gate.py --list reporting` names them.
+
+**A cheaper answer arrived on 2026-09-09**, from
+[`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) read at file level
+([33 §5.6](33-external-repository-research.md)). The reason to hesitate here is cost — every fragment
+naming what it turned down makes every answer longer. **They measured it the other way round:**
+
+> One short sentence on the empty case is therefore a **token saving, not a cost**: it replaces a
+> multi-thousand-token fallback search with roughly thirty tokens of honesty.
+
+And three choices make that hold, all three available here:
+
+1. **Attach the marker only when the result is empty** — so *"every response that carries results stays
+   byte-identical to before."* Nothing already working gets longer.
+2. **Hard-cap it.** Honesty with a ceiling cannot grow into a paragraph.
+3. **Keep the blind-spot list as data, not conditionals**, and delete an entry when the gap closes —
+   which is [D-54](DECISIONS.md) built into the structure instead of relied on as a discipline.
+
+**So the choice above may not be "59 edits or guidance".** A third shape exists: one rule that fires
+only on the empty case, capped, applied once.
 
 **Answer:**
 
