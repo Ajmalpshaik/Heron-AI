@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -56,6 +56,26 @@ contract:
       type: ElementId
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,435 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created 1 item(s) [id 925687],
+    creation Document, findings 1 item(s) [Floor created on 'Level 1' using the Revit 2022
+    and later ca...], newStyle RuntimeMethodInfo, oldStyle (null). inputs came level as given;
+    floorType as given; boundary as given (4). on Project1 work_ajmal.al
+  negative_case: run with boundary=0,0,0; 6000,0,0, floorType=Generic 300mm, level=Level 1
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    created (null), creation Document, findings 1 item(s) [A floor needs at least three boundary
+    points and 2 were give...], newStyle RuntimeMethodInfo, oldStyle (null). inputs came level
+    as given; floorType as given; boundary as given (2). on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: af71eb48a7154b12
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

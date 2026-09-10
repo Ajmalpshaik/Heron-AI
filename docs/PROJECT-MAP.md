@@ -144,10 +144,10 @@ Do **not** pick whichever makes the cleanup easier, and do not close a policy co
 [NEEDS-CHECKING.md](NEEDS-CHECKING.md).
 
 What matters to you: **read and write are different things, and they are proven to different depths.**
-Reading is proven far more widely — **106 `READ` fragments carry a proof against 55 `MODIFY`** — and
+Reading is proven far more widely — **106 `READ` fragments carry a proof against 63 `MODIFY`** — and
 `write.enabled` still defaults to `false` whatever the fragment says.
 
-A fragment marked `DRAFT` **has never met a model.** 193 of 360 at the last count. Derive both rather
+A fragment marked `DRAFT` **has never met a model.** 185 of 360 at the last count. Derive both rather
 than believing any of those numbers, including these:
 
 ```bash

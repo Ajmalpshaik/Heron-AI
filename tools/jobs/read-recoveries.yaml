@@ -1,0 +1,76 @@
+# Two READ fragments whose recorded run came back POSITIVE EMPTY - 2026-09-10.
+#
+# WHY THESE TWO OUT OF FORTY-ONE. `batch-prove.judge` reports POSITIVE EMPTY for
+# 41 DRAFT fragments. That verdict says the arrangement was wrong, not that the
+# fragment is - so each is recoverable IF the model can fill its positive case.
+# These two are READ, so nothing needs `write.enabled` and nothing rolls back,
+# and the model was measured before the values were chosen rather than after.
+#
+# WHAT THIS MODEL HOLDS, probed 2026-09-10 in Snowdon-scratch:
+#
+#              FloorPlan: M1   FloorPlan: L3
+#   Ducts               22           307
+#   Duct Fittings       16           285
+#   Air Terminals       10           144
+#   Mech Equipment       2            10     Heat Recovery Units
+#   Spaces               5             -
+#   Duct Tags            9             -
+#   Rooms                0             -     none at all
+#
+# THE NEGATIVE IS A DIFFERENT SELECTION, NOT A CLEARED ONE. Clearing it leaves
+# the need unbound and the executor refuses, which proves nothing (section 1d).
+
+model: "Snowdon-scratch_ajmal.al, Revit 2024 - counts measured before this file was written"
+
+defaults:
+  write: false                    # both are risk READ
+  in: "Snowdon-scratch_ajmal.al"  # two models are open; do not follow the active one
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  # THE NEGATIVE HERE IS STRUCTURAL, WHICH IS THE STRONGEST KIND AVAILABLE.
+  # A nested shared family lives inside a family INSTANCE, so only a loadable
+  # family can have one. Ducts are SYSTEM families - they cannot nest anything,
+  # ever, in any model - so `withoutSubComponents` is the fragment's own stated
+  # answer rather than an accident of this project's content. It cannot go the
+  # other way on a richer model, which a count-based negative always can.
+  #
+  # The positive takes the 10 Heat Recovery Units in L3: MEP equipment is the
+  # case the purpose names, "the shared families placed inside a piece of MEP
+  # equipment".
+  - fragment: select-subcomponents
+    set:
+      categoryName: "Mechanical Equipment"
+      inViewOnly: "FloorPlan: L3"
+      recursive: true
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      recursive: true
+
+  # A SECOND ATTEMPT ON A BIGGER SELECTION, and it may still come back empty.
+  # The earlier record returned deadEnds 0 and stubs 0. That is a real possible
+  # answer - Snowdon is a finished sample model, and the purpose is explicit
+  # that "MOST OPEN ENDS ARE MEANT TO BE THERE": a run ending at a terminal, a
+  # fixture or a cap is finished, not broken, and this fragment filters those
+  # out on purpose.
+  #
+  # So this is worth ONE more try on 307 ducts rather than 22, with a stub
+  # threshold large enough to catch a short spur. If it comes back empty again
+  # that is evidence the model has no dead ends, which is a finding about the
+  # model and NOT a defect in the fragment - and it should then be recorded and
+  # left rather than retried a third time.
+  #
+  # UNITS: `stubLength` is a bare double, so INTERNAL FEET. 10 is about 3 m.
+  # A `...Mm` suffix would have meant millimetres; a plain name means feet.
+  - fragment: find-dead-ends
+    set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: L3"
+      stubLength: 10
+    negative-set:
+      categoryName: Duct Tags
+      inViewOnly: "FloorPlan: M1"
+      stubLength: 10

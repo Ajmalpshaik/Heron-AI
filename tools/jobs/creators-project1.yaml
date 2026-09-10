@@ -33,6 +33,12 @@ defaults:
   # back (D-55), so nothing here is kept.
   write: true
   setup: []
+  # PIN THE MODEL, do not follow whatever is in front. Without this the batch
+  # runs against the ACTIVE document, and clicking the other open model mid-run
+  # would send five write fragments into it. Two are open on 2026-09-10:
+  # "Project1 work_ajmal.al" and "Snowdon-scratch_ajmal.al". The name must be
+  # the whole one - "Project1" alone matches nothing.
+  in: "Project1 work_ajmal.al"
 
 jobs:
   # A 6 m x 4 m room, closed. Five points because the run returns to its start.
