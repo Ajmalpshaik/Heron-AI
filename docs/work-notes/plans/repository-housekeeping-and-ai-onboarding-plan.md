@@ -1,9 +1,11 @@
 # Heron AI — Repository Housekeeping, Documentation & AI Onboarding Master Plan
 
-> **Type:** Temporary execution plan
+> **Type:** Temporary execution plan — revised 2026-09-10; execution not started
+> **Scope of this revision:** Publish an improved plan only. Reading, editing, reviewing or pushing this file does not activate its execution prompt or self-removal rule.
+> **Execution method:** Read section 28 before Phase A. Use the phase gates and task records below; choose inline or delegated execution only when housekeeping itself is authorized.
 > **Repository:** `Ajmalpshaik/Heron-AI`
 > **Purpose:** Clean, reconcile, restructure, document, and make the repository easy to understand for Ajmal, a BIM modeller, a BIM manager, a developer, or a fresh AI agent.
-> **Important:** This file is temporary. **Delete this file only after every applicable task in this plan is completed, verified, and the final repository audit is green.**
+> **Important:** This file is temporary. **Delete this file only after every applicable task in this plan is completed, verified, and the final repository audit meets the closure rules in sections 25–28. No required failure may be waived merely by documenting it.**
 
 ---
 
@@ -150,7 +152,7 @@ Classify every meaningful file and folder into one of the following groups:
 | **Permanent authority** | Constitution, accepted specifications, decisions, architecture | Keep; update links/status only |
 | **Navigation document** | README, project map, module index | Keep/create/update |
 | **Live operational status** | Current gaps, fragment issues, test/proof queue | Keep only if actively maintained and clearly identified |
-| **Session/work note** | Handover, temporary planning, current investigation | Move under `docs/work-notes/` |
+| **Session/work note** | Handover, temporary planning, current investigation | Prefer `docs/work-notes/`; retain established entry points when migration risk outweighs benefit |
 | **One-time execution prompt** | Markdown created to instruct an AI to perform a task | Verify task; delete when finished or keep only while active |
 | **Fix note** | Temporary instructions for a specific defect | Verify fix; merge unique knowledge; then delete if no longer needed |
 | **Idea/proposal** | Not yet approved work | Move to ideas/proposals area or permanent proposal doc |
@@ -288,6 +290,8 @@ Heron-AI/
 │       ├── ideas/
 │       └── investigations/
 │
+├── platform/
+│   └── README.md                    # shared contracts; verify existing equivalent
 ├── revit/
 │   └── README.md
 ├── mcp/
@@ -458,17 +462,14 @@ Examples:
 
 State which source wins when documents disagree.
 
-Recommended principle:
+Separate **required behavior** from **observed behavior**:
 
-1. live code / machine-derived validation where applicable;
-2. accepted constitution and decisions;
-3. authoritative specifications;
-4. permanent architecture documentation;
-5. current operational registers;
-6. temporary work notes;
-7. old historical snapshots.
+- Binding constitution, Golden Rules and accepted decisions govern what Heron is allowed to do. A conflicting implementation is a defect; running code cannot silently amend policy.
+- Code, metadata, tool output and fresh proof describe what is implemented or observed at a named revision and environment. They can correct an outdated status sentence, but a passing checker has only its implemented coverage.
+- Specifications and permanent architecture explain intent under those decisions. Historical specifications retain their historical wording; point to superseding decisions instead of rewriting history.
+- Registers describe current work; temporary notes and old snapshots provide context. Retrieval/vector indexes are derived views, never canonical authority.
 
-The exact hierarchy must be checked against Heron's existing rules before finalizing.
+Record each contradiction with both sources, the governing decision, the observed evidence, and the owner of its resolution. Leave unresolved policy conflicts open instead of selecting whichever source makes cleanup easiest.
 
 ---
 
@@ -478,7 +479,7 @@ The exact hierarchy must be checked against Heron's existing rules before finali
 
 The owner needs one place to look for temporary or active work without mixing it into permanent product documentation.
 
-Create:
+Create only populated, justified areas from this model; reuse existing folders:
 
 ```text
 docs/work-notes/
@@ -550,7 +551,7 @@ For each prompt:
 
 ### If the instructed work is not complete
 
-Move it into the correct `docs/work-notes/` area and keep it active.
+Classify it as active or blocked. Move it only through the migration procedure in section 28.4; otherwise retain the established path with an explicit operational role.
 
 ### If the instructed work is complete
 
@@ -608,6 +609,7 @@ Audit major folders and ensure each **significant subsystem boundary** has a use
 
 Likely candidates include:
 
+- `platform/`
 - `revit/`
 - `mcp/`
 - `brain/`
@@ -846,6 +848,8 @@ Use actual project evidence.
 
 ## 25. Final checklist
 
+Apply the evidence and extended closure checklist in sections 28.6–28.10 as part of this audit.
+
 Before declaring the housekeeping finished, verify all of the following.
 
 ### Structure
@@ -875,8 +879,8 @@ Before declaring the housekeeping finished, verify all of the following.
 
 ### Cleanup
 
-- [ ] Completed one-time prompts were deleted after verification.
-- [ ] Completed fix notes were deleted after durable knowledge was captured.
+- [ ] Completed one-time prompts have disposition records: deleted after verification or retained with a specific preservation reason.
+- [ ] Completed fix notes were retired after durable knowledge was captured, or retained with a justified evidence role.
 - [ ] Duplicate/outdated files were removed safely.
 - [ ] Important historical decisions were preserved.
 - [ ] No unique technical lesson was lost during cleanup.
@@ -891,7 +895,7 @@ Before declaring the housekeeping finished, verify all of the following.
 ### Validation
 
 - [ ] Documentation checks pass where available.
-- [ ] Structure/metadata/gap checks pass where applicable.
+- [ ] Structure and metadata gates pass; gap findings are classified, with outstanding product proof distinguished from housekeeping regressions.
 - [ ] Tests were run where the environment permits.
 - [ ] Revit-only items are clearly labelled as Revit-only rather than guessed.
 
@@ -900,7 +904,8 @@ Before declaring the housekeeping finished, verify all of the following.
 - [ ] Changes are logically committed.
 - [ ] No unrelated files were modified.
 - [ ] No generated junk is committed.
-- [ ] Repository is left in a clean, understandable state.
+- [ ] Owned worktree and staged paths are understood; unrelated concurrent changes are listed, preserved and excluded.
+- [ ] Remote branch SHA and draft PR are verified; default-branch integration is reported separately.
 
 ---
 
@@ -944,11 +949,205 @@ Delete it **only when**:
 2. all completed temporary prompts/fix notes have been handled;
 3. documentation status matches repository truth;
 4. required links/references have been repaired;
-5. applicable validation is green or limitations are honestly documented;
+5. every required housekeeping gate passes; optional/environment-dependent checks have explicit scope decisions and owners, not a blanket waiver;
 6. the final repository structure is understandable without this plan;
 7. any remaining work is recorded in the correct live work-note/handover location.
 
-If unfinished work remains, **do not delete this file**. Update its checklist or handover state instead.
+If required housekeeping work remains, **do not delete this file**. Update its checklist or handover state instead. Unrelated product proof can remain open in its existing register. Optional work may be deferred with rationale and an owner; a broken migration or missing required verification cannot be reclassified as optional to close this plan. Preserve the disposition ledger and closure evidence outside this file before removing it, then check references again.
+
+---
+
+# 28. Practical execution controls and task cards
+
+Read this section **before Phase A**. It supplies the operating procedure for phases A–L, not a second housekeeping project. Checkboxes above remain unchecked until execution evidence exists.
+
+## 28.1 Priorities, scope and baseline
+
+**Must do:** inventory all in-scope repository files; resolve misleading current authority/status; preserve unique knowledge; repair every affected reference; provide usable entry routes; verify changed paths and record closure. **Optional:** cosmetic renames, splitting a large document, new diagrams, extra indexes and folder reshaping without a concrete navigation benefit. Assess every significant folder, but a documented keep-in-place decision is a valid result. Do not turn the registry into a mandate to build unimplemented agents.
+
+The four product boundaries are `platform/`, `revit/`, `brain/`, and `mcp/`. Include `tools/`, `tests/`, `docs/`, root configuration, hidden instruction/configuration folders and `.github/` in the map. The conceptual tree in section 8 is not a complete file inventory. Verify all paths at execution time.
+
+Begin from the repository root in PowerShell. These are inspection commands, not cleanup commands:
+
+```powershell
+git status --short
+git branch --show-current
+git rev-parse HEAD
+git remote -v
+git worktree list
+git diff --name-status
+git diff --cached --name-status
+git ls-files
+git ls-files --others --exclude-standard
+rg --files --hidden -g '!.git' -g '!**/bin/**' -g '!**/obj/**'
+```
+
+Record date/time, commit, branch, upstream, dirty paths, active owners, tool versions and available Python/.NET/Revit/MCP dependencies in a single working ledger. Use `docs/work-notes/plans/housekeeping-execution-record.md` only if no existing execution record already owns this work; it is a proposed deliverable, not an existing file. Keep verbose logs in a local task output folder and commit only sanitized evidence necessary for review.
+
+Inventory tracked and untracked files separately. Enumerate ignored paths using Git ignore information only when needed to explain exclusions; do not ingest private knowledge stores or model contents into the ledger. Group reproducible `bin/`, `obj/`, caches and package contents by generator with counts/ignore reason instead of reading every generated byte. Read all repository-owned Markdown, including hidden folders, and every source/configuration file proposed for alteration. Record unreadable files as unresolved. Reconcile inventory totals against tracked-file output; record additions/removals since baseline before closure.
+
+For each baseline check retain command, exit code, meaningful findings, environment and commit. A pre-existing failure is not automatically caused by this change; compare before/after. Conversely, a failure mentioned in an old skill is not automatically harmless on this machine.
+
+## 28.2 Phase dependencies, owners and entry/exit gates
+
+Assign one execution owner and one reviewer for the overall batch; assign a module maintainer role for each affected area. These are responsibilities, not invented Heron agent IDs. The executor maintains evidence; the reviewer checks it; Ajmal resolves product intent or unresolved authority decisions. In a single-agent run, mark independent review pending rather than pretending self-review is independent approval.
+
+| Phase | Entry / dependency | Concrete work and output | Exit evidence |
+|---|---|---|---|
+| A | Authorized execution; safe checkout and ownership recorded | Inventory/classification ledger, exclusions, baseline checks, conflict list | Every in-scope file accounted for; no move/delete candidate unread |
+| B | A inventory and baseline | Compare current claims to tools, code and proof; record source-to-claim corrections | Each changed claim cites evidence; unresolved conflicts have owner and next action |
+| C | A; B authority findings | Draft responsibility map; decide existing versus new entry files; justify proposed moves | One canonical owner per topic and reviewed migration map |
+| D | C map and per-file disposition | Preserve knowledge, relocate or retain operational notes in small batches | Each batch passes reference checks before commit; durable destination verified |
+| E | C boundaries; D final paths for affected modules | Improve significant module READMEs, including platform contracts | Entry points, constraints and exact relevant checks verified against source |
+| F | B current claims; C/E entry documents | Add role routes and definitions; perform section 28.7 tasks | Reader can reach authoritative answers; failures recorded and repaired |
+| G | Every move/delete batch, then D–F | Repair links, anchors, code/config/tool paths and generated navigation | No unresolved affected live reference; external consumers addressed |
+| H | B–G coherent | Reconcile master architecture with accepted decisions; remove duplication | Authority and lifecycle readable; historical content preserved |
+| I | Changed batch ready; repeat for final snapshot | Run section 28.6 matrix and fresh-checkout walkthrough | Required checks pass; baseline defects and unrun checks named |
+| J | A–I outputs | Reconcile final inventory, disposition coverage and section 25 checklist | Required tasks complete; no unexplained omissions or broken migration |
+| K | J accepted | Short closure report, maintenance ownership, durable ledger/evidence location | Another session can continue without chat memory |
+| L | K record survives independently | Remove this temporary plan only after its closure conditions; repair inbound links | Final checks rerun after removal, reviewable commit and remote evidence |
+
+G is a continuous gate, not permission to leave broken links until late in the project. Independent documentation drafting may overlap, but do not edit the same file concurrently. A phase can be partially complete; report which task remains blocked. Never mark all of housekeeping done because one batch passed.
+
+## 28.3 Disposition, knowledge and uncertain-file records
+
+Use one ledger row per affected file, plus grouped keep records for unchanged source where appropriate. Required fields:
+
+| Field | Required content |
+|---|---|
+| Identity | Original repo-relative path; baseline commit; content hash where needed |
+| Role and ownership | Class, canonical topic owner, maintainer/reviewer, active session if any |
+| Decision | Keep / update / move / merge / delete / defer; reason and priority |
+| Evidence | Read completed; inbound/outbound references; task/fix status; proof freshness |
+| Knowledge destination | Exact permanent path and heading; what unique lesson/decision is retained |
+| Migration | Old-to-new path and anchors; affected loaders/tests/configuration; compatibility handling |
+| Completion | Verification command/result, reviewer, commit, next review trigger or remaining blocker |
+
+For merge/delete, first summarize the unique constraints, failed approaches and decision rationale. Add them to the existing authoritative destination without changing their meaning. Compare source and destination side by side; record what was intentionally omitted and why. Repair references and only then remove the disposable file. Git history is recovery evidence, not a substitute for discoverable current knowledge.
+
+Lifecycle for operational notes: **active → blocked or completed → knowledge preserved → retired**. A retained historical record is labelled historical and links to the current owner; it does not keep issuing active instructions. Put status, owner role, last reviewed date and closure condition in the note or central index, avoiding duplicate metadata everywhere.
+
+If ownership, uniqueness, reference coverage or completion is uncertain, choose **defer/keep**. Record the precise question, evidence already inspected, who can answer, next action and review trigger in the existing open-work system. Do not invent a deadline or delete after a timeout. An unresolved optional tidy-up can be deferred; an unresolved dependency of a planned deletion blocks that deletion. Existing decision IDs remain stable; do not renumber decisions or Golden Rules during housekeeping.
+
+## 28.4 Safe folder reorganization and reference repair
+
+Folder refactoring is in scope for the future execution, where justified. Prefer one bounded move with all consumers repaired over a repository-wide rename. Keep the four product boundaries and existing project identities. Moving source projects, fragments or runtime assets is higher risk than moving prose and requires their module-specific checks.
+
+Before each move:
+
+- [ ] Explain the practical benefit, affected readers/loaders, and why an index/link improvement alone is insufficient.
+- [ ] Record old path → new path, old heading → new heading, owner, batch, rollback method and checks. Include case-only changes and filename collisions on Windows.
+- [ ] Inspect full path, basename, relative path variants, forward/backslashes and dynamic path construction. Search tracked and hidden repository files with `rg -n --hidden -F -g '!.git' 'old-path' .`; replace the literal old-path with the actual candidate. A zero literal hit does not prove absence of runtime consumers.
+- [ ] Inspect Markdown links/anchors, reference-style links, HTML links, image sources, README indexes, prompts, skills, `.mcp.json`, host configuration, CI/templates when present, project references, imports, working-directory assumptions, package data and tests.
+- [ ] Check external entry points: saved prompts, installed add-in/configuration paths, GitHub links and other worktrees. If a consumer cannot be updated, retain the old entry point with an explicit compatibility strategy or defer the move.
+- [ ] Move tracked files with `git mv` using literal quoted paths, then repair inbound **and outbound** links in the same batch. Relative links inside the moved document often change even when their destination did not move.
+- [ ] Rerun searches and selected validation; inspect `git diff --summary` and `git diff --check`. Review GitHub-style anchors and case-sensitive path spelling; Windows file existence alone misses case defects.
+- [ ] Regenerate affected derived catalogs/indexes using their documented generator, inspect results, and commit only outputs whose repository policy requires tracking. Do not hand-edit vector databases or generated counts.
+
+A compatibility stub must contain only the current destination and its migration purpose; it must not become a second copy of authoritative content. Give it a removal trigger based on consumer migration, not age alone. Historical mentions of old paths may remain labelled as history; every live dependency must resolve. For runtime paths, test the actual loader from a fresh checkout and a working directory containing spaces.
+
+**Fragment boundary:** `brain/heron_fragment.py` fingerprints implementation paths as well as normalized content. A path-only move can affect proof identity. Compare metadata/validator results before and after, preserve original evidence, and use the established proof workflow if new proof is needed. Never restamp or promote merely to make a housekeeping gate green.
+
+## 28.5 Concurrent sessions and interruption recovery
+
+Use a dedicated `codex/` branch and isolated worktree when other sessions are active. Before claiming a file, inspect working-tree changes and current tasks/worktrees; coordinate overlapping ownership. Never overwrite another session's changes, stash their work, clean their untracked files or stage the entire repository. Stage explicit owned paths and review the staged diff. Do not restart Revit, deploy binaries or run shared-output build/proof tools while another session is using them without coordination.
+
+Checkpoint after each coherent batch: baseline and current commit, owned paths, disposition rows completed, checks and findings, pending moves, next exact action, and any necessary environment assumptions. Never store tokens or private model identifiers in a public-ready checkpoint.
+
+On interruption, reread the checkpoint and current Git state, compare the plan/file hashes and remote branch, then inspect partial moves before resuming. Re-run checks invalidated by intervening edits. If a batch must be undone, reverse only owned changes; use a normal revert for an already committed batch, preserving later work. Never use blanket reset/clean or history rewriting. If a newer session already completed a task, verify and reuse that result rather than publishing a duplicate change.
+
+## 28.6 Validation matrix and evidence interpretation
+
+Read the current `tools/README.md`, check implementation and applicable shipping instructions at execution time. Commands below exist in the inspected repository; their outputs and coverage may evolve. Run from the repository root. This matrix selects checks; it does not authorize deploying or changing a live model.
+
+| Change or claim | Actual command / inspection | Acceptance and limitation |
+|---|---|---|
+| Any documentation batch | `python tools/check-docs.py` | Exit status **and** broken-link/reference/count output reviewed; no introduced defects. Link findings are not all fatal in the current implementation |
+| Any batch | `python tools/check-metadata.py`; `python tools/check-structure.py`; `git diff --check` | No new header, registry, layering or whitespace defects; required gates pass |
+| Repository status | `python tools/check-gaps.py`; `python tools/agent-count.py` | Read findings; current gaps exit code follows UNFINISHED, while WAITING is reported separately and remains unproven. Agent reconciliation failures require investigation |
+| Fragment status/path changes | `python brain/heron_fragment.py` | Metadata and freshness findings classified; no unearned lifecycle change |
+| Preservation/licensing | `python tools/check-licence.py` plus manual `LICENSE`, `NOTICE`, `CONTRIBUTING.md` review | Retain attribution and notices; automated coverage is not legal clearance |
+| Reachability/behavior claims | `python tools/check-reachable.py`; `python tools/check-revit-gate.py` | Reports guide questions; exit zero alone does not mean every finding is resolved |
+| Python/MCP path changes; shipping regression suite | Run each `tests/test_*.py` as below | Record each result; investigate actual errors rather than inheriting old environment failure lists |
+| C# project/build/path changes | `python tools/check-compile.py` | Record each requested release and skips; needs suitable SDK/reference access; shared outputs can overwrite deployed-version build artifacts |
+| Fragment implementation/path changes | `python tools/check-fragments-compile.py` | Requires compiler/dependencies; declared supported releases covered or explicitly blocked |
+| Routing/index changes | Inspect and run `check-routing.py` / `check-intrusion.py` as documented | Use a controlled knowledge store, preserve scope isolation; record data/environment dependencies |
+| Revit-dependent behavior changed | Existing fragment validation/proving workflow and appropriate live model | Named environment, actual positive/negative results, freshness and rollback/apply semantics; compile is insufficient |
+
+PowerShell regression loop, preserving exit codes and printing each suite result:
+
+```powershell
+$housekeepingFailures = @()
+Get-ChildItem tests/test_*.py | Sort-Object Name | ForEach-Object {
+    python $_.FullName
+    $suiteExit = $LASTEXITCODE
+    Write-Output "$($_.Name): exit $suiteExit"
+    if ($suiteExit -ne 0) { $housekeepingFailures += $_.Name }
+}
+$housekeepingFailures
+```
+
+Do not invent a universal all-checks command. Some tools mutate files: for example, `recount-agent-registry.py` rewrites counts. Inspect before running generators or repair modes. A Markdown-only revision needs no new live Revit proof or compiler run unless its actual effect reaches executable configuration.
+
+Each evidence entry must include scope/path, command, commit, timestamp, environment/dependencies, exit code, relevant output, verdict and remaining action. Use PASS, FAIL, NOT RUN (with reason), or NEEDS REAL REVIT. Add a separate relevance field: required / optional / not applicable. An unrelated product gap is open work, not a housekeeping pass or failure. A baseline link defect may be outside a plan-only revision, but required final repository link cleanup cannot be declared complete while that defect remains.
+
+Proof freshness depends on what was tested: implementation fingerprint, executor/dependency changes, Revit release and model/context. An unchanged fragment fingerprint does not prove a changed executor still behaves correctly. Retain historical proof and mark its limits; re-run the affected proof when required. Never update historical dates to imply a fresh run.
+
+## 28.7 Role-based onboarding acceptance and fresh checkout
+
+Use the final entry documents without this plan or conversation history. Record route taken, answer source, obstacles and result for each task. Aim for the first useful answer within a few documents; measure actual time and document count rather than claiming an arbitrary perfect score.
+
+| Reader | Practical acceptance task | Pass evidence |
+|---|---|---|
+| Ajmal / owner | Find current capability status, unfinished work and the place to start a new AI | Can distinguish built, deployed and proven; names current sources rather than stale totals |
+| BIM modeller | Find a read versus write workflow and how to identify unproven behavior | Explains model-impact boundary and proof limits in BIM terms |
+| BIM manager | Find compatibility, safety/approval and data-scope rules | Locates binding rules and distinguishes declared support from tested releases |
+| Developer | Trace MCP → bridge → Revit entry path and locate the relevant checks | Identifies actual files, platform contracts, threading/version constraints and executable test command |
+| Fresh AI | Find governing instructions, task owner, applicable module docs and validation requirements | Produces a small safe change route without inventing agents, executing stale prompts or treating retrieval as authority |
+
+Add concise glossary guidance in an existing navigation document, not necessarily a new glossary file. Define fragment (reusable implementation unit), skill (user-facing capability), host (AI application providing orchestration), MCP (tool interface), bridge (request transport into Revit), ExternalEvent (safe scheduling onto the Revit main thread), lifecycle, proof, adapter and canonical source. Link to existing detailed definitions; do not redefine lifecycle states or hide uncertainty behind jargon.
+
+Fresh-checkout walkthrough at each candidate final commit (repeat affected checks after any repair or final plan removal):
+
+1. Use a new clean clone/worktree at the exact review commit; record it. Do not borrow untracked modules, local indexes or cached generated navigation from the author's checkout.
+2. Follow root README and AI entry instructions as written. Record missing prerequisites rather than silently using the existing machine's setup.
+3. Follow each role route, verify case-correct links/anchors and locate the current work record. Exercise paths with spaces; inspect Linux/case-sensitive behavior where available and state when not tested.
+4. Run documentation, metadata and structure checks, then applicable test/loader commands from the matrix. Confirm generated artifacts can be recreated if the documented workflow depends on them.
+5. Reconcile results against the original worktree. Repair missing tracked dependencies or hidden path assumptions, then repeat only the affected walkthrough steps.
+6. Verify staged/committed file list and remote branch SHA. Open a draft PR on the session branch under current repository policy. Report push, PR creation and merge as separate outcomes; do not claim main changed until verified.
+
+## 28.8 Preservation and privacy boundaries
+
+Keep accepted rules, stable IDs, historical master specification wording, proof records, licences/attributions, test fixtures and safety/version constraints intact. A proposed behavior fix discovered during cleanup is a separate implementation task unless specifically authorized; record the defect instead of expanding housekeeping silently.
+
+Inspect the owned diff for credentials, client/company/project data, real model names, user-specific absolute paths, machine usernames, local URLs, logs and exported knowledge. Use repository-relative paths in durable docs; show environment variables or clearly labelled synthetic examples when a local installation path is essential. Follow `CONTRIBUTING.md`, `.gitignore` and `SECURITY.md`. Do not copy sensitive findings into the execution ledger or PR; keep only a sanitized reference and use the private reporting route if required. Ignore rules do not prove that tracked content is safe.
+
+## 28.9 Worked disposition examples
+
+**Established handover:** Inspect `docs/HANDOVER.md`, its inbound references and current consumers. If moving it would break saved continuation prompts, keep the path as an operational entry point and extract durable lessons into the existing decisions/field-note destination. If a move is justified, map the new path and every internal relative link; retain a short old-path pointer until consumers migrate. Evidence includes old-path search results, repaired links and a cold continuation test. A heading containing "handover" does not make `docs/00c-master-handover-baseline.md` disposable.
+
+**Completed fix prompt:** For `docs/PROMPT-fragment-validation-agent.md`, treat completion as a question. Match each requested deliverable to implementation, tests and required proof. If any required item is unproven, retain the prompt with an explicit remaining item. If complete, preserve unique validation lessons under the existing fragment documentation or decision, record destination headings, repair references and retire it. This example does not assert that the prompt is complete today.
+
+**Unknown file:** A generated-looking catalog with no documented generator is kept/deferred. Find the producer and consumers, demonstrate regeneration in a scratch output location, compare meaningful content and check tracking policy. Only then decide whether it is reproducible output. A filename or ignore pattern alone is insufficient deletion evidence.
+
+**Stale proof after reorganization:** A fragment implementation is moved without text changes. Compare validator output and fingerprint before/after, identify path participation, and retain the original proof. If the prescribed workflow cannot establish validity without a new model run, defer the move or schedule the required proof. Do not replace the proof hash by hand.
+
+## 28.10 Completion evidence and continuing maintenance
+
+Add these to section 25's final audit:
+
+- [ ] Baseline/final inventories reconcile, including exclusions and concurrent additions.
+- [ ] Every move, merge, delete and defer has a disposition reason and owner.
+- [ ] Unique knowledge destinations are verified; immutable history and licensing are preserved.
+- [ ] Each affected old path/anchor has verified consumers or a documented compatibility entry point.
+- [ ] Role tasks and fresh-checkout walkthrough have actual results and limitations.
+- [ ] Privacy and machine-specific path review covers the exact staged content.
+- [ ] Required failures remain blocking; optional deferrals have owners and triggers.
+- [ ] Durable closure record survives plan removal and links to review/commit evidence.
+
+Keep maintenance proportional: on a behavior/path/status change, the affected module owner updates its canonical page and derived reports; on a work-note completion, the task owner performs disposition review; before a release or major onboarding handover, the reviewer repeats navigation/link and stale-claim checks. Review blocked/deferred notes when their dependency changes. Reuse existing CI or shipping checks; propose missing enforcement separately instead of creating an unsolicited automation. Record these responsibilities in the existing contributor/work-note guide so they survive this plan.
+
+A successful cleanup is a verifiable improvement with clearly bounded remaining product work. It is not a promise that every future reader, machine, external link or Revit model has been tested.
 
 ---
 
@@ -956,7 +1155,7 @@ If unfinished work remains, **do not delete this file**. Update its checklist or
 
 > You are the repository housekeeping, documentation, and onboarding agent for **Heron AI**.
 >
-> Work directly inside the current `Ajmalpshaik/Heron-AI` repository. Execute this Markdown plan from top to bottom. Do not merely review it, summarize it, or propose changes. Perform the work.
+> Activate this prompt only when the user authorizes executing housekeeping, not when asked to revise or publish the plan. Work in the authorized `Ajmalpshaik/Heron-AI` checkout, using an isolated session branch when appropriate. Read section 28 first, then execute phases A–L through their entry/exit gates. Record ownership, baseline, disposition decisions and interruption checkpoints.
 >
 > First inspect the complete repository recursively. Read and classify the files before changing them. Pay special attention to every `.md` file, all current status documents, fragment proof/status data, architecture documents, work instructions, temporary prompts, fix notes, READMEs, agent instructions, tests, tools, and cross-references.
 >
@@ -968,14 +1167,14 @@ If unfinished work remains, **do not delete this file**. Update its checklist or
 >
 > Create or improve the project-wide AI onboarding file (`AGENTS.md`) and technical navigation (`docs/PROJECT-MAP.md`) only after checking whether equivalent documents already exist. Ensure significant subsystem folders have useful README-level onboarding where needed, but do not create repetitive README files in every small folder.
 >
-> For every one-time prompt, architecture execution instruction, or fix note: determine whether the requested work is actually finished. If unfinished, place it in the correct active work-note location. If finished, verify the implementation and required tests/proofs, transfer any unique durable knowledge into permanent documentation, repair references, then delete the obsolete temporary file.
+> For every one-time prompt, architecture execution instruction, or fix note: determine whether the requested work is actually finished. If unfinished, retain it or migrate it through the verified mapping into the correct active work-note location. If finished, verify the implementation and required tests/proofs, transfer any unique durable knowledge into permanent documentation, repair references, then delete the obsolete temporary file.
 >
 > Update **all affected documentation**, not only root `README.md`. If a status changed, find every meaningful place that states the old status and reconcile it. Do not leave "2 tested" in one file when the repository proves 10, and do not maintain fragile hard-coded counts when a reliable command/tool can derive them.
 >
-> Before any deletion or move, search all references. After changes, repair Markdown links, code comments, script paths, tests, agent instructions, and documentation indexes. Run the repository's available documentation, structure, metadata, gap, licence, test, and compile checks as applicable. Clearly separate PASS, FAIL, NOT RUN, and NEEDS REAL REVIT. Never fake verification because the environment lacks Revit, .NET, MCP dependencies, or another required component.
+> Include justified folder refactoring through section 28.4, with old-to-new mapping, repaired consumers, compatibility handling and rollback. Keep unknown files until the disposition question is resolved. Before any deletion or move, search all references. After changes, repair Markdown links, code comments, script paths, tests, agent instructions, and documentation indexes. Run the repository's available documentation, structure, metadata, gap, licence, test, and compile checks as applicable. Clearly separate PASS, FAIL, NOT RUN, and NEEDS REAL REVIT. Never fake verification because the environment lacks Revit, .NET, MCP dependencies, or another required component.
 >
 > Keep Heron-specific architecture, naming, safety, compatibility, and project rules intact. Do not dump content from other repositories. Do not simplify away important lessons. Do not rewrite history. Do not force-push. Make logical, reviewable commits and avoid unrelated changes.
 >
-> When finished, perform the complete final checklist in this plan. Leave one short final handover/report in the appropriate live documentation location describing what changed and what, if anything, still needs attention.
+> Run the role-based tasks and fresh-checkout walkthrough, inspect privacy/machine-specific paths in the exact diff, and distinguish checker exit codes from findings. Never change binding rules to match defective code. Keep required failures blocking and assign optional deferrals an owner. When finished, perform the complete final checklist in sections 25 and 28.10. Leave one short final handover/report in the appropriate live documentation location describing what changed and what, if anything, still needs attention.
 >
-> **Final action:** only after the repository is clean, current, validated, understandable without this plan, and all remaining work is correctly recorded elsewhere, delete `docs/work-notes/plans/repository-housekeeping-and-ai-onboarding-plan.md` itself. This plan must be the last temporary file removed.
+> **Final action:** only after required housekeeping gates pass, durable disposition/closure evidence survives elsewhere, concurrent work is preserved, and the repository is understandable without this plan, delete `docs/work-notes/plans/repository-housekeeping-and-ai-onboarding-plan.md` itself. This plan must be the last temporary file removed.
