@@ -21,6 +21,20 @@ to answer it without reading the whole repository.
 | A research or debugging note from one session | A question that must be answered — that is [OPEN-QUESTIONS.md](../OPEN-QUESTIONS.md) |
 | An execution record with its evidence | An unproven claim — that is [NEEDS-CHECKING.md](../NEEDS-CHECKING.md) |
 
+**THE TEST IS DELETION, NOT HOW OPERATIONAL SOMETHING FEELS.** Everything here ends at *retired* -
+see the lifecycle below - and *retired* means deleted. So the question for any file is: **will this
+be deleted once its work is done?** If yes, it belongs here. If it is where a note's knowledge goes
+to SURVIVE, it does not.
+
+That is why the registers in the right-hand column live in `docs/` and not here. They are never
+deleted; they are the permanent destination this folder empties into. Filing them here would put the
+destination inside the bin.
+
+**[`docs/PROJECT-MAP.md` §D](../PROJECT-MAP.md) groups them all as "only context", and that is about
+AUTHORITY, not about location.** By authority the registers, the handover and these notes are one
+kind of thing. By lifecycle they are two. Mixing the two questions is how a register nearly ended up
+in here.
+
 ### Two things that are deliberately NOT in this folder
 
 **[`docs/HANDOVER.md`](../HANDOVER.md) is the current-work entry point, and it stays where it is.**

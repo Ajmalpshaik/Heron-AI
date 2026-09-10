@@ -129,6 +129,45 @@ Registers ([NEEDS-CHECKING](NEEDS-CHECKING.md), [FRAGMENT-ISSUES](FRAGMENT-ISSUE
 
 **A retrieval or vector index is a derived view, never canonical** — [Golden Rule 11](14-golden-rules.md).
 
+### Authority and lifecycle are DIFFERENT questions, and this is where they get confused
+
+**The four lists above rank files by AUTHORITY — which one wins when two disagree. They say nothing
+about WHERE A FILE LIVES.** That is a second question with a different answer, and reading the first
+list as if it answered the second is the mistake this section now exists to prevent.
+
+It is a fair mistake, because the grouping invites it: *"only context"* puts
+[FRAGMENT-ISSUES](FRAGMENT-ISSUES.md), [NEEDS-CHECKING](NEEDS-CHECKING.md),
+[OPEN-QUESTIONS](OPEN-QUESTIONS.md), the [handover](HANDOVER.md) and everything in
+[work-notes/](work-notes/README.md) on one line — so they look like one kind of thing that belongs in
+one place. **By authority they ARE one kind of thing. By lifecycle they are two.**
+
+| The question | What it decides | The test |
+|---|---|---|
+| **Authority** | Which source wins in a disagreement | The four lists above |
+| **Lifecycle** | Which folder the file lives in | **Is this file expected to be DELETED once its work is done?** |
+
+**`docs/work-notes/` is defined by its ending.** Its lifecycle is
+`active → blocked or completed → knowledge preserved → retired`, and *retired* means **deleted**. A
+note there is scaffolding: before it goes, the lasting part of it is moved *somewhere permanent*.
+
+**The registers are that somewhere.** `FRAGMENT-ISSUES`, `NEEDS-CHECKING`, `OPEN-QUESTIONS` and
+`PROPOSALS` are where a work note's knowledge goes to survive. They are never deleted, which is
+exactly why they do not live in the folder that empties itself. Putting them there would file the
+destination inside the bin.
+
+**So a file in `docs/` that WILL be deleted is in the wrong place**, and two were:
+`FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` and `PROMPT-fragment-validation-agent.md` moved to
+`work-notes/plans/` on 2026-09-10. Both are one-time jobs that end in deletion.
+
+**[`HANDOVER.md`](HANDOVER.md) is the one deliberate exception, and it is not a quiet one.** Its own
+first line says *"It is a work note, not specification"* — true, and it stays in `docs/` anyway
+because fifteen files link to it and it is the documented cold start. The reason is recorded in
+[work-notes/README](work-notes/README.md) rather than left to be rediscovered.
+
+**Before moving anything on the strength of this section, read
+[`work-notes/README.md`](work-notes/README.md) first** — it owns the list of what goes there, and the
+answer is decided by that list, not by how operational a file feels.
+
 ### When two sources disagree
 
 Record **both**, name the governing decision, name the observed evidence, and name who resolves it.
