@@ -372,3 +372,30 @@ what Stage 1 needs and keeps documents on the machine; it is also by far the lar
 repository would have taken, against a `brain/` that needs `pyyaml` and nothing else.
 
 **Still no code.** Twenty-five requirements added today, R-46 to R-70.
+
+### 2026-09-10 — installing it, and one package actually installed
+
+**Owner's instruction, in two parts.** First: the installer should handle the Python side automatically
+and the README should say so. Then, sharpened: **say what each package is FOR**, announce it **while**
+installing, **check the version and not just presence**, and state the **size up front like system
+requirements**. **R-78 and R-79 come from the second half and were not in the plan before he said them.**
+
+**R-71 to R-79**, [§K](01-requirements.md), designed as [`00-structure.md` §3.9](00-structure.md).
+
+**The sharp one is R-78.** *Installed* is not *correct*. `sqlite-vec` is at **0.1.9** — pre-1.0, where an
+interface moving under a caller is normal. **A component that loads an old version and half-works is
+worse than one that refuses**, because it fails the way this repository is built to prevent: quietly,
+plausibly, and only in the case nobody tested. So the check reports **three** states — missing, present
+but out of date, correct.
+
+**And one package was installed, with his authorisation.** `sqlite-vec 0.1.9`, **0.3 MB**, per-user, no
+administrator rights. It loads (`vec_version()` answers), and `test_embed`, `test_retrieve` and
+`test_scope_store` all still exit 0. **[D-23](../../../DECISIONS.md) named it and the code has always
+tried to load it** — until today it fell back to comparing vectors in Python, which is exactly the
+silent degradation §3.9 exists to make visible.
+
+**Measured, for R-79:** the whole installed Python side is **≈93 MB** — less than one Revit project
+file. The re-ranker would add **500 MB – 2 GB**, a document parser several hundred more. **Those two are
+the only large numbers in the entire plan**, and both are optional and both come last.
+
+**Still no code written.**

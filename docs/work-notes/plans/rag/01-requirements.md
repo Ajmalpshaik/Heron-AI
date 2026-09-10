@@ -307,8 +307,13 @@ are cheap now and expensive later.
 
 ### K — Installing it, asked for by the owner 2026-09-10
 
-**Owner's instruction:** *"the new installer also needs to install this automatically, and mention it in
-the README."* Raised by him after asking whether a new person cloning from GitHub gets the dependencies
+**Owner's instructions, 2026-09-10, in two parts.** First: *"the new installer also needs to install this
+automatically, and mention it in the README."* Then, sharpened: *"if you are installing something purely
+for Heron AI, mention that in the README — that this thing we need for Heron AI, and it will be
+automatically installed, and while they are notified. Also you need to check that it is installed; if
+yes, is that the right one, or does it need to update. And they need to understand the size of the
+items, like system requirements."* **R-78 and R-79 come from the second half, and neither was in the
+plan before he said it.** Raised by him after asking whether a new person cloning from GitHub gets the dependencies
 automatically — the answer was **no**, recorded as **W-5** and **W-6** in
 [`03-working-note.md` §4](03-working-note.md).
 
@@ -325,6 +330,10 @@ and leave this note.
 | **R-73** | A component running in **fallback mode says so, and names what would improve it** | R-72, W-5 | **PART** | the backend line says *"NOT meaning"* today and stops there |
 | **R-74** | Setup installs the **Python side as well as the add-in**, per-user, with no administrator rights | W-6, D-01 | **NONE** | [`tools/setup.ps1`](../../../../tools/setup.ps1) builds and deploys the add-in for every Revit on the machine in one command, and installs no Python package at all |
 | **R-75** | The README states **what is required, what is optional, what each optional one costs in size, and what it buys** | W-5 | **NONE** | measured 2026-09-10: the whole installed Python side is **≈93 MB**. A re-ranker would add **500 MB to 2 GB**, and a document parser several hundred more. **Those two are the only large ones, and a person is entitled to know before installing** |
+| **R-76** | The README **names every package as a Heron dependency and says what Heron uses it for** — not a bare list | owner, 2026-09-10 | **NONE** | *"`sqlite-vec` — faster vector search"*, not *"sqlite-vec"*. A name with no purpose beside it is a thing nobody dares remove |
+| **R-77** | Installation is **automatic AND announced** — each package named, with **what it is for and how large it is, before the download starts** | owner, 2026-09-10 | **NONE** | announced *before*, so somebody on a slow or metered connection can stop a 2 GB download rather than discover it |
+| **R-78** | The check asks **not only "is it installed" but "is it the RIGHT one"** — the version is checked, and an out-of-date one is reported as needing an update | owner, 2026-09-10 | **NONE** | **installed is not the same as correct.** `sqlite-vec` is at `0.1.9` — pre-1.0, where an interface can still move under a caller. A component that loads an old version and half-works is worse than one that refuses |
+| **R-79** | A **system requirements** section states the total disk cost — minimum, and with each optional piece — so a person can judge **before** starting | owner, 2026-09-10 | **NONE** | measured 2026-09-10: **≈93 MB minimum**. Plus a re-ranker, **500 MB – 2 GB**. Plus a document parser, several hundred MB. **Nobody should discover that halfway through an install** |
 
 ---
 

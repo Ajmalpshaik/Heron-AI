@@ -505,9 +505,35 @@ reranker     optional   MISSING      settles the top-20 ties   500 MB - 2 GB
 several hundred more. Those two are the only large ones in the entire plan, and somebody is entitled to
 know that before typing the command rather than after.
 
+#### 3.9a Installed is not the same as correct
+
+**The owner's addition, and it is the sharper half.** A check that asks *is it installed?* passes on a
+version whose interface has moved underneath the caller. `sqlite-vec` is at **`0.1.9`** — pre-1.0,
+where that is normal rather than unlikely.
+
+**A component that loads an old version and half-works is worse than one that refuses**, because it
+fails the way this whole repository is built to prevent: quietly, plausibly, and only under the case
+nobody tested. So the check reports three states, not two: **missing · present but out of date ·
+correct.**
+
+#### 3.9b System requirements, stated before anybody starts
+
+Measured 2026-09-10, on the owner's machine:
+
+| | Disk |
+|---|---|
+| Minimum — everything Heron's Python side needs today | **≈ 93 MB** |
+| Plus the re-ranker | **500 MB – 2 GB** |
+| Plus a document parser | several hundred MB |
+
+**93 MB is less than one Revit project file.** The other two are the only large numbers in the entire
+plan — which is worth stating plainly, because it means **the whole core of this RAG is effectively
+free to install**, and the expensive parts are both optional and both last.
+
 **Must not break:** nothing may become a hard stop. This adds a report, never a requirement.
-**Proved by:** with a package removed, the command names it, says what is lost, and Heron still answers.
-**Cost:** small. **Needs:** nothing. Requirements **R-71 to R-75**.
+**Proved by:** with a package removed, the command names it, says what is lost, and Heron still
+answers; with an out-of-date one present, it says **out of date** rather than **installed**.
+**Cost:** small. **Needs:** nothing. Requirements **R-71 to R-79**.
 
 ---
 
