@@ -1,0 +1,89 @@
+# SWEEP 5 - MAKE THE INPUT, again - 2026-09-11.
+#
+# THE METHOD THIS FILE IS BUILT ON came out of sweep 3 and is worth stating on
+# its own: WHERE A FRAGMENT'S INPUT IS A FILE, THE MISSING CONTENT CAN BE
+# MANUFACTURED. `import-parameter-values` was proved that way - it reads a CSV,
+# so two CSVs were written, identical but for the first column. No model has to
+# hold anything.
+#
+# Four more fragments take a file or a workset rather than model content:
+#
+#   add-project-parameter    a SHARED PARAMETER FILE - a tab-separated text
+#   transfer-project-parameters-between-documents    the same file
+#   upgrade-family-files     .rfa files on disk
+#   create-workset           nothing but names, in a workshared model
+#
+# THE SHARED PARAMETER FILE WAS WRITTEN FOR THIS, both of them - one declaring
+# two TEXT parameters under a group called HERON, and one with the same header,
+# the same META and GROUP rows, and NO PARAM ROWS AT ALL. That second file is
+# the negative: it is a VALID shared parameter file that happens to define
+# nothing, so the fragment reads it successfully and binds nothing. It is not a
+# missing file and not a refusal to start.
+#
+# THE FAMILY FILES WERE COPIED, NOT POINTED AT. Two .rfa files from the Revit
+# 2024 English library were copied into this session's scratchpad and the job
+# reads those. Nothing under C:/ProgramData is opened, and the upgraded copies
+# are written to a second scratchpad folder.
+#
+# SNOWDON IS THE ACTIVE MODEL and is workshared, which is why `create-workset`
+# is here rather than in a Project1 sweep.
+#
+#     python tools/batch-prove.py tools/jobs/sweep-made-inputs.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/sweep-made-inputs.yaml
+
+model: "Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024"
+
+defaults:
+  write: true
+  in: "Snowdon-scratch_ajmal.al"
+  setup: []
+
+jobs:
+  # A valid file that declares two parameters, against a valid file that
+  # declares none. Same header, same META, same GROUP - only the PARAM rows go.
+  - fragment: add-project-parameter
+    set:
+      sharedParameterFile: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/heron-shared.txt"
+      groupName: "HERON"
+      parameterName: "HERON_ASSET_TAG"
+      categories: "Ducts"
+      instanceBinding: true
+    negative-set:
+      sharedParameterFile: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/heron-shared-empty.txt"
+      groupName: "HERON"
+      parameterName: "HERON_ASSET_TAG"
+      categories: "Ducts"
+      instanceBinding: true
+    expect: bound
+
+  # The other project is the source. `nameContains` is what varies.
+  - fragment: transfer-project-parameters-between-documents
+    set:
+      sourceDocumentTitle: "Project1 work_ajmal.al"
+      sharedParameterFile: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/heron-shared.txt"
+      nameContains: ""
+    negative-set:
+      sourceDocumentTitle: "Project1 work_ajmal.al"
+      sharedParameterFile: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/heron-shared.txt"
+      nameContains: "ZZZNOTHINGHERE"
+    expect: bound
+
+  # Two real .rfa files against a path that is not one.
+  - fragment: upgrade-family-files
+    set:
+      sourceFiles: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/fams/M_One Way Indicator in Route Analysis.rfa"
+      destinationFolder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/famsout"
+      allowProjectFiles: false
+      maxFiles: 10
+    negative-set:
+      sourceFiles: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/params-real.csv"
+      destinationFolder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/famsout"
+      allowProjectFiles: false
+      maxFiles: 10
+    expect: upgraded
+
+  # Names against no names, in a workshared model.
+  - fragment: create-workset
+    set:          {worksetNames: "HERON WS A,HERON WS B"}
+    negative-set: {worksetNames: ""}
+    expect: createdNames

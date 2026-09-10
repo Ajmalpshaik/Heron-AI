@@ -1778,6 +1778,65 @@ here would be read as a finding later. What is certain is only what the record s
 
 Marked **NEEDS_REVIEW**, not OPEN: one unreproduced observation is not yet a defect.
 
+### `validate` DOES NOT APPLY THE RISK GATE — found 2026-09-11, OPEN
+
+**The proving path is the one place `risk_refusal` is not called, and proving is where fragments run
+against a real model with `write.enabled` on.**
+
+Found by accident. `create-workset` came back PASS in a sweep, and the same fragment run through
+`fragment` refused:
+
+> *"create-workset is declared risk: ADMIN, and Heron does not run those yet — HeronPermissions puts
+> Publish and Admin out of reach for Phase 0 and Phase 1. **Nothing was sent to Revit.**"*
+
+But the run record says it ran, on the live model:
+
+```
+positive ok=True  doc=Snowdon-scratch_ajmal.al
+  createdNames 2 item(s) [HERON WS A, HERON WS B]
+  findings     "2 workset(s) created: HERON WS A, ..."
+```
+
+**Read in the client**, `risk_refusal` is called in exactly two places —
+[`cmd_fragment`](../mcp/client/heron_bridge_client.py) and `cmd_prove`. `cmd_validate` does not call
+it at all.
+
+| Path | Gated? |
+|---|---|
+| `fragment` — one run, no proof | **yes** |
+| `prove` — the old chain runner | **yes** |
+| `validate` — **the proving path, with `--write`** | **NO** |
+
+### Eight gated fragments were run through it in one session
+
+| Fragment | risk | status |
+|---|---|---|
+| `create-workset` | ADMIN | DRAFT |
+| `add-project-parameter` | ADMIN | DRAFT |
+| `transfer-project-parameters-between-documents` | ADMIN | DRAFT |
+| `upgrade-family-files` | PUBLISH | DRAFT |
+| `export-view-image` | PUBLISH | DRAFT |
+| `export-parameters-to-csv` | PUBLISH | DRAFT |
+| `export-families` | PUBLISH | DRAFT |
+| **`export-views-to-fbx`** | **PUBLISH** | **PROVEN** |
+
+**One of them is already promoted.** `export-views-to-fbx` was proved and signed on 2026-09-11 through
+a path `HeronPermissions` says must not run in Phase 0 or 1. Its evidence is real — a file was written,
+and the negative is structural — but it was obtained through a gate that was supposed to stop it.
+
+**Whether that proof stands is the owner's call, not a proving session's.** Two readings, and nothing
+here settles which:
+
+- the permission tier is the authority, and a `PUBLISH` fragment has no business running yet, so the
+  status goes back to `DRAFT` until the phase allows it; **or**
+- the gate is about what Heron does *for a user*, proving is a different act, and `validate` is
+  correctly exempt — in which case the exemption should be **written down and deliberate**, not the
+  absence of a line.
+
+> The exports all wrote into this session's scratchpad, and the ADMIN runs were inside the rolled-back
+> TransactionGroup. Nothing landed anywhere it should not have. **That is luck about where the paths
+> pointed, not the gate doing its job.**
+
 ### `can_promote` WILL PROMOTE AN UNPROVEN FRAGMENT TO `PROVEN` — found 2026-09-10, OPEN
 
 This is in the machinery the whole *"the machine never signs"* discipline stands on, so it is written
