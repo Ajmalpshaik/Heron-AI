@@ -141,12 +141,15 @@ RECEIVABLE = frozenset([
     "double", "Double",
     "bool", "Boolean",
     # Resolved inside Revit, by name, and refused when the name matches twice.
-    # `Element` is the odd one: it resolves to an element TYPE and refuses a
-    # specific instance, because an instance has no name of its own. So a
-    # fragment wanting `wallType` can be arranged and one wanting `reference`
-    # cannot, and both declare the same type - which this file cannot tell apart
-    # and does not try to. It emits the job; Revit refuses the instance by name,
-    # saying to select it instead.
+    # `Element` is the odd one: it means either a TYPE to build with or one
+    # PARTICULAR element, and both are written `Element` in a contract. THE
+    # NEED'S NAME IS WHAT TELLS THEM APART - see is_type_need_name.
+    #
+    # This file used to say it "cannot tell them apart and does not try to",
+    # emitting the job and leaving Revit to refuse. Revit did not refuse: a
+    # typed name resolved to a TYPE and the fragment ran on it, so all twelve
+    # came back 0 with no error and a findings line naming the type. Measured
+    # 2026-09-10 - of the 39 jobs offered, 27 were genuinely testable.
     "View", "Level", "Category", "BuiltInCategory", "Element",
     # THE NARROWED ONES. A contract that says WallType where it means one
     # resolves among wall types alone, where "Generic - 200mm" is unique - the
@@ -192,13 +195,38 @@ NAMED_REFUSALS = [
 ]
 
 
-def receivable(declared):
+ELEMENT_INSTANCE_REASON = (
+    "one PARTICULAR element, and a typed name cannot say which one. An instance "
+    "has no name of its own - Element.Name on one returns its TYPE's name, so a "
+    "typed name would match every element of that type rather than the one "
+    "meant. Select it in Revit instead. (A need named like `wallType` is a type "
+    "to build with, and that one IS typed by name)")
+
+
+def is_type_need_name(need_name):
+    """Does this need-name mean a TYPE to build with, not one element?
+
+    THE SAME RULE AS `IsTypeNeedName` IN RevitFragment.cs, AND IT HAS TO STAY
+    THE SAME RULE. This file decides whether to EMIT a job and Revit decides
+    whether to REFUSE it, so the two disagreeing shows up as a job that is
+    generated every time and then always declines - which is worse than either
+    behaviour alone, because the job file then looks like a worklist.
+    """
+    return (need_name or "").endswith("Type")
+
+
+def receivable(declared, need_name=None):
     """(ok, why-not). Can a caller type this type in at all?
 
     `why-not` is the reason Revit itself would give, not a restatement of the
     type name - see NAMED_REFUSALS.
+
+    `need_name` decides exactly one type, `Element`, and is ignored for every
+    other - see is_type_need_name.
     """
     wanted = (declared or "").replace(" ", "")
+    if wanted == "Element" and not is_type_need_name(need_name):
+        return False, ELEMENT_INSTANCE_REASON
     if wanted in RECEIVABLE:
         return True, None
     for _, matches, reason in NAMED_REFUSALS:
@@ -395,7 +423,7 @@ def blockers(frag, supply, threshold_ordinal, ladder):
     for need in frag.needs():
         if HF.need_source(need) != "request":
             continue
-        ok, why = receivable(need.get("type"))
+        ok, why = receivable(need.get("type"), need.get("name"))
         if not ok:
             found.append("`%s (%s)` cannot be typed in: %s"
                          % (need.get("name"), need.get("type"), why))
@@ -488,8 +516,9 @@ def how_to_type(declared):
     if re.search(r"\b(View|Category|BuiltInCategory|Level)\b", wanted):
         hints.append("resolved BY NAME in Revit; a name matching twice is refused")
     if re.search(r"\bElement\b", wanted):
-        hints.append('an element TYPE by name - "Basic Wall: Generic - 200mm". A '
-                     'particular wall or duct cannot be typed in')
+        # Only a `...Type` need reaches this hint now - one meaning a
+        # particular element is refused above and never emitted.
+        hints.append('an element TYPE by name - "Basic Wall: Generic - 200mm"')
     elif re.search(r"(Type|Symbol|Phase|FilterElement|HostObjAttributes)$", wanted):
         # A narrowed declaration says which kind, so the search is confined to
         # that kind and the ambiguity the bare `Element` hint warns about

@@ -897,7 +897,7 @@ namespace Heron.Revit.Addin
                     // back to "unbound" here would report a missing value the
                     // caller can see they supplied.
                     string problem;
-                    var given = FromRequest(givenText, type, target, out problem);
+                    var given = FromRequest(givenText, type, name, target, out problem);
                     if (problem != null) return Json.Error("bad_request_value", problem);
 
                     globals.__heron[name] = given;
@@ -1359,8 +1359,9 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// One element, by name, or a refusal that says how to name it.
         ///
-        /// AN `Element` HERE MEANS AN ELEMENT TYPE, AND THAT IS THE WHOLE RULE.
-        /// Fragments declare a need as `Element` meaning two different things:
+        /// THE NEED'S NAME DECIDES WHICH OF TWO THINGS THIS IS, AND THAT IS THE
+        /// WHOLE RULE. Fragments declare a need as `Element` meaning two
+        /// different things:
         ///
         ///   a TYPE to build with     wallType, floorType, ceilingType,
         ///                            regionType, runType, hostType
@@ -1380,15 +1381,56 @@ namespace Heron.Revit.Addin
         /// wants "that duct there" have different problems, and one message
         /// cannot serve both.
         ///
+        /// THIS PARAGRAPH DESCRIBED AN INTENTION UNTIL 2026-09-10, NOT THE CODE.
+        /// Nothing refused: the body was one line resolving against every
+        /// ElementType in the model, so an instance-meaning need bound a TYPE
+        /// and the fragment ran on it. See the body for what draws the line now.
+        ///
         /// THE NARROWER DECLARATIONS ARE BETTER, AND ARE NOW AVAILABLE. A
         /// contract saying WallType resolves among wall types alone, where
         /// "Generic - 200mm" is unique; the same name against every element type
         /// in the model may not be. This branch stays for the needs that really
         /// are "some type", and for contracts nobody has narrowed yet.
         /// </summary>
-        private static object OneElement(Document doc, string text, out string problem)
+        private static object OneElement(Document doc, string need, string text,
+                                         out string problem)
         {
+            // THE NEED'S NAME DECIDES, BECAUSE THE TYPE CANNOT. `wallType` and
+            // `reference` are both written `Element` in a contract and mean
+            // opposite things. Only one of them has a name to resolve, so the
+            // name is the only thing that can tell them apart here.
+            //
+            // WHY AN ALLOWLIST RATHER THAN A LIST OF THE INSTANCE NAMES. A list
+            // of `reference, target, host, ...` would silently mis-bind the next
+            // contract that says `Element duct` - which is this defect exactly,
+            // found 2026-09-10 with all fourteen bare `Element` needs meaning an
+            // instance and every one of them answering emptily instead of
+            // refusing. Refusing by default means a NEW name is refused rather
+            // than guessed at, and a guess here is a confident wrong answer.
+            if (!IsTypeNeedName(need))
+            {
+                problem = "'" + need + "' asks for ONE PARTICULAR ELEMENT in the model, "
+                        + "and a typed name cannot say which one. An instance has no name "
+                        + "of its own - Element.Name on one returns its TYPE's name, so \""
+                        + text + "\" would match every element of that type rather than "
+                        + "the one that was meant. SELECT IT IN REVIT and run this again. "
+                        + "(A need named like 'wallType' or 'floorType' is a type to build "
+                        + "with, and that one is typed by name.)";
+                return null;
+            }
             return OneOfClass(doc, typeof(ElementType), "element type", text, out problem);
+        }
+
+        /// <summary>
+        /// Does this need-name mean a TYPE to build with, rather than one
+        /// particular element in the model?
+        ///
+        /// Both are declared `Element`, so the name is all there is to go on -
+        /// see OneElement for why that is a refusal rather than a lookup.
+        /// </summary>
+        private static bool IsTypeNeedName(string need)
+        {
+            return (need ?? "").EndsWith("Type", StringComparison.Ordinal);
         }
 
         /// <summary>One level, by name, on the same rule as a view.</summary>
@@ -1534,8 +1576,8 @@ namespace Heron.Revit.Addin
         /// Returns null with `problem` set. Every message says what to type
         /// instead, because every one of these is fixable at the keyboard.
         /// </summary>
-        private static object FromRequest(string text, string type, Document doc,
-                                          out string problem)
+        private static object FromRequest(string text, string type, string need,
+                                          Document doc, out string problem)
         {
             problem = null;
             var wanted = (type ?? "").Replace(" ", "");
@@ -1575,7 +1617,7 @@ namespace Heron.Revit.Addin
 
             if (wanted == "View") return OneView(doc, text, out problem);
             if (wanted == "Level") return OneLevel(doc, text, out problem);
-            if (wanted == "Element") return OneElement(doc, text, out problem);
+            if (wanted == "Element") return OneElement(doc, need, text, out problem);
 
             // A POINT, IN MILLIMETRES. See OnePoint for why that unit and
             // why a direction needs no separate rule.

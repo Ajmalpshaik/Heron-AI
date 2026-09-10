@@ -62,6 +62,27 @@ contract:
       role: result
       type: bool
 
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,445 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection, read-element-parameters, measure-run-quantities
+    with this phase's own values. returned counts 3 entry(ies), incomplete false, missing
+    3 entry(ies), totals 3 entry(ies). inputs came values from measure-run-quantities (22);
+    quantities from measure-run-quantities (22). on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1, parameterName=Comments,
+    measure=area instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection,
+    read-element-parameters, measure-run-quantities with this phase''s own values. returned
+    counts 0 entry(ies), incomplete false, missing 0 entry(ies), totals 0 entry(ies). inputs
+    came values from measure-run-quantities (0); quantities from measure-run-quantities (22).
+    on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 62aac163d8e145eb
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
