@@ -685,6 +685,51 @@ because they are what §3h.1 asks every fragment for:
 Both were judged NO NEGATIVE / POSITIVE EMPTY, because a refusal is not an empty answer — but a
 fragment that refuses like that is not the problem.
 
+### Sweep 3 — MAKE the missing input instead of waiting for it, 2026-09-11
+
+[`sweep-project1-3.yaml`](../tools/jobs/sweep-project1-3.yaml). **2 PASS**, 6 POSITIVE EMPTY.
+
+| Passed | Positive | Negative |
+|---|---|---|
+| `import-parameter-values` | `valuesWritten 5`, `rowsMatched 5` | `rowsUnmatched 5`, nothing written |
+| `export-views-to-fbx` | `exported 1 [{3D - ajmal.al}]` | `notThreeD 1`, *"None of the views given is a 3D view"* |
+
+**`import-parameter-values` is the one worth copying as a method.** It reads a CSV, so a CSV was
+written — two of them, the same shape, the same size, the same columns, differing **only in the first
+column**: one holds the five real duct ids in this model, the other holds `1,2,3,4,5`. The fragment
+reads both, matches five rows in one and none in the other, and reports `rowsUnmatched` either way.
+
+> Where a fragment's input is a FILE, the missing content can be manufactured. That is a whole class
+> of fragment that does not need the model to have anything.
+
+**`export-views-to-fbx` has a STRUCTURAL negative**, which is the strongest kind available. FBX is a
+3D format and a plan view has no solid geometry to give it — so `notThreeD 1` is true of every model
+ever, not a count this project happens to produce. Compare `select-subcomponents`, whose negative is
+strong for the same reason: ducts are system families and cannot nest anything, anywhere.
+
+**The six that came back empty needed content this model has not got**, and the sweep is how that got
+settled rather than assumed: no revisions (`delete-revision`), no design options (`set-design-option`),
+no scope boxes (`assign-scope-box-to-view`), no groups (`ungroup-elements`), no named DWG export setup
+(`export-views-to-dwg`, the same block Snowdon has in §3b-i), and no schedules (`export-schedule-to-csv`).
+
+### What is left, and why it needs a different model
+
+After three sweeps, **27 arrangeable fragments remain and most are blocked on content Project1 will
+never have**:
+
+| Need | Fragments |
+|---|---|
+| **Sheets** | `align-viewports-across-sheets`, `create-sheet-list`, `export-sheets-to-pdf`, `place-views-on-sheet`, `set-sheet-title-block` |
+| CAD import | `convert-cad-to-directshape`, `extract-cad-curves` |
+| Worksets | `create-workset`, `set-element-workset` |
+| A shared parameter file | `add-project-parameter`, `transfer-project-parameters-between-documents` |
+| One each | lines, pipes, tags, spaces, design options, scope boxes, revisions, family files on disk |
+
+`Project1` has **no sheets at all**. `Snowdon-scratch` is a delivered sample model and has a drawing
+set — `find-unplaced-views` reported *"42 that are placed"* on it. **Five fragments turn on that one
+fact**, and the only thing standing between them and a run is which document is in front, because the
+`model:` stamp follows the active one.
+
 ### The nine that acted when told not to — one family, and it is the biggest yet
 
 Each was handed the value that should switch its own answer off, and each reported work anyway:
