@@ -75,6 +75,30 @@ contract:
       role: accounting
       type: IList<string>
 
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,435 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned acrossPositions 3 item(s) [0, 20,
+    40], created 6 item(s) [Grid, Grid, Grid, ...], depth 40, firstNumber 1, namedAs 6 item(s)
+    [A, B, C, ...], nextLetters Func`2, positionsFrom Func`2, refused 1 item(s) [2 spacing(s)
+    across gave 3 lettered grid(s), and 2 spacing(s...], taken HashSet`1, upPositions 3 item(s)
+    [0, 20, 40], width 40. inputs came origin as given; spacingsAcross as given (2); spacingsUp
+    as given (2); firstLetter as given; firstNumber as given. on Project1 work_ajmal.al
+  negative_case: run with firstLetter=A, firstNumber=1, origin=0,0,0, spacingsAcross=, spacingsUp=
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    acrossPositions 1 item(s) [0], created 0 item(s), depth 0, firstNumber 1, namedAs 0 item(s),
+    nextLetters Func`2, positionsFrom Func`2, refused 1 item(s) [no spacings given in either
+    direction - nothing to set out], taken HashSet`1, upPositions 1 item(s) [0], width 0.
+    inputs came origin as given; spacingsAcross as given (0); spacingsUp as given (0); firstLetter
+    as given; firstNumber as given. on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 99062476bf43495a
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
