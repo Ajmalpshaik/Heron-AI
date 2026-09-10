@@ -72,6 +72,30 @@ contract:
       role: result
       type: IList<ElementId>
 
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,445 elements), Revit 2024, session 24688
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned findings
+    309 item(s) [307 device(s) checked against 0 host-model ceiling(s): 0 out..., no ceilings
+    in the HOST model. If the architecture is a LINK..., Tees (id 1395899): NO CEILING above
+    it. Fine in an open soff..., ...], hostCeilings 0, noCeilingAbove 307 item(s) [1395899,
+    1395935, 1395946, ...], outOfPlane 0 item(s), rayView View3D, tolerance 99999. inputs
+    came devices from the selection (307); tolerance as given. on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, tolerance=99999
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase''s
+    own values. returned findings 11 item(s) [9 device(s) checked against 0 host-model ceiling(s):
+    0 out o..., no ceilings in the HOST model. If the architecture is a LINK..., Duct Size
+    Tag (id 1491217): no readable position - not check..., ...], hostCeilings 0, noCeilingAbove
+    0 item(s), outOfPlane 0 item(s), rayView View3D, tolerance 99999. inputs came devices
+    from the selection (9); tolerance as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c905e58bb9224d02
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

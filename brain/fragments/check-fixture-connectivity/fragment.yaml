@@ -66,6 +66,30 @@ contract:
       role: result
       type: IList<ElementId>
 
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,445 elements), Revit 2024, session 24688
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned findings
+    11 item(s) [10 fixture(s): 0 with a service missing or unconnected, 10 w..., 16x4 Connection
+    8 Diameter Duct (id 1449300): NO PLUMBING CO..., 16x4 Connection 8 Diameter Duct (id 1449341):
+    NO PLUMBING CO..., ...], missingService 0 item(s), noConnectors 10 item(s) [1449300, 1449341,
+    1449397, ...], wanted 3 item(s) [Supply Air, Return Air, Exhaust Air]. inputs came fixtures
+    from the selection (10); requiredServices as given (3). on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, requiredServices=Supply
+    Air,Return Air,Exhaust Air instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values. returned findings 10 item(s) [9 fixture(s): 0 with a service
+    missing or unconnected, 0 wit..., Duct Size Tag (id 1491217): not a placed family instance,
+    Duct Size Tag (id 1491220): not a placed family instance, ...], missingService 0 item(s),
+    noConnectors 0 item(s), wanted 3 item(s) [Supply Air, Return Air, Exhaust Air]. inputs
+    came fixtures from the selection (9); requiredServices as given (3). on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 226fb0f00d83f212
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

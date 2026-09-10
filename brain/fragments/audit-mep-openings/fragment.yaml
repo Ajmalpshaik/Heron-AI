@@ -63,6 +63,34 @@ contract:
       role: result
       type: IList<ElementId>
 
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,445 elements), Revit 2024, session 24688
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned SERVICE_CATEGORIES
+    4 item(s) [OST_PipeCurves, OST_DuctCurves, OST_CableTray, ...], combined 9 item(s) [1425148,
+    1425379, 1457775, ...], findings 308 item(s) [307 opening(s) audited against 1053 service(s)
+    in the host m..., opening 1395899 (placed family): OK - Ducts 1395899 through ..., opening
+    1395935 (placed family): OK - Ducts 1395935 through ..., ...], services 1053 item(s) [[Autodesk.Revit.DB.Mechanical.Duct,
+    Autodesk.Revit.DB.Boundi..., [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...,
+    [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi..., ...], stale 0 item(s),
+    unhosted 0 item(s). inputs came openings from the selection (307). on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1 instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running select-by-category-name, set-selection with this phase''s own values.
+    returned SERVICE_CATEGORIES 4 item(s) [OST_PipeCurves, OST_DuctCurves, OST_CableTray,
+    ...], combined 0 item(s), findings 10 item(s) [9 opening(s) audited against 1053 service(s)
+    in the host mod..., opening 1491217 (placed family): no readable extent - not au..., opening
+    1491220 (placed family): no readable extent - not au..., ...], services 1053 item(s) [[Autodesk.Revit.DB.Mechanical.Duct,
+    Autodesk.Revit.DB.Boundi..., [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...,
+    [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi..., ...], stale 0 item(s),
+    unhosted 0 item(s). inputs came openings from the selection (9). on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 763fe17981cd8107
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
