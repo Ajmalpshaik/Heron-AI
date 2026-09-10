@@ -100,6 +100,49 @@ machine.
 | **Distribution** | Free and **open source** on public GitHub; Autodesk App Store later, also free |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
+### How it fits together
+
+```mermaid
+flowchart TD
+    U(["<b>BIM modeller</b><br/><i>select all ducts</i>"])
+    CC["<b>Claude Code</b> — the host<br/>conversation · agents · persona · orchestration"]
+    BR["<b>Heron MCP</b> + <b>Heron Brain</b> — Python<br/>RAG · fragments · skills · memory"]
+    AD["<b>Heron Revit Add-in</b> — C#<br/>one build per Revit version"]
+    RV["<b>Revit</b><br/>2020 → latest"]
+    PL["<b>Heron Platform</b><br/>install · update · registry<br/>security · audit"]
+
+    U   ==>|plain language| CC
+    CC  ==>|MCP| BR
+    BR  ==>|named pipe · local only| AD
+    AD  ==>|ExternalEvent · main thread| RV
+    RV  -.->|result + audit trail| U
+
+    PL -.-> CC
+    PL -.-> BR
+    PL -.-> AD
+
+    classDef user   fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host   fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain  fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin  fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit  fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat   fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+
+    class U user
+    class CC host
+    class BR brain
+    class AD addin
+    class RV revit
+    class PL plat
+```
+
+**Solid arrows are the live request path.** Dotted is what comes back, and what Heron Platform
+holds up underneath — it installs, updates and secures the other three rather than sitting in the
+call chain.
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 Claude Code           host: conversation, agents, persona, orchestration
      |  MCP
@@ -108,7 +151,11 @@ Heron MCP Server      Python — brain, RAG, fragments, skills, memory
 Heron Revit Add-in    C# — one build per Revit version
      |  ExternalEvent
 Revit
+
+Heron Platform        install, update, registry, security, audit — under all three
 ```
+
+</details>
 
 ---
 
