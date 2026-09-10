@@ -121,12 +121,12 @@ version-specific API get a second implementation — which is precisely the deci
 
 Each Revit version needs its own `.addin` manifest and its own assembly set:
 
-```text
-%AppData%\Autodesk\Revit\Addins\2020\Heron\  ...  net48 build
-%AppData%\Autodesk\Revit\Addins\2024\Heron\  ...  net48 build
-%AppData%\Autodesk\Revit\Addins\2025\Heron\  ...  net8  build
-%AppData%\Autodesk\Revit\Addins\2026\Heron\  ...  net8  build
-```
+| Install path | Build |
+|---|---|
+| `%AppData%\Autodesk\Revit\Addins\2020\Heron\` | net48 |
+| `%AppData%\Autodesk\Revit\Addins\2024\Heron\` | net48 |
+| `%AppData%\Autodesk\Revit\Addins\2025\Heron\` | net8 |
+| `%AppData%\Autodesk\Revit\Addins\2026\Heron\` | net8 |
 
 The installer detects which Revit versions are present and deploys only those.
 

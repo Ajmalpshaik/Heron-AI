@@ -54,12 +54,12 @@ rather than only in CI.
 
 [Part 4 §27–28](00d-additional-requirements.md) make automated evaluation a mandatory component.
 
-```text
-Agent:     Duct Selection Agent
-Test:      Select all ducts
-Expected:  All visible ducts selected
-Result:    PASS
-```
+| | |
+|---|---|
+| **Agent** | Duct Selection Agent |
+| **Test** | Select all ducts |
+| **Expected** | All visible ducts selected |
+| **Result** | PASS |
 
 > A permanent collection of known-good cases. Every major update runs against these tests.
 

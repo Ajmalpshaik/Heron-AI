@@ -138,12 +138,39 @@ which is a strong signal it is correct:
 
 Made concrete as an enforced pipeline order:
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    Q1{"1 · Utterance cache hit?"}
+    Q1 -->|yes| X1["execute<br/><b>0 model calls</b>"]
+    Q1 -->|no| Q2{"2 · Capability exact match?"}
+    Q2 -->|yes| X2["execute proven fragment<br/><b>0 model calls</b>"]
+    Q2 -->|no| Q3{"3 · Capability semantic match?"}
+    Q3 -->|yes| X3["<b>1 T2 call</b> to confirm intent,<br/>then execute"]
+    Q3 -->|no| X4["4 · full workflow<br/><i>expensive, tell the user</i>"]
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:2px,color:#4C1D95
+    class Q1,Q2,Q3 addin
+    class X1,X2 brain
+    class X3 host
+    class X4 user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 1. Utterance cache hit?          -> execute, 0 model calls
 2. Capability exact match?       -> execute proven fragment, 0 model calls
 3. Capability semantic match?    -> 1 T2 call to confirm intent, then execute
 4. No capability?                -> full workflow (expensive, tell the user)
 ```
+
+</details>
 
 Steps 1 and 2 must be tried **before** any model is invoked, structurally — not as an optimisation
 added later. If step 4 is ever reached for *"select all ducts"* after the first time, something is broken.

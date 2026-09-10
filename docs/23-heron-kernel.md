@@ -99,14 +99,14 @@ Claude Code is the *host*, the Kernel is Heron's *spine*.
 
 **[NOTE]** Part 4 §2's capability entry is worth quoting because it shows all five joining up:
 
-```text
-Capability:      Select Ducts
-Provider:        Revit Selection Agent      <- Agent Registry
-Implementation:  Fragment X                 <- Fragment Registry
-Skill:           MEP Selection              <- Skill Registry
-Supported:       Revit 2020-2027
-Status:          PROVEN                     <- lifecycle, see 24
-```
+| Field | Value | Resolved by |
+|---|---|---|
+| Capability | Select Ducts | |
+| Provider | Revit Selection Agent | Agent Registry |
+| Implementation | Fragment X | Fragment Registry |
+| Skill | MEP Selection | Skill Registry |
+| Supported | Revit 2020-2027 | |
+| Status | PROVEN | lifecycle, see 24 |
 
 One row, five registries, and it answers *"can I do this, with what, how well, on this Revit version?"*
 in a single lookup. That lookup is the first step of the cost pipeline in
@@ -213,13 +213,14 @@ downgraded.**
 
 ## 7. Immutable provenance
 
-```text
-Fragment F-001
-  v1.0 -> Created
-  v1.1 -> Revit 2021 fix
-  v1.2 -> Revit 2023 support
-  v1.3 -> Performance improvement
-```
+**Fragment F-001**
+
+| Version | Change |
+|---|---|
+| v1.0 | Created |
+| v1.1 | Revit 2021 fix |
+| v1.2 | Revit 2023 support |
+| v1.3 | Performance improvement |
 
 > **Never silently overwrite important knowledge.**
 
