@@ -551,6 +551,53 @@ as one. The purpose settles it in its first sentence: *"until the run sits at **
 > A number that looks wrong is a reason to read the purpose, not to file a defect. The caller was
 > wrong twice and the fragment was right twice.
 
+### Two more that Snowdon blocked and Project1 proved — 2026-09-10
+
+The third and fourth *"wrong model, right fragment"* cases of the night, after `find-dead-ends` and
+`set-mep-slope`. Snowdon's architecture is in a **link**, and the executor skips linked documents by
+design — so Doors 0, Walls 0, Rooms 0 in both working views. Project1 has four walls drawn by hand
+with one door in them.
+
+| Fragment | Positive | Negative |
+|---|---|---|
+| `flip-elements` | `flipped 1`, `cannotFlip 0` | `flipped 0`, `cannotFlip 1` |
+| `dimension-wall-openings` | `created 8`, `notAWall 0` | `created 0`, `segmentsDisagree 0`, `notAWall 5` |
+
+`flip-elements` is a true value-driven pair — the same door in both legs, and asking it to flip in *no*
+direction turns the only declared result off. On Snowdon it returned `cannotFlip` for all 154 air
+terminals and mechanical equipment with `notFamilyInstance 0`: it read every one, and none has a flip
+control.
+
+`dimension-wall-openings` has no value that can empty it, so the negative is a second selection — and
+it is the shape that already proved `dimension-rooms`, which used Walls against a declared `notARoom`.
+Here it is Ducts against a declared `notAWall`. **Being handed the wrong kind of thing is inside the
+contract when the fragment declares what it does with it**, and `notAWall 5` is the evidence it
+examined all five.
+
+> A triage row that names what a fragment NEEDS is a shopping list. Four fragments have now been
+> unblocked by reading one and going to the other model.
+
+### `disallow-join` COUNTS THE CALL, NOT THE CHANGE — found 2026-09-10, OPEN
+
+Run on the same four walls, both ways, everything else held identical:
+
+| `allowJoin` | `changed` | `refused` | `wasPinned` | `unsupported` |
+|---|---|---|---|---|
+| `false` — disallow | **4** | 0 | 0 | 0 |
+| `true` — allow | **4** | 0 | 0 | 0 |
+
+**Identical.** Walls that already allow joining are told to allow joining, and all four are counted as
+changed. `changed` is `role: result`, and it reports the number of CALLS MADE rather than the number
+of ends whose state actually moved.
+
+This is the family §3h.1 is about — `create-levels` reporting `created 2` beside `nameRefused 2`, and
+`duplicate-type` producing a second type called `Tees`. A counter that cannot come back zero is a
+counter that cannot be wrong, and a fragment that cannot be wrong cannot be proved.
+
+**Left out of the batch deliberately.** A pair like that demonstrates nothing, and proving it would
+freeze a counter that reports work nobody did. The fix is to read the end's join state first and count
+only what moved — a fragment change, and the owner's.
+
 ### `set-mep-justification` ACCEPTS ONLY AN OFFSET OF ZERO — NEEDS_REVIEW
 
 Run on the same 22 ducts, three times:

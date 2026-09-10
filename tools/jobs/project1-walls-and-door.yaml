@@ -1,0 +1,100 @@
+# Two MODIFY fragments that need a WALL and a DOOR - 2026-09-10.
+#
+# WHY NOT SNOWDON. Snowdon is an HVAC model whose architecture is in a LINK, and
+# the executor skips linked documents by design - Doors 0, Rooms 0, Walls 0 in
+# both working views (section 3b-iii). `flip-elements` was tried there on air
+# terminals and mechanical equipment and returned `cannotFlip` for all 154 with
+# `notFamilyInstance 0`, meaning it read every one and none has a flip control.
+# Project1 has four walls and one door in one of them, drawn by hand.
+#
+# THIS IS THE THIRD "WRONG MODEL, RIGHT FRAGMENT" CASE tonight, after
+# `find-dead-ends` and `set-mep-slope`. The pattern is now worth stating: a
+# triage row that names what a fragment NEEDS is a shopping list, and the two
+# models between them cover different halves of it.
+#
+#     python tools/batch-prove.py tools/jobs/project1-walls-and-door.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-walls-and-door.yaml
+
+model: "Project1 work_ajmal.al (3,471 elements), Revit 2024 - view '1 - Mech'"
+
+defaults:
+  # risk MODIFY on both. batch-prove does NOT derive this from `risk:`.
+  write: true
+  # PIN THE MODEL, AND MAKE IT ACTIVE FIRST. Two projects are open, and the run
+  # record's `model:` line is stamped from the ACTIVE document rather than from
+  # this pin - an OPEN defect that has already mis-stamped three promoted
+  # proofs. Project1 was made active by hand before this ran and the stamp was
+  # checked afterwards.
+  in: "Project1 work_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  # A TRUE VALUE-DRIVEN NEGATIVE: the same door in both legs, and the value
+  # turns the only declared result off.
+  #
+  #     flipHand=true,  flipFacing=false   flipped 1   cannotFlip 0
+  #     flipHand=false, flipFacing=false   flipped 0   cannotFlip 1
+  #
+  # `cannotFlip 1` in the negative is `role: accounting` so it cannot make the
+  # answer read non-empty, and it is the evidence the fragment LOOKED at the
+  # door rather than being handed nothing. Asked to flip in no direction at all,
+  # it reports the door as not flippable for this request - its own handling,
+  # not an accident of the model.
+  - fragment: flip-elements
+    set:
+      categoryName: Doors
+      inViewOnly:   "1 - Mech"
+      flipHand:     true
+      flipFacing:   false
+    negative-set:
+      categoryName: Doors
+      inViewOnly:   "1 - Mech"
+      flipHand:     false
+      flipFacing:   false
+    expect: flipped
+
+  # NO VALUE CAN EMPTY THIS ONE, so the negative is a second selection - and it
+  # is the same shape that proved `dimension-rooms`, which used Walls against a
+  # declared `notARoom`. Here it is Ducts against a declared `notAWall`.
+  #
+  # BEING HANDED NON-WALLS IS INSIDE THE CONTRACT, NOT OUTSIDE IT. The fragment
+  # DECLARES `notAWall` as accounting, which is a fragment saying in advance
+  # what it does with things it cannot use. Measured:
+  #
+  #     Walls (4, one holding the door)   created 8   segmentsDisagree 0   notAWall 0
+  #     Ducts (5)                         created 0   segmentsDisagree 0   notAWall 5
+  #
+  # BOTH declared results are empty in the negative, which is what the judge
+  # needs, and `notAWall 5` shows it examined all five rather than receiving
+  # less. `withOverall: true` is held IDENTICAL across the legs so the only
+  # thing that varies is the selection.
+  #
+  # Eight dimensions from four walls with one door in them is the right order:
+  # the door gives openings to dimension and `withOverall` adds the run.
+  - fragment: dimension-wall-openings
+    set:
+      categoryName: Walls
+      inViewOnly:   "1 - Mech"
+      view:         "1 - Mech"
+      offsetMm:     500
+      withOverall:  true
+    negative-set:
+      categoryName: Ducts
+      inViewOnly:   "1 - Mech"
+      view:         "1 - Mech"
+      offsetMm:     500
+      withOverall:  true
+    expect: created
+
+  # DISALLOW-JOIN IS LEFT OUT, AND THIS RECORDS WHY RATHER THAN DROPPING IT.
+  # Run on the same four walls 2026-09-10, both ways:
+  #
+  #     allowJoin=false   changed 4    refused 0   wasPinned 0   unsupported 0
+  #     allowJoin=true    changed 4    refused 0   wasPinned 0   unsupported 0
+  #
+  # IDENTICAL. `changed` counts the CALL, not whether anything moved - walls
+  # that already allow joining are told to allow joining and counted as changed.
+  # A pair like that cannot demonstrate anything, and proving it would freeze a
+  # counter that reports work nobody did. Recorded in FRAGMENT-ISSUES instead.
