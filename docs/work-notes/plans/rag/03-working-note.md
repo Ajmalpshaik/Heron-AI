@@ -318,3 +318,48 @@ it never says you meant something else.**
 
 **Still no code.** Twenty requirements added today across §H and §I, and the plan now has a Stage 0b
 worth doing that needs neither Revit nor the PC.
+
+### 2026-09-10 — the field read, and one technique turned out to be free
+
+**Owner's instruction:** *"go to GitHub and find the best repos, and research on the internet too, not
+only GitHub — what is it we are going to do. Research and update."*
+
+**Done.** [LightRAG](https://github.com/HKUDS/LightRAG) and
+[RAGFlow](https://github.com/infiniflow/ragflow) as named, plus Anthropic's contextual retrieval, IBM's
+Docling, current chunking practice for regulated documents, CPU re-rankers and the embedded vector
+stores. Written up as
+[`../../investigations/rag-state-of-the-art-2026-09-10.md`](../../investigations/rag-state-of-the-art-2026-09-10.md).
+**Folded in as R-66 to R-70**, [§J](01-requirements.md), designed in
+[`00-structure.md` §3.8](00-structure.md).
+
+**Five decisions survived it**, which is the more valuable half: D-23, D-01, hierarchical chunking,
+clause-level chunking for standards, and the re-ranker being feasible on a CPU. **D-23 gained a number**
+— `sqlite-vec`'s brute-force search stays fast below roughly **500,000 vectors**, and Heron is at 360.
+That ceiling had never been written down.
+
+**The finding worth having.** The published way to stop a chunk being embedded in isolation is to
+prepend a model-generated summary of where it sits — **49% fewer retrieval failures, 67% with
+re-ranking** — and it costs **one model call per chunk at index time**, which is precisely the cost
+[D-24](../../../DECISIONS.md) exists to avoid. **For a numbered standard, the heading path does the same
+job for nothing.** *QCS 2014 → Section 21 → 21.3 Ductwork → 21.3.2* is read off the document, not
+generated, and §3.3 had already decided to store it. **The technique arrives without breaking the
+decision.**
+
+**The finding worth fearing.** A chunk split between a rule and its exception makes Heron state the
+**opposite** of a requirement **with a citation attached** — more convincing than any uncited guess.
+QCS and Ashghal are written as rule-then-qualification throughout, so this is the normal case here and
+not an edge one. **R-68, and its test is written before the chunker.**
+
+**What was refused.** LightRAG's graph — it needs a model to build it, and
+[`34 §2.13`](../../../34-patterns-adapted.md) already measured the shape at six settings. RAGFlow's
+stack — Elasticsearch, Redis, MySQL, MinIO, Docker, 16 GB RAM. And **RAGAS and the LLM-judge evaluation
+frameworks**, which need a model per evaluation and whose correlation with human judgement is reported
+at **0.55**. [`check-routing.py`](../../../../tools/check-routing.py) already reports precision@1 and
+recall@3 with no judge at all, and with this morning's fabrication check that is a **fully
+deterministic evaluation stack** the frameworks cannot match.
+
+**Left to the owner: S-4** — take Docling or write the parser. **No default offered.** It does exactly
+what Stage 1 needs and keeps documents on the machine; it is also by far the largest dependency this
+repository would have taken, against a `brain/` that needs `pyyaml` and nothing else.
+
+**Still no code.** Twenty-five requirements added today, R-46 to R-70.

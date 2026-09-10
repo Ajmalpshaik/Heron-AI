@@ -212,6 +212,21 @@ risky ones rather than guessing.
 above and assert none of them is split. That test is the requirement; the chunker is an implementation
 of it.
 
+#### And three more chunker-time decisions, added 2026-09-10
+
+All from [`the field reading`](../../investigations/rag-state-of-the-art-2026-09-10.md), all designed
+in [`00-structure.md` §3.8](00-structure.md), and **all cheap here and expensive anywhere else.**
+
+| | Do | Test it with |
+|---|---|---|
+| **R-66, R-67** | Prepend the **heading path** to a chunk's indexed text — *QCS 2014 → Section 21 → 21.3 Ductwork → 21.3.2* — read from structure, **never generated** | a clause found by a question using its **section's** vocabulary and not its own. And a check that the path came from the parent link, not from a model |
+| **R-68** | **A rule and its exception stay in one chunk.** A candidate split immediately before *except* / *unless* / *provided that* / *save that* / *however* is **not** a split point | *"Ducts shall be insulated … except where installed within conditioned spaces."* One chunk. **Write this test first** |
+| **R-69** | The ingester can **print one document's chunk boundaries** for a person to read | run it on the first real standard and read the output before trusting anything downstream |
+
+**R-68 is the one to write first, ahead of even the token test.** Get it wrong and Heron states the
+opposite of a requirement **with a citation attached** — which is more convincing than any uncited
+guess, and is the worst output this system is capable of.
+
 ### 4.4 What Stage 1 does NOT do
 
 No retrieval. No citation. No re-index trigger. A document goes in and can be counted; nothing reads it
