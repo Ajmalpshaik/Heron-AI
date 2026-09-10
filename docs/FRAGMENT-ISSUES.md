@@ -616,6 +616,56 @@ of ducts for `snap-to-grid`, `System Type` instead of the empty `Comments` for `
 an underlay looking DOWN a level instead of up. **All six came back POSITIVE EMPTY again.** They are
 blocked by this model, not by the job file, and that is now settled rather than assumed.
 
+### Sweep 2 — twenty-one more, 2026-09-11
+
+[`sweep-project1-2.yaml`](../tools/jobs/sweep-project1-2.yaml). **3 PASS**, 10 POSITIVE EMPTY,
+4 NEG NOT EMPTY, 2 NO NEGATIVE, 2 DID NOT RUN. Model 3,471 elements before and after.
+
+| Passed | Positive | Negative |
+|---|---|---|
+| `sum-by-group` | `totals 1 entry`, `counts 1 entry` | empty |
+| `rename-family` | `renamed 1 [HERON FAM A]` on `M_Single-Flush` | an empty name is refused |
+| `create-room-elevations` | `created 4` elevations round the room | `slotCount 0` → none |
+
+**`sum-by-group` completes the row 11 payoff.** It is the second of the two fragments the `keep-chain`
+fix was built for, and it needs a FOUR-step setup — `select-by-category-name`, `set-selection`,
+`read-element-parameters`, `measure-run-quantities` — because it takes **two** values from the chain:
+
+```
+bound: values from measure-run-quantities (5); quantities from measure-run-quantities (5)
+```
+
+Worth a glance when this draft is read: the `bound` line attributes **both** to
+`measure-run-quantities`, though `values` is what `read-element-parameters` was put in the chain to
+leave. Only the first setup step resets the chain, so later steps accumulate and the line names the
+last producer to touch a name. The proof holds either way — both legs bound, positive non-empty,
+negative empty — but the attribution is not evidence of which fragment supplied what.
+
+**What sweep 2 removed from the pool, with the reason measured rather than assumed:**
+
+- **NO SHEETS AT ALL** in Project1 (`find-views viewType=DrawingSheet` → 0). That blocks
+  `place-views-on-sheet`, `align-viewports-across-sheets`, `create-sheet-list`,
+  `set-sheet-title-block` and `export-sheets-to-pdf` at the source. None was run.
+- `set-view-crop-to-shape` and `show-analysis-heatmap` **DID NOT RUN** — both need a value no
+  selection can supply (`boundary: IList<Curve>`, `values: IDictionary<ElementId,double>`) and the
+  executor refused rather than reporting a false zero. They belong with the D-54 group, not here.
+- Four more joined the *acted-when-told-not-to* family: `check-family-standards` (`offStandard 191`
+  with every requirement removed), `check-surface-fit`, `set-view-template-control` and
+  `export-parameters-to-csv` (`rows 5` for a parameter that does not exist).
+
+**Two refusals were better than the arrangement that produced them**, and both are worth quoting
+because they are what §3h.1 asks every fragment for:
+
+> *"No wall, floor, ceiling or roof type called "ZZZNOTHINGHERE"… the Properties palette writes it
+> "Basic Wall: Generic - 200mm", and either that or just "Generic - 200mm" works when the short name
+> is unique."*
+
+> *"No points were given. Separate them with semicolons and their three millimetre ordinates with
+> commas — "0,0,0; 5000,0,0; 5000,3000,0"."*
+
+Both were judged NO NEGATIVE / POSITIVE EMPTY, because a refusal is not an empty answer — but a
+fragment that refuses like that is not the problem.
+
 ### The nine that acted when told not to — one family, and it is the biggest yet
 
 Each was handed the value that should switch its own answer off, and each reported work anyway:

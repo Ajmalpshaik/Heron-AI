@@ -1,0 +1,173 @@
+# SWEEP 2 - the next twenty, 2026-09-11.
+#
+# READ tools/jobs/sweep-project1.yaml FIRST for what a sweep is and is not.
+# Same method: ask many at once, segregate, then work the issue list. Nothing
+# that passes here is signed from this file.
+#
+# WHAT SWEEP 1 REMOVED FROM THE POOL. 30 asked, 5 passed, and a second pass with
+# corrected arrangements moved none of the other 25 - so those are settled.
+#
+# WHAT THIS MODEL DOES NOT HAVE, checked before writing rather than after:
+# NO SHEETS AT ALL (`find-views viewType=DrawingSheet` -> 0). That blocks
+# `place-views-on-sheet`, `align-viewports-across-sheets`, `create-sheet-list`,
+# `set-sheet-title-block` and `export-sheets-to-pdf` at the source, and none of
+# them is here. It has 8 elevations (North - Mech, East - Mech, West - Mech...),
+# 4 plan views, 3 3D views, 16 view templates, 3 view filters, 6 loaded links
+# and a second project open.
+#
+# EXPORTS WRITE REAL FILES AND ARE NOT ROLLED BACK. Every folder below points at
+# this session's scratchpad, never at the repository or the user's documents.
+# That is the one thing in a sweep that survives the TransactionGroup.
+#
+#     python tools/batch-prove.py tools/jobs/sweep-project1-2.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/sweep-project1-2.yaml
+
+model: "Project1 work_ajmal.al (3,471 elements), Revit 2024 - view '1 - Mech'"
+
+defaults:
+  write: true
+  in: "Project1 work_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly:   "1 - Mech"
+  negative-set:
+    categoryName: Ducts
+    inViewOnly:   "1 - Mech"
+
+jobs:
+  # ---- things the one room makes possible --------------------------------
+  - fragment: create-from-room-boundaries    # a real wall type against none
+    setup: []
+    set:          {hostType: "Generic - 200mm", heightAboveLevel: 10}
+    negative-set: {hostType: "ZZZNOTHINGHERE", heightAboveLevel: 10}
+    expect: created
+
+  - fragment: create-room-elevations         # four slots against none
+    setup: []
+    set:          {planView: "1 - Mech", origin: "3000,2000,0", slotCount: 4, scale: 50}
+    negative-set: {planView: "1 - Mech", origin: "3000,2000,0", slotCount: 0, scale: 50}
+    expect: created
+
+  # ---- readers with a value that can switch the answer off ----------------
+  - fragment: check-family-standards
+    write: false
+    set:          {namePattern: "ZZZ*", requiredParameters: "Comments", mustHaveConnectors: true}
+    negative-set: {namePattern: "*",    requiredParameters: "",         mustHaveConnectors: false}
+    expect: offStandard
+
+  - fragment: check-surface-fit
+    write: false
+    set:          {direction: "0,0,-1", maxDistance: 10000, evenness: 1}
+    negative-set: {direction: "0,0,-1", maxDistance: 0,     evenness: 1}
+    expect: unsafeToMove
+
+  - fragment: select-by-electrical-circuit
+    write: false
+    setup: []
+    set:          {circuitKind: "Power", circuitName: ""}
+    negative-set: {circuitKind: "Power", circuitName: "ZZZNOTHINGHERE"}
+    expect: elements
+
+  # ---- the chain pair, the sibling of group-and-count ---------------------
+  - fragment: sum-by-group
+    write: false
+    keep-chain: true
+    setup:
+      - select-by-category-name
+      - set-selection
+      - read-element-parameters
+      - measure-run-quantities
+    set:          {parameterName: "System Type", measure: "length"}
+    negative-set: {parameterName: "ZZZNOTHINGHERE", measure: "length"}
+    expect: totals
+
+  # ---- view machinery -----------------------------------------------------
+  - fragment: set-view-crop-to-shape
+    set:          {view: "1 - Mech", joinTolerance: 100}
+    negative-set: {view: "1 - Mech", joinTolerance: 0}
+    expect: applied
+
+  - fragment: set-view-template-control
+    setup: []
+    set:          {template: "Mechanical Plan", parameterNames: "V/G Overrides Model", include: true}
+    negative-set: {template: "Mechanical Plan", parameterNames: "ZZZNOTHINGHERE", include: true}
+    expect: nowHeld
+
+  - fragment: show-analysis-heatmap
+    set:          {view: "1 - Mech", measurementName: "HERON HEAT"}
+    negative-set: {view: "1 - Mech", measurementName: ""}
+    expect: painted
+
+  - fragment: show-elements
+    set:          {view: "1 - Mech", permanent: true}
+    negative-set: {view: "1 - Mech", permanent: false}
+    expect: shown
+
+  # ---- saved sets and links ----------------------------------------------
+  - fragment: update-saved-set
+    set:          {setName: "Domestic", mode: "replace"}
+    negative-set: {setName: "ZZZNOTHINGHERE", mode: "replace"}
+    expect: setSize
+
+  - fragment: reload-links
+    setup: []
+    set:          {unload: true}
+    negative-set: {unload: false}
+    expect: done
+
+  - fragment: unload-links
+    setup: []
+    set: {}
+    negative-set: {}
+    expect: unloaded
+
+  # ---- the second document -----------------------------------------------
+  - fragment: transfer-views-between-documents
+    setup: []
+    set:          {sourceDocumentTitle: "Snowdon-scratch_ajmal.al", viewKind: "FloorPlan", nameContains: "M1"}
+    negative-set: {sourceDocumentTitle: "Snowdon-scratch_ajmal.al", viewKind: "FloorPlan", nameContains: "ZZZNOTHINGHERE"}
+    expect: copied
+
+  # ---- creators needing a named type -------------------------------------
+  - fragment: place-family-instances
+    setup: []
+    set:          {symbol: "0915 x 2134mm", points: "3000,2000,0", level: "Level 1"}
+    negative-set: {symbol: "0915 x 2134mm", points: "",            level: "Level 1"}
+    expect: placed
+
+  - fragment: create-electrical-run
+    setup: []
+    set:          {runKind: "duct", runType: "Radius Elbows / Tees", level: "Level 1", points: "0,0,0; 4000,0,0"}
+    negative-set: {runKind: "duct", runType: "Radius Elbows / Tees", level: "Level 1", points: "0,0,0"}
+    expect: created
+
+  - fragment: create-assembly-views
+    set:          {withPartList: true,  withMaterialTakeoff: true}
+    negative-set: {withPartList: false, withMaterialTakeoff: false}
+    expect: created
+
+  - fragment: rename-family
+    set:          {categoryName: Doors, inViewOnly: "1 - Mech", newName: "HERON FAM A"}
+    negative-set: {categoryName: Doors, inViewOnly: "1 - Mech", newName: ""}
+    expect: renamed
+
+  # ---- exports, all into the scratchpad ----------------------------------
+  - fragment: export-view-image
+    setup: []
+    set:          {views: "1 - Mech", folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports", filePrefix: "HERON", pixelWidth: 800}
+    negative-set: {views: "ZZZNOTHINGHERE", folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports", filePrefix: "HERON", pixelWidth: 800}
+    expect: exported
+
+  - fragment: export-parameters-to-csv
+    set:          {parameterNames: "System Type", csvPath: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/params.csv"}
+    negative-set: {parameterNames: "ZZZNOTHINGHERE", csvPath: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/params2.csv"}
+    expect: rows
+
+  - fragment: export-families
+    setup: []
+    set:          {folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports", nameContains: "0915"}
+    negative-set: {folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports", nameContains: "ZZZNOTHINGHERE"}
+    expect: saved
