@@ -1149,6 +1149,65 @@ Keep maintenance proportional: on a behavior/path/status change, the affected mo
 
 A successful cleanup is a verifiable improvement with clearly bounded remaining product work. It is not a promise that every future reader, machine, external link or Revit model has been tested.
 
+## 28.11 Gate readiness, measured on this repository
+
+Recorded 2026-09-10 on the working checkout `D:\Ajmal\Aj Programs\Heron Ai` at commit `69edf63`. These are findings about the plan's own instruments, not new housekeeping scope. Each one changes a gate, not a phase.
+
+### A. Prove every gate runs before Phase A classifies anything
+
+Two commands this plan depends on do not currently complete on the owner's machine:
+
+| Gate | Observed | Cause |
+|---|---|---|
+| `python tools/check-licence.py` | Exit 0 standalone; `tests/test_licence_check.py` dies with `ValueError: path is on mount 'C:', start on mount 'D:'` | `inspect()` calls `os.path.relpath(path, ROOT)` where `ROOT` is the repository root. Any inspected folder on another drive raises. The test builds its fixture in `tempfile.mkdtemp()`, which is on `C:` while the repository is on `D:` |
+| `python tools/check-gaps.py` | Did not finish within 400 seconds; killed | Unknown; not investigated here |
+
+A gate that crashes or does not terminate cannot certify a phase exit. Add to Phase A's entry gate, before any file is classified: run every command in the 28.6 matrix once, record exit code **and wall-clock duration**, and mark any command that crashes or exceeds its stated bound as a **blocked gate with a named owner**. Phase I may not treat a blocked gate as a pass, and may not quietly drop it from the matrix.
+
+`check-licence.py` is a portability defect in the tool, not in the test. Per 28.8 it is recorded here as a defect, not fixed as part of housekeeping.
+
+### B. Record the baseline suite result as a committed artefact
+
+Root `README.md` states 41 suites, "all passing bar three", attributing the three to a missing MCP SDK (two) and an unbuilt .NET test host (one). Measured on this checkout:
+
+- **37 pass, 4 fail**, out of 41.
+- Both named causes are gone. The MCP SDK is installed and the test host is built, so `test_mcp_serves`, `test_mcp_stdio` and `test_bridge_roundtrip` all pass.
+- The real failures are `test_context` (1 check), `test_graph` (3), `test_licence_check` (1 crash, section A), `test_reachable` (5).
+- All four also fail at `04ffa48`, the commit before the plan revision. They are pre-existing; no merge introduced them.
+
+The README is therefore stale in both its count and its reasons — in the first file every reader opens. This is the exact failure mode sections 6 and 20 exist to correct, and the first concrete instance of the plan's own rule against hard-coded counts a command can derive.
+
+Phase A must write the baseline suite-by-suite result (name, exit code, duration, environment) to a file under `docs/work-notes/`. Phase I compares against that file, not against prose or recollection. A newly failing suite and a newly passing one must both be reported; a matching total conceals a changed set, which is precisely what happened between the reviewer's checkout and this one.
+
+### C. Add drive letter to the fresh-checkout walkthrough
+
+28.7 step 3 already exercises paths with spaces and asks about case sensitivity. Add one condition: **a checkout whose drive letter differs from `TEMP`.** That single condition is what exposes the `check-licence.py` crash in section A. It is the owner's normal setup — repository on `D:`, `TEMP` on `C:` — and a reviewer working inside a `C:` worktree cannot see it. The space-in-path condition is already satisfied by the owner's real path and need not be simulated.
+
+State the executing checkout's drive and `TEMP` location in every evidence entry, alongside the environment field 28.6 already requires.
+
+### D. Bound `check-gaps.py` and give it an owner
+
+28.6 lists it under "Repository status" with no time bound. Give it an explicit timeout, record `NOT RUN (exceeded <n>s)` with the reason when it is hit, and name who investigates. Without a bound, a Phase I gate can stall indefinitely on a single command.
+
+### E. Say how untracked paths enter the Phase A inventory
+
+`.agents/skills/` currently holds three tracked skills and three untracked ones belonging to a concurrent session. An inventory built from `git ls-files` misses them; one built by walking the filesystem absorbs another session's in-flight work and may classify or dispose of it, which 28.5 forbids.
+
+State it explicitly: the Phase A inventory is built from **tracked files at a named baseline commit**. Untracked paths are listed once as *present, not in scope, owned elsewhere*, with no disposition row. Two related observations:
+
+- `.gitignore` line 84 whitelists `.claude/skills/*/bin/`, but the live path in this repository is `.agents/skills/*/bin/`.
+- A `__pycache__/*.pyc` already sits under one untracked skill. A `git add -A` would commit it. 28.5's rule to stage explicit owned paths is what prevents this; keep it.
+
+### F. Name Phase L's concrete precondition
+
+Phase L removes this plan last. Today this plan is the **only** file in `docs/work-notes/`, and `docs/work-notes/README.md` (section 12), `AGENTS.md` (section 10) and `docs/PROJECT-MAP.md` (section 11) do not yet exist. Removing the plan before those exist deletes the work-notes system along with it and leaves the durable closure record of 28.10 with nowhere to live.
+
+Name them in L's entry condition: the plan may not be removed while it is still the only thing giving `docs/work-notes/` its structure and meaning.
+
+### Verification status of this section
+
+Every measurement above was taken by running the named command on the named commit. `git diff --check` passes; `check-docs.py`, `check-metadata.py`, `check-structure.py`, `check-licence.py` and `agent-count.py` all exit 0. Documentation reports the same four pre-existing broken links, none in this plan. No housekeeping was executed, no file moved or deleted, and no gate was repaired.
+
 ---
 
 # EXECUTION PROMPT — USE ONLY WHEN READY TO RUN THE HOUSEKEEPING
