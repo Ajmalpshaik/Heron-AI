@@ -603,3 +603,48 @@ ignored**, with an explicit exception available the way `tests/models/` already 
 
 **This closes the practical half of R-87.** The rule still belongs in the requirements — a file layout
 that happens to be safe is not the same as a stated rule — but the leak it described is now shut.
+
+### 2026-09-11 — the person putting the document in is a modeller
+
+**Owner:** *"a new installer is like a modeller — they don't know where we need to keep the knowledge.
+So inform them where it needs to be kept, how it will be, and how safe it is."* And separately: **BIM
+standards are a document kind too.** **R-89 to R-93**, [§N](01-requirements.md).
+
+**Everything written in this plan before today assumes a reader who knows what a scope is.**
+[Golden Rule 1](../../../14-golden-rules.md) says the opposite: *the user focuses on BIM, Heron handles
+the technical complexity*, and [`docs/01`](../../../01-vision-and-principles.md) says they should never
+need to understand vector databases, embeddings or RAG. **The plan had no requirement covering the one
+screen it adds.**
+
+**R-92 is the one that was already true and never said.** Deleting everything Heron stored leaves every
+original file untouched — the index is derived ([GR 11](../../../14-golden-rules.md)). **It is the
+strongest safety promise this system can make, and nothing says it to the person who needs to hear it.**
+
+**And R-93 puts BIM standards in**, where [R-88](01-requirements.md) ranks a **company** BIM standard
+above an international one: the model knows nothing about it, it carries no licence problem, and it is
+what a modeller opens daily.
+
+### The clause travels; the file does not
+
+He then asked directly whether this means nothing goes to the cloud. **It does not mean that, and the
+answer was given precisely rather than reassuringly**, which is what R-91 exists to enforce:
+
+| | Leaves the machine |
+|---|---|
+| The document file | **never** |
+| The **one clause** Heron quotes to answer a question | **yes — with the answer** |
+| The rest of the document, and the store | never |
+
+**Because the host writes the answer** ([D-01](../../../DECISIONS.md)) and the host is in the cloud. The
+brain finds the clause locally and hands over **that clause**, which is precisely the mechanism that
+stops a clause number being invented.
+
+**This is [D-26](../../../DECISIONS.md), already decided by him** — the model file never leaves,
+content is acceptable — and it is enforced by R-10, where the ingester refuses `.rvt` and `.rfa` by
+extension rather than by the user remembering.
+
+**The one option not taken:** a scope marked confidential, which would **refuse to answer** rather than
+send a clause. Named to him, not built, and not proposed — it is cheap now and expensive later, so it is
+recorded here rather than left in a conversation.
+
+**93 requirements. Still no code.**

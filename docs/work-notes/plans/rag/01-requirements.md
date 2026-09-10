@@ -380,6 +380,39 @@ up when a store is copied.
 
 ---
 
+### N — The person putting a document in is a modeller, 2026-09-11
+
+**Owner's instruction:** *"a new installer is like a modeller — they don't know where we need to keep the
+knowledge. So inform them where it needs to be kept, how it will be, and how safe it is — that it will
+not do anything anywhere else."*
+
+**This is [Golden Rule 1](../../../14-golden-rules.md) applied to the one screen this plan adds.**
+[`docs/01`](../../../01-vision-and-principles.md) already says the user should not need to understand
+vector databases, embeddings or RAG. **Everything above this section assumes a reader who does.**
+
+| | Requirement | Source | State | Note |
+|---|---|---|---|---|
+| **R-89** | A person is **told where knowledge goes, in modeller language**, without learning what a scope is | [GR 1](../../../14-golden-rules.md), owner | **NONE** | *"just for me" · "for the whole company" · "for this project only"* — never `GLOBAL`, `COMPANY`, `PROJECT` |
+| **R-90** | Adding a document is **one obvious action**. The user never types a path, names a database, or chooses a folder | [GR 1](../../../14-golden-rules.md), [01](../../../01-vision-and-principles.md) | **NONE** | the store's location is Heron's problem. `heron_scope.py` already decides it and already refuses to guess a project |
+| **R-91** | Heron **states plainly what it does and does not do to the file**, before it does it | owner | **NONE** | see the four sentences below. **They must be true, not reassuring** |
+| **R-92** | **Deleting everything Heron stored leaves every original file untouched** — and the user is told that | [GR 11](../../../14-golden-rules.md) | **TRUE ALREADY, NEVER SAID** | the index is derived. **The strongest safety promise this system can make, and nothing says it to the person who needs it** |
+| **R-93** | **BIM standards are a first-class document kind** — ISO 19650, a company BIM standard, Ashghal BIM requirements, LOD definitions, naming conventions | owner, [bim standards work](../../../00d-additional-requirements.md) | **NONE** | and by [R-88](#l--checking-the-plan-against-the-specification-2026-09-10) a **company** BIM standard outranks an international one: the model knows nothing about it, it carries no licence problem, and it is what a modeller uses daily |
+
+**The four sentences R-91 requires, written here so they cannot drift into marketing:**
+
+> **Your file is not moved.** Heron reads it where it is.
+> **Your file is not changed, and not deleted.** Heron only reads.
+> **Your file is not uploaded.** When Heron answers a question it quotes the clause it used — that
+> sentence travels with the answer, exactly as if you had typed it yourself. **The file never does.**
+> **Nothing outside Heron's own folder is touched.**
+
+**The third sentence is the one to keep honest.** *"Nothing leaves your machine"* would be easier to say
+and would be **false** — [D-26](../../../DECISIONS.md) settled that the model file never leaves and that
+project content in the cloud is acceptable, and a quoted clause is content. **A safety promise that is
+90% true is worse than a precise one**, because the 10% is what somebody finds out later.
+
+---
+
 ## 7. Deliberately not in scope
 
 Naming these stops the track growing sideways, which is how a reviewable batch becomes an
