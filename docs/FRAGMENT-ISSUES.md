@@ -1234,6 +1234,57 @@ here would be read as a finding later. What is certain is only what the record s
 
 Marked **NEEDS_REVIEW**, not OPEN: one unreproduced observation is not yet a defect.
 
+### `can_promote` WILL PROMOTE AN UNPROVEN FRAGMENT TO `PROVEN` — found 2026-09-10, OPEN
+
+This is in the machinery the whole *"the machine never signs"* discipline stands on, so it is written
+out in full rather than summarised.
+
+**Reproduced on a fragment with no proof at all:**
+
+```
+>>> f = heron_fragment.load('brain/fragments/connect-open-ends')
+>>> f.status
+'DRAFT'
+>>> f.proof
+None
+>>> heron_fragment.proof_problems(f)
+[]
+>>> heron_fragment.can_promote(f, 'PROVEN')
+(True, 'well-formed, and PROVEN needs no proof')
+```
+
+`PROVEN` **is** in `NEEDS_PROOF`, and `can_promote` **does** call `proof_problems` for it. The check
+inside is the problem — it reads the fragment's **CURRENT** status, not the **TARGET** it is being
+asked about:
+
+```python
+if proof is None:
+    if frag.status in NEEDS_PROOF:      # <- where it IS, not where it is GOING
+        problems.append("... status is %s but there is no proof ...")
+```
+
+A `DRAFT` has status `DRAFT`, which is not in `NEEDS_PROOF`, so the "there is no proof" branch cannot
+fire during the one call that decides the promotion. By the time `status` reads `PROVEN` the promotion
+has already happened.
+
+**`proof_problems` is not wrong — it is being asked the wrong question.** Its own docstring says
+*"Whether this fragment's proof, **if it has one**, is a proof at all"*: it is an AUDIT of a fragment
+already sitting at `PROVEN`, and [`validate`](../brain/heron_fragment.py) uses it that way correctly.
+`can_promote` reuses it as a transition gate, and as a transition gate it can never refuse.
+
+> The same shape as the comment sitting ten lines above it — *"The gate existed and nothing stood on
+> it."* One layer up, and still true.
+
+**What it does NOT mean.** Nothing has reached `PROVEN` this way. Every promotion so far has been a
+person naming signed fragments after reading each draft, and `accept` is unaffected — it still records
+the signature and still refuses to set a status. The hole is that nothing would have STOPPED a wrong
+promotion, not that one happened. It was found by checking eligibility before offering to promote, and
+seeing three **unsigned** fragments come back READY beside two signed ones.
+
+**Not fixed here.** The obvious change — pass `target` to `proof_problems`, or test
+`target in NEEDS_PROOF` rather than `frag.status` — touches the promotion gate itself and belongs to
+the owner, not to a proving session. Recorded and left, per the standing rule.
+
 ### ONE PERSON, ONE `HERON_CLIENT_ID`
 
 The lease identifies a **chat**, not a person. Four ids were in use for one afternoon's work —
