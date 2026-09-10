@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -102,6 +102,38 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned anchor start,
+    bothEndsConnected 1 item(s) [925646], endIsConnected Func`3, fallAwayFromAnchor true,
+    findings 4 item(s) [925641  - run 13650 mm, end moved 136 mm, Revit now reads no..., 925658  -
+    run 9050 mm, end moved 91 mm, Revit now reads no s..., 926355  - run 6000 mm, end moved
+    60 mm, Revit now reads no s..., ...], inGroup 0 item(s), managerOf Func`2, maxEndMove
+    1.64041994750656, maxEndMoveMm 500, mmPerFoot 304.8, refused 0 item(s), risers 0 item(s),
+    shortest 0.00256026455729167, slopeRatio 100, sloped 4. inputs came elements from the
+    selection (5); slopeRatio as given; anchorEnd as given; fallAwayFromAnchor as given; maxEndMoveMm
+    as given. on Project1 work_ajmal.al
+  negative_case: 'run with anchorEnd=start, categoryName=Ducts, fallAwayFromAnchor=True, inViewOnly=1
+    - Mech, maxEndMoveMm=500, slopeRatio=1 instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned anchor start, bothEndsConnected
+    1 item(s) [925646], endIsConnected Func`3, fallAwayFromAnchor true, findings 0 item(s),
+    inGroup 0 item(s), managerOf Func`2, maxEndMove 1.64041994750656, maxEndMoveMm 500, mmPerFoot
+    304.8, refused 4 item(s) [925641: would move an end 13650 mm, past the 500 mm limit as...,
+    925658: would move an end 9050 mm, past the 500 mm limit ask..., 926355: would move an
+    end 6000 mm, past the 500 mm limit ask..., ...], risers 0 item(s), shortest 0.00256026455729167,
+    slopeRatio 1, sloped 0. inputs came elements from the selection (5); slopeRatio as given;
+    anchorEnd as given; fallAwayFromAnchor as given; maxEndMoveMm as given. on Project1 work_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 427142b1cdf3a4f4
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
