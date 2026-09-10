@@ -282,3 +282,39 @@ repositories. The entry belongs there as `✅ BUILT` when §6.1 exists.
 
 **Still no code.** Stage 0 and 0b remain next.
 
+### 2026-09-10 — the other three taken, and they turned out to be one thing
+
+**Owner's instruction:** *"take the other three also, add to plan."* Done the same day as §H.
+
+**What was taken.** The item-level citation, the out-of-domain refusal, and grading what came back —
+**R-56 to R-65**, [`01-requirements.md` §I](01-requirements.md), designed in
+[`00-structure.md` §3.7](00-structure.md) and built as [`02-implementation.md` §3a](02-implementation.md).
+
+**The finding that writing them up produced.** They are not three features. Two of them, plus the
+confidence work already taken as §3.1, rest on **one question asked at three strengths**:
+
+> *Does this candidate have a real claim on the sentence that was asked?*
+
+Report it, act on it, refuse on it. **One measurement, three thresholds.** Built as three mechanisms
+they would produce three numbers that disagree, and the disagreement would show up as a shortlist
+claiming confidence about candidates it had also dropped.
+
+**Two of the three need nothing and fix a defect already on record.** Stage 0b now covers them, and its
+test case is already written: at 59 fragments
+[`retrieval-history.md`](../../../../brain/retrieval-history.md) recorded that the top five for the
+tracked duct question included `find-sheets` and two dimensioning fragments with **no claim on that
+sentence at all**, two of which **write to the model**. Today's run at 360 has the same shape —
+`CREATE_DUCT` at nearness #1 for a sentence beginning *"show me"*. **Dropping is what fixes that;
+ranking never will.**
+
+**The third is the quiet prerequisite of §H.** The fabrication check compares a claim against *the chunk
+it cites*. Until a packet part carries the id of the exact chunk and that binding survives into the
+draft, the comparison has no defined target. R-63 to R-65 now say so, and §6.1 says build them first.
+
+**What was refused while taking them.** A keyword list of BIM words (R-60) — wrong the week it is
+written. And a classifier inside `brain/` (R-62) — [D-01](../../../DECISIONS.md) gives classification to
+the host, and `heron_context.py` already refuses to classify. **The brain says nothing here has a claim;
+it never says you meant something else.**
+
+**Still no code.** Twenty requirements added today across §H and §I, and the plan now has a Stage 0b
+worth doing that needs neither Revit nor the PC.

@@ -94,6 +94,56 @@ the word `model`, and the two checkers have a recorded run at the current size.
 
 ---
 
+## 3a. Stage 0b — say the confidence out loud, then act on it
+
+**Closes:** R-34, R-35, and **R-56 to R-62**. **Needs:** nothing — no PC, no Revit, no documents.
+**Do it second, straight after Stage 0.**
+
+Every number this stage needs **already exists and is discarded**. `heron_retrieve.py` computes the
+fused score, both route ranks, and whether the routes agreed; it returns a ranked list and throws the
+rest away.
+
+### 3a.1 One measurement, three thresholds
+
+Build the measurement **once**. Three things then read it:
+
+| | Threshold | Behaviour |
+|---|---|---|
+| **Report** | none | say how contested the shortlist was, in words and in units of one fusion rank |
+| **Drop** | per-candidate | a candidate below it is **removed from the shortlist and counted** |
+| **Refuse** | all candidates | nothing above the floor means the question is **refused by name** |
+
+**Three separate implementations would produce three numbers that disagree**, and the disagreement
+would surface as a shortlist that says it is confident about candidates it also dropped.
+
+### 3a.2 The order to build it
+
+| | Step | Test it with |
+|---|---|---|
+| 1 | **Expose what is already computed** — spread across the shortlist, in units of one fusion rank (R-34) | one clear question and one genuinely ambiguous one; the reported spread differs in the right direction |
+| 2 | **Say it in words as well as a number** (R-35) | `heron_retrieve` already prints *"both routes agree"*; extend that vocabulary rather than adding a second one |
+| 3 | **Pool awareness** (R-61) | with fewer than 20 eligible candidates, agreement is reported as **not evidence** — the case `retrieval-history.md` recorded |
+| 4 | **Drop, and count** (R-56, R-57) | the 59-fragment case: a question about ducts must not return `find-sheets`, and must **say** it dropped it |
+| 5 | **Refuse** (R-58, R-59) | a question with no BIM content is refused; and the refusal is **not** the same sentence as an empty store or an all-version-blocked result |
+
+**Step 4 has a recorded test case already written for you.** At 59 fragments the top five for *"show me
+every duct in the model"* were `dimension-mep-runs`, `find-views`, `set-selection`, `find-sheets`,
+`dimension-family-instances` — and the file says plainly that three of them **have no claim on that
+sentence at all**, two of which **write to the model**. If step 4 works, that shortlist gets shorter.
+
+**What this stage must not do.**
+
+- **Do not add a keyword list of BIM words** (R-60). It would be wrong the week it was written.
+- **Do not classify the question** (R-62). D-01 gives that to the host. The brain says *nothing here has
+  a claim*; it does not say *you meant something else*.
+- **Do not move a floor to make a report look better** (R-55, and it extends here). If the drops are
+  wrong, the measurement is wrong.
+
+**Done when:** a question with no BIM content is refused by name; the 59-fragment shortlist case drops
+its no-claim candidates and says so; the three nothings read differently; and each is a test.
+
+---
+
 ## 4. Stage 1 — a document can go in
 
 **Closes:** R-05, R-06, R-07, R-08, R-09, R-10, R-11. **Needs:** nothing. **This is the stage the whole
@@ -224,6 +274,10 @@ and it is what makes the first two enforceable rather than merely stated — §6
 New file, `brain/heron_ground.py`, carrying `Heron-Agent: HERON-RAG-CIT-014` and the rest of the header
 [`docs/29`](../../../29-metadata-standard.md) requires. It takes **a proposed answer and the packet it
 was built from**, and returns a report. **It never returns a corrected answer** (R-53).
+
+**Build R-63 to R-65 first, in the same stage.** The check compares a claim against *the chunk it
+cites*, so until a packet part carries the id of the exact chunk and that binding survives into the
+draft, the comparison has **no defined target** and step 2 below is comparing against a guess.
 
 Build it in this order — each step is testable alone, and the last two are where the judgement lives:
 

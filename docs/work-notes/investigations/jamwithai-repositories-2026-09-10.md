@@ -3,9 +3,11 @@
 > **Type:** Operational work note — a research note from one session. **Not specification.**
 > Where a sentence here disagrees with the [Constitution](../../../HERON_CONSTITUTION.md), the
 > [Golden Rules](../../14-golden-rules.md) or [DECISIONS.md](../../DECISIONS.md), **those win.**
-> **Status:** **Read and sorted. ONE ROW TAKEN — §3.1, by Ajmal PS on 2026-09-10**, and now in the RAG
-> plan as [`plans/rag/00-structure.md` §3.6a](../plans/rag/00-structure.md) and requirements **R-46 to
-> R-55**. Every other ✅ below is still only a proposal.
+> **Status:** **ALL FOUR ✅ ROWS TAKEN by Ajmal PS on 2026-09-10**, and all four are in the RAG plan —
+> §3.1 as [`00-structure.md` §3.6a](../plans/rag/00-structure.md) with requirements **R-46 to R-55**;
+> §3.2, §3.3 and §3.4 as [`§3.7`](../plans/rag/00-structure.md) with **R-56 to R-65**. **The three ⏸
+> owner's calls are still open.** This note retires once the taken rows are built and recorded in
+> [`docs/34`](../../34-patterns-adapted.md).
 > **Asked for by:** Ajmal PS, 2026-09-10 — *"check this profile, is there anything we can use for our
 > project, not only RAG, for complete Heron AI."*
 > **The rule this obeys:** [**D-25**](../../DECISIONS.md) — **studied and re-authored, never imported.**
@@ -114,7 +116,7 @@ failure as narrowing a retrieval assertion to keep it passing, which
 
 ---
 
-### 3.2 ✅ TAKE — the citation points at the item, not the document
+### 3.2 ✅ **TAKEN 2026-09-10** — the citation points at the item, not the document
 
 Their rewritten CV bullets carry a `corpus_ref` — a pointer back to the **specific source item** the
 bullet came from, not to the CV as a whole.
@@ -129,7 +131,7 @@ source it came from.
 
 ---
 
-### 3.3 ✅ TAKE — refuse the out-of-domain question before retrieving, not after
+### 3.3 ✅ **TAKEN 2026-09-10** — refuse the out-of-domain question before retrieving, not after
 
 Their pipeline runs a **guardrail first**: is this question even in the domain? Out-of-domain queries
 are stopped before retrieval, specifically to prevent hallucination.
@@ -145,7 +147,7 @@ which already exist. **Heron has the refusal habit; it does not have this refusa
 
 ---
 
-### 3.4 ✅ TAKE — grade what came back, before using it
+### 3.4 ✅ **TAKEN 2026-09-10** — grade what came back, before using it
 
 Between retrieval and generation they insert **document grading**: is what came back actually relevant?
 Only graded documents reach the generator.
@@ -257,9 +259,16 @@ also the reason [`33`](../../33-external-repository-research.md) and
 
 ## 6. What to do with this
 
-**One row is accepted: §3.1, on 2026-09-10.** It is in the plan. The remaining **three ✅ rows and
-three ⏸ rows are still proposals** — §3.2 the item-level citation, §3.3 the out-of-domain refusal,
-§3.4 grading what came back, and the three owner's calls.
+**All four ✅ rows were taken on 2026-09-10** and all four are in the plan — twenty requirements,
+**R-46 to R-65**, with a build order.
+
+**Writing them up found something the reading did not.** §3.1, §3.3 and §3.4 look like three
+features and are **one measurement at three thresholds** — *does this candidate have a real claim on
+the sentence?* — reported, acted on, and refused on. Built as three they would produce three numbers
+that disagree. [`00-structure.md` §3.7](../plans/rag/00-structure.md) is that finding.
+
+**The three ⏸ owner's calls remain open:** the rewrite loop and its cap (§3.5), whether chunks
+overlap (§3.6), and per-stage timing (§3.7).
 
 If the owner takes any of them, the durable half moves into
 [`docs/34`](../../34-patterns-adapted.md) beside the sixteen already there — including the rejections,

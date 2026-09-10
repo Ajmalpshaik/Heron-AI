@@ -190,7 +190,7 @@ means it cannot start until an earlier row lands.
 |---|---|---|---|---|
 | **R-21** | **No source, no claim.** A standards answer without a citation is a **bug**, not a low-confidence answer | [05 §8](../../../05-heron-brain.md) | **NONE** | the most credibility-carrying row on this page. **Section H is how it stops being untestable** |
 | **R-22** | A citation resolves to something a human can open — file, page, clause | `HERON-RAG-CIT-014` | **NONE** | |
-| **R-23** | Retrieved knowledge is **checked before it is used** | `HERON-RAG-VAL-013` | **NONE** | |
+| **R-23** | Retrieved knowledge is **checked before it is used** | `HERON-RAG-VAL-013` | **NONE** | **Section I is its mechanism**, the way section H is R-21's |
 | **R-24** | Two sources disagreeing is **surfaced and asked about**, not silently resolved by rank | `HERON-RAG-CNF-015`, [docs/20](../../../20-knowledge-trust-and-conflict.md) | **NONE** | |
 | **R-25** | A trust score combining accuracy, freshness, usage, success rate and source trust feeds ranking | [00b](../../../00b-master-specification-agent-os.md) | **NONE** | R-16 is waiting on this |
 | **R-26** | The Research agent may answer from **outside** Heron's knowledge, and everything it returns is cited | `HERON-RAG-RSH-017` | **NONE** | |
@@ -262,6 +262,28 @@ cheap now and expensive later.
 | **R-53** | The check **flags, never rewrites** | [00 §3.6a](00-structure.md), D-30 | **NONE** | the brain cannot write the answer, so it must not repair one either |
 | **R-54** | The fabrication rate is recorded in [`retrieval-history.md`](../../../../brain/retrieval-history.md) **with its date, corpus size and thresholds** | R-31, [00 §3.6a](00-structure.md) | **NONE** | the rule every other number here obeys |
 | **R-55** | **A threshold is never lowered to reduce flags** | [`retrieval-history.md`](../../../../brain/retrieval-history.md) | **NONE** | the same refusal that kept *"show me just these"* on the isolate fragment. Tuning a threshold to make a report look better is the measurement protecting itself |
+
+---
+
+### I — The other three, taken 2026-09-10
+
+**Taken by the owner** the same day as §H, from the same reading, and **re-authored, never imported**
+([D-25](../../../DECISIONS.md)). Designed together in [`00-structure.md` §3.7](00-structure.md), because
+R-56 to R-62 are **one measurement at three thresholds** — report it (R-34), act on it (R-56), refuse on
+it (R-58) — and building them as three mechanisms produces three numbers that disagree.
+
+| | Requirement | Source | State | Note |
+|---|---|---|---|---|
+| **R-56** | A candidate that clears the structured filter but has **no real claim on the question** is **dropped, not ranked last** | [00 §3.7a](00-structure.md), `HERON-RAG-VAL-013` | **NONE** | R-23's mechanism. **A shortlist is not the top five of everything** — at 59 fragments [`retrieval-history.md`](../../../../brain/retrieval-history.md) recorded three of the top five with no claim on the sentence, two of which **write to the model** |
+| **R-57** | A dropped candidate is **counted and reported** — the answer says how many were dropped, and on what floor | [00 §3.7a](00-structure.md), R-18 | **NONE** | the same habit as *"they EXIST but are not for this release"*. A silent drop is indistinguishable from a retrieval that never found it |
+| **R-58** | When **nothing** clears the floor, the question is **refused by name** — before generation, before cost | [00 §3.7b](00-structure.md) | **NONE** | ask Heron about cats today and it answers with a confident ranked shortlist |
+| **R-59** | The refusal distinguishes **three different nothings**: the store is empty · everything was blocked for this release · nothing here covers that | [00 §3.7b](00-structure.md) | **first two DONE, third NONE** | they need three different actions from the reader, so one message for all three is a wrong answer twice |
+| **R-60** | The floor is **derived from the same measurement as R-34** — never from a hand-written list of in-domain words | [00 §3.7b](00-structure.md) | **NONE** | a keyword list would be wrong the week it was written and nobody would maintain it |
+| **R-61** | The floor is **pool-aware** — below a small pool, route agreement is not evidence | [`retrieval-history.md`](../../../../brain/retrieval-history.md) | **NONE** | already measured: under a pool of 20, *"both routes agree"* is true of everything, *"including a question about cats"* |
+| **R-62** | **No classifier in `brain/`.** The brain reports *nothing here has a claim*; deciding what the user meant is the host's act | D-01, [00 §3.7b](00-structure.md) | **DONE, and must stay done** | `heron_context.py` already refuses to classify, and an assumed path says it was assumed |
+| **R-63** | A packet part drawn from a document carries the id of the **exact chunk**, not of the document | [00 §3.7c](00-structure.md) | **NONE** | sharpens R-09 rather than replacing it |
+| **R-64** | That binding **survives into the draft answer**, so R-46's comparison has a defined target | [00 §3.7c](00-structure.md) | **NONE** | **the quiet prerequisite of §H** — you cannot compare a claim to its source without recording which source |
+| **R-65** | A claim with **no chunk pointer is uncited** — R-21 applies, so it is a bug and not a low-confidence answer | [00 §3.7c](00-structure.md), R-21 | **NONE** | *"per the specification"* is not a citation |
 
 ---
 

@@ -89,6 +89,10 @@ them have no system assigned"*. Same query. Only one of them lets you decide wha
 in the right direction, and a test that asserts it.
 **Cost:** small. **Needs:** nothing. **Can be done today.**
 
+> **And since 2026-09-10 this is the foundation of two more things, not one.** §3.7 takes the same
+> measurement and acts on it — dropping a candidate with no claim, and refusing a question nothing
+> covers. **Build the measurement once.**
+
 ---
 
 ### 3.2 It follows relationships — *corrected 2026-09-10, and now conditional*
@@ -291,6 +295,104 @@ its source **passes**; and the whole thing runs with no network and no keys.
 **Cost:** small on top of §3.3 and citations — the comparison is standard library.
 **Needs:** citations, so it follows them.
 
+
+### 3.7 The three taken on 2026-09-10 — *one measurement, three thresholds*
+
+The owner took the remaining three rows from
+[`the investigation`](../../investigations/jamwithai-repositories-2026-09-10.md) — the item-level
+citation (§3.2 there), the out-of-domain refusal (§3.3), and grading what came back (§3.4).
+
+**Written up together, because they are not three features.** Two of them rest on **one question**,
+asked at different strengths:
+
+> **Does this candidate have a real claim on the sentence that was asked?**
+
+| Strength | What it does | Where |
+|---|---|---|
+| **Report it** | Say how contested the shortlist was | §3.1, already taken |
+| **Act on it** | A candidate with no claim is **dropped, not ranked last** | new — grading |
+| **Refuse on it** | When *nothing* clears the floor, the question is refused by name | new — out-of-domain |
+
+**One measurement, three thresholds. Not three mechanisms**, and building them as three is how a
+system ends up with three numbers that disagree.
+
+#### 3.7a Drop what has no claim, rather than ranking it last
+
+**Heron has this defect on record, in its own words.** At 59 fragments
+[`retrieval-history.md`](../../../../brain/retrieval-history.md) says:
+
+> *"the shortlist itself has stopped being made of fragments that fairly claim the sentence. The top
+> five are now `dimension-mep-runs`, `find-views`, `set-selection`, `find-sheets`,
+> `dimension-family-instances` … **`find-sheets` and the two dimensioning fragments have no claim on
+> this sentence at all**, and two of them WRITE to the model."*
+
+**A shortlist is not the top five of everything.** Today the structured filter excludes on version,
+status and scope — hard, correct, and nothing to do with meaning — and after that **everything that
+survives is ranked and nothing is dropped**. So a question always produces five answers, even when the
+honest number is none.
+
+This is `HERON-RAG-VAL-013` in [`docs/28`](../../../28-agent-registry.md) — *checks retrieved knowledge
+before it is used* — which has never had code, and it is [R-23](01-requirements.md)'s mechanism the way
+§3.6a is R-21's.
+
+**And it is different from ranking.** Ranking asks *which of these is best*. This asks *does this one
+belong in the list at all*, and the second question has an answer that can be **none**.
+
+**In Revit terms:** a schedule filter that returns every element in the model sorted by how duct-like it
+is. What you want is the ducts.
+
+#### 3.7b Refuse the question nothing covers, before spending anything
+
+The same measurement with the floor at zero survivors: **nothing here has a real claim, so say so.**
+
+**Heron already knows about this and treats it as a joke.**
+[`retrieval-history.md`](../../../../brain/retrieval-history.md) records that below a pool of 20,
+*"both routes agree"* is true of everything — *"including a question about cats"*. Ask Heron something
+with no BIM content in it and it returns a confident ranked shortlist.
+
+**Two things this must not become.**
+
+- **A hand-written list of in-domain words.** It would be wrong the week it was written and nobody would
+  maintain it. The floor is derived from the same measurement as §3.1, and from nothing else.
+- **A classifier in `brain/`.** [D-01](../../../DECISIONS.md) gives classification to the host. The
+  brain's job is to say *nothing here has a claim*; deciding what the user meant is not its act.
+
+**And the refusal must distinguish three different nothings**, because they need three different
+actions from the person reading them:
+
+| It says | It means | They should |
+|---|---|---|
+| *the store is empty* | nothing is indexed | rebuild |
+| *everything was blocked for this release* | it exists, for another Revit | check the version |
+| *nothing here covers that* | the library genuinely has no claim | ask something else, or add knowledge |
+
+The first two already exist and work. **The third does not.**
+
+#### 3.7c The citation points at the chunk, not the document
+
+The third row, and it is the quiet prerequisite of §3.6a: **you cannot compare a claim against its
+source unless you recorded which source it came from.**
+
+So a packet part drawn from a document carries the id of the **exact chunk**, and that binding survives
+into the draft — which makes the fabrication check's target defined rather than guessed. A claim whose
+chunk pointer is missing is **uncited**, and by [R-21](01-requirements.md) that is a bug and not a
+low-confidence answer.
+
+It sharpens [R-09](01-requirements.md) and [R-22](01-requirements.md) rather than replacing them: those
+say a chunk carries provenance and a citation opens. This says **the claim and the chunk are bound at
+answer time**, which neither said.
+
+**In Revit terms:** *"per the specification"* is not a citation. *"QCS 2014 §21.3.2"* is — and a tag
+that points at no element is a tag somebody will trust anyway.
+
+**Must not break:** D-01 for all three. [R-55](01-requirements.md) extends to every threshold here — **a
+floor is never moved to change how a report looks.**
+**Proved by:** a question with no BIM content in it is **refused by name** rather than answered; a
+shortlist drops a candidate that clears the version filter and bears no relation to the question, and
+**says it dropped it**; and a claim in a draft can be traced to the chunk it came from.
+**Cost:** small — §3.1's numbers already exist, and this is what to do with them.
+**Needs:** nothing for 3.7a and 3.7b. 3.7c needs documents.
+
 ---
 
 ## 4. The shape, when all six are in
@@ -328,6 +430,7 @@ its source **passes**; and the whole thing runs with no network and no keys.
              the parts, at a depth, each saying what it lost
              + the CITATION, which opens                                  NEW
              + the CONFIDENCE, and what was tied                          NEW  [3.1]
+             + the CHUNK each claim came from                             NEW  [3.7c]
              + what is MISSING - or a refusal by name
                                    |
                                    v
@@ -367,10 +470,10 @@ before the six were decided.
 | Stage | What | The six | Needs |
 |---|---|---|---|
 | **0** | Measure the trained backend and record it; fix the four stale sentences | — | nothing |
-| **0b** | **Say the confidence out loud** | **3.1** | nothing |
+| **0b** | **Say the confidence out loud — then act on it.** Drop candidates with no claim; refuse a question nothing covers | **3.1**, **3.7a**, **3.7b** | nothing |
 | **1** | `documents` + `chunks` tables, the ingester, **hierarchy in the chunker** | **3.3** | nothing |
 | **2** | Documents come back out, alongside fragments | — | Stage 1 |
-| **3** | Citations, the refusal that must not soften, **and the fabrication check** | **3.6**, **3.6a** | Stage 2 |
+| **3** | Citations bound to the chunk, the refusal that must not soften, **and the fabrication check** | **3.6**, **3.6a**, **3.7c** | Stage 2 |
 | **4** | The Librarian picks the scope | **3.4** | documents in two scopes |
 | **5** | Document nodes, **then a density count**, and the edge route **only if it passes** | **3.2** | Stage 2 |
 | **6** | Maintenance — re-index on change, duplicates | — | Stage 2 |
