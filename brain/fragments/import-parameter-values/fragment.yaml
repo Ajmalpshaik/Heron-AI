@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -92,6 +92,33 @@ contract:
       # WRITTEN IS RE-READ, and these are the ones that did not take (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-09-11'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned byId 5 entry(ies),
+    findings 2 item(s) [5 value(s) written across 5 matched row(s). Every value writ..., Skipped:
+    0 because the parameter is not there, 0 because it ...], includeTypeParameters false,
+    quotingIsBroken false, rowsMatched 5, rowsUnmatched 0, splitRecords Func`2, splitRow Func`2,
+    valuesRejected 0, valuesWritten 5. inputs came elements from the selection (5); csvPath
+    as given; includeTypeParameters as given. on Project1 work_ajmal.al'
+  negative_case: 'run with categoryName=Ducts, csvPath=C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/params-nomatch.csv,
+    inViewOnly=1 - Mech, includeTypeParameters=False instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned byId 5 entry(ies), findings 7 item(s)
+    [0 value(s) written across 0 matched row(s), 5 row(s) matched...,   row 2: ''1'' is not
+    one of the elements handed in,   row 3: ''2'' is not one of the elements handed in, ...],
+    includeTypeParameters false, quotingIsBroken false, rowsMatched 0, rowsUnmatched 5, splitRecords
+    Func`2, splitRow Func`2, valuesRejected 0, valuesWritten 0. inputs came elements from
+    the selection (5); csvPath as given; includeTypeParameters as given. on Project1 work_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cb8381c0c15c1e0a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
