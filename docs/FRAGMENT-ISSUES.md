@@ -712,6 +712,57 @@ settled rather than assumed: no revisions (`delete-revision`), no design options
 no scope boxes (`assign-scope-box-to-view`), no groups (`ungroup-elements`), no named DWG export setup
 (`export-views-to-dwg`, the same block Snowdon has in §3b-i), and no schedules (`export-schedule-to-csv`).
 
+### Sweep 4 — Snowdon, 0 passes and four findings, 2026-09-11
+
+[`sweep-snowdon.yaml`](../tools/jobs/sweep-snowdon.yaml). **Nothing passed**, and it was still the most
+useful sweep of the four, because two of its jobs existed to settle a question rather than to prove a
+fragment. 9,628 elements before and after.
+
+**THE REASON FOR GOING THERE WAS WRONG, AND THAT IS THE FIRST FINDING.** Sweep 3 ended by saying five
+fragments were blocked only by Project1 having no sheets, and that Snowdon has a drawing set —
+`find-unplaced-views` reported *"42 that are placed"*. **It does not.** That proof was taken against
+`Snowdon Towers Sample HVAC.rvt`, the delivered sample; the open model is `Snowdon-scratch_ajmal.al`,
+a working copy, and `find-views viewType=DrawingSheet` returns **0** there too.
+
+> A proof names its model. Reading "Snowdon" in one and assuming it means the Snowdon you have open is
+> the same mistake as reading a count instead of deriving it. `align-viewports-across-sheets`,
+> `create-sheet-list`, `export-sheets-to-pdf`, `place-views-on-sheet` and `set-sheet-title-block` are
+> blocked on **both** open models.
+
+### `set-mep-justification` and `select-in-region` are the FRAGMENT, not the model — SETTLED
+
+Both were recorded NEEDS_REVIEW after odd behaviour on Project1's five ducts. Re-run here against 307:
+
+| Fragment | Project1 (5 ducts) | Snowdon (307 ducts) |
+|---|---|---|
+| `set-mep-justification` | every non-zero offset refused, only 0 accepted | **`set 0` at 50 mm — same** |
+| `select-in-region` | `elements 0` in a ±100 m box | **`elements 0` in a ±200 m box — same** |
+
+**Neither is model-specific.** One model can never tell you that; two can, which is the only reason
+both were run again. `set-mep-justification` writes, reads back, and honestly reports the value did not
+stick — on every duct in a delivered sample as well as a hand-drawn scratch. `select-in-region` still
+reports the volume it searched in **feet labelled as millimetres**.
+
+> Both move from NEEDS_REVIEW to **OPEN**. What was a coincidence on one model is a defect on two.
+
+### `create-hvac-zone` IGNORES THE LEVEL IT WAS GIVEN — found 2026-09-11, OPEN
+
+Seventeen spaces were selected in `FloorPlan: L3`. Grouped by level with `group-and-count`, ten are on
+`L3`, five on `Parking`, one on `L1 - Block 37`. The negative asked for a zone on **`L1 - Block 35`**,
+a real level in the same model that **none of the seventeen is on**:
+
+```
+added 17
+movedFromAnotherZone 17 [Residential Lobby 106 (id 1410865) LEFT zone 'Default', ...]
+```
+
+It put **all seventeen** into a zone on a level none of them belongs to, and pulled each one out of its
+existing `Default` zone to do it. This is worse than the counting family below: those report work
+nobody did, and this one **does real work in the wrong place**. Its reporting is good — every move is
+named — but nothing checks that the space is on the level the zone is for.
+
+`stack-tags` joins the counting family: `gapMm 0` still `stacked 73`.
+
 ### What is left, and why it needs a different model
 
 After three sweeps, **27 arrangeable fragments remain and most are blocked on content Project1 will

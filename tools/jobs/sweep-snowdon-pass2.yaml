@@ -1,0 +1,79 @@
+# SWEEP 4, PASS 2 - two jobs that failed on MY errors, not the fragments' -
+# 2026-09-11.
+#
+# READ tools/jobs/sweep-snowdon.yaml FIRST.
+#
+# stack-tags DID NOT RUN because the job never supplied `view`. The contract
+# asks for it and the executor refused rather than guessing:
+#   "'view (View)' is a value the CALLER supplies... guessing it is how a job
+#    runs against the wrong thing and reports success."
+# That refusal is the harness working. The job file was wrong.
+#
+# create-hvac-zone came back `added 0` because it was pointed at a level with
+# no spaces on it. THE MODEL WAS ASKED RATHER THAN GUESSED THIS TIME, and the
+# fragment that answered is one proved this morning - `group-and-count` through
+# the chain that `keep-chain` unblocked:
+#
+#     select-by-category-name -> set-selection -> read-element-parameters
+#       parameterName "Level", 17 Spaces in FloorPlan: L3
+#     groups 4 item(s) [[L3, 10], [Parking, 5], [L1 - Block 37, 1], ...]
+#
+# So the zone goes on "L3", which holds ten of them, and the NEGATIVE goes on
+# "L1 - Block 35", which holds none - a real level in the same model with
+# nothing for the fragment to gather. That is a second selection rather than a
+# refusal: the phase and the name are identical across the legs and only the
+# level moves.
+#
+#     python tools/batch-prove.py tools/jobs/sweep-snowdon-pass2.yaml
+
+model: "Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024"
+
+defaults:
+  write: true
+  in: "Snowdon-scratch_ajmal.al"
+
+jobs:
+  # IT TAKES THE SPACES FROM THE SELECTION, not from the level - the first
+  # attempt passed `setup: []` and the executor refused rather than reporting a
+  # false zero: "'elements (IList<Element>)' was never supplied. Nothing is
+  # selected in Revit."
+  #
+  # So both legs select the SAME 17 spaces in FloorPlan: L3, and only the LEVEL
+  # moves. Ten of those spaces are on "L3"; none is on "L1 - Block 35", which is
+  # a real level in the same model. The negative is therefore a genuine empty
+  # answer about a real question, not a refusal and not a wrong category.
+  - fragment: create-hvac-zone
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: Spaces
+      inViewOnly:   "FloorPlan: L3"
+      zoneName:     "HERON ZONE A"
+      level:        "L3"
+      phase:        "New Construction"
+    negative-set:
+      categoryName: Spaces
+      inViewOnly:   "FloorPlan: L3"
+      zoneName:     "HERON ZONE B"
+      level:        "L1 - Block 35"
+      phase:        "New Construction"
+    expect: added
+
+  - fragment: stack-tags
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: "Duct Tags"
+      inViewOnly:   "FloorPlan: L3"
+      view:         "FloorPlan: L3"
+      stackAt:      "0,0,0"
+      gapMm:        200
+    negative-set:
+      categoryName: "Duct Tags"
+      inViewOnly:   "FloorPlan: L3"
+      view:         "FloorPlan: L3"
+      stackAt:      "0,0,0"
+      gapMm:        0
+    expect: stacked
