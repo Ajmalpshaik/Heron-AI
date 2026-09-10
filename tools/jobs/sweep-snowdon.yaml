@@ -1,0 +1,129 @@
+# SWEEP 4 - Snowdon, and two questions Project1 could not settle - 2026-09-11.
+#
+# READ tools/jobs/sweep-project1.yaml FIRST for what a sweep is and is not.
+#
+# THE REASON FOR COMING HERE TURNED OUT TO BE WRONG, AND THAT IS WORTH WRITING
+# DOWN. Sweep 3 ended by saying five fragments were blocked only by Project1
+# having no sheets, and that Snowdon has a drawing set - `find-unplaced-views`
+# reported "42 that are placed". **It does not.** That proof was taken against
+# `Snowdon Towers Sample HVAC.rvt`, the delivered sample; this is
+# `Snowdon-scratch_ajmal.al`, a working copy of it, and
+# `find-views viewType=DrawingSheet` returns 0 here too. So
+# `align-viewports-across-sheets`, `create-sheet-list`, `export-sheets-to-pdf`,
+# `place-views-on-sheet` and `set-sheet-title-block` are blocked on BOTH open
+# models and none of them is in this file.
+#
+#   A proof names its model. Reading "Snowdon" in one and assuming it means the
+#   Snowdon you have open is the same mistake as reading a count and not
+#   deriving it.
+#
+# WHAT THIS MODEL ACTUALLY HOLDS, probed 2026-09-11 before any value below:
+#
+#                    FloorPlan: M1   FloorPlan: L3
+#     Spaces                    5              17
+#     Duct Tags                 9              73
+#     Air Terminals            10             144
+#     Ducts                    22             307
+#     Pipes / Rooms / Room Tags / Lines: 0 everywhere
+#
+# Levels are named "Parking", "L1 - Block 35", "L1 - Block 37" and eight more.
+#
+# TWO OF THESE JOBS EXIST TO SETTLE A QUESTION, NOT TO PROVE A FRAGMENT.
+# `set-mep-justification` and `select-in-region` are both recorded NEEDS_REVIEW
+# after behaving oddly on Project1. Running them here says whether what was seen
+# was the MODEL or the FRAGMENT - which is the only thing that separates a
+# defect from a coincidence, and neither can be settled on one model.
+#
+#     python tools/batch-prove.py tools/jobs/sweep-snowdon.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/sweep-snowdon.yaml
+
+model: "Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024"
+
+defaults:
+  write: true
+  # PIN THE MODEL, AND IT IS ALSO THE ACTIVE ONE. Two projects are open and the
+  # `model:` stamp follows the ACTIVE document rather than this pin (OPEN
+  # defect). Snowdon was brought to the front by hand before this ran.
+  in: "Snowdon-scratch_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly:   "FloorPlan: L3"
+  negative-set:
+    categoryName: Ducts
+    inViewOnly:   "FloorPlan: L3"
+
+jobs:
+  # ---- the two questions -------------------------------------------------
+  # On Project1 EVERY non-zero offset was refused and only 0 was accepted, which
+  # could be a locked justification in that model or a write the read-back
+  # cannot see. 307 ducts in a delivered sample answer it.
+  - fragment: set-mep-justification
+    set:          {horizontalOffsetMm: 50, verticalOffsetMm: 50}
+    negative-set: {horizontalOffsetMm: 0,  verticalOffsetMm: 0}
+    expect: set
+
+  # On Project1 it reported searching "a 66 x 66 x 66 mm volume" for a 20,000 mm
+  # box - feet labelled as millimetres - and found nothing at any size.
+  - fragment: select-in-region
+    write: false
+    setup: []
+    set:          {minMm: "-200000,-200000,-200000", maxMm: "200000,200000,200000", exact: false, categories: "Ducts"}
+    negative-set: {minMm: "900000,900000,900000",    maxMm: "900100,900100,900100", exact: false, categories: "Ducts"}
+    expect: elements
+
+  # ---- what the spaces and tags make possible ----------------------------
+  - fragment: create-hvac-zone
+    setup: []
+    set:          {zoneName: "HERON ZONE A", level: "L1 - Block 35", phase: "New Construction"}
+    negative-set: {zoneName: "HERON ZONE B", level: "L1 - Block 35", phase: "ZZZNOTHINGHERE"}
+    expect: added
+
+  - fragment: stack-tags                      # 73 duct tags in L3
+    set:          {categoryName: "Duct Tags", inViewOnly: "FloorPlan: L3", stackAt: "0,0,0", gapMm: 200}
+    negative-set: {categoryName: "Duct Tags", inViewOnly: "FloorPlan: L3", stackAt: "0,0,0", gapMm: 0}
+    expect: stacked
+
+  # ---- richer content for the two that acted when told not to ------------
+  - fragment: check-family-standards
+    write: false
+    set:          {namePattern: "ZZZ*", requiredParameters: "HERON NOT A PARAMETER", mustHaveConnectors: true}
+    negative-set: {namePattern: "*",    requiredParameters: "",                      mustHaveConnectors: false}
+    expect: offStandard
+
+  - fragment: select-by-material              # ducts carry no named material here; equipment may
+    write: false
+    setup: []
+    set:          {materialName: "Steel", includePaint: false, categories: "Mechanical Equipment"}
+    negative-set: {materialName: "ZZZNOTHINGHERE", includePaint: false, categories: "Mechanical Equipment"}
+    expect: elements
+
+  # ---- run to find out ----------------------------------------------------
+  - fragment: set-design-option
+    set:          {designOptionName: "Main Model"}
+    negative-set: {designOptionName: "ZZZNOTHINGHERE"}
+    expect: copied
+
+  - fragment: convert-cad-to-directshape
+    setup: []
+    set:          {category: "Generic Models"}
+    negative-set: {category: "Ducts"}
+    expect: created
+
+  - fragment: extract-cad-curves
+    setup: []
+    set:          {layerNames: "0", asDetailLines: true, view: "FloorPlan: L3", maxCurves: 500}
+    negative-set: {layerNames: "ZZZNOTHINGHERE", asDetailLines: true, view: "FloorPlan: L3", maxCurves: 500}
+    expect: created
+
+  - fragment: place-flow-arrows
+    set:          {view: "FloorPlan: L3", arrowFamilyName: "Air Flow Arrow", arrowTypeName: "", spacingMm: 3000}
+    negative-set: {view: "FloorPlan: L3", arrowFamilyName: "ZZZNOTHINGHERE", arrowTypeName: "", spacingMm: 3000}
+    expect: placed
+
+  - fragment: auto-size-pipe                  # no pipes here; the verdict records that
+    set:          {targetVelocity: 3, nominalSizesMm: "15,20,25,32,40,50", boresMm: "15,20,25,32,40,50", categoryName: Ducts, inViewOnly: "FloorPlan: L3"}
+    negative-set: {targetVelocity: 0, nominalSizesMm: "", boresMm: "", categoryName: Ducts, inViewOnly: "FloorPlan: L3"}
+    expect: sized
