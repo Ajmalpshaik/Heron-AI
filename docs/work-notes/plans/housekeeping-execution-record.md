@@ -25,7 +25,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | **F** | AI-first / human-first navigation | **DONE** | `AGENTS.md` and `docs/PROJECT-MAP.md` created and linked; role routes added — §25 to §27 |
 | **G** | Cross-link and stale-reference cleanup | **DONE** | Broken links 4 → **0**; three false-absence claims corrected — §28 to §30 |
 | **H** | Permanent documentation quality | **DONE** | Responsibilities confirmed distinct; four coherence defects fixed, one of them mine — §32 to §34 |
-| **I** | Validation and QA | **NOT DONE** | Will diff against §4 of this file |
+| **I** | Validation and QA | **DONE** | Matrix re-run, suite set identical to baseline, fresh checkout passes — §36 to §39 |
 | **J** | Final repository audit | **NOT DONE** | — |
 | **K** | Final handover report | **NOT DONE** | — |
 | **L** | Plan self-removal | **Precondition MET** | All three §28.11 F files now exist. Still gated on Phases G–K completing |
@@ -259,8 +259,8 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Phase I: re-run the §28.6 matrix and diff the suite result against the §4 baseline, reporting a newly
-passing suite as well as a newly failing one.
+Phase J: reconcile the final inventory and the §25 / §28.10 closure checklists, then Phase K writes the
+durable closure record.
 
 ---
 
@@ -918,3 +918,95 @@ next, and nothing catches it except reading the whole set again afterwards.
 ## 35. Verification
 
 `check-docs` exit 0, **0 broken links**. `check-metadata` 0, `check-structure` 0, `git diff --check` 0.
+
+---
+
+# PHASE I — validation and QA
+
+Run at `820c3f3`, same environment as §2. Compared against the committed baseline in §4, not
+recollection.
+
+## 36. The suite set — diffed against §4, both directions
+
+**41 suites both times. 36 pass both times. Not one suite changed exit code.**
+
+| | Baseline (`5aa7f6d`) | Final (`820c3f3`) |
+|---|---|---|
+| Suites on disk | 41 | 41 |
+| Pass | 36 | 36 |
+| Wall clock | 226.7s | 232.4s |
+
+| Non-zero | Baseline | Final |
+|---|---|---|
+| `test_bridge_roundtrip.py` | exit 1 | exit 1 |
+| `test_graph.py` | exit 1 | exit 1 |
+| `test_mcp_serves.py` | exit 3 | exit 3 |
+| `test_reachable.py` | exit 1 | exit 1 |
+| `test_served_claims.py` | exit 1 | exit 1 |
+
+**No newly failing suite, and no newly passing one.** §28.11 item B required both directions to be
+reported because a matching total can hide a changed set; here the set itself is identical, which is a
+stronger statement than the total agreeing.
+
+`check-gaps.py`: **exit 1 in 237.8s** (baseline 236.3s), with an identical UNFINISHED list —
+`test_graph`, `test_reachable`, `test_served_claims`. Exit 1 remains correct.
+
+## 37. The §28.6 matrix, re-run
+
+| Command | Exit | Duration | State |
+|---|---|---|---|
+| `git diff --check` | 0 | 0.0s | **PASS** |
+| `check-docs.py` | 0 | 1.5s | **PASS** — **0 broken links** (4 at baseline) |
+| `check-metadata.py` | 0 | 0.1s | **PASS** |
+| `check-structure.py` | 0 | 0.1s | **PASS** |
+| `check-licence.py` | 0 | 0.4s | **PASS** |
+| `agent-count.py` | 0 | 0.1s | **PASS** |
+| `brain/heron_fragment.py` | 0 | 2.4s | **PASS** — 360 well-formed |
+| `check-reachable.py` | 0 | 0.5s | **PASS** (report) |
+| `check-revit-gate.py` | 0 | 1.9s | **PASS** (report) |
+| `check-routing.py` | 0 | 28.7s | **PASS** |
+| `check-intrusion.py` | 0 | 21.6s | **PASS** |
+| `check-gaps.py` | 1 | 237.8s | **PASS as a gate** — exit 1 by design |
+| 41 suites | mixed | 232.4s | §36 |
+| `check-compile.py` | 1 | 0.0s | **NOT RUN — no .NET SDK** |
+| `check-fragments-compile.py` | 1 | 1.6s | **NOT RUN — no .NET SDK** |
+| `check-api-surface.py` | 1 | 0.1s | **NOT RUN — no .NET SDK** |
+| Revit proof workflow | — | — | **NEEDS REAL REVIT** — not applicable to a Markdown batch |
+
+**The one improvement against baseline is broken links, 4 → 0.** Everything else is unchanged, which
+for a documentation-only run is the correct result.
+
+## 38. Fresh-checkout walkthrough — §28.7
+
+A clean `git clone` of the tracked tree at `820c3f3`, into a path **containing spaces**:
+`…/fresh checkout with spaces/Heron AI`. Nothing untracked was borrowed — `git ls-files --others`
+returned **0 files** in the clone.
+
+| Step | Result |
+|---|---|
+| Every entry document present | ✅ `README.md`, `AGENTS.md`, `docs/PROJECT-MAP.md`, `docs/README.md`, `docs/work-notes/README.md`, `tests/README.md`, `HERON_CONSTITUTION.md`, `CONTRIBUTING.md` |
+| `check-structure` · `check-docs` · `check-metadata` · `check-licence` · `heron_fragment` · `check-routing` | **All exit 0** from the spaced path |
+| Broken links, from the clone | **0** |
+| The derive command a modeller is told to run | Works: **193 `DRAFT`, 167 `PROVEN`** — matching what the documents say |
+| Suites from a spaced path | `test_fragment_store`, `test_heron_guard`, `test_licence_check` all exit 0 |
+| Local vs remote | **In sync** at `820c3f3` |
+| `main` | Still `5aa7f6d` — **not merged.** Push and merge are separate outcomes |
+
+**Case sensitivity is genuinely tested here, not assumed.** The container filesystem was confirmed
+case-sensitive by experiment, so a link with wrong capitalisation would have failed. **0 broken links
+on a case-sensitive filesystem** is stronger evidence than the same result on Windows.
+
+## 39. What Phase I could NOT establish
+
+Named rather than glossed, per §23's rule that the four states must not be mixed.
+
+| Outstanding | Why | Owner |
+|---|---|---|
+| 3 compile gates + `test_bridge_roundtrip` | No .NET SDK in this container | A machine with the SDK |
+| `test_mcp_serves`, `test_served_claims` | MCP SDK not installed | `pip install --user mcp`, or the owner |
+| **§28.11 C — the drive-letter condition** | Repository and `TEMP` share a filesystem here. It cannot be simulated | **The owner's Windows checkout.** The `check-licence.py` repair is still not re-proved by this run |
+| **§28.7 cold read by a stranger** | This session wrote the entry documents and cannot cold-read them | An independent reader |
+| Everything in `NEEDS-CHECKING.md` | **NEEDS REAL REVIT** | Unrelated product work, open before this run and still open |
+| Independent review of this batch | Single-agent run (§28.2) | A reviewer |
+
+Scope of the change, for the reviewer: **31 files, +1,558 −1,237** against `5aa7f6d`.
