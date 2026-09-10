@@ -1,0 +1,116 @@
+# SWEEP 3 - the last of what Project1 can feed, 2026-09-11.
+#
+# READ tools/jobs/sweep-project1.yaml FIRST for what a sweep is and is not.
+#
+# WHY THIS ONE IS SHORT. After sweeps 1 and 2 there are 27 arrangeable
+# fragments left, and MOST OF THEM NEED CONTENT THIS MODEL DOES NOT HAVE:
+#
+#   5 need SHEETS      align-viewports-across-sheets, create-sheet-list,
+#                      export-sheets-to-pdf, place-views-on-sheet,
+#                      set-sheet-title-block. Project1 has none
+#                      (`find-views viewType=DrawingSheet` -> 0).
+#   2 need CAD         convert-cad-to-directshape, extract-cad-curves
+#   2 need worksets    create-workset, set-element-workset
+#   2 need a shared parameter FILE on disk
+#   and one each for lines, pipes, tags, spaces, design options, scope boxes,
+#   revisions and family files on disk.
+#
+# So this file takes the ones that need nothing but a path, and it makes the
+# missing input rather than waiting for it: `import-parameter-values` reads a
+# CSV, so a CSV was written - one whose first column holds the five real duct
+# ids in this model, and one whose ids are 1 to 5 and match nothing.
+#
+# THAT IS THE CLEANEST NEGATIVE IN THIS FILE. Both CSVs are the same shape, the
+# same size and the same columns; only the ids differ. The fragment reads both,
+# matches five rows in one and none in the other, and reports `rowsUnmatched`
+# either way - so the empty answer is its own, not a refusal to start.
+#
+# EXPORTS WRITE REAL FILES AND ARE NOT ROLLED BACK. Every path points at this
+# session's scratchpad.
+#
+#     python tools/batch-prove.py tools/jobs/sweep-project1-3.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/sweep-project1-3.yaml
+
+model: "Project1 work_ajmal.al (3,471 elements), Revit 2024 - view '1 - Mech'"
+
+defaults:
+  write: true
+  in: "Project1 work_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly:   "1 - Mech"
+  negative-set:
+    categoryName: Ducts
+    inViewOnly:   "1 - Mech"
+
+jobs:
+  # Two CSVs, identical but for the ids. The only input that changes is the path.
+  - fragment: import-parameter-values
+    set:
+      csvPath: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/params-real.csv"
+      includeTypeParameters: false
+    negative-set:
+      csvPath: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/params-nomatch.csv"
+      includeTypeParameters: false
+    expect: valuesWritten
+
+  - fragment: export-views-to-fbx
+    setup: []
+    set:
+      views: "{3D - ajmal.al}"
+      folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports"
+      fileName: "HERON"
+    negative-set:
+      views: "1 - Mech"          # FBX is a 3D format; a plan view has nothing to give it
+      folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports"
+      fileName: "HERON2"
+    expect: exported
+
+  - fragment: export-views-to-dwg
+    setup: []
+    set:
+      views: "1 - Mech"
+      folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports"
+      setupName: ""
+    negative-set:
+      views: "1 - Mech"
+      folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports"
+      setupName: "ZZZNOTHINGHERE"
+    expect: created
+
+  - fragment: export-schedule-to-csv
+    set:
+      exportFolder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports"
+      fieldDelimiter: ","
+    negative-set:
+      exportFolder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports"
+      fieldDelimiter: ""
+    expect: written
+
+  # Run to find out, not because the answer is known. Project1 is a fresh
+  # template, so it very likely has no revisions and no design options - and a
+  # POSITIVE EMPTY verdict is the recorded finding that says so.
+  - fragment: delete-revision
+    setup: []
+    set:          {sequenceNumber: 1}
+    negative-set: {sequenceNumber: 999}
+    expect: deleted
+
+  - fragment: set-design-option
+    set:          {designOptionName: "Main Model"}
+    negative-set: {designOptionName: "ZZZNOTHINGHERE"}
+    expect: copied
+
+  - fragment: assign-scope-box-to-view
+    setup: []
+    set:          {views: "1 - Mech", scopeBoxName: "ZZZNOTHINGHERE"}
+    negative-set: {views: "1 - Mech", scopeBoxName: ""}
+    expect: assigned
+
+  - fragment: ungroup-elements              # nothing is grouped; the rollback saw to that
+    set:          {categoryName: Ducts, inViewOnly: "1 - Mech"}
+    negative-set: {categoryName: Walls, inViewOnly: "1 - Mech"}
+    expect: ungrouped
