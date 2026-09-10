@@ -130,4 +130,6 @@ real model. Nobody looks for what they have been told is not there.
 
 | File | State |
 |---|---|
+| [`plans/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md`](plans/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md) | **Active, partly implemented.** An outside review of the fragment library. C03, C04, C09 and N01-N09 are done; **C01, C02, C05-C08 and the S01-S05 splits are still plan only.** Its baseline numbers are a dated snapshot - derive current ones. Moved here from `docs/` on 2026-09-10: it is a one-time plan somebody is executing, which is what this folder is for |
+| [`plans/PROMPT-fragment-validation-agent.md`](plans/PROMPT-fragment-validation-agent.md) | **Active, one half remaining.** The brief that built the Fragment Validation Agent. The agent exists and its test passes; **the on-model half NEEDS REAL REVIT** and is why the prompt is retained rather than deleted. Moved here from `docs/` on 2026-09-10 |
 | [`plans/housekeeping-execution-record.md`](plans/housekeeping-execution-record.md) | **Permanent.** The ledger for the repository housekeeping run — baseline, gate results, every disposition and its evidence. **The plan that drove it was deleted on 2026-09-10** once its closure rules were met; this record is what survives, and it quotes the plan's requirements where it relies on them |

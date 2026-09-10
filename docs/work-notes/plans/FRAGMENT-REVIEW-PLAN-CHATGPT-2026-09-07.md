@@ -86,7 +86,7 @@ Priorities: **P1** = fix before trusting the affected workflow; **P2** = improve
 ### C01 — Preserve room holes or refuse creation (P1)
 
 **Fragment:** `create-from-room-boundaries`  
-**Evidence:** [implementation](../brain/fragments/create-from-room-boundaries/impl/any/fragment.cs), legacy floor branch and curve-loop construction.
+**Evidence:** [implementation](../../../brain/fragments/create-from-room-boundaries/impl/any/fragment.cs), legacy floor branch and curve-loop construction.
 
 The legacy floor branch creates from `curveLoops[0]` even when there are holes, adds a refusal message saying the hole was not cut, and still records the floor in `created`. Invalid loops can also be silently discarded before creation. A warning after construction does not preserve the requested geometry.
 
@@ -97,7 +97,7 @@ The legacy floor branch creates from `curveLoops[0]` even when there are holes, 
 ### C02 — Make sizing checks actionable before writes (P1)
 
 **Fragments:** `auto-size-mep`, `auto-size-pipe`  
-**Evidence:** [duct sizing](../brain/fragments/auto-size-mep/impl/any/fragment.cs), [pipe sizing](../brain/fragments/auto-size-pipe/impl/any/fragment.cs).
+**Evidence:** [duct sizing](../../../brain/fragments/auto-size-mep/impl/any/fragment.cs), [pipe sizing](../../../brain/fragments/auto-size-pipe/impl/any/fragment.cs).
 
 The duct fragment appends a UNIT CHECK message telling the reader to stop if values disagree, then immediately continues into size writes. It also calls `OrderBy` on supplied size lists before validating them. The pipe fragment explicitly proceeds with approximate bore assumptions when bore data is absent or mismatched.
 
@@ -108,7 +108,7 @@ The duct fragment appends a UNIT CHECK message telling the reader to stop if val
 ### C03 — Correct exact-pattern matching (P1)
 
 **Fragment:** `check-model-standards`  
-**Evidence:** [implementation](../brain/fragments/check-model-standards/impl/any/fragment.cs), local `matches` function.
+**Evidence:** [implementation](../../../brain/fragments/check-model-standards/impl/any/fragment.cs), local `matches` function.
 
 For a pattern without `*`, the first-part branch checks `StartsWith`, then the function eventually returns true. Therefore the pattern `ABC` also accepts `ABC-extra`, although the documented language is literal text plus explicit wildcard `*`.
 
@@ -121,7 +121,7 @@ For a pattern without `*`, the first-part branch checks `StartsWith`, then the f
 ### C04 — Make CSV round trips preserve complete records (P1)
 
 **Fragments:** `import-parameter-values`, `export-parameters-to-csv`  
-**Evidence:** [import](../brain/fragments/import-parameter-values/impl/any/fragment.cs), `ReadAllLines` and per-line `splitRow`; [export](../brain/fragments/export-parameters-to-csv/impl/any/fragment.cs), quoted value output.
+**Evidence:** [import](../../../brain/fragments/import-parameter-values/impl/any/fragment.cs), `ReadAllLines` and per-line `splitRow`; [export](../../../brain/fragments/export-parameters-to-csv/impl/any/fragment.cs), quoted value output.
 
 The importer parses each physical line independently. A quoted field containing a newline becomes multiple rows, so the current record reader cannot correctly round-trip multiline parameter text.
 
@@ -134,7 +134,7 @@ The importer parses each physical line independently. A quoted field containing 
 ### C05 — Use consistent connection evidence (P1)
 
 **Fragments:** `connect-air-terminals`, `report-connectors`  
-**Evidence:** [connection implementation](../brain/fragments/connect-air-terminals/impl/any/fragment.cs), `connectorOf` and `IsConnected`; [report contract](../brain/fragments/report-connectors/fragment.yaml), physical-reference policy.
+**Evidence:** [connection implementation](../../../brain/fragments/connect-air-terminals/impl/any/fragment.cs), `connectorOf` and `IsConnected`; [report contract](../../../brain/fragments/report-connectors/fragment.yaml), physical-reference policy.
 
 The terminal connector helper returns the first End connector, without a domain or air-terminal category check. It uses `IsConnected` for both skipping and final verification. The connector report explicitly distinguishes that flag from actual partner references. Nearest-duct selection also occurs before compatibility filtering.
 
@@ -145,7 +145,7 @@ The terminal connector helper returns the first End connector, without a domain 
 ### C06 — Preserve ownership uncertainty (P2)
 
 **Fragments:** `read-element-ownership`, `report-element-ownership`  
-**Evidence:** [read](../brain/fragments/read-element-ownership/impl/any/fragment.cs), [report](../brain/fragments/report-element-ownership/impl/any/fragment.cs).
+**Evidence:** [read](../../../brain/fragments/read-element-ownership/impl/any/fragment.cs), [report](../../../brain/fragments/report-element-ownership/impl/any/fragment.cs).
 
 One records an unreadable checkout status as owned by an unknown person; the other leaves it out of both editable and owned-by-others lists. Consumers therefore receive different classifications for the same uncertainty.
 
@@ -156,7 +156,7 @@ One records an unreadable checkout status as owned by an unknown person; the oth
 ### C07 — Preserve loop structure in room geometry (P2)
 
 **Fragment:** `read-room-geometry`  
-**Evidence:** [implementation](../brain/fragments/read-room-geometry/impl/any/fragment.cs), flat `holes` list.
+**Evidence:** [implementation](../../../brain/fragments/read-room-geometry/impl/any/fragment.cs), flat `holes` list.
 
 Outer and inner boundaries are separated, but every inner loop is flattened into a single list of curves. Multiple holes lose their individual grouping.
 
@@ -167,7 +167,7 @@ Outer and inner boundaries are separated, but every inner loop is flattened into
 ### C08 — Provide structured connector measurements (P2)
 
 **Fragment:** `report-connectors`  
-**Evidence:** [contract](../brain/fragments/report-connectors/fragment.yaml), `connectorFacts: IDictionary<ElementId, IList<string>>`.
+**Evidence:** [contract](../../../brain/fragments/report-connectors/fragment.yaml), `connectorFacts: IDictionary<ElementId, IList<string>>`.
 
 Connector sizes, positions and directions are chiefly exposed as report strings. A downstream size filter or connection planner should not parse formatted prose to recover geometry.
 
@@ -177,7 +177,7 @@ Connector sizes, positions and directions are chiefly exposed as report strings.
 
 ### C09 — Refresh the library documentation (P2)
 
-**File:** [brain/README.md](../brain/README.md).
+**File:** [brain/README.md](../../../brain/README.md).
 
 It still describes thirty-two fragments, all DRAFT, while the current validator finds 349 with 16 PROVEN. Its execution-status narrative should also be reconciled against the current implementation rather than copied into new documentation.
 
@@ -185,7 +185,7 @@ It still describes thirty-two fragments, all DRAFT, while the current validator 
 
 ## 4. What should be split, shared, or kept separate?
 
-The repository's [fragment guidance](09-skills-and-fragments.md) recommends splitting only when there are at least two actual or clearly imminent consumers. A shared implementation helper is sometimes more suitable than a separately searchable fragment.
+The repository's [fragment guidance](../../09-skills-and-fragments.md) recommends splitting only when there are at least two actual or clearly imminent consumers. A shared implementation helper is sometimes more suitable than a separately searchable fragment.
 
 | ID | Existing area | Proposed boundary | Consumers and decision |
 |---|---|---|---|

@@ -9,9 +9,9 @@
 
 > ## ✅ BUILT — 2026-09-06. This is now the record of the brief, not a job waiting.
 >
-> [`brain/heron_validate.py`](../brain/heron_validate.py) is the agent, [`tests/test_validate_agent.py`](../tests/test_validate_agent.py)
+> [`brain/heron_validate.py`](../../../brain/heron_validate.py) is the agent, [`tests/test_validate_agent.py`](../../../tests/test_validate_agent.py)
 > checks it without Revit, and `heron_bridge_client.py validate` is the half that needs a model open.
-> [`brain/proof-drafts/README.md`](../brain/proof-drafts/) explains what a draft is to whoever finds one.
+> [`brain/proof-drafts/README.md`](../../../brain/proof-drafts/) explains what a draft is to whoever finds one.
 >
 > **Nothing has been run against Revit.** Every judgement below is testable off-model and was tested;
 > the running half could not be, on a machine with no Windows and no Revit on it. The three open
@@ -25,8 +25,8 @@
 **Written 2026-09-07. Paste the block below into a fresh session.** It is written to be started from
 cold — it names the files, the numbers, the one rule that must not be broken, and how to know it worked.
 
-Background for a human reading this first: [HANDOVER.md PART 7](HANDOVER.md) is the survey this came
-from. Twelve agents are named in [`08-agent-catalog.md`](08-agent-catalog.md), none are built, five are
+Background for a human reading this first: [HANDOVER.md PART 7](../../HANDOVER.md) is the survey this came
+from. Twelve agents are named in [`08-agent-catalog.md`](../../08-agent-catalog.md), none are built, five are
 buildable now, and this is the one worth doing first because it attacks the measured bottleneck —
 **333 DRAFT fragments against 16 PROVEN**, proved by hand, one at a time.
 
@@ -64,7 +64,7 @@ Then propose the design before writing it, and say what you will NOT attempt.
 
 ## What the agent is for
 
-A proof under [D-30](DECISIONS.md) needs a positive case, a **negative case**, a **second route**, the
+A proof under [D-30](../../DECISIONS.md) needs a positive case, a **negative case**, a **second route**, the
 model it ran against, and a fingerprint. Producing one by hand takes a person at a PC with Revit open.
 **Most of that work is mechanical and some of it is not**, and the whole value of this agent is drawing
 that line honestly.
