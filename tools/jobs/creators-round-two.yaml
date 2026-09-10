@@ -1,0 +1,121 @@
+# The second round of creators - 2026-09-10.
+#
+# WHY THESE FOUR AND NOT THE TWELVE. Section 5 row 8 named fifteen DRAFT
+# fragments whose only countable result is a bare `ElementId`, and its fix was
+# expected to unblock them. It unblocked how the answer READS, and three of them
+# passed on that alone (create-grid, create-floor, create-ceiling). It did not
+# unblock the rest, and the reason is a DIFFERENT refusal:
+#
+#   SIX cannot be arranged at all because a caller cannot type an ElementId -
+#   create-3d-view (viewFamilyTypeId), create-plan-view (levelId),
+#   create-schedule (categoryId), create-sheet (titleblockTypeId),
+#   create-text-note (textTypeId) and create-view-filter (categoryIds,
+#   parameterId and a Color). That is the most-wanted refused type in D-54, not
+#   a fragment defect, and no job file can work around it.
+#
+#   ONE is blocked by the model rather than by Heron - create-legend-view wants
+#   a legend to copy, and "Legend: Mechanical Legend" DOES NOT EXIST in
+#   Snowdon-scratch. It was named in modify-round-2.yaml with a comment saying
+#   "CONFIRM this legend exists"; nobody did, and both phases came back
+#   bad_request_value. Confirmed absent 2026-09-10 before writing this file.
+#
+#   ONE needs a value nobody has confirmed - create-filled-region wants a
+#   FilledRegionType by name and no name has been checked against this model.
+#   Left out rather than guessed: a wrong type name is a confident refusal that
+#   reads like a fragment defect.
+#
+# WHY SNOWDON AND NOT PROJECT1. These need a 2D view, a category with real
+# content and MEP curves. Project1 has none of it - it has no floor plan view at
+# all. Probed 2026-09-10: "Level 1", "FloorPlan: Level 1", "East", "North",
+# "South", "West" and "Site" are all absent there and only "{3D}" answers, and a
+# callout and a filled region cannot go in a 3D view. "FloorPlan: M1" was
+# confirmed present in Snowdon-scratch before this file was written.
+#
+# NOTHING IS KEPT. `apply` is never sent, so each phase runs inside a
+# TransactionGroup and is rolled back (D-55). The creators batch on the same
+# night left its model at 3,435 elements before and after.
+
+model: "Snowdon-scratch_ajmal.al, Revit 2024 - view FloorPlan: M1 confirmed present"
+
+defaults:
+  # risk: MODIFY on all four, so they need the write path. batch-prove does NOT
+  # derive this from the fragment's `risk:` - section 5 row 6, which read as
+  # intermittent worksharing behaviour for a whole commit.
+  write: true
+  # PIN THE MODEL. Two are open and the active one changed twice while the
+  # earlier batch was being set up. The name must be the whole one.
+  in: "Snowdon-scratch_ajmal.al"
+
+jobs:
+  # A callout needs a PARENT VIEW that can hold one, which a 3D view cannot.
+  # The negative is a degenerate rectangle - the two corners identical, so the
+  # crop region has no area and there is nothing to call out.
+  - fragment: create-callout
+    setup: []
+    set:
+      parentView: "FloorPlan: M1"
+      corner:     "0,0,0"
+      opposite:   "10000,8000,0"
+      viewScale:  50
+      viewName:   "HERON CALLOUT Z1"
+    negative-set:
+      parentView: "FloorPlan: M1"
+      corner:     "0,0,0"
+      opposite:   "0,0,0"
+      viewScale:  50
+      viewName:   "HERON CALLOUT Z2"
+    expect: created
+
+  # A key schedule is a schedule of a CATEGORY, and Snowdon is an HVAC model so
+  # Ducts is populated. The negative names a category the model has not got:
+  # nothing can be scheduled for it, and `refused` carries role: accounting so
+  # the empty answer reads as empty rather than as a finding (D-52).
+  - fragment: create-key-schedule
+    setup: []
+    set:
+      category:         "Ducts"
+      scheduleName:     "HERON KEY Z1"
+      keyParameterName: "HERON Key"
+    negative-set:
+      category:         "ZZZNOTHINGHERE"
+      scheduleName:     "HERON KEY Z2"
+      keyParameterName: "HERON Key"
+    expect: created
+
+  # TWO CONTRASTING SELECTIONS, not select-then-clear. `elements` comes from the
+  # SELECTION, so the setup chain has to re-make it before each phase - a
+  # rolled-back write clears it (section 1d).
+  #
+  # The positive selects Ducts, which have a duplicable type. The negative
+  # selects Rooms, which are not type-based at all, so `noType` is the
+  # fragment's own stated answer rather than something invented for the proof.
+  - fragment: duplicate-type
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: "Ducts"
+      inViewOnly:   "FloorPlan: M1"
+      newTypeName:  "HERON DUP Z1"
+    negative-set:
+      categoryName: "Rooms"
+      inViewOnly:   "FloorPlan: M1"
+      newTypeName:  "HERON DUP Z2"
+    expect: createdTypeId
+
+  # Same shape. place-mep-fitting acts on MEP CURVES, so the positive selects
+  # Ducts and the negative selects Rooms - which are not MEP curves, and the
+  # fragment declares `notMepCurve` for exactly that.
+  - fragment: place-mep-fitting
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: "Ducts"
+      inViewOnly:   "FloorPlan: M1"
+      toleranceMm:  25
+    negative-set:
+      categoryName: "Rooms"
+      inViewOnly:   "FloorPlan: M1"
+      toleranceMm:  25
+    expect: created
