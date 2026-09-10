@@ -352,10 +352,31 @@ def main():
     print("PASSED - deterministic across processes, tolerant of endings and")
     print("word order, and free to re-index when nothing changed.")
     print()
+    # THIS USED TO ASSERT A STORY INSTEAD OF REPORTING A RUN, and the story
+    # went out of date. It said flatly that a trained model "could not be
+    # tested here, because this container's network refuses huggingface.co" -
+    # which was written in a container where that was true, was FALSE on
+    # 2026-09-10 in a container where the suite ran on the model backend and
+    # printed so eight lines above this sentence, and is true again in the
+    # container this correction was made in. A sentence that flips with the
+    # network is not a finding, it is a guess about the machine.
+    #
+    # So it says which backend actually answered THIS run. Recorded as W-3 in
+    # docs/work-notes/plans/rag/03-working-note.md and closed here.
+    name, _why = E.backend()
     print("It is NOT meaning, and check 3 says so in numbers. A trained model")
-    print("is the backend that would be - and it could not be tested here,")
-    print("because this container's network refuses huggingface.co. A7 in")
-    print("NEEDS-CHECKING.md is that run, on a machine that can reach one.")
+    print("is the backend that would be.")
+    print()
+    if name == E.MODEL:
+        print("This run used the TRAINED backend, so the numbers above are its")
+        print("numbers - read them as such, and record them in")
+        print("brain/retrieval-history.md with the library size beside them.")
+    else:
+        print("This run used the BUILT-IN backend (%s), so every number above" % name)
+        print("is a number about character n-grams. No trained weights could be")
+        print("loaded here. That is a fact about THIS MACHINE and not about")
+        print("Heron - measured 2026-09-11, huggingface.co answered 403 to")
+        print("CONNECT through this container's proxy, as it did on 2026-08-28.")
     return 0
 
 

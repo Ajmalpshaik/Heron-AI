@@ -109,12 +109,19 @@ class Answer(object):
     """What a lookup found, and how."""
 
     def __init__(self, route, fragment_id=None, candidates=None, autorun=False,
-                 note=""):
+                 note="", contest=None):
         self.route = route                 # identity | cache | keywords | nothing
         self.fragment_id = fragment_id
         self.candidates = candidates or []
         self.autorun = autorun
         self.note = note
+
+        # HOW CONTESTED THIS ANSWER WAS - a heron_retrieve.Contest, or None on
+        # the routes that do not rank anything (identity, cache, nothing).
+        # Carried rather than folded into `note` because a number a caller can
+        # read is worth more than a sentence it has to parse back out, and
+        # because docs/05 s4.4's re-ranker will be judged against it later.
+        self.contest = contest
 
     def __repr__(self):
         return "<Answer %s %s%s>" % (self.route, self.fragment_id or "-",
@@ -405,17 +412,55 @@ def forget_stale(store, on_disk=None):
 
 
 def keywords(store, text, limit=5):
-    """Route 3. FTS5 over the scope, best first."""
+    """Route 3. FTS5 over the scope, best first.
+
+    Each row carries FTS5's own `rank` as `score`. It is bm25, so it is
+    NEGATIVE and more negative is better. It is a MAGNITUDE, which the
+    position in this list is not: reciprocal rank fusion keeps the order and
+    throws the strength away by design, so this column is the only place the
+    words route's own opinion of how well it matched survives at all.
+
+    Nothing ranks on it. It is reported (heron_retrieve.Contest) so that a
+    floor can one day be derived from a measurement instead of invented.
+    """
     ensure_tables(store)          # asked before indexing is a normal order
     query = _fts_query(text)
     if not query:
         return []
     rows = store.execute(
-        "SELECT t.id, f.capability, f.status, f.kind "
+        "SELECT t.id, t.rank AS score, f.capability, f.status, f.kind "
         "FROM fragment_text t JOIN fragments f ON f.id = t.id "
         "WHERE fragment_text MATCH ? ORDER BY rank LIMIT ?",
         (query, limit)).fetchall()
     return [dict(r) for r in rows]
+
+
+def match_breadth(store, text):
+    """How many fragments the words route matches AT ALL, not the top few.
+
+    THE NUMBER THAT SHOWS A ROUTE HAS STOPPED BEING SELECTIVE. _fts_query
+    joins the words with OR so that a missing word cannot empty the result -
+    which is right for a lookup, and means a sentence made mostly of ordinary
+    English matches most of the library. Measured 2026-09-11 at 360
+    fragments: "what is the best food for a cat" matched 360 of 360, because
+    "what", "is", "for" and "a" are in every fragment.
+
+    A route that matched everything has ranked everything, and a rank out of
+    everything is not evidence. Reported, never ranked on.
+
+    IT COSTS ONE COUNT, NOT A SECOND SEARCH. Measured 2026-09-11 at 360
+    fragments: 0.35 ms against a 9.6 ms lookup, so 3.6% of a call. Worth
+    measuring rather than assuming - A8 in NEEDS-CHECKING.md records a Heron
+    tool call that sat for thirty minutes because nobody timed an import.
+    """
+    ensure_tables(store)
+    query = _fts_query(text)
+    if not query:
+        return 0
+    row = store.execute(
+        "SELECT COUNT(*) AS n FROM fragment_text WHERE fragment_text MATCH ?",
+        (query,)).fetchone()
+    return row["n"] if row else 0
 
 
 def ask(store, text, limit=5):

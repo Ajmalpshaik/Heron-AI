@@ -208,11 +208,25 @@ means it cannot start until an earlier row lands.
 
 | | Requirement | Source | State | Note |
 |---|---|---|---|---|
-| **R-31** | Every retrieval measurement records **date, corpus size, and which backend answered** | [`retrieval-history.md`](../../../../brain/retrieval-history.md) | **RULE HELD, PRACTICE BROKEN** | see below |
-| **R-32** | Routing measured by `check-routing.py`, intrusion by `check-intrusion.py` — and neither may weaken a fragment's own words to buy a rank | `tools/` | **DONE**, but **stale** | both last recorded on `lexical`, at 32 and 59 fragments |
+| **R-31** | Every retrieval measurement records **date, corpus size, and which backend answered** | [`retrieval-history.md`](../../../../brain/retrieval-history.md) | **DONE for `lexical` 2026-09-11, still owed for `model`** | rows at 360 and both backends compared at one size. The `model` row needs a machine that can reach `huggingface.co` |
+| **R-32** | Routing measured by `check-routing.py`, intrusion by `check-intrusion.py` — and neither may weaken a fragment's own words to buy a rank | `tools/` | **DONE**, re-run at **360** on 2026-09-11 | both exit 0. Words route **#1 for 81%, top three for 96%** of 2038 utterances; worst intruder in **64** shortlists it does not own. Still `lexical` — see R-31 |
 | **R-33** | Document retrieval gets its own measurement from its first day | this note | **NONE** | do not let it start unmeasured, the way the fragment side nearly did |
 
-**R-31 is violated right now, and it is the cheapest thing on this page to fix.**
+> ### ✅ Closed 2026-09-11, and it produced something the plan did not expect
+>
+> [`retrieval-history.md`](../../../../brain/retrieval-history.md) now carries rows at **360**, both
+> checkers have a run there, and the two backends are compared **at the same corpus size** — which is
+> the comparison [`03-working-note.md` §3.2](03-working-note.md) said nothing had, because the jump
+> from 59 to 360 moved corpus size and backend at once. Measuring the **old backend at the new size**
+> separates them for nothing: the words route's decline is **corpus size**, the nearness route's
+> improvement is **the backend**.
+>
+> **The `model` row is still owed.** It cannot be taken where `huggingface.co` is blocked, and it was
+> **not** borrowed from an earlier session and re-presented as a fresh run.
+
+**The paragraph below is what that closed. Kept because the finding is the file's own failure mode.**
+
+**R-31 was violated, and it was the cheapest thing on this page to fix.**
 [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) has **eleven rows and every one
 says `lexical`**. The last is 2026-08-31 at **59** fragments. Today the library is **360** and the
 backend is **`model`**. The record is six times out of date on corpus size and wrong on the backend —
@@ -228,8 +242,8 @@ cheap now and expensive later.
 
 | | Requirement | Source | State | Note |
 |---|---|---|---|---|
-| **R-34** | An answer says **how contested it was** — the spread across the shortlist in units of one fusion rank, and whether the routes agreed | [00 §3.1](00-structure.md) | **NONE** | `heron_retrieve.py` computes all of it and throws it away |
-| **R-35** | A shortlist that is effectively tied **says so, in words** — not only as a number | [00 §3.1](00-structure.md), S-3 | **NONE** | at 14 fragments the top five spanned 0.0021 where one rank is 0.00026, and nobody was told |
+| **R-34** | An answer says **how contested it was** — the spread across the shortlist in units of one fusion rank, and whether the routes agreed | [00 §3.1](00-structure.md) | **DONE 2026-09-11** | `heron_retrieve.Contest`, `tests/test_contest.py`. It also reports the **two magnitudes fusion discards** — bm25 and raw nearness — because a floor can only ever be derived from those |
+| **R-35** | A shortlist that is effectively tied **says so, in words** — not only as a number | [00 §3.1](00-structure.md), S-3 | **DONE 2026-09-11** | *"A COIN TOSS"* when the top two are inside **one rank of fusion** — which is narrower than the quality nudge, so status alone could have set that order. The one comparison it makes, and it is arithmetic rather than a dial |
 | **R-36** | A chunk knows its **parent**, so a clause can be returned with the section it sits in | [00 §3.3](00-structure.md) | **NONE** | extends `heron_context`'s existing `depth`, never a second mechanism |
 | **R-37** | Hierarchy depth is **arbitrary, stored as a parent link** — not a fixed Part/Section/Clause | [00 §3.3](00-structure.md), S-2 | **NONE** | fixed levels are a guess about documents nobody has read yet |
 | **R-38** | The Librarian picks **one** scope. Two scopes means **two queries**, never one merged query, and `CrossScopeRefused` is unchanged | [00 §3.4](00-structure.md), GR 5, D-33 | **NONE** | **the trap in this whole track.** A `UNION` here is a contractual problem, not a technical one |
@@ -274,12 +288,12 @@ it (R-58) — and building them as three mechanisms produces three numbers that 
 
 | | Requirement | Source | State | Note |
 |---|---|---|---|---|
-| **R-56** | A candidate that clears the structured filter but has **no real claim on the question** is **dropped, not ranked last** | [00 §3.7a](00-structure.md), `HERON-RAG-VAL-013` | **NONE** | R-23's mechanism. **A shortlist is not the top five of everything** — at 59 fragments [`retrieval-history.md`](../../../../brain/retrieval-history.md) recorded three of the top five with no claim on the sentence, two of which **write to the model** |
-| **R-57** | A dropped candidate is **counted and reported** — the answer says how many were dropped, and on what floor | [00 §3.7a](00-structure.md), R-18 | **NONE** | the same habit as *"they EXIST but are not for this release"*. A silent drop is indistinguishable from a retrieval that never found it |
-| **R-58** | When **nothing** clears the floor, the question is **refused by name** — before generation, before cost | [00 §3.7b](00-structure.md) | **NONE** | ask Heron about cats today and it answers with a confident ranked shortlist |
-| **R-59** | The refusal distinguishes **three different nothings**: the store is empty · everything was blocked for this release · nothing here covers that | [00 §3.7b](00-structure.md) | **first two DONE, third NONE** | they need three different actions from the reader, so one message for all three is a wrong answer twice |
-| **R-60** | The floor is **derived from the same measurement as R-34** — never from a hand-written list of in-domain words | [00 §3.7b](00-structure.md) | **NONE** | a keyword list would be wrong the week it was written and nobody would maintain it |
-| **R-61** | The floor is **pool-aware** — below a small pool, route agreement is not evidence | [`retrieval-history.md`](../../../../brain/retrieval-history.md) | **NONE** | already measured: under a pool of 20, *"both routes agree"* is true of everything, *"including a question about cats"* |
+| **R-56** | A candidate that clears the structured filter but has **no real claim on the question** is **dropped, not ranked last** | [00 §3.7a](00-structure.md), `HERON-RAG-VAL-013` | **BLOCKED on the `model` backend — W-8** | R-23's mechanism. **A shortlist is not the top five of everything** — at 59 fragments [`retrieval-history.md`](../../../../brain/retrieval-history.md) recorded three of the top five with no claim on the sentence, two of which **write to the model** |
+| **R-57** | A dropped candidate is **counted and reported** — the answer says how many were dropped, and on what floor | [00 §3.7a](00-structure.md), R-18 | **BLOCKED on R-56** | the same habit as *"they EXIST but are not for this release"*. A silent drop is indistinguishable from a retrieval that never found it |
+| **R-58** | When **nothing** clears the floor, the question is **refused by name** — before generation, before cost | [00 §3.7b](00-structure.md) | **BLOCKED on the `model` backend — W-8** | ask Heron about cats today and it answers with a confident ranked shortlist |
+| **R-59** | The refusal distinguishes **three different nothings**: the store is empty · everything was blocked for this release · nothing here covers that | [00 §3.7b](00-structure.md) | **first two DONE, third BLOCKED on R-58** | they need three different actions from the reader, so one message for all three is a wrong answer twice |
+| **R-60** | The floor is **derived from the same measurement as R-34** — never from a hand-written list of in-domain words | [00 §3.7b](00-structure.md) | **HELD, and it is what blocks R-56 to R-59** | a keyword list would be wrong the week it was written and nobody would maintain it |
+| **R-61** | The floor is **pool-aware** — below a small pool, route agreement is not evidence | [`retrieval-history.md`](../../../../brain/retrieval-history.md) | **DONE 2026-09-11** | already measured: under a pool of 20, *"both routes agree"* is true of everything, *"including a question about cats"* |
 | **R-62** | **No classifier in `brain/`.** The brain reports *nothing here has a claim*; deciding what the user meant is the host's act | D-01, [00 §3.7b](00-structure.md) | **DONE, and must stay done** | `heron_context.py` already refuses to classify, and an assumed path says it was assumed |
 | **R-63** | A packet part drawn from a document carries the id of the **exact chunk**, not of the document | [00 §3.7c](00-structure.md) | **NONE** | sharpens R-09 rather than replacing it |
 | **R-64** | That binding **survives into the draft answer**, so R-46's comparison has a defined target | [00 §3.7c](00-structure.md) | **NONE** | **the quiet prerequisite of §H** — you cannot compare a claim to its source without recording which source |

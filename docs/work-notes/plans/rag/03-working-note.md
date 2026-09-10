@@ -29,8 +29,8 @@ and deliberately left alone.
 | | |
 |---|---|
 | **The shape** | **DECIDED 2026-09-10 — all six.** [`00-structure.md`](00-structure.md). Becomes **a numbered decision** when the note is agreed; not written to [DECISIONS.md](../../../DECISIONS.md) yet |
-| Stage 0 — measure and record | **not started.** One measurement taken (§3) and **not yet written into `retrieval-history.md`** |
-| Stage 0b — say the confidence out loud | **not started.** New, from the decision. Costs almost nothing, needs nothing, and every later measurement is read against it |
+| Stage 0 — measure and record | **DONE for `lexical`, BLOCKED for `model`.** [`retrieval-history.md`](../../../../brain/retrieval-history.md) now carries 360-fragment rows, both checkers run at 360, and the two backends compared at the same corpus size for the first time. **No `model` run was taken** — this container refuses `huggingface.co`, and the row says so rather than borrowing one |
+| Stage 0b — say the confidence out loud | **DONE for the reporting half (R-34, R-35, R-61). NOT built: the acting half (R-56 to R-59).** `heron_retrieve.Contest`, `tests/test_contest.py`. The floor those need is **derived from a measurement or not set** (R-60), and the measurement says **not on this backend** — twelve questions, every column overlapping. **W-8** |
 | Stage 1 — a document can go in | **not started.** No `documents` table, no `chunks` table, no ingester. **Now also carries hierarchy** — the one thing that cannot be retrofitted cheaply |
 | Stages 2 to 8 | **not started**, blocked on Stage 1 |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
@@ -104,13 +104,15 @@ Each of these is a sentence that was true when written and is false now.
 
 | # | Where | Says | Actually |
 |---|---|---|---|
-| **W-1** | [`brain/README.md`](../../../../brain/README.md), the `heron_embed.py` row | the `model` backend *"has never run (`A7`)"* | it runs. `python brain/heron_embed.py` prints `Backend: model` |
-| **W-2** | [`brain/README.md`](../../../../brain/README.md), the `retrieval-history.md` row | the file *"currently records the built-in backend collapsing as the library grows, which is the evidence for `A7`"* | `A7` is closed. The row describes the evidence for a thing that has already happened |
-| **W-3** | [`tests/test_embed.py`](../../../../tests/test_embed.py), closing text | *"it could not be tested here, because this container's network refuses huggingface.co. A7 in NEEDS-CHECKING.md is that run"* | the suite **just ran on the model backend** and printed `Backend in use: model` eight lines above this sentence |
-| **W-4** | [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) | eleven rows, every one `lexical`, last at 59 fragments | 360 fragments, `model`. **The file written to prevent a stale retrieval number is carrying one** |
+| **W-1** | [`brain/README.md`](../../../../brain/README.md), the `heron_embed.py` row | the `model` backend *"has never run (`A7`)"* | it runs. `python brain/heron_embed.py` prints `Backend: model` — **on a machine that can fetch the weights.** ✅ **CLOSED 2026-09-11**, and rewritten to say **when it runs and when it does not**, because *"it runs"* flat is the same kind of environment-free sentence as the one it replaces |
+| **W-2** | [`brain/README.md`](../../../../brain/README.md), the `retrieval-history.md` row | the file *"currently records the built-in backend collapsing as the library grows, which is the evidence for `A7`"* | `A7` is closed. The row describes the evidence for a thing that has already happened. ✅ **CLOSED 2026-09-11.** And *"collapsing"* was the wrong word: measured at 360, the tracked fragment sits at **118th of 360 by words** against **17th of 59** — it is **sinking in proportion**, not falling out |
+| **W-3** | [`tests/test_embed.py`](../../../../tests/test_embed.py), closing text | *"it could not be tested here, because this container's network refuses huggingface.co. A7 in NEEDS-CHECKING.md is that run"* | the suite **just ran on the model backend** and printed `Backend in use: model` eight lines above this sentence. ✅ **CLOSED 2026-09-11 — and not by swapping one fixed claim for another.** The sentence was **false** on 2026-09-10 and is **true again** in the container it was corrected in, so it now **reports which backend answered THIS run**. A sentence that flips with the network is a guess about the machine, not a finding |
+| **W-4** | [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) | eleven rows, every one `lexical`, last at 59 fragments | 360 fragments, `model`. **The file written to prevent a stale retrieval number is carrying one.** ⚠️ **HALF CLOSED 2026-09-11.** The corpus size is fixed — rows at 360, both checkers run there, and the two backends compared at one size. **The `model` row is still owed** and cannot be taken where `huggingface.co` is blocked. **It is not borrowed from §3 and re-presented as today's run** |
 | **W-5** | [`brain/README.md`](../../../../brain/README.md), the dependency table | `pyyaml` is the whole list | **`model2vec` is used too** — it is what makes `Backend: model` work. Somebody following the instructions exactly installs `pyyaml`, gets the weaker backend, and is told nothing |
 | **W-7** | This plan itself, about ten times | `QCS 2014 §21.3.2 Insulation`, `Section 21 Mechanical` | **Invented as an illustration and never verified.** Whether QCS Section 21 is the mechanical section is not known here. **A plan about not fabricating clause numbers, fabricating a clause number** — left visible, flagged in [`00-structure.md` §3.3](00-structure.md), and replaced when Q-A names the real section |
 | **W-6** | The repository has **no `requirements.txt`, no `pyproject.toml`, no `setup.py`** | — | [`tools/setup.ps1`](../../../../tools/setup.ps1) builds and deploys the **add-in** and installs no Python package at all. [`docs/07`](../../../07-installation-and-update.md) specifies an installer that *"checks required dependencies"* and a Dependency Agent that *"check[s] and install[s]"* them — **designed, not built.** So the Python half of Heron is installed by hand, from a list that is wrong (W-5) |
+
+| **W-8** | The floor that [R-56](01-requirements.md) and R-58 stand on | Stage 0b would *"drop candidates with no claim"* and *"refuse a question nothing covers"*, needing nothing | **Found 2026-09-11 by building the measurement first, which is why it was built first.** [R-60](01-requirements.md) says the floor is derived from that measurement and from nothing else — and **at 360 fragments on `lexical` the measurement does not separate a BIM question from a question about cats.** Twelve questions, **every column overlaps**: *"how do I bake sourdough bread"* has the widest winning gap of all twelve. **Reciprocal rank fusion keeps order and discards strength**, so the fused score never could; and the two surviving magnitudes fail because `heron_embed`'s own docstring says the built-in backend **"IS NOT MEANING"**. **So R-56 to R-59 are blocked on the `model` backend, which is blocked on the network.** Numbers in [`retrieval-history.md`](../../../../brain/retrieval-history.md) |
 
 **W-5 and W-6 were found on 2026-09-10 by the owner asking a question** — *does a new person
 installing from GitHub get this automatically?* The answer is that the **add-in half installs itself
@@ -123,6 +125,11 @@ weaker backend permanently.** W-6 is the gap; a dependency manifest would close 
 sentences** and could be corrected in ten minutes — deliberately not done here, because a documentation
 fix folded into a planning commit is the widening this folder forbids. They are logged so whoever picks
 up Stage 0 fixes them in the same breath as the measurement, which is where they belong.
+
+> **Closed 2026-09-11, in that same breath, exactly as this paragraph asked.** W-1, W-2 and W-3 are
+> corrected; W-4 is half closed and says which half. **W-5, W-6 and W-7 are untouched** — W-5 and W-6
+> belong to the install thread (R-71 to R-79) and W-7 waits on Q-A naming a real clause. Closing them
+> here would be the widening this folder forbids, in the commit that closed the rest.
 
 ---
 
@@ -709,3 +716,101 @@ stranger can check it**, next to the list of what was actually read.
 **The section names only the projects that changed something**, and points at `33` and `34` for the full
 sixteen with what each became — including the rejections, because a rejection with a number is worth as
 much as an adoption.
+
+### 2026-09-11 — the first code, and the measurement that stopped half of it
+
+**Stage 0 and the reporting half of Stage 0b.** The first code this track has produced.
+
+**What ran, and what it said.**
+
+```bash
+python brain/heron_scope.py --rebuild                 # 360 fragments
+python brain/heron_embed.py                           # Backend: lexical
+python brain/heron_fragment.py                        # 198 PROVEN
+python tools/check-routing.py                         # exit 0, first run at 360
+python tools/check-intrusion.py                       # exit 0, first run at 360
+```
+
+**Stage 0 is done for one backend and blocked for the other, and the blocked half is not faked.**
+`huggingface.co` is refused by this container — the proxy answers **403 to `CONNECT`**, which is the
+**same block [`heron_embed.py`](../../../../brain/heron_embed.py) recorded on 2026-08-28**, still in
+force. `model2vec` is not installed here either and installing it would not help: the weights come
+from the host that is blocked. **So no `model` measurement was taken, and the 2026-09-10 numbers in
+§3 above were not copied into `retrieval-history.md` as though they were today's.**
+
+> **What came out of measuring `lexical` at 360 anyway — and it is the thing §3.2 said nobody had.**
+>
+> §3.2 says two variables moved at once between the last recorded row and today: **the corpus went
+> 59 → 360 AND the backend went `lexical` → `model`**, and no honest reading of that pair separates
+> them. Measuring the **old backend at the new size** separates them, and costs nothing:
+>
+> | Route | `lexical` at 360 | `model` at 360 | |
+> |---|---|---|---|
+> | words | 118th of 360 | outside the first 100 | **the same, and it must be** — the words route never touches the embedding backend, so two runs agreeing where they cannot differ is a small check on both |
+> | nearness | **194th of 360** | **19th** | **the trained encoder, measured against its own alternative at one corpus size for the first time** |
+>
+> **The words route's decline is corpus size. The nearness route's improvement is the backend.**
+> 17th of 59 is 29% of the library; 118th of 360 is 33%. It is sinking in proportion rather than
+> falling out.
+
+**Stage 0b was built as far as the evidence allows, and no further.**
+[`heron_retrieve.Contest`](../../../../brain/heron_retrieve.py) reports the winner's lead and the
+shortlist's spread **in units of one rank of fusion**, how many candidates both routes found, the
+small-pool caveat (**R-61**, which was already a comment inside `find()` and is now part of the
+measurement rather than a second copy of it), and the **two magnitudes fusion discards** — FTS5's bm25
+and the raw nearness score, neither of which anything ranks on. `tests/test_contest.py`, 18 checks.
+
+**The one comparison it makes is not a dial.** A gap under **one** rank is a gap narrower than the
+quality nudge, so the order **could have been set by the fragments' status** rather than by either
+route preferring one. That is arithmetic, and the test asserts it as arithmetic — the way the test
+that caught the nudge being eight times too big did.
+
+> ## And then the measurement stopped R-56 to R-59, which is why it was built first
+>
+> The plan is explicit that **report it, act on it and refuse on it are one measurement at three
+> thresholds** ([`00-structure.md` §3.7](00-structure.md)), and that **R-60**'s floor is derived from
+> that measurement and from nothing else. **So the measurement was built first, and then it was
+> read.** Twelve questions at 360 fragments — six about BIM, six with no BIM content at all:
+>
+> | | winner's lead | words matched | best bm25 | best nearness |
+> |---|---|---|---|---|
+> | six BIM | 2.1 – 8.1 ranks | 265 – 360 | −4.27 – −10.37 | 0.19 – 0.59 |
+> | six not BIM | 0.9 – 29.9 ranks | 245 – 360 | −0.00 – −6.59 | 0.15 – 0.47 |
+>
+> **Every column overlaps.** *"How do I bake sourdough bread"* has the **widest winning gap of all
+> twelve**. *"What is the best food for a cat"* scores **0.0254** where the tracked duct question
+> scores **0.0246** — the cat question wins. **A floor anywhere here cuts a real question to reach an
+> unreal one.**
+>
+> **And the reason is not bad luck.** Reciprocal rank fusion keeps **order** and throws **strength**
+> away by construction, so the fused score never could have carried this. The other two columns fail
+> for a reason `heron_embed.py` states about itself in capital letters: the built-in backend **"IS NOT
+> MEANING"**. Asking it to tell a duct from a cat asks it for the one thing it says it cannot do.
+>
+> **So the floor is not set. That is a result, not a postponement** — and it belongs on the `model`
+> backend, where nearness *is* meaning. **W-8.**
+
+**A first answer was published inside this session and then withdrawn by measuring more.** At three
+questions the words route looked selective for real questions and not for unreal ones, and that was
+written into the code as a promising shape. At twelve it is not true. **Three questions is an
+observation; twelve is the measurement**, and the docstring now says the opposite of what it said an
+hour earlier. Recorded because a session that reports only its final answer hides the fact that the
+first one was wrong.
+
+**What was refused.** No keyword list of BIM words (**R-60**). No classifier in `brain/` (**R-62**).
+No floor chosen because it happened to sort twelve questions nicely (**R-55**). And **nothing drops
+and nothing refuses** — `tests/test_contest.py` check 6 asserts that **absence**, so adding it later
+takes a deliberate hand rather than a quiet edit.
+
+**Found while working, and fixed rather than recorded, because this change caused it.** Adding a test
+suite made a stated count wrong in [`README.md`](../../../../README.md) — it said *"41 test suites"* —
+and made a dated count in [`HANDOVER.md`](../../../HANDOVER.md) read as a current one. `check-docs.py` caught both.
+[The execution record](../housekeeping-execution-record.md) **quotes** the old README line, so it is
+marked as a quotation instead of rewritten — **rewriting a record of what a file said is how a record
+stops being one.**
+
+**Next.** Stage 1 — the `documents` and `chunks` tables and `brain/heron_ingest.py`
+([`02-implementation.md` §4](02-implementation.md)). **It is blocked by none of this**: no network, no
+model, no Revit. R-56 to R-59 wait for a machine that can fetch weights, and the *before* they will be
+read against is now recorded.
+

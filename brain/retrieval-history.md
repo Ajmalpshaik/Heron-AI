@@ -26,6 +26,8 @@ so it is the one with history.
 | 2026-08-30 | 32 | **7th of 32** | not in the top 5 (**17th of 32**) | not in the top 5 | `lexical` |
 | 2026-08-31 | 47 | 12th of 47 | not in the top 5 | not in the top 5 | `lexical` |
 | 2026-08-31 | 59 | **17th of 59** | **36th of 59** | **20th of 59** | `lexical` |
+| 2026-09-10 | 360 | outside the first 100 | **19th** | not in the shortlist | **`model`** |
+| 2026-09-11 | 360 | **118th of 360** | **194th of 360** | not in the shortlist | `lexical` |
 
 **At 59 the decline is no longer just the duct filter sinking - the shortlist itself has stopped being
 made of fragments that fairly claim the sentence.** The top five are now `dimension-mep-runs`,
@@ -276,6 +278,132 @@ which he means.
 weakened to buy back a rank. Taking *"show me just these"* away from the isolate
 fragment would make the isolate unfindable in order to protect a number, and a
 checker that failed a build over a collision would teach exactly that habit.
+
+---
+
+## 2026-09-11 — 360 fragments, and the two backends compared at the same size
+
+**This file had eleven rows, every one `lexical`, the last at 59 fragments, while the library stood at
+360.** That is the drift it was written to prevent, happening to it. Two rows above close it.
+
+```bash
+python brain/heron_scope.py --rebuild
+python brain/heron_embed.py                    # says which backend answered
+python brain/heron_fragment.py                 # the library size
+python brain/heron_retrieve.py "show me every duct in the model" --revit 2024
+```
+
+### The row this file still does not have, and why
+
+**No measurement on the `model` backend was taken today.** The container this was run in refuses
+`huggingface.co` — the proxy answers `403` to `CONNECT`, so no weights can be fetched and
+`heron_embed.py` reports `Backend: lexical`. That is the **same block `heron_embed.py` recorded on
+2026-08-28**, still in force, and it is a fact about **one container** rather than about Heron.
+
+The `2026-09-10 / model` row above is carried across from
+[`docs/work-notes/plans/rag/03-working-note.md` §3](../docs/work-notes/plans/rag/03-working-note.md),
+where it was measured on a machine that could reach a model. **It is not re-derived here and must not
+be quoted as if it were** — its words column reads *"outside the first 100"* because that run capped
+its list at 100.
+
+### What comparing the two rows actually shows
+
+**Same query. Same corpus size. Two backends.** That is the comparison
+[the working note](../docs/work-notes/plans/rag/03-working-note.md) said nothing had, because the jump
+from 59 to 360 moved corpus size and backend at once and neither number separated them.
+
+| Route | `lexical` at 360 | `model` at 360 | Reading |
+|---|---|---|---|
+| words | 118th of 360 | outside the first 100 | **The same, and it must be** — the words route is FTS5 and does not touch the embedding backend at all. Two runs agreeing where they cannot differ is a small check on both |
+| nearness | **194th of 360** | **19th** | **The trained encoder is worth roughly ten places in a hundred here.** Middle of the library against the top fifth |
+
+**So the degradation on the words route is CORPUS SIZE and the improvement on nearness is the
+BACKEND.** At 59 the duct filter was 17th of 59 by words (29%); at 360 it is 118th of 360 (33%). It is
+sinking in proportion to the library rather than falling out of it.
+
+**And the query is still the wrong instrument, which this file decided on 2026-08-30 and still means.**
+*"Show me every duct in the model"* is filter-then-show — a composition, which is what a **skill**
+names, not a fragment. Three fragments fairly claim it. It is kept for continuity with the rows above
+it and for nothing else.
+
+### Both checkers, run at 360 for the first time
+
+`check-routing.py` and `check-intrusion.py` were last recorded at **32** and **59** fragments. Both
+exit 0 at 360, on `lexical`:
+
+```bash
+python tools/check-routing.py
+python tools/check-intrusion.py
+```
+
+| | 2038 declared utterances, 360 fragments, `lexical` |
+|---|---|
+| words route | **#1 for 81%**, top three for **96%** |
+| nearness route | **#1 for 54%**, top three for **73%** |
+| worst intruder | `FRG-VIEW-094` `arrange-tags-to-view-edges`, in **64** shortlists it does not own |
+| correlation(purpose words, intrusions) | **0.151** |
+
+**The words route reached 100% in the top three once, at 59 fragments, and it is 96% at 360.** That is
+thirteen times the library for four points, and the four points are **not** a licence to reword
+anything: the section above this one says what is never the answer, and it still is not.
+
+**Neither number is comparable to a `model` run, because there is not one.** Both tools report the
+backend they ran on, which is the whole reason they print it.
+
+---
+
+---
+
+## 2026-09-11 — how contested a shortlist is, and why no floor was set
+
+**Stage 0b** of the RAG plan: retrieval now reports how contested its answer was — the winner's lead
+and the shortlist's spread in units of **one rank of fusion**, how many candidates both routes found,
+and the two magnitudes fusion discards. `heron_retrieve.Contest`, and `tests/test_contest.py`.
+
+The plan also asked for two things built on the same measurement: **drop a candidate with no claim**
+(R-56) and **refuse a question nothing covers** (R-58). **Neither was built, and this is the
+measurement that says why.**
+
+Twelve questions — six about BIM, six with no BIM content at all — at 360 fragments on `lexical`:
+
+| | winner's lead | words route matched | best bm25 | best nearness |
+|---|---|---|---|---|
+| six BIM questions | 2.1 – 8.1 ranks | 265 – 360 of 360 | −4.27 – −10.37 | 0.19 – 0.59 |
+| six not about BIM | 0.9 – 29.9 ranks | 245 – 360 of 360 | −0.00 – −6.59 | 0.15 – 0.47 |
+
+**Every column overlaps.** *"How do I bake sourdough bread"* has the **widest winning gap of all
+twelve** and the second most selective words route. *"Tag every mechanical equipment"* is less near
+than *"what is the best food for a cat"*. **A floor anywhere on any of these four columns cuts a real
+question in order to reach an unreal one.**
+
+**Why the fused score could never have been the answer.** Reciprocal rank fusion keeps **order** and
+discards **strength** by construction, so two shortlists look alike from the outside however different
+their contents. The cat question's top candidate scores **0.0254**; the tracked duct question's scores
+**0.0246**. The cat question scores **higher**.
+
+**Why the other two columns fail is not a surprise either, once it is said out loud.**
+`heron_embed.py`'s own docstring says of the built-in backend: **"IT IS NOT MEANING."** Asking it to
+tell a duct from a cat is asking it for the one thing it states it cannot do. And `_fts_query` joins
+words with `OR` so a missing word cannot empty a result — correct for a lookup, and it means a sentence
+made of ordinary English matches most of the library. *"What is the best food for a cat"* matched
+**360 of 360**, because *what*, *is*, *for* and *a* are in every fragment.
+
+> **So the floor is not set, and that is a result rather than a postponement.**
+> [R-60](../docs/work-notes/plans/rag/01-requirements.md) says the floor is derived from a measurement
+> and from nothing else. This is the measurement, and it says **not on this backend**. The run belongs
+> on the `model` backend, where nearness is meaning — and that needs a machine that can reach
+> `huggingface.co`.
+>
+> **A first shape was reported and then withdrawn by measuring more.** At three questions the words
+> route looked selective for real questions and not for unreal ones. At twelve it does not. **Three
+> questions is an observation; the twelve are the measurement**, and the first version of this note
+> said the opposite of what the second one says.
+
+**What was NOT done, deliberately.** No keyword list of BIM words (R-60) — it would be wrong the week
+it was written. No classifier in `brain/` (R-62) — [D-01](../docs/DECISIONS.md) gives classifying to
+the host. And no floor chosen to make the twelve questions sort nicely, which is
+[R-55](../docs/work-notes/plans/rag/01-requirements.md) and the same refusal that kept *"show me just
+these"* on the isolate fragment three times above.
 
 ---
 

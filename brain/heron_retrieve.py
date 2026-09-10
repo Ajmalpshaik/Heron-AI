@@ -22,6 +22,9 @@ THE ORDER MATTERS AND IT IS NOT NEGOTIABLE
   3. Reciprocal rank fusion, to make one list out of two.
   4. A small quality nudge, which may settle a near-tie and may not overturn a
      clearly better match.
+  5. SAY HOW CONTESTED THE RESULT WAS. Stages 1 to 4 already compute every
+     number this needs and used to throw all of them away, so a coin toss and
+     a clear winner came back wearing the same face. See Contest.
 
 WHY THE VERSION FILTER IS A WALL AND NOT A WEIGHTING (docs/05 s8)
 ----------------------------------------------------------------
@@ -62,6 +65,16 @@ import heron_fragment as FRAG                                 # noqa: E402
 # below it, so a fragment both routes place 2nd or 3rd can still beat one that
 # only ONE route loved. That is the whole point of fusing rather than picking.
 RRF_K = 60
+
+# ONE RANK OF FUSION - the unit every spread on this page is measured in.
+#
+# Derived, never typed. It is what one place in a route's ranking is worth to
+# the fused score, and it is the yardstick the quality nudge below is already
+# held against: the nudge must be SMALLER than this, or status would outrank
+# matching. Measuring a shortlist's spread in the same unit means "the top two
+# are half a rank apart" reads against a number the file already lives by,
+# instead of against 0.0002 with nothing to compare it to.
+ONE_RANK = 1.0 / (RRF_K + 1) - 1.0 / (RRF_K + 2)
 
 # THE TWO ROUTES DO NOT GET AN EQUAL VOTE, AND THE REASON IS MEASURED.
 #
@@ -120,8 +133,9 @@ class Candidate(object):
         self.id = fragment_id
         self.row = row
         self.keyword_rank = None
+        self.keyword_score = None      # bm25, negative, lower is better
         self.vector_rank = None
-        self.vector_score = None
+        self.vector_score = None       # cosine, higher is better
         self.fused = 0.0
         self.quality = 0.0
 
@@ -142,6 +156,167 @@ class Candidate(object):
 
     def __repr__(self):
         return "<%s %.4f %s>" % (self.id, self.score, self.why())
+
+
+class Contest(object):
+    """How contested a shortlist was. A MEASUREMENT, never a verdict.
+
+    docs/work-notes/plans/rag/00-structure.md s3.1: retrieval answers with the
+    same face whether it is sure or guessing, and the evidence was already on
+    record. At 14 fragments brain/retrieval-history.md called a top five
+    spanning 0.0021 "noise rather than ranking - a reader who takes the top hit
+    as 'the answer' is reading a coin toss", and nobody was told that at query
+    time. Every number below was computed by retrieve() before this class
+    existed and discarded on the way out.
+
+    WHAT IT REPORTS, AND WHY EACH ONE IS HERE
+
+      top_gap    the winner's lead over the runner-up, in ONE_RANK. The one
+                 number that answers "was this a coin toss?".
+      spread     first to last across the shortlist, same unit. What
+                 retrieval-history was describing in raw score.
+      agreed     how many of the shortlist both routes found. Agreement is the
+                 only signal in this file that is not an opinion - but see
+                 pool_is_evidence.
+      breadth    how many fragments the WORDS route matched at all.
+      best_words
+      best_near  the two MAGNITUDES fusion throws away. Reported, never ranked
+                 on - see the warning below.
+
+    THE THRESHOLD THAT IS NOT INVENTED. There is exactly one comparison here -
+    top_gap against ONE rank - and it is not a dial. A gap smaller than one
+    rank is a gap narrower than the quality nudge, which means the order could
+    have been produced by the fragments' STATUS rather than by either route
+    liking one more than the other. That is a fact about the arithmetic, and
+    R-55 - a threshold is never moved to make a report look better - has
+    nothing to bite on because there is no number here to move.
+
+    WHAT THIS DELIBERATELY DOES NOT DO - and it is the whole reason it stops
+    here. It does not DROP a candidate (R-56) and it does not REFUSE a question
+    nothing covers (R-58). Both need a floor, and R-60 says a floor is derived
+    from a measurement or it is not set at all.
+
+    THE FUSED SCORE CANNOT BE THAT MEASUREMENT, and this is arithmetic rather
+    than an opinion. Reciprocal rank fusion keeps ORDER and discards STRENGTH,
+    so every shortlist looks similar from the outside no matter what went into
+    it. Measured 2026-09-11 at 360 fragments on the lexical backend:
+
+        "what is the best food for a cat"    top 0.0254   gap 2.4 ranks
+        "show me every duct in the model"    top 0.0246   gap 2.1 ranks
+
+    The cat question scores HIGHER than the duct one. A floor on the fused
+    score would have to cut the real question to reach the unreal one.
+
+    NEITHER SURVIVING MAGNITUDE IS THAT MEASUREMENT EITHER, ON THIS BACKEND.
+    Three questions suggested they might be - a real question appeared to make
+    the words route select rather than match everything - so the run was
+    widened to twelve, six BIM and six with no BIM content at all, and the
+    shape did not survive it. Every column overlaps:
+
+                        gap        breadth     bm25          nearness
+        six BIM        2.1 - 8.1   265 - 360   -4.27 -10.37  0.19 - 0.59
+        six not BIM    0.9 - 29.9  245 - 360   -0.00 - -6.59 0.15 - 0.47
+
+    "how do I bake sourdough bread" has the widest winning gap of all twelve
+    and the second most selective words route. "tag every mechanical
+    equipment" is less near than the cat question. A floor anywhere on any of
+    these four columns cuts real questions to reach unreal ones.
+
+    SO NOTHING ACTS ON THEM, AND THE REASON IS NOT CAUTION - it is that the
+    numbers say the lexical backend has no opinion about meaning, which is
+    precisely what heron_embed's own docstring says about it: "IT IS NOT
+    MEANING". Asking it to tell a duct from a cat is asking it for the one
+    thing it says it cannot do. The measurement belongs on the MODEL backend,
+    where nearness is meaning, and it has not been run because the container
+    this was written in refuses huggingface.co - the same block heron_embed
+    recorded on 2026-08-28, still in force on 2026-09-11.
+
+    Reported, so the run on a machine that can reach a model has a before to
+    read against. brain/retrieval-history.md carries this run in full;
+    docs/work-notes/plans/rag/03-working-note.md carries it as W-8.
+    """
+
+    def __init__(self, ranked, eligible_count, pool, breadth):
+        self.count = len(ranked)
+        self.eligible = eligible_count
+        self.pool = pool
+        self.breadth = breadth
+
+        scores = [c.score for c in ranked]
+        self.top_gap = ((scores[0] - scores[1]) / ONE_RANK
+                        if len(scores) > 1 else None)
+        self.spread = ((scores[0] - scores[-1]) / ONE_RANK
+                       if len(scores) > 1 else 0.0)
+        self.agreed = len([c for c in ranked
+                           if c.keyword_rank is not None
+                           and c.vector_rank is not None])
+
+        words = [c.keyword_score for c in ranked if c.keyword_score is not None]
+        near = [c.vector_score for c in ranked if c.vector_score is not None]
+        self.best_words = min(words) if words else None   # bm25: lower is better
+        self.best_near = max(near) if near else None
+
+    @property
+    def pool_is_evidence(self):
+        """Whether "both agree" means anything yet.
+
+        MEASURED LIMITATION, and it predates this class - it was a comment in
+        find(). The nearness route returns a similarity for EVERY eligible
+        fragment rather than a shortlist, so while the library is smaller than
+        the pool, every candidate is found by both routes and "both agree" is
+        true of everything, including a question about cats.
+        """
+        return self.eligible > self.pool
+
+    @property
+    def words_selected_nothing(self):
+        """The words route matched at least as much as the filter left.
+
+        Not a threshold - a comparison of two counts. When it is true the
+        route ranked the library rather than choosing from it, and a position
+        in that ranking says nothing about having a claim on the sentence.
+        """
+        return self.breadth >= self.eligible
+
+    def sentence(self):
+        """The same measurement in words, because words are the contract.
+
+        S-3 in 00-structure.md: a number and a sentence, and the sentence is
+        what survives. This file already spoke this way - "both agree" - and
+        this extends that vocabulary rather than starting a second one.
+        """
+        if self.count < 2:
+            return ("one candidate, so nothing was contested - a shortlist of "
+                    "one is not a ranking")
+
+        if self.top_gap < 1.0:
+            said = ("A COIN TOSS: the top two are %.1f of one fusion rank "
+                    "apart, which is narrower than the quality nudge - their "
+                    "order could have come from status alone, not from either "
+                    "route preferring one" % self.top_gap)
+        else:
+            said = ("the winner is %.1f rank(s) clear of the runner-up"
+                    % self.top_gap)
+
+        said += ("; the shortlist spans %.1f rank(s); %d of %d found by both "
+                 "routes" % (self.spread, self.agreed, self.count))
+
+        if not self.pool_is_evidence:
+            said += (". Only %d fragment(s) were eligible, fewer than the pool "
+                     "of %d - every one of them is found by both routes, so "
+                     "'both agree' means nothing here yet"
+                     % (self.eligible, self.pool))
+        if self.words_selected_nothing:
+            said += (". The words route matched %d fragment(s) - at least as "
+                     "many as the %d the filter left - so it ranked the "
+                     "library rather than selecting from it"
+                     % (self.breadth, self.eligible))
+        return said
+
+    def __repr__(self):
+        return ("<contest gap=%s spread=%.1f agreed=%d/%d>"
+                % ("-" if self.top_gap is None else "%.1f" % self.top_gap,
+                   self.spread, self.agreed, self.count))
 
 
 class Excluded(object):
@@ -239,7 +414,9 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
         if hit["id"] not in keep:
             continue
         rank += 1
-        candidate(hit["id"]).keyword_rank = rank
+        got = candidate(hit["id"])
+        got.keyword_rank = rank
+        got.keyword_score = hit.get("score")
         if rank >= pool:
             break
 
@@ -335,27 +512,24 @@ def find(store, text, revit=None, limit=5):
     if best.keyword_rank is None or best.vector_rank is None:
         note += (". NO candidate was found by both routes, so treat this as a "
                  "weak match - one route liking something is not two agreeing")
-    elif len(allowed) <= pool:
-        # MEASURED LIMITATION, worth more than the label above.
-        #
-        # The nearness route ranks EVERY eligible fragment - it returns a
-        # similarity for all of them, not a shortlist. So while the library is
-        # smaller than `pool`, every candidate is found by both routes and
-        # "both agree" is true of everything, including an unrelated question.
-        # It becomes real evidence only once there are more fragments than the
-        # pool and the routes have something to disagree about.
-        #
-        # Said out loud because a future reader will otherwise see "both agree"
-        # on a 7-fragment library and believe it.
-        note += (". Only %d fragment(s) were eligible, fewer than the pool of "
-                 "%d - every one of them is found by both routes, so 'both "
-                 "agree' means nothing here yet" % (len(allowed), pool))
+
+    # ONE MEASUREMENT, NOT TWO. The small-pool caveat used to be built here,
+    # in an `elif`, so it was only ever said when the best candidate happened
+    # to be found by both routes - the limitation is true either way. It now
+    # lives in Contest with the rest of the numbers, because 00-structure.md
+    # s3.7's rule is that this measurement is built ONCE: three copies of it
+    # become three numbers that disagree.
+    contest = Contest(ranked, len(allowed), pool,
+                      SEARCH.match_breadth(store, text))
+    note += ". " + contest.sentence()
+
     return SEARCH.Answer(
         "hybrid", best.id,
         candidates=[{"id": c.id, "capability": c.row["capability"],
                      "status": c.row["status"], "score": c.score,
-                     "why": c.why()} for c in ranked],
-        note=note)
+                     "why": c.why(), "words_score": c.keyword_score,
+                     "nearness_score": c.vector_score} for c in ranked],
+        note=note, contest=contest)
 
 
 def main(argv):
@@ -405,6 +579,22 @@ def main(argv):
         for c in answer.candidates:
             print("          %-14s %-30s %-11s %.4f  %s"
                   % (c["id"], c["capability"], c["status"], c["score"], c["why"]))
+
+        # THE MAGNITUDES, printed because fusion discards them.
+        #
+        # The line above is fused score, which is built from POSITIONS. These
+        # two are the routes' own opinions of how well they matched, and they
+        # are the only numbers on this page a floor could ever be derived from
+        # (R-60). Printed so a person can look at them across many questions
+        # before anybody sets one. Nothing ranks on them today.
+        k = answer.contest
+        if k is not None:
+            print("Numbers: %s"
+                  % ("words matched %d of %d eligible; best bm25 %s; "
+                     "best nearness %s"
+                     % (k.breadth, k.eligible,
+                        "-" if k.best_words is None else "%.4f" % k.best_words,
+                        "-" if k.best_near is None else "%.4f" % k.best_near)))
 
         _rows, excluded = eligible(store, revit)
         for e in excluded:
