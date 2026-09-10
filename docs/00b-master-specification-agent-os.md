@@ -1,7 +1,9 @@
 # Heron AI — Advanced Internal Architecture, Agent Operating System & Self-Evolution Specification
 
-> **Status:** Source-of-truth record, part 2 of 2, as provided by the owner on 2026-08-27.
+> **Status:** Source-of-truth record, **part 2 of 4**, as provided by the owner on 2026-08-27.
 > Part 1 is [00 — Master Specification](00-master-specification.md) (the platform and its organisation).
+> Part 3 is [00c — Handover Baseline](00c-master-handover-baseline.md), **authoritative on the Golden
+> Rules**; Part 4 is [00d — Additional Requirements](00d-additional-requirements.md).
 > This part specifies **how Heron operates internally** as an autonomous engineering organisation.
 >
 > This file is the **verbatim architectural intent**. Do not edit it to "fix" it —

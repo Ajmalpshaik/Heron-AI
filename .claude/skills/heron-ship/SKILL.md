@@ -53,8 +53,10 @@ knowledge store.
 for t in tests/test_*.py; do python "$t" >/dev/null 2>&1 || echo "FAIL $t"; done
 ```
 
-**35 of 38 pass. Three fail, and they do not share a reason** — which matters, because "three failures"
-read as one cause is how a real regression hides among them:
+**41 suites** — `ls tests/test_*.py | wc -l`. Do not read a pass total here; derive it. What matters is
+that the failures **do not share a reason**, because a lump total is how a real regression hides.
+
+**Three cannot run at all without an optional dependency.** They prove nothing either way:
 
 | | needs | |
 |---|---|---|
@@ -62,8 +64,21 @@ read as one cause is how a real regression hides among them:
 | `test_served_claims.py` | the **MCP SDK** | same |
 | `test_bridge_roundtrip.py` | a **built .NET test host** | `dotnet build tests/Heron.Bridge.TestHost` |
 
-**A fourth failure is yours. So is any change to that list.** If one of the three starts passing,
-somebody installed something — say so rather than quietly recording a better number.
+`test_mcp_serves.py` exits **3**, not 1, so `check-gaps.py` reports it as waiting rather than failing.
+
+**Two fail for real, on any machine, and are not yours** — measured 2026-09-10 and pre-dating this
+work:
+
+| | |
+|---|---|
+| `test_graph.py` | 3 checks |
+| `test_reachable.py` | 1 check |
+
+So a plain container with neither dependency gets **36 of 41**, and a fully equipped machine gets
+**39 of 41** until somebody fixes those two.
+
+**A sixth failure is yours. So is any change to either list.** If one starts passing, somebody
+installed something or fixed something — say so rather than quietly recording a better number.
 
 ## 3. The reports — a finding is a question, not a failure
 

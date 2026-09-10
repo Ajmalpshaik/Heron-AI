@@ -1,5 +1,13 @@
 # Heron AI — Session Handover
 
+> **What this file is:** the **operational current-work entry point** — where the last session stopped,
+> what is proven rather than merely built, and what to do next. It is a work note, not specification.
+> Where it disagrees with the [Constitution](../HERON_CONSTITUTION.md), the
+> [Golden Rules](14-golden-rules.md) or [DECISIONS.md](DECISIONS.md), **those win.**
+>
+> It belongs with [`work-notes/`](work-notes/README.md) by role, and **stays here by decision** —
+> it is the documented cold start and too many things point at this exact path to move it.
+
 ## If you are the owner, starting your PC — say this and nothing else
 
 > **"Read HANDOVER.md in Heron-AI and carry on."**
@@ -77,7 +85,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | Proven | **167** as of 2026-09-10 (was 159; PR #72 promoted eight) — 142 at the start of the day's second proving track, **+18 from it**, and `set-view-section-box` back to `DRAFT` when its implementation changed after its proof was signed. Each carries a recorded proof with a negative case and a staleness fingerprint (D-30). Moving hourly — derive it, do not read it here |
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, docs, gaps, agent-count, **structure** — all green. **`check-licence` added 2026-09-09 and it EXITS 1 on a finding**, unlike the other reports; 370 units, all clean today ([D-66](DECISIONS.md)). `check-revit-gate` and `check-reachable` are reports and exit 0, so their findings are questions and two of them are now worklists. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
-| Tests | **41 suites. 38 pass in a plain Linux container and the three failures are the MACHINE, with two causes not one** — `test_mcp_serves` and `test_served_claims` need the MCP SDK, `test_bridge_roundtrip` needs a built .NET test host. On a machine with both, all 40 should. **Do not fix them by editing the tests.** `test_embed` and `test_retrieve` were re-based against the model backend in PART 5, not edited until green |
+| Tests | **41 suites. 36 pass in a plain Linux container, measured 2026-09-10. Three failures are the MACHINE, with two causes not one** — `test_mcp_serves` and `test_served_claims` need the MCP SDK, `test_bridge_roundtrip` needs a built .NET test host. On a machine with both, those three should pass. **Two more are NOT the machine** — `test_graph` and `test_reachable` fail wherever they are run and pre-date this work, so 39 of 41 is the best a fully equipped machine gets until somebody fixes them. **Do not fix them by editing the tests.** `test_embed` and `test_retrieve` were re-based against the model backend in PART 5, not edited until green |
 | Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | **THAT CLAIM WAS WRONG AND IS CORRECTED. Rebuilt and redeployed 2026-09-10, to Revit 2020, 2024 AND 2027**, verified at binary level. The binary Revit had loaded was dated 2026-09-08 23:06 while `RevitFragment.cs` was written 2026-09-09 23:14 - so D-67's caller-value widening and the rollback check had NEVER reached the machine ([FRAGMENT-ISSUES](FRAGMENT-ISSUES.md) rows 8 and 12). Deploy ONE release at a time. Rebuild it after ANY change under `revit/` — and check the framework first: `check-compile.py` builds 2020–2027 into one folder and the newest wins, so a run of it leaves .NET 10 binaries that Revit 2024 refuses with *"Revit cannot run the external application"*. `deploy-addin.ps1` now guards this rather than trusting the operator |
 | Agents | **71 of 250 have code**, 4 host-provided by D-01, 175 left — `python tools/agent-count.py`. The 71st is `HERON-RAG-CTX-007`, the Context Manager, on 2026-09-09. Phase 0/1's agent list is COMPLETE |
@@ -302,6 +310,52 @@ counts what is left; believe it over this file.
 > claimed the two sentences return identical shortlists, which holds in the full library and not in that
 > test's smaller fixture. Measured in one place and asserted in another. The corrected one says what is
 > true there, with the reason.
+
+---
+
+## HANDOVER — 2026-09-10 (the HOUSEKEEPING track): three READMEs were wrong by more than a hundred, and the write path was documented as not existing
+
+**Documentation only. No executable code was modified** — `git diff --diff-filter=M` over `.py`, `.cs`,
+`.csproj`, `.props` and `.ps1` across the whole batch returns nothing. Full evidence, every disposition
+and every measurement:
+[`docs/work-notes/plans/housekeeping-execution-record.md`](work-notes/plans/housekeeping-execution-record.md).
+
+**The three findings worth knowing about:**
+
+1. **The write path was documented as not existing.** The root `README.md` and `brain/README.md` both
+   said running a fragment that WRITES *"does not exist"*. It does — `run_fragment_write`, registered
+   `MODIFY`, dispatched in two files, governed by [D-55](DECISIONS.md) — and **55 `MODIFY` fragments
+   carry a recorded proof**, so it has met a real model. Corrected in both.
+2. **Three READMEs carried a fragment count wrong by more than a hundred.** `brain/README.md` said
+   *52 `PROVEN`, 308 `DRAFT`*; the truth was **167 and 193**. The root `README.md` and `docs/README.md`
+   said 159/201. Every one of them already carried a sentence admitting the number goes stale —
+   **writing that sentence is not enough**, and each now names the deriving command instead.
+3. **The skills lived in three places and one of them never existed.** `.claude/skills/` and
+   `.agents/skills/` held the same six skills, five byte-identical, while `.codex/agents/*.toml` told
+   Codex to read `.Codex/skills/` — **a directory that has never existed**, so Codex was broken
+   independently of either. On the owner's decision the tree is now one: `.claude/skills/`, matching
+   [D-01](DECISIONS.md), with `.codex` repointed at it and the `.agents` copy deleted after
+   file-by-file verification that nothing unique was lost.
+
+| | |
+|---|---|
+| **Created** | `AGENTS.md` · [`docs/PROJECT-MAP.md`](PROJECT-MAP.md) · [`docs/work-notes/README.md`](work-notes/README.md) · [`tests/README.md`](../tests/README.md) |
+| **Deleted** | `.agents/skills/` — 7 files, a duplicate |
+| **Moved** | **Nothing.** Four candidate moves were assessed and all rejected with reasons. This file stays put because saved continuation prompts point at this exact path from outside the repository; it is **labelled** as the operational entry point instead |
+| **Links** | **4 broken → 0.** All four were wrong filenames; each right target was found by reading content |
+| **Also corrected** | The four specification parts disagreed about how many parts exist (1 of 2, 2 of 2, 3 of 3) · `CONTRIBUTING.md` said Phase 2 had never loaded into Revit · the `heron-ship` skill said *"35 of 38 pass"* when there are 41 suites, so its own *"a fourth failure is yours"* rule would have misled an agent |
+| **Checks passing** | `check-docs` (0 broken links), `check-metadata`, `check-structure`, `check-licence`, `check-routing`, `check-intrusion`, `agent-count`, `heron_fragment`, `git diff --check`. `check-gaps` exits 1 by design |
+| **Could not run** | The three compile gates and `test_bridge_roundtrip` — **no .NET SDK.** `test_mcp_serves` and `test_served_claims` — **no MCP SDK.** None counted as a pass |
+| **Needs real Revit** | Everything in [NEEDS-CHECKING.md](NEEDS-CHECKING.md). Unchanged by this run |
+
+**Two things this run could not establish, and does not claim.** The drive-letter condition — repository
+on one drive, `TEMP` on another — cannot be exercised where they share a filesystem, so the
+`check-licence.py` repair is **still not re-proved** and wants one run on the owner's machine. And the
+cold-read walkthrough is not claimed: the session that wrote the entry documents cannot cold-read them.
+
+**Left alone deliberately:** `test_graph` (3 checks) and `test_reachable` (1 check) fail and are
+pre-existing and unrelated — recorded, not fixed. So are the dated snapshots inside `DECISIONS.md`,
+`FRAGMENT-ISSUES.md` and this file's own session records; those are labelled history.
 
 ---
 
@@ -964,7 +1018,7 @@ fault, and the six stale verdicts above.
 3. **The `LIST_*` gap** — five fragments blocked purely for want of a name nothing can supply: a workset
    id, a template-free view, a legend name, a section mark, a material name. `list-worksets` reports
    names but not ids.
-4. **Then keep proving.** 201 `DRAFT` remain. Read §3i first — it now holds the arrangements that work.
+4. **Then keep proving.** 193 `DRAFT` remain, as of 2026-09-10 — derive it, do not read it here. Read §3i first — it now holds the arrangements that work.
 
 **Revit was left busy with a dialog open at the end of the session.** If `heron_bridge_client.py count`
 answers *"Revit is busy"*, look at the Revit window before anything else.

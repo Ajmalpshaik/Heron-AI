@@ -11,7 +11,7 @@ go and read the skill.
 
 ## How to search
 
-Skills live in `.Codex/skills/<name>/SKILL.md`. Each has a `description` in its frontmatter listing
+Skills live in `.claude/skills/<name>/SKILL.md`. Each has a `description` in its frontmatter listing
 what it covers and the phrases that should trigger it.
 
 1. **Read every skill's frontmatter first.** There are few enough that reading all of them is cheap and

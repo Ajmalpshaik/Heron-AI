@@ -2,8 +2,8 @@
 
 > **Status:** **Phase 0 is complete** — Steps 1 to 5, proven in real Revit 2020 and 2024. **Step 6 (the
 > first write) and the whole of Phase 2 (Steps 7 to 14) are built, compile on all eight releases, and
-> have never loaded into Revit.** **All ten skills are `DRAFT`; 159 of the 360 fragments are `PROVEN`
-> as of 2026-09-09** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
+> have never loaded into Revit.** **All ten skills are `DRAFT`; 167 of the 360 fragments are `PROVEN`
+> as of 2026-09-10** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
 > derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
 > **Do not trust this paragraph over the tool.** `python tools/check-gaps.py` is computed from disk on
@@ -77,6 +77,8 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | If you want to… | Read |
 |---|---|
 | **Pick up where the last session stopped** | [**HANDOVER.md**](HANDOVER.md) |
+| **Find which folder owns what, and where to start a change** | [**PROJECT-MAP.md**](PROJECT-MAP.md) |
+| Work on Heron as an AI agent | [**AGENTS.md**](../AGENTS.md) |
 | Understand what Heron AI is | [01 — Vision & Principles](01-vision-and-principles.md) |
 | See the original specification, unaltered | [00 — Master Specification](00-master-specification.md) |
 | Know what is missing or risky | [PROPOSALS.md](PROPOSALS.md) |
@@ -148,7 +150,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 29 | [Metadata Standard](29-metadata-standard.md) | The five fields every artefact carries — and how they tie the code back to the registry |
 | 30 | [Compiling Away From Windows](30-compiling-away-from-windows.md) | **The compile gate runs anywhere.** All eight releases, 2020–2027, from NuGet on Linux; what a pass proves; the 2020-only defect it caught on its first run; and why three releases were skipped for a reason that was about the SDK package, not the operating system |
 | 31 | [Studying The Existing Libraries](31-studying-the-existing-libraries.md) | **How a fragment is studied and re-authored, never imported.** What travels (the mechanism, the scar) and what cannot (the code, the words, the proof); the owner's three rules — check and edit, add, split; and why 221 verified fragments arrive here as 221 unproven ones |
-| 32 | [**The Master Architecture document, reconciled**](32-master-architecture-reconciliation.md) | **Read this before building anything from [`HERON_AI_MASTER_ARCHITECTURE.md`](../HERON_AI_MASTER_ARCHITECTURE.md).** The audit that document demands of itself, done against this repository: **nine of its platform modules already exist here, four of them stricter than it asks for.** What is genuinely missing, ranked — the Context Manager and the six things beside it in [19](19-context-and-cost.md) have **no implementation of any kind**. And what is rejected, with reasons, so the same proposals are not made again. [D-57](DECISIONS.md) |
+| 32 | [**The Master Architecture document, reconciled**](32-master-architecture-reconciliation.md) | **Read this before building anything from [`HERON_AI_MASTER_ARCHITECTURE.md`](../HERON_AI_MASTER_ARCHITECTURE.md).** The audit that document demands of itself, done against this repository: **nine of its platform modules already exist here, four of them stricter than it asks for.** What is genuinely missing, ranked — **and partly closed since**: at audit time the Context Manager and the six things beside it in [19](19-context-and-cost.md) had no implementation of any kind, and [`brain/heron_context.py`](../brain/heron_context.py) was built the same day. Three of the seven are now real; **four remain absent on purpose**, three of them placed in the host by [D-58](DECISIONS.md). And what is rejected, with reasons, so the same proposals are not made again. [D-57](DECISIONS.md) |
 | 33 | [The External Repository Research Matrix](33-external-repository-research.md) | **The fifteen projects [`HERON_AI_MASTER_ARCHITECTURE.md`](../HERON_AI_MASTER_ARCHITECTURE.md) §10 asks about — read twice: from their pages, then by cloning and reading every one.** The file-level pass **disagreed with the page-level one in ten of the fifteen entries** (§4a), corrected five licence cells and three of this document's own claims, and changed two decisions. **Six projects agree with Heron** — §1 separates the three that are shared convention from the four that are a design that could have gone otherwise. **Nothing is adopted as code**, and one project is **AGPLv3** against Heron's Apache 2.0 |
 | 34 | [The Patterns, Adapted](34-patterns-adapted.md) | **Not *what* those projects are — *how* they get their result, and what that is worth to a modeller.** Fourteen patterns. **Two built** — tiered depth and the cut marker, which together take a generation packet from **5,737 characters to 372 with the request byte-identical**; six already held, four waiting on the owner, two rejected. The lesson three of them taught from different directions: **a rule in code beats a rule in prose** |
 
@@ -159,9 +161,11 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | [**HANDOVER.md**](HANDOVER.md) | Where the last session stopped — what exists, what is **proven** rather than merely built, and what to say to carry on |
 | [**NEEDS-CHECKING.md**](NEEDS-CHECKING.md) | The proving register — every unproven claim as a numbered item, grouped by what it needs. `python tools/check-gaps.py` reads this file |
 | [PROPOSALS.md](PROPOSALS.md) | Gaps found in review, feature ideas, strategic questions |
-| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | 42 questions, prioritised, with answer slots |
+| [FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md](FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md) | An outside review of the fragment library. **Partly implemented** — C03, C04, C09 and N01–N09 are done; **C01, C02, C05–C08 and the S01–S05 splits are still plan only.** Its own baseline numbers are a dated snapshot |
+| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | Every question, prioritised, with answer slots. **The count is derived** — `python tools/check-docs.py` reads the questions themselves and fails if the progress line disagrees |
 | [ROADMAP.md](ROADMAP.md) | Phase 0 → Phase 7, and what is deliberately deferred |
 | [DECISIONS.md](DECISIONS.md) | Append-only log of decisions actually made |
+| [**work-notes/**](work-notes/README.md) | **What work is going on right now** — active plans, execution records, temporary notes. Operational workspace, never specification |
 | [../tools/](../tools/README.md) | Scripts that keep these documents honest — link checker, count recomputer, map generator |
 
 ---
