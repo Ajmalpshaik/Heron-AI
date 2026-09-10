@@ -1824,8 +1824,21 @@ it at all.
 a path `HeronPermissions` says must not run in Phase 0 or 1. Its evidence is real — a file was written,
 and the negative is structural — but it was obtained through a gate that was supposed to stop it.
 
-**Whether that proof stands is the owner's call, not a proving session's.** Two readings, and nothing
-here settles which:
+**DECIDED BY THE OWNER, 2026-09-11: the permission tier wins.** `export-views-to-fbx` is back to
+`heron-status: DRAFT`.
+
+**Its proof block was KEPT, deliberately.** The evidence is real and it carries Ajmal PS's signature —
+throwing that away would lose a true record of a run that happened. What was withdrawn is the CLAIM
+the status makes, not the evidence behind it. When `PUBLISH` is allowed by the phase, or when
+`validate` is given the gate and the run is re-taken, the fragment is one promotion away rather than
+one proof away.
+
+> A proof and a status are different assertions. The proof says *this ran and this came back*; the
+> status says *this library stands behind it*. Only the second was wrong here.
+
+That leaves the second question open and it is worth a `D-` number if the answer is the other one:
+
+**Whether the gate belongs on `validate` at all.** Two readings, and nothing here settles which:
 
 - the permission tier is the authority, and a `PUBLISH` fragment has no business running yet, so the
   status goes back to `DRAFT` until the phase allows it; **or**
