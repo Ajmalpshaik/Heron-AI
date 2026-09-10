@@ -103,6 +103,7 @@ machine.
 ### How it fits together
 
 ```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     U(["<b>BIM modeller</b><br/><i>select all ducts</i>"])
     CC["<b>Claude Code</b> — the host<br/>conversation · agents · persona · orchestration"]
@@ -111,23 +112,21 @@ flowchart TD
     RV["<b>Revit</b><br/>2020 → latest"]
     PL["<b>Heron Platform</b><br/>install · update · registry<br/>security · audit"]
 
-    U   ==>|plain language| CC
-    CC  ==>|MCP| BR
-    BR  ==>|named pipe · local only| AD
-    AD  ==>|ExternalEvent · main thread| RV
-    RV  -.->|result + audit trail| U
+    RV -.->|result + audit trail| U
+    U ==>|plain language| CC
+    CC ==>|MCP| BR
+    BR ==>|named pipe · local only| AD
+    AD ==>|ExternalEvent · main thread| RV
+    CC -.- PL
+    BR -.- PL
+    AD -.- PL
 
-    PL -.-> CC
-    PL -.-> BR
-    PL -.-> AD
-
-    classDef user   fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host   fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain  fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin  fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit  fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
-    classDef plat   fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
-
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
     class U user
     class CC host
     class BR brain
@@ -219,11 +218,37 @@ Full index: **[docs/README.md](docs/README.md)**
 
 Phase 0 is one thin vertical slice through every layer:
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    A(["<i>Select all ducts.</i>"]) --> B["intent"] --> C["skill"] --> D["MCP"]
+    D --> E["named pipe"] --> F["add-in"] --> G["ExternalEvent"]
+    G --> H["Revit main thread"] --> I["selection changes on screen"] --> J(["audit log entry"])
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class A user
+    class B,C host
+    class D,E brain
+    class F,G addin
+    class H,I revit
+    class J user
 ```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
 "Select all ducts."  ->  intent  ->  skill  ->  MCP  ->  named pipe
   ->  add-in  ->  ExternalEvent  ->  Revit main thread
   ->  selection changes on screen  ->  audit log entry
 ```
+
+</details>
 
 No RAG, no fragments, no installer, no code generation. Just proof that the bridge works —
 which settles the remaining blocking questions with facts instead of opinion.

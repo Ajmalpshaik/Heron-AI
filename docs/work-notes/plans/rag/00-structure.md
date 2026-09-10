@@ -507,12 +507,12 @@ says what you have. It never says **what would fix it**.
 
 **So: what is missing, what it costs, and what it buys — in one command.**
 
-```text
-pyyaml       REQUIRED   installed
-model2vec    optional   installed    meaning-based search
-sqlite-vec   optional   installed    faster vector search      0.3 MB
-reranker     optional   MISSING      settles the top-20 ties   500 MB - 2 GB
-```
+| Package | | State | What it buys | Size |
+|---|---|---|---|---|
+| `pyyaml` | REQUIRED | installed | | |
+| `model2vec` | optional | installed | meaning-based search | |
+| `sqlite-vec` | optional | installed | faster vector search | 0.3 MB |
+| `reranker` | optional | **MISSING** | settles the top-20 ties | 500 MB - 2 GB |
 
 **The sizes belong in it.** Measured 2026-09-10, the whole installed Python side of Heron is **about
 93 MB** — less than one Revit project file. **A re-ranker is 500 MB to 2 GB**, and a document parser
@@ -613,6 +613,55 @@ back **marked as quoted content with its source** — and the guard reports it r
 
 ## 4. The shape, when all six are in
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    S(["a sentence a modeller actually said"])
+    LB["<b>[3.4] the LIBRARIAN picks the scope</b><br/>one scope. Two scopes means TWO queries,<br/>never one merged one<br/><i>HERON-RAG-LIB-001 · NEW</i>"]
+    SF["<b>the STRUCTURED FILTER, as a plain SQL WHERE</b><br/>scope · Revit version · status · domain<br/>a WALL, never a soft signal<br/><i>already built</i>"]
+
+    RT["<b>[3.2] THREE ROUTES over the survivors</b>"]
+    W["<b>words</b> — FTS5, exact tokens<br/><i>already built</i>"]
+    N["<b>nearness</b> — the trained encoder<br/><i>already built</i>"]
+    E["<b>edges</b> — the graph, finds what never says the word<br/>over DOCUMENTS only. The same route over the fragment<br/>graph was measured at six settings and lost every one<br/><i>NEW, CONDITIONAL</i>"]
+
+    FU["<b>FUSION by reciprocal rank</b><br/>the third route gets NO WEIGHT until it is measured<br/><i>already built</i>"]
+    RR["<b>[3.5] the RE-RANKER re-reads the top 20</b><br/>absent = slower to be right, never broken<br/><i>NEW, and OPTIONAL</i>"]
+    CK["<b>[3.3] the CHUNK, with its PARENT available</b><br/><i>decided in the chunker</i>"]
+    CP["<b>[3.6] the CONTEXT PACKET</b> — heron_context.py<br/>the parts, at a depth, each saying what it lost<br/>+ the CITATION, which opens · + the CONFIDENCE, and what was tied<br/>+ the CHUNK each claim came from<br/>+ what is MISSING — or a refusal by name"]
+    HO["<b>the HOST writes the answer the user reads</b><br/><i>D-01 · NEVER the brain</i>"]
+    Q{"not enough?"}
+
+    S --> LB --> SF --> RT
+    RT --> W
+    RT --> N
+    RT --> E
+    W --> FU
+    N --> FU
+    E --> FU
+    FU --> RR --> CK --> CP --> HO --> Q
+    Q -.->|"ask again, with better words — [3.1] is what makes this loop worth running"| S
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class S user
+    class LB host
+    class SF addin
+    class RT addin
+    class W,N,E brain
+    class FU,RR brain
+    class CK,CP user
+    class HO host
+    class Q plat
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
                     a sentence a modeller actually said
                                    |
@@ -657,6 +706,8 @@ back **marked as quoted content with its source** — and the guard reports it r
                                    +---------> back to the top    <-- [3.1] is what makes
                                                                       this loop worth running
 ```
+
+</details>
 
 ---
 

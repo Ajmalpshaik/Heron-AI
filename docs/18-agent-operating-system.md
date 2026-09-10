@@ -58,19 +58,19 @@ answer "can I do this without a model call?" and "does this need confirmation?" 
 
 ### Recommended capability entry
 
-```text
-Capability ID           SELECT_ELEMENTS_BY_CATEGORY
-Semantic identity       stable, survives renaming
-Domain                  Revit / Selection
-Providers               [agent ids, ordered by trust score]
-Input contract          JSON Schema
-Output contract         JSON Schema
-Risk level              READ | ANALYZE | SUGGEST | EXECUTE | MODIFY | PUBLISH | ADMIN
-Cost tier               T1 | T2 | T3
-Platform support        Revit 2020-2027
-Related fragments       [fragment ids]
-Status                  PROPOSED ... PRODUCTION
-```
+| Field | Value |
+|---|---|
+| Capability ID | `SELECT_ELEMENTS_BY_CATEGORY` |
+| Semantic identity | stable, survives renaming |
+| Domain | Revit / Selection |
+| Providers | [agent ids, ordered by trust score] |
+| Input contract | JSON Schema |
+| Output contract | JSON Schema |
+| Risk level | READ \| ANALYZE \| SUGGEST \| EXECUTE \| MODIFY \| PUBLISH \| ADMIN |
+| Cost tier | T1 \| T2 \| T3 |
+| Platform support | Revit 2020-2027 |
+| Related fragments | [fragment ids] |
+| Status | PROPOSED ... PRODUCTION |
 
 ---
 

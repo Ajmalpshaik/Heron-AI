@@ -120,15 +120,15 @@ mechanically enforceable: L1 knowledge is structurally unable to reach a live mo
 
 Retrieval preference, in strict order:
 
-```text
-1. HARD FILTER   version compatibility        -- non-matching is unselectable, never ranked down
-2. HARD FILTER   scope                        -- Golden Rule 5, enforced at query time
-3. HARD FILTER   level >= required for the operation's risk
-4. RANK          knowledge hierarchy by source (Project > Company > User > Community > Official)
-5. RANK          level, descending
-6. RANK          success rate for this Revit version
-7. RANK          recency
-```
+| | | |
+|---|---|---|
+| 1 | **HARD FILTER** | version compatibility — non-matching is unselectable, never ranked down |
+| 2 | **HARD FILTER** | scope — Golden Rule 5, enforced at query time |
+| 3 | **HARD FILTER** | level >= required for the operation's risk |
+| 4 | **RANK** | knowledge hierarchy by source (Project > Company > User > Community > Official) |
+| 5 | **RANK** | level, descending |
+| 6 | **RANK** | success rate for this Revit version |
+| 7 | **RANK** | recency |
 
 **[NOTE]** Steps 1–3 are filters, not weights. This is the difference between *"we preferred a safer
 fragment"* and *"an unsafe fragment could not be chosen"*. For anything that writes to a model, only the

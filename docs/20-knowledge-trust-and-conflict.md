@@ -39,6 +39,40 @@ to be discarded, which is the single most wasteful thing a retrieval pipeline ca
 
 **Adopted order**, combining the best of all three statements:
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    A["Intent → Domain → Knowledge Scope"]
+    B["Metadata + version filter<br/><i>cheap, exact, enforces scope isolation</i>"]
+    C1["Keyword search"]
+    C2["Vector search"]
+    D["Rank fusion"]
+    E["Trust evaluation<br/><i>from Baseline §20</i>"]
+    F["Conflict detection"]
+    G["Knowledge validation"]
+    H(["Context assembly"])
+
+    A --> B
+    B --> C1
+    B --> C2
+    C1 --> D
+    C2 --> D
+    D --> E --> F --> G --> H
+
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    class A host
+    class B addin
+    class C1,C2,D brain
+    class E,F,G user
+    class H brain
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 Intent -> Domain -> Knowledge Scope
 -> Metadata + version filter   (cheap, exact, enforces scope isolation)
@@ -49,6 +83,8 @@ Intent -> Domain -> Knowledge Scope
 -> Knowledge validation
 -> Context assembly
 ```
+
+</details>
 
 **Conflict Detection as a pipeline stage is new in Part 2 and is a genuine improvement** — see §4 below.
 
@@ -198,6 +234,26 @@ behaviour of every skill that depends on it.
 
 ## 8. Skill composition
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    MQ(["<b>MODEL QA SKILL</b>"])
+    MQ --> S1["Element Validation Skill"]
+    MQ --> S2["Parameter Validation Skill"]
+    MQ --> S3["Naming Skill"]
+    MQ --> S4["Geometry Skill"]
+    MQ --> S5["Standard Checking Skill"]
+    MQ --> S6["Reporting Skill"]
+
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    class MQ brain
+    class S1,S2,S3,S4,S5,S6 user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 MODEL QA SKILL
  +-- Element Validation Skill
@@ -207,6 +263,8 @@ MODEL QA SKILL
  +-- Standard Checking Skill
  +-- Reporting Skill
 ```
+
+</details>
 
 **[NOTE]** Skills composing from skills is new in Part 2 and is the right model — it is how a real QA
 procedure is actually structured. Two guards:

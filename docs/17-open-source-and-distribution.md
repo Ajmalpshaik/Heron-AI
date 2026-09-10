@@ -27,17 +27,15 @@ But it changes several things that were previously simple.
 
 This is the most important consequence, and it must be structural rather than a matter of care.
 
-```text
-PUBLIC REPOSITORY              LOCAL MACHINE ONLY
--------------------            ---------------------------
-Core engine                    User memory
-Revit add-in source            Project memory
-MCP server                     Company standards
-Agent definitions              Client project data
-Core fragments & skills        Audit logs
-Documentation                  Vector indexes
-Tests + synthetic models       Imported private tooling
-```
+| PUBLIC REPOSITORY | LOCAL MACHINE ONLY |
+|---|---|
+| Core engine | User memory |
+| Revit add-in source | Project memory |
+| MCP server | Company standards |
+| Agent definitions | Client project data |
+| Core fragments & skills | Audit logs |
+| Documentation | Vector indexes |
+| Tests + synthetic models | Imported private tooling |
 
 The product/data/derived split in [06 §2](06-heron-platform.md) already draws this line. Open sourcing
 makes it load-bearing: **the data class must live outside the repository directory entirely**, so that

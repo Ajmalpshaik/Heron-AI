@@ -3697,17 +3697,17 @@ Before writing anything, twelve of the owner's own sentences were put through `h
 the answers read. That is what chose the batch, and some of the answers were worth the exercise on their
 own:
 
-```
-"make a new duct type at 300 wide"    -> CREATE_3D_VIEW
-"the tags are on top of each other"   -> ALIGN_MEP_ELEVATION   (a WRITE, on MEP)
-"add a project parameter"             -> COPY_PARAMETER_VALUE  (a different write)
-"create a ceiling in this room"       -> MEASURE_CEILING_HEIGHT (a read answering a create)
-"add a new workset"                   -> LIST_WORKSETS
-"change the material on these"        -> READ_ELEMENT_MATERIAL
-"draw a cable tray"                   -> DIMENSION_MEP_RUNS
-"reload the links"                    -> LIST_LINKED_MODELS
-"put a scope box round this area"     -> SET_VIEW_SECTION_BOX
-```
+| The sentence | What came back | |
+|---|---|---|
+| *"make a new duct type at 300 wide"* | `CREATE_3D_VIEW` | |
+| *"the tags are on top of each other"* | `ALIGN_MEP_ELEVATION` | a WRITE, on MEP |
+| *"add a project parameter"* | `COPY_PARAMETER_VALUE` | a different write |
+| *"create a ceiling in this room"* | `MEASURE_CEILING_HEIGHT` | a read answering a create |
+| *"add a new workset"* | `LIST_WORKSETS` | |
+| *"change the material on these"* | `READ_ELEMENT_MATERIAL` | |
+| *"draw a cable tray"* | `DIMENSION_MEP_RUNS` | |
+| *"reload the links"* | `LIST_LINKED_MODELS` | |
+| *"put a scope box round this area"* | `SET_VIEW_SECTION_BOX` | |
 
 **The last six are still true and are the obvious next batch** — `CREATE_CEILING`, `CREATE_WORKSET`,
 `REPLACE_MATERIAL`, `CREATE_CABLE_TRAY`, `RELOAD_LINKS`, `CREATE_SCOPE_BOX`. `JOIN_GEOMETRY` belongs on
