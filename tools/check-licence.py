@@ -106,6 +106,27 @@ def declared_source(folder):
     return None
 
 
+def repo_relative(path):
+    """`path` written against the repository root.
+
+    Falls back to the absolute path when there is no relative form. A unit is
+    not always inside the checkout - a scratch folder under a test, or a skill
+    pack kept beside the user's data while Heron sits on another drive - and on
+    Windows os.path.relpath RAISES across drives rather than merely returning
+    something useless. Reporting a file this walked is not worth a crash.
+
+    brain/heron_fragment.py owns this answer and this is the same rule, not a
+    different one. It is repeated here rather than imported because importing
+    it costs PyYAML, and this is the tool you run on a bare machine to read the
+    licence of something you just downloaded, before you trust it enough to
+    install anything for it.
+    """
+    try:
+        return os.path.relpath(path, ROOT)
+    except ValueError:
+        return os.path.abspath(path)
+
+
 def files_of(path):
     """One file, or every text file under one folder."""
     if os.path.isfile(path):
@@ -124,7 +145,7 @@ def inspect(folder):
     for path in files_of(folder):
         body = read(path)
         if RESERVED.search(body):
-            reserved.append(os.path.relpath(path, ROOT))
+            reserved.append(repo_relative(path))
         for match in LICENCE_NAME.findall(body):
             licences.add(match.lower().strip())
         for match in COPYRIGHT.findall(body):

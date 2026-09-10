@@ -1149,6 +1149,76 @@ Keep maintenance proportional: on a behavior/path/status change, the affected mo
 
 A successful cleanup is a verifiable improvement with clearly bounded remaining product work. It is not a promise that every future reader, machine, external link or Revit model has been tested.
 
+## 28.11 Gate readiness, measured on this repository
+
+Recorded 2026-09-10 on the working checkout `D:\Ajmal\Aj Programs\Heron Ai` at commit `69edf63`. These are findings about the plan's own instruments, not new housekeeping scope. Each one changes a gate, not a phase.
+
+### A. Prove every gate runs before Phase A classifies anything
+
+Two commands this plan depends on do not currently complete on the owner's machine:
+
+| Gate | Observed | Cause |
+|---|---|---|
+| `python tools/check-licence.py` | Exit 0 standalone; `tests/test_licence_check.py` dies with `ValueError: path is on mount 'C:', start on mount 'D:'` | `inspect()` calls `os.path.relpath(path, ROOT)` where `ROOT` is the repository root. Any inspected folder on another drive raises. The test builds its fixture in `tempfile.mkdtemp()`, which is on `C:` while the repository is on `D:` |
+| `python tools/check-gaps.py` | Did not finish within 400 seconds; killed | Unknown; not investigated here |
+
+A gate that crashes or does not terminate cannot certify a phase exit. Add to Phase A's entry gate, before any file is classified: run every command in the 28.6 matrix once, record exit code **and wall-clock duration**, and mark any command that crashes or exceeds its stated bound as a **blocked gate with a named owner**. Phase I may not treat a blocked gate as a pass, and may not quietly drop it from the matrix.
+
+**Both were repaired on 2026-09-10, on the owner's instruction, before housekeeping begins.** The finding above is kept as written; what follows is the resolution, not a revision of it.
+
+| Gate | Repair | Standing |
+|---|---|---|
+| `check-licence.py` | Added a local `repo_relative()` that falls back to the absolute path when there is no relative form, the same rule `brain/heron_fragment.py::repo_relative()` already owns. Repeated rather than imported because importing it costs PyYAML, and this is the tool you run on a bare machine to read the licence of something before trusting it enough to install anything for it | Fixed. `tests/test_licence_check.py` passes from a `D:` checkout with `TEMP` on `C:` |
+| `check-gaps.py` | It was never hung. It runs all 41 suites serially inside itself and genuinely costs several minutes. The defect was that it did this unbounded and silently: one suite that never returns stalled the gate for ever with no output naming it, which is indistinguishable from a dead terminal. Added a 300s per-suite bound — about four times the slowest suite measured, `test_brain_reachable.py` at 78s — reporting a suite that exceeds it as `UNFINISHED`, plus flushed per-suite timings and a section total | Fixed as a gate. Measured end to end after the repair: **457s, exit 1**, no suite hit the bound, 440s of it the suites. Exit 1 is correct — `test_context`, `test_graph` and `test_reachable` genuinely fail. `test_licence_check` no longer appears in that list, which is the gate confirming the row above |
+
+So the original finding stands and is now explained: 457s really does exceed the 400s it was first given, and the tool was never going to beat that bound. The `check-gaps.py` repair fixes the gate, not the runtime. Making it fast means running the 41 suites in parallel, which requires first proving they are mutually isolated; 17 of them do not visibly use a temporary directory. That is separate, provable work and was deliberately not attempted here — a gate made fast by an unproven assumption is worse than a slow one.
+
+`check-licence.py` was a portability defect in the tool, not in the test. The same `os.path.relpath(path, ROOT)` pattern remains in `tools/check-reachable.py`, `tools/measure-routes.py`, `tools/check-fragments-compile.py`, `tools/generate-jobs.py`, `brain/heron_skill.py` and `brain/heron_validate.py`. None is reachable with an out-of-repo path today, so each is latent rather than broken; record them, and use the owning helper if any of those paths ever becomes caller-supplied.
+
+### B. Record the baseline suite result as a committed artefact
+
+Root `README.md` states 41 suites, "all passing bar three", attributing the three to a missing MCP SDK (two) and an unbuilt .NET test host (one). Measured on this checkout:
+
+- **37 pass, 4 fail**, out of 41.
+- Both named causes are gone. The MCP SDK is installed and the test host is built, so `test_mcp_serves`, `test_mcp_stdio` and `test_bridge_roundtrip` all pass.
+- The real failures are `test_context` (1 check), `test_graph` (3), `test_licence_check` (1 crash, section A), `test_reachable` (5).
+- All four also fail at `04ffa48`, the commit before the plan revision. They are pre-existing; no merge introduced them.
+
+The README is therefore stale in both its count and its reasons — in the first file every reader opens. This is the exact failure mode sections 6 and 20 exist to correct, and the first concrete instance of the plan's own rule against hard-coded counts a command can derive.
+
+Phase A must write the baseline suite-by-suite result (name, exit code, duration, environment) to a file under `docs/work-notes/`. Phase I compares against that file, not against prose or recollection. A newly failing suite and a newly passing one must both be reported; a matching total conceals a changed set, which is precisely what happened between the reviewer's checkout and this one.
+
+### C. Add drive letter to the fresh-checkout walkthrough
+
+28.7 step 3 already exercises paths with spaces and asks about case sensitivity. Add one condition: **a checkout whose drive letter differs from `TEMP`.** That single condition is what exposes the `check-licence.py` crash in section A. It is the owner's normal setup — repository on `D:`, `TEMP` on `C:` — and a reviewer working inside a `C:` worktree cannot see it. The space-in-path condition is already satisfied by the owner's real path and need not be simulated.
+
+State the executing checkout's drive and `TEMP` location in every evidence entry, alongside the environment field 28.6 already requires.
+
+### D. Bound `check-gaps.py` and give it an owner
+
+28.6 lists it under "Repository status" with no time bound. Give it an explicit timeout, record `NOT RUN (exceeded <n>s)` with the reason when it is hit, and name who investigates. Without a bound, a Phase I gate can stall indefinitely on a single command.
+
+### E. Say how untracked paths enter the Phase A inventory
+
+`.agents/skills/` currently holds three tracked skills and three untracked ones belonging to a concurrent session. An inventory built from `git ls-files` misses them; one built by walking the filesystem absorbs another session's in-flight work and may classify or dispose of it, which 28.5 forbids.
+
+State it explicitly: the Phase A inventory is built from **tracked files at a named baseline commit**. Untracked paths are listed once as *present, not in scope, owned elsewhere*, with no disposition row. Two related observations:
+
+- `.gitignore` line 84 whitelists `.claude/skills/*/bin/`, but the live path in this repository is `.agents/skills/*/bin/`.
+- A `__pycache__/*.pyc` already sits under one untracked skill. A `git add -A` would commit it. 28.5's rule to stage explicit owned paths is what prevents this; keep it.
+
+### F. Name Phase L's concrete precondition
+
+Phase L removes this plan last. Today this plan is the **only** file in `docs/work-notes/`, and `docs/work-notes/README.md` (section 12), `AGENTS.md` (section 10) and `docs/PROJECT-MAP.md` (section 11) do not yet exist. Removing the plan before those exist deletes the work-notes system along with it and leaves the durable closure record of 28.10 with nowhere to live.
+
+Name them in L's entry condition: the plan may not be removed while it is still the only thing giving `docs/work-notes/` its structure and meaning.
+
+### Verification status of this section
+
+Every measurement above was taken by running the named command on the named commit. `git diff --check` passes; `check-docs.py`, `check-metadata.py`, `check-structure.py`, `check-licence.py` and `agent-count.py` all exit 0. Documentation reports the same four pre-existing broken links, none in this plan.
+
+The two gates named in section A were repaired on the owner's instruction; the timeout was proven by giving the bound a suite that never returns and confirming it is named, skipped and reported rather than waited on. No housekeeping was executed, and no file was moved, merged or deleted. Items B to F remain proposals for the execution to adopt.
+
 ---
 
 # EXECUTION PROMPT — USE ONLY WHEN READY TO RUN THE HOUSEKEEPING
