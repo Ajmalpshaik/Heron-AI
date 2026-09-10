@@ -399,3 +399,28 @@ file. The re-ranker would add **500 MB – 2 GB**, a document parser several hun
 the only large numbers in the entire plan**, and both are optional and both come last.
 
 **Still no code written.**
+
+### 2026-09-10 — the plan re-read, and four defects found in it
+
+**Owner's instruction:** *"check the whole thing once more — is everything covered, do we need to update
+or add anything."* Done, and it found four things. **All four were in work written today.**
+
+| # | Found | Fixed |
+|---|---|---|
+| **1** | **The same stage number meant two different things.** [`02-implementation.md`](02-implementation.md) said *Stage 4 — maintenance*; [`00-structure.md` §6](00-structure.md) said *Stage 4 — the Librarian*. A reader acting on one while quoting the other would build the wrong thing | renumbered; the two files now map one to one, and §2 of the implementation note carries the map |
+| **2** | **Three stages had no build section at all** — the Librarian, the document graph, and the re-ranker existed only as design in `00-structure.md` | written as §7, §8 and §10 |
+| **3** | **`HERON-RAG-EVO-016` was the one RAG agent with no requirement anywhere** — and it was omitted **silently**, which is the part that matters | named in §7 of the requirements as deliberately deferred, with the reason |
+| **4** | The dependency example still said **`sqlite-vec MISSING`** — installed earlier the same day | corrected to `installed, 0.3 MB` |
+
+**Defect 1 appeared twice.** The headings were fixed first, and the *"why this order"* table thirty lines
+below still carried the old numbering, along with *"none of stages 0 to 5 needs Revit"* when there are
+now ten. **A renumbering that stops at the headings is half a renumbering** — which is the same shape as
+every stale-count defect this repository has recorded, arriving inside a file written to prevent them.
+
+**Defect 3 is the one worth remembering.** Everything else was a wrong number; that one was an
+**absence**, and absences do not announce themselves. It was found by listing all seventeen agent ids and
+counting how many times each appears in the plan — a command, not a reading. **The registry was the
+checklist, and nothing else would have caught it.**
+
+**Nothing new was added to the scope.** No requirement was created by this pass except the one naming an
+omission. **Still 79, and still no code.**

@@ -496,7 +496,7 @@ says what you have. It never says **what would fix it**.
 ```text
 pyyaml       REQUIRED   installed
 model2vec    optional   installed    meaning-based search
-sqlite-vec   optional   MISSING      faster vector search      ~2 MB
+sqlite-vec   optional   installed    faster vector search      0.3 MB
 reranker     optional   MISSING      settles the top-20 ties   500 MB - 2 GB
 ```
 
@@ -620,7 +620,8 @@ before the six were decided.
 | **5** | Document nodes, **then a density count**, and the edge route **only if it passes** | **3.2** | Stage 2 |
 | **6** | Maintenance — re-index on change, duplicates | — | Stage 2 |
 | **7** | The re-ranker, measured before and after | **3.5** | Stage 2, and 0b |
-| **8** | Trust, conflict, research | — | Stage 3 |
+| **8** | Trust and conflict | — | Stage 3 |
+| **9** | Research — **last, and deliberately so** | — | Stage 3 |
 
 **0b is new and it is deliberately early.** It costs almost nothing, it needs nothing, and every later
 measurement is read against it. Without it, Stage 7 cannot show the re-ranker helped, because nobody

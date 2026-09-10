@@ -10,11 +10,24 @@
 > **Progress is not recorded here.** It is recorded in [`03-working-note.md`](03-working-note.md).
 > This file says what the plan *is*; that one says what actually happened.
 
-> **⚠ The stage list in §3 to §9 is SUPERSEDED.** It was written before the six structural
-> questions were decided on 2026-09-10. **The order to follow is
-> [`00-structure.md` §6](00-structure.md)**, which keeps every stage below and adds **0b** (say the
-> confidence out loud) and hierarchy inside Stage 1. The stage *contents* here are still correct and
-> still the detail — it is the sequence that moved.
+> **Stage map — this file and [`00-structure.md` §6](00-structure.md) now agree.**
+> They did not until 2026-09-10: this file said *Stage 4 — maintenance* while §6 said *Stage 4 — the
+> Librarian*, so **the same number meant two different things in one plan**, and three stages had no
+> build section at all. Both were found by re-reading and are fixed here.
+>
+> | Stage | What | Here |
+> |---|---|---|
+> | 0 | Measure the trained backend | §3 |
+> | 0b | Confidence, drop, refuse | §3a |
+> | 1 | Documents go in | §4 |
+> | 2 | Documents come back out | §5 |
+> | 3 | Citation, refusal, fabrication check | §6 |
+> | 4 | The Librarian picks the scope | §7 |
+> | 5 | Document nodes, and the density count | §8 |
+> | 6 | Maintenance | §9 |
+> | 7 | The re-ranker | §10 |
+> | 8 | Trust and conflict | §11 |
+> | 9 | Research | §12 |
 
 ---
 
@@ -326,7 +339,50 @@ and no keys; and every one of those is a test.
 
 ---
 
-## 7. Stage 4 — maintenance, so it stays true
+## 7. Stage 4 — the Librarian picks the scope
+
+**Closes:** R-38. **Needs:** documents in more than one scope. **Design:**
+[`00-structure.md` §3.4](00-structure.md).
+
+Short, and it is short because **the danger is in one sentence rather than in the work.**
+
+> The Librarian decides **which one**. If it needs two, it makes **two separate queries** and says which
+> answer came from where. It never merges them, and `CrossScopeRefused` stays exactly as it is.
+
+*"An agent that decides which scopes to search"* reads as *"an agent that searches several"*, and
+implemented that way it is a `UNION` — one client's knowledge in the same result set as another's, which
+[D-33](../../../DECISIONS.md) calls a **contractual** problem rather than a technical one.
+
+**Done when:** a question that legitimately needs company **and** project knowledge produces **two
+labelled answers**, and an attempt to express it as one query still raises.
+
+---
+
+## 8. Stage 5 — document nodes, and the count that decides whether to build the rest
+
+**Closes:** R-39, R-40 — **or closes them as withdrawn.** **Needs:** Stage 2. **Design:**
+[`00-structure.md` §3.2](00-structure.md).
+
+**This stage begins with a count, not with code.**
+
+[`34 §2.13`](../../../34-patterns-adapted.md) measured a third retrieval stream at six settings and
+**all six lost**, because Heron's graph is dense — median 50 neighbours per fragment, worst 230. A
+document graph is a different graph, so the finding does not transfer automatically. **The test that
+decides it does.**
+
+| | Step |
+|---|---|
+| 1 | Build document nodes and their edges — **derived on demand**, like every edge but one ([D-40](../../../DECISIONS.md)) |
+| 2 | **Count the neighbours.** Median, worst, and how many have none |
+| 3 | **If it is dense, stop and record that it was stopped.** A rejection with a number is a result |
+| 4 | Only if it is sparse: add the route, with **no weight until measured** |
+
+**Done when:** either the count is recorded and the route was not built, **or** the route exists and a
+recorded measurement earned it a weight. **Both outcomes close the requirement.**
+
+---
+
+## 9. Stage 6 — maintenance, so it stays true
 
 **Closes:** R-27, R-28, R-29. **Needs:** Stage 2.
 
@@ -338,7 +394,32 @@ and no keys; and every one of those is a test.
 
 ---
 
-## 8. Stage 5 — trust and conflict
+## 10. Stage 7 — the re-ranker
+
+**Closes:** R-41, R-42, and finishes R-16. **Needs:** Stage 2, **and Stage 0b.** **Design:**
+[`00-structure.md` §3.5](00-structure.md).
+
+**0b is a hard prerequisite, not an ordering preference.** A re-ranker's whole job is to settle contested
+shortlists. If nobody recorded what *contested* looked like beforehand, there is no way to show it
+helped — only a feeling that results seem better.
+
+| | Step | Watch for |
+|---|---|---|
+| 1 | Record the **before**: the tracked questions, the spread, the ties | this is Stage 0b's output. Do not re-derive it |
+| 2 | Add the re-ranker over the **top ~20 only** | never the whole library — that is why the spec says twenty |
+| 3 | **Absent means slower to be right, never broken** (R-41) | the same fallback contract `heron_embed.py` already honours, and it must be tested with the package uninstalled |
+| 4 | Record the **after**, same questions, same corpus size | [`retrieval-history.md`](../../../../brain/retrieval-history.md), with the model named |
+
+**Size is a decision, not a detail.** A re-ranker is **500 MB to 2 GB** — by far the largest thing in
+this plan after a document parser, and R-77 and R-79 say a person is told that **before** the download
+starts.
+
+**Done when:** a before-and-after measurement exists at the same corpus size; a run with the package
+uninstalled still answers and **says it is not using it**; and the size was announced.
+
+---
+
+## 11. Stage 8 — trust and conflict
 
 **Closes:** R-23, R-24, R-25, and finishes R-16. **Needs:** Stage 3.
 
@@ -359,7 +440,7 @@ consultancy that is the difference between a tool and a liability.
 
 ---
 
-## 9. Stage 6 — research
+## 12. Stage 9 — research
 
 **Closes:** R-26. **Needs:** Stage 3. **Last, and it is not optional to put it last.**
 
@@ -370,26 +451,30 @@ the system can produce.** Build the citation first, then let it reach outside.
 
 ---
 
-## 10. Why this order
+## 13. Why this order
 
 | Stage | Chosen because |
 |---|---|
 | 0 measure | Costs an hour, needs nothing, and fixes a rule the repository is currently breaking. Also gives the *before* number every later stage is judged against |
+| 0b act on it | Same measurement, three thresholds. Needs nothing, and **Stage 7 cannot be judged without it** |
 | 1 ingest | Nothing else is possible. Eight of the seventeen agents are waiting on a table that does not exist |
 | 2 retrieve | The round trip. The first stage a person can *see* |
 | 3 cite | The credibility stage. Everything after it can produce a claim, so it comes before them |
-| 4 maintain | Stops the index quietly diverging from the disk |
-| 5 trust | Needs real usage to be worth anything |
-| 6 research | Most dangerous without 3 |
+| 4 librarian | Nothing to choose between until documents exist in two scopes |
+| 5 graph count | **A count, not a build.** It may end in a recorded rejection, and that is a result |
+| 6 maintain | Stops the index quietly diverging from the disk |
+| 7 rerank | **Needs 0b.** Without a recorded *before*, nobody can show it helped |
+| 8 trust | Needs real usage to be worth anything |
+| 9 research | Most dangerous without 3 |
 
-**None of stages 0 to 5 needs Revit, and none needs the PC.** That is deliberate: this is work that can
+**None of stages 0 to 9 needs Revit, and none needs the PC.** That is deliberate: this is work that can
 run while a model is not open, which is most of the time. Compare the queue in
 [`docs/HANDOVER.md`](../../../HANDOVER.md), where the biggest item has been waiting for a machine
 since 2026-09-09.
 
 ---
 
-## 11. How to tell a stage is actually done
+## 14. How to tell a stage is actually done
 
 The repository has been bitten by *done* meaning *a note says so*. For every stage:
 

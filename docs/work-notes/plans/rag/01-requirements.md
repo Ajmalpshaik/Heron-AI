@@ -348,6 +348,7 @@ unreviewable one.
 | A UI for the knowledge library | Nothing to show until R-06 lands |
 | Re-opening D-23, D-24 or D-26 | §2 |
 | Personal and project **memory** ([docs/10](../../../10-memory-and-knowledge.md)) | Same store, different subject. It follows the document work; it does not share this note |
+| **`HERON-RAG-EVO-016`, the Knowledge Evolution Agent** — restructuring the knowledge organisation when it stops fitting | **Found missing by re-reading on 2026-09-10:** it is the one RAG agent with no requirement anywhere in §6, and it was omitted silently rather than deliberately. Naming it here is the fix. It is **T3**, it restructures an organisation that does not exist yet, and it cannot sensibly be specified before something has been organised badly. **Revisit once real documents have been in a real scope long enough to stop fitting** |
 | Weakening any fragment's declared words to improve a number | It makes a real fragment unfindable to buy a metric. [`retrieval-history.md`](../../../../brain/retrieval-history.md) has refused this three times, and the refusal is the precedent |
 | Anything needing Revit | Nothing on this page does. That is the point of doing it now |
 
