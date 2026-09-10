@@ -109,6 +109,7 @@ Each of these is a sentence that was true when written and is false now.
 | **W-3** | [`tests/test_embed.py`](../../../../tests/test_embed.py), closing text | *"it could not be tested here, because this container's network refuses huggingface.co. A7 in NEEDS-CHECKING.md is that run"* | the suite **just ran on the model backend** and printed `Backend in use: model` eight lines above this sentence |
 | **W-4** | [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) | eleven rows, every one `lexical`, last at 59 fragments | 360 fragments, `model`. **The file written to prevent a stale retrieval number is carrying one** |
 | **W-5** | [`brain/README.md`](../../../../brain/README.md), the dependency table | `pyyaml` is the whole list | **`model2vec` is used too** — it is what makes `Backend: model` work. Somebody following the instructions exactly installs `pyyaml`, gets the weaker backend, and is told nothing |
+| **W-7** | This plan itself, about ten times | `QCS 2014 §21.3.2 Insulation`, `Section 21 Mechanical` | **Invented as an illustration and never verified.** Whether QCS Section 21 is the mechanical section is not known here. **A plan about not fabricating clause numbers, fabricating a clause number** — left visible, flagged in [`00-structure.md` §3.3](00-structure.md), and replaced when Q-A names the real section |
 | **W-6** | The repository has **no `requirements.txt`, no `pyproject.toml`, no `setup.py`** | — | [`tools/setup.ps1`](../../../../tools/setup.ps1) builds and deploys the **add-in** and installs no Python package at all. [`docs/07`](../../../07-installation-and-update.md) specifies an installer that *"checks required dependencies"* and a Dependency Agent that *"check[s] and install[s]"* them — **designed, not built.** So the Python half of Heron is installed by hand, from a list that is wrong (W-5) |
 
 **W-5 and W-6 were found on 2026-09-10 by the owner asking a question** — *does a new person
@@ -130,7 +131,35 @@ up Stage 0 fixes them in the same breath as the measurement, which is where they
 None of these blocks Stage 0. **All four block Stage 1**, and guessing any of them means rewriting the
 ingester.
 
-### Q-A — which documents go in first?
+### Q-A — which documents go in first? ✅ **ANSWERED 2026-09-11**
+
+> **Everything is kept — QCS, NFPA, ASHRAE, Ashghal, company, project. Only the ORDER was in
+> question, and the owner set it by an argument this note did not have.**
+>
+> **His argument:** *"NFPA and QCS, that kind of world data the AI can see easily. Company and
+> project data it cannot."* **He is right, and it reorders the library:**
+>
+> | | AI already knows it | Worth indexing |
+> |---|---|---|
+> | Project documents | nothing | **highest** |
+> | Company standards | nothing | **highest** |
+> | QCS / Ashghal | badly — regional and thin | medium |
+> | NFPA / ASHRAE | reasonably, in general terms | **lowest** |
+>
+> **The rule that falls out of it:** *index what the model cannot know.* **With one exception that
+> justifies indexing a standard the model half-knows: the model knows the TOPIC and invents the
+> CLAUSE NUMBER.** This session produced its own proof — `§21.3.2` was fabricated here and looked
+> entirely real ([W-7](#4-defects-found-while-planning--recorded-not-fixed)). Editions compound it:
+> QCS 2014 against 2010, NFPA 13 2022 against 2019, blended in memory while a contract names one.
+>
+> **And the owner's second argument settles keeping them at all:** *"if we keep it, it will improve
+> the speed."* Correct, and it is not only speed — a local clause is **milliseconds**, it is the
+> **right edition**, and it sends **one clause to the cloud instead of a document**.
+>
+> **First document: whichever numbered document he can hand over first** — a company standard if one
+> is numbered, otherwise one QCS section. **Numbered is the only hard condition**, because clause
+> numbers are what make citations testable on day one.
+
 
 The first document decides the chunker's first test
 ([`02-implementation.md` §4.3](02-implementation.md)). Candidates, in the order they would most likely
@@ -140,7 +169,15 @@ standard**, or a **live project's documents**.
 *Not neutral:* a standard with numbered clauses gives `locator` an obvious meaning and makes the
 citation requirement testable on day one. A project folder of mixed PDFs does not.
 
-### Q-B — does the store keep the file, or point at it?
+### Q-B — does the store keep the file, or point at it? ✅ **ANSWERED 2026-09-11 — point at it**
+
+> **The file is never copied.** The chunks hold the text, so a citation still reads correctly after
+> the file moves; only the convenience of opening it breaks, and Heron says *the source file has
+> moved* rather than failing. Copying would duplicate a client's content into `%APPDATA%` where
+> nobody chose to put it — and, with a licensed standard, would make every copy of the store a
+> redistribution. In the schema at
+> [`02-implementation.md` §4.1](02-implementation.md).
+
 
 If the store holds only chunks and a path, **moving or renaming the source breaks every citation**. If
 it copies the file in, the store grows and a project's content is duplicated somewhere the user did not
@@ -481,3 +518,56 @@ no amount of re-reading the plan against itself would have found it. **A plan ca
 against something outside it.**
 
 **Still no code. 84 requirements.**
+
+### 2026-09-11 — the four decisions answered, and a fifth question that reordered the library
+
+**All four blocking decisions taken.** Q-A, Q-B, S-2 and S-4 — the detail is in
+[§5](#5-decisions-waiting-on-the-owner) and [`00-structure.md` §8](00-structure.md).
+
+| | Answer |
+|---|---|
+| **Q-A** | Whichever **numbered** document he can hand over first. **Numbered is the only hard condition** |
+| **Q-B** | **Point at the file. Never copy it.** In the schema |
+| **S-2** | **Any depth, as `parent_id`.** One column instead of a guess |
+| **S-4** | **Write the parser, and let one real PDF decide.** Docling only if it cannot cope |
+
+**S-4 is the one worth reading twice.** It is not *"write it because dependencies are bad"* — it is
+*write it, run it on one real section, and read the output.* 500 MB against a `brain/` that needs 0.7 MB
+is not a change to make on a guess, and this repository already has the method: `34 §2.13` settled the
+graph route with six measurements rather than an argument.
+
+### And then he asked the question that reordered the library
+
+> *"NFPA and QCS, that kind of world data the AI can see easily. Company and project data it cannot. So
+> why do we need to keep NFPA-like files?"*
+
+**He is right about priority and wrong about exclusion, and both halves matter.**
+
+Right: **the value of indexing something is inversely proportional to how well the model already knows
+it.** Project and company documents are invisible to it; NFPA and ASHRAE are half-known, licensed and
+huge. **R-88.**
+
+Wrong about exclusion, for one reason: **the model knows the topic and invents the clause number.** This
+session produced its own proof — `QCS 2014 §21.3.2` was fabricated in this very plan, looked completely
+real, and survived ten repetitions until it was checked ([W-7](#4-defects-found-while-planning--recorded-not-fixed)).
+Editions compound it: QCS 2014 against 2010, NFPA 13 2022 against 2019, blended in memory while a
+contract names exactly one.
+
+**Then he settled it himself:** *"if we keep it, it will improve the speed."* Correct, and it is more
+than speed — a local clause is **milliseconds**, it is the **right edition**, and it sends **one clause
+to the cloud instead of a whole document**.
+
+**So nothing is excluded. Only the order changed**, and the order is now a requirement rather than a
+preference.
+
+### The licensing thread this opened — R-85 to R-87
+
+Raised by him in the same breath. **A licensed standard is not the same kind of object as a company
+note**, and the difference only appears when a store is copied. On 2026-09-10 this session suggested
+*"copy `company.db` to the shared drive"* as the way to share company knowledge — **which is also
+exactly how a bought standard reaches twenty people who did not buy it.**
+
+[`34 §2.12`](../../../34-patterns-adapted.md) is an open item called *"an inventory of what imported
+knowledge permits."* **This is that item arriving**, from the owner rather than from the research.
+
+**88 requirements. Still no code.**

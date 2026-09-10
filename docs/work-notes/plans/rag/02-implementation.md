@@ -167,22 +167,49 @@ track exists for.**
 Two tables, in the scope's own file, beside the fragment tables — **not** in a second database. One
 file per scope is what makes GR 5 physical, and a separate document store would break that on day one.
 
+**Settled by the owner on 2026-09-11: Q-B and S-2.** The store **points at the file and never copies
+it**, and hierarchy is **any depth, as a parent link**. Both are in the schema below.
+
 ```text
 documents        id            content hash of the file, so re-ingest is free
-                 scope         the store it went into (redundant, and worth it — see below)
-                 path          where it came from
+                 scope         the store it went into (redundant, and worth it - see below)
+                 path          where it WAS. A pointer, never a copy          <- Q-B
                  title         what a citation shows a human
                  kind          pdf | docx | md | txt
+                 status        DRAFT | REVIEWED | RETIRED - GR 10 lifecycle    <- R-83
                  added_utc     when
                  added_by      who
                  source_trust  who says this is authoritative
 
 chunks           id            document id + ordinal
                  document_id   FK
+                 parent_id     the chunk this sits inside. NULL at the top    <- S-2
+                 depth         0, 1, 2, ... derived from parent_id
                  ordinal       position in the document
-                 locator       page number, clause number, heading — what a citation POINTS AT
+                 locator       clause number, heading, page - what a citation POINTS AT
+                 heading_path  the ancestors' locators, joined - free context  <- R-66
                  text          the chunk itself
+                 split_by      structure | length - length is the risky kind
+                 untrusted     always 1 for an ingested document               <- R-80
 ```
+
+**`parent_id` rather than three fixed levels** is S-2, and it is one column instead of a guess. QCS,
+ISO 19650, an Ashghal requirement and a company standard all nest differently; fix the depth at three
+and the first document with four breaks the schema.
+
+**`path` is a pointer and the file is never copied** — Q-B. The chunks already hold the text needed to
+answer, so **a citation still reads correctly after the file moves**; what breaks is only the
+convenience of opening it, and Heron says *the source file has moved* rather than failing. Copying it
+would duplicate a client's content into `%APPDATA%` where nobody chose to put it. **This is the same
+reasoning [`heron_scope.py`](../../../../brain/heron_scope.py) already uses** when it refuses to name a
+store after a file, *"because renaming the file loses the knowledge"*.
+
+**`heading_path` is R-66 stored rather than recomputed** — it is the free form of contextual
+retrieval, and it is derived from `parent_id`, so it can never disagree with the hierarchy.
+
+**`untrusted` is R-80 made structural.** Every row from an ingested document carries it. A column that
+is always 1 looks redundant until the day something is ingested from somewhere else, and then it is
+the only thing that distinguishes them.
 
 `scope` is stored on the row even though the file already is the scope. It costs one column and it
 means a store that is ever copied, merged or recovered by hand carries its own answer to *whose

@@ -361,6 +361,25 @@ that wrote it.
 
 ---
 
+### M — Licensing, raised by the owner 2026-09-11
+
+**A licensed standard is not the same kind of object as a company note**, and the difference only shows
+up when a store is copied.
+
+| | Requirement | Source | State | Note |
+|---|---|---|---|---|
+| **R-85** | Every document records **what it is licensed for** — owned outright, licensed per seat, public, or unknown | owner, [34 §2.12](../../../34-patterns-adapted.md) | **NONE** | `34 §2.12` is an open item called *"an inventory of what imported knowledge permits."* **This is that item arriving** |
+| **R-86** | A scope containing a **per-seat licensed** document **warns before the store is copied or shared** | R-85, [GR 12](../../../14-golden-rules.md) | **NONE** | *"copy `company.db` to the shared drive"* was suggested in conversation on 2026-09-10 as the way to share company knowledge. **That is also exactly how a bought standard reaches twenty people who did not buy it** |
+| **R-87** | **No knowledge store is ever committed to the repository or shipped with Heron** | [17](../../../17-open-source-and-distribution.md), R-85 | **HELD BY ACCIDENT** | the stores live in `%APPDATA%`, outside the repository, so this cannot happen today. **It is held by the file layout rather than by a rule**, and Heron goes public — so it is worth being a rule |
+
+**And an ordering rule, from the owner's own argument:**
+
+| | Requirement | Source | State | Note |
+|---|---|---|---|---|
+| **R-88** | Indexing effort goes **where the model's own knowledge is weakest** — project and company documents first, regional standards next, widely-known international standards last | owner, 2026-09-11 | **NONE** | **with one exception that justifies indexing a standard the model half-knows: the model knows the topic and invents the clause number.** [W-7](03-working-note.md) is this session's own proof |
+
+---
+
 ## 7. Deliberately not in scope
 
 Naming these stops the track growing sideways, which is how a reviewable batch becomes an
