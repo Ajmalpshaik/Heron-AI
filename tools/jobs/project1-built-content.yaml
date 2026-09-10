@@ -1,0 +1,163 @@
+# Three READ fragments against content built by hand in Project1 - 2026-09-10.
+#
+# WHY THIS MODEL AND NOT SNOWDON. Snowdon is a finished sample: every duct end
+# in it is connected, which blocked THREE fragments at once (section 3, and
+# `find-dead-ends` was set aside there three times). Project1 was drawn by hand
+# for this purpose and is deliberately unfinished, so it holds the thing a
+# finished model cannot: a duct run with a loose end.
+#
+# THE VIEW IS NOT CALLED "Level 1", AND THAT COST A WHOLE SESSION. Project1 is
+# an MEP template. Its LEVELS are "Level 1" and "Level 2"; its PLAN VIEWS are
+# "1 - Mech", "2 - Mech", "1 - Plumbing" and "2 - Plumbing". Every earlier probe
+# asked for "Level 1" and "FloorPlan: Level 1", got nothing, and concluded the
+# model had no plan view. It has four. Confirmed 2026-09-10 with `find-views`
+# viewType=FloorPlan: 4 found, 16 templates and 3 non-drawings skipped.
+#
+# WHAT THIS MODEL HOLDS, probed 2026-09-10 before any value below was chosen:
+#
+#                        1 - Mech   1 - Plumbing
+#   Rooms                       1              0
+#   Doors                       1              1
+#   Walls                       4              4
+#   Ducts                       5              0
+#   Duct Fittings               2              0
+#   Air Terminals               0              0
+#   Mechanical Equipment        0              0
+#   Spaces                      0              0
+#
+# AND THE ONE FACT THE WHOLE FILE RESTS ON. `select-by-connection-status` with
+# wantOpenEnds=true, run 2026-09-10: "4 of 5 scanned element(s) have at least
+# one OPEN end". That is the exact thing section 3 said was missing - the row
+# for `find-dead-ends` reads "Needs a duct run with a loose end".
+#
+# NOTHING HERE IS A CLEARED SELECTION. Clearing leaves the need unbound and the
+# executor refuses, which proves nothing (section 1d). Two of the three take
+# their negative from a VALUE, which is the stronger form - it tests the input
+# rather than the arrangement (tools/jobs/value-driven-negatives.yaml).
+#
+#     python tools/batch-prove.py tools/jobs/project1-built-content.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-built-content.yaml
+
+model: "Project1 work_ajmal.al (3,471 elements), Revit 2024 - view '1 - Mech'"
+
+defaults:
+  write: false                     # all three are risk READ
+  # PIN THE MODEL by its whole name. "Project1" alone matches nothing.
+  in: "Project1 work_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  # THE PAIR THAT CLEARS A RECORDED BLOCK - section 3, "Needs a duct run with a
+  # loose end". Project1 has one; Snowdon never did.
+  #
+  # A VALUE-DRIVEN NEGATIVE WAS TRIED FIRST AND IT FAILED, AND THE REASON IS
+  # WORTH MORE THAN THE ATTEMPT. Holding the selection and moving `stubLength`
+  # gives a pair that LOOKS ideal:
+  #
+  #     stubLength 0.1     deadEnds 4   stubs 0
+  #     stubLength 99999   deadEnds 0   stubs 4
+  #
+  # The four move from one list to the other and the total is conserved. It was
+  # judged NEG NOT EMPTY on 2026-09-10, correctly: `deadEnds` and `stubs` are
+  # BOTH `role: result`, so relocating the findings between them empties
+  # neither. A value-driven negative only works where the value can turn the
+  # whole answer OFF - not where it re-labels it. `stubLength` re-labels.
+  #
+  # SO THE NEGATIVE IS A SECOND SELECTION, AND IT IS NOT A WRONG CATEGORY.
+  # Measured 2026-09-10 with `select-by-connection-status`, wantOpenEnds=true:
+  #
+  #     Ducts           4 of 5 have at least one OPEN end
+  #     Duct Fittings   0 of 2 have an open end, withoutConnectors 0
+  #
+  # `withoutConnectors 0` is the part that matters. The two fittings HAVE
+  # connectors and are fully capable of showing an open end - they simply have
+  # none, because they sit mid-run with a duct on either side. So the negative
+  # is the same domain, the same view and a populated selection that could have
+  # answered and honestly did not. Confirmed directly: deadEnds 0, stubs 0,
+  # openEndsFound 0. That is the fragment's own answer, not a refusal.
+  #
+  # NOTHING CAN BE `served` HERE, WHICH IS WHY THE POSITIVE IS CLEAN. An open
+  # end is excused when it reaches a terminal, a fixture or equipment. This view
+  # has 0 Air Terminals and 0 Mechanical Equipment, so `served` is 0 and
+  # `capped` is 0 - the four open ends have nothing to excuse them.
+  #
+  # UNITS: `stubLength` is a bare double, so INTERNAL FEET, not millimetres.
+  # 0.1 ft is about 30 mm - shorter than any duct here, so nothing counts as
+  # short and all four open ends land in `deadEnds` rather than `stubs`.
+  - fragment: find-dead-ends
+    set:
+      categoryName: Ducts
+      inViewOnly:   "1 - Mech"
+      stubLength:   0.1
+    negative-set:
+      categoryName: "Duct Fittings"
+      inViewOnly:   "1 - Mech"
+      stubLength:   0.1
+    expect: deadEnds
+
+  # THE DIFFERENCE HERE IS REAL MODELLING STATE, NOT A WRONG CATEGORY.
+  #
+  # A magenta per-element override - line RGB(255,0,255) - was applied by hand
+  # in "1 - Mech" before this file was written. Measured there 2026-09-10:
+  #
+  #     Duct Fittings   2 of 2 carry an override
+  #     Ducts           3 of 5 carry an override
+  #     Walls           0 of 4
+  #     Doors           0 of 1
+  #     Rooms           0 of 1
+  #
+  # So both legs hand it a REAL, POPULATED selection of elements that are all
+  # equally capable of carrying an override, and the answer differs because the
+  # model differs. That is the distinction value-driven-negatives.yaml warns
+  # about: a negative that merely hands over a different KIND of thing tests the
+  # arrangement, not the fragment.
+  #
+  # 4 walls, not 0, is the point. An empty selection would leave `elements`
+  # unbound and come back setup_failed - a MISSING ARRANGEMENT, not a negative.
+  - fragment: read-graphic-overrides
+    set:
+      categoryName: "Duct Fittings"
+      inViewOnly:   "1 - Mech"
+      view:         "1 - Mech"
+    negative-set:
+      categoryName: Walls
+      inViewOnly:   "1 - Mech"
+      view:         "1 - Mech"
+    expect: withOverride
+
+  # NO `expect:` ON THIS ONE, DELIBERATELY - THE JUDGE DECIDES, NOT ME.
+  #
+  # The pair is honest and demonstrates the purpose's own claim: "FROM AND TO
+  # ARE PHASE-DEPENDENT, AND THE BARE PROPERTY ANSWERS FOR THE LAST PHASE ONLY."
+  # Same door, same selection, same probe distance, only the phase changes:
+  #
+  #     phase "New Construction"   Door 926314: (outside) -> Room 1
+  #     phase "Existing"           Door 926314: (outside) -> (outside)
+  #                                noRoomEitherSide 1
+  #
+  # Room 1 does not exist in the Existing phase, so the door has no room on
+  # either side there. That is a real answer about the model.
+  #
+  # WHY IT MAY STILL NOT PASS, STATED IN ADVANCE SO THE RESULT IS NOT A SURPRISE.
+  # The only `role: result` field is `disagreements`, and it is 0 in both legs.
+  # A disagreement needs Revit's FromRoom/ToRoom property to contradict where
+  # the rooms physically ARE - a genuine modelling fault, which this clean
+  # little model does not have and which cannot honestly be manufactured.
+  # `doorsChecked`, `noRoomEitherSide` and `phaseUsed` are all `role: accounting`
+  # and the judge skips them by design (heron_validate, D-52).
+  #
+  # It is run anyway because a RECORDED verdict from the repository's own judge
+  # is worth more than my opinion of what the judge would say.
+  - fragment: report-door-room-links
+    set:
+      categoryName:     Doors
+      inViewOnly:       "1 - Mech"
+      phaseName:        "New Construction"
+      probeDistanceMm:  300
+    negative-set:
+      categoryName:     Doors
+      inViewOnly:       "1 - Mech"
+      phaseName:        "Existing"
+      probeDistanceMm:  300
