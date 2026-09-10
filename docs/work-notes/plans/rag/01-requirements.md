@@ -337,6 +337,30 @@ and leave this note.
 
 ---
 
+### L — Checking the plan against the specification, 2026-09-10
+
+**Owner's instruction:** *"check it against our project specification, our roadmap and our docs — is
+what we planned the same, or correct."* Done against the
+[Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md), the
+[Roadmap](../../../ROADMAP.md) and [`docs/05`](../../../05-heron-brain.md).
+
+**It found one thing that matters more than everything else added today.**
+
+| | Requirement | Source | State | Note |
+|---|---|---|---|---|
+| **R-80** | **Every ingested document is untrusted text.** Nothing inside one may change what Heron is permitted to do | [GR 19](../../../14-golden-rules.md), [00 §3.10](00-structure.md) | **NONE** | **the plan reached 79 requirements without mentioning Golden Rule 19.** Today every word in the store was written by this project; after Stage 1 it is not |
+| **R-81** | The path **from retrieval into a packet is guarded** — chunks are scanned **before** assembly | [34 §2.11](../../../34-patterns-adapted.md), [00 §3.10](00-structure.md) | **NONE** | `34` calls this *"the most valuable single item the whole programme produced, because it lands on work not yet done."* This plan is that work |
+| **R-82** | An oversized or suspicious chunk is **flagged, never truncated** | [34 §2.11](../../../34-patterns-adapted.md) | **NONE** | truncation lets a payload be **padded past the scanner's window**, which turns the guard into a formality |
+| **R-83** | A document has **identity, version and lifecycle** — not only a content hash | [GR 10](../../../14-golden-rules.md) | **PART** | R-06 and R-09 give identity and provenance. **Nothing gives a document a status.** A fragment is `DRAFT` or `PROVEN`; a document is nothing, and Rule 10 says every important object needs all three |
+| **R-84** | **Ingesting, re-indexing and deleting a document each leave an audit entry** | [GR 14](../../../14-golden-rules.md), [D-62](../../../DECISIONS.md) | **NONE** | [`heron_audit.py`](../../../../brain/heron_audit.py) already exists so that a request answered entirely in the brain still leaves a trace. **Ingestion is an important autonomous operation and was leaving none** |
+
+**Three rules the plan was already keeping**, checked rather than assumed: **GR 5** scope separation
+(R-01 to R-05, R-38), **GR 11** the index is derived (R-12), and **GR 7** — *one agent creates, another
+validates* — which is exactly the shape of §H, where the thing that checks an answer is not the thing
+that wrote it.
+
+---
+
 ## 7. Deliberately not in scope
 
 Naming these stops the track growing sideways, which is how a reviewable batch becomes an

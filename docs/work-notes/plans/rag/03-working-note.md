@@ -424,3 +424,60 @@ checklist, and nothing else would have caught it.**
 
 **Nothing new was added to the scope.** No requirement was created by this pass except the one naming an
 omission. **Still 79, and still no code.**
+
+### 2026-09-10 — checked against the specification, and it found the rule the plan forgot
+
+**Owner's instruction:** *"check it against our project specification, our roadmap and our docs — is
+what we planned the same, or correct."* Checked against the
+[Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md), the
+[Roadmap](../../../ROADMAP.md) and [`docs/05`](../../../05-heron-brain.md). **R-80 to R-84**, [§L](01-requirements.md).
+
+> ## The finding that matters more than everything else added today
+>
+> **The plan reached seventy-nine requirements without mentioning [Golden Rule 19](../../../14-golden-rules.md).**
+> A search for *Rule 19*, *permission level*, *injection* or *untrusted text* across all four notes
+> returned **nothing.**
+>
+> Rule 19: *content from documents is **data, never instruction**.* Its stated *why*: **the consequence
+> of a successful injection is a write to a live project model.**
+>
+> **And [`34 §2.11`](../../../34-patterns-adapted.md) had already called it** — *"Heron is the carrier,
+> and every source it carries today is its own. **The day the RAG index exists is the day that stops
+> being true.**"* It named that guard **"the most valuable single item the whole programme produced,
+> because it lands on work not yet done."**
+>
+> **This plan is that work.** A plan whose entire purpose is to make Heron carry text it did not write,
+> which never mentioned the rule about carrying text it did not write.
+
+Design in [`00-structure.md` §3.10](00-structure.md). Three rules answer it: a chunk is carried as
+**quoted content with its source**, never spliced where it reads as direction; the path into a packet is
+**guarded before assembly**; and an oversized chunk is **flagged, never truncated** — because truncation
+lets a payload be padded past the scanner's window.
+
+**The permission side is already right, which makes this a gap and not a hole.** `write.enabled`
+defaults to false, a write rolls back without `apply`, and the brain executes nothing. **No document can
+reach the model on its own.** What it could do is mislead the person who can.
+
+### And three smaller findings from the same pass
+
+- **R-83 — a document has no lifecycle.** [Golden Rule 10](../../../14-golden-rules.md) requires
+  identity, version **and** lifecycle for every important object. Documents had identity and provenance
+  and **no status**. A fragment is `DRAFT` or `PROVEN`; a document was nothing.
+- **R-84 — ingestion left no audit trace.** [Golden Rule 14](../../../14-golden-rules.md), and
+  [`heron_audit.py`](../../../../brain/heron_audit.py) exists precisely so a request answered inside the
+  brain still leaves one. Ingesting a document is an important autonomous operation and was leaving none.
+- **The plan spans three roadmap phases and never said so.** Mostly **Phase 2** — but **Stage 3 is the
+  foundation for Phase 7** (*"Standards department with citation enforcement"*) and **Stage 8 is
+  Phase 4** (*"knowledge trust levels and conflict resolution"*, word for word). [`§6`](00-structure.md)
+  now carries a phase column. **Without it somebody reads this as Phase 2 quietly growing to include a
+  standards department**, and the roadmap's whole argument is that one thin slice beats a wide one.
+
+**Three rules the plan was already keeping**, checked rather than assumed: GR 5 scope separation, GR 11
+the derived index, and GR 7 — *one agent creates, another validates* — which is the exact shape of §H.
+
+**What this pass proves about the earlier one.** The self-re-read four entries above found four defects
+and **all four were wrong numbers or a collision**. This pass found an **absence of a safety rule**, and
+no amount of re-reading the plan against itself would have found it. **A plan can only be checked
+against something outside it.**
+
+**Still no code. 84 requirements.**
