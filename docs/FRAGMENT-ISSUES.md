@@ -432,6 +432,68 @@ The level name and the view name are different things, and in every delivered te
 
 ---
 
+## 3b-iii. THE SNOWDON ROUND THAT WAS WRITTEN AND NEVER RUN — 2026-09-10
+
+`rerun-stale-passes.yaml` and `read-recoveries.yaml` were both written earlier the same night and
+neither was ever run — housekeeping interrupted, and all eight fragments involved were still `DRAFT`
+hours later. Running them cost one command each.
+
+**The four stale re-runs all passed.** Their earlier records were same-day and therefore stale by this
+repository's own rule ([`heron_validate.implementation_changed_after`](../brain/heron_validate.py)), so
+signing them on that evidence would have been signing a record the rule already distrusted:
+
+| Fragment | Positive |
+|---|---|
+| `read-space-loads` | `noLoad 5` |
+| `check-ceiling-coordination` | `noCeilingAbove 307` |
+| `check-fixture-connectivity` | `noConnectors 10` |
+| `audit-mep-openings` | `combined 9` |
+
+> The staleness rule did its job. Four fragments that *looked* signable at 19:00 needed a fresh run,
+> got one, and passed on evidence that is now current.
+
+### `check-flow-direction` — the negative is the same category, elsewhere in the same building
+
+The only DRAFT read fragment this model could still feed, and the pair is the strongest shape available
+to a fragment with no value able to switch its own answer off:
+
+| View | Ducts | `jointsChecked` | `bothOut` | `bothIn` |
+|---|---|---|---|---|
+| `FloorPlan: L3` | 307 | 165 | **7** | 0 |
+| `FloorPlan: M1` | 22 | 19 | 0 | 0 |
+
+`jointsChecked` is `role: accounting` so it cannot make the negative read non-empty — but **19 is the
+evidence the fragment looked** in that leg rather than being handed something it could not read. That
+is the whole difference between an honest empty answer and a missing arrangement (§1d), and it is why
+Duct Tags were **not** used: a tag has no connectors, so its empty answer would have been about the
+arrangement, not the model.
+
+The positive is a real finding — seven joints with both connectors flowing OUT, reported as pairs
+(`1431100 | 1510229`) so each can be selected in Revit and looked at.
+
+**Project1 could not have proved it.** Five hand-drawn ducts, `jointsChecked 0`,
+`bidirectionalSkipped 4`: drawn but carrying no system, so there is no flow to check. The two models
+block opposite things, which is the argument for keeping both.
+
+### What Snowdon still cannot feed, and it is a different list from Project1's
+
+**Snowdon is an HVAC model and its architecture is in a LINK.** Probed 2026-09-10 in both
+`FloorPlan: M1` and `FloorPlan: L3` — **Doors 0, Rooms 0, Lines 0, Detail Items 0.** The executor skips
+linked documents by design, the same fact that blocked `check-ceiling-coordination` in §3b.
+
+| Fragment | Blocked on Project1 because | Blocked on Snowdon because |
+|---|---|---|
+| `report-door-room-links` | one door, and it is not mis-facing — the only `role: result` field needs a genuine fault | no host doors at all; they are in the architectural link |
+| `find-overlapping-lines` | nothing is drawn on top of anything (`overlapping 0` at 99999 mm) | no model or detail lines in the host |
+
+`select-subcomponents` came back **POSITIVE EMPTY a second time**, exactly as
+[`read-recoveries.yaml`](../tools/jobs/read-recoveries.yaml) predicted in its own comment. Its negative
+is still the best in the library — ducts are SYSTEM families and structurally cannot nest anything in
+any model — but the positive needs one piece of equipment with a nested shared family, and neither
+model has one. **Two runs have now agreed. Do not run it a third time on either model.**
+
+---
+
 ## 3c. THE NEGATIVE CASE HAS NOT BEEN FOUND YET — 2026-09-08, third round
 
 These have a **working positive**. What is missing is an arrangement in which the answer MUST be empty,
