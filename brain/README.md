@@ -32,7 +32,7 @@ caller passes `apply` ([D-55](../docs/DECISIONS.md)).
 | | |
 |---|---|
 | [`heron_fragment.py`](heron_fragment.py) | **Step 7.** What a fragment IS on disk, and the validator that will not let it lie. Identity is not the filename; the contract is data, not prose; a proof without a negative case is refused |
-| [`fragments/`](fragments/) | The library. **360 as of 2026-09-08 — 308 `DRAFT`, 52 `PROVEN`.** Do not trust those three numbers over the tools: `python brain/heron_fragment.py` counts and validates them from disk, and it is right where this line has gone stale. This row once said *thirty-two, every one DRAFT*, and stayed saying it for a week after neither half was true. Every one **compiles**, on all eight releases, via [`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py). Its first run found one that never could have: `FRG-QA-001` had a value called `checked`, a reserved C# keyword |
+| [`fragments/`](fragments/) | The library. **360 as of 2026-09-10 — 193 `DRAFT`, 167 `PROVEN`.** Do not trust those three numbers over the tools: `python brain/heron_fragment.py` counts and validates them from disk, and it is right where this line has gone stale. This row once said *thirty-two, every one DRAFT*, and stayed saying it for a week after neither half was true. Every one **compiles**, on all eight releases, via [`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py). Its first run found one that never could have: `FRG-QA-001` had a value called `checked`, a reserved C# keyword |
 | [`heron_search.py`](heron_search.py) | **Step 9.** Finding a fragment by exact words. Three routes and it says which answered: `identity` (one lookup, no search), `cache` (this wording was resolved before), `keywords` (FTS5, ranked). Only a **PROVEN** fragment may run off an exact match without asking |
 | [`heron_skill.py`](heron_skill.py) · [`skills/`](skills/) | **Step 14.** What the user can *ask for*, in their own words. A skill names **capabilities, never fragments** — so a fragment can be replaced without editing a skill, and a skill can be written **before** the fragment that will serve it. Ten of them, all `DRAFT` |
 | [`heron_graph.py`](heron_graph.py) | **Step 13.** *What breaks if this changes.* Every edge but one is **computed from the fragments on demand** (D-40) — the only stored edge is a skill's requirement, which no artifact underneath carries. Names the dangerous case out loud: a **sole provider**, because whatever asked for its capability never named it |
@@ -53,9 +53,10 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, mostly.** **52 fragments are `PROVEN`; the other 308 and all ten skills are `DRAFT`.** Phase 2's
+**Proof, mostly.** **167 fragments are `PROVEN`; the other 193 and all ten skills are `DRAFT`** — derive
+both with `python brain/heron_fragment.py` rather than reading them here. Phase 2's
 definition of done is *"ten real skills **work**"* — ten are written, and the word that needs a Revit is
-still the last one. The 52 are what one night with a real model bought; the arithmetic on the rest has
+still the last one. The first 52 are what one night with a real model bought; the arithmetic on the rest has
 not changed, only the size of it - and the ten fragments added on 2026-09-08, four for
 switching project and view and six for the review's N01 to N06, arrived `DRAFT` like
 everything else.
