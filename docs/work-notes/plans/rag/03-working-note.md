@@ -31,8 +31,8 @@ and deliberately left alone.
 | **The shape** | **DECIDED 2026-09-10 — all six.** [`00-structure.md`](00-structure.md). Becomes **a numbered decision** when the note is agreed; not written to [DECISIONS.md](../../../DECISIONS.md) yet |
 | Stage 0 — measure and record | **DONE for `lexical`, BLOCKED for `model`.** [`retrieval-history.md`](../../../../brain/retrieval-history.md) now carries 360-fragment rows, both checkers run at 360, and the two backends compared at the same corpus size for the first time. **No `model` run was taken** — this container refuses `huggingface.co`, and the row says so rather than borrowing one |
 | Stage 0b — say the confidence out loud | **DONE for the reporting half (R-34, R-35, R-61). NOT built: the acting half (R-56 to R-59).** `heron_retrieve.Contest`, `tests/test_contest.py`. The floor those need is **derived from a measurement or not set** (R-60), and the measurement says **not on this backend** — twelve questions, every column overlapping. **W-8** |
-| Stage 1 — a document can go in | **not started.** No `documents` table, no `chunks` table, no ingester. **Now also carries hierarchy** — the one thing that cannot be retrofitted cheaply |
-| Stages 2 to 8 | **not started**, blocked on Stage 1 |
+| Stage 1 — a document can go in | **DONE 2026-09-11.** `documents` and `chunks` tables, [`brain/heron_ingest.py`](../../../../brain/heron_ingest.py), hierarchy at arbitrary depth, the heading path, the rule-and-exception split, and `--boundaries` for a person to read. **PDF is the one format that needs an optional reader** — everything else is standard library |
+| Stages 2 to 8 | **not started.** Stage 2 is now unblocked |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
 
 ---
@@ -813,4 +813,95 @@ stops being one.**
 ([`02-implementation.md` §4](02-implementation.md)). **It is blocked by none of this**: no network, no
 model, no Revit. R-56 to R-59 wait for a machine that can fetch weights, and the *before* they will be
 read against is now recorded.
+
+### 2026-09-11 — Stage 1: the half of the store that did not exist
+
+**`documents` and `chunks`, and [`brain/heron_ingest.py`](../../../../brain/heron_ingest.py).**
+Every table beside these two was about Heron's own code library, so every requirement about
+citations, standards and provenance had nothing to act on. It has something now.
+
+**Closes R-05 to R-12, R-36, R-37, R-66 to R-70, R-82 and R-84.** `tests/test_ingest.py`, 63 checks.
+
+**Three are closed only in part, and say which part**: R-06 (PDF needs an optional reader), R-80
+(marked, and the guard that reads the mark is Stage 2), and **R-83** — a document now has identity and
+a lifecycle, but **two versions of one document are not linked**, so *"which edition is this clause
+from?"* is answerable and *"what did it say before?"* is not.
+
+**The two tests were written before the chunker, in the order the plan set.**
+
+- **R-68 first.** A rule and its exception never land in different chunks. Five qualifiers were named
+  in the plan — *except, unless, provided that, save that, however* — and four more were added while
+  writing it: *other than, save where, save as, but not*. **When no legal split point exists the chunk
+  stays oversized and is flagged.** Refusing to cut is a real outcome, not a failure.
+- **R-08 second.** Five token shapes survive whole. The test also asserts **the text really was cut
+  somewhere**, because otherwise it passes by splitting nothing — which is the shape of a test that
+  proves its own subject never ran.
+
+**What the design settled, and why each is not a guess.**
+
+| | |
+|---|---|
+| **Parent from the numbering** | `4.1.1`'s parent is `4.1` **because the document numbered it that way**, and only if that fails does it fall back to the heading stack. The document is better evidence than the position |
+| **Title from the document** | not from the filename. `heron_scope.py` already refuses to name a store after a file *"because renaming the file loses the knowledge"* — and a citation reading `qcs-sec-21-final-v3-USE-THIS` is not one a person can check against a printed standard |
+| **`.docx` needs nothing** | it is a zip of XML, and its `Heading 2` styles are exactly the structure R-66 wants |
+| **PDF is the one exception** | font encodings and compressed streams cannot be standard library. It is **optional and loud**, the contract `heron_embed.py` already honours: absent means a smaller Heron, never a broken one, and it names what would fix it |
+
+> **`MAX_CHARS = 2000` is the one number here that was chosen rather than derived, and it says so in
+> the file.** Nearly every chunk is decided by structure — a clause is a chunk because the document
+> says so. The limit exists so one unnumbered block does not become a chapter-sized chunk, and every
+> chunk it creates records `split_by = "length"` so the risky ones can be **listed rather than
+> guessed at**. It is one of the numbers to check when the first real document is read.
+
+**Four defects found by running the thing, not by reading it.** All four were in code written in
+this batch.
+
+1. **The command was broken while every test passed.** `main()` upper-cased the scope name against
+   `heron_scope`'s lowercase constants, so **every CLI call died** — and all thirty-odd checks were
+   green, because they call `ingest()` and never the command. **A test now calls `main()` too.**
+2. **Heading-only chunks were stored empty.** *"Section 4 Mechanical Works"* often has no prose of its
+   own; the row must exist for its children to point at. An empty chunk is one **retrieval can
+   return**, and returning nothing while looking like an answer is the failure this whole plan is
+   about. It now holds its own heading as its text.
+3. **The splitter took three tries, and only measuring found the second two.** It was **recursive**,
+   so a long document ended on `RecursionError` rather than on a chunk. Made iterative, it re-scanned
+   everything still to come at every cut — **quadratic**, and measured rather than suspected:
+
+   | | before | after |
+   |---|---|---|
+   | 102 KB | 0.25 s | 0.01 s |
+   | 408 KB | 3.8 s | 0.05 s |
+   | 1.6 MB | **60 s** | **0.26 s** |
+
+   It now scans a window of the next chunk's worth of text. **The window runs past the limit by a
+   margin on purpose** — a token straddling its edge must still be seen whole, or the fix for the
+   speed would have broken R-08 silently. **The test walks a token and a qualifier across that edge
+   at eleven offsets**, because that is the one place this optimisation could have cost a rule.
+4. **Re-ingesting printed the filename** while the row held the document's own title, so one document
+   had two names depending on which run you read.
+
+**All four were fixed rather than recorded, because all four are defects in the code written in this
+same batch.** The rule about recording rather than fixing exists so a batch stays reviewable; it is
+not a licence to ship a broken command.
+
+> **Three of the four were invisible to a passing test suite.** The command was broken while every
+> check was green; the splitter was 230 times too slow at the size that matters and nothing asserted
+> a time. **A suite that only calls the functions does not test the program**, and *"it works"*
+> measured on a 400-character fixture says nothing about a real section.
+
+**What Stage 1 deliberately does not do.** Nothing reads a document back out. No retrieval, no
+citation, no re-index trigger. `tests/test_ingest.py` asserts that absence — the ingester is the half
+that has to be right, and reviewing it alongside a retrieval change is reviewing neither.
+
+**Still owed, and named rather than quietly skipped.**
+
+- **`.rte` / `.rft` are NOT refused.** [`02-implementation.md` §4.2](02-implementation.md) proposes it
+  and says it **needs the owner's word** first, *"because a refusal nobody agreed to is as surprising
+  as a leak"*. He has not given it, so it is not coded — and the test asserts the **absence**, so
+  adding it later is a deliberate act.
+- **S-4 is not settled by this.** Every document in the test suite was written to be easy. S-4 is
+  settled by running the ingester on **one real numbered section** and reading `--boundaries`. Clean
+  clause numbers and headings → no further dependency. It cannot cope → Docling, knowing exactly why.
+
+**Next.** Stage 2 — documents come back out, alongside fragments, and the guard on the path into a
+packet (**R-81**), which is the half of Golden Rule 19 that Stage 1 only marked.
 
