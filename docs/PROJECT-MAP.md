@@ -161,7 +161,8 @@ destination inside the bin.
 
 **[`HANDOVER.md`](HANDOVER.md) is the one deliberate exception, and it is not a quiet one.** Its own
 first line says *"It is a work note, not specification"* — true, and it stays in `docs/` anyway
-because fifteen files link to it and it is the documented cold start. The reason is recorded in
+because it is the documented cold start and **sixteen files reference it, two of them tools**
+(at 2026-09-10). The reason, and the command that derives that number, are recorded in
 [work-notes/README](work-notes/README.md) rather than left to be rediscovered.
 
 **Before moving anything on the strength of this section, read
