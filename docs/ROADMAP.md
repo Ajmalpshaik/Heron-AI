@@ -3,7 +3,9 @@
 > A phased plan for reaching the architecture in the [Master Specification](00-master-specification.md).
 > The spec is the destination. This is the route.
 >
-> **Nothing here is committed until the Tier 1 questions in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) are answered.**
+> **Tier 1 is clear.** Every question that blocked Phase 0 has been answered ([D-01](DECISIONS.md) to
+> [D-10](DECISIONS.md)), and Phase 0 is complete. What remains open, and whether any of it gates a
+> phase, is in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) — derive it there rather than reading a count here.
 
 ---
 

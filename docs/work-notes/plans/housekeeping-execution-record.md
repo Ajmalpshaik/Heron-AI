@@ -19,7 +19,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | **A entry gate** | Prove every gate runs (§28.11 A) | **DONE** | — |
 | **A** | Repository-wide audit and inventory | **DONE** | Inventory built, all 82 Markdown files classified, conflicts recorded — §9 to §12 below |
 | **B** | Truth and status reconciliation | **DONE** | All seven stale claims corrected in `edfd867` — §15 |
-| **C** | Documentation architecture | **NOT DONE** | — |
+| **C** | Documentation architecture | **DONE** | Responsibility map agreed, three files approved for creation, no moves — §17 to §19 |
 | **D** | Work-notes separation | **NOT DONE** | `docs/work-notes/README.md` does not exist |
 | **E** | Module-level onboarding READMEs | **NOT DONE** | — |
 | **F** | AI-first / human-first navigation | **NOT DONE** | — |
@@ -259,8 +259,7 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Phase C: draft the documentation responsibility map, and decide whether `AGENTS.md`,
-`docs/PROJECT-MAP.md` and `docs/work-notes/README.md` are created new or fulfilled by an existing file.
+Phase D: create `docs/work-notes/README.md` and populate the work-notes structure, per the map in §17.
 
 ---
 
@@ -478,3 +477,82 @@ broken links. Nothing untracked.
 
 **This was a consolidation the owner authorised, not a behaviour fix taken on initiative.** It is
 recorded here as a housekeeping decision; if it should carry a decision ID, that is Ajmal's to assign.
+
+---
+
+# PHASE C — documentation architecture
+
+Design only. Nothing was moved. Two further stale claims found while reading and corrected here
+rather than left (§19).
+
+## 17. Responsibility map — one canonical owner per topic
+
+| Topic | Canonical owner | Status |
+|---|---|---|
+| First introduction — what Heron is, who it is for | `README.md` | Exists |
+| **Rules and reading order for an AI agent** | **`AGENTS.md`** | **To create — §18** |
+| Full documentation index — which document covers what | `docs/README.md` | Exists |
+| **Technical navigation — which folder owns what, where to start a change** | **`docs/PROJECT-MAP.md`** | **To create — §18** |
+| Binding constitution | `HERON_CONSTITUTION.md` | Exists |
+| The 21 Golden Rules | `docs/14-golden-rules.md` | Exists |
+| Accepted decisions and their reasoning | `docs/DECISIONS.md` | Exists |
+| Questions still genuinely open | `docs/OPEN-QUESTIONS.md` | Exists |
+| Permanent specification and architecture | `docs/00`–`00e`, `docs/01`–`34` | Exists |
+| **Current session state — what is proven vs merely built** | `docs/HANDOVER.md` | Exists — **stays in place, §19** |
+| The proving register | `docs/NEEDS-CHECKING.md` | Exists |
+| Fragment defects | `docs/FRAGMENT-ISSUES.md` | Exists |
+| Ideas and gaps not yet accepted | `docs/PROPOSALS.md` | Exists |
+| Phase plan — *what* each phase delivers | `docs/ROADMAP.md` | Exists |
+| Build steps — *what to do next* | `docs/27-build-order.md` | Exists |
+| Agent reference table | `docs/28-agent-registry.md` | Exists |
+| **Temporary operational work** | **`docs/work-notes/README.md`** | **To create — §18** |
+| Local orientation per module | `brain/`, `mcp/`, `platform/`, `revit/`, `tools/` READMEs | Exist; `tests/` has none — Phase E |
+| House rules for whoever is working, human or AI | `.claude/skills/` | Exists, now the only copy |
+| **Fragment lifecycle counts** | the fragments themselves, via `brain/heron_fragment.py` | Tool owns it; prose must derive |
+| **Test pass/fail set** | `tools/check-gaps.py` | Tool owns it; prose must derive |
+
+**No two files claim the same topic.** Three pairs were checked and are genuinely distinct:
+
+- `docs/ROADMAP.md` and `docs/27-build-order.md` — build order states its own boundary in its header:
+  *"ROADMAP says what each phase delivers, not what to do on Monday."* They cross-reference; they do
+  not compete.
+- `docs/README.md` and the proposed `docs/PROJECT-MAP.md` — one indexes **documents**, the other maps
+  **folders and code**. `docs/README.md` today contains no folder map, no change map and no truth
+  hierarchy.
+- `docs/08-agent-catalog.md` (~150 spec-named agents) and `docs/28-agent-registry.md` (250 registry
+  agents) — different populations, and 08 says so in its own header. **The "~150" in `docs/README.md`
+  was checked and is correct**; it was not "fixed".
+
+## 18. The three missing files — create new, and why not an existing file
+
+| File | Plan § | Existing equivalent? | Decision |
+|---|---|---|---|
+| `AGENTS.md` | §10 | **None.** No `CLAUDE.md`, no `.cursorrules`, no `copilot-instructions.md`. `CONTRIBUTING.md` was read and is human-facing — it mentions agents only as a registry reference | **Create.** §10's condition ("unless a clearly superior project-wide AI instruction file already exists") is not met |
+| `docs/PROJECT-MAP.md` | §11 | **None.** `docs/README.md` indexes documents, not folders. `tools/generate-agent-map.py` produces an *agent* map from the registry, not a folder map. A repository-wide search for a folder map found nothing | **Create.** Keep it short — it must not become a second architecture document |
+| `docs/work-notes/README.md` | §12 | **None.** `docs/work-notes/` currently holds only the plan and this record | **Create.** §28.11 item F makes it a precondition of Phase L |
+
+## 19. Migration map — nothing moves, and why
+
+Plan §28.4 requires a benefit for every move. Every candidate was assessed and **all were rejected**:
+
+| Candidate | Considered | Decision |
+|---|---|---|
+| `docs/HANDOVER.md` → `docs/work-notes/handover/` | §13 | **Keep in place.** 13 inbound references; the root README sends every new reader to it; its own first line is the sentence the owner is told to type — *"Read HANDOVER.md in Heron-AI and carry on."* Saved continuation prompts live outside this repository and cannot be verified from inside it. §13 and §28.9 both permit keeping an established entry point. It will be **labelled** as the operational/current-work entry point instead |
+| `docs/PROMPT-fragment-validation-agent.md` → work-notes | §14 | **Keep in place.** Its work is unfinished (the on-model half), it is referenced from `HANDOVER.md`, and moving an unfinished item achieves nothing. Renaming it away from the misleading `PROMPT-` prefix was considered and **rejected** — 2 inbound references would break for a cosmetic gain |
+| `docs/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` → work-notes | §14 | **Keep in place**, but it needs an inbound link — Phase G. Moving a file nothing references would make it *less* findable, not more |
+| Numbered `docs/00`–`34` → subfolders | §8 | **Keep.** §8 is explicit that these must not be moved merely to make the tree prettier. They carry many references and form an established system |
+
+**Net migration: zero files.** The plan's target tree in §8 is a responsibility model, not a mandate,
+and this repository already satisfies it through existing files in almost every row.
+
+## 19b. Two further stale claims, corrected
+
+Found while reading for the map. Same class as Phase B, so corrected rather than deferred.
+
+| File | Was | Now | Evidence |
+|---|---|---|---|
+| `docs/README.md` | "OPEN-QUESTIONS.md \| 42 questions" | Names `check-docs.py` as the deriver; no typed count | `check-docs` derives **53 defined, 52 answered, 1 open** |
+| `docs/ROADMAP.md` | "Nothing here is committed until the Tier 1 questions are answered" | States Tier 1 is clear and Phase 0 complete; points at `OPEN-QUESTIONS.md` | `OPEN-QUESTIONS.md` §Tier 1 reads **"✅ All clear"**; Phase 0 is complete and Phase 1 is built |
+
+The second was actively misleading: it implied nothing had been committed, in a repository where
+Phase 0 is proven and Phase 1 is built.
