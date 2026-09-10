@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -80,6 +80,39 @@ contract:
       # it looked, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned connected 1,
+    ends 6 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector,
+    ...], findings 1 item(s) [926355 joined to 926369  - 300x300, gap was 127.7 mm], managerOf
+    Func`2, maxGap 16.4041994750656, maxGapMm 5000, mmPerFoot 304.8, noConnectors 0 item(s),
+    nominalSize Func`2, notPaired 2 item(s) [925658 and 926355: not facing each other - 1.00,
+    so a crossi..., 925658 and 926369: not facing each other - 1.00, so a crossi...], openEnds
+    6, order 2 item(s) [1, 0], owners 6 item(s) [Radius Elbows / Tees, Radius Elbows / Tees,
+    Radius Elbows / Tees, ...], pairA 2 item(s) [1, 2], pairB 2 item(s) [2, 4], pairGap 2
+    item(s) [10.9089985273231, 0.418967581571284], sizeLabel Func`2, sizeTolerance 1.64041994750656,
+    sizeToleranceMm 500, used HashSet`1. inputs came elements from the selection (5); maxGapMm
+    as given; sizeToleranceMm as given. on Project1 work_ajmal.al'
+  negative_case: run with categoryName=Ducts, inViewOnly=1 - Mech, maxGapMm=0, sizeToleranceMm=500
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned connected 0, ends 6 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector,
+    Autodesk.Revit.DB.Connector, ...], findings 0 item(s), managerOf Func`2, maxGap 0, maxGapMm
+    0, mmPerFoot 304.8, noConnectors 0 item(s), nominalSize Func`2, notPaired 0 item(s), openEnds
+    6, order 0 item(s), owners 6 item(s) [Radius Elbows / Tees, Radius Elbows / Tees, Radius
+    Elbows / Tees, ...], pairA 0 item(s), pairB 0 item(s), pairGap 0 item(s), sizeLabel Func`2,
+    sizeTolerance 1.64041994750656, sizeToleranceMm 500, used HashSet`1. inputs came elements
+    from the selection (5); maxGapMm as given; sizeToleranceMm as given. on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a3903aabc3db8793
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
