@@ -130,5 +130,4 @@ real model. Nobody looks for what they have been told is not there.
 
 | File | State |
 |---|---|
-| [`plans/repository-housekeeping-and-ai-onboarding-plan.md`](plans/repository-housekeeping-and-ai-onboarding-plan.md) | **Active.** The plan being executed. It deletes itself when its own closure rules are met, and not before |
-| [`plans/housekeeping-execution-record.md`](plans/housekeeping-execution-record.md) | **Active.** The ledger for that execution — baseline, gate results, every disposition and its evidence. This one **survives** the plan's removal |
+| [`plans/housekeeping-execution-record.md`](plans/housekeeping-execution-record.md) | **Permanent.** The ledger for the repository housekeeping run — baseline, gate results, every disposition and its evidence. **The plan that drove it was deleted on 2026-09-10** once its closure rules were met; this record is what survives, and it quotes the plan's requirements where it relies on them |

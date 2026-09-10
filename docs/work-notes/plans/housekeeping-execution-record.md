@@ -1,7 +1,9 @@
 # Housekeeping execution record
 
 > **Type:** Operational work note — the durable ledger for the repository housekeeping
-> run driven by [`repository-housekeeping-and-ai-onboarding-plan.md`](repository-housekeeping-and-ai-onboarding-plan.md).
+> run driven by the repository housekeeping and AI onboarding plan, **deleted 2026-09-10** once its
+> own closure rules were met. **This file is what survives it** - the plan's requirements are quoted
+> where they are relied on, so nothing here depends on being able to open it.
 > **Status:** Phases A and B complete. One owner-authorised consolidation performed (§16).
 > **Owner of this run:** single-agent session on branch `claude/amazing-fermat-emyav7`.
 > Independent review is **pending** — self-review is not independent approval (plan §28.2).
@@ -1133,7 +1135,7 @@ detail stays here.
 | **The closure report** | A dated track section in [`docs/HANDOVER.md`](../../HANDOVER.md) — *"the HOUSEKEEPING track"* — in the same shape every other session's handover uses | ✅ |
 | **The full ledger** | **This file.** Baseline, gate matrix, every disposition, every measurement, every limitation | ✅ |
 | **Maintenance ownership** | [`docs/work-notes/README.md`](../README.md) — who updates what, triggered by a change rather than a calendar | ✅ |
-| The plan being executed | `plans/repository-housekeeping-and-ai-onboarding-plan.md` | ❌ — it removes itself at Phase L |
+| The plan being executed | `plans/repository-housekeeping-and-ai-onboarding-plan.md` | ❌ — **deleted 2026-09-10**, after the two verifications §47 was waiting on were completed on the owner's Windows PC. See §49 |
 
 **Another session can continue from these three without any chat memory.** That was the exit condition
 for Phase K, and it is what §28.10's last item required before the plan could go.
@@ -1196,3 +1198,93 @@ The cheapest path to closure, in order:
 
 **Then the plan can be deleted, and its inbound links repaired** — `docs/work-notes/README.md` and
 this file both reference it, and `docs/README.md` does not. Nothing else does; that was checked.
+
+---
+
+## 49. Closure on the owner's Windows PC — 2026-09-10
+
+**§48 named three things that had to be done by somebody who was not the cloud session. Two are now
+done, the third only partly, and the plan has been deleted.** Everything below was run on the owner's
+machine, repository on `D:` and `TEMP` on `C:`.
+
+### 1. The drive-letter condition — §28.11 item C — **CONFIRMED**
+
+The condition was **proved to exist before the test was trusted**, which is the whole point of the
+item: the repository is on `D:\Ajmal\Aj Programs\Heron Ai` and `TEMP` resolves to
+`C:\Users\...\AppData\Local\Temp`. Different drives, so a `relpath` across them is a real crossing
+rather than a simulated one.
+
+| Command | Exit | Result |
+|---|---|---|
+| `python tests/test_licence_check.py` | **0** | PASS |
+| `python tools/check-licence.py` | **0** | PASS — 370 units, 370 clean, 0 findings |
+
+**No `ValueError` about paths on different mounts, and no traceback.** The repair is proved on the
+setup it was written for, which is what §47 said had never happened.
+
+### 2. Every gate this machine can run — **ALL PASS**
+
+| Check | Exit |
+|---|---|
+| `check-docs.py` | **0** — BROKEN LOCAL LINKS: **0** |
+| `check-metadata.py` | **0** |
+| `check-structure.py` | **0** |
+| `git diff --check` | **0** |
+| `check-compile.py` | **0** — 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027 |
+| `check-fragments-compile.py` | **0** — every fragment on every release it claims |
+| `dotnet build tests/Heron.Bridge.TestHost` | **0** |
+| `tests/test_bridge_roundtrip.py` | **0** |
+
+**Nothing was NOT RUN.** `dotnet 10.0.303` is installed here, so the six checks §39 listed as needing
+a tool the container lacked were all exercised except the two needing a real Revit and the owner.
+
+### 3. The cold read — §28.7 — **PARTLY SATISFIED, AND HONESTLY SO**
+
+All five questions were answered from `README.md` → `AGENTS.md` → `docs/PROJECT-MAP.md` alone:
+
+| | Answer | Verdict | Documents |
+|---|---|---|---|
+| a | A BIM platform for a Revit modeller or coordinator, not a coding assistant | FOUND EASILY | 1 |
+| b | 167 of 360, and the `grep` that derives it — **derived here, and it matched the README exactly** | FOUND EASILY | 1 |
+| c | `revit/` owns the add-in; it must never contain **network of any kind**, nor business decisions that could live outside Revit | FOUND EASILY | 3 |
+| d | `docs/work-notes/` for active work, `docs/HANDOVER.md` for where the last session stopped | FOUND EASILY | 2 |
+| e | `check-docs`, `check-metadata`, `check-structure`, `git diff --check`, and the `heron-ship` skill | FOUND EASILY | 2 |
+
+**No question came back NOT FOUND, so the routes hold.** But the reader was an agent that had already
+worked in this repository for a long session, and **§28.7 asks for a stranger**. What is established
+is that every answer EXISTS and is findable in the three entry documents. What is still not
+established is whether somebody with no prior exposure finds them. **That remains open, and naming it
+closed would be the exact reclassification §27 forbids.**
+
+### 4. A defect found while closing, recorded and NOT fixed
+
+**`docs/HANDOVER.md` and the `heron-ship` skill both state that *"39 of 41 is the best a fully
+equipped machine gets"*, naming `test_graph` and `test_reachable` as the only real failures. On
+Windows it is 38 of 41.**
+
+`test_context` also fails, on exit 1, and it is named nowhere as a known failure. Its single failing
+check is `a part read from disk cites the file`, and the value it reports is
+`brain\fragments\...\fragment.yaml` — **backslashes**. It is a path-separator assumption, and §17 of
+this record shows `test_context` PASSING in the Linux container.
+
+**So the count is Linux-specific and nobody knew.** This matters more than one number, because the
+`heron-ship` skill's whole job is telling a later session which failures are theirs: somebody here
+will see three failures where the documents promise two, and assume the third is their own doing.
+
+It is the same CLASS of defect as the one item C exists for — a path assumption that only appears on
+Windows — which is worth noting given that is what this closure was verifying.
+
+**Left alone deliberately**, at the owner's instruction, rather than widening a closure commit into a
+fix. It needs a decision: correct the two sentences, or fix `test_context` to compare paths in a
+separator-independent way.
+
+### 5. What was merged and what was deleted
+
+| | |
+|---|---|
+| PR **#77** | Marked ready and **merged**. `main` moved `5aa7f6d` → `bba1fb0` |
+| The plan | **Deleted.** `docs/work-notes/plans/repository-housekeeping-and-ai-onboarding-plan.md` |
+| References repaired | This file (2 places) and [`docs/work-notes/README.md`](../README.md) (1). The whole repository was searched rather than trusting the list; there were no others |
+
+**§28.2's independent review is still pending.** A single agent verified and merged this; that is not
+two people, and it should not be recorded as if it were.
