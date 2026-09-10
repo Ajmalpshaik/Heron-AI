@@ -21,7 +21,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | **B** | Truth and status reconciliation | **DONE** | All seven stale claims corrected in `edfd867` — §15 |
 | **C** | Documentation architecture | **DONE** | Responsibility map agreed, three files approved for creation, no moves — §17 to §19 |
 | **D** | Work-notes separation | **DONE** | `docs/work-notes/README.md` created; HANDOVER labelled; no empty folders — §20 |
-| **E** | Module-level onboarding READMEs | **NOT DONE** | — |
+| **E** | Module-level onboarding READMEs | **DONE** | All six verified against source; five corrections, `tests/README.md` created — §23 |
 | **F** | AI-first / human-first navigation | **NOT DONE** | — |
 | **G** | Cross-link and stale-reference cleanup | **NOT DONE** | 4 pre-existing broken links stand (§5 below) |
 | **H** | Permanent documentation quality | **NOT DONE** | — |
@@ -259,7 +259,8 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Phase E: module READMEs — verify the five that exist against their source, and decide `tests/README.md`.
+Phase F: create `AGENTS.md` and `docs/PROJECT-MAP.md`. PROJECT-MAP's folder map must link every module
+README — §24 records that none of them is reachable from any index today.
 
 ---
 
@@ -590,3 +591,66 @@ than deferred:
 and still exactly the same four pre-existing broken links. Every link inside the new README resolves;
 none was added to the broken list. `check-metadata` exit 0, `check-structure` exit 0,
 `git diff --check` exit 0.
+
+---
+
+# PHASE E — module-level onboarding
+
+Every claim was checked against the source, as §28.2 requires. Five READMEs were wrong; one skill was
+wrong; one README was missing.
+
+## 23. Verified against source, and what changed
+
+| File | Claim checked | Result |
+|---|---|---|
+| `revit/README.md` | "Size — under 40 KB total, deliberately" | **WRONG.** `find revit -name '*.cs'` → **13 files, 281,422 bytes ≈ 275 KB**. `RevitFragment.cs` alone is 95 KB. True when this folder was a ribbon and a pipe; 7× out now. **Corrected** to name the deriving command |
+| `revit/README.md` | "`Autodesk.Revit` appears only in `Heron.Revit.Addin`" | **HOLDS.** The only mention in `Heron.Bridge` is a csproj comment stating the boundary. `check-structure.py` enforces `Autodesk.Revit` inside `revit/` only, and exits 0. **Not touched** |
+| `revit/README.md` | TFMs `net472`, `net48`, `net8.0-windows`, `net10.0-windows` | **HOLDS.** `Directory.Build.props` maps 2020→net472, 2021–2024→net48, 2025–2026→net8.0-windows, 2027→net10.0-windows. **Not touched** |
+| `revit/README.md` | "No network. No `HttpClient`, no sockets" | **HOLDS.** The only hit in `revit/` is the sentence itself. **Not touched** |
+| `platform/README.md` | "`Heron.Core` — `HeronPaths`, `HeronConfig`, `HeronIdentity`" | **INCOMPLETE.** Nine classes exist. Six were undocumented: `HeronAudit`, `HeronLease`, `HeronOperationRegistry`, `HeronPermissions`, `HeronStop`, `HeronUnits`. **All nine now listed**, each with its build step |
+| `platform/README.md` | "What will be here … permission manager" | **WRONG.** `HeronPermissions.cs` already exists. **Removed from the future list** |
+| `platform/README.md` | "`IsSafeToDelete` returns false for anything under data" | **HOLDS.** It resolves `Data` and `Derived` and compares. **Not touched** |
+| `platform/README.md` | "a `Load` and a `Save` and deliberately no `ApplyFromRequest`" | **HOLDS.** `Load()` and `Save()` are the only public entry points; nothing named `Apply*`. **Not touched** |
+| `mcp/README.md` | "`heron_brain.py` is the one place this side reaches `brain/`" | **HOLDS.** Only `heron_brain.py` imports brain modules. `heron_diagnose.py` reaches them **through that seam** (`import heron_brain as brain`). **Not touched** |
+| `mcp/README.md` | "Three tools stand on it" | **HOLDS.** `catalogue()`, `resolve()`, `lookup()`. **Not touched** |
+| `brain/README.md` | Module coverage | **INCOMPLETE.** 4 of 13 undocumented: `heron_audit`, `heron_gaps`, `heron_matrix`, `heron_validate` — all four Step 17. **All 13 now listed** |
+| `tools/README.md` | Tool coverage | **INCOMPLETE.** 1 of 22 undocumented: **`check-licence.py`** — which is one of the two gates §28.11 item A depends on. **Now documented**, including the cross-drive `relpath` defect and why the helper is repeated rather than imported |
+
+## 23b. A skill was wrong, and the repository's own rule says fix it now
+
+`.claude/skills/heron-ship/SKILL.md` — the skill an agent reads to decide whether a failure is its
+fault — said **"35 of 38 pass. Three fail."**
+
+There are **41** suites, and the measured result is 36 pass here. Its three named machine failures are
+exactly right; what it did not know is that `test_graph` and `test_reachable` fail as well. Its own
+rule — *"a fourth failure is yours"* — would therefore have told an agent that two pre-existing
+failures were its own doing.
+
+`.claude/skills/README.md` is explicit: *"Fix a skill the moment it is found to be wrong — not in a
+follow-up task. A known-wrong skill left in place will be followed by the next person who reads it."*
+
+**Corrected.** It now derives the suite count, separates the three that cannot run from the two that
+genuinely fail, records that `test_mcp_serves.py` exits 3 rather than 1, and states both totals: 36 of
+41 in a plain container, 39 of 41 on a fully equipped machine. `test_skills.py` passes after the edit.
+
+## 23c. `tests/README.md` — created
+
+§17 lists `tests/` as a candidate. It earns one because of a specific gap: **the exit-code convention
+is written down nowhere in prose.** Exit 3 means *could not run* and is not a pass; `check-gaps.py`
+reads it as waiting. Until now that existed only in two code comments and one line buried at
+`HANDOVER.md:4990`.
+
+Kept short and deliberately non-duplicating: the testing *model* stays in
+[docs/13](../../13-testing-and-quality.md), the pre-push *order* stays in the `heron-ship` skill, and
+this README points at both rather than repeating them. It adds the three exit codes, why
+`check-gaps.py` runs 40 of 41 on purpose, what `golden/` and `Heron.Bridge.TestHost/` are, and the rule
+against editing a test until it passes.
+
+## 24. Open item handed to Phase F
+
+**No index links the module READMEs.** `platform/README.md`, `mcp/README.md`, `revit/README.md` and
+the new `tests/README.md` are reachable from no Markdown file in the repository except this record.
+`brain/README.md` and `tools/README.md` are linked, but incidentally.
+
+This is not a broken link — it is a discoverability gap, and it is exactly what §11's folder map is
+for. **`docs/PROJECT-MAP.md` must link all six.** Recorded here so it cannot be quietly skipped.

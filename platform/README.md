@@ -10,14 +10,25 @@
 
 ## What's here
 
-| Project | Does |
-|---|---|
-| `Heron.Core` | `HeronPaths` (product / data / derived), `HeronConfig`, `HeronIdentity` |
+One project, `Heron.Core`. Nine classes, each the Kernel half of an agent in
+[the registry](../docs/28-agent-registry.md):
+
+| Class | Does | Step |
+|---|---|---|
+| [`HeronPaths.cs`](Heron.Core/HeronPaths.cs) | **The Path Manager** — the single place that knows where anything lives. Product, data and derived are separate in code, and `IsSafeToDelete` returns false for anything under either | 1 |
+| [`HeronConfig.cs`](Heron.Core/HeronConfig.cs) | The Configuration Manager. `Load` and `Save`, and deliberately **no** `ApplyFromRequest` | 1 |
+| [`HeronIdentity.cs`](Heron.Core/HeronIdentity.cs) | Stable identity for the things Heron must be able to name twice | 1 |
+| [`HeronOperationRegistry.cs`](Heron.Core/HeronOperationRegistry.cs) | The Tool Registry — every operation Heron will run, and the risk level of each | 3 |
+| [`HeronAudit.cs`](Heron.Core/HeronAudit.cs) | The audit trail: one append-only line per request, keyed by Workflow ID | 4 |
+| [`HeronLease.cs`](Heron.Core/HeronLease.cs) | Who currently holds a Revit, and who may therefore send it anything ([D-22](../docs/DECISIONS.md)) | 6 |
+| [`HeronPermissions.cs`](Heron.Core/HeronPermissions.cs) | The seven permission levels of [docs/12 §1](../docs/12-security-and-permissions.md), in order | 6 |
+| [`HeronStop.cs`](Heron.Core/HeronStop.cs) | Emergency Stop — one switch that stops Heron doing anything further | 6 |
+| [`HeronUnits.cs`](Heron.Core/HeronUnits.cs) | Unit conversion. Millimetres, which is what the user says, to whatever Revit wants | 6 |
 
 ## What will be here
 
-Installer · update system · package manager · event bus · workflow engine · registries ·
-secret store · permission manager.
+Installer · update system · package manager · event bus · workflow engine ·
+the remaining registries · secret store.
 
 ## Rules for this folder
 

@@ -316,6 +316,31 @@ member. A checker that finds nothing is evidence about the checker until it has 
 
 ---
 
+## `check-licence.py` — what licence is on the knowledge Heron ships
+
+```bash
+python tools/check-licence.py            # every fragment and skill
+python tools/check-licence.py --all      # including the ones that are fine
+```
+
+Heron plans community packages, and a package the user redistributes carries whatever licence its
+source had. This reads the files rather than the landing page — [Q-53](../docs/OPEN-QUESTIONS.md),
+answered as [D-66](../docs/DECISIONS.md), after a skill library whose README said *"MIT, use freely"*
+turned out to ship four skills marked all rights reserved.
+
+**Exits 1 on a finding, 0 when there is nothing to say.** A finding is a question for a person; the
+tool does not decide whether redistribution is lawful and **automated coverage is not legal
+clearance**.
+
+One portability note, because it cost a session once: `inspect()` must not assume the path it is given
+shares a drive with the repository. It uses a local `repo_relative()` that falls back to the absolute
+path when there is no relative form — the same rule
+[`brain/heron_fragment.py`](../brain/heron_fragment.py) owns — because
+`os.path.relpath` raises `ValueError` across drives on Windows, and the test builds its fixture in
+`tempfile.mkdtemp()`. Repository on `D:`, `TEMP` on `C:`, and the gate dies. Repeated rather than
+imported on purpose: importing it costs PyYAML, and this is the tool you run on a bare machine to read
+the licence of something *before* trusting it enough to install anything for it.
+
 ## `heron-backup.py` — the user's own data, and getting it back
 
 ```bash
