@@ -376,7 +376,9 @@ up when a store is copied.
 
 | | Requirement | Source | State | Note |
 |---|---|---|---|---|
-| **R-88** | Indexing effort goes **where the model's own knowledge is weakest** — project and company documents first, regional standards next, widely-known international standards last | owner, 2026-09-11 | **NONE** | **with one exception that justifies indexing a standard the model half-knows: the model knows the topic and invents the clause number.** [W-7](03-working-note.md) is this session's own proof |
+| **R-88** | **Two orders, and they are not the same question.** *Value to one user* runs project → company → regional → international, because the model knows least about the first. ***What Heron should know out of the box*** runs the other way: **BIM and ISO standards first, regional next, company last** | owner, 2026-09-11 | **NONE** | **the owner corrected this on 2026-09-11 and he is right.** A company standard helps one company; ISO 19650 helps every user of the product, and is stable across projects. The first framing was about one person's value and the second is about the product — **the product one governs** |
+| **R-88a** | **No standard is ever bundled with Heron.** Priority does not mean shipping it | R-85, [17](../../../17-open-source-and-distribution.md) | **NONE** | ISO sells ISO 19650 the way NFPA sells NFPA. *"First priority to load"* and *"ships in the box"* are different sentences, and only the first one is true |
+| **R-88b** | **The first document is a TEST of the engine, not the start of the library** | owner, 2026-09-11 | **NONE** | *"this is the RAG engine we are making, not started with the real documents."* **Correct, and it unblocks Stage 1**: it needs one numbered structured document to prove chunking and citation, not the real corpus and not anybody's licensed copy |
 
 ---
 

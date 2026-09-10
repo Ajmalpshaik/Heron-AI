@@ -648,3 +648,38 @@ send a clause. Named to him, not built, and not proposed — it is cheap now and
 recorded here rather than left in a conversation.
 
 **93 requirements. Still no code.**
+
+### 2026-09-11 — two corrections from the owner, and the second one unblocked Stage 1
+
+**He corrected R-88's ordering.** This note had *company documents first*, on the argument that the
+model knows least about them. He said **BIM and ISO standards first, company last** — and he is right,
+because **the two are not the same question:**
+
+| Question | Order |
+|---|---|
+| What is worth most **to one user**? | project → company → regional → international |
+| **What should Heron know out of the box?** | **BIM/ISO → regional → company** |
+
+A company standard helps one company. ISO 19650 helps every user of the product, and does not change
+per project. **The first framing was about one person's value; his is about the product, and the product
+one governs.** R-88 now carries both, and says which wins.
+
+**With one thing he did not say and which follows immediately: R-88a.** ISO sells ISO 19650 the way NFPA
+sells NFPA. *"First priority to load"* and *"ships in the box"* are different sentences and only the
+first is true — **no standard is ever bundled with Heron.**
+
+### And the correction that actually unblocked the work
+
+> *"This is the RAG engine we are making, am I right? Not started with the real documents, am I right?"*
+
+**Yes, and it changes what Stage 1 needs.** The plan had drifted into treating *the first document* as
+*the start of the library*, which made Stage 1 wait on the owner finding a real company standard, a QCS
+section, or a licensed copy of something.
+
+**It does not.** Stage 1 proves that chunking, hierarchy, the heading path, the rule-and-exception split
+and the citation all work. **For that it needs one numbered, structured document — any one.** The real
+library is loaded afterwards, in the order R-88 now sets, by whoever owns each document.
+
+**R-88b.** Nothing on this track is blocked on the owner any more.
+
+**95 requirement rows — R-01 to R-93, plus R-88a and R-88b. Still no code.**
