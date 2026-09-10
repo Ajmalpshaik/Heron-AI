@@ -54,7 +54,7 @@ So the six split three ways:
 | **1** Searches again | **Reporting.** The host already loops. It cannot loop well because retrieval never tells it *"this was a coin toss"* | say the confidence out loud |
 | **6** Answers from what it found | **Reporting.** The host writes the answer — that is D-01. The brain owes it a packet it cannot invent from | put citations in the packet |
 | **3** Knows a clause is inside a section | **Decided at ingestion.** Cannot be retrofitted cheaply — chunking is where hierarchy is won or lost | get it right in Stage 1 |
-| **2** Follows relationships | New machinery — a third retrieval route | `heron_graph.py` is the half that exists |
+| **2** Follows relationships | New machinery — a third retrieval route, and **conditional**: the same idea over the *fragment* graph was measured at six settings and lost ([`34 §2.13`](../../../34-patterns-adapted.md)) | a density count decides whether it is built at all |
 | **4** Decides where to look | New machinery — the Librarian | must not become a merged query (§3.4) |
 | **5** Re-reads its shortlist | New machinery — a re-ranker model | optional and absent-tolerant, like the encoder |
 
@@ -91,7 +91,7 @@ in the right direction, and a test that asserts it.
 
 ---
 
-### 3.2 It follows relationships — *the part that is specific to you*
+### 3.2 It follows relationships — *corrected 2026-09-10, and now conditional*
 
 **What it means here.** A third route beside words and nearness: follow edges. *This clause governs
 insulation → insulation belongs to duct systems → this fragment reads a duct's insulation.* No text
@@ -105,6 +105,30 @@ provider**, because whatever asked for its capability never named it.
 **What is missing.** Documents are not in the graph, because documents are not anywhere (see
 [`01-requirements.md` §5](01-requirements.md)). A clause has no node, so it has no edges.
 
+> ### ⚠ This section was written without checking, and the repository had already tried it
+>
+> [**`34 §2.13`**](../../../34-patterns-adapted.md) records a third retrieval stream **measured
+> and rejected**: [`tools/measure-graph.py`](../../../../tools/measure-graph.py), 360 questions,
+> four query shapes, **six settings — all six lost.** The gentlest cost 1.1 points of P@1, the
+> strongest 14, and **P@5 never improved at any setting**, so it did not widen recall either — the
+> one thing a graph stream is supposed to be good at.
+>
+> **And it named the property that decides it: density.** Heron's composition graph runs a
+> **median of 50 neighbours per fragment, worst 230**. A fragment providing `IList<Element>`
+> composes with most of the library, so *"the neighbours of the best hit"* is not a signal — it is
+> a large slice of the library added as competitors.
+>
+> **What that kills, and what it leaves standing:**
+>
+> | | |
+> |---|---|
+> | ❌ **Dead** | Feeding the **fragment composition graph** into retrieval as a third stream. Measured, six settings, rejected. Do not re-propose it without new evidence |
+> | ⏸ **Open, unmeasured** | A **document** graph — *clause governs system, system has elements* — is **not that graph**. It does not exist and its density is unknown |
+> | ✅ **The rule that survives** | **Measure the neighbour count before building anything.** If document edges are as dense as fragment edges, this loses the same way for the same reason |
+>
+> So 3.2 is **conditional**, not planned. It earns a stage by passing a density check, and the
+> check is cheap — it is a count, not an experiment.
+
 **The rule this route inherits.** `heron_retrieve.py` is explicit that **route weights follow
 measurement, not feeling** — with equal weights, fusion is symmetric and the winner is decided by
 whatever the tiebreak happens to be, which on its very first run was *alphabetical order*. So the edge
@@ -114,9 +138,12 @@ route **gets no vote until it has been measured**, exactly as the nearness route
 is *"select this duct, then Select Connected"*. The second one finds things that never say the word.
 
 **Must not break:** D-40 — edges stay derived. A stored document edge is a cache that will go stale.
+**Gated by:** the density count above. **A count, before a line of retrieval code.**
 **Proved by:** one question answerable *only* by following an edge, which the words and nearness routes
-both miss, and a recorded measurement before the route is given any weight.
-**Cost:** medium. **Needs:** documents to exist first.
+both miss, and a recorded measurement before the route is given any weight — the same bar
+[`tools/measure-graph.py`](../../../../tools/measure-graph.py) already set and the fragment graph failed.
+**Cost:** medium, and **possibly zero** — the density count may end it.
+**Needs:** documents to exist first.
 
 ---
 
@@ -247,7 +274,9 @@ with the source removed **refuses by name**; and both are tested.
   [3.2]  THREE ROUTES over the survivors
              words       FTS5, exact tokens                   already built
              nearness    the trained encoder                  already built
-             edges       the graph - finds what never says the word      NEW
+             edges       the graph - finds what never says the word      NEW, CONDITIONAL
+                         over DOCUMENTS only. The same route over the fragment
+                         graph was measured at six settings and lost every one
                                    |
                                    v
   [ - ]  FUSION by reciprocal rank                            already built
@@ -283,7 +312,7 @@ with the source removed **refuses by name**; and both are tested.
 | **3.1** confidence | — | The numbers already exist and are discarded |
 | **3.3** hierarchy | — | **It is decided in the chunker.** Late means re-ingesting everything |
 | **3.4** librarian | documents in two scopes | Nothing to choose between |
-| **3.2** edges | documents ingested | A clause with no node has no edges |
+| **3.2** edges | documents ingested, **and a density count** | A clause with no node has no edges — and a dense graph is competitors, not signal |
 | **3.6** grounded packet | citations | The packet's job is to carry them |
 | **3.5** re-ranker | retrieval working, **and 3.1** | You cannot see a re-ranker help if ties were invisible before it |
 
@@ -307,7 +336,7 @@ before the six were decided.
 | **2** | Documents come back out, alongside fragments | — | Stage 1 |
 | **3** | Citations, and the refusal that must not soften | **3.6** | Stage 2 |
 | **4** | The Librarian picks the scope | **3.4** | documents in two scopes |
-| **5** | Document nodes and the edge route | **3.2** | Stage 2 |
+| **5** | Document nodes, **then a density count**, and the edge route **only if it passes** | **3.2** | Stage 2 |
 | **6** | Maintenance — re-index on change, duplicates | — | Stage 2 |
 | **7** | The re-ranker, measured before and after | **3.5** | Stage 2, and 0b |
 | **8** | Trust, conflict, research | — | Stage 3 |

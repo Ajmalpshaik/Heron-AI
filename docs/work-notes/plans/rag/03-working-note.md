@@ -219,3 +219,29 @@ not get to record a decision on its own. It gets a number when it is written the
 
 **Next.** Unchanged: Stage 0, then 0b. Neither needs Revit, the PC, or any of the four open questions
 in §5 to be settled first.
+
+### 2026-09-10 — outside repositories read, and one of them corrected us
+
+**Asked.** Ajmal: read `github.com/jamwithai` and say whether anything there is useful for Heron —
+the whole platform, not only RAG.
+
+**Done.** Five repositories read. Written up as
+[`../../investigations/jamwithai-repositories-2026-09-10.md`](../../investigations/jamwithai-repositories-2026-09-10.md),
+sorted the way [`docs/34`](../../../34-patterns-adapted.md) sorts things: **four ✅ take, three ⏸
+owner's call, the entire stack ❌ does not transfer.** Nothing accepted — every row is a proposal.
+
+**The one worth having.** A fabrication check that calls **no model at all** — normalise both sides,
+compare with `difflib`, threshold per kind of claim, and understating the source is allowed. It turns
+[R-21](01-requirements.md) *no source, no claim* from a rule nobody can test into a number that can be
+measured offline with the standard library.
+
+**And it corrected this track.** Reading them sent us to [`34 §2.13`](../../../34-patterns-adapted.md),
+which had **already measured a third retrieval stream at six settings and rejected it** — all six lost,
+P@5 never improved, and the deciding property is **density**: median 50 neighbours per fragment, worst
+230. [`00-structure.md` §3.2](00-structure.md) had proposed exactly that this morning, without checking.
+It is now **conditional**: documents only, and gated on a neighbour count that costs nothing to run.
+
+> **This is the second correction in one day made by this repository to itself**, and both came from a
+> file somebody wrote so the next person would not repeat the work. The other was `check-docs.py`
+> refusing a decision number nothing defines.
+
