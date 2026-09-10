@@ -143,13 +143,19 @@ Do **not** pick whichever makes the cleanup easier, and do not close a policy co
 [01 — Vision & Principles](01-vision-and-principles.md) → the [README](../README.md) status section →
 [NEEDS-CHECKING.md](NEEDS-CHECKING.md).
 
-What matters to you: **read and write are different things.** Everything proven so far is read-only.
-`write.enabled` defaults to `false`. A fragment marked `DRAFT` has never met a model — 193 of 360 at
-the last count, and you should derive it rather than believe that number:
+What matters to you: **read and write are different things, and they are proven to different depths.**
+Reading is proven far more widely — **106 `READ` fragments carry a proof against 55 `MODIFY`** — and
+`write.enabled` still defaults to `false` whatever the fragment says.
+
+A fragment marked `DRAFT` **has never met a model.** 193 of 360 at the last count. Derive both rather
+than believing any of those numbers, including these:
 
 ```bash
 grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
 ```
+
+A proof is a recorded run against a **named real model**, with a case that was supposed to fail and
+did. It is not a compile and not a passing test.
 
 ### BIM manager
 

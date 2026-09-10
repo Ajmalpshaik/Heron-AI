@@ -24,7 +24,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | **E** | Module-level onboarding READMEs | **DONE** | All six verified against source; five corrections, `tests/README.md` created — §23 |
 | **F** | AI-first / human-first navigation | **DONE** | `AGENTS.md` and `docs/PROJECT-MAP.md` created and linked; role routes added — §25 to §27 |
 | **G** | Cross-link and stale-reference cleanup | **DONE** | Broken links 4 → **0**; three false-absence claims corrected — §28 to §30 |
-| **H** | Permanent documentation quality | **NOT DONE** | — |
+| **H** | Permanent documentation quality | **DONE** | Responsibilities confirmed distinct; four coherence defects fixed, one of them mine — §32 to §34 |
 | **I** | Validation and QA | **NOT DONE** | Will diff against §4 of this file |
 | **J** | Final repository audit | **NOT DONE** | — |
 | **K** | Final handover report | **NOT DONE** | — |
@@ -259,8 +259,8 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Phase H: confirm each major document still has one responsibility and that no duplication was
-introduced, then Phase I re-runs the §28.6 matrix against the §4 baseline.
+Phase I: re-run the §28.6 matrix and diff the suite result against the §4 baseline, reporting a newly
+passing suite as well as a newly failing one.
 
 ---
 
@@ -830,3 +830,91 @@ of the seven are real, four remain absent on purpose, three of those placed in t
 
 `check-docs` exit 0 with **0 broken links** across 81 Markdown files. `check-metadata` 0,
 `check-structure` 0, `git diff --check` 0.
+
+---
+
+# PHASE H — permanent documentation quality
+
+## 32. §21 — one responsibility per document, checked including the four this run created
+
+The greatest risk in this phase was **duplication introduced by this run itself**: `AGENTS.md`,
+`docs/PROJECT-MAP.md`, `docs/work-notes/README.md` and `tests/README.md` are all new.
+
+| Pair examined | Verdict |
+|---|---|
+| `AGENTS.md` vs `CONTRIBUTING.md` | **Distinct.** CONTRIBUTING owns the pull-request process, code style and the reject-outright list, for a human. AGENTS owns reading order and safety for a cold agent. They shared only the three gate commands, which both front doors legitimately need. **Gap found and fixed:** AGENTS did not mention CONTRIBUTING at all; it now hands the PR process to it explicitly |
+| `AGENTS.md` vs `heron-ship` skill | **Distinct.** AGENTS names the gates; the skill owns the order and which failure is the machine. AGENTS points at it rather than restating |
+| `tests/README.md` vs `docs/13` vs `heron-ship` | **Distinct.** 13 owns the testing *model*, the skill owns the pre-push *order*, the README owns *exit codes and folder contents* — which existed in no prose anywhere |
+| `docs/README.md` vs `docs/PROJECT-MAP.md` | **Distinct.** One indexes documents, the other maps folders and code |
+| `PROJECT-MAP` §F vs `docs/15-glossary.md` | **Distinct.** §F is eight one-line pointers; 15 owns the definitions. §28.7 asks for glossary guidance in a navigation document rather than a new glossary |
+| `README.md` role table vs `PROJECT-MAP` §E | **Was drifting.** Fixed — README is now a signpost that names the first document and links to §E for the full route, so the two cannot disagree |
+
+**The six "master" files were checked for competing authority and each has a stated, different role:**
+Parts 1–4 of the specification, `32` as the audit of the incoming brief, and
+`HERON_AI_MASTER_ARCHITECTURE.md` itself, which §22 required to be unmistakable.
+
+## 33. §22 — the master architecture, confirmed
+
+**No action needed; the work predates this run.** `HERON_AI_MASTER_ARCHITECTURE.md` opens with a
+banner added 2026-09-09 under [D-57](../../DECISIONS.md):
+
+> *"This is a research brief. It is not part of the Heron AI specification and supersedes nothing."*
+
+It names the four specification parts plus the Constitution and Golden Rules as what is authoritative,
+sends the reader to [32](../../32-master-architecture-reconciliation.md) before building anything from
+it, and states that its text is left unedited on purpose because *"the disagreements are the useful
+part."* §22's requirement — that a new AI must never mistake an old proposal for production truth —
+is met.
+
+## 34. Four coherence defects fixed
+
+### The four specification parts disagreed about how many there are
+
+| File | Said | Now |
+|---|---|---|
+| `docs/00` | part 1 **of 2** | part 1 **of 4** |
+| `docs/00b` | part 2 **of 2** | part 2 **of 4** |
+| `docs/00c` | part 3 **of 3** | part 3 **of 4**, and its parts table gained the missing Part 4 row |
+| `docs/00d` | part 4 of 4 | unchanged — it was the only correct one |
+
+A reader opening Part 1 was told the specification has two parts. `docs/README.md` has said *"complete
+in four parts"* throughout.
+
+**Only the `> **Status:**` blockquote was touched.** That block is the repository's own editorial
+framing — it describes the file *"as provided by the owner"* — and both files say the body beneath it
+is the verbatim architectural intent that must not be edited to fix it. The specification text itself
+is untouched, and §28.8's preservation rule holds.
+
+### `CONTRIBUTING.md` — the contributor's front door said Phase 2 had never loaded into Revit
+
+It read: *"Step 6 and the whole of Phase 2 are built and compiled on every supported release, and have
+**never loaded into Revit**. Almost every fragment and every skill is still `DRAFT`."*
+
+Against evidence: the add-in was deployed to Revit 2020, 2024 **and** 2027 on 2026-09-10 and verified
+at binary level (`HANDOVER.md:90`); D-28's executor runs a fragment's C# inside Revit's process; and
+**167 of 360 fragments carry a recorded proof, 55 of them `MODIFY`.** All ten skills *are* still
+`DRAFT`, so that half was right and is kept.
+
+### One defect was introduced by this run, and is corrected here
+
+Phase F wrote *"Everything proven so far is read-only"* into the root `README.md` role table and into
+`PROJECT-MAP.md` §E. **Phase G then disproved it** by finding 55 proven `MODIFY` fragments.
+
+Both are corrected to the derived split:
+
+| Risk | `PROVEN` |
+|---|---|
+| READ | 106 |
+| **MODIFY** | **55** |
+| ANALYZE | 3 |
+| EXECUTE | 3 |
+
+The honest statement is not *"proven work is read-only"* but *"reading is proven about twice as widely
+as writing, and `write.enabled` still defaults to `false`."*
+
+This is exactly why §21 is a separate phase: a claim written in one phase can be falsified by the
+next, and nothing catches it except reading the whole set again afterwards.
+
+## 35. Verification
+
+`check-docs` exit 0, **0 broken links**. `check-metadata` 0, `check-structure` 0, `git diff --check` 0.

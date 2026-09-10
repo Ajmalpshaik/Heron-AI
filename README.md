@@ -119,7 +119,10 @@ Revit
 | **the owner, or continuing work** | [**HANDOVER.md**](docs/HANDOVER.md) — what exists, what is proven versus merely built, the five things that will bite you, and what is waiting on a decision |
 | **an AI agent** | [**AGENTS.md**](AGENTS.md) — short, and the only file written for you |
 | **a developer** | [**docs/PROJECT-MAP.md**](docs/PROJECT-MAP.md) — which folder owns what, where to start a change, which source wins |
-| **a BIM modeller or manager** | [01 — Vision & Principles](docs/01-vision-and-principles.md), then the Status section above. Everything proven so far is **read-only** |
+| **a BIM modeller** | [01 — Vision & Principles](docs/01-vision-and-principles.md), then the Status section above. Reading a model is proven far more widely than changing one — **106 `READ` fragments are `PROVEN` against 55 `MODIFY`**, and `write.enabled` still defaults to `false` |
+| **a BIM manager** | [16 — Version Support](docs/16-version-support-strategy.md) and [12 — Security & Permissions](docs/12-security-and-permissions.md). **Declared support and tested releases are different lists** |
+
+Full routes, with what to read at each stop: [**PROJECT-MAP §E**](docs/PROJECT-MAP.md#e-routes-by-role).
 
 ## Documentation
 

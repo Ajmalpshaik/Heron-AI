@@ -88,6 +88,10 @@ pass** — see [`tests/README.md`](tests/README.md).
 
 **Stage explicit paths.** Never `git add -A`; another session may be writing to this tree.
 
+**[`CONTRIBUTING.md`](CONTRIBUTING.md) owns the pull-request process, the code style and the list of
+things that get a change rejected outright** — real model data, credentials, redistributed Revit
+assemblies. Read it before opening one; it is not repeated here.
+
 **Fix a wrong skill the moment you find it**, not in a follow-up task. A known-wrong skill left in
 place will be followed by whoever reads it next.
 
