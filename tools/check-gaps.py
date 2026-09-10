@@ -38,6 +38,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
@@ -45,6 +46,22 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 # A suite exits 3 when it could not run for want of an optional
 # dependency. Kept as a name in both files rather than as a bare 3.
 SKIPPED = 3
+
+# How long one suite may take before this tool stops waiting for it.
+#
+# This sweep runs every suite serially, so it costs the sum of all of them -
+# around eight minutes on the machine this was measured on, which is slow but
+# is NOT the defect. The defect was that a suite which never returns hangs this
+# tool for ever, with no output naming it: the reader sees a dead terminal and
+# cannot tell a hung gate from a slow one. A gate that cannot say why it
+# stopped cannot certify anything.
+#
+# 300s is roughly four times the slowest suite measured here
+# (test_brain_reachable.py, 78s on 2026-09-10), so a healthy suite on a slower
+# machine still finishes well inside it. A suite that exceeds it is reported
+# UNFINISHED, because a test that hangs is work somebody can do today - which
+# is exactly the line this whole tool is drawn along.
+SUITE_TIMEOUT = 300
 
 UNFINISHED = []      # could be done here, today
 WAITING = []         # genuinely needs a machine this is not
@@ -115,6 +132,9 @@ def check_tests():
     """Every test suite, run."""
     print()
     print("TESTS - every suite, actually run")
+    print("  (serial, so this section costs the sum of them - several minutes)",
+          flush=True)
+    section_started = time.time()
     folder = os.path.join(ROOT, "tests")
     for name in sorted(os.listdir(folder)):
         if not name.startswith("test_") or not name.endswith(".py"):
@@ -123,11 +143,23 @@ def check_tests():
             # Needs the compiled test host. Its absence is a build step, not a
             # gap in the code, and check-compile covers the compiling.
             continue
-        proc = subprocess.run([sys.executable, os.path.join(folder, name)],
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL, cwd=ROOT)
+        started = time.time()
+        try:
+            proc = subprocess.run([sys.executable, os.path.join(folder, name)],
+                                  stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL, cwd=ROOT,
+                                  timeout=SUITE_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            # Named, not silent. The whole point of the bound is that the
+            # reader learns WHICH suite stopped returning.
+            print("  HUNG  %s - still running after %ds, gave up"
+                  % (name, SUITE_TIMEOUT), flush=True)
+            unfinished("%s DOES NOT RETURN within %ds"
+                       % (name, SUITE_TIMEOUT))
+            continue
+        took = time.time() - started
         if proc.returncode == 0:
-            print("  ok    %s" % name)
+            print("  ok    %s (%.1fs)" % (name, took), flush=True)
         elif proc.returncode == SKIPPED:
             # A suite that could not run for want of an OPTIONAL dependency,
             # not one that failed. It is neither: reporting it `ok` would be a
@@ -138,11 +170,15 @@ def check_tests():
             # stdout goes to DEVNULL - so a suite has no other way to say
             # "I skipped". test_mcp_serves.py is the first to need it: the MCP
             # SDK is not installed on a machine with no Revit.
-            print("  wait  %s - skipped, see its own output for why" % name)
+            print("  wait  %s - skipped, see its own output for why" % name,
+                  flush=True)
             waiting("%s could not run here" % name,
                     "an optional dependency this machine does not have")
         else:
+            print("  FAIL  %s (%.1fs)" % (name, took), flush=True)
             unfinished("%s FAILS" % name)
+    print("  %.0fs for the suites" % (time.time() - section_started),
+          flush=True)
 
 
 def check_tools():

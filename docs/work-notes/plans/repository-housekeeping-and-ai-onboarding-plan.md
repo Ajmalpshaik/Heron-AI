@@ -1164,7 +1164,16 @@ Two commands this plan depends on do not currently complete on the owner's machi
 
 A gate that crashes or does not terminate cannot certify a phase exit. Add to Phase A's entry gate, before any file is classified: run every command in the 28.6 matrix once, record exit code **and wall-clock duration**, and mark any command that crashes or exceeds its stated bound as a **blocked gate with a named owner**. Phase I may not treat a blocked gate as a pass, and may not quietly drop it from the matrix.
 
-`check-licence.py` is a portability defect in the tool, not in the test. Per 28.8 it is recorded here as a defect, not fixed as part of housekeeping.
+**Both were repaired on 2026-09-10, on the owner's instruction, before housekeeping begins.** The finding above is kept as written; what follows is the resolution, not a revision of it.
+
+| Gate | Repair | Standing |
+|---|---|---|
+| `check-licence.py` | Added a local `repo_relative()` that falls back to the absolute path when there is no relative form, the same rule `brain/heron_fragment.py::repo_relative()` already owns. Repeated rather than imported because importing it costs PyYAML, and this is the tool you run on a bare machine to read the licence of something before trusting it enough to install anything for it | Fixed. `tests/test_licence_check.py` passes from a `D:` checkout with `TEMP` on `C:` |
+| `check-gaps.py` | It was never hung. It runs all 41 suites serially inside itself and genuinely costs several minutes. The defect was that it did this unbounded and silently: one suite that never returns stalled the gate for ever with no output naming it, which is indistinguishable from a dead terminal. Added a 300s per-suite bound — about four times the slowest suite measured, `test_brain_reachable.py` at 78s — reporting a suite that exceeds it as `UNFINISHED`, plus flushed per-suite timings and a section total | Fixed as a gate. Measured end to end after the repair: **457s, exit 1**, no suite hit the bound, 440s of it the suites. Exit 1 is correct — `test_context`, `test_graph` and `test_reachable` genuinely fail. `test_licence_check` no longer appears in that list, which is the gate confirming the row above |
+
+So the original finding stands and is now explained: 457s really does exceed the 400s it was first given, and the tool was never going to beat that bound. The `check-gaps.py` repair fixes the gate, not the runtime. Making it fast means running the 41 suites in parallel, which requires first proving they are mutually isolated; 17 of them do not visibly use a temporary directory. That is separate, provable work and was deliberately not attempted here — a gate made fast by an unproven assumption is worse than a slow one.
+
+`check-licence.py` was a portability defect in the tool, not in the test. The same `os.path.relpath(path, ROOT)` pattern remains in `tools/check-reachable.py`, `tools/measure-routes.py`, `tools/check-fragments-compile.py`, `tools/generate-jobs.py`, `brain/heron_skill.py` and `brain/heron_validate.py`. None is reachable with an out-of-repo path today, so each is latent rather than broken; record them, and use the owning helper if any of those paths ever becomes caller-supplied.
 
 ### B. Record the baseline suite result as a committed artefact
 
@@ -1206,7 +1215,9 @@ Name them in L's entry condition: the plan may not be removed while it is still 
 
 ### Verification status of this section
 
-Every measurement above was taken by running the named command on the named commit. `git diff --check` passes; `check-docs.py`, `check-metadata.py`, `check-structure.py`, `check-licence.py` and `agent-count.py` all exit 0. Documentation reports the same four pre-existing broken links, none in this plan. No housekeeping was executed, no file moved or deleted, and no gate was repaired.
+Every measurement above was taken by running the named command on the named commit. `git diff --check` passes; `check-docs.py`, `check-metadata.py`, `check-structure.py`, `check-licence.py` and `agent-count.py` all exit 0. Documentation reports the same four pre-existing broken links, none in this plan.
+
+The two gates named in section A were repaired on the owner's instruction; the timeout was proven by giving the bound a suite that never returns and confirming it is named, skipped and reported rather than waited on. No housekeeping was executed, and no file was moved, merged or deleted. Items B to F remain proposals for the execution to adopt.
 
 ---
 
