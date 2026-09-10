@@ -21,6 +21,23 @@
 !tests/models/**/*.rvt
 !tests/models/**/*.rfa
 
+# Source documents for ingestion — licensed standards and client-owned work.
+# THE STORE WAS PROTECTED AND THE SOURCE WAS NOT. A knowledge store lives in
+# %APPDATA%\Heron\knowledge and *.db is ignored below, so no ingested text can
+# reach this repository. The PDF it was ingested FROM could, and that is the
+# licensed half: NFPA and ASHRAE are bought per seat, QCS is somebody's
+# publication, and a client specification is theirs. A fork propagates and
+# GitHub caches, so this one is permanent if it happens once.
+# Anything the repository genuinely needs is committed with an explicit
+# exception, the way tests/models/ is above.
+*.pdf
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.pptx
+*.ppt
+
 # Heron data class — belongs to the user, never to the repository
 /workspace/
 /data/
