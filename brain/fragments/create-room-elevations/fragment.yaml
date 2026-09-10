@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 15
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -70,6 +70,28 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-09-11'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created 4 item(s) [ViewSection,
+    ViewSection, ViewSection, ...], elevationType ViewFamilyType, marker ElevationMarker,
+    refused 1 item(s) [4 elevation(s) made, pointing in the marker's DEFAULT direct...], scale
+    50, slotCount 4. inputs came planView as given; origin as given; slotCount as given; scale
+    as given. on Project1 work_ajmal.al
+  negative_case: run with categoryName=Ducts, inViewOnly=1 - Mech, origin=3000,2000,0, planView=1
+    - Mech, scale=50, slotCount=0 instead - chosen because it should not contain what this
+    fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned created 0 item(s), elevationType ViewFamilyType, marker
+    ElevationMarker, refused 1 item(s) [no elevations asked for - the marker was placed and
+    left emp...], scale 50, slotCount 0. inputs came planView as given; origin as given; slotCount
+    as given; scale as given. on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: e023b1f857bf37e1
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

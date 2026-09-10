@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,29 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, copiesEach 2, count 3, created 10 item(s) [926619, 926622, 926625, ...], length
+    0.00328083989501312, refused 0 item(s), spacingMm 2000. inputs came elements from the
+    selection (5); direction as given; spacingMm as given; count as given. on Project1 work_ajmal.al
+  negative_case: run with categoryName=Ducts, count=1, direction=1,0,0, inViewOnly=1 - Mech,
+    spacingMm=2000 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, copiesEach 0, count 1,
+    created 0 item(s), length 0.00328083989501312, refused 5 item(s) [925641, 925646, 925658,
+    ...], spacingMm 2000. inputs came elements from the selection (5); direction as given;
+    spacingMm as given; count as given. on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: aab5a4a849bae2fe
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
