@@ -2210,7 +2210,7 @@ fragments is the failure mode to avoid.
 justification is that it is read-only and it attacks the measured bottleneck. Recorded as a departure
 rather than slipped in.
 
-`docs/PROMPT-fragment-validation-agent.md` is the brief, written so another session can start from it
+`docs/work-notes/plans/PROMPT-fragment-validation-agent.md` is the brief, written so another session can start from it
 without asking anything.
 
 ### A git trap that cost nothing this time and would eventually cost a day
