@@ -83,6 +83,15 @@ obj/
 # file whose parent directory is excluded.
 !.claude/skills/*/bin/
 !.claude/skills/*/bin/*.py
+#
+# The same trap, a second time: the skills moved to .agents/skills/ and the
+# re-include above did not follow them, so `bin/` swallowed heron_guard.py
+# again at its new path. Committing the folder would have tracked SKILL.md and
+# silently dropped the hook it advertises - the identical broken state PR #44
+# fixed. Whitelist the path that actually exists, not only the one that used
+# to. Found 2026-09-10, before the first commit of these three skills.
+!.agents/skills/*/bin/
+!.agents/skills/*/bin/*.py
 [Dd]ebug/
 [Rr]elease/
 *.user
