@@ -162,6 +162,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | Every question, prioritised, with answer slots. **The count is derived** — `python tools/check-docs.py` reads the questions themselves and fails if the progress line disagrees |
 | [ROADMAP.md](ROADMAP.md) | Phase 0 → Phase 7, and what is deliberately deferred |
 | [DECISIONS.md](DECISIONS.md) | Append-only log of decisions actually made |
+| [**work-notes/**](work-notes/README.md) | **What work is going on right now** — active plans, execution records, temporary notes. Operational workspace, never specification |
 | [../tools/](../tools/README.md) | Scripts that keep these documents honest — link checker, count recomputer, map generator |
 
 ---

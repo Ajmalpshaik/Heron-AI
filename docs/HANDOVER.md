@@ -1,5 +1,13 @@
 # Heron AI — Session Handover
 
+> **What this file is:** the **operational current-work entry point** — where the last session stopped,
+> what is proven rather than merely built, and what to do next. It is a work note, not specification.
+> Where it disagrees with the [Constitution](../HERON_CONSTITUTION.md), the
+> [Golden Rules](14-golden-rules.md) or [DECISIONS.md](DECISIONS.md), **those win.**
+>
+> It belongs with [`work-notes/`](work-notes/README.md) by role, and **stays here by decision** —
+> it is the documented cold start and too many things point at this exact path to move it.
+
 ## If you are the owner, starting your PC — say this and nothing else
 
 > **"Read HANDOVER.md in Heron-AI and carry on."**

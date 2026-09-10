@@ -20,7 +20,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | **A** | Repository-wide audit and inventory | **DONE** | Inventory built, all 82 Markdown files classified, conflicts recorded — §9 to §12 below |
 | **B** | Truth and status reconciliation | **DONE** | All seven stale claims corrected in `edfd867` — §15 |
 | **C** | Documentation architecture | **DONE** | Responsibility map agreed, three files approved for creation, no moves — §17 to §19 |
-| **D** | Work-notes separation | **NOT DONE** | `docs/work-notes/README.md` does not exist |
+| **D** | Work-notes separation | **DONE** | `docs/work-notes/README.md` created; HANDOVER labelled; no empty folders — §20 |
 | **E** | Module-level onboarding READMEs | **NOT DONE** | — |
 | **F** | AI-first / human-first navigation | **NOT DONE** | — |
 | **G** | Cross-link and stale-reference cleanup | **NOT DONE** | 4 pre-existing broken links stand (§5 below) |
@@ -28,7 +28,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | **I** | Validation and QA | **NOT DONE** | Will diff against §4 of this file |
 | **J** | Final repository audit | **NOT DONE** | — |
 | **K** | Final handover report | **NOT DONE** | — |
-| **L** | Plan self-removal | **BLOCKED** | Precondition unmet: `AGENTS.md`, `docs/PROJECT-MAP.md` and `docs/work-notes/README.md` do not exist (§28.11 F) |
+| **L** | Plan self-removal | **BLOCKED** | Precondition partly met: `docs/work-notes/README.md` now exists. Still missing `AGENTS.md` and `docs/PROJECT-MAP.md` (§28.11 F) |
 
 ---
 
@@ -259,7 +259,7 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Phase D: create `docs/work-notes/README.md` and populate the work-notes structure, per the map in §17.
+Phase E: module READMEs — verify the five that exist against their source, and decide `tests/README.md`.
 
 ---
 
@@ -556,3 +556,37 @@ Found while reading for the map. Same class as Phase B, so corrected rather than
 
 The second was actively misleading: it implied nothing had been committed, in a repository where
 Phase 0 is proven and Phase 1 is built.
+
+---
+
+# PHASE D — work-notes separation
+
+Phase C established that nothing moves, so Phase D is creation and labelling only. No file was
+relocated, merged or deleted.
+
+## 20. What was done
+
+| Plan § | Task | Result |
+|---|---|---|
+| §12 | Create `docs/work-notes/README.md` | **Created.** Explains the folder's role, what does not belong in it, the four-stage note lifecycle, and the two derive-don't-type rules this repository has already paid for |
+| §12 | Populate the subfolder model | **Only `plans/` exists**, because only `plans/` holds anything. `handover/`, `fixes/`, `ideas/` and `investigations/` are documented and created when first needed. §12 says create only populated areas; §25 forbids unnecessary empty folders. An empty folder is a promise the repository has not kept |
+| §13 | Handover disposition | **Labelled, not moved.** `docs/HANDOVER.md` now opens with a block stating it is the operational current-work entry point, that it is a work note rather than specification, that the Constitution and DECISIONS win over it, and that it belongs with `work-notes/` by role but stays put by decision |
+| §14 | One-time prompts | **Both retained**, per the Phase A dispositions in §13 of this record. Neither is complete: the validation prompt's on-model half needs real Revit, and the fragment review plan still has C01, C02, C05–C08 and S01–S05 outstanding |
+| §15 | Fix notes | **None exist.** Searched the tracked Markdown for fix/patch/bugfix/hotfix naming and by classification in Phase A. No file in this repository is a temporary defect instruction |
+| §16 | Ideas | **No new home created.** `docs/PROPOSALS.md` already owns reviewed gaps, risks and suggestions, and §2.6 forbids a second source for one responsibility. `work-notes/ideas/` is documented as the place for a raw thought *before* it is ready for `PROPOSALS.md`, and will be created when there is one |
+
+## 21. Reference repair done in the same batch
+
+§28.2 makes G a continuous gate, not a late phase, so the inbound link was added immediately rather
+than deferred:
+
+- `docs/README.md` — the Working documents table now carries a **work-notes/** row. Without it the
+  new README would have been created as an orphan, which is the exact defect recorded against
+  `docs/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` in §13.
+
+## 22. Verification
+
+`check-docs` exit 0 — **77 Markdown files** (76 after the skills consolidation, plus this one README),
+and still exactly the same four pre-existing broken links. Every link inside the new README resolves;
+none was added to the broken list. `check-metadata` exit 0, `check-structure` exit 0,
+`git diff --check` exit 0.
