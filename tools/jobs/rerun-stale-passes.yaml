@@ -1,0 +1,88 @@
+# Re-running four passes whose run records cannot be trusted - 2026-09-10.
+#
+# WHY RE-RUN SOMETHING THAT ALREADY PASSED. Judged with tools/batch-prove.judge
+# against the records on disk, these four come back PASS. They are still DRAFT
+# and unsigned, so signing them looked like free progress. It is not.
+#
+# EVERY ONE OF THEIR RUN RECORDS IS STALE BY THIS REPOSITORY'S OWN RULE.
+# `heron_validate.implementation_changed_after` treats SAME DAY as "the code
+# moved after", and says why: "This library proves and fixes within a single day
+# as a matter of routine, so same-day is the COMMON case here, not the edge."
+#
+#   audit-mep-openings          run 2026-09-09, code last changed 2026-09-09
+#   check-ceiling-coordination  run 2026-09-09, code last changed 2026-09-09
+#   check-fixture-connectivity  run 2026-09-09, code last changed 2026-09-09
+#   read-space-loads            run 2026-09-09, code last changed 2026-09-09
+#
+# A FIFTH AND SIXTH ARE LEFT OUT. `test-view-filter-match` is worse, not
+# same-day: its record is 2026-09-08 and the code moved on 2026-09-09, so it is
+# definitively stale - but it has NO draft and no recorded arrangement anywhere
+# in tools/jobs, so re-running it needs a case built from scratch rather than
+# repeated. `set-view-section-box` is the fragment the same-day rule was WRITTEN
+# for - its proof was taken and the implementation changed hours later, altering
+# the very negative case the proof recorded - and it likewise has no job entry.
+#
+# THE ARRANGEMENTS ARE NOT NEW. Each is lifted from the job file that recorded
+# the original pass, so what changes is the freshness of the evidence and
+# nothing else: read-space-loads from example.yaml, check-ceiling-coordination
+# and check-fixture-connectivity from defect-finders.yaml, audit-mep-openings
+# from defect-finders-2.yaml.
+#
+# NO `expect:` ON ANY OF THEM, DELIBERATELY. The four were judged PASS with
+# expect=None, and two of the source files carry an `expect:` naming a field
+# that is NOT the one the recorded positive moved - audit-mep-openings expects
+# `stale` where the pass was `combined 9`, and check-fixture-connectivity
+# expects `missingService` where the pass was `noConnectors 10`. Carrying those
+# across would manufacture a failure out of a judgement that already held.
+
+model: "Snowdon-scratch_ajmal.al, Revit 2024 - views FloorPlan: M1 and FloorPlan: L3"
+
+defaults:
+  write: false                    # all four are risk READ
+  in: "Snowdon-scratch_ajmal.al"  # two models are open; do not follow the active one
+  setup:
+    - select-by-category-name
+    - set-selection
+  # THE NEGATIVE IS A DIFFERENT SELECTION, NOT A CLEARED ONE. Clearing it leaves
+  # `elements` unbound and the executor refuses, which proves nothing (section 1d).
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: L3"    # 307 ducts - the rich selection
+  negative-set:
+    categoryName: Duct Tags
+    inViewOnly: "FloorPlan: M1"    # 9 tags, no geometry to judge
+
+jobs:
+  # Spaces carry loads; ducts do not. The original recorded noLoad 17 - all 17
+  # spaces present and none of them carrying a load, which is a real answer
+  # about this model rather than a fragment finding nothing.
+  - fragment: read-space-loads
+    set:
+      categoryName: Spaces
+      inViewOnly: "FloorPlan: M1"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+
+  # A tolerance nothing can satisfy makes every device out of plane; tags have no
+  # plane at all. Held IDENTICAL across the legs so the SELECTION is what varies.
+  - fragment: check-ceiling-coordination
+    set:
+      tolerance: 99999
+    negative-set:
+      tolerance: 99999
+
+  # Demanding THREE services makes a terminal carrying one incomplete. Tags have
+  # no connectors, so nothing is missing because nothing is required.
+  - fragment: check-fixture-connectivity
+    set:
+      categoryName: "Air Terminals"
+      inViewOnly: "FloorPlan: M1"
+      requiredServices: "Supply Air,Return Air,Exhaust Air"
+    negative-set:
+      requiredServices: "Supply Air,Return Air,Exhaust Air"
+
+  # Takes the whole selection and audits it. Defaults carry both legs.
+  - fragment: audit-mep-openings
+    set: {}
+    negative-set: {}
