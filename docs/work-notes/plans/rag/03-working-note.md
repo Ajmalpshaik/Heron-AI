@@ -108,6 +108,15 @@ Each of these is a sentence that was true when written and is false now.
 | **W-2** | [`brain/README.md`](../../../../brain/README.md), the `retrieval-history.md` row | the file *"currently records the built-in backend collapsing as the library grows, which is the evidence for `A7`"* | `A7` is closed. The row describes the evidence for a thing that has already happened |
 | **W-3** | [`tests/test_embed.py`](../../../../tests/test_embed.py), closing text | *"it could not be tested here, because this container's network refuses huggingface.co. A7 in NEEDS-CHECKING.md is that run"* | the suite **just ran on the model backend** and printed `Backend in use: model` eight lines above this sentence |
 | **W-4** | [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) | eleven rows, every one `lexical`, last at 59 fragments | 360 fragments, `model`. **The file written to prevent a stale retrieval number is carrying one** |
+| **W-5** | [`brain/README.md`](../../../../brain/README.md), the dependency table | `pyyaml` is the whole list | **`model2vec` is used too** — it is what makes `Backend: model` work. Somebody following the instructions exactly installs `pyyaml`, gets the weaker backend, and is told nothing |
+| **W-6** | The repository has **no `requirements.txt`, no `pyproject.toml`, no `setup.py`** | — | [`tools/setup.ps1`](../../../../tools/setup.ps1) builds and deploys the **add-in** and installs no Python package at all. [`docs/07`](../../../07-installation-and-update.md) specifies an installer that *"checks required dependencies"* and a Dependency Agent that *"check[s] and install[s]"* them — **designed, not built.** So the Python half of Heron is installed by hand, from a list that is wrong (W-5) |
+
+**W-5 and W-6 were found on 2026-09-10 by the owner asking a question** — *does a new person
+installing from GitHub get this automatically?* The answer is that the **add-in half installs itself
+and the Python half does not**, and this track makes it sharper rather than causing it: the plan adds
+**optional** packages (the re-ranker, possibly a PDF reader), and every one of them degrades silently
+when absent. **Silent degradation plus an install list nobody can follow is how a user ends up on the
+weaker backend permanently.** W-6 is the gap; a dependency manifest would close both.
 
 **W-4 is Stage 0** and is fixed by doing the work, not by editing the file. **W-1 to W-3 are three
 sentences** and could be corrected in ten minutes — deliberately not done here, because a documentation
