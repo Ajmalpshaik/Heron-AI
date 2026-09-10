@@ -615,6 +615,62 @@ counter that cannot be wrong, and a fragment that cannot be wrong cannot be prov
 freeze a counter that reports work nobody did. The fix is to read the end's join state first and count
 only what moved — a fragment change, and the owner's.
 
+### `group-and-count` PROVED THROUGH THE CHAIN — the payoff for row 11, 2026-09-10
+
+The fix that added `--keep-chain` was made earlier the same day and never collected on. This is what
+it was for.
+
+`group-and-count` takes `values` from the CHAIN, not from the selection, and by default the fragment
+under test resets the chain — so before the fix it came back `needs_unbound: 'values' was never
+supplied` while the setup reported success. The setup is three steps and only the first resets:
+`select-by-category-name` leaves `elements`, `set-selection` writes the real selection,
+`read-element-parameters` leaves `values`.
+
+| `parameterName` | `groups` |
+|---|---|
+| `System Type` | **1 item(s) `[[Supply Air, 5]]`** |
+| `ZZZNOTHINGHERE` | 0 item(s) |
+
+**The `bound` line is the whole argument, and it is recorded in the draft:**
+
+```
+positive  values from read-element-parameters (5)
+negative  values from read-element-parameters (0)
+```
+
+Both legs are **bound**. A parameter name matching nothing leaves `read-element-parameters` returning
+an EMPTY dictionary — not a failure — so `values` is bound to something real and the fragment ran and
+found nothing. That is the §1d distinction exactly: a cleared selection leaves the need **unbound**
+and the executor refuses before the fragment starts, which proves nothing.
+
+Snowdon gives richer evidence for the same fragment — three groups, `9 + 8 + 5 = 22`, measured
+2026-09-10 — and is worth taking if this is ever re-proved. Arithmetic across three groups is stronger
+than a count of one.
+
+### `select-in-region` REPORTS FEET AS MILLIMETRES, AND FINDS NOTHING — NEEDS_REVIEW, 2026-09-10
+
+Asked for a 20,000 mm cube over content that sits within 6 m of the origin:
+
+```
+minMm=0,0,0   maxMm=20000,20000,20000   categories=Ducts
+  -> "0 element(s) in a 66 x 66 x 66 mm volume, by the fast BOUNDING BOX test"
+```
+
+**20000 ÷ 304.8 = 65.6.** The value is converted to internal feet correctly and then reported with a
+`mm` label — so the sentence a reader checks their input against is off by a factor of 305. A second
+run at `-5000 … 20000` (25,000 mm) reported *"82 x 82 x 82 mm"*; 25000 ÷ 304.8 = 82.
+
+**And it found nothing** — `elements 0`, `withoutGeometry 0` — in a box that on those numbers is
+65.6 ft ≈ 20 m and should contain four walls and five ducts. Tried with `Ducts` and `Walls`, with
+`exact` false and true, and with a ±100 m box. Always zero.
+
+**No mechanism is claimed.** The label defect is certain — the arithmetic is on the page. Whether the
+empty result is the same units problem one layer deeper, a different origin, or something else is not
+settled by anything measured here.
+
+> A fragment that reports the volume it searched in the wrong unit is worse than one that reports
+> nothing, because the number looks like a confirmation of what you asked for.
+
 ### `set-mep-justification` ACCEPTS ONLY AN OFFSET OF ZERO — NEEDS_REVIEW
 
 Run on the same 22 ducts, three times:
