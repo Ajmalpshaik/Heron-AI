@@ -4,7 +4,10 @@
 > run driven by the repository housekeeping and AI onboarding plan, **deleted 2026-09-10** once its
 > own closure rules were met. **This file is what survives it** - the plan's requirements are quoted
 > where they are relied on, so nothing here depends on being able to open it.
-> **Status:** Phases A and B complete. One owner-authorised consolidation performed (§16).
+> **Status:** **Phases A to K are complete** — §1 carries the per-phase evidence, and L's
+> precondition is met with the plan since deleted. One owner-authorised consolidation performed
+> (§16). **Completed, but blocked rather than finished:** the three verifications in §47 each need
+> somebody who is not the authoring session, and this note does not retire until they are done.
 > **Owner of this run:** single-agent session on branch `claude/amazing-fermat-emyav7`.
 > Independent review is **pending** — self-review is not independent approval (plan §28.2).
 
