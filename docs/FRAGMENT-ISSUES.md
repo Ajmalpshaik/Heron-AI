@@ -1285,6 +1285,64 @@ seeing three **unsigned** fragments come back READY beside two signed ones.
 `target in NEEDS_PROOF` rather than `frag.status` — touches the promotion gate itself and belongs to
 the owner, not to a proving session. Recorded and left, per the standing rule.
 
+### A PROOF TAKEN WITH `--in` NAMES THE WRONG MODEL — found 2026-09-10, OPEN
+
+D-30 asks for *"a recorded run against a **named real model**"*. `proof.model` is that name, and when
+`--in` is used it is **the model that happened to be in front, not the one the run went to.**
+
+**Demonstrated in one run.** `validate --in "Snowdon-scratch_ajmal.al" list-levels`, with `Project1`
+active:
+
+```
+record model line : Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+phase document    : Snowdon-scratch_ajmal.al
+levels            : 11 item(s) [Parking, L1 - Block 35, L1 - Block 37, ...]
+```
+
+Eleven levels with Snowdon's names — so the run went where it was told. Only the headline is wrong,
+and the element count is wrong with it: 3,471 is Project1's, not Snowdon's.
+
+**The cause, read rather than guessed** ([`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py)):
+
+```python
+model = "%s (%s elements), Revit %s, session %s" % (
+    opening.get("document"), ...)
+```
+
+`opening` is the probe that identifies the **ACTIVE** model — its own failure text says *"Could not
+identify the active model"*. `in_document` is passed separately to each phase, which is why every
+phase's `document` field is right and only the stamp is wrong. The refusal sitting immediately above
+that line reads *"Refusing to record evidence about a model that will not name itself"* — and then it
+mis-names one that did.
+
+**Three PROMOTED fragments carry it.** All three came from a job file pinning `in:
+"Snowdon-scratch_ajmal.al"` while `Project1` was the active document:
+
+| Fragment | `proof.model` says | but both phases ran on |
+|---|---|---|
+| `create-callout` | `Project1 work_ajmal.al (3,445 elements)` | `Snowdon-scratch_ajmal.al` |
+| `create-key-schedule` | `Project1 work_ajmal.al (3,445 elements)` | `Snowdon-scratch_ajmal.al` |
+| `duplicate-type` | `Project1 work_ajmal.al (3,445 elements)` | `Snowdon-scratch_ajmal.al` |
+
+**The evidence is not invalid, and that distinction matters.** The runs happened, both phases are
+recorded, and each names the document it used — the proof contradicts itself *inside one block*, which
+is how it was caught. What is wrong is the field a reader trusts first.
+
+**Three more are FLAGGED, not asserted** — `transfer-line-styles-`, `transfer-object-styles-` and
+`transfer-view-filters-between-documents`, whose model line says `Snowdon Towers Sample Architectural`
+while the phases ran on `Snowdon-scratch_ajmal.al`. These fragments take a `sourceDocumentTitle`, so
+the named document is a genuine participant and the mismatch may read differently. Needs a look by
+someone who took them.
+
+**`restamp` is NOT the remedy** — it re-records fingerprints only, and refuses anything whose code
+moved after the proof. Nothing in the repository currently rewrites `proof.model`.
+
+> The five fragments proved on `Project1` tonight are unaffected: the pin and the active document were
+> the same, so the stamp is true. That is luck, not a safeguard.
+
+**Not fixed here.** The change is one line in the proving client — stamp the resolved document rather
+than the active one — plus a decision about the three already promoted. Both belong to the owner.
+
 ### ONE PERSON, ONE `HERON_CLIENT_ID`
 
 The lease identifies a **chat**, not a person. Four ids were in use for one afternoon's work —
