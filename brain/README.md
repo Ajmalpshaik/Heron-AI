@@ -32,7 +32,7 @@ caller passes `apply` ([D-55](../docs/DECISIONS.md)).
 | | |
 |---|---|
 | [`heron_fragment.py`](heron_fragment.py) | **Step 7.** What a fragment IS on disk, and the validator that will not let it lie. Identity is not the filename; the contract is data, not prose; a proof without a negative case is refused |
-| [`fragments/`](fragments/) | The library. **360 as of 2026-09-08 — 308 `DRAFT`, 52 `PROVEN`.** Do not trust those three numbers over the tools: `python brain/heron_fragment.py` counts and validates them from disk, and it is right where this line has gone stale. This row once said *thirty-two, every one DRAFT*, and stayed saying it for a week after neither half was true. Every one **compiles**, on all eight releases, via [`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py). Its first run found one that never could have: `FRG-QA-001` had a value called `checked`, a reserved C# keyword |
+| [`fragments/`](fragments/) | The library. **360 as of 2026-09-10 — 193 `DRAFT`, 167 `PROVEN`.** Do not trust those three numbers over the tools: `python brain/heron_fragment.py` counts and validates them from disk, and it is right where this line has gone stale. This row once said *thirty-two, every one DRAFT*, and stayed saying it for a week after neither half was true. Every one **compiles**, on all eight releases, via [`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py). Its first run found one that never could have: `FRG-QA-001` had a value called `checked`, a reserved C# keyword |
 | [`heron_search.py`](heron_search.py) | **Step 9.** Finding a fragment by exact words. Three routes and it says which answered: `identity` (one lookup, no search), `cache` (this wording was resolved before), `keywords` (FTS5, ranked). Only a **PROVEN** fragment may run off an exact match without asking |
 | [`heron_skill.py`](heron_skill.py) · [`skills/`](skills/) | **Step 14.** What the user can *ask for*, in their own words. A skill names **capabilities, never fragments** — so a fragment can be replaced without editing a skill, and a skill can be written **before** the fragment that will serve it. Ten of them, all `DRAFT` |
 | [`heron_graph.py`](heron_graph.py) | **Step 13.** *What breaks if this changes.* Every edge but one is **computed from the fragments on demand** (D-40) — the only stored edge is a skill's requirement, which no artifact underneath carries. Names the dangerous case out loud: a **sole provider**, because whatever asked for its capability never named it |
@@ -42,6 +42,10 @@ caller passes `apply` ([D-55](../docs/DECISIONS.md)).
 | [`heron_embed.py`](heron_embed.py) | **Step 10.** Finding a fragment by something other than its exact words. **Two backends**: `lexical` is built in, offline, needs nothing installed — and is measured, in numbers, as *not meaning*; `model` is a trained encoder used when one is present, and **has never run** (`A7`). Content-hashed, so re-indexing unchanged files costs nothing |
 | [`heron_scope.py`](heron_scope.py) | **Step 8.** One knowledge store per scope, as one file each. A cross-scope query is impossible to *write*: the API takes one scope and `ATTACH` is refused by name. The stores are **derived** — delete them all and `--rebuild` puts them back |
 | [`heron_context.py`](heron_context.py) | **The Context Manager** — [docs/19 §1–§2](../docs/19-context-and-cost.md), specified and never implemented until 2026-09-09 ([32 §4.1](../docs/32-master-architecture-reconciliation.md)). Four paths, each with a **declared list of parts it may carry**, and a part outside it **raises** — docs/19: *exceeding a budget is a bug in retrieval, not a reason to raise the budget*. The budget is a parts list rather than a token count because Heron has no tokeniser and the host counts tokens ([D-58](../docs/DECISIONS.md)); size is reported and never enforced. **The request crosses byte for byte** — `OST_DuctCurves` is the load-bearing half of a BIM sentence and is what a compressor damages first, and since 2026-09-09 that is a **branch** (`FULL_ONLY`) rather than a promise. **Depth** — `abstract` / `overview` / `full` — says how much of each part is carried, taking a generation packet from **5,737 characters to 372** with the request unchanged; a part that lost something says **how much**, and a part that carried all of itself says nothing extra ([34 §2.1–2.2](../docs/34-patterns-adapted.md)). **It does not classify what the user meant** ([D-01](../docs/DECISIONS.md)); an assumed path says it was assumed. A path whose source does not exist — `STANDARDS` wants clauses and no clause store exists — is **refused by name rather than quietly degraded** |
+| [`heron_validate.py`](heron_validate.py) | **Step 17.** The Fragment Validation Agent. It gathers the evidence for a proof and **never signs one** — a person does, because an agent that can stamp 193 fragments is the fastest machine ever built for making an unproven claim look proven ([D-30](../docs/DECISIONS.md)). Its drafts land in [`proof-drafts/`](proof-drafts/) |
+| [`heron_matrix.py`](heron_matrix.py) | **Step 17.** The Compatibility Matrix Agent — every fragment against every Revit release, so a release-specific hole is visible before somebody finds it in a model |
+| [`heron_gaps.py`](heron_gaps.py) | **Step 17.** The Capability Gap Agent — what Heron was asked for and could not do. Not the same as `tools/check-gaps.py`, which reports what is unfinished in the repository |
+| [`heron_audit.py`](heron_audit.py) | **Step 17.** The brain's half of the audit trail. The add-in records what reached the model; this records what the brain did, so a request answered entirely here still leaves a trace ([D-62](../docs/DECISIONS.md)) |
 
 ```bash
 python brain/heron_fragment.py                              # validate the library
@@ -53,17 +57,21 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, mostly.** **52 fragments are `PROVEN`; the other 308 and all ten skills are `DRAFT`.** Phase 2's
+**Proof, mostly.** **167 fragments are `PROVEN`; the other 193 and all ten skills are `DRAFT`** — derive
+both with `python brain/heron_fragment.py` rather than reading them here. Phase 2's
 definition of done is *"ten real skills **work**"* — ten are written, and the word that needs a Revit is
-still the last one. The 52 are what one night with a real model bought; the arithmetic on the rest has
+still the last one. The first 52 are what one night with a real model bought; the arithmetic on the rest has
 not changed, only the size of it - and the ten fragments added on 2026-09-08, four for
 switching project and view and six for the review's N01 to N06, arrived `DRAFT` like
 everything else.
 
-**And a WRITE path for the executor.** Reading a model through a fragment works: the executor is built
-and runs one read-only. What does not exist is running a fragment that CHANGES anything — that is a
-separate operation, deliberately, and `write.enabled` defaults to `false` until a real Revit has been
-through [NEEDS-CHECKING.md](../docs/NEEDS-CHECKING.md). So a request resolves to *this capability,
+**The WRITE path exists now.** Reading a model through a fragment works, and so does changing one:
+`run_fragment_write` is a **separate** operation from the read, deliberately — `MODIFY` in the
+registry, wrapping the run in a `TransactionGroup` assimilated only on `apply=true` and rolled back
+otherwise, so a preview is the run itself undone rather than a simulation that could lie
+([D-55](../docs/DECISIONS.md)). **55 `MODIFY` fragments are `PROVEN`** — derive that with
+`heron_fragment.py` — so this is built *and* met a model. `write.enabled` still defaults to `false`
+until a real Revit has been through [NEEDS-CHECKING.md](../docs/NEEDS-CHECKING.md). So a request resolves to *this capability,
 provided by that fragment*, and can be READ all the way through — and no answer here may imply more
 than that.
 

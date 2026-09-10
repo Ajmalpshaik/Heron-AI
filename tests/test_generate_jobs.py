@@ -194,12 +194,34 @@ def test_a_point_is_millimetres_and_says_so():
 def test_an_element_is_a_type_and_a_list_of_them_is_still_refused():
     print("`Element` resolves to a TYPE; the instance boundary stays")
 
-    # `Element` became receivable when OneElement landed. It resolves to an
-    # element TYPE by name and refuses a particular wall or duct, because an
-    # instance has no name of its own - Element.Name on one returns its TYPE's
-    # name, so "Generic - 200mm" would match every wall in the model.
-    ok, _ = GJ.receivable("Element")
-    check(ok, "a single Element can be typed in")
+    # WHY THIS ASSERTION MOVED, 2026-09-10 - defect row 13.
+    #
+    # It used to read `receivable("Element")` -> True, on the reasoning that
+    # `Element` "resolves to an element TYPE by name and refuses a particular
+    # wall or duct". THE FIRST HALF WAS TRUE AND THE SECOND WAS NOT. Nothing
+    # refused: `OneElement` was `OneOfClass(doc, typeof(ElementType), ...)`, so
+    # a typed name resolved to a TYPE successfully and the fragment ran on it.
+    # All fourteen bare `Element` needs in the library mean an INSTANCE, and all
+    # twelve fragments came back 0 with no error and a findings line naming the
+    # type - the confident meaningless answer this repository exists to refuse.
+    #
+    # The boundary the old comment describes is now REAL, and the need's NAME is
+    # what draws it, because the type cannot: `wallType` and `reference` are both
+    # written `Element`. So the old assertion still holds for a name meaning a
+    # type, and is inverted for a name meaning an instance.
+    ok, _ = GJ.receivable("Element", "wallType")
+    check(ok, "a single Element CAN be typed in when the name means a type")
+
+    refused, why = GJ.receivable("Element", "reference")
+    check(not refused, "and CANNOT when the name means one particular element")
+    check(why and "PARTICULAR" in why,
+          "and the refusal says which of the two it hit")
+
+    # AND AN UNNAMED ONE IS REFUSED, not accepted. A caller with no name to offer
+    # cannot be shown to mean a type, and guessing "type" is how this defect read
+    # as twelve fragment failures for a day.
+    blind, _ = GJ.receivable("Element")
+    check(not blind, "an Element with no need-name is refused, not assumed a type")
 
     # AND THE LIST FORM DID NOT COME WITH IT. The three fragments declaring
     # `IList<Element>` as a caller value want instances, and a comma-separated
@@ -210,11 +232,13 @@ def test_an_element_is_a_type_and_a_list_of_them_is_still_refused():
     check(why and "not one of them yet" in why,
           "and says so rather than half-accepting it")
 
-    # The hint a person reads beside the blank names the boundary, so they meet
-    # it while filling the file in rather than after a run against a model.
+    # The hint a person reads beside the blank names what to write. It no longer
+    # has to warn that an instance cannot be given: since row 13 an instance-
+    # meaning need is refused by `receivable` and never reaches a job file at
+    # all, so the warning would be addressed to a blank that cannot exist.
     hint = GJ.how_to_type("Element")
-    check("TYPE" in hint and "cannot be typed in" in hint,
-          "the hint says a type is wanted and an instance cannot be given")
+    check("TYPE" in hint, "the hint says a TYPE is wanted")
+    check("Basic Wall" in hint, "and shows the shape of the name to write")
 
 
 def test_the_narrowed_declarations_resolve():

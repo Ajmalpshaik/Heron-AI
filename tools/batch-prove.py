@@ -210,6 +210,13 @@ def read_jobs(path):
         job = {
             "fragment": row["fragment"],
             "setup": row.get("setup", defaults.get("setup")) or [],
+            # DEFECT ROW 11. Keep what the setup chain left instead of resetting
+            # it before the fragment under test. Per job, and defaulting to
+            # False, because the chain outranks the selection - see cmd_validate
+            # in the client. A producer -> consumer pair needs it; every
+            # arrangement written before 2026-09-10 must not have it.
+            "keep-chain": bool(row.get("keep-chain",
+                                       defaults.get("keep-chain", False))),
             "set": _merge(defaults.get("set"), row.get("set")),
             "negative-set": _merge(defaults.get("negative-set"),
                                    row.get("negative-set")),
@@ -248,6 +255,22 @@ def job_refusal(job, library):
     for step in job["setup"]:
         if step not in library:
             return REFUSED, "the setup names '%s', which is not a fragment" % step
+
+    if job.get("keep-chain") and not job["setup"]:
+        # `.get` AND NOT `[...]`, UNLIKE ITS NEIGHBOURS. `job_refusal` reads a
+        # SUBSET of a job's keys and is called with partial dicts - it never
+        # touches `write` or `timeout`, and tests/test_generate_jobs.py passes
+        # one without them. A required key here would break that contract for a
+        # field that is optional by design and False by default.
+        #
+        # KEEPING THE CHAIN WITH NOTHING TO KEEP IS NOT A NO-OP. Nothing in this
+        # job fills the chain, so what survives is whatever an earlier run left,
+        # and the fragment would bind from something nobody remembers running.
+        # The client refuses this too; catching it here means a batch of
+        # fourteen says so before Revit is touched.
+        return REFUSED, ("`keep-chain: true` with no `setup:` - there is nothing "
+                         "for it to keep, and what would survive is whatever an "
+                         "earlier run left behind")
 
     if not job["negative-set"] and not job["negative-in"]:
         # `validate` with no negative arrangement STOPS AND WAITS at the
@@ -466,6 +489,8 @@ def validate_command(job, record_path):
         argv.append("--write")
     for step in job["setup"]:
         argv += ["--setup", step]
+    if job["keep-chain"]:
+        argv.append("--keep-chain")
     for key in sorted(job["set"]):
         argv += ["--set", "%s=%s" % (key, job["set"][key])]
     for key in sorted(job["negative-set"]):

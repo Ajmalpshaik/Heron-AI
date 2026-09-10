@@ -3,10 +3,15 @@
 Thank you for considering it. Heron AI is a platform for BIM professionals, and contributions from
 people who actually do BIM work are worth more than contributions from people who only write code.
 
-> **Current stage: built far ahead of what is proven.** Phase 0 — the whole path from a sentence to a
-> selection changing on screen — is proven in real Revit 2020 and 2024. Step 6 (the first write) and
-> the whole of Phase 2 are **built and compiled on every supported release, and have never loaded into
-> Revit.** Almost every fragment and every skill is still `DRAFT`.
+> **Current stage: built ahead of what is proven, though less far than it was.** Phase 0 — the whole
+> path from a sentence to a selection changing on screen — is proven in real Revit 2020 and 2024. The
+> add-in has since been deployed to Revit 2020, 2024 and 2027, and D-28's executor compiles a
+> fragment's C# inside Revit's own process, so fragments do now meet real models: **167 of the 360
+> carry a recorded proof, 55 of them on the write path.** **All ten skills are still `DRAFT`**, and
+> 193 fragments have still never met a model.
+>
+> Derive both numbers rather than believing this line —
+> `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
 > So the most useful contributions are **proof** rather than more code, and the architecture questions
 > that are genuinely still open — see [Open Questions](docs/OPEN-QUESTIONS.md).

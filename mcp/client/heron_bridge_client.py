@@ -1144,7 +1144,8 @@ def cmd_prove(names, in_document=None, values=None):
 
 
 def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
-                 values=None, negative_values=None, writing=False, setup=None):
+                 values=None, negative_values=None, writing=False, setup=None,
+                 keep_chain=False):
     """
     Run ONE fragment through the phases a proof needs, and record what came back.
 
@@ -1173,8 +1174,36 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
 
     A PHASE THAT DID NOT RUN IS SIMPLY ABSENT FROM THE RECORD, and the draft
     then says NOT ESTABLISHED. Nothing here invents a result it did not see.
+
+    WHAT A SETUP CHAIN CAN HAND OVER, AND `keep_chain` - defect row 11
+    ------------------------------------------------------------------
+    By default the fragment under test RESETS the chain, so a setup chain hands
+    over only what lives in Revit's own state - the SELECTION - and never a
+    value. `select-by-category-name` then `set-selection` survives because
+    `set-selection` writes the real selection; `read-element-parameters` then
+    `group-and-count` does not, and both `group-and-count` and `sum-by-group`
+    came back `needs_unbound: 'values' was never supplied` on 2026-09-10 while
+    the setup reported success.
+
+    `keep_chain=True` keeps it, and it is OPT-IN PER JOB rather than the
+    default because the obvious fix is wrong. THE CHAIN OUTRANKS THE SELECTION
+    (`RevitFragment.cs`, "1. THE CHAIN" then "2. THE SELECTION"), so keeping it
+    everywhere would make `set-selection` decorative in the middle of every
+    arrangement already written, and those proofs would quietly begin testing
+    something other than what they say.
     """
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    # KEEPING THE CHAIN WITH NOTHING TO KEEP IS NOT A NO-OP. With no setup this
+    # run puts nothing there, so what would survive is whatever some earlier run
+    # of some other fragment left - "elements collected by something nobody
+    # remembers running", which is the exact hazard the reset exists to prevent.
+    if keep_chain and not setup:
+        print("--keep-chain needs a --setup to keep something FROM.")
+        print("Without one, nothing in this run fills the chain, and what would")
+        print("survive is whatever an earlier run left behind - which is what")
+        print("the chain reset exists to prevent.")
+        return 2
 
     source_path = os.path.join(root, "brain", "fragments", name, "impl", "any",
                                "fragment.cs")
@@ -1374,7 +1403,11 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
         print("%-14s %s" % (phase, "ok" if record["ok"] else record.get("error")))
         return record
 
-    run_fragment("positive", in_document, "run as it would normally be run", True)
+    # DEFECT ROW 11, and the default is deliberate - see the docstring.
+    reset_chain = not keep_chain
+
+    run_fragment("positive", in_document, "run as it would normally be run",
+                 reset_chain)
 
     if negative_in or negative_values:
         # THE NEGATIVE CASE FOR A VIEW FRAGMENT IS ANOTHER VIEW, and until this
@@ -1398,7 +1431,7 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
         run_fragment("negative", negative_in or in_document,
                      "run %s instead - chosen because it should not contain what "
                      "this fragment reports" % " ".join(parts),
-                     True, using=negative_values or None)
+                     reset_chain, using=negative_values or None)
     else:
         print("")
         print("NEGATIVE CASE. Arrange an answer that must come back empty -")
@@ -1414,7 +1447,7 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
         else:
             run_fragment("negative", in_document,
                          "run after the state was arranged by hand so the "
-                         "answer had to be empty", True)
+                         "answer had to be empty", reset_chain)
 
     if cross:
         # A CROSS-CHECK THAT DID NOT RUN MUST SAY SO. Silence here would reach
@@ -1684,6 +1717,11 @@ def main(argv):
         # fragment DID, and the model ends untouched.
         writing = "--write" in rest
         rest = [r for r in rest if r != "--write"]
+        # --keep-chain keeps what the setup chain left, instead of resetting it
+        # before the fragment under test. Defect row 11, and OPT-IN because the
+        # chain outranks the selection - see cmd_validate.
+        keep_chain = "--keep-chain" in rest
+        rest = [r for r in rest if r != "--keep-chain"]
         # --setup names a fragment to run BEFORE each phase, repeatable and in
         # order. It re-makes the arrangement - typically select-by-category-name
         # then set-selection - because a rolled-back write clears the selection.
@@ -1726,6 +1764,12 @@ def main(argv):
             print("                        write clears the selection, so a selection-based")
             print("                        write needs it: --setup select-by-category-name")
             print("                        --setup set-selection")
+            print("  --keep-chain          keep what the setup chain left, instead of")
+            print("                        resetting it. Needed when the setup PRODUCES a")
+            print("                        value the fragment consumes - the selection")
+            print("                        survives a reset and a value does not. Needs")
+            print("                        --setup, and changes what binds: the chain")
+            print("                        outranks the selection")
             return 2
         values = caller_values(pairs)
         if values is None:
@@ -1735,7 +1779,7 @@ def main(argv):
             return 2
         return cmd_validate(rest[0], values=values,
                             negative_values=negative_values, writing=writing,
-                            setup=setup, **options)
+                            setup=setup, keep_chain=keep_chain, **options)
 
     print(__doc__.strip())
     return 2

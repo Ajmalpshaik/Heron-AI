@@ -842,7 +842,7 @@ made this a question rather than a patch.
 
 **What is never written there: the user's sentence.** The live route share needs the route and whether
 it resolved. It does not need the words, and this file is append-only and never pruned
-([12 §5](12-security-and-privacy.md)). The wording lives in the utterance cache instead — a local store,
+([12 §5](12-security-and-permissions.md)). The wording lives in the utterance cache instead — a local store,
 a different lifetime, and one a person can delete without losing the trail.
 
 **A refusal is recorded as `ok: false` with its reason**, because a trail holding only the successes

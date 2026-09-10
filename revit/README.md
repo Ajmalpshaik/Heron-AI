@@ -8,7 +8,7 @@
 | Runs | inside Revit's process |
 | Changing it needs | **a Revit restart** — a loaded assembly cannot be unloaded |
 | Built | once per Revit generation: `net472`, `net48`, `net8.0-windows`, `net10.0-windows` |
-| Size | under 40 KB total, deliberately |
+| Size | **13 files, ~275 KB of C#** — `find revit -name '*.cs' | xargs wc -c`. Derive it; do not read it here |
 
 ## What's here
 

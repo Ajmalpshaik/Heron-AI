@@ -2,7 +2,7 @@
 
 *Complete Product, Architecture, Agent, Knowledge, Development & Operations Specification*
 
-> **Status:** Source-of-truth record, **part 3 of 3** — the consolidated **handover baseline**,
+> **Status:** Source-of-truth record, **part 3 of 4** — the consolidated **handover baseline**,
 > as provided by the owner on 2026-08-27.
 >
 > | Part | Covers |
@@ -10,6 +10,7 @@
 > | [Part 1](00-master-specification.md) | The platform and its organisation (76 §) |
 > | [Part 2](00b-master-specification-agent-os.md) | The Agent Operating System and self-evolution (84 §) |
 > | **Part 3 — this document** | **The consolidated baseline.** Supersedes nothing; unifies both. |
+> | [Part 4](00d-additional-requirements.md) | Additional requirements — the Kernel, Workflow Engine, Constitution and 30 mandatory components |
 >
 > **This part is authoritative on the Golden Rules** — it replaces Part 1's ten rules with fifteen.
 > See [14 — Golden Rules](14-golden-rules.md).

@@ -84,12 +84,15 @@ obj/
 !.claude/skills/*/bin/
 !.claude/skills/*/bin/*.py
 #
-# The same trap, a second time: the skills moved to .agents/skills/ and the
-# re-include above did not follow them, so `bin/` swallowed heron_guard.py
-# again at its new path. Committing the folder would have tracked SKILL.md and
-# silently dropped the hook it advertises - the identical broken state PR #44
-# fixed. Whitelist the path that actually exists, not only the one that used
-# to. Found 2026-09-10, before the first commit of these three skills.
+# The same trap nearly landed a second time: a copy of the skills briefly sat
+# at .agents/skills/ and the re-include above did not follow it, so `bin/`
+# swallowed heron_guard.py again at that path. Found 2026-09-10 before the
+# first commit of it.
+#
+# That copy is GONE - the skills live at .claude/skills/ and nowhere else, and
+# .codex/agents/*.toml points there too. These two lines are kept only as a
+# tripwire: if anyone recreates .agents/skills/, the hook script comes with it
+# instead of being silently dropped. Remove them once that risk is gone.
 !.agents/skills/*/bin/
 !.agents/skills/*/bin/*.py
 [Dd]ebug/
