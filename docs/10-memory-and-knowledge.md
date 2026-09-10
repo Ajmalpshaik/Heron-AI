@@ -20,6 +20,29 @@
 
 ## 2. Project context isolation
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    H(["<b>Heron AI</b>"])
+    CO["Company"]
+    PA["<b>Project A</b><br/>Standards / Skills / Fragments<br/>Memory / Documents"]
+    PB["<b>Project B</b><br/>Standards / Skills / Fragments<br/>Memory / Documents"]
+
+    H --> CO
+    H --> PA
+    H --> PB
+
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    class H brain
+    class CO plat
+    class PA,PB user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 Heron AI
  |
@@ -31,6 +54,8 @@ Heron AI
  +-- Project B
        +-- Standards / Skills / Fragments / Memory / Documents
 ```
+
+</details>
 
 Project information must not contaminate another project.
 

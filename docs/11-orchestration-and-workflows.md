@@ -67,6 +67,34 @@ See [10 §5](10-memory-and-knowledge.md) for the constraints — read-only sourc
 
 ## 5. Reference workflow — fragment update across versions
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    DI["Discovery"] --> CA["Compatibility Analysis"] --> EF["Existing Fragment Analysis"]
+    EF --> Q1{"Can existing code work?"}
+    Q1 -->|YES| KE["Keep existing implementation"]
+    Q1 -->|NO| Q2{"Adapter required?"}
+    Q2 -->|YES| AD["Add adapter"]
+    Q2 -->|NO| VS["Version-specific implementation"]
+    KE --> RT["Regression Testing<br/>2020 / 2021 / 2022 / 2023 …"]
+    AD --> RT
+    VS --> RT
+    RT --> QA["QA"] --> AP(["Approve"])
+
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    class DI,CA,EF host
+    class Q1,Q2 addin
+    class KE,AD,VS brain
+    class RT,QA user
+    class AP brain
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 Discovery -> Compatibility Analysis -> Existing Fragment Analysis
 -> Can existing code work?
@@ -76,6 +104,8 @@ Discovery -> Compatibility Analysis -> Existing Fragment Analysis
               NO  -> version-specific implementation
 -> Regression Testing (2020 / 2021 / 2022 / 2023 ...) -> QA -> Approve
 ```
+
+</details>
 
 Existing versions must remain functional. This is Golden Rule 4.
 
