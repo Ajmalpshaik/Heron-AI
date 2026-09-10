@@ -22,13 +22,13 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | **C** | Documentation architecture | **DONE** | Responsibility map agreed, three files approved for creation, no moves — §17 to §19 |
 | **D** | Work-notes separation | **DONE** | `docs/work-notes/README.md` created; HANDOVER labelled; no empty folders — §20 |
 | **E** | Module-level onboarding READMEs | **DONE** | All six verified against source; five corrections, `tests/README.md` created — §23 |
-| **F** | AI-first / human-first navigation | **NOT DONE** | — |
+| **F** | AI-first / human-first navigation | **DONE** | `AGENTS.md` and `docs/PROJECT-MAP.md` created and linked; role routes added — §25 to §27 |
 | **G** | Cross-link and stale-reference cleanup | **NOT DONE** | 4 pre-existing broken links stand (§5 below) |
 | **H** | Permanent documentation quality | **NOT DONE** | — |
 | **I** | Validation and QA | **NOT DONE** | Will diff against §4 of this file |
 | **J** | Final repository audit | **NOT DONE** | — |
 | **K** | Final handover report | **NOT DONE** | — |
-| **L** | Plan self-removal | **BLOCKED** | Precondition partly met: `docs/work-notes/README.md` now exists. Still missing `AGENTS.md` and `docs/PROJECT-MAP.md` (§28.11 F) |
+| **L** | Plan self-removal | **Precondition MET** | All three §28.11 F files now exist. Still gated on Phases G–K completing |
 
 ---
 
@@ -259,8 +259,8 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Phase F: create `AGENTS.md` and `docs/PROJECT-MAP.md`. PROJECT-MAP's folder map must link every module
-README — §24 records that none of them is reachable from any index today.
+Phase G: sweep the repository for stale references and the remaining stale-status wording, and give
+`docs/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` the inbound link §13 says it needs.
 
 ---
 
@@ -654,3 +654,84 @@ the new `tests/README.md` are reachable from no Markdown file in the repository 
 
 This is not a broken link — it is a discoverability gap, and it is exactly what §11's folder map is
 for. **`docs/PROJECT-MAP.md` must link all six.** Recorded here so it cannot be quietly skipped.
+
+---
+
+# PHASE F — AI-first and human-first navigation
+
+## 25. The two entry documents, created
+
+### `AGENTS.md`
+
+Deliberately short. Everything in it points at the file that owns the detail — §10 forbids duplicating
+those files inside it, and two copies of a rule is how one goes stale.
+
+It opens with the mistake this repository has already paid for in writing: Heron is a
+**BIM-modeller-facing platform**, not a developer harness, and a document arrived here proposing to
+rebuild it as one ([32 §1](../../32-master-architecture-reconciliation.md)).
+
+Its **Never** list is drawn from what this run actually found, not from a template — never claim proof
+without naming the evidence, never type a derivable number, never put `Autodesk.Revit` outside
+`revit/`, never let an index outrank a source file, never `git add -A`, and never leave a wrong skill
+for a follow-up task.
+
+It records the four states (PASS · FAIL · NOT RUN · NEEDS REAL REVIT), that `check-gaps.py` exits 1 by
+design, that some checkers are reports rather than gates, and that **exit 3 is not a pass**.
+
+### `docs/PROJECT-MAP.md`
+
+The four parts §11 asks for, each built from verified source rather than description:
+
+- **§A System map** — request flow from the modeller to the model, with the two misreadings named: the
+  host decides intent, not Heron; and resolving a capability is not running it.
+- **§B Folder map** — owns / must not own / entry point / gate, for all six folders. The dependency
+  table is copied from `tools/check-structure.py`'s own `ALLOWED` map, so it is the enforced rule and
+  not a description of it. Entry points were verified by grep: `IExternalApplication` →
+  `HeronApplication.cs`, `NamedPipeServerStream` → `BridgeServer.cs`, `__main__` →
+  `heron_mcp_server.py`.
+- **§C Change map** — eight "I need to…" routes.
+- **§D Truth hierarchy** — split into *what Heron is allowed to do* (Constitution, Golden Rules,
+  decisions — a conflicting implementation is a **defect**) and *what Heron actually does* (code, tool
+  output, recorded proof — which can correct a stale sentence, but a passing checker proves only what
+  it implements).
+- **§E Role routes** and **§F the eight most-confused terms**, pointing at
+  [15 — Glossary](../../15-glossary.md) rather than redefining anything. §28.7 asks for glossary
+  guidance in an existing navigation document, not a new glossary file.
+
+## 26. §24 resolved — everything is now reachable
+
+Inbound Markdown links, measured after the change:
+
+| File | Before | After |
+|---|---|---|
+| `AGENTS.md` | did not exist | **5** |
+| `docs/PROJECT-MAP.md` | did not exist | **4** |
+| `tests/README.md` | 1 (this record only) | **3** |
+| `platform/README.md` | 1 (this record only) | **2** |
+| `mcp/README.md` | 1 (this record only) | **2** |
+| `revit/README.md` | 1 (this record only) | **2** |
+| `docs/work-notes/README.md` | 2 | **3** |
+
+Root `README.md` gained a **role table** answering §9's question *"where should an AI agent start?"*,
+which it did not answer before. `docs/README.md` gained rows for the project map and `AGENTS.md`.
+
+## 27. §28.7 role tasks — what was and was not established
+
+**Every route was followed and every link in it resolves** — `check-docs.py` reports the same four
+pre-existing broken links and no new ones, across 80 Markdown files.
+
+| Reader | Route | Documents to first useful answer |
+|---|---|---|
+| Owner | `README.md` role table → `HANDOVER.md` | 2 |
+| BIM modeller | `README.md` role table → `PROJECT-MAP.md` §E → the derive command | 2 |
+| BIM manager | `README.md` → `PROJECT-MAP.md` §E → `16` or `12` | 3 |
+| Developer | `README.md` → `PROJECT-MAP.md` §A and §B | 2 |
+| Fresh AI | `AGENTS.md` | 1 |
+
+**What this is not.** §28.7 asks for a cold walkthrough by someone without the plan or the
+conversation. This session **wrote these documents**, so it cannot cold-read them: an author always
+knows where the answer is. Link resolution and route existence are established; **whether a stranger
+finds the answer is not**, and no score is claimed for it.
+
+Recorded as **outstanding**, with the fresh-checkout walkthrough of §28.7, for Phase I. Independent
+review remains pending throughout (§28.2).

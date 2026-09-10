@@ -114,8 +114,12 @@ Revit
 
 ## Picking this up
 
-**Start with [HANDOVER.md](docs/HANDOVER.md)** — what exists, what is proven versus merely built, the five
-things that will bite you, and what is waiting on a decision.
+| If you are… | Start at |
+|---|---|
+| **the owner, or continuing work** | [**HANDOVER.md**](docs/HANDOVER.md) — what exists, what is proven versus merely built, the five things that will bite you, and what is waiting on a decision |
+| **an AI agent** | [**AGENTS.md**](AGENTS.md) — short, and the only file written for you |
+| **a developer** | [**docs/PROJECT-MAP.md**](docs/PROJECT-MAP.md) — which folder owns what, where to start a change, which source wins |
+| **a BIM modeller or manager** | [01 — Vision & Principles](docs/01-vision-and-principles.md), then the Status section above. Everything proven so far is **read-only** |
 
 ## Documentation
 
@@ -123,6 +127,8 @@ Full index: **[docs/README.md](docs/README.md)**
 
 **Read first:**
 
+- [**AGENTS.md**](AGENTS.md) — rules and reading order for an AI agent
+- [**Project Map**](docs/PROJECT-MAP.md) — folders, entry points, change routes, truth hierarchy
 - [Vision & Principles](docs/01-vision-and-principles.md) — what this is and why
 - [Master Specification](docs/00-master-specification.md) — the complete original spec
 - [Proposals](docs/PROPOSALS.md) — what is missing, what is risky, what to add

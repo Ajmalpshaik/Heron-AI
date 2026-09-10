@@ -77,6 +77,8 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | If you want to… | Read |
 |---|---|
 | **Pick up where the last session stopped** | [**HANDOVER.md**](HANDOVER.md) |
+| **Find which folder owns what, and where to start a change** | [**PROJECT-MAP.md**](PROJECT-MAP.md) |
+| Work on Heron as an AI agent | [**AGENTS.md**](../AGENTS.md) |
 | Understand what Heron AI is | [01 — Vision & Principles](01-vision-and-principles.md) |
 | See the original specification, unaltered | [00 — Master Specification](00-master-specification.md) |
 | Know what is missing or risky | [PROPOSALS.md](PROPOSALS.md) |
