@@ -1,0 +1,66 @@
+# group-and-count, proved through the chain that defect row 11 unblocked.
+#
+# THIS IS THE PAYOFF FOR ROW 11, AND IT IS THE REASON `keep-chain` EXISTS.
+# `group-and-count` takes `values` from THE CHAIN, not from the selection. By
+# default the fragment under test RESETS the chain, so a setup chain hands over
+# only what lives in Revit's own state - the SELECTION - and never a value.
+# Before the fix, this fragment and `sum-by-group` both came back
+# `needs_unbound: 'values' was never supplied` while the setup reported success.
+#
+# `keep-chain: true` IS OPT-IN PER JOB, and that is deliberate. THE CHAIN
+# OUTRANKS THE SELECTION (`RevitFragment.cs`, "1. THE CHAIN" then "2. THE
+# SELECTION"), so keeping it everywhere would make `set-selection` decorative in
+# the middle of every arrangement already written, and those proofs would
+# quietly begin testing something other than what they say.
+#
+# THE SETUP IS THREE STEPS AND THE ORDER MATTERS. `select-by-category-name`
+# leaves `elements`; `set-selection` writes them into Revit's real selection;
+# `read-element-parameters` then reads one parameter off them and leaves
+# `values` in the chain. Only the FIRST setup step resets the chain, which is
+# what lets step two consume what step one left.
+#
+# THE NEGATIVE IS VALUE-DRIVEN AND THE NEED IS STILL BOUND, which is the
+# distinction section 1d turns on. A parameter name that matches nothing leaves
+# `read-element-parameters` returning an EMPTY dictionary - not a failure - so
+# `values` is bound to something real and `group-and-count` runs and finds
+# nothing. That is different from a cleared selection, where the need is UNBOUND
+# and the executor refuses before the fragment starts.
+#
+#     parameterName "System Type"        groups 1 item(s) [[Supply Air, 5]]
+#     parameterName "ZZZNOTHINGHERE"     groups 0 item(s)
+#
+# All five ducts are on one system here, so the positive is a single group of
+# five - checkable against the five ducts the selection holds. Snowdon gives
+# richer evidence for the same fragment (three groups, 9 + 8 + 5 = 22, measured
+# 2026-09-10), and that is worth taking if this is ever re-proved: the arithmetic
+# across three groups is stronger than a count of one.
+#
+#     python tools/batch-prove.py tools/jobs/project1-chain-fed.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-chain-fed.yaml
+
+model: "Project1 work_ajmal.al (3,471 elements), Revit 2024 - view '1 - Mech'"
+
+defaults:
+  write: false                    # risk READ
+  # PIN THE MODEL, AND MAKE IT ACTIVE FIRST. Two projects are open, and the run
+  # record's `model:` line is stamped from the ACTIVE document rather than from
+  # this pin - an OPEN defect that has already mis-stamped three promoted
+  # proofs. Project1 was active before this ran and the stamp was checked after.
+  in: "Project1 work_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+    - read-element-parameters
+
+jobs:
+  - fragment: group-and-count
+    keep-chain: true              # without this: needs_unbound, 'values'
+    set:
+      categoryName:  Ducts
+      inViewOnly:    "1 - Mech"
+      parameterName: "System Type"
+    negative-set:
+      categoryName:  Ducts
+      inViewOnly:    "1 - Mech"
+      parameterName: "ZZZNOTHINGHERE"
+    expect: groups
