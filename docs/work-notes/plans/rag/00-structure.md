@@ -469,6 +469,46 @@ reported.
 **Cost:** small — 3.8a is a string prepend, 3.8b is a rule in the splitter.
 **Needs:** Stage 1. All four are chunker-time decisions, which is where they are cheap.
 
+
+### 3.9 Saying what is missing — *added at the owner's request, 2026-09-10*
+
+Not one of the six. It is what the six make necessary.
+
+**Every optional piece in this plan degrades silently.** No `model2vec` and search still answers, using
+character n-grams. No `sqlite-vec` and vectors still compare, in Python. No re-ranker and the top twenty
+stay in fusion order. **Nothing breaks, and that is the design** — [D-01](../../../DECISIONS.md)'s
+promise is that Heron installs on a locked-down machine, so nothing may be a hard stop.
+
+**But silence has a cost that only shows up much later:**
+
+> Somebody installs Heron, it works, and they run the weak version for six months — then judge the whole
+> product on it.
+
+**In Revit terms:** a model where half the worksets never loaded. Everything opens, everything looks
+fine, and you are working on a fraction of it without being told.
+
+**Heron is already half-honest about this.** `heron_embed.backend()` returns the backend **and a
+reason** — *"built-in character n-grams — tolerant of spelling and word order, but NOT meaning"*. It
+says what you have. It never says **what would fix it**.
+
+**So: what is missing, what it costs, and what it buys — in one command.**
+
+```text
+pyyaml       REQUIRED   installed
+model2vec    optional   installed    meaning-based search
+sqlite-vec   optional   MISSING      faster vector search      ~2 MB
+reranker     optional   MISSING      settles the top-20 ties   500 MB - 2 GB
+```
+
+**The sizes belong in it.** Measured 2026-09-10, the whole installed Python side of Heron is **about
+93 MB** — less than one Revit project file. **A re-ranker is 500 MB to 2 GB**, and a document parser
+several hundred more. Those two are the only large ones in the entire plan, and somebody is entitled to
+know that before typing the command rather than after.
+
+**Must not break:** nothing may become a hard stop. This adds a report, never a requirement.
+**Proved by:** with a package removed, the command names it, says what is lost, and Heron still answers.
+**Cost:** small. **Needs:** nothing. Requirements **R-71 to R-75**.
+
 ---
 
 ## 4. The shape, when all six are in

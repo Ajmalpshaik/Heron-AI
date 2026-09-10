@@ -305,6 +305,29 @@ are cheap now and expensive later.
 
 ---
 
+### K — Installing it, asked for by the owner 2026-09-10
+
+**Owner's instruction:** *"the new installer also needs to install this automatically, and mention it in
+the README."* Raised by him after asking whether a new person cloning from GitHub gets the dependencies
+automatically — the answer was **no**, recorded as **W-5** and **W-6** in
+[`03-working-note.md` §4](03-working-note.md).
+
+**This belongs to [`docs/07`](../../../07-installation-and-update.md), not to RAG.** It is written here
+because **this track is what makes it urgent**: every piece the plan adds is optional and **degrades
+silently**, and silent degradation plus an install list nobody can follow is how somebody runs the weak
+version of Heron for months and judges the product on it. When these are built, they move to `docs/07`
+and leave this note.
+
+| | Requirement | Source | State | Note |
+|---|---|---|---|---|
+| **R-71** | **A dependency manifest exists** — the list of packages is a file a machine reads, not prose in a README somebody edits | W-6 | **NONE** | there is no `requirements.txt`, no `pyproject.toml` and no `setup.py` in the repository. **The list cannot go stale if nothing types it twice** |
+| **R-72** | One command reports **every optional dependency: present or missing, and what is lost without it** | [00 §3.9](00-structure.md) | **NONE** | half of it exists — `heron_embed.backend()` already returns the name **and a reason**. What it never says is *what to install to fix it* |
+| **R-73** | A component running in **fallback mode says so, and names what would improve it** | R-72, W-5 | **PART** | the backend line says *"NOT meaning"* today and stops there |
+| **R-74** | Setup installs the **Python side as well as the add-in**, per-user, with no administrator rights | W-6, D-01 | **NONE** | [`tools/setup.ps1`](../../../../tools/setup.ps1) builds and deploys the add-in for every Revit on the machine in one command, and installs no Python package at all |
+| **R-75** | The README states **what is required, what is optional, what each optional one costs in size, and what it buys** | W-5 | **NONE** | measured 2026-09-10: the whole installed Python side is **≈93 MB**. A re-ranker would add **500 MB to 2 GB**, and a document parser several hundred more. **Those two are the only large ones, and a person is entitled to know before installing** |
+
+---
+
 ## 7. Deliberately not in scope
 
 Naming these stops the track growing sideways, which is how a reviewable batch becomes an
