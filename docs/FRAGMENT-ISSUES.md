@@ -503,13 +503,53 @@ Four are blocked, and each one says exactly what it needs:
 | Fragment | What came back | What it needs |
 |---|---|---|
 | `flip-elements` | `cannotFlip 144` on air terminals, `cannotFlip 10` on mechanical equipment, `notFamilyInstance 0` both times — so it read every one and none has a flip control | An instance that can actually flip. Snowdon's host has no doors or windows; they are in the architectural link |
-| `set-mep-slope` | `sloped 0`, and the accounting explains it completely: `bothEndsConnected 20` + `risers 2` = the whole selection of 22 | A duct with a FREE end. **`Project1` has four** — the same open ends that proved `find-dead-ends`. This is the clearest "wrong model, right fragment" case since that one |
+| `set-mep-slope` | `sloped 0`, and the accounting explains it completely: `bothEndsConnected 20` + `risers 2` = the whole selection of 22 | A duct with a FREE end. **`Project1` has four** — the same open ends that proved `find-dead-ends`. This is the clearest "wrong model, right fragment" case since that one. **Done — PASS on `Project1`, `sloped 4`, below** |
 | `disallow-join` | not run | Host walls, and there are none in `FloorPlan: M1` or `L3` |
 | `group-elements` | `grouped 44`, `groupId 1`, `refused false` | A negative. It groups whatever it is handed — the shape [`value-driven-negatives.yaml`](../tools/jobs/value-driven-negatives.yaml) already names, and no value it takes can switch that off |
 
 **`set-mep-slope` is worth reading rather than filing.** It refused all 22 and gave a per-element reason
 for every one, splitting them into two named causes that add up exactly. That is the behaviour §3h.1
 ("make silence illegal") is asking every fragment for, already built.
+
+### …and `set-mep-slope` then PASSED on Project1, exactly as the row predicted
+
+The prediction above was written before the run and held: Snowdon refused all 22, `Project1`'s four
+free ends took the fall.
+
+| `slopeRatio` | `sloped` | `findings` | `refused` |
+|---|---|---|---|
+| 100 — *1 in 100* | **4** | 4 | 0 |
+| 1 — *1 in 1* | 0 | 0 | 4 |
+
+**The positive is arithmetic anyone can check**, which is what a proof is for:
+
+```
+925641  - run 13650 mm, end moved 136 mm          13650 / 100 = 136.5
+```
+
+The negative moves only the ratio. A 45° fall wants to move the same run's end 13650 mm, and
+`maxEndMoveMm` refuses it — the fragment's own stated safety behaviour, and it turns **both** declared
+results off at once. Contrast `find-dead-ends`, where the value only re-labelled findings between two
+result fields and emptied neither. `bothEndsConnected 1` is identical in both legs, which is the
+evidence it examined the same five ducts each time.
+
+3,471 elements before and after, on a fragment whose implementation opens with *"THIS MOVES REAL
+GEOMETRY. IT IS NOT A COSMETIC CHANGE."*
+
+#### `slopeRatio` is the X in "1 in X", and reading it as a gradient nearly filed a false defect
+
+A bigger number is a **shallower** fall — the opposite of how a ratio usually reads — and the
+implementation divides by it (`var drop = run / slopeRatio`).
+
+Asking for a 2% fall as `slopeRatio=0.02` means *"1 in 0.02"*, a fall of fifty to one, and the
+fragment answered `would move an end 682500 mm`. `slopeRatio=0` then produced **`would move an end ∞
+mm`** — which is *"1 in 0"*, and equally correct.
+
+Both readings looked exactly like an inverted-arithmetic bug, and the division was about to be filed
+as one. The purpose settles it in its first sentence: *"until the run sits at **1 in X**."*
+
+> A number that looks wrong is a reason to read the purpose, not to file a defect. The caller was
+> wrong twice and the fragment was right twice.
 
 ### `set-mep-justification` ACCEPTS ONLY AN OFFSET OF ZERO — NEEDS_REVIEW
 

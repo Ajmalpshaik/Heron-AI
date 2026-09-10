@@ -1,0 +1,81 @@
+# set-mep-slope, on the ducts Snowdon could not offer - 2026-09-10.
+#
+# THE SECOND "WRONG MODEL, RIGHT FRAGMENT" CASE, AND IT WAS PREDICTED.
+# Section 3b-iii triaged this fragment as blocked on Snowdon and named exactly
+# what it needed: a duct with a FREE end. Snowdon refused all 22 it was given,
+# and its accounting said why without ambiguity - `bothEndsConnected 20` plus
+# `risers 2`, which is the whole selection. Project1 has four free ends, the
+# same ones that proved `find-dead-ends`.
+#
+# READ `slopeRatio` BEFORE CHANGING IT. It is the X in "1 in X", stated in the
+# purpose: "holds one end still and lifts or drops the other until the run sits
+# at 1 in X". So a BIGGER number is a SHALLOWER fall, which is the opposite of
+# how a ratio usually reads, and the implementation divides by it
+# (`var drop = run / slopeRatio`).
+#
+# THIS WAS NEARLY FILED AS AN ARITHMETIC DEFECT. Probed first with
+# `slopeRatio=0.02`, meaning to ask for a 2% fall. That is "1 in 0.02" - a fall
+# of fifty to one - and the fragment correctly answered "would move an end
+# 682500 mm". `slopeRatio=0` then produced "would move an end INFINITY mm",
+# which is "1 in 0" and equally correct. Both readings were the caller's error,
+# not the fragment's, and the division is right.
+#
+# THE POSITIVE IS ARITHMETIC A PERSON CAN CHECK, which is the point of a proof:
+#
+#     925641  - run 13650 mm, end moved 136 mm        13650 / 100 = 136.5
+#
+# THE NEGATIVE IS THE SAME DUCTS AND THE SAME LIMIT, with only the ratio moved.
+# "1 in 1" is a 45-degree fall, so the same 13650 mm run wants to move its end
+# 13650 mm, and `maxEndMoveMm` refuses it:
+#
+#     925641: would move an end 13650 mm, past the 500 mm limit asked for
+#
+# That refusal is the fragment's own stated safety behaviour, not an accident of
+# this model - and it turns BOTH declared results off at once, `sloped 0` and
+# `findings 0`, which is what a value-driven negative has to do. Contrast
+# `find-dead-ends` in project1-built-content.yaml, where the value only
+# RE-LABELLED the findings between two result fields and emptied neither.
+#
+# `bothEndsConnected 1` IS IDENTICAL IN BOTH LEGS, and that is the evidence it
+# examined the same five ducts each time rather than being handed less.
+#
+# THIS MOVES REAL GEOMETRY. The implementation says so in a banner: "THIS MOVES
+# REAL GEOMETRY. IT IS NOT A COSMETIC CHANGE." No `apply` is sent, so both
+# phases run inside a TransactionGroup and are rolled back (D-55). The count was
+# 3,471 before and after.
+#
+#     python tools/batch-prove.py tools/jobs/project1-slope.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-slope.yaml
+
+model: "Project1 work_ajmal.al (3,471 elements), Revit 2024 - view '1 - Mech'"
+
+defaults:
+  # risk MODIFY - batch-prove does NOT derive this from the fragment's `risk:`.
+  write: true
+  # PIN THE MODEL, and MAKE IT ACTIVE FIRST. Two projects are open. The run
+  # record's `model:` line is stamped from the ACTIVE document rather than from
+  # this pin - an OPEN defect in section 5 that has already mis-stamped three
+  # promoted proofs. Project1 was made active by hand before this ran, and the
+  # stamp was checked afterwards.
+  in: "Project1 work_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: set-mep-slope
+    set:
+      categoryName:  Ducts
+      inViewOnly:    "1 - Mech"
+      slopeRatio:    100            # 1 in 100 - an ordinary drainage fall
+      anchorEnd:     start
+      fallAwayFromAnchor: true
+      maxEndMoveMm:  500
+    negative-set:
+      categoryName:  Ducts
+      inViewOnly:    "1 - Mech"
+      slopeRatio:    1              # 1 in 1 - 45 degrees, refused by the limit
+      anchorEnd:     start
+      fallAwayFromAnchor: true
+      maxEndMoveMm:  500
+    expect: sloped
