@@ -67,9 +67,16 @@ jobs:
     expect: created
 
   # A key schedule is a schedule of a CATEGORY, and Snowdon is an HVAC model so
-  # Ducts is populated. The negative names a category the model has not got:
-  # nothing can be scheduled for it, and `refused` carries role: accounting so
-  # the empty answer reads as empty rather than as a finding (D-52).
+  # Ducts is populated.
+  #
+  # THE NEGATIVE NAMES A REAL CATEGORY, AND THE FIRST ATTEMPT DID NOT.
+  # "ZZZNOTHINGHERE" does not resolve to a Category at all, so the run came back
+  # bad_request_value - a REFUSAL TO START, not an empty answer, and D-30's
+  # second leg needs the fragment to RUN and find nothing. Measured 2026-09-10.
+  # "Sheets" is a real category that Revit does not allow a key schedule on, and
+  # the fragment checks exactly that before trying: "Revit does not allow a key
+  # schedule on '<name>'. Asked before trying" (impl line 38). So the empty
+  # answer is the fragment's own stated behaviour.
   - fragment: create-key-schedule
     setup: []
     set:
@@ -77,7 +84,7 @@ jobs:
       scheduleName:     "HERON KEY Z1"
       keyParameterName: "HERON Key"
     negative-set:
-      category:         "ZZZNOTHINGHERE"
+      category:         "Sheets"
       scheduleName:     "HERON KEY Z2"
       keyParameterName: "HERON Key"
     expect: created
@@ -86,9 +93,14 @@ jobs:
   # SELECTION, so the setup chain has to re-make it before each phase - a
   # rolled-back write clears it (section 1d).
   #
-  # The positive selects Ducts, which have a duplicable type. The negative
-  # selects Rooms, which are not type-based at all, so `noType` is the
-  # fragment's own stated answer rather than something invented for the proof.
+  # The positive selects Ducts, which have a duplicable type.
+  #
+  # THE NEGATIVE SELECTS SPACES, AND THE FIRST ATTEMPT SELECTED ROOMS. Probed
+  # 2026-09-10 in this view: Rooms 0, Walls 0, Spaces 5, Ducts 22. Rooms are
+  # absent, so the setup chain selected nothing, set-selection had nothing to
+  # write and the phase came back setup_failed - which is a MISSING ARRANGEMENT,
+  # not a negative result. Spaces are present and are not type-based, so `noType`
+  # is the fragment's own stated answer.
   - fragment: duplicate-type
     setup:
       - select-by-category-name
@@ -98,24 +110,20 @@ jobs:
       inViewOnly:   "FloorPlan: M1"
       newTypeName:  "HERON DUP Z1"
     negative-set:
-      categoryName: "Rooms"
+      categoryName: "Spaces"
       inViewOnly:   "FloorPlan: M1"
       newTypeName:  "HERON DUP Z2"
     expect: createdTypeId
 
-  # Same shape. place-mep-fitting acts on MEP CURVES, so the positive selects
-  # Ducts and the negative selects Rooms - which are not MEP curves, and the
-  # fragment declares `notMepCurve` for exactly that.
-  - fragment: place-mep-fitting
-    setup:
-      - select-by-category-name
-      - set-selection
-    set:
-      categoryName: "Ducts"
-      inViewOnly:   "FloorPlan: M1"
-      toleranceMm:  25
-    negative-set:
-      categoryName: "Rooms"
-      inViewOnly:   "FloorPlan: M1"
-      toleranceMm:  25
-    expect: created
+  # PLACE-MEP-FITTING IS REMOVED, AND THIS RECORDS WHY RATHER THAN DROPPING IT.
+  # Run 2026-09-10 with 22 Ducts selected in this view: POSITIVE EMPTY, created 0.
+  # That is not a defect and not a bad selection. The fragment joins the OPEN ENDS
+  # of two runs and "Revit requires the two ends to be at the same point already;
+  # ends that are apart are reported with the distance, not dragged together" - it
+  # deliberately moves nothing. Snowdon's ducts are already joined, so there is
+  # nothing for it to join.
+  #
+  # THIS MODEL CANNOT FILL THE POSITIVE CASE. It needs two ducts drawn end to end
+  # and left unconnected, built on purpose - the same method that produced the
+  # first five write proofs. Until that exists this job would spend a slot and
+  # teach nothing.
