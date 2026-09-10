@@ -95,6 +95,37 @@ a reviewable batch becomes an unreviewable one.
 
 ---
 
+## Who keeps this true, and when
+
+Maintenance is **proportional** — it is triggered by a change, not by a calendar.
+
+| When this happens | Whoever did it | Does this |
+|---|---|---|
+| Behaviour, a path, or a status changes | the person who changed it | Update the **canonical page for that module** and any derived report. Not every page that mentions it — the one that owns it |
+| A work note's work finishes | the task owner | Disposition review: move the durable part somewhere permanent, repair references, then delete the note |
+| A blocked note's dependency changes | the task owner | Re-read it. A blocked note that is no longer blocked is an active one, and should say so |
+| Before a release, or handing the project to a new reader | the reviewer | Repeat the navigation and link checks, and re-read the entry documents for stale claims |
+
+The link and count checks are already executable, so run them rather than reading for them:
+
+```bash
+python tools/check-docs.py        # links, and every count that can be derived
+python tools/check-metadata.py
+python tools/check-structure.py
+```
+
+**Two rules that exist because this repository has been bitten by them.**
+
+A **stale count is not a small defect.** Three README files once disagreed with the tools by more than
+a hundred fragments at the same time, each with a sentence beside the number admitting it would go
+stale. The sentence did not help. Name the command instead of the number.
+
+**A feature documented as missing is worse than one documented as broken.** Two files said running a
+fragment that writes did not exist, months after it did and after 55 of them had been proven against a
+real model. Nobody looks for what they have been told is not there.
+
+---
+
 ## What is here now
 
 | File | State |

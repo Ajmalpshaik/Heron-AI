@@ -27,7 +27,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | **H** | Permanent documentation quality | **DONE** | Responsibilities confirmed distinct; four coherence defects fixed, one of them mine — §32 to §34 |
 | **I** | Validation and QA | **DONE** | Matrix re-run, suite set identical to baseline, fresh checkout passes — §36 to §39 |
 | **J** | Final repository audit | **DONE** | Inventory reconciles, §25 and §28.10 worked against evidence — §40 to §43 |
-| **K** | Final handover report | **NOT DONE** | — |
+| **K** | Final handover report | **DONE** | Closure report in `HANDOVER.md`; maintenance ownership in the work-note guide — §45 |
 | **L** | Plan self-removal | **Precondition MET** | All three §28.11 F files now exist. Still gated on Phases G–K completing |
 
 ---
@@ -260,8 +260,8 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Phase K: write the short closure report into the live documentation, and name who maintains what
-afterwards. Phase L is then judged against §28.11 item F and §27's conditions.
+Phase L: judge the plan's removal against §27's seven conditions and §28.11 item F. **This is the
+owner's call, not this session's** — §46 sets out what is met and what is not.
 
 ---
 
@@ -1118,3 +1118,81 @@ Unchanged by this run, open before it, and open now:
 - The on-model half of `docs/PROMPT-fragment-validation-agent.md`.
 
 None of these is a housekeeping pass or failure. They are product work in their existing registers.
+
+---
+
+# PHASE K — closure record
+
+## 45. Where the closure evidence lives after this run
+
+§26 forbids another giant cleanup report, so the closure summary is **short and operational**, and the
+detail stays here.
+
+| Record | Location | Survives plan removal? |
+|---|---|---|
+| **The closure report** | A dated track section in [`docs/HANDOVER.md`](../../HANDOVER.md) — *"the HOUSEKEEPING track"* — in the same shape every other session's handover uses | ✅ |
+| **The full ledger** | **This file.** Baseline, gate matrix, every disposition, every measurement, every limitation | ✅ |
+| **Maintenance ownership** | [`docs/work-notes/README.md`](../README.md) — who updates what, triggered by a change rather than a calendar | ✅ |
+| The plan being executed | `plans/repository-housekeeping-and-ai-onboarding-plan.md` | ❌ — it removes itself at Phase L |
+
+**Another session can continue from these three without any chat memory.** That was the exit condition
+for Phase K, and it is what §28.10's last item required before the plan could go.
+
+The closure report names the three findings worth knowing, the counts, what was created, deleted and
+deliberately not moved, which checks passed, which could not run, and the two things this run does not
+claim. It links here for anything deeper.
+
+---
+
+# PHASE L — assessment, not execution
+
+**This session has NOT deleted the plan.** §27's conditions are assessed below; the removal is the
+owner's call.
+
+## 46. §27's seven conditions, and §28.11 item F
+
+| # | Condition | State |
+|---|---|---|
+| — | **§28.11 F precondition** — the plan may not go while it is the only thing giving `docs/work-notes/` structure | ✅ **MET.** `AGENTS.md`, `docs/PROJECT-MAP.md` and `docs/work-notes/README.md` all exist |
+| 1 | Every applicable phase executed | ✅ A–K complete, each with committed evidence |
+| 2 | Completed temporary prompts and fix notes handled | ✅ Two prompts **retained with their remaining items named**; **no fix notes exist** |
+| 3 | Documentation status matches repository truth | ✅ Counts derived, the write path corrected, four documents reconciled |
+| 4 | Required links and references repaired | ✅ **0 broken links**, from 4 |
+| 5 | Every required gate passes; environment-dependent checks have explicit scope decisions and owners, **not a blanket waiver** | ⚠️ **Partly.** Every gate that can run here passes. Six checks cannot run, each named with an owner in §39 — a scope decision, not a waiver. **But see the two items below** |
+| 6 | Final structure understandable without this plan | ✅ Four entry documents plus the closure report |
+| 7 | Remaining work recorded in the correct live location | ✅ §44, and each item sits in its existing register |
+
+## 47. The two things that are not the environment
+
+§27 is explicit: *"a broken migration or missing required verification cannot be reclassified as
+optional to close this plan."* Two verifications are outstanding, and neither is a machine limitation
+that can be waived by naming an owner.
+
+**1. §28.7's cold read has not happened.** Its whole purpose is a reader without the plan or the
+conversation following the entry documents. This session **wrote** those documents. Route existence
+and link resolution are established (§27, §38); whether a stranger finds the answer is not, and cannot
+be by the author.
+
+**2. §28.11 item C's drive-letter condition has not been exercised.** It was added specifically
+because it is what exposed the `check-licence.py` defect, and it cannot be simulated where the
+repository and `TEMP` share a filesystem. **The repair is still not re-proved on the setup it was
+written for.**
+
+**3. Independent review is pending** throughout, per §28.2 — self-review is not independent approval.
+
+## 48. What this session recommends
+
+**Do not delete the plan yet.** Not because housekeeping is unfinished — A to K are complete and
+evidenced — but because two of the plan's own required verifications need somebody who is not this
+session, and §27 forbids reclassifying a missing required verification as optional in order to close.
+
+The cheapest path to closure, in order:
+
+1. On a Windows checkout with the repository and `TEMP` on **different drives**, run
+   `python tests/test_licence_check.py` and `python tools/check-licence.py`. That closes item C.
+2. Have someone who has not read this plan follow `README.md` → `AGENTS.md` → `docs/PROJECT-MAP.md`
+   and try the five role tasks in §28.7. That closes the cold read.
+3. Review the branch. That closes §28.2.
+
+**Then the plan can be deleted, and its inbound links repaired** — `docs/work-notes/README.md` and
+this file both reference it, and `docs/README.md` does not. Nothing else does; that was checked.
