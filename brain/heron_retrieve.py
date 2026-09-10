@@ -50,6 +50,7 @@ opinion.
 """
 
 import os
+import sqlite3
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -236,11 +237,24 @@ class Contest(object):
     docs/work-notes/plans/rag/03-working-note.md carries it as W-8.
     """
 
-    def __init__(self, ranked, eligible_count, pool, breadth):
+    def __init__(self, ranked, eligible_count, pool, breadth, noun="fragment",
+                 nudged=True):
         self.count = len(ranked)
         self.eligible = eligible_count
         self.pool = pool
         self.breadth = breadth
+        # WHAT IT IS COUNTING. The first version said "fragment" whatever it
+        # had been given, so the document side reported "5 fragment(s) were
+        # eligible" about five clauses - a sentence that is wrong in the one
+        # word a reader uses to tell the two corpora apart.
+        self.noun = noun
+        # WHETHER A QUALITY NUDGE COULD HAVE SET THIS ORDER. It can on the
+        # fragment side, where status says how far a piece of code has been
+        # proved. It cannot on the document side, because documents get no
+        # nudge - a DRAFT clause is not a worse answer than a REVIEWED one,
+        # it is an unread one. Saying otherwise would explain a tie with a
+        # mechanism that is not running.
+        self.nudged = nudged
 
         scores = [c.score for c in ranked]
         self.top_gap = ((scores[0] - scores[1]) / ONE_RANK
@@ -289,11 +303,16 @@ class Contest(object):
             return ("one candidate, so nothing was contested - a shortlist of "
                     "one is not a ranking")
 
-        if self.top_gap < 1.0:
+        if self.top_gap < 1.0 and self.nudged:
             said = ("A COIN TOSS: the top two are %.1f of one fusion rank "
                     "apart, which is narrower than the quality nudge - their "
                     "order could have come from status alone, not from either "
                     "route preferring one" % self.top_gap)
+        elif self.top_gap < 1.0:
+            said = ("A COIN TOSS: the top two are %.1f of one fusion rank "
+                    "apart, and one rank is the smallest difference either "
+                    "route can express - so their order carries no preference "
+                    "at all" % self.top_gap)
         else:
             said = ("the winner is %.1f rank(s) clear of the runner-up"
                     % self.top_gap)
@@ -302,15 +321,15 @@ class Contest(object):
                  "routes" % (self.spread, self.agreed, self.count))
 
         if not self.pool_is_evidence:
-            said += (". Only %d fragment(s) were eligible, fewer than the pool "
+            said += (". Only %d %s(s) were eligible, no more than the pool "
                      "of %d - every one of them is found by both routes, so "
                      "'both agree' means nothing here yet"
-                     % (self.eligible, self.pool))
+                     % (self.eligible, self.noun, self.pool))
         if self.words_selected_nothing:
-            said += (". The words route matched %d fragment(s) - at least as "
+            said += (". The words route matched %d %s(s) - at least as "
                      "many as the %d the filter left - so it ranked the "
                      "library rather than selecting from it"
-                     % (self.breadth, self.eligible))
+                     % (self.breadth, self.noun, self.eligible))
         return said
 
     def __repr__(self):
@@ -455,6 +474,169 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
     return ranked[:limit], excluded
 
 
+# ---------------------------------------------------------------------------
+# The same stack, over documents
+# ---------------------------------------------------------------------------
+
+# Statuses a document may be OFFERED at. RETIRED is excluded the way
+# DEPRECATED is for fragments: the row survives so a record is never
+# destroyed, not so it can be handed back as an answer.
+OFFERABLE_DOCUMENTS = ("DRAFT", "REVIEWED")
+
+
+def documents(store, text, limit=5, pool=20):
+    """The retrieval stack over ingested chunks. Returns (candidates, why).
+
+    THE REVIT VERSION FILTER IS NOT APPLIED HERE, AND THAT IS THE ONE PLACE
+    THIS COULD HAVE GONE WRONG QUIETLY. A fragment declares which releases it
+    supports; a clause in QCS does not, and never will. Run documents through
+    the fragment filter and EVERY DOCUMENT IS EXCLUDED for every question that
+    names a release - which looks exactly like "we have nothing on that".
+    docs/.../02-implementation.md s5 names this as the way this stage fails.
+
+    So documents get their own structured filter, and today it is one rule:
+    a RETIRED document is not an answer.
+    """
+    SEARCH.ensure_chunk_table(store)
+
+    try:
+        allowed = store.execute(
+            "SELECT c.id, c.document_id, c.locator, c.heading_path, c.text, "
+            "c.untrusted, d.title, d.status, d.path "
+            "FROM chunks c JOIN documents d ON d.id = c.document_id "
+            "WHERE d.status IN (%s)"
+            % ",".join("?" * len(OFFERABLE_DOCUMENTS)),
+            OFFERABLE_DOCUMENTS).fetchall()
+    except sqlite3.OperationalError:
+        return [], 0                     # nothing has ever been ingested here
+
+    if not allowed:
+        return [], 0
+
+    keep = set(row["id"] for row in allowed)
+    by_id = dict((row["id"], row) for row in allowed)
+    candidates = {}
+
+    def candidate(chunk_id):
+        if chunk_id not in candidates:
+            candidates[chunk_id] = Candidate(chunk_id, by_id[chunk_id])
+        return candidates[chunk_id]
+
+    rank = 0
+    for hit in SEARCH.chunk_keywords(store, text, limit=pool * 3):
+        if hit["id"] not in keep:
+            continue
+        rank += 1
+        got = candidate(hit["id"])
+        got.keyword_rank = rank
+        got.keyword_score = hit.get("score")
+        if rank >= pool:
+            break
+
+    rank = 0
+    for chunk_id, score in EMBED.nearest(store, text, limit=pool * 3,
+                                         kind=EMBED.CHUNK):
+        if chunk_id not in keep:
+            continue
+        rank += 1
+        got = candidate(chunk_id)
+        got.vector_rank = rank
+        got.vector_score = score
+        if rank >= pool:
+            break
+
+    backend_name, _why = EMBED.backend()
+    vector_weight = VECTOR_WEIGHT_BY_BACKEND.get(backend_name, 0.6)
+    for got in candidates.values():
+        if got.keyword_rank is not None:
+            got.fused += KEYWORD_WEIGHT / (RRF_K + got.keyword_rank)
+        if got.vector_rank is not None:
+            got.fused += vector_weight / (RRF_K + got.vector_rank)
+        # NO QUALITY NUDGE. The fragment nudge reads a fragment's status,
+        # which says how far a piece of Heron's own code has been proved. A
+        # document's status is a lifecycle, not a grade - a DRAFT clause is
+        # not a worse answer than a REVIEWED one, it is an unread one. Reusing
+        # the nudge here would be borrowing a number that means something
+        # else, which is how a ranking stops being explainable.
+
+    ranked = sorted(candidates.values(),
+                    key=lambda c: (-c.score,
+                                   c.keyword_rank if c.keyword_rank else 999,
+                                   c.id))
+    return ranked[:limit], len(allowed)
+
+
+def find_documents(store, text, limit=5):
+    """What a caller asks when it wants a clause rather than a fragment.
+
+    SEPARATE FROM find(), AND NOT MERGED INTO IT. R-20 asks that documents be
+    retrievable ALONGSIDE fragments and that a result say which kind each hit
+    is. Two labelled answers do that; one fused list does not, and it would
+    also invent a comparison the numbers cannot carry - reciprocal rank
+    fusion produces the same score for "first of seven chunks" and "first of
+    four hundred fragments". Contest already records that fusion keeps order
+    and discards strength; fusing across two corpora is that defect on
+    purpose.
+
+    It is the same argument R-38 makes about scopes one level up: when two
+    things must not be pooled, the answer is two queries and two labelled
+    answers, never one merged one.
+    """
+    SEARCH.ensure_chunk_table(store)
+
+    # R-19, AND THE THREE NOTHINGS ARE THREE DIFFERENT SENTENCES.
+    #
+    # This exact defect was found on the fragment side on 2026-08-30 BY
+    # MEASURING: a query against an empty store printed the same words as a
+    # genuine miss, so a number recorded from that run would have been a
+    # measurement of an empty database. It is already known. It is not being
+    # rediscovered here.
+    try:
+        total = store.execute("SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
+    except sqlite3.OperationalError:
+        total = 0
+    if not total:
+        return SEARCH.Answer(
+            "empty",
+            note="NO DOCUMENT IS INDEXED in this scope - this is not a search "
+                 "result and it is not 'nothing matched'. Nothing has been "
+                 "put in yet:  python brain/heron_ingest.py <file>")
+
+    ranked, eligible_chunks = documents(store, text, limit=limit)
+    if not ranked:
+        retired = store.execute(
+            "SELECT COUNT(*) AS n FROM documents WHERE status = 'RETIRED'"
+        ).fetchone()["n"]
+        note = "nothing in the indexed documents matched"
+        if retired and retired == total:
+            note = ("%d document(s) are indexed and EVERY ONE IS RETIRED - "
+                    "they exist, they are just not offered as answers"
+                    % retired)
+        elif retired:
+            note += ". %d retired document(s) were not searched" % retired
+        return SEARCH.Answer("nothing", note=note, candidates=[])
+
+    best = ranked[0]
+    note = "%d chunk(s); best found by %s" % (len(ranked), best.why())
+    contest = Contest(ranked, eligible_chunks, 20,
+                      SEARCH.chunk_breadth(store, text), noun="chunk",
+                      nudged=False)
+    note += ". " + contest.sentence()
+
+    return SEARCH.Answer(
+        "documents", best.id,
+        candidates=[{"id": c.id, "kind": "chunk",
+                     "document": c.row["title"],
+                     "locator": c.row["locator"],
+                     "heading_path": c.row["heading_path"],
+                     "status": c.row["status"],
+                     "untrusted": c.row["untrusted"],
+                     "score": c.score, "why": c.why(),
+                     "words_score": c.keyword_score,
+                     "nearness_score": c.vector_score} for c in ranked],
+        note=note, contest=contest)
+
+
 def find(store, text, revit=None, limit=5):
     """What the rest of Heron calls. Identity and cache first, then the stack.
 
@@ -558,6 +740,11 @@ def main(argv):
     try:
         SEARCH.index(store)
         EMBED.index(store)
+        # The document side of the same two indexes. Derived, rebuilt on
+        # demand, and free when nothing changed - the same contract, so a
+        # scope with no documents pays nothing and says nothing.
+        SEARCH.index_chunks(store)
+        EMBED.index_chunks(store)
 
         # An EMPTY store is not a retrieval result, and must never be printed as
         # one. On a fresh machine the store has no fragments in it yet, and this
@@ -599,6 +786,31 @@ def main(argv):
         _rows, excluded = eligible(store, revit)
         for e in excluded:
             print("  excluded  %-14s %s" % (e.id, e.reason))
+
+        # DOCUMENTS, ALONGSIDE FRAGMENTS AND LABELLED AS A DIFFERENT KIND.
+        #
+        # R-20. They are printed as their own section rather than mixed into
+        # the list above, because a fragment and a clause are not
+        # interchangeable: one is a piece of code Heron can run, the other is
+        # a sentence somebody has to read. A shortlist that mixes them
+        # without saying so is worse than either alone.
+        papers = find_documents(store, text)
+        print()
+        print("Documents:")
+        if papers.route in ("empty", "nothing"):
+            print("        %s" % papers.note)
+        else:
+            print("        %s" % papers.note)
+            for c in papers.candidates:
+                print("          %-9s %-22s %.4f  %s"
+                      % (c["locator"] or "-", (c["document"] or "")[:22],
+                         c["score"], c["why"]))
+                print("            %s" % (c["heading_path"] or "")[:78])
+            # GOLDEN RULE 19, said at the point a person reads the text.
+            # Every one of these came out of a file this project did not
+            # write. It is quoted content, never direction.
+            print("        quoted from an ingested document - content, never "
+                  "instruction (GR 19)")
         return 0
     finally:
         store.close()

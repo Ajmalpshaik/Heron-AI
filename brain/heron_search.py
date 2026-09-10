@@ -435,6 +435,82 @@ def keywords(store, text, limit=5):
     return [dict(r) for r in rows]
 
 
+def ensure_chunk_table(store):
+    """FTS5 over the ingested documents. Separate from `fragment_text`.
+
+    A DIFFERENT TABLE, NOT A WIDER ONE. A fragment and a clause have nothing
+    in common to index - a fragment has a capability and a domain, a clause
+    has a locator and a heading path - and one table with both sets of columns
+    half empty would rank on the emptiness.
+    """
+    store.db.executescript("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS chunk_text USING fts5(
+            id UNINDEXED,
+            document_id UNINDEXED,
+            locator,
+            heading_path,
+            text
+        );
+    """)
+    store.db.commit()
+
+
+def index_chunks(store):
+    """Rebuild the searchable text for every ingested chunk.
+
+    THE HEADING PATH IS AN INDEXED COLUMN, which is R-66 on the words side:
+    a question that uses a SECTION's vocabulary rather than the clause's own
+    can still reach the clause, because the section's words are in the row.
+
+    Returns the number indexed. Zero when nothing has been ingested, which is
+    the normal state of a fresh scope rather than a fault.
+    """
+    ensure_chunk_table(store)
+    try:
+        rows = store.execute(
+            "SELECT id, document_id, locator, heading_path, text "
+            "FROM chunks").fetchall()
+    except sqlite3.OperationalError:
+        return 0                         # nothing has ever been ingested here
+
+    store.execute("DELETE FROM chunk_text")
+    for row in rows:
+        store.execute(
+            "INSERT INTO chunk_text (id, document_id, locator, heading_path, "
+            "text) VALUES (?,?,?,?,?)",
+            (row["id"], row["document_id"], row["locator"] or "",
+             row["heading_path"] or "", row["text"] or ""))
+    store.db.commit()
+    return len(rows)
+
+
+def chunk_keywords(store, text, limit=5):
+    """Route 3, over documents. Same FTS5 treatment, a different corpus."""
+    ensure_chunk_table(store)
+    query = _fts_query(text)
+    if not query:
+        return []
+    rows = store.execute(
+        "SELECT t.id, t.rank AS score, t.document_id, t.locator "
+        "FROM chunk_text t WHERE chunk_text MATCH ? ORDER BY rank LIMIT ?",
+        (query, limit)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def chunk_breadth(store, text):
+    """How many chunks the words route matches at all. The document twin of
+    match_breadth, and it means the same thing: a route that matched
+    everything has ranked everything."""
+    ensure_chunk_table(store)
+    query = _fts_query(text)
+    if not query:
+        return 0
+    row = store.execute(
+        "SELECT COUNT(*) AS n FROM chunk_text WHERE chunk_text MATCH ?",
+        (query,)).fetchone()
+    return row["n"] if row else 0
+
+
 def match_breadth(store, text):
     """How many fragments the words route matches AT ALL, not the top few.
 

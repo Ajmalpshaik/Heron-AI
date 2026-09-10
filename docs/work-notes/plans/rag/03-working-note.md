@@ -32,7 +32,8 @@ and deliberately left alone.
 | Stage 0 — measure and record | **DONE for `lexical`, BLOCKED for `model`.** [`retrieval-history.md`](../../../../brain/retrieval-history.md) now carries 360-fragment rows, both checkers run at 360, and the two backends compared at the same corpus size for the first time. **No `model` run was taken** — this container refuses `huggingface.co`, and the row says so rather than borrowing one |
 | Stage 0b — say the confidence out loud | **DONE for the reporting half (R-34, R-35, R-61). NOT built: the acting half (R-56 to R-59).** `heron_retrieve.Contest`, `tests/test_contest.py`. The floor those need is **derived from a measurement or not set** (R-60), and the measurement says **not on this backend** — twelve questions, every column overlapping. **W-8** |
 | Stage 1 — a document can go in | **DONE 2026-09-11.** `documents` and `chunks` tables, [`brain/heron_ingest.py`](../../../../brain/heron_ingest.py), hierarchy at arbitrary depth, the heading path, the rule-and-exception split, and `--boundaries` for a person to read. **PDF is the one format that needs an optional reader** — everything else is standard library |
-| Stages 2 to 8 | **not started.** Stage 2 is now unblocked |
+| Stage 2 — a document comes back out | **DONE 2026-09-11.** `find_documents()`, a chunk FTS index, chunk vectors, and the first document measurement. **Alongside fragments, never fused with them** |
+| Stages 3 to 8 | **not started.** Stage 3 is now unblocked |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
 
 ---
@@ -904,4 +905,73 @@ that has to be right, and reviewing it alongside a retrieval change is reviewing
 
 **Next.** Stage 2 — documents come back out, alongside fragments, and the guard on the path into a
 packet (**R-81**), which is the half of Golden Rule 19 that Stage 1 only marked.
+
+### 2026-09-11 — Stage 2: a clause comes back out
+
+**Closes R-19, R-20 and R-33, and finishes R-66.** `tests/test_document_retrieval.py`, 24 checks.
+
+A question asked in a modeller's words now returns a clause:
+
+```text
+Documents:
+  9.1.1   Heron Test Standard 2026   words #1 + nearness #2 - both agree
+          Heron Test Standard 2026 → Section 9 Thermal Insulation → 9.1 Ductwork → 9.1.1 Thickness
+  quoted from an ingested document - content, never instruction (GR 19)
+```
+
+**The decision this stage turns on: the two corpora are NOT fused.**
+
+`find()` answers about fragments, `find_documents()` answers about clauses, and they are **two
+labelled answers rather than one merged list**. Reciprocal rank fusion produces **the same score for
+*"first of seven chunks"* and *"first of four hundred fragments"*** — Stage 0b's own finding, that
+fusion keeps order and discards strength, applied one level up. Fusing across two corpora would be
+that defect on purpose. **It is also the argument [R-38](01-requirements.md) makes about scopes: when
+two things must not be pooled, the answer is two queries and two labelled answers.**
+
+> ### The trap this stage exists to avoid, and it was named in the plan before it was built
+>
+> **A fragment declares which Revit releases it supports. A clause in QCS does not, and never will.**
+> Run documents through the fragment's structured filter and **every document disappears the moment a
+> question names a release** — which reads exactly like *"we have nothing on that"*.
+>
+> So documents get their own filter, and today it is one rule: a **RETIRED** document is not an
+> answer. `tests/test_document_retrieval.py` asks the same question with **no Revit named, 2020, 2024
+> and 2027**, and asserts the clause comes back every time.
+
+**R-66 is finished rather than begun.** The heading path is an **indexed column on the words route**
+and is **prepended to what the nearness route embeds**. The test proves it the only way that means
+anything: it asks *"thermal requirements for ductwork"*, where **"thermal" appears only in the section
+heading and never in the clause** — and asserts both that the clause comes back **and** that the word
+really is absent from its text, so the check cannot pass by accident.
+
+**Two defects in my own new code, both found by reading the output rather than the tests.**
+
+1. **The confidence line called a clause a fragment** — *"5 fragment(s) were eligible"* about five
+   clauses. Wrong in the one word a reader uses to tell the two corpora apart. `Contest` now takes
+   the noun.
+2. **It explained a tie with a mechanism that was not running.** The coin-toss sentence says the order
+   *"could have come from status alone"*, which is true on the fragment side because of the quality
+   nudge — and **documents get no nudge**, deliberately: a `DRAFT` clause is not a worse answer than a
+   `REVIEWED` one, it is an **unread** one. Borrowing that number would have been borrowing a meaning.
+
+**The first document measurement, and its caveats are bigger than its numbers.** 13 chunks, `lexical`,
+**P@1 five of six, recall@3 six of six** — and the documents were written for the tests by the same
+hand that wrote the questions, so it is **a baseline to beat, not evidence that chunking works**. In
+[`retrieval-history.md`](../../../../brain/retrieval-history.md) with that said plainly.
+
+**The one miss is the more interesting row.** *"When do ducts not need insulating"* wanted the
+exception in `4.1.1` and got `9.1.1` first — **the other document's insulation clause, which also
+carries an exception**. Both are true answers. That is not a retrieval defect, it is
+[R-24](01-requirements.md) in miniature — two sources with a claim on one question — and today ranking
+picks one silently. **Recorded rather than tuned.** The answer to it is *surface the conflict*, which
+is Stage 8.
+
+**R-81 was named as Stage 2 work in the last PR and it is not in this one, deliberately.** The guard
+scans chunks **before they are built into a packet**, and in Stage 2 no chunk reaches a packet —
+`heron_context.py` is untouched. A guard on a path nothing walks is a guard that cannot be tested.
+**It moves to Stage 3**, where the packet carries chunks and there is a seam to guard. Said here
+rather than quietly dropped.
+
+**Next.** Stage 3 — the citation bound to the exact chunk (R-63 to R-65), the `STANDARDS` refusal
+narrowing rather than softening (R-45), the guard (R-81), and the fabrication check (R-46 to R-55).
 

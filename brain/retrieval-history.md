@@ -407,6 +407,47 @@ these"* on the isolate fragment three times above.
 
 ---
 
+## 2026-09-11 — the first document measurement, and it is a weak one on purpose
+
+**R-33: document retrieval gets its own measurement from its first day**, so that this half never
+reaches the state the fragment half nearly did — working, trusted, and unmeasured.
+
+**13 chunks, two documents, `lexical` backend.** Six questions asked the way a modeller would ask
+them, each with the clause it should return:
+
+| Asked | Wanted | Got |
+|---|---|---|
+| how thick should duct insulation be | 9.1.1 | **9.1.1** |
+| do I need a vapour barrier over insulation | 9.1.2 | **9.1.2** |
+| what fall for a soil drain | 12.1 | **12.1** |
+| what category should ducts carry | 4.1.2 | **4.1.2** |
+| when do ducts not need insulating | 4.1.1 | 9.1.1, then **4.1.1** |
+| what gradient for drainage | 12.1 | **12.1** |
+
+**P@1 five of six. Recall@3 six of six.**
+
+### Read the caveats before the numbers, because they are larger than the numbers
+
+- **The documents were written for the tests, by the same hand that wrote the questions.** They use
+  the vocabulary the questions use. **This is the weakest kind of measurement there is** and it is
+  recorded as a baseline to beat, never as evidence that chunking works. The real measurement is one
+  real numbered section, and S-4 is still open.
+- **13 chunks is below the pool of 20**, so *"both routes agree"* is true of everything here — the
+  system says so itself in every answer, which is R-61 doing its job on the document side from the
+  first run.
+- **`lexical` again.** The trained backend needs `huggingface.co`, still refused here.
+
+### The one miss is the more interesting row
+
+*"When do ducts not need insulating"* wanted the exception in **4.1.1** and got **9.1.1** first — the
+other document's insulation clause, which also carries an exception. **Both documents say something
+true about when insulation is not required.** That is not a retrieval defect; it is
+[R-24](../docs/work-notes/plans/rag/01-requirements.md) in miniature — two sources with a claim on
+one question — and today ranking silently picks one. **Recorded rather than tuned**, because the
+answer to it is *surface the conflict*, which is Stage 8.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:

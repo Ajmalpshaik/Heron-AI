@@ -289,6 +289,10 @@ def _try_vec_extension(db):
         return False
 
 
+FRAGMENT = "fragment"
+CHUNK = "chunk"
+
+
 def ensure_tables(store):
     store.db.executescript("""
         CREATE TABLE IF NOT EXISTS vectors (
@@ -298,6 +302,23 @@ def ensure_tables(store):
             embedding BLOB NOT NULL
         );
     """)
+    # ONE TABLE, TWO KINDS OF THING IN IT - and a column that says which.
+    #
+    # A chunk id and a fragment id cannot collide, so the rows could have
+    # shared this table silently. They must not: nearest() would then hand a
+    # caller asking about fragments a clause it never asked for, and index()
+    # walks the fragments, so chunk rows would be orphans nothing refreshed.
+    # A column is cheaper than a second table with a second hashing scheme.
+    #
+    # ADD COLUMN is the whole migration, the same one heron_search already
+    # does for `fingerprint`. A row written before this column reads NULL, and
+    # every row written before this column was a fragment - so NULL means
+    # fragment, and that is a fact about the history rather than a default.
+    try:
+        store.db.execute("ALTER TABLE vectors ADD COLUMN kind TEXT")
+    except sqlite3.OperationalError as exc:
+        if "duplicate column" not in str(exc):
+            raise
     store.db.commit()
 
 
@@ -340,23 +361,87 @@ def index(store, force=False):
                 continue
 
         store.execute(
-            "INSERT OR REPLACE INTO vectors (id, text_hash, backend, embedding) "
-            "VALUES (?,?,?,?)", (row["id"], digest, name, _pack(vector(text))))
+            "INSERT OR REPLACE INTO vectors (id, text_hash, backend, embedding, "
+            "kind) VALUES (?,?,?,?,?)",
+            (row["id"], digest, name, _pack(vector(text)), FRAGMENT))
         embedded += 1
 
     store.db.commit()
     return embedded, skipped
 
 
-def nearest(store, text, limit=5):
-    """The closest fragments to this text. [(id, similarity), ...], best first.
+def index_chunks(store, force=False):
+    """Embed every chunk whose text has changed. Returns (embedded, skipped).
+
+    WHAT IS EMBEDDED IS THE HEADING PATH PLUS THE CHUNK, NOT THE CHUNK ALONE.
+    That is R-66, and it is the whole of it: a clause embedded in isolation
+    has lost the document it came from, and "21.3.2 Insulation" means nothing
+    without "Section 21 Mechanical - 21.3 Ductwork" in front of it. The
+    published version of this technique generates that context with a model
+    call per chunk; here it is read off the document's own structure, so it
+    costs nothing and cannot disagree with the hierarchy.
+
+    Returns (0, 0) when nothing has been ingested. A scope with no documents
+    is the normal case, not an error.
+    """
+    ensure_tables(store)
+    try:
+        rows = store.execute(
+            "SELECT id, heading_path, text FROM chunks").fetchall()
+    except sqlite3.OperationalError:
+        return 0, 0                      # no documents table: nothing ingested
+
+    name, _why = backend()
+    embedded = skipped = 0
+    for row in rows:
+        text = "%s\n%s" % (row["heading_path"] or "", row["text"] or "")
+        digest = hashlib.blake2b(text.encode("utf-8"),
+                                 digest_size=16).hexdigest()
+        if not force:
+            have = store.execute(
+                "SELECT text_hash, backend FROM vectors WHERE id = ?",
+                (row["id"],)).fetchone()
+            if have and have["text_hash"] == digest and have["backend"] == name:
+                skipped += 1
+                continue
+        store.execute(
+            "INSERT OR REPLACE INTO vectors (id, text_hash, backend, embedding, "
+            "kind) VALUES (?,?,?,?,?)",
+            (row["id"], digest, name, _pack(vector(text)), CHUNK))
+        embedded += 1
+
+    # A chunk that no longer exists leaves a vector behind, and a vector with
+    # no chunk is a hit that resolves to nothing. Forgetting them here is the
+    # same pass, so the two can never drift.
+    store.execute(
+        "DELETE FROM vectors WHERE kind = ? AND id NOT IN "
+        "(SELECT id FROM chunks)", (CHUNK,))
+    store.db.commit()
+    return embedded, skipped
+
+
+def nearest(store, text, limit=5, kind=FRAGMENT):
+    """The closest things to this text. [(id, similarity), ...], best first.
 
     Similarity, not distance: 1.0 is identical and 0.0 is unrelated, because
     every caller and every log line reads better that way round.
+
+    `kind` says WHAT to compare against, and it defaults to fragments because
+    every caller that existed before documents did meant fragments. Passing
+    CHUNK searches the ingested documents instead.
+
+    THE TWO ARE NEVER RETURNED TOGETHER, and that is a decision rather than an
+    omission. A chunk ranked first among a hundred and a fragment ranked first
+    among four hundred are not comparable numbers, and putting them in one
+    list would invent a comparison the scores cannot support - which is the
+    same reason Contest reports the discarded magnitudes rather than fusing
+    them. Two corpora, two questions, two answers, each labelled.
     """
     ensure_tables(store)
     want = vector(text)
-    rows = store.execute("SELECT id, embedding FROM vectors").fetchall()
+    rows = store.execute(
+        "SELECT id, embedding FROM vectors "
+        "WHERE COALESCE(kind, ?) = ?", (FRAGMENT, kind)).fetchall()
 
     scored = []
     for row in rows:
