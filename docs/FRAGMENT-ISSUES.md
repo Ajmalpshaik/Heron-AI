@@ -492,6 +492,52 @@ is still the best in the library — ducts are SYSTEM families and structurally 
 any model — but the positive needs one piece of equipment with a nested shared family, and neither
 model has one. **Two runs have now agreed. Do not run it a third time on either model.**
 
+### The WRITE pool on this model, triaged — 2026-09-10
+
+`write.enabled` was switched on and five MODIFY fragments were run for real, inside the rolled-back
+TransactionGroup. **The model was 9,628 elements before and after**, so §1c's rollback held across all
+of them — including a `group-elements` run that really did group 22 ducts.
+
+Four are blocked, and each one says exactly what it needs:
+
+| Fragment | What came back | What it needs |
+|---|---|---|
+| `flip-elements` | `cannotFlip 144` on air terminals, `cannotFlip 10` on mechanical equipment, `notFamilyInstance 0` both times — so it read every one and none has a flip control | An instance that can actually flip. Snowdon's host has no doors or windows; they are in the architectural link |
+| `set-mep-slope` | `sloped 0`, and the accounting explains it completely: `bothEndsConnected 20` + `risers 2` = the whole selection of 22 | A duct with a FREE end. **`Project1` has four** — the same open ends that proved `find-dead-ends`. This is the clearest "wrong model, right fragment" case since that one |
+| `disallow-join` | not run | Host walls, and there are none in `FloorPlan: M1` or `L3` |
+| `group-elements` | `grouped 44`, `groupId 1`, `refused false` | A negative. It groups whatever it is handed — the shape [`value-driven-negatives.yaml`](../tools/jobs/value-driven-negatives.yaml) already names, and no value it takes can switch that off |
+
+**`set-mep-slope` is worth reading rather than filing.** It refused all 22 and gave a per-element reason
+for every one, splitting them into two named causes that add up exactly. That is the behaviour §3h.1
+("make silence illegal") is asking every fragment for, already built.
+
+### `set-mep-justification` ACCEPTS ONLY AN OFFSET OF ZERO — NEEDS_REVIEW
+
+Run on the same 22 ducts, three times:
+
+| `horizontalOffsetMm` / `verticalOffsetMm` | `set` | `withoutOffsets` |
+|---|---|---|
+| 500 / 500 | **0** | 0 |
+| 50 / 50 | **0** | 0 |
+| 0 / 0 | **22** | 0 |
+
+Every non-zero offset is refused, per element: *"Refused: id 1447716: 2 of 2 offset(s) did not take the
+value"*. `withoutOffsets 0` says all 22 **have** the parameters, so it is not a missing-parameter case.
+
+**The fragment is behaving well** — it writes, reads back, and reports that the value did not stick
+rather than claiming success. The question is why nothing but zero sticks. Two readings, and nothing
+here settles which:
+
+- the ducts' justification is constrained or locked in this model, and zero is the only legal value; or
+- the write is going somewhere the read-back does not see, in which case `set 22` for zero is **also**
+  wrong — it would be reporting success for a change that never had to happen.
+
+> The second reading is the reason not to prove it. A pair of `set 22` against `set 0` would pass D-30
+> on the strength of a zero-offset positive, and freeze whichever of the two is true.
+
+Same family as `check-equipment-connectors` in §3b-i, where a larger tolerance found MORE mismatches:
+**worth reading before it is proved, because a proof would freeze whichever behaviour is there.**
+
 ---
 
 ## 3c. THE NEGATIVE CASE HAS NOT BEEN FOUND YET — 2026-09-08, third round
