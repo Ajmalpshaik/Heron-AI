@@ -577,6 +577,23 @@ examined all five.
 > A triage row that names what a fragment NEEDS is a shopping list. Four fragments have now been
 > unblocked by reading one and going to the other model.
 
+### Two more write fragments triaged, both blocked by CONTENT — 2026-09-10
+
+| Fragment | What came back | What it needs |
+|---|---|---|
+| `rename-elements` | `find=Generic` on 4 walls: `planned 4`, **`collisions 3`**, `renamed 0`. `find=Room` on the room: `planned 1`, **`refused 1`**, `renamed 0` | A selection whose members have **distinct, renameable names**. Project1's four walls share ONE type, so renaming each instance collides with the first — correct behaviour, wrong selection. Revit then refused the room outright |
+| `transfer-materials-between-documents` | `Steel` → `clashed 2`, `copied 0`. `Gypsum` → `clashed 1`. `Brick` → `clashed 1`. `Carpet`, `Aluminum` → nothing in either | A material present in the source and **absent** from the target. Both models derive from the standard Autodesk library, so every shared name clashes and nothing else exists to copy |
+
+**`rename-elements` is not failing — it is refusing correctly, twice over.** Four instances of one wall
+type all want the same new name, and it reports `collisions 3` rather than renaming one and silently
+dropping three. That is the opposite of the §3h.1 problem: a fragment that declines rather than
+inventing. Proving it needs a model with distinctly-named renameable elements.
+
+**A second project being open is not enough for the transfer family.** `openTitles` came back with
+**eight** documents — the two projects plus six loaded links — so the source resolves fine. The
+obstacle is that the two projects are too ALIKE. A transfer proof needs models that differ in the
+thing being transferred, which is a sharper requirement than "two are open".
+
 ### `disallow-join` COUNTS THE CALL, NOT THE CHANGE — found 2026-09-10, OPEN
 
 Run on the same four walls, both ways, everything else held identical:
