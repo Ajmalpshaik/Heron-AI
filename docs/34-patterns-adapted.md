@@ -195,7 +195,7 @@ All 54 were listed and read at description level, and the three promising ones o
 |---|---|
 | **`benchmark`** | *"Performance regression detection"* — page load, Core Web Vitals, Lighthouse, bundle size. **Heron has no web page.** But its principle is the one thing [`measure-brain.py`](../tools/measure-brain.py) lacks: a baseline nothing compares against is a number, not a check |
 | **`learn`** | *"Review, search, prune and export what has been learned across sessions."* Heron holds this as [DECISIONS.md](DECISIONS.md), [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) and [D-54](DECISIONS.md) — *a message describing a gap must be corrected when the gap closes* — with `check-docs.py` enforcing the counts. **Already held, and enforced rather than remembered** |
-| **`health`** | *"Wraps existing project tools."* That is [`heron_health.py`](../brain/heron_health.py) and the gate set. **Already held** |
+| **`health`** | *"Wraps existing project tools."* That is [`heron_health.py`](../mcp/server/heron_health.py) and the gate set. **Already held** |
 
 **The remaining 50 are a startup founder's workflow** — five iOS skills, four design reviews, seven
 browser-automation skills, deploys, ship, retro, office hours, a CEO-mode plan review. Not one belongs

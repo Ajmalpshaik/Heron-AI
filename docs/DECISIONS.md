@@ -3680,7 +3680,7 @@ processes write into it without a shared lock.
 ### What is never written there
 
 **Not the user's sentence.** The trail already carries project information and
-[12 §5](12-security-and-privacy.md) puts it under the same egress rules as everything else. **The live
+[12 §5](12-security-and-permissions.md) puts it under the same egress rules as everything else. **The live
 route share needs the route and whether it resolved; it does not need the words.** Recording the
 sentence would add a class of content to an append-only, never-pruned file for a report that does not
 read it.
@@ -3742,7 +3742,7 @@ what somebody thought to check.**
 ## D-63 — A want is recorded when a capability is asked for BY NAME and nobody provides it
 
 **Status:** Accepted · **Date:** 2026-09-09 · **Found during:** [`tools/check-reachable.py`](../tools/check-reachable.py) finding `heron_capability.want()` called from two tests and no production code
-**Affects:** [`heron_capability.py`](../brain/heron_capability.py), [`heron_brain.py`](../mcp/server/heron_brain.py), [D-40](DECISIONS.md), [06 §6](06-agent-hr.md)
+**Affects:** [`heron_capability.py`](../brain/heron_capability.py), [`heron_brain.py`](../mcp/server/heron_brain.py), [D-40](DECISIONS.md), [06 §6](06-heron-platform.md)
 
 ### Context
 

@@ -65,10 +65,13 @@ not changed, only the size of it - and the ten fragments added on 2026-09-08, fo
 switching project and view and six for the review's N01 to N06, arrived `DRAFT` like
 everything else.
 
-**And a WRITE path for the executor.** Reading a model through a fragment works: the executor is built
-and runs one read-only. What does not exist is running a fragment that CHANGES anything — that is a
-separate operation, deliberately, and `write.enabled` defaults to `false` until a real Revit has been
-through [NEEDS-CHECKING.md](../docs/NEEDS-CHECKING.md). So a request resolves to *this capability,
+**The WRITE path exists now.** Reading a model through a fragment works, and so does changing one:
+`run_fragment_write` is a **separate** operation from the read, deliberately — `MODIFY` in the
+registry, wrapping the run in a `TransactionGroup` assimilated only on `apply=true` and rolled back
+otherwise, so a preview is the run itself undone rather than a simulation that could lie
+([D-55](../docs/DECISIONS.md)). **55 `MODIFY` fragments are `PROVEN`** — derive that with
+`heron_fragment.py` — so this is built *and* met a model. `write.enabled` still defaults to `false`
+until a real Revit has been through [NEEDS-CHECKING.md](../docs/NEEDS-CHECKING.md). So a request resolves to *this capability,
 provided by that fragment*, and can be READ all the way through — and no answer here may imply more
 than that.
 

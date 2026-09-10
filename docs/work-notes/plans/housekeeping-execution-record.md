@@ -23,7 +23,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | **D** | Work-notes separation | **DONE** | `docs/work-notes/README.md` created; HANDOVER labelled; no empty folders — §20 |
 | **E** | Module-level onboarding READMEs | **DONE** | All six verified against source; five corrections, `tests/README.md` created — §23 |
 | **F** | AI-first / human-first navigation | **DONE** | `AGENTS.md` and `docs/PROJECT-MAP.md` created and linked; role routes added — §25 to §27 |
-| **G** | Cross-link and stale-reference cleanup | **NOT DONE** | 4 pre-existing broken links stand (§5 below) |
+| **G** | Cross-link and stale-reference cleanup | **DONE** | Broken links 4 → **0**; three false-absence claims corrected — §28 to §30 |
 | **H** | Permanent documentation quality | **NOT DONE** | — |
 | **I** | Validation and QA | **NOT DONE** | Will diff against §4 of this file |
 | **J** | Final repository audit | **NOT DONE** | — |
@@ -259,8 +259,8 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Phase G: sweep the repository for stale references and the remaining stale-status wording, and give
-`docs/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` the inbound link §13 says it needs.
+Phase H: confirm each major document still has one responsibility and that no duplication was
+introduced, then Phase I re-runs the §28.6 matrix against the §4 baseline.
 
 ---
 
@@ -735,3 +735,98 @@ finds the answer is not**, and no score is claimed for it.
 
 Recorded as **outstanding**, with the fresh-checkout walkthrough of §28.7, for Phase I. Independent
 review remains pending throughout (§28.2).
+
+---
+
+# PHASE G — cross-link and stale-reference cleanup
+
+## 28. The four pre-existing broken links — repaired, 4 → 0
+
+All four were **wrong filenames**, not wrong intent. The correct target was established by reading the
+content in each case, never by guessing at a similar name. The visible link text is unchanged in all
+four, so no historical wording was altered — only the href.
+
+| File | Was | Now | How the target was established |
+|---|---|---|---|
+| `docs/DECISIONS.md` | `12-security-and-privacy.md` | `12-security-and-permissions.md` | That file exists and **has a §5** (Audit log), so the `[12 §5]` reference is valid as written |
+| `docs/OPEN-QUESTIONS.md` | `12-security-and-privacy.md` | `12-security-and-permissions.md` | Same |
+| `docs/DECISIONS.md` (D-63) | `06-agent-hr.md` | `06-heron-platform.md` | Doc 06 **§6 is "Self-Growing Agents"**, and it is where the **Capability Gap Agent** lives — which is exactly D-63's subject. The `[06 §6]` text was right all along |
+| `docs/34-patterns-adapted.md` | `../brain/heron_health.py` | `../mcp/server/heron_health.py` | The module is at `mcp/server/`, verified — `tests/test_config_and_health.py` and `tests/test_diagnose.py` both add `mcp/server` to the path to import it |
+
+`check-docs.py` now reports **BROKEN LOCAL LINKS: 0**. The plan's §28.11 verification section recorded
+four; there are none.
+
+## 29. Reference sweep after this run's one deletion
+
+Nothing in this run moved a file; one folder was deleted (`.agents/skills/`, §16).
+
+| Searched for | Result |
+|---|---|
+| `.agents/skills` | **No live reference.** The one hit is `PROPOSALS.md` prose reading *"agents/skills/fragments"* — not a path. `.gitignore` keeps its tripwire lines by decision |
+| `.Codex` | **None as a path.** Remaining hits are the word *Codex* naming the reviewer in code comments (*"Found by Codex on PR #44"*) |
+| `.codex/skills` | **None** |
+
+Beyond links, every repository-relative path written in backticks across all tracked Markdown was
+resolved against disk. Six were flagged and **all six are false positives**, each checked individually:
+
+| Flagged | Verdict |
+|---|---|
+| `docs/00`, `docs/01`, `docs/32` | Range notation (`docs/00`–`34`), truncated by the matcher. Not paths |
+| `tests/cases.yaml` | A **per-fragment** path — `brain/fragments/<name>/tests/cases.yaml`, and 360 of them exist. Used as shorthand |
+| `docs/b2-confirmed-in-revit` | A **branch name**, quoted in `HANDOVER.md` as somebody else's branch |
+| `.claude/settings.json` | Cited *because it is absent* — Q-49 is the observation that Heron has no hooks. Correct as written |
+
+**`docs/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` is no longer an orphan.** It is now indexed in
+`docs/README.md`'s working documents with its real state on the row: C03, C04 and N01–N09 done;
+**C01, C02, C05–C08 and the S01–S05 splits still plan only.**
+
+## 30. §20 — three statements that claimed a feature was missing while the code existed
+
+§6 lists this exact failure mode as a required check: *"documentation claiming a feature is missing
+when code now exists."* Three instances were found and corrected.
+
+### The write path — claimed absent in two files, and it is both built and proven
+
+`README.md` said *"Running a fragment that WRITES is a separate operation that still does not exist."*
+`brain/README.md` said *"What does not exist is running a fragment that CHANGES anything."*
+
+Both are wrong. Verified in source:
+
+- `platform/Heron.Core/HeronOperationRegistry.cs:108` registers `run_fragment_write` as `HeronRisk.Modify`
+- `revit/Heron.Revit.Addin/RevitDispatcher.cs:347` and `RevitOperations.cs:84` dispatch it
+- `revit/Heron.Revit.Addin/RevitFragment.cs:287` opens a `TransactionGroup` on the writing path, with
+  `apply` deciding assimilate-or-roll-back — a preview that is the run itself, undone
+- **[D-55](../../DECISIONS.md), Accepted 2026-09-08**, governs it
+
+And it is not merely built. Derived from the library:
+
+| Lifecycle | Risk | Count |
+|---|---|---|
+| **PROVEN** | **MODIFY** | **55** |
+| PROVEN | READ | 106 |
+| PROVEN | ANALYZE / EXECUTE | 3 / 3 |
+| DRAFT | MODIFY | 129 |
+
+**55 `MODIFY` fragments carry a recorded proof**, so the write path has met a real model. Both files
+now say so, name D-55, and keep the true half — `write.enabled` still defaults to `false`.
+
+This is the same failure `HANDOVER.md:197` already records against an earlier claim: *"it still says
+it CANNOT run them … my own assertion was stale before it was a day old."* It happened again, in the
+first file a reader opens, and stood for two days.
+
+### The Context Manager — `docs/README.md` repeated a finding that doc 32 had already closed
+
+Its row for [32](../../32-master-architecture-reconciliation.md) said the Context Manager and six
+things beside it have **"no implementation of any kind."**
+
+Doc 32 itself no longer says that. Its §4.1 is titled *"✅ The Context Manager — specified, then built
+the same day"*, and its §6.1 row reads **GAP, CLOSED IN PART**. `brain/heron_context.py` exists,
+imports, and is 44 KB.
+
+The index was quoting the audit's *original* wording rather than its current verdict. Corrected: three
+of the seven are real, four remain absent on purpose, three of those placed in the host by D-58.
+
+## 31. Verification
+
+`check-docs` exit 0 with **0 broken links** across 81 Markdown files. `check-metadata` 0,
+`check-structure` 0, `git diff --check` 0.
