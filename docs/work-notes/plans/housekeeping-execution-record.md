@@ -2,7 +2,7 @@
 
 > **Type:** Operational work note — the durable ledger for the repository housekeeping
 > run driven by [`repository-housekeeping-and-ai-onboarding-plan.md`](repository-housekeeping-and-ai-onboarding-plan.md).
-> **Status:** Phase A entry gate complete. No file has been classified, moved, merged or deleted.
+> **Status:** Phase A complete. Nothing has been moved, merged or deleted; classification only.
 > **Owner of this run:** single-agent session on branch `claude/amazing-fermat-emyav7`.
 > Independent review is **pending** — self-review is not independent approval (plan §28.2).
 
@@ -17,7 +17,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | Phase | Title | Status | Remaining |
 |---|---|---|---|
 | **A entry gate** | Prove every gate runs (§28.11 A) | **DONE** | — |
-| **A** | Repository-wide audit and inventory | **NOT DONE** | Inventory and classification not started; awaiting owner confirmation of this gate report |
+| **A** | Repository-wide audit and inventory | **DONE** | Inventory built, all 82 Markdown files classified, conflicts recorded — §9 to §12 below |
 | **B** | Truth and status reconciliation | **NOT DONE** | Root `README.md` line 45 known stale; not yet corrected |
 | **C** | Documentation architecture | **NOT DONE** | — |
 | **D** | Work-notes separation | **NOT DONE** | `docs/work-notes/README.md` does not exist |
@@ -259,5 +259,138 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Await the owner's confirmation of this gate report, then begin the Phase A inventory and
-classification from tracked files at `5aa7f6d`.
+Phase B: reconcile the stale claims in §11 against derived truth. Nothing in Phase B moves or
+deletes a file.
+
+---
+
+# PHASE A — repository-wide audit
+
+Built from **tracked files at `5aa7f6d`**, per §28.11 item E. Working tree clean; no untracked
+paths, so no "present, not in scope" rows are needed.
+
+## 9. Inventory
+
+1,329 tracked files at the baseline (1,330 including this record).
+
+| Area | Files | Class | Disposition |
+|---|---|---|---|
+| `brain/fragments/` | 1,080 | Permanent source | **Grouped keep** — 360 fragments, all well-formed |
+| `brain/skills/` | 10 | Permanent source | **Grouped keep** — all 10 `DRAFT` |
+| `brain/*.py` | 13 | Permanent source | **Grouped keep** |
+| `tools/` | 47 | Permanent source | **Grouped keep** (README classified separately) |
+| `tests/` | 44 | Permanent source | **Grouped keep**; no README — Phase E candidate |
+| `revit/` | 19 | Permanent source | **Grouped keep** |
+| `mcp/` | 12 | Permanent source | **Grouped keep** |
+| `platform/` | 11 | Permanent source | **Grouped keep** |
+| `.codex/` | 5 | Permanent AI config | **Keep** — `config.toml` + 4 agent definitions |
+| `.claude/` | 12 | Permanent AI config | **Keep, but see the conflict in §12** |
+| `.agents/` | 7 | Permanent AI config | **Defer — see the conflict in §12** |
+| `.github/` | 4 | Permanent config | **Keep** — issue templates only; no workflows, no PR template |
+| Root config | 5 | Permanent config | **Keep** — `.gitignore`, `.mcp.json`, `Directory.Build.props`, `LICENSE`, `NOTICE` |
+| Markdown | 82 | mixed | Classified in §10 |
+
+**There is no CI in this repository.** `.github/` holds issue templates and nothing else — no
+workflows, no pull-request template. Recorded as a fact about the validation surface, not a defect
+to fix here.
+
+## 10. Markdown classification — all 82 accounted for
+
+| Class | Files | Disposition |
+|---|---|---|
+| **Permanent authority** | `docs/00`, `00b`, `00c`, `00d`, `00e`, `docs/01`–`34` (35), `HERON_CONSTITUTION.md`, `docs/DECISIONS.md` | **Keep.** Update links/status only |
+| **Governance** | `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `DISCLAIMER.md` | **Keep** |
+| **Research brief, authority already settled** | `HERON_AI_MASTER_ARCHITECTURE.md` | **Keep** — see §13 |
+| **Navigation** | `README.md`, `docs/README.md`, `brain/README.md`, `mcp/README.md`, `platform/README.md`, `revit/README.md`, `tools/README.md`, `.claude/skills/README.md`, `brain/proof-drafts/README.md` | **Keep; three need updating** — §11 |
+| **Live operational register** | `docs/NEEDS-CHECKING.md`, `docs/FRAGMENT-ISSUES.md`, `docs/OPEN-QUESTIONS.md`, `docs/PROPOSALS.md`, `docs/ROADMAP.md` | **Keep** — all actively maintained |
+| **Historical evidence** | `brain/retrieval-history.md` | **Keep** — measurement history, explicitly quotable |
+| **Session/work note** | `docs/HANDOVER.md` | **Defer the move** — §12 |
+| **One-time execution prompt** | `docs/PROMPT-fragment-validation-agent.md` | **Retain with a remaining item** — §13 |
+| **One-time plan, partly implemented** | `docs/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` | **Retain; needs an inbound link** — §13 |
+| **AI instruction** | 6 `.agents/skills/*/SKILL.md`, 6 `.claude/skills/*/SKILL.md`, 4 `.claude/agents/*.md` | **Defer** — duplication conflict, §12 |
+| **This run's own files** | the housekeeping plan, this record | Plan deleted at Phase L only |
+
+**Missing entirely, and named by the plan as deliverables:** `AGENTS.md` (§10), `docs/PROJECT-MAP.md`
+(§11), `docs/work-notes/README.md` (§12), `tests/README.md` (§17 candidate).
+
+## 11. Stale status claims found, with derived truth beside them
+
+Derived by the command the README itself names:
+`grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`
+
+**Truth at `5aa7f6d`: 360 fragments — 167 `PROVEN`, 193 `DRAFT`. Ten skills, all `DRAFT`.**
+
+| File | Line | Claim | Truth | Verdict |
+|---|---|---|---|---|
+| `README.md` | 52 | "159 of the 360 fragments are `PROVEN` as of 2026-09-09" | 167 | **STALE** |
+| `README.md` | 82 | "201 of the 360 fragments are `DRAFT` and 159 are `PROVEN`" | 193 / 167 | **STALE** |
+| `README.md` | 45 | "41 test suites, all passing bar three … two want the MCP SDK and one wants a built .NET test host" | Measured 36 pass, 2 genuine fail, 3 not run | **STALE** — the count is wrong, and the reasons omit two real failures |
+| `docs/README.md` | 5 | "159 of the 360 fragments are `PROVEN` as of 2026-09-09" | 167 | **STALE** |
+| `brain/README.md` | 35 | "360 as of 2026-09-08 — 308 `DRAFT`, 52 `PROVEN`" | 193 / 167 | **STALE**, and the worst of the three |
+| `brain/README.md` | 56 | "52 fragments are `PROVEN`; the other 308 … are `DRAFT`" | 167 / 193 | **STALE** |
+| `docs/HANDOVER.md` | 80 | "41 suites. **38 pass** in a plain Linux container and the three failures are the MACHINE" | 36 pass in this Linux container; 3 machine + **2 genuine** | **INCOMPLETE** — the 3 machine failures it names are exactly right, but `test_graph` and `test_reachable` are missing from the account |
+
+**`docs/HANDOVER.md` line 77 and line 1314 are correct** — both already say 167 `PROVEN`, 193 to go,
+dated 2026-09-10. The operational note is current while the two front doors are not, which is the
+opposite of what a reader would assume.
+
+Claims checked and found **correct**, so Phase B must not touch them: "52 answered · 1 open"
+(`check-docs` agrees, `Q-51` open), 30 Constitution Articles, 21 Golden Rules, 250 agents in the
+registry, "all ten skills are `DRAFT`".
+
+## 12. Conflicts needing an owner decision
+
+### C-1 — `.claude/skills/` and `.agents/skills/` are near-duplicate copies of the same six skills
+
+Commit `fc7aec1` states *"the skills have since moved to `.agents/skills/`"*. **They were copied, not
+moved:** `.claude/skills/` still holds all six plus its own `README.md` and `bin/heron_guard.py`, all
+tracked. Five of the six `SKILL.md` files are byte-identical across the two trees.
+
+Every consumer still points at `.claude/skills/`: `tests/test_heron_guard.py`,
+`tools/check-licence.py`, `tools/batch-prove.py`, `tools/generate-jobs.py`,
+`tools/check-api-surface.py`, `tools/jobs/example.yaml`, `tools/README.md`, and several docs.
+**Nothing except `.gitignore` and the housekeeping plan references `.agents/`.**
+
+This is an incomplete migration, and which tree is canonical is a product-intent decision.
+**Deferred to Ajmal** (§28.3: uncertain ownership → defer/keep). Not touched.
+
+### C-2 — `.agents/skills/heron-guard/SKILL.md` points at a path that does not exist
+
+It is the one file of the six that differs, and the difference is the hook command:
+
+| Tree | Command in `SKILL.md` |
+|---|---|
+| `.claude/skills/heron-guard/` | `python .claude/skills/heron-guard/bin/heron_guard.py` |
+| `.agents/skills/heron-guard/` | `python .Codex/skills/heron-guard/bin/heron_guard.py` |
+
+**There is no `.codex/skills/` directory at all** — `.codex/` holds `config.toml` and four agent
+`.toml` files. The path is also capitalised `.Codex`, which resolves on Windows and fails on Linux.
+The script itself is byte-identical in both trees.
+
+So the `.agents/` copy of a **deny-tier, fails-closed** hook names an executable that is not there.
+Recorded as a defect per §28.8. **Not fixed** — it belongs with the C-1 decision.
+
+### C-3 — `docs/HANDOVER.md` is 433 KB and is the documented cold-start entry point
+
+Plan §13 asks whether it should move to `docs/work-notes/handover/`. It has 13 inbound references,
+the root README sends every new reader to it, and its own first line is the sentence the owner is
+told to type: *"Read HANDOVER.md in Heron-AI and carry on."*
+
+§13 and §28.9 both allow keeping an established entry point in place. **Deferred pending the
+Phase C responsibility map** — a move here would break saved continuation prompts that live outside
+this repository and cannot be checked from inside it.
+
+## 13. Files the plan names by name, resolved
+
+| File | Plan section | Finding | Disposition |
+|---|---|---|---|
+| `HERON_AI_MASTER_ARCHITECTURE.md` | §22 | **Already resolved.** It carries a banner added 2026-09-09 under D-57: *"This is a research brief. It is not part of the Heron AI specification and supersedes nothing"*, pointing to `docs/32` for the audit | **No action.** §22 is satisfied by work that predates this run |
+| `docs/PROMPT-fragment-validation-agent.md` | §14, §28.9 | Header says **BUILT 2026-09-06**. Verified: `brain/heron_validate.py` exists, `tests/test_validate_agent.py` exists and **passes** at baseline, `brain/proof-drafts/README.md` exists, the `validate` subcommand exists in `heron_bridge_client.py`. But the header also says *"Nothing has been run against Revit"* | **Retain.** §28.9 is explicit: any unproven required item means the prompt stays, with the remaining item named. Remaining item: the on-model half, which **NEEDS REAL REVIT**. Its filename says `PROMPT-`, which reads as an active job — a naming question for Phase C, not a deletion |
+| `docs/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` | §14 | Its own status line: C03, C04, C09 and N01–N09 done; **C01, C02, C05–C08 and S01–S05 remain plan only**. Its internal snapshot says 350 fragments; there are now 360 — a labelled dated snapshot, acceptable under §6 | **Retain — work is unfinished.** But it has **zero inbound references from anywhere in the repository**, so live remaining work sits in a file nothing links to. Giving it an inbound link is Phase G work |
+
+## 14. Phase A exit evidence
+
+- Every in-scope file is accounted for: 1,329 tracked files, grouped or classified.
+- All **82** Markdown files classified; none left unread that is a move or delete candidate.
+- No move, merge or delete has been performed. Three conflicts are deferred with reasons.
+- Independent review: **pending**.
