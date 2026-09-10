@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -77,6 +77,25 @@ contract:
       # be judged. The evidence it looked, never a fault it found (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values. returned bidirectionalSkipped
+    571, bothIn 0 item(s), bothOut 7 item(s) [1431100 | 1510229, 1433909 | 1510065, 1443013
+    | 1443675, ...], connectorsOf Func`2, jointsChecked 165, seen HashSet`1. inputs came elements
+    from the selection (307). on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1 instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running select-by-category-name, set-selection with this phase''s own values. returned
+    bidirectionalSkipped 31, bothIn 0 item(s), bothOut 0 item(s), connectorsOf Func`2, jointsChecked
+    19, seen HashSet`1. inputs came elements from the selection (22). on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a3b42a219a98f2bb
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
