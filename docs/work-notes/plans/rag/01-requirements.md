@@ -247,7 +247,7 @@ cheap now and expensive later.
 
 **Taken by the owner** from an outside repository and **re-authored, never imported**
 ([D-25](../../../DECISIONS.md)) — the reading is
-[`the investigation` §3.1](../../investigations/jamwithai-repositories-2026-09-10.md), the design is
+[`the investigation` §3.1](../../investigations/rag-engineering-practices-2026-09-10.md), the design is
 [`00-structure.md` §3.6a](00-structure.md). It is what makes **R-21** testable instead of merely stated.
 
 | | Requirement | Source | State | Note |

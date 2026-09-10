@@ -272,7 +272,7 @@ in §5 to be settled first.
 the whole platform, not only RAG.
 
 **Done.** Five repositories read. Written up as
-[`../../investigations/jamwithai-repositories-2026-09-10.md`](../../investigations/jamwithai-repositories-2026-09-10.md),
+[`../../investigations/rag-engineering-practices-2026-09-10.md`](../../investigations/rag-engineering-practices-2026-09-10.md),
 sorted the way [`docs/34`](../../../34-patterns-adapted.md) sorts things: **four ✅ take, three ⏸
 owner's call, the entire stack ❌ does not transfer.** Nothing accepted — every row is a proposal.
 
@@ -683,3 +683,29 @@ library is loaded afterwards, in the order R-88 now sets, by whoever owns each d
 **R-88b.** Nothing on this track is blocked on the owner any more.
 
 **95 requirement rows — R-01 to R-93, plus R-88a and R-88b. Still no code.**
+
+### 2026-09-11 — a file named for a person, and a thanks that was missing
+
+**Owner:** *"keeping the repo or person name is not good, I think. Also if you are referring to anything
+from any repo, mention it in the README, like a thanks section."*
+
+**Both right, and the second is the more important one.**
+
+**The rename.** `jamwithai-repositories-2026-09-10.md` is now
+[`rag-engineering-practices-2026-09-10.md`](../../investigations/rag-engineering-practices-2026-09-10.md).
+**A file should be named for what is in it.** This repository goes public, and a page titled after
+somebody's account reads as being *about them* rather than about the two ideas taken from their work.
+Nine references updated; the sources are still named inside, which is where attribution belongs.
+
+**The thanks.** [`README.md`](../../../../README.md) had **no acknowledgements section at all** — after
+sixteen repositories were read at file level for [`33`](../../../33-external-repository-research.md) and
+[`34`](../../../34-patterns-adapted.md), and five more this week. **Every source was credited in the
+research documents and none of it was visible from the front page.**
+
+That is not only manners. [D-25](../../../DECISIONS.md) — *studied and re-authored, never imported* — is
+a claim about how this project treats other people's work, and **a claim like that belongs where a
+stranger can check it**, next to the list of what was actually read.
+
+**The section names only the projects that changed something**, and points at `33` and `34` for the full
+sixteen with what each became — including the rejections, because a rejection with a number is worth as
+much as an adoption.

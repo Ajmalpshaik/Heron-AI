@@ -183,6 +183,33 @@ which settles the remaining blocking questions with facts instead of opinion.
 
 ---
 
+## Thanks — what was studied, and the rule that governs it
+
+Heron is built by people who read other people's work. **[D-25](docs/DECISIONS.md) is the rule:
+studied and re-authored, never imported.** No code, no dependency and no name is taken from any
+project below — what is taken is the *thinking*, rewritten in Heron's own shape, and every capability
+starts at `DRAFT` here whatever status it held where it was read.
+
+**Sixteen repositories were read at file level and written up in
+[33 — External repository research](docs/33-external-repository-research.md), with what each one
+became in [34 — The patterns behind them](docs/34-patterns-adapted.md)** — including the ones that
+were **measured and rejected**, because a rejection with a number saves the next person a week.
+
+Named here because something in Heron is different for having read them:
+
+| | For |
+|---|---|
+| [jamwithai](https://github.com/jamwithai) — `observable-job-agent`, `production-agentic-rag-course` | A way to check a generated claim against its source that **calls no model at all** — and *"the human applies, the agent never submits"*, which this repository had reached independently as [D-30](docs/DECISIONS.md) |
+| [Anthropic — Contextual Retrieval](https://www.anthropic.com/engineering/contextual-retrieval) | The observation that a chunk is embedded having lost its document. For a numbered standard, its heading path answers it for free |
+| [LightRAG](https://github.com/HKUDS/LightRAG) · [RAGFlow](https://github.com/infiniflow/ragflow) | Read and **not adopted** — both need servers Heron may not have. RAGFlow's reviewable chunk boundaries stayed |
+| [Docling](https://docling.org/) | A local document parser, still an open question rather than a dependency |
+| [`sqlite-vec`](https://github.com/asg017/sqlite-vec) | The one that made [D-23](docs/DECISIONS.md) possible — vector search in a single file, with no server to install |
+
+**Where a project's licence forbade reading its source, its source was not read** — that is recorded
+per row in [33](docs/33-external-repository-research.md), not assumed.
+
+---
+
 ## A note on this repository
 
 It is still **private**. Three of the four conditions for making it public are now met — the licence
