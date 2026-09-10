@@ -245,3 +245,40 @@ It is now **conditional**: documents only, and gated on a neighbour count that c
 > file somebody wrote so the next person would not repeat the work. The other was `check-docs.py`
 > refusing a decision number nothing defines.
 
+### 2026-09-10 — the fabrication check taken, and folded in
+
+**Owner's instruction:** *"take the fabrication check, add to plan."* Done the same day.
+
+**What was taken.** A way to check a claim against its source that **calls no model and touches no
+network** — normalise both sides identically, compare with the standard library, threshold per kind of
+claim, check only sentences that carry a fact, and **let a claim that says less than its source pass**.
+
+**Why it matters here.** [R-21](01-requirements.md) — *no source, no claim* — has been the most
+credibility-carrying rule in the whole track and the least testable. It is now **ten requirements with a
+build order**: R-46 to R-55, [`01-requirements.md` §H](01-requirements.md), built as
+[`02-implementation.md` §6.1](02-implementation.md).
+
+**The design decision that made it fit.** Heron does not write the answer — [D-01](../../../DECISIONS.md)
+gives that to the host — so at first sight the brain cannot check one. It can:
+[`heron_validate.py`](../../../../brain/heron_validate.py) already **gathers the evidence for a proof and
+never signs one**. This is that shape one layer up — **the brain cannot write the answer, but it can
+refuse to endorse one** — so the check is a call the host makes back into the brain, returning a report
+and never a rewrite. It stands on `HERON-RAG-CIT-014`, whose registry line has read *"No source, no
+claim"* since it was written and which has never had any code.
+
+**What was re-authored rather than copied** ([D-25](../../../DECISIONS.md)): the normalisation list. Their
+corpus varied in frequency words and numeric suffixes; **BIM text varies in units and clause numbers** —
+`150mm` / `150 mm`, `DN150` / `150Ø`, `§21.3.2` / `21.3.2`. That list is Heron's own and is the part most
+likely to decide whether the check is trusted.
+
+**The row to get right, flagged now rather than found later:** R-51. A modeller who writes *"the duct
+needs insulation"* about a clause saying *"insulated to 25mm"* has said something true and less specific.
+**A checker that calls that a fabrication will be switched off within a week**, so its test is written
+first.
+
+**Not done, on purpose.** Nothing written into [`docs/34`](../../../34-patterns-adapted.md). Its markers
+are about reality rather than intent, and its §1 tally describes one closed programme of sixteen
+repositories. The entry belongs there as `✅ BUILT` when §6.1 exists.
+
+**Still no code.** Stage 0 and 0b remain next.
+

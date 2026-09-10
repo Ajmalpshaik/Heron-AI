@@ -188,7 +188,7 @@ means it cannot start until an earlier row lands.
 
 | | Requirement | Source | State | Note |
 |---|---|---|---|---|
-| **R-21** | **No source, no claim.** A standards answer without a citation is a **bug**, not a low-confidence answer | [05 §8](../../../05-heron-brain.md) | **NONE** | the most credibility-carrying row on this page |
+| **R-21** | **No source, no claim.** A standards answer without a citation is a **bug**, not a low-confidence answer | [05 §8](../../../05-heron-brain.md) | **NONE** | the most credibility-carrying row on this page. **Section H is how it stops being untestable** |
 | **R-22** | A citation resolves to something a human can open — file, page, clause | `HERON-RAG-CIT-014` | **NONE** | |
 | **R-23** | Retrieved knowledge is **checked before it is used** | `HERON-RAG-VAL-013` | **NONE** | |
 | **R-24** | Two sources disagreeing is **surfaced and asked about**, not silently resolved by rank | `HERON-RAG-CNF-015`, [docs/20](../../../20-knowledge-trust-and-conflict.md) | **NONE** | |
@@ -240,6 +240,28 @@ cheap now and expensive later.
 | **R-43** | The context packet carries **citation, confidence, and what is missing** — enough that the host answers without inventing | [00 §3.6](00-structure.md) | **NONE** | this is what "generation" means here |
 | **R-44** | **No language model inside `brain/`.** The host writes the reply the user reads | [00 §3.6](00-structure.md), D-01 | **DONE, and must stay done** | `check-metadata.py` prints it as fact |
 | **R-45** | When the clause store exists, the `STANDARDS` refusal **narrows** to *"nothing indexed covers this"*. It never softens into a guess | [00 §3.6](00-structure.md) | **NONE** | a system that refused honestly while empty and guessed once full would be worse than the one that refused |
+
+---
+
+### H — The fabrication check, taken 2026-09-10
+
+**Taken by the owner** from an outside repository and **re-authored, never imported**
+([D-25](../../../DECISIONS.md)) — the reading is
+[`the investigation` §3.1](../../investigations/jamwithai-repositories-2026-09-10.md), the design is
+[`00-structure.md` §3.6a](00-structure.md). It is what makes **R-21** testable instead of merely stated.
+
+| | Requirement | Source | State | Note |
+|---|---|---|---|---|
+| **R-46** | Every sentence of a proposed answer that makes a **factual claim about an indexed source** is compared against the chunk it cites, before the answer is shown | [00 §3.6a](00-structure.md) | **NONE** | R-21's enforcement, and R-21 has had none |
+| **R-47** | The comparison calls **no model and touches no network**. Standard library only | [00 §3.6a](00-structure.md), [34 §2.4](../../../34-patterns-adapted.md) | **NONE** | *deterministic before the model*, applied to the output instead of the input. It must run on a machine with no keys |
+| **R-48** | **Both sides are normalised identically** before comparing — case, punctuation, whitespace, and the forms BIM text genuinely varies in: `150mm` / `150 mm`, `DN150` / `150Ø`, `2024` / `Revit 2024`, `§21.3.2` / `21.3.2` | [00 §3.6a](00-structure.md) | **NONE** | **a spelling difference must never read as an invention.** The unit list is Heron's own, and is where this differs most from what was read |
+| **R-49** | The threshold is **per kind of claim**, never one global number — a quoted clause is held tighter than a paraphrase of one | [00 §3.6a](00-structure.md) | **NONE** | one number for every kind of sentence is either too loose for quotes or too tight for prose |
+| **R-50** | **Only checkable sentences are checked** — those carrying a number, a dimension, a clause reference, a category name or a parameter name | [00 §3.6a](00-structure.md) | **NONE** | a sentence with no fact in it cannot fabricate one, and flagging it teaches people to ignore flags |
+| **R-51** | **A claim that says LESS than its source passes.** Understating is not fabricating | [00 §3.6a](00-structure.md) | **NONE** | *"insulated"* is not a fabrication when the clause says *"insulated to 25mm"*. **The row most likely to be got wrong** |
+| **R-52** | The report records **the thresholds it used, how many claims were checked, and every flag with its ratio** | [00 §3.6a](00-structure.md) | **NONE** | the denominator is what makes two runs comparable; a flag count alone is not a measurement |
+| **R-53** | The check **flags, never rewrites** | [00 §3.6a](00-structure.md), D-30 | **NONE** | the brain cannot write the answer, so it must not repair one either |
+| **R-54** | The fabrication rate is recorded in [`retrieval-history.md`](../../../../brain/retrieval-history.md) **with its date, corpus size and thresholds** | R-31, [00 §3.6a](00-structure.md) | **NONE** | the rule every other number here obeys |
+| **R-55** | **A threshold is never lowered to reduce flags** | [`retrieval-history.md`](../../../../brain/retrieval-history.md) | **NONE** | the same refusal that kept *"show me just these"* on the isolate fragment. Tuning a threshold to make a report look better is the measurement protecting itself |
 
 ---
 

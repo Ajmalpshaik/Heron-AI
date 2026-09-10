@@ -3,8 +3,9 @@
 > **Type:** Operational work note — a research note from one session. **Not specification.**
 > Where a sentence here disagrees with the [Constitution](../../../HERON_CONSTITUTION.md), the
 > [Golden Rules](../../14-golden-rules.md) or [DECISIONS.md](../../DECISIONS.md), **those win.**
-> **Status:** **Read and sorted. Nothing accepted yet — every ✅ below is a proposal until the owner
-> takes it.**
+> **Status:** **Read and sorted. ONE ROW TAKEN — §3.1, by Ajmal PS on 2026-09-10**, and now in the RAG
+> plan as [`plans/rag/00-structure.md` §3.6a](../plans/rag/00-structure.md) and requirements **R-46 to
+> R-55**. Every other ✅ below is still only a proposal.
 > **Asked for by:** Ajmal PS, 2026-09-10 — *"check this profile, is there anything we can use for our
 > project, not only RAG, for complete Heron AI."*
 > **The rule this obeys:** [**D-25**](../../DECISIONS.md) — **studied and re-authored, never imported.**
@@ -61,7 +62,14 @@ repository put the human at the last step for the same reason.**
 Marked the way [`docs/34`](../../34-patterns-adapted.md) marks things, so an accepted row can move there
 unchanged.
 
-### 3.1 ✅ TAKE — a fabrication check that uses no model at all
+### 3.1 ✅ **TAKEN 2026-09-10** — a fabrication check that uses no model at all
+
+> **Taken by the owner on 2026-09-10 and folded into the plan the same day.** The design is
+> [`plans/rag/00-structure.md` §3.6a](../plans/rag/00-structure.md), the requirements are **R-46 to
+> R-55** in [`plans/rag/01-requirements.md` §H](../plans/rag/01-requirements.md), and the build order
+> is [`plans/rag/02-implementation.md` §6.1](../plans/rag/02-implementation.md). **Re-authored, not
+> copied** — the normalisation list below is Heron's own, because BIM text varies in units and clause
+> numbers rather than in the things their corpus varied in.
 
 **The single most valuable idea on the profile**, and it lands squarely on the requirement this
 repository has no way to satisfy: [R-21](../plans/rag/01-requirements.md) — *no source, no claim* — which
@@ -249,11 +257,19 @@ also the reason [`33`](../../33-external-repository-research.md) and
 
 ## 6. What to do with this
 
-**Nothing is accepted.** Four ✅ rows and three ⏸ rows, all proposals.
+**One row is accepted: §3.1, on 2026-09-10.** It is in the plan. The remaining **three ✅ rows and
+three ⏸ rows are still proposals** — §3.2 the item-level citation, §3.3 the out-of-domain refusal,
+§3.4 grading what came back, and the three owner's calls.
 
 If the owner takes any of them, the durable half moves into
 [`docs/34`](../../34-patterns-adapted.md) beside the sixteen already there — including the rejections,
 because that file records those too — and this note is deleted.
 
-**The one to take first, if only one is taken:** §3.1. It turns *no source, no claim* from a rule
-nobody can check into a number that can be measured offline, with no model, using the standard library.
+**§3.1 was the one to take first, and it was taken.** It turns *no source, no claim* from a rule
+nobody can check into a number measurable offline, with no model, using the standard library.
+
+**Note on [`docs/34`](../../34-patterns-adapted.md).** That file is titled for **the sixteen
+repositories** and its §1 tally describes that one closed programme. This pattern came from a
+separate reading on a different day, and its markers there are about reality — `BUILT`,
+`ALREADY HELD`, `REJECTED` — not about intent. **So nothing was written into it yet.** The natural
+moment is when §6.1 is built, as a new `✅ BUILT` entry. Say if you want it recorded there sooner.

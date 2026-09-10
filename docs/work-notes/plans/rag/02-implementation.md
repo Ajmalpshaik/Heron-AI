@@ -199,16 +199,17 @@ passes, and `retrieval-history.md` has a first document row.
 
 ---
 
-## 6. Stage 3 — the citation, and the refusal
+## 6. Stage 3 — the citation, the refusal, and the check
 
-**Closes:** R-21, R-22. **Needs:** Stage 2. **This is the stage that decides whether Heron is
-trustworthy.**
+**Closes:** R-21, R-22, **and R-46 to R-55**. **Needs:** Stage 2. **This is the stage that decides
+whether Heron is trustworthy.**
 
 [`05 §8`](../../../05-heron-brain.md): a claim about ISO 19650, QCS, Ashghal or a company standard
 **must** carry a citation to an indexed source. **No source, no claim.** An uncited standards answer is
 a bug.
 
-Two halves, and the second is the one people skip:
+**Three parts.** The second is the one people skip; the third was taken from outside on 2026-09-10,
+and it is what makes the first two enforceable rather than merely stated — §6.1 below.
 
 - **The citation.** Every answer built from a chunk carries `title`, `locator`, and enough to open the
   file. A citation a human cannot follow is decoration.
@@ -218,8 +219,41 @@ Two halves, and the second is the one people skip:
   indexed covers this"*. A path that refused honestly while empty and started guessing once full would
   be a worse system than the one that refused.
 
-**Done when:** a standards question with an indexed source answers with an openable citation, the same
-question with the source removed **refuses by name**, and both are covered by a test.
+### 6.1 The check — how it gets built
+
+New file, `brain/heron_ground.py`, carrying `Heron-Agent: HERON-RAG-CIT-014` and the rest of the header
+[`docs/29`](../../../29-metadata-standard.md) requires. It takes **a proposed answer and the packet it
+was built from**, and returns a report. **It never returns a corrected answer** (R-53).
+
+Build it in this order — each step is testable alone, and the last two are where the judgement lives:
+
+| | Step | Test it with |
+|---|---|---|
+| 1 | **Normalise** — one function, both sides, identical (R-48) | pairs differing only in unit form: `150mm` / `150 mm`, `DN150` / `150Ø`, `§21.3.2` / `21.3.2`. All must normalise equal |
+| 2 | **Compare** — a similarity ratio from the standard library, no model (R-47) | a sentence against itself is 1.0; against unrelated text, low. Run it with no network and no keys |
+| 3 | **Select** — which sentences are checkable at all (R-50) | a sentence with a dimension is checked; *"this is worth reviewing"* is not |
+| 4 | **Threshold** — per kind of claim, from a named table (R-49) | a quoted clause below its threshold flags; a paraphrase at the same ratio does not |
+| 5 | **The understating rule** (R-51) | *"insulated"* against *"insulated to 25mm"* **passes** |
+| 6 | **Report** — thresholds used, claims checked, every flag with its ratio (R-52) | two runs at different thresholds produce reports that can be compared |
+
+**Write step 5's test first.** It is the difference between a checker people trust and one they switch
+off. A modeller who writes *"the duct needs insulation"* about a clause saying *"ducts in unconditioned
+spaces shall be insulated to 25mm"* has said something **true and less specific** — and a checker that
+calls that a fabrication will be ignored within a week.
+
+**What it must not become.** A threshold that drops whenever the report is noisy (R-55). If the flags
+are wrong, the **normaliser or the selector** is wrong — fix the step that is wrong and record what it
+was, the way [`retrieval-history.md`](../../../../brain/retrieval-history.md) records the three times an
+utterance was left alone rather than weakened.
+
+**The first number goes into [`retrieval-history.md`](../../../../brain/retrieval-history.md)** with its
+date, corpus size and thresholds (R-54). Without the thresholds beside it a fabrication rate is not
+comparable to the next one — the same lesson that file was written to teach about retrieval scores.
+
+**Done when:** a standards question with an indexed source answers with an openable citation; the same
+question with the source removed **refuses by name**; a deliberately fabricated sentence is **flagged
+with its ratio**; a sentence that only understates its source **passes**; it all runs with no network
+and no keys; and every one of those is a test.
 
 ---
 

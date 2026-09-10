@@ -52,7 +52,7 @@ So the six split three ways:
 | | The six | What it really is |
 |---|---|---|
 | **1** Searches again | **Reporting.** The host already loops. It cannot loop well because retrieval never tells it *"this was a coin toss"* | say the confidence out loud |
-| **6** Answers from what it found | **Reporting.** The host writes the answer — that is D-01. The brain owes it a packet it cannot invent from | put citations in the packet |
+| **6** Answers from what it found | **Reporting, plus one check.** The host writes the answer — that is D-01. The brain owes it a packet it cannot invent from, **and a way to say a draft drifted from it** | citations in the packet, and §3.6a |
 | **3** Knows a clause is inside a section | **Decided at ingestion.** Cannot be retrofitted cheaply — chunking is where hierarchy is won or lost | get it right in Stage 1 |
 | **2** Follows relationships | New machinery — a third retrieval route, and **conditional**: the same idea over the *fragment* graph was measured at six settings and lost ([`34 §2.13`](../../../34-patterns-adapted.md)) | a density count decides whether it is built at all |
 | **4** Decides where to look | New machinery — the Librarian | must not become a merged query (§3.4) |
@@ -227,7 +227,7 @@ questions — and a run with the re-ranker uninstalled that still answers.
 
 ---
 
-### 3.6 It answers from what it found — *the biggest question, already half-decided*
+### 3.6 It answers from what it found — *and from today, it is checked*
 
 **What it means here — and what it does not.** It does **not** mean putting a language model inside
 `brain/`. [D-01](../../../DECISIONS.md) settled that: **the host writes the reply the user reads.**
@@ -250,10 +250,46 @@ one that refused.
 **In Revit terms:** a schedule shows what is in the model. It does not invent a fire rating for a wall
 that has none — it shows the cell empty, and you go and fill it in. That empty cell is the feature.
 
-**Must not break:** D-01, the parts-list `raise`, and the refusal.
-**Proved by:** a standards question with a source answers with an openable citation; the same question
-with the source removed **refuses by name**; and both are tested.
-**Cost:** small on top of §3.3 and citations. **Needs:** citations, so it follows them.
+**And from 2026-09-10 there is a third part.**
+
+- **The check.** *No source, no claim* is a rule nobody can test. **It becomes a number.** Every
+  sentence in a proposed answer that makes a factual claim is compared against the chunk it cites —
+  **deterministically, with no model call and no network** — and what disagrees is flagged with how
+  far off it is. Taken from an outside repository and re-authored:
+  [`the reading` §3.1](../../investigations/jamwithai-repositories-2026-09-10.md). Mechanism below.
+
+#### 3.6a The check, and why it belongs here
+
+**Heron does not write the answer, so how can Heron check it?** Because checking and writing are
+different acts, and this repository has already separated them once.
+
+[`heron_validate.py`](../../../../brain/heron_validate.py) — the Fragment Validation Agent —
+**gathers the evidence for a proof and never signs one**, because [D-30](../../../DECISIONS.md) says an
+agent that can stamp 193 fragments is the fastest machine ever built for making an unproven claim look
+proven. **This is that shape again, one layer up:**
+
+> **The brain cannot write the answer. It can refuse to endorse one.**
+
+So the check is a call the host makes *back* into the brain, with its draft and the packet the draft was
+built from. It returns a report, **never a rewrite**. An answer that fails is flagged, not silently
+repaired — a checker that quietly fixes its own findings is how a wrong answer becomes an invisible one.
+
+**Whose responsibility it is.** `HERON-RAG-CIT-014` in [`docs/28`](../../../28-agent-registry.md), whose
+registry line already reads *"Tracks provenance. **No source, no claim**"*. That row has had no code
+since it was written; this is what it was for. It is **not** `HERON-RAG-VAL-013`, which checks
+*retrieved* knowledge before use — that is §3.4, a different act at a different moment.
+
+**In Revit terms:** a model audit, not a review meeting. Not *"does this look right"* — every dimension
+compared against the element it dimensions, automatically, and the ones that disagree listed with how
+far off they are. Nobody argues with the list; they go and look.
+
+**Must not break:** D-01 — the check never becomes a writer. The parts-list `raise`. The refusal. And
+**a threshold is never lowered to reduce flags**, which is the same rule as never weakening a fragment's
+declared words to buy a rank.
+**Proved by:** a fabricated sentence is **flagged with its ratio**; a sentence that merely *understates*
+its source **passes**; and the whole thing runs with no network and no keys.
+**Cost:** small on top of §3.3 and citations — the comparison is standard library.
+**Needs:** citations, so it follows them.
 
 ---
 
@@ -334,7 +370,7 @@ before the six were decided.
 | **0b** | **Say the confidence out loud** | **3.1** | nothing |
 | **1** | `documents` + `chunks` tables, the ingester, **hierarchy in the chunker** | **3.3** | nothing |
 | **2** | Documents come back out, alongside fragments | — | Stage 1 |
-| **3** | Citations, and the refusal that must not soften | **3.6** | Stage 2 |
+| **3** | Citations, the refusal that must not soften, **and the fabrication check** | **3.6**, **3.6a** | Stage 2 |
 | **4** | The Librarian picks the scope | **3.4** | documents in two scopes |
 | **5** | Document nodes, **then a density count**, and the edge route **only if it passes** | **3.2** | Stage 2 |
 | **6** | Maintenance — re-index on change, duplicates | — | Stage 2 |
