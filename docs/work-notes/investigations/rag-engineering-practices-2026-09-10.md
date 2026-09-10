@@ -1,4 +1,9 @@
-# `jamwithai` — read 2026-09-10, and what transfers
+# Engineering practices from two production RAG systems — read 2026-09-10
+
+> **Renamed 2026-09-11**, from a filename that was the author's account name. **A file should be
+> named for what is in it**, and this repository goes public — a page titled after a person reads as
+> being *about* them rather than about the two ideas taken from their work. The sources are named in
+> §1 and credited in [`README.md`](../../../README.md), which is where credit belongs.
 
 > **Type:** Operational work note — a research note from one session. **Not specification.**
 > Where a sentence here disagrees with the [Constitution](../../../HERON_CONSTITUTION.md), the

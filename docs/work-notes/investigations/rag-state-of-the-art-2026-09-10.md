@@ -7,7 +7,7 @@
 > **Asked for by:** Ajmal PS, 2026-09-10 — *"go to GitHub and find the best repos, and research on the
 > internet too, not only GitHub — what is it we are going to do. Research and update."*
 > **The rule this obeys:** [**D-25**](../../DECISIONS.md) — **studied and re-authored, never imported.**
-> **Reads with:** [`jamwithai-repositories-2026-09-10.md`](jamwithai-repositories-2026-09-10.md), the
+> **Reads with:** [`rag-engineering-practices-2026-09-10.md`](rag-engineering-practices-2026-09-10.md), the
 > first reading, whose four ✅ rows are already taken.
 
 ---

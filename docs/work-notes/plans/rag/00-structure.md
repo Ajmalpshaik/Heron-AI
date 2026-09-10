@@ -274,7 +274,7 @@ that has none — it shows the cell empty, and you go and fill it in. That empty
   sentence in a proposed answer that makes a factual claim is compared against the chunk it cites —
   **deterministically, with no model call and no network** — and what disagrees is flagged with how
   far off it is. Taken from an outside repository and re-authored:
-  [`the reading` §3.1](../../investigations/jamwithai-repositories-2026-09-10.md). Mechanism below.
+  [`the reading` §3.1](../../investigations/rag-engineering-practices-2026-09-10.md). Mechanism below.
 
 #### 3.6a The check, and why it belongs here
 
@@ -313,7 +313,7 @@ its source **passes**; and the whole thing runs with no network and no keys.
 ### 3.7 The three taken on 2026-09-10 — *one measurement, three thresholds*
 
 The owner took the remaining three rows from
-[`the investigation`](../../investigations/jamwithai-repositories-2026-09-10.md) — the item-level
+[`the investigation`](../../investigations/rag-engineering-practices-2026-09-10.md) — the item-level
 citation (§3.2 there), the out-of-domain refusal (§3.3), and grading what came back (§3.4).
 
 **Written up together, because they are not three features.** Two of them rest on **one question**,
