@@ -2,7 +2,7 @@
 
 > **Type:** Operational work note — the durable ledger for the repository housekeeping
 > run driven by [`repository-housekeeping-and-ai-onboarding-plan.md`](repository-housekeeping-and-ai-onboarding-plan.md).
-> **Status:** Phase A complete. Nothing has been moved, merged or deleted; classification only.
+> **Status:** Phases A and B complete. One owner-authorised consolidation performed (§16).
 > **Owner of this run:** single-agent session on branch `claude/amazing-fermat-emyav7`.
 > Independent review is **pending** — self-review is not independent approval (plan §28.2).
 
@@ -18,7 +18,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 |---|---|---|---|
 | **A entry gate** | Prove every gate runs (§28.11 A) | **DONE** | — |
 | **A** | Repository-wide audit and inventory | **DONE** | Inventory built, all 82 Markdown files classified, conflicts recorded — §9 to §12 below |
-| **B** | Truth and status reconciliation | **NOT DONE** | Root `README.md` line 45 known stale; not yet corrected |
+| **B** | Truth and status reconciliation | **DONE** | All seven stale claims corrected in `edfd867` — §15 |
 | **C** | Documentation architecture | **NOT DONE** | — |
 | **D** | Work-notes separation | **NOT DONE** | `docs/work-notes/README.md` does not exist |
 | **E** | Module-level onboarding READMEs | **NOT DONE** | — |
@@ -259,8 +259,8 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Phase B: reconcile the stale claims in §11 against derived truth. Nothing in Phase B moves or
-deletes a file.
+Phase C: draft the documentation responsibility map, and decide whether `AGENTS.md`,
+`docs/PROJECT-MAP.md` and `docs/work-notes/README.md` are created new or fulfilled by an existing file.
 
 ---
 
@@ -394,3 +394,87 @@ this repository and cannot be checked from inside it.
 - All **82** Markdown files classified; none left unread that is a move or delete candidate.
 - No move, merge or delete has been performed. Three conflicts are deferred with reasons.
 - Independent review: **pending**.
+
+---
+
+# PHASE B — truth and status reconciliation
+
+## 15. Corrections made, with the evidence for each
+
+Commit `edfd867`. Markdown only; no behaviour changed.
+
+Derived truth at the time of the correction:
+`grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`
+→ **360 fragments: 167 `PROVEN`, 193 `DRAFT`.** Ten skills, all `DRAFT`.
+
+| File | Was | Now | Evidence |
+|---|---|---|---|
+| `README.md` (prose) | 159 `PROVEN` / 201 never met a model | 167 / 193, dated 2026-09-10 | derived command above |
+| `README.md` (Phase 2 row) | 201 `DRAFT`, 159 `PROVEN` | 193 / 167 | same |
+| `README.md` (test sentence) | "41 suites, all passing bar three", blamed on the MCP SDK and an unbuilt test host | Names `check-gaps.py` as the deriver; separates the 2 genuine failures from the 3 that need an optional dependency | §4 of this record |
+| `docs/README.md` | 159 `PROVEN` | 167 | derived command above |
+| `brain/README.md` (table) | 360 as of 2026-09-08 — 308 `DRAFT`, 52 `PROVEN` | 360 as of 2026-09-10 — 193 / 167 | derived command above |
+| `brain/README.md` (prose) | "52 fragments are `PROVEN`; the other 308 … `DRAFT`" | 167 / 193, plus the recomputing command | derived command above |
+| `docs/HANDOVER.md` (test row) | "38 pass in a plain Linux container … three failures are the MACHINE" | 36 pass; 3 machine **and 2 genuine**; 39 of 41 is the ceiling on a fully equipped machine | §4 of this record |
+| `docs/HANDOVER.md` (next steps) | "201 `DRAFT` remain" | 193, dated, with derive-don't-read | derived command above |
+
+`brain/README.md` keeps its sentence about what one night with a real model bought, reworded to
+*"the first 52"* — the history survives the correction rather than being overwritten by it.
+
+**Deliberately left alone.** The dated snapshots inside `docs/DECISIONS.md` (288 of 308),
+`docs/FRAGMENT-ISSUES.md` (288 of 308), `docs/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` (350
+fragments, 16→52) and `HANDOVER.md`'s own session records (16 at the start, 52 at the end). Each is
+labelled history at a named date, and §28.8 keeps historical wording intact rather than rounding it
+forward.
+
+**Verified correct, so not touched:** "52 answered · 1 open", 30 Constitution Articles, 21 Golden
+Rules, 250 registry agents, ten skills all `DRAFT`. `check-docs.py` §7 reports all 82 Markdown files
+agreeing with the source that owns each claim.
+
+## 16. C-1 and C-2 resolved — one skills folder
+
+**Owner's decision, given during execution:** three folders disagreeing is a conflict; keep the
+skills in one place. Commit `1958e24`.
+
+### What was actually wrong
+
+| Folder | State before |
+|---|---|
+| `.claude/skills/` | Real. Every tool and test in the repository calls it |
+| `.agents/skills/` | Real files, referenced by nothing but `.gitignore` |
+| `.codex/skills/` | **Never existed** — yet `.codex/agents/*.toml` told Codex to read it |
+
+Two `.codex` agent definitions named `.Codex/skills/<name>/SKILL.md` and a third named
+`.Codex/skills/README.md`. Neither path has ever existed, and the capital `C` would fail on a
+case-sensitive filesystem even if it had. **Codex was broken from the moment those files were
+written**, and keeping `.claude/` was never the cause.
+
+### What was done
+
+`.claude/skills/` kept — it matches **D-01** (accepted: the execution host is a Claude Code plugin)
+and is what `tests/test_heron_guard.py`, `tools/check-licence.py`, `tools/batch-prove.py`,
+`tools/generate-jobs.py`, `tools/check-api-surface.py`, `tools/jobs/example.yaml` and
+`tools/README.md` already call.
+
+`.agents/skills/` deleted — 7 files. **No unique knowledge lost, checked before the delete:** five of
+six `SKILL.md` byte-identical, `heron_guard.py` byte-identical, and the sixth differing in exactly two
+lines which were the broken `.Codex` path itself.
+
+`.codex/agents/*.toml` repointed to `.claude/skills/` — 3 references. They now match their
+`.claude/agents/*.md` counterparts, which had said `.claude/skills/` all along. The two sets were
+meant to be the same instructions for two hosts and had diverged on the one line that decides whether
+either works.
+
+`.gitignore` keeps its `.agents/skills/*/bin/` whitelist as a **tripwire**, with the comment corrected
+to say so. If anyone recreates that folder, the hook script comes with it instead of being silently
+dropped — the trap PR #44 fixed once and this repository nearly repeated.
+
+### Verification
+
+`check-docs`, `check-metadata`, `check-structure`, `check-licence`, `git diff --check` — all exit 0.
+The five suites that touch the skills path — `test_heron_guard`, `test_licence_check`, `test_skills`,
+`test_batch_prove`, `test_generate_jobs` — all pass. `heron_guard.py` parses. Same four pre-existing
+broken links. Nothing untracked.
+
+**This was a consolidation the owner authorised, not a behaviour fix taken on initiative.** It is
+recorded here as a housekeeping decision; if it should carry a decision ID, that is Ajmal's to assign.
