@@ -641,6 +641,25 @@ leave. Only the first setup step resets the chain, so later steps accumulate and
 last producer to touch a name. The proof holds either way — both legs bound, positive non-empty,
 negative empty — but the attribution is not evidence of which fragment supplied what.
 
+**IT ALSO OVERWROTE A PROOF, AND THE TRADE IS WORTH STATING.** `sum-by-group` already carried a
+`proof:` block on `main` — signed by Ajmal PS, still `DRAFT`, and **mis-stamped**: `model: Project1
+work_ajmal.al (3,445 elements)` while its positive case ends *"on Snowdon-scratch_ajmal.al"*. The
+sweep re-proved it and `accept` replaced that block:
+
+| | old | new |
+|---|---|---|
+| stamp | `Project1` | `Project1` |
+| actually ran on | **`Snowdon`** | `Project1` |
+| evidence | `totals 3 entry(ies)`, 22 ducts | `totals 1 entry(ies)`, 5 ducts |
+
+**The richer evidence was the mis-stamped one.** Three groups across 22 ducts says more than one group
+across five — but it claimed a model it was not taken against, which is the OPEN defect in §5. A thin
+proof that names its own model correctly is worth more than a rich one that does not, and that is why
+the replacement was kept rather than reverted.
+
+> `batch-prove` reports `ALREADY` only for `heron-status: PROVEN`. A fragment sitting at `DRAFT` with
+> a signed proof already on it is re-run and overwritten in silence. Nothing warns you.
+
 **What sweep 2 removed from the pool, with the reason measured rather than assumed:**
 
 - **NO SHEETS AT ALL** in Project1 (`find-views viewType=DrawingSheet` → 0). That blocks
