@@ -1,0 +1,67 @@
+# check-flow-direction, against two areas of the SAME building - 2026-09-10.
+#
+# WHY THIS IS ONE JOB AND NOT A BATCH. It is the only DRAFT READ fragment left
+# that this model can still feed. The rest of the selection-driven read pool is
+# triaged in section 3b-i and section 3b-ii: no host doors, no model lines, no
+# area scheme, and filters that match nothing.
+#
+# SNOWDON IS AN HVAC MODEL AND ITS ARCHITECTURE IS IN A LINK. Probed 2026-09-10
+# in both FloorPlan: M1 and FloorPlan: L3 - Doors 0, Rooms 0, Lines 0, Detail
+# Items 0. The executor skips linked documents by design, which is the same
+# fact that blocked `check-ceiling-coordination` in section 3b. So anything
+# needing a door, a room boundary or a drafted line cannot be proved here, and
+# `report-door-room-links` and `find-overlapping-lines` stay blocked.
+#
+# THE NEGATIVE IS THE SAME CATEGORY IN A DIFFERENT PART OF THE SAME MODEL,
+# which is the strongest form available to a fragment that takes no value able
+# to switch its own answer off. Measured 2026-09-10, before this file:
+#
+#                      Ducts   jointsChecked   bothOut   bothIn
+#   FloorPlan: L3        307             165         7        0
+#   FloorPlan: M1         22              19         0        0
+#
+# `jointsChecked` is `role: accounting`, so it cannot make the negative look
+# non-empty - but 19 is the evidence the fragment LOOKED in that leg rather
+# than being handed something it could not read. That is the difference between
+# an honest empty answer and a missing arrangement (section 1d), and it is why
+# Duct Tags were NOT used as the negative: a tag has no connectors, so the
+# empty answer would have been about the arrangement instead of the model.
+#
+# THE POSITIVE IS A REAL FINDING, NOT A CONTRIVANCE. Seven joints in L3 have
+# both connectors flowing OUT of them, which cannot be right in a duct system.
+# The fragment reports them as pairs - "1431100 | 1510229" - so each one can be
+# selected in Revit and looked at.
+#
+# THIS COULD NOT HAVE BEEN PROVED ON PROJECT1. Run there 2026-09-10 on its five
+# hand-drawn ducts: `jointsChecked 0`, `bidirectionalSkipped 4`. The ducts are
+# drawn but carry no system, so there is no flow to check and nothing to find.
+# Recorded in section 3b-ii.
+#
+#     python tools/batch-prove.py tools/jobs/snowdon-flow-direction.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/snowdon-flow-direction.yaml
+
+model: "Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024"
+
+defaults:
+  write: false                      # risk READ
+  # PIN THE MODEL, and MAKE IT THE ACTIVE ONE BEFORE RUNNING. Two projects are
+  # open. Pinning alone is not enough: the run record's `model:` line is stamped
+  # from the ACTIVE document, not from this pin, so a proof taken while
+  # Project1 is in front NAMES PROJECT1 while running on Snowdon. That is an
+  # OPEN defect in section 5, and it has already mis-stamped three promoted
+  # proofs. Snowdon was made active by hand before this file was run, and the
+  # stamp was checked afterwards.
+  in: "Snowdon-scratch_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: check-flow-direction
+    set:
+      categoryName: Ducts
+      inViewOnly:   "FloorPlan: L3"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly:   "FloorPlan: M1"
+    expect: bothOut
