@@ -10,6 +10,42 @@ For *which document covers what*, use [README.md](README.md) — the documentati
 
 ## A. How a request travels
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    MO(["<b>The modeller</b><br/><i>select all ducts</i>"])
+    CC["<b>Claude Code</b><br/>the host: conversation, intent, orchestration — D-01"]
+    MS["<b>mcp/server/</b><br/>tool surface — transport only, no BIM knowledge"]
+    BR["<b>brain/</b><br/>which capability is wanted, which fragment provides it"]
+    BG["<b>revit/Heron.Bridge/</b><br/>the pipe server, with no Revit reference at all"]
+    AD["<b>revit/Heron.Revit.Addin/</b><br/>inside Revit.exe"]
+    MT["<b>Revit's main thread</b><br/>the only thread the Revit API may be touched from"]
+    MD(["<b>The model</b><br/>selection changes on screen · one audit line written"])
+
+    MO --> CC
+    CC -->|"MCP (stdio)"| MS
+    MS --> BR
+    BR -->|"back through mcp/client/<br/>named pipe — local only, never a socket"| BG
+    BG --> AD
+    AD -->|"ExternalEvent"| MT
+    MT --> MD
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    class MO user
+    class CC host
+    class MS,BR brain
+    class BG,AD addin
+    class MT revit
+    class MD user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 The modeller                "select all ducts"
    │
@@ -28,6 +64,8 @@ Revit's main thread         the only thread the Revit API may be touched from
    │
 The model                   selection changes on screen · one audit line written
 ```
+
+</details>
 
 Two things this diagram is easy to misread:
 

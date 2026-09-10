@@ -7,6 +7,42 @@
 
 ## 1. Layer stack
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    U(["USER"])
+    CP["CONVERSATION / PERSONA LAYER"]
+    IO["INTENT + ORCHESTRATOR"]
+    TW["TASK / WORKFLOW ENGINE"]
+    KS["KNOWLEDGE SYSTEM"]
+    SA["SPECIALIZED AGENTS"]
+    RL["RAG / LIBRARY / MEMORY"]
+    VA["VALIDATION"]
+    EX["EXECUTION"]
+    RS["RESULT"]
+    LM["LEARNING / MEMORY / FRAGMENT EVOLUTION"]
+
+    U --> CP --> IO
+    IO --> TW
+    IO --> KS
+    TW --> SA
+    KS --> RL
+    SA --> VA --> EX --> RS --> LM
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    class U user
+    class CP,IO host
+    class TW,SA,VA,EX addin
+    class KS,RL,LM brain
+    class RS user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 USER
  |
@@ -37,6 +73,8 @@ RESULT
 LEARNING / MEMORY / FRAGMENT EVOLUTION
 ```
 
+</details>
+
 ## 2. The four product parts
 
 | Part | Owns | Document |
@@ -47,6 +85,41 @@ LEARNING / MEMORY / FRAGMENT EVOLUTION
 | **Heron Platform** | Install, update, packages, registry, security, GitHub | [06](06-heron-platform.md) |
 
 ## 3. Company analogy
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    H(["<b>HERON AI</b>"])
+    CEO["CEO / ORCHESTRATOR"]
+    ENG["<b>ENGINEERING</b><br/>Revit · MCP · .NET<br/>Coding · QA · Testing"]
+    KNO["<b>KNOWLEDGE</b><br/>RAG · Brain · Memory<br/>Skills · Fragments · Library"]
+    PLA["<b>PLATFORM</b><br/>Install · Update · Package<br/>Security · Workspace · GitHub"]
+    COM["COMMUNICATION"]
+    BIM(["<b>BIM USER</b>"])
+
+    H --> CEO
+    CEO --> ENG
+    CEO --> KNO
+    CEO --> PLA
+    ENG --> COM
+    KNO --> COM
+    PLA --> COM
+    COM --> BIM
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95
+    class H,CEO host
+    class ENG addin
+    class KNO brain
+    class PLA plat
+    class COM,BIM user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
 
 ```text
                     HERON AI
@@ -70,6 +143,8 @@ LEARNING / MEMORY / FRAGMENT EVOLUTION
                        |
                   BIM USER
 ```
+
+</details>
 
 ## 4. Orchestrator responsibilities
 

@@ -45,6 +45,31 @@ Those eight named components map onto the phases below:
 
 **Goal:** one sentence typed by a human changes the selection in a running Revit.
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    A(["<i>Select all ducts.</i>"]) --> B["intent"] --> C["skill lookup"]
+    C --> D["MCP tool call"] --> E["named pipe"] --> F["add-in listener"]
+    F --> G["ExternalEvent"] --> H["Revit main thread"]
+    H --> I["FilteredElementCollector (OST_DuctCurves)"] --> J["selection set"]
+    J --> K["result"] --> L(["audit log entry"])
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    class A user
+    class B,C host
+    class D,E brain
+    class F,G addin
+    class H,I,J revit
+    class K,L user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 "Select all ducts."
   -> intent
@@ -59,6 +84,8 @@ Those eight named components map onto the phases below:
   -> result
   -> audit log entry
 ```
+
+</details>
 
 > **[Rescoped 2026-08-27 after an honest re-read.]** An earlier draft of this phase had accumulated
 > session binding, a live availability list, document pinning, a permission layer, an event bus, a prompt

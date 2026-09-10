@@ -13,6 +13,26 @@ The intelligence and knowledge layer: Skills, Fragments, RAG, vector database, e
 
 ## 2. Knowledge is separated, never pooled
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    CK(["<b>CORE KNOWLEDGE</b>"])
+    CK --> K1["COMPANY KNOWLEDGE"]
+    CK --> K2["PROJECT KNOWLEDGE"]
+    CK --> K3["USER KNOWLEDGE"]
+    CK --> K4["COMMUNITY KNOWLEDGE"]
+    CK --> K5["TEMPORARY KNOWLEDGE"]
+    CK --> K6["EXPERIMENTAL KNOWLEDGE"]
+
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    class CK brain
+    class K1,K2,K3,K4,K5,K6 user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 CORE KNOWLEDGE
 |
@@ -28,6 +48,8 @@ CORE KNOWLEDGE
 |
 +-- EXPERIMENTAL KNOWLEDGE
 ```
+
+</details>
 
 This is **Golden Rule 5**. A polluted brain is unsearchable and untrustworthy, and in a consultancy setting mixing Project A's knowledge into Project B is a commercial and contractual problem, not just a technical one.
 
