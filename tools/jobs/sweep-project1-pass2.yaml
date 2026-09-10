@@ -1,0 +1,89 @@
+# SWEEP PASS 2 - the arrangements the first pass showed were mine, not the
+# fragments' - 2026-09-10.
+#
+# READ tools/jobs/sweep-project1.yaml FIRST. Pass 1 asked thirty fragments at
+# once and segregated them: 5 PASS, 13 POSITIVE EMPTY, 9 NEG NOT EMPTY, 2
+# POSITIVE UNREADABLE, 1 DID NOT RUN. This file re-runs only the ones whose
+# verdict pointed at the ARRANGEMENT rather than at the fragment.
+#
+# WHAT PASS 1 TAUGHT, PER JOB:
+#
+#   set-view-section-box   `{3D}` exists but is not the model's working 3D view.
+#                          `zoom-to-elements` leaked the real name in its own
+#                          answer - viewAfter `{3D - ajmal.al}` - which is the
+#                          worksharing-suffixed view this user actually opens.
+#   set-view-crop          same fix, same reason.
+#   snap-to-grid           ducts are drawn to no grid and lie where they lie;
+#                          walls were drawn on round numbers, so they are the
+#                          selection that can demonstrate a snap.
+#   trim-extend-elements   needs two curves that MEET or nearly meet. The four
+#                          open duct ends are the only such pair in the model.
+#   copy-parameter-value   pass 1 copied FROM "Comments", which is empty on
+#                          every duct - so the positive copied nothing and was
+#                          judged POSITIVE EMPTY correctly. "System Type" holds
+#                          "Supply Air" on all five, proved by group-and-count.
+#   set-view-underlay      pass 1 asked a Level 1 view to underlay Level 2,
+#                          which is above it; an underlay looks DOWN by default.
+#
+# NOT RE-RUN, AND WHY. The nine NEG NOT EMPTY are not arrangement mistakes -
+# move, copy, rotate, hide, zoom, set-category-visibility, set-crop-box-settings
+# and create-workset-3d-views all reported work done when handed the value that
+# should switch them off (a zero offset, a zero angle, `visible: true` on
+# something already visible). That is a finding about the fragments and is
+# recorded in FRAGMENT-ISSUES, not something a better job file can fix.
+#
+#     python tools/batch-prove.py tools/jobs/sweep-project1-pass2.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/sweep-project1-pass2.yaml
+
+model: "Project1 work_ajmal.al (3,471 elements), Revit 2024 - view '1 - Mech'"
+
+defaults:
+  write: true
+  in: "Project1 work_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly:   "1 - Mech"
+  negative-set:
+    categoryName: Ducts
+    inViewOnly:   "1 - Mech"
+
+jobs:
+  # The working 3D view, not the one that merely exists.
+  - fragment: set-view-section-box
+    set:          {view: "{3D - ajmal.al}", marginMm: 500}
+    negative-set: {view: "{3D - ajmal.al}", marginMm: 0}
+    expect: applied
+
+  - fragment: set-view-crop
+    set:          {view: "{3D - ajmal.al}", marginMm: 500}
+    negative-set: {view: "{3D - ajmal.al}", marginMm: 0}
+    expect: applied
+
+  # Walls sit on round numbers; ducts do not.
+  - fragment: snap-to-grid
+    set:          {categoryName: Walls, inViewOnly: "1 - Mech", anchor: "0,0,0", spacingX: 1000, spacingY: 1000}
+    negative-set: {categoryName: Walls, inViewOnly: "1 - Mech", anchor: "0,0,0", spacingX: 0,    spacingY: 0}
+    expect: snapped
+
+  # The four open duct ends are the only curves in this model that can be joined.
+  - fragment: trim-extend-elements
+    set:          {categoryName: Ducts, inViewOnly: "1 - Mech"}
+    negative-set: {categoryName: "Duct Fittings", inViewOnly: "1 - Mech"}
+    expect: moved
+
+  # "System Type" holds "Supply Air" on all five - group-and-count proved it.
+  # "Comments" is empty, which is why pass 1 copied nothing.
+  - fragment: copy-parameter-value
+    set:          {fromName: "System Type", toName: "Comments"}
+    negative-set: {fromName: "ZZZNOTHINGHERE", toName: "Comments"}
+    expect: copied
+
+  # An underlay looks DOWN, so a Level 1 view underlays Level 1, not Level 2.
+  - fragment: set-view-underlay
+    setup: []
+    set:          {views: "2 - Mech", baseLevel: "Level 1", topLevel: "Level 1", lookingDown: true}
+    negative-set: {views: "2 - Mech", baseLevel: "Level 2", topLevel: "Level 2", lookingDown: true}
+    expect: changed

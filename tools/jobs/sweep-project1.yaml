@@ -1,0 +1,213 @@
+# A BULK SWEEP, not a set of finished proofs - 2026-09-10.
+#
+# WHAT THIS FILE IS FOR, AND WHAT IT IS NOT.
+# Every other job file here was written after probing one fragment at a time and
+# knowing the answer before the run. This one is the opposite on purpose: it
+# asks thirty fragments at once so the pool can be SEGREGATED into "passed" and
+# "has an issue" in a single pass, instead of one round trip per fragment.
+#
+# NOTHING THAT PASSES HERE SHOULD BE SIGNED FROM THIS FILE. A pass tells you the
+# arrangement is worth writing up properly; it does not carry the reasoning that
+# a proof a person signs has to show. The rule stays: read the draft, then sign.
+#
+# WHY PROJECT1. It is the ACTIVE document, and the run record's `model:` line is
+# stamped from the active document rather than from the `in:` pin (an OPEN
+# defect). Running a sweep against the other model would stamp all thirty wrong.
+#
+# WHAT THIS MODEL HOLDS, in view "1 - Mech": Walls 4 (one type, one holding the
+# door), Doors 1, Rooms 1, Ducts 5 (4 with an open end), Duct Fittings 2.
+# Levels: "Level 1" at 0, "Level 2" at 4000. Views: 1 - Mech, 2 - Mech,
+# 1 - Plumbing, 2 - Plumbing, {3D}. View filters: Domestic, Sanitary, Hydronic.
+#
+# THE NEGATIVE IS VALUE-DRIVEN WHEREVER THE FRAGMENT HAS A VALUE THAT CAN TURN
+# ITS OWN ANSWER OFF - a zero offset, a zero angle, a count of one, a degenerate
+# plane, a name that matches nothing. Where no such value exists the job is
+# still run, because a POSITIVE EMPTY or a NEG NOT EMPTY verdict is itself the
+# finding that says which bucket the fragment belongs in.
+#
+#     python tools/batch-prove.py tools/jobs/sweep-project1.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/sweep-project1.yaml --report sweep.json
+
+model: "Project1 work_ajmal.al (3,471 elements), Revit 2024 - view '1 - Mech'"
+
+defaults:
+  write: true
+  in: "Project1 work_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly:   "1 - Mech"
+  negative-set:
+    categoryName: Ducts
+    inViewOnly:   "1 - Mech"
+
+jobs:
+  # ---- geometry moves: the value goes to zero -----------------------------
+  - fragment: move-elements                 # a real offset against no offset
+    set:          {offset: "1000,0,0"}
+    negative-set: {offset: "0,0,0"}
+    expect: moved
+
+  - fragment: copy-elements                 # same shape, but it copies
+    set:          {offset: "1000,0,0"}
+    negative-set: {offset: "0,0,0"}
+    expect: copies
+
+  - fragment: rotate-elements               # a real angle against no angle
+    set:          {angleRadians: 0.5, pivot: "0,0,0"}
+    negative-set: {angleRadians: 0,   pivot: "0,0,0"}
+    expect: rotated
+
+  - fragment: array-elements                # count 3 against count 1
+    set:          {direction: "1,0,0", spacingMm: 2000, count: 3}
+    negative-set: {direction: "1,0,0", spacingMm: 2000, count: 1}
+    expect: created
+
+  - fragment: mirror-elements               # a real plane against a degenerate one
+    set:          {planeFrom: "0,0,0", planeTo: "0,10000,0", asCopy: true}
+    negative-set: {planeFrom: "0,0,0", planeTo: "0,0,0",     asCopy: true}
+    expect: copies
+
+  - fragment: snap-to-grid                  # a real grid against a zero one
+    set:          {anchor: "0,0,0", spacingX: 1000, spacingY: 1000}
+    negative-set: {anchor: "0,0,0", spacingX: 0,    spacingY: 0}
+    expect: snapped
+
+  - fragment: trim-extend-elements          # no value to vary; walls against ducts
+    set:          {categoryName: Walls, inViewOnly: "1 - Mech"}
+    negative-set: {categoryName: "Duct Fittings", inViewOnly: "1 - Mech"}
+    expect: moved
+
+  # ---- view state ----------------------------------------------------------
+  - fragment: hide-elements
+    set:          {view: "1 - Mech", permanent: true}
+    negative-set: {view: "1 - Mech", permanent: false}
+    expect: hidden
+
+  - fragment: isolate-elements
+    write: false
+    set:          {view: "1 - Mech"}
+    negative-set: {view: "1 - Mech", categoryName: "Duct Fittings"}
+    expect: isolated
+
+  - fragment: zoom-to-elements
+    set:          {alsoSelect: true}
+    negative-set: {alsoSelect: false}
+    expect: shown
+
+  - fragment: set-view-crop                 # a real margin against a huge one
+    set:          {view: "1 - Mech", marginMm: 500}
+    negative-set: {view: "1 - Mech", marginMm: 0}
+    expect: applied
+
+  - fragment: set-view-section-box          # needs a 3D view; Project1 has {3D}
+    set:          {view: "{3D}", marginMm: 500}
+    negative-set: {view: "{3D}", marginMm: 0}
+    expect: applied
+
+  - fragment: set-section-mark-visibility
+    set:          {view: "1 - Mech", onSheetsOnly: true}
+    negative-set: {view: "1 - Mech", onSheetsOnly: false}
+    expect: hidden
+
+  - fragment: set-category-visibility
+    set:          {view: "1 - Mech", categories: "Ducts", visible: false}
+    negative-set: {view: "1 - Mech", categories: "Ducts", visible: true}
+    expect: changed
+
+  - fragment: remove-view-filter            # a filter that is there, then one that is not
+    set:          {view: "1 - Mech", filterNames: "Domestic", deleteFromProject: false}
+    negative-set: {view: "1 - Mech", filterNames: "ZZZNOTHINGHERE", deleteFromProject: false}
+    expect: removed
+
+  - fragment: set-crop-box-settings
+    set:          {views: "1 - Mech", cropActive: "on",  cropVisible: "on",  annotationCrop: "on"}
+    negative-set: {views: "1 - Mech", cropActive: "off", cropVisible: "off", annotationCrop: "off"}
+    expect: changed
+
+  - fragment: set-view-underlay
+    set:          {views: "1 - Mech", baseLevel: "Level 2", topLevel: "Level 2", lookingDown: true}
+    negative-set: {views: "1 - Mech", baseLevel: "Level 1", topLevel: "Level 1", lookingDown: true}
+    expect: changed
+
+  - fragment: duplicate-views
+    setup: []
+    set:          {duplicateOption: "Duplicate", categoryName: Ducts, inViewOnly: "1 - Mech"}
+    negative-set: {duplicateOption: "ZZZNOTHINGHERE", categoryName: Ducts, inViewOnly: "1 - Mech"}
+    expect: duplicated
+
+  # ---- parameters ----------------------------------------------------------
+  - fragment: copy-parameter-value
+    set:          {fromName: "Comments", toName: "Mark"}
+    negative-set: {fromName: "ZZZNOTHINGHERE", toName: "Mark"}
+    expect: copied
+
+  - fragment: remove-parameter-value
+    set:          {parameterName: "Comments"}
+    negative-set: {parameterName: "ZZZNOTHINGHERE"}
+    expect: cleared
+
+  - fragment: edit-parameter-text
+    set:          {parameterName: "Comments", find: "", replaceWith: "", prefix: "HERON-", suffix: ""}
+    negative-set: {parameterName: "ZZZNOTHINGHERE", find: "", replaceWith: "", prefix: "HERON-", suffix: ""}
+    expect: edited
+
+  - fragment: edit-text-values
+    set:          {field: "text", mode: "prefix", text: "HERON-", replacement: ""}
+    negative-set: {field: "text", mode: "replace", text: "ZZZNOTHINGHERE", replacement: "X"}
+    expect: changed
+
+  # ---- selectors, all READ -------------------------------------------------
+  - fragment: select-by-material
+    write: false
+    setup: []
+    set:          {materialName: "Default", includePaint: false, categories: "Walls"}
+    negative-set: {materialName: "ZZZNOTHINGHERE", includePaint: false, categories: "Walls"}
+    expect: elements
+
+  - fragment: select-openings
+    write: false
+    setup: []
+    set:          {inViewOnly: "1 - Mech"}
+    negative-set: {inViewOnly: "2 - Mech"}
+    expect: elements
+
+  - fragment: select-unenclosed-rooms
+    write: false
+    setup: []
+    set:          {includeRooms: true, includeSpaces: true}
+    negative-set: {includeRooms: false, includeSpaces: false}
+    expect: elements
+
+  # ---- creators ------------------------------------------------------------
+  - fragment: place-room-at-point
+    setup: []
+    set:          {level: "Level 1", points: "3000,2000,0", asSpace: false}
+    negative-set: {level: "Level 1", points: "900000,900000,0", asSpace: false}
+    expect: created
+
+  - fragment: create-levels
+    setup: []
+    set:          {elevations: "8000,12000", names: "HERON L8,HERON L12"}
+    negative-set: {elevations: "", names: ""}
+    expect: created
+
+  - fragment: create-view-template-from-view
+    setup: []
+    set:          {sourceView: "1 - Mech", newTemplateName: "HERON TPL A", applyToSource: false}
+    negative-set: {sourceView: "1 - Mech", newTemplateName: "", applyToSource: false}
+    expect: templateName
+
+  - fragment: create-mep-system-type
+    setup: []
+    set:          {copyFromName: "Supply Air", newName: "HERON SYS A", abbreviation: "HSA"}
+    negative-set: {copyFromName: "ZZZNOTHINGHERE", newName: "HERON SYS B", abbreviation: "HSB"}
+    expect: created
+
+  - fragment: create-workset-3d-views
+    setup: []
+    set:          {namePrefix: "HERON WS"}
+    negative-set: {namePrefix: ""}
+    expect: created

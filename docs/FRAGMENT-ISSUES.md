@@ -594,6 +594,60 @@ inventing. Proving it needs a model with distinctly-named renameable elements.
 obstacle is that the two projects are too ALIKE. A transfer proof needs models that differ in the
 thing being transferred, which is a sharper requirement than "two are open".
 
+## 3g-iii. A THIRTY-FRAGMENT SWEEP, AND WHAT IT SEGREGATED — 2026-09-10
+
+Every other job file here was written after probing one fragment at a time and knowing the answer
+before the run. [`sweep-project1.yaml`](../tools/jobs/sweep-project1.yaml) is the opposite on purpose:
+it asked **thirty at once** so the pool could be split in a single pass. 36 write jobs ran for real
+against a live model; **3,471 elements before and after.**
+
+| Verdict | Count | What it means |
+|---|---|---|
+| **PASS** | **5** | `array-elements`, `mirror-elements`, `remove-view-filter`, `edit-parameter-text`, `create-levels` |
+| POSITIVE EMPTY | 13 | the positive found nothing |
+| **NEG NOT EMPTY** | **9** | **the negative acted anyway — see below** |
+| POSITIVE UNREADABLE | 2 | the result is a name or a type, not a quantity |
+| DID NOT RUN | 1 | `isolate-elements` threw *"Attempt to modify the model outside of transaction"* — it is `risk: EXECUTE` and still needs the write path |
+
+**A second pass fixed the arrangements and changed nothing.**
+[`sweep-project1-pass2.yaml`](../tools/jobs/sweep-project1-pass2.yaml) re-ran six of the POSITIVE
+EMPTY with better values — the real working 3D view `{3D - ajmal.al}` instead of `{3D}`, walls instead
+of ducts for `snap-to-grid`, `System Type` instead of the empty `Comments` for `copy-parameter-value`,
+an underlay looking DOWN a level instead of up. **All six came back POSITIVE EMPTY again.** They are
+blocked by this model, not by the job file, and that is now settled rather than assumed.
+
+### The nine that acted when told not to — one family, and it is the biggest yet
+
+Each was handed the value that should switch its own answer off, and each reported work anyway:
+
+| Fragment | The "off" value | What it still reported |
+|---|---|---|
+| `move-elements` | `offset 0,0,0` | `moved 5` |
+| `copy-elements` | `offset 0,0,0` | `copies 5` — five copies stacked on the originals |
+| `rotate-elements` | `angleRadians 0` | `rotated 5` |
+| `hide-elements` | `permanent false` | `hidden 5` |
+| `zoom-to-elements` | `alsoSelect false` | `shown 5` |
+| `set-category-visibility` | `visible true` on something already visible | `changed 1` |
+| `set-crop-box-settings` | every switch `off` | `changed 1` |
+| `place-room-at-point` | a point 900 m from anything | `created 1`, `unenclosed 1` |
+| `create-workset-3d-views` | `namePrefix ""` | `created 2` |
+
+With `disallow-join` (recorded below) that is **ten fragments** whose counter reports the CALL rather
+than the CHANGE.
+
+> A counter that cannot come back zero cannot be wrong, and a fragment that cannot be wrong cannot be
+> proved. This is §3h.1 — *make silence illegal* — and the sweep has just multiplied its membership by
+> five in one pass.
+
+**`copy-elements` is the one to fix first.** A zero offset produces five real copies sitting exactly on
+top of the originals — invisible in every view, counted as success, and a genuine modelling fault the
+next person inherits. `move-elements` and `rotate-elements` merely do nothing and say they did
+something; this one leaves debris.
+
+**`place-room-at-point` is the interesting exception.** It created a room 900 m away and reported
+`unenclosed 1` in the same breath — so it already knows the room is nonsense. It has the information
+needed to refuse and reports it as accounting instead.
+
 ### `disallow-join` COUNTS THE CALL, NOT THE CHANGE — found 2026-09-10, OPEN
 
 Run on the same four walls, both ways, everything else held identical:
