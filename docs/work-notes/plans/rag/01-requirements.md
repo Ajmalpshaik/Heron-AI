@@ -25,6 +25,7 @@ The other two notes in this folder:
 
 | | |
 |---|---|
+| [`00-structure.md`](00-structure.md) | **What kind of RAG this is** — the six structural decisions. **Read it first; structure decides these requirements** |
 | [`02-implementation.md`](02-implementation.md) | **How** it gets built — stages, and what proves each one |
 | [`03-working-note.md`](03-working-note.md) | **Where it actually stands** — the live log, dated |
 
@@ -218,6 +219,27 @@ backend is **`model`**. The record is six times out of date on corpus size and w
 which is the exact failure that file was written to prevent, happening to that file. The measurement
 taken today is in [`03-working-note.md`](03-working-note.md) and has **not** been moved into it,
 because this folder's own rule is that **a defect found while planning is recorded, not fixed.**
+
+### G — The structure decided on 2026-09-10
+
+**All six structural questions are in scope** — [`00-structure.md` §1](00-structure.md). These rows are
+what that decision creates. Every one is **NONE** today; the point of listing them is that several are
+cheap now and expensive later.
+
+| | Requirement | Source | State | Note |
+|---|---|---|---|---|
+| **R-34** | An answer says **how contested it was** — the spread across the shortlist in units of one fusion rank, and whether the routes agreed | [00 §3.1](00-structure.md) | **NONE** | `heron_retrieve.py` computes all of it and throws it away |
+| **R-35** | A shortlist that is effectively tied **says so, in words** — not only as a number | [00 §3.1](00-structure.md), S-3 | **NONE** | at 14 fragments the top five spanned 0.0021 where one rank is 0.00026, and nobody was told |
+| **R-36** | A chunk knows its **parent**, so a clause can be returned with the section it sits in | [00 §3.3](00-structure.md) | **NONE** | extends `heron_context`'s existing `depth`, never a second mechanism |
+| **R-37** | Hierarchy depth is **arbitrary, stored as a parent link** — not a fixed Part/Section/Clause | [00 §3.3](00-structure.md), S-2 | **NONE** | fixed levels are a guess about documents nobody has read yet |
+| **R-38** | The Librarian picks **one** scope. Two scopes means **two queries**, never one merged query, and `CrossScopeRefused` is unchanged | [00 §3.4](00-structure.md), GR 5, D-33 | **NONE** | **the trap in this whole track.** A `UNION` here is a contractual problem, not a technical one |
+| **R-39** | A **third retrieval route follows graph edges**, and it gets **no weight until it has been measured** | [00 §3.2](00-structure.md) | **NONE** | the rule `heron_retrieve.py` already states: weights follow measurement, not feeling |
+| **R-40** | Document nodes and their edges are **derived on demand**, like every edge but one | [00 §3.2](00-structure.md), D-40 | **NONE** | a stored document edge is a cache that goes stale |
+| **R-41** | A cross-encoder re-ranks the top ~20, and **its absence makes Heron slower to be right, never broken** | [00 §3.5](00-structure.md), [05 §4.4](../../../05-heron-brain.md) | **NONE** | the same fallback contract `heron_embed.py` already honours |
+| **R-42** | The re-ranker installs **per-user with no administrator rights** | [00 §3.5](00-structure.md), D-01 | **NONE** | `model2vec` already proved this is possible |
+| **R-43** | The context packet carries **citation, confidence, and what is missing** — enough that the host answers without inventing | [00 §3.6](00-structure.md) | **NONE** | this is what "generation" means here |
+| **R-44** | **No language model inside `brain/`.** The host writes the reply the user reads | [00 §3.6](00-structure.md), D-01 | **DONE, and must stay done** | `check-metadata.py` prints it as fact |
+| **R-45** | When the clause store exists, the `STANDARDS` refusal **narrows** to *"nothing indexed covers this"*. It never softens into a guess | [00 §3.6](00-structure.md) | **NONE** | a system that refused honestly while empty and guessed once full would be worse than the one that refused |
 
 ---
 

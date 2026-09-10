@@ -8,8 +8,9 @@
 > **Closure condition:** the four sentences in [`01-requirements.md` §8](01-requirements.md) are all
 > true, and every measurement below has been moved into
 > [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md).
-> **Reads with:** [`01-requirements.md`](01-requirements.md) — what it must do ·
-> [`02-implementation.md`](02-implementation.md) — how it gets built.
+> **Reads with:** [`00-structure.md`](00-structure.md) — what kind of RAG, and the order ·
+> [`01-requirements.md`](01-requirements.md) — what it must do ·
+> [`02-implementation.md`](02-implementation.md) — how each stage is built.
 
 ---
 
@@ -27,9 +28,11 @@ and deliberately left alone.
 
 | | |
 |---|---|
+| **The shape** | **DECIDED 2026-09-10 — all six.** [`00-structure.md`](00-structure.md). Becomes **a numbered decision** when the note is agreed; not written to [DECISIONS.md](../../../DECISIONS.md) yet |
 | Stage 0 — measure and record | **not started.** One measurement taken (§3) and **not yet written into `retrieval-history.md`** |
-| Stage 1 — a document can go in | **not started.** No `documents` table, no `chunks` table, no ingester |
-| Stages 2 to 6 | **not started**, blocked on Stage 1 |
+| Stage 0b — say the confidence out loud | **not started.** New, from the decision. Costs almost nothing, needs nothing, and every later measurement is read against it |
+| Stage 1 — a document can go in | **not started.** No `documents` table, no `chunks` table, no ingester. **Now also carries hierarchy** — the one thing that cannot be retrofitted cheaply |
+| Stages 2 to 8 | **not started**, blocked on Stage 1 |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
 
 ---
@@ -182,3 +185,37 @@ in place. `retrieval-history.md` not touched.
 
 **Next.** Stage 0 — [`02-implementation.md` §3](02-implementation.md). An hour, needs nothing, and it
 closes W-1 to W-4 at the same time.
+
+### 2026-09-10 — the shape decided: all six
+
+**Asked.** Six structural questions — does it search again, does it follow relationships, does it know
+a clause sits inside a section, who picks the scope, is ranking done by rules or by a model, and does
+it answer from what it found or only find.
+
+**Answered by the owner: all six.** Heron's RAG is the full shape, not a search box with a filter on
+it. Written up as [`00-structure.md`](00-structure.md), which now sits ahead of the other three
+because structure decides requirements and not the other way round.
+
+**The finding that came out of writing it.** Two of the six are **not new machinery**. Because
+[D-01](../../../DECISIONS.md) puts the host in charge of classifying the request and writing the
+reply, *searching again* and *answering from what it found* are both about **what the brain reports**
+— confidence, and a packet with citations in it. `heron_retrieve.py` already computes the confidence
+numbers and discards them. So "all six" is a smaller build than it sounds, and the honest reason is
+a decision taken months ago rather than anything clever.
+
+**What moved in the plan.** A new **Stage 0b** — say the confidence out loud — placed early because
+it needs nothing and every later measurement is read against it. And **hierarchy moved into Stage 1**,
+because it is decided in the chunker: it is the one item on the whole list that gets expensive if it
+is postponed. Twelve requirements added, **R-34 to R-45**.
+
+**Not done, on purpose.** Nothing written to [DECISIONS.md](../../../DECISIONS.md) — a work note does
+not get to record a decision on its own. It gets a number when it is written there.
+
+> **And the gate caught this note trying to allocate one.** The first draft named the next free decision
+> number, and `check-docs.py` failed it as **referenced but not defined**. It is right twice over: the
+> decision is not recorded, and with another session committing to this repository today, 68 may not
+> be free by the time it is. **A decision number is claimed by writing the decision, never by
+> planning to.**
+
+**Next.** Unchanged: Stage 0, then 0b. Neither needs Revit, the PC, or any of the four open questions
+in §5 to be settled first.

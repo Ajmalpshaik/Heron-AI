@@ -4,10 +4,17 @@
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
 > **Status:** **Active — no stage started.** Opened 2026-09-10.
-> **Reads with:** [`01-requirements.md`](01-requirements.md) — every stage below closes numbered rows
-> from its §6, and a stage that closes no row should not be built.
+> **Reads with:** [`00-structure.md`](00-structure.md) — what kind of RAG this is, and the order ·
+> [`01-requirements.md`](01-requirements.md) — every stage below closes numbered rows from its §6,
+> and a stage that closes no row should not be built.
 > **Progress is not recorded here.** It is recorded in [`03-working-note.md`](03-working-note.md).
 > This file says what the plan *is*; that one says what actually happened.
+
+> **⚠ The stage list in §3 to §9 is SUPERSEDED.** It was written before the six structural
+> questions were decided on 2026-09-10. **The order to follow is
+> [`00-structure.md` §6](00-structure.md)**, which keeps every stage below and adds **0b** (say the
+> confidence out loud) and hierarchy inside Stage 1. The stage *contents* here are still correct and
+> still the detail — it is the sequence that moved.
 
 ---
 
