@@ -6,8 +6,10 @@
 > where they are relied on, so nothing here depends on being able to open it.
 > **Status:** **Phases A to K are complete** — §1 carries the per-phase evidence, and L's
 > precondition is met with the plan since deleted. One owner-authorised consolidation performed
-> (§16). **Completed, but blocked rather than finished:** the three verifications in §47 each need
-> somebody who is not the authoring session, and this note does not retire until they are done.
+> (§16). **Completed, but blocked rather than finished:** of the three verifications §47 named, the
+> drive-letter condition is **closed** (§49.1) and the cold read is **partly** done (§49.3). What is
+> still outstanding is **a cold read by somebody new to the repository, and an independent review**
+> — both need a person who is not the author, and this note does not retire until they happen.
 > **Owner of this run:** single-agent session on branch `claude/amazing-fermat-emyav7`.
 > Independent review is **pending** — self-review is not independent approval (plan §28.2).
 
@@ -1169,6 +1171,14 @@ owner's call.
 
 ## 47. The two things that are not the environment
 
+> **Superseded in part by §49, and left unedited so the position at the time still reads.** Item 2
+> below is **CLOSED** — the drive-letter condition was exercised on the owner's Windows PC when §49
+> was written, and re-confirmed later the same day during the file-placement audit. Both runs exit 0;
+> §49.1 carries the evidence. Item 1 is **partly** answered by §49.3: every answer was found from the three
+> entry documents, but by a reader who already knew the repository, and §28.7 asks for a stranger.
+> **Item 3 is untouched.** So what is genuinely outstanding is *a cold read by somebody new* and
+> *an independent review* — two things, both of which need a person who is not the author.
+
 §27 is explicit: *"a broken migration or missing required verification cannot be reclassified as
 optional to close this plan."* Two verifications are outstanding, and neither is a machine limitation
 that can be waived by naming an owner.
@@ -1193,8 +1203,10 @@ session, and §27 forbids reclassifying a missing required verification as optio
 
 The cheapest path to closure, in order:
 
-1. On a Windows checkout with the repository and `TEMP` on **different drives**, run
-   `python tests/test_licence_check.py` and `python tools/check-licence.py`. That closes item C.
+1. ~~On a Windows checkout with the repository and `TEMP` on **different drives**, run
+   `python tests/test_licence_check.py` and `python tools/check-licence.py`.~~ **DONE — §49.1.**
+   Item C is closed. Re-confirmed 2026-09-10 on the same setup: both exit 0, 370 units, 0 findings.
+   **Do not run this again expecting it to be outstanding.**
 2. Have someone who has not read this plan follow `README.md` → `AGENTS.md` → `docs/PROJECT-MAP.md`
    and try the five role tasks in §28.7. That closes the cold read.
 3. Review the branch. That closes §28.2.
