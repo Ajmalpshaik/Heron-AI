@@ -1451,6 +1451,70 @@ moved after the proof. Nothing in the repository currently rewrites `proof.model
 **Not fixed here.** The change is one line in the proving client — stamp the resolved document rather
 than the active one — plus a decision about the three already promoted. Both belong to the owner.
 
+### `switch-active-project` ASKS THE WRONG `UIDocument`, AND HAS NEVER SWITCHED — found 2026-09-10, OPEN
+
+§3b-i said this one *"needs a second project open"* to be tested properly. Two were open on 2026-09-10,
+and it does not work.
+
+```
+target=Project1 work_ajmal.al   viewName=1 - Mech
+  activeBefore  Snowdon-scratch_ajmal.al
+  switched      false
+  findings      Revit refused to change to the view "1 - Mech" in "Project1 ..."
+```
+
+Verified afterwards the way the purpose demands — `REPORT_OPEN_DOCUMENTS` still reports
+`active is "Snowdon-scratch_ajmal.al"`. **The tab bar did not move.**
+
+**The cause, read in two files.** The target view is collected correctly from the target document:
+
+```csharp
+var openable = new FilteredElementCollector(wantedDoc)      // the OTHER project
+...
+uidoc.RequestViewChange(chosen);                            // line 150
+```
+
+but `uidoc` is bound by the executor to the **active** document
+([`RevitFragment.cs:145`](../revit/Heron.Revit.Addin/RevitFragment.cs)):
+
+```csharp
+uidoc = app.ActiveUIDocument;
+```
+
+So it hands Snowdon's `UIDocument` a view belonging to Project1, and Revit throws. The fragment's own
+comment states the rule it then breaks — *"a view belongs to one document"*. Switching needs a
+`UIDocument` for the **target** document, not the active one.
+
+**This means the fragment has never done the thing it exists for.** The earlier record that reported
+`switched true` took the *"already the active project"* branch — asking to switch to the project you
+are already in, which returns success having done nothing and is documented as correct. Every path
+that would actually move between projects throws.
+
+**It was NOT the transaction.** Run first with `--write` and then without, the refusal is identical —
+consistent with its own line *"Opens no transaction and needs none… That is why it is EXECUTE rather
+than MODIFY."*
+
+### …and it could not be PROVED even once it is fixed
+
+Its only `role: result` is `switched`, a **bool** — and the judge reads every boolean as zero, however
+it arrives:
+
+```python
+if isinstance(value, bool):     return 0
+if text.lower() in ("true", "false"):   ...
+```
+
+That is deliberate and right — `looks_empty`'s own docstring gives the reason: a flag that reads the
+same in both cases *"would make an empty answer impossible for it to demonstrate."* But the
+consequence here is that `switched: true` counts as zero as well, so **the POSITIVE reads empty too**.
+
+> A declared result that is a BOOL cannot carry EITHER leg. This is the sibling of the NAME case
+> above, and worse: a name at least makes the negative impossible, while a bool makes both impossible.
+> Either the fragment gains a countable result beside the flag, or D-53 tracking is the route.
+
+**Not fixed here.** The `UIDocument` fix is one line in a fragment implementation, the proving question
+is a contract change, and both are the owner's.
+
 ### ONE PERSON, ONE `HERON_CLIENT_ID`
 
 The lease identifies a **chat**, not a person. Four ids were in use for one afternoon's work —
