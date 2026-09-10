@@ -27,7 +27,7 @@ A skill that restates what the code already says is dead weight. It will drift, 
 ## Structure
 
 ```
-.Codex/skills/<name>/SKILL.md
+.claude/skills/<name>/SKILL.md
 ```
 
 Name it for **the work it governs**, not the technology — what someone would think they were doing.
@@ -63,7 +63,7 @@ you cannot establish either gets left out or gets marked plainly as unverified.
 python tools/check-docs.py      # the links into docs/ are checked here
 ```
 
-Add a row to `.Codex/skills/README.md`, then say in one line what the skill covers and what evidence
+Add a row to `.claude/skills/README.md`, then say in one line what the skill covers and what evidence
 each of its rules rests on.
 
 ## Never
