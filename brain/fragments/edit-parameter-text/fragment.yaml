@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -93,6 +93,30 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned absent 0 item(s),
+    doneTypes HashSet`1, editText Func`2, edited 5, refused 0 item(s), typesEdited 0 item(s),
+    unchanged 0 item(s). inputs came elements from the selection (5); parameterName as given;
+    find as given; replaceWith as given; prefix as given; suffix as given. on Project1 work_ajmal.al
+  negative_case: run with categoryName=Ducts, find=, inViewOnly=1 - Mech, parameterName=ZZZNOTHINGHERE,
+    prefix=HERON-, replaceWith=, suffix= instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned absent 5 item(s) [925641, 925646,
+    925658, ...], doneTypes HashSet`1, editText Func`2, edited 0, refused 0 item(s), typesEdited
+    0 item(s), unchanged 0 item(s). inputs came elements from the selection (5); parameterName
+    as given; find as given; replaceWith as given; prefix as given; suffix as given. on Project1
+    work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 505e0ab92ca79b06
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

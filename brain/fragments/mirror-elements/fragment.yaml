@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -55,6 +55,28 @@ contract:
       # to mirror across. A refusal, never a mirror it made (D-52).
       role: accounting
       type: bool
+
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned along XYZ, asCopy
+    true, copies 5 item(s) [926649, 926650, 926651, ...], degenerate false, flat XYZ, mirrored
+    5. inputs came elements from the selection (5); planeFrom as given; planeTo as given;
+    asCopy as given. on Project1 work_ajmal.al
+  negative_case: run with asCopy=True, categoryName=Ducts, inViewOnly=1 - Mech, planeFrom=0,0,0,
+    planeTo=0,0,0 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned along XYZ, asCopy true, copies 0 item(s), degenerate
+    true, flat XYZ, mirrored 0. inputs came elements from the selection (5); planeFrom as
+    given; planeTo as given; asCopy as given. on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ddbde8e6101de83b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

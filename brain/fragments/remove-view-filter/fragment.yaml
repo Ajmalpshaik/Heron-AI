@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -64,6 +64,29 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned deleteFromProject
+    false, deleted 0, refused 1 item(s) ['Domestic' is still on 7 other view(s) and still
+    in the proj...], removed 1. inputs came view as given; filterNames as given (1); deleteFromProject
+    as given. on Project1 work_ajmal.al
+  negative_case: run with categoryName=Ducts, deleteFromProject=False, filterNames=ZZZNOTHINGHERE,
+    inViewOnly=1 - Mech, view=1 - Mech instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned deleteFromProject false, deleted
+    0, refused 1 item(s) [no filter called 'ZZZNOTHINGHERE' in this project], removed 0. inputs
+    came view as given; filterNames as given (1); deleteFromProject as given. on Project1
+    work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a75c34dc7f668dce
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
