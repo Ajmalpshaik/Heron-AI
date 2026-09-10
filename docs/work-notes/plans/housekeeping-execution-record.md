@@ -26,7 +26,7 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 | **G** | Cross-link and stale-reference cleanup | **DONE** | Broken links 4 → **0**; three false-absence claims corrected — §28 to §30 |
 | **H** | Permanent documentation quality | **DONE** | Responsibilities confirmed distinct; four coherence defects fixed, one of them mine — §32 to §34 |
 | **I** | Validation and QA | **DONE** | Matrix re-run, suite set identical to baseline, fresh checkout passes — §36 to §39 |
-| **J** | Final repository audit | **NOT DONE** | — |
+| **J** | Final repository audit | **DONE** | Inventory reconciles, §25 and §28.10 worked against evidence — §40 to §43 |
 | **K** | Final handover report | **NOT DONE** | — |
 | **L** | Plan self-removal | **Precondition MET** | All three §28.11 F files now exist. Still gated on Phases G–K completing |
 
@@ -54,10 +54,11 @@ committed artefact, and §28.1 requires a single working ledger. Phase I compare
 
 ### Environment limitation that changes how this record must be read
 
-This run executes on **Linux**, at `/home/user/Heron-AI`, with the temporary directory on
-the **same filesystem** as the repository.
+This run executes on **Linux**, in a container, with the temporary directory on the **same
+filesystem** as the repository.
 
-Plan §28.11 was measured on Windows, at `D:\Ajmal\Aj Programs\Heron Ai`, with `TEMP` on `C:`.
+Plan §28.11 was measured on **Windows, with the repository on one drive and `TEMP` on another** —
+the owner's normal setup, and the condition §28.11 item C names.
 §28.11 item C makes a differing drive letter a required walkthrough condition, because that
 condition is exactly what exposed the `check-licence.py` defect.
 
@@ -259,8 +260,8 @@ Staging rule for every commit in this run: **explicit paths only, never `git add
 
 ## 8. Next exact action
 
-Phase J: reconcile the final inventory and the §25 / §28.10 closure checklists, then Phase K writes the
-durable closure record.
+Phase K: write the short closure report into the live documentation, and name who maintains what
+afterwards. Phase L is then judged against §28.11 item F and §27's conditions.
 
 ---
 
@@ -1010,3 +1011,110 @@ Named rather than glossed, per §23's rule that the four states must not be mixe
 | Independent review of this batch | Single-agent run (§28.2) | A reviewer |
 
 Scope of the change, for the reviewer: **31 files, +1,558 −1,237** against `5aa7f6d`.
+
+---
+
+# PHASE J — final repository audit
+
+## 40. Inventory reconciliation, `5aa7f6d` → `54f433b`
+
+| | |
+|---|---|
+| Tracked at baseline | **1,329** |
+| Deleted | **−7** (`.agents/skills/`, §16) |
+| Added | **+5** |
+| Tracked now | **1,327** ✅ reconciles exactly |
+| Untracked | **0** |
+| Modified | 19 |
+
+**Added:** `AGENTS.md` · `docs/PROJECT-MAP.md` · `docs/work-notes/README.md` ·
+`docs/work-notes/plans/housekeeping-execution-record.md` · `tests/README.md`
+
+**No concurrent additions by another session appeared** at any point; the tree was clean at every
+commit and `git ls-files --others` returned 0 throughout.
+
+### No executable code was modified
+
+`git diff --diff-filter=M` over `*.py`, `*.cs`, `*.csproj`, `*.props`, `*.ps1` returns **nothing**.
+The only file with executable code in the diff is `.agents/skills/heron-guard/bin/heron_guard.py`, and
+it is a **deletion** of the duplicate — the `.claude/` copy it was byte-identical to is untouched.
+
+Everything else is Markdown, plus three path strings in `.codex/agents/*.toml` and a corrected comment
+in `.gitignore`.
+
+**`LICENSE`, `NOTICE`, `SECURITY.md` and `CODE_OF_CONDUCT.md` are untouched.**
+
+## 41. §28.8 privacy review of the exact staged content
+
+1,650 added lines scanned.
+
+| Looked for | Found |
+|---|---|
+| Credentials, tokens, API keys | **None.** One match on the word *"secret store"* — the platform README's list of future components |
+| Client, company or project data | **None** |
+| Real model names, `.rvt` files | **None** |
+| Email addresses | **None** beyond the commit trailer |
+| Local URLs, IPs | **None** |
+| Machine-specific absolute paths | **Two, and both were generalised in this phase** — §2 now says "Linux, in a container" and "Windows, with the repository on one drive and `TEMP` on another" rather than naming either literal path. The condition is what carries meaning, not the folder name |
+
+## 42. §25 checklist
+
+**Structure** — ✅ folder responsibilities in `PROJECT-MAP` §B · ✅ permanent docs and work notes
+separated by `work-notes/README.md` · ✅ temporary plans not scattered · ✅ **no empty folders
+created** — only `plans/` exists because only `plans/` holds anything · ✅ two new READMEs, each
+justified against a named gap.
+
+**Documentation** — ✅ root README corrected in three phases · ✅ `docs/README.md` re-indexed ·
+✅ `AGENTS.md` exists · ✅ `PROJECT-MAP.md` exists · ✅ all six module READMEs present and checked
+against source · ✅ no two files claim one topic (§32).
+
+**Status** — ✅ every fragment count is 167/193 and names its deriving command · ✅ proven wording
+corrected, including the write path · ✅ counts derived rather than typed wherever a command exists ·
+✅ completed work no longer shown pending (write path, Context Manager) · ✅ pending work not shown
+complete — both prompt files retained with their remaining items named.
+
+**Cleanup** — ✅ both one-time prompts have disposition records with reasons · ✅ **no fix notes
+exist**, established by search rather than assumed · ✅ the duplicate skills tree removed after
+file-by-file verification · ✅ historical snapshots preserved as history · ✅ no unique lesson lost.
+
+**References** — ✅ **0 broken links** (4 at baseline) · ✅ no reference to a deleted file · ✅ tool
+paths repaired (`.codex` → `.claude/skills/`) · ✅ agent instructions repaired.
+
+**Validation** — ✅ documentation, metadata and structure gates pass · ✅ gap findings classified,
+with product proof separated from housekeeping · ✅ tests run where the environment permits ·
+✅ Revit-only items labelled rather than guessed.
+
+**Git** — ✅ **12 commits, one coherent batch each** · ✅ no unrelated file modified · ✅ no generated
+junk (the one `/bin/` path is the deliberately whitelisted hook script) · ✅ explicit paths staged
+throughout, never `git add -A` · ✅ remote SHA verified and a draft PR open — **`main` is still
+`5aa7f6d`; push and merge are reported separately and nothing is merged.**
+
+## 43. §28.10 checklist
+
+- ✅ **Baseline and final inventories reconcile** — 1,329 − 7 + 5 = 1,327, with zero exclusions and no
+  concurrent additions.
+- ✅ **Every move, merge, delete and defer has a reason and owner** — §16 (delete, owner's decision),
+  §19 (four moves considered, all rejected with reasons), §12 C-3 (deferred), §13 (two prompts
+  retained).
+- ✅ **Unique knowledge destinations verified** — the only deletion was checked file by file first;
+  immutable history and licensing untouched.
+- ✅ **Each affected old path has a documented compatibility entry point** — the `.gitignore`
+  whitelist for `.agents/skills/*/bin/` stays as a labelled tripwire with a removal trigger.
+- ✅ **Role tasks and fresh-checkout walkthrough have actual results and limitations** — §27 and §38,
+  including what is *not* claimed.
+- ✅ **Privacy and machine-specific path review covers the exact staged content** — §41.
+- ✅ **Required failures remain blocking; optional deferrals have owners and triggers** — §39.
+- ⬜ **Durable closure record survives plan removal** — **Phase K.** This is the one item Phase J
+  cannot close by itself.
+
+## 44. What is still open, and it is not housekeeping
+
+Unchanged by this run, open before it, and open now:
+
+- **193 fragments below `PROVEN`** and all ten skills `DRAFT` — needs real Revit.
+- **`test_graph` (3 checks) and `test_reachable` (1 check)** — pre-existing, unrelated, recorded not fixed.
+- **`check-gaps` reports 49 WAITING items**, 47 of them needing a real Revit.
+- The remaining items in `docs/FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md`: C01, C02, C05–C08, S01–S05.
+- The on-model half of `docs/PROMPT-fragment-validation-agent.md`.
+
+None of these is a housekeeping pass or failure. They are product work in their existing registers.
