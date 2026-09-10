@@ -1,0 +1,128 @@
+# Three MODIFY fragments against hand-built content in Project1 - 2026-09-10.
+#
+# READ tools/jobs/project1-built-content.yaml FIRST. It carries the counts this
+# file rests on and the reason the view is called "1 - Mech" and not "Level 1".
+#
+# WRITE IS OFF BY DEFAULT AND THAT IS NOT AN OBSTACLE TO ROUTE AROUND.
+# `write.enabled` is false in %APPDATA%\Heron\config\heron.config. With it off
+# these three come back `write_disabled` and NOTHING is sent to Revit - which is
+# the correct behaviour, not a failure. It was switched on by the owner for this
+# batch and switched back to false immediately afterwards. Allows() reads the
+# file fresh every call, so neither change needs a restart.
+#
+# NOTHING IS KEPT. `apply` is never sent, so each phase runs inside a
+# TransactionGroup and is rolled back (D-55). Section 1c records that rollback
+# has failed three times, so the model was CHECKED afterwards rather than
+# assumed - see the note under `reset-graphic-overrides`.
+#
+# `write: true` IS SET EXPLICITLY ON EVERY JOB. batch-prove does NOT derive it
+# from the fragment's `risk:` - section 5 row 6, which read as intermittent
+# worksharing behaviour for a whole commit.
+#
+#     python tools/batch-prove.py tools/jobs/project1-modify.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-modify.yaml
+
+model: "Project1 work_ajmal.al (3,471 elements), Revit 2024 - view '1 - Mech'"
+
+defaults:
+  write: true
+  in: "Project1 work_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  # THE CLEANEST PAIR IN EITHER PROJECT1 FILE, and a true value-driven negative:
+  # the value turns the answer OFF rather than re-labelling it.
+  #
+  #     maxGapMm 5000   connected 1   findings 1   openEnds 6
+  #     maxGapMm 0      connected 0   findings 0   openEnds 6
+  #
+  # `openEnds` is 6 in BOTH legs, so the fragment found the same six open ends
+  # each time and genuinely looked. Only whether it was ALLOWED to join them
+  # changed. Contrast `find-dead-ends` in the other file, where `stubLength`
+  # moved findings between two declared results and emptied neither.
+  #
+  # THE POSITIVE IS CHECKABLE BY HAND, which is the point of a proof:
+  #   "926355 joined to 926369  - 300x300, gap was 127.7 mm"
+  # A real measured gap of 127.7 mm, accepted under a 5000 mm tolerance and
+  # refused under 0. The two are the same size, so `sizeToleranceMm` is not
+  # what decided it - it is held at 500 in both legs so that only ONE value
+  # varies.
+  #
+  # UNITS: both are named `...Mm`, so MILLIMETRES. The fragment divides by
+  # 304.8 itself (`var maxGap = maxGapMm / mmPerFoot`).
+  - fragment: connect-open-ends
+    write: true
+    set:
+      categoryName:     Ducts
+      inViewOnly:       "1 - Mech"
+      maxGapMm:         5000
+      sizeToleranceMm:  500
+    negative-set:
+      categoryName:     Ducts
+      inViewOnly:       "1 - Mech"
+      maxGapMm:         0
+      sizeToleranceMm:  500
+    expect: connected
+
+  # THE NEGATIVE IS A SECOND SELECTION BECAUSE NO VALUE CAN EMPTY THIS ONE.
+  # `measureTo` has three modes - centre, outside, and everything else meaning
+  # inside - and all three dimension the room. `offsetMm` only moves the
+  # dimension line. There is no input that makes it measure nothing.
+  #
+  # SO WALLS, AND THIS IS NOT THE "WRONG CATEGORY" MISTAKE. The fragment
+  # DECLARES `notARoom` as accounting, which means being handed things that are
+  # not rooms is inside its stated contract, not outside it. Measured:
+  #
+  #     Rooms (1)   created 2, values 2, notARoom 0
+  #     Walls (4)   created 0, notARoom 4
+  #
+  # Two dimensions from one rectangular room is right - a length and a width.
+  #
+  # UNITS: `offsetMm` is millimetres and the fragment converts (`offsetMm *
+  # MmToFeet`). 500 mm holds the dimension line clear of the wall face.
+  - fragment: dimension-rooms
+    write: true
+    set:
+      categoryName: Rooms
+      inViewOnly:   "1 - Mech"
+      view:         "1 - Mech"
+      measureTo:    centre
+      offsetMm:     500
+    negative-set:
+      categoryName: Walls
+      inViewOnly:   "1 - Mech"
+      view:         "1 - Mech"
+      measureTo:    centre
+      offsetMm:     500
+    expect: created
+
+  # THE SAME REAL MODELLING STATE THAT PROVED `read-graphic-overrides`, used the
+  # other way round. A magenta per-element override - line RGB(255,0,255) - was
+  # applied by hand in "1 - Mech":
+  #
+  #     Duct Fittings   2 of 2 carry one   -> expect cleared 2
+  #     Walls           0 of 4             -> expect cleared 0, hadNothing 4
+  #
+  # Both selections are populated and both are equally capable of carrying an
+  # override. The answer differs because the MODEL differs, which is the
+  # distinction value-driven-negatives.yaml asks for.
+  #
+  # THIS IS THE ONE TO CHECK THE MODEL AFTER. It is the only job in either file
+  # that destroys something the owner made by hand, and it relies on the
+  # rollback that section 1c records failing three times. After this batch,
+  # re-run `read-graphic-overrides` on Duct Fittings: it must still say 2 of 2.
+  # If it says 0, the rollback did not hold and one Ctrl+Z in Revit puts the
+  # override back.
+  - fragment: reset-graphic-overrides
+    write: true
+    set:
+      categoryName: "Duct Fittings"
+      inViewOnly:   "1 - Mech"
+      view:         "1 - Mech"
+    negative-set:
+      categoryName: Walls
+      inViewOnly:   "1 - Mech"
+      view:         "1 - Mech"
+    expect: cleared

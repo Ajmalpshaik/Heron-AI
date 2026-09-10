@@ -77,6 +77,30 @@ contract:
       role: accounting
       type: int
 
+proof:
+  date: '2026-09-10'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values. returned capped 0
+    item(s), connectorsOf Func`2, deadEnds 4 item(s) [925641, 925658, 926355, ...], isCap
+    Func`2, lengthOf Func`2, openEndsFound 4, served 0 item(s), servesSomething Func`2, stubLength
+    0.1, stubs 0 item(s), terminalCategories 4 item(s) [OST_DuctTerminal, OST_PlumbingFixtures,
+    OST_MechanicalEquipment, ...]. inputs came elements from the selection (5); stubLength
+    as given. on Project1 work_ajmal.al
+  negative_case: run with categoryName=Duct Fittings, inViewOnly=1 - Mech, stubLength=0.1
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase's
+    own values. returned capped 0 item(s), connectorsOf Func`2, deadEnds 0 item(s), isCap
+    Func`2, lengthOf Func`2, openEndsFound 0, served 0 item(s), servesSomething Func`2, stubLength
+    0.1, stubs 0 item(s), terminalCategories 4 item(s) [OST_DuctTerminal, OST_PlumbingFixtures,
+    OST_MechanicalEquipment, ...]. inputs came elements from the selection (2); stubLength
+    as given. on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 1383935ea5bd8b19
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

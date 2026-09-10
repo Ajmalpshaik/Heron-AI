@@ -352,7 +352,7 @@ Ran correctly and returned the honest empty answer. The model simply has none of
 | `check-ceiling-coordination` | 307 ducts in L3, `tolerance=99999` | `outOfPlane 0`. A tolerance nothing can satisfy still found nothing, because the ceilings are in the architectural LINK and the executor skips linked documents by design. Needs a ceiling drawn in the host |
 | `check-fixture-connectivity` | air terminals in M1, three services required | `missingService 0`. Demanding Supply, Return AND Exhaust of every terminal still found none incomplete. Needs a terminal with a service genuinely absent |
 | `find-overlapping-lines` | 307 ducts, `toleranceMm=99999` | `overlapping 0`. **Not a tolerance defect — it works on model LINES, and a duct is not one.** Needs detail or model lines, which this selection never contained |
-| `find-dead-ends` | 307 ducts, `stubLength=99999` | `deadEnds 0`, confirming the earlier run rather than resting on it. `select-by-connection-status` proved every duct end in this model is connected, so there is nothing to find at any stub length. **Confirmed a THIRD time 2026-09-10 with `stubLength=10`, and this run names the mechanism rather than the outcome: `openEndsFound 0` across all 307.** The fragment filters open ends that are meant to be there - a run reaching a terminal, a fixture or a cap - but here there were no open ends AT ALL to filter, so the empty answer is settled at the source. **STOP RE-RUNNING THIS ONE.** Three runs at three stub lengths have now agreed, and the row said so before the third |
+| `find-dead-ends` | 307 ducts, `stubLength=99999` | `deadEnds 0`, confirming the earlier run rather than resting on it. `select-by-connection-status` proved every duct end in this model is connected, so there is nothing to find at any stub length. **Confirmed a THIRD time 2026-09-10 with `stubLength=10`, and this run names the mechanism rather than the outcome: `openEndsFound 0` across all 307.** The fragment filters open ends that are meant to be there - a run reaching a terminal, a fixture or a cap - but here there were no open ends AT ALL to filter, so the empty answer is settled at the source. **STOP RE-RUNNING THIS ONE.** Three runs at three stub lengths have now agreed, and the row said so before the third. **This still stands FOR THIS MODEL — but the fragment is PROVEN, on `Project1` which has four open duct ends. The row named what it needed and a different model had it: §3b-ii** |
 | `select-subcomponents` | 10 Mechanical Equipment (Heat Recovery Units) in L3, `recursive=true` | `elements 0`, and the accounting proves it LOOKED rather than skipped: `withoutSubComponents 10` and *"0 nested element(s) found under 10 parent(s), followed 0 levels"*. A nested shared family lives inside a loadable family instance, and none of this model's equipment has one. **Its NEGATIVE is already perfect and is worth keeping** - 22 Ducts return `withoutSubComponents 0` with *"22 of what was given"* excluded, because ducts are SYSTEM families and structurally cannot nest anything in any model, which is a stronger negative than a count that a richer model could overturn. Needs one piece of equipment with a nested shared family, or a multi-component fixture |
 
 ---
@@ -391,6 +391,47 @@ first eight write proofs were taken on 2026-09-10.
 
 ---
 
+## 3b-ii. A SECOND MODEL CLEARS A BLOCK THAT WAS NEVER ABOUT THE FRAGMENT — 2026-09-10
+
+Every row above says *"in this model"*, and it was easy to read them as *"this fragment cannot be
+proved"*. One of them was tested against a different model and fell immediately.
+
+**`find-dead-ends` is PROVEN.** It was set aside three times on Snowdon, and §3b ends with **STOP
+RE-RUNNING THIS ONE** — which was the correct instruction and is still correct *for Snowdon*. The row
+also said exactly what would lift it: *"Needs a duct run with a loose end."* `Project1 work_ajmal.al`
+was drawn by hand with five ducts, four of them left open:
+
+| Measured 2026-09-10, `select-by-connection-status` `wantOpenEnds=true` | |
+|---|---|
+| Ducts | **4 of 5** have at least one OPEN end |
+| Duct Fittings | 0 of 2, and `withoutConnectors 0` |
+
+Positive `deadEnds 4`, negative `deadEnds 0` and `stubs 0`. Judged **PASS**.
+
+> A blocked row names a MODEL, not a fragment. Before writing one off, read what the row says it
+> needs and ask whether some other model has it.
+
+### The view was not called what everyone assumed, and it cost a session
+
+`Project1` is an MEP template. Its **levels** are `Level 1` and `Level 2`; its **plan views** are
+`1 - Mech`, `2 - Mech`, `1 - Plumbing` and `2 - Plumbing`. Earlier probes asked for `Level 1` and
+`FloorPlan: Level 1`, got nothing back, and concluded the model *"has no floor plan view at all"* —
+which is written into [`creators-round-two.yaml`](../tools/jobs/creators-round-two.yaml). It has four.
+
+The level name and the view name are different things, and in every delivered template they differ.
+`find-views` with `viewType=FloorPlan` answers this in one call and no probe needs to guess again.
+
+### What this model blocks, and it is a different list from Snowdon's
+
+| Fragment | What was tried | What came back |
+|---|---|---|
+| `report-door-room-links` | 1 door, phase `New Construction` against phase `Existing` | **POSITIVE EMPTY.** The pair is honest and shows the purpose's own phase-dependence claim — the same door reads `(outside) -> Room 1` on New Construction and `(outside) -> (outside)` on Existing. But the only `role: result` field is `disagreements`, and it is 0 in both legs. A disagreement needs Revit's `FromRoom`/`ToRoom` to contradict where the rooms physically are — a real modelling fault, which a clean four-wall model does not have and which cannot honestly be manufactured. Needs a model with a genuinely mis-facing door |
+| `check-flow-direction` | 5 ducts in `1 - Mech` | `jointsChecked 0`, `bidirectionalSkipped 4`. The ducts are drawn but carry no flow — no system, no equipment, nothing to set a direction. Needs ducts on a real system |
+| `find-overlapping-lines` | 5 ducts, then 4 walls, `toleranceMm=99999` | `overlapping 0`, `notStraight 0`, starts and ends read for every element. It looked and there is genuinely nothing stacked. Needs two lines drawn on top of each other — **and note §3b blamed the category for this on Snowdon; here the category was varied and the answer did not change** |
+| `find-nearest-elements` | 5 ducts, `metric=distance` | Refused before running: *"this fragment needs 2 separate sets of elements and one selection cannot say which is which… Running anyway would report 0 results, which reads as 'there was nothing to find' rather than 'nobody was asked'."* The two-set gap of §5, refusing honestly. Nothing about this model can fix it |
+
+---
+
 ## 3c. THE NEGATIVE CASE HAS NOT BEEN FOUND YET — 2026-09-08, third round
 
 These have a **working positive**. What is missing is an arrangement in which the answer MUST be empty,
@@ -409,7 +450,7 @@ and the obvious one turned out not to be.
 | `reset-view-graphics` | Cleared 109 element overrides in `Model Linking` | The drafting view chosen as the negative had **8 overrides of its own** and cleared them. Not a failure — a real answer. Needs a view with none, and no view in Snowdon has none |
 | `switch-active-project` | Reported `switched true` | Only ONE project is open, so it switched to the model it was already in. The handover's real question — *"check the tab bar afterwards, and never chain a write onto it assuming it landed"* — needs a second project open |
 | `export-views-to-dwg` | **None.** `created 0` | *"name the DWG export setup"* — it will not use Revit's default, and this model has no named setup to give it. Needs one created in Export Setups first |
-| `find-dead-ends` | **None.** `deadEnds 0`, `openEndsFound 0`, `stubs 0` | Consistent with `select-by-connection-status`, which proved every duct end in this model is connected. There are no dead ends to find. Needs a duct run with a loose end |
+| `find-dead-ends` | **None.** `deadEnds 0`, `openEndsFound 0`, `stubs 0` | Consistent with `select-by-connection-status`, which proved every duct end in this model is connected. There are no dead ends to find. Needs a duct run with a loose end — **and one was built: PROVEN on `Project1`, §3b-ii** |
 | `test-view-filter-match` | **None.** `matched 0` at both ends | The filter *is* found — `outOfScope` is 307 against 0 — but `Domestic` matches nothing, which `audit-view-filters` and `select-from-saved-set` both showed earlier. Third fragment blocked by the same fact about this model |
 | `report-bounding-box` | 307 measured, combined 53957 × 22545 × 7137 mm | `maxRows` only limits how many rows are LISTED; `measured` and `combinedSizeMm` are the same whatever it is set to. There is no input that makes this fragment measure nothing, so the negative has to come from the selection — which no read fragment can change |
 | `find-untagged-elements` | 235 untagged of 307 in `L3`, 72 already tagged | Its answer is the UNTAGGED ones, so it empties only when everything is tagged — and in a view with no tags at all it correctly returns all 307, which is a full answer rather than an empty one. `alreadyTagged` does go 72 → 0, so TRACKING ([D-53](DECISIONS.md)) would prove it |
@@ -908,6 +949,31 @@ empty case at all. It belongs with the D-53 tracking group in §3c, not here.
 > A declared result that is a NAME cannot carry the negative leg. Either the fragment has a countable
 > result beside it, or it is a describer and D-53 is the route.
 
+### A VALUE THAT RE-LABELS IS NOT A VALUE THAT TURNS THE ANSWER OFF — found 2026-09-10
+
+`looks_empty` reads **every** declared result, so a negative is empty only when they are **all** zero
+at once. A value-driven negative therefore has to switch the whole answer off, and one that merely
+moves findings from one declared result into another does not — it looks like the strongest possible
+pair and proves nothing.
+
+`find-dead-ends` was arranged that way and judged **NEG NOT EMPTY**, correctly:
+
+| `stubLength` | `deadEnds` | `stubs` | `openEndsFound` |
+|---|---|---|---|
+| 0.1 ft | 4 | 0 | 4 |
+| 99999 ft | 0 | **4** | 4 |
+
+`deadEnds` and `stubs` are both `role: result`. The four findings were re-labelled from one to the
+other and the negative still returned content. The conserved total — which is what made the pair look
+convincing — is precisely the proof that nothing was turned off.
+
+> Before choosing a value for the negative leg, list the fragment's `role: result` fields. If the
+> value moves findings **between** them rather than emptying them, it cannot carry the negative.
+
+What worked instead was a second selection that was **not** a wrong category: two duct fittings, with
+`withoutConnectors 0` — elements fully capable of showing an open end that genuinely had none. Same
+domain, same view, populated on both sides. See §3b-ii.
+
 ### Four more for "make silence illegal" (§3h.1)
 
 All four create something **in both legs**, which is why none can be proved — and all four are worse
@@ -1139,6 +1205,34 @@ Confirmed: **fourteen of the eighteen fragments proved on 2026-09-09 came from t
 other four were proved by TRACKING, where the D-53 evidence *is* the tracking rows and those were run
 fresh — but their positive phase came from the earlier session, so they are being re-run rather than
 argued for.
+
+### A RUN BOUND THE PREVIOUS SELECTION AND CALLED IT A PASS — seen ONCE, 2026-09-10, NOT REPRODUCED
+
+Recorded because it is the same family as the section above — a confident answer about something that
+was not what was asked — and because it nearly went into a job file as a proved negative.
+
+`dimension-rooms` was run twice back to back on the write path, first with `categoryName=Rooms` and
+then with `categoryName=Walls`, each with `--setup select-by-category-name --setup set-selection`. The
+second run returned **`created 2` and `notARoom 0`** — identical to the first — and its record says:
+
+> `elements from the selection (1)`
+
+One element, when its own setup had just asked for four walls. Had it been read as the negative leg it
+would have said "the negative created two dimensions as well", which is a finding about nothing.
+
+**It has not reproduced.** The same Walls run in isolation binds `(4)` and returns `created 0`,
+`notARoom 4` — twice — and three further deliberate Rooms-then-Walls trials, run back to back to
+provoke it, were all correct. Five clean runs against one bad one.
+
+**No mechanism is claimed.** §1d records that a rolled-back write clears the selection, and a race
+between that restore and the next run's setup would fit — but that is a guess, and a guess written down
+here would be read as a finding later. What is certain is only what the record says.
+
+> `bound` is the field that catches this, and it is already printed. **Read `elements from the
+> selection (N)` and check N against the category you asked for**, before reading the result. A wrong
+> selection does not announce itself in the answer.
+
+Marked **NEEDS_REVIEW**, not OPEN: one unreproduced observation is not yet a defect.
 
 ### ONE PERSON, ONE `HERON_CLIENT_ID`
 
