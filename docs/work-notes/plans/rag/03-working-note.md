@@ -571,3 +571,35 @@ exactly how a bought standard reaches twenty people who did not buy it.**
 knowledge permits."* **This is that item arriving**, from the owner rather than from the research.
 
 **88 requirements. Still no code.**
+
+### 2026-09-11 — the store was protected and the source was not
+
+**Owner's question:** *"NFPA or licensed files — can we push them, or give them to people? Would GitHub
+pushing be an issue? Or are we not pushing those files?"*
+
+**Checked rather than reassured, and he was right to ask.** Two protections already existed and one did
+not.
+
+| | |
+|---|---|
+| ✅ The knowledge store lives in `%APPDATA%\Heron\knowledge` | outside the repository entirely |
+| ✅ `.gitignore` blocks `*.db`, `*.sqlite`, `/data/`, `*.rvt`, `*.rfa` | under a heading that reads *"NEVER COMMIT — client data, project knowledge, models"* |
+| ❌ **`*.pdf` and `*.docx` were not blocked** | so the **document a store was built FROM** could be committed by one `git add .` |
+
+**The store was protected and the source was not — and the source is the licensed half.** NFPA and
+ASHRAE are bought per seat; a client specification is theirs. `.gitignore` opens by saying this
+repository becomes public and that *"anything committed here is permanent: forks propagate and GitHub
+caches"*, which makes this the kind of mistake that only has to happen once.
+
+**Fixed, and proved rather than asserted.** A file named `QCS-Section-21.pdf` was created in the
+repository root; `git status` did not list it, and `git check-ignore -v` named the rule that caught it:
+
+```text
+.gitignore:33:*.pdf     QCS-Section-21.pdf
+```
+
+The test file was then removed. **`.pdf`, `.docx`, `.doc`, `.xlsx`, `.xls`, `.pptx` and `.ppt` are now
+ignored**, with an explicit exception available the way `tests/models/` already has one.
+
+**This closes the practical half of R-87.** The rule still belongs in the requirements — a file layout
+that happens to be safe is not the same as a stated rule — but the leak it described is now shut.
