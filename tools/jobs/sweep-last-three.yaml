@@ -1,0 +1,67 @@
+# SWEEP 6 - the last three that can be run at all - 2026-09-11.
+#
+# THIS IS THE END OF THE ARRANGEABLE POOL, and it is worth saying what that
+# means. Counting only fragments that are DRAFT, arrangeable from a selection
+# and supplied values, and NOT `risk: ADMIN` or `risk: PUBLISH`, EIGHT remain
+# untried after five sweeps. Five of those eight are blocked at the source:
+#
+#   align-viewports-across-sheets   SHEETS - neither open model has any
+#   create-sheet-list               SHEETS
+#   place-views-on-sheet            SHEETS
+#   set-sheet-title-block           SHEETS
+#   fillet-lines                    LINES - neither open model has any
+#
+# THE RISK GATE IS APPLIED BY HAND IN THIS FILE, and that is new. `validate`
+# does not call `risk_refusal` - the OPEN defect found 2026-09-11 - so ADMIN and
+# PUBLISH fragments run through it when they should not. The owner decided the
+# permission tier wins and put `export-views-to-fbx` back to DRAFT. Until the
+# gate is on the proving path, every job file has to keep it: nothing here is
+# ADMIN or PUBLISH, and that was checked against each fragment's `risk:` rather
+# than assumed from its name.
+#
+# SNOWDON IS THE ACTIVE MODEL and is workshared, which is what makes
+# `set-element-workset` runnable at all.
+#
+#     python tools/batch-prove.py tools/jobs/sweep-last-three.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/sweep-last-three.yaml
+
+model: "Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024"
+
+defaults:
+  write: true
+  in: "Snowdon-scratch_ajmal.al"
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly:   "FloorPlan: L3"
+  negative-set:
+    categoryName: Ducts
+    inViewOnly:   "FloorPlan: L3"
+
+jobs:
+  # A real workset id against one that cannot exist. Which ids are real is not
+  # known from outside, so 0 is tried first and the findings will name what it
+  # found or say there is no such workset - either answer is the verdict.
+  - fragment: set-element-workset
+    set:          {worksetId: 0}
+    negative-set: {worksetId: 999999}
+    expect: moved
+
+  # A count of things checked against a count of none. `report-findings` turns a
+  # list into the sentence a modeller reads, and it says so out loud when there
+  # was nothing - which is the behaviour the negative is meant to catch.
+  - fragment: report-findings
+    write: false
+    setup: []
+    set:          {checkedCount: 307, whatWasChecked: "ducts in FloorPlan: L3"}
+    negative-set: {checkedCount: 0,   whatWasChecked: ""}
+    expect: report
+
+  # A damper is the commonest duct accessory in a delivered HVAC sample. If the
+  # name is wrong the fragment says so and that is the finding, not a failure.
+  - fragment: place-accessory-on-run
+    set:          {accessorySymbol: "Damper", positionAlong: 0.5}
+    negative-set: {accessorySymbol: "ZZZNOTHINGHERE", positionAlong: 0.5}
+    expect: placed
