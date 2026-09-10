@@ -10,6 +10,33 @@
 
 ## 1. The Kernel
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TB
+    M01["Configuration"] --- K
+    M02["Identity"] --- K
+    M03["Permissions"] --- K
+    M04["Event Bus"] --- K
+    M05["Agent Registry"] --- K
+    M06["Skill Registry"] --- K
+    M07["Fragment Registry"] --- K
+    K(["<b>Heron Kernel</b><br/><i>every module talks<br/>through it, never<br/>to each other</i>"])
+    K --- M08["Tool Registry"]
+    K --- M09["Memory Manager"]
+    K --- M10["Workflow Manager"]
+    K --- M11["State Manager"]
+    K --- M12["Logging"]
+    K --- M13["Security"]
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:2px,color:#4C1D95
+    class K plat
+    class M01,M02,M03,M04,M05,M06,M07,M08,M09,M10,M11,M12,M13 user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
 ```text
 Heron Kernel
 ├── Configuration      ├── Memory Manager
@@ -21,6 +48,8 @@ Heron Kernel
 ├── Fragment Registry
 └── Tool Registry
 ```
+
+</details>
 
 > Every module communicates **through the Kernel** instead of directly depending on every other module.
 
