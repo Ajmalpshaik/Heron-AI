@@ -39,10 +39,18 @@ in here.
 
 **[`docs/HANDOVER.md`](../HANDOVER.md) is the current-work entry point, and it stays where it is.**
 It is operational — it is exactly the kind of thing this folder is for — but it is also the documented
-cold start: the root README sends every new reader to it, thirteen files link to it, and its own first
-line is the sentence the owner types to resume work. Saved continuation prompts pointing at that path
-live outside this repository and cannot be checked from inside it. Moving it would cost more than the
-tidiness is worth. **Read it as if it were in this folder.**
+cold start: the root README sends every new reader to it, **sixteen files reference it — fourteen
+documents and two tools, at 2026-09-10** — and its own first line is the sentence the owner types to
+resume work. Do not trust that number either. It is exactly the kind this page's own rule says to
+derive rather than type, so derive it:
+
+```bash
+grep -rl 'HANDOVER\.md' --include='*.md' --include='*.py' . | grep -v '\.git/' | grep -v 'docs/HANDOVER\.md'
+```
+
+Saved continuation prompts pointing at that path live outside this repository and cannot be checked
+from inside it. Moving it would cost more than the tidiness is worth. **Read it as if it were in
+this folder.**
 
 **Ideas that have been reviewed belong in [`PROPOSALS.md`](../PROPOSALS.md), not here.** That file
 already owns reviewed gaps, risks and suggestions. `ideas/` here is only for a raw thought that is not

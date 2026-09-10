@@ -647,4 +647,10 @@ Step 6 is finished, and not before. At that point:
    [D-19](DECISIONS.md) says why the answer is probably still no.
 2. Delete the "never run" banners in `RevitWrite.cs` and `heron_mcp_server.py`.
 3. Move the proven rows into [`HANDOVER.md`](HANDOVER.md) §3, under *proven against a real Revit*.
-4. Delete this file.
+4. **Do not delete this file.** That instruction was written on 2026-08-28, when this was a
+   123-line Step 6 checklist and deleting it was the whole plan. It is now a **permanent
+   register** — one of the four places a retiring work note's knowledge goes to survive
+   ([`PROJECT-MAP.md` §D](PROJECT-MAP.md), [`work-notes/README.md`](work-notes/README.md)) — and
+   a register that deletes itself files the destination inside the bin. **What ends is the Step 6
+   content, not the file:** once step 3 has moved those rows out, this one holds whatever is
+   unproven next.
