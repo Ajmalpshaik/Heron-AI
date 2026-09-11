@@ -4,21 +4,35 @@ name: Gates
 # matters. This runs the repository's own pre-push procedure on every change,
 # so nobody has to remember it.
 #
-# What it deliberately does NOT do: build the C# add-in. That needs the Revit
-# API assemblies, which ship with Revit and cannot be installed on a hosted
-# runner. The compiler checks stay on the owner's machine.
+# It DOES build the C# add-in, against every Revit release. That sentence used
+# to read the opposite way here - "cannot be installed on a hosted runner" -
+# which was wrong: the add-in takes the Revit API from NuGet whenever
+# RevitApiDir is unset, and a runner has no Revit, so a runner is exactly the
+# case that path exists for. See docs/30-compiling-away-from-windows.md.
+#
+# What it still does NOT do: run a fragment against a real model. No compiler
+# and no test here can tell you whether a duct moves 200 millimetres or 200
+# feet. That is what proving against a model is for.
 
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Callable, so the weekly run tests exactly what a pull request tests
+  # rather than a copy of it that can drift out of step.
+  workflow_call:
 
 permissions:
   contents: read
 
+# github.workflow is the CALLER's workflow name inside a reusable workflow, so
+# this reads "Gates" on a push or pull request and "Weekly" on the scheduled
+# call. Keyed on the ref alone, the weekly run on main landed in the same group
+# as a push to main and cancel-in-progress had one kill the other - destroying
+# the exact signal the weekly run exists to give.
 concurrency:
-  group: gates-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

@@ -1,0 +1,28 @@
+name: Weekly
+
+# The pull request checks answer "did this change break anything".
+# This one answers a different question: "did the outside world break us
+# while nobody pushed".
+#
+# It is not paranoia. The add-in takes the Revit API from NuGet at a FLOATING
+# version - Nice3point.Revit.Api.RevitAPI at "$(RevitVersion).*" - and there is
+# no packages.lock.json, so every build resolves afresh. A new package release,
+# a new PyYAML, or a changed runner image can all change the answer with no
+# commit in this repository. On push-and-pull-request triggers alone, the first
+# anyone would hear of it is an unrelated pull request going red for reasons
+# its author did not cause.
+#
+# Monday 06:00 UTC, and on demand.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: Everything, against today's dependencies
+    uses: ./.github/workflows/gates.yml

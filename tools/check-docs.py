@@ -377,17 +377,25 @@ else:
     # DRAFT while the fragments said 197 and 163. Nothing caught it because
     # nothing was looking. Deriving it costs one glob.
     status = {}
+    by_risk = {}
     for fy in glob.glob(os.path.join(root, 'brain', 'fragments', '*',
                                      'fragment.yaml')):
         try:
             with io.open(fy, encoding='utf-8') as fh:
-                for line in fh:
-                    m = re.match(r'heron-status:\s*(\S+)', line)
-                    if m:
-                        status[m.group(1)] = status.get(m.group(1), 0) + 1
-                        break
+                text = fh.read()
         except IOError:
             continue
+        st = re.search(r'^heron-status:\s*(\S+)', text, re.M)
+        if not st:
+            continue
+        status[st.group(1)] = status.get(st.group(1), 0) + 1
+        # The risk is the SECOND half of every claim of the form
+        # "N MODIFY fragments are PROVEN" - a count of one status within
+        # one risk, and a different number from either on its own.
+        rk = re.search(r'^\s*risk:\s*(\S+)', text, re.M)
+        if rk:
+            key = (st.group(1), rk.group(1))
+            by_risk[key] = by_risk.get(key, 0) + 1
 
     if status:
         total = sum(status.values())
@@ -433,6 +441,50 @@ else:
                         drift.append((p, i, '%s %s' % (said_n, what),
                                       '%d (grep heron-status: in '
                                       'brain/fragments)' % real_n))
+
+    # THE SAME CLAIM, NARROWED TO ONE RISK. "77 MODIFY fragments are PROVEN"
+    # is a third number again - not the status total and not the grand total.
+    #
+    # This was missed the first time round. The two headline numbers were
+    # derived and enforced while three sibling claims in the SAME file went
+    # unchecked, and all three were wrong: README.md said 55 MODIFY PROVEN on
+    # one line and 63 on another, while the fragments said 77. A checker that
+    # covers one sentence and leaves its neighbours alone teaches the reader
+    # that the file is checked when it is not.
+    if by_risk:
+        risk_claim = re.compile(r'(\d+)\s+`?([A-Z]{4,8})`?\s+fragments'
+                                r'\s+are\s+`?(PROVEN|DRAFT)`?')
+        # "... are PROVEN against 77 MODIFY" - the trailing half, and only on
+        # a line that already carried the full claim above.
+        against = re.compile(r'against\s+(\d+)\s+`?([A-Z]{4,8})`?')
+        for p in md:
+            if '/work-notes/' in p:
+                continue
+            for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
+                if HISTORY.search(line):
+                    continue
+                hits = list(risk_claim.finditer(line))
+                if not hits:
+                    continue
+                for m in hits:
+                    said, risk, what = m.groups()
+                    if (what, risk) not in by_risk:
+                        continue
+                    real = by_risk[(what, risk)]
+                    if int(said) != real:
+                        drift.append((p, i, '%s %s %s' % (said, risk, what),
+                                      '%d (grep risk: and heron-status: in '
+                                      'brain/fragments)' % real))
+                what = hits[0].group(3)
+                for m in against.finditer(line):
+                    said, risk = m.groups()
+                    if (what, risk) not in by_risk:
+                        continue
+                    real = by_risk[(what, risk)]
+                    if int(said) != real:
+                        drift.append((p, i, '%s %s %s' % (said, risk, what),
+                                      '%d (grep risk: and heron-status: in '
+                                      'brain/fragments)' % real))
 
     if drift:
         for p, i, said, real in drift:
