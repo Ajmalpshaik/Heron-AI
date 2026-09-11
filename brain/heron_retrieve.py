@@ -22,6 +22,10 @@ THE ORDER MATTERS AND IT IS NOT NEGOTIABLE
   3. Reciprocal rank fusion, to make one list out of two.
   4. A small quality nudge, which may settle a near-tie and may not overturn a
      clearly better match.
+  4b. RE-READ THE TOP ~20, if a re-ranker is installed. It reads each question
+     and passage TOGETHER, which neither route above can do, so it is allowed
+     to overturn the order - and on a machine without one, nothing happens and
+     the answer says so. See heron_rerank.py.
   5. SAY HOW CONTESTED THE RESULT WAS. Stages 1 to 4 already compute every
      number this needs and used to throw all of them away, so a coin toss and
      a clear winner came back wearing the same face. See Contest.
@@ -60,6 +64,7 @@ import heron_scope as SCOPE                                   # noqa: E402
 import heron_search as SEARCH                                 # noqa: E402
 import heron_embed as EMBED                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
+import heron_rerank as RERANK                                 # noqa: E402
 
 # The constant in reciprocal rank fusion. 60 is the value the technique is
 # normally used with; what it does is stop rank 1 from dwarfing everything
@@ -139,9 +144,26 @@ class Candidate(object):
         self.vector_score = None       # cosine, higher is better
         self.fused = 0.0
         self.quality = 0.0
+        # THE RE-RANKER'S OPINION IS CARRIED, NOT ADDED IN. Both stay None on a
+        # machine with no re-ranker installed, which is most machines.
+        self.rerank_score = None       # the cross-encoder's, higher is better
+        self.rerank_rank = None        # its position in that order, 1-based
 
     @property
     def score(self):
+        """The FUSED score plus the quality nudge. The re-ranker is not in it.
+
+        DELIBERATE, and it is the one arithmetic decision in Stage 7. Every
+        number on this page is measured in ONE_RANK, the quality nudge is
+        bounded against ONE_RANK, and Contest reads every spread in ONE_RANK.
+        A cross-encoder's score is on an unrelated scale that differs by model,
+        so folding it in here would silently unbound the nudge and turn every
+        spread Contest reports into a mixture of two units.
+
+        So the re-ranker re-ORDERS the shortlist and leaves the score alone.
+        The fused score stays on record underneath it, which is also the only
+        reason a before-and-after measurement is possible at all.
+        """
         return self.fused + self.quality
 
     def why(self):
@@ -153,7 +175,10 @@ class Candidate(object):
         if not parts:
             parts.append("no route")
         agreed = self.keyword_rank is not None and self.vector_rank is not None
-        return "%s%s" % (" + ".join(parts), " - both agree" if agreed else "")
+        said = "%s%s" % (" + ".join(parts), " - both agree" if agreed else "")
+        if self.rerank_rank is not None:
+            said += ", re-ranker #%d" % self.rerank_rank
+        return said
 
     def __repr__(self):
         return "<%s %.4f %s>" % (self.id, self.score, self.why())
@@ -256,7 +281,21 @@ class Contest(object):
         # mechanism that is not running.
         self.nudged = nudged
 
-        scores = [c.score for c in ranked]
+        # WHETHER A RE-RANKER SET THIS ORDER. Derived from the candidates
+        # rather than passed in, so a caller cannot forget to say so - the
+        # same reason D-40 derives an edge instead of storing one.
+        self.reranked = any(getattr(c, "rerank_rank", None) is not None
+                            for c in ranked)
+
+        # SORTED DESCENDING, AND THAT IS NOT TIDINESS. Every number below is a
+        # fact about FUSION, and when a re-ranker has re-ordered the shortlist
+        # the list arrives in the re-ranker's order instead - at which point
+        # scores[0] - scores[1] is the gap between the re-ranker's first and
+        # second, which can be NEGATIVE. That would report a spread of -3.2
+        # ranks and call every re-ranked result a coin toss. Sorting recovers
+        # the fusion spread of the same set, and changes nothing at all when
+        # no re-ranker ran, because then the list is already in this order.
+        scores = sorted([c.score for c in ranked], reverse=True)
         self.top_gap = ((scores[0] - scores[1]) / ONE_RANK
                         if len(scores) > 1 else None)
         self.spread = ((scores[0] - scores[-1]) / ONE_RANK
@@ -303,7 +342,20 @@ class Contest(object):
             return ("one candidate, so nothing was contested - a shortlist of "
                     "one is not a ranking")
 
-        if self.top_gap < 1.0 and self.nudged:
+        # A RE-RANKED ORDER IS NOT EXPLAINED BY THE FUSION GAP, and saying
+        # it was would be the most confident wrong sentence on this page. The
+        # gap describes the shortlist the re-ranker was HANDED; the order shown
+        # is the re-ranker's, set by reading each pair. Reporting "a coin toss"
+        # about an order something else decided would be describing a contest
+        # that did not settle anything.
+        if self.reranked:
+            said = ("the RE-RANKER set this order, reading each question-and-%s "
+                    "pair - so the fusion numbers here describe the shortlist "
+                    "it was given, not the order shown" % self.noun)
+            said += ("; that shortlist spanned %.1f rank(s) and %d of %d were "
+                     "found by both routes"
+                     % (self.spread, self.agreed, self.count))
+        elif self.top_gap < 1.0 and self.nudged:
             said = ("A COIN TOSS: the top two are %.1f of one fusion rank "
                     "apart, which is narrower than the quality nudge - their "
                     "order could have come from status alone, not from either "
@@ -317,8 +369,9 @@ class Contest(object):
             said = ("the winner is %.1f rank(s) clear of the runner-up"
                     % self.top_gap)
 
-        said += ("; the shortlist spans %.1f rank(s); %d of %d found by both "
-                 "routes" % (self.spread, self.agreed, self.count))
+        if not self.reranked:
+            said += ("; the shortlist spans %.1f rank(s); %d of %d found by "
+                     "both routes" % (self.spread, self.agreed, self.count))
 
         if not self.pool_is_evidence:
             said += (". Only %d %s(s) were eligible, no more than the pool "
@@ -401,6 +454,103 @@ def eligible(store, revit=None, domain=None, kind=None, statuses=OFFERABLE):
 
 
 # ---------------------------------------------------------------------------
+# Stage 4b - read the shortlist again, if there is anything to read it with
+# ---------------------------------------------------------------------------
+
+def _fragment_passage(candidate):
+    """What a re-ranker is given about a fragment.
+
+    LESS THAN THE ENCODER IS GIVEN, and the reason is a cost rather than an
+    oversight. heron_embed._text_for() also folds in the fragment's utterances
+    and purpose, which live in its YAML and arrive via FRAG.load_all() - the
+    whole library, read to describe twenty rows. The encoder pays that once at
+    index time. A re-ranker would pay it on every question.
+
+    So this reads the three columns the store already holds. If a measurement
+    ever shows the utterances change a re-ranked order, the fix is to carry
+    them into the store, not to load the library per query.
+
+    EVERY VALUE IS GUARDED, because this runs BEFORE anything knows whether a
+    re-ranker exists - so a null column here would raise on every query on
+    every machine, including the ones with nothing installed. That is the one
+    way this seam could break R-41 while appearing to honour it.
+    """
+    row = candidate.row
+    return " ".join([row["semantic_identity"] or "", row["capability"] or "",
+                     row["domain"] or ""]).strip()
+
+
+def _chunk_passage(candidate):
+    """What a re-ranker is given about a clause - its heading path and its text.
+
+    THE TEXT IS UNTRUSTED AND THAT IS STILL FINE HERE (Golden Rule 19). An
+    ingested document is DATA, never instruction, and a cross-encoder cannot be
+    instructed: it consumes a pair and emits one number. There is no channel
+    through which a clause reading "ignore previous instructions" can do
+    anything but be scored. The screening in heron_context.py exists because
+    that text reaches a MODEL THAT WRITES; this one only ranks.
+    """
+    row = candidate.row
+    return " ".join([row["heading_path"] or "", row["text"] or ""]).strip()
+
+
+def _rerank(text, ranked, passage):
+    """Re-order the top ~20 by reading each pair. Returns the list, re-ordered.
+
+    THE SLICE HAPPENS HERE AND NOT AT THE CALLER, so the caller cannot ask for
+    the whole library to be re-ranked by passing a larger list. docs/05 s4.4
+    says top ~20; heron_rerank.SHORTLIST is that number and this is the only
+    place it is applied.
+
+    RE-RANKING RUNS BEFORE THE CUT TO `limit`, which is the entire point. With
+    limit=5 and a re-rank of the top five, fusion's 7th can never become the
+    answer - and fusion's 7th becoming the answer is the improvement a
+    cross-encoder is installed for.
+
+    WITH NO RE-RANKER THIS RETURNS THE LIST IT WAS GIVEN, unchanged and in the
+    same object order. Not a fallback ordering - the same ordering. R-41: the
+    absence makes Heron slower to be right, never different-but-worse.
+
+    THE PASSAGES ARE BUILT BEFORE ANYTHING KNOWS WHETHER A BACKEND EXISTS, so
+    on most machines twenty strings are built and thrown away. MEASURED rather
+    than tidied: 0.000004 s over twenty candidates against 0.0074 s for a whole
+    retrieve(), which is 0.05% of a query at 360 fragments. Asking backend()
+    first would save that and put a SECOND place in this file that decides
+    whether a re-ranker is present, which is the more expensive of the two.
+    """
+    if len(ranked) < 2:
+        return ranked
+
+    head = ranked[:RERANK.SHORTLIST]
+    tail = ranked[RERANK.SHORTLIST:]
+
+    got = RERANK.scores(text, [passage(c) for c in head])
+    if got is None:
+        return ranked
+
+    for candidate, value in zip(head, got):
+        candidate.rerank_score = value
+
+    scored = [c for c in head if c.rerank_score is not None]
+    if not scored:
+        return ranked
+    unscored = [c for c in head if c.rerank_score is None]
+
+    # The fused score is the tiebreak, then the id - the same shape the fusion
+    # sort uses. A cross-encoder returning the same score for two passages has
+    # no opinion about their order, and the route that did have one should keep
+    # the last word rather than handing it to the alphabet.
+    scored.sort(key=lambda c: (-c.rerank_score, -c.score, c.id))
+    for position, candidate in enumerate(scored, 1):
+        candidate.rerank_rank = position
+
+    # The tail keeps its fusion order and stays behind everything the re-ranker
+    # looked at. It was never scored, so promoting any of it would be inventing
+    # an opinion nothing expressed.
+    return scored + unscored + tail
+
+
+# ---------------------------------------------------------------------------
 # Stages 2 to 4 - two searches, fused, then nudged
 # ---------------------------------------------------------------------------
 
@@ -471,6 +621,10 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
                     key=lambda c: (-c.score,
                                    c.keyword_rank if c.keyword_rank else 999,
                                    c.id))
+
+    # -- stage 4b: read the shortlist again, if anything can ----------------
+    ranked = _rerank(text, ranked, _fragment_passage)
+
     return ranked[:limit], excluded
 
 
@@ -604,6 +758,8 @@ def documents(store, text, limit=5, pool=20):
                     key=lambda c: (-c.score,
                                    c.keyword_rank if c.keyword_rank else 999,
                                    c.id))
+    ranked = _rerank(text, ranked, _chunk_passage)
+
     return ranked[:limit], len(allowed)
 
 
@@ -695,7 +851,8 @@ def find_documents(store, text, limit=5):
                      "untrusted": c.row["untrusted"],
                      "score": c.score, "why": c.why(),
                      "words_score": c.keyword_score,
-                     "nearness_score": c.vector_score} for c in ranked],
+                     "nearness_score": c.vector_score,
+                     "rerank_score": c.rerank_score} for c in ranked],
         note=note, contest=contest)
 
 
@@ -868,7 +1025,8 @@ def find(store, text, revit=None, limit=5):
         candidates=[{"id": c.id, "capability": c.row["capability"],
                      "status": c.row["status"], "score": c.score,
                      "why": c.why(), "words_score": c.keyword_score,
-                     "nearness_score": c.vector_score} for c in ranked],
+                     "nearness_score": c.vector_score,
+                     "rerank_score": c.rerank_score} for c in ranked],
         note=note, contest=contest)
 
 
@@ -919,6 +1077,16 @@ def main(argv):
 
         print("Asked:  %s%s" % (text, "   (Revit %s)" % revit if revit else ""))
         print("Route:  %s" % answer.route)
+
+        # WHICH RE-RANKER ANSWERED, AND ON MOST MACHINES THAT IS "absent".
+        #
+        # Stage 7's done-when, word for word: a run with the package
+        # uninstalled still answers AND SAYS IT IS NOT USING IT. An optional
+        # quality step that degrades in silence is indistinguishable from one
+        # that is working, and the person who most needs to know is the one
+        # comparing two machines' answers.
+        rerank_name, rerank_why = RERANK.backend()
+        print("Re-rank: %s - %s" % (rerank_name, rerank_why))
         print("Best:   %s" % (answer.fragment_id or "nothing"))
         print("        %s" % answer.note)
         for c in answer.candidates:

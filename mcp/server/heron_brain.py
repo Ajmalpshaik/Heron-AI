@@ -139,6 +139,23 @@ def warm():
         # degradation rather than an outage.
         pass
 
+    # THE RE-RANKER IS WARMED FOR THE SAME REASON AND IT IS A HEAVIER IMPORT.
+    #
+    # `A7`/`A8` cost thirty minutes of a real tool call because a 1.0 s
+    # model2vec import ran on the asyncio event loop. A cross-encoder pulls in
+    # torch, which is larger. So it is loaded here, off the request path,
+    # before anything asks - and until it finishes, retrieval keeps fusion's
+    # order and says the re-ranker did not run.
+    #
+    # NOT a seventh member of _brain()'s tuple: six call sites unpack that
+    # positionally, and heron_rerank needs no PyYAML, so importing it here is
+    # always safe.
+    try:
+        import heron_rerank as RERANK
+        RERANK.warm()
+    except Exception:
+        pass
+
 
 class _Open(object):
     """A ready store: built if empty, indexed if stale, closed on the way out.

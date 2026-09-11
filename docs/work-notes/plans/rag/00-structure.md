@@ -230,6 +230,14 @@ because the test asserted the arithmetic rather than the intention. **Two of the
 [`05 §4.4`](../../../05-heron-brain.md) names do not exist at all** — nothing records success rate,
 nothing records recency of use.
 
+**And since 2026-09-11, the seam.** [`brain/heron_rerank.py`](../../../../brain/heron_rerank.py) bounds
+the re-rank to twenty pairs in one place, carries the cross-encoder's opinion **beside** the fused score
+rather than inside it, and reports `absent` on every machine without one — which at the time of writing
+is every machine this repository has ever run on. **No cross-encoder has run**: the weights need
+`huggingface.co`, so Stage 7 is half done and the half that is missing is the measurement. It needs a
+network rather than Revit or the PC, which is the one thing on this track that needs anything outside
+the machine at all.
+
 **The rule it inherits from the encoder.** `heron_embed.py` has two backends and **reports which one
 answered**; when the trained model is absent it falls back and says so. The re-ranker does the same: an
 installation without it is slower to be right, never broken. [D-01](../../../DECISIONS.md)'s promise —

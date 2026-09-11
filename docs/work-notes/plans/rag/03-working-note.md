@@ -37,7 +37,8 @@ and deliberately left alone.
 | Stage 4 — the Librarian picks the scope | **DONE 2026-09-11.** `heron_retrieve.librarian()` — one query per scope, two labelled answers, nothing pooled |
 | Stage 5 — document nodes, and the density count | **COUNTED 2026-09-11.** Edges derived, density an order of magnitude below the fragment graph, **and the route still has no weight** |
 | Stage 6 — maintenance | **DONE 2026-09-11.** Re-index on change by content hash, duplicate clauses at write time, and the host rebuilds both halves |
-| Stages 7 and 8 | **not started.** Stage 7 needs the `model` backend |
+| Stage 7 — the re-ranker | **HALF DONE 2026-09-11, and the half that is done is the one this machine can prove.** [`brain/heron_rerank.py`](../../../../brain/heron_rerank.py) is the seam, bounded to twenty pairs in one place; `tests/test_rerank.py` asserts that with nothing installed the shortlist comes back in *exactly* fusion's order, and the tool says `Re-rank: absent` out loud. **The after-measurement is NOT taken** — no cross-encoder has ever run here, because the weights need `huggingface.co`. **W-9**, and `A10` in [NEEDS-CHECKING.md](../../../NEEDS-CHECKING.md) |
+| Stage 8 — trust and conflict | **not started.** Needs Stage 3, which is done. Q-C is the decision it is actually waiting on |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
 
 ---
@@ -119,11 +120,16 @@ Each of these is a sentence that was true when written and is false now.
 
 | **W-8** | The floor that [R-56](01-requirements.md) and R-58 stand on | Stage 0b would *"drop candidates with no claim"* and *"refuse a question nothing covers"*, needing nothing | **Found 2026-09-11 by building the measurement first, which is why it was built first.** [R-60](01-requirements.md) says the floor is derived from that measurement and from nothing else — and **at 360 fragments on `lexical` the measurement does not separate a BIM question from a question about cats.** Twelve questions, **every column overlaps**: *"how do I bake sourdough bread"* has the widest winning gap of all twelve. **Reciprocal rank fusion keeps order and discards strength**, so the fused score never could; and the two surviving magnitudes fail because `heron_embed`'s own docstring says the built-in backend **"IS NOT MEANING"**. **So R-56 to R-59 are blocked on the `model` backend, which is blocked on the network.** Numbers in [`retrieval-history.md`](../../../../brain/retrieval-history.md) |
 
+| **W-9** | Stage 7's own done-when, in [`02-implementation.md` §10](02-implementation.md) | a before-and-after measurement exists at the same corpus size | **only the before exists.** The seam is built and the absent half is measured — at 360 fragments the tracked question comes back at **0.0246 with a 2.1-rank lead, identical to the Stage 0b run**, so the seam is provably inert when nothing is installed. **No cross-encoder has ever run in this repository.** `huggingface.co` answers `CONNECT tunnel failed, response 403` from this container (re-checked 2026-09-11) while `pypi.org` answers 200, so it is that host's policy rather than a broken network — the same block [`heron_embed.py`](../../../../brain/heron_embed.py) recorded on 2026-08-28. **Nothing was estimated to fill the gap and no stub's number was written down as a result.** `A10` is the run |
+
 **W-5 and W-6 were found on 2026-09-10 by the owner asking a question** — *does a new person
 installing from GitHub get this automatically?* The answer is that the **add-in half installs itself
 and the Python half does not**, and this track makes it sharper rather than causing it: the plan adds
 **optional** packages (the re-ranker, possibly a PDF reader), and every one of them degrades silently
-when absent. **Silent degradation plus an install list nobody can follow is how a user ends up on the
+when absent. **Stage 7 made that concrete on 2026-09-11**: `sentence-transformers` is the third
+optional package and the first one that **announces itself before it downloads** — 500 MB to 2 GB,
+said before rather than during. W-5's table still does not mention it, and deliberately: W-5 belongs
+to the install thread, and fixing it inside Stage 7's commit is the widening this folder forbids. **Silent degradation plus an install list nobody can follow is how a user ends up on the
 weaker backend permanently.** W-6 is the gap; a dependency manifest would close both.
 
 **W-4 is Stage 0** and is fixed by doing the work, not by editing the file. **W-1 to W-3 are three
@@ -1285,3 +1291,89 @@ poor at asserting what it would do with input I had not thought of. **Every hole
 shape, not a logic error** — a lowercased pattern, a quotation without a number, a clause number that
 is not unique, a flag with nothing after it, a file with no text. The suites now carry all of them.
 
+
+---
+
+### 2026-09-11 — Stage 7: the seam is built, and the measurement it exists for cannot be taken here
+
+**Stage 7's done-when has three clauses. Two are met and the third is not, and this entry is mostly
+about not pretending otherwise.**
+
+| Clause | |
+|---|---|
+| a run with the package uninstalled **still answers and says it is not using it** | ✅ `python brain/heron_retrieve.py "show me every duct in the model" --revit 2024` prints `Re-rank: absent` on the line under the route, and answers exactly as before |
+| the **size was announced** | ✅ `python brain/heron_rerank.py` names the package, what it is for, **500 MB to 2 GB**, and `pip install --user` — and needs no network to print any of it |
+| a **before-and-after** measurement at the same corpus size | ❌ **only the before exists.** No cross-encoder has ever run here. **W-9**, and `A10` |
+
+### The one arithmetic decision, and it is the reason this stage was easy to get wrong
+
+A cross-encoder's score is on an unrelated scale that differs by model. **Every number in
+`heron_retrieve.py` is measured in `ONE_RANK`** — the quality nudge is bounded against it, and
+`Contest` reads every spread in it. Folding a re-rank score into `Candidate.score` would have
+**silently unbounded the nudge** and turned every spread `Contest` reports into a mixture of two units.
+
+So the re-ranker **re-orders and does not score**. `rerank_score` and `rerank_rank` are carried beside
+the fused score, never added to it, and the fused score stays on record underneath — which is also the
+only reason a before-and-after is possible at all.
+
+### And the defect that decision created two lines later, found by writing the test
+
+`Contest` computes its spread as `scores[0] - scores[-1]` **over the list it is handed**. Once a
+re-ranker re-orders that list, the first element is no longer the highest fused score, so the
+subtraction goes **negative** — a shortlist reported as spanning **−3.2 ranks**, and `top_gap < 1.0`
+true by construction, so **every re-ranked answer would have been called a coin toss.**
+
+Fixed by sorting the scores before reading them, which changes nothing at all when no re-ranker ran.
+**The test asserts `spread >= 0` on a re-ranked shortlist**, because the docstring saying it cannot
+happen is what the sixteen-finding review was about.
+
+### The sentence that would have been worse than the number
+
+Even sorted, the fusion gap is a fact about **the shortlist the re-ranker was handed**, not about the
+order shown. Reporting *"the winner is 2.1 ranks clear"* about an order a cross-encoder set would be
+the most confident wrong sentence on that page. So `Contest` **derives** that a re-ranker ran — from
+the candidates, so a caller cannot forget to say so — and leads with it:
+
+> the RE-RANKER set this order, reading each question-and-chunk pair — so the fusion numbers here
+> describe the shortlist it was given, not the order shown
+
+### Three things carried over from lessons already paid for
+
+- **`warm()`, from the start rather than after a stack dump.** `A8` was thirty minutes of a real
+  Claude Code tool call waiting on a 1.0 s `import model2vec` inside an MCP handler, on the asyncio
+  event loop. A torch import is heavier. It loads on a background thread, and the MCP server warms it
+  beside the encoder.
+- **The score travels out through the seam.** A review found the citation working in-process and
+  absent through `mcp/server/heron_brain.py` — a feature that does not serialise does not exist in
+  production. `rerank_score` is in the candidate dicts, and a test asserts it.
+- **Every way a backend can misbehave is absorbed.** It throws; it returns the wrong number of scores.
+  Both mean *fusion's order stands*, and a mismatched count is **refused rather than aligned by
+  guesswork** — a silent misalignment would re-order the shortlist by nothing at all.
+
+### What the stub is, and what it is not
+
+`tests/test_rerank.py` injects a stub scorer to prove the plumbing. **A test may inject a scorer; a
+measurement may not.** A stub's opinion about which clause answers a question is this session's opinion
+wearing a model's clothes, and a re-ranker's entire claim is that it improves an order. Nothing from the
+stub is in [`retrieval-history.md`](../../../../brain/retrieval-history.md) as a result.
+
+### One thing measured that was not asked for, because it was cheap and it answers a reviewer
+
+The absent path costs **0.000004 s** over twenty candidates against **0.0074 s** for a whole
+`retrieve()` — **0.05 % of a query**. It builds twenty passage strings it then discards, because
+`scores()` is asked before anything knows whether a backend exists. **Left that way on purpose**:
+avoiding it would put a second place in the code that decides whether a re-ranker is present, and
+0.05 % is not a reason to have two.
+
+### And a piece of documentation drift this stage surfaced
+
+[`01-requirements.md` §3](01-requirements.md) mapped seventeen agents to their code and said **"nine
+have code standing on them; eight have nothing"** — typed, above the very command that derives it.
+Stages 1 to 7 made it wrong four times over: `DIS-002` is `heron_ingest.py`, `CIT-014` is
+`heron_ground.py`, `RIX-011` and `DUP-012` are Stage 6, and `RNK-006` is now two files. **The rows are
+corrected and the count is gone**, replaced by the command. Same shape as the typed suite count the
+review caught — and again, the repeated hand-bumping was the evidence.
+
+**`RIX-011` and `DUP-012` are marked *"no file declares the id"* rather than declared**, because the
+behaviour is spread across `heron_ingest`, `heron_search` and `heron_embed` and putting the id on one
+of them would be a half-truth in the register that exists to prevent those.

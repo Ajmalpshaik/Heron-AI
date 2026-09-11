@@ -52,25 +52,27 @@ ingester refusing the extension, not by the user remembering.**
 ## 3. The department on paper — seventeen agents
 
 From [`docs/28`](../../../28-agent-registry.md) rows `HERON-RAG-LIB-001` to `HERON-RAG-RSH-017`, with
-[`05 §3`](../../../05-heron-brain.md) as the prose. **Nine have code standing on them; eight have
-nothing.** Derive it rather than trusting this table — the command is under it.
+[`05 §3`](../../../05-heron-brain.md) as the prose. **How many have code standing on them is derived by
+the command under this table, not typed here** — it was typed once, as *"nine have code, eight have
+nothing"*, and stages 1 to 7 made it wrong four times over without anybody noticing. Derive it rather
+than trusting this table; the table itself is only the pointer.
 
 | Agent | Does | Code today |
 |---|---|---|
-| `HERON-RAG-LIB-001` Librarian | Decides **which scopes** to search | [`brain/heron_scope.py`](../../../../brain/heron_scope.py) |
-| `HERON-RAG-DIS-002` Knowledge Discovery | Finds potentially relevant knowledge | **nothing** |
+| `HERON-RAG-LIB-001` Librarian | Decides **which scopes** to search | [`brain/heron_scope.py`](../../../../brain/heron_scope.py), and since Stage 4 `heron_retrieve.librarian` |
+| `HERON-RAG-DIS-002` Knowledge Discovery | Finds potentially relevant knowledge | [`brain/heron_ingest.py`](../../../../brain/heron_ingest.py) — Stage 1 |
 | `HERON-RAG-RET-003` Retriever | Retrieves candidates | [`brain/heron_search.py`](../../../../brain/heron_search.py) |
 | `HERON-RAG-FMT-004` Fragment Matcher | Request against existing fragments | partial — style only, in [`heron_fragment.py`](../../../../brain/heron_fragment.py) |
 | `HERON-RAG-SMT-005` Skill Matcher | Applicable skills | [`mcp/server/heron_brain.py`](../../../../mcp/server/heron_brain.py) |
-| `HERON-RAG-RNK-006` Ranking | Fuses keyword and vector, ranks | [`brain/heron_retrieve.py`](../../../../brain/heron_retrieve.py) |
+| `HERON-RAG-RNK-006` Ranking | Fuses keyword and vector, ranks | [`brain/heron_retrieve.py`](../../../../brain/heron_retrieve.py), and [`brain/heron_rerank.py`](../../../../brain/heron_rerank.py) — Stage 7, **the seam only: no cross-encoder has ever run here** |
 | `HERON-RAG-CTX-007` Context Builder | Assembles minimal context | [`brain/heron_context.py`](../../../../brain/heron_context.py) |
 | `HERON-RAG-EMB-008` Embedding | Creates embeddings | [`brain/heron_embed.py`](../../../../brain/heron_embed.py) |
 | `HERON-RAG-VEC-009` Vector Search | Searches the vector index | `heron_embed.nearest` |
 | `HERON-RAG-IDX-010` Index Manager | Maintains indexes | `heron_search.ensure_tables` |
-| `HERON-RAG-RIX-011` Re-index | Re-indexes **on change**, by content hash | **nothing** — rebuild is a hand-typed `--rebuild` |
-| `HERON-RAG-DUP-012` Duplicate Detection | Duplicates **at write time** | **nothing** |
+| `HERON-RAG-RIX-011` Re-index | Re-indexes **on change**, by content hash | `heron_ingest.refresh` — Stage 6. No file declares the id |
+| `HERON-RAG-DUP-012` Duplicate Detection | Duplicates **at write time** | `heron_ingest.duplicate_clauses` — Stage 6. No file declares the id |
 | `HERON-RAG-VAL-013` Knowledge Validation | Checks knowledge before it is used | **nothing** |
-| `HERON-RAG-CIT-014` Citation / Source | Provenance. **No source, no claim** | **nothing** |
+| `HERON-RAG-CIT-014` Citation / Source | Provenance. **No source, no claim** | [`brain/heron_ground.py`](../../../../brain/heron_ground.py) — Stage 3 |
 | `HERON-RAG-CNF-015` Knowledge Conflict | Two sources disagree | **nothing** |
 | `HERON-RAG-EVO-016` Knowledge Evolution | Restructures when it stops fitting | **nothing** |
 | `HERON-RAG-RSH-017` Research | Answers what Heron cannot, **everything cited** | **nothing** |
@@ -249,8 +251,8 @@ cheap now and expensive later.
 | **R-38** | The Librarian picks **one** scope. Two scopes means **two queries**, never one merged query, and `CrossScopeRefused` is unchanged | [00 §3.4](00-structure.md), GR 5, D-33 | **DONE 2026-09-11** — `heron_retrieve.librarian()`, `tests/test_librarian.py` | **the trap in this whole track.** A `UNION` here is a contractual problem, not a technical one — so **there is no argument this function could take that pooled two scopes**, and nothing compares a score from one store with a score from another. `ATTACH` still raises, and its message already said *"open a second Store instead"*, which is what this stage built |
 | **R-39** | A **third retrieval route follows graph edges**, over **documents only**, and **only if a density count passes first** | [00 §3.2](00-structure.md), [34 §2.13](../../../34-patterns-adapted.md) | **COUNTED 2026-09-11 — passed provisionally, and the route has NO WEIGHT** | **the same route over the fragment graph was measured at six settings and lost every one.** Density decides it: median 50 neighbours, worst 230, is competitors rather than signal |
 | **R-40** | Document nodes and their edges are **derived on demand**, like every edge but one | [00 §3.2](00-structure.md), D-40 | **DONE 2026-09-11** — `heron_graph.document_neighbours()` | a stored document edge is a cache that goes stale, and a test asserts **no edge table exists**. Three kinds, all read off the document: parent, sibling, and a clause whose text **names another clause's number** — the one that links two clauses sharing no vocabulary |
-| **R-41** | A cross-encoder re-ranks the top ~20, and **its absence makes Heron slower to be right, never broken** | [00 §3.5](00-structure.md), [05 §4.4](../../../05-heron-brain.md) | **NONE** | the same fallback contract `heron_embed.py` already honours |
-| **R-42** | The re-ranker installs **per-user with no administrator rights** | [00 §3.5](00-structure.md), D-01 | **NONE** | `model2vec` already proved this is possible |
+| **R-41** | A cross-encoder re-ranks the top ~20, and **its absence makes Heron slower to be right, never broken** | [00 §3.5](00-structure.md), [05 §4.4](../../../05-heron-brain.md) | **PART** | **the absent half is DONE and it is the half this machine can prove.** `heron_rerank.py` is the seam, bounded to twenty pairs in one place, and `tests/test_rerank.py` asserts that with nothing installed the shortlist comes back in *exactly* fusion's order and says so. **No cross-encoder has ever run**: the weights need `huggingface.co`, which this container refuses, so the half that re-ranks is untested against a real model |
+| **R-42** | The re-ranker installs **per-user with no administrator rights** | [00 §3.5](00-structure.md), D-01 | **PART** | the install line is `pip install --user sentence-transformers` and `announcement()` states it **before** any download. **Nobody has run it** — `model2vec` proved the shape on the owner's PC (`A7`), this package has not been installed anywhere |
 | **R-43** | The context packet carries **citation, confidence, and what is missing** — enough that the host answers without inventing | [00 §3.6](00-structure.md) | **NONE** | this is what "generation" means here |
 | **R-44** | **No language model inside `brain/`.** The host writes the reply the user reads | [00 §3.6](00-structure.md), D-01 | **DONE, and must stay done** | `check-metadata.py` prints it as fact |
 | **R-45** | When the clause store exists, the `STANDARDS` refusal **narrows** to *"nothing indexed covers this"*. It never softens into a guess | [00 §3.6](00-structure.md) | **PART — and the missing part is named** | the empty-store refusal narrowed and still refuses. **The third state cannot fire**: asked about cats this path returns five correctly cited clauses, because refusing needs a floor and **W-8** says none is derivable on this backend. The packet carries the contest measurement instead of pretending. **Weaker than a refusal, and it says so** |
@@ -345,7 +347,7 @@ and leave this note.
 | **R-74** | Setup installs the **Python side as well as the add-in**, per-user, with no administrator rights | W-6, D-01 | **NONE** | [`tools/setup.ps1`](../../../../tools/setup.ps1) builds and deploys the add-in for every Revit on the machine in one command, and installs no Python package at all |
 | **R-75** | The README states **what is required, what is optional, what each optional one costs in size, and what it buys** | W-5 | **NONE** | measured 2026-09-10: the whole installed Python side is **≈93 MB**. A re-ranker would add **500 MB to 2 GB**, and a document parser several hundred more. **Those two are the only large ones, and a person is entitled to know before installing** |
 | **R-76** | The README **names every package as a Heron dependency and says what Heron uses it for** — not a bare list | owner, 2026-09-10 | **NONE** | *"`sqlite-vec` — faster vector search"*, not *"sqlite-vec"*. A name with no purpose beside it is a thing nobody dares remove |
-| **R-77** | Installation is **automatic AND announced** — each package named, with **what it is for and how large it is, before the download starts** | owner, 2026-09-10 | **NONE** | announced *before*, so somebody on a slow or metered connection can stop a 2 GB download rather than discover it |
+| **R-77** | Installation is **automatic AND announced** — each package named, with **what it is for and how large it is, before the download starts** | owner, 2026-09-10 | **PART** | **announced for one package, automatic for none.** `heron_rerank.announcement()` names the package, what it is for, the size and the `--user` install, and needs no network to print it — which is the only way it can come before the network is used. `model2vec` and `sqlite-vec` still announce nothing, and nothing installs anything on its own — and the 2 GB it would let somebody stop is real: it is the re-ranker's own size |
 | **R-78** | The check asks **not only "is it installed" but "is it the RIGHT one"** — the version is checked, and an out-of-date one is reported as needing an update | owner, 2026-09-10 | **NONE** | **installed is not the same as correct.** `sqlite-vec` is at `0.1.9` — pre-1.0, where an interface can still move under a caller. A component that loads an old version and half-works is worse than one that refuses |
 | **R-79** | A **system requirements** section states the total disk cost — minimum, and with each optional piece — so a person can judge **before** starting | owner, 2026-09-10 | **NONE** | measured 2026-09-10: **≈93 MB minimum**. Plus a re-ranker, **500 MB – 2 GB**. Plus a document parser, several hundred MB. **Nobody should discover that halfway through an install** |
 

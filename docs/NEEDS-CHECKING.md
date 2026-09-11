@@ -36,7 +36,10 @@ every one that matters most. Compiling is not behaving: `D3` is still the line t
 error, and nothing here has moved anything yet.
 
 **63 rows, 19 closed, 44 left** — recounted on 2026-09-06 with the pattern named below, IDs printed
-and read rather than the total trusted. **And 19 closed does not mean 19 proved:** 15 passed
+and read rather than the total trusted. **One row has been added since that recount: `A10`, on
+2026-09-11**, so these three totals are each one short and the two sentences below them are about the
+44 as counted then. They are left as recounted rather than adjusted by hand, because a total nobody
+recounted is exactly what this paragraph has twice been wrong about. **And 19 closed does not mean 19 proved:** 15 passed
 (`A1`, `A2`, `A3`, `A4`, `A5`, `A6`, `A7`, `A8`, `A9`, `R1`, `R2`, `B2`, `B2a`, `B2b`, `B3`) and **4 are
 RETIRED unproven** —
 `C1`, `C2`, `C4` and `C6` cannot be run at all since the Emergency Stop button was removed
@@ -44,7 +47,7 @@ RETIRED unproven** —
 cannot say which.
 
 Of the 44 left: **43 need Revit**, and **1 needs a screen in front of him** (`R1b` — seeing the trust
-model work). **Group A is FINISHED**, all nine rows, on 2026-09-06.
+model work). **Group A was finished on 2026-09-06**, all nine rows — and reopened on 2026-09-11 by `A10`, which needs `huggingface.co` reachable rather than a Windows machine.
 
 **Everything that remains needs Revit, except one conversation.** That is a different shape of backlog from
 the one this file has carried since it was written, and it is worth saying once: no row is now waiting on a
@@ -123,13 +126,15 @@ right. Add an item every time something is built away from Revit.
 
 ## Group A — does it build, and does the bridge work
 
-**Does NOT need Revit.** This group is **seven rows done of NINE** — `A6` and `A9` both closed on
+**Does NOT need Revit.** This group is **nine rows done of TEN** — `A10` was added 2026-09-11 and is the only one open. `A6` and `A9` both closed on
 2026-09-06 on the owner's PC, which carries the .NET SDK. *(This line said "of eight" while nine rows
 sat under it, which is the same drift as the summary above and was caught the same way: by counting
 the rows in this section rather than believing the sentence over them.)*
 
-**ALL NINE ARE CLOSED**, every one of them on 2026-09-06 on the owner's PC. `A4`, `A6`, `A7`, `A8` and
-`A9` fell in a single afternoon — rows parked for months on *a machine*, closed by somebody sitting at one.
+**A1 TO A9 ARE ALL CLOSED**, every one of them on 2026-09-06 on the owner's PC. `A4`, `A6`, `A7`, `A8`
+and `A9` fell in a single afternoon — rows parked for months on *a machine*, closed by somebody sitting
+at one. **`A10` was added on 2026-09-11 and needs a network rather than a machine** — the re-ranker
+measurement Stage 7 asks for, which the container it was built in cannot take.
 
 **`A8` is the one that earned its place.** It did not pass on the first attempt: it exposed a hang that no
 existing test could see, because every one of them called the tools **in this process**, where the failing
@@ -179,6 +184,7 @@ python tools/check-compile.py          # 2020 through 2027, all four projects, 0
 | ~~**A8**~~ | ~~On the PC, with the Heron MCP server configured in Claude Code, ask it *"what can you do?"*~~ | **DONE 2026-09-06 on the owner's PC — and it FAILED first, which is the only reason the row was worth keeping.** A real host over stdio: `initialize` 1.7 s, **all ten tools offered**, `heron_capabilities` **6.1 s** — *"10 jobs Heron knows by name. 10 have every part they need, 0 are waiting on something nobody has built"*, 343 capabilities with a provider, 0 unprovided — and `heron_lookup` 4.4 s naming `SELECT_BY_CATEGORIES` via `FRG-SEL-024`. Every answer still says plainly it cannot RUN any of them. **Before the fix, `heron_capabilities` never replied at all**: a real Claude Code tool call sat on it for **thirty minutes**. The stack, taken with `faulthandler` rather than guessed, was `heron_capabilities → catalogue → index → backend → _load_model → import model2vec → import numpy → loading numpy's native extension`, **on the asyncio event loop** — an import costing **1.0 s** in a fresh process and still running **40 s** later there. **Closing `A7` is what broke this**: until model2vec was installed the import failed instantly and Heron degraded to `lexical`, so the handler always answered. Two rows, each correct alone, never run together — **a register of independent rows cannot see that, and this is the first time it has bitten.** Fixed by loading the encoder on a background thread at startup ([D-49](DECISIONS.md)); until it is ready every answer is lexical and says so. `tests/test_mcp_stdio.py` is the check made permanent, and it holds the reply to a **deadline** — a test that waits forever cannot tell a slow answer from no answer |
 | ~~**A7**~~ | ~~`pip install --user model2vec` then `python brain/heron_embed.py "stop the air going the wrong way"`~~ | **DONE 2026-09-06 on the owner's PC. `Backend: model`, 343 fragments embedded** — the weights host is reachable from here, which it was not from either container. **The check was not stopped at that line**, because *the model loaded* and *the model helps* are different claims. Scored against candidates sharing **no word** with the query: the model ranks `check flow direction` **first at 0.391** and `rename a sheet` at **0.001**; the built-in `lexical` backend ranks the same correct answer **LAST at 0.038**, below `rename a sheet` at 0.048. **The old engine's best guess was `find dead ends` and its worst was the right answer** — which is what *tolerant of spelling but not of meaning* costs, in numbers. **Two things recorded rather than smoothed over.** In the full index `find-dead-ends` (0.478) edged `check-flow-direction` (0.475) by **0.003** — too close to call, and both are defensible readings of that sentence, so this row proves the backend understands meaning and does **not** prove any particular ordering. And **this row's PASS wording is retired with its reasoning**: it asked for *"the duct fragment"*, written when the library held seven and no damper/flow fragment existed. At 343 the honest form is *a flow-direction fragment ranks top-2 with no shared words*, which is what happened |
 | ~~**A9**~~ | ~~On any machine with the .NET SDK, run `python tools/check-fragments-compile.py`~~ | **DONE 2026-09-06, on the owner's PC, at 343 fragments — `Every fragment compiles on every release it claims`, all eight, 2020 through 2027.** This row had been run green once before at **329** and left open because the library kept growing; it is closed now because the machine that can re-run it in minutes is the owner's own, so it stops being a row and becomes a command. **What it proves is the API surface agreeing and the contract being kept** — each fragment leaving what it promised at the declared type. **It proves nothing about behaviour**, which needs a real model and a proof carrying a negative case ([D-30](DECISIONS.md)). The nine version defects this check caught before they were written are recorded in the git history of this row rather than repeated here |
+| **A10** | `pip install --user sentence-transformers` then `python brain/heron_rerank.py`, then the tracked question and the twelve of the Stage 0b run — **on a machine that can reach `huggingface.co`** | **Stage 7's after-measurement, and it is the only thing standing between R-41 and DONE.** The seam is built and the absent half is tested; no cross-encoder has ever run. Pass looks like: `Backend: cross-encoder`, then the same tracked question at 360 fragments and 62 chunks with the top five and the winner's lead recorded beside the 2026-09-11 `absent` row in [`brain/retrieval-history.md`](../brain/retrieval-history.md) — **whichever way it comes out.** A re-ranker that does not improve the order is a result worth the same as one that does, and R-55 says a threshold is never moved to make a report look better. Also record the **real download size** against the 500 MB – 2 GB this repository has only ever quoted from a field reading |
 
 ## Group J — the executor's inputs (needs Revit, and something selected)
 

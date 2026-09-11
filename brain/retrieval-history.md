@@ -575,6 +575,79 @@ none — a stored document edge is a cache that goes stale the moment a document
 
 ---
 
+## 2026-09-11 — Stage 7: the re-ranker seam, and the half of it that cannot be measured here
+
+**Stage 7 asks for a before and an after at the same corpus size. Only the before exists, and this
+section is about being clear which is which.**
+
+`brain/heron_rerank.py` is the seam: a cross-encoder reads the top ~20 (question, passage) pairs
+together and may re-order them, which neither existing route can do because both score the question
+and the passage separately. `tests/test_rerank.py` is the check.
+
+### What was measured — 2026-09-11, 360 fragments, backend `lexical`, re-ranker `absent`
+
+`show me every duct in the model`, Revit 2024:
+
+| | |
+|---|---|
+| re-ranker reported | **`absent`** — printed by the tool, on the line under the route |
+| best | `FRG-SEL-030` `ZOOM_TO_ELEMENTS`, **0.0246** |
+| winner's lead | **2.1 rank(s)** |
+| shortlist spread | 31.6 rank(s) |
+| found by both routes | 3 of 5 |
+| best bm25 / best nearness | −4.3609 / 0.4924 |
+
+**The top score and the winner's lead are IDENTICAL to the Stage 0b run above** — 0.0246 and 2.1
+ranks, recorded before this file existed. That is the result: **with nothing installed the seam is
+inert, and it was checked against a recorded number rather than asserted in a docstring.**
+
+Its cost, on the same machine and the same question:
+
+| | |
+|---|---|
+| a whole `retrieve()` | **0.0074 s** (mean of 20) |
+| the seam, re-ranker absent, over 20 candidates | **0.000004 s** (mean of 200) |
+| share of one query | **0.05 %** |
+
+So the four-microsecond path builds twenty passage strings it then throws away, because `scores()` is
+asked before anything knows whether a backend exists. **Measured rather than tidied**: removing it
+would put a second place in the code that decides whether a re-ranker is present, and 0.05 % of a
+query is not a reason to have two.
+
+### What was NOT measured, and it is the half Stage 7 is actually about
+
+**No cross-encoder has ever run in this repository.** The weights need `huggingface.co`, and the
+container this was written in refuses it:
+
+```
+$ curl https://huggingface.co/api/models/...
+curl: (56) CONNECT tunnel failed, response 403
+```
+
+Re-checked 2026-09-11. `pypi.org` answers 200 from the same container, so this is that host's policy
+and not a broken network — the same block `heron_embed.py` recorded on 2026-08-28, still in force.
+
+**Nothing was estimated to fill the gap, and no number from a stub was written down as a result.**
+`tests/test_rerank.py` injects a stub scorer to prove the plumbing — that the order changes, that at
+most twenty pairs are scored, that a backend which throws is absorbed. A stub's opinion about which
+clause answers a question is this session's opinion wearing a model's clothes, and a re-ranker's whole
+claim is that it improves an order. **An improvement nobody measured is a feeling.**
+
+> **The after belongs on a machine that can reach a model**, at 360 fragments and 62 chunks, on the
+> same tracked question and the same twelve of the Stage 0b run. `A10` in
+> [`docs/NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) is that run.
+
+### The size, announced before anything downloads
+
+`python brain/heron_rerank.py` prints the package, what it is for, **500 MB to 2 GB**, and
+`pip install --user`, and it needs no network to print any of it — which is the only way an
+announcement can come before the download it is warning about (R-77, R-42, D-01). The figure is the
+one [R-79](../docs/work-notes/plans/rag/01-requirements.md) records from the field reading on
+2026-09-10; it is **not** measured here, because measuring it needs the host that is blocked.
+`pip download --no-deps sentence-transformers torch` is the command that confirms it.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:
