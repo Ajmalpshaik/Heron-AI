@@ -165,15 +165,34 @@ def main():
     print()
 
     print("6. THE GAP COMES FROM THE LIBRARIAN, NOT FROM A GUESS")
-    empty = [RETRIEVE.Asked("company", skipped="nothing is indexed"),
-             RETRIEVE.Asked("project", skipped="no project is identified")]
-    sure = R.gap("anything", empty)
+    import heron_search as SEARCH0
+    sure = R.gap("anything", [
+        RETRIEVE.Asked("company", answer=SEARCH0.Answer("empty")),
+        RETRIEVE.Asked("global", answer=SEARCH0.Answer("nothing"))])
     check(sure.certain,
-          "every scope returning nothing is a CERTAIN gap - so an outside "
-          "answer is not being preferred over Heron's own knowledge, because "
-          "Heron has none")
+          "every scope OPENED and returning nothing is a CERTAIN gap - so an "
+          "outside answer is not being preferred over Heron's own knowledge, "
+          "because Heron has none")
     check("NOTHING IN THE SCOPES ASKED ANSWERS THIS" in sure.sentence(),
           "and it says so in words")
+
+    # A SKIPPED SCOPE IS A PREREQUISITE, NOT A MISS. The first version of this
+    # section asserted the opposite, because the module did: in the default
+    # company,project workflow before a model has supplied its project key,
+    # an empty company store plus an unopened project store made the gap
+    # CERTAIN and the brief said Heron knows nothing - while the project
+    # specification sat unopened and quite possibly holding the answer.
+    unopened = R.gap("anything", [
+        RETRIEVE.Asked("company", answer=SEARCH0.Answer("empty")),
+        RETRIEVE.Asked("project", skipped="no project is identified")])
+    check(not unopened.certain,
+          "a scope that was never OPENED does not make the gap certain - "
+          "sending somebody to the internet for a clause sitting in their own "
+          "project specification is the worst outcome this stage has")
+    check("NEVER OPENED" in unopened.sentence()
+          and "PREREQUISITE" in unopened.sentence(),
+          "and the brief calls it a prerequisite to settle, naming the scope "
+          "and why it was skipped")
 
     import heron_search as SEARCH
 
@@ -204,11 +223,36 @@ def main():
           "and it names the one command that turns an external answer into a "
           "checkable one - ingest the source and the next asking is answered "
           "from inside, with a chunk id")
+
+    # THE BRIEF NAMES NO DESTINATION, and the first version named one by
+    # taking the FIRST SCOPE SEARCHED - so searching `global,company` printed
+    # `--scope global` under a company standard, one client's document into
+    # the store every project on the machine reads.
+    ordered = R.brief(sure, ["global", "company"])
+    check("--scope company" in ordered and "--scope global" in ordered
+          and "--scope project --project" in ordered,
+          "the brief offers every destination and chooses none - search order "
+          "is not storage intent, and Golden Rule 5 is what list order would "
+          "have broken")
+    check("needs its key" in ordered or "--project <" in ordered,
+          "and it says the project scope needs its key, which heron_ingest "
+          "refuses without")
     check("UNVERIFIED" in text,
           "and it says up front what Heron will not do with the answer")
     print()
 
-    print("8. Nothing here decides what the user meant")
+    print("8. AN EDITION BELONGS TO ITS DOCUMENT")
+    stray = R.citation("Install by 2026 per ISO 19650 clause 5.1.")
+    check(stray.edition is None and stray.verdict == R.VAGUE,
+          "a delivery date is not an edition - the year was searched for "
+          "anywhere in the sentence, so any year satisfied the contract while "
+          "the ISO citation still could not be looked up")
+    real = R.citation("Per ISO 19650-2:2018 clause 5.1.4 the naming applies.")
+    check(real.edition == "2018" and real.verdict == R.WELL_FORMED,
+          "while a year attached to the document IS its edition")
+    print()
+
+    print("9. Nothing here decides what the user meant")
     for banned in ("def classify", "def intent", "def guess", "def decide"):
         check(banned not in source,
               "no %s - R-62 puts that in the host, which is the only party "

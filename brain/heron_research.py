@@ -121,8 +121,24 @@ class Searched(object):
 
     @property
     def missed(self):
-        """Whether this scope returned nothing. Derived from its own route."""
-        return bool(self.skipped) or self.route in FOUND_NOTHING
+        """Whether this scope was ASKED and returned nothing.
+
+        A SKIPPED SCOPE IS NOT A MISS, and the first version counted it as
+        one. In the default company,project workflow before a model has
+        supplied its project key, the project store is not opened at all - so
+        an empty company store plus a skipped project store made the gap
+        CERTAIN and the brief said Heron has no knowledge on the question,
+        while the project specification sat unopened and quite possibly
+        holding the answer. Sending somebody to the internet for a clause that
+        is in their own project spec is the worst outcome this stage has.
+        Found by a review 2026-09-11, hours after the stage was written.
+        """
+        return not self.skipped and self.route in FOUND_NOTHING
+
+    @property
+    def unasked(self):
+        """Whether this scope was never opened. A prerequisite, not a result."""
+        return bool(self.skipped)
 
     def __repr__(self):
         return "<searched %s %s>" % (self.label, self.skipped or self.route)
@@ -158,9 +174,22 @@ class Gap(object):
         self.searched = list(searched)
 
     @property
+    def unasked(self):
+        """The scopes that were never opened. Each is a prerequisite, not a miss."""
+        return [one for one in self.searched if one.unasked]
+
+    @property
     def certain(self):
-        """Every scope asked came back with nothing. There IS no answer here."""
-        return bool(self.searched) and all(one.missed for one in self.searched)
+        """EVERY named scope ran, and every one came back with nothing.
+
+        Both halves are required. A scope that was skipped has not answered
+        the question either way - it was never opened - and treating that as
+        "nothing there" is how Heron would send somebody outside for a clause
+        sitting in their own project specification.
+        """
+        if not self.searched or self.unasked:
+            return False
+        return all(one.missed for one in self.searched)
 
     @property
     def clauses(self):
@@ -171,11 +200,21 @@ class Gap(object):
         if not self.searched:
             return ("NO SCOPE WAS ASKED, so nothing is known about what Heron "
                     "holds on this. Name at least one scope.")
+        if self.unasked:
+            return ("%d OF THE SCOPES NAMED WAS NEVER OPENED, so nothing is "
+                    "known about what it holds: %s. That is a PREREQUISITE, "
+                    "not a result - settle it before going outside, because a "
+                    "clause sitting in an unopened project specification is "
+                    "the worst thing to research past."
+                    % (len(self.unasked),
+                       "; ".join("%s (%s)" % (one.label, one.skipped)
+                                 for one in self.unasked)))
         if self.certain:
-            return ("NOTHING IN THE SCOPES ASKED ANSWERS THIS. Every one came "
-                    "back empty, unindexed, or with no match - so an outside "
-                    "answer is not being preferred over Heron's own knowledge, "
-                    "because Heron has none on this question.")
+            return ("NOTHING IN THE SCOPES ASKED ANSWERS THIS. Every one was "
+                    "opened and every one came back empty, unindexed, or with "
+                    "no match - so an outside answer is not being preferred "
+                    "over Heron's own knowledge, because Heron has none on "
+                    "this question.")
         return ("HERON RETURNED %d CLAUSE(S) FOR THIS, and whether any of them "
                 "ANSWERS it is not established. Retrieval cannot yet refuse a "
                 "question nothing covers - the floor that would do it has to "
@@ -245,6 +284,21 @@ def brief(gap_found, scopes=None):
     Written for a host to act on and for a person to read over its shoulder.
     It carries no answer and no opinion about the question - R-62 - only what
     was searched, what came back, and the contract.
+
+    IT NAMES NO INGEST TARGET, and the first version named one by taking the
+    FIRST SCOPE SEARCHED. Searching `global,company` therefore printed
+
+        python brain/heron_ingest.py <file> --scope global
+
+    under a company standard - one client's document into the store every
+    project on the machine reads, Golden Rule 5 broken by list order. Put
+    `project` first and it printed a command heron_ingest refuses outright,
+    because the project scope needs a key nothing here has. Search order is
+    not storage intent and was never evidence of it. Found by a review
+    2026-09-11.
+
+    `scopes` is kept for the searched list and is deliberately no longer read
+    for anything that decides where knowledge goes.
     """
     said = ['RESEARCH BRIEF', '', 'Question:  "%s"' % gap_found.question, '']
 
@@ -281,10 +335,24 @@ def brief(gap_found, scopes=None):
     said.append("")
 
     said.append("HOW TO MAKE THE NEXT ASKING ANSWERABLE FROM INSIDE")
-    said.append("  Get the document this answer cites and put it in:")
+    said.append("  Get the document this answer cites and put it in. WHICH "
+                "STORE IS YOURS TO")
+    said.append("  CHOOSE - it is not the order the scopes were searched in, "
+                "and Heron does")
+    said.append("  not guess it:")
     said.append("")
-    said.append("      python brain/heron_ingest.py <file> --scope %s"
-                % (scopes[0] if scopes else "company"))
+    said.append("      python brain/heron_ingest.py <file> --scope company")
+    said.append("      python brain/heron_ingest.py <file> --scope global")
+    said.append("      python brain/heron_ingest.py <file> --scope project "
+                "--project <the project key>")
+    said.append("")
+    said.append("  global is shared by EVERY project on this machine and "
+                "company by every")
+    said.append("  project in the firm, so putting a project-specific "
+                "specification in either")
+    said.append("  is Golden Rule 5 broken by a default. The project scope "
+                "needs its key and")
+    said.append("  heron_ingest refuses without one.")
     said.append("")
     said.append("  After that the same question is answered with a chunk id "
                 "that resolves to")
@@ -379,10 +447,24 @@ def citation(text):
     if found:
         document = found.group(0).strip(" ,;:-")
 
+    # THE EDITION HAS TO BELONG TO THE DOCUMENT, and scanning the whole
+    # sentence for a year meant any year satisfied the contract:
+    #
+    #     "Install by 2026 per ISO 19650 clause 5.1"
+    #        -> well-formed, edition 2026
+    #
+    # ISO 19650 gave no edition at all; a delivery date was read as one, and
+    # the citation still cannot be looked up. So the year is searched for in
+    # the document reference and the few characters that follow it -
+    # "ISO 19650-2:2018", "QCS 2014", "BS EN 12845:2015" - and nowhere else.
+    # Found by a review 2026-09-11.
     edition = None
-    found = _EDITION.search(flat)
-    if found:
-        edition = found.group(0)
+    if document:
+        at = flat.find(document)
+        span = flat[at:at + len(document) + 8] if at >= 0 else document
+        found = _EDITION.search(span)
+        if found:
+            edition = found.group(0)
 
     locator = None
     found = _LOCATOR.search(flat)

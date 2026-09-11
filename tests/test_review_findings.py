@@ -1087,6 +1087,127 @@ def main():
           "and neither index path reaches past it to the live model")
     print()
 
+    # -----------------------------------------------------------------
+    # Round nine, 2026-09-11. Nine findings, every one real.
+    # -----------------------------------------------------------------
+
+    print("56. A NAMED FACT CANNOT LEAVE THROUGH THE BRACKETS EITHER")
+    for bracketed, fact in (("[DN100]", "dn100"),
+                            ("[OST_DuctCurves]", "ost_ductcurves")):
+        sentence = "Use %s pipe [abc12345:0001]" % bracketed
+        check(fact in G.facts(sentence),
+              "%s is a fact, not a citation - the round before refused "
+              "anything carrying a UNIT, which only caught numeric-leading "
+              "measurements while a nominal bore, a Revit category and a "
+              "parameter name all walked past it" % bracketed)
+    check(G._MARKER.findall("Use [DN100] pipe [abc12345:0001]")
+          == ["abc12345:0001"],
+          "and the real chunk id is still the citation")
+    check(G._MARKER.findall("cited [c1]", known=set(["c1"])) == ["c1"],
+          "while a short id the shape does not know is still a citation when "
+          "the PACKET carries it - a fact about the packet, not a guess")
+    print()
+
+    print("57. THE PACKET REACHES EVERY MARKER-STRIPPING SITE")
+    ground_source = inspect.getsource(G)
+    check(ground_source.count('_MARKER.sub(" ", text or "")') == 0
+          and ground_source.count('_MARKER.sub(" ", sentence or "")') == 0,
+          "no marker is stripped without the packet - kind_of, _bare and "
+          "_negations each stripped blind, so narrowing the marker shape left "
+          "'[c1]' in the word list and reverses() STOPPED FIRING. That put "
+          "back the round-three defect where a reversed clause passed. Caught "
+          "by the check standing on that finding, inside a minute")
+    print()
+
+    print("58. A SENTENCE IS CHECKED AGAINST EVERY SOURCE IT CITES")
+    def _two(cid, text, loc):
+        return CTX.Part(CTX.STANDARD, "x",
+                        CTX.as_quoted_source(text, "D", loc), "s", "w",
+                        citation={"chunk": cid, "document": "D",
+                                  "locator": loc, "path": "/x"},
+                        evidence=text)
+
+    class _Both(object):
+        parts = [_two("a", "Duct insulation shall be 25mm.", "4.1"),
+                 _two("b", "Duct insulation shall be 50mm.", "4.2")]
+
+    both = G.check("Company requires 25mm [a], but project requires 50mm [b].",
+                   _Both())
+    check(both.claims[0].verdict == G.GROUNDED,
+          "the sentence a standards answer most needs to write - two clauses, "
+          "two citations - passes. _cited() returned on the FIRST marker, so "
+          "50mm was reported as invented and the gate rejected the natural "
+          "way to report exactly the disagreement Stage 8 surfaces")
+    invented = G.check("Company requires 25mm [a], but project requires "
+                       "80mm [b].", _Both())
+    check(invented.claims[0].verdict == G.FLAGGED
+          and "80mm" in invented.claims[0].added,
+          "and a value in NEITHER cited clause is still flagged, which is the "
+          "rule that matters")
+    print()
+
+    print("59. RANKING DOES NOT DECIDE WHETHER EVIDENCE IS CHECKABLE")
+    check("_carry_cited" in brain_source and "cited_ids" in brain_source,
+          "the chunks a draft CITES are fetched by id - check_answer "
+          "reassembles the packet by re-running retrieval, so a clause that "
+          "heron_standards had shown could fall out of the new top-five when "
+          "a re-ranker warmed or a document was ingested between the two "
+          "calls, and the report said UNRESOLVED about a real clause still "
+          "sitting in the store")
+    print()
+
+    print("60. SCOPE ORDER DOES NOT DECIDE A GROUNDING VERDICT")
+    check("more than one scope carries this citation" in brain_source,
+          "two scopes that both resolve a bare locator and DISAGREE is "
+          "ambiguous, not first-wins - company 4.1 at 25mm against project "
+          "4.1 at 50mm passed one way round and flagged the identical draft "
+          "the other. The docstring had recorded that as a limit instead of "
+          "fixing it")
+    print()
+
+    print("61. THE ENCODER IS READ BEFORE IT IS USED, NOT AFTER")
+    retrieve_src = inspect.getsource(R)
+    before = retrieve_src.index("backend_name, backend_why = EMBED.backend()")
+    check(before < retrieve_src.index("for fragment_id, score in EMBED.nearest"),
+          "the nearness backend is taken BEFORE the route runs - read "
+          "afterwards, a warm-up finishing mid-request meant the scores came "
+          "from the lexical encoder while both the fusion weight and the "
+          "recorded name said `model`. The round before moved the REPORT onto "
+          "the candidate and left the poll where it was: it fixed who was "
+          "asked, not when")
+    print()
+
+    print("62. A RESTORED FALLBACK HAS TO BE THE RIGHT BYTES")
+    check("file_hash(was) != wanted_id" in ingest_source,
+          "an earlier path is accepted only when its content hash matches the "
+          "manifest - taking any path that still EXISTED restored SITE SAFETY "
+          "NOTES under the title 'Acme Standard 2026' and reported success, "
+          "because a path gets reused. Measured on that exact code. The "
+          "document id IS the content hash, so the check is one comparison "
+          "and the comment had stood in for it")
+    print()
+
+    print("63. AN UNOPENED SCOPE IS A PREREQUISITE, NOT A MISS")
+    research_source = open(os.path.join(ROOT, "brain", "heron_research.py"),
+                           encoding="utf-8").read()
+    check("return not self.skipped and self.route in FOUND_NOTHING"
+          in research_source,
+          "a skipped scope is not a miss - an empty company store plus an "
+          "unopened project store made the gap CERTAIN and the brief said "
+          "Heron knows nothing, while the project specification sat unopened")
+    # ON THE DEFECT, NOT ON THE PROSE. The first version of this checked for a
+    # sentence in the brief and failed because the source wraps it across two
+    # lines - the same substring trap that broke the UNVERIFIED check a round
+    # earlier. What matters is that the line which CHOSE a scope is gone.
+    check("scopes[0] if scopes else" not in research_source,
+          "the brief names no ingest destination - taking the FIRST SCOPE "
+          "SEARCHED printed `--scope global` under a company standard, Golden "
+          "Rule 5 broken by list order")
+    check("at + len(document)" in research_source,
+          "and an edition is searched for at the DOCUMENT, so a delivery date "
+          "elsewhere in the sentence cannot satisfy the citation contract")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
@@ -1096,7 +1217,7 @@ def main():
     print("PASSED - every defect an automated review found on 2026-09-11 has")
     print("a check standing on it, and each one fails if it comes back.")
     print()
-    print("It proves nothing about the defects NOBODY has found yet. EIGHT")
+    print("It proves nothing about the defects NOBODY has found yet. NINE")
     print("rounds of this review, each after the one before it was called")
     print("done, and each found real things - a value moved between two")
     print("requirements of one clause, a whole multi-scope path that two")

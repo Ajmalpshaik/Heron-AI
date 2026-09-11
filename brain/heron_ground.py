@@ -172,26 +172,42 @@ def normalise(text):
 # and the check can do its job.
 _BRACKETED = re.compile(r"\[([^\]]{1,120})\]")
 
-# What a citation can LOOK like: one token with no spaces in it - "9.1.1",
-# "para-7", "abc123:0001", "c1" - or a named clause, "Section 3". Deliberately
-# loose, because a caller's chunk ids are its own business and this must not
-# start refusing short ones.
+# What a citation can LOOK like. TWO SHAPES AND NO CATCH-ALL.
+#
+# The first version added a permissive "one token with no spaces" arm so that
+# a caller's own short chunk ids would keep working - and that arm let every
+# NAMED fact through:
+#
+#     Use [DN100] pipe [abc123:0001]        -> both stripped, no facts, SKIPPED
+#     Use [OST_DuctCurves] here [abc:0001]  -> same
+#
+# against a clause specifying DN50. The round before had closed the same door
+# for "[50mm]" by refusing anything with a UNIT on it, which only ever caught
+# numeric-leading measurements - a nominal bore, a Revit category and a
+# parameter name all walked past it. Found by a review 2026-09-11, one round
+# after the first half.
+#
+# So a marker is a chunk id or a locator, both of which START with a digit
+# after any naming word. A short id that this shape does not recognise is
+# still a citation when the packet CARRIES it - that is what `known` is for,
+# and it is a fact about the packet rather than a guess about the text.
 _CITE_SHAPED = re.compile(
     r"""^\s*(?:
-          (?:section|clause|sub-?clause|sub-?section|table|appendix|annex|
+          [0-9a-f]{8,}(?::[0-9]+)?             # a chunk id
+        | (?:section|clause|sub-?clause|sub-?section|table|appendix|annex|
              part|paragraph|para|item|rule|figure)
-          [\s.-]*[0-9a-z]+(?:[.-][0-9a-z]+)*
-        | [0-9a-z][0-9a-z._:-]*
+          [\s.-]*\d+(?:[.-]\d+)*[a-z]?        # Section 3, para-7, clause 4.1a
+        | \d+(?:\.\d+)*[a-z]?                 # 4, 4.1, 9.1.1, 7a
     )\s*$""", re.I | re.X)
 
 
-# A VALUE WITH A UNIT ON IT, which is the one thing a citation is never.
+# A VALUE WITH A UNIT ON IT, kept as a SECOND guard behind the shape above.
 #
-# Deliberately narrower than "states a fact". A clause number IS a fact
-# pattern - that is precisely why markers are stripped at all - and so is a
-# year, and so is a bare count; all three are shapes a locator legitimately
-# takes. What no locator has ever been is a measurement: "50mm", "4 cm",
-# "-200mm", "1in100". So that is the disqualifier, and nothing wider.
+# The shape alone is not quite enough: "50m" is one digit-run and one letter,
+# which is also what a clause "7a" looks like, so the locator arm accepts it.
+# A unit settles it. Narrow on purpose - a clause number, a year and a bare
+# count are all shapes a real locator takes, and only a measurement is
+# something no locator has ever been.
 _MEASURED = re.compile(
     r"^\s*(?:-?\d+(?:\.\d+)?\s*[a-z]+[0-9]?|\d+\s*in\s*\d+)\s*$", re.I)
 
@@ -264,6 +280,29 @@ class _Markers(object):
 
 
 _MARKER = _Markers()
+
+
+def cited_ids(text):
+    """Every bracketed span in a draft that could be a CHUNK ID, deduplicated.
+
+    Deliberately looser than _is_marker: this is the list a caller looks up BY
+    ID in a store, and a lookup that misses costs one query and answers None.
+    Being strict here would reintroduce the thing it exists to prevent - a
+    real clause that a shortlist did not rank being reported as a citation
+    resolving to nothing.
+
+    A span containing whitespace is skipped: "Section 3" is a locator that a
+    person writes, and locators are not unique across documents, so resolving
+    one by id is meaningless.
+    """
+    out = []
+    for found in _BRACKETED.findall(text or ""):
+        key = found.strip()
+        if not key or " " in key or "\t" in key:
+            continue
+        if key not in out:
+            out.append(key)
+    return out
 
 # A SENTENCE WITH NO FACT IN IT CANNOT FABRICATE ONE, and flagging it teaches
 # people to ignore flags. "This is worth reviewing" is not a claim about an
@@ -484,13 +523,20 @@ _NEGATIONS = ("not", "no", "never", "cannot", "without", "neither", "nor",
               "except", "unless", "exclude", "excludes", "excluding")
 
 
-def _negations(text):
-    """Which negating words a sentence carries, as a set."""
-    words = set(normalise(_MARKER.sub(" ", text or "")).split())
+def _negations(text, known=None):
+    """Which negating words a sentence carries, as a set.
+
+    `known` TRAVELS BECAUSE A MARKER LEFT IN CHANGES THE WORD LIST. Stripping
+    without it left "[c1]" in the sentence, so the claim's words and the
+    source's words could never match and reverses() stopped firing - which put
+    back the round-three defect where a reversed clause passed the check.
+    Every marker-stripping site takes the packet now.
+    """
+    words = set(normalise(_MARKER.sub(" ", text or "", known)).split())
     return set(word for word in _NEGATIONS if word in words)
 
 
-def reverses(claim, source_sentence):
+def reverses(claim, source_sentence, known=None):
     """Whether the claim is its source with the negation taken out or put in.
 
     STRUCTURAL, AND WITH NO THRESHOLD IN IT - which is the only kind of rule
@@ -508,13 +554,14 @@ def reverses(claim, source_sentence):
     something this module deliberately does not have (R-47: no model, no
     network).
     """
-    mine, theirs = _negations(claim), _negations(source_sentence)
+    mine = _negations(claim, known)
+    theirs = _negations(source_sentence, known)
     if mine == theirs:
         return False
-    return _bare(claim) == _bare(source_sentence)
+    return _bare(claim, known) == _bare(source_sentence, known)
 
 
-def _bare(text):
+def _bare(text, known=None):
     """The sentence as words, with the negation and the full stops taken out.
 
     THE TRAILING FULL STOP IS THE WHOLE REASON THIS IS A FUNCTION. normalise()
@@ -525,7 +572,7 @@ def _bare(text):
     what testing it through check() caught and testing the helper alone did
     not.
     """
-    words = normalise(_MARKER.sub(" ", text or "")).split()
+    words = normalise(_MARKER.sub(" ", text or "", known)).split()
     out = []
     for word in words:
         word = word.strip(".,;:-")
@@ -554,7 +601,7 @@ def nearest_sentence(claim, source):
     return best
 
 
-def kind_of(sentence):
+def kind_of(sentence, known=None):
     """Which threshold this sentence is held to.
 
     THE CITATION MARKER IS STRIPPED FIRST, for the same reason facts() strips
@@ -562,7 +609,7 @@ def kind_of(sentence):
     a REFERENCE claim because of the marker that says where it came from
     rather than because of anything it says.
     """
-    claim = _MARKER.sub(" ", sentence or "")
+    claim = _MARKER.sub(" ", sentence or "", known)
     if re.search(r"[\"“”]", claim):
         return QUOTE
     if re.search(r"\b\d+(?:\.\d+){1,}\b", normalise(claim)):
@@ -799,17 +846,33 @@ def _cited(sentence, by_locator, by_chunk):
     locator matching more than one document is AMBIGUOUS - which is reported
     and asks for a chunk id, rather than guessed at.
     """
+    # EVERY MARKER, NOT THE FIRST. Returning on the first one checked a whole
+    # sentence against a single source, and the sentence a standards answer
+    # most needs to write is the one that cites two:
+    #
+    #     "Company requires 25mm [a], but project requires 50mm [b]"
+    #
+    # 50mm was reported as invented, because only chunk `a` was ever consulted
+    # - so the grounding gate rejected the natural way to report exactly the
+    # disagreement Stage 8 exists to surface. Found by a review 2026-09-11.
+    #
+    # The claim is checked against all of them together: it cited both, so a
+    # fact carried by either is a fact it is entitled to state. A fact in
+    # neither is still added, which is the rule that matters.
+    resolved = []
     for found in _MARKER.findall(sentence or "",
                                  set(by_chunk) | set(by_locator)):
         key = found.strip()
         if key in by_chunk:
-            return by_chunk[key]
+            resolved.append(by_chunk[key])
+            continue
         if key in by_locator:
             matches = by_locator[key]
             if len(matches) == 1:
-                return matches[0]
+                resolved.append(matches[0])
+                continue
             return AMBIGUOUS
-    return None
+    return resolved or None
 
 
 def check(draft, packet):
@@ -880,10 +943,16 @@ def check(draft, packet):
                                 added=found))
             continue
 
-        citation, body = cited
-        kind = kind_of(sentence)
-        ratio = support(sentence, body)
-        in_source = facts(body)
+        # THE FIRST CITATION LEADS, EVERY CITATION COUNTS. The citation shown
+        # on the claim is the first one it named; the EVIDENCE is all of them,
+        # because the sentence cited all of them.
+        citation, body = cited[0]
+        bodies = [text for _cite, text in cited]
+        kind = kind_of(sentence, known)
+        ratio = max(support(sentence, text) for text in bodies)
+        in_source = []
+        for text in bodies:
+            in_source.extend(facts(text))
         added = [fact for fact in found if fact not in in_source]
 
         # WHICH SENTENCE OF THE CHUNK THIS CLAIM IS ACTUALLY ABOUT.
@@ -900,15 +969,23 @@ def check(draft, packet):
         # was negated, and the checker endorsed a requirement moved from pipes
         # to ducts - which on site is a different failure from an invented
         # number and exactly as expensive. Found by a review.
-        nearest = nearest_sentence(sentence, body)
-        in_nearest = facts(nearest)
+        # THE NEAREST SENTENCE OF WHICHEVER CITED CHUNK IS CLOSEST. With one
+        # citation this is exactly what it was; with two it stops the
+        # misplaced-value rule reporting a fact that is correctly lifted from
+        # the SECOND source.
+        nearest = max((nearest_sentence(sentence, text) for text in bodies),
+                      key=lambda near: support(sentence, near))
+        in_nearest = []
+        for text in bodies:
+            in_nearest.extend(facts(nearest_sentence(sentence, text)))
 
         # A REVERSAL IS CHECKED BEFORE ANYTHING ELSE, because it is invisible
         # to every other rule here. It adds no fact, so the added-fact rule
         # passes it; it is almost word for word its source, so the ratio is
         # HIGH rather than low. "shall not exceed 25mm" against "shall exceed
         # 25mm" was returning GROUNDED. Found by a review 2026-09-11.
-        if reverses(sentence, nearest_sentence(sentence, body)):
+        if all(reverses(sentence, nearest_sentence(sentence, text), known)
+               for text in bodies):
             claims.append(Claim(sentence, REVERSED, kind=kind, ratio=ratio,
                                 threshold=THRESHOLDS[kind], citation=citation,
                                 added=["the source's negation is not this "

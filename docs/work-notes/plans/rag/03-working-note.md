@@ -2105,3 +2105,91 @@ A question Heron could not answer is precisely what the **Capability Gap Agent**
 until this stage nothing recorded one. `heron_gaps` could see what had been asked of **Revit** and never
 what the knowledge layer had **missed**. `research()` records `knowledge.research` with the scopes, the
 route and whether the gap was certain.
+
+---
+
+### 2026-09-11 — a ninth round, nine more, and the fix that put an old defect back
+
+Codex reviewed `f53e0b1` — Stage 9's commit, an hour old. **Nine findings, every one verified before
+anything was changed, every one real.** Four were in Stage 9 itself, two in round eight's fixes.
+
+### The one that restored the wrong document under the right title
+
+Round eight taught `restore()` to fall back to an earlier path when the newest one is gone. It took any
+earlier path **that still existed**. Paths get reused:
+
+```
+ingested   A -> "Acme Standard 2026"
+ingested   B -> same bytes, same id
+B deleted, A overwritten with site safety notes
+restore    -> SITE SAFETY NOTES, under the title "Acme Standard 2026", reported as restored
+```
+
+Measured on that exact code. Every citation written against it would name the wrong document, and the
+report said success. **The comment beside the code claimed the content hash made the fallback safe and
+the code never compared one** — the document id *is* the content hash, so the check is one line.
+
+### The one that would send a modeller outside for their own spec
+
+`Gap.certain` counted a **skipped** scope as a miss. In the default `company,project` workflow before a
+model has supplied its project key, the project store is never opened — so an empty company store plus
+an unopened project store made the gap certain and the brief said *Heron has no knowledge on this*,
+with the project specification sitting unread.
+
+**Researching past a clause that is already in your own project spec is the worst outcome this stage
+has.** A skipped scope is a **prerequisite**, not a result, and the brief now says so and names it.
+
+### And the brief chose a store by list order
+
+It printed the ingest command using `scopes[0]`. Searching `global,company` therefore said:
+
+```
+python brain/heron_ingest.py <file> --scope global
+```
+
+under a **company** standard — one client's document into the store every project on the machine reads.
+Put `project` first and it printed a command `heron_ingest` refuses, because the project scope needs a
+key nothing there has. **Search order is not storage intent and was never evidence of it.** The brief
+offers all three destinations and chooses none.
+
+### The fix that put a round-three defect back, caught by its own test
+
+Closing the bracket escape for **named** facts — `[DN100]`, `[OST_DuctCurves]` — meant narrowing the
+marker shape. Three call sites strip markers **without the packet**: `kind_of`, `_bare` and
+`_negations`. So `[c1]` stopped being recognised, survived into the word list, and **`reverses()`
+stopped firing** — putting back the round-three finding where a reversed clause passed the fabrication
+check.
+
+`tests/test_review_findings.py` caught it inside a minute, on the check standing on that very finding.
+**Every marker-stripping site takes the packet now.**
+
+> Round eight's version of this guard refused anything carrying a **unit**, which only ever caught
+> numeric-leading measurements. A nominal bore, a Revit category and a parameter name all walked past
+> it. Two rounds to close one door.
+
+### The sentence a standards answer most needs to write
+
+```
+Company requires 25mm [a], but project requires 50mm [b].
+```
+
+`_cited()` returned on the **first** marker, so the whole sentence was checked against chunk `a` alone
+and 50mm was reported as invented. **The grounding gate rejected the natural way to report exactly the
+disagreement Stage 8 exists to surface.** A claim is checked against every source it cites now; a value
+in neither is still flagged.
+
+### The rest, in one line each
+
+| | |
+|---|---|
+| ranking decided whether evidence was **checkable** | `check_answer` re-runs retrieval, so a clause `heron_standards` had shown could fall out of the new top five when a re-ranker warmed — and the report said UNRESOLVED about a real clause still in the store. Cited ids are fetched **by id** now, the one lookup no score can affect |
+| **scope order** decided a verdict | company `4.1` at 25mm against project `4.1` at 50mm passed one way round and flagged the identical draft the other. Two scopes that resolve and disagree is AMBIGUOUS. The docstring had recorded this as a limit instead of fixing it |
+| the encoder was read **after** it was used | round eight moved the *report* onto the candidate and left the poll where it was — it fixed **who** was asked, not **when**. The fusion weight and the recorded name now come from one observation taken before the route runs |
+| any year satisfied the **edition** | *"Install by 2026 per ISO 19650 clause 5.1"* was well-formed with edition 2026. A delivery date is not an edition; the year is looked for **at the document** |
+
+### Nine rounds
+
+**Four of nine were in code less than two hours old**, and the shapes are the ones already named. The
+new one is narrower and more uncomfortable than any of them: **a fix that reopens a defect an earlier
+round closed.** Only the test standing on that earlier finding caught it — which is the entire argument
+for `tests/test_review_findings.py` keeping a check per finding rather than a summary.

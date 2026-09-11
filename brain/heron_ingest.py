@@ -1190,16 +1190,38 @@ def restore(store):
             continue
         if not os.path.isfile(path):
             # A PATH THAT IS GONE IS NOT A DOCUMENT THAT IS GONE. Any earlier
-            # path this same document was ingested at is tried, newest first,
-            # and the content hash is what makes that safe: a file at the old
-            # path with DIFFERENT bytes is a different document and is left
-            # alone by the id check below.
-            fallback = [was for was in reversed(earlier.get(_key, []))
-                        if was != path and os.path.isfile(was)]
-            if not fallback:
+            # path this same document was ingested at is tried, newest first.
+            #
+            # AND ITS BYTES HAVE TO MATCH, which the first version of this
+            # asserted in a comment and did not do. It took any earlier path
+            # that still EXISTED, and a path gets reused:
+            #
+            #     ingested   A -> "Acme Standard 2026"
+            #     ingested   B -> same content, same id
+            #     B deleted, A overwritten with site safety notes
+            #     restore    -> site safety notes, RESTORED UNDER THE TITLE
+            #                   "Acme Standard 2026", reported as success
+            #
+            # Every citation written against it would then name the wrong
+            # document. Measured on this exact code 2026-09-11; found by a
+            # review, one round after the fallback was added. The document id
+            # IS the content hash, so the check is one comparison and there is
+            # no excuse for the comment having stood in for it.
+            wanted_id = line.get("document")
+            fallback = None
+            for was in reversed(earlier.get(_key, [])):
+                if was == path or not os.path.isfile(was):
+                    continue
+                if wanted_id and file_hash(was) != wanted_id:
+                    # The right path, the wrong bytes. Someone else's document
+                    # lives there now and it is not this one.
+                    continue
+                fallback = was
+                break
+            if fallback is None:
                 out.gone.append((path, line.get("title") or ""))
                 continue
-            path = fallback[0]
+            path = fallback
         # BY DOCUMENT ID WHERE THE LINE HAS ONE, NOT BY PATH. A retired
         # revision and the document that replaced it SHARE A PATH - that is
         # what retirement means - so once restore() began putting retired rows

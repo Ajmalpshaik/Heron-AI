@@ -715,6 +715,58 @@ def context(request, path=None, revit=None, full=False, depth=None,
         }
 
 
+def _carry_cited(CONTEXT, GROUND, store, draft, packet):
+    """Add every chunk the draft CITES that the packet did not happen to rank.
+
+    RANKING MUST NOT DECIDE WHETHER EXISTING EVIDENCE IS CHECKABLE, and until
+    a review found it 2026-09-11 it did. check_answer reassembles the packet by
+    re-running retrieval from the original request - deliberately, because a
+    packet held between two calls is a session that can go stale - and the
+    reassembly returns a top-five shortlist. So a chunk that WAS shown by
+    heron_standards, and is still sitting in the store, could fall out of the
+    new shortlist when a re-ranker finished warming or another document was
+    ingested between the two calls. The draft then cited a real clause and the
+    report said UNRESOLVED: a citation that resolves to nothing, which R-22
+    calls the tag pointing at no element - invented here by the checker rather
+    than by the answer.
+
+    So the ids in the draft are looked up BY ID. That is the one lookup whose
+    answer cannot depend on a score.
+    """
+    have = set()
+    for part in getattr(packet, "parts", []):
+        cite = getattr(part, "citation", None)
+        if cite and cite.get("chunk"):
+            have.add(cite["chunk"])
+
+    for marker in GROUND.cited_ids(draft):
+        if marker in have:
+            continue
+        try:
+            row = store.execute(
+                "SELECT c.id, c.text, c.locator, c.heading_path, d.title, "
+                "d.path FROM chunks c JOIN documents d ON d.id = c.document_id "
+                "WHERE c.id = ?", (marker,)).fetchone()
+        except Exception:
+            continue
+        if row is None:
+            continue
+        packet.add(CONTEXT.Part(
+            CONTEXT.STANDARD,
+            ("%s %s" % (CONTEXT.as_metadata(row["title"]),
+                        CONTEXT.as_metadata(row["locator"]))).strip(),
+            CONTEXT.as_quoted_source(row["text"], row["title"], row["locator"]),
+            "%s - %s" % (CONTEXT.as_metadata(row["title"]),
+                         CONTEXT.as_metadata(row["heading_path"])),
+            "a clause this draft CITES, fetched by id because the shortlist "
+            "did not happen to carry it",
+            evidence=row["text"],
+            citation={"chunk": row["id"], "document": row["title"],
+                      "locator": row["locator"], "path": row["path"],
+                      "heading_path": row["heading_path"]}))
+        have.add(marker)
+
+
 def _check_across(GROUND, CONTEXT, draft, request, wanted,
                   path=None, revit=None, project=None, project_name=None):
     """One grounding check per scope, combined by claim. No packet is pooled.
@@ -754,6 +806,7 @@ def _check_across(GROUND, CONTEXT, draft, request, wanted,
                     CONTEXT.SourceMissing) as why:
                 refusals.append("%s: %s" % (scope, why))
                 continue
+            _carry_cited(CONTEXT, GROUND, store, draft, packet)
             reports.append(GROUND.check(draft, packet))
             asked.append(scope)
         finally:
@@ -780,6 +833,22 @@ def _check_across(GROUND, CONTEXT, draft, request, wanted,
                 break
             if claims[i].verdict == GROUND.UNRESOLVED:
                 claims[i] = claim
+                continue
+            # TWO SCOPES THAT BOTH RESOLVED IT AND DISAGREE IS AMBIGUOUS, NOT
+            # FIRST-WINS. A bare locator can exist in more than one store:
+            # company 4.1 says 25mm, project 4.1 says 50mm, and the draft
+            # claims 25mm. Keeping the first non-UNRESOLVED verdict meant
+            # `scopes="company,project"` passed it and `"project,company"`
+            # flagged the identical draft - REQUEST ORDER deciding a grounding
+            # result. Within one scope this case is already AMBIGUOUS_CITE;
+            # across scopes it was not, and the docstring recorded that as a
+            # limit rather than fixing it. Found by a review 2026-09-11.
+            if (claim.verdict != GROUND.UNRESOLVED
+                    and claim.verdict != claims[i].verdict):
+                claims[i] = GROUND.Claim(
+                    claims[i].sentence, GROUND.AMBIGUOUS_CITE,
+                    added=["more than one scope carries this citation and "
+                           "they do not agree - cite the chunk id"])
 
     combined = GROUND.Report(claims, first.thresholds,
                              sum(r.sources for r in reports))

@@ -692,6 +692,14 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
             break
 
     # -- stage 2b: nearness, same treatment -------------------------------
+    # TAKEN BEFORE THE ROUTE RUNS, NOT AFTER IT. Read afterwards, a warm-up
+    # finishing mid-request meant the scores came from the LEXICAL encoder and
+    # both the fusion weight and the recorded name said `model` - the ranking
+    # arithmetic and the report describing a different encoder from the one
+    # that produced the numbers. The round before moved the REPORT onto the
+    # candidate and left the poll where it was, which fixed who was asked and
+    # not when. Found by a review 2026-09-11.
+    backend_name, backend_why = EMBED.backend()
     rank = 0
     for fragment_id, score in EMBED.nearest(store, text, limit=pool * 3):
         if fragment_id not in keep:
@@ -704,7 +712,6 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
             break
 
     # -- stage 3: reciprocal rank fusion -----------------------------------
-    backend_name, backend_why = EMBED.backend()
     vector_weight = VECTOR_WEIGHT_BY_BACKEND.get(backend_name, 0.6)
 
     for got in candidates.values():
@@ -841,6 +848,15 @@ def documents(store, text, limit=5, pool=20):
             break
 
     rank = 0
+    # TAKEN BEFORE THE ROUTE RUNS, NOT AFTER IT. Read afterwards, a warm-up
+    # finishing mid-request meant the scores came from the LEXICAL encoder and
+    # both the fusion weight and the recorded name said `model` - the ranking
+    # arithmetic and the report describing a different encoder from the one
+    # that produced the numbers. The round before moved the REPORT onto the
+    # candidate and left the poll where it was, which fixed who was asked and
+    # not when. Found by a review 2026-09-11.
+    backend_name, backend_why = EMBED.backend()
+
     for chunk_id, score in _until_filled_pairs(store, text, keep, pool):
         rank += 1
         got = candidate(chunk_id)
@@ -849,7 +865,6 @@ def documents(store, text, limit=5, pool=20):
         if rank >= pool:
             break
 
-    backend_name, backend_why = EMBED.backend()
     vector_weight = VECTOR_WEIGHT_BY_BACKEND.get(backend_name, 0.6)
     for got in candidates.values():
         if got.keyword_rank is not None:
