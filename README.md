@@ -7,6 +7,11 @@
 > website when it is ready to install.
 >
 > Until then, feel free to read and follow along.
+>
+> **Programmers and AI engineers — your thoughts are very welcome.**
+> Please read the code and share your suggestions, ideas or corrections
+> through an Issue or a Discussion. That help is what I am asking for now,
+> not installs.
 
 **A modular, agent-based AI engineering platform for BIM.**
 
