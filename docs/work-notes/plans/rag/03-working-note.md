@@ -33,7 +33,8 @@ and deliberately left alone.
 | Stage 0b — say the confidence out loud | **DONE for the reporting half (R-34, R-35, R-61). NOT built: the acting half (R-56 to R-59).** `heron_retrieve.Contest`, `tests/test_contest.py`. The floor those need is **derived from a measurement or not set** (R-60), and the measurement says **not on this backend** — twelve questions, every column overlapping. **W-8** |
 | Stage 1 — a document can go in | **DONE 2026-09-11.** `documents` and `chunks` tables, [`brain/heron_ingest.py`](../../../../brain/heron_ingest.py), hierarchy at arbitrary depth, the heading path, the rule-and-exception split, and `--boundaries` for a person to read. **PDF is the one format that needs an optional reader** — everything else is standard library |
 | Stage 2 — a document comes back out | **DONE 2026-09-11.** `find_documents()`, a chunk FTS index, chunk vectors, and the first document measurement. **Alongside fragments, never fused with them** |
-| Stages 3 to 8 | **not started.** Stage 3 is now unblocked |
+| Stage 3 — citation, refusal, fabrication check | **DONE 2026-09-11, with R-45 part-done and saying which part.** `heron_ground.py`, the guard, citations bound to the exact chunk |
+| Stages 4 to 8 | **not started** |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
 
 ---
@@ -974,4 +975,85 @@ rather than quietly dropped.
 
 **Next.** Stage 3 — the citation bound to the exact chunk (R-63 to R-65), the `STANDARDS` refusal
 narrowing rather than softening (R-45), the guard (R-81), and the fabrication check (R-46 to R-55).
+
+### 2026-09-11 — Stage 3: the citation, the guard, and the check that cannot rewrite
+
+**Closes R-21, R-22, R-46 to R-55, R-63 to R-65, R-80 and R-81.** **R-45 is PART**, and §"what it
+could not do" below says which part. `tests/test_ground.py`, 59 checks.
+
+**Three things landed.**
+
+1. **A clause reaches a packet with its citation bound to the exact chunk** (R-63), carried as a
+   **quotation with every line prefixed**, and the `STANDARDS` path builds it.
+2. **The Golden Rule 19 guard** (R-81) runs **at the seam**, before the part is built —
+   [`34 §2.11`](../../../34-patterns-adapted.md) called that *"the most valuable single item the whole
+   programme produced, because it lands on work not yet done"*. **The guard that actually holds is the
+   quotation, not the pattern list**: a marker on the first line only is one a payload writes past, so
+   every line is prefixed.
+3. **`brain/heron_ground.py`** — a draft and the packet it came from in, a report out, and **it cannot
+   rewrite**. `difflib` and `re`, no model, no network.
+
+> ## The measurement changed the design twice, and that is the entry
+>
+> **The first version flagged on a similarity ratio**, per kind of claim, as the plan sketched. Run on
+> twelve claims — six true, six invented — it got **two of the six inventions wrong**: *"except within
+> 10m"* against a source saying **3m**, and *"density 96 kg/m3"* against **48**. The prose was nearly
+> identical, so the ratio carried them. **One character is the whole fabrication, and a ratio is at
+> its blindest exactly there.**
+>
+> So the ratio was measured properly, on six true paraphrases against six wrong claims:
+>
+> | | range |
+> |---|---|
+> | true paraphrases | **0.222 – 0.682** |
+> | wrong claims | **0.204 – 0.588** |
+>
+> **They overlap almost entirely.** A true claim scores **0.222**, below a wrong one at **0.236**.
+> **The ratio cannot do this job**, so it is reported and never enforced — and what catches an
+> invention is structural instead: **an added fact is a flag, whatever the ratio says.**
+>
+> **One gate survived, because a quotation is a different claim.** It asserts it IS the source's words,
+> so the question is not *how similar* but **is it in there**. Containment separated cleanly —
+> **1.000 and 1.000 against 0.265 and 0.167**, nothing in between.
+>
+> **After the redesign: 0 false positives of 4 checked, 6 of 6 caught.**
+>
+> **This is not R-55 being bent.** R-55 forbids lowering a threshold to reduce flags. What changed is
+> the **mechanism**, because a measurement said the old one did not work — the same method that
+> settled the graph route at six settings. **The distinction is written down so the next reader can
+> check it was not a tune wearing a reason.**
+
+**Three defects found by running it, all in this batch's own code.**
+
+1. **The citation marker was being read as a fact.** `[9.1.1]` looks exactly like a clause reference
+   because it **is** one — so *"insulated to 25mm [9.1.1]"* appeared to state a clause its source did
+   not contain, and **every true sentence was flagged as a lie**. The marker says where a claim came
+   from; it is not part of the claim.
+2. **The punctuation strip was eating two whole classes of fact before the selector saw them.**
+   `1:100` became `1 100` and `50%` became `50`, so **a drainage fall was not a checkable fact at all
+   and could be invented freely**. Both now have canonical forms, which also folds the three ways a
+   fall is written on three drawings.
+3. **`1,500mm` normalised to `1 500mm`.** The thousands rule needed a trailing word boundary that a
+   following letter never provides.
+
+### What it could not do, and R-45 is honest about it
+
+**Asked about cats, the `STANDARDS` path returns five clauses, each correctly cited.** That is the
+softening R-45 forbids, arriving through the front door.
+
+**It is the same blocked floor as W-8.** Refusing *"nothing indexed covers this"* needs a floor;
+[R-60](01-requirements.md) says a floor comes from a measurement; the measurement says none is
+derivable on this backend. **A floor invented to fix it is exactly what R-60 forbids.**
+
+So the packet **carries the measurement instead of pretending**: the contest sentence, plus a line
+saying plainly that *a clause being cited does not mean it answers the question*. **That is weaker
+than a refusal and it is said out loud** — here, in the code, and in the test, which asserts the cats
+question still returns clauses **so the gap cannot be quietly forgotten**. When the floor exists, that
+check is the one that should change.
+
+**The empty-store refusal did narrow**, and still refuses: it now names the real cause rather than
+saying no clause store exists at all.
+
+**Next.** Stage 4 — the Librarian picks the scope, which needs documents in more than one scope. And
+**S-4 is still open**: every document in these tests was written to be easy.
 

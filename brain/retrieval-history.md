@@ -448,6 +448,81 @@ answer to it is *surface the conflict*, which is Stage 8.
 
 ---
 
+## 2026-09-11 — the first fabrication rate, and the mechanism that was measured out
+
+**R-54: a fabrication rate is recorded with its date, its corpus size and ITS THRESHOLDS**, because
+without the thresholds beside it the number is not comparable to the next one. `brain/heron_ground.py`,
+`tests/test_ground.py`.
+
+**6 chunks, one document, `lexical` backend.** Twelve claims against the clauses they cite — six true,
+six invented:
+
+| | flagged | checked |
+|---|---|---|
+| six TRUE claims | **0** | 4 |
+| six FALSE claims | **6** | 6 |
+
+**No false positives. Every invention caught.** Two of the six true claims carried no fact at all and
+were **skipped rather than checked** — R-50, and it is why the denominator is 4 and not 6.
+
+**Thresholds in force:** `quote 0.90 coverage` · `reference, numeric, paraphrase — no ratio gate`.
+
+### The mechanism that was measured and rejected, which is the more useful half
+
+The first version of this check flagged on a **similarity ratio** against a per-kind threshold. It got
+**two of the six false claims wrong** — *"insulated to 25mm except within 10m"* against a source saying
+**3m**, and *"density 96 kg/m3"* against a source saying **48** — because the prose around the number
+was nearly identical and the ratio carried them over the line. **One character is the whole
+fabrication, and a ratio is at its blindest exactly there.**
+
+So the ratio was measured properly, on six true paraphrases and six wrong claims all carrying a fact
+the source did carry:
+
+| | range |
+|---|---|
+| six true paraphrases | **0.222 – 0.682** |
+| six wrong claims | **0.204 – 0.588** |
+
+**They overlap almost entirely.** *"25mm insulation is required on ducts"* — true — scores **0.222**,
+**below** *"drainage shall fall at 25mm"* at **0.236**. Any threshold on that column either flags a
+modeller's own wording or passes a wrong claim, and flagging a modeller's own wording is what
+[R-51](../docs/work-notes/plans/rag/01-requirements.md) exists to prevent.
+
+**So the ratio is reported and never enforced**, and what catches an invention is structural:
+
+> **An added fact is a flag, whatever the ratio says.** A number, a dimension, a gradient or a clause
+> reference the source does not carry is invented, and no amount of surrounding agreement vouches for
+> it.
+
+### And one gate that survived, because a quotation is a different claim
+
+A claim in quotation marks asserts it **IS** the source's words, so the right question is not *how
+similar* but **is it in there** — the share of the quoted text appearing verbatim in the source:
+
+| | coverage |
+|---|---|
+| true quotations | **1.000, 1.000** |
+| misquotations | **0.265, 0.167** |
+
+A clean separation with nothing between. **0.90 is not tuned to that gap** — it is what *"these are
+the source's words"* means, allowing an ellipsis and nothing more.
+
+> **This is not [R-55](../docs/work-notes/plans/rag/01-requirements.md) being bent.** R-55 forbids
+> lowering a threshold to reduce flags. What changed here is the **mechanism**, and it changed because
+> a measurement said the old one did not work — which is the one reason this repository accepts, and
+> the same method that settled the graph route at six settings.
+
+### Read the caveats, they are larger than the numbers
+
+- **Twelve claims, hand-written, against a document written for the tests by the same hand.** This is
+  a baseline to beat, not evidence the check is right.
+- **`lexical` again** — though this check does not use an embedding at all, so the backend affects
+  only which clauses the packet carried.
+- **It proves the answer did not invent the numbers in it. It does not prove the answer is good.**
+  Those are different claims and only the second one needs a person.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:
