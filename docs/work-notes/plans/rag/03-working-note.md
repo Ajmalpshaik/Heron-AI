@@ -1488,3 +1488,65 @@ The pattern across all three is one thing: **the tests asserted what the code wa
 almost nothing about what it does with input nobody imagined** — a reversed quotation, a title that
 is also a year, a deleted index, a file that moved. Every finding above is an input shape or a seam,
 not a logic error. The suite is green either way, which is the honest measure of what green is worth.
+
+---
+
+### 2026-09-11 — a fourth round, seven more, and a value that walked from pipes to ducts
+
+**Four rounds now: 16, 15, 8, 7. Every finding in every round has been real.** This one found two
+things the third round's fixes had not closed and two the third round's fixes created.
+
+### The one that matters
+
+```
+clause   "Duct insulation shall be 25mm. Pipe insulation shall be 50mm."
+draft    "Duct insulation shall be 50mm [chunk]"        -->  UNDERSTATED, ok
+```
+
+**Nothing was invented and nothing was negated.** `facts()` was taken over the WHOLE CHUNK, so a value
+belonging to one requirement could be attached to another and still be "in the source". A chunk is
+usually several requirements; this was true of every one of them.
+
+Facts are compared against the claim's **nearest sentence** now, and a fact that is in the chunk but
+not in that sentence is `MISPLACED` — *nothing was invented, it was moved*. **What it costs is written
+into the code rather than found later:** a draft honestly summarising two sentences of one chunk is
+flagged too, because a checker with no model (R-47) cannot tell that from the swap above. The remedy
+already exists — cite each clause separately, which is what a chunk-level citation is for.
+
+### Two that my own fixes created
+
+- **The offline flags were global.** `_construct()` set `HF_HUB_OFFLINE` around its own load and put
+  them back. `heron_brain.warm()` starts the **encoder's** loader on another thread at that moment, so
+  on a machine with both stacks installed and neither cached, the encoder could observe this module's
+  flag, fail its download, and cache `None` for the life of the process — **retrieval silently on
+  `lexical` with a perfectly good network.** There is no global state left: a per-load keyword, and an
+  older package that will not take it gets `absent` rather than a download.
+- **`_SYNCED` was marked before the attempt.** One locked database, one file being written as it was
+  read, and every later request in the process skipped reconciliation until a restart. **A pass that
+  gives up for good after one bad moment is worse than one that was never wired in, because it looks
+  wired in.**
+
+### Two the third round left half done
+
+`restore()` learned to carry the title; **`refresh()` did not**, so a changed file retired a correctly
+named row and replaced it with a filename. And `forget()` ignored whether its **tombstone** reached the
+manifest — an unwritable manifest leaves `ingested` as the latest durable record, so the next restore
+brings back the document somebody deliberately removed while `forget` reports success.
+
+### And two claims that were bigger than the code
+
+- **`--project Tower` without `--scope project`** left the scope at `global` and still handed the key
+  to `open_scope()`. One forgotten flag put project knowledge in the shared store and overwrote that
+  store's project metadata. **Golden Rule 5 undone by a default.** Refused by name now, rather than
+  corrected — *"I meant the project scope"* and *"I pasted the wrong flag"* want different answers and
+  only the person typing knows which.
+- **`brain/README.md` claimed every run says `Re-rank: absent`.** Only the command line did. The
+  served `heron_lookup` said nothing, so two machines could give two orders with nothing explaining
+  why. Both backends are carried through the seam and rendered now — **the same lesson as the
+  citation, one round later: the CLI is not production.**
+
+### What four rounds of this is evidence of
+
+**Three of these seven are in code written to fix the previous round.** That is not an argument for
+reviewing less; it is the measure of how much a green suite proves on its own, which is: that the
+cases somebody thought of still pass.

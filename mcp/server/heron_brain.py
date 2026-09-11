@@ -185,10 +185,13 @@ def _reconcile(store):
     """
     if store.scope in _SYNCED:
         return
-    _SYNCED.add(store.scope)
     try:
         import heron_ingest as INGEST
     except ImportError:
+        # Nothing to reconcile with, and that will not change inside this
+        # process. Marking it done stops every later request retrying an
+        # import that already failed.
+        _SYNCED.add(store.scope)
         return
     try:
         # RESTORE FIRST. An empty document table after a deleted store is the
@@ -196,7 +199,15 @@ def _reconcile(store):
         INGEST.restore(store)
         INGEST.refresh(store)
     except Exception:
-        pass
+        # MARKED ONLY ON SUCCESS, and the first version marked it BEFORE the
+        # attempt. One transient failure - a locked database, a file being
+        # written as it was read - then made every later request in the
+        # process skip reconciliation, so the server answered from stale
+        # clauses until somebody restarted it. A pass that gives up for good
+        # after one bad moment is worse than one that was never wired in,
+        # because it looks wired in. Found by a review 2026-09-11.
+        return
+    _SYNCED.add(store.scope)
 
 
 class _Open(object):
@@ -483,8 +494,37 @@ def lookup(request, revit=None):
             "autorun": bool(getattr(answer, "autorun", False)),
             "candidates": candidates,
             "excluded": [{"id": e.id, "reason": e.reason} for e in excluded],
+            # WHICH BACKENDS ANSWERED, THROUGH THE SEAM A HOST ACTUALLY USES.
+            #
+            # heron_retrieve's command line prints both and this path printed
+            # neither, so a caller could not tell a fusion-only answer from one
+            # a cross-encoder had re-read - which is R-41's "degrades but SAYS
+            # SO" holding in the one place nobody looks and failing in the one
+            # place everybody does. The same shape as the citation, found the
+            # same way, by a review.
+            "backends": _backends(),
             "revit": revit,
         }
+
+
+def _backends():
+    """Which optional backends answered. Never raises, always a dict.
+
+    Both are optional by construction and both report absence rather than
+    failing, so asking them cannot be allowed to fail either.
+    """
+    out = {}
+    try:
+        import heron_embed as EMBED
+        out["nearness"], out["nearness_why"] = EMBED.backend()
+    except Exception:
+        out["nearness"], out["nearness_why"] = "unknown", "could not be asked"
+    try:
+        import heron_rerank as RERANK
+        out["rerank"], out["rerank_why"] = RERANK.backend()
+    except Exception:
+        out["rerank"], out["rerank_why"] = "unknown", "could not be asked"
+    return out
 
 
 class ContextRefused(Exception):

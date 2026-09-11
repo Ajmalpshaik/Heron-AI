@@ -863,6 +863,19 @@ def heron_lookup(request: str) -> str:
             seen.add(c["capability"])
             lines.append("    %-30s %s" % (c["capability"], c["why"]))
 
+    # WHICH OPTIONAL BACKENDS ANSWERED. Printed on every lookup, because the
+    # degradation is invisible otherwise: the same request on two machines can
+    # give two orders, and only this line says why. R-41 and heron_embed's own
+    # contract - it degrades, and it SAYS SO, on the path a host actually uses
+    # rather than only on a command line.
+    backends = found.get("backends") or {}
+    if backends:
+        lines.append("")
+        lines.append("  nearness     %s - %s" % (backends.get("nearness"),
+                                                 backends.get("nearness_why")))
+        lines.append("  re-rank      %s - %s" % (backends.get("rerank"),
+                                                 backends.get("rerank_why")))
+
     if revit is None:
         lines.append("")
         lines.append("No Revit is connected, so the version filter did not run.")

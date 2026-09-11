@@ -8,6 +8,8 @@
 """
 One check per defect an automated review found on 2026-09-11, so none returns.
 
+Four rounds, each after the one before it was called done: 16, 15, 8 and 7.
+
     python tests/test_review_findings.py
 
 WHY THESE ARE TOGETHER RATHER THAN SPREAD ACROSS SEVEN SUITES
@@ -378,6 +380,125 @@ def main():
           "no marker to cite it by")
     print()
 
+    print("18. A VALUE MOVED BETWEEN SUBJECTS DOES NOT PASS")
+    two = "Duct insulation shall be 25mm. Pipe insulation shall be 50mm."
+
+    def packet_of(text):
+        made = CTX.Part(CTX.STANDARD, "n",
+                        CTX.as_quoted_source(text, "Spec", "9.1"), "s", "w",
+                        citation={"chunk": "c1", "document": "Spec",
+                                  "locator": "9.1", "path": "/tmp/x.md"},
+                        evidence=text)
+
+        class _P(object):
+            parts = [made]
+
+        return _P()
+
+    report = G.check("Duct insulation shall be 50mm [c1]", packet_of(two))
+    check(report.claims[0].verdict == G.MISPLACED and not report.ok,
+          "50mm claimed for ducts is MISPLACED - it IS in the chunk, under "
+          "pipes, and facts() over the whole chunk let a requirement move "
+          "between subjects and still report ok")
+    for right in ("Duct insulation shall be 25mm [c1]",
+                  "Pipe insulation shall be 50mm [c1]"):
+        check(G.check(right, packet_of(two)).ok,
+              "and %r still passes, so the rule has not started failing "
+              "everything" % right[:34])
+    print()
+
+    print("19. NO PROCESS-WIDE OFFLINE FLAGS, EVER")
+    source = inspect.getsource(RERANK)
+    check("os.environ[key]" not in source and "HF_HUB_OFFLINE\"" not in source,
+          "the re-ranker sets no huggingface environment variable - it did, "
+          "around its own load, and heron_brain.warm() starts the ENCODER on "
+          "another thread at the same moment, so the encoder could see the "
+          "flag, fail its download and cache None for the process")
+    check("local_files_only" in source,
+          "it uses a per-load keyword instead, which no other loader can see")
+    print()
+
+    print("20. ONE BAD MOMENT DOES NOT DISABLE MAINTENANCE FOR THE PROCESS")
+    brain_source = open(os.path.join(ROOT, "mcp", "server", "heron_brain.py"),
+                        encoding="utf-8").read()
+    reconcile = brain_source[brain_source.index("def _reconcile"):]
+    reconcile = reconcile[:reconcile.index("class _Open")]
+    check(reconcile.rstrip().endswith("_SYNCED.add(store.scope)"),
+          "the scope is marked reconciled only AFTER the work succeeds - it "
+          "was marked before the attempt, so one locked database made every "
+          "later request in the process skip refresh until a restart")
+    print()
+
+    print("21. A PROJECT KEY CANNOT REACH A SHARED SCOPE")
+    hold = tempfile.mkdtemp(prefix="heron-review-scope-")
+    papers2 = tempfile.mkdtemp(prefix="heron-review-scope-p-")
+    os.environ["HERON_KNOWLEDGE"] = hold
+    try:
+        doc = os.path.join(papers2, "spec.md")
+        with open(doc, "w", encoding="utf-8") as handle:
+            handle.write("Ducts shall be insulated.\n")
+        code = I.main([doc, "--project", "Tower"])
+        check(code == 2,
+              "--project with no --scope project is REFUSED - scope defaulted "
+              "to global and the key was still handed to open_scope(), so one "
+              "forgotten flag put project knowledge in the shared store and "
+              "overwrote its project metadata (Golden Rule 5)")
+        check(I.main([doc, "--scope", "project", "--project", "Tower"]) == 0,
+              "and naming both still works")
+    finally:
+        os.environ.pop("HERON_KNOWLEDGE", None)
+        shutil.rmtree(hold, ignore_errors=True)
+        shutil.rmtree(papers2, ignore_errors=True)
+    print()
+
+    print("22. A TITLE SURVIVES A REFRESH, AND A TOMBSTONE IS REPORTED")
+    hold = tempfile.mkdtemp(prefix="heron-review-refresh-")
+    papers3 = tempfile.mkdtemp(prefix="heron-review-refresh-p-")
+    os.environ["HERON_KNOWLEDGE"] = hold
+    try:
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            SEARCH.ensure_tables(store)
+            EMBED.ensure_tables(store)
+            doc = os.path.join(papers3, "spec.md")
+            with open(doc, "w", encoding="utf-8") as handle:
+                handle.write("Ducts shall be insulated to 25mm.\n")
+            first = I.ingest(store, doc, title="Acme Standard 2026",
+                             added_by="tests")
+            with open(doc, "a", encoding="utf-8") as handle:
+                handle.write("\nA vapour barrier shall be applied.\n")
+            I.refresh(store)
+            fresh = store.execute(
+                "SELECT title FROM documents WHERE status != 'RETIRED'"
+            ).fetchone()
+            check(fresh and fresh["title"] == "Acme Standard 2026",
+                  "a refreshed document keeps the title it was ingested "
+                  "under - refresh() dropped it, so the correctly named row "
+                  "was retired and its replacement took a filename")
+
+            gone, remembered = I.forget(store, first.document_id)
+            check(remembered is True,
+                  "forget() reports whether its TOMBSTONE reached the "
+                  "manifest - it ignored that, so an unwritable manifest let "
+                  "a later restore bring back the document somebody "
+                  "deliberately removed, while forget reported success")
+        finally:
+            store.close()
+    finally:
+        os.environ.pop("HERON_KNOWLEDGE", None)
+        shutil.rmtree(hold, ignore_errors=True)
+        shutil.rmtree(papers3, ignore_errors=True)
+    print()
+
+    print("23. THE SERVED LOOKUP SAYS WHICH BACKENDS ANSWERED")
+    check("_backends()" in brain_source,
+          "brain.lookup() carries the backend state - the retrieval CLI "
+          "printed it and the seam a host actually uses printed neither, so "
+          "two machines could give two orders with nothing saying why")
+    check('found.get("backends")' in server_source,
+          "and the tool renders it")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
@@ -387,10 +508,11 @@ def main():
     print("PASSED - every defect an automated review found on 2026-09-11 has")
     print("a check standing on it, and each one fails if it comes back.")
     print()
-    print("It proves nothing about the defects NOBODY has found yet. Two")
-    print("rounds of this review each found real things after the previous")
-    print("round was called done, which is the honest thing to say about how")
-    print("much a green suite is worth.")
+    print("It proves nothing about the defects NOBODY has found yet. FOUR")
+    print("rounds of this review, each after the one before it was called")
+    print("done, and each found real things - including a value moved between")
+    print("two requirements of one clause, which every rule here passed.")
+    print("That is the honest measure of what a green suite is worth.")
     return 0
 
 

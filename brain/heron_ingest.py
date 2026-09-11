@@ -1186,8 +1186,16 @@ def refresh(store):
             out.unchanged.append(row["id"])
             continue
 
+        # THE TITLE TRAVELS, exactly as it does through restore(). Without
+        # it a document ingested under an explicit name is re-ingested under
+        # one derived from its filename or its changed first line - so the
+        # correctly named row is RETIRED and its replacement carries a
+        # different name, permanently, in every citation written afterwards.
+        # The same defect was fixed in restore() one round earlier and left
+        # here. Found by a review 2026-09-11.
         fresh = ingest(store, row["path"], added_by=row["added_by"],
-                       source_trust=row["source_trust"], status=row["status"])
+                       source_trust=row["source_trust"], status=row["status"],
+                       title=row["title"])
         store.execute(
             "UPDATE documents SET status = 'RETIRED', replaced_by = ? "
             "WHERE id = ?", (fresh.document_id, row["id"]))
@@ -1203,11 +1211,19 @@ def refresh(store):
 
 
 def forget(store, document_id):
-    """Remove a document and its chunks. GR 11 - the index is DERIVED.
+    """Remove a document and its chunks. Returns (chunks, remembered).
 
-    Deleting must stay a safe recovery action after documents exist, exactly
-    as it already is for fragments. The source file is untouched, because the
-    store never held it - it holds a path (Q-B).
+    GR 11 - the index is DERIVED. Deleting must stay a safe recovery action
+    after documents exist, exactly as it already is for fragments. The source
+    file is untouched, because the store never held it - it holds a path (Q-B).
+
+    `remembered` IS THE HALF THAT MATTERS AND IT WAS BEING THROWN AWAY. The
+    manifest is append-only, so forgetting writes a TOMBSTONE rather than
+    erasing the earlier line. If that write fails - an unwritable folder, a
+    full disk - the latest durable record of this document is still
+    "ingested", and the next restore() brings back the document somebody
+    deliberately removed, while this function reports success. Found by a
+    review 2026-09-11.
     """
     ensure_tables(store)
     gone = store.execute("DELETE FROM chunks WHERE document_id = ?",
@@ -1216,15 +1232,17 @@ def forget(store, document_id):
                         (document_id,)).fetchone()
     store.execute("DELETE FROM documents WHERE id = ?", (document_id,))
     store.db.commit()
+    remembered = True
     if was:
         # So a restore does not bring back what somebody deliberately removed.
-        _remember(store, "forgotten",
-                  {"path": was["path"], "scope": store.scope,
-                   "title": was["title"], "document": document_id})
-    AUDIT.record("knowledge.forget", True,
+        remembered = _remember(store, "forgotten",
+                               {"path": was["path"], "scope": store.scope,
+                                "title": was["title"],
+                                "document": document_id})
+    AUDIT.record("knowledge.forget", remembered,
                  fields={"document": document_id, "scope": store.scope},
                  numbers={"chunks": gone})
-    return gone
+    return gone, remembered
 
 
 def boundaries(store, document_id):
@@ -1290,6 +1308,27 @@ def _main(argv):
     # command. Found by running it. A test now calls main() too.
     scope = (_flag(argv, "--scope", SCOPE.GLOBAL) or SCOPE.GLOBAL).lower()
     project = _flag(argv, "--project")
+
+    # A PROJECT KEY WITHOUT THE PROJECT SCOPE IS REFUSED, NOT QUIETLY IGNORED.
+    #
+    # `--project Tower` with no `--scope project` left scope at its default -
+    # global - and still handed the key to open_scope(). So a command that
+    # named a project put the document in the SHARED database and overwrote
+    # that database's project metadata on the way. One forgotten flag, and
+    # project knowledge is visible to every project: Golden Rule 5 undone by a
+    # default. Found by a review 2026-09-11.
+    #
+    # Refused rather than corrected, because the two readings - "I meant the
+    # project scope" and "I pasted the wrong flag" - want different answers
+    # and only the person typing knows which.
+    if project and scope != SCOPE.PROJECT:
+        print("  --project names a project and the scope is '%s'." % scope)
+        print("  A project key belongs to the PROJECT scope and nowhere else -")
+        print("  putting it anywhere else would ingest project knowledge into a")
+        print("  shared store (Golden Rule 5). Say which you meant:")
+        print("    ... --scope project --project %s" % project)
+        print("    ... --scope %s            (and drop --project)" % scope)
+        return 2
     trust = _flag(argv, "--trust", "unknown")
     show = _flag(argv, "--boundaries")
     do_refresh = "--refresh" in argv

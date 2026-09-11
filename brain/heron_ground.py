@@ -472,6 +472,7 @@ UNCITED = "uncited"          # a fact with no chunk behind it - a BUG (R-65)
 UNRESOLVED = "unresolved"    # it cites something this packet does not carry
 AMBIGUOUS_CITE = "ambiguous"  # the locator names more than one document
 REVERSED = "reversed"        # its source with the negation taken out or put in
+MISPLACED = "misplaced"      # the value is in the chunk, under a DIFFERENT subject
 
 PASSES = (SKIPPED, GROUNDED, UNDERSTATED)
 
@@ -553,6 +554,12 @@ class Report(object):
         return [c for c in self.claims if c.verdict == AMBIGUOUS_CITE]
 
     @property
+    def misplaced(self):
+        """Claims stating a value that sits under another subject in the same
+        chunk. Nothing was invented; it was moved."""
+        return [c for c in self.claims if c.verdict == MISPLACED]
+
+    @property
     def reversed_claims(self):
         """Claims that are their source with the negation moved. The worst
         verdict here, because the sentence is otherwise word for word right."""
@@ -561,7 +568,8 @@ class Report(object):
     @property
     def ok(self):
         return (not self.flagged and not self.uncited and not self.unresolved
-                and not self.ambiguous and not self.reversed_claims)
+                and not self.ambiguous and not self.reversed_claims
+                and not self.misplaced)
 
     def lines(self):
         """The report a person reads. R-52: thresholds, denominator, ratios."""
@@ -598,6 +606,12 @@ class Report(object):
             out.append("           this is the cited clause with its negation "
                        "TAKEN OUT or PUT IN - every other word matches. It "
                        "states the opposite of its source")
+        for claim in self.misplaced:
+            out.append("MISPLACED  %s" % claim.sentence[:70])
+            out.append("           it states %s, which IS in the cited chunk "
+                       "but under a different requirement than the one this "
+                       "sentence matches. Nothing was invented - it was moved"
+                       % ", ".join(claim.added))
         for claim in self.flagged:
             out.append("FLAGGED    %s" % claim.sentence[:70])
             if claim.threshold is None:
@@ -724,6 +738,23 @@ def check(draft, packet):
         in_source = facts(body)
         added = [fact for fact in found if fact not in in_source]
 
+        # WHICH SENTENCE OF THE CHUNK THIS CLAIM IS ACTUALLY ABOUT.
+        #
+        # facts(body) is the whole chunk, and a chunk is usually several
+        # requirements. So a value could be lifted off ONE requirement and
+        # attached to ANOTHER and still pass, because it was "in the source":
+        #
+        #   clause  "Duct insulation shall be 25mm. Pipe insulation shall
+        #            be 50mm."
+        #   draft   "Duct insulation shall be 50mm [chunk]"   -> UNDERSTATED, ok
+        #
+        # Measured 2026-09-11 on this exact code. Nothing was added, nothing
+        # was negated, and the checker endorsed a requirement moved from pipes
+        # to ducts - which on site is a different failure from an invented
+        # number and exactly as expensive. Found by a review.
+        nearest = nearest_sentence(sentence, body)
+        in_nearest = facts(nearest)
+
         # A REVERSAL IS CHECKED BEFORE ANYTHING ELSE, because it is invisible
         # to every other rule here. It adds no fact, so the added-fact rule
         # passes it; it is almost word for word its source, so the ratio is
@@ -743,9 +774,29 @@ def check(draft, packet):
                                 added=added))
             continue
 
+        # A FACT THAT IS IN THE CHUNK BUT NOT IN THE SENTENCE THIS CLAIM
+        # MATCHES. Structural, and with no threshold in it: the claim's own
+        # nearest sentence is the one it is about, and a value it states that
+        # is somewhere ELSE in the chunk has been moved between subjects.
+        #
+        # WHAT THIS COSTS, said rather than discovered. A draft that honestly
+        # summarises TWO sentences of one chunk - "ducts are 25mm and pipes
+        # 50mm" - is flagged too, because a checker with no model (R-47)
+        # cannot tell that from the swap above. That is the safe direction and
+        # it has a remedy the system already provides: cite each clause
+        # separately, which is what a chunk-level citation is for. It is a
+        # flag, never a rewrite (R-53), so the cost is a person reading a line.
+        elsewhere = [fact for fact in found if fact not in in_nearest]
+        if elsewhere:
+            claims.append(Claim(sentence, MISPLACED, kind=kind, ratio=ratio,
+                                threshold=THRESHOLDS[kind], citation=citation,
+                                added=elsewhere))
+            continue
+
         # R-51, AND IT IS A RULE RATHER THAN A THRESHOLD. Every fact the claim
-        # states is in the source, so it cannot have invented one.
-        verdict = (UNDERSTATED if len(in_source) > len(found) else GROUNDED)
+        # states is in the sentence it is about, so it cannot have invented one
+        # and cannot have moved one.
+        verdict = (UNDERSTATED if len(in_nearest) > len(found) else GROUNDED)
 
         # The one gate that survived measurement: a quotation must be IN its
         # source. Everything else is reported and not enforced.
