@@ -900,6 +900,33 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
                           % ", ".join(changes), tuple(values) + (document_id,))
             store.db.commit()
 
+        # A CORRECTED TITLE HAS TO REACH THE CHUNKS, because the title is the
+        # ROOT OF heading_path and heading_path is what both routes index:
+        #
+        #     "Acme Standard 2026 -> 3.1 Insulation"
+        #
+        # Updating documents.title alone left every chunk carrying the old
+        # name, so searching for the corrected title found nothing while the
+        # result that did come back was displayed and cited under it. Two
+        # names for one document, one of them invisible. Found by a review
+        # 2026-09-11.
+        #
+        # The bytes are unchanged, so re-chunking is deterministic and the
+        # chunk ids - document id plus ordinal - do not move. The derived
+        # indexes rebuild on the next pass because the chunk TEXT changed,
+        # which is what they are keyed on.
+        if title and title != already["title"] and os.path.isfile(path):
+            try:
+                _rechunk(store, document_id, path, extension, title)
+                count = store.execute(
+                    "SELECT COUNT(*) AS n FROM chunks WHERE document_id = ?",
+                    (document_id,)).fetchone()["n"]
+            except (KeyError, IOError, OSError, UnreadableDocument):
+                # A rename is not worth failing an otherwise good re-ingest
+                # over, and the row is already correct. The chunks keep the
+                # old heading path until the file is readable again.
+                pass
+
         # AND THE MANIFEST HEARS ABOUT IT. Without this line restore() reads
         # the OLD path after the derived store is deleted, reports the source
         # gone, and restores nothing - for a file that is sitting exactly where
@@ -927,6 +954,26 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
                         remembered=remembered)
 
     text = READERS[extension](path)
+
+    # THE ID HAS TO DESCRIBE THE BYTES THAT WERE ACTUALLY READ.
+    #
+    # The hash is taken at the top and the file is opened here, which are two
+    # separate reads of a file somebody else may be writing - a save from
+    # Word, an atomic replace by a sync client, a checkout. Between them the
+    # document id describes the OLD bytes while every chunk below holds the
+    # NEW ones, so a content-addressed id names content that was never
+    # stored, and the manifest's expected hash stops describing the ingested
+    # text - which is what restore()'s fallback comparison relies on.
+    #
+    # Refused rather than silently re-hashed: the caller asked for a
+    # particular file at a particular moment and the honest answer is that it
+    # moved underneath. Found by a review 2026-09-11.
+    if file_hash(path) != document_id:
+        raise UnreadableDocument(
+            "%s changed while it was being read, so the content hash Heron "
+            "would file it under no longer describes the text it got. "
+            "Nothing was stored. Try again once whatever is writing it has "
+            "finished." % os.path.basename(path))
 
     # A DOCUMENT THAT YIELDS NOTHING IS REFUSED, NOT ACCEPTED EMPTY. A blank
     # file, or an image-only PDF with no text layer, produced a document row, a
@@ -1266,6 +1313,25 @@ def restore(store):
     return out
 
 
+def _rechunk(store, document_id, path, extension, title):
+    """Re-split an unchanged file under a new title. Same bytes, same ids."""
+    text = READERS[extension](path)
+    pieces = chunk_document(text, title)
+    store.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,))
+    keys = {}
+    for ordinal, piece in enumerate(pieces):
+        chunk_id = "%s:%04d" % (document_id, ordinal)
+        keys[piece.key] = chunk_id
+        store.execute(
+            "INSERT OR REPLACE INTO chunks (id, document_id, parent_id, depth, "
+            "ordinal, locator, heading_path, text, split_by, untrusted) "
+            "VALUES (?,?,?,?,?,?,?,?,?,1)",
+            (chunk_id, document_id, keys.get(piece.parent_key), piece.depth,
+             ordinal, piece.locator, piece.heading_path, piece.text,
+             piece.split_by))
+    store.db.commit()
+
+
 def duplicate_clauses(store, document_id):
     """Clauses in this document that are BYTE-IDENTICAL to ones already here.
 
@@ -1311,14 +1377,21 @@ class Refreshed(object):
         self.unchanged = []
         self.changed = []          # (old id, new id, title)
         self.missing = []          # (id, title, path) - the source has moved
+        # RETIREMENTS THE MANIFEST DID NOT ACCEPT. (id, title). ingest() and
+        # forget() both carry this out already and refresh() dropped it - so
+        # a full disk or a read-only folder lost the retired revision the
+        # moment the derived store was deleted, while the refresh reported
+        # success. Found by a review 2026-09-11.
+        self.unrecorded = []
 
     @property
     def touched(self):
         return len(self.changed)
 
     def __repr__(self):
-        return "<refreshed %d unchanged, %d changed, %d missing>" % (
-            len(self.unchanged), len(self.changed), len(self.missing))
+        return ("<refreshed %d unchanged, %d changed, %d missing, "
+                "%d unrecorded>" % (len(self.unchanged), len(self.changed),
+                                    len(self.missing), len(self.unrecorded)))
 
 
 def refresh(store):
@@ -1396,7 +1469,7 @@ def refresh(store):
         # deletion as a QUESTION WITH A DATE ON IT, not as an answer. Said here
         # and in NEEDS-CHECKING rather than left to be discovered by somebody
         # asking it.
-        _remember(store, "retired", {
+        kept = _remember(store, "retired", {
             "document": row["id"],
             "path": row["path"],
             "title": row["title"],
@@ -1407,13 +1480,16 @@ def refresh(store):
             "replaced_by": fresh.document_id,
             "text_recoverable": False,
         })
+        if not kept:
+            out.unrecorded.append((row["id"], row["title"]))
         out.changed.append((row["id"], fresh.document_id, fresh.title))
 
-    AUDIT.record("knowledge.refresh", True,
+    AUDIT.record("knowledge.refresh", not out.unrecorded,
                  fields={"scope": store.scope},
                  numbers={"unchanged": len(out.unchanged),
                           "changed": len(out.changed),
-                          "missing": len(out.missing)})
+                          "missing": len(out.missing),
+                          "unrecorded": len(out.unrecorded)})
     return out
 
 
@@ -1621,6 +1697,17 @@ def _main(argv):
                 print("             NOTHING WAS DELETED - the clauses and "
                       "their citations still read correctly. Only opening "
                       "the original is broken")
+            for doc_id, title in done.unrecorded:
+                # The row is retired correctly; what failed is the manifest
+                # beside the store, which is the only thing that survives the
+                # derived store being deleted.
+                print("  NOT RECORDED  %s" % title)
+                print("             %s was retired in the store, and the "
+                      "recovery manifest could not be written" % doc_id[:12])
+                print("             %s" % manifest_path(store))
+                print("             DELETE THE DERIVED STORE NOW AND THIS "
+                      "REVISION IS GONE - the row is the only record of it "
+                      "until the manifest is writable again.")
             if not done.changed and not done.missing:
                 print("  nothing to do. Re-indexing on an unchanged library "
                       "is free, which is why it may be run at any time.")

@@ -489,8 +489,22 @@ def coverage(claim, source):
     spans = _QUOTED.findall(claim or "")
     if not spans:
         return None
-    got = normalise(source)
-    if not got:
+
+    # `source` MAY BE SEVERAL SOURCES, because a sentence may cite several.
+    # Each span is then measured against the BEST of them and the claim
+    # against the WORST of its spans - "every quotation is in one of the
+    # clauses I cited" - which is the rule a conflict sentence needs:
+    #
+    #   Company says "…25mm" [a], while project says "…50mm" [b]
+    #
+    # Taking the best whole-CLAIM coverage across the bodies was not enough
+    # and was the first attempt: against chunk a the 50mm span still failed
+    # and against chunk b the 25mm span did, so the worst span lost either
+    # way. The choice has to be per span. Found by measuring the fix.
+    texts = [source] if isinstance(source, str) else list(source or [])
+    grounds = [normalise(text) for text in texts]
+    grounds = [got for got in grounds if got]
+    if not grounds:
         return 0.0
 
     worst = None
@@ -498,14 +512,16 @@ def coverage(claim, source):
         want = normalise(span)
         if not want:
             continue
-        if want in got:
-            score = 1.0
-        else:
+        best = 0.0
+        for got in grounds:
+            if want in got:
+                best = 1.0
+                break
             matcher = difflib.SequenceMatcher(None, want, got)
             longest = matcher.find_longest_match(0, len(want), 0, len(got))
-            score = longest.size / float(len(want))
-        if worst is None or score < worst:
-            worst = score
+            best = max(best, longest.size / float(len(want)))
+        if worst is None or best < worst:
+            worst = best
     if worst is None:
         return 0.0
     return worst
@@ -1026,7 +1042,18 @@ def check(draft, packet):
         # The one gate that survived measurement: a quotation must be IN its
         # source. Everything else is reported and not enforced.
         gate = THRESHOLDS[kind]
-        held = coverage(sentence, body) if kind == QUOTE else None
+        # AGAINST EVERY CITED BODY, NOT THE FIRST. The round before combined
+        # FACTS across all the cited chunks and left this line reading `body`,
+        # which is only the first citation - so the quoted form of the same
+        # conflict sentence was still flagged:
+        #
+        #   Company says "…25mm" [a], while project says "…50mm" [b]
+        #
+        # Each quotation occurs exactly in its own source and the check saw
+        # only one of them. Fixed one half of a finding and left its twin,
+        # which is the shape this plan keeps producing. Found by a review
+        # 2026-09-11.
+        held = coverage(sentence, bodies) if kind == QUOTE else None
         if gate is not None and held is not None and held < gate:
             verdict = FLAGGED
             claims.append(Claim(sentence, verdict, kind=kind, ratio=held,

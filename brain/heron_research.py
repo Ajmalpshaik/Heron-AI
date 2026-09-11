@@ -393,9 +393,35 @@ _LOCATOR = re.compile(
     r"\b(?:clause|section|sub-?clause|sub-?section|table|figure|appendix|"
     r"annex|part|paragraph|item)\s*\.?\s*[0-9a-z]+(?:[.\-][0-9a-z]+)*", re.I)
 _BARE_LOCATOR = re.compile(r"\b\d+(?:\.\d+){1,}\b")
+# WHO ISSUED IT, AND - JUST AS OFTEN - WHAT IT IS CALLED.
+#
+# An acronym list alone refused the two documents this entire system exists
+# for. "Acme Engineering BIM Standard 2026, clause 3.1" meets the stated
+# contract in full and came back VAGUE, missing "the document", because no
+# issuing body in the list appears in it. The company standard and the project
+# specification are precisely the sources a modeller cites, and a hand-written
+# catalogue of issuers could never contain them. Found by a review 2026-09-11.
+#
+# So there are two ways to name a document, and the second needs no list: a
+# PROPER NAME is two or more capitalised words running together. "Acme
+# Engineering BIM Standard" is one; "Company requires" is not, because only a
+# sentence's first word is capitalised in ordinary prose.
+_ISSUER = (r"ISO|BS|EN|DIN|ASTM|ASHRAE|NFPA|SMACNA|CIBSE|AWS|IEC|QCS|QCDD|"
+           r"ASHGHAL|KAHRAMAA|UNICLASS|IFC")
+
+# The issuer plus the few tokens that belong to it - a number, a part, an
+# edition. It stops at the first lower-case word, which is where the citation
+# ends and the sentence resumes. The first version ran on for forty characters
+# and swallowed "requires X in the workflow d" into the document name.
 _DOCUMENT = re.compile(
-    r"\b(?:ISO|BS|EN|DIN|ASTM|ASHRAE|NFPA|SMACNA|CIBSE|AWS|IEC|QCS|QCDD|"
-    r"ASHGHAL|KAHRAMAA|UNICLASS|IFC)\b[\w\s\-:/]{0,40}", re.I)
+    r"\b(?:" + _ISSUER + r")\b(?:[\s:/-]+[A-Z0-9][\w.:/-]*){0,4}")
+
+# Two or more capitalised words together. A locator word may not start it -
+# "Section 2" is where to look, not what to look in.
+_NAMED = re.compile(
+    r"\b(?!(?:Section|Clause|Table|Figure|Appendix|Annex|Part|Item|Rule|"
+    r"Paragraph)\b)"
+    r"[A-Z][A-Za-z0-9&.\-]*(?:\s+[A-Z][A-Za-z0-9&.\-]*){1,7}")
 
 # Words that read like a source and name none. Every one of these has been
 # written under a confident paragraph by something that had no source at all.
@@ -405,6 +431,28 @@ _NOT_A_DOCUMENT = (
     "standard practice", "the specification", "the spec", "generally accepted",
     "it is standard", "typically", "usually", "most projects", "the guidelines",
 )
+
+
+# AT MOST THIS MANY WORDS MAY SIT BETWEEN A DOCUMENT AND ITS LOCATOR.
+#
+# Two, which covers every way a citation is actually written - "QCS 2014,
+# Section 22", "ISO 19650-2:2018 clause 5.1.4", "Acme Standard 2026, at
+# clause 3.1" - and excludes a locator that belongs to a different sentence
+# entirely. Not a threshold on a measurement (R-60 has nothing to bite on): it
+# is a statement about where a citation's parts sit relative to each other.
+_LOCATOR_GAP = 2
+
+
+def _follows(text, document, where):
+    """Whether the locator at `where` belongs to this document reference."""
+    at = text.find(document)
+    if at < 0:
+        return True
+    end = at + len(document)
+    if where < end:
+        return True
+    between = text[end:where].strip(" ,;:-")
+    return len(between.split()) <= _LOCATOR_GAP
 
 
 class Cited(object):
@@ -446,6 +494,15 @@ def citation(text):
     found = _DOCUMENT.search(flat)
     if found:
         document = found.group(0).strip(" ,;:-")
+    else:
+        # No issuing body named. A proper name will do, and for a company or
+        # project document it is the only thing there is.
+        for maybe in _NAMED.finditer(flat):
+            name = maybe.group(0).strip(" ,;:-")
+            if name.lower() in _NOT_A_DOCUMENT:
+                continue
+            document = name
+            break
 
     # THE EDITION HAS TO BELONG TO THE DOCUMENT, and scanning the whole
     # sentence for a year meant any year satisfied the contract:
@@ -466,19 +523,35 @@ def citation(text):
         if found:
             edition = found.group(0)
 
+    # THE LOCATOR BELONGS TO THE DOCUMENT, the same way the edition does - and
+    # the round that bound the edition left this half alone. Searched across
+    # the whole sentence:
+    #
+    #     "ISO 19650:2018 requires X in the workflow described in Section 2"
+    #        -> well-formed, locator "Section 2"
+    #
+    # Section 2 is a section of the ANSWER, not of ISO 19650, so the citation
+    # was reported as something a person could look up when no locator within
+    # that document had been given at all. A locator that belongs to a
+    # citation follows it closely: a comma, a "clause", at most a word or two.
+    # Found by a review 2026-09-11.
     locator = None
-    found = _LOCATOR.search(flat)
-    if found:
+    for found in _LOCATOR.finditer(flat):
+        if document and not _follows(flat, document, found.start()):
+            continue
         locator = found.group(0)
-    else:
+        break
+    if locator is None:
         # A BARE DOTTED NUMBER COUNTS ONLY WHEN A DOCUMENT WAS NAMED, and that
         # condition is the whole of why this is a separate pattern. "5.1.4" in
         # "ISO 19650-2:2018, 5.1.4" is a clause; "5.1.4" in "a fall of 1.5 to
         # 2.5" is a measurement. heron_graph learned the same lesson from the
         # other side and a review had to point it out twice.
-        found = _BARE_LOCATOR.search(flat)
-        if found and document:
+        for found in _BARE_LOCATOR.finditer(flat):
+            if not document or not _follows(flat, document, found.start()):
+                continue
             locator = found.group(0)
+            break
 
     lowered = flat.lower()
     vague_words = [phrase for phrase in _NOT_A_DOCUMENT if phrase in lowered]

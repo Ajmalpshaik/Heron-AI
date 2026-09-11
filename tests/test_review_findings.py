@@ -1166,9 +1166,14 @@ def main():
     print()
 
     print("61. THE ENCODER IS READ BEFORE IT IS USED, NOT AFTER")
+    # ANCHORED ON THE RULE, NOT ON A LINE. The first version of this check
+    # quoted the `for fragment_id, score in EMBED.nearest` loop, and the very
+    # next round replaced that loop with a growing window - so the check
+    # crashed on a substring rather than failing on a defect. What matters is
+    # that the backend is read before the route WRITES A RANK.
     retrieve_src = inspect.getsource(R)
     before = retrieve_src.index("backend_name, backend_why = EMBED.backend()")
-    check(before < retrieve_src.index("for fragment_id, score in EMBED.nearest"),
+    check(before < retrieve_src.index("got.vector_rank = rank"),
           "the nearness backend is taken BEFORE the route runs - read "
           "afterwards, a warm-up finishing mid-request meant the scores came "
           "from the lexical encoder while both the fusion weight and the "
@@ -1208,6 +1213,111 @@ def main():
           "elsewhere in the sentence cannot satisfy the citation contract")
     print()
 
+    # -----------------------------------------------------------------
+    # Round ten, 2026-09-11. Seven findings, every one real, and FOUR of
+    # them the untouched twin of a fix from the round before.
+    # -----------------------------------------------------------------
+
+    print("64. A COMPANY STANDARD IS A DOCUMENT")
+    import heron_research as RSH
+    named = RSH.citation("Acme Engineering BIM Standard 2026, clause 3.1 "
+                         "requires 30mm.")
+    check(named.verdict == RSH.WELL_FORMED,
+          "a company standard cited by its full title is well-formed - an "
+          "acronym list refused the two documents this whole system exists "
+          "for, because no issuing body appears in either. A hand-written "
+          "catalogue of issuers could never contain them")
+    project = RSH.citation("Tower B Project Specification 2025 section 4.2 "
+                           "requires 40mm.")
+    check(project.verdict == RSH.WELL_FORMED,
+          "and so is a project specification")
+    check(RSH.citation("Ductwork shall be 25mm as per the standard.").verdict
+          == RSH.VAGUE,
+          "while 'the standard' still names nothing - a proper name is two or "
+          "more capitalised words, which ordinary prose does not produce")
+    print()
+
+    print("65. A LOCATOR BELONGS TO ITS DOCUMENT")
+    stray = RSH.citation("ISO 19650:2018 requires X in the workflow "
+                         "described in Section 2 below.")
+    check(stray.verdict == RSH.VAGUE,
+          "a section of the ANSWER is not a locator into ISO 19650 - the "
+          "round before bound the EDITION to the document and left the "
+          "locator searching the whole sentence, which is the fixed-one-half "
+          "shape again")
+    close = RSH.citation("QCS 2014, Section 22, Part 2.3 requires 30mm.")
+    check(close.verdict == RSH.WELL_FORMED,
+          "while a locator that follows its document closely still counts")
+    print()
+
+    print("66. A QUOTATION IS CHECKED AGAINST EVERY SOURCE CITED")
+    def _q(cid, text, loc):
+        return CTX.Part(CTX.STANDARD, "x",
+                        CTX.as_quoted_source(text, "D", loc), "s", "w",
+                        citation={"chunk": cid, "document": "D",
+                                  "locator": loc, "path": "/x"},
+                        evidence=text)
+
+    class _Quoted(object):
+        parts = [_q("a", "Duct insulation shall be 25mm.", "4.1"),
+                 _q("b", "Duct insulation shall be 50mm.", "4.2")]
+
+    both = G.check('Company says "Duct insulation shall be 25mm" [a], while '
+                   'project says "Duct insulation shall be 50mm" [b].',
+                   _Quoted())
+    check(both.claims[0].verdict == G.GROUNDED,
+          "the QUOTED form of the conflict sentence passes - the round before "
+          "combined FACTS across the cited chunks and left the coverage call "
+          "reading only the first body")
+    faked = G.check('Company says "Duct insulation shall be 25mm" [a], while '
+                    'project says "Ducts shall be painted red" [b].', _Quoted())
+    check(faked.claims[0].verdict != G.GROUNDED,
+          "and a quotation in NEITHER cited clause is still caught - the "
+          "choice is per SPAN, not per claim, which the first attempt at this "
+          "fix got wrong and measuring it showed")
+    print()
+
+    print("67. EVERY ROUTE FILLS ITS POOL WITH ELIGIBLE ROWS")
+    check("_until_filled(SEARCH.keywords" in retrieve_src
+          and "_until_filled_fragments" in retrieve_src,
+          "both FRAGMENT routes grow their window until the eligible pool is "
+          "full - they took the top pool*3 of the unfiltered index and "
+          "discarded afterwards, so once more than that many higher-ranked "
+          "rows were excluded by status, domain, kind or the Revit version "
+          "wall, an eligible match below the window was never considered and "
+          "both routes could come back empty with a compatible fragment in "
+          "the store. The document routes were fixed in round seven and these "
+          "were not")
+    print()
+
+    print("68. THE ID DESCRIBES THE BYTES THAT WERE STORED")
+    check("if file_hash(path) != document_id" in ingest_source,
+          "the hash is taken again after the read - the id was computed from "
+          "one read and the chunks from another, so a file replaced between "
+          "them (a save, a sync client, a checkout) gave a content-addressed "
+          "id naming content that was never stored, and the manifest's "
+          "expected hash stopped describing the ingested text")
+    print()
+
+    print("69. A CORRECTED TITLE REACHES THE CHUNKS")
+    check("_rechunk" in ingest_source,
+          "re-ingesting unchanged bytes under a corrected title re-splits "
+          "them - the title is the ROOT of heading_path and heading_path is "
+          "what both routes index, so updating documents.title alone left "
+          "every chunk carrying the old name: searching the corrected title "
+          "found nothing while the result that did come back was displayed "
+          "and cited under it")
+    print()
+
+    print("70. A RETIREMENT THE MANIFEST REFUSED IS REPORTED")
+    check("out.unrecorded.append" in ingest_source
+          and "NOT RECORDED" in ingest_source,
+          "refresh() carries the manifest failure out, as ingest() and "
+          "forget() already did - a full disk or a read-only folder lost the "
+          "retired revision the moment the derived store was deleted, while "
+          "the refresh reported success")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
@@ -1217,7 +1327,7 @@ def main():
     print("PASSED - every defect an automated review found on 2026-09-11 has")
     print("a check standing on it, and each one fails if it comes back.")
     print()
-    print("It proves nothing about the defects NOBODY has found yet. NINE")
+    print("It proves nothing about the defects NOBODY has found yet. TEN")
     print("rounds of this review, each after the one before it was called")
     print("done, and each found real things - a value moved between two")
     print("requirements of one clause, a whole multi-scope path that two")

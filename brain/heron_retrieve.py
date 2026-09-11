@@ -680,10 +680,19 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
         return candidates[fragment_id]
 
     # -- stage 2a: keywords, filtered to the survivors --------------------
+    #
+    # THE WINDOW GROWS UNTIL IT HOLDS `pool` ELIGIBLE ROWS, which is what the
+    # document side has done since round seven and this side did not. Taking
+    # the top pool*3 of the UNFILTERED index and discarding afterwards means
+    # that once more than pool*3 higher-ranked rows are excluded - by status,
+    # by domain, by kind, or by the Revit version wall - an eligible match
+    # below the window is never considered at all, and the route reports
+    # nothing while a compatible fragment sits in the store.
+    #
+    # The same defect, in the same file, fixed on the document routes and left
+    # on the fragment ones. Found by a review 2026-09-11.
     rank = 0
-    for hit in SEARCH.keywords(store, text, limit=pool * 3):
-        if hit["id"] not in keep:
-            continue
+    for hit in _until_filled(SEARCH.keywords, store, text, keep, pool):
         rank += 1
         got = candidate(hit["id"])
         got.keyword_rank = rank
@@ -701,9 +710,11 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
     # not when. Found by a review 2026-09-11.
     backend_name, backend_why = EMBED.backend()
     rank = 0
-    for fragment_id, score in EMBED.nearest(store, text, limit=pool * 3):
-        if fragment_id not in keep:
-            continue
+    # THE SAME GROWING WINDOW ON THE NEARNESS ROUTE. It orders by similarity
+    # over the whole index, so it excludes exactly the same rows in exactly
+    # the same order as the words route - both could come back empty together
+    # with a compatible fragment sitting below the window.
+    for fragment_id, score in _until_filled_fragments(store, text, keep, pool):
         rank += 1
         got = candidate(fragment_id)
         got.vector_rank = rank
@@ -765,6 +776,23 @@ def _until_filled(route, store, text, keep, pool, ceiling=20):
     while True:
         rows = route(store, text, limit=want)
         seen = [r for r in rows if r["id"] in keep]
+        if len(seen) >= pool or len(rows) < want or want >= pool * ceiling:
+            break
+        want *= 2
+    return seen[:pool]
+
+
+def _until_filled_fragments(store, text, keep, pool, ceiling=20):
+    """EMBED.nearest over fragments, widened until `pool` eligible rows are in.
+
+    The fragment twin of _until_filled_pairs. It returns (id, score) pairs
+    rather than rows, which is why it cannot share _until_filled.
+    """
+    want = pool * 3
+    seen = []
+    while True:
+        rows = EMBED.nearest(store, text, limit=want)
+        seen = [pair for pair in rows if pair[0] in keep]
         if len(seen) >= pool or len(rows) < want or want >= pool * ceiling:
             break
         want *= 2

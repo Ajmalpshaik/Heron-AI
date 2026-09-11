@@ -2193,3 +2193,76 @@ in neither is still flagged.
 new one is narrower and more uncomfortable than any of them: **a fix that reopens a defect an earlier
 round closed.** Only the test standing on that earlier finding caught it — which is the entire argument
 for `tests/test_review_findings.py` keeping a check per finding rather than a summary.
+
+---
+
+### 2026-09-11 — a tenth round, seven more, and FOUR of them the twin of a fix from the round before
+
+Codex reviewed `ff280c6`. Seven findings, every one verified before anything changed, every one real.
+**Four are the untouched half of something round nine fixed.** That is no longer a recurring shape; it
+is the dominant one.
+
+| round nine fixed | round ten found |
+|---|---|
+| facts combined across every cited body | the **quotation** check still read only the first body |
+| the **edition** bound to its document | the **locator** still searched the whole sentence |
+| the document routes' growing window (round seven) | the **fragment** routes still filter after their limit |
+| retirement recorded in the manifest | the manifest's **failure** still discarded |
+
+### The one that refused the documents this system is for
+
+`Acme Engineering BIM Standard 2026, clause 3.1` came back **VAGUE**, missing *"the document"* — because
+`_DOCUMENT` was a hand-written list of issuing bodies (ISO, BS, NFPA, QCS…) and a company standard is in
+none of them. **The company standard and the project specification are exactly the sources a modeller
+cites**, and no catalogue of issuers could ever contain them.
+
+A second way to name a document needs no list: **a proper name is two or more capitalised words running
+together.** Ordinary prose does not produce one, because only a sentence's first word is capitalised.
+
+### The one that was the same mistake twice, one line apart
+
+Round nine bound the **edition** to its document, so a delivery date could no longer pass as one. It
+left the **locator** searching the whole sentence:
+
+```
+ISO 19650:2018 requires X in the workflow described in Section 2 below
+    -> well-formed, locator "Section 2"
+```
+
+Section 2 of the **answer**, offered as a place to look inside ISO 19650.
+
+### The P1: a route that filters after it limits
+
+Both **fragment** routes took the top `pool * 3` of the unfiltered index and discarded the ineligible
+rows afterwards. Once more than that many higher-ranked rows are excluded — by status, by domain, by
+kind, or by the **Revit version wall** — an eligible match below the window is never considered, and
+both routes report nothing while a compatible fragment sits in the store.
+
+**The document routes were given a growing window in round seven. The fragment routes, in the same
+file, were not.**
+
+### And one that undid content addressing
+
+The document id is hashed from one read of the file and the chunks come from another. A file replaced
+between them — a save from Word, a sync client, a checkout — gives an id describing bytes that were
+never stored, and the manifest's expected hash stops describing the ingested text. That hash is
+precisely what round nine's restore fallback now compares against. **Refused rather than re-hashed:**
+the caller asked for a file at a moment, and the honest answer is that it moved underneath.
+
+### The rest
+
+| | |
+|---|---|
+| a corrected **title** never reached the chunks | the title is the ROOT of `heading_path`, and `heading_path` is what both routes index — so searching the corrected title found nothing while the result that came back was displayed and cited under it. Two names for one document, one invisible |
+| a retirement the **manifest refused** | `ingest()` and `forget()` both carry that failure out; `refresh()` discarded it, so a full disk lost the retired revision the instant the derived store was deleted, while the refresh said success |
+
+> **The quotation fix took two goes and measuring caught the first.** Taking the best whole-claim
+> coverage across the bodies still failed: against chunk `a` the 50mm span failed, against chunk `b` the
+> 25mm span did, and the worst span lost either way. The choice has to be **per span**.
+
+### Ten rounds
+
+A check written in round nine **crashed** in round ten — it quoted the `EMBED.nearest` loop that round
+ten replaced, so it failed on a substring rather than on a defect. Anchored on the rule now: the backend
+is read before the route writes a rank. **A test that names a line instead of a rule is a test with a
+half-life.**
