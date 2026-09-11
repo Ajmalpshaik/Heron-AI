@@ -110,7 +110,7 @@ class Answer(object):
     """What a lookup found, and how."""
 
     def __init__(self, route, fragment_id=None, candidates=None, autorun=False,
-                 note="", contest=None):
+                 note="", contest=None, backends=None):
         self.route = route                 # identity | cache | keywords | nothing
         self.fragment_id = fragment_id
         self.candidates = candidates or []
@@ -123,6 +123,18 @@ class Answer(object):
         # read is worth more than a sentence it has to parse back out, and
         # because docs/05 s4.4's re-ranker will be judged against it later.
         self.contest = contest
+
+        # WHICH OPTIONAL BACKENDS ACTUALLY RAN ON THIS ANSWER, recorded by the
+        # route that ran them and never re-derived afterwards. Asking a
+        # backend whether it is INSTALLED, after the search, answers a
+        # different question: a warm-up finishing between the search and the
+        # question labels a lexically-answered query "model", and a re-ranker
+        # that was loaded but returned no scores reports as having answered.
+        # Both were live. Found by a review 2026-09-11.
+        #
+        # None on the routes that record nothing, which a caller reads as "not
+        # said" rather than as "not used".
+        self.backends = backends
 
     def __repr__(self):
         return "<Answer %s %s%s>" % (self.route, self.fragment_id or "-",
@@ -564,21 +576,46 @@ def chunk_keywords(store, text, limit=5, statuses=OFFERABLE_DOCUMENTS):
     return [dict(r) for r in rows]
 
 
-def chunk_breadth(store, text):
+def chunk_breadth(store, text, statuses=None):
     """How many chunks the words route matches at all. The document twin of
     match_breadth, and it means the same thing: a route that matched
-    everything has ranked everything."""
+    everything has ranked everything.
+
+    `statuses` NARROWS IT TO THE SAME CORPUS THE CALLER COUNTED AS ELIGIBLE,
+    and leaving it out was a defect rather than a default. Contest compares
+    this number against `eligible`, which is offerable chunks only - while
+    this counted every row in the index, RETIRED revisions included. A
+    document with a long retained history therefore pushed breadth above
+    eligible and the report said "the words route ranked the whole library"
+    about a query that had selected one clause out of it. Found by a review
+    2026-09-11. Two counts are only comparable over one corpus.
+    """
     ensure_chunk_table(store)
     query = _fts_query(text)
     if not query:
         return 0
-    row = store.execute(
-        "SELECT COUNT(*) AS n FROM chunk_text WHERE chunk_text MATCH ?",
-        (query,)).fetchone()
+    if not statuses:
+        row = store.execute(
+            "SELECT COUNT(*) AS n FROM chunk_text WHERE chunk_text MATCH ?",
+            (query,)).fetchone()
+        return row["n"] if row else 0
+    try:
+        row = store.execute(
+            "SELECT COUNT(*) AS n FROM chunk_text t "
+            "JOIN documents d ON d.id = t.document_id "
+            "WHERE chunk_text MATCH ? AND d.status IN (%s)"
+            % ",".join("?" * len(statuses)),
+            (query,) + tuple(statuses)).fetchone()
+    except sqlite3.OperationalError as exc:
+        # No `documents` table means nothing was ever ingested. Anything else
+        # is a broken store and must not read as a breadth of zero.
+        if "no such table" not in str(exc):
+            raise
+        return 0
     return row["n"] if row else 0
 
 
-def match_breadth(store, text):
+def match_breadth(store, text, keep=None):
     """How many fragments the words route matches AT ALL, not the top few.
 
     THE NUMBER THAT SHOWS A ROUTE HAS STOPPED BEING SELECTIVE. _fts_query
@@ -591,19 +628,41 @@ def match_breadth(store, text):
     A route that matched everything has ranked everything, and a rank out of
     everything is not evidence. Reported, never ranked on.
 
-    IT COSTS ONE COUNT, NOT A SECOND SEARCH. Measured 2026-09-11 at 360
-    fragments: 0.35 ms against a 9.6 ms lookup, so 3.6% of a call. Worth
-    measuring rather than assuming - A8 in NEEDS-CHECKING.md records a Heron
-    tool call that sat for thirty minutes because nobody timed an import.
+    IT COSTS ONE QUERY, NOT A SECOND SEARCH - and the filter below made it
+    dearer, which is recorded rather than glossed. Measured 2026-09-11 at 360
+    fragments: as a bare COUNT it was 0.35 ms against a 9.6 ms lookup (3.6%);
+    fetching the matched ids to intersect them costs 0.83 ms against a 6.4 ms
+    lookup, so 13% of a call. Counting in SQL with an `id IN (...)` list was
+    measured at 0.86 ms - no cheaper - so the Python intersection stays,
+    because it is also right when the index holds a row the fragment table no
+    longer has. Worth measuring rather than assuming: A8 in NEEDS-CHECKING.md
+    records a Heron tool call that sat for thirty minutes because nobody
+    timed an import.
+
+    `keep` IS THE CALLER'S ELIGIBLE SET, AND WITHOUT IT THE TWO NUMBERS WERE
+    NOT COMPARABLE. Contest reads breadth against `eligible`, which is what
+    heron_retrieve.eligible() left after status, Revit version, domain and
+    kind were applied - while this counted matches across the WHOLE index. A
+    release with 20 eligible fragments, a query matching one of them and 20
+    fragments declared for another Revit version, and `breadth >= eligible`
+    turned true: the report then said the words route had ranked the entire
+    eligible library when it had selected one row out of it. Found by a
+    review 2026-09-11. The filter is a Python walk rather than a WHERE, so
+    the ids come back and the intersection is counted here.
     """
     ensure_tables(store)
     query = _fts_query(text)
     if not query:
         return 0
-    row = store.execute(
-        "SELECT COUNT(*) AS n FROM fragment_text WHERE fragment_text MATCH ?",
-        (query,)).fetchone()
-    return row["n"] if row else 0
+    if keep is None:
+        row = store.execute(
+            "SELECT COUNT(*) AS n FROM fragment_text WHERE fragment_text MATCH ?",
+            (query,)).fetchone()
+        return row["n"] if row else 0
+    rows = store.execute(
+        "SELECT id FROM fragment_text WHERE fragment_text MATCH ?",
+        (query,)).fetchall()
+    return len([r for r in rows if r["id"] in keep])
 
 
 def ask(store, text, limit=5):

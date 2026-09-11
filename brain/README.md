@@ -4,9 +4,12 @@
 
 **And since 2026-08-29 it is reachable.** Everything here was imported by nothing but its own tests until
 [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) was written — complete, tested, and invisible
-to any conversation. **Four** MCP tools now stand on that seam: `heron_capabilities`, `heron_resolve`,
-`heron_lookup` and, since 2026-09-09, `heron_context`. **They ask for a capability and never for a
-fragment**, which is what keeps everything in here replaceable.
+to any conversation. MCP tools now stand on that seam — `python mcp/server/heron_tools.py` lists every
+one of them and marks the only one that can change a model. **Do not trust a count typed here**: this
+line said *four* and named them, and by the time `heron_check` and `heron_standards` were added it was
+a stale description of which surfaces a caller can reach, which is the one kind of list worth deriving.
+**They ask for a capability and never for a fragment**, which is what keeps everything in here
+replaceable.
 
 **Running one is a bridge operation rather than an MCP tool**, and the two are not the same door.
 [D-28](../docs/DECISIONS.md)'s in-process Roslyn landed on 2026-09-06 as

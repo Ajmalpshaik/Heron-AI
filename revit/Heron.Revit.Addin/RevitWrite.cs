@@ -183,6 +183,7 @@ namespace Heron.Revit.Addin
                 Json.Str("distance", HeronUnits.DescribeMillimetres(millimetres)),
                 Json.Str("document", doc.Title),
                 Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
+                Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
                 Json.Num("expiresInSeconds", (long)PreviewLifetime.TotalSeconds),
                 Json.Str("summary", Describe(movable.Count, skipped.Count, preview.Category) +
                                     " up " + HeronUnits.DescribeMillimetres(millimetres) +
@@ -426,6 +427,7 @@ namespace Heron.Revit.Addin
                 Json.Str("distance", HeronUnits.DescribeMillimetres(preview.MillimetresUp)),
                 Json.Str("document", doc.Title),
                 Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
+                Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
                 Json.Num("warnings", handler.Count),
                 Json.Str("undo", "One Ctrl+Z in Revit puts this back."),
                 Json.Str("undoEntry", name));

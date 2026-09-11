@@ -179,3 +179,31 @@ def describe():
         mark = "  <- CHANGES THE MODEL" if risk >= MODIFY else ""
         lines.append("  %-*s  %-8s%s" % (width, name, NAMES[risk], mark))
     return "\n".join(lines)
+
+
+def main():
+    """
+    Print the registry. THE INVENTORY IS DERIVED, NEVER TYPED.
+
+    Two places in this repository listed the MCP tools in prose - brain's
+    README said "four" and this server's own module header listed seven - and
+    adding `heron_check` and `heron_standards` left both of them wrong, on
+    exactly the descriptions a reviewer reads to find out what Heron can
+    reach and what it can change. A hand-typed list of callable surfaces is a
+    security claim with a half-life. Found by a review 2026-09-11.
+
+    So both now name this command instead, and this is the one place the
+    answer lives:
+
+        python mcp/server/heron_tools.py
+    """
+    print("Every MCP tool Heron declares, worst first. %d in all." % len(TOOLS))
+    print()
+    print(describe())
+    print()
+    print("Derived from heron_tools.TOOLS, which is what the server enforces.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

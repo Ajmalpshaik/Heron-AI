@@ -205,11 +205,25 @@ def same_number(value):
     return "%g" % number
 
 
+def _flat(value):
+    """A document-derived string, safe to put on a line that does not quote it.
+
+    The same treatment heron_context.as_metadata gives a packet field, kept
+    here rather than imported because this module answers a command line with
+    no MCP server and no packet anywhere near it. Whitespace collapses so the
+    value cannot break out of its line, a delimiter marks it as somebody
+    else's words, and the length is left exactly as it was.
+    """
+    flat = re.sub(r"\s+", " ", str(value or "")).strip()
+    return "\u00ab%s\u00bb" % flat if flat else ""
+
+
 class Value(object):
     """One number a scope's answer carried, and enough to go and look at it."""
 
     def __init__(self, scope, label, unit, value, document, locator, path,
-                 chunk, claimed=True, pool_is_evidence=True):
+                 chunk, claimed=True, pool_is_evidence=True,
+                 document_id=None):
         # WHETHER THE WORDS ROUTE ACTUALLY SELECTED THIS SHORTLIST, or merely
         # ranked the whole scope - and whether that question can be answered at
         # this corpus size at all. Both come from Contest, and the second one
@@ -220,7 +234,8 @@ class Value(object):
         self.label = label            # the Librarian's label, project included
         self.unit = unit
         self.value = value
-        self.document = document
+        self.document = document      # the title - for a person to read
+        self.document_id = document_id  # the identity - for grouping
         self.locator = locator
         self.path = path
         self.chunk = chunk
@@ -231,8 +246,19 @@ class Value(object):
 
         Two standards in one company store are two sources. One standard is
         one source however many of its clauses come back.
+
+        BY DOCUMENT ID, NOT BY TITLE. Keyed on the title, two different
+        documents that happen to share one - two projects' copies of one
+        template, an old and a new edition both offerable - counted as a
+        single source, their values were merged into one `says` entry and the
+        disagreement between them was dropped. That is the same failure this
+        property was written to fix, one level in. The title stays for
+        display and the id does the matching. Found by a review 2026-09-11.
+
+        Falls back to the title when no id came through, because a source
+        that cannot be told apart is better than a source that vanishes.
         """
-        return (self.label, self.document or "")
+        return (self.label, self.document_id or self.document or "")
 
     def __repr__(self):
         return "<%s %s%s %s %s>" % (self.label, self.value, self.unit,
@@ -302,17 +328,25 @@ class Disagreement(object):
         return min(ranked, key=lambda v: HIERARCHY.index(v.scope)).label
 
     def sentence(self):
-        """The disagreement in words, and the word for what it is not."""
+        """The disagreement in words, and the word for what it is not.
+
+        THE TITLE AND THE CLAUSE NUMBER ARE DOCUMENT-DERIVED TEXT, and these
+        lines do not quote them. A title carrying a newline and a speaker
+        label would sit in this report looking like Heron talking - Golden
+        Rule 19 undone by a column. Collapsed to one line and delimited here,
+        the same way heron_context.as_metadata does it for a packet, and
+        NOTHING is trimmed (R-82).
+        """
         said = ["THESE ANSWERS DISAGREE, and Heron has not decided between them:"]
         for value in self.values:
             said.append("  %-18s %6s%-8s %s %s"
                         % (value.label, value.value, self.unit,
-                           value.document or "", value.locator or ""))
+                           _flat(value.document), _flat(value.locator)))
         if self.same_locator:
             said.append("  Both sit at clause %s, which makes it likelier they "
                         "are the same requirement - but Heron cannot tell, and "
                         "does not claim to."
-                        % self.values[0].locator)
+                        % _flat(self.values[0].locator))
         else:
             said.append("  They sit at different clause numbers, so they may "
                         "well be about different things. Heron compared the "
@@ -397,7 +431,8 @@ def _values_from(store, asked):
             out.append(Value(asked.scope, asked.label, unit, value,
                              hit.get("document"), hit.get("locator"),
                              hit.get("path"), hit["id"],
-                             claimed=claimed, pool_is_evidence=evidence))
+                             claimed=claimed, pool_is_evidence=evidence,
+                             document_id=hit.get("document_id")))
     return out
 
 
@@ -416,10 +451,24 @@ def disagreements(text, scopes=None, project=None, limit=5, asked=None):
     the ones shown above it. Found by a review 2026-09-11.
     """
     wanted = list(scopes or [])
-    if len(wanted) < 2:
-        # A scope cannot disagree with itself, and saying so beats returning an
-        # empty list that reads as "they agree".
+    if not wanted:
+        # Nothing was asked of anybody. An empty list here means "no scope was
+        # named", not "they agree" - and the caller named none.
         return []
+
+    # THE GATE IS TWO SOURCES, NOT TWO SCOPE NAMES, and the first version
+    # tested the wrong one. `if len(wanted) < 2: return []` carried the
+    # comment "a scope cannot disagree with itself" - true, and beside the
+    # point: TWO DOCUMENTS IN ONE COMPANY STORE disagree all the time, which
+    # is the case the source grouping below was built for. So that grouping
+    # was unreachable for exactly the situation it existed to report, and a
+    # single-scope caller was told nothing while its own store held 30mm and
+    # 40mm for the same thing. A comment describing one rule sitting on top
+    # of code enforcing another. Found by a review 2026-09-11.
+    #
+    # There is no cheaper gate to put here: whether two sources exist is not
+    # knowable before the stores are read, and `says` below already refuses
+    # to report a unit fewer than two sources carry.
 
     if asked is None:
         asked = RETRIEVE.librarian(text, scopes=wanted, project=project,

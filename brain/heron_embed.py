@@ -417,8 +417,17 @@ def index_chunks(store, force=False):
     try:
         rows = store.execute(
             "SELECT id, heading_path, text FROM chunks").fetchall()
-    except sqlite3.OperationalError:
-        return 0, 0                      # no documents table: nothing ingested
+    except sqlite3.OperationalError as exc:
+        # ONLY "THE TABLE IS NOT THERE". The last twin of a shape a review has
+        # now named four times in this repository: a locked, malformed or
+        # schema-shifted store counted as "nothing ingested", index_chunks()
+        # returned (0, 0), and the caller was told the meaning route had
+        # nothing to index rather than that the store is broken. Found while
+        # fixing the same line in heron_retrieve.find_documents, by grepping
+        # for the shape instead of waiting for the next review to find it.
+        if "no such table" not in str(exc):
+            raise
+        return 0, 0                      # no chunks table: nothing ingested
 
     name = stamp()
     embedded = skipped = 0

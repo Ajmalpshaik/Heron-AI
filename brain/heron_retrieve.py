@@ -151,6 +151,13 @@ class Candidate(object):
         # HOW MANY THE RE-RANKER ACTUALLY READ. Carried on the candidate so a
         # list cut down to `limit` still knows - see Contest.
         self.rerank_pool = None
+        # WHICH NEARNESS BACKEND PRODUCED vector_rank, written where the rank
+        # is used rather than asked for afterwards. It is the same name the
+        # FUSION WEIGHT was chosen from, so a report cannot name one backend
+        # while the arithmetic used another - and it cannot be changed by a
+        # warm-up finishing after the search. See ran().
+        self.vector_backend = None
+        self.vector_why = None
 
     @property
     def score(self):
@@ -500,6 +507,53 @@ def eligible(store, revit=None, domain=None, kind=None, statuses=OFFERABLE):
 # Stage 4b - read the shortlist again, if there is anything to read it with
 # ---------------------------------------------------------------------------
 
+def ran(ranked):
+    """Which optional backends ACTUALLY RAN, read off the candidates.
+
+    NOT "WHAT IS INSTALLED", and the difference is a whole class of wrong
+    sentence. heron_brain asked EMBED.backend() and RERANK.backend() AFTER the
+    search and reported the answers as though they described the run, so:
+
+      * a warm-up finishing between find() and that question labelled a
+        lexically-answered query "model"
+      * a re-ranker that was loaded and returned NO scores - the shortlist too
+        short, the model declining - was reported as having answered
+
+    Both are a sentence about the machine wearing the words of a sentence
+    about the answer. Found by a review 2026-09-11, on a line written to fix
+    the identity-route half of exactly this.
+
+    A rank is the evidence, because a rank only exists if the route produced
+    it. The nearness backend's NAME is read off the candidate rather than
+    asked for here: the fusion loop writes it where it picks the fusion weight
+    from it, so this cannot report one backend while the arithmetic used
+    another, and nothing finishing later can change it.
+    """
+    near = [c for c in ranked if c.vector_rank is not None]
+    rerank_ran = any(getattr(c, "rerank_rank", None) is not None for c in ranked)
+    out = {}
+    if near:
+        out["nearness"] = near[0].vector_backend or "not said"
+        out["nearness_why"] = (near[0].vector_why
+                               or "the route did not record which backend ran")
+    else:
+        out["nearness"] = "not used"
+        out["nearness_why"] = ("nothing in this answer carries a nearness "
+                               "rank, so the meaning route contributed "
+                               "nothing to it")
+    if rerank_ran:
+        # It scored this shortlist a moment ago, so there is nothing to ask.
+        out["rerank"] = RERANK.CROSS_ENCODER
+        out["rerank_why"] = ("it read each (question, passage) pair of this "
+                             "shortlist together and re-ordered it")
+    else:
+        out["rerank"] = "not used"
+        out["rerank_why"] = ("this shortlist was not re-read - either no "
+                             "re-ranker is installed, or the one installed "
+                             "returned no scores for it")
+    return out
+
+
 def _fragment_passage(candidate):
     """What a re-ranker is given about a fragment.
 
@@ -650,7 +704,7 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
             break
 
     # -- stage 3: reciprocal rank fusion -----------------------------------
-    backend_name, _why = EMBED.backend()
+    backend_name, backend_why = EMBED.backend()
     vector_weight = VECTOR_WEIGHT_BY_BACKEND.get(backend_name, 0.6)
 
     for got in candidates.values():
@@ -658,6 +712,7 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
             got.fused += KEYWORD_WEIGHT / (RRF_K + got.keyword_rank)
         if got.vector_rank is not None:
             got.fused += vector_weight / (RRF_K + got.vector_rank)
+            got.vector_backend, got.vector_why = backend_name, backend_why
 
     # -- stage 4: the quality nudge ----------------------------------------
     for got in candidates.values():
@@ -683,7 +738,13 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
 # Statuses a document may be OFFERED at. RETIRED is excluded the way
 # DEPRECATED is for fragments: the row survives so a record is never
 # destroyed, not so it can be handed back as an answer.
-OFFERABLE_DOCUMENTS = ("DRAFT", "REVIEWED")
+#
+# BORROWED, NOT RE-TYPED. This was a second literal tuple, and heron_search
+# holds the one the FTS query filters on. Two copies of one lifecycle rule is
+# a rule that can disagree with itself: edit one and the words route would
+# filter on a set the ranker does not, silently. 00-structure.md s3.7 - the
+# measurement is built once - is the same rule about a constant.
+OFFERABLE_DOCUMENTS = SEARCH.OFFERABLE_DOCUMENTS
 
 
 def _until_filled(route, store, text, keep, pool, ceiling=20):
@@ -788,13 +849,14 @@ def documents(store, text, limit=5, pool=20):
         if rank >= pool:
             break
 
-    backend_name, _why = EMBED.backend()
+    backend_name, backend_why = EMBED.backend()
     vector_weight = VECTOR_WEIGHT_BY_BACKEND.get(backend_name, 0.6)
     for got in candidates.values():
         if got.keyword_rank is not None:
             got.fused += KEYWORD_WEIGHT / (RRF_K + got.keyword_rank)
         if got.vector_rank is not None:
             got.fused += vector_weight / (RRF_K + got.vector_rank)
+            got.vector_backend, got.vector_why = backend_name, backend_why
         # NO QUALITY NUDGE. The fragment nudge reads a fragment's status,
         # which says how far a piece of Heron's own code has been proved. A
         # document's status is a lifecycle, not a grade - a DRAFT clause is
@@ -838,7 +900,16 @@ def find_documents(store, text, limit=5):
     # rediscovered here.
     try:
         total = store.execute("SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as exc:
+        # ONLY "THE TABLE IS NOT THERE" - the same narrowing documents() above
+        # already does, and this line did not. A LOCKED OR MALFORMED STORE
+        # counted as zero documents and returned the `empty` route below,
+        # which tells the caller "nothing has been put in yet" about a store
+        # that is full and broken. That is D-52's plausible zero wearing the
+        # one message a reader would never doubt. Found by a review
+        # 2026-09-11, one file away from the fix for the same shape.
+        if "no such table" not in str(exc):
+            raise
         total = 0
     if not total:
         return SEARCH.Answer(
@@ -878,14 +949,23 @@ def find_documents(store, text, limit=5):
     best = ranked[0]
     note = "%d chunk(s); best found by %s" % (len(ranked), best.why())
     contest = Contest(ranked, eligible_chunks, 20,
-                      SEARCH.chunk_breadth(store, text), noun="chunk",
-                      nudged=False)
+                      SEARCH.chunk_breadth(store, text,
+                                           statuses=OFFERABLE_DOCUMENTS),
+                      noun="chunk", nudged=False)
     note += ". " + contest.sentence()
 
     return SEARCH.Answer(
         "documents", best.id,
         candidates=[{"id": c.id, "kind": "chunk",
                      "document": c.row["title"],
+                     # THE TITLE IS FOR READING, THIS IS FOR MATCHING. Two
+                     # documents may carry the same title - two revisions of
+                     # one standard, two projects' copies of one template -
+                     # and anything that grouped candidates by title merged
+                     # them into one source. heron_conflict did exactly that
+                     # and lost a disagreement between them. Found by a
+                     # review 2026-09-11.
+                     "document_id": c.row["document_id"],
                      # R-22: A CITATION RESOLVES TO SOMETHING A HUMAN CAN
                      # OPEN. The query already selected the path and the
                      # result dropped it, so every citation named a title and
@@ -901,7 +981,8 @@ def find_documents(store, text, limit=5):
                      "words_score": c.keyword_score,
                      "nearness_score": c.vector_score,
                      "rerank_score": c.rerank_score} for c in ranked],
-        note=note, contest=contest)
+        note=note, contest=contest,
+        backends=ran(ranked))
 
 
 # ---------------------------------------------------------------------------
@@ -1065,7 +1146,7 @@ def find(store, text, revit=None, limit=5):
     # s3.7's rule is that this measurement is built ONCE: three copies of it
     # become three numbers that disagree.
     contest = Contest(ranked, len(allowed), pool,
-                      SEARCH.match_breadth(store, text))
+                      SEARCH.match_breadth(store, text, keep=keep))
     note += ". " + contest.sentence()
 
     return SEARCH.Answer(
@@ -1075,7 +1156,8 @@ def find(store, text, revit=None, limit=5):
                      "why": c.why(), "words_score": c.keyword_score,
                      "nearness_score": c.vector_score,
                      "rerank_score": c.rerank_score} for c in ranked],
-        note=note, contest=contest)
+        note=note, contest=contest,
+        backends=ran(ranked))
 
 
 def main(argv):

@@ -178,6 +178,25 @@ class DocumentPin(object):
         return self._key
 
     @property
+    def project_key(self):
+        """The key a PROJECT KNOWLEDGE STORE may be named after, or None.
+
+        Deliberately narrower than `key`. A pin only has to tell two open
+        models apart, so a path or a title will do; a store's NAME has to
+        survive the file being renamed and must never be shared with a
+        different model that happens to sit at the same path. Only the Project
+        Information UniqueId does both, so only that is returned here.
+
+        None means "not known yet", and every caller must treat it as a
+        question to ask rather than a scope to skip: skipping the project
+        store silently answers a project question out of the company standard
+        and says nothing about it.
+        """
+        if self._key and self._key.startswith("project:"):
+            return self._key[len("project:"):]
+        return None
+
+    @property
     def is_pinned(self):
         return self._key is not None
 
@@ -195,11 +214,30 @@ class DocumentPin(object):
         model called Project1 open in each. The path distinguishes saved
         models; an unsaved one falls back to the title and is pinned as
         loosely as it deserves.
+
+        `projectKey` IS PREFERRED AND IT IS THE ONLY ONE A KNOWLEDGE SCOPE MAY
+        BE NAMED AFTER. heron_scope._safe_key defines the project key as the
+        UniqueId of the document's Project Information element - created with
+        the document, surviving save, rename and move. This returned a
+        path-based key and three brain tools handed it to `open_scope`, so a
+        project store was named after a FILE NAME: rename the file and the
+        knowledge is gone; open a detached copy and it is somebody else's
+        store. The add-in had that UniqueId all along for its own
+        preview/commit pairing and never sent it. It does now. Found by a
+        review 2026-09-11.
+
+        THE PATH AND TITLE FALLBACKS STAY, FOR PINNING ONLY. Golden Rule 20
+        needs to tell two open models apart and any stable string does that.
+        Naming a STORE is a different question with a stricter answer, which
+        is why `project_key` below returns only the first of these.
         """
         if not reply:
             return None
+        project = reply.get("projectKey")
         path = reply.get("documentPath")
         title = reply.get("document")
+        if project:
+            return "project:" + str(project)
         if path:
             return "path:" + str(path)
         if title:

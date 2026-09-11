@@ -1081,10 +1081,39 @@ class Restored(object):
         self.reingested = []
         self.gone = []
         self.skipped = []
+        # RETIRED REVISIONS, BACK AS ROWS AND NOT AS TEXT. (id, title,
+        # replaced_by). Separate from `reingested` because they are a
+        # different fact and adding them to that list would say a document
+        # was re-read when nothing was read.
+        self.retired = []
 
     def __repr__(self):
-        return "<restored %d, %d gone, %d skipped>" % (
-            len(self.reingested), len(self.gone), len(self.skipped))
+        return "<restored %d, %d retired, %d gone, %d skipped>" % (
+            len(self.reingested), len(self.retired),
+            len(self.gone), len(self.skipped))
+
+
+def _restore_retired(store, line, out):
+    """Put one retired revision back as a row. Never its text - see refresh()."""
+    document_id = line.get("document")
+    if not document_id:
+        return
+    have = store.execute("SELECT id FROM documents WHERE id = ?",
+                         (document_id,)).fetchone()
+    if have:
+        out.skipped.append((line.get("path") or "", "already in the store"))
+        return
+    store.execute(
+        "INSERT INTO documents (id, scope, path, title, kind, status, "
+        " added_utc, added_by, source_trust, replaced_by) "
+        "VALUES (?, ?, ?, ?, ?, 'RETIRED', ?, ?, ?, ?)",
+        (document_id, store.scope, line.get("path") or "",
+         line.get("title") or "", line.get("kind") or "",
+         line.get("at") or "", line.get("added_by"),
+         line.get("source_trust"), line.get("replaced_by")))
+    store.db.commit()
+    out.retired.append((document_id, line.get("title") or "",
+                        line.get("replaced_by")))
 
 
 def restore(store):
@@ -1097,6 +1126,14 @@ def restore(store):
 
     A document that was explicitly forgotten stays forgotten: the manifest
     records that too, so a restore does not resurrect what somebody removed.
+
+    A RETIRED REVISION COMES BACK AS A ROW AND NOT AS TEXT. refresh() records
+    each retirement beside the store, so after a deletion the history is
+    visible again - what the id was, what it was called, when it was retired
+    and what replaced it. Its clauses are not: the source file was overwritten
+    in place and Q-B says Heron points at a file and never copies it, so there
+    is nowhere left to read them from. Restoring a row and inventing chunks
+    for it would be the worse answer by a distance.
     """
     ensure_tables(store)
     out = Restored()
@@ -1125,11 +1162,34 @@ def restore(store):
         if line.get("event") == "forgotten":
             out.skipped.append((path, "it was forgotten on purpose"))
             continue
+        if line.get("event") == "retired":
+            # A REVISION THAT EXISTED, BACK AS A ROW. Its source file was
+            # overwritten in place, so its clause text cannot be re-read from
+            # anywhere and is NOT invented here - the row carries the id, the
+            # title, the date and what replaced it, and no chunks. Without
+            # this a restore silently erased every earlier revision and the
+            # store looked as though the document had never changed.
+            _restore_retired(store, line, out)
+            continue
         if not os.path.isfile(path):
             out.gone.append((path, line.get("title") or ""))
             continue
-        have = store.execute(
-            "SELECT id FROM documents WHERE path = ?", (path,)).fetchone()
+        # BY DOCUMENT ID WHERE THE LINE HAS ONE, NOT BY PATH. A retired
+        # revision and the document that replaced it SHARE A PATH - that is
+        # what retirement means - so once restore() began putting retired rows
+        # back, this path check found the retired row and skipped the CURRENT
+        # document. The store came back holding only history and no answer.
+        # Caught by running it, immediately after the change that caused it.
+        #
+        # The path is still the fallback for any line written before the id
+        # was recorded.
+        document_id = line.get("document")
+        if document_id:
+            have = store.execute("SELECT id FROM documents WHERE id = ?",
+                                 (document_id,)).fetchone()
+        else:
+            have = store.execute("SELECT id FROM documents WHERE path = ?",
+                                 (path,)).fetchone()
         if have:
             out.skipped.append((path, "already in the store"))
             continue
@@ -1152,6 +1212,7 @@ def restore(store):
     AUDIT.record("knowledge.restore", True,
                  fields={"scope": store.scope},
                  numbers={"reingested": len(out.reingested),
+                          "retired": len(out.retired),
                           "gone": len(out.gone),
                           "skipped": len(out.skipped)})
     return out
@@ -1240,7 +1301,7 @@ def refresh(store):
     out = Refreshed()
 
     rows = store.execute(
-        "SELECT id, path, title, status, added_by, source_trust "
+        "SELECT id, path, title, kind, status, added_by, source_trust "
         "FROM documents WHERE status != 'RETIRED'").fetchall()
 
     for row in rows:
@@ -1266,6 +1327,38 @@ def refresh(store):
             "UPDATE documents SET status = 'RETIRED', replaced_by = ? "
             "WHERE id = ?", (fresh.document_id, row["id"]))
         store.db.commit()
+
+        # THE RETIREMENT IS RECORDED BESIDE THE STORE, NOT ONLY IN IT.
+        #
+        # Golden Rule 11 says deleting a derived store must be a safe recovery
+        # action, and until a review found this on 2026-09-11 the retired row
+        # was the ONLY record that a previous revision had ever existed. The
+        # manifest held one line per path and that path now points at the NEW
+        # bytes, so deleting the store and restoring took the history with it -
+        # the database was authoritative for history while being declared
+        # disposable, which is the exact shape Golden Rule 11 names.
+        #
+        # WHAT THIS RECOVERS AND WHAT IT CANNOT. After a restore the retired
+        # revision comes back as a ROW: its id (the old file's content hash),
+        # its title, when it was retired, and which document replaced it. Its
+        # CLAUSE TEXT DOES NOT, and nothing short of copying the document at
+        # retirement time could bring it back - the source file was overwritten
+        # in place and Q-B is explicit that Heron points at a file and never
+        # copies it. So "what did this clause say before?" survives a store
+        # deletion as a QUESTION WITH A DATE ON IT, not as an answer. Said here
+        # and in NEEDS-CHECKING rather than left to be discovered by somebody
+        # asking it.
+        _remember(store, "retired", {
+            "document": row["id"],
+            "path": row["path"],
+            "title": row["title"],
+            "kind": row["kind"],
+            "status": row["status"],
+            "added_by": row["added_by"],
+            "source_trust": row["source_trust"],
+            "replaced_by": fresh.document_id,
+            "text_recoverable": False,
+        })
         out.changed.append((row["id"], fresh.document_id, fresh.title))
 
     AUDIT.record("knowledge.refresh", True,
@@ -1374,6 +1467,35 @@ def _main(argv):
     # command. Found by running it. A test now calls main() too.
     scope = (_flag(argv, "--scope", SCOPE.GLOBAL) or SCOPE.GLOBAL).lower()
     project = _flag(argv, "--project")
+    trust = _flag(argv, "--trust", "unknown")
+    show = _flag(argv, "--boundaries")
+    do_refresh = "--refresh" in argv
+    if do_refresh:
+        argv.remove("--refresh")
+
+    # EVERY REMAINING FLAG IS REFUSED BEFORE ANY FILE IS OPENED.
+    #
+    # `--scop company spec.pdf` - one letter short - left the known `--scope`
+    # absent, so scope defaulted to GLOBAL; "--scop" and "company" were then
+    # treated as bad paths and reported, and spec.pdf was ingested into the
+    # SHARED store anyway. The command exited 0 because something had been
+    # ingested. **A typo published company knowledge globally and said it had
+    # worked.** Golden Rule 5 undone by one missing letter, and the second time
+    # this file has let a mistyped scope through a different door - the first
+    # was `--scope` with no value at all. Found by a review 2026-09-11.
+    #
+    # THIS CHECK SITS BELOW THE PARSING ABOVE, AND THAT ORDER IS THE WHOLE
+    # POINT. Written first at the top of the function, it read argv before
+    # _flag() had taken anything out of it - so `--boundaries <id>`, a real
+    # flag, was refused as a typo. Every known flag is consumed above; what is
+    # still here wearing a dash is a flag this tool does not have.
+    stray = [a for a in argv if a.startswith("-")]
+    if stray:
+        print("  not a flag this tool has: %s" % " ".join(stray))
+        print("  Nothing was ingested. A mistyped scope flag would otherwise")
+        print("  default to the GLOBAL store, which every project can read.")
+        print('  python brain/heron_ingest.py <file> --scope company')
+        return 2
 
     # A PROJECT KEY WITHOUT THE PROJECT SCOPE IS REFUSED, NOT QUIETLY IGNORED.
     #
@@ -1395,11 +1517,6 @@ def _main(argv):
         print("    ... --scope project --project %s" % project)
         print("    ... --scope %s            (and drop --project)" % scope)
         return 2
-    trust = _flag(argv, "--trust", "unknown")
-    show = _flag(argv, "--boundaries")
-    do_refresh = "--refresh" in argv
-    if do_refresh:
-        argv.remove("--refresh")
 
     if not argv and not show and not do_refresh:
         print('  python brain/heron_ingest.py <file> --scope global')

@@ -796,6 +796,30 @@ somebody actually wants them.
 
 ---
 
+## `check-narrow-errors.py` — a broken database reported as an empty one
+
+```bash
+python tools/check-narrow-errors.py
+```
+
+**[D-52](../docs/DECISIONS.md)'s plausible zero, in the one shape it keeps arriving in.**
+`except sqlite3.OperationalError: return []` is written for the honest case — the table has not
+been created yet — and swallows every other case with it. A **locked** database, a **malformed**
+file, a **missing column**, a schema older than the code: each one comes back as *"no document is
+indexed in this scope — put one in"*, which is a sentence nobody doubts, about a store that is full
+and broken.
+
+**It is a tool because four reviews found it four times, in four files, all on 2026-09-11** —
+`heron_retrieve.documents()`, then `heron_graph`, then `heron_search.index_chunks`, then
+`heron_retrieve.find_documents`. Each was a copy of a line already corrected somewhere else. A defect
+that arrives one file at a time is not a defect, it is a shape, and a shape is something a command
+can look for.
+
+It asks only that a handler **distinguishes the normal case from a fault** before swallowing —
+a check on the message and a `raise` — not any particular wording. Exits 1 on a finding.
+
+---
+
 ## `check-reachable.py` — built, tested, and called by nothing but a test
 
 ```bash

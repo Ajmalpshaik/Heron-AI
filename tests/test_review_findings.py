@@ -426,8 +426,8 @@ def main():
                         encoding="utf-8").read()
     reconcile = brain_source[brain_source.index("def _reconcile"):]
     reconcile = reconcile[:reconcile.index("class _Open")]
-    check(reconcile.rstrip().endswith("_SYNCED.add(store.scope)"),
-          "the scope is marked reconciled only AFTER the work succeeds - it "
+    check(reconcile.rstrip().endswith("_SYNCED.add(key)"),
+          "the store is marked reconciled only AFTER the work succeeds - it "
           "was marked before the attempt, so one locked database made every "
           "later request in the process skip refresh until a restart")
     print()
@@ -494,7 +494,7 @@ def main():
     print()
 
     print("23. THE SERVED LOOKUP SAYS WHICH BACKENDS ANSWERED")
-    check("_backends(answer.route)" in brain_source,
+    check("_backends(answer)" in brain_source,
           "brain.lookup() carries the backend state - the retrieval CLI "
           "printed it and the seam a host actually uses printed neither, so "
           "two machines could give two orders with nothing saying why")
@@ -505,13 +505,30 @@ def main():
     sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
     import heron_brain as BRAIN2
     for route in ("identity", "cache", "nothing"):
-        said = BRAIN2._backends(route)
+        said = BRAIN2._backends(SEARCH.Answer(route))
         check(said["nearness"] == "not used" and said["rerank"] == "not used",
               "the %r route reports both backends as 'not used' - it answers "
               "without searching, so there was no shortlist for either to "
               "touch" % route)
-    check(BRAIN2._backends("hybrid")["rerank"] != "not used",
-          "and a route that DID search reports the real backend")
+
+    # AND IT READS WHAT THE RUN RECORDED, never what the machine has now.
+    # Gating on the route fixed only the short circuits: a warm-up finishing
+    # between find() and the question still labelled a lexical answer "model",
+    # and a loaded re-ranker that returned no scores was reported as having
+    # re-read the shortlist. Round seven, 2026-09-11.
+    check("def ran(" in inspect.getsource(R),
+          "heron_retrieve records which backends produced a rank, in the "
+          "function that produced it")
+    made_up = SEARCH.Answer("hybrid", backends={
+        "nearness": "lexical", "nearness_why": "measured on this run",
+        "rerank": "not used", "rerank_why": "nothing re-read this shortlist"})
+    check(BRAIN2._backends(made_up)["nearness"] == "lexical",
+          "and the seam repeats the run's own record rather than asking a "
+          "backend a second question with a different answer")
+    check(BRAIN2._backends(SEARCH.Answer("hybrid"))["rerank"] == "not said",
+          "a searching route that recorded nothing says so - naming a backend "
+          "there would be a sentence about the machine wearing the words of a "
+          "sentence about the answer")
     check('found.get("backends")' in server_source,
           "and the tool renders it")
     print()
@@ -676,10 +693,46 @@ def main():
           "no tool passes pinned.title into open_scope's project_key slot - "
           "three did, so a project store was named after a display name that "
           "changes when somebody renames a file")
-    check(server_source.count("project=pinned.key") == 3,
+    check(server_source.count("project=pinned.project_key") == 3,
           "all three pass the stable key, which is what DocumentPin's own "
           "docstring says identity is: 'Title alone is NOT identity', written "
           "after two Revit sessions here both had a document called Project1")
+
+    # AND THE KEY IS THE ONE heron_scope DEFINES, OBTAINED IN A READ-ONLY
+    # CONVERSATION. Round seven found that the previous fix moved a name and
+    # established nothing: pinned.check() ran in ONE tool, the write preview,
+    # so a chat that only ever read had no pin at all - and key_of() built a
+    # PATH-based key while heron_scope names the project store after the
+    # Project Information UniqueId.
+    from heron_write import DocumentPin
+    unpinned = DocumentPin()
+    check(unpinned.project_key is None,
+          "a pin nobody has set names no project store, and says None rather "
+          "than a default - D-33: guessing writes one client's knowledge into "
+          "another's file")
+    by_path = DocumentPin()
+    by_path.check({"document": "Tower B", "documentPath": "C:/x/TowerB.rvt"})
+    check(by_path.is_pinned and by_path.project_key is None,
+          "a path pins the CHAT to one model (Golden Rule 20) and still names "
+          "no store - rename the file and a path-named store is orphaned")
+    real = DocumentPin()
+    real.check({"document": "Tower B", "documentPath": "C:/x/TowerB.rvt",
+                "projectKey": "1a2b3c-0000-4d5e"})
+    check(real.project_key == "1a2b3c-0000-4d5e",
+          "and the Project Information UniqueId the add-in now sends is what "
+          "a project store is named after - it survives save, rename and move")
+    check("Json.Str(\"projectKey\"" in open(
+              os.path.join(ROOT, "revit", "Heron.Revit.Addin",
+                           "RevitOperations.cs"), encoding="utf-8").read(),
+          "the add-in SENDS it - it computed this identity for its own "
+          "preview pairing all along and never put it on the wire, so the "
+          "server had no way to obtain one")
+    server_pin = server_source[server_source.index("def revit_select_by_category"):]
+    server_pin = server_pin[:server_pin.index("def revit_use_session")]
+    check("pinned.check(reply)" in server_pin,
+          "and a READ tool establishes the pin - it was set in the write "
+          "preview alone, so a conversation that never previewed a move "
+          "skipped the project store every time and said nothing")
     print()
 
     print("35. A BROKEN STORE IS NOT AN EMPTY INDEX EITHER")
@@ -701,6 +754,205 @@ def main():
           "current standard, ranking just below them, disappeared")
     print()
 
+    # -----------------------------------------------------------------
+    # Round seven, 2026-09-11. Thirteen findings, every one real.
+    # -----------------------------------------------------------------
+
+    print("37. TWO QUOTED SPANS ARE TWO CLAIMS, NOT ONE LONG ONE")
+    both_exact = 'The clause says "ducts" shall be "insulated" [c]'
+    check(G.coverage(both_exact, "Ductwork: ducts shall be insulated.") == 1.0,
+          "two separately quoted excerpts of one clause both pass - they were "
+          "joined with a space and that invented phrase was looked for whole, "
+          "so a sentence whose every quotation was exact came back flagged")
+    one_wrong = 'The clause says "ducts" shall be "painted red" [c]'
+    check(G.coverage(one_wrong, "Ductwork: ducts shall be insulated.") < 1.0,
+          "and a claim where ONE span is fabricated is still caught - the "
+          "combination is the worst span, not the average, so a true "
+          "quotation beside a false one cannot carry it")
+    print()
+
+    print("38. BREADTH AND ELIGIBLE ARE COUNTED OVER THE SAME CORPUS")
+    check("statuses=OFFERABLE_DOCUMENTS" in inspect.getsource(R),
+          "the document breadth query applies the same lifecycle filter the "
+          "eligible count does - it counted every row in the index, retired "
+          "revisions included, so a long history pushed breadth above "
+          "eligible and the report said the words route had ranked the whole "
+          "library when it had picked one clause out of it")
+    check("keep=keep" in inspect.getsource(R.find),
+          "and the fragment breadth is counted over what the structured "
+          "filter left, not over the whole FTS table")
+    check(R.OFFERABLE_DOCUMENTS is SEARCH.OFFERABLE_DOCUMENTS,
+          "one lifecycle rule, in one place - it was two literal tuples in "
+          "two modules, and two copies of a rule is a rule that can disagree "
+          "with itself")
+    print()
+
+    print("39. A BROKEN STORE IS NEVER A PLAUSIBLE ZERO")
+    retrieve_source = inspect.getsource(R)
+    check(retrieve_source.count('if "no such table" not in str(exc)') >= 2,
+          "find_documents()' document COUNT re-raises anything but a missing "
+          "table - a locked or malformed store counted as zero documents and "
+          "returned the `empty` route, which tells the reader 'nothing has "
+          "been put in yet' about a store that is full and broken (D-52)")
+    check('if "no such table" not in str(exc)' in inspect.getsource(EMBED),
+          "and so does the meaning index - the fourth copy of this shape, "
+          "found by grepping for it rather than by waiting for the next "
+          "review to name it")
+    print()
+
+    print("40. TWO DOCUMENTS ARE TWO SOURCES EVEN IN ONE SCOPE")
+    # BEHAVIOURAL, because the old guard's text survives in the comment that
+    # explains it - and a check that greps for a line it expects to be gone
+    # passes the day somebody quotes it.
+    home7 = tempfile.mkdtemp(prefix="heron-r7-one-scope-")
+    papers7 = tempfile.mkdtemp(prefix="heron-r7-one-scope-p-")
+    os.environ["HERON_KNOWLEDGE"] = home7
+    try:
+        for name, body in (
+                ("current.md", "Acme Standard 2026\n\nSection 3 Ductwork\n\n"
+                               "3.1 Insulation\n\nInsulate to 30mm.\n"),
+                ("legacy.md", "Legacy Acme Standard 2019\n\nSection 3 "
+                              "Ductwork\n\n3.1 Insulation\n\n"
+                              "Insulate to 45mm.\n")):
+            where = os.path.join(papers7, name)
+            with open(where, "w", encoding="utf-8") as handle:
+                handle.write(body)
+            one = SCOPE.open_scope(SCOPE.COMPANY)
+            try:
+                I.ingest(one, where, added_by="tests")
+                SEARCH.index_chunks(one)
+                EMBED.index_chunks(one)
+            finally:
+                one.close()
+        alone = C.disagreements("how thick should duct insulation be",
+                                scopes=[SCOPE.COMPANY])
+        check(len(alone) == 1,
+              "naming ONE scope reports two of its documents disagreeing - "
+              "the gate tested the number of SCOPE NAMES and returned before "
+              "any document was read, so the document-level grouping below it "
+              "was unreachable for exactly the case it was built for")
+        check(alone and len(alone[0].sources) == 2,
+              "and they are counted as two SOURCES, which is what R-24 says")
+        check(C.disagreements("anything", scopes=[]) == [],
+              "while naming no scope at all is still nothing, because nothing "
+              "was asked of anybody")
+    finally:
+        os.environ.pop("HERON_KNOWLEDGE", None)
+        shutil.rmtree(home7, ignore_errors=True)
+        shutil.rmtree(papers7, ignore_errors=True)
+    value = C.Value("company", "company", "mm", "30", "Acme Standard", "3.1",
+                    None, "chunk-a", document_id="doc-one")
+    twin = C.Value("company", "company", "mm", "40", "Acme Standard", "3.1",
+                   None, "chunk-b", document_id="doc-two")
+    check(value.source != twin.source,
+          "two documents sharing a TITLE are two sources - keyed on the title "
+          "they merged into one `says` entry and the disagreement between "
+          "them was dropped, which is the failure Value.source was written "
+          "to fix, one level in")
+    print()
+
+    print("41. THE STANDARDS PATH RUNS THE GUARD IT CLAIMS TO RUN")
+    check("CONTEXT.screen(" in brain_source,
+          "the multi-scope seam screens every document-derived field before "
+          "the renderer sees it - the response ended with 'content, never "
+          "instruction (Golden Rule 19)' and nothing on that path had looked, "
+          "because screen() was reached only through heron_context.build()")
+    check("as_metadata(hit.get(\"document\"))" in brain_source,
+          "and the title and locator are delimited for the lines that do not "
+          "quote them - a title carrying a newline would otherwise sit in the "
+          "answer looking like Heron talking")
+    check("saw: %s" in server_source,
+          "and the renderer raises the visible flag, which is the half the "
+          "packet path has had since R-81 and this newer path had none of")
+    check("_flat(value.document)" in inspect.getsource(C),
+          "the disagreement report does the same with the titles it prints")
+    print()
+
+    print("42. EVERY SCOPE IS RECONCILED, NOT ONLY THE GLOBAL ONE")
+    check("_ready_scope" in brain_source and "_reconcile(store)" in brain_source,
+          "standards() reconciles each scope it opens - the only "
+          "reconciliation was inside _Open, which always opens `global`, so a "
+          "company file edited on disk or a project store deleted as the "
+          "documented safe action stayed stale through every served request")
+    check('getattr(store, "path", None) or store.scope' in brain_source,
+          "and the once-per-process record is keyed on the STORE FILE - keyed "
+          "on the scope NAME, the first project reconciled marked 'project' "
+          "done and every other project was skipped for the life of the "
+          "process")
+    print()
+
+    print("43. A DRAFT IS CHECKED AGAINST THE SCOPES IT CAME FROM")
+    check("scopes=None" in brain_source and "_check_across" in brain_source,
+          "check_answer() takes the scopes that supplied the evidence - it "
+          "opened the global store and only that, so a draft written from "
+          "heron_standards cited chunks global has never heard of and every "
+          "marker came back unresolved, or the reassembly refused outright")
+    across = brain_source[brain_source.index("def _check_across"):]
+    across = across[:across.index("def _ready_scope")]
+    check("store.close()" in across and across.count("CONTEXT.assemble") == 1,
+          "and no packet ever holds two scopes' clauses - one store is opened "
+          "at a time and closed before the next, which is the discipline "
+          "heron_conflict keeps (D-33, Golden Rule 5)")
+    check("scopes=named" in server_source,
+          "and the tool passes them through, so the workflow the check exists "
+          "for can actually use it")
+    print()
+
+    print("44. A MISTYPED FLAG NEVER PUBLISHES TO THE GLOBAL STORE")
+    ingest_source = inspect.getsource(I)
+    main_body = ingest_source[ingest_source.index("def _main"):]
+    main_body = main_body[:main_body.index("def _flag")] \
+        if "def _flag" in main_body else main_body
+    check('stray = [a for a in argv if a.startswith("-")]' in ingest_source,
+          "every argument still wearing a dash after the known flags are "
+          "taken out is refused - `--scop company spec.pdf`, one letter "
+          "short, left scope at its default and ingested the file into the "
+          "SHARED store, exiting 0 because something had been ingested")
+    check(ingest_source.index('show = _flag(argv, "--boundaries")')
+          < ingest_source.index('stray = [a for a in argv'),
+          "and the check sits BELOW the parsing - written above it, it read "
+          "argv before _flag() had taken anything out and refused "
+          "`--boundaries`, a flag this tool has. Caught by the suite within "
+          "a minute")
+    print()
+
+    print("45. A RETIRED REVISION SURVIVES THE STORE BEING DELETED")
+    check('_remember(store, "retired"' in ingest_source,
+          "refresh() records the retirement beside the store - the retired "
+          "row was the only record a previous revision had ever existed, and "
+          "the manifest held one line per path which now points at the NEW "
+          "bytes, so the database was authoritative for history while Golden "
+          "Rule 11 declares it disposable")
+    check("_restore_retired" in ingest_source,
+          "and restore() puts it back as a ROW: its id, its title, when it "
+          "was retired and what replaced it")
+    check("text_recoverable" in ingest_source,
+          "and says plainly that its TEXT is not recoverable - the source was "
+          "overwritten in place and Q-B says Heron points at a file and never "
+          "copies it, so inventing chunks for it would be the worse answer")
+    print()
+
+    print("46. THE TOOL INVENTORY IS DERIVED, NEVER TYPED")
+    tools_source = open(os.path.join(ROOT, "mcp", "server", "heron_tools.py"),
+                        encoding="utf-8").read()
+    check("def main(" in tools_source,
+          "there is a command that prints every declared MCP tool from the "
+          "registry the server enforces")
+    readme = open(os.path.join(ROOT, "brain", "README.md"),
+                  encoding="utf-8").read()
+    check("mcp/server/heron_tools.py" in readme,
+          "brain's README names that command - it said 'Four MCP tools' and "
+          "listed them, and heron_check and heron_standards made it a stale "
+          "description of which surfaces a caller can reach")
+    opened = server_source.index('"""')
+    header = server_source[opened:server_source.index('"""', opened + 3)]
+    check("revit_use_this_model      reads" not in header
+          and "mcp/server/heron_tools.py" in header,
+          "and the server's own module header does too - it listed seven "
+          "while the registry held sixteen. A hand-typed inventory of "
+          "callable surfaces is a security claim with a half-life")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
@@ -710,7 +962,7 @@ def main():
     print("PASSED - every defect an automated review found on 2026-09-11 has")
     print("a check standing on it, and each one fails if it comes back.")
     print()
-    print("It proves nothing about the defects NOBODY has found yet. SIX")
+    print("It proves nothing about the defects NOBODY has found yet. SEVEN")
     print("rounds of this review, each after the one before it was called")
     print("done, and each found real things - a value moved between two")
     print("requirements of one clause, a whole multi-scope path that two")

@@ -314,19 +314,48 @@ def coverage(claim, source):
 
     The ratio is still returned when there is no containment, because the
     report shows it and a reader can see how near a miss was.
+
+    EACH QUOTED SPAN IS ITS OWN CLAIM, AND JOINING THEM INVENTED A THIRD.
+    The first containment version glued every span together with one space
+    and looked for that string:
+
+        source  "ducts shall be insulated"
+        draft   The clause says "ducts" shall be "insulated" [chunk]
+        joined  "ducts insulated"  - which the source does not contain
+        scored  flagged, and BOTH quotations were exact
+
+    The draft never presented those words as one quotation; the check did.
+    A reader told their correct sentence is fabricated stops reading the
+    reports, which costs more than the miss it was guarding. Found by a
+    review 2026-09-11.
+
+    Combined by the WORST span, not the average: the gate is 1.0, so every
+    span has to be in the clause, and the number a reader sees should be the
+    one that failed rather than a figure softened by the spans that passed.
     """
     spans = _QUOTED.findall(claim or "")
     if not spans:
         return None
-    want = normalise(" ".join(spans))
     got = normalise(source)
-    if not want or not got:
+    if not got:
         return 0.0
-    if want in got:
-        return 1.0
-    matcher = difflib.SequenceMatcher(None, want, got)
-    longest = matcher.find_longest_match(0, len(want), 0, len(got))
-    return longest.size / float(len(want))
+
+    worst = None
+    for span in spans:
+        want = normalise(span)
+        if not want:
+            continue
+        if want in got:
+            score = 1.0
+        else:
+            matcher = difflib.SequenceMatcher(None, want, got)
+            longest = matcher.find_longest_match(0, len(want), 0, len(got))
+            score = longest.size / float(len(want))
+        if worst is None or score < worst:
+            worst = score
+    if worst is None:
+        return 0.0
+    return worst
 
 
 # A REVERSAL IS NOT AN ADDED FACT, WHICH IS WHY THE ADDED-FACT RULE MISSED IT.

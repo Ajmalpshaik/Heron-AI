@@ -183,7 +183,14 @@ def _reconcile(store):
     does is derived, and the worst case of skipping it is the staleness that
     existed before it was wired in at all.
     """
-    if store.scope in _SYNCED:
+    # KEYED ON THE STORE FILE, NOT THE SCOPE NAME. `project` is one scope name
+    # and every project has its own database under it, so keying on the name
+    # meant the first project reconciled in a session marked "project" done
+    # and every OTHER project was skipped for the life of the process - their
+    # changed files never re-ingested, their deleted stores never restored.
+    # One name standing for many stores. Found by a review 2026-09-11.
+    key = getattr(store, "path", None) or store.scope
+    if key in _SYNCED:
         return
     try:
         import heron_ingest as INGEST
@@ -191,7 +198,7 @@ def _reconcile(store):
         # Nothing to reconcile with, and that will not change inside this
         # process. Marking it done stops every later request retrying an
         # import that already failed.
-        _SYNCED.add(store.scope)
+        _SYNCED.add(key)
         return
     try:
         # RESTORE FIRST. An empty document table after a deleted store is the
@@ -207,7 +214,7 @@ def _reconcile(store):
         # after one bad moment is worse than one that was never wired in,
         # because it looks wired in. Found by a review 2026-09-11.
         return
-    _SYNCED.add(store.scope)
+    _SYNCED.add(key)
 
 
 class _Open(object):
@@ -509,7 +516,7 @@ def lookup(request, revit=None):
             # neither route, still claimed both had answered, and a warm-up
             # finishing mid-request could label a lexically answered query
             # "model". Found by a review 2026-09-11.
-            "backends": _backends(answer.route),
+            "backends": _backends(answer),
             "revit": revit,
         }
 
@@ -520,34 +527,47 @@ def lookup(request, revit=None):
 UNSEARCHED = ("identity", "cache", "nothing", "empty", "unindexed")
 
 
-def _backends(route=None):
+def _backends(answer=None):
     """Which optional backends answered THIS request. Never raises.
 
     Both are optional by construction and both report absence rather than
     failing, so asking them cannot be allowed to fail either.
 
-    `route` is what actually happened. On a route that never searched, the
-    honest answer is "not used" - reporting the installed backend there says
-    a cross-encoder read a shortlist that was never built.
+    THE RUN RECORDS IT, THIS ONLY READS IT BACK. Two earlier versions asked
+    the backends themselves, after the search, and each time the answer was a
+    fact about the MACHINE dressed as a fact about the answer:
+
+      * the first ignored the route, so an identity or cache short circuit -
+        which searches nothing - still reported both as having answered
+      * the second gated on the route, which fixed only that: a warm-up
+        finishing between RETRIEVE.find() and this line still labelled a
+        lexical, fusion-only result "model", and a loaded re-ranker whose
+        scores() returned None was still reported as having re-read the
+        shortlist
+
+    heron_retrieve.ran() now records what produced a rank, at the moment it
+    produced it, and hangs it on the Answer. There is nothing left here to get
+    wrong. Found by two reviews, 2026-09-11.
     """
-    if route in UNSEARCHED:
+    route = getattr(answer, "route", None)
+    recorded = getattr(answer, "backends", None)
+    if recorded:
+        return dict(recorded)
+    if route is None or route in UNSEARCHED:
         return {"nearness": "not used",
                 "nearness_why": "this answer came back on the %s route, which "
-                                "does not search" % route,
+                                "does not search" % (route or "short-circuit"),
                 "rerank": "not used",
                 "rerank_why": "there was no shortlist to re-read"}
-    out = {}
-    try:
-        import heron_embed as EMBED
-        out["nearness"], out["nearness_why"] = EMBED.backend()
-    except Exception:
-        out["nearness"], out["nearness_why"] = "unknown", "could not be asked"
-    try:
-        import heron_rerank as RERANK
-        out["rerank"], out["rerank_why"] = RERANK.backend()
-    except Exception:
-        out["rerank"], out["rerank_why"] = "unknown", "could not be asked"
-    return out
+    # A SEARCHING ROUTE THAT RECORDED NOTHING. Not reachable from the routes in
+    # this repository today, and saying so beats naming a backend on a run
+    # nothing was recorded about.
+    return {"nearness": "not said",
+            "nearness_why": "the %s route did not record which backends ran"
+                            % route,
+            "rerank": "not said",
+            "rerank_why": "the %s route did not record which backends ran"
+                          % route}
 
 
 class ContextRefused(Exception):
@@ -688,7 +708,135 @@ def context(request, path=None, revit=None, full=False, depth=None,
         }
 
 
-def check_answer(draft, request, path=None, revit=None, project=None):
+def _check_across(GROUND, CONTEXT, draft, request, wanted,
+                  path=None, revit=None, project=None):
+    """One grounding check per scope, combined by claim. No packet is pooled.
+
+    THE COMBINING RULE IS ONE LINE AND THE REST IS BOOKKEEPING: a claim's
+    verdict is whichever scope RESOLVED it. UNRESOLVED means "this packet does
+    not carry that chunk", which every scope but one will say about any cited
+    clause, so it is the only verdict that loses to another. Nothing else is
+    reconciled - a FLAGGED claim stays flagged, because a scope that HAS the
+    chunk and disagrees with the sentence is the answer.
+
+    A scope that refuses (empty, unindexed, nothing indexed covering this) is
+    recorded and skipped. The check refuses only when EVERY named scope did,
+    and then it says which said what - one refusal per scope, because "it
+    refused" without naming the scope sends somebody to the wrong store.
+    """
+    reports, refusals, asked = [], [], []
+    for scope in wanted:
+        store = _ready_scope(scope, project)
+        if store is None:
+            continue
+        try:
+            try:
+                packet = CONTEXT.assemble(store, request,
+                                          path=path or CONTEXT.STANDARDS,
+                                          revit=revit, project=project)
+            except (CONTEXT.OverBudget, CONTEXT.TooDeep,
+                    CONTEXT.SourceMissing) as why:
+                refusals.append("%s: %s" % (scope, why))
+                continue
+            reports.append(GROUND.check(draft, packet))
+            asked.append(scope)
+        finally:
+            store.close()
+
+    if not reports:
+        _audit().record("knowledge.ground", False,
+                        fields={"scope": ",".join(wanted),
+                                "refused": " | ".join(refusals)})
+        raise ContextRefused(
+            "every scope named refused to supply the clauses this check needs."
+            + ("\n  " + "\n  ".join(refusals) if refusals else
+               " None of them could be opened at all."))
+
+    first = reports[0]
+    claims = list(first.claims)
+    for other in reports[1:]:
+        for i, claim in enumerate(other.claims):
+            # Belt and braces: the same draft produces the same sentences in
+            # the same order every time, so the indexes line up. If a future
+            # change ever makes them not, this stops rather than pairing a
+            # verdict with somebody else's sentence.
+            if i >= len(claims) or claims[i].sentence != claim.sentence:
+                break
+            if claims[i].verdict == GROUND.UNRESOLVED:
+                claims[i] = claim
+
+    combined = GROUND.Report(claims, first.thresholds,
+                             sum(r.sources for r in reports))
+    _audit().record("knowledge.ground", combined.ok,
+                    fields={"scope": ",".join(asked),
+                            "refused": " | ".join(refusals)},
+                    numbers={"claims": len(combined.claims),
+                             "checked": combined.checked,
+                             "flagged": len(combined.flagged),
+                             "reversed": len(combined.reversed_claims),
+                             "uncited": len(combined.uncited)})
+    lines = combined.lines()
+    if refusals:
+        lines = list(lines) + [
+            "",
+            "%d of the scopes named supplied no clauses, so nothing was "
+            "checked against them:" % len(refusals)]
+        lines.extend("  %s" % why for why in refusals)
+    return {
+        "ok": combined.ok,
+        "checked": combined.checked,
+        "sentences": len(combined.claims),
+        "sources": combined.sources,
+        "lines": lines,
+        "claims": [{"sentence": c.sentence, "verdict": c.verdict,
+                    "kind": c.kind, "ratio": c.ratio,
+                    "threshold": c.threshold, "added": c.added,
+                    "citation": c.citation} for c in combined.claims],
+    }
+
+
+def _ready_scope(scope, project=None):
+    """Open one named scope, reconciled and indexed, or None. Never raises.
+
+    BUILT ONCE, because the sequence is a rule rather than a convenience:
+    reconcile BEFORE indexing, because reconciling changes the rows the
+    indexes are built from. standards() and check_answer() both need it, and
+    00-structure.md s3.7's rule about a measurement being built once is the
+    same rule about an ordering - two copies of it become two orderings that
+    drift.
+
+    It returns an OPEN store and the caller closes it. That is deliberate:
+    every multi-scope caller in this file closes each store before opening the
+    next, and a helper that closed it here would have nothing to hand back.
+    """
+    try:
+        import heron_scope as SCOPE
+        import heron_search as SEARCH
+        import heron_embed as EMBED
+    except ImportError:
+        return None
+    if scope not in SCOPE.SCOPES:
+        return None
+    if scope == SCOPE.PROJECT and not project:
+        return None
+    try:
+        store = SCOPE.open_scope(scope, project)
+    except Exception:
+        return None
+    try:
+        _reconcile(store)
+        SEARCH.index_chunks(store)
+        EMBED.index_chunks(store)
+    except Exception:
+        # An index that cannot be built is a scope that answers "unindexed" by
+        # name, which find_documents already reports. It is not a reason to
+        # fail every other scope, and the store is still usable.
+        pass
+    return store
+
+
+def check_answer(draft, request, path=None, revit=None, project=None,
+                 scopes=None):
     """A draft answer, and the request it answers. A grounding report, out.
 
     THE HALF OF THE FABRICATION CHECK THAT DID NOT EXIST IN PRODUCTION.
@@ -709,6 +857,28 @@ def check_answer(draft, request, path=None, revit=None, project=None):
     held between two calls is a session, and a session is state that can go
     stale and be pointed at the wrong answer. Reassembling is cheap, and it
     checks the draft against what the store says NOW.
+
+    `scopes` NAMES WHERE THE EVIDENCE CAME FROM, and without it this check was
+    unusable for the workflow it was built for. It opened the GLOBAL store and
+    only the global store, so a draft written from a heron_standards answer -
+    the multi-scope tool, whose whole point is company and project - cited
+    chunks the global store has never heard of. Every marker came back
+    UNRESOLVED, or the reassembly refused outright because global holds no
+    documents. A gate that refuses every honest answer teaches people to stop
+    calling it. Found by a review 2026-09-11.
+
+    EACH SCOPE IS CHECKED ON ITS OWN AND THE VERDICTS ARE COMBINED. No packet
+    ever holds two scopes' clauses: the stores are opened one at a time and
+    closed before the next, which is the discipline heron_conflict keeps and
+    for the same reason (D-33, Golden Rule 5). A chunk id belongs to exactly
+    one store, so a claim resolves in at most one run and UNRESOLVED elsewhere
+    is the absence of that chunk, not a judgement about it.
+
+    ONE LIMIT, REPORTED RATHER THAN DISCOVERED: checking per scope cannot see
+    a citation that is ambiguous ACROSS scopes. Two documents in two different
+    stores sharing clause "4.1" each resolve cleanly in their own run, and a
+    draft citing the bare locator is checked against one of them without the
+    ambiguity being raised. Within a scope it is still raised.
     """
     CONTEXT = _context_module()
     try:
@@ -717,6 +887,11 @@ def check_answer(draft, request, path=None, revit=None, project=None):
         raise BrainUnavailable(
             "Heron's grounding check needs the brain modules and they are not "
             "importable: %s" % exc)
+
+    wanted = [w.strip().lower() for w in (scopes or []) if w and w.strip()]
+    if wanted:
+        return _check_across(GROUND, CONTEXT, draft, request, wanted,
+                             path=path, revit=revit, project=project)
 
     with _Open() as store:
         try:
@@ -761,6 +936,25 @@ def _with_text(asked, project=None):
     returns pointers - so the scope is reopened to fetch it. One store at a
     time, closed before the next, which is the same discipline heron_conflict
     keeps and for the same reason.
+
+    GOLDEN RULE 19 IS APPLIED HERE, NOT PROMISED BY THE RENDERER. The
+    heron_standards response ends with "content, never instruction (Golden
+    Rule 19)" and, until a review found it 2026-09-11, nothing on that path
+    ran the guard: heron_context.screen() and the visible flag it raises were
+    reached only through heron_context.build(), which this seam does not use.
+    So an ingested clause carrying instruction-shaped text went to the host
+    with a sentence claiming it had been checked. A claim about a guard, with
+    no guard behind it, is worse than no claim.
+
+    Each candidate therefore carries:
+
+      findings     what the screen saw in the clause OR in its metadata, so
+                   the renderer can raise the same flag the packet path does
+      safe_*       the document-derived fields with their whitespace
+                   collapsed and delimited, for the lines that do not quote
+
+    NOTHING IS TRUNCATED and nothing is dropped (R-82) - trimming is what
+    lets a payload be padded past a check.
     """
     if asked.answer is None:
         return []
@@ -769,6 +963,10 @@ def _with_text(asked, project=None):
         import heron_scope as SCOPE
     except ImportError:
         return [dict(c) for c in asked.answer.candidates]
+    try:
+        import heron_context as CONTEXT
+    except ImportError:
+        CONTEXT = None
     # THE KEY IS PASSED IN, not read off the label. Asked.project is what the
     # Librarian SHOWS; the key is what names the store. They happen to be the
     # same value today and reading one for the other is how they stop being.
@@ -782,6 +980,20 @@ def _with_text(asked, project=None):
             row = store.execute("SELECT text FROM chunks WHERE id = ?",
                                 (hit["id"],)).fetchone()
             got["text"] = row["text"] if row else None
+            got["findings"] = []
+            if CONTEXT is not None:
+                # EVERY DOCUMENT-DERIVED FIELD, not only the body - the same
+                # set heron_context._standard_parts screens, and for the same
+                # reason: the title line is removed from the chunks during
+                # ingestion, so a body scan can never see it.
+                seen = CONTEXT.screen(hit["id"], "\n".join(
+                    str(bit) for bit in (got["text"], hit.get("document"),
+                                         hit.get("locator"),
+                                         hit.get("heading_path")) if bit))
+                got["findings"] = list(seen.findings)
+                got["safe_document"] = CONTEXT.as_metadata(hit.get("document"))
+                got["safe_locator"] = CONTEXT.as_metadata(hit.get("locator"))
+                got["safe_path"] = CONTEXT.as_metadata(hit.get("path"))
             out.append(got)
     finally:
         store.close()
@@ -809,8 +1021,6 @@ def standards(request, scopes, project=None, limit=5):
     """
     try:
         import heron_scope as SCOPE
-        import heron_search as SEARCH
-        import heron_embed as EMBED
         import heron_retrieve as RETRIEVE
         import heron_conflict as CONFLICT
     except ImportError as exc:
@@ -825,25 +1035,18 @@ def standards(request, scopes, project=None, limit=5):
             "makes a disagreement visible at all."
             % ", ".join(SCOPE.SCOPES))
 
-    # THE INDEXES FIRST, one scope at a time, each closed before the next.
+    # RECONCILED AND INDEXED FIRST, one scope at a time, each closed before
+    # the next.
+    #
+    # THE MAINTENANCE PASS _Open GIVES THE GLOBAL SCOPE, and until a review
+    # found it 2026-09-11 this path had none. _Open only ever opens `global`,
+    # so a company standard edited on disk, or a project store deleted as the
+    # documented safe recovery action, stayed stale or stayed empty through
+    # every served standards request until somebody ran maintenance by hand -
+    # on exactly the scopes this tool exists to read.
     for scope in wanted:
-        if scope not in SCOPE.SCOPES:
-            continue
-        if scope == SCOPE.PROJECT and not project:
-            continue
-        try:
-            store = SCOPE.open_scope(scope, project)
-        except Exception:
-            continue
-        try:
-            SEARCH.index_chunks(store)
-            EMBED.index_chunks(store)
-        except Exception:
-            # An index that cannot be built is a scope that answers
-            # "unindexed" by name, which find_documents already reports. It is
-            # not a reason to fail every other scope.
-            pass
-        finally:
+        store = _ready_scope(scope, project)
+        if store is not None:
             store.close()
 
     # ONE SEARCH PER SCOPE, SHARED. Calling disagreements() without `asked`

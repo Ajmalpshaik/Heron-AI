@@ -1752,3 +1752,140 @@ and this one had neither.
 **A seam nobody wired. A comment that describes something the code below it does not do. A fix applied
 in one place and not its twin.** This round added a fourth: **a class whose docstring names the
 mistake, being used to make it.** None is a logic error. The suite was green through all six.
+
+---
+
+### 2026-09-11 — a seventh round, thirteen more, and the round where a shape stopped being a defect
+
+Codex reviewed `2dd0c21` and posted **thirteen**. Every one was verified against the code before
+anything was changed, and **every one was real**. No false positive in seven rounds.
+
+Four of the thirteen were in code written to fix round six, and two of those were in the fix for the
+finding I had called the worst of that round.
+
+### The one that would have published company knowledge to every project
+
+`brain/heron_ingest.py`, the command:
+
+```
+python brain/heron_ingest.py --scop company spec.pdf
+```
+
+One letter short. The known `--scope` was absent, so the scope stayed at its default — **global**.
+`--scop` and `company` were then reported as bad file paths, `spec.pdf` was ingested into the
+**shared** store, and the command **exited 0**, because something had been ingested.
+
+A typo published company knowledge to every project and said it had worked. Golden Rule 5 undone by a
+missing letter, and the **second time** this one file has let a mistyped scope through a different
+door — the first was `--scope` with no value at all, found in round two.
+
+Every argument still wearing a dash after the known flags are consumed is now refused before any file
+is opened.
+
+**And the first version of that refusal broke `--boundaries`.** Written at the top of the function, it
+read `argv` before `_flag()` had taken anything out of it, so a real flag was refused as a typo. The
+existing suite caught it in under a minute. The check sits below the parsing now, and the comment
+beside it says why the order is the point.
+
+### The half of the multi-scope path that could not be used
+
+Two findings, one shape: `heron_standards` is the tool the whole scope wall exists for, and two things
+attached to it only looked as though they worked.
+
+**`check_answer()` always opened the global store.** A draft written from a company or project answer
+cited chunks the global store has never heard of, so every marker came back `unresolved` — or the
+reassembly refused outright, because global holds no documents at all. *A gate that refuses every
+honest answer teaches people to stop calling it.* It takes the scopes now, checks **one store at a
+time**, closes each before the next, and combines by claim: `unresolved` is the only verdict that
+loses to another, because it means "this packet does not carry that chunk" rather than a judgement.
+One limit is written into the docstring rather than left to be found — checking per scope cannot see a
+citation that is ambiguous **across** scopes.
+
+**`standards()` reconciled nothing.** The only maintenance pass lives inside `_Open`, which always
+opens `global`. So a company standard edited on disk, or a project store deleted as the documented
+safe recovery action, stayed stale or stayed empty through every served request — on exactly the
+scopes this tool exists to read. And the once-per-process marker was keyed on the **scope name**, so
+the first project reconciled in a session marked `project` done and every other project was skipped
+for the life of the process. One name standing for many stores.
+
+### A guard claimed and never run
+
+The `heron_standards` response ends with *"content, never instruction (Golden Rule 19)"*. Nothing on
+that path had ever looked: `screen()` is reached through `heron_context.build()`, and this seam does
+not use it. A clause carrying instruction-shaped text went to the host under a sentence saying it had
+been checked.
+
+**A claim about a guard, with no guard behind it, is worse than no claim.** Every document-derived
+field is screened at the seam now, the titles and clause numbers on the lines that do not quote them
+are delimited, and the renderer raises the same visible flag the packet path has had since R-81.
+
+### The project key, again, and this time the reason it was missing
+
+Round six moved three call sites from `pinned.title` to `pinned.key`. Round seven pointed out that
+this **established nothing**:
+
+* `pinned.check()` was called in **one** tool, the write preview — so a conversation that only ever
+  read never pinned anything, and `pinned.key` stayed `None`
+* even after a preview, `key_of()` built a **path-based** key, while `heron_scope` defines a project
+  store's name as the Project Information **UniqueId**
+
+The add-in had that UniqueId all along — `RevitWrite.DocumentKey` computes it for its own
+preview/commit pairing — and **never put it on the wire**. It does now, beside `document` and
+`documentPath`. `DocumentPin` gained a narrower `project_key` that returns only that: a path is enough
+to pin a *chat* to one model (Golden Rule 20) and is not enough to *name a store*, because renaming
+the file orphans it. A read tool establishes the pin.
+
+**The C# half of this is not compiled here.** There is no .NET SDK in this container. `ProjectInformation.UniqueId`
+is the same expression `RevitWrite.cs` already uses on every release from 2020 to 2027, which is
+evidence rather than an assumption — but it is not a build.
+
+### The two that were sentences about the machine
+
+**`_backends()` asked the backends what was installed, after the search.** Round five gated it on the
+route, which fixed only the short circuits. A warm-up finishing between `find()` and that line still
+labelled a lexical, fusion-only result `model`, and a loaded re-ranker whose `scores()` returned
+`None` was still reported as having re-read the shortlist. `heron_retrieve.ran()` records what
+produced a rank, in the loop that produced it, and the seam now only reads it back.
+
+**`breadth` counted the whole index while `eligible` counted the survivors.** `Contest` compares the
+two, so a release with twenty eligible fragments and twenty incompatible ones could make
+`breadth >= eligible` true and the report say the words route had ranked the entire library when it
+had selected one row out of it. Both sides are counted over one corpus now, and the cost of that is
+written down rather than glossed: **0.83 ms against a 6.4 ms lookup, up from 0.35 ms** — 13% of a
+call, against 3.6% before.
+
+### The shape that stopped being a defect
+
+`except sqlite3.OperationalError: return []` came back for the **fourth** time, in
+`find_documents()`'s document count. Round two fixed it in `documents()`, round five in `heron_graph`,
+round six in `heron_search.index_chunks`, and this round found the copy one screen below the round-two
+fix, in the same file.
+
+A defect that arrives one file at a time is not a defect. It is a shape, and a shape is something a
+command can look for — **`tools/check-narrow-errors.py`**. It found the fourth copy and a fifth nobody
+had reported, in `heron_embed.index_chunks`. Both are narrowed. Proved by introducing the shape and
+watching it exit 1, not by passing on a clean tree.
+
+### The rest, in one line each
+
+| | |
+|---|---|
+| two quoted spans in one claim were **glued with a space** | `The clause says "ducts" shall be "insulated"` was flagged against a source saying *ducts shall be insulated*. Both quotations were exact; the check invented a third |
+| conflict sources were keyed on the **document title** | two documents sharing a title merged into one source and their disagreement was dropped — the failure `Value.source` was written to fix, one level in |
+| `if len(wanted) < 2: return []` | naming **one** scope returned before any document was read, so the document-level grouping added the round before was unreachable for the single-scope case it was built for. Its comment said *"a scope cannot disagree with itself"*, which is true and beside the point |
+| a **retired revision** vanished with the derived store | the manifest held one line per path and that path now points at the new bytes. `refresh()` records the retirement beside the store now; a restore brings the revision back as a **row** — id, title, date, successor — and says plainly that its **text** is not recoverable, because the file was overwritten and Q-B says Heron never copies it |
+| the tool inventory was typed in **two** places | `brain/README.md` said *four*, the server header listed *seven*, the registry holds **sixteen**. `python mcp/server/heron_tools.py` prints it from the table the server enforces, and both prose lists now name the command |
+
+### Seven rounds, and what the shapes are now
+
+The four from round six all recurred: **a seam nobody wired** (`check_answer`, `standards()`), **a
+comment describing what the code does not do** (`if len(wanted) < 2`), **a fix applied in one place
+and not its twin** (the fourth and fifth `OperationalError`), **a class whose docstring names the
+mistake** (`DocumentPin`, for the second round running).
+
+This round added a fifth, and it is the most uncomfortable: **a sentence in the output claiming a
+check that never ran.** Golden Rule 19 on the standards path, and `_backends` naming a re-ranker that
+read nothing. Both were *written by me, in the same session, in wording that described the intention
+rather than the code*.
+
+The suite was green through all seven.
