@@ -1,0 +1,21 @@
+# Keep the actions in .github/workflows pinned to versions that still run.
+#
+# This file exists because of a specific near-miss. The first workflow here
+# pinned actions/checkout@v4 and actions/setup-python@v5, both of which run on
+# Node 20 - and Node 20 is removed from GitHub's runners on 2026-09-23. The
+# build was green and warning quietly. Nobody would have looked until it broke.
+#
+# Dependabot opens a pull request when a newer major is out, so the next one is
+# a review rather than an outage. It runs the full Gates workflow like any
+# other pull request, so a bad bump cannot land silently.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+    open-pull-requests-limit: 3

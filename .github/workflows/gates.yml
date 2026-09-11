@@ -27,9 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -61,14 +61,77 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+  generated:
+    name: The generated files are current
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
+      # Three tools in this repository WRITE files, and they are not equal.
+      # recount-agent-registry rewrites docs/28-agent-registry.md, which IS
+      # committed - so it can be stale, and a stale committed file is worse
+      # than an absent one because it is believed. The other two write
+      # agent-map.html and fragment-catalog.html, both gitignored, so they
+      # can never drift.
+      #
+      # All three run anyway. The diff can only catch the registry, but a
+      # generator that has stopped running at all is its own regression, and
+      # nothing else here would notice.
+      - name: Re-run the generators and diff
+        shell: bash
+        run: |
+          for g in generate-fragment-catalog generate-agent-map \
+                   recount-agent-registry; do
+            echo "----- ${g} -----"
+            python "tools/${g}.py"
+          done
+
+          # Scoped to the file the generators own. An unscoped diff would
+          # report any other tracked change in the tree as "stale".
+          GENERATED="docs/28-agent-registry.md"
+
+          if git diff --quiet -- "$GENERATED"; then
+            echo "All three generators ran. The one generated file that is committed matches."
+            {
+              echo "### Generated files"
+              echo
+              echo "All three generators ran. \`docs/28-agent-registry.md\`, the"
+              echo "one generated file that is committed, matches what its"
+              echo "generator produces."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "::error::A committed generated file is stale."
+          git --no-pager diff --stat -- "$GENERATED"
+          {
+            echo "### Generated files"
+            echo
+            echo "**A committed generated file is stale.** Re-run the"
+            echo "generator and commit the result:"
+            echo
+            echo '```'
+            git --no-pager diff --stat -- "$GENERATED"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
   reports:
     name: The reports - a finding is a question
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -109,9 +172,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
