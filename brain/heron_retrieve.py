@@ -1,4 +1,4 @@
-# Heron-Agent:  HERON-RAG-RNK-006, HERON-RAG-CTX-007
+# Heron-Agent:  HERON-RAG-RNK-006, HERON-RAG-CTX-007, HERON-RAG-LIB-001
 # Heron-Step:   11
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -602,6 +602,20 @@ def find_documents(store, text, limit=5):
                  "result and it is not 'nothing matched'. Nothing has been "
                  "put in yet:  python brain/heron_ingest.py <file>")
 
+    # DOCUMENTS INGESTED BUT NOT INDEXED IS A THIRD STATE, and reporting it
+    # as "nothing matched" is the R-19 defect one level down: the chunks are
+    # there, the searchable text is not, and a miss and an unbuilt index read
+    # identically from the outside. Found by a test that ingested and forgot
+    # to index - which is exactly how a caller will meet it.
+    indexed = store.execute("SELECT COUNT(*) AS n FROM chunk_text").fetchone()["n"]
+    if not indexed:
+        return SEARCH.Answer(
+            "unindexed",
+            note="%d document(s) are ingested and NOT INDEXED - this is not a "
+                 "search result either. The searchable text is derived and "
+                 "has not been built:  heron_search.index_chunks(store) and "
+                 "heron_embed.index_chunks(store)" % total)
+
     ranked, eligible_chunks = documents(store, text, limit=limit)
     if not ranked:
         retired = store.execute(
@@ -635,6 +649,102 @@ def find_documents(store, text, limit=5):
                      "words_score": c.keyword_score,
                      "nearness_score": c.vector_score} for c in ranked],
         note=note, contest=contest)
+
+
+# ---------------------------------------------------------------------------
+# The Librarian - which scope, and the trap in the question
+# ---------------------------------------------------------------------------
+
+class Asked(object):
+    """One scope, asked on its own, with its own answer. Never merged."""
+
+    def __init__(self, scope, project=None, answer=None, skipped=None):
+        self.scope = scope
+        self.project = project
+        self.answer = answer
+        self.skipped = skipped        # why it was not asked, or None
+
+    @property
+    def label(self):
+        if self.project:
+            return "%s (%s)" % (self.scope, self.project)
+        return self.scope
+
+    def __repr__(self):
+        return "<asked %s %s>" % (self.label,
+                                  self.skipped or (self.answer.route
+                                                   if self.answer else "-"))
+
+
+def librarian(text, scopes=None, project=None, limit=5):
+    """Ask each scope SEPARATELY. Returns one Asked per scope, labelled.
+
+    THE TRAP IN THIS WHOLE TRACK IS IN THE NAME OF THIS FUNCTION.
+    "An agent that decides which scopes to search" reads as "an agent that
+    searches several", and implemented that way it is a UNION - one client's
+    knowledge in the same result set as another's. D-33 calls that a
+    CONTRACTUAL problem rather than a technical one, and Golden Rule 5 exists
+    to make it impossible to write.
+
+    So the rule, written down before any of this was coded:
+
+        The Librarian decides WHICH ONE. If it needs two, it makes TWO
+        SEPARATE QUERIES and says which answer came from where. It never
+        merges them, and CrossScopeRefused stays exactly as it is.
+
+    THERE IS NO ARGUMENT HERE THAT COULD TAKE A MERGED QUERY, and that is the
+    design rather than an omission. Each scope is opened as its own Store,
+    asked its own question, and its answer is returned under its own label.
+    Nothing compares two scopes' scores, because a score from one store and a
+    score from another are not the same measurement - the same reason
+    find_documents() is separate from find().
+
+    AND IT DOES NOT CHOOSE (R-62, D-01). It reports what each scope holds.
+    Deciding what the user meant, and which answer to use, is the host's act -
+    which is S-1's "hand it back", taken as the plan's stated default.
+
+    In Revit terms: you can open two models side by side. You do not copy one
+    into the other to compare them.
+    """
+    wanted = list(scopes or [SCOPE.GLOBAL])
+    out = []
+    for scope in wanted:
+        if scope not in SCOPE.SCOPES:
+            out.append(Asked(scope, skipped="not a knowledge scope"))
+            continue
+
+        if scope == SCOPE.PROJECT and not project:
+            # D-33, and heron_scope already refuses this - the refusal is
+            # called rather than re-implemented. A guess here writes one
+            # client's knowledge into another's file.
+            out.append(Asked(scope, skipped=(
+                "no project is identified, so the project store is not opened "
+                "- guessing which project a question belongs to is how one "
+                "client's knowledge reaches another")))
+            continue
+
+        # THE PROJECT KEY LABELS THE PROJECT SCOPE AND NOTHING ELSE. It was
+        # attached to every answer at first, so a company answer came back
+        # labelled "company (Tower B)" - which reads as this being Tower B's
+        # copy of the company standard. It is not: it is the company's one
+        # store, and mislabelling whose knowledge something is, is the exact
+        # confusion Golden Rule 5 exists to prevent.
+        label = project if scope == SCOPE.PROJECT else None
+
+        try:
+            store = SCOPE.open_scope(scope, project)
+        except Exception as why:
+            out.append(Asked(scope, project=label,
+                             skipped="could not be opened: %s" % why))
+            continue
+
+        try:
+            SEARCH.ensure_chunk_table(store)
+            out.append(Asked(scope, project=label,
+                             answer=find_documents(store, text, limit=limit)))
+        finally:
+            store.close()
+    return out
 
 
 def find(store, text, revit=None, limit=5):

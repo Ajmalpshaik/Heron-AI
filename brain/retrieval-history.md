@@ -523,6 +523,58 @@ the source's words"* means, allowing an ellipsis and nothing more.
 
 ---
 
+## 2026-09-11 — the document graph's density, and the route that still has no vote
+
+**Stage 5 begins with a count, not with code**, because the same idea over the **fragment** graph was
+measured at six settings and **lost every one** ([`34 §2.13`](../docs/34-patterns-adapted.md)) — and
+the property that decided it was **density**: a median of **50** neighbours per fragment, **worst
+230**, so *"the neighbours of the best hit"* was a large slice of the library added as competitors.
+
+**A document graph is a different graph, so the finding does not transfer. The test that decided it
+does.** `heron_graph.document_density()`:
+
+| | fragments | documents |
+|---|---|---|
+| chunks / fragments counted | 360 | **62** |
+| **median neighbours** | **50** | **7** |
+| **worst** | **230** | **12** |
+| isolated | — | 1 |
+
+**An order of magnitude sparser, and for a reason that is intelligible rather than lucky.** A
+fragment providing `IList<Element>` composes with most of the library — that is what made it dense.
+**A clause cannot do that.** Its neighbours are its one parent, the clauses sharing that parent, its
+own children, and the clauses its text names. **The document's own numbering bounds the count**, and
+no clause can be the parent of two hundred others unless the document really does number them that
+way — in which case they really are its subsections.
+
+### So the route is built and it still has NO WEIGHT, which is step 4 exactly
+
+`heron_graph.document_neighbours()` derives three kinds of edge — **parent**, **sibling**, and a
+clause whose **text names another clause's number**. The third is the only reason a graph route is
+worth considering at all: *"labelling shall be in accordance with 21.3.1"* links two clauses that
+share no subject and no vocabulary, so neither the words route nor the nearness route can find it.
+
+**Nothing in retrieval reads any of it**, and a test asserts that. Fusion still has exactly two
+weighted routes. **An edge route gets no vote until a measurement earns it one — the same bar the
+nearness route had to clear**, and the same bar `34 §2.13` set for the fragment graph before it
+failed.
+
+### What this count is NOT
+
+**62 chunks, in four documents, all written for these tests by the same hand.** The density is
+*structurally* bounded, which is the part that generalises; the *number* is about this corpus. A real
+QCS section with thirty clauses under one subsection would push the median up — and still nowhere
+near 50.
+
+**So the gate is passed provisionally and the weight is not granted.** Granting it needs a tracked
+question set on a real corpus, and a question set over documents this session wrote would measure the
+documents rather than the route.
+
+**D-40 holds: every edge is derived on demand.** There is no edge table, and a test asserts there is
+none — a stored document edge is a cache that goes stale the moment a document is re-ingested.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:

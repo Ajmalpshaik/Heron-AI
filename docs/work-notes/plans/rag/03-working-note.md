@@ -34,7 +34,9 @@ and deliberately left alone.
 | Stage 1 — a document can go in | **DONE 2026-09-11.** `documents` and `chunks` tables, [`brain/heron_ingest.py`](../../../../brain/heron_ingest.py), hierarchy at arbitrary depth, the heading path, the rule-and-exception split, and `--boundaries` for a person to read. **PDF is the one format that needs an optional reader** — everything else is standard library |
 | Stage 2 — a document comes back out | **DONE 2026-09-11.** `find_documents()`, a chunk FTS index, chunk vectors, and the first document measurement. **Alongside fragments, never fused with them** |
 | Stage 3 — citation, refusal, fabrication check | **DONE 2026-09-11, with R-45 part-done and saying which part.** `heron_ground.py`, the guard, citations bound to the exact chunk |
-| Stages 4 to 8 | **not started** |
+| Stage 4 — the Librarian picks the scope | **DONE 2026-09-11.** `heron_retrieve.librarian()` — one query per scope, two labelled answers, nothing pooled |
+| Stage 5 — document nodes, and the density count | **COUNTED 2026-09-11.** Edges derived, density an order of magnitude below the fragment graph, **and the route still has no weight** |
+| Stages 6 to 8 | **not started** |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
 
 ---
@@ -1056,4 +1058,103 @@ saying no clause store exists at all.
 
 **Next.** Stage 4 — the Librarian picks the scope, which needs documents in more than one scope. And
 **S-4 is still open**: every document in these tests was written to be easy.
+
+### 2026-09-11 — Stage 4: two scopes, two queries, and nothing pooled
+
+**Closes R-38.** `heron_retrieve.librarian()`, `tests/test_librarian.py`, 20 checks.
+
+**The whole stage is one sentence and the danger is in the name of the function.** *"An agent that
+decides which scopes to search"* reads as *"an agent that searches several"*, and implemented that way
+it is a `UNION` — one client's knowledge in the same result set as another's, which
+[D-33](../../../DECISIONS.md) calls a **contractual** problem rather than a technical one.
+
+So the shape is the guarantee: **there is no argument this function could take that pooled two
+scopes.** Each is opened as its own `Store`, asked its own question, and returned under its own label.
+Nothing compares a score from one store with a score from another — the same reason `find_documents()`
+is separate from `find()`.
+
+```text
+company            Acme Engineering BIM Standard 2026  3.1   insulate to 30mm
+project (Tower B)  Tower B Project Specification       3.1   insulate to 40mm
+```
+
+**Two different thicknesses, both correctly reported, and nothing decided between them.** Deciding is
+the host's act; **surfacing that they disagree at all is Stage 8**, and this is the first time the
+plan's R-24 case exists as something a test can point at rather than a sentence.
+
+**`ATTACH` still raises, and it turned out to have been giving the instruction all along.** Its refusal
+already read *"Open a second Store instead, where the crossing is visible and can be logged"* — which
+is exactly what this stage built. The test asserts the refusal is **unchanged**.
+
+**One defect in this batch's own code.** The project key was attached to every answer, so a company
+answer came back labelled **`company (Tower B)`** — which reads as *Tower B's copy of the company
+standard*. It is not; it is the company's one store. **Mislabelling whose knowledge something is, is
+the exact confusion Golden Rule 5 exists to prevent**, arriving in the stage written to keep it.
+
+### S-1 — settled by building it, and the two horns did not conflict
+
+> This heading used to put the question's number directly in front of the word for *resolved*, and
+> `check-docs.py` failed it — its question-count rule read the pair as a tally and compared it against
+> `OPEN-QUESTIONS.md`. **The gate was wrong about the meaning and right to stop the line**: a phrase
+> that reads as a count to a checker reads as one to a person skimming too. **The wording changed;
+> the checker did not.**
+
+> *When the Librarian needs two scopes, does Heron ask two questions itself, or hand the choice back to
+> the host?*
+
+**Both, and they were never opposed.** The brain asks each named scope **separately** — milliseconds
+against a local file, so there is no cost argument — and **hands back one labelled answer per scope,
+choosing none**. That is *asking two questions* in mechanism and *handing it back* in contract, which
+is what [D-01](../../../DECISIONS.md) and R-62 actually require.
+
+**Recorded as the plan's stated default taken, and flagged for the owner rather than closed.**
+
+**Next.** Stage 5 — document nodes, and **the density count that decides whether the edge route is
+built at all**. It begins with a count, not with code, and a recorded rejection closes the requirement
+just as well as a route does.
+
+### 2026-09-11 — Stage 5: the count, and the route that still has no vote
+
+**Closes R-40, and R-39 provisionally.** `heron_graph.document_neighbours()`,
+`tests/test_document_graph.py`, 15 checks.
+
+**This stage begins with a count, not with code**, because the same idea over the **fragment** graph
+was measured at six settings and **lost every one** — and the property that decided it was density.
+
+| | fragments | documents |
+|---|---|---|
+| **median neighbours** | **50** | **7** |
+| **worst** | **230** | **12** |
+
+**An order of magnitude sparser, for a reason that is intelligible rather than lucky.** A fragment
+providing `IList<Element>` composes with most of the library — that is what made it dense. **A clause
+cannot do that.** Its neighbours are its one parent, the clauses sharing that parent, its own
+children, and the clauses its text names; **the document's own numbering bounds the count**.
+
+**So step 4 is done exactly as written: the route is built and has NO WEIGHT.** Three kinds of edge —
+parent, sibling, and **a clause whose text names another clause's number**, which is the only one
+worth having: *"labelling shall be in accordance with 21.3.1"* links two clauses that **share no
+subject and no vocabulary**, so neither existing route can find it. **Nothing in retrieval reads any
+of it**, and a test asserts that fusion still has exactly two weighted routes.
+
+**The gate is passed PROVISIONALLY and the weight is not granted.** 62 chunks in four documents, all
+written for these tests by the same hand. The density is *structurally* bounded — that part
+generalises — but the *number* is about this corpus, and a question set over documents this session
+wrote would measure the documents rather than the route.
+
+**D-40 holds and is tested as an absence**: there is no edge table, and the test lists the tables to
+prove it.
+
+### And the count found a defect nothing else would have
+
+The test ingested a document and **forgot to index it**, and retrieval answered **"nothing in the
+indexed documents matched"**. The chunks were there; the searchable text was not. **That is the R-19
+defect one level down** — a miss and an unbuilt index reading identically from the outside, which is
+exactly how a number recorded from such a run becomes a measurement of nothing.
+
+There is now a fourth state, `unindexed`, that says so and names the two calls that fix it. **Found by
+a test making the mistake a caller will make.**
+
+**Next.** Stage 6 — maintenance: re-index on change by content hash, and duplicate detection at write
+time.
 

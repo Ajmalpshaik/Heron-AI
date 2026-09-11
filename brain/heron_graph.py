@@ -45,6 +45,8 @@ graph reports the break BEFORE any of its clean output is believed.
 """
 
 import os
+import re
+import sqlite3
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -208,6 +210,116 @@ def orphans(store):
                               "an action nothing can feed - nothing provides %s"
                               % ", ".join(unmet)))
     return found
+
+
+# ---------------------------------------------------------------------------
+# Document neighbours - Stage 5, and it begins with a COUNT rather than a route
+# ---------------------------------------------------------------------------
+
+# WHY THIS IS A COUNT AND NOT A FEATURE.
+#
+# docs/34 s2.13 measured a third retrieval stream over the FRAGMENT graph at
+# six settings and ALL SIX LOST - the gentlest cost 1.1 points of P@1, the
+# strongest 14, and P@5 never improved at any setting, so it did not widen
+# recall either, which is the one thing a graph stream is supposed to be good
+# at.
+#
+# And it named the property that decided it: DENSITY. Heron's composition
+# graph runs a median of 50 neighbours per fragment, worst 230. A fragment
+# providing IList<Element> composes with most of the library, so "the
+# neighbours of the best hit" is not a signal - it is a large slice of the
+# library added as competitors.
+#
+# A DOCUMENT GRAPH IS A DIFFERENT GRAPH, so that finding does not transfer
+# automatically. The TEST that decided it does. So this derives the edges and
+# counts them, and nothing reads them into retrieval until a count says it is
+# worth it.
+#
+# D-40: EVERY EDGE HERE IS DERIVED ON DEMAND. A stored document edge is a
+# cache that goes stale the moment a document is re-ingested.
+
+_CLAUSE_REFERENCE = re.compile(r"\b\d+(?:\.\d+)+\b")
+
+
+def document_neighbours(store, chunk_id=None):
+    """Every chunk's neighbours, derived. {chunk_id: set(chunk_id)}.
+
+    THREE KINDS OF EDGE, all read off what the document already says:
+
+      parent    the section a clause sits inside, and its clauses back
+      sibling   the clauses under one parent - "the rest of 21.3"
+      cites     a clause whose TEXT names another clause's number. This is
+                the one that finds what words alone miss: "insulation shall
+                comply with 21.3.2" links two clauses that share no subject.
+
+    Nothing is stored. Ask again after a re-ingest and the answer is rebuilt
+    from the rows, which is the whole of D-40.
+    """
+    try:
+        rows = store.execute(
+            "SELECT id, document_id, parent_id, locator, text "
+            "FROM chunks").fetchall()
+    except sqlite3.OperationalError:
+        return {}
+
+    by_locator = {}
+    for row in rows:
+        if row["locator"]:
+            by_locator.setdefault((row["document_id"], row["locator"]),
+                                  row["id"])
+
+    children = {}
+    for row in rows:
+        if row["parent_id"]:
+            children.setdefault(row["parent_id"], []).append(row["id"])
+
+    edges = {}
+    for row in rows:
+        near = set()
+        if row["parent_id"]:
+            near.add(row["parent_id"])
+            for other in children.get(row["parent_id"], ()):
+                if other != row["id"]:
+                    near.add(other)          # sibling
+        near.update(children.get(row["id"], ()))
+
+        # A clause that names another clause's number, within the same
+        # document. Across documents it would be a guess - "4.1.1" means
+        # something different in every standard.
+        for found in _CLAUSE_REFERENCE.findall(row["text"] or ""):
+            if found == row["locator"]:
+                continue
+            other = by_locator.get((row["document_id"], found))
+            if other:
+                near.add(other)
+
+        near.discard(row["id"])
+        edges[row["id"]] = near
+
+    if chunk_id is not None:
+        return {chunk_id: edges.get(chunk_id, set())}
+    return edges
+
+
+def document_density(store):
+    """The count Stage 5 turns on. Returns a dict a report can print.
+
+    WHAT THE NUMBER HAS TO BEAT. The fragment graph's median was 50 and its
+    worst 230, and at that density the neighbours of a good hit are
+    competitors rather than evidence. A document graph that looks like that
+    loses the same way for the same reason, and the route is not built.
+    """
+    edges = document_neighbours(store)
+    if not edges:
+        return {"chunks": 0, "median": 0, "worst": 0, "isolated": 0,
+                "total": 0}
+    counts = sorted(len(near) for near in edges.values())
+    middle = counts[len(counts) // 2]
+    return {"chunks": len(counts),
+            "median": middle,
+            "worst": counts[-1],
+            "isolated": len([c for c in counts if c == 0]),
+            "total": sum(counts)}
 
 
 def main(argv):
