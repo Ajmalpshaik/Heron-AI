@@ -100,6 +100,17 @@ TOOLS = {
     # describe. What crosses between them is a number and a clause number.
     "heron_standards":          (READ,    None),
 
+    # Stage 9's two (HERON-RAG-RSH-017, docs/28). READ, operation None, and
+    # for these two that is a stronger claim than for the others: the Research
+    # agent is the one part of this plan whose NAME suggests reaching outside,
+    # and it does not. heron_research says what Heron's own knowledge missed
+    # and what an outside answer must carry; heron_research_check reports on
+    # the CITATIONS of what came back. Neither opens a socket - the host has
+    # the model and the network (D-01), and tests/test_research.py asserts the
+    # absence of a fetch rather than trusting this comment.
+    "heron_research":           (READ,    None),
+    "heron_research_check":     (READ,    None),
+
     # The Capability Gap report (HERON-AHR-GAP-001, docs/06 s6). READ, and the
     # operation is None for the same reason as the three above - it sends
     # nothing to Revit. What it reads is Heron's OWN audit trail, which is a

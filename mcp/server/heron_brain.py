@@ -950,6 +950,105 @@ def check_answer(draft, request, path=None, revit=None, project=None,
         }
 
 
+def research(request, scopes, project=None, limit=5, project_name=None):
+    """What Heron does not know about this question, and what an answer owes.
+
+    STAGE 9, AND HERON DOES NOT FETCH. D-01 puts every model call in the host
+    because Heron is a per-user install with no admin rights and no server; the
+    network is the same boundary, and docs/DECISIONS.md adds the offline
+    premise - "site visits, locked-down networks, a laptop on a plane". So this
+    seam hands the host a BRIEF and the host, which has both the model and the
+    connection, goes and finds out.
+
+    THE GAP IS READ OFF THE LIBRARIAN'S OWN ANSWER, not asked for a second
+    time. Stage 8 learned that the hard way: a second search gives a second
+    shortlist, and a sentence printed under an answer can then be about other
+    clauses than the ones above it.
+    """
+    try:
+        import heron_scope as SCOPE
+        import heron_retrieve as RETRIEVE
+        import heron_research as RESEARCH
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's knowledge layer needs PyYAML and it is not installed: %s\n"
+            "Install it with:  pip install --user pyyaml" % exc)
+
+    wanted = [one.strip().lower() for one in (scopes or []) if one.strip()]
+    if not wanted:
+        raise ValueError(
+            "name at least one scope to search before going outside. There "
+            "are %s - and Heron has to know what it does NOT hold before an "
+            "outside answer is worth anything." % ", ".join(SCOPE.SCOPES))
+
+    for scope in wanted:
+        store = _ready_scope(scope, project)
+        if store is not None:
+            store.close()
+
+    asked = RETRIEVE.librarian(request, scopes=wanted, project=project,
+                               limit=limit, project_name=project_name)
+    found = RESEARCH.gap(request, asked)
+
+    # D-62's trail. A question Heron could not answer is exactly what the
+    # Capability Gap Agent exists to count, and until this line nothing
+    # recorded one - the gaps report could only see what had been ASKED of
+    # Revit, never what the knowledge layer had missed.
+    _audit().record("knowledge.research", True,
+                    fields={"scopes": ",".join(wanted),
+                            "certain": str(found.certain)},
+                    numbers={"clauses": found.clauses,
+                             "searched": len(found.searched)})
+
+    return {
+        "request": request,
+        "certain": found.certain,
+        "clauses": found.clauses,
+        "sentence": found.sentence(),
+        "brief": RESEARCH.brief(found, wanted),
+        "searched": [{"label": one.label, "route": one.route,
+                      "note": one.note, "clauses": one.clauses,
+                      "skipped": one.skipped} for one in found.searched],
+    }
+
+
+def research_check(answer):
+    """An external answer, in. A report on its CITATIONS, out. Never on its truth.
+
+    The half of Stage 9 with teeth, and the reason the stage is last. An answer
+    from inside Heron carries a chunk id that resolves to text; an answer from
+    outside carries whatever was written down, and "per ISO 19650" under a
+    confident paragraph is indistinguishable, to a reader in a hurry, from a
+    citation. docs/05 s8 calls that the invented-standard failure.
+
+    It cannot say the answer is right. There is no chunk, no text and no packet
+    to compare against, so every claim ends at UNVERIFIED however well-formed
+    its citation is.
+    """
+    try:
+        import heron_research as RESEARCH
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's research check needs the brain modules and they are not "
+            "importable: %s" % exc)
+
+    report = RESEARCH.check(answer)
+    _audit().record("knowledge.research_check", report.ok,
+                    numbers={"claims": len(report.claims),
+                             "checked": len(report.checked),
+                             "uncited": len(report.uncited),
+                             "vague": len(report.vague)})
+    return {
+        "ok": report.ok,
+        "checked": len(report.checked),
+        "sentences": len(report.claims),
+        "lines": report.lines(),
+        "claims": [{"sentence": c.sentence, "verdict": c.verdict,
+                    "missing": (c.cited.missing if c.cited else [])}
+                   for c in report.claims],
+    }
+
+
 def _with_text(asked, project=None):
     """One scope's candidates, each carrying the clause a person has to read.
 

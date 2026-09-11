@@ -1248,6 +1248,84 @@ def heron_standards(request: str, scopes: str = "company,project") -> str:
 
 
 @server.tool()
+def heron_research(request: str, scopes: str = "company,project") -> str:
+    """
+    Say what Heron does NOT know about a question, and what an outside answer must carry.
+
+    Call this BEFORE answering a standards question from your own knowledge or
+    from the web. Heron searches the scopes you name, reports what each one
+    holds, and hands back a brief: what is missing, and the three things every
+    claim in an answer must carry to be worth anything.
+
+    **Heron does not fetch, and that is deliberate.** It has no keys, no proxy
+    policy and no way to promise a connection, and it has to work on a site
+    with no signal. You have the model and the network; this tells you what to
+    go and find, and what shape the answer has to come back in.
+
+    **Read the clauses Heron DID return before researching.** Where any came
+    back, Heron cannot tell you whether they answer your question - that needs
+    a retrieval floor it has measured and cannot derive - so it says so rather
+    than guessing. Researching past a clause that already answers is how a
+    modeller ends up with a web answer over their own company standard.
+
+    `scopes` is a comma-separated list: global, company, project, user,
+    temporary, experimental. Touches nothing in the model.
+    """
+    try:
+        got = brain.research(request, [s for s in scopes.split(",")],
+                             project=pinned.project_key,
+                             project_name=pinned.title)
+    except brain.BrainUnavailable as why:
+        return str(why)
+    except ValueError as why:
+        return str(why)
+
+    lines = [got["brief"], "", _not_proven()]
+    return "\n".join(lines)
+
+
+@server.tool()
+def heron_research_check(answer: str) -> str:
+    """
+    Check the CITATIONS in an answer that came from outside Heron. Never the facts.
+
+    Call this on a draft built from research - your own knowledge, a web page,
+    anything not in Heron's stores - before showing it to the user. It reports
+    which claims cite nothing, which cite something nobody could look up, and
+    which name a document, an edition and a clause.
+
+    **It cannot tell you whether the answer is true.** Heron has not read those
+    sources and has no chunk to compare against, so every claim ends at
+    UNVERIFIED however well-formed its citation is. A well-formed citation on a
+    wrong sentence is the most convincing wrong answer this system can produce,
+    which is exactly why the check reports shape and stops there.
+
+    A claim about ISO 19650, QCS, Ashghal or a company standard that cites
+    nothing is a **bug** rather than a low-confidence answer (docs/05 s8).
+
+    To make any of it checkable: ingest the source document, then ask again
+    through heron_standards and ground the draft with heron_check. Touches
+    nothing in the model.
+    """
+    try:
+        got = brain.research_check(answer)
+    except brain.BrainUnavailable as why:
+        return str(why)
+
+    lines = ["Citation check on an EXTERNAL answer - %s"
+             % ("every claim carries a citation that could be looked up"
+                if got["ok"] else "SOMETHING IS FLAGGED")]
+    lines.append("")
+    lines.extend(got["lines"])
+    lines.append("")
+    lines.append("This is a report on CITATIONS. Heron did not read any of "
+                 "these sources and has not checked a single fact - R-53, and "
+                 "it never rewrites an answer either.")
+    lines.append(_not_proven())
+    return "\n".join(lines)
+
+
+@server.tool()
 def heron_gaps(days: int = 0) -> str:
     """
     What Heron has been asked to do lately, what failed, and what is slow.

@@ -2009,3 +2009,99 @@ The fifth shape named in round seven — a sentence claiming a check that never 
 first four did.
 
 The suite was green through all eight.
+
+---
+
+### 2026-09-11 — Stage 9: the Research agent, which does not research
+
+Closes **R-26**. `brain/heron_research.py`, `tests/test_research.py`, two MCP tools. Last, and the plan
+says why: *"an external answer without a working citation system is exactly the invented-standard
+failure 05 §8 forbids — and it is the most convincing kind of wrong answer the system can produce."*
+
+### The requirement read properly
+
+*"The Research agent may answer from outside Heron's knowledge"* reads as **give Heron a web client**.
+It does not get one, and three rules stack to say so:
+
+| | |
+|---|---|
+| **D-01** | every model call is the host's, because Heron is a per-user install with no admin rights and no server. The network is the same boundary — Heron has no keys, no proxy policy and no way to promise a connection |
+| the offline premise | `DECISIONS.md`: *"It has to work with no connection. Site visits, locked-down networks, a laptop on a plane."* A capability that only works online fails on exactly the days a modeller is on site |
+| **Golden Rule 19** | an ingested file is at least a file somebody chose to put in. A web page is text a stranger controls, arriving at the moment of the question. If a document is DATA AND NEVER INSTRUCTION, a fetched page is that rule under load |
+
+So the division is: **Heron says what it does not know and what an answer must carry; the host, which
+has the model and the network, goes and finds out; Heron checks the SHAPE of what comes back.** A test
+greps the module for `http`, `requests`, `urllib` and `socket` — the same shape `test_ground` uses for
+R-47, so adding a fetch fails the suite rather than passing review.
+
+### What can be checked, and what cannot
+
+Written before the code rather than discovered after it.
+
+**Checkable** — whether a claim carries a citation at all (R-21, R-65); whether that citation could be
+*looked up*; whether the answer is presented as external.
+
+**Not checkable** — whether the claim is **true**. Heron has not read the source. There is no chunk, no
+text, and nothing to compare — `heron_ground.check()` needs a packet and there is no packet.
+
+So every external claim ends at **`UNVERIFIED`**, however well-formed its citation, and **there is no
+verdict above it**. A check asserts that nothing named `VERIFIED`, `CORRECT`, `TRUE` or `APPROVED`
+exists in the module — meant to fail the day somebody adds one.
+
+> **That check failed on its first run, against the constant it exists to protect.** `"VERIFIED ="` is
+> a substring of `"UNVERIFIED ="`. Anchored to the start of a line now. Caught by running it.
+
+### The three things a citation owes, and why each one
+
+Not a style preference — each has a known way of going wrong on a Qatar project.
+
+| | |
+|---|---|
+| **the document** | *"per the standard"* names nothing. A modeller cannot open it, a checker cannot verify it, a client cannot accept it |
+| **the edition** | ISO 19650 is five parts across several years, and QCS 2014 is not QCS 2010. A clause number without an edition points into whichever copy the reader happens to be holding |
+| **the locator** | a document with no clause number means *somewhere in four hundred pages*, which in practice means nobody checks |
+
+A citation missing any is `VAGUE` **and the report names which** — "vague" on its own is not something a
+person can act on.
+
+### The defect I found by running the seam, an hour after writing it
+
+`_is_claim` borrowed `heron_ground`'s test. That test asks **"is there a VALUE here that could be
+fabricated?"**, because grounding is about to compare a value against a chunk. This needed a different
+and wider question — **"is this sentence asserting something a source should back?"** — and measured on
+its own output:
+
+```
+"Revisions are lettered per the standard."   ->   not a claim
+```
+
+No number, so no fact, so never checked — while `per the standard` is the **exact phrase** the module's
+own vague-source list was written to catch. **The list was unreachable for the sentence it existed
+for.** Four things make a sentence checkable now: a fact, a quotation, a normative verb, or a phrase
+that claims a source without naming one.
+
+`shall` / `must` / `is required` is grammar rather than vocabulary — it is how ISO, BS, NFPA and QCS
+each write a requirement, in English, whatever the subject. That is materially different from the
+hand-written domain word list **R-60** forbids.
+
+**One limit recorded rather than discovered:** a bare assertion with no number, no modal and no source
+phrase — *"Container names use six fields"* — still reads as prose and is not checked. Widening further
+starts flagging *"let me know if you need more detail"*, and a report that flags everything is one
+nobody reads.
+
+### What the gap can and cannot say
+
+`Gap.certain` is true only when **every scope asked returned nothing by name** — `empty`, `unindexed`
+or `nothing`. Where clauses *did* come back, whether they answer the question is **not established**:
+that needs a retrieval floor, **W-8** records that none can be derived on the lexical backend at this
+corpus size, and **R-60** forbids inventing one from a word list. So the brief says exactly that and
+puts the judgement on the reader — **R-62**, no classifier in `brain/`.
+
+That is Stage 8's limit met from a third side, and it is now the most-repeated sentence in this plan.
+
+### And one thing that was missing everywhere
+
+A question Heron could not answer is precisely what the **Capability Gap Agent** exists to count, and
+until this stage nothing recorded one. `heron_gaps` could see what had been asked of **Revit** and never
+what the knowledge layer had **missed**. `research()` records `knowledge.research` with the scopes, the
+route and whether the gap was certain.

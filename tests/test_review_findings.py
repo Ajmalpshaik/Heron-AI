@@ -690,15 +690,22 @@ def main():
     print()
 
     print("34. THE PROJECT KEY IS THE KEY, NOT THE DISPLAY TITLE")
-    check(server_source.count("project=pinned.project_key") == 2,
-          "the two calls that OPEN a project store pass the stable key, which "
-          "is what DocumentPin's own docstring says identity is: 'Title alone "
-          "is NOT identity', written after two Revit sessions here both had a "
+    # PAIRED, NOT COUNTED. The first version asserted "== 2" and went stale the
+    # moment Stage 9 added a third tool that gets it right - a typed count of
+    # something a command can derive, which is the rule this repository states
+    # about its own prose and had not applied to its own test.
+    keys = server_source.count("project=pinned.project_key")
+    names = server_source.count("project_name=pinned.title")
+    check(keys >= 2,
+          "the calls that OPEN a project store pass the stable key, which is "
+          "what DocumentPin's own docstring says identity is: 'Title alone is "
+          "NOT identity', written after two Revit sessions here both had a "
           "document called Project1")
-    check(server_source.count("project_name=pinned.title") == 2,
-          "and both carry the display name BESIDE it rather than instead of "
-          "it - a store's name and a modeller's word for the building are two "
-          "facts, and the first fix for this swapped one for the other")
+    check(keys == names,
+          "and every one of them carries the display name BESIDE it rather "
+          "than instead of it (%d keys, %d names) - a store's name and a "
+          "modeller's word for the building are two facts, and the first fix "
+          "for this swapped one for the other" % (keys, names))
     check("depth=depth or None, project=pinned.title)" in server_source,
           "while heron_context gets the NAME: it opens no project store and "
           "renders `project` straight into the situation line, so passing the "
