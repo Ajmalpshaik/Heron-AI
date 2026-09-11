@@ -1149,10 +1149,27 @@ def restore(store):
     #
     # The path is the fallback for any line written before the id was recorded.
     latest = {}
+    earlier = {}
     for line in manifest(store):
         key = line.get("document") or line.get("path")
-        if key:
-            latest[key] = line
+        if not key:
+            continue
+        # EVERY PATH THIS DOCUMENT HAS EVER BEEN AT, kept in order, because
+        # the latest one can be the one that is gone.
+        #
+        # A document id is a CONTENT hash, so the same standard ingested at A
+        # and later at B is one id with two paths, and reconciling by id kept
+        # only B. Delete B, delete the derived store, restore: the manifest
+        # says "B", B is not there, the document is reported missing - while
+        # its authoritative bytes are still sitting at A. Golden Rule 11's
+        # safe recovery action losing a document it could have rebuilt. Found
+        # by a review 2026-09-11, in the reconciliation added to fix the twin
+        # of this a round earlier.
+        seen = earlier.setdefault(key, [])
+        path = line.get("path")
+        if path and path not in seen:
+            seen.append(path)
+        latest[key] = line
 
     for _key, line in sorted(latest.items(),
                              key=lambda pair: pair[1].get("path") or ""):
@@ -1172,8 +1189,17 @@ def restore(store):
             _restore_retired(store, line, out)
             continue
         if not os.path.isfile(path):
-            out.gone.append((path, line.get("title") or ""))
-            continue
+            # A PATH THAT IS GONE IS NOT A DOCUMENT THAT IS GONE. Any earlier
+            # path this same document was ingested at is tried, newest first,
+            # and the content hash is what makes that safe: a file at the old
+            # path with DIFFERENT bytes is a different document and is left
+            # alone by the id check below.
+            fallback = [was for was in reversed(earlier.get(_key, []))
+                        if was != path and os.path.isfile(was)]
+            if not fallback:
+                out.gone.append((path, line.get("title") or ""))
+                continue
+            path = fallback[0]
         # BY DOCUMENT ID WHERE THE LINE HAS ONE, NOT BY PATH. A retired
         # revision and the document that replaced it SHARE A PATH - that is
         # what retirement means - so once restore() began putting retired rows

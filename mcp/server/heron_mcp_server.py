@@ -246,7 +246,19 @@ def revit_select_by_category(category: str = "ducts") -> str:
     except NotBound as unbound:
         return str(unbound)
 
-    reply = session.request("select_by_category", op_args={"category": category})
+    # THE PIN TRAVELS WITH THE REQUEST, because checking it on the reply is
+    # checking it too late. SelectByCategory calls SetElementIds before it
+    # answers, so the version of this that compared the pin against the reply
+    # highlighted every duct in the wrong model and then said nothing had been
+    # sent to Revit - a refusal that arrives after the act is a description.
+    # Found by a review 2026-09-11, in a guard added the same day.
+    #
+    # Empty when this chat has not pinned a project yet, which the add-in
+    # reads as "do not check": a first request has nothing to compare against,
+    # and refusing it would make the pin unobtainable.
+    reply = session.request("select_by_category",
+                            op_args={"category": category,
+                                     "expectProject": pinned.project_key or ""})
     session.close()
 
     if reply is None:
@@ -269,8 +281,15 @@ def revit_select_by_category(category: str = "ducts") -> str:
     #     out of the company standard
     #
     # Selecting is not writing, and it still puts a highlight on the wrong
-    # building's ducts. The refusal is the same one the write path gives, and
-    # heron_repin is the way to move the pin on purpose.
+    # building's ducts. heron_repin is the way to move the pin on purpose.
+    #
+    # THIS RUNS AFTER THE ADD-IN'S OWN CHECK ABOVE AND IS NOT THE GUARD. The
+    # add-in refuses before it touches the selection; this pins on FIRST
+    # sight, when there was no key to send and nothing to compare. Its
+    # refusal can only fire where the add-in could not check - an older
+    # add-in, or a model with no Project Information - and it is honoured
+    # rather than dropped, because a mismatch nobody checked is still a
+    # mismatch.
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
         return wrong_model
@@ -380,15 +399,27 @@ def revit_use_session(session: str) -> str:
     if reply and reply.get("ok"):
         document = "%s, %s elements" % (reply.get("document"),
                                         "{:,}".format(reply.get("count", 0)))
-        # THE FIRST SIGHT OF A DOCUMENT IS WHERE THE PIN COMES FROM, and
-        # choosing a session is the first thing most conversations do. A
-        # MISMATCH IS NOT REFUSED HERE, deliberately: the user has just said
-        # which Revit to work with, so a model different from the pin is a
-        # deliberate move rather than a drift, and refusing the act of
-        # choosing would leave them nothing to do but repin. check() pins on
-        # first sight and returns a refusal otherwise; the refusal is ignored
-        # here and honoured by every tool that acts on a model.
-        pinned.check(reply)
+        # AN EXPLICIT SWITCH MOVES THE PIN. repin(), not check().
+        #
+        # check() pins on FIRST sight and otherwise returns a refusal without
+        # moving anything - and the first version of this line called it and
+        # THREW THE REFUSAL AWAY. So choosing a session holding a different
+        # model left the binding pointing at the new Revit, the pin pointing
+        # at the old document, and the answer saying "Now working with" -
+        # after which every tool that touches a model refused, correctly, for
+        # a reason nothing had told the user. A state where two halves of the
+        # session disagree and the reply describes neither. Found by a review
+        # 2026-09-11, one round after this line was added.
+        #
+        # repin is right rather than convenient: the user has just NAMED the
+        # Revit to work with, which is the deliberate act Golden Rule 20 asks
+        # for before a retarget. Anything pending from the old model is
+        # dropped below for the same reason heron_repin drops it.
+        was = pinned.title
+        now = pinned.repin(reply)
+        if was and now and was != now:
+            approval.clear()
+            document += " - moved from %s" % was
     chosen.close()
 
     return ("Now working with Revit %s (session %s) - %s.\n"
@@ -938,7 +969,7 @@ def heron_context(request: str, path: str = "", full: bool = False,
 
     try:
         got = brain.context(request, path=path or None, revit=revit, full=full,
-                            depth=depth or None, project=pinned.project_key)
+                            depth=depth or None, project=pinned.title)
     except brain.BrainUnavailable as why:
         return str(why)
     except ValueError as why:
@@ -1069,7 +1100,8 @@ def heron_check(draft: str, request: str, scopes: str = "") -> str:
     named = [one for one in scopes.split(",") if one.strip()]
     try:
         got = brain.check_answer(draft, request, revit=revit,
-                                 project=pinned.project_key, scopes=named)
+                                 project=pinned.project_key, scopes=named,
+                                 project_name=pinned.title)
     except brain.BrainUnavailable as why:
         return str(why)
     except brain.ContextRefused as why:
@@ -1121,7 +1153,8 @@ def heron_standards(request: str, scopes: str = "company,project") -> str:
     """
     try:
         got = brain.standards(request, [s for s in scopes.split(",")],
-                              project=pinned.project_key)
+                              project=pinned.project_key,
+                              project_name=pinned.title)
     except brain.BrainUnavailable as why:
         return str(why)
     except ValueError as why:

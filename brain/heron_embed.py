@@ -280,6 +280,43 @@ def vector(text):
     return got if got is not None else lexical_vector(text)
 
 
+def encoder():
+    """(stamp, a function from text to a vector) - TAKEN TOGETHER, once.
+
+    THE STAMP AND THE ENCODER HAVE TO BE ONE DECISION, and an indexing pass
+    that asked for them separately could store two encoders' work under one
+    name. stamp() is read once at the top of a pass and vector() consults the
+    loaded model on every row, so a warm-up finishing mid-pass meant:
+
+        row 1..k     lexical vectors, stamped "lexical"
+        row k+1..n   MODEL vectors, stamped "lexical"
+
+    in one table, under one backend name. At a different dimension nearest()
+    then discards the lot; at the same dimension it computes cross-model dot
+    products that mean nothing - and either way the semantic route quietly
+    stops working, which is exactly the failure the stamp was added to
+    prevent. Only a later pass repairs it, and only if something notices.
+    Found by a review 2026-09-11, against the fix for the first half of this.
+
+    So the model is resolved ONCE and closed over. A warm-up that finishes
+    half way through a pass now changes nothing until the next pass, which is
+    the honest behaviour: one pass, one encoder, one name.
+    """
+    model = _load_model()
+    if model is None:
+        return LEXICAL, lexical_vector
+
+    which = _WHICH_MODEL[0]
+    tag = "%s:%s" % (MODEL, which) if which else MODEL
+
+    def fixed(text):
+        got = model(text)
+        length = math.sqrt(sum(x * x for x in got))
+        return [x / length for x in got] if length else got
+
+    return tag, fixed
+
+
 # ---------------------------------------------------------------------------
 # Storing vectors, in the scope's own file
 # ---------------------------------------------------------------------------
@@ -372,7 +409,7 @@ def index(store, force=False):
     library for nothing. Keyed on content, that costs zero.
     """
     ensure_tables(store)
-    name = stamp()
+    name, embed = encoder()
     on_disk, _ = FRAG.load_all()
 
     embedded = skipped = 0
@@ -392,7 +429,7 @@ def index(store, force=False):
         store.execute(
             "INSERT OR REPLACE INTO vectors (id, text_hash, backend, embedding, "
             "kind) VALUES (?,?,?,?,?)",
-            (row["id"], digest, name, _pack(vector(text)), FRAGMENT))
+            (row["id"], digest, name, _pack(embed(text)), FRAGMENT))
         embedded += 1
 
     store.db.commit()
@@ -429,7 +466,7 @@ def index_chunks(store, force=False):
             raise
         return 0, 0                      # no chunks table: nothing ingested
 
-    name = stamp()
+    name, embed = encoder()
     embedded = skipped = 0
     for row in rows:
         text = "%s\n%s" % (row["heading_path"] or "", row["text"] or "")
@@ -445,7 +482,7 @@ def index_chunks(store, force=False):
         store.execute(
             "INSERT OR REPLACE INTO vectors (id, text_hash, backend, embedding, "
             "kind) VALUES (?,?,?,?,?)",
-            (row["id"], digest, name, _pack(vector(text)), CHUNK))
+            (row["id"], digest, name, _pack(embed(text)), CHUNK))
         embedded += 1
 
     # A chunk that no longer exists leaves a vector behind, and a vector with

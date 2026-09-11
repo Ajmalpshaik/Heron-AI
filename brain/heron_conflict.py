@@ -186,6 +186,73 @@ def quantity(fact):
     return unit, value
 
 
+# WHAT COUNTS AS THE SAME KIND OF THING, AND HOW MANY OF THE BASE UNIT ONE OF
+# THESE IS.
+#
+# GROUPING ON THE LITERAL UNIT STRING MISSED THE DISAGREEMENTS IT EXISTS FOR.
+# 30mm and 4cm landed in a "mm" group and a "cm" group, were never compared,
+# and two clauses prescribing different thicknesses came back agreeing by
+# silence. A modeller reading that report learns nothing and believes there is
+# nothing to learn. Found by a review 2026-09-11.
+#
+# CONVERSION IS NOT A THRESHOLD. R-60 has nothing to bite on here: 1 cm IS 10
+# mm, exactly, on every project in every country, and nothing about that is a
+# tuned number. What is deliberately NOT here is any pair that needs a
+# judgement - no temperature scales, no currency, nothing per-something.
+#
+# Conservative on purpose. A unit that is not in this table keeps its own
+# group, which is exactly what happened before, so an unknown unit can only
+# behave as it always did.
+_DIMENSION = {
+    "mm": ("length", 1.0), "cm": ("length", 10.0),
+    "m": ("length", 1000.0), "km": ("length", 1000000.0),
+    "in": ("length", 25.4), "ft": ("length", 304.8),
+    "g": ("mass", 1.0), "kg": ("mass", 1000.0), "t": ("mass", 1000000.0),
+    "pa": ("pressure", 1.0), "kpa": ("pressure", 1000.0),
+    "mbar": ("pressure", 100.0), "bar": ("pressure", 100000.0),
+    "w": ("power", 1.0), "kw": ("power", 1000.0), "mw": ("power", 1000000.0),
+    "l": ("volume", 1.0), "ml": ("volume", 0.001), "m3": ("volume", 1000.0),
+}
+
+
+def _gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+
+def comparable(unit, value):
+    """(what kind of thing, the value in its base unit). Never raises.
+
+    The pair two clauses are compared ON, as against the pair they are
+    DISPLAYED as. 30mm and 4cm compare as ("length", "30") and
+    ("length", "40"); they still print as the modeller wrote them.
+
+    A GRADIENT IS REDUCED, and not reducing it invented a disagreement in the
+    other direction: 1:100 and 2:200 are the same fall, and comparing the
+    strings reported two sources contradicting each other about a slope they
+    agree on. A flag on nothing is what teaches people to stop reading flags.
+    """
+    if unit == "gradient":
+        parts = str(value).split(":")
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            rise, run = int(parts[0]), int(parts[1])
+            factor = _gcd(rise, run) or 1
+            return "gradient", "%d:%d" % (rise // factor, run // factor)
+        return "gradient", str(value)
+
+    known = _DIMENSION.get((unit or "").lower())
+    if not known:
+        # An unknown unit is its own kind of thing, which is what grouping on
+        # the literal string always did.
+        return unit, same_number(value)
+    kind, per = known
+    try:
+        return kind, same_number(float(value) * per)
+    except (TypeError, ValueError):
+        return kind, same_number(value)
+
+
 def same_number(value):
     """A value canonicalised for COMPARISON. The spelling is kept for display.
 
@@ -266,11 +333,27 @@ class Value(object):
 
 
 class Disagreement(object):
-    """One unit, two or more scopes, and values that are not the same."""
+    """One kind of measurement, two or more sources, and values that differ.
+
+    `unit` IS THE KIND, NOT THE SPELLING. It used to be the literal unit
+    string, because a group could only ever hold one; since comparable() put
+    millimetres and centimetres in one group it is the dimension - "length" -
+    and each value prints the unit its own clause was written in. Reporting
+    "40mm" as "4cm" would be correcting somebody's standard on the way past.
+    """
 
     def __init__(self, unit, values):
-        self.unit = unit
+        self.unit = unit              # the dimension: length, mass, gradient...
         self.values = values
+
+    @property
+    def units(self):
+        """The distinct spellings in this disagreement, in the order seen."""
+        out = []
+        for value in self.values:
+            if value.unit not in out:
+                out.append(value.unit)
+        return out
 
     @property
     def sources(self):
@@ -340,8 +423,15 @@ class Disagreement(object):
         said = ["THESE ANSWERS DISAGREE, and Heron has not decided between them:"]
         for value in self.values:
             said.append("  %-18s %6s%-8s %s %s"
-                        % (value.label, value.value, self.unit,
+                        % (value.label, value.value,
+                           "" if value.unit == "gradient" else value.unit,
                            _flat(value.document), _flat(value.locator)))
+        if len(self.units) > 1:
+            said.append("  These are written in different units (%s) and were "
+                        "compared in the smaller of them. The values above are "
+                        "as each clause writes them - Heron converts to "
+                        "compare and never to rewrite somebody's standard."
+                        % ", ".join(self.units))
         if self.same_locator:
             said.append("  Both sit at clause %s, which makes it likelier they "
                         "are the same requirement - but Heron cannot tell, and "
@@ -436,7 +526,8 @@ def _values_from(store, asked):
     return out
 
 
-def disagreements(text, scopes=None, project=None, limit=5, asked=None):
+def disagreements(text, scopes=None, project=None, limit=5, asked=None,
+                  project_name=None):
     """Ask each scope on its own, and report where their numbers differ.
 
     ONE STORE IS OPEN AT A TIME. Each is opened, asked, reduced to values and
@@ -472,7 +563,7 @@ def disagreements(text, scopes=None, project=None, limit=5, asked=None):
 
     if asked is None:
         asked = RETRIEVE.librarian(text, scopes=wanted, project=project,
-                                   limit=limit)
+                                   limit=limit, project_name=project_name)
 
     values = []
     for one in asked:
@@ -487,9 +578,13 @@ def disagreements(text, scopes=None, project=None, limit=5, asked=None):
         finally:
             store.close()
 
+    # GROUPED BY WHAT KIND OF THING IT IS, not by how it was spelled. See
+    # comparable(): millimetres and centimetres are one group, and the values
+    # inside it are compared in the base unit.
     by_unit = {}
     for value in values:
-        by_unit.setdefault(value.unit, []).append(value)
+        kind, _canonical = comparable(value.unit, value.value)
+        by_unit.setdefault(kind, []).append(value)
 
     found = []
     for unit in sorted(by_unit):
@@ -512,7 +607,8 @@ def disagreements(text, scopes=None, project=None, limit=5, asked=None):
         # KEYED ON THE CANONICAL NUMBER, holding the value as written.
         says = {}
         for value in group:
-            says.setdefault(value.source, {})[same_number(value.value)] = value
+            _kind, canonical = comparable(value.unit, value.value)
+            says.setdefault(value.source, {})[canonical] = value
         if len(says) < 2:
             continue
 

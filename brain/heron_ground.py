@@ -153,7 +153,117 @@ def normalise(text):
 
 # How a sentence says which chunk it came from. A locator is what a person
 # writes - "[4.1.1]" - and a chunk id is what a machine writes.
-_MARKER = re.compile(r"\[([^\]]{1,120})\]")
+#
+# A MARKER IS CITATION-SHAPED, AND ACCEPTING ANY BRACKETED TEXT LET A CLAIM
+# WALK OUT THROUGH THE BRACKETS. facts() strips every marker before it looks
+# for facts - it has to, because "[9.1.1]" IS a clause number and would
+# otherwise read as a fabricated one. But with any bracket counting as a
+# marker:
+#
+#     Use [50mm] insulation [abc123:0001]
+#
+# lost BOTH brackets, found no fact, was classified SKIPPED, and the report
+# said ok - against a clause requiring 25mm. Bracketing a number turned the
+# fabrication check off for that sentence. Found by a review 2026-09-11.
+#
+# So the shape is named. A citation is a chunk id, or a clause locator, or a
+# named one ("Section 3", "para-7"); it is never a value carrying a unit.
+# Anything else in brackets stays in the sentence, where facts() can see it
+# and the check can do its job.
+_BRACKETED = re.compile(r"\[([^\]]{1,120})\]")
+
+# What a citation can LOOK like: one token with no spaces in it - "9.1.1",
+# "para-7", "abc123:0001", "c1" - or a named clause, "Section 3". Deliberately
+# loose, because a caller's chunk ids are its own business and this must not
+# start refusing short ones.
+_CITE_SHAPED = re.compile(
+    r"""^\s*(?:
+          (?:section|clause|sub-?clause|sub-?section|table|appendix|annex|
+             part|paragraph|para|item|rule|figure)
+          [\s.-]*[0-9a-z]+(?:[.-][0-9a-z]+)*
+        | [0-9a-z][0-9a-z._:-]*
+    )\s*$""", re.I | re.X)
+
+
+# A VALUE WITH A UNIT ON IT, which is the one thing a citation is never.
+#
+# Deliberately narrower than "states a fact". A clause number IS a fact
+# pattern - that is precisely why markers are stripped at all - and so is a
+# year, and so is a bare count; all three are shapes a locator legitimately
+# takes. What no locator has ever been is a measurement: "50mm", "4 cm",
+# "-200mm", "1in100". So that is the disqualifier, and nothing wider.
+_MEASURED = re.compile(
+    r"^\s*(?:-?\d+(?:\.\d+)?\s*[a-z]+[0-9]?|\d+\s*in\s*\d+)\s*$", re.I)
+
+
+def _states_a_measurement(text):
+    """Whether this span is a measured value rather than a pointer to one."""
+    return bool(_MEASURED.match((text or "").strip()))
+
+
+def _is_marker(found, known=None):
+    """Whether one bracketed span is a citation rather than part of the claim.
+
+    ACCEPTING ANY BRACKETED TEXT LET A CLAIM WALK OUT THROUGH THE BRACKETS.
+    facts() strips every marker before looking for facts - it has to, because
+    "[9.1.1]" IS a clause number and would otherwise read as a fabricated one.
+    But with every bracket counting as a marker:
+
+        Use [50mm] insulation [abc123:0001]
+
+    lost BOTH brackets, found no fact, was classified SKIPPED, and the report
+    said ok - against a clause requiring 25mm. Bracketing a number turned the
+    fabrication check off for that sentence. Found by a review 2026-09-11.
+
+    Two questions, in this order:
+
+      does it RESOLVE?   `known` is what this packet actually carries. A span
+                         that names a chunk or a locator in it is a citation
+                         whatever it looks like, which is what keeps short
+                         ids working.
+      does it MEASURE?   otherwise it has to be citation-SHAPED and carry no
+                         unit. A clause number, a year and a bare count are
+                         all shapes a real locator takes; "50mm" is not.
+
+    "[99]" is the honest edge. A bare count is both a plausible locator and a
+    checkable fact, so `known` decides it: a citation when the packet holds
+    locator 99, and a claim when it does not. Where nothing resolves it, this
+    still reads it as a marker - which is the pre-existing behaviour, and it
+    is written down here rather than left to be discovered.
+    """
+    key = (found or "").strip()
+    if known and key in known:
+        return True
+    if not _CITE_SHAPED.match(key):
+        return False
+    return not _states_a_measurement(key)
+
+
+class _Markers(object):
+    """The bracketed spans that are citations, and nothing else.
+
+    One object rather than one regex because "is this a marker" is now two
+    questions, and every caller needs the same answer to both.
+    """
+
+    @staticmethod
+    def findall(text, known=None):
+        return [found for found in _BRACKETED.findall(text or "")
+                if _is_marker(found, known)]
+
+    @staticmethod
+    def search(text, known=None):
+        return bool(_Markers.findall(text, known))
+
+    @staticmethod
+    def sub(with_what, text, known=None):
+        def swap(match):
+            return (with_what if _is_marker(match.group(1), known)
+                    else match.group(0))
+        return _BRACKETED.sub(swap, text or "")
+
+
+_MARKER = _Markers()
 
 # A SENTENCE WITH NO FACT IN IT CANNOT FABRICATE ONE, and flagging it teaches
 # people to ignore flags. "This is worth reviewing" is not a claim about an
@@ -193,8 +303,12 @@ _FACT = [
 ]
 
 
-def facts(text):
+def facts(text, known=None):
     """Every checkable fact in a sentence, normalised. Empty means not checkable.
+
+    `known` is what the packet carries - chunk ids and locators - so a
+    bracketed span that RESOLVES is stripped as a citation and one that does
+    not is left in the sentence to be checked. See _is_marker.
 
     The list IS the selector: a sentence with no facts is skipped, and the
     same list decides what R-51 compares.
@@ -208,7 +322,7 @@ def facts(text):
     part of the claim.
     """
     seen = []
-    flat = normalise(_MARKER.sub(" ", text or ""))
+    flat = normalise(_MARKER.sub(" ", text or "", known))
     for pattern in _FACT:
         for match in pattern.finditer(flat):
             found = match.group(0).strip()
@@ -685,7 +799,8 @@ def _cited(sentence, by_locator, by_chunk):
     locator matching more than one document is AMBIGUOUS - which is reported
     and asks for a chunk id, rather than guessed at.
     """
-    for found in _MARKER.findall(sentence or ""):
+    for found in _MARKER.findall(sentence or "",
+                                 set(by_chunk) | set(by_locator)):
         key = found.strip()
         if key in by_chunk:
             return by_chunk[key]
@@ -721,9 +836,13 @@ def check(draft, packet):
         if cite.get("locator"):
             by_locator.setdefault(cite["locator"], []).append((cite, body))
 
+    # WHAT THIS PACKET ACTUALLY CARRIES, so a bracketed span that resolves is
+    # read as a citation and one that does not is read as part of the claim.
+    known = set(by_chunk) | set(by_locator)
+
     claims = []
     for sentence in sentences(draft):
-        found = facts(sentence)
+        found = facts(sentence, known)
 
         # A QUOTATION IS CHECKABLE WHETHER OR NOT IT CARRIES A NUMBER, and
         # missing that let the one gate which survived measurement be skipped
@@ -733,7 +852,7 @@ def check(draft, packet):
         #
         # A quotation asserts THESE ARE THE SOURCE'S WORDS. That is a claim
         # about an indexed source whatever else the sentence contains.
-        quoted = bool(_QUOTED.search(_MARKER.sub(" ", sentence or "")))
+        quoted = bool(_QUOTED.search(_MARKER.sub(" ", sentence or "", known)))
 
         if not found and not quoted:
             # R-50. No fact, nothing to invent, and flagging it would teach
@@ -741,7 +860,7 @@ def check(draft, packet):
             claims.append(Claim(sentence, SKIPPED))
             continue
 
-        marked = bool(_MARKER.search(sentence or ""))
+        marked = bool(_MARKER.search(sentence or "", known))
         cited = _cited(sentence, by_locator, by_chunk)
         if cited is AMBIGUOUS:
             claims.append(Claim(sentence, AMBIGUOUS_CITE, added=found))

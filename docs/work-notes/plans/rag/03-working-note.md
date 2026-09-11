@@ -1921,3 +1921,91 @@ and it stays open.
 
 **The SDK is installed in this container and nowhere else.** A fresh session starts without it, so the
 four results above are a run, not a property of the repository.
+
+---
+
+### 2026-09-11 — an eighth round, nine more, and four of them in the fixes from the seventh
+
+Codex reviewed `cfcab93` and posted **nine**. Every one verified before anything was changed, and every
+one real. **Four were in code written an hour earlier, in round seven's fixes.** It then reported hitting
+its usage limit again — and this note says nothing about whether that is the last round, because the
+last time it did, three more arrived.
+
+### The one that turned the fabrication check off
+
+```
+Use [50mm] insulation [abc123:0001]
+```
+
+`facts()` strips citation markers before it looks for facts — it has to, because `[9.1.1]` **is** a
+clause number and would otherwise read as a fabricated one. But *any* bracketed text counted as a
+marker. So both brackets went, no fact was found, the sentence was classified `SKIPPED`, and the report
+said **ok** against a clause requiring 25mm.
+
+**Bracketing a number switched the check off for that sentence.**
+
+The fix took two goes and the first was too wide. "A marker never states a fact" broke `[9.1.1]`
+immediately — a clause number *is* a fact pattern, which is the entire reason markers are stripped. The
+disqualifier is narrower and exact: **a unit**. A clause number, a year and a bare count are all shapes
+a real locator takes; `50mm` is not. And a span the packet actually carries is a citation whatever it
+looks like, which is what keeps a caller's own short chunk ids working.
+
+`[99]` is the honest edge — both a plausible locator and a checkable fact. What the packet holds
+decides it, and where nothing resolves it the pre-existing reading stands. Written down rather than
+left to be found.
+
+### A guard that arrived after the act
+
+Round seven added `pinned.check(reply)` to `revit_select_by_category`. **`SelectByCategory` calls
+`SetElementIds` before it answers.** So switching the active document mid-conversation highlighted every
+duct in the wrong model, and *then* returned a refusal saying nothing had been sent to Revit.
+
+A refusal that arrives after the act is a description. The expected project key travels **with** the
+request now, and the add-in refuses before it touches the selection. Compiled on 2020 – 2027.
+
+### And a pin that did not follow the user
+
+`revit_use_session` called `check()` and **threw the refusal away**, with a comment explaining that a
+mismatch is deliberate here. Both halves of that were wrong at once: `check()` pins on *first* sight and
+otherwise moves nothing, so choosing a session holding a different model left the binding on the new
+Revit, the pin on the old document, and the reply saying *"Now working with"* — after which every tool
+that touches a model refused, correctly, for a reason nothing had told anybody. `repin()` is the call
+the situation asks for; the comment had justified `repin` and the code had called `check`.
+
+### The key and the name, swapped
+
+Round seven made the project key stable — the Project Information UniqueId. Round eight found where that
+key then went:
+
+```
+project: a7f3c2e1-0000-4b8d-...            (heron_context's situation line)
+project (a7f3c2e1-0000-4b8d-...)           (every librarian label)
+```
+
+`heron_context` opens no project store; its `project` is rendered straight into the line that exists to
+say **which building this is**. The key identifies, the name is what a modeller recognises, and they are
+not interchangeable in either direction. Both travel now, each to the place that needs it — and the
+folder index learns the name on the way past, so a project store stops being an unreadable filename.
+
+### The rest, in one line each
+
+| | |
+|---|---|
+| `scopes="company,proejct"` | one letter short, and the grounding check produced an **ok company-only report** with nothing saying the other named source was never looked at. The same shape as the mistyped ingest flag, one tool along |
+| a document lost because its **newest** path was | a document id is a content hash, so one standard ingested at A and later at B is one id with two paths — and keeping only B lost it when B was deleted while its bytes still sat at A. Earlier paths are tried now, newest first |
+| **30mm against 4cm** never compared | grouped on the literal unit string, they were separate groups, and two clauses prescribing different thicknesses came back agreeing by silence. Conversion is not a threshold: 1 cm IS 10 mm |
+| **1:100 against 2:200** reported as a conflict | the same fall, and the report said two sources contradicted each other about it. A flag on nothing is what teaches people to stop reading flags |
+| a bare `to` cited a clause | *"spacing varies from 1.5 to 2.5 times the diameter"* made an edge to clause 2.5. Every numeric RANGE in a standard is written that way, and standards are mostly ranges — so the false edges landed exactly where they are densest, in the number that decides whether the graph route is viable |
+| one indexing pass, **two encoders** | `stamp()` read once at the top while `vector()` consulted the live model per row, so a warm-up finishing mid-pass stored MODEL vectors under the name `lexical`. The stamp and the encoder are one decision now |
+
+### Eight rounds, and the shape that keeps arriving
+
+**Four of nine were in round seven's own fixes**, and three of those four are the same shape wearing
+different clothes: *the code did something adjacent to what its comment claimed*. `check()` where the
+comment argued for `repin()`. A pin compared after the act it was guarding. A key sent where a name was
+rendered.
+
+The fifth shape named in round seven — a sentence claiming a check that never ran — did not recur. The
+first four did.
+
+The suite was green through all eight.

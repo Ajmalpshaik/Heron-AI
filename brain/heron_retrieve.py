@@ -1010,7 +1010,7 @@ class Asked(object):
                                                    if self.answer else "-"))
 
 
-def librarian(text, scopes=None, project=None, limit=5):
+def librarian(text, scopes=None, project=None, limit=5, project_name=None):
     """Ask each scope SEPARATELY. Returns one Asked per scope, labelled.
 
     THE TRAP IN THIS WHOLE TRACK IS IN THE NAME OF THIS FUNCTION.
@@ -1063,7 +1063,15 @@ def librarian(text, scopes=None, project=None, limit=5):
         # copy of the company standard. It is not: it is the company's one
         # store, and mislabelling whose knowledge something is, is the exact
         # confusion Golden Rule 5 exists to prevent.
-        label = project if scope == SCOPE.PROJECT else None
+        #
+        # AND THE LABEL IS THE NAME, NOT THE KEY. `project` names the STORE -
+        # since the last round that is the Project Information UniqueId, which
+        # is stable and completely unreadable. Shown as a label it turned
+        # "project (Tower B)" into "project (a7f3c2e1-0000-4b8d-...)" in every
+        # answer. The key identifies; the name is what a modeller recognises,
+        # and they are not interchangeable in either direction. Found by a
+        # review 2026-09-11, in the change that made the key stable.
+        label = ((project_name or project) if scope == SCOPE.PROJECT else None)
 
         try:
             store = SCOPE.open_scope(scope, project)

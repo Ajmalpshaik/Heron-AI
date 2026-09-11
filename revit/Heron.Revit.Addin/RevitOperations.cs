@@ -61,7 +61,8 @@ namespace Heron.Revit.Addin
                     return CountElements(app);
 
                 case "select_by_category":
-                    return SelectByCategory(app, Json.ReadString(request, "category"));
+                    return SelectByCategory(app, Json.ReadString(request, "category"),
+                                            Json.ReadString(request, "expectProject"));
 
                 // D-28's executor. Reads only: it opens no transaction, so
                 // Revit itself refuses anything that would change the model.
@@ -204,8 +205,23 @@ namespace Heron.Revit.Addin
         /// says so. "Selected 126 ducts" means something different in a view
         /// than in a model, and a modeller reading a number must not have to
         /// guess which was meant.
+        ///
+        /// GOLDEN RULE 20 IS CHECKED HERE, BEFORE THE SELECTION MOVES, and
+        /// checking it on the other side of the wire was not enough. The MCP
+        /// server compared the pin against the REPLY - which arrives after
+        /// SetElementIds has already run - so switching the active document
+        /// mid-conversation highlighted every duct in the wrong model and then
+        /// returned a refusal saying nothing had been sent to Revit. A refusal
+        /// that arrives after the act is a description, not a guard. Found by
+        /// a review 2026-09-11.
+        ///
+        /// `expectProject` is the caller's pinned project key, or empty when
+        /// the chat has not pinned one yet. Empty means "do not check": a
+        /// first request has nothing to compare against, and refusing it would
+        /// make the pin unobtainable.
         /// </summary>
-        private static string SelectByCategory(UIApplication app, string category)
+        private static string SelectByCategory(UIApplication app, string category,
+                                               string expectProject)
         {
             BuiltInCategory builtIn;
             var unknown = ResolveCategory(category, out builtIn);
@@ -217,6 +233,19 @@ namespace Heron.Revit.Addin
             {
                 return Json.Error("no_document",
                     "No model is open in Revit. Open one and ask again.");
+            }
+
+            if (!string.IsNullOrEmpty(expectProject))
+            {
+                var here = ProjectKey(doc);
+                if (here != expectProject)
+                {
+                    return Json.Error("wrong_document",
+                        "This chat has been working on another model, and the "
+                        + "one in front of Revit now is \"" + doc.Title
+                        + "\". NOTHING was selected. Say so explicitly if you "
+                        + "meant to change model.");
+                }
             }
 
             var found = new FilteredElementCollector(doc)

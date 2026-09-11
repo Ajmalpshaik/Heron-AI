@@ -611,6 +611,13 @@ def _context_module():
 
 def context(request, path=None, revit=None, full=False, depth=None,
             project=None):
+    # `project` HERE IS THE NAME, NOT THE KEY. This packet never opens a
+    # project store - _Open opens global - and heron_context._situation
+    # renders it straight into "project: %s" for a person to read. Passing the
+    # Project Information UniqueId put an opaque identifier on the one line
+    # that exists to say which building this is. The key belongs where a store
+    # is chosen; see standards() and check_answer(). Found by a review
+    # 2026-09-11.
     """
     What one agent would be given for one request, and nothing else.
 
@@ -709,7 +716,7 @@ def context(request, path=None, revit=None, full=False, depth=None,
 
 
 def _check_across(GROUND, CONTEXT, draft, request, wanted,
-                  path=None, revit=None, project=None):
+                  path=None, revit=None, project=None, project_name=None):
     """One grounding check per scope, combined by claim. No packet is pooled.
 
     THE COMBINING RULE IS ONE LINE AND THE REST IS BOOKKEEPING: a claim's
@@ -728,12 +735,21 @@ def _check_across(GROUND, CONTEXT, draft, request, wanted,
     for scope in wanted:
         store = _ready_scope(scope, project)
         if store is None:
+            # A SCOPE THAT COULD NOT BE OPENED IS NAMED, NOT DROPPED. Skipping
+            # it silently meant `scopes="company,proejct"` - one letter short -
+            # produced an `ok` COMPANY-ONLY report with nothing saying the
+            # other named source was never looked at. The same shape as the
+            # mistyped ingest flag, one tool along: a typo turning a check off
+            # and reporting success. Found by a review 2026-09-11.
+            refusals.append("%s: not a knowledge scope, or it could not be "
+                            "opened - nothing was checked against it" % scope)
             continue
         try:
             try:
                 packet = CONTEXT.assemble(store, request,
                                           path=path or CONTEXT.STANDARDS,
-                                          revit=revit, project=project)
+                                          revit=revit,
+                                          project=project_name or project)
             except (CONTEXT.OverBudget, CONTEXT.TooDeep,
                     CONTEXT.SourceMissing) as why:
                 refusals.append("%s: %s" % (scope, why))
@@ -779,8 +795,8 @@ def _check_across(GROUND, CONTEXT, draft, request, wanted,
     if refusals:
         lines = list(lines) + [
             "",
-            "%d of the scopes named supplied no clauses, so nothing was "
-            "checked against them:" % len(refusals)]
+            "%d of the scopes named supplied no clauses, so NOTHING WAS "
+            "CHECKED against them:" % len(refusals)]
         lines.extend("  %s" % why for why in refusals)
     return {
         "ok": combined.ok,
@@ -836,7 +852,7 @@ def _ready_scope(scope, project=None):
 
 
 def check_answer(draft, request, path=None, revit=None, project=None,
-                 scopes=None):
+                 scopes=None, project_name=None):
     """A draft answer, and the request it answers. A grounding report, out.
 
     THE HALF OF THE FABRICATION CHECK THAT DID NOT EXIST IN PRODUCTION.
@@ -891,13 +907,18 @@ def check_answer(draft, request, path=None, revit=None, project=None,
     wanted = [w.strip().lower() for w in (scopes or []) if w and w.strip()]
     if wanted:
         return _check_across(GROUND, CONTEXT, draft, request, wanted,
-                             path=path, revit=revit, project=project)
+                             path=path, revit=revit, project=project,
+                             project_name=project_name)
 
     with _Open() as store:
         try:
+            # THE NAME, because this packet's `project` is only ever rendered
+            # for a person - _Open opens the global store and nothing here
+            # chooses one by key.
             packet = CONTEXT.assemble(store, request,
                                       path=path or CONTEXT.STANDARDS,
-                                      revit=revit, project=project)
+                                      revit=revit,
+                                      project=project_name or project)
         except (CONTEXT.OverBudget, CONTEXT.TooDeep,
                 CONTEXT.SourceMissing) as why:
             # TRANSLATED, THE SAME WAY context() DOES IT. A refusal from the
@@ -1000,7 +1021,8 @@ def _with_text(asked, project=None):
     return out
 
 
-def standards(request, scopes, project=None, limit=5):
+def standards(request, scopes, project=None, limit=5,
+              project_name=None):
     """Each named scope asked on its own, and where their numbers disagree.
 
     THE MULTI-SCOPE PATH HAD NO SEAM AT ALL, and that covered two stages.
@@ -1056,9 +1078,23 @@ def standards(request, scopes, project=None, limit=5):
     # warm-up or a changed file could make different, so the disagreement shown
     # could be about clauses other than the ones listed above it.
     asked = RETRIEVE.librarian(request, scopes=wanted, project=project,
-                               limit=limit)
+                               limit=limit, project_name=project_name)
     found = CONFLICT.disagreements(request, scopes=wanted, project=project,
-                                   limit=limit, asked=asked)
+                                   limit=limit, asked=asked,
+                                   project_name=project_name)
+
+    # THE FOLDER INDEX LEARNS THE NAME WHILE BOTH ARE IN HAND. heron_scope
+    # keeps projects/labels.json so that somebody opening the folder can tell
+    # which .db is which - the key is the filename and the label is the only
+    # readable thing about it. Nothing on the served path had ever written to
+    # it, so every project store was an unreadable filename on disk.
+    if project and project_name:
+        try:
+            SCOPE.remember_label(project, project_name)
+        except Exception:
+            # A label nobody could write loses nothing that matters: the key
+            # is still the filename. Never let it fail a question.
+            pass
 
     _audit().record("knowledge.standards", True,
                     fields={"scopes": ",".join(wanted)},

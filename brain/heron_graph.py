@@ -262,9 +262,25 @@ _CLAUSE_REFERENCE = re.compile(r"\b\d+(?:\.\d+)+\b")
 _MEASUREMENT_AFTER = re.compile(
     r"\s*(?:%|mm|cm|m|km|in|ft|kg|g|t|l|ml|pa|kpa|bar|mbar|c|k|w|kw|mw|va|"
     r"kva|hz|v|kv|a|ma|db|lux|lm|cfm|m2|m3)\b", re.I)
+# A BARE "to" IS NOT A CITING WORD, AND HAVING IT HERE MANUFACTURED EDGES.
+#
+#     "spacing varies from 1.5 to 2.5 times the diameter"
+#
+# "times" is not a unit, so the measurement guard let it through, and "to"
+# made 2.5 a reference to clause 2.5 wherever that locator existed. Every
+# numeric RANGE in a standard is written this way, and standards are mostly
+# ranges - so the false edges landed exactly where they are densest, in the
+# number that decides whether the graph route is viable at all. Found by a
+# review 2026-09-11, in a guard added a round earlier to fix the same class.
+#
+# The phrases that keep "to" are the ones that actually cite: refer to,
+# according to, pursuant to, subject to. Written out rather than made optional,
+# because "(refer\s+)?to" is the same bug with more characters.
 _CITING_WORD = re.compile(
     r"(?:clause|section|sub-?clause|sub-?section|table|appendix|annex|part|"
-    r"paragraph|item|rule|in\s+accordance\s+with|as\s+per|per|see|to)\s*$",
+    r"paragraph|item|rule|in\s+accordance\s+with|as\s+per|per|see|"
+    r"refer(?:s|red|ring)?\s+to|according\s+to|pursuant\s+to|"
+    r"subject\s+to|conform(?:s|ing)?\s+to|comply(?:ing)?\s+with)\s*$",
     re.I)
 
 

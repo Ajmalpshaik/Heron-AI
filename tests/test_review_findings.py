@@ -545,8 +545,9 @@ def main():
     check(EMBED.MODEL not in stamp or ":" in stamp,
           "and where the backend IS a trained model the stamp names WHICH")
     embed_source = inspect.getsource(EMBED)
-    check("name = stamp()" in embed_source,
-          "both index paths use it, so a changed encoder invalidates the "
+    check(embed_source.count("name, embed = encoder()") == 2,
+          "both index paths take the stamp and the encoder TOGETHER, so a "
+          "changed encoder invalidates the "
           "cache instead of satisfying it")
     print()
 
@@ -689,14 +690,20 @@ def main():
     print()
 
     print("34. THE PROJECT KEY IS THE KEY, NOT THE DISPLAY TITLE")
-    check("project=pinned.title" not in server_source,
-          "no tool passes pinned.title into open_scope's project_key slot - "
-          "three did, so a project store was named after a display name that "
-          "changes when somebody renames a file")
-    check(server_source.count("project=pinned.project_key") == 3,
-          "all three pass the stable key, which is what DocumentPin's own "
-          "docstring says identity is: 'Title alone is NOT identity', written "
-          "after two Revit sessions here both had a document called Project1")
+    check(server_source.count("project=pinned.project_key") == 2,
+          "the two calls that OPEN a project store pass the stable key, which "
+          "is what DocumentPin's own docstring says identity is: 'Title alone "
+          "is NOT identity', written after two Revit sessions here both had a "
+          "document called Project1")
+    check(server_source.count("project_name=pinned.title") == 2,
+          "and both carry the display name BESIDE it rather than instead of "
+          "it - a store's name and a modeller's word for the building are two "
+          "facts, and the first fix for this swapped one for the other")
+    check("depth=depth or None, project=pinned.title)" in server_source,
+          "while heron_context gets the NAME: it opens no project store and "
+          "renders `project` straight into the situation line, so passing the "
+          "Project Information UniqueId put an opaque identifier on the one "
+          "line that exists to say which building this is")
 
     # AND THE KEY IS THE ONE heron_scope DEFINES, OBTAINED IN A READ-ONLY
     # CONVERSATION. Round seven found that the previous fix moved a name and
@@ -953,6 +960,126 @@ def main():
           "callable surfaces is a security claim with a half-life")
     print()
 
+    # -----------------------------------------------------------------
+    # Round eight, 2026-09-11. Nine findings, every one real.
+    # -----------------------------------------------------------------
+
+    print("47. BRACKETS ARE NOT A WAY OUT OF THE FABRICATION CHECK")
+    check(G.facts("Use [50mm] insulation [abc123def:0001]") == ["50mm"],
+          "a value in brackets is still a fact - every bracketed span counted "
+          "as a citation marker and was stripped before facts() looked, so "
+          "`Use [50mm] insulation [chunk]` had no facts, was SKIPPED, and the "
+          "report said ok against a clause requiring 25mm")
+    check(G.facts("Insulate to 25mm [9.1.1].") == ["25mm"]
+          and G._MARKER.findall("Insulate to 25mm [9.1.1].") == ["9.1.1"],
+          "and a clause number in brackets is still a citation - it IS a fact "
+          "pattern, which is the whole reason markers are stripped, so the "
+          "disqualifier is a UNIT and nothing wider")
+    check(G._MARKER.findall("cited [99]", known=set(["99"])) == ["99"]
+          and G._MARKER.findall("claims [50mm]", known=set(["50mm"])) == ["50mm"],
+          "and a span the packet actually carries is a citation whatever it "
+          "looks like, which is what keeps a caller's own short chunk ids "
+          "working")
+    print()
+
+    print("48. THE SELECTION CANNOT MOVE BEFORE THE PIN IS CHECKED")
+    ops = open(os.path.join(ROOT, "revit", "Heron.Revit.Addin",
+                            "RevitOperations.cs"), encoding="utf-8").read()
+    guard = ops.index("expectProject")
+    check(guard < ops.index("uiDoc.Selection.SetElementIds(found)"),
+          "the add-in compares the expected project key BEFORE it touches the "
+          "selection - the server compared its pin against the REPLY, which "
+          "arrives after SetElementIds has run, so switching model mid-chat "
+          "highlighted the wrong building's ducts and then said nothing had "
+          "been sent to Revit")
+    check('"expectProject": pinned.project_key or ""' in server_source,
+          "and the server sends the key with the request rather than checking "
+          "it afterwards. Empty means 'do not check': a first request has "
+          "nothing to compare against, and refusing it would make the pin "
+          "unobtainable")
+    print()
+
+    print("49. AN EXPLICIT SESSION SWITCH MOVES THE PIN")
+    switch = server_source[server_source.index("def revit_use_session"):]
+    switch = switch[:switch.index("def revit_preview_move")]
+    check("pinned.repin(reply)" in switch and "pinned.check(reply)" not in switch,
+          "choosing a session repins - check() pins on FIRST sight and "
+          "otherwise returns a refusal without moving anything, and this line "
+          "called it and threw the refusal away: the binding moved, the pin "
+          "did not, the answer said 'Now working with', and every tool that "
+          "touches a model then refused for a reason nothing had told anybody")
+    print()
+
+    print("50. THE KEY NAMES THE STORE, THE TITLE NAMES THE BUILDING")
+    lib = inspect.getsource(R.librarian)
+    check("project_name" in lib and "(project_name or project)" in lib,
+          "the librarian labels the project scope with the NAME - since the "
+          "key became the Project Information UniqueId, every answer came "
+          "back labelled `project (a7f3c2e1-0000-...)` instead of "
+          "`project (Tower B)`")
+    check("remember_label" in brain_source,
+          "and the folder index learns that name, so a project store on disk "
+          "is not an unreadable filename")
+    print()
+
+    print("51. A SCOPE THE GROUNDING CHECK COULD NOT OPEN IS NAMED")
+    check("not a knowledge scope, or it could not be " in brain_source,
+          "a scope that could not be opened is reported rather than dropped - "
+          "`scopes=\"company,proejct\"`, one letter short, produced an `ok` "
+          "COMPANY-ONLY report with nothing saying the other named source was "
+          "never looked at. The same shape as the mistyped ingest flag, one "
+          "tool along")
+    print()
+
+    print("52. A DOCUMENT IS NOT LOST BECAUSE ITS NEWEST PATH IS")
+    check("earlier.setdefault" in ingest_source and "fallback" in ingest_source,
+          "restore() tries the earlier paths a document was ingested at - a "
+          "document id is a CONTENT hash, so the same standard at A and later "
+          "at B is one id with two paths, and keeping only B lost the "
+          "document when B was deleted while its bytes still sat at A")
+    print()
+
+    print("53. THE SAME MEASUREMENT IN TWO UNITS IS ONE MEASUREMENT")
+    check(C.comparable("mm", "30") == ("length", "30")
+          and C.comparable("cm", "4") == ("length", "40"),
+          "30mm and 4cm are compared - grouped on the literal unit string "
+          "they landed in separate groups, were never compared, and two "
+          "clauses prescribing different thicknesses came back agreeing by "
+          "silence")
+    check(C.comparable("gradient", "2:200") == C.comparable("gradient", "1:100"),
+          "and 1:100 against 2:200 is NOT a disagreement - comparing the "
+          "strings reported two sources contradicting each other about a fall "
+          "they agree on, which is a flag on nothing")
+    check(C.comparable("dn", "50") == ("dn", "50"),
+          "while a unit nothing knows how to convert keeps its own group, "
+          "which is exactly what grouping on the literal string always did")
+    print()
+
+    print("54. A NUMERIC RANGE IS NOT A CLAUSE REFERENCE")
+    ranged = "spacing varies from 1.5 to 2.5 times the diameter"
+    check(not any(GRAPH._is_clause_reference(ranged, m)
+                  for m in GRAPH._CLAUSE_REFERENCE.finditer(ranged)),
+          "a bare 'to' no longer cites - every numeric RANGE in a standard is "
+          "written this way, and standards are mostly ranges, so the false "
+          "edges landed exactly where they are densest: in the number that "
+          "decides whether the graph route is viable at all")
+    for cites in ("refer to 2.5 for the detail", "according to 4.1",
+                  "shall conform to 5.2", "see 4.1", "as per 3.2"):
+        check(any(GRAPH._is_clause_reference(cites, m)
+                  for m in GRAPH._CLAUSE_REFERENCE.finditer(cites)),
+              "while %r still does" % cites)
+    print()
+
+    print("55. ONE INDEXING PASS, ONE ENCODER, ONE NAME")
+    check("def encoder(" in embed_source,
+          "the stamp and the encoder are one decision - stamp() was read once "
+          "at the top of a pass while vector() consulted the loaded model per "
+          "row, so a warm-up finishing mid-pass stored MODEL vectors under "
+          "the name `lexical` in the same table")
+    check("_pack(vector(" not in embed_source,
+          "and neither index path reaches past it to the live model")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
@@ -962,7 +1089,7 @@ def main():
     print("PASSED - every defect an automated review found on 2026-09-11 has")
     print("a check standing on it, and each one fails if it comes back.")
     print()
-    print("It proves nothing about the defects NOBODY has found yet. SEVEN")
+    print("It proves nothing about the defects NOBODY has found yet. EIGHT")
     print("rounds of this review, each after the one before it was called")
     print("done, and each found real things - a value moved between two")
     print("requirements of one clause, a whole multi-scope path that two")

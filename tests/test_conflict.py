@@ -151,8 +151,12 @@ def main():
         check(len(found) == 1,
               "one disagreement is reported, not none and not five")
         one = found[0] if found else None
-        check(one is not None and one.unit == "mm",
-              "it is about millimetres")
+        check(one is not None and one.unit == "length"
+              and one.units == ["mm"],
+              "it is about a LENGTH, and both clauses wrote it in "
+              "millimetres - the group is the kind of measurement so that "
+              "30mm and 4cm can be compared at all, and each value still "
+              "prints the unit its own clause used")
         check(one is not None and set(v.value for v in one.values) ==
               set(["30", "40"]),
               "30 against 40 - the two numbers a modeller had to spot "
