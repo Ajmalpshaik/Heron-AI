@@ -38,7 +38,7 @@ and deliberately left alone.
 | Stage 5 — document nodes, and the density count | **COUNTED 2026-09-11.** Edges derived, density an order of magnitude below the fragment graph, **and the route still has no weight** |
 | Stage 6 — maintenance | **DONE 2026-09-11.** Re-index on change by content hash, duplicate clauses at write time, and the host rebuilds both halves |
 | Stage 7 — the re-ranker | **HALF DONE 2026-09-11, and the half that is done is the one this machine can prove.** [`brain/heron_rerank.py`](../../../../brain/heron_rerank.py) is the seam, bounded to twenty pairs in one place; `tests/test_rerank.py` asserts that with nothing installed the shortlist comes back in *exactly* fusion's order, and the tool says `Re-rank: absent` out loud. **The after-measurement is NOT taken** — no cross-encoder has ever run here, because the weights need `huggingface.co`. **W-9**, and `A10` in [NEEDS-CHECKING.md](../../../NEEDS-CHECKING.md) |
-| Stage 8 — trust and conflict | **not started.** Needs Stage 3, which is done. Q-C is the decision it is actually waiting on |
+| Stage 8 — trust and conflict | **HALF DONE 2026-09-11, and the halves split on who has to decide.** **Conflict is built** — [`brain/heron_conflict.py`](../../../../brain/heron_conflict.py), `tests/test_conflict.py`: company 30mm against project 40mm now says it disagrees, resolves nothing, and names the docs/20 §2 hierarchy while explicitly not applying it. **Trust is blocked on Q-C** — two of R-25's four signals do not exist, and whether Heron keeps a usage log is the owner's call. [02 §11](02-implementation.md) says the decision is written down BEFORE the weights move, so no weight moved |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
 
 ---
@@ -224,6 +224,23 @@ cloud, the opt-in may be worth building, or it may be a setting nobody will ever
 switch with no user.
 
 ---
+
+### Q-E — may an INGEST read another scope? *(raised 2026-09-11 by building Stage 8)*
+
+[docs/20 §4](../../../20-knowledge-trust-and-conflict.md) asks for conflict detection **at write
+time** as well as read time, and gives a good reason: resolving a conflict once, at ingest, is far
+cheaper than resolving it on every query, and it stops the knowledge base accumulating contradictions
+in the first place.
+
+**It cannot be built without answering a contractual question first.** At read time the crossing is
+already authorised — a host asked one question of two named scopes, and `librarian()` opens each on
+its own. **At write time nothing has been asked of anybody.** Finding a conflict at ingest means
+reading ANOTHER scope while writing into this one, and [D-33](../../../DECISIONS.md) makes
+cross-scope a contractual matter rather than a technical one.
+
+*Worth saying out loud:* the read-time version already crosses, and deliberately keeps that crossing
+to **a number and a clause number, never a clause**. A write-time version could hold to the same
+limit. Whether it may happen at all is still the owner's call.
 
 ## 6. Log
 
@@ -1550,3 +1567,72 @@ brings back the document somebody deliberately removed while `forget` reports su
 **Three of these seven are in code written to fix the previous round.** That is not an argument for
 reviewing less; it is the measure of how much a green suite proves on its own, which is: that the
 cases somebody thought of still pass.
+
+---
+
+### 2026-09-11 — Stage 8: the two clauses say different numbers, and now the answer says so
+
+**Stage 8 splits on who has to decide, and only one half was mine to build.**
+
+| | |
+|---|---|
+| **Conflict** — R-24, `HERON-RAG-CNF-015` | **built.** `brain/heron_conflict.py`, `tests/test_conflict.py` |
+| **Trust** — R-16, R-25 | **blocked on Q-C.** Two of the four signals do not exist, and whether Heron keeps a usage log is the owner's call. **No weight moved** |
+| **R-23** | **blocked on W-8**, through R-56 — the floor the measurement says cannot be derived on this backend |
+
+### The case was already sitting in Stage 4's test
+
+```text
+company            Acme Engineering BIM Standard 2026  3.1   insulate to 30mm
+project (Tower B)  Tower B Project Specification       3.1   insulate to 40mm
+```
+
+**Both correct, both cited, and nothing saying they disagreed.** A modeller had to spot the two
+numbers themselves. On a bad afternoon they do not, and 30mm goes on a wall the project specified at
+40. docs/20 §4 is blunt about the alternative: let ranking settle it and the knowledge base becomes
+quietly non-deterministic.
+
+### What it does, and the word for what it does not
+
+It **surfaces**. Both clauses still come back under their own scopes. The docs/20 §2 hierarchy — project
+above company — is **named and explicitly not applied**, which is that section's own caveat kept:
+*"overrides must not mean silently replaces"*. **A test asserts there is no `winner` and no `resolve`
+anywhere in the module**, and is meant to fail the day somebody adds one.
+
+### What crosses the wall is a number and a clause number, never a clause
+
+A disagreement cannot be seen without *something* crossing. Each store is opened, asked, **reduced to
+its measured values, and closed before the next is opened** — so no scope's text is ever in memory
+beside another's. What travels is `40mm at 3.1`.
+
+### Only quantities, and the reason is noise rather than principle
+
+`facts()` pulls `9` and `1` out of *"clause 9.1.1"*, and two scopes citing different clause numbers is
+not a disagreement about anything. So a clause number, a year, a category and a bare count are all
+excluded. **Over-flagging teaches people to ignore flags** — `heron_ground`'s own recorded lesson about
+R-50 — and a missed disagreement is recoverable, because both clauses come back either way.
+
+### Two limits reported rather than discovered, and the second one the test found
+
+**It compares units, not subjects.** *"Insulation 25mm"* against *"clearance 40mm"* would be reported
+too. Deciding sameness is meaning, and this layer has no model and no network (R-47). The report says
+that in words.
+
+**And it inherits the missing floor.** The test asked whether a question *neither* scope covers reports
+silence. **It does not** — retrieval has no floor, so five clauses come back for anything asked and
+their numbers still differ. The check now asserts what happens instead of a floor that is not there.
+
+> **The caveat took two goes, and the first one fired backwards.** It carried
+> `Contest.words_selected_nothing` — the words route matched at least as much as the filter left. On
+> two chunks per scope that fired on the **real** question and stayed silent on the irrelevant one. The
+> reason was already written one class up: below a pool of twenty, `pool_is_evidence` is false and none
+> of those counts means anything yet. **A signal that is really about corpus size, read as a signal
+> about the question.** It is gated on Contest's own comparison now, and where the pool is too small
+> the report says *that* rather than guessing.
+
+### And a question this raised by being built — Q-E
+
+docs/20 §4 also wants detection **at write time**. It cannot be built without an answer first: at read
+time the crossing is authorised because a host asked one question of two named scopes, but **at ingest
+nothing has been asked of anybody**, so reading another scope while writing into this one is a crossing
+[D-33](../../../DECISIONS.md) makes contractual. Recorded for the owner, not decided here.
