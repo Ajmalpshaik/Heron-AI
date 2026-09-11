@@ -1,0 +1,160 @@
+name: Gates
+
+# A check that has to be remembered is a check that is skipped on the day it
+# matters. This runs the repository's own pre-push procedure on every change,
+# so nobody has to remember it.
+#
+# What it deliberately does NOT do: build the C# add-in. That needs the Revit
+# API assemblies, which ship with Revit and cannot be installed on a hosted
+# runner. The compiler checks stay on the owner's machine.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: The three that must pass
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
+      # A non-zero exit from any of these three is the change, not the machine.
+      # They need no compiler, no knowledge store and no Revit.
+      - name: check-docs
+        run: python tools/check-docs.py
+
+      - name: check-metadata
+        run: python tools/check-metadata.py
+
+      - name: check-structure
+        run: python tools/check-structure.py
+
+      - name: Derive the fragment proof counts
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Fragment proof status"
+            echo
+            echo "Derived from the fragments themselves, not read off a sentence."
+            echo
+            echo '```'
+            grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  tests:
+    name: Every suite, against the known-failure list
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
+      - name: Run every suite and compare the failing set
+        shell: bash
+        run: |
+          # The suites that fail on a plain Linux runner, and why. A lump
+          # pass total is how a real regression hides, so the build compares
+          # the SET of failures instead of counting them.
+          #
+          #   test_graph.py            real, and pre-dates this workflow
+          #   test_reachable.py        real, and pre-dates this workflow
+          #   test_bridge_roundtrip.py needs a built .NET test host
+          #   test_mcp_serves.py       needs the MCP SDK
+          #   test_served_claims.py    needs the MCP SDK
+          #
+          # The MCP SDK and the .NET host are left out on purpose: both drag in
+          # native dependencies that break for reasons that have nothing to do
+          # with this repository. Those three prove nothing either way here.
+          printf '%s\n' \
+            test_bridge_roundtrip.py \
+            test_graph.py \
+            test_mcp_serves.py \
+            test_reachable.py \
+            test_served_claims.py \
+            | sort > "$RUNNER_TEMP/known-failures.txt"
+
+          for t in tests/test_*.py; do
+            python "$t" > /dev/null 2>&1 || basename "$t"
+          done | sort > "$RUNNER_TEMP/actual-failures.txt"
+
+          total=$(ls tests/test_*.py | wc -l)
+          failed=$(wc -l < "$RUNNER_TEMP/actual-failures.txt")
+          new=$(comm -13 "$RUNNER_TEMP/known-failures.txt" "$RUNNER_TEMP/actual-failures.txt")
+          fixed=$(comm -23 "$RUNNER_TEMP/known-failures.txt" "$RUNNER_TEMP/actual-failures.txt")
+
+          {
+            echo "### Test suites"
+            echo
+            echo "Ran ${total} suites. ${failed} failed."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          status=0
+
+          if [ -n "$new" ]; then
+            echo "::error::A suite failed that is not on the known-failure list."
+            echo "New failures - these are the change, not the machine:"
+            echo "$new"
+            {
+              echo
+              echo "**New failures — these are the change, not the machine:**"
+              echo
+              echo '```'
+              echo "$new"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            status=1
+          fi
+
+          if [ -n "$fixed" ]; then
+            echo "::error::A suite on the known-failure list passed."
+            echo "Somebody fixed something or installed something:"
+            echo "$fixed"
+            {
+              echo
+              echo "**On the known-failure list, but it passed.** Somebody fixed"
+              echo "something or installed something. Say so — update the list in"
+              echo "\`.github/workflows/gates.yml\` in the same change, rather than"
+              echo "quietly recording a better number."
+              echo
+              echo '```'
+              echo "$fixed"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            status=1
+          fi
+
+          if [ "$status" -eq 0 ]; then
+            echo "The failing set is exactly the known-failure list. Nothing new broke."
+            {
+              echo
+              echo "The failing set is exactly the known-failure list. Nothing new broke."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          exit "$status"
