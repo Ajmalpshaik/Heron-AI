@@ -1,0 +1,346 @@
+name: Gates
+
+# A check that has to be remembered is a check that is skipped on the day it
+# matters. This runs the repository's own pre-push procedure on every change,
+# so nobody has to remember it.
+#
+# What it deliberately does NOT do: build the C# add-in. That needs the Revit
+# API assemblies, which ship with Revit and cannot be installed on a hosted
+# runner. The compiler checks stay on the owner's machine.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: The gates that must pass
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
+      # The three the ship checklist calls "the three that must pass". A
+      # non-zero exit from any of them is the change, not the machine, and
+      # none needs a compiler, a knowledge store or Revit.
+      - name: check-docs
+        run: python tools/check-docs.py
+
+      - name: check-metadata
+        run: python tools/check-metadata.py
+
+      - name: check-structure
+        run: python tools/check-structure.py
+
+      # These two need somewhere to put a knowledge store, and say so rather
+      # than failing when there is none: "No %APPDATA% and no HERON_KNOWLEDGE".
+      # An empty directory is enough for them to run, so CI gives them one.
+      - name: check-routing and check-intrusion
+        env:
+          HERON_KNOWLEDGE: ${{ runner.temp }}/heron-kb
+        run: |
+          mkdir -p "$HERON_KNOWLEDGE"
+          python tools/check-routing.py
+          python tools/check-intrusion.py
+
+      - name: Derive the fragment proof counts
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Fragment proof status"
+            echo
+            echo "Derived from the fragments themselves, not read off a sentence."
+            echo
+            echo '```'
+            grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  compile:
+    name: The C# compiles, 2020 to 2027
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      # The .NET 10 SDK, not the .NET 8 one. docs/30-compiling-away-from-windows.md
+      # measured this: the 8 SDK omits the WindowsDesktop MSBuild targets, so the
+      # add-in fails MSB4019 on Revit 2025-2027, while the 10 SDK ships them and
+      # builds all eight releases. An SDK builds target frameworks older than
+      # itself, so the newest is the one to install.
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      # No Revit on this runner, and none needed. The add-in takes the Revit API
+      # from NuGet whenever RevitApiDir is unset, which is exactly the case here,
+      # and check-compile.py passes -p:EnableWindowsTargeting=true so the SDK
+      # restores the Windows targeting packs while not running on Windows.
+      - name: Compile every project against every Revit release
+        shell: bash
+        run: |
+          status=0
+          python tools/check-compile.py > "$RUNNER_TEMP/compile.log" 2>&1 || status=$?
+          cat "$RUNNER_TEMP/compile.log"
+
+          {
+            echo "### The C# compiles"
+            echo
+            echo '```'
+            tail -20 "$RUNNER_TEMP/compile.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$status" -ne 0 ]; then
+            echo "::error::A project failed to compile. The log names the file and line."
+            exit 1
+          fi
+
+          # A SKIP IS NOT A PASS, and check-compile returns 0 when it skips.
+          # Without this the job would go green having compiled nothing at all -
+          # which is the exact failure the tool's own output line warns about.
+          if grep -q 'SKIPPED' "$RUNNER_TEMP/compile.log"; then
+            echo "::error::A Revit release was skipped. On this runner every release should build - a skip means the SDK is wrong, not that the release is unsupported."
+            grep 'SKIPPED' "$RUNNER_TEMP/compile.log"
+            exit 1
+          fi
+
+  generated:
+    name: The generated files are current
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
+      # Three tools in this repository WRITE files, and they are not equal.
+      # recount-agent-registry rewrites docs/28-agent-registry.md, which IS
+      # committed - so it can be stale, and a stale committed file is worse
+      # than an absent one because it is believed. The other two write
+      # agent-map.html and fragment-catalog.html, both gitignored, so they
+      # can never drift.
+      #
+      # All three run anyway. The diff can only catch the registry, but a
+      # generator that has stopped running at all is its own regression, and
+      # nothing else here would notice.
+      - name: Re-run the generators and diff
+        shell: bash
+        run: |
+          for g in generate-fragment-catalog generate-agent-map \
+                   recount-agent-registry; do
+            echo "----- ${g} -----"
+            python "tools/${g}.py"
+          done
+
+          # Scoped to the file the generators own. An unscoped diff would
+          # report any other tracked change in the tree as "stale".
+          GENERATED="docs/28-agent-registry.md"
+
+          if git diff --quiet -- "$GENERATED"; then
+            echo "All three generators ran. The one generated file that is committed matches."
+            {
+              echo "### Generated files"
+              echo
+              echo "All three generators ran. \`docs/28-agent-registry.md\`, the"
+              echo "one generated file that is committed, matches what its"
+              echo "generator produces."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "::error::A committed generated file is stale."
+          git --no-pager diff --stat -- "$GENERATED"
+          {
+            echo "### Generated files"
+            echo
+            echo "**A committed generated file is stale.** Re-run the"
+            echo "generator and commit the result:"
+            echo
+            echo '```'
+            git --no-pager diff --stat -- "$GENERATED"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      # agent-map.html and fragment-catalog.html are gitignored, so they exist
+      # nowhere a reader can reach. The catalog is a browsable view of all 360
+      # fragments. Uploading it means anyone can open the current one from a
+      # run without installing Python or Revit.
+      - name: Upload the generated catalog and map
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: catalog-and-map
+          path: |
+            fragment-catalog.html
+            agent-map.html
+          if-no-files-found: error
+          retention-days: 30
+
+  reports:
+    name: The reports - a finding is a question
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
+      # These three exit 0 whatever they find, and that is deliberate: their
+      # findings are open questions with owners, not breaks. They are here so
+      # somebody reads them - until now they only ran when a person remembered
+      # to run them. This job never fails the build.
+      - name: Read the reports into the summary
+        shell: bash
+        run: |
+          echo "### Reports" >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo "These do not fail the build. A finding here is a question with" >> "$GITHUB_STEP_SUMMARY"
+          echo "an owner, not a regression." >> "$GITHUB_STEP_SUMMARY"
+          for r in check-reachable check-revit-gate agent-count; do
+            # Run it ONCE. Print it to the job log, and fold the same text
+            # into the summary.
+            python "tools/${r}.py" > "$RUNNER_TEMP/${r}.txt" 2>&1 || true
+            echo "----- ${r} -----"
+            cat "$RUNNER_TEMP/${r}.txt"
+            {
+              echo
+              echo "<details><summary>${r}</summary>"
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/${r}.txt"
+              echo '```'
+              echo
+              echo "</details>"
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+
+  tests:
+    name: Every suite, against the known-failure list
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
+      - name: Run every suite and compare the failing set
+        shell: bash
+        run: |
+          # The suites that fail on a plain Linux runner, and why. A lump
+          # pass total is how a real regression hides, so the build compares
+          # the SET of failures instead of counting them.
+          #
+          #   test_graph.py            real, and pre-dates this workflow
+          #   test_reachable.py        real, and pre-dates this workflow
+          #   test_bridge_roundtrip.py needs a built .NET test host
+          #   test_mcp_serves.py       needs the MCP SDK
+          #   test_served_claims.py    needs the MCP SDK
+          #
+          # The MCP SDK and the .NET host are left out on purpose: both drag in
+          # native dependencies that break for reasons that have nothing to do
+          # with this repository. Those three prove nothing either way here.
+          printf '%s\n' \
+            test_bridge_roundtrip.py \
+            test_graph.py \
+            test_mcp_serves.py \
+            test_reachable.py \
+            test_served_claims.py \
+            | sort > "$RUNNER_TEMP/known-failures.txt"
+
+          for t in tests/test_*.py; do
+            python "$t" > /dev/null 2>&1 || basename "$t"
+          done | sort > "$RUNNER_TEMP/actual-failures.txt"
+
+          total=$(ls tests/test_*.py | wc -l)
+          failed=$(wc -l < "$RUNNER_TEMP/actual-failures.txt")
+          new=$(comm -13 "$RUNNER_TEMP/known-failures.txt" "$RUNNER_TEMP/actual-failures.txt")
+          fixed=$(comm -23 "$RUNNER_TEMP/known-failures.txt" "$RUNNER_TEMP/actual-failures.txt")
+
+          {
+            echo "### Test suites"
+            echo
+            echo "Ran ${total} suites. ${failed} failed."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          status=0
+
+          if [ -n "$new" ]; then
+            echo "::error::A suite failed that is not on the known-failure list."
+            echo "New failures - these are the change, not the machine:"
+            echo "$new"
+            {
+              echo
+              echo "**New failures — these are the change, not the machine:**"
+              echo
+              echo '```'
+              echo "$new"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            status=1
+          fi
+
+          if [ -n "$fixed" ]; then
+            echo "::error::A suite on the known-failure list passed."
+            echo "Somebody fixed something or installed something:"
+            echo "$fixed"
+            {
+              echo
+              echo "**On the known-failure list, but it passed.** Somebody fixed"
+              echo "something or installed something. Say so — update the list in"
+              echo "\`.github/workflows/gates.yml\` in the same change, rather than"
+              echo "quietly recording a better number."
+              echo
+              echo '```'
+              echo "$fixed"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            status=1
+          fi
+
+          if [ "$status" -eq 0 ]; then
+            echo "The failing set is exactly the known-failure list. Nothing new broke."
+            {
+              echo
+              echo "The failing set is exactly the known-failure list. Nothing new broke."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          exit "$status"
