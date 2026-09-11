@@ -148,6 +148,9 @@ class Candidate(object):
         # machine with no re-ranker installed, which is most machines.
         self.rerank_score = None       # the cross-encoder's, higher is better
         self.rerank_rank = None        # its position in that order, 1-based
+        # HOW MANY THE RE-RANKER ACTUALLY READ. Carried on the candidate so a
+        # list cut down to `limit` still knows - see Contest.
+        self.rerank_pool = None
 
     @property
     def score(self):
@@ -286,6 +289,12 @@ class Contest(object):
         # same reason D-40 derives an edge instead of storing one.
         self.reranked = any(getattr(c, "rerank_rank", None) is not None
                             for c in ranked)
+        # AND HOW MANY IT READ, which is not the same as how many are here.
+        # find() builds this from the list AFTER the cut to `limit`, so with
+        # limit=5 the re-ranker had read twenty and this held five.
+        pools = [getattr(c, "rerank_pool", None) for c in ranked]
+        pools = [n for n in pools if n]
+        self.rerank_pool = max(pools) if pools else None
 
         # SORTED DESCENDING, AND THAT IS NOT TIDINESS. Every number below is a
         # fact about FUSION, and when a re-ranker has re-ordered the shortlist
@@ -352,14 +361,33 @@ class Contest(object):
             said = ("the RE-RANKER set this order, reading each question-and-%s "
                     "pair - so the fusion numbers here describe the shortlist "
                     "it was given, not the order shown" % self.noun)
-            said += ("; that shortlist spanned %.1f rank(s) and %d of %d were "
+            # WHAT THESE NUMBERS ARE ACTUALLY OVER. They are computed from the
+            # candidates in hand, and with a limit smaller than the re-rank
+            # pool that is a SUBSET of what the re-ranker read. Saying "the
+            # shortlist it was given" about five of twenty was a sentence
+            # describing a set it had never seen. Found by a review.
+            if self.rerank_pool and self.rerank_pool > self.count:
+                said += ("; it read %d, and these %d are the ones it put on "
+                         "top - the fusion numbers below are over THESE %d, "
+                         "not over all %d"
+                         % (self.rerank_pool, self.count, self.count,
+                            self.rerank_pool))
+            said += ("; they span %.1f fusion rank(s) and %d of %d were "
                      "found by both routes"
                      % (self.spread, self.agreed, self.count))
-        elif self.top_gap < 1.0 and self.nudged:
+        elif self.top_gap * ONE_RANK < QUALITY_SPAN and self.nudged:
+            # THE COMPARISON IS AGAINST WHAT STATUS CAN ACTUALLY MOVE, not
+            # against a whole rank. Across the statuses a fragment may be
+            # OFFERED at, the nudge spans about six tenths of one rank - so a
+            # gap of 0.8 ranks is below one rank and STILL wider than anything
+            # status could have produced. The old wording blamed status for
+            # those, in the one sentence here whose job is to say honestly
+            # what set an order. Found by a review 2026-09-11.
             said = ("A COIN TOSS: the top two are %.1f of one fusion rank "
-                    "apart, which is narrower than the quality nudge - their "
-                    "order could have come from status alone, not from either "
-                    "route preferring one" % self.top_gap)
+                    "apart, which is inside the %.1f rank(s) the quality "
+                    "nudge spans - their order could have come from status "
+                    "alone, not from either route preferring one"
+                    % (self.top_gap, QUALITY_SPAN / ONE_RANK))
         elif self.top_gap < 1.0:
             said = ("A COIN TOSS: the top two are %.1f of one fusion rank "
                     "apart, and one rank is the smallest difference either "
@@ -416,6 +444,21 @@ class Excluded(object):
 # by default: they exist so a record is never destroyed (Golden Rule 4), not so
 # they can be handed back as answers.
 OFFERABLE = ("DISCOVERED", "DRAFT", "TESTING", "VALIDATED", "PROVEN", "PRODUCTION")
+
+# WHAT THE NUDGE CAN ACTUALLY MOVE, DERIVED FROM THE TABLE ABOVE.
+#
+# Contest used to say a gap below ONE rank "could have come from status
+# alone". It cannot: across the statuses a fragment may be OFFERED at, the
+# whole nudge spans less than one rank, so a gap wider than this span is a gap
+# status could not have produced however the shortlist was ordered. Saying
+# otherwise blames a mechanism that could not have done it - in the one
+# sentence on this page whose entire job is to be honest about what decided
+# an order. Found by a review 2026-09-11.
+#
+# Derived, never typed, for the same reason ONE_RANK is: change a value in
+# QUALITY and this follows.
+QUALITY_SPAN = (max(QUALITY[s] for s in OFFERABLE)
+                - min(QUALITY[s] for s in OFFERABLE))
 
 
 def eligible(store, revit=None, domain=None, kind=None, statuses=OFFERABLE):
@@ -543,6 +586,11 @@ def _rerank(text, ranked, passage):
     scored.sort(key=lambda c: (-c.rerank_score, -c.score, c.id))
     for position, candidate in enumerate(scored, 1):
         candidate.rerank_rank = position
+        # THE SIZE OF WHAT IT READ, RECORDED ON EACH SURVIVOR. find() builds
+        # its Contest from the list AFTER the cut to `limit`, so a report that
+        # said "the shortlist it was given" was describing five candidates
+        # while the re-ranker had read twenty. Found by a review 2026-09-11.
+        candidate.rerank_pool = len(head)
 
     # The tail keeps its fusion order and stays behind everything the re-ranker
     # looked at. It was never scored, so promoting any of it would be inventing

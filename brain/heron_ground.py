@@ -159,7 +159,11 @@ _MARKER = re.compile(r"\[([^\]]{1,120})\]")
 # people to ignore flags. "This is worth reviewing" is not a claim about an
 # indexed source; "ducts shall be insulated to 25mm" is.
 _FACT = [
-    re.compile(r"\b\d+(?:\.\d+)*\s*" + _UNITS + r"\b"),   # a dimension
+    # THE SIGN IS PART OF THE VALUE. Written without it, a source requiring a
+    # fall of -200mm and a draft claiming +200mm produced the SAME fact and
+    # the draft passed - a reversed gradient reported as grounded. Found by a
+    # review 2026-09-11.
+    re.compile(r"-?\d+(?:\.\d+)*\s*" + _UNITS + r"\b"),  # a dimension
     re.compile(r"\bdn\d+\b"),                             # a nominal bore
     re.compile(r"\b\d+(?:\.\d+){1,}\b"),                  # a clause number
     # LOWERCASE, BECAUSE facts() RUNS THESE ON NORMALISED TEXT. Both of these
@@ -175,6 +179,17 @@ _FACT = [
     re.compile(r"\b\d+in\d+\b"),                           # a gradient, 1:100
     re.compile(r"\b\d+(?:\.\d+)?pct\b"),                    # a percentage
     re.compile(r"\b\d{4}\b"),                             # a year or release
+    # A BARE COUNT IS A CLAIM ABOUT THE SOURCE TOO, and leaving it out meant
+    # "install 99 supports" against a clause requiring 2 was reported ok - the
+    # sentence had no unit, no clause number and no year, so facts() was empty
+    # and R-50 skipped it. Found by a review 2026-09-11.
+    #
+    # THIS MAKES MORE SENTENCES CHECKABLE, WHICH MEANS MORE FLAGS. That is the
+    # safe direction for a standards check and it is not free: a draft that
+    # mentions a number the clause does not carry is now FLAGGED rather than
+    # skipped. The module flags and never rewrites (R-53), so the cost is a
+    # person reading a line, and the alternative was a wrong count passing.
+    re.compile(r"-?\b\d+\b"),                            # a plain count
 ]
 
 
@@ -260,7 +275,11 @@ PARAPHRASE = "paraphrase"    # prose about a named thing
 NO_RATIO_GATE = None
 
 THRESHOLDS = {
-    QUOTE:      0.90,            # coverage, not similarity - see above
+    # 1.0 BECAUSE coverage() IS NOW CONTAINMENT. The measurement that set
+    # 0.90 recorded a true quotation at exactly 1.000 and a false one at
+    # 0.265; the slack between was never evidence, and a reversed quotation
+    # measured 0.982 walked straight through it. See coverage().
+    QUOTE:      1.0,             # containment, not similarity - see above
     REFERENCE:  NO_RATIO_GATE,   # the added-fact rule carries these three
     NUMERIC:    NO_RATIO_GATE,
     PARAPHRASE: NO_RATIO_GATE,
@@ -273,9 +292,28 @@ _QUOTED = re.compile(r'["“]([^"”]{4,})["”]')
 def coverage(claim, source):
     """The share of a quoted span that appears verbatim in its source.
 
-    Containment, not similarity. A quotation that is really in the clause
-    scores 1.0 however much prose surrounds it; one that is not scores what
-    it deserves, and the two do not overlap.
+    CONTAINMENT, NOT SIMILARITY - and the first version of this said so and
+    did not do it. It returned the LONGEST COMMON RUN over the quote's length,
+    which is a different measurement: a long quotation with a short reversal
+    at its START keeps a very long matching tail.
+
+        source  "No ducts shall be installed within the ceiling void unless..."
+        quoted  "All ducts shall be installed within the ceiling void unless..."
+        scored   0.982, against a gate of 0.90 - REPORTED GROUNDED
+
+    Measured 2026-09-11 on this exact code. The claim reversed the clause and
+    the check endorsed it, which is the single failure this module exists to
+    prevent. Found by a review.
+
+    So containment is now literal: a quotation IS in the clause or it is not.
+    The gate moves to 1.0 with it, and that is not a threshold being tuned
+    (R-55) - the measurement that set 0.90 recorded a true quote at EXACTLY
+    1.000 and a false one at 0.265, with nothing in between. The 0.90 was
+    slack around a number that had no spread, and the slack is what the
+    reversal walked through.
+
+    The ratio is still returned when there is no containment, because the
+    report shows it and a reader can see how near a miss was.
     """
     spans = _QUOTED.findall(claim or "")
     if not spans:
@@ -284,9 +322,93 @@ def coverage(claim, source):
     got = normalise(source)
     if not want or not got:
         return 0.0
+    if want in got:
+        return 1.0
     matcher = difflib.SequenceMatcher(None, want, got)
     longest = matcher.find_longest_match(0, len(want), 0, len(got))
     return longest.size / float(len(want))
+
+
+# A REVERSAL IS NOT AN ADDED FACT, WHICH IS WHY THE ADDED-FACT RULE MISSED IT.
+#
+#     clause  "Duct insulation shall not exceed 25mm"
+#     draft   "Duct insulation shall exceed 25mm [chunk]"
+#
+# Both yield exactly one fact, 25mm. Nothing was added, the ratio has no gate
+# on a NUMERIC claim, and the report said GROUNDED about a sentence stating the
+# opposite of its source. Measured 2026-09-11; found by a review.
+_NEGATIONS = ("not", "no", "never", "cannot", "without", "neither", "nor",
+              "except", "unless", "exclude", "excludes", "excluding")
+
+
+def _negations(text):
+    """Which negating words a sentence carries, as a set."""
+    words = set(normalise(_MARKER.sub(" ", text or "")).split())
+    return set(word for word in _NEGATIONS if word in words)
+
+
+def reverses(claim, source_sentence):
+    """Whether the claim is its source with the negation taken out or put in.
+
+    STRUCTURAL, AND WITH NO THRESHOLD IN IT - which is the only kind of rule
+    this module is allowed to add. Strip the negating words from both sides;
+    if what is left is IDENTICAL and the negating words differ, then the only
+    difference between the two sentences is the negation, and one of them
+    states the opposite of the other.
+
+    WHAT IT DOES NOT CATCH, said plainly rather than discovered later. A
+    reversal that also rewords - "no ducts" against "all ducts" - leaves
+    different remainders and is invisible here. That is the general paraphrase
+    problem, and R-46's measurement already recorded that the similarity ratio
+    cannot separate a true paraphrase from a wrong claim. A QUOTED reversal is
+    caught by coverage(), which is containment; an unquoted reworded one needs
+    something this module deliberately does not have (R-47: no model, no
+    network).
+    """
+    mine, theirs = _negations(claim), _negations(source_sentence)
+    if mine == theirs:
+        return False
+    return _bare(claim) == _bare(source_sentence)
+
+
+def _bare(text):
+    """The sentence as words, with the negation and the full stops taken out.
+
+    THE TRAILING FULL STOP IS THE WHOLE REASON THIS IS A FUNCTION. normalise()
+    keeps "." because a clause number needs it, so a source sentence ends
+    "25mm." and a claim ends "25mm" - and comparing the two lists made every
+    reversal look like a different sentence. The first version of reverses()
+    passed its own unit check and still returned GROUNDED end to end, which is
+    what testing it through check() caught and testing the helper alone did
+    not.
+    """
+    words = normalise(_MARKER.sub(" ", text or "")).split()
+    out = []
+    for word in words:
+        word = word.strip(".,;:-")
+        if word and word not in _NEGATIONS:
+            out.append(word)
+    return out
+
+
+def nearest_sentence(claim, source):
+    """The sentence of `source` this claim is closest to. Never None.
+
+    support() already finds this score and throws the sentence away. The
+    polarity check needs the SENTENCE - comparing a claim's negation against a
+    whole fifteen-hundred-character chunk would find a "not" somewhere in it
+    almost every time.
+    """
+    want = normalise(claim)
+    best, score = source or "", -1.0
+    for piece in sentences(source) or [source or ""]:
+        got = normalise(piece)
+        if not got:
+            continue
+        ratio = difflib.SequenceMatcher(None, want, got).ratio()
+        if ratio > score:
+            best, score = piece, ratio
+    return best
 
 
 def kind_of(sentence):
@@ -349,6 +471,7 @@ FLAGGED = "flagged"          # a fact the source does not carry
 UNCITED = "uncited"          # a fact with no chunk behind it - a BUG (R-65)
 UNRESOLVED = "unresolved"    # it cites something this packet does not carry
 AMBIGUOUS_CITE = "ambiguous"  # the locator names more than one document
+REVERSED = "reversed"        # its source with the negation taken out or put in
 
 PASSES = (SKIPPED, GROUNDED, UNDERSTATED)
 
@@ -430,9 +553,15 @@ class Report(object):
         return [c for c in self.claims if c.verdict == AMBIGUOUS_CITE]
 
     @property
+    def reversed_claims(self):
+        """Claims that are their source with the negation moved. The worst
+        verdict here, because the sentence is otherwise word for word right."""
+        return [c for c in self.claims if c.verdict == REVERSED]
+
+    @property
     def ok(self):
         return (not self.flagged and not self.uncited and not self.unresolved
-                and not self.ambiguous)
+                and not self.ambiguous and not self.reversed_claims)
 
     def lines(self):
         """The report a person reads. R-52: thresholds, denominator, ratios."""
@@ -461,6 +590,14 @@ class Report(object):
             out.append("           it cites a source this packet does not "
                        "carry. R-22: a citation a human cannot follow is "
                        "decoration - check whether the clause exists")
+        # FIRST IN THE LIST, because it is the one a reader would otherwise
+        # skim past: every word matches its source except the one that
+        # reverses it.
+        for claim in self.reversed_claims:
+            out.append("REVERSED   %s" % claim.sentence[:70])
+            out.append("           this is the cited clause with its negation "
+                       "TAKEN OUT or PUT IN - every other word matches. It "
+                       "states the opposite of its source")
         for claim in self.flagged:
             out.append("FLAGGED    %s" % claim.sentence[:70])
             if claim.threshold is None:
@@ -530,10 +667,16 @@ def check(draft, packet):
         cite = getattr(part, "citation", None)
         if not cite:
             continue
-        by_chunk[cite["chunk"]] = (cite, part.body)
+        # THE RAW CLAUSE, NOT THE RENDERED ONE. part.body is wrapped by
+        # heron_context.as_quoted_source() with the document title and the
+        # locator on its first line, and taking facts() of that made the LABEL
+        # into evidence: a title of "QCS 2014" supplied the year 2014 to every
+        # claim citing it. Falls back to the body for any part built before
+        # this field existed, so an older caller still gets checked.
+        body = getattr(part, "evidence", None) or part.body
+        by_chunk[cite["chunk"]] = (cite, body)
         if cite.get("locator"):
-            by_locator.setdefault(cite["locator"], []).append(
-                (cite, part.body))
+            by_locator.setdefault(cite["locator"], []).append((cite, body))
 
     claims = []
     for sentence in sentences(draft):
@@ -580,6 +723,18 @@ def check(draft, packet):
         ratio = support(sentence, body)
         in_source = facts(body)
         added = [fact for fact in found if fact not in in_source]
+
+        # A REVERSAL IS CHECKED BEFORE ANYTHING ELSE, because it is invisible
+        # to every other rule here. It adds no fact, so the added-fact rule
+        # passes it; it is almost word for word its source, so the ratio is
+        # HIGH rather than low. "shall not exceed 25mm" against "shall exceed
+        # 25mm" was returning GROUNDED. Found by a review 2026-09-11.
+        if reverses(sentence, nearest_sentence(sentence, body)):
+            claims.append(Claim(sentence, REVERSED, kind=kind, ratio=ratio,
+                                threshold=THRESHOLDS[kind], citation=citation,
+                                added=["the source's negation is not this "
+                                       "claim's"]))
+            continue
 
         if added:
             # AN ADDED FACT IS A FLAG, AND THE RATIO DOES NOT GET A VOTE.

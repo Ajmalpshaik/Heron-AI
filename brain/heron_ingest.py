@@ -230,9 +230,23 @@ def protected_spans(text):
 # "Ducts shall be insulated ... except where installed within conditioned
 # spaces." Split there, retrieve the first half, and Heron states the opposite
 # of the requirement with a citation attached.
+# THIS LIST IS NOT EXHAUSTIVE AND CANNOT BE, which is why it is written out
+# rather than hidden behind a name that sounds complete. Every form here was
+# added because a real clause used it; the review on 2026-09-11 added the
+# second line after pointing out that `subject to`, `notwithstanding`,
+# `with the exception of` and `excluding` all begin a qualification and none
+# of them was here - so a rule could be cut away from its exception and the
+# first chunk would state the opposite of the source, with a citation on it.
+#
+# A structural mechanism that did not need a list would be better. There is
+# not one: a qualification is a thing about MEANING, and this module has no
+# model and no network (R-47). So the list grows, and the test walks each new
+# form across a chunk boundary.
 QUALIFIERS = re.compile(
     r"^\W*(except|unless|provided\s+that|save\s+that|however|other\s+than|"
-    r"save\s+where|save\s+as|but\s+not)\b", re.I)
+    r"save\s+where|save\s+as|but\s+not|subject\s+to|notwithstanding|"
+    r"with\s+the\s+exception\s+of|excluding|save\s+for|apart\s+from|"
+    r"other\s+wise\s+than|in\s+no\s+case|only\s+where|only\s+if)\b", re.I)
 
 
 def starts_a_qualification(text):
@@ -363,14 +377,23 @@ class Chunk(object):
 
 
 def _split_points(text):
-    """Candidate places to cut, best first: blank line, then sentence end."""
+    """(rank, position) for every place this may be cut. Rank 0 is preferred.
+
+    THE RANK IS RETURNED RATHER THAN BAKED INTO THE ORDER, and that is the
+    fix for a real defect. This used to sort by (rank, position) and hand back
+    positions only, so EVERY blank line came before EVERY sentence end whatever
+    their positions were. The caller walked that list and stopped at the first
+    point past its limit - which meant one blank line just beyond the limit
+    ended the search before any sentence end INSIDE the limit was looked at,
+    and the piece came back oversized. Found by a review 2026-09-11.
+    """
     points = []
     for m in re.finditer(r"\n\s*\n", text):
         points.append((0, m.end()))
     for m in re.finditer(r"(?<=[.;:])\s+(?=[A-Z(])", text):
         points.append((1, m.end()))
     points.sort()
-    return [p for _rank, p in points]
+    return points
 
 
 def _cut(text, limit=MAX_CHARS):
@@ -405,17 +428,23 @@ def _cut(text, limit=MAX_CHARS):
         window = rest[:limit + margin]
         spans = protected_spans(window)
 
-        best = None
-        for at in _split_points(window):
+        # THE BEST LEGAL POINT WITHIN THE LIMIT, ACROSS EVERY RANK - not the
+        # last one seen before the first point that overshoots. A better-ranked
+        # point wins; among equals the latest wins, because a longer piece
+        # keeps more of the clause together.
+        best, best_rank = None, None
+        for rank, at in _split_points(window):
             if at <= 0 or at >= len(rest):
                 continue
+            if at > limit:
+                continue                   # too far. Keep looking, never stop.
             if any(start < at < end for start, end in spans):
                 continue                   # R-08. Never through a token.
             if starts_a_qualification(rest[at:at + 40]):
                 continue                   # R-68. Never before a qualifier.
-            if at > limit:
-                break
-            best = at
+            if best_rank is None or rank < best_rank or (rank == best_rank
+                                                         and at > best):
+                best, best_rank = at, rank
 
         if best is None:
             # NOTHING MAY BE CUT, and that is a real outcome. The piece stays
@@ -505,13 +534,25 @@ def chunk_document(text, title, drop_title_line=False):
         if heading is None:
             if not body_text:
                 continue
-            # A preamble, before any heading. It has no locator, and a chunk
-            # with no locator can be retrieved and CANNOT BE CITED - which
-            # R-21 calls a bug rather than a low-confidence answer. It is
-            # kept, and the missing locator is visible on the row.
+            # A PREAMBLE, OR A WHOLE DOCUMENT WITH NO HEADINGS IN IT - which a
+            # plain-text file and an unstructured PDF both are.
+            #
+            # These used to be stored with an EMPTY locator, and the comment
+            # here said so: "a chunk with no locator can be retrieved and
+            # CANNOT BE CITED - which R-21 calls a bug". It was kept anyway.
+            # That is a chunk offered as a citable standards source with
+            # nothing in the citation a person could follow back to a place in
+            # the file. Found by a review 2026-09-11, which was right that
+            # writing the defect down is not the same as not having it.
+            #
+            # So an unnumbered block gets the only locator its document can
+            # honestly give: WHICH BLOCK IT IS. "para-3" is not a clause
+            # number and does not pretend to be one - it is a position, and a
+            # person can count to it. R-22 asks that a citation resolve to
+            # something a human can open; with the path beside it, this does.
             for piece in _cut(body_text):
                 chunks.append(Chunk(
-                    piece, "", title, 0,
+                    piece, "para-%d" % (len(chunks) + 1), title, 0,
                     "structure" if len(body_text) <= MAX_CHARS else "length",
                     parent_key=None, key=len(chunks)))
             continue
@@ -608,14 +649,19 @@ def _read_docx(path):
     """
     import xml.etree.ElementTree as ET
     ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    # THE XML PARSE IS INSIDE THE GUARD, and leaving it outside was a real
+    # hole: a file that is a valid ZIP and contains word/document.xml but whose
+    # XML is truncated - a half-copied file, a corrupt download - raised
+    # ParseError past every named ingestion exception and came out as a
+    # traceback, while every other bad document was refused by name. Found by
+    # a review 2026-09-11.
     try:
         with zipfile.ZipFile(path) as archive:
             xml = archive.read("word/document.xml")
+        root = ET.fromstring(xml)
     except Exception as problem:
         raise UnreadableDocument("%s could not be opened as a .docx: %s"
                                  % (path, problem))
-
-    root = ET.fromstring(xml)
     out = []
     for para in root.iter("{%s}p" % ns["w"]):
         style = ""
@@ -681,7 +727,7 @@ class Ingested(object):
     """What one call did, in numbers a caller can print rather than guess."""
 
     def __init__(self, document_id, title, kind, chunks, reused=False,
-                 oversized=None, duplicates=None):
+                 oversized=None, duplicates=None, remembered=True):
         self.document_id = document_id
         self.title = title
         self.kind = kind
@@ -690,10 +736,23 @@ class Ingested(object):
         self.oversized = oversized or []
         # R-28, at WRITE time. (locator, other document id, other title).
         self.duplicates = duplicates or []
+        # WHETHER THE RECOVERY MANIFEST TOOK THE LINE. False means the store
+        # is once again the ONLY registry for this document, so deleting it -
+        # which Golden Rule 11 calls a safe action - would lose the document
+        # rather than rebuild it. _remember() returns that fact and the first
+        # version of this threw it away, reporting a clean ingest. Found by a
+        # review 2026-09-11.
+        #
+        # NOT AN EXCEPTION: the document IS in the store and the chunks ARE
+        # searchable, so failing here would be a lie in the other direction.
+        # It is a degraded state, and the rule is that it degrades but SAYS SO.
+        self.remembered = remembered
 
     def __repr__(self):
-        return "<ingested %s %d chunk(s)%s>" % (
-            self.document_id[:12], self.chunks, " REUSED" if self.reused else "")
+        return "<ingested %s %d chunk(s)%s%s>" % (
+            self.document_id[:12], self.chunks,
+            " REUSED" if self.reused else "",
+            "" if self.remembered else " NOT-IN-MANIFEST")
 
 
 def file_hash(path):
@@ -717,7 +776,7 @@ def file_hash(path):
 
 
 def ingest(store, path, added_by=None, source_trust="unknown", title=None,
-           status="DRAFT"):
+           status=None):
     """One file into ONE scope. Never a list of scopes (R-05, GR 5).
 
     `store` is already a single scope, which is how the wall is kept: there is
@@ -745,6 +804,11 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
             % (os.path.basename(path), extension or "file with no extension",
                ", ".join(sorted(READABLE))))
 
+    # NONE MEANS "THE CALLER DID NOT SAY", which is not the same as DRAFT and
+    # the difference only shows on re-ingest: with a plain default of DRAFT,
+    # re-ingesting a REVIEWED document to refresh it would silently demote it.
+    asked_status = status
+    status = status or "DRAFT"
     if status not in STATUSES:
         raise ValueError("status is one of %s, not %r"
                          % (", ".join(STATUSES), status))
@@ -755,17 +819,49 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
 
     # R-11. An unchanged file costs nothing to re-ingest, so re-indexing stays
     # something a person does freely rather than avoids.
-    already = store.execute("SELECT id, path, title FROM documents WHERE id = ?",
-                            (document_id,)).fetchone()
+    already = store.execute(
+        "SELECT id, path, title, status FROM documents WHERE id = ?",
+        (document_id,)).fetchone()
     if already:
         count = store.execute(
             "SELECT COUNT(*) AS n FROM chunks WHERE document_id = ?",
             (document_id,)).fetchone()["n"]
-        if already["path"] != path:
+        # WHAT THE CALLER ASKED FOR IS APPLIED, and the first version of this
+        # returned before any of it. Re-ingesting a DRAFT file as REVIEWED left
+        # the row DRAFT and there was no other operation anywhere that moved a
+        # document's lifecycle - so a status could be requested and silently
+        # dropped. Found by a review 2026-09-11.
+        changes, values = [], []
+        if asked_status and asked_status != already["status"]:
+            changes.append("status = ?")
+            values.append(asked_status)
+        if title and title != already["title"]:
+            changes.append("title = ?")
+            values.append(title)
+        moved = already["path"] != path
+        if moved:
             # Same bytes, new location. The pointer moves; nothing is re-read.
-            store.execute("UPDATE documents SET path = ? WHERE id = ?",
-                          (path, document_id))
+            changes.append("path = ?")
+            values.append(path)
+        if changes:
+            store.execute("UPDATE documents SET %s WHERE id = ?"
+                          % ", ".join(changes), tuple(values) + (document_id,))
             store.db.commit()
+
+        # AND THE MANIFEST HEARS ABOUT IT. Without this line restore() reads
+        # the OLD path after the derived store is deleted, reports the source
+        # gone, and restores nothing - for a file that is sitting exactly where
+        # this call just accepted it. The manifest is append-only (GR 4), so a
+        # move is a new line rather than an edit. Found by a review.
+        remembered = True
+        if changes:
+            remembered = _remember(store, "ingested", {
+                "path": path, "scope": store.scope,
+                "title": title or already["title"],
+                "kind": extension.lstrip("."),
+                "status": asked_status or already["status"],
+                "added_by": added_by, "source_trust": source_trust,
+                "document": document_id})
         AUDIT.record("knowledge.ingest", True,
                      fields={"document": document_id, "scope": store.scope,
                              "path": path, "reused": "yes"},
@@ -774,8 +870,9 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
         # printed the file's name while the row held the document's own
         # title, so the same document had two names depending on which run
         # you were reading.
-        return Ingested(document_id, already["title"] or shown,
-                        extension.lstrip("."), count, reused=True)
+        return Ingested(document_id, title or already["title"] or shown,
+                        extension.lstrip("."), count, reused=True,
+                        remembered=remembered)
 
     text = READERS[extension](path)
 
@@ -829,11 +926,15 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
 
     # GR 11. The line that makes these rows derivable again after somebody
     # deletes the store, which is the documented safe-recovery action.
-    _remember(store, "ingested",
-              {"path": path, "scope": store.scope, "title": shown,
-               "kind": extension.lstrip("."), "status": status,
-               "added_by": added_by, "source_trust": source_trust,
-               "document": document_id})
+    # THE RESULT IS CARRIED OUT, not dropped. A manifest that could not be
+    # written leaves the derived store as the only registry for this document,
+    # which is exactly the Golden Rule 11 promise this line exists to keep.
+    remembered = _remember(store, "ingested",
+                           {"path": path, "scope": store.scope,
+                            "title": shown, "kind": extension.lstrip("."),
+                            "status": status, "added_by": added_by,
+                            "source_trust": source_trust,
+                            "document": document_id})
 
     # GR 14, R-84. Ingestion is an important autonomous operation and was
     # leaving no trace at all. heron_audit.py exists so that a request
@@ -845,7 +946,7 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
                  numbers={"chunks": len(chunks), "oversized": len(oversized)})
 
     return Ingested(document_id, shown, extension.lstrip("."), len(chunks),
-                    oversized=oversized,
+                    oversized=oversized, remembered=remembered,
                     duplicates=duplicate_clauses(store, document_id))
 
 
@@ -967,8 +1068,15 @@ def restore(store):
             out.skipped.append((path, "already in the store"))
             continue
         try:
+            # THE TITLE IS PASSED BACK. Without it ingest() re-derives one
+            # from the filename or the first line, so a document restored
+            # after the safe deletion of a derived store came back under a
+            # DIFFERENT NAME - and the name is half of every citation written
+            # against it. The manifest recorded the title all along and this
+            # call was not reading it. Found by a review 2026-09-11.
             got = ingest(store, path, added_by=line.get("added_by"),
                          source_trust=line.get("source_trust") or "unknown",
+                         title=line.get("title") or None,
                          status=line.get("status") or "DRAFT")
         except (RefusedByExtension, UnreadableDocument) as why:
             out.gone.append((path, str(why)))
@@ -1261,6 +1369,22 @@ def _main(argv):
             print("%s  %s" % ("reused " if got.reused else "ingested", got.title))
             print("  id       %s" % got.document_id)
             print("  chunks   %d" % got.chunks)
+            if not got.remembered:
+                # DEGRADED, AND SAYING SO. The document is in and searchable;
+                # what failed is the append-only manifest beside the store,
+                # which is the line that makes these rows rebuildable after
+                # somebody deletes the derived file. Without it the store is
+                # again the only registry, and Golden Rule 11's safe recovery
+                # action would lose this document instead of restoring it.
+                print("  NOT RECORDED  the recovery manifest could not be "
+                      "written:")
+                print("             %s" % manifest_path(store))
+                print("             The document IS ingested and searchable. "
+                      "But deleting this")
+                print("             scope's store would now LOSE it rather "
+                      "than rebuild it.")
+                print("             Check the folder is writable, then "
+                      "re-ingest.")
             if got.duplicates:
                 # R-28. REPORTED, never refused - a project spec quoting a
                 # company standard verbatim is Tuesday, not an error.

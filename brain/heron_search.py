@@ -51,6 +51,7 @@ it may never be the reason an answer is right.
 
 import os
 import re
+import hashlib
 import sqlite3
 import sys
 
@@ -473,6 +474,35 @@ def index_chunks(store):
     except sqlite3.OperationalError:
         return 0                         # nothing has ever been ingested here
 
+    # FREE WHEN NOTHING CHANGED, and it was NOT until 2026-09-11.
+    #
+    # mcp/server/heron_brain.py calls this on EVERY request - a catalogue
+    # lookup, a fragment search, anything - and this function deleted the whole
+    # FTS table and reinserted every chunk each time, with a comment at the
+    # call site claiming it cost nothing when unchanged. That was true of the
+    # embedding half, which is content-hashed, and never true of this half.
+    # Found by a review.
+    #
+    # The fingerprint is over the ids and the text, so a re-ingest that changes
+    # a clause changes it, and a re-open that changes nothing does not. It is
+    # kept in `meta`, in the scope's own file, like every other derived fact.
+    digest = hashlib.blake2b(
+        "\n".join("%s\t%s" % (row["id"], row["text"] or "") for row in rows)
+        .encode("utf-8"), digest_size=16).hexdigest()
+    # AND THE DERIVED TABLE IS COUNTED, not assumed. The first version of
+    # this skipped on the fingerprint alone, which keys on the SOURCE - so
+    # emptying `chunk_text` and asking for a rebuild got a no-op and a silently
+    # unsearchable store. Golden Rule 11 says deleting a derived thing is a
+    # safe recovery action, and a rebuild that declines to rebuild breaks
+    # exactly that. tests/test_document_retrieval.py deletes the table and
+    # caught it inside a minute.
+    have = store.execute(
+        "SELECT value FROM meta WHERE key = 'chunk_text_fingerprint'"
+    ).fetchone()
+    built = store.execute("SELECT COUNT(*) AS n FROM chunk_text").fetchone()["n"]
+    if have and have["value"] == digest and built == len(rows):
+        return len(rows)
+
     store.execute("DELETE FROM chunk_text")
     for row in rows:
         store.execute(
@@ -480,6 +510,9 @@ def index_chunks(store):
             "text) VALUES (?,?,?,?,?)",
             (row["id"], row["document_id"], row["locator"] or "",
              row["heading_path"] or "", row["text"] or ""))
+    store.execute(
+        "INSERT OR REPLACE INTO meta (key, value) "
+        "VALUES ('chunk_text_fingerprint', ?)", (digest,))
     store.db.commit()
     return len(rows)
 

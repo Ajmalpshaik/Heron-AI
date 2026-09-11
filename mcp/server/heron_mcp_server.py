@@ -948,6 +948,24 @@ def heron_context(request: str, path: str = "", full: bool = False,
                         ", %s" % part["depth"]
                         if part.get("cut") else ""))
         lines.append("     from  %s" % part["source"])
+        # THE CITATION, WHICH IS THE WHOLE POINT OF A STANDARDS PART.
+        #
+        # heron_brain.context() has carried it since Stage 3 and this renderer
+        # dropped it, so a host got a quoted clause with NO CHUNK MARKER and
+        # could not write the "[chunk]" that heron_ground reads back. The
+        # feature worked in-process and did not exist in production - the same
+        # shape as the depth line above, found the same way, by a review.
+        #
+        # R-22: the path is here because a citation has to resolve to
+        # something a person can OPEN, especially when two documents share a
+        # title or a clause number.
+        cite = part.get("citation")
+        if cite:
+            lines.append("     cite  [%s]  %s %s"
+                         % (cite.get("chunk", ""), cite.get("document") or "",
+                            cite.get("locator") or ""))
+            if cite.get("path"):
+                lines.append("     file  %s" % cite["path"])
         lines.append("     why   %s" % part["why"])
         if part.get("cut"):
             # Only when something was actually left out. A part carrying all of
@@ -973,6 +991,50 @@ def heron_context(request: str, path: str = "", full: bool = False,
     # host counts tokens (D-58). What IS enforced is the parts list.
     lines.append("Size is reported, not enforced. The budget that IS enforced "
                  "is the list of parts.")
+    lines.append(_not_proven())
+    return "\n".join(lines)
+
+
+@server.tool()
+def heron_check(draft: str, request: str) -> str:
+    """
+    Check a drafted standards answer against the clauses it cites. Flags, never rewrites.
+
+    Call this BEFORE showing the user an answer about a standard. Pass the
+    draft you are about to show and the SAME request you passed to
+    heron_context, and Heron reassembles the packet and reports: which claims
+    are carried by the clause they cite, which state a fact the clause does
+    not carry, which cite nothing at all, and which are the cited clause with
+    its negation removed.
+
+    It returns a report and never a corrected answer - repairing its own
+    findings is how a wrong answer becomes an invisible one. Touches nothing
+    in the model.
+
+    Mark each claim with the chunk id heron_context printed on the `cite`
+    line, in square brackets: "Ducts are insulated to 25mm [a1b2c3...]". A
+    claim with no marker is reported UNCITED, which docs/05 s8 calls a bug in
+    a standards answer rather than a low-confidence answer.
+    """
+    revit, _how = _revit_version()
+    try:
+        got = brain.check_answer(draft, request, revit=revit,
+                                 project=pinned.title)
+    except brain.BrainUnavailable as why:
+        return str(why)
+    except Exception as why:
+        # A REFUSAL FROM THE PACKET IS AN ANSWER, NOT A CRASH. The STANDARDS
+        # path refuses by name when nothing is indexed or nothing covers the
+        # request, and that sentence is exactly what the caller needs to see.
+        return "The draft could not be checked: %s" % why
+
+    lines = ["Grounding check - %s"
+             % ("nothing flagged" if got["ok"] else "SOMETHING IS FLAGGED")]
+    lines.append("")
+    lines.extend(got["lines"])
+    lines.append("")
+    lines.append("This is a report. Heron does not rewrite answers (D-01, "
+                 "R-53) - it says what it could not find in the sources.")
     lines.append(_not_proven())
     return "\n".join(lines)
 

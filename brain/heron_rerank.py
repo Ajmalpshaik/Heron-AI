@@ -116,6 +116,22 @@ MODEL_ENV = "HERON_RERANK_MODEL"
 # machine that can reach it is the command that confirms it.
 SIZE = "500 MB to 2 GB"
 
+# THE VARIABLES THAT STOP A DOWNLOAD STARTING BY ITSELF.
+#
+# R-77 says the size is announced BEFORE the download, and the first version
+# of this module announced it only from the command line while warm() - which
+# the MCP server calls at startup - went straight to CrossEncoder(), which
+# FETCHES THE WEIGHTS when they are not cached. So on a machine that had
+# `sentence-transformers` installed, production start would have pulled
+# several hundred megabytes in the background with nobody told. The
+# announcement was real and it was on the wrong path. Found by a review
+# 2026-09-11.
+#
+# These are huggingface_hub's own switches, set around the load and put back
+# afterwards: a model already on disk loads, and a model that is not simply
+# fails, which this module already treats as "no re-ranker here".
+_OFFLINE = ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE")
+
 _CACHE = []                      # [scorer] or [None] once it has been settled
 _WARMING = threading.Event()
 _WARM_THREAD = [None]
@@ -198,8 +214,7 @@ def _load():
         return None
 
     try:
-        from sentence_transformers import CrossEncoder
-        model = CrossEncoder(os.environ.get(MODEL_ENV) or DEFAULT_MODEL)
+        model = _construct(offline=True)
         _CACHE.append(lambda pairs: [float(s) for s in model.predict(pairs)])
         return _CACHE[0]
     except Exception:
@@ -211,6 +226,62 @@ def _load():
 
     _CACHE.append(None)
     return None
+
+
+def _construct(offline):
+    """Build the cross-encoder. `offline=True` cannot start a download.
+
+    THE ONLY PLACE THE WEIGHTS ARE EVER FETCHED IS offline=False, and the only
+    caller that passes it is `fetch()`, which prints announcement() first and
+    will not proceed without a yes. Every automatic path - warm(), backend(),
+    scores() - comes through here with offline=True and therefore either finds
+    the model already on disk or reports `absent`.
+    """
+    from sentence_transformers import CrossEncoder
+    name = os.environ.get(MODEL_ENV) or DEFAULT_MODEL
+    if not offline:
+        return CrossEncoder(name)
+
+    was = dict((key, os.environ.get(key)) for key in _OFFLINE)
+    for key in _OFFLINE:
+        os.environ[key] = "1"
+    try:
+        return CrossEncoder(name)
+    finally:
+        # PUT BACK, including where it was UNSET. Leaving these on would make
+        # every other huggingface user in this process offline too, which is a
+        # side effect nobody asked this module for.
+        for key, value in was.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
+def fetch(confirmed=False):
+    """Download the weights, AFTER the size has been shown. Returns a message.
+
+    R-77's actual shape: the announcement comes first, a person reads it, and
+    only then does anything start. `confirmed` is the yes - without it this
+    prints what it would cost and downloads nothing, which is the whole
+    difference between announcing BEFORE and announcing DURING.
+    """
+    if not confirmed:
+        return (announcement()
+                + "\n\nNothing was downloaded. To go ahead:"
+                  "\n  python brain/heron_rerank.py --fetch --yes")
+    _CACHE[:] = []
+    try:
+        model = _construct(offline=False)
+    except ImportError:
+        return ("sentence-transformers is not installed, so there is nothing "
+                "to fetch weights for yet:\n  pip install --user "
+                "sentence-transformers")
+    except Exception as problem:
+        return "The weights could not be fetched: %s" % problem
+    _CACHE.append(lambda pairs: [float(s) for s in model.predict(pairs)])
+    return ("Fetched. %s is on this machine now, and retrieval will use it."
+            % (os.environ.get(MODEL_ENV) or DEFAULT_MODEL))
 
 
 def backend():
@@ -265,6 +336,10 @@ def scores(question, passages):
 
 
 def main(argv):
+    if "--fetch" in argv:
+        print(fetch(confirmed="--yes" in argv))
+        return 0
+
     print(announcement())
     print("")
     name, why = backend()

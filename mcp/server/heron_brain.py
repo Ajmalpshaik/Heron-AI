@@ -157,6 +157,48 @@ def warm():
         pass
 
 
+# THE SOURCES ARE RECONCILED ONCE PER PROCESS, NOT ONCE PER REQUEST.
+#
+# Two things were built in Stage 6 and reachable from nothing: refresh(), which
+# re-ingests a source file that changed on disk, and restore(), which rebuilds
+# the document rows from the append-only manifest after somebody deletes the
+# derived store. Both were called only by their own CLI and their own tests, so
+# a served Heron answered from obsolete clauses until a person remembered a
+# command, and a deleted store came back with every fragment and NO DOCUMENTS.
+# Found by a review 2026-09-11, which was right that "maintenance is automatic"
+# was a claim and not a fact.
+#
+# ONCE PER PROCESS is the compromise and the reason is cost: both walk every
+# source file and hash it, which is fine at startup and is not fine on every
+# catalogue lookup. A file changed while the server is up is still stale until
+# it restarts, which is the same limit tests/test_maintenance.py already
+# records - nothing here watches the filesystem.
+_SYNCED = set()
+
+
+def _reconcile(store):
+    """Re-ingest what changed, restore what the manifest remembers. Never raises.
+
+    A maintenance pass must not be able to take the server down: everything it
+    does is derived, and the worst case of skipping it is the staleness that
+    existed before it was wired in at all.
+    """
+    if store.scope in _SYNCED:
+        return
+    _SYNCED.add(store.scope)
+    try:
+        import heron_ingest as INGEST
+    except ImportError:
+        return
+    try:
+        # RESTORE FIRST. An empty document table after a deleted store is the
+        # case restore() exists for, and refreshing nothing costs nothing.
+        INGEST.restore(store)
+        INGEST.refresh(store)
+    except Exception:
+        pass
+
+
 class _Open(object):
     """A ready store: built if empty, indexed if stale, closed on the way out.
 
@@ -210,6 +252,9 @@ class _Open(object):
             # ingested through the host stayed unsearchable until somebody
             # remembered a command. Both halves are derived and both are free
             # when nothing changed, so both are rebuilt in the same place.
+            # BEFORE THE INDEXES, because both of these change the rows the
+            # indexes are built from.
+            _reconcile(self.store)
             SEARCH.index_chunks(self.store)
             EMBED.index_chunks(self.store)
         except BrainUnavailable:
@@ -577,6 +622,60 @@ def context(request, path=None, revit=None, full=False, depth=None,
                       for p in ctx.parts],
             "not_carried": [{"kind": k, "reason": r} for k, r in ctx.refused],
             "revit": revit,
+        }
+
+
+def check_answer(draft, request, path=None, revit=None, project=None):
+    """A draft answer, and the request it answers. A grounding report, out.
+
+    THE HALF OF THE FABRICATION CHECK THAT DID NOT EXIST IN PRODUCTION.
+    heron_ground.check() was complete and tested and reachable from a command
+    line with a file on disk - which is to say, from nowhere a conversation
+    goes. A repo-wide search on 2026-09-11 found no tool, hook or host
+    instruction that called it, so a standards answer could be shown with the
+    pre-display gate never having run. This file's own docstring already names
+    that shape of mistake; the review was right that it had it.
+
+    D-01 IS NOT BROKEN BY THIS AND IT IS THE REASON FOR THE SIGNATURE. The
+    brain does not write the answer and does not see one until the host hands
+    it back. So the host drafts, calls this with the draft and the SAME
+    request, and Heron reassembles the packet and reports. It returns a report
+    and NEVER a rewrite (R-53).
+
+    THE PACKET IS REASSEMBLED RATHER THAN REMEMBERED, deliberately. A packet
+    held between two calls is a session, and a session is state that can go
+    stale and be pointed at the wrong answer. Reassembling is cheap, and it
+    checks the draft against what the store says NOW.
+    """
+    CONTEXT = _context_module()
+    try:
+        import heron_ground as GROUND
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's grounding check needs the brain modules and they are not "
+            "importable: %s" % exc)
+
+    with _Open() as store:
+        packet = CONTEXT.assemble(store, request, path=path or CONTEXT.STANDARDS,
+                                  revit=revit, project=project)
+        report = GROUND.check(draft, packet)
+        _audit().record("knowledge.ground", report.ok,
+                        fields={"scope": store.scope},
+                        numbers={"claims": len(report.claims),
+                                 "checked": report.checked,
+                                 "flagged": len(report.flagged),
+                                 "reversed": len(report.reversed_claims),
+                                 "uncited": len(report.uncited)})
+        return {
+            "ok": report.ok,
+            "checked": report.checked,
+            "sentences": len(report.claims),
+            "sources": report.sources,
+            "lines": report.lines(),
+            "claims": [{"sentence": c.sentence, "verdict": c.verdict,
+                        "kind": c.kind, "ratio": c.ratio,
+                        "threshold": c.threshold, "added": c.added,
+                        "citation": c.citation} for c in report.claims],
         }
 
 

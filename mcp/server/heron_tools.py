@@ -77,6 +77,19 @@ TOOLS = {
     # gives, and nothing else about the document.
     "heron_context":            (READ,    None),
 
+    # The grounding check (HERON-RAG-CIT-014, docs/05 s8). READ, and the
+    # operation is None for the same reason: it sends nothing to Revit. It
+    # takes a draft the HOST wrote and the clauses Heron already holds, and
+    # reports where the two disagree.
+    #
+    # READ rather than anything higher even though a DRAFT crosses into it,
+    # because the draft goes nowhere: it is compared in this process, against
+    # this machine's own store, with no model and no network (R-47), and the
+    # only thing that comes back is a report. And it can never change an
+    # answer - R-53 forbids a rewrite, which is what keeps a checker from
+    # quietly becoming an editor.
+    "heron_check":              (READ,    None),
+
     # The Capability Gap report (HERON-AHR-GAP-001, docs/06 s6). READ, and the
     # operation is None for the same reason as the three above - it sends
     # nothing to Revit. What it reads is Heron's OWN audit trail, which is a

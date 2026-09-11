@@ -1,0 +1,398 @@
+# Heron-Agent:  HERON-RAG-CIT-014, HERON-RAG-DIS-002, HERON-RAG-RNK-006
+# Heron-Step:   11
+# Heron-Status: DRAFT
+# Heron-Since:  0.1.0
+# Heron-Layer:  test
+# See docs/29-metadata-standard.md
+
+"""
+One check per defect an automated review found on 2026-09-11, so none returns.
+
+    python tests/test_review_findings.py
+
+WHY THESE ARE TOGETHER RATHER THAN SPREAD ACROSS SEVEN SUITES
+--------------------------------------------------------------
+Each suite here already tests what its module was BUILT to do. These test what
+its module was found to do INSTEAD - and the two read differently. A reader
+asking "what went wrong once, and what stops it now" gets one file, and the
+sentence beside each check is the failure in the words it was reported in.
+
+They are ordinary checks, not a log: every one fails if the defect comes back.
+
+THE ONE THAT MATTERS MOST IS FIRST. The fabrication check was endorsing a
+quotation that REVERSED its source - "No ducts shall..." quoted as "All ducts
+shall..." scored 0.982 against a 0.90 gate and came back grounded. A checker
+that passes the opposite of a clause is worse than no checker, because the
+answer now carries a citation AND a clean report.
+"""
+
+import os
+import shutil
+import sys
+import tempfile
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "brain"))
+
+FAILURES = []
+
+
+def check(condition, what):
+    print("  %-5s %s" % ("ok" if condition else "FAIL", what))
+    if not condition:
+        FAILURES.append(what)
+
+
+LONG_CLAUSE = ("No ducts shall be installed within the ceiling void unless a "
+               "maintenance access panel is provided adjacent to each damper "
+               "and the panel is not less than 450mm square")
+
+
+def main():
+    import heron_ground as G
+    import heron_ingest as I
+    import heron_retrieve as R
+    import heron_rerank as RERANK
+    import heron_graph as GRAPH
+    import heron_scope as SCOPE
+    import heron_search as SEARCH
+    import heron_embed as EMBED
+    import heron_context as CTX
+
+    print("1. A QUOTATION THAT REVERSES ITS SOURCE IS NOT GROUNDED")
+    reversed_quote = ('The clause says "All ducts shall be installed within '
+                      'the ceiling void unless a maintenance access panel is '
+                      'provided adjacent to each damper and the panel is not '
+                      'less than 450mm square" [c]')
+    got = G.coverage(reversed_quote, LONG_CLAUSE)
+    check(got < G.THRESHOLDS[G.QUOTE],
+          "the reversed quotation (%.3f) is below the gate (%.2f) - it used "
+          "to score above a gate of 0.90 because the unchanged TAIL of a long "
+          "quote dominated a longest-common-run ratio"
+          % (got, G.THRESHOLDS[G.QUOTE]))
+    check(G.coverage('It says "a continuous vapour barrier shall be applied" [c]',
+                     "A continuous vapour barrier shall be applied over the "
+                     "insulation.") == 1.0,
+          "and a quotation that IS in its clause still scores exactly 1.0, "
+          "which is what the original measurement recorded")
+    check(G.THRESHOLDS[G.QUOTE] == 1.0,
+          "the gate is containment, not 0.90 - the measurement that set 0.90 "
+          "recorded 1.000 and 0.265 with nothing between, so the slack was "
+          "never evidence")
+    print()
+
+    print("2. A CLAIM WITH THE NEGATION TAKEN OUT IS REVERSED, NOT GROUNDED")
+    check(G.reverses("Duct insulation shall exceed 25 mm",
+                     "Duct insulation shall not exceed 25mm"),
+          "'shall exceed' against 'shall not exceed' is caught - both yield "
+          "the single fact 25mm, so the added-fact rule passed it and the "
+          "ratio was HIGH rather than low")
+    check(not G.reverses("Insulation is limited to 25mm",
+                         "Duct insulation shall not exceed 25mm"),
+          "a genuine paraphrase that reads the same way is NOT caught - the "
+          "rule is structural and fires only when the negation is the ONLY "
+          "difference, so it cannot flood the report")
+    check(G.REVERSED not in G.PASSES,
+          "and a reversal does not pass")
+
+    # THROUGH check(), NOT JUST THROUGH THE HELPER. The first version of
+    # reverses() passed every unit check above and still returned GROUNDED end
+    # to end, because normalise() keeps the full stop a source sentence ends
+    # with and the claim had none - so the two word lists never matched. A
+    # helper that works and a check that works are different claims.
+    part = CTX.Part(CTX.STANDARD, "QCS 9.1.1",
+                    CTX.as_quoted_source("Duct insulation shall not exceed "
+                                         "25mm.", "QCS 2014", "9.1.1"),
+                    "s", "w",
+                    citation={"chunk": "c1", "document": "QCS 2014",
+                              "locator": "9.1.1", "path": "/tmp/x.md"},
+                    evidence="Duct insulation shall not exceed 25mm.")
+
+    class _Packet(object):
+        parts = [part]
+
+    report = G.check("Duct insulation shall exceed 25mm [c1]", _Packet())
+    check(report.claims[0].verdict == G.REVERSED and not report.ok,
+          "a served draft with the negation removed comes back REVERSED and "
+          "the report is not ok")
+    report = G.check("Duct insulation shall not exceed 25mm [c1]", _Packet())
+    check(report.ok,
+          "and the same claim WITH the negation still passes, so the rule has "
+          "not simply started failing everything")
+    print()
+
+    print("3. A FACT IS A FACT WITH A SIGN, AND A BARE COUNT IS ONE TOO")
+    check(G.facts("a fall of -200mm") != G.facts("a fall of 200mm"),
+          "-200mm and 200mm are different facts - the pattern started at the "
+          "digit, so a reversed gradient passed")
+    check(G.facts("Install 99 supports"),
+          "'install 99 supports' is checkable - with no unit, no clause "
+          "number and no year it produced no fact at all and was SKIPPED, so "
+          "a wrong count against a clause requiring 2 was reported ok")
+    print()
+
+    print("4. A LABEL ON A CLAUSE IS NOT EVIDENCE FOR IT")
+    wrapped = CTX.as_quoted_source("Ducts shall be insulated.", "QCS 2014",
+                                   "9.1.1")
+    check("2014" in G.normalise(wrapped),
+          "the rendered part carries the title, so its year is in the text a "
+          "reader sees")
+    part = CTX.Part(CTX.STANDARD, "n", wrapped, "s", "w",
+                    citation={"chunk": "c1", "document": "QCS 2014",
+                              "locator": "9.1.1", "path": "/tmp/x.md"},
+                    evidence="Ducts shall be insulated.")
+    check("2014" not in G.facts(part.evidence),
+          "but the EVIDENCE is the clause alone, so the title's year cannot "
+          "ground a claim about Revit 2014 that the clause never made")
+    check(part.citation.get("path"),
+          "and the citation carries the file path (R-22) - it named a title "
+          "and a clause number and nothing a person could open")
+    print()
+
+    print("5. NOTHING DOWNLOADS A MODEL WITHOUT SAYING SO FIRST")
+    said = RERANK.fetch(confirmed=False)
+    check("Nothing was downloaded" in said,
+          "fetch() without a yes downloads nothing")
+    check(RERANK.SIZE in said,
+          "and shows the size first - warm() used to go straight to "
+          "CrossEncoder(), which FETCHES the weights, so production start "
+          "could pull gigabytes with nobody told")
+    import inspect
+    source = inspect.getsource(RERANK._load)
+    check("offline=True" in source,
+          "and the automatic path loads offline-only, so it can never start "
+          "a download by itself")
+    print()
+
+    print("6. THE CONTEST DOES NOT BLAME STATUS FOR GAPS STATUS CANNOT MAKE")
+    span = R.QUALITY_SPAN / R.ONE_RANK
+    check(span < 1.0,
+          "the quality nudge spans %.2f of one rank across OFFERABLE "
+          "statuses, so it cannot produce every gap below 1.0" % span)
+
+    def pair(top, second):
+        made = []
+        for i, value in enumerate((top, second)):
+            got = R.Candidate("f%d" % i, {"capability": "c", "status": "DRAFT",
+                                          "semantic_identity": "s",
+                                          "domain": "d"})
+            got.fused = value
+            got.keyword_rank = i + 1
+            made.append(got)
+        return made
+
+    wide = R.Contest(pair(0.30, 0.30 - 0.8 * R.ONE_RANK), 200, 20, 40)
+    check("status alone" not in wide.sentence(),
+          "a 0.8-rank gap is NOT explained by status, because status cannot "
+          "move that far - it used to say it could")
+    narrow = R.Contest(pair(0.30, 0.30 - 0.2 * R.ONE_RANK), 200, 20, 40)
+    check("status alone" in narrow.sentence(),
+          "and a 0.2-rank gap still is, because status can")
+    print()
+
+    print("7. A RE-RANKED REPORT SAYS HOW MANY IT ACTUALLY READ")
+    RERANK._CACHE[:] = [lambda pairs: [float(i) for i in range(len(pairs))]]
+    many = [R.Candidate("f%02d" % i, {"capability": "c", "status": "DRAFT",
+                                      "semantic_identity": "s", "domain": "d"})
+            for i in range(20)]
+    for i, got in enumerate(many):
+        got.fused = 1.0 - i * 0.01
+        got.keyword_rank = i + 1
+    ranked = R._rerank("a question", many, R._fragment_passage)
+    contest = R.Contest(ranked[:5], 200, 20, 40)
+    check("it read 20" in contest.sentence(),
+          "with limit=5 the report says the re-ranker read 20 - it used to "
+          "call five candidates 'the shortlist it was given'")
+    check("over THESE 5" in contest.sentence(),
+          "and says the fusion numbers are over the five in hand")
+    RERANK._CACHE[:] = [None]
+    print()
+
+    print("8. A SENTENCE END INSIDE THE LIMIT BEATS A BLANK LINE PAST IT")
+    body = ("Alpha beta gamma delta epsilon zeta. Eta theta iota kappa lambda "
+            "mu. Nu xi omicron pi rho sigma.\n\nTau upsilon phi chi psi omega.")
+    pieces = I._cut(body, limit=80)
+    check(all(len(piece) <= 80 for piece in pieces),
+          "every piece is inside the limit - the search used to stop at the "
+          "first blank line past the limit and skip every sentence end before "
+          "it, returning one oversized chunk")
+    print()
+
+    print("9. MORE FORMS OF QUALIFICATION ARE RECOGNISED BEFORE A SPLIT")
+    for opener in ("subject to", "notwithstanding", "with the exception of",
+                   "excluding"):
+        check(I.starts_a_qualification("%s the above, ducts shall be lagged"
+                                       % opener),
+              "'%s' begins a qualification - a rule cut away from it states "
+              "the opposite of its source, with a citation attached" % opener)
+    print()
+
+    print("10. A CORRUPT .docx IS A NAMED REFUSAL, NOT A TRACEBACK")
+    import zipfile
+    hold = tempfile.mkdtemp(prefix="heron-review-")
+    try:
+        bad = os.path.join(hold, "broken.docx")
+        with zipfile.ZipFile(bad, "w") as archive:
+            archive.writestr("word/document.xml", "<w:document><w:body>")
+        refused = None
+        try:
+            I.READERS[".docx"](bad)
+        except I.UnreadableDocument as why:
+            refused = str(why)
+        check(refused and "broken.docx" in refused,
+              "a valid zip with truncated XML is refused BY NAME - the parse "
+              "sat outside the guard and came out as a traceback")
+    finally:
+        shutil.rmtree(hold, ignore_errors=True)
+    print()
+
+    print("11. A DOTTED MEASUREMENT IS NOT A CLAUSE REFERENCE")
+    # "1.5m" never matched at all - there is no word boundary between the
+    # digit and the unit - so the real shapes are the SPACED one and the
+    # percentage, and those did match.
+    for text in ("The duct shall fall 1.5 m to the riser.",
+                 "A gradient of 2.5% is required."):
+        match = GRAPH._CLAUSE_REFERENCE.search(text)
+        check(match and not GRAPH._is_clause_reference(text, match),
+              "%r is a measurement - in a document that also numbers a clause "
+              "%s this made an edge between two unrelated clauses, and "
+              "inflated the density count that decides whether the route is "
+              "viable" % (text, match.group(0) if match else "?"))
+    cited = "Labelling shall be in accordance with clause 1.5 throughout."
+    match = GRAPH._CLAUSE_REFERENCE.search(cited)
+    check(match and GRAPH._is_clause_reference(cited, match),
+          "and 'in accordance with clause 1.5' still is")
+    deep = "See 21.3.2 for the rest."
+    match = GRAPH._CLAUSE_REFERENCE.search(deep)
+    check(match and GRAPH._is_clause_reference(deep, match),
+          "as is a three-segment number, which no measurement is written as")
+    print()
+
+    print("12. THE STORE, THE MANIFEST AND THE INDEX ALL STAY TRUE")
+    home = tempfile.mkdtemp(prefix="heron-review-home-")
+    papers = tempfile.mkdtemp(prefix="heron-review-papers-")
+    os.environ["HERON_KNOWLEDGE"] = home
+    try:
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            SEARCH.ensure_tables(store)
+            EMBED.ensure_tables(store)
+
+            plain = os.path.join(papers, "notes.txt")
+            with open(plain, "w", encoding="utf-8") as handle:
+                handle.write("Ducts shall be insulated to 25mm.\n\n"
+                             "A vapour barrier shall be continuous.\n")
+            got = I.ingest(store, plain, added_by="tests")
+            locators = [r["locator"] for r in store.execute(
+                "SELECT locator FROM chunks WHERE document_id = ?",
+                (got.document_id,)).fetchall()]
+            check(all(locator for locator in locators),
+                  "a document with no headings still gives every chunk a "
+                  "locator - they were stored EMPTY, and a chunk with no "
+                  "locator is offered as a citable source that cites nothing")
+            check(any(locator.startswith("para-") for locator in locators),
+                  "and it is a position a person can count to, not a clause "
+                  "number it has invented")
+
+            print()
+            print("13. RE-INGESTING APPLIES WHAT THE CALLER ASKED FOR")
+            again = I.ingest(store, plain, status="REVIEWED", title="Site Notes")
+            row = store.execute("SELECT status, title FROM documents WHERE id = ?",
+                                (got.document_id,)).fetchone()
+            check(again.reused and row["status"] == "REVIEWED",
+                  "a re-ingest as REVIEWED moves the row - it returned early "
+                  "and dropped the status, and nothing else anywhere moved a "
+                  "document's lifecycle")
+            check(row["title"] == "Site Notes",
+                  "and an explicit title is applied too")
+            plain_status = I.ingest(store, plain)
+            row = store.execute("SELECT status FROM documents WHERE id = ?",
+                                (got.document_id,)).fetchone()
+            check(plain_status.reused and row["status"] == "REVIEWED",
+                  "while a re-ingest that says NOTHING about status leaves it "
+                  "alone, rather than demoting it back to DRAFT")
+
+            print()
+            print("14. A MOVED FILE IS RECORDED WHERE RECOVERY READS")
+            moved = os.path.join(papers, "renamed.txt")
+            shutil.move(plain, moved)
+            I.ingest(store, moved)
+            paths = [line.get("path") for line in I.manifest(store)]
+            check(moved in paths,
+                  "the manifest carries the NEW path - it recorded only the "
+                  "first one, so restore() looked for a file that had moved "
+                  "and restored nothing")
+
+            print()
+            print("15. THE DERIVED INDEX COMES BACK WHEN IT IS DELETED")
+            SEARCH.index_chunks(store)
+            first = store.execute(
+                "SELECT COUNT(*) AS n FROM chunk_text").fetchone()["n"]
+            store.execute("DELETE FROM chunk_text")
+            store.db.commit()
+            SEARCH.index_chunks(store)
+            back = store.execute(
+                "SELECT COUNT(*) AS n FROM chunk_text").fetchone()["n"]
+            check(first and back == first,
+                  "index_chunks() rebuilds an emptied table - skipping on a "
+                  "source fingerprint alone left it empty and silently "
+                  "unsearchable, which is Golden Rule 11 broken by an "
+                  "optimisation")
+
+            print()
+            print("16. RESTORE PUTS THE DOCUMENT BACK UNDER ITS OWN NAME")
+            store.execute("DELETE FROM documents")
+            store.execute("DELETE FROM chunks")
+            store.db.commit()
+            out = I.restore(store)
+            row = store.execute("SELECT title FROM documents").fetchone()
+            check(out.reingested and row and row["title"] == "Site Notes",
+                  "the title the manifest recorded is the title it comes back "
+                  "with - restore() omitted it and let ingest() re-derive one "
+                  "from the filename, changing every citation written against "
+                  "it")
+        finally:
+            store.close()
+    finally:
+        os.environ.pop("HERON_KNOWLEDGE", None)
+        shutil.rmtree(home, ignore_errors=True)
+        shutil.rmtree(papers, ignore_errors=True)
+    print()
+
+    print("17. THE CHECK AND THE CITATION REACH A CONVERSATION")
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    check("heron_check" in TOOLS.TOOLS,
+          "heron_check is a registered tool - heron_ground.check() was "
+          "complete, tested, and callable only from a command line with a "
+          "file on disk, so no served answer ever went through it")
+    import heron_brain as BRAIN
+    check(hasattr(BRAIN, "check_answer"),
+          "and the brain has the seam it is served through")
+    server_source = open(os.path.join(ROOT, "mcp", "server",
+                                      "heron_mcp_server.py"),
+                         encoding="utf-8").read()
+    check('part.get("citation")' in server_source,
+          "the MCP renderer reads the citation - it was put in the dictionary "
+          "and dropped by the formatter, so a host got a quoted clause with "
+          "no marker to cite it by")
+    print()
+
+    if FAILURES:
+        print("FAILED - %d check(s):" % len(FAILURES))
+        for line in FAILURES:
+            print("  %s" % line)
+        return 1
+
+    print("PASSED - every defect an automated review found on 2026-09-11 has")
+    print("a check standing on it, and each one fails if it comes back.")
+    print()
+    print("It proves nothing about the defects NOBODY has found yet. Two")
+    print("rounds of this review each found real things after the previous")
+    print("round was called done, which is the honest thing to say about how")
+    print("much a green suite is worth.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

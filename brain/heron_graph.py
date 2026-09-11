@@ -238,7 +238,44 @@ def orphans(store):
 # D-40: EVERY EDGE HERE IS DERIVED ON DEMAND. A stored document edge is a
 # cache that goes stale the moment a document is re-ingested.
 
+# A DOTTED NUMBER IS NOT AUTOMATICALLY A CLAUSE NUMBER, and reading it as one
+# put false edges into the only count that decides whether this route is worth
+# having. In a standard full of ordinary measurements - "shall fall 1.5m", "a
+# 2.5mm gap" - every one of those matched, and in a document that also happens
+# to number a clause 1.5 or 2.5 an edge appeared between two clauses that have
+# nothing to do with each other. Density is what Stage 5 measures; inflating it
+# with false edges is measuring the regex. Found by a review 2026-09-11.
+#
+# So a match counts only when the text says it is a reference:
+#
+#   * a unit or a percent directly after it means it is a MEASUREMENT, never
+#     a clause - checked first, because it is the common case; or
+#   * three or more segments (21.3.2) - no measurement is written that way; or
+#   * a citing word just before it - clause, section, table, appendix, part,
+#     paragraph, item, or "in accordance with".
+#
+# A real reference written as bare "1.5" with no citing word is missed. That is
+# the safe direction: a missing edge costs recall in a route that has no vote
+# yet, and a false edge corrupts the measurement that decides whether it ever
+# gets one.
 _CLAUSE_REFERENCE = re.compile(r"\b\d+(?:\.\d+)+\b")
+_MEASUREMENT_AFTER = re.compile(
+    r"\s*(?:%|mm|cm|m|km|in|ft|kg|g|t|l|ml|pa|kpa|bar|mbar|c|k|w|kw|mw|va|"
+    r"kva|hz|v|kv|a|ma|db|lux|lm|cfm|m2|m3)\b", re.I)
+_CITING_WORD = re.compile(
+    r"(?:clause|section|sub-?clause|sub-?section|table|appendix|annex|part|"
+    r"paragraph|item|rule|in\s+accordance\s+with|as\s+per|per|see|to)\s*$",
+    re.I)
+
+
+def _is_clause_reference(text, match):
+    """Whether this dotted number is citing a clause rather than measuring."""
+    after = text[match.end():match.end() + 8]
+    if _MEASUREMENT_AFTER.match(after):
+        return False
+    if match.group(0).count(".") >= 2:
+        return True
+    return bool(_CITING_WORD.search(text[max(0, match.start() - 30):match.start()]))
 
 
 def document_neighbours(store, chunk_id=None):
@@ -286,8 +323,12 @@ def document_neighbours(store, chunk_id=None):
         # A clause that names another clause's number, within the same
         # document. Across documents it would be a guess - "4.1.1" means
         # something different in every standard.
-        for found in _CLAUSE_REFERENCE.findall(row["text"] or ""):
+        body = row["text"] or ""
+        for match in _CLAUSE_REFERENCE.finditer(body):
+            found = match.group(0)
             if found == row["locator"]:
+                continue
+            if not _is_clause_reference(body, match):
                 continue
             other = by_locator.get((row["document_id"], found))
             if other:

@@ -353,7 +353,8 @@ class Part(object):
     """
 
     def __init__(self, kind, name, body, source, why,
-                 depth=FULL, cut=None, tierable=False, citation=None):
+                 depth=FULL, cut=None, tierable=False, citation=None,
+                 evidence=None):
         # R-63. A part drawn from a document carries the id of the EXACT
         # CHUNK, not of the document - because R-46's comparison is against
         # the chunk a claim cites, and "somewhere in QCS Section 21" is not a
@@ -363,6 +364,18 @@ class Part(object):
         # with NO chunk pointer is UNCITED, and R-21 calls an uncited
         # standards answer a bug rather than a low-confidence answer.
         self.citation = citation
+        # THE CLAUSE'S OWN WORDS, WITHOUT THE LABEL WRAPPED ROUND THEM.
+        #
+        # `body` is what a reader sees, and as_quoted_source() prefixes it with
+        # the document title and locator so nothing can read as the packet
+        # talking. heron_ground then took facts() of that WHOLE STRING - so
+        # with a title like "QCS 2014" the year 2014 became EVIDENCE, and a
+        # draft claiming "Revit 2014" was reported grounded against a clause
+        # whose text contains no year at all. Found by a review 2026-09-11.
+        #
+        # So the raw clause is carried beside the rendered one, and grounding
+        # reads this. A label is not evidence for the thing it labels.
+        self.evidence = evidence
         self.kind = kind
         self.name = name
         self.body = body
@@ -882,8 +895,16 @@ def _standard_parts(ctx, store, request):
                          as_metadata(row["heading_path"])),
             "the clause this answer must be grounded in. Quoted, cited, and "
             "carried as content - never as direction (Golden Rule 19)",
+            evidence=row["text"],
             citation={"chunk": hit["id"], "document": hit["document"],
                       "locator": hit["locator"],
+                      # R-22: A CITATION RESOLVES TO SOMETHING A HUMAN CAN
+                      # OPEN. find_documents() has carried the path since the
+                      # last review and this seam still dropped it, so every
+                      # citation named a title and a clause number and nothing
+                      # openable - which matters most when two documents share
+                      # a title or a clause number.
+                      "path": hit.get("path"),
                       "heading_path": hit["heading_path"]}))
 
     if flagged:

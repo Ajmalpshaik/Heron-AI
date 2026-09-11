@@ -1377,3 +1377,114 @@ review caught — and again, the repeated hand-bumping was the evidence.
 **`RIX-011` and `DUP-012` are marked *"no file declares the id"* rather than declared**, because the
 behaviour is spread across `heron_ingest`, `heron_search` and `heron_embed` and putting the id on one
 of them would be a half-truth in the register that exists to prevent those.
+
+---
+
+### 2026-09-11 — a second and third review round, twenty-three findings, and the one that mattered most
+
+**Two more rounds arrived after the sixteen were closed: fifteen on the Stage 1–6 commit and eight on
+Stage 7. Every one was checked against the code and every one was real.** `tests/test_review_findings.py`
+holds a check on each, so none comes back silently.
+
+### The finding that would have done real damage
+
+**The fabrication check was endorsing a quotation that reversed its source.**
+
+```
+clause   "No ducts shall be installed within the ceiling void unless ..."
+quoted   "All ducts shall be installed within the ceiling void unless ..."
+scored    0.982   against a gate of 0.90   -->  GROUNDED
+```
+
+`coverage()`'s docstring said **containment**; its code took the **longest common run** over the
+quote's length, which is a different measurement — a long quotation with a short reversal at its
+**start** keeps a very long matching tail. A checker that passes the opposite of a clause is worse
+than no checker at all, because the answer now carries a citation *and* a clean report.
+
+It is containment now, literally. **The gate moved to 1.0 and that is not a threshold being tuned
+(R-55):** the measurement that set 0.90 recorded a true quotation at exactly **1.000** and a false one
+at **0.265**, with nothing between. The 0.90 was slack around a number that had no spread, and the
+slack is what the reversal walked through.
+
+### And the same failure by a different route
+
+```
+clause   "Duct insulation shall not exceed 25mm"
+draft    "Duct insulation shall exceed 25mm [chunk]"      -->  GROUNDED
+```
+
+Both yield exactly one fact, `25mm`. **Nothing was added**, so the added-fact rule passed it; the text
+is nearly identical, so the ratio was **high** rather than low. Every rule in the file was working and
+the answer was still the opposite of its source.
+
+`reverses()` is structural and has **no threshold in it**: strip the negating words from both sides, and
+if what is left is identical while the negations differ, one states the opposite of the other. What it
+does **not** catch is written into its docstring — a reversal that also rewords leaves different
+remainders and is invisible. That is the paraphrase problem R-46's measurement already recorded, and
+this file has no model to solve it with (R-47).
+
+> **It passed its own unit check and still returned GROUNDED end to end.** `normalise()` keeps the full
+> stop a clause ends with, so the source's last word was `25mm.` and the draft's was `25mm`. Testing the
+> helper proved the helper; only testing through `check()` proved the check. Both assertions are in the
+> suite now.
+
+### Three things that were complete, tested, and unreachable
+
+This repository has a name for this mistake and still made it three times in one batch.
+
+| | Reachable from | Now |
+|---|---|---|
+| `heron_ground.check()` | its own CLI, with a draft on disk | the `heron_check` tool and `brain.check_answer()` |
+| `heron_ingest.refresh()` | its own CLI | `_reconcile()`, once per process, at open |
+| `heron_ingest.restore()` | its own test | the same place, before the indexes |
+
+**R-46 said *"before the answer is shown"* and was marked DONE.** Nothing that shows an answer could
+call it. The row now says so.
+
+### The label that became evidence
+
+`as_quoted_source()` prefixes a clause with its document title, and `heron_ground` took `facts()` of
+the **whole rendered string**. With a title like `QCS 2014`, the year **2014 became evidence for the
+clause** — a draft claiming the clause applies to Revit 2014 came back grounded against text
+containing no year at all. The raw clause is carried separately now, as `Part.evidence`. **A label is
+not evidence for the thing it labels.**
+
+### An optimisation that broke a Golden Rule, caught by an existing test inside a minute
+
+`SEARCH.index_chunks()` deleted and rebuilt the whole FTS table on **every request**, while the comment
+at its call site claimed it was free when unchanged — true of the embedding half, which is
+content-hashed, and never true of this one. So it got a fingerprint.
+
+**The first version keyed on the SOURCE only**, so emptying `chunk_text` and asking for a rebuild got
+a polite no-op and a silently unsearchable store. Golden Rule 11 says deleting a derived thing is a
+**safe recovery action**; a rebuild that declines to rebuild breaks exactly that.
+`tests/test_document_retrieval.py` deletes that table and failed at once. The skip now checks the
+derived table too.
+
+### The rest, in one line each
+
+| | |
+|---|---|
+| the re-ranker could **download gigabytes at startup** | `warm()` reached `CrossEncoder()`, which fetches weights. The announcement was real and on the wrong path. The automatic path is offline-only now; `--fetch --yes` is the only thing that downloads |
+| the contest **blamed status for gaps status cannot make** | the nudge spans **0.61** of one rank across offerable statuses, and the sentence fired below **1.0** |
+| a re-ranked report **called five candidates twenty** | the pool size is carried on the candidate, so a list cut to `limit` still knows what was read |
+| a **blank line past the limit** ended the split search | every sentence end inside the limit was skipped and the chunk came back oversized |
+| `subject to`, `notwithstanding`, `with the exception of`, `excluding` | all begin a qualification and none was in `QUALIFIERS`. **The list cannot be exhaustive and now says so** |
+| a **truncated .docx** was a traceback | the XML parse sat outside the guard that names every other bad document |
+| an **unnumbered chunk had no locator** | the comment said *"can be retrieved and CANNOT BE CITED — which R-21 calls a bug"*, and kept it anyway. They get `para-N`, which is a position a person can count to |
+| **re-ingesting dropped the caller's status** | and nothing anywhere else moved a document's lifecycle. `status=None` now means *the caller did not say*, so a refresh cannot demote a REVIEWED document |
+| a **moved file** never reached the manifest | so `restore()` looked for the old path and restored nothing |
+| `restore()` **dropped the title** | the document came back under a filename, changing every citation written against it |
+| a failed **manifest write** was ignored | the ingest reported clean while the store became the only registry again. It is a named degraded state now |
+| **`1.5 m` and `2.5%` counted as clause references** | false edges in the one count that decides whether the graph route is ever worth a vote |
+| `brain/README.md` said **no clause store exists** | two rows of one table contradicting each other about a central route |
+
+### What this round is evidence of
+
+**Three rounds, each after the previous was called done, each finding real things.** The first found
+sixteen, the second fifteen, the third eight. Nothing here was a false positive.
+
+The pattern across all three is one thing: **the tests asserted what the code was built to do, and
+almost nothing about what it does with input nobody imagined** — a reversed quotation, a title that
+is also a year, a deleted index, a file that moved. Every finding above is an input shape or a seam,
+not a logic error. The suite is green either way, which is the honest measure of what green is worth.
