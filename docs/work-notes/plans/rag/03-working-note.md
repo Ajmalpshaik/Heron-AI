@@ -114,9 +114,9 @@ Each of these is a sentence that was true when written and is false now.
 | **W-2** | [`brain/README.md`](../../../../brain/README.md), the `retrieval-history.md` row | the file *"currently records the built-in backend collapsing as the library grows, which is the evidence for `A7`"* | `A7` is closed. The row describes the evidence for a thing that has already happened. ✅ **CLOSED 2026-09-11.** And *"collapsing"* was the wrong word: measured at 360, the tracked fragment sits at **118th of 360 by words** against **17th of 59** — it is **sinking in proportion**, not falling out |
 | **W-3** | [`tests/test_embed.py`](../../../../tests/test_embed.py), closing text | *"it could not be tested here, because this container's network refuses huggingface.co. A7 in NEEDS-CHECKING.md is that run"* | the suite **just ran on the model backend** and printed `Backend in use: model` eight lines above this sentence. ✅ **CLOSED 2026-09-11 — and not by swapping one fixed claim for another.** The sentence was **false** on 2026-09-10 and is **true again** in the container it was corrected in, so it now **reports which backend answered THIS run**. A sentence that flips with the network is a guess about the machine, not a finding |
 | **W-4** | [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) | eleven rows, every one `lexical`, last at 59 fragments | 360 fragments, `model`. **The file written to prevent a stale retrieval number is carrying one.** ⚠️ **HALF CLOSED 2026-09-11.** The corpus size is fixed — rows at 360, both checkers run there, and the two backends compared at one size. **The `model` row is still owed** and cannot be taken where `huggingface.co` is blocked. **It is not borrowed from §3 and re-presented as today's run** |
-| **W-5** | [`brain/README.md`](../../../../brain/README.md), the dependency table | `pyyaml` is the whole list | **`model2vec` is used too** — it is what makes `Backend: model` work. Somebody following the instructions exactly installs `pyyaml`, gets the weaker backend, and is told nothing |
+| **W-5** | [`brain/README.md`](../../../../brain/README.md), the dependency table | `pyyaml` is the whole list | **`model2vec` is used too** — it is what makes `Backend: model` work. Somebody following the instructions exactly installs `pyyaml`, gets the weaker backend, and is told nothing. ✅ **CLOSED 2026-09-11.** The table is gone, and **not replaced by a longer table** — that would be the same defect with more rows. It points at [`requirements.txt`](../../../../requirements.txt) and [`requirements-optional.txt`](../../../../requirements-optional.txt). The list was **derived by walking every import in the repository**, and `pyyaml` was one of **six**: `model2vec`, `sqlite-vec`, `sentence-transformers`, `pypdf` and `mcp` were all used and none was written down |
 | **W-7** | This plan itself, about ten times | `QCS 2014 §21.3.2 Insulation`, `Section 21 Mechanical` | **Invented as an illustration and never verified.** Whether QCS Section 21 is the mechanical section is not known here. **A plan about not fabricating clause numbers, fabricating a clause number** — left visible, flagged in [`00-structure.md` §3.3](00-structure.md), and replaced when Q-A names the real section |
-| **W-6** | The repository has **no `requirements.txt`, no `pyproject.toml`, no `setup.py`** | — | [`tools/setup.ps1`](../../../../tools/setup.ps1) builds and deploys the **add-in** and installs no Python package at all. [`docs/07`](../../../07-installation-and-update.md) specifies an installer that *"checks required dependencies"* and a Dependency Agent that *"check[s] and install[s]"* them — **designed, not built.** So the Python half of Heron is installed by hand, from a list that is wrong (W-5) |
+| **W-6** | The repository has **no `requirements.txt`, no `pyproject.toml`, no `setup.py`** | ⚠️ **HALF CLOSED 2026-09-11 — the manifest half.** Both manifests exist and pip reads them. **The install is still by hand:** `setup.ps1` deploys the add-in and installs no Python package, which is R-74 and R-77, neither built. The list is no longer wrong; it is still nobody's job to act on it | [`tools/setup.ps1`](../../../../tools/setup.ps1) builds and deploys the **add-in** and installs no Python package at all. [`docs/07`](../../../07-installation-and-update.md) specifies an installer that *"checks required dependencies"* and a Dependency Agent that *"check[s] and install[s]"* them — **designed, not built.** So the Python half of Heron is installed by hand, from a list that is wrong (W-5) |
 
 | **W-8** | The floor that [R-56](01-requirements.md) and R-58 stand on | Stage 0b would *"drop candidates with no claim"* and *"refuse a question nothing covers"*, needing nothing | **Found 2026-09-11 by building the measurement first, which is why it was built first.** [R-60](01-requirements.md) says the floor is derived from that measurement and from nothing else — and **at 360 fragments on `lexical` the measurement does not separate a BIM question from a question about cats.** Twelve questions, **every column overlaps**: *"how do I bake sourdough bread"* has the widest winning gap of all twelve. **Reciprocal rank fusion keeps order and discards strength**, so the fused score never could; and the two surviving magnitudes fail because `heron_embed`'s own docstring says the built-in backend **"IS NOT MEANING"**. **So R-56 to R-59 are blocked on the `model` backend, which is blocked on the network.** Numbers in [`retrieval-history.md`](../../../../brain/retrieval-history.md) |
 
@@ -141,6 +141,13 @@ up Stage 0 fixes them in the same breath as the measurement, which is where they
 > corrected; W-4 is half closed and says which half. **W-5, W-6 and W-7 are untouched** — W-5 and W-6
 > belong to the install thread (R-71 to R-79) and W-7 waits on Q-A naming a real clause. Closing them
 > here would be the widening this folder forbids, in the commit that closed the rest.
+
+> **Superseded 2026-09-11, in its own commit, once the RAG batch had MERGED.** The reason for holding
+> W-5 and W-6 was *do not widen this batch*, and that reason expired the moment the batch landed — so
+> they are closed now rather than left standing as defects with no live objection. **W-7 is still open
+> and still correctly blocked.** Q-A is answered, and its answer names *whichever numbered document he
+> can hand over first* rather than a real clause, so the thing W-7 waits for has not arrived. Checked
+> rather than assumed: the blocker reads as cleared and is not.
 
 ---
 
@@ -2266,3 +2273,50 @@ A check written in round nine **crashed** in round ten — it quoted the `EMBED.
 ten replaced, so it failed on a substring rather than on a defect. Anchored on the rule now: the backend
 is read before the route writes a rank. **A test that names a line instead of a rule is a test with a
 half-life.**
+
+---
+
+### 2026-09-11 — the batch merged, so the two defects it was not allowed to fix got fixed
+
+**W-5 and W-6 were never blocked on knowledge. They were blocked on a rule** — *a defect found while
+working is recorded, not fixed, so the batch stays reviewable* — and that rule stopped applying the
+moment PR #114 merged. Nothing else about them had changed since 2026-09-10.
+
+**The list was derived, not remembered, and that is what made it worth doing.** Walking every `import`
+in the repository returns **six** third-party names where `brain/README.md` had one:
+
+| | |
+|---|---|
+| `yaml` | required — 11 files |
+| `model2vec` · `sqlite_vec` · `sentence_transformers` · `pypdf` | optional, all in `brain/` |
+| `mcp` | optional — `mcp/server` and one test |
+
+**Two things the walk proved that nobody had checked.** `mcp/client/` and `platform/` import **nothing**
+third-party — the locked-down-machine rule `brain/README.md` states was true and unenforced, and
+`tests/test_dependencies.py` now enforces it. And a crude reading of the imports flagged
+`sentence_transformers` as unguarded in `heron_rerank.py`; it is inside `_construct`, `_load` catches
+every exception, and **running it with the package absent** printed `Backend: absent` and what is lost.
+**A grep said defect and the measurement said no.**
+
+**The README does not get a longer table, because a longer table is the same defect with more rows.**
+The list lives in [`requirements.txt`](../../../../requirements.txt) and
+[`requirements-optional.txt`](../../../../requirements-optional.txt) where pip reads it, each entry
+carrying `# <import name> | <what it is for> | <what happens without it>` — and
+`tools/check-dependencies.py` **parses that same line** rather than holding a second copy. R-71 in one
+sentence: *the list cannot go stale if nothing types it twice.*
+
+**No size is typed anywhere in this change.** `heron_rerank.announcement()` already owns the
+re-ranker's `500 MB to 2 GB` and prints it *before* the network is touched; the checker **reads it from
+there**. The first draft of `brain/README.md` typed the number anyway, two paragraphs after saying it
+would not — caught on re-reading, and it is the same shape as every finding in the ten rounds: *the
+code did something adjacent to what the sentence beside it claimed.*
+
+**What is honestly NOT done.** R-71 and R-72 are closed. **R-75 and R-76 are PART and the rows say
+why** — the owner's words are *the README states* and *the README names*, and the README now
+**points**. Whether a pointer satisfies those is his call. **R-74, R-77, R-78 and R-79 are untouched:
+nothing installs itself, and `installed` here means importable, not correct.** W-6 is half closed for
+exactly that reason — the list is no longer wrong, and it is still nobody's job to act on it.
+
+**W-7 was checked and is still blocked.** Q-A is answered, which looks like the release W-7 waits on —
+its answer names *whichever numbered document he can hand over first*, not a clause. The blocker reads
+as cleared and is not.
