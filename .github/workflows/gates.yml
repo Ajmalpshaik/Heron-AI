@@ -73,6 +73,59 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+  compile:
+    name: The C# compiles, 2020 to 2027
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      # The .NET 10 SDK, not the .NET 8 one. docs/30-compiling-away-from-windows.md
+      # measured this: the 8 SDK omits the WindowsDesktop MSBuild targets, so the
+      # add-in fails MSB4019 on Revit 2025-2027, while the 10 SDK ships them and
+      # builds all eight releases. An SDK builds target frameworks older than
+      # itself, so the newest is the one to install.
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      # No Revit on this runner, and none needed. The add-in takes the Revit API
+      # from NuGet whenever RevitApiDir is unset, which is exactly the case here,
+      # and check-compile.py passes -p:EnableWindowsTargeting=true so the SDK
+      # restores the Windows targeting packs while not running on Windows.
+      - name: Compile every project against every Revit release
+        shell: bash
+        run: |
+          status=0
+          python tools/check-compile.py > "$RUNNER_TEMP/compile.log" 2>&1 || status=$?
+          cat "$RUNNER_TEMP/compile.log"
+
+          {
+            echo "### The C# compiles"
+            echo
+            echo '```'
+            tail -20 "$RUNNER_TEMP/compile.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$status" -ne 0 ]; then
+            echo "::error::A project failed to compile. The log names the file and line."
+            exit 1
+          fi
+
+          # A SKIP IS NOT A PASS, and check-compile returns 0 when it skips.
+          # Without this the job would go green having compiled nothing at all -
+          # which is the exact failure the tool's own output line warns about.
+          if grep -q 'SKIPPED' "$RUNNER_TEMP/compile.log"; then
+            echo "::error::A Revit release was skipped. On this runner every release should build - a skip means the SDK is wrong, not that the release is unsupported."
+            grep 'SKIPPED' "$RUNNER_TEMP/compile.log"
+            exit 1
+          fi
+
   generated:
     name: The generated files are current
     runs-on: ubuntu-latest
