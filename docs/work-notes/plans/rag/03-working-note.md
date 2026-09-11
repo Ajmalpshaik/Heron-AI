@@ -1889,3 +1889,35 @@ read nothing. Both were *written by me, in the same session, in wording that des
 rather than the code*.
 
 The suite was green through all seven.
+
+### The same afternoon — the compiler that was one `apt-get` away
+
+`A11` was filed an hour earlier saying the C# *has never been compiled: this container has no .NET SDK*.
+That sentence was true and the conclusion drawn from it was not. `dotnet` was absent; the **SDK** was in
+the Ubuntu archive:
+
+```
+apt-get install -y dotnet-sdk-10.0        # 10.0.112
+```
+
+`docs/30-compiling-away-from-windows.md` had recorded that exact package building all eight releases on
+Ubuntu 24.04, and `tools/check-compile.py` says so in its own docstring. **I read "no dotnet on PATH" and
+wrote "cannot be compiled here", which is a different claim** — the same shape as every finding in this
+plan's review rounds, made in my own status note.
+
+What it bought, all measured rather than asserted:
+
+| | |
+|---|---|
+| `tools/check-compile.py` | **COMPILED 2020 – 2027.** Four projects × eight releases, 0 warnings |
+| `tools/check-api-surface.py` | *every referenced type and member exists*, all eight, read against the **shipped** assemblies rather than the NuGet reference ones — 165 distinct Revit types and members |
+| `tools/check-fragments-compile.py` | every fragment compiles on every release it claims |
+| `tests/test_bridge_roundtrip.py` | **passes on Linux**, once the test host is built. It had been on the known-failures list for needing a `dotnet build` |
+
+So `ProjectInformation.UniqueId` is not an assumption any more: it exists by name on 2020 through 2027
+and the signature compiles on each. **What a compile still cannot say** is whether the value is the same
+string after a save, a rename and a move — that is the half of `A11` that needs a model open in Revit,
+and it stays open.
+
+**The SDK is installed in this container and nowhere else.** A fresh session starts without it, so the
+four results above are a run, not a property of the repository.
