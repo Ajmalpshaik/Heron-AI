@@ -180,6 +180,45 @@ def main():
                   "standard verbatim is Tuesday, not an error")
             print()
 
+            print("5b. GOLDEN RULE 11 - deleting the store is safe RECOVERY")
+            # The rule: "the index is derived, never authoritative - deleting
+            # it must always be a safe recovery action." Fragments obeyed it;
+            # documents did NOT. The documents table was the only record of
+            # which external files had been ingested, into which scope, with
+            # which title, status and trust - so deleting a scope file, the
+            # documented recovery action, destroyed all of it while every
+            # original file sat untouched on disk. A review found it.
+            mpath = I.manifest_path(store)
+            check(os.path.isfile(mpath),
+                  "a manifest lives BESIDE the store, not inside it: %s"
+                  % os.path.basename(mpath))
+            check(not mpath.endswith(".db"),
+                  "and it is not the store file, so deleting one leaves the "
+                  "other")
+            before_docs = store.execute(
+                "SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
+            db = store.path
+            store.close()
+            os.remove(db)
+            store = SCOPE.open_scope(SCOPE.GLOBAL)
+            check(store.execute(
+                      "SELECT COUNT(*) AS n FROM sqlite_master "
+                      "WHERE name = 'documents'").fetchone()["n"] == 0,
+                  "the store is deleted and the documents table is gone with it")
+            done = I.restore(store)
+            after_docs = store.execute(
+                "SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
+            check(done.reingested,
+                  "restore() re-reads the source files the manifest names, "
+                  "and brings %d document(s) back" % len(done.reingested))
+            check(after_docs > 0,
+                  "%d document row(s) exist again, from %d before - the ones "
+                  "whose source files are still on disk" % (after_docs,
+                                                            before_docs))
+            check(not done.gone or all(isinstance(g, tuple) for g in done.gone),
+                  "and a source that has MOVED is named, never invented")
+            print()
+
             print("6. R-29 - the index is never a thing a person maintains")
             done = I.refresh(store)
             check(not done.changed,

@@ -89,6 +89,7 @@ with a licensed standard would make every copy of the store a redistribution.
 
 import datetime
 import hashlib
+import json
 import os
 import re
 import sqlite3
@@ -332,9 +333,13 @@ MAX_CHARS = 2000
 
 class Chunk(object):
     def __init__(self, text, locator, heading_path, depth, split_by,
-                 parent_key=None, key=None):
+                 parent_key=None, key=None, locator_label=None):
         self.text = text
         self.locator = locator
+        # The heading as it reads in a path - "21.3 Ductwork". Kept so the
+        # heading path can be walked up the PARENT CHAIN rather than rebuilt
+        # from whatever the parser's stack happened to hold.
+        self.locator_label = locator_label or locator
         self.heading_path = heading_path
         self.depth = depth
         self.split_by = split_by
@@ -525,7 +530,23 @@ def chunk_document(text, title, drop_title_line=False):
         if parent_key is None and stack:
             parent_key = stack[-1][1]
 
-        ancestors = [title] + [entry[3] for entry in stack]
+        # THE PATH FOLLOWS THE CHOSEN PARENT, NOT THE PARSING STACK. When
+        # parent_key came from the document's own numbering it could differ from
+        # where the stack happened to be - a numbered child after another
+        # branch, or a mixed markdown-and-numbered document - and then parent_id
+        # pointed at one section while the searchable, cited heading_path named
+        # a different one. Two columns describing one tree, quietly disagreeing:
+        # the same defect that was fixed for `depth` and left here.
+        if parent_key is not None:
+            up = []
+            walk = parent_key
+            while walk is not None:
+                up.append(chunks[walk].locator_label)
+                walk = chunks[walk].parent_key
+            up.reverse()
+            ancestors = [title] + up
+        else:
+            ancestors = [title]
         path = " → ".join([a for a in ancestors if a] + [heading.label()])
 
         # DEPTH IS DERIVED FROM parent_id, which is what the schema says it
@@ -551,7 +572,7 @@ def chunk_document(text, title, drop_title_line=False):
                 piece, heading.locator, path, depth,
                 "structure" if len(pieces) == 1 else "length",
                 parent_key=parent_key if i == 0 else key,
-                key=len(chunks)))
+                key=len(chunks), locator_label=heading.label()))
 
         stack.append((heading.depth, key, heading.locator, heading.label()))
         if heading.locator:
@@ -757,6 +778,24 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
                         extension.lstrip("."), count, reused=True)
 
     text = READERS[extension](path)
+
+    # A DOCUMENT THAT YIELDS NOTHING IS REFUSED, NOT ACCEPTED EMPTY. A blank
+    # file, or an image-only PDF with no text layer, produced a document row, a
+    # commit, and a cheerful "ingested, 0 chunks" - a document that can never be
+    # retrieved or cited, and which afterwards reads as merely unindexed.
+    #
+    # This is the scanned-PDF case, which is the most likely way a real
+    # standard fails to come in, so the refusal names it.
+    if not (text or "").strip():
+        raise UnreadableDocument(
+            "%s produced no text at all, so there is nothing to chunk, "
+            "retrieve or cite. It is refused rather than stored empty.%s"
+            % (os.path.basename(path),
+               " A PDF with no text layer is a PICTURE of a document - open it "
+               "and try to select a sentence with the mouse. If you cannot, it "
+               "needs OCR before Heron can read it."
+               if extension == ".pdf" else ""))
+
     if title is None:
         found = document_title(text, shown)
         chunks = chunk_document(text, found, drop_title_line=(found != shown))
@@ -788,6 +827,14 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
              piece.locator, piece.heading_path, piece.text, piece.split_by))
     store.db.commit()
 
+    # GR 11. The line that makes these rows derivable again after somebody
+    # deletes the store, which is the documented safe-recovery action.
+    _remember(store, "ingested",
+              {"path": path, "scope": store.scope, "title": shown,
+               "kind": extension.lstrip("."), "status": status,
+               "added_by": added_by, "source_trust": source_trust,
+               "document": document_id})
+
     # GR 14, R-84. Ingestion is an important autonomous operation and was
     # leaving no trace at all. heron_audit.py exists so that a request
     # answered entirely inside the brain still leaves one.
@@ -800,6 +847,140 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
     return Ingested(document_id, shown, extension.lstrip("."), len(chunks),
                     oversized=oversized,
                     duplicates=duplicate_clauses(store, document_id))
+
+
+# ---------------------------------------------------------------------------
+# The manifest - because Golden Rule 11 says the index is DERIVED
+# ---------------------------------------------------------------------------
+
+# GOLDEN RULE 11: "The index is derived, never authoritative. Deleting it must
+# always be a safe recovery action."
+#
+# THE DOCUMENT ROWS BROKE THAT, AND IT TOOK A REVIEW TO SEE IT. Fragments are
+# derived - delete every store and `heron_scope.py --rebuild` reads
+# brain/fragments/ and puts them back. Documents had no such source: the
+# `documents` table was the ONLY record of which external files had been
+# ingested, into which scope, with which title, status and trust. Delete a
+# scope file - the documented safe-recovery action - and all of that was gone
+# even though every original file was still sitting on disk untouched.
+#
+# So the registry lives BESIDE the store and not inside it, as one append-only
+# line per event. Append-only because Golden Rule 4 says a record is never
+# destroyed, and because an appended line cannot corrupt the ones before it.
+#
+# It is NOT a copy of the documents. It is the list of what to re-read, which
+# is the smallest thing that makes the index derivable again (Q-B: the file is
+# pointed at, never copied - so the file is the authority and this is the
+# pointer to it).
+
+MANIFEST_SUFFIX = "-documents.jsonl"
+
+
+def manifest_path(store):
+    """Beside the scope's own file, never inside it.
+
+    Derived from the store's path rather than rebuilt, so there is no second
+    place that knows how a knowledge path is shaped.
+    """
+    base = store.path
+    if base.endswith(".db"):
+        base = base[:-3]
+    return base + MANIFEST_SUFFIX
+
+
+def _remember(store, event, row):
+    """Append one line. Never fatal - a trail that can break the operation it
+    records is worse than no trail, which is heron_audit's own rule."""
+    line = dict(row)
+    line["event"] = event
+    line["at"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        with open(manifest_path(store), "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(line, sort_keys=True) + "\n")
+        return True
+    except (IOError, OSError):
+        return False
+
+
+def manifest(store):
+    """Every line, oldest first. [] when there is none - a normal state."""
+    path = manifest_path(store)
+    if not os.path.isfile(path):
+        return []
+    out = []
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except ValueError:
+                # One unreadable line must not hide the rest. A manifest is a
+                # recovery tool; refusing to read it because of one bad row
+                # would make the recovery need a recovery.
+                continue
+    return out
+
+
+class Restored(object):
+    def __init__(self):
+        self.reingested = []
+        self.gone = []
+        self.skipped = []
+
+    def __repr__(self):
+        return "<restored %d, %d gone, %d skipped>" % (
+            len(self.reingested), len(self.gone), len(self.skipped))
+
+
+def restore(store):
+    """Rebuild the document rows from the manifest. GR 11 made true.
+
+    Delete a scope file, run this, and every document whose source still
+    exists comes back with its scope, title, status and trust. A source that
+    has moved is NAMED and not invented - the manifest says what was ingested,
+    the file says what it said, and neither is guessed at.
+
+    A document that was explicitly forgotten stays forgotten: the manifest
+    records that too, so a restore does not resurrect what somebody removed.
+    """
+    ensure_tables(store)
+    out = Restored()
+
+    latest = {}
+    for line in manifest(store):
+        path = line.get("path")
+        if path:
+            latest[path] = line
+
+    for path, line in sorted(latest.items()):
+        if line.get("event") == "forgotten":
+            out.skipped.append((path, "it was forgotten on purpose"))
+            continue
+        if not os.path.isfile(path):
+            out.gone.append((path, line.get("title") or ""))
+            continue
+        have = store.execute(
+            "SELECT id FROM documents WHERE path = ?", (path,)).fetchone()
+        if have:
+            out.skipped.append((path, "already in the store"))
+            continue
+        try:
+            got = ingest(store, path, added_by=line.get("added_by"),
+                         source_trust=line.get("source_trust") or "unknown",
+                         status=line.get("status") or "DRAFT")
+        except (RefusedByExtension, UnreadableDocument) as why:
+            out.gone.append((path, str(why)))
+            continue
+        out.reingested.append((path, got.document_id, got.chunks))
+
+    AUDIT.record("knowledge.restore", True,
+                 fields={"scope": store.scope},
+                 numbers={"reingested": len(out.reingested),
+                          "gone": len(out.gone),
+                          "skipped": len(out.skipped)})
+    return out
 
 
 def duplicate_clauses(store, document_id):
@@ -923,8 +1104,15 @@ def forget(store, document_id):
     ensure_tables(store)
     gone = store.execute("DELETE FROM chunks WHERE document_id = ?",
                          (document_id,)).rowcount
+    was = store.execute("SELECT path, title FROM documents WHERE id = ?",
+                        (document_id,)).fetchone()
     store.execute("DELETE FROM documents WHERE id = ?", (document_id,))
     store.db.commit()
+    if was:
+        # So a restore does not bring back what somebody deliberately removed.
+        _remember(store, "forgotten",
+                  {"path": was["path"], "scope": store.scope,
+                   "title": was["title"], "document": document_id})
     AUDIT.record("knowledge.forget", True,
                  fields={"document": document_id, "scope": store.scope},
                  numbers={"chunks": gone})
@@ -951,17 +1139,42 @@ def boundaries(store, document_id):
 # The command
 # ---------------------------------------------------------------------------
 
+class MissingFlagValue(Exception):
+    """A flag that takes a value was given none. Refused, never defaulted."""
+
+
 def _flag(argv, name, default=None):
+    """The value after `name`, or `default` when the flag is absent.
+
+    A FLAG PRESENT WITH NO VALUE IS AN ERROR, NOT THE DEFAULT. `--scope` at the
+    end of a command returned None and the caller substituted "global" - so a
+    mistyped command meant for company or project knowledge ingested the
+    document into the GLOBALLY SHARED scope and said nothing about it. That is
+    Golden Rule 5 broken by a typo, which is the class of mistake the scope wall
+    exists to make impossible.
+    """
     if name in argv:
         i = argv.index(name)
         value = argv[i + 1] if i + 1 < len(argv) else None
+        if value is None or value.startswith("--"):
+            raise MissingFlagValue(
+                "%s needs a value and was given none. Nothing was ingested - "
+                "a missing scope is NOT the global scope." % name)
         del argv[i:i + 2]
         return value
     return default
 
 
 def main(argv):
-    argv = list(argv)
+    """The command. A flag error is reported and refused, never defaulted."""
+    try:
+        return _main(list(argv))
+    except MissingFlagValue as why:
+        print("  %s" % why)
+        return 2
+
+
+def _main(argv):
     # LOWER, not upper. heron_scope.SCOPES are lowercase strings, and the
     # first version of this line upper-cased them - so every CLI call
     # died on "'GLOBAL' is not a knowledge scope" while the whole test
@@ -985,6 +1198,13 @@ def main(argv):
 
     store = SCOPE.open_scope(scope, project)
     try:
+        # THE SCHEMA EXISTS BEFORE ANYTHING IS COUNTED. On a fresh scope where
+        # every path was refused, ingest() never ran, the tables were never
+        # created, and the summary count below died on "no such table: chunks"
+        # AFTER the refusals had printed - a crash where a refusal was the
+        # correct and complete answer.
+        ensure_tables(store)
+
         if show:
             rows = boundaries(store, show)
             if not rows:
@@ -1028,11 +1248,15 @@ def main(argv):
                       "is free, which is why it may be run at any time.")
             return 0
 
+        refused = 0
+        ingested_any = False
         for path in argv:
             try:
                 got = ingest(store, path, source_trust=trust)
-            except (RefusedByExtension, UnreadableDocument) as refused:
-                print("  REFUSED  %s" % refused)
+                ingested_any = True
+            except (RefusedByExtension, UnreadableDocument) as why:
+                print("  REFUSED  %s" % why)
+                refused += 1
                 continue
             print("%s  %s" % ("reused " if got.reused else "ingested", got.title))
             print("  id       %s" % got.document_id)
@@ -1067,8 +1291,11 @@ def main(argv):
         # ceiling is a day somebody NOTICES rather than a day search gets slow.
         print("  D-23's sqlite-vec brute-force search stays fast below roughly")
         print("  500,000 vectors. Nothing here is close to it.")
+        if refused and not ingested_any:
+            print("  NOTHING was ingested: every file given was refused. That "
+                  "is a complete answer, and the exit code says so.")
         print("  Your file was not moved, not changed and not copied.")
-        return 0
+        return 2 if (refused and not ingested_any) else 0
     finally:
         store.close()
 

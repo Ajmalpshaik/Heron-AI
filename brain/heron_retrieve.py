@@ -484,6 +484,36 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
 OFFERABLE_DOCUMENTS = ("DRAFT", "REVIEWED")
 
 
+def _until_filled(route, store, text, keep, pool, ceiling=20):
+    """Ask a words route repeatedly until `pool` ELIGIBLE rows are found.
+
+    The window grows rather than being guessed at once, and it stops at a
+    ceiling so a pathological store cannot turn one question into a scan.
+    """
+    want = pool * 3
+    seen = []
+    while True:
+        rows = route(store, text, limit=want)
+        seen = [r for r in rows if r["id"] in keep]
+        if len(seen) >= pool or len(rows) < want or want >= pool * ceiling:
+            break
+        want *= 2
+    return seen[:pool]
+
+
+def _until_filled_pairs(store, text, keep, pool, ceiling=20):
+    """The same, for the nearness route's (id, score) pairs."""
+    want = pool * 3
+    seen = []
+    while True:
+        rows = EMBED.nearest(store, text, limit=want, kind=EMBED.CHUNK)
+        seen = [pair for pair in rows if pair[0] in keep]
+        if len(seen) >= pool or len(rows) < want or want >= pool * ceiling:
+            break
+        want *= 2
+    return seen[:pool]
+
+
 def documents(store, text, limit=5, pool=20):
     """The retrieval stack over ingested chunks. Returns (candidates, why).
 
@@ -507,8 +537,15 @@ def documents(store, text, limit=5, pool=20):
             "WHERE d.status IN (%s)"
             % ",".join("?" * len(OFFERABLE_DOCUMENTS)),
             OFFERABLE_DOCUMENTS).fetchall()
-    except sqlite3.OperationalError:
-        return [], 0                     # nothing has ever been ingested here
+    except sqlite3.OperationalError as exc:
+        # ONLY "THE TABLE IS NOT THERE". A broken store, a missing column, a
+        # lock or a malformed file must NOT read as "no documents were ever
+        # ingested" - that is a plausible empty answer standing in for a fault,
+        # which is D-52's shape. heron_context._indexed already narrows for
+        # exactly this reason, and this did not follow it.
+        if "no such table" not in str(exc):
+            raise
+        return [], 0
 
     if not allowed:
         return [], 0
@@ -522,10 +559,17 @@ def documents(store, text, limit=5, pool=20):
             candidates[chunk_id] = Candidate(chunk_id, by_id[chunk_id])
         return candidates[chunk_id]
 
+    # THE LIFECYCLE FILTER IS APPLIED AFTER EACH ROUTE HAS ALREADY LIMITED
+    # ITSELF, so retired chunks can consume the whole fetched window and hide
+    # an offerable one below them. Asking for far more than the pool is not a
+    # fix, it is a bigger window - so each route is asked until the pool is
+    # FILLED with eligible rows, or the index runs out.
+    #
+    # Cheap here because a retired document is rare and the store is local; the
+    # alternative is an answer that says "nothing matched" while the match sits
+    # one row past an arbitrary cut.
     rank = 0
-    for hit in SEARCH.chunk_keywords(store, text, limit=pool * 3):
-        if hit["id"] not in keep:
-            continue
+    for hit in _until_filled(SEARCH.chunk_keywords, store, text, keep, pool):
         rank += 1
         got = candidate(hit["id"])
         got.keyword_rank = rank
@@ -534,10 +578,7 @@ def documents(store, text, limit=5, pool=20):
             break
 
     rank = 0
-    for chunk_id, score in EMBED.nearest(store, text, limit=pool * 3,
-                                         kind=EMBED.CHUNK):
-        if chunk_id not in keep:
-            continue
+    for chunk_id, score in _until_filled_pairs(store, text, keep, pool):
         rank += 1
         got = candidate(chunk_id)
         got.vector_rank = rank
@@ -641,6 +682,13 @@ def find_documents(store, text, limit=5):
         "documents", best.id,
         candidates=[{"id": c.id, "kind": "chunk",
                      "document": c.row["title"],
+                     # R-22: A CITATION RESOLVES TO SOMETHING A HUMAN CAN
+                     # OPEN. The query already selected the path and the
+                     # result dropped it, so every citation named a title and
+                     # a clause number and nothing a person could actually
+                     # open - which matters most exactly when two documents
+                     # share a title or a clause number.
+                     "path": c.row["path"],
                      "locator": c.row["locator"],
                      "heading_path": c.row["heading_path"],
                      "status": c.row["status"],

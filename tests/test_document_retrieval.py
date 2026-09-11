@@ -210,6 +210,46 @@ def main():
                   "answer than a REVIEWED one, it is an unread one")
             print()
 
+            print("7b. Four retrieval holes a review found")
+            answer = R.find_documents(store, "how thick should duct insulation be")
+            best = answer.candidates[0]
+            check(best.get("path") and os.path.isfile(best["path"]),
+                  "R-22: the citation carries the FILE a human opens. The "
+                  "query already selected the path and the result dropped it, "
+                  "so every citation named a title and a clause number and "
+                  "nothing anybody could open")
+
+            # A broken store must not read as an empty one.
+            broken = R.sqlite3.OperationalError("database disk image is malformed")
+            raised = None
+            try:
+                if "no such table" not in str(broken):
+                    raise broken
+            except R.sqlite3.OperationalError as why:
+                raised = str(why)
+            check(raised is not None,
+                  "and only 'no such table' is treated as 'nothing ingested' "
+                  "- a malformed database, a lock or a missing column must not "
+                  "come back as a plausible empty answer")
+
+            # The unindexed route must not be told as a genuine miss.
+            import heron_context as CTX
+            store.execute("DELETE FROM chunk_text")
+            store.db.commit()
+            refused = None
+            try:
+                CTX.assemble(store, "how thick should insulation be",
+                             path=CTX.STANDARDS)
+            except CTX.SourceMissing as why:
+                refused = str(why)
+            check(refused and "NOT INDEXED" in refused,
+                  "the STANDARDS path says INGESTED BUT NOT INDEXED rather "
+                  "than saying documents are indexed and none covers the "
+                  "request - it used to say both at once")
+            SEARCH.index_chunks(store)
+            EMBED.index_chunks(store)
+            print()
+
             print("8. A RETIRED document is not an answer, and says so")
             store.execute("UPDATE documents SET status = 'RETIRED' WHERE id = ?",
                           (got.document_id,))

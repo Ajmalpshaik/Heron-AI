@@ -544,6 +544,15 @@ def context(request, path=None, revit=None, full=False, depth=None,
             "parts": [{"kind": p.kind, "name": p.name, "source": p.source,
                        "why": p.why, "size": p.size,
                        "depth": CONTEXT.DEPTH_NAMES[p.depth],
+                       # THE CITATION, WITHOUT WHICH THE WHOLE CHAIN BREAKS AT
+                       # THIS SEAM. The chunk id exists on the in-process Part
+                       # and was not serialized here, so a host calling this -
+                       # the only way production reaches heron_context - could
+                       # not produce the [chunk id] marker heron_ground reads,
+                       # and the binding R-63 and R-64 exist to create was
+                       # lost exactly where it had to survive. Omitted when
+                       # there is none, so a fragment part is unchanged.
+                       **({"citation": p.citation} if p.citation else {}),
                        # Present only when something was actually left out.
                        # A part carrying all of itself says nothing extra.
                        "cut": p.cut,

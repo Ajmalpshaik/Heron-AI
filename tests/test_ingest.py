@@ -363,6 +363,43 @@ def main():
                   "and --boundaries prints them and exits 0")
             print()
 
+            print("14b. Three refusals a review found missing")
+            # A document that yields nothing was being STORED, cheerfully, as
+            # a successful ingest with zero chunks - a document that can never
+            # be retrieved or cited and which afterwards reads as merely
+            # unindexed. This is the scanned-PDF case.
+            blank = write(papers, "blank.txt", "   \n\n   \n")
+            try:
+                I.ingest(store, blank)
+                check(False, "an empty document was accepted")
+            except I.UnreadableDocument as why:
+                check("no text at all" in str(why),
+                      "a document that produces no text is REFUSED, not "
+                      "stored empty")
+
+            # A value-taking flag with no value silently became the default,
+            # so a mistyped command meant for company knowledge ingested into
+            # the GLOBALLY SHARED scope and said nothing about it.
+            code = I.main([path, "--scope"])
+            check(code == 2,
+                  "--scope with no value is refused rather than defaulted to "
+                  "global - Golden Rule 5 broken by a typo is still broken")
+
+            # And an all-refused run on a fresh scope crashed on a table that
+            # was never created, AFTER printing its refusals.
+            import tempfile as _t
+            fresh = _t.mkdtemp(prefix="heron-fresh-")
+            os.environ["HERON_KNOWLEDGE"] = fresh
+            try:
+                code = I.main([write(papers, "Only.rvt", "x")])
+                check(code == 2,
+                      "an all-refused ingest on a FRESH scope exits 2 instead "
+                      "of crashing on a table nothing had created yet")
+            finally:
+                shutil.rmtree(fresh, ignore_errors=True)
+                os.environ["HERON_KNOWLEDGE"] = home
+            print()
+
             print("15. A sentence that opens with a number is not a heading")
             check(I.read_heading("4.1 Ductwork") is not None,
                   "'4.1 Ductwork' is a heading")
@@ -377,7 +414,29 @@ def main():
                   "document numbered it that way")
             print()
 
-            print("16. Nothing here reads a document back out - that is Stage 2")
+            print("16. heading_path can never disagree with parent_id")
+            mixed = write(papers, "mixed.md",
+                          "Mixed Standard 2026\n\n# Part One\n\n"
+                          "1.1 Submittals\n\nSubmit drawings.\n\n"
+                          "## Appendix\n\nNotes.\n\n1.2 Testing\n\n"
+                          "Test it.\n\n1.2.1 Witness\n\nA witness per 1.1.\n")
+            m = I.ingest(store, mixed)
+            got_rows = I.boundaries(store, m.document_id)
+            by_id = dict((r["id"], r) for r in got_rows)
+            wrong = [r["locator"] for r in got_rows
+                     if r["parent_id"]
+                     and by_id[r["parent_id"]]["locator"]
+                     and by_id[r["parent_id"]]["locator"]
+                     not in (r["heading_path"] or "")]
+            check(not wrong,
+                  "in a MIXED markdown-and-numbered document, every chunk's "
+                  "heading path contains its actual parent (%d mismatch(es)) "
+                  "- the path used to be built from the parsing stack while "
+                  "parent_id came from the numbering, so two columns described "
+                  "one tree and could disagree" % len(wrong))
+            print()
+
+            print("17. Nothing here reads a document back out - that is Stage 2")
             check(not hasattr(I, "search") and not hasattr(I, "retrieve"),
                   "heron_ingest has no retrieval of any kind, and reviewing "
                   "an ingester alongside a retrieval change is reviewing "

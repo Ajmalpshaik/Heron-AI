@@ -768,6 +768,19 @@ def _standard_parts(ctx, store, request):
             "returning a packet that looks complete and is not. Put one in: "
             "python brain/heron_ingest.py <file>")
 
+    if answer.route == "unindexed":
+        # A DIFFERENT NOTHING, AND IT WAS BEING TOLD AS THE WRONG ONE. This
+        # branch used to catch the unindexed route through "not
+        # answer.candidates" and say that documents ARE indexed and none
+        # covers the request, while the note appended to it said the opposite.
+        # Two contradictory sentences in one refusal is worse than either.
+        raise SourceMissing(
+            "the STANDARDS path needs the clauses a check CITES, and the "
+            "documents in this scope are INGESTED BUT NOT INDEXED. This is "
+            "not a retrieval result and nothing is missing from the library - "
+            "the searchable text is derived and has not been built. %s"
+            % answer.note)
+
     if answer.route == "nothing" or not answer.candidates:
         raise SourceMissing(
             "NOTHING INDEXED COVERS THIS. Documents are indexed in this "
@@ -821,8 +834,19 @@ def _standard_parts(ctx, store, request):
             # uncited case R-65 calls a bug.
             continue
 
-        # R-81. SCANNED BEFORE ASSEMBLY, which is the seam 34 s2.11 named.
-        seen = screen(hit["id"], row["text"])
+        # R-81. SCANNED BEFORE ASSEMBLY, which is the seam 34 s2.11 named -
+        # AND EVERY DOCUMENT-DERIVED FIELD IS SCANNED, not only the body.
+        #
+        # The title, the locator and the heading path all come out of the
+        # ingested file too, and they go into the part's NAME and SOURCE,
+        # where nothing quotes them. A document whose extracted title carries
+        # instruction-shaped text would place it unquoted into packet
+        # metadata, which is the one place the quoting guarantee did not
+        # reach. Worse, the title line is removed from the chunks during
+        # ingestion, so the body scan could never have seen it.
+        seen = screen(hit["id"], "\n".join(
+            str(bit) for bit in (row["text"], hit["document"],
+                                 hit["locator"], hit["heading_path"]) if bit))
         if seen.suspicious:
             flagged.append(seen)
 

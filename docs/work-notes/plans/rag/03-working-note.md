@@ -1216,3 +1216,64 @@ same block as W-8 and Stage 0's missing row. Stage 8 is trust and conflict, and 
 produced its first real case: a company standard saying 30mm and a project spec saying 40mm, both
 correctly returned, with nothing surfacing that they disagree.
 
+### 2026-09-11 — a review found sixteen things, and every one I checked was real
+
+**An automated reviewer went over the whole track on PR #114 and raised sixteen findings.** I verified
+each against the code before touching anything. **Every one I could test reproduced.** They are worth
+recording in full, because the pattern in them is more useful than any single fix.
+
+> ## The pattern: three of them made the checker say `ok` about a false claim
+>
+> Stage 3 exists to catch a fabricated answer. Three separate holes meant it approved one.
+>
+> | | What happened |
+> |---|---|
+> | **A category or parameter was never a fact** | `OST_DuctCurves` and `BuiltInParameter.RBS_...` were matched **case-sensitively**, and `facts()` lowercases before running them. **Neither pattern could ever match.** R-50's list of checkable things contained two entries that could not be checked, and a sentence inventing a category was skipped as factless |
+> | **A quotation with no number was never checked** | `The clause says "Ducts shall be painted red" [4.1]` has no number, unit or clause reference — so it was **skipped before the quote gate ran**. The one gate that survived measurement never ran on the only kind of claim it was built for |
+> | **A shared clause number resolved to the wrong document** | Two documents both numbered `4.1`; the second overwrote the first in a dictionary. A **TRUE claim about the company standard was flagged as a fabrication** because the project spec's `4.1` won. That is R-51's false alarm arriving through the citation instead of the comparison |
+>
+> **All three are invisible from the outside.** A sentence the checker never looked at and a sentence
+> it looked at and approved produce the same report. **A test that only feeds it fabrications it does
+> catch cannot find this** — which is what my tests were doing.
+
+**And the one that broke the whole chain at the seam.** Stage 3 binds a claim to the exact chunk it
+cites. The **MCP server serialized every `Part` field except `citation`** — so the only path
+production has into `heron_context` dropped the chunk id, and the host could never produce the marker
+`heron_ground` reads. **The feature worked in-process and did not exist in production.**
+
+> ## And one Golden Rule I broke without noticing
+>
+> **GR 11: the index is derived, never authoritative — deleting it must always be a safe recovery
+> action.** Fragments obey it: delete every store and `--rebuild` reads `brain/fragments/` and puts
+> them back.
+>
+> **Documents did not.** The `documents` table was the **only** record of which external files had
+> been ingested, into which scope, with which title, status and trust. Delete a scope file — **the
+> documented recovery action** — and all of it was destroyed while every original file sat untouched
+> on disk.
+>
+> There is now an **append-only manifest beside the store, never inside it**, and `restore()` re-reads
+> the files it names. The test deletes the store and brings the documents back. **Append-only because
+> GR 4 says a record is never destroyed, and a forgotten document stays forgotten** — the manifest
+> records that too, so a restore does not resurrect what somebody removed.
+
+**The rest, each verified and fixed.**
+
+| | |
+|---|---|
+| `--scope` with **no value** silently became `global` | **Golden Rule 5 broken by a typo.** A company document went to the globally shared scope and nothing said so. Now refused |
+| A document producing **no chunks** was stored as a success | The **scanned-PDF case** — the most likely way a real standard fails to come in. Now refused, naming OCR |
+| An **all-refused** ingest crashed | `no such table: chunks`, *after* printing its refusals. A refusal was the correct and complete answer |
+| `heading_path` was built from the **parsing stack** while `parent_id` came from the numbering | Two columns describing one tree, able to disagree — **the same defect I had just fixed for `depth` and left here** |
+| Any `OperationalError` read as "no documents" | A malformed database or a lock became a plausible empty answer. `heron_context._indexed` already narrows for this reason and I had not followed it |
+| The citation dropped the **file path** | R-22 says a citation resolves to something a human can open; it carried a title and a clause number and nothing openable |
+| The `unindexed` route was reported as a genuine miss | The refusal said documents *are* indexed and none covers the request, while its own appended note said the opposite |
+| Retired chunks could **consume the route's window** | The lifecycle filter ran after each route had already limited itself. Each route now fills the pool with eligible rows |
+| The density **median** took the upper middle | On an even count. That number decides whether a route is viable |
+| A **typed suite count** in the README | I had bumped it by hand at every stage — six times — while the same line named the command that derives it. **The bumping was the evidence.** The number is gone |
+
+**What this says about the tests I wrote.** They were good at asserting the thing I had just built and
+poor at asserting what it would do with input I had not thought of. **Every hole above is an input
+shape, not a logic error** — a lowercased pattern, a quotation without a number, a clause number that
+is not unique, a flag with nothing after it, a file with no text. The suites now carry all of them.
+

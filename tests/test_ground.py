@@ -253,6 +253,46 @@ def main():
           "difflib and re are the whole comparison")
     print()
 
+    print("8b. The three holes a review found, each of which said 'ok'")
+    # Every one of these produced a PASSING report on a false claim. They are
+    # kept together because they share a shape: a sentence the checker never
+    # looked at is indistinguishable, from the outside, from a sentence it
+    # looked at and approved.
+    check(G.facts("Every duct shall carry OST_DuctCurves.") == ["ost_ductcurves"],
+          "a CATEGORY is a fact. The pattern was written case-sensitive and "
+          "facts() lowercases before running it, so OST_ anything matched "
+          "NOTHING and the sentence was skipped as factless")
+    check(G.facts("Set BuiltInParameter.RBS_DUCT_BOTTOM_ELEVATION.")
+          == ["builtinparameter.rbs_duct_bottom_elevation"],
+          "and so is a PARAMETER, for the same reason")
+
+    report = G.check('The clause says "Ducts shall be painted red" [9.1.1].',
+                     packet)
+    check(not report.ok,
+          "a fabricated QUOTATION carrying no number is flagged. It was "
+          "skipped as factless before the quote gate could run - so the one "
+          "gate that survived measurement never ran on the only kind of claim "
+          "it was built for")
+    report = G.check('The clause says "insulated to 25mm" [9.1.1].', packet)
+    check(report.ok, "while a real partial quotation still passes")
+
+    two = FakePacket([
+        FakePart({"chunk": "a:1", "locator": "4.1", "document": "Company"},
+                 "Ducts shall be insulated to 30mm."),
+        FakePart({"chunk": "b:1", "locator": "4.1", "document": "Project"},
+                 "Ducts shall be insulated to 40mm.")])
+    report = G.check("Ducts shall be insulated to 30mm [4.1].", two)
+    check(report.ambiguous and not report.ok,
+          "a locator that names TWO documents is AMBIGUOUS, not resolved to "
+          "whichever was added last. That silently checked a TRUE claim "
+          "against the wrong document and flagged it - the false alarm R-51 "
+          "exists to prevent, arriving through the citation")
+    report = G.check("Ducts shall be insulated to 30mm [a:1].", two)
+    check(report.ok,
+          "and citing the chunk id resolves it, which is what the ambiguous "
+          "report asks for")
+    print()
+
     print("9. R-52 - the report carries its thresholds and its denominator")
     report = G.check("Ducts shall be insulated to 50mm [9.1.1]. This is worth "
                      "a look. Drainage falls at 1:100 [9.1.1].", packet)

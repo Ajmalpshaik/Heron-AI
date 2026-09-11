@@ -162,8 +162,16 @@ _FACT = [
     re.compile(r"\b\d+(?:\.\d+)*\s*" + _UNITS + r"\b"),   # a dimension
     re.compile(r"\bdn\d+\b"),                             # a nominal bore
     re.compile(r"\b\d+(?:\.\d+){1,}\b"),                  # a clause number
-    re.compile(r"\bOST_[A-Za-z0-9_]+\b"),                 # a category
-    re.compile(r"\b[A-Za-z]+\.[A-Z][A-Za-z0-9_]*\b"),     # a parameter
+    # LOWERCASE, BECAUSE facts() RUNS THESE ON NORMALISED TEXT. Both of these
+    # were written case-sensitive - "OST_" and an uppercase letter after the
+    # dot - and normalise() lowercases before they run, so NEITHER EVER
+    # MATCHED. A sentence whose only claim was OST_DuctCurves or
+    # BuiltInParameter.RBS_DUCT_BOTTOM_ELEVATION produced no facts at all, was
+    # skipped, and left the report saying ok - which is R-50's list of
+    # checkable things quietly containing two entries that could not be
+    # checked. Found by a review; the test below now covers both.
+    re.compile(r"\bost_[a-z0-9_]+\b"),                      # a category
+    re.compile(r"\b[a-z]+\.[a-z][a-z0-9_]*_[a-z0-9_]+\b"),  # a parameter
     re.compile(r"\b\d+in\d+\b"),                           # a gradient, 1:100
     re.compile(r"\b\d+(?:\.\d+)?pct\b"),                    # a percentage
     re.compile(r"\b\d{4}\b"),                             # a year or release
@@ -340,6 +348,7 @@ UNDERSTATED = "understated"  # says LESS than the source. A PASS (R-51)
 FLAGGED = "flagged"          # a fact the source does not carry
 UNCITED = "uncited"          # a fact with no chunk behind it - a BUG (R-65)
 UNRESOLVED = "unresolved"    # it cites something this packet does not carry
+AMBIGUOUS_CITE = "ambiguous"  # the locator names more than one document
 
 PASSES = (SKIPPED, GROUNDED, UNDERSTATED)
 
@@ -417,8 +426,13 @@ class Report(object):
         return [c for c in self.claims if c.verdict == UNRESOLVED]
 
     @property
+    def ambiguous(self):
+        return [c for c in self.claims if c.verdict == AMBIGUOUS_CITE]
+
+    @property
     def ok(self):
-        return not self.flagged and not self.uncited and not self.unresolved
+        return (not self.flagged and not self.uncited and not self.unresolved
+                and not self.ambiguous)
 
     def lines(self):
         """The report a person reads. R-52: thresholds, denominator, ratios."""
@@ -437,6 +451,11 @@ class Report(object):
             out.append("           it states %s and cites nothing. R-21: an "
                        "uncited standards answer is a BUG, not a "
                        "low-confidence answer" % ", ".join(claim.added))
+        for claim in self.ambiguous:
+            out.append("AMBIGUOUS  %s" % claim.sentence[:70])
+            out.append("           more than one document in this packet has "
+                       "that clause number, so the check will not guess which "
+                       "one. Cite the chunk id instead")
         for claim in self.unresolved:
             out.append("UNRESOLVED %s" % claim.sentence[:70])
             out.append("           it cites a source this packet does not "
@@ -468,13 +487,33 @@ class Report(object):
 # The check
 # ---------------------------------------------------------------------------
 
+AMBIGUOUS = object()      # a locator that names more than one document
+
+
 def _cited(sentence, by_locator, by_chunk):
+    """The source a sentence cites, AMBIGUOUS, or None.
+
+    A LOCATOR IS NOT UNIQUE ACROSS DOCUMENTS, and the first version of this
+    stored one per locator in a dict - so when two documents both had a clause
+    "4.1", the second overwrote the first and a draft citing [4.1] was checked
+    against whichever happened to be ingested last. A TRUE claim about the
+    company standard was flagged as a fabrication because the project
+    specification's 4.1 won the dictionary.
+
+    That is the false alarm R-51 exists to prevent, arriving through the
+    citation rather than through the comparison. So every match is kept, and a
+    locator matching more than one document is AMBIGUOUS - which is reported
+    and asks for a chunk id, rather than guessed at.
+    """
     for found in _MARKER.findall(sentence or ""):
         key = found.strip()
         if key in by_chunk:
             return by_chunk[key]
         if key in by_locator:
-            return by_locator[key]
+            matches = by_locator[key]
+            if len(matches) == 1:
+                return matches[0]
+            return AMBIGUOUS
     return None
 
 
@@ -493,12 +532,24 @@ def check(draft, packet):
             continue
         by_chunk[cite["chunk"]] = (cite, part.body)
         if cite.get("locator"):
-            by_locator[cite["locator"]] = (cite, part.body)
+            by_locator.setdefault(cite["locator"], []).append(
+                (cite, part.body))
 
     claims = []
     for sentence in sentences(draft):
         found = facts(sentence)
-        if not found:
+
+        # A QUOTATION IS CHECKABLE WHETHER OR NOT IT CARRIES A NUMBER, and
+        # missing that let the one gate which survived measurement be skipped
+        # entirely. `The clause says "Ducts shall be painted red" [4.1]` has no
+        # number, no unit, no clause reference - so facts() was empty, the
+        # sentence was SKIPPED, and a fabricated quotation came back ok.
+        #
+        # A quotation asserts THESE ARE THE SOURCE'S WORDS. That is a claim
+        # about an indexed source whatever else the sentence contains.
+        quoted = bool(_QUOTED.search(_MARKER.sub(" ", sentence or "")))
+
+        if not found and not quoted:
             # R-50. No fact, nothing to invent, and flagging it would teach
             # people to ignore flags.
             claims.append(Claim(sentence, SKIPPED))
@@ -506,6 +557,9 @@ def check(draft, packet):
 
         marked = bool(_MARKER.search(sentence or ""))
         cited = _cited(sentence, by_locator, by_chunk)
+        if cited is AMBIGUOUS:
+            claims.append(Claim(sentence, AMBIGUOUS_CITE, added=found))
+            continue
         if cited is None:
             # TWO DIFFERENT WRONGS, AND THEY NEED DIFFERENT ANSWERS.
             #

@@ -314,7 +314,13 @@ def document_density(store):
         return {"chunks": 0, "median": 0, "worst": 0, "isolated": 0,
                 "total": 0}
     counts = sorted(len(near) for near in edges.values())
-    middle = counts[len(counts) // 2]
+    # THE MEDIAN OF BOTH MIDDLE OBSERVATIONS, not the upper one. This number
+    # is what decides whether the graph route is viable at all, so a dataset
+    # whose two central counts differ was getting an overstated median and
+    # could cross the decision boundary for arithmetic reasons.
+    half = len(counts) // 2
+    middle = (counts[half] if len(counts) % 2
+              else (counts[half - 1] + counts[half]) / 2.0)
     return {"chunks": len(counts),
             "median": middle,
             "worst": counts[-1],
