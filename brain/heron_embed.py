@@ -220,7 +220,9 @@ def _load_model():
 
     try:
         from model2vec import StaticModel
-        model = StaticModel.from_pretrained(name or "minishlab/potion-base-8M")
+        which = name or "minishlab/potion-base-8M"
+        model = StaticModel.from_pretrained(which)
+        _WHICH_MODEL[0] = "model2vec:%s" % which
         _MODEL_CACHE.append(lambda t: list(model.encode([t])[0]))
         return _MODEL_CACHE[0]
     except Exception:
@@ -228,7 +230,9 @@ def _load_model():
 
     try:
         from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer(name or "all-MiniLM-L6-v2")
+        which = name or "all-MiniLM-L6-v2"
+        model = SentenceTransformer(which)
+        _WHICH_MODEL[0] = "sentence-transformers:%s" % which
         _MODEL_CACHE.append(lambda t: list(model.encode(t)))
         return _MODEL_CACHE[0]
     except Exception:
@@ -236,6 +240,31 @@ def _load_model():
 
     _MODEL_CACHE.append(None)
     return None
+
+
+# WHICH trained model, not just THAT one is trained - and the difference is a
+# corrupted index. A vector was stamped `backend = "model"`, so changing
+# HERON_EMBED_MODEL, or installing model2vec beside sentence-transformers,
+# produced a DIFFERENT encoder wearing the same label. Every unchanged chunk
+# then satisfied the cache check and kept vectors from the old model: at a
+# different dimension nearest() silently discards them all, and at the same
+# dimension it computes meaningless cross-model dot products. Either way the
+# semantic route quietly stops working and nothing says so. Found by a review
+# 2026-09-11.
+_WHICH_MODEL = [None]
+
+
+def stamp():
+    """What to record beside a vector so a changed encoder invalidates it.
+
+    The backend name for `lexical`, which is one built-in implementation and
+    cannot change under a caller. The backend name AND the model for `model`,
+    which can.
+    """
+    name, _why = backend()
+    if name == MODEL and _WHICH_MODEL[0]:
+        return "%s:%s" % (name, _WHICH_MODEL[0])
+    return name
 
 
 def backend():
@@ -343,7 +372,7 @@ def index(store, force=False):
     library for nothing. Keyed on content, that costs zero.
     """
     ensure_tables(store)
-    name, _why = backend()
+    name = stamp()
     on_disk, _ = FRAG.load_all()
 
     embedded = skipped = 0
@@ -391,7 +420,7 @@ def index_chunks(store, force=False):
     except sqlite3.OperationalError:
         return 0, 0                      # no documents table: nothing ingested
 
-    name, _why = backend()
+    name = stamp()
     embedded = skipped = 0
     for row in rows:
         text = "%s\n%s" % (row["heading_path"] or "", row["text"] or "")

@@ -90,6 +90,16 @@ TOOLS = {
     # quietly becoming an editor.
     "heron_check":              (READ,    None),
 
+    # The multi-scope standards answer (HERON-RAG-LIB-001 and
+    # HERON-RAG-CNF-015, docs/20). READ, and the operation is None - it sends
+    # nothing to Revit and reads only this machine's own knowledge stores.
+    #
+    # IT OPENS MORE THAN ONE SCOPE AND THAT IS WORTH SAYING HERE, because it is
+    # the only tool that does. It does not POOL them: each is asked on its own
+    # and answers under its own label, which is the wall D-33 and Golden Rule 5
+    # describe. What crosses between them is a number and a clause number.
+    "heron_standards":          (READ,    None),
+
     # The Capability Gap report (HERON-AHR-GAP-001, docs/06 s6). READ, and the
     # operation is None for the same reason as the three above - it sends
     # nothing to Revit. What it reads is Heron's OWN audit trail, which is a

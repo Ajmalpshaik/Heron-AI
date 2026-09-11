@@ -296,7 +296,17 @@ def document_neighbours(store, chunk_id=None):
         rows = store.execute(
             "SELECT id, document_id, parent_id, locator, text "
             "FROM chunks").fetchall()
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as exc:
+        # ONLY "THE TABLE IS NOT THERE", and the broad version of this was the
+        # same defect heron_retrieve.documents() was corrected for a round
+        # earlier and this copy did not get. A locked database or a missing
+        # column returned {} - and document_density() then reported a
+        # zero-chunk, zero-density corpus, so the Stage 5 measurement that
+        # decides whether the graph route is ever worth a vote could record a
+        # clean empty reading where no measurement ran at all. That is D-52's
+        # plausible zero on the one number this module exists to produce.
+        if "no such table" not in str(exc):
+            raise
         return {}
 
     by_locator = {}

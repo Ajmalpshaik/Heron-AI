@@ -1049,13 +1049,27 @@ def restore(store):
     ensure_tables(store)
     out = Restored()
 
+    # RECONCILED BY DOCUMENT, NOT BY PATH, and the difference resurrects a
+    # deleted document. A document id is the content hash, so a file moved from
+    # A to B keeps ONE id across both lines. Keyed by path, A and B kept
+    # SEPARATE histories: forget the document at B and A's newest event was
+    # still `ingested`, so rebuilding the store skipped B's tombstone and
+    # re-ingested from A - bringing back exactly what somebody removed, which
+    # is Golden Rule 11's safe recovery action doing the opposite of recovery.
+    # Found by a review 2026-09-11.
+    #
+    # The path is the fallback for any line written before the id was recorded.
     latest = {}
     for line in manifest(store):
-        path = line.get("path")
-        if path:
-            latest[path] = line
+        key = line.get("document") or line.get("path")
+        if key:
+            latest[key] = line
 
-    for path, line in sorted(latest.items()):
+    for _key, line in sorted(latest.items(),
+                             key=lambda pair: pair[1].get("path") or ""):
+        path = line.get("path")
+        if not path:
+            continue
         if line.get("event") == "forgotten":
             out.skipped.append((path, "it was forgotten on purpose"))
             continue

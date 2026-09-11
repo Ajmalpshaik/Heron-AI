@@ -8,7 +8,7 @@
 """
 One check per defect an automated review found on 2026-09-11, so none returns.
 
-Four rounds, each after the one before it was called done: 16, 15, 8 and 7.
+Five rounds, each after the one before it was called done: 16, 15, 8, 7 and 8.
 
     python tests/test_review_findings.py
 
@@ -52,6 +52,7 @@ LONG_CLAUSE = ("No ducts shall be installed within the ceiling void unless a "
 
 def main():
     import heron_ground as G
+    import heron_graph as GRAPH
     import heron_ingest as I
     import heron_retrieve as R
     import heron_rerank as RERANK
@@ -491,12 +492,106 @@ def main():
     print()
 
     print("23. THE SERVED LOOKUP SAYS WHICH BACKENDS ANSWERED")
-    check("_backends()" in brain_source,
+    check("_backends(answer.route)" in brain_source,
           "brain.lookup() carries the backend state - the retrieval CLI "
           "printed it and the seam a host actually uses printed neither, so "
           "two machines could give two orders with nothing saying why")
+
+    # AND IT REPORTS WHAT RAN, not what is installed. The first version asked
+    # backend() after the search, so an identity or cache short circuit - which
+    # runs neither route - still claimed both had answered.
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_brain as BRAIN2
+    for route in ("identity", "cache", "nothing"):
+        said = BRAIN2._backends(route)
+        check(said["nearness"] == "not used" and said["rerank"] == "not used",
+              "the %r route reports both backends as 'not used' - it answers "
+              "without searching, so there was no shortlist for either to "
+              "touch" % route)
+    check(BRAIN2._backends("hybrid")["rerank"] != "not used",
+          "and a route that DID search reports the real backend")
     check('found.get("backends")' in server_source,
           "and the tool renders it")
+    print()
+
+    print("24. A VECTOR REMEMBERS WHICH MODEL MADE IT")
+    stamp = EMBED.stamp()
+    check(stamp,
+          "vectors are stamped with %r rather than just the backend name - "
+          "'model' covered every trained encoder, so changing "
+          "HERON_EMBED_MODEL left unchanged chunks holding vectors from the "
+          "OLD one: at a different dimension nearest() discards them all, at "
+          "the same one it computes meaningless cross-model dot products, and "
+          "nothing says so either way" % stamp)
+    check(EMBED.MODEL not in stamp or ":" in stamp,
+          "and where the backend IS a trained model the stamp names WHICH")
+    embed_source = inspect.getsource(EMBED)
+    check("name = stamp()" in embed_source,
+          "both index paths use it, so a changed encoder invalidates the "
+          "cache instead of satisfying it")
+    print()
+
+    print("25. A MOVED-THEN-FORGOTTEN DOCUMENT STAYS FORGOTTEN")
+    hold = tempfile.mkdtemp(prefix="heron-review-move-")
+    papers4 = tempfile.mkdtemp(prefix="heron-review-move-p-")
+    os.environ["HERON_KNOWLEDGE"] = hold
+    try:
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            SEARCH.ensure_tables(store)
+            EMBED.ensure_tables(store)
+            first = os.path.join(papers4, "spec.md")
+            with open(first, "w", encoding="utf-8") as handle:
+                handle.write("Spec\n\n1.1 Rule\n\nDucts to 25mm.\n")
+            got = I.ingest(store, first, added_by="tests")
+            moved = os.path.join(papers4, "renamed.md")
+            shutil.move(first, moved)
+            I.ingest(store, moved)
+            I.forget(store, got.document_id)
+
+            store.execute("DELETE FROM documents")
+            store.execute("DELETE FROM chunks")
+            store.db.commit()
+            out = I.restore(store)
+            check(not out.reingested,
+                  "a document moved from A to B and then forgotten is NOT "
+                  "resurrected - the manifest was reconciled BY PATH, so A "
+                  "and B kept separate histories and A's newest event was "
+                  "still 'ingested'. Rebuilding the store brought back "
+                  "exactly what somebody had removed")
+            check(any("forgotten" in reason for _p, reason in out.skipped),
+                  "and it is skipped by name, because it was forgotten on "
+                  "purpose")
+        finally:
+            store.close()
+    finally:
+        os.environ.pop("HERON_KNOWLEDGE", None)
+        shutil.rmtree(hold, ignore_errors=True)
+        shutil.rmtree(papers4, ignore_errors=True)
+    print()
+
+    print("26. A REFUSAL AND A DEFECT DO NOT COME BACK LOOKING THE SAME")
+    check("except brain.ContextRefused as why" in server_source,
+          "heron_check catches the NAMED refusal - it caught every Exception, "
+          "so a TypeError or a malformed store came back wearing the words of "
+          "a normal answer and the transport was never told the call failed")
+    check("except Exception as why" not in
+          server_source[server_source.index("def heron_check"):
+                        server_source.index("def heron_standards")],
+          "and nothing blanket is left in that handler")
+    check("raise ContextRefused(str(why))" in brain_source,
+          "and check_answer() translates the packet's own refusals, which is "
+          "what makes the narrow catch possible at all")
+    print()
+
+    print("27. A BROKEN STORE IS NOT A ZERO-DENSITY GRAPH")
+    graph_source = inspect.getsource(GRAPH)
+    check('if "no such table" not in str(exc)' in graph_source,
+          "document_neighbours() re-raises anything but a missing table - a "
+          "locked database returned {} and document_density() then reported a "
+          "zero-chunk, zero-density corpus, so the Stage 5 measurement that "
+          "decides whether the graph route is ever worth a vote could record "
+          "a clean empty reading where no measurement ran")
     print()
 
     if FAILURES:
@@ -508,10 +603,11 @@ def main():
     print("PASSED - every defect an automated review found on 2026-09-11 has")
     print("a check standing on it, and each one fails if it comes back.")
     print()
-    print("It proves nothing about the defects NOBODY has found yet. FOUR")
+    print("It proves nothing about the defects NOBODY has found yet. FIVE")
     print("rounds of this review, each after the one before it was called")
-    print("done, and each found real things - including a value moved between")
-    print("two requirements of one clause, which every rule here passed.")
+    print("done, and each found real things - a value moved between two")
+    print("requirements of one clause, and a whole multi-scope path that two")
+    print("stages built and no host could reach.")
     print("That is the honest measure of what a green suite is worth.")
     return 0
 

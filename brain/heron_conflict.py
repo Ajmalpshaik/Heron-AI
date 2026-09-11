@@ -206,6 +206,15 @@ class Value(object):
         self.path = path
         self.chunk = chunk
 
+    @property
+    def source(self):
+        """Scope and document together - what R-24 means by a source.
+
+        Two standards in one company store are two sources. One standard is
+        one source however many of its clauses come back.
+        """
+        return (self.label, self.document or "")
+
     def __repr__(self):
         return "<%s %s%s %s %s>" % (self.label, self.value, self.unit,
                                     self.document, self.locator)
@@ -217,6 +226,23 @@ class Disagreement(object):
     def __init__(self, unit, values):
         self.unit = unit
         self.values = values
+
+    @property
+    def sources(self):
+        """The distinct SOURCES, which are documents and not scopes.
+
+        R-24 says two SOURCES disagreeing. The first version grouped by scope
+        label, so two company standards giving 30mm and 40mm were treated as
+        one source and the disagreement was silently dropped - while the
+        comment beside it claimed it was excluding one DOCUMENT with two
+        clauses in it. The comment described one thing and the code did
+        another. Found by a review 2026-09-11.
+        """
+        out = []
+        for value in self.values:
+            if value.source not in out:
+                out.append(value.source)
+        return out
 
     @property
     def scopes(self):
@@ -241,7 +267,16 @@ class Disagreement(object):
 
     @property
     def would_be_preferred(self):
-        """The label docs/20 s2's hierarchy would weigh highest. NOT applied."""
+        """The label docs/20 s2's hierarchy would weigh highest. NOT applied.
+
+        None when every source is in the SAME scope, and that is not a
+        shortcoming - docs/20 s2 orders scopes, and it has nothing whatever to
+        say about two standards sitting in one company store. Printing
+        "the hierarchy would weigh company highest" when both sides ARE company
+        is a sentence that looks like guidance and carries none.
+        """
+        if len(set(v.scope for v in self.values)) < 2:
+            return None
         ranked = [v for v in self.values if v.scope in HIERARCHY]
         if not ranked:
             return None
@@ -251,7 +286,7 @@ class Disagreement(object):
         """The disagreement in words, and the word for what it is not."""
         said = ["THESE ANSWERS DISAGREE, and Heron has not decided between them:"]
         for value in self.values:
-            said.append("  %-22s %s%s   %s %s"
+            said.append("  %-18s %6s%-8s %s %s"
                         % (value.label, value.value, self.unit,
                            value.document or "", value.locator or ""))
         if self.same_locator:
@@ -282,6 +317,12 @@ class Disagreement(object):
                         "choosing from it, so that side may have no claim on "
                         "the question (W-8).")
         preferred = self.would_be_preferred
+        if preferred is None and len(set(v.scope for v in self.values)) < 2:
+            said.append("  THESE ARE BOTH IN ONE SCOPE, so the docs/20 s2 "
+                        "hierarchy has nothing to say about them - it orders "
+                        "scopes, not the documents inside one. Two standards "
+                        "in one store disagreeing is a question for whoever "
+                        "keeps that store.")
         if preferred:
             said.append("  docs/20 s2 would weigh %s highest of these. THAT "
                         "ORDERING HAS NOT BEEN APPLIED - both clauses are "
@@ -375,33 +416,50 @@ def disagreements(text, scopes=None, project=None, limit=5):
     found = []
     for unit in sorted(by_unit):
         group = by_unit[unit]
-        # ACROSS SCOPES ONLY. One document listing 25mm in one clause and 40mm
-        # in another is a document with two requirements in it, not a conflict -
-        # and R-24 is about two SOURCES disagreeing.
-        labels = set(v.label for v in group)
-        numbers = set(v.value for v in group)
-        if len(labels) < 2 or len(numbers) < 2:
+
+        # WHAT EACH SOURCE SAYS, AS A SET. Two things were wrong in the first
+        # version and a review found both:
+        #
+        #   * it grouped by SCOPE, so two standards in one company store were
+        #     one source and their disagreement vanished. R-24 says two
+        #     SOURCES, and a source is a document.
+        #   * it kept only the FIRST value each scope offered, so a clause
+        #     carrying "clearance 25mm, insulation 30mm" against one carrying
+        #     "clearance 25mm, insulation 40mm" matched on 25 and reported
+        #     nothing - the conflicting pair was thrown away before comparison.
+        #
+        # Comparing SETS fixes both and fixes a third thing neither finding
+        # named: two sources that both carry 25mm and 30mm AGREE, and reporting
+        # "two sources, two values" about them would have been noise.
+        says = {}
+        for value in group:
+            says.setdefault(value.source, {})[value.value] = value
+        if len(says) < 2:
             continue
 
-        # One value per scope, the first its answer offered, so a scope with
-        # five clauses in the shortlist does not fill the report with itself.
-        first = {}
-        for value in group:
-            first.setdefault(value.label, value)
-        chosen = [first[label] for label in sorted(first,
-                                                   key=lambda l: _rank(first[l]))]
-        if len(set(v.value for v in chosen)) < 2:
-            continue
+        shapes = [frozenset(v) for v in says.values()]
+        if len(set(shapes)) < 2:
+            continue          # every source says the same thing. Not a conflict.
+
+        chosen = []
+        for source in sorted(says, key=lambda k: _rank(says[k])):
+            for number in sorted(says[source]):
+                chosen.append(says[source][number])
         found.append(Disagreement(unit, chosen))
     return found
 
 
-def _rank(value):
-    """Sort key: the hierarchy's order, then the label. REPORTING ONLY."""
+def _rank(by_number):
+    """Sort key for one source: the hierarchy's order, then its name.
+
+    REPORTING ONLY. Nothing here drops or prefers anything - the order decides
+    which line is printed first and nothing else.
+    """
+    value = list(by_number.values())[0]
     try:
-        return (HIERARCHY.index(value.scope), value.label)
+        return (HIERARCHY.index(value.scope), value.label, value.document or "")
     except ValueError:
-        return (len(HIERARCHY), value.label)
+        return (len(HIERARCHY), value.label, value.document or "")
 
 
 def main(argv):

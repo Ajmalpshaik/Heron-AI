@@ -318,6 +318,117 @@ def main():
         shutil.rmtree(papers, ignore_errors=True)
     print()
 
+    print("9. TWO DOCUMENTS IN ONE SCOPE ARE TWO SOURCES")
+    home2 = tempfile.mkdtemp(prefix="heron-conflict-same-")
+    papers2 = tempfile.mkdtemp(prefix="heron-conflict-same-p-")
+    os.environ["HERON_KNOWLEDGE"] = home2
+    try:
+        def load2(scope, name, body, project=None):
+            path = os.path.join(papers2, name)
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(body)
+            store = SCOPE.open_scope(scope, project)
+            try:
+                I.ingest(store, path, added_by="tests")
+                SEARCH.index_chunks(store)
+                EMBED.index_chunks(store)
+            finally:
+                store.close()
+
+        load2(SCOPE.COMPANY, "current.md",
+              "Acme Standard 2026\n\nSection 3 Ductwork\n\n3.1 Insulation"
+              "\n\nDuctwork shall be insulated to 30mm.\n")
+        load2(SCOPE.COMPANY, "legacy.md",
+              "Legacy Acme Standard 2019\n\nSection 3 Ductwork\n\n"
+              "3.1 Insulation\n\nDuctwork shall be insulated to 45mm.\n")
+        same = C.disagreements("how thick should duct insulation be",
+                               scopes=[SCOPE.COMPANY, SCOPE.GLOBAL])
+        check(len(same) == 1,
+              "two standards in ONE company store disagreeing is reported - "
+              "the first version grouped by SCOPE, so they were one source and "
+              "this vanished, while the comment beside it claimed it was "
+              "excluding one document with two clauses")
+        check(same and len(same[0].sources) == 2,
+              "and it counts them as two SOURCES, which is what R-24 says")
+        check(same and "ONE SCOPE" in same[0].sentence(),
+              "the report says the docs/20 §2 hierarchy has nothing to say "
+              "about two documents inside one scope - it orders scopes. "
+              "Printing 'the hierarchy would weigh company highest' when both "
+              "sides ARE company looks like guidance and carries none")
+        check(same and same[0].would_be_preferred is None,
+              "so no preference is named at all")
+    finally:
+        os.environ["HERON_KNOWLEDGE"] = home
+        shutil.rmtree(home2, ignore_errors=True)
+        shutil.rmtree(papers2, ignore_errors=True)
+    print()
+
+    print("10. EVERY quantity is compared, not just the first one")
+    home3 = tempfile.mkdtemp(prefix="heron-conflict-two-")
+    papers3 = tempfile.mkdtemp(prefix="heron-conflict-two-p-")
+    os.environ["HERON_KNOWLEDGE"] = home3
+    try:
+        def load3(scope, name, body, project=None):
+            path = os.path.join(papers3, name)
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(body)
+            store = SCOPE.open_scope(scope, project)
+            try:
+                I.ingest(store, path, added_by="tests")
+                SEARCH.index_chunks(store)
+                EMBED.index_chunks(store)
+            finally:
+                store.close()
+
+        # THE SHARED VALUE COMES FIRST IN BOTH. Reducing each scope to its
+        # first quantity matched on 25mm and reported nothing, throwing the
+        # conflicting pair away before it was ever compared.
+        load3(SCOPE.COMPANY, "acme.md",
+              "Acme Standard\n\nSection 3 Ductwork\n\n3.1 Insulation\n\n"
+              "A clearance of 25mm applies and ductwork shall be insulated "
+              "to 30mm.\n")
+        load3(SCOPE.PROJECT, "tower.md",
+              "Tower B Spec\n\nSection 3 Ductwork\n\n3.1 Insulation\n\n"
+              "A clearance of 25mm applies and ductwork shall be insulated "
+              "to 40mm.\n", project="Tower B")
+        both = C.disagreements("duct insulation clearance",
+                               scopes=[SCOPE.COMPANY, SCOPE.PROJECT],
+                               project="Tower B")
+        check(len(both) == 1,
+              "the second quantity is still compared when the FIRST one "
+              "agrees - 25mm matched on both sides and 30 against 40 was "
+              "being discarded with it")
+        numbers = set(v.value for v in both[0].values) if both else set()
+        check("30" in numbers and "40" in numbers,
+              "and both conflicting values are in the report")
+
+        # AND TWO SOURCES THAT SAY THE SAME THING ARE NOT A DISAGREEMENT.
+        agree = C.disagreements("clearance",
+                                scopes=[SCOPE.COMPANY, SCOPE.COMPANY],
+                                project="Tower B")
+        check(all(len(set(v.value for v in d.values)) > 1 for d in agree),
+              "a unit where every source says the same thing is never "
+              "reported - comparing sets rather than counting values is what "
+              "keeps 'two sources, two numbers' from firing on agreement")
+    finally:
+        os.environ["HERON_KNOWLEDGE"] = home
+        shutil.rmtree(home3, ignore_errors=True)
+        shutil.rmtree(papers3, ignore_errors=True)
+    print()
+
+    print("11. THE MULTI-SCOPE PATH IS REACHABLE FROM A CONVERSATION")
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    import heron_brain as BRAIN
+    check("heron_standards" in TOOLS.TOOLS,
+          "heron_standards is a registered tool - `librarian()` since Stage 4 "
+          "and `disagreements()` since Stage 8 were BOTH callable only from a "
+          "command line, so the scope wall and the disagreement were invisible "
+          "to any host")
+    check(hasattr(BRAIN, "standards"),
+          "and the brain has the seam it is served through")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

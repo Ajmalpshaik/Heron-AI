@@ -1636,3 +1636,57 @@ docs/20 §4 also wants detection **at write time**. It cannot be built without a
 time the crossing is authorised because a host asked one question of two named scopes, but **at ingest
 nothing has been asked of anybody**, so reading another scope while writing into this one is a crossing
 [D-33](../../../DECISIONS.md) makes contractual. Recorded for the owner, not decided here.
+
+---
+
+### 2026-09-11 — a fifth round, eight more, and a whole path two stages built that no host could reach
+
+**Five rounds now: 16, 15, 8, 7, 8. Nothing in any of them was a false positive.** And I had told the
+owner a fifth round was not expected, because Codex had reported hitting its usage limit. It arrived
+anyway — recorded here because a prediction about somebody else's service is not a finding.
+
+### The one that covered two stages at once
+
+`heron_conflict.disagreements()` was callable only from its own command line and its own test.
+Checking that, **so was `heron_retrieve.librarian()` — since Stage 4.** The scope wall Stage 4 built
+and the disagreement Stage 8 surfaces were **both invisible to any host**, and the review found it on
+the half that was one commit old rather than the half that had been sitting there for a day.
+
+`heron_standards` is the tool, `brain.standards()` the seam. It asks each named scope on its own,
+returns each labelled answer, reports the disagreements, and **indexes each scope before asking**, so
+R-29's promise — nobody manages the index by hand — holds on the path a host actually uses.
+
+> **This is the third time in five rounds.** The citation, the fabrication check, and now two stages of
+> the multi-scope path. Building it, testing it and never wiring it is this session's most repeated
+> mistake by a distance.
+
+### And two defects inside the code I had just written
+
+**Two documents in one scope were treated as one source.** The grouping keyed on the scope label, so
+two company standards giving 30mm and 45mm cancelled each other out — while **the comment beside it
+claimed it was excluding one document with two clauses**. The comment described one thing and the code
+did another. R-24 says two *sources*, and a source is a document.
+
+**Only the first value per scope was compared.** A clause carrying *"clearance 25mm, insulation 30mm"*
+against one carrying *"clearance 25mm, insulation 40mm"* matched on 25 and reported nothing — the
+conflicting pair was thrown away before anything was compared.
+
+Both are fixed by comparing **value sets per source**, which also fixed a third thing neither finding
+named: two sources that both carry 25mm and 30mm **agree**, and "two sources, two values" would have
+fired on them.
+
+### The rest
+
+| | |
+|---|---|
+| a vector remembered **that** a model made it, not **which** | `backend = "model"` covered every trained encoder, so changing `HERON_EMBED_MODEL` left unchanged chunks holding the old model's vectors — silently discarded at a different dimension, silently meaningless at the same one |
+| a **moved then forgotten** document came back | the manifest reconciled by PATH, so A and B kept separate histories and A's newest event was still `ingested`. Golden Rule 11's safe recovery action doing the opposite of recovery |
+| `heron_check` caught **every** exception | so a `TypeError` or a malformed store came back wearing the words of an honest refusal. It catches the named refusal now, and `check_answer()` translates — which is what made the narrow catch possible |
+| `_backends()` reported what was **installed**, not what **ran** | an identity or cache short circuit runs neither route and still claimed both had answered |
+| `document_neighbours()` turned any database fault into an **empty graph** | a locked store read as a zero-density corpus — on the one number that decides whether the graph route is ever worth a vote. **The same defect `documents()` was corrected for in round two, in a copy that did not get it** |
+
+### What five rounds of this says
+
+The same three shapes keep coming back: **a seam nobody wired**, **a comment that describes something
+the code below it does not do**, and **a fix applied in one place and not its twin**. None of them is
+a logic error, and a green suite catches none of them.

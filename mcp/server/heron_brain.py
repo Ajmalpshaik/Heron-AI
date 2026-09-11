@@ -502,17 +502,40 @@ def lookup(request, revit=None):
             # SO" holding in the one place nobody looks and failing in the one
             # place everybody does. The same shape as the citation, found the
             # same way, by a review.
-            "backends": _backends(),
+            #
+            # AND IT IS ASKED ABOUT THIS ANSWER, not about the machine. The
+            # first version called backend() AFTER the search and reported what
+            # was AVAILABLE - so an identity or cache short circuit, which runs
+            # neither route, still claimed both had answered, and a warm-up
+            # finishing mid-request could label a lexically answered query
+            # "model". Found by a review 2026-09-11.
+            "backends": _backends(answer.route),
             "revit": revit,
         }
 
 
-def _backends():
-    """Which optional backends answered. Never raises, always a dict.
+# The routes that answer WITHOUT searching. heron_search.short_circuit() and
+# recall() return a fragment by exact phrasing or by what was asked before -
+# no nearness, no fusion, nothing to re-rank.
+UNSEARCHED = ("identity", "cache", "nothing", "empty", "unindexed")
+
+
+def _backends(route=None):
+    """Which optional backends answered THIS request. Never raises.
 
     Both are optional by construction and both report absence rather than
     failing, so asking them cannot be allowed to fail either.
+
+    `route` is what actually happened. On a route that never searched, the
+    honest answer is "not used" - reporting the installed backend there says
+    a cross-encoder read a shortlist that was never built.
     """
+    if route in UNSEARCHED:
+        return {"nearness": "not used",
+                "nearness_why": "this answer came back on the %s route, which "
+                                "does not search" % route,
+                "rerank": "not used",
+                "rerank_why": "there was no shortlist to re-read"}
     out = {}
     try:
         import heron_embed as EMBED
@@ -696,8 +719,20 @@ def check_answer(draft, request, path=None, revit=None, project=None):
             "importable: %s" % exc)
 
     with _Open() as store:
-        packet = CONTEXT.assemble(store, request, path=path or CONTEXT.STANDARDS,
-                                  revit=revit, project=project)
+        try:
+            packet = CONTEXT.assemble(store, request,
+                                      path=path or CONTEXT.STANDARDS,
+                                      revit=revit, project=project)
+        except (CONTEXT.OverBudget, CONTEXT.TooDeep,
+                CONTEXT.SourceMissing) as why:
+            # TRANSLATED, THE SAME WAY context() DOES IT. A refusal from the
+            # packet is an ANSWER - "nothing indexed covers this" is the
+            # sentence a caller needs. Without this the tool above had to catch
+            # every Exception to show it, which meant a real defect came back
+            # wearing the words of a normal answer.
+            _audit().record("knowledge.ground", False,
+                            fields={"scope": store.scope, "refused": str(why)})
+            raise ContextRefused(str(why))
         report = GROUND.check(draft, packet)
         _audit().record("knowledge.ground", report.ok,
                         fields={"scope": store.scope},
@@ -717,6 +752,98 @@ def check_answer(draft, request, path=None, revit=None, project=None):
                         "threshold": c.threshold, "added": c.added,
                         "citation": c.citation} for c in report.claims],
         }
+
+
+def standards(request, scopes, project=None, limit=5):
+    """Each named scope asked on its own, and where their numbers disagree.
+
+    THE MULTI-SCOPE PATH HAD NO SEAM AT ALL, and that covered two stages.
+    `heron_retrieve.librarian()` (Stage 4) and `heron_conflict.disagreements()`
+    (Stage 8) were both callable only from a command line and their own tests -
+    so the scope wall Stage 4 built and the disagreement Stage 8 surfaces were
+    invisible to any host. A review found it on the conflict half; the librarian
+    half had been sitting there since Stage 4 and nobody had looked.
+
+    NOTHING IS POOLED AND THAT IS THE LIBRARIAN'S GUARANTEE, NOT THIS
+    FUNCTION'S. Each scope is asked separately and answers under its own label;
+    this returns a list of them, never a merged one. D-33 and Golden Rule 5.
+
+    R-29 IS KEPT HERE. Each scope's chunk indexes are built before it is asked,
+    for the same reason `_Open` does it for the global scope: a document put in
+    through the CLI must not stay unsearchable until somebody remembers a
+    command.
+    """
+    try:
+        import heron_scope as SCOPE
+        import heron_search as SEARCH
+        import heron_embed as EMBED
+        import heron_retrieve as RETRIEVE
+        import heron_conflict as CONFLICT
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's knowledge layer needs PyYAML and it is not installed: %s\n"
+            "Install it with:  pip install --user pyyaml" % exc)
+
+    wanted = [s.strip().lower() for s in (scopes or []) if s.strip()]
+    if not wanted:
+        raise ValueError(
+            "name at least one scope. There are %s - and naming TWO is what "
+            "makes a disagreement visible at all."
+            % ", ".join(SCOPE.SCOPES))
+
+    # THE INDEXES FIRST, one scope at a time, each closed before the next.
+    for scope in wanted:
+        if scope not in SCOPE.SCOPES:
+            continue
+        if scope == SCOPE.PROJECT and not project:
+            continue
+        try:
+            store = SCOPE.open_scope(scope, project)
+        except Exception:
+            continue
+        try:
+            SEARCH.index_chunks(store)
+            EMBED.index_chunks(store)
+        except Exception:
+            # An index that cannot be built is a scope that answers
+            # "unindexed" by name, which find_documents already reports. It is
+            # not a reason to fail every other scope.
+            pass
+        finally:
+            store.close()
+
+    asked = RETRIEVE.librarian(request, scopes=wanted, project=project,
+                               limit=limit)
+    found = CONFLICT.disagreements(request, scopes=wanted, project=project,
+                                   limit=limit)
+
+    _audit().record("knowledge.standards", True,
+                    fields={"scopes": ",".join(wanted)},
+                    numbers={"answered": len([a for a in asked if a.answer]),
+                             "disagreements": len(found)})
+
+    return {
+        "request": request,
+        "scopes": [{
+            "scope": a.scope,
+            "label": a.label,
+            "skipped": a.skipped,
+            "route": a.answer.route if a.answer else None,
+            "note": a.answer.note if a.answer else None,
+            "candidates": a.answer.candidates if a.answer else [],
+        } for a in asked],
+        "disagreements": [{
+            "unit": d.unit,
+            "sources": ["%s - %s" % (label, doc) for label, doc in d.sources],
+            "same_locator": d.same_locator,
+            "would_be_preferred": d.would_be_preferred,
+            "sentence": d.sentence(),
+            "values": [{"label": v.label, "value": v.value, "unit": d.unit,
+                        "document": v.document, "locator": v.locator,
+                        "path": v.path, "chunk": v.chunk}
+                       for v in d.values],
+        } for d in found],
+    }
 
 
 def gaps(days=None):
