@@ -1,5 +1,13 @@
 # Heron AI
 
+> **Dear Modelers — please do not install this yet.**
+>
+> This repo is public only so the work is open. It is still not finished.
+> Let me complete everything first. I will announce it on LinkedIn and on the
+> website when it is ready to install.
+>
+> Until then, feel free to read and follow along.
+
 **A modular, agent-based AI engineering platform for BIM.**
 
 > The user focuses on BIM. Heron AI focuses on everything behind the BIM work.
