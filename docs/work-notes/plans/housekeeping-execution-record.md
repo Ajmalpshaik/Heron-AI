@@ -332,7 +332,7 @@ Derived by the command the README itself names:
 |---|---|---|---|---|
 | `README.md` | 52 | "159 of the 360 fragments are `PROVEN` as of 2026-09-09" | 167 | **STALE** |
 | `README.md` | 82 | "201 of the 360 fragments are `DRAFT` and 159 are `PROVEN`" | 193 / 167 | **STALE** |
-| `README.md` | 45 | "41 test suites, all passing bar three … two want the MCP SDK and one wants a built .NET test host" | Measured 36 pass, 2 genuine fail, 3 not run | **STALE** — the count is wrong, and the reasons omit two real failures |
+| `README.md` | 45 | it said "41 test suites, all passing bar three … two want the MCP SDK and one wants a built .NET test host" | Measured 36 pass, 2 genuine fail, 3 not run | **STALE** — the count is wrong, and the reasons omit two real failures |
 | `docs/README.md` | 5 | "159 of the 360 fragments are `PROVEN` as of 2026-09-09" | 167 | **STALE** |
 | `brain/README.md` | 35 | "360 as of 2026-09-08 — 308 `DRAFT`, 52 `PROVEN`" | 193 / 167 | **STALE**, and the worst of the three |
 | `brain/README.md` | 56 | "52 fragments are `PROVEN`; the other 308 … are `DRAFT`" | 167 / 193 | **STALE** |

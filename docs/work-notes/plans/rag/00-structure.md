@@ -230,6 +230,14 @@ because the test asserted the arithmetic rather than the intention. **Two of the
 [`05 §4.4`](../../../05-heron-brain.md) names do not exist at all** — nothing records success rate,
 nothing records recency of use.
 
+**And since 2026-09-11, the seam.** [`brain/heron_rerank.py`](../../../../brain/heron_rerank.py) bounds
+the re-rank to twenty pairs in one place, carries the cross-encoder's opinion **beside** the fused score
+rather than inside it, and reports `absent` on every machine without one — which at the time of writing
+is every machine this repository has ever run on. **No cross-encoder has run**: the weights need
+`huggingface.co`, so Stage 7 is half done and the half that is missing is the measurement. It needs a
+network rather than Revit or the PC, which is the one thing on this track that needs anything outside
+the machine at all.
+
 **The rule it inherits from the encoder.** `heron_embed.py` has two backends and **reports which one
 answered**; when the trained model is absent it falls back and says so. The re-ranker does the same: an
 installation without it is slower to be right, never broken. [D-01](../../../DECISIONS.md)'s promise —
@@ -793,7 +801,7 @@ Deciding all six adds three more, and each is small enough to answer in a senten
 
 | | Question | Raised by | Cheapest safe default |
 |---|---|---|---|
-| **S-1** | When the Librarian needs two scopes, does Heron ask two questions itself, or hand the choice back to the host? | 3.4 | **Hand it back.** D-01 says the host classifies; two scopes is a classification |
+| **S-1** | When the Librarian needs two scopes, does Heron ask two questions itself, or hand the choice back to the host? | 3.4 | ✅ **TAKEN AS THE DEFAULT 2026-09-11, and the two turned out not to conflict.** The brain asks each named scope **separately** — milliseconds against a local file — and **hands back one labelled answer per scope, choosing none**. That is *asking two questions* in mechanism and *handing it back* in contract, which is what D-01 and R-62 actually require: the brain reports what each scope holds, and deciding what the user meant is the host's act. **Flagged for the owner rather than closed by me** |
 | **S-2** | ~~How deep does a document's hierarchy go?~~ | 3.3 | ✅ **ANSWERED 2026-09-11 — arbitrary depth, as a `parent_id`.** Fixed levels are a guess about documents nobody has read yet, and QCS, ISO 19650, Ashghal and a company standard all nest differently. One column instead of a guess |
 | **S-3** | Is the confidence a number, or a sentence? | 3.1 | **Both, and the sentence is the contract.** `heron_retrieve` already says *"both routes agree"* in words, and words are what survived every other measurement in this repository |
 | **S-4** | **Take [Docling](https://docling.org/) for document parsing, or write it?** It is local, keeps documents on the machine, and preserves headings, tables and reading order — which is R-66 and §3.3 already built. It is also **by far the largest dependency this repository would have taken**: `brain/` needs `pyyaml` and nothing else today, and Docling brings a deep-learning parsing stack that **downloads models on first run** and wants Python 3.10+ | [the field reading §3.4](../../investigations/rag-state-of-the-art-2026-09-10.md) | ✅ **ANSWERED 2026-09-11 — write it, and let one real PDF decide.** Not a preference: the simple parser is written, run against **one real QCS section**, and the output is read. Clause numbers and headings come out clean → **done, no dependency**. It cannot cope → **take Docling, knowing exactly why.** The same method that settled the graph route — six measurements rather than an argument ([`34 §2.13`](../../../34-patterns-adapted.md)). **500 MB against a `brain/` that needs 0.7 MB is not a change to make on a guess** |

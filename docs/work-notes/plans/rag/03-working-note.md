@@ -29,10 +29,16 @@ and deliberately left alone.
 | | |
 |---|---|
 | **The shape** | **DECIDED 2026-09-10 — all six.** [`00-structure.md`](00-structure.md). Becomes **a numbered decision** when the note is agreed; not written to [DECISIONS.md](../../../DECISIONS.md) yet |
-| Stage 0 — measure and record | **not started.** One measurement taken (§3) and **not yet written into `retrieval-history.md`** |
-| Stage 0b — say the confidence out loud | **not started.** New, from the decision. Costs almost nothing, needs nothing, and every later measurement is read against it |
-| Stage 1 — a document can go in | **not started.** No `documents` table, no `chunks` table, no ingester. **Now also carries hierarchy** — the one thing that cannot be retrofitted cheaply |
-| Stages 2 to 8 | **not started**, blocked on Stage 1 |
+| Stage 0 — measure and record | **DONE for `lexical`, BLOCKED for `model`.** [`retrieval-history.md`](../../../../brain/retrieval-history.md) now carries 360-fragment rows, both checkers run at 360, and the two backends compared at the same corpus size for the first time. **No `model` run was taken** — this container refuses `huggingface.co`, and the row says so rather than borrowing one |
+| Stage 0b — say the confidence out loud | **DONE for the reporting half (R-34, R-35, R-61). NOT built: the acting half (R-56 to R-59).** `heron_retrieve.Contest`, `tests/test_contest.py`. The floor those need is **derived from a measurement or not set** (R-60), and the measurement says **not on this backend** — twelve questions, every column overlapping. **W-8** |
+| Stage 1 — a document can go in | **DONE 2026-09-11.** `documents` and `chunks` tables, [`brain/heron_ingest.py`](../../../../brain/heron_ingest.py), hierarchy at arbitrary depth, the heading path, the rule-and-exception split, and `--boundaries` for a person to read. **PDF is the one format that needs an optional reader** — everything else is standard library |
+| Stage 2 — a document comes back out | **DONE 2026-09-11.** `find_documents()`, a chunk FTS index, chunk vectors, and the first document measurement. **Alongside fragments, never fused with them** |
+| Stage 3 — citation, refusal, fabrication check | **DONE 2026-09-11, with R-45 part-done and saying which part.** `heron_ground.py`, the guard, citations bound to the exact chunk |
+| Stage 4 — the Librarian picks the scope | **DONE 2026-09-11.** `heron_retrieve.librarian()` — one query per scope, two labelled answers, nothing pooled |
+| Stage 5 — document nodes, and the density count | **COUNTED 2026-09-11.** Edges derived, density an order of magnitude below the fragment graph, **and the route still has no weight** |
+| Stage 6 — maintenance | **DONE 2026-09-11.** Re-index on change by content hash, duplicate clauses at write time, and the host rebuilds both halves |
+| Stage 7 — the re-ranker | **HALF DONE 2026-09-11, and the half that is done is the one this machine can prove.** [`brain/heron_rerank.py`](../../../../brain/heron_rerank.py) is the seam, bounded to twenty pairs in one place; `tests/test_rerank.py` asserts that with nothing installed the shortlist comes back in *exactly* fusion's order, and the tool says `Re-rank: absent` out loud. **The after-measurement is NOT taken** — no cross-encoder has ever run here, because the weights need `huggingface.co`. **W-9**, and `A10` in [NEEDS-CHECKING.md](../../../NEEDS-CHECKING.md) |
+| Stage 8 — trust and conflict | **HALF DONE 2026-09-11, and the halves split on who has to decide.** **Conflict is built** — [`brain/heron_conflict.py`](../../../../brain/heron_conflict.py), `tests/test_conflict.py`: company 30mm against project 40mm now says it disagrees, resolves nothing, and names the docs/20 §2 hierarchy while explicitly not applying it. **Trust is blocked on Q-C** — two of R-25's four signals do not exist, and whether Heron keeps a usage log is the owner's call. [02 §11](02-implementation.md) says the decision is written down BEFORE the weights move, so no weight moved |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
 
 ---
@@ -104,25 +110,37 @@ Each of these is a sentence that was true when written and is false now.
 
 | # | Where | Says | Actually |
 |---|---|---|---|
-| **W-1** | [`brain/README.md`](../../../../brain/README.md), the `heron_embed.py` row | the `model` backend *"has never run (`A7`)"* | it runs. `python brain/heron_embed.py` prints `Backend: model` |
-| **W-2** | [`brain/README.md`](../../../../brain/README.md), the `retrieval-history.md` row | the file *"currently records the built-in backend collapsing as the library grows, which is the evidence for `A7`"* | `A7` is closed. The row describes the evidence for a thing that has already happened |
-| **W-3** | [`tests/test_embed.py`](../../../../tests/test_embed.py), closing text | *"it could not be tested here, because this container's network refuses huggingface.co. A7 in NEEDS-CHECKING.md is that run"* | the suite **just ran on the model backend** and printed `Backend in use: model` eight lines above this sentence |
-| **W-4** | [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) | eleven rows, every one `lexical`, last at 59 fragments | 360 fragments, `model`. **The file written to prevent a stale retrieval number is carrying one** |
+| **W-1** | [`brain/README.md`](../../../../brain/README.md), the `heron_embed.py` row | the `model` backend *"has never run (`A7`)"* | it runs. `python brain/heron_embed.py` prints `Backend: model` — **on a machine that can fetch the weights.** ✅ **CLOSED 2026-09-11**, and rewritten to say **when it runs and when it does not**, because *"it runs"* flat is the same kind of environment-free sentence as the one it replaces |
+| **W-2** | [`brain/README.md`](../../../../brain/README.md), the `retrieval-history.md` row | the file *"currently records the built-in backend collapsing as the library grows, which is the evidence for `A7`"* | `A7` is closed. The row describes the evidence for a thing that has already happened. ✅ **CLOSED 2026-09-11.** And *"collapsing"* was the wrong word: measured at 360, the tracked fragment sits at **118th of 360 by words** against **17th of 59** — it is **sinking in proportion**, not falling out |
+| **W-3** | [`tests/test_embed.py`](../../../../tests/test_embed.py), closing text | *"it could not be tested here, because this container's network refuses huggingface.co. A7 in NEEDS-CHECKING.md is that run"* | the suite **just ran on the model backend** and printed `Backend in use: model` eight lines above this sentence. ✅ **CLOSED 2026-09-11 — and not by swapping one fixed claim for another.** The sentence was **false** on 2026-09-10 and is **true again** in the container it was corrected in, so it now **reports which backend answered THIS run**. A sentence that flips with the network is a guess about the machine, not a finding |
+| **W-4** | [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) | eleven rows, every one `lexical`, last at 59 fragments | 360 fragments, `model`. **The file written to prevent a stale retrieval number is carrying one.** ⚠️ **HALF CLOSED 2026-09-11.** The corpus size is fixed — rows at 360, both checkers run there, and the two backends compared at one size. **The `model` row is still owed** and cannot be taken where `huggingface.co` is blocked. **It is not borrowed from §3 and re-presented as today's run** |
 | **W-5** | [`brain/README.md`](../../../../brain/README.md), the dependency table | `pyyaml` is the whole list | **`model2vec` is used too** — it is what makes `Backend: model` work. Somebody following the instructions exactly installs `pyyaml`, gets the weaker backend, and is told nothing |
 | **W-7** | This plan itself, about ten times | `QCS 2014 §21.3.2 Insulation`, `Section 21 Mechanical` | **Invented as an illustration and never verified.** Whether QCS Section 21 is the mechanical section is not known here. **A plan about not fabricating clause numbers, fabricating a clause number** — left visible, flagged in [`00-structure.md` §3.3](00-structure.md), and replaced when Q-A names the real section |
 | **W-6** | The repository has **no `requirements.txt`, no `pyproject.toml`, no `setup.py`** | — | [`tools/setup.ps1`](../../../../tools/setup.ps1) builds and deploys the **add-in** and installs no Python package at all. [`docs/07`](../../../07-installation-and-update.md) specifies an installer that *"checks required dependencies"* and a Dependency Agent that *"check[s] and install[s]"* them — **designed, not built.** So the Python half of Heron is installed by hand, from a list that is wrong (W-5) |
+
+| **W-8** | The floor that [R-56](01-requirements.md) and R-58 stand on | Stage 0b would *"drop candidates with no claim"* and *"refuse a question nothing covers"*, needing nothing | **Found 2026-09-11 by building the measurement first, which is why it was built first.** [R-60](01-requirements.md) says the floor is derived from that measurement and from nothing else — and **at 360 fragments on `lexical` the measurement does not separate a BIM question from a question about cats.** Twelve questions, **every column overlaps**: *"how do I bake sourdough bread"* has the widest winning gap of all twelve. **Reciprocal rank fusion keeps order and discards strength**, so the fused score never could; and the two surviving magnitudes fail because `heron_embed`'s own docstring says the built-in backend **"IS NOT MEANING"**. **So R-56 to R-59 are blocked on the `model` backend, which is blocked on the network.** Numbers in [`retrieval-history.md`](../../../../brain/retrieval-history.md) |
+
+| **W-9** | Stage 7's own done-when, in [`02-implementation.md` §10](02-implementation.md) | a before-and-after measurement exists at the same corpus size | **only the before exists.** The seam is built and the absent half is measured — at 360 fragments the tracked question comes back at **0.0246 with a 2.1-rank lead, identical to the Stage 0b run**, so the seam is provably inert when nothing is installed. **No cross-encoder has ever run in this repository.** `huggingface.co` answers `CONNECT tunnel failed, response 403` from this container (re-checked 2026-09-11) while `pypi.org` answers 200, so it is that host's policy rather than a broken network — the same block [`heron_embed.py`](../../../../brain/heron_embed.py) recorded on 2026-08-28. **Nothing was estimated to fill the gap and no stub's number was written down as a result.** `A10` is the run |
 
 **W-5 and W-6 were found on 2026-09-10 by the owner asking a question** — *does a new person
 installing from GitHub get this automatically?* The answer is that the **add-in half installs itself
 and the Python half does not**, and this track makes it sharper rather than causing it: the plan adds
 **optional** packages (the re-ranker, possibly a PDF reader), and every one of them degrades silently
-when absent. **Silent degradation plus an install list nobody can follow is how a user ends up on the
+when absent. **Stage 7 made that concrete on 2026-09-11**: `sentence-transformers` is the third
+optional package and the first one that **announces itself before it downloads** — 500 MB to 2 GB,
+said before rather than during. W-5's table still does not mention it, and deliberately: W-5 belongs
+to the install thread, and fixing it inside Stage 7's commit is the widening this folder forbids. **Silent degradation plus an install list nobody can follow is how a user ends up on the
 weaker backend permanently.** W-6 is the gap; a dependency manifest would close both.
 
 **W-4 is Stage 0** and is fixed by doing the work, not by editing the file. **W-1 to W-3 are three
 sentences** and could be corrected in ten minutes — deliberately not done here, because a documentation
 fix folded into a planning commit is the widening this folder forbids. They are logged so whoever picks
 up Stage 0 fixes them in the same breath as the measurement, which is where they belong.
+
+> **Closed 2026-09-11, in that same breath, exactly as this paragraph asked.** W-1, W-2 and W-3 are
+> corrected; W-4 is half closed and says which half. **W-5, W-6 and W-7 are untouched** — W-5 and W-6
+> belong to the install thread (R-71 to R-79) and W-7 waits on Q-A naming a real clause. Closing them
+> here would be the widening this folder forbids, in the commit that closed the rest.
 
 ---
 
@@ -206,6 +224,23 @@ cloud, the opt-in may be worth building, or it may be a setting nobody will ever
 switch with no user.
 
 ---
+
+### Q-E — may an INGEST read another scope? *(raised 2026-09-11 by building Stage 8)*
+
+[docs/20 §4](../../../20-knowledge-trust-and-conflict.md) asks for conflict detection **at write
+time** as well as read time, and gives a good reason: resolving a conflict once, at ingest, is far
+cheaper than resolving it on every query, and it stops the knowledge base accumulating contradictions
+in the first place.
+
+**It cannot be built without answering a contractual question first.** At read time the crossing is
+already authorised — a host asked one question of two named scopes, and `librarian()` opens each on
+its own. **At write time nothing has been asked of anybody.** Finding a conflict at ingest means
+reading ANOTHER scope while writing into this one, and [D-33](../../../DECISIONS.md) makes
+cross-scope a contractual matter rather than a technical one.
+
+*Worth saying out loud:* the read-time version already crosses, and deliberately keeps that crossing
+to **a number and a clause number, never a clause**. A write-time version could hold to the same
+limit. Whether it may happen at all is still the owner's call.
 
 ## 6. Log
 
@@ -709,3 +744,1525 @@ stranger can check it**, next to the list of what was actually read.
 **The section names only the projects that changed something**, and points at `33` and `34` for the full
 sixteen with what each became — including the rejections, because a rejection with a number is worth as
 much as an adoption.
+
+### 2026-09-11 — the first code, and the measurement that stopped half of it
+
+**Stage 0 and the reporting half of Stage 0b.** The first code this track has produced.
+
+**What ran, and what it said.**
+
+```bash
+python brain/heron_scope.py --rebuild                 # 360 fragments
+python brain/heron_embed.py                           # Backend: lexical
+python brain/heron_fragment.py                        # 198 PROVEN
+python tools/check-routing.py                         # exit 0, first run at 360
+python tools/check-intrusion.py                       # exit 0, first run at 360
+```
+
+**Stage 0 is done for one backend and blocked for the other, and the blocked half is not faked.**
+`huggingface.co` is refused by this container — the proxy answers **403 to `CONNECT`**, which is the
+**same block [`heron_embed.py`](../../../../brain/heron_embed.py) recorded on 2026-08-28**, still in
+force. `model2vec` is not installed here either and installing it would not help: the weights come
+from the host that is blocked. **So no `model` measurement was taken, and the 2026-09-10 numbers in
+§3 above were not copied into `retrieval-history.md` as though they were today's.**
+
+> **What came out of measuring `lexical` at 360 anyway — and it is the thing §3.2 said nobody had.**
+>
+> §3.2 says two variables moved at once between the last recorded row and today: **the corpus went
+> 59 → 360 AND the backend went `lexical` → `model`**, and no honest reading of that pair separates
+> them. Measuring the **old backend at the new size** separates them, and costs nothing:
+>
+> | Route | `lexical` at 360 | `model` at 360 | |
+> |---|---|---|---|
+> | words | 118th of 360 | outside the first 100 | **the same, and it must be** — the words route never touches the embedding backend, so two runs agreeing where they cannot differ is a small check on both |
+> | nearness | **194th of 360** | **19th** | **the trained encoder, measured against its own alternative at one corpus size for the first time** |
+>
+> **The words route's decline is corpus size. The nearness route's improvement is the backend.**
+> 17th of 59 is 29% of the library; 118th of 360 is 33%. It is sinking in proportion rather than
+> falling out.
+
+**Stage 0b was built as far as the evidence allows, and no further.**
+[`heron_retrieve.Contest`](../../../../brain/heron_retrieve.py) reports the winner's lead and the
+shortlist's spread **in units of one rank of fusion**, how many candidates both routes found, the
+small-pool caveat (**R-61**, which was already a comment inside `find()` and is now part of the
+measurement rather than a second copy of it), and the **two magnitudes fusion discards** — FTS5's bm25
+and the raw nearness score, neither of which anything ranks on. `tests/test_contest.py`, 18 checks.
+
+**The one comparison it makes is not a dial.** A gap under **one** rank is a gap narrower than the
+quality nudge, so the order **could have been set by the fragments' status** rather than by either
+route preferring one. That is arithmetic, and the test asserts it as arithmetic — the way the test
+that caught the nudge being eight times too big did.
+
+> ## And then the measurement stopped R-56 to R-59, which is why it was built first
+>
+> The plan is explicit that **report it, act on it and refuse on it are one measurement at three
+> thresholds** ([`00-structure.md` §3.7](00-structure.md)), and that **R-60**'s floor is derived from
+> that measurement and from nothing else. **So the measurement was built first, and then it was
+> read.** Twelve questions at 360 fragments — six about BIM, six with no BIM content at all:
+>
+> | | winner's lead | words matched | best bm25 | best nearness |
+> |---|---|---|---|---|
+> | six BIM | 2.1 – 8.1 ranks | 265 – 360 | −4.27 – −10.37 | 0.19 – 0.59 |
+> | six not BIM | 0.9 – 29.9 ranks | 245 – 360 | −0.00 – −6.59 | 0.15 – 0.47 |
+>
+> **Every column overlaps.** *"How do I bake sourdough bread"* has the **widest winning gap of all
+> twelve**. *"What is the best food for a cat"* scores **0.0254** where the tracked duct question
+> scores **0.0246** — the cat question wins. **A floor anywhere here cuts a real question to reach an
+> unreal one.**
+>
+> **And the reason is not bad luck.** Reciprocal rank fusion keeps **order** and throws **strength**
+> away by construction, so the fused score never could have carried this. The other two columns fail
+> for a reason `heron_embed.py` states about itself in capital letters: the built-in backend **"IS NOT
+> MEANING"**. Asking it to tell a duct from a cat asks it for the one thing it says it cannot do.
+>
+> **So the floor is not set. That is a result, not a postponement** — and it belongs on the `model`
+> backend, where nearness *is* meaning. **W-8.**
+
+**A first answer was published inside this session and then withdrawn by measuring more.** At three
+questions the words route looked selective for real questions and not for unreal ones, and that was
+written into the code as a promising shape. At twelve it is not true. **Three questions is an
+observation; twelve is the measurement**, and the docstring now says the opposite of what it said an
+hour earlier. Recorded because a session that reports only its final answer hides the fact that the
+first one was wrong.
+
+**What was refused.** No keyword list of BIM words (**R-60**). No classifier in `brain/` (**R-62**).
+No floor chosen because it happened to sort twelve questions nicely (**R-55**). And **nothing drops
+and nothing refuses** — `tests/test_contest.py` check 6 asserts that **absence**, so adding it later
+takes a deliberate hand rather than a quiet edit.
+
+**Found while working, and fixed rather than recorded, because this change caused it.** Adding a test
+suite made a stated count wrong in [`README.md`](../../../../README.md) — it said *"41 test suites"* —
+and made a dated count in [`HANDOVER.md`](../../../HANDOVER.md) read as a current one. `check-docs.py` caught both.
+[The execution record](../housekeeping-execution-record.md) **quotes** the old README line, so it is
+marked as a quotation instead of rewritten — **rewriting a record of what a file said is how a record
+stops being one.**
+
+**Next.** Stage 1 — the `documents` and `chunks` tables and `brain/heron_ingest.py`
+([`02-implementation.md` §4](02-implementation.md)). **It is blocked by none of this**: no network, no
+model, no Revit. R-56 to R-59 wait for a machine that can fetch weights, and the *before* they will be
+read against is now recorded.
+
+### 2026-09-11 — Stage 1: the half of the store that did not exist
+
+**`documents` and `chunks`, and [`brain/heron_ingest.py`](../../../../brain/heron_ingest.py).**
+Every table beside these two was about Heron's own code library, so every requirement about
+citations, standards and provenance had nothing to act on. It has something now.
+
+**Closes R-05 to R-12, R-36, R-37, R-66 to R-70, R-82 and R-84.** `tests/test_ingest.py`, 63 checks.
+
+**Three are closed only in part, and say which part**: R-06 (PDF needs an optional reader), R-80
+(marked, and the guard that reads the mark is Stage 2), and **R-83** — a document now has identity and
+a lifecycle, but **two versions of one document are not linked**, so *"which edition is this clause
+from?"* is answerable and *"what did it say before?"* is not.
+
+**The two tests were written before the chunker, in the order the plan set.**
+
+- **R-68 first.** A rule and its exception never land in different chunks. Five qualifiers were named
+  in the plan — *except, unless, provided that, save that, however* — and four more were added while
+  writing it: *other than, save where, save as, but not*. **When no legal split point exists the chunk
+  stays oversized and is flagged.** Refusing to cut is a real outcome, not a failure.
+- **R-08 second.** Five token shapes survive whole. The test also asserts **the text really was cut
+  somewhere**, because otherwise it passes by splitting nothing — which is the shape of a test that
+  proves its own subject never ran.
+
+**What the design settled, and why each is not a guess.**
+
+| | |
+|---|---|
+| **Parent from the numbering** | `4.1.1`'s parent is `4.1` **because the document numbered it that way**, and only if that fails does it fall back to the heading stack. The document is better evidence than the position |
+| **Title from the document** | not from the filename. `heron_scope.py` already refuses to name a store after a file *"because renaming the file loses the knowledge"* — and a citation reading `qcs-sec-21-final-v3-USE-THIS` is not one a person can check against a printed standard |
+| **`.docx` needs nothing** | it is a zip of XML, and its `Heading 2` styles are exactly the structure R-66 wants |
+| **PDF is the one exception** | font encodings and compressed streams cannot be standard library. It is **optional and loud**, the contract `heron_embed.py` already honours: absent means a smaller Heron, never a broken one, and it names what would fix it |
+
+> **`MAX_CHARS = 2000` is the one number here that was chosen rather than derived, and it says so in
+> the file.** Nearly every chunk is decided by structure — a clause is a chunk because the document
+> says so. The limit exists so one unnumbered block does not become a chapter-sized chunk, and every
+> chunk it creates records `split_by = "length"` so the risky ones can be **listed rather than
+> guessed at**. It is one of the numbers to check when the first real document is read.
+
+**Four defects found by running the thing, not by reading it.** All four were in code written in
+this batch.
+
+1. **The command was broken while every test passed.** `main()` upper-cased the scope name against
+   `heron_scope`'s lowercase constants, so **every CLI call died** — and all thirty-odd checks were
+   green, because they call `ingest()` and never the command. **A test now calls `main()` too.**
+2. **Heading-only chunks were stored empty.** *"Section 4 Mechanical Works"* often has no prose of its
+   own; the row must exist for its children to point at. An empty chunk is one **retrieval can
+   return**, and returning nothing while looking like an answer is the failure this whole plan is
+   about. It now holds its own heading as its text.
+3. **The splitter took three tries, and only measuring found the second two.** It was **recursive**,
+   so a long document ended on `RecursionError` rather than on a chunk. Made iterative, it re-scanned
+   everything still to come at every cut — **quadratic**, and measured rather than suspected:
+
+   | | before | after |
+   |---|---|---|
+   | 102 KB | 0.25 s | 0.01 s |
+   | 408 KB | 3.8 s | 0.05 s |
+   | 1.6 MB | **60 s** | **0.26 s** |
+
+   It now scans a window of the next chunk's worth of text. **The window runs past the limit by a
+   margin on purpose** — a token straddling its edge must still be seen whole, or the fix for the
+   speed would have broken R-08 silently. **The test walks a token and a qualifier across that edge
+   at eleven offsets**, because that is the one place this optimisation could have cost a rule.
+4. **Re-ingesting printed the filename** while the row held the document's own title, so one document
+   had two names depending on which run you read.
+
+**All four were fixed rather than recorded, because all four are defects in the code written in this
+same batch.** The rule about recording rather than fixing exists so a batch stays reviewable; it is
+not a licence to ship a broken command.
+
+> **Three of the four were invisible to a passing test suite.** The command was broken while every
+> check was green; the splitter was 230 times too slow at the size that matters and nothing asserted
+> a time. **A suite that only calls the functions does not test the program**, and *"it works"*
+> measured on a 400-character fixture says nothing about a real section.
+
+**What Stage 1 deliberately does not do.** Nothing reads a document back out. No retrieval, no
+citation, no re-index trigger. `tests/test_ingest.py` asserts that absence — the ingester is the half
+that has to be right, and reviewing it alongside a retrieval change is reviewing neither.
+
+**Still owed, and named rather than quietly skipped.**
+
+- **`.rte` / `.rft` are NOT refused.** [`02-implementation.md` §4.2](02-implementation.md) proposes it
+  and says it **needs the owner's word** first, *"because a refusal nobody agreed to is as surprising
+  as a leak"*. He has not given it, so it is not coded — and the test asserts the **absence**, so
+  adding it later is a deliberate act.
+- **S-4 is not settled by this.** Every document in the test suite was written to be easy. S-4 is
+  settled by running the ingester on **one real numbered section** and reading `--boundaries`. Clean
+  clause numbers and headings → no further dependency. It cannot cope → Docling, knowing exactly why.
+
+**Next.** Stage 2 — documents come back out, alongside fragments, and the guard on the path into a
+packet (**R-81**), which is the half of Golden Rule 19 that Stage 1 only marked.
+
+### 2026-09-11 — Stage 2: a clause comes back out
+
+**Closes R-19, R-20 and R-33, and finishes R-66.** `tests/test_document_retrieval.py`, 24 checks.
+
+A question asked in a modeller's words now returns a clause:
+
+```text
+Documents:
+  9.1.1   Heron Test Standard 2026   words #1 + nearness #2 - both agree
+          Heron Test Standard 2026 → Section 9 Thermal Insulation → 9.1 Ductwork → 9.1.1 Thickness
+  quoted from an ingested document - content, never instruction (GR 19)
+```
+
+**The decision this stage turns on: the two corpora are NOT fused.**
+
+`find()` answers about fragments, `find_documents()` answers about clauses, and they are **two
+labelled answers rather than one merged list**. Reciprocal rank fusion produces **the same score for
+*"first of seven chunks"* and *"first of four hundred fragments"*** — Stage 0b's own finding, that
+fusion keeps order and discards strength, applied one level up. Fusing across two corpora would be
+that defect on purpose. **It is also the argument [R-38](01-requirements.md) makes about scopes: when
+two things must not be pooled, the answer is two queries and two labelled answers.**
+
+> ### The trap this stage exists to avoid, and it was named in the plan before it was built
+>
+> **A fragment declares which Revit releases it supports. A clause in QCS does not, and never will.**
+> Run documents through the fragment's structured filter and **every document disappears the moment a
+> question names a release** — which reads exactly like *"we have nothing on that"*.
+>
+> So documents get their own filter, and today it is one rule: a **RETIRED** document is not an
+> answer. `tests/test_document_retrieval.py` asks the same question with **no Revit named, 2020, 2024
+> and 2027**, and asserts the clause comes back every time.
+
+**R-66 is finished rather than begun.** The heading path is an **indexed column on the words route**
+and is **prepended to what the nearness route embeds**. The test proves it the only way that means
+anything: it asks *"thermal requirements for ductwork"*, where **"thermal" appears only in the section
+heading and never in the clause** — and asserts both that the clause comes back **and** that the word
+really is absent from its text, so the check cannot pass by accident.
+
+**Two defects in my own new code, both found by reading the output rather than the tests.**
+
+1. **The confidence line called a clause a fragment** — *"5 fragment(s) were eligible"* about five
+   clauses. Wrong in the one word a reader uses to tell the two corpora apart. `Contest` now takes
+   the noun.
+2. **It explained a tie with a mechanism that was not running.** The coin-toss sentence says the order
+   *"could have come from status alone"*, which is true on the fragment side because of the quality
+   nudge — and **documents get no nudge**, deliberately: a `DRAFT` clause is not a worse answer than a
+   `REVIEWED` one, it is an **unread** one. Borrowing that number would have been borrowing a meaning.
+
+**The first document measurement, and its caveats are bigger than its numbers.** 13 chunks, `lexical`,
+**P@1 five of six, recall@3 six of six** — and the documents were written for the tests by the same
+hand that wrote the questions, so it is **a baseline to beat, not evidence that chunking works**. In
+[`retrieval-history.md`](../../../../brain/retrieval-history.md) with that said plainly.
+
+**The one miss is the more interesting row.** *"When do ducts not need insulating"* wanted the
+exception in `4.1.1` and got `9.1.1` first — **the other document's insulation clause, which also
+carries an exception**. Both are true answers. That is not a retrieval defect, it is
+[R-24](01-requirements.md) in miniature — two sources with a claim on one question — and today ranking
+picks one silently. **Recorded rather than tuned.** The answer to it is *surface the conflict*, which
+is Stage 8.
+
+**R-81 was named as Stage 2 work in the last PR and it is not in this one, deliberately.** The guard
+scans chunks **before they are built into a packet**, and in Stage 2 no chunk reaches a packet —
+`heron_context.py` is untouched. A guard on a path nothing walks is a guard that cannot be tested.
+**It moves to Stage 3**, where the packet carries chunks and there is a seam to guard. Said here
+rather than quietly dropped.
+
+**Next.** Stage 3 — the citation bound to the exact chunk (R-63 to R-65), the `STANDARDS` refusal
+narrowing rather than softening (R-45), the guard (R-81), and the fabrication check (R-46 to R-55).
+
+### 2026-09-11 — Stage 3: the citation, the guard, and the check that cannot rewrite
+
+**Closes R-21, R-22, R-46 to R-55, R-63 to R-65, R-80 and R-81.** **R-45 is PART**, and §"what it
+could not do" below says which part. `tests/test_ground.py`, 59 checks.
+
+**Three things landed.**
+
+1. **A clause reaches a packet with its citation bound to the exact chunk** (R-63), carried as a
+   **quotation with every line prefixed**, and the `STANDARDS` path builds it.
+2. **The Golden Rule 19 guard** (R-81) runs **at the seam**, before the part is built —
+   [`34 §2.11`](../../../34-patterns-adapted.md) called that *"the most valuable single item the whole
+   programme produced, because it lands on work not yet done"*. **The guard that actually holds is the
+   quotation, not the pattern list**: a marker on the first line only is one a payload writes past, so
+   every line is prefixed.
+3. **`brain/heron_ground.py`** — a draft and the packet it came from in, a report out, and **it cannot
+   rewrite**. `difflib` and `re`, no model, no network.
+
+> ## The measurement changed the design twice, and that is the entry
+>
+> **The first version flagged on a similarity ratio**, per kind of claim, as the plan sketched. Run on
+> twelve claims — six true, six invented — it got **two of the six inventions wrong**: *"except within
+> 10m"* against a source saying **3m**, and *"density 96 kg/m3"* against **48**. The prose was nearly
+> identical, so the ratio carried them. **One character is the whole fabrication, and a ratio is at
+> its blindest exactly there.**
+>
+> So the ratio was measured properly, on six true paraphrases against six wrong claims:
+>
+> | | range |
+> |---|---|
+> | true paraphrases | **0.222 – 0.682** |
+> | wrong claims | **0.204 – 0.588** |
+>
+> **They overlap almost entirely.** A true claim scores **0.222**, below a wrong one at **0.236**.
+> **The ratio cannot do this job**, so it is reported and never enforced — and what catches an
+> invention is structural instead: **an added fact is a flag, whatever the ratio says.**
+>
+> **One gate survived, because a quotation is a different claim.** It asserts it IS the source's words,
+> so the question is not *how similar* but **is it in there**. Containment separated cleanly —
+> **1.000 and 1.000 against 0.265 and 0.167**, nothing in between.
+>
+> **After the redesign: 0 false positives of 4 checked, 6 of 6 caught.**
+>
+> **This is not R-55 being bent.** R-55 forbids lowering a threshold to reduce flags. What changed is
+> the **mechanism**, because a measurement said the old one did not work — the same method that
+> settled the graph route at six settings. **The distinction is written down so the next reader can
+> check it was not a tune wearing a reason.**
+
+**Three defects found by running it, all in this batch's own code.**
+
+1. **The citation marker was being read as a fact.** `[9.1.1]` looks exactly like a clause reference
+   because it **is** one — so *"insulated to 25mm [9.1.1]"* appeared to state a clause its source did
+   not contain, and **every true sentence was flagged as a lie**. The marker says where a claim came
+   from; it is not part of the claim.
+2. **The punctuation strip was eating two whole classes of fact before the selector saw them.**
+   `1:100` became `1 100` and `50%` became `50`, so **a drainage fall was not a checkable fact at all
+   and could be invented freely**. Both now have canonical forms, which also folds the three ways a
+   fall is written on three drawings.
+3. **`1,500mm` normalised to `1 500mm`.** The thousands rule needed a trailing word boundary that a
+   following letter never provides.
+
+### What it could not do, and R-45 is honest about it
+
+**Asked about cats, the `STANDARDS` path returns five clauses, each correctly cited.** That is the
+softening R-45 forbids, arriving through the front door.
+
+**It is the same blocked floor as W-8.** Refusing *"nothing indexed covers this"* needs a floor;
+[R-60](01-requirements.md) says a floor comes from a measurement; the measurement says none is
+derivable on this backend. **A floor invented to fix it is exactly what R-60 forbids.**
+
+So the packet **carries the measurement instead of pretending**: the contest sentence, plus a line
+saying plainly that *a clause being cited does not mean it answers the question*. **That is weaker
+than a refusal and it is said out loud** — here, in the code, and in the test, which asserts the cats
+question still returns clauses **so the gap cannot be quietly forgotten**. When the floor exists, that
+check is the one that should change.
+
+**The empty-store refusal did narrow**, and still refuses: it now names the real cause rather than
+saying no clause store exists at all.
+
+**Next.** Stage 4 — the Librarian picks the scope, which needs documents in more than one scope. And
+**S-4 is still open**: every document in these tests was written to be easy.
+
+### 2026-09-11 — Stage 4: two scopes, two queries, and nothing pooled
+
+**Closes R-38.** `heron_retrieve.librarian()`, `tests/test_librarian.py`, 20 checks.
+
+**The whole stage is one sentence and the danger is in the name of the function.** *"An agent that
+decides which scopes to search"* reads as *"an agent that searches several"*, and implemented that way
+it is a `UNION` — one client's knowledge in the same result set as another's, which
+[D-33](../../../DECISIONS.md) calls a **contractual** problem rather than a technical one.
+
+So the shape is the guarantee: **there is no argument this function could take that pooled two
+scopes.** Each is opened as its own `Store`, asked its own question, and returned under its own label.
+Nothing compares a score from one store with a score from another — the same reason `find_documents()`
+is separate from `find()`.
+
+```text
+company            Acme Engineering BIM Standard 2026  3.1   insulate to 30mm
+project (Tower B)  Tower B Project Specification       3.1   insulate to 40mm
+```
+
+**Two different thicknesses, both correctly reported, and nothing decided between them.** Deciding is
+the host's act; **surfacing that they disagree at all is Stage 8**, and this is the first time the
+plan's R-24 case exists as something a test can point at rather than a sentence.
+
+**`ATTACH` still raises, and it turned out to have been giving the instruction all along.** Its refusal
+already read *"Open a second Store instead, where the crossing is visible and can be logged"* — which
+is exactly what this stage built. The test asserts the refusal is **unchanged**.
+
+**One defect in this batch's own code.** The project key was attached to every answer, so a company
+answer came back labelled **`company (Tower B)`** — which reads as *Tower B's copy of the company
+standard*. It is not; it is the company's one store. **Mislabelling whose knowledge something is, is
+the exact confusion Golden Rule 5 exists to prevent**, arriving in the stage written to keep it.
+
+### S-1 — settled by building it, and the two horns did not conflict
+
+> This heading used to put the question's number directly in front of the word for *resolved*, and
+> `check-docs.py` failed it — its question-count rule read the pair as a tally and compared it against
+> `OPEN-QUESTIONS.md`. **The gate was wrong about the meaning and right to stop the line**: a phrase
+> that reads as a count to a checker reads as one to a person skimming too. **The wording changed;
+> the checker did not.**
+
+> *When the Librarian needs two scopes, does Heron ask two questions itself, or hand the choice back to
+> the host?*
+
+**Both, and they were never opposed.** The brain asks each named scope **separately** — milliseconds
+against a local file, so there is no cost argument — and **hands back one labelled answer per scope,
+choosing none**. That is *asking two questions* in mechanism and *handing it back* in contract, which
+is what [D-01](../../../DECISIONS.md) and R-62 actually require.
+
+**Recorded as the plan's stated default taken, and flagged for the owner rather than closed.**
+
+**Next.** Stage 5 — document nodes, and **the density count that decides whether the edge route is
+built at all**. It begins with a count, not with code, and a recorded rejection closes the requirement
+just as well as a route does.
+
+### 2026-09-11 — Stage 5: the count, and the route that still has no vote
+
+**Closes R-40, and R-39 provisionally.** `heron_graph.document_neighbours()`,
+`tests/test_document_graph.py`, 15 checks.
+
+**This stage begins with a count, not with code**, because the same idea over the **fragment** graph
+was measured at six settings and **lost every one** — and the property that decided it was density.
+
+| | fragments | documents |
+|---|---|---|
+| **median neighbours** | **50** | **7** |
+| **worst** | **230** | **12** |
+
+**An order of magnitude sparser, for a reason that is intelligible rather than lucky.** A fragment
+providing `IList<Element>` composes with most of the library — that is what made it dense. **A clause
+cannot do that.** Its neighbours are its one parent, the clauses sharing that parent, its own
+children, and the clauses its text names; **the document's own numbering bounds the count**.
+
+**So step 4 is done exactly as written: the route is built and has NO WEIGHT.** Three kinds of edge —
+parent, sibling, and **a clause whose text names another clause's number**, which is the only one
+worth having: *"labelling shall be in accordance with 21.3.1"* links two clauses that **share no
+subject and no vocabulary**, so neither existing route can find it. **Nothing in retrieval reads any
+of it**, and a test asserts that fusion still has exactly two weighted routes.
+
+**The gate is passed PROVISIONALLY and the weight is not granted.** 62 chunks in four documents, all
+written for these tests by the same hand. The density is *structurally* bounded — that part
+generalises — but the *number* is about this corpus, and a question set over documents this session
+wrote would measure the documents rather than the route.
+
+**D-40 holds and is tested as an absence**: there is no edge table, and the test lists the tables to
+prove it.
+
+### And the count found a defect nothing else would have
+
+The test ingested a document and **forgot to index it**, and retrieval answered **"nothing in the
+indexed documents matched"**. The chunks were there; the searchable text was not. **That is the R-19
+defect one level down** — a miss and an unbuilt index reading identically from the outside, which is
+exactly how a number recorded from such a run becomes a measurement of nothing.
+
+There is now a fourth state, `unindexed`, that says so and names the two calls that fix it. **Found by
+a test making the mistake a caller will make.**
+
+**Next.** Stage 6 — maintenance: re-index on change by content hash, and duplicate detection at write
+time.
+
+### 2026-09-11 — Stage 6: the index stays true without anybody remembering
+
+**Closes R-27, R-28, R-29 — and finishes R-83, which Stage 1 left open.**
+`tests/test_maintenance.py`, 18 checks.
+
+**R-27 — re-index on change, and the test proves the thing that is easy to get wrong.** It moves a
+file's mtime **10,000 seconds** and asserts **nothing re-indexes**. That is the case
+[`05 §7`](../../../05-heron-brain.md) names: a `git checkout` touches every file and changes none of
+them, so anything keyed on time re-indexes the whole library for nothing.
+
+```text
+$ python brain/heron_ingest.py --refresh
+  CHANGED    Acme Standard 2026
+             6f3aea899d79 is RETIRED and names db1c206a0f26 as its replacement
+```
+
+> ### The maintenance closed the gap Stage 1 had to leave open
+>
+> On the day Stage 1 landed, R-83 was marked **PART** with the reason written out: a changed file
+> becomes a **different document** and nothing joined it to the one it replaced, so *"which edition is
+> this clause from?"* was answerable and ***"what did it say before?"* was not.**
+>
+> **Re-indexing is the operation that needed the link**, so it built it. A changed file retires its
+> predecessor (Golden Rule 4 — a record is never destroyed) and names its successor in `replaced_by`.
+> **The old clauses stay**, so a citation written last month still resolves; they are simply no longer
+> offered as answers.
+
+**A missing source deletes nothing**, and the test counts the chunks either side to prove it. That is
+Q-B being kept: the store **points at** the file and never held it, so the text and the citations
+still read correctly after somebody tidies a folder. **Deleting the knowledge because a file moved
+would be the opposite of what pointing at it was for.**
+
+**R-28 — duplicates at write time, with no similarity number anywhere.** The content hash catches two
+identical FILES. It does not catch the normal case: the same standard re-exported, or saved with a
+cover line added. So a clause is compared for **byte-equality at the same locator** — exact, and
+needing no threshold. **W-8 is the record of what happens when a number is invented to decide whether
+two things are "the same enough".**
+
+**Reported, never refused.** A project specification quoting a company standard verbatim is Tuesday,
+not an error. What a person needs is to be **told**, so they can say which it is.
+
+**R-29, and it had quietly stopped being true.** The host re-indexed the **fragment** half on every
+open and **not the document half** — so a document ingested through the host stayed unsearchable until
+somebody remembered a command, which is precisely *"the user manages the index by hand"* wearing a
+different hat. Both halves now rebuild in the same place. `--rebuild` stays as recovery and has
+stopped being the only way.
+
+**What Stage 6 does NOT do, and the test says so.** **Nothing watches the filesystem.** The host
+rebuilds on open and a person can ask for a refresh; **a document changed while Heron is open stays
+stale until the next open.** A watcher is a different thing with different failure modes, and it was
+not asked for.
+
+**Next.** Stage 7 — the re-ranker — **needs the `model` backend and is therefore blocked here**, the
+same block as W-8 and Stage 0's missing row. Stage 8 is trust and conflict, and Stage 4 already
+produced its first real case: a company standard saying 30mm and a project spec saying 40mm, both
+correctly returned, with nothing surfacing that they disagree.
+
+### 2026-09-11 — a review found sixteen things, and every one I checked was real
+
+**An automated reviewer went over the whole track on PR #114 and raised sixteen findings.** I verified
+each against the code before touching anything. **Every one I could test reproduced.** They are worth
+recording in full, because the pattern in them is more useful than any single fix.
+
+> ## The pattern: three of them made the checker say `ok` about a false claim
+>
+> Stage 3 exists to catch a fabricated answer. Three separate holes meant it approved one.
+>
+> | | What happened |
+> |---|---|
+> | **A category or parameter was never a fact** | `OST_DuctCurves` and `BuiltInParameter.RBS_...` were matched **case-sensitively**, and `facts()` lowercases before running them. **Neither pattern could ever match.** R-50's list of checkable things contained two entries that could not be checked, and a sentence inventing a category was skipped as factless |
+> | **A quotation with no number was never checked** | `The clause says "Ducts shall be painted red" [4.1]` has no number, unit or clause reference — so it was **skipped before the quote gate ran**. The one gate that survived measurement never ran on the only kind of claim it was built for |
+> | **A shared clause number resolved to the wrong document** | Two documents both numbered `4.1`; the second overwrote the first in a dictionary. A **TRUE claim about the company standard was flagged as a fabrication** because the project spec's `4.1` won. That is R-51's false alarm arriving through the citation instead of the comparison |
+>
+> **All three are invisible from the outside.** A sentence the checker never looked at and a sentence
+> it looked at and approved produce the same report. **A test that only feeds it fabrications it does
+> catch cannot find this** — which is what my tests were doing.
+
+**And the one that broke the whole chain at the seam.** Stage 3 binds a claim to the exact chunk it
+cites. The **MCP server serialized every `Part` field except `citation`** — so the only path
+production has into `heron_context` dropped the chunk id, and the host could never produce the marker
+`heron_ground` reads. **The feature worked in-process and did not exist in production.**
+
+> ## And one Golden Rule I broke without noticing
+>
+> **GR 11: the index is derived, never authoritative — deleting it must always be a safe recovery
+> action.** Fragments obey it: delete every store and `--rebuild` reads `brain/fragments/` and puts
+> them back.
+>
+> **Documents did not.** The `documents` table was the **only** record of which external files had
+> been ingested, into which scope, with which title, status and trust. Delete a scope file — **the
+> documented recovery action** — and all of it was destroyed while every original file sat untouched
+> on disk.
+>
+> There is now an **append-only manifest beside the store, never inside it**, and `restore()` re-reads
+> the files it names. The test deletes the store and brings the documents back. **Append-only because
+> GR 4 says a record is never destroyed, and a forgotten document stays forgotten** — the manifest
+> records that too, so a restore does not resurrect what somebody removed.
+
+**The rest, each verified and fixed.**
+
+| | |
+|---|---|
+| `--scope` with **no value** silently became `global` | **Golden Rule 5 broken by a typo.** A company document went to the globally shared scope and nothing said so. Now refused |
+| A document producing **no chunks** was stored as a success | The **scanned-PDF case** — the most likely way a real standard fails to come in. Now refused, naming OCR |
+| An **all-refused** ingest crashed | `no such table: chunks`, *after* printing its refusals. A refusal was the correct and complete answer |
+| `heading_path` was built from the **parsing stack** while `parent_id` came from the numbering | Two columns describing one tree, able to disagree — **the same defect I had just fixed for `depth` and left here** |
+| Any `OperationalError` read as "no documents" | A malformed database or a lock became a plausible empty answer. `heron_context._indexed` already narrows for this reason and I had not followed it |
+| The citation dropped the **file path** | R-22 says a citation resolves to something a human can open; it carried a title and a clause number and nothing openable |
+| The `unindexed` route was reported as a genuine miss | The refusal said documents *are* indexed and none covers the request, while its own appended note said the opposite |
+| Retired chunks could **consume the route's window** | The lifecycle filter ran after each route had already limited itself. Each route now fills the pool with eligible rows |
+| The density **median** took the upper middle | On an even count. That number decides whether a route is viable |
+| A **typed suite count** in the README | I had bumped it by hand at every stage — six times — while the same line named the command that derives it. **The bumping was the evidence.** The number is gone |
+
+**And one of the sixteen was only half fixed on the first pass, which is worth its own line.** The
+finding asked to *screen AND safely delimit* every document-derived metadata field. I screened them and
+**left them undelimited** — so the guard reported a hostile title and the title still sat unquoted in
+the part's name. **Screening says there is a problem; delimiting is what stops it mattering.** Every
+such value is now whitespace-collapsed and wrapped, because **a line break is the lever** that makes
+text read as a new speaker — and nothing is truncated, because R-82 does not stop applying when the
+field is small.
+
+**What this says about the tests I wrote.** They were good at asserting the thing I had just built and
+poor at asserting what it would do with input I had not thought of. **Every hole above is an input
+shape, not a logic error** — a lowercased pattern, a quotation without a number, a clause number that
+is not unique, a flag with nothing after it, a file with no text. The suites now carry all of them.
+
+
+---
+
+### 2026-09-11 — Stage 7: the seam is built, and the measurement it exists for cannot be taken here
+
+**Stage 7's done-when has three clauses. Two are met and the third is not, and this entry is mostly
+about not pretending otherwise.**
+
+| Clause | |
+|---|---|
+| a run with the package uninstalled **still answers and says it is not using it** | ✅ `python brain/heron_retrieve.py "show me every duct in the model" --revit 2024` prints `Re-rank: absent` on the line under the route, and answers exactly as before |
+| the **size was announced** | ✅ `python brain/heron_rerank.py` names the package, what it is for, **500 MB to 2 GB**, and `pip install --user` — and needs no network to print any of it |
+| a **before-and-after** measurement at the same corpus size | ❌ **only the before exists.** No cross-encoder has ever run here. **W-9**, and `A10` |
+
+### The one arithmetic decision, and it is the reason this stage was easy to get wrong
+
+A cross-encoder's score is on an unrelated scale that differs by model. **Every number in
+`heron_retrieve.py` is measured in `ONE_RANK`** — the quality nudge is bounded against it, and
+`Contest` reads every spread in it. Folding a re-rank score into `Candidate.score` would have
+**silently unbounded the nudge** and turned every spread `Contest` reports into a mixture of two units.
+
+So the re-ranker **re-orders and does not score**. `rerank_score` and `rerank_rank` are carried beside
+the fused score, never added to it, and the fused score stays on record underneath — which is also the
+only reason a before-and-after is possible at all.
+
+### And the defect that decision created two lines later, found by writing the test
+
+`Contest` computes its spread as `scores[0] - scores[-1]` **over the list it is handed**. Once a
+re-ranker re-orders that list, the first element is no longer the highest fused score, so the
+subtraction goes **negative** — a shortlist reported as spanning **−3.2 ranks**, and `top_gap < 1.0`
+true by construction, so **every re-ranked answer would have been called a coin toss.**
+
+Fixed by sorting the scores before reading them, which changes nothing at all when no re-ranker ran.
+**The test asserts `spread >= 0` on a re-ranked shortlist**, because the docstring saying it cannot
+happen is what the sixteen-finding review was about.
+
+### The sentence that would have been worse than the number
+
+Even sorted, the fusion gap is a fact about **the shortlist the re-ranker was handed**, not about the
+order shown. Reporting *"the winner is 2.1 ranks clear"* about an order a cross-encoder set would be
+the most confident wrong sentence on that page. So `Contest` **derives** that a re-ranker ran — from
+the candidates, so a caller cannot forget to say so — and leads with it:
+
+> the RE-RANKER set this order, reading each question-and-chunk pair — so the fusion numbers here
+> describe the shortlist it was given, not the order shown
+
+### Three things carried over from lessons already paid for
+
+- **`warm()`, from the start rather than after a stack dump.** `A8` was thirty minutes of a real
+  Claude Code tool call waiting on a 1.0 s `import model2vec` inside an MCP handler, on the asyncio
+  event loop. A torch import is heavier. It loads on a background thread, and the MCP server warms it
+  beside the encoder.
+- **The score travels out through the seam.** A review found the citation working in-process and
+  absent through `mcp/server/heron_brain.py` — a feature that does not serialise does not exist in
+  production. `rerank_score` is in the candidate dicts, and a test asserts it.
+- **Every way a backend can misbehave is absorbed.** It throws; it returns the wrong number of scores.
+  Both mean *fusion's order stands*, and a mismatched count is **refused rather than aligned by
+  guesswork** — a silent misalignment would re-order the shortlist by nothing at all.
+
+### What the stub is, and what it is not
+
+`tests/test_rerank.py` injects a stub scorer to prove the plumbing. **A test may inject a scorer; a
+measurement may not.** A stub's opinion about which clause answers a question is this session's opinion
+wearing a model's clothes, and a re-ranker's entire claim is that it improves an order. Nothing from the
+stub is in [`retrieval-history.md`](../../../../brain/retrieval-history.md) as a result.
+
+### One thing measured that was not asked for, because it was cheap and it answers a reviewer
+
+The absent path costs **0.000004 s** over twenty candidates against **0.0074 s** for a whole
+`retrieve()` — **0.05 % of a query**. It builds twenty passage strings it then discards, because
+`scores()` is asked before anything knows whether a backend exists. **Left that way on purpose**:
+avoiding it would put a second place in the code that decides whether a re-ranker is present, and
+0.05 % is not a reason to have two.
+
+### And a piece of documentation drift this stage surfaced
+
+[`01-requirements.md` §3](01-requirements.md) mapped seventeen agents to their code and said **"nine
+have code standing on them; eight have nothing"** — typed, above the very command that derives it.
+Stages 1 to 7 made it wrong four times over: `DIS-002` is `heron_ingest.py`, `CIT-014` is
+`heron_ground.py`, `RIX-011` and `DUP-012` are Stage 6, and `RNK-006` is now two files. **The rows are
+corrected and the count is gone**, replaced by the command. Same shape as the typed suite count the
+review caught — and again, the repeated hand-bumping was the evidence.
+
+**`RIX-011` and `DUP-012` are marked *"no file declares the id"* rather than declared**, because the
+behaviour is spread across `heron_ingest`, `heron_search` and `heron_embed` and putting the id on one
+of them would be a half-truth in the register that exists to prevent those.
+
+---
+
+### 2026-09-11 — a second and third review round, twenty-three findings, and the one that mattered most
+
+**Two more rounds arrived after the sixteen were closed: fifteen on the Stage 1–6 commit and eight on
+Stage 7. Every one was checked against the code and every one was real.** `tests/test_review_findings.py`
+holds a check on each, so none comes back silently.
+
+### The finding that would have done real damage
+
+**The fabrication check was endorsing a quotation that reversed its source.**
+
+```
+clause   "No ducts shall be installed within the ceiling void unless ..."
+quoted   "All ducts shall be installed within the ceiling void unless ..."
+scored    0.982   against a gate of 0.90   -->  GROUNDED
+```
+
+`coverage()`'s docstring said **containment**; its code took the **longest common run** over the
+quote's length, which is a different measurement — a long quotation with a short reversal at its
+**start** keeps a very long matching tail. A checker that passes the opposite of a clause is worse
+than no checker at all, because the answer now carries a citation *and* a clean report.
+
+It is containment now, literally. **The gate moved to 1.0 and that is not a threshold being tuned
+(R-55):** the measurement that set 0.90 recorded a true quotation at exactly **1.000** and a false one
+at **0.265**, with nothing between. The 0.90 was slack around a number that had no spread, and the
+slack is what the reversal walked through.
+
+### And the same failure by a different route
+
+```
+clause   "Duct insulation shall not exceed 25mm"
+draft    "Duct insulation shall exceed 25mm [chunk]"      -->  GROUNDED
+```
+
+Both yield exactly one fact, `25mm`. **Nothing was added**, so the added-fact rule passed it; the text
+is nearly identical, so the ratio was **high** rather than low. Every rule in the file was working and
+the answer was still the opposite of its source.
+
+`reverses()` is structural and has **no threshold in it**: strip the negating words from both sides, and
+if what is left is identical while the negations differ, one states the opposite of the other. What it
+does **not** catch is written into its docstring — a reversal that also rewords leaves different
+remainders and is invisible. That is the paraphrase problem R-46's measurement already recorded, and
+this file has no model to solve it with (R-47).
+
+> **It passed its own unit check and still returned GROUNDED end to end.** `normalise()` keeps the full
+> stop a clause ends with, so the source's last word was `25mm.` and the draft's was `25mm`. Testing the
+> helper proved the helper; only testing through `check()` proved the check. Both assertions are in the
+> suite now.
+
+### Three things that were complete, tested, and unreachable
+
+This repository has a name for this mistake and still made it three times in one batch.
+
+| | Reachable from | Now |
+|---|---|---|
+| `heron_ground.check()` | its own CLI, with a draft on disk | the `heron_check` tool and `brain.check_answer()` |
+| `heron_ingest.refresh()` | its own CLI | `_reconcile()`, once per process, at open |
+| `heron_ingest.restore()` | its own test | the same place, before the indexes |
+
+**R-46 said *"before the answer is shown"* and was marked DONE.** Nothing that shows an answer could
+call it. The row now says so.
+
+### The label that became evidence
+
+`as_quoted_source()` prefixes a clause with its document title, and `heron_ground` took `facts()` of
+the **whole rendered string**. With a title like `QCS 2014`, the year **2014 became evidence for the
+clause** — a draft claiming the clause applies to Revit 2014 came back grounded against text
+containing no year at all. The raw clause is carried separately now, as `Part.evidence`. **A label is
+not evidence for the thing it labels.**
+
+### An optimisation that broke a Golden Rule, caught by an existing test inside a minute
+
+`SEARCH.index_chunks()` deleted and rebuilt the whole FTS table on **every request**, while the comment
+at its call site claimed it was free when unchanged — true of the embedding half, which is
+content-hashed, and never true of this one. So it got a fingerprint.
+
+**The first version keyed on the SOURCE only**, so emptying `chunk_text` and asking for a rebuild got
+a polite no-op and a silently unsearchable store. Golden Rule 11 says deleting a derived thing is a
+**safe recovery action**; a rebuild that declines to rebuild breaks exactly that.
+`tests/test_document_retrieval.py` deletes that table and failed at once. The skip now checks the
+derived table too.
+
+### The rest, in one line each
+
+| | |
+|---|---|
+| the re-ranker could **download gigabytes at startup** | `warm()` reached `CrossEncoder()`, which fetches weights. The announcement was real and on the wrong path. The automatic path is offline-only now; `--fetch --yes` is the only thing that downloads |
+| the contest **blamed status for gaps status cannot make** | the nudge spans **0.61** of one rank across offerable statuses, and the sentence fired below **1.0** |
+| a re-ranked report **called five candidates twenty** | the pool size is carried on the candidate, so a list cut to `limit` still knows what was read |
+| a **blank line past the limit** ended the split search | every sentence end inside the limit was skipped and the chunk came back oversized |
+| `subject to`, `notwithstanding`, `with the exception of`, `excluding` | all begin a qualification and none was in `QUALIFIERS`. **The list cannot be exhaustive and now says so** |
+| a **truncated .docx** was a traceback | the XML parse sat outside the guard that names every other bad document |
+| an **unnumbered chunk had no locator** | the comment said *"can be retrieved and CANNOT BE CITED — which R-21 calls a bug"*, and kept it anyway. They get `para-N`, which is a position a person can count to |
+| **re-ingesting dropped the caller's status** | and nothing anywhere else moved a document's lifecycle. `status=None` now means *the caller did not say*, so a refresh cannot demote a REVIEWED document |
+| a **moved file** never reached the manifest | so `restore()` looked for the old path and restored nothing |
+| `restore()` **dropped the title** | the document came back under a filename, changing every citation written against it |
+| a failed **manifest write** was ignored | the ingest reported clean while the store became the only registry again. It is a named degraded state now |
+| **`1.5 m` and `2.5%` counted as clause references** | false edges in the one count that decides whether the graph route is ever worth a vote |
+| `brain/README.md` said **no clause store exists** | two rows of one table contradicting each other about a central route |
+
+### What this round is evidence of
+
+**Three rounds, each after the previous was called done, each finding real things.** The first found
+sixteen, the second fifteen, the third eight. Nothing here was a false positive.
+
+The pattern across all three is one thing: **the tests asserted what the code was built to do, and
+almost nothing about what it does with input nobody imagined** — a reversed quotation, a title that
+is also a year, a deleted index, a file that moved. Every finding above is an input shape or a seam,
+not a logic error. The suite is green either way, which is the honest measure of what green is worth.
+
+---
+
+### 2026-09-11 — a fourth round, seven more, and a value that walked from pipes to ducts
+
+**Four rounds now: 16, 15, 8, 7. Every finding in every round has been real.** This one found two
+things the third round's fixes had not closed and two the third round's fixes created.
+
+### The one that matters
+
+```
+clause   "Duct insulation shall be 25mm. Pipe insulation shall be 50mm."
+draft    "Duct insulation shall be 50mm [chunk]"        -->  UNDERSTATED, ok
+```
+
+**Nothing was invented and nothing was negated.** `facts()` was taken over the WHOLE CHUNK, so a value
+belonging to one requirement could be attached to another and still be "in the source". A chunk is
+usually several requirements; this was true of every one of them.
+
+Facts are compared against the claim's **nearest sentence** now, and a fact that is in the chunk but
+not in that sentence is `MISPLACED` — *nothing was invented, it was moved*. **What it costs is written
+into the code rather than found later:** a draft honestly summarising two sentences of one chunk is
+flagged too, because a checker with no model (R-47) cannot tell that from the swap above. The remedy
+already exists — cite each clause separately, which is what a chunk-level citation is for.
+
+### Two that my own fixes created
+
+- **The offline flags were global.** `_construct()` set `HF_HUB_OFFLINE` around its own load and put
+  them back. `heron_brain.warm()` starts the **encoder's** loader on another thread at that moment, so
+  on a machine with both stacks installed and neither cached, the encoder could observe this module's
+  flag, fail its download, and cache `None` for the life of the process — **retrieval silently on
+  `lexical` with a perfectly good network.** There is no global state left: a per-load keyword, and an
+  older package that will not take it gets `absent` rather than a download.
+- **`_SYNCED` was marked before the attempt.** One locked database, one file being written as it was
+  read, and every later request in the process skipped reconciliation until a restart. **A pass that
+  gives up for good after one bad moment is worse than one that was never wired in, because it looks
+  wired in.**
+
+### Two the third round left half done
+
+`restore()` learned to carry the title; **`refresh()` did not**, so a changed file retired a correctly
+named row and replaced it with a filename. And `forget()` ignored whether its **tombstone** reached the
+manifest — an unwritable manifest leaves `ingested` as the latest durable record, so the next restore
+brings back the document somebody deliberately removed while `forget` reports success.
+
+### And two claims that were bigger than the code
+
+- **`--project Tower` without `--scope project`** left the scope at `global` and still handed the key
+  to `open_scope()`. One forgotten flag put project knowledge in the shared store and overwrote that
+  store's project metadata. **Golden Rule 5 undone by a default.** Refused by name now, rather than
+  corrected — *"I meant the project scope"* and *"I pasted the wrong flag"* want different answers and
+  only the person typing knows which.
+- **`brain/README.md` claimed every run says `Re-rank: absent`.** Only the command line did. The
+  served `heron_lookup` said nothing, so two machines could give two orders with nothing explaining
+  why. Both backends are carried through the seam and rendered now — **the same lesson as the
+  citation, one round later: the CLI is not production.**
+
+### What four rounds of this is evidence of
+
+**Three of these seven are in code written to fix the previous round.** That is not an argument for
+reviewing less; it is the measure of how much a green suite proves on its own, which is: that the
+cases somebody thought of still pass.
+
+---
+
+### 2026-09-11 — Stage 8: the two clauses say different numbers, and now the answer says so
+
+**Stage 8 splits on who has to decide, and only one half was mine to build.**
+
+| | |
+|---|---|
+| **Conflict** — R-24, `HERON-RAG-CNF-015` | **built.** `brain/heron_conflict.py`, `tests/test_conflict.py` |
+| **Trust** — R-16, R-25 | **blocked on Q-C.** Two of the four signals do not exist, and whether Heron keeps a usage log is the owner's call. **No weight moved** |
+| **R-23** | **blocked on W-8**, through R-56 — the floor the measurement says cannot be derived on this backend |
+
+### The case was already sitting in Stage 4's test
+
+```text
+company            Acme Engineering BIM Standard 2026  3.1   insulate to 30mm
+project (Tower B)  Tower B Project Specification       3.1   insulate to 40mm
+```
+
+**Both correct, both cited, and nothing saying they disagreed.** A modeller had to spot the two
+numbers themselves. On a bad afternoon they do not, and 30mm goes on a wall the project specified at
+40. docs/20 §4 is blunt about the alternative: let ranking settle it and the knowledge base becomes
+quietly non-deterministic.
+
+### What it does, and the word for what it does not
+
+It **surfaces**. Both clauses still come back under their own scopes. The docs/20 §2 hierarchy — project
+above company — is **named and explicitly not applied**, which is that section's own caveat kept:
+*"overrides must not mean silently replaces"*. **A test asserts there is no `winner` and no `resolve`
+anywhere in the module**, and is meant to fail the day somebody adds one.
+
+### What crosses the wall is a number and a clause number, never a clause
+
+A disagreement cannot be seen without *something* crossing. Each store is opened, asked, **reduced to
+its measured values, and closed before the next is opened** — so no scope's text is ever in memory
+beside another's. What travels is `40mm at 3.1`.
+
+### Only quantities, and the reason is noise rather than principle
+
+`facts()` pulls `9` and `1` out of *"clause 9.1.1"*, and two scopes citing different clause numbers is
+not a disagreement about anything. So a clause number, a year, a category and a bare count are all
+excluded. **Over-flagging teaches people to ignore flags** — `heron_ground`'s own recorded lesson about
+R-50 — and a missed disagreement is recoverable, because both clauses come back either way.
+
+### Two limits reported rather than discovered, and the second one the test found
+
+**It compares units, not subjects.** *"Insulation 25mm"* against *"clearance 40mm"* would be reported
+too. Deciding sameness is meaning, and this layer has no model and no network (R-47). The report says
+that in words.
+
+**And it inherits the missing floor.** The test asked whether a question *neither* scope covers reports
+silence. **It does not** — retrieval has no floor, so five clauses come back for anything asked and
+their numbers still differ. The check now asserts what happens instead of a floor that is not there.
+
+> **The caveat took two goes, and the first one fired backwards.** It carried
+> `Contest.words_selected_nothing` — the words route matched at least as much as the filter left. On
+> two chunks per scope that fired on the **real** question and stayed silent on the irrelevant one. The
+> reason was already written one class up: below a pool of twenty, `pool_is_evidence` is false and none
+> of those counts means anything yet. **A signal that is really about corpus size, read as a signal
+> about the question.** It is gated on Contest's own comparison now, and where the pool is too small
+> the report says *that* rather than guessing.
+
+### And a question this raised by being built — Q-E
+
+docs/20 §4 also wants detection **at write time**. It cannot be built without an answer first: at read
+time the crossing is authorised because a host asked one question of two named scopes, but **at ingest
+nothing has been asked of anybody**, so reading another scope while writing into this one is a crossing
+[D-33](../../../DECISIONS.md) makes contractual. Recorded for the owner, not decided here.
+
+---
+
+### 2026-09-11 — a fifth round, eight more, and a whole path two stages built that no host could reach
+
+**Five rounds now: 16, 15, 8, 7, 8. Nothing in any of them was a false positive.** And I had told the
+owner a fifth round was not expected, because Codex had reported hitting its usage limit. It arrived
+anyway — recorded here because a prediction about somebody else's service is not a finding.
+
+### The one that covered two stages at once
+
+`heron_conflict.disagreements()` was callable only from its own command line and its own test.
+Checking that, **so was `heron_retrieve.librarian()` — since Stage 4.** The scope wall Stage 4 built
+and the disagreement Stage 8 surfaces were **both invisible to any host**, and the review found it on
+the half that was one commit old rather than the half that had been sitting there for a day.
+
+`heron_standards` is the tool, `brain.standards()` the seam. It asks each named scope on its own,
+returns each labelled answer, reports the disagreements, and **indexes each scope before asking**, so
+R-29's promise — nobody manages the index by hand — holds on the path a host actually uses.
+
+> **This is the third time in five rounds.** The citation, the fabrication check, and now two stages of
+> the multi-scope path. Building it, testing it and never wiring it is this session's most repeated
+> mistake by a distance.
+
+### And two defects inside the code I had just written
+
+**Two documents in one scope were treated as one source.** The grouping keyed on the scope label, so
+two company standards giving 30mm and 45mm cancelled each other out — while **the comment beside it
+claimed it was excluding one document with two clauses**. The comment described one thing and the code
+did another. R-24 says two *sources*, and a source is a document.
+
+**Only the first value per scope was compared.** A clause carrying *"clearance 25mm, insulation 30mm"*
+against one carrying *"clearance 25mm, insulation 40mm"* matched on 25 and reported nothing — the
+conflicting pair was thrown away before anything was compared.
+
+Both are fixed by comparing **value sets per source**, which also fixed a third thing neither finding
+named: two sources that both carry 25mm and 30mm **agree**, and "two sources, two values" would have
+fired on them.
+
+### The rest
+
+| | |
+|---|---|
+| a vector remembered **that** a model made it, not **which** | `backend = "model"` covered every trained encoder, so changing `HERON_EMBED_MODEL` left unchanged chunks holding the old model's vectors — silently discarded at a different dimension, silently meaningless at the same one |
+| a **moved then forgotten** document came back | the manifest reconciled by PATH, so A and B kept separate histories and A's newest event was still `ingested`. Golden Rule 11's safe recovery action doing the opposite of recovery |
+| `heron_check` caught **every** exception | so a `TypeError` or a malformed store came back wearing the words of an honest refusal. It catches the named refusal now, and `check_answer()` translates — which is what made the narrow catch possible |
+| `_backends()` reported what was **installed**, not what **ran** | an identity or cache short circuit runs neither route and still claimed both had answered |
+| `document_neighbours()` turned any database fault into an **empty graph** | a locked store read as a zero-density corpus — on the one number that decides whether the graph route is ever worth a vote. **The same defect `documents()` was corrected for in round two, in a copy that did not get it** |
+
+### What five rounds of this says
+
+The same three shapes keep coming back: **a seam nobody wired**, **a comment that describes something
+the code below it does not do**, and **a fix applied in one place and not its twin**. None of them is
+a logic error, and a green suite catches none of them.
+
+---
+
+### 2026-09-11 — a sixth round, nine more, and a class that warned about its own misuse
+
+**Six rounds: 16, 15, 8, 7, 8, 9. Still no false positive in any of them.**
+
+### The one that had been wrong for longer than this plan
+
+`DocumentPin` exposes `title` and holds `_key`, and its docstring says why both exist:
+
+> *"Title alone is NOT identity, and that is not theoretical here: the first live run of the selection
+> tool had two Revit sessions with a document called Project1."*
+
+**Three brain tools were passing `pinned.title` into `open_scope`'s `project_key` slot** — including the
+one I added an hour earlier, where the project scope is the entire point. So a project store was named
+after a display name that changes when somebody renames a file, and in an ordinary read-only
+conversation `title` is `None` anyway, so the project scope was **silently skipped**. `pinned.key` now,
+at all three.
+
+**The class had written down the exact mistake it was later used to make.**
+
+### Two more in text written the same day
+
+- **`heron_standards` said *"both clauses are above, each with its own citation"*** while its payload
+  carried a title, a locator and a ranking reason — **nothing to read and nothing to open**. It carries
+  the clause body and the file path now.
+- **It searched every scope twice.** `standards()` asked the Librarian, then called
+  `disagreements()`, which asked again. Beyond the waste: two shortlists that a finishing warm-up or a
+  changed file could make different, so **the disagreement shown could have been about other clauses
+  than the ones listed above it**. One search, shared.
+
+### The chunker, twice
+
+- **An unsplittable opening swallowed the rest of the section.** When the first window held no legal
+  cut, the loop *ended* — so a long opening sentence collapsed everything after it into one chunk
+  however many clean paragraph breaks followed. Measured: a 200-character prefix turned a
+  269-character body into one piece. The oversized prefix is emitted at the first legal boundary after
+  it now, and splitting continues.
+- **A byte-order mark hid the first heading.** Python's plain `utf-8` decoder *accepts* a BOM and keeps
+  it as a character, so the `utf-8-sig` branch below it was **unreachable** — and that invisible mark
+  sat in front of the first heading and stopped its regex matching. Windows tools write that BOM by
+  default.
+
+### And the pattern that is now unmistakable
+
+**`index_chunks()` turned any database fault into "nothing was ever ingested"** — returning 0 and
+leaving the stale `chunk_text` in place, so retrieval went on answering from old clauses. That is the
+**third copy** of one defect: `documents()` was corrected in round two, `heron_graph` in round five,
+and this one had neither.
+
+| | |
+|---|---|
+| a **retired revision** could hide the current standard | the lifecycle filter ran after the route's LIMIT, so a document's own retained history could fill the window. It is inside the query now |
+| **30mm and 30.0mm** read as a disagreement | two sources that agree, flagged. A flag on nothing is what teaches people to stop reading flags |
+| a length-split **continuation** was its own sibling's child | same depth, parent set to the first piece — a row that is a child of something at its own level, and two different trees for anything reading the hierarchy |
+
+### Six rounds, and the shapes have not changed
+
+**A seam nobody wired. A comment that describes something the code below it does not do. A fix applied
+in one place and not its twin.** This round added a fourth: **a class whose docstring names the
+mistake, being used to make it.** None is a logic error. The suite was green through all six.
+
+---
+
+### 2026-09-11 — a seventh round, thirteen more, and the round where a shape stopped being a defect
+
+Codex reviewed `2dd0c21` and posted **thirteen**. Every one was verified against the code before
+anything was changed, and **every one was real**. No false positive in seven rounds.
+
+Four of the thirteen were in code written to fix round six, and two of those were in the fix for the
+finding I had called the worst of that round.
+
+### The one that would have published company knowledge to every project
+
+`brain/heron_ingest.py`, the command:
+
+```
+python brain/heron_ingest.py --scop company spec.pdf
+```
+
+One letter short. The known `--scope` was absent, so the scope stayed at its default — **global**.
+`--scop` and `company` were then reported as bad file paths, `spec.pdf` was ingested into the
+**shared** store, and the command **exited 0**, because something had been ingested.
+
+A typo published company knowledge to every project and said it had worked. Golden Rule 5 undone by a
+missing letter, and the **second time** this one file has let a mistyped scope through a different
+door — the first was `--scope` with no value at all, found in round two.
+
+Every argument still wearing a dash after the known flags are consumed is now refused before any file
+is opened.
+
+**And the first version of that refusal broke `--boundaries`.** Written at the top of the function, it
+read `argv` before `_flag()` had taken anything out of it, so a real flag was refused as a typo. The
+existing suite caught it in under a minute. The check sits below the parsing now, and the comment
+beside it says why the order is the point.
+
+### The half of the multi-scope path that could not be used
+
+Two findings, one shape: `heron_standards` is the tool the whole scope wall exists for, and two things
+attached to it only looked as though they worked.
+
+**`check_answer()` always opened the global store.** A draft written from a company or project answer
+cited chunks the global store has never heard of, so every marker came back `unresolved` — or the
+reassembly refused outright, because global holds no documents at all. *A gate that refuses every
+honest answer teaches people to stop calling it.* It takes the scopes now, checks **one store at a
+time**, closes each before the next, and combines by claim: `unresolved` is the only verdict that
+loses to another, because it means "this packet does not carry that chunk" rather than a judgement.
+One limit is written into the docstring rather than left to be found — checking per scope cannot see a
+citation that is ambiguous **across** scopes.
+
+**`standards()` reconciled nothing.** The only maintenance pass lives inside `_Open`, which always
+opens `global`. So a company standard edited on disk, or a project store deleted as the documented
+safe recovery action, stayed stale or stayed empty through every served request — on exactly the
+scopes this tool exists to read. And the once-per-process marker was keyed on the **scope name**, so
+the first project reconciled in a session marked `project` done and every other project was skipped
+for the life of the process. One name standing for many stores.
+
+### A guard claimed and never run
+
+The `heron_standards` response ends with *"content, never instruction (Golden Rule 19)"*. Nothing on
+that path had ever looked: `screen()` is reached through `heron_context.build()`, and this seam does
+not use it. A clause carrying instruction-shaped text went to the host under a sentence saying it had
+been checked.
+
+**A claim about a guard, with no guard behind it, is worse than no claim.** Every document-derived
+field is screened at the seam now, the titles and clause numbers on the lines that do not quote them
+are delimited, and the renderer raises the same visible flag the packet path has had since R-81.
+
+### The project key, again, and this time the reason it was missing
+
+Round six moved three call sites from `pinned.title` to `pinned.key`. Round seven pointed out that
+this **established nothing**:
+
+* `pinned.check()` was called in **one** tool, the write preview — so a conversation that only ever
+  read never pinned anything, and `pinned.key` stayed `None`
+* even after a preview, `key_of()` built a **path-based** key, while `heron_scope` defines a project
+  store's name as the Project Information **UniqueId**
+
+The add-in had that UniqueId all along — `RevitWrite.DocumentKey` computes it for its own
+preview/commit pairing — and **never put it on the wire**. It does now, beside `document` and
+`documentPath`. `DocumentPin` gained a narrower `project_key` that returns only that: a path is enough
+to pin a *chat* to one model (Golden Rule 20) and is not enough to *name a store*, because renaming
+the file orphans it. A read tool establishes the pin.
+
+**The C# half of this is not compiled here.** There is no .NET SDK in this container. `ProjectInformation.UniqueId`
+is the same expression `RevitWrite.cs` already uses on every release from 2020 to 2027, which is
+evidence rather than an assumption — but it is not a build.
+
+### The two that were sentences about the machine
+
+**`_backends()` asked the backends what was installed, after the search.** Round five gated it on the
+route, which fixed only the short circuits. A warm-up finishing between `find()` and that line still
+labelled a lexical, fusion-only result `model`, and a loaded re-ranker whose `scores()` returned
+`None` was still reported as having re-read the shortlist. `heron_retrieve.ran()` records what
+produced a rank, in the loop that produced it, and the seam now only reads it back.
+
+**`breadth` counted the whole index while `eligible` counted the survivors.** `Contest` compares the
+two, so a release with twenty eligible fragments and twenty incompatible ones could make
+`breadth >= eligible` true and the report say the words route had ranked the entire library when it
+had selected one row out of it. Both sides are counted over one corpus now, and the cost of that is
+written down rather than glossed: **0.83 ms against a 6.4 ms lookup, up from 0.35 ms** — 13% of a
+call, against 3.6% before.
+
+### The shape that stopped being a defect
+
+`except sqlite3.OperationalError: return []` came back for the **fourth** time, in
+`find_documents()`'s document count. Round two fixed it in `documents()`, round five in `heron_graph`,
+round six in `heron_search.index_chunks`, and this round found the copy one screen below the round-two
+fix, in the same file.
+
+A defect that arrives one file at a time is not a defect. It is a shape, and a shape is something a
+command can look for — **`tools/check-narrow-errors.py`**. It found the fourth copy and a fifth nobody
+had reported, in `heron_embed.index_chunks`. Both are narrowed. Proved by introducing the shape and
+watching it exit 1, not by passing on a clean tree.
+
+### The rest, in one line each
+
+| | |
+|---|---|
+| two quoted spans in one claim were **glued with a space** | `The clause says "ducts" shall be "insulated"` was flagged against a source saying *ducts shall be insulated*. Both quotations were exact; the check invented a third |
+| conflict sources were keyed on the **document title** | two documents sharing a title merged into one source and their disagreement was dropped — the failure `Value.source` was written to fix, one level in |
+| `if len(wanted) < 2: return []` | naming **one** scope returned before any document was read, so the document-level grouping added the round before was unreachable for the single-scope case it was built for. Its comment said *"a scope cannot disagree with itself"*, which is true and beside the point |
+| a **retired revision** vanished with the derived store | the manifest held one line per path and that path now points at the new bytes. `refresh()` records the retirement beside the store now; a restore brings the revision back as a **row** — id, title, date, successor — and says plainly that its **text** is not recoverable, because the file was overwritten and Q-B says Heron never copies it |
+| the tool inventory was typed in **two** places | `brain/README.md` said *four*, the server header listed *seven*, the registry holds **sixteen**. `python mcp/server/heron_tools.py` prints it from the table the server enforces, and both prose lists now name the command |
+
+### Seven rounds, and what the shapes are now
+
+The four from round six all recurred: **a seam nobody wired** (`check_answer`, `standards()`), **a
+comment describing what the code does not do** (`if len(wanted) < 2`), **a fix applied in one place
+and not its twin** (the fourth and fifth `OperationalError`), **a class whose docstring names the
+mistake** (`DocumentPin`, for the second round running).
+
+This round added a fifth, and it is the most uncomfortable: **a sentence in the output claiming a
+check that never ran.** Golden Rule 19 on the standards path, and `_backends` naming a re-ranker that
+read nothing. Both were *written by me, in the same session, in wording that described the intention
+rather than the code*.
+
+The suite was green through all seven.
+
+### The same afternoon — the compiler that was one `apt-get` away
+
+`A11` was filed an hour earlier saying the C# *has never been compiled: this container has no .NET SDK*.
+That sentence was true and the conclusion drawn from it was not. `dotnet` was absent; the **SDK** was in
+the Ubuntu archive:
+
+```
+apt-get install -y dotnet-sdk-10.0        # 10.0.112
+```
+
+`docs/30-compiling-away-from-windows.md` had recorded that exact package building all eight releases on
+Ubuntu 24.04, and `tools/check-compile.py` says so in its own docstring. **I read "no dotnet on PATH" and
+wrote "cannot be compiled here", which is a different claim** — the same shape as every finding in this
+plan's review rounds, made in my own status note.
+
+What it bought, all measured rather than asserted:
+
+| | |
+|---|---|
+| `tools/check-compile.py` | **COMPILED 2020 – 2027.** Four projects × eight releases, 0 warnings |
+| `tools/check-api-surface.py` | *every referenced type and member exists*, all eight, read against the **shipped** assemblies rather than the NuGet reference ones — 165 distinct Revit types and members |
+| `tools/check-fragments-compile.py` | every fragment compiles on every release it claims |
+| `tests/test_bridge_roundtrip.py` | **passes on Linux**, once the test host is built. It had been on the known-failures list for needing a `dotnet build` |
+
+So `ProjectInformation.UniqueId` is not an assumption any more: it exists by name on 2020 through 2027
+and the signature compiles on each. **What a compile still cannot say** is whether the value is the same
+string after a save, a rename and a move — that is the half of `A11` that needs a model open in Revit,
+and it stays open.
+
+**The SDK is installed in this container and nowhere else.** A fresh session starts without it, so the
+four results above are a run, not a property of the repository.
+
+---
+
+### 2026-09-11 — an eighth round, nine more, and four of them in the fixes from the seventh
+
+Codex reviewed `cfcab93` and posted **nine**. Every one verified before anything was changed, and every
+one real. **Four were in code written an hour earlier, in round seven's fixes.** It then reported hitting
+its usage limit again — and this note says nothing about whether that is the last round, because the
+last time it did, three more arrived.
+
+### The one that turned the fabrication check off
+
+```
+Use [50mm] insulation [abc123:0001]
+```
+
+`facts()` strips citation markers before it looks for facts — it has to, because `[9.1.1]` **is** a
+clause number and would otherwise read as a fabricated one. But *any* bracketed text counted as a
+marker. So both brackets went, no fact was found, the sentence was classified `SKIPPED`, and the report
+said **ok** against a clause requiring 25mm.
+
+**Bracketing a number switched the check off for that sentence.**
+
+The fix took two goes and the first was too wide. "A marker never states a fact" broke `[9.1.1]`
+immediately — a clause number *is* a fact pattern, which is the entire reason markers are stripped. The
+disqualifier is narrower and exact: **a unit**. A clause number, a year and a bare count are all shapes
+a real locator takes; `50mm` is not. And a span the packet actually carries is a citation whatever it
+looks like, which is what keeps a caller's own short chunk ids working.
+
+`[99]` is the honest edge — both a plausible locator and a checkable fact. What the packet holds
+decides it, and where nothing resolves it the pre-existing reading stands. Written down rather than
+left to be found.
+
+### A guard that arrived after the act
+
+Round seven added `pinned.check(reply)` to `revit_select_by_category`. **`SelectByCategory` calls
+`SetElementIds` before it answers.** So switching the active document mid-conversation highlighted every
+duct in the wrong model, and *then* returned a refusal saying nothing had been sent to Revit.
+
+A refusal that arrives after the act is a description. The expected project key travels **with** the
+request now, and the add-in refuses before it touches the selection. Compiled on 2020 – 2027.
+
+### And a pin that did not follow the user
+
+`revit_use_session` called `check()` and **threw the refusal away**, with a comment explaining that a
+mismatch is deliberate here. Both halves of that were wrong at once: `check()` pins on *first* sight and
+otherwise moves nothing, so choosing a session holding a different model left the binding on the new
+Revit, the pin on the old document, and the reply saying *"Now working with"* — after which every tool
+that touches a model refused, correctly, for a reason nothing had told anybody. `repin()` is the call
+the situation asks for; the comment had justified `repin` and the code had called `check`.
+
+### The key and the name, swapped
+
+Round seven made the project key stable — the Project Information UniqueId. Round eight found where that
+key then went:
+
+```
+project: a7f3c2e1-0000-4b8d-...            (heron_context's situation line)
+project (a7f3c2e1-0000-4b8d-...)           (every librarian label)
+```
+
+`heron_context` opens no project store; its `project` is rendered straight into the line that exists to
+say **which building this is**. The key identifies, the name is what a modeller recognises, and they are
+not interchangeable in either direction. Both travel now, each to the place that needs it — and the
+folder index learns the name on the way past, so a project store stops being an unreadable filename.
+
+### The rest, in one line each
+
+| | |
+|---|---|
+| `scopes="company,proejct"` | one letter short, and the grounding check produced an **ok company-only report** with nothing saying the other named source was never looked at. The same shape as the mistyped ingest flag, one tool along |
+| a document lost because its **newest** path was | a document id is a content hash, so one standard ingested at A and later at B is one id with two paths — and keeping only B lost it when B was deleted while its bytes still sat at A. Earlier paths are tried now, newest first |
+| **30mm against 4cm** never compared | grouped on the literal unit string, they were separate groups, and two clauses prescribing different thicknesses came back agreeing by silence. Conversion is not a threshold: 1 cm IS 10 mm |
+| **1:100 against 2:200** reported as a conflict | the same fall, and the report said two sources contradicted each other about it. A flag on nothing is what teaches people to stop reading flags |
+| a bare `to` cited a clause | *"spacing varies from 1.5 to 2.5 times the diameter"* made an edge to clause 2.5. Every numeric RANGE in a standard is written that way, and standards are mostly ranges — so the false edges landed exactly where they are densest, in the number that decides whether the graph route is viable |
+| one indexing pass, **two encoders** | `stamp()` read once at the top while `vector()` consulted the live model per row, so a warm-up finishing mid-pass stored MODEL vectors under the name `lexical`. The stamp and the encoder are one decision now |
+
+### Eight rounds, and the shape that keeps arriving
+
+**Four of nine were in round seven's own fixes**, and three of those four are the same shape wearing
+different clothes: *the code did something adjacent to what its comment claimed*. `check()` where the
+comment argued for `repin()`. A pin compared after the act it was guarding. A key sent where a name was
+rendered.
+
+The fifth shape named in round seven — a sentence claiming a check that never ran — did not recur. The
+first four did.
+
+The suite was green through all eight.
+
+---
+
+### 2026-09-11 — Stage 9: the Research agent, which does not research
+
+Closes **R-26**. `brain/heron_research.py`, `tests/test_research.py`, two MCP tools. Last, and the plan
+says why: *"an external answer without a working citation system is exactly the invented-standard
+failure 05 §8 forbids — and it is the most convincing kind of wrong answer the system can produce."*
+
+### The requirement read properly
+
+*"The Research agent may answer from outside Heron's knowledge"* reads as **give Heron a web client**.
+It does not get one, and three rules stack to say so:
+
+| | |
+|---|---|
+| **D-01** | every model call is the host's, because Heron is a per-user install with no admin rights and no server. The network is the same boundary — Heron has no keys, no proxy policy and no way to promise a connection |
+| the offline premise | `DECISIONS.md`: *"It has to work with no connection. Site visits, locked-down networks, a laptop on a plane."* A capability that only works online fails on exactly the days a modeller is on site |
+| **Golden Rule 19** | an ingested file is at least a file somebody chose to put in. A web page is text a stranger controls, arriving at the moment of the question. If a document is DATA AND NEVER INSTRUCTION, a fetched page is that rule under load |
+
+So the division is: **Heron says what it does not know and what an answer must carry; the host, which
+has the model and the network, goes and finds out; Heron checks the SHAPE of what comes back.** A test
+greps the module for `http`, `requests`, `urllib` and `socket` — the same shape `test_ground` uses for
+R-47, so adding a fetch fails the suite rather than passing review.
+
+### What can be checked, and what cannot
+
+Written before the code rather than discovered after it.
+
+**Checkable** — whether a claim carries a citation at all (R-21, R-65); whether that citation could be
+*looked up*; whether the answer is presented as external.
+
+**Not checkable** — whether the claim is **true**. Heron has not read the source. There is no chunk, no
+text, and nothing to compare — `heron_ground.check()` needs a packet and there is no packet.
+
+So every external claim ends at **`UNVERIFIED`**, however well-formed its citation, and **there is no
+verdict above it**. A check asserts that nothing named `VERIFIED`, `CORRECT`, `TRUE` or `APPROVED`
+exists in the module — meant to fail the day somebody adds one.
+
+> **That check failed on its first run, against the constant it exists to protect.** `"VERIFIED ="` is
+> a substring of `"UNVERIFIED ="`. Anchored to the start of a line now. Caught by running it.
+
+### The three things a citation owes, and why each one
+
+Not a style preference — each has a known way of going wrong on a Qatar project.
+
+| | |
+|---|---|
+| **the document** | *"per the standard"* names nothing. A modeller cannot open it, a checker cannot verify it, a client cannot accept it |
+| **the edition** | ISO 19650 is five parts across several years, and QCS 2014 is not QCS 2010. A clause number without an edition points into whichever copy the reader happens to be holding |
+| **the locator** | a document with no clause number means *somewhere in four hundred pages*, which in practice means nobody checks |
+
+A citation missing any is `VAGUE` **and the report names which** — "vague" on its own is not something a
+person can act on.
+
+### The defect I found by running the seam, an hour after writing it
+
+`_is_claim` borrowed `heron_ground`'s test. That test asks **"is there a VALUE here that could be
+fabricated?"**, because grounding is about to compare a value against a chunk. This needed a different
+and wider question — **"is this sentence asserting something a source should back?"** — and measured on
+its own output:
+
+```
+"Revisions are lettered per the standard."   ->   not a claim
+```
+
+No number, so no fact, so never checked — while `per the standard` is the **exact phrase** the module's
+own vague-source list was written to catch. **The list was unreachable for the sentence it existed
+for.** Four things make a sentence checkable now: a fact, a quotation, a normative verb, or a phrase
+that claims a source without naming one.
+
+`shall` / `must` / `is required` is grammar rather than vocabulary — it is how ISO, BS, NFPA and QCS
+each write a requirement, in English, whatever the subject. That is materially different from the
+hand-written domain word list **R-60** forbids.
+
+**One limit recorded rather than discovered:** a bare assertion with no number, no modal and no source
+phrase — *"Container names use six fields"* — still reads as prose and is not checked. Widening further
+starts flagging *"let me know if you need more detail"*, and a report that flags everything is one
+nobody reads.
+
+### What the gap can and cannot say
+
+`Gap.certain` is true only when **every scope asked returned nothing by name** — `empty`, `unindexed`
+or `nothing`. Where clauses *did* come back, whether they answer the question is **not established**:
+that needs a retrieval floor, **W-8** records that none can be derived on the lexical backend at this
+corpus size, and **R-60** forbids inventing one from a word list. So the brief says exactly that and
+puts the judgement on the reader — **R-62**, no classifier in `brain/`.
+
+That is Stage 8's limit met from a third side, and it is now the most-repeated sentence in this plan.
+
+### And one thing that was missing everywhere
+
+A question Heron could not answer is precisely what the **Capability Gap Agent** exists to count, and
+until this stage nothing recorded one. `heron_gaps` could see what had been asked of **Revit** and never
+what the knowledge layer had **missed**. `research()` records `knowledge.research` with the scopes, the
+route and whether the gap was certain.
+
+---
+
+### 2026-09-11 — a ninth round, nine more, and the fix that put an old defect back
+
+Codex reviewed `f53e0b1` — Stage 9's commit, an hour old. **Nine findings, every one verified before
+anything was changed, every one real.** Four were in Stage 9 itself, two in round eight's fixes.
+
+### The one that restored the wrong document under the right title
+
+Round eight taught `restore()` to fall back to an earlier path when the newest one is gone. It took any
+earlier path **that still existed**. Paths get reused:
+
+```
+ingested   A -> "Acme Standard 2026"
+ingested   B -> same bytes, same id
+B deleted, A overwritten with site safety notes
+restore    -> SITE SAFETY NOTES, under the title "Acme Standard 2026", reported as restored
+```
+
+Measured on that exact code. Every citation written against it would name the wrong document, and the
+report said success. **The comment beside the code claimed the content hash made the fallback safe and
+the code never compared one** — the document id *is* the content hash, so the check is one line.
+
+### The one that would send a modeller outside for their own spec
+
+`Gap.certain` counted a **skipped** scope as a miss. In the default `company,project` workflow before a
+model has supplied its project key, the project store is never opened — so an empty company store plus
+an unopened project store made the gap certain and the brief said *Heron has no knowledge on this*,
+with the project specification sitting unread.
+
+**Researching past a clause that is already in your own project spec is the worst outcome this stage
+has.** A skipped scope is a **prerequisite**, not a result, and the brief now says so and names it.
+
+### And the brief chose a store by list order
+
+It printed the ingest command using `scopes[0]`. Searching `global,company` therefore said:
+
+```
+python brain/heron_ingest.py <file> --scope global
+```
+
+under a **company** standard — one client's document into the store every project on the machine reads.
+Put `project` first and it printed a command `heron_ingest` refuses, because the project scope needs a
+key nothing there has. **Search order is not storage intent and was never evidence of it.** The brief
+offers all three destinations and chooses none.
+
+### The fix that put a round-three defect back, caught by its own test
+
+Closing the bracket escape for **named** facts — `[DN100]`, `[OST_DuctCurves]` — meant narrowing the
+marker shape. Three call sites strip markers **without the packet**: `kind_of`, `_bare` and
+`_negations`. So `[c1]` stopped being recognised, survived into the word list, and **`reverses()`
+stopped firing** — putting back the round-three finding where a reversed clause passed the fabrication
+check.
+
+`tests/test_review_findings.py` caught it inside a minute, on the check standing on that very finding.
+**Every marker-stripping site takes the packet now.**
+
+> Round eight's version of this guard refused anything carrying a **unit**, which only ever caught
+> numeric-leading measurements. A nominal bore, a Revit category and a parameter name all walked past
+> it. Two rounds to close one door.
+
+### The sentence a standards answer most needs to write
+
+```
+Company requires 25mm [a], but project requires 50mm [b].
+```
+
+`_cited()` returned on the **first** marker, so the whole sentence was checked against chunk `a` alone
+and 50mm was reported as invented. **The grounding gate rejected the natural way to report exactly the
+disagreement Stage 8 exists to surface.** A claim is checked against every source it cites now; a value
+in neither is still flagged.
+
+### The rest, in one line each
+
+| | |
+|---|---|
+| ranking decided whether evidence was **checkable** | `check_answer` re-runs retrieval, so a clause `heron_standards` had shown could fall out of the new top five when a re-ranker warmed — and the report said UNRESOLVED about a real clause still in the store. Cited ids are fetched **by id** now, the one lookup no score can affect |
+| **scope order** decided a verdict | company `4.1` at 25mm against project `4.1` at 50mm passed one way round and flagged the identical draft the other. Two scopes that resolve and disagree is AMBIGUOUS. The docstring had recorded this as a limit instead of fixing it |
+| the encoder was read **after** it was used | round eight moved the *report* onto the candidate and left the poll where it was — it fixed **who** was asked, not **when**. The fusion weight and the recorded name now come from one observation taken before the route runs |
+| any year satisfied the **edition** | *"Install by 2026 per ISO 19650 clause 5.1"* was well-formed with edition 2026. A delivery date is not an edition; the year is looked for **at the document** |
+
+### Nine rounds
+
+**Four of nine were in code less than two hours old**, and the shapes are the ones already named. The
+new one is narrower and more uncomfortable than any of them: **a fix that reopens a defect an earlier
+round closed.** Only the test standing on that earlier finding caught it — which is the entire argument
+for `tests/test_review_findings.py` keeping a check per finding rather than a summary.
+
+---
+
+### 2026-09-11 — a tenth round, seven more, and FOUR of them the twin of a fix from the round before
+
+Codex reviewed `ff280c6`. Seven findings, every one verified before anything changed, every one real.
+**Four are the untouched half of something round nine fixed.** That is no longer a recurring shape; it
+is the dominant one.
+
+| round nine fixed | round ten found |
+|---|---|
+| facts combined across every cited body | the **quotation** check still read only the first body |
+| the **edition** bound to its document | the **locator** still searched the whole sentence |
+| the document routes' growing window (round seven) | the **fragment** routes still filter after their limit |
+| retirement recorded in the manifest | the manifest's **failure** still discarded |
+
+### The one that refused the documents this system is for
+
+`Acme Engineering BIM Standard 2026, clause 3.1` came back **VAGUE**, missing *"the document"* — because
+`_DOCUMENT` was a hand-written list of issuing bodies (ISO, BS, NFPA, QCS…) and a company standard is in
+none of them. **The company standard and the project specification are exactly the sources a modeller
+cites**, and no catalogue of issuers could ever contain them.
+
+A second way to name a document needs no list: **a proper name is two or more capitalised words running
+together.** Ordinary prose does not produce one, because only a sentence's first word is capitalised.
+
+### The one that was the same mistake twice, one line apart
+
+Round nine bound the **edition** to its document, so a delivery date could no longer pass as one. It
+left the **locator** searching the whole sentence:
+
+```
+ISO 19650:2018 requires X in the workflow described in Section 2 below
+    -> well-formed, locator "Section 2"
+```
+
+Section 2 of the **answer**, offered as a place to look inside ISO 19650.
+
+### The P1: a route that filters after it limits
+
+Both **fragment** routes took the top `pool * 3` of the unfiltered index and discarded the ineligible
+rows afterwards. Once more than that many higher-ranked rows are excluded — by status, by domain, by
+kind, or by the **Revit version wall** — an eligible match below the window is never considered, and
+both routes report nothing while a compatible fragment sits in the store.
+
+**The document routes were given a growing window in round seven. The fragment routes, in the same
+file, were not.**
+
+### And one that undid content addressing
+
+The document id is hashed from one read of the file and the chunks come from another. A file replaced
+between them — a save from Word, a sync client, a checkout — gives an id describing bytes that were
+never stored, and the manifest's expected hash stops describing the ingested text. That hash is
+precisely what round nine's restore fallback now compares against. **Refused rather than re-hashed:**
+the caller asked for a file at a moment, and the honest answer is that it moved underneath.
+
+### The rest
+
+| | |
+|---|---|
+| a corrected **title** never reached the chunks | the title is the ROOT of `heading_path`, and `heading_path` is what both routes index — so searching the corrected title found nothing while the result that came back was displayed and cited under it. Two names for one document, one invisible |
+| a retirement the **manifest refused** | `ingest()` and `forget()` both carry that failure out; `refresh()` discarded it, so a full disk lost the retired revision the instant the derived store was deleted, while the refresh said success |
+
+> **The quotation fix took two goes and measuring caught the first.** Taking the best whole-claim
+> coverage across the bodies still failed: against chunk `a` the 50mm span failed, against chunk `b` the
+> 25mm span did, and the worst span lost either way. The choice has to be **per span**.
+
+### Ten rounds
+
+A check written in round nine **crashed** in round ten — it quoted the `EMBED.nearest` loop that round
+ten replaced, so it failed on a substring rather than on a defect. Anchored on the rule now: the backend
+is read before the route writes a rank. **A test that names a line instead of a rule is a test with a
+half-life.**

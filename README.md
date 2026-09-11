@@ -55,7 +55,7 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 **Phase 1 is BUILT AND UNPROVEN, and Phase 2 is built and barely proven — those are different words
 on purpose.** The C# —
 the write path, and the fragment bodies — compiles on all eight releases from 2020 to 2027 with zero
-warnings. The Python that reasons about it has 41 test suites (`ls tests/test_*.py | wc -l`), and the pass/fail set is **derived, not typed here** — `python tools/check-gaps.py` runs them and separates what genuinely failed from what is only waiting for a machine. **Two failures are real and pre-date this work**: `test_graph` and `test_reachable`. **Three more can say nothing without an optional dependency** — `test_bridge_roundtrip` wants a built .NET test host (`dotnet build tests/Heron.Bridge.TestHost`), and `test_mcp_serves` and `test_served_claims` want the MCP SDK (`pip install --user mcp`). A compiler proves the
+warnings. The Python that reasons about it has a suite per subject — derive the count with `ls tests/test_*.py | wc -l` rather than reading one here, and the pass/fail set is **derived, not typed here** — `python tools/check-gaps.py` runs them and separates what genuinely failed from what is only waiting for a machine. **Two failures are real and pre-date this work**: `test_graph` and `test_reachable`. **Three more can say nothing without an optional dependency** — `test_bridge_roundtrip` wants a built .NET test host (`dotnet build tests/Heron.Bridge.TestHost`), and `test_mcp_serves` and `test_served_claims` want the MCP SDK (`pip install --user mcp`). A compiler proves the
 API surface agrees; a test proves the logic agrees with itself; neither says whether a duct moves 200
 millimetres or 200 feet.
 

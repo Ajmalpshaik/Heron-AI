@@ -26,6 +26,8 @@ so it is the one with history.
 | 2026-08-30 | 32 | **7th of 32** | not in the top 5 (**17th of 32**) | not in the top 5 | `lexical` |
 | 2026-08-31 | 47 | 12th of 47 | not in the top 5 | not in the top 5 | `lexical` |
 | 2026-08-31 | 59 | **17th of 59** | **36th of 59** | **20th of 59** | `lexical` |
+| 2026-09-10 | 360 | outside the first 100 | **19th** | not in the shortlist | **`model`** |
+| 2026-09-11 | 360 | **118th of 360** | **194th of 360** | not in the shortlist | `lexical` |
 
 **At 59 the decline is no longer just the duct filter sinking - the shortlist itself has stopped being
 made of fragments that fairly claim the sentence.** The top five are now `dimension-mep-runs`,
@@ -276,6 +278,373 @@ which he means.
 weakened to buy back a rank. Taking *"show me just these"* away from the isolate
 fragment would make the isolate unfindable in order to protect a number, and a
 checker that failed a build over a collision would teach exactly that habit.
+
+---
+
+## 2026-09-11 — 360 fragments, and the two backends compared at the same size
+
+**This file had eleven rows, every one `lexical`, the last at 59 fragments, while the library stood at
+360.** That is the drift it was written to prevent, happening to it. Two rows above close it.
+
+```bash
+python brain/heron_scope.py --rebuild
+python brain/heron_embed.py                    # says which backend answered
+python brain/heron_fragment.py                 # the library size
+python brain/heron_retrieve.py "show me every duct in the model" --revit 2024
+```
+
+### The row this file still does not have, and why
+
+**No measurement on the `model` backend was taken today.** The container this was run in refuses
+`huggingface.co` — the proxy answers `403` to `CONNECT`, so no weights can be fetched and
+`heron_embed.py` reports `Backend: lexical`. That is the **same block `heron_embed.py` recorded on
+2026-08-28**, still in force, and it is a fact about **one container** rather than about Heron.
+
+The `2026-09-10 / model` row above is carried across from
+[`docs/work-notes/plans/rag/03-working-note.md` §3](../docs/work-notes/plans/rag/03-working-note.md),
+where it was measured on a machine that could reach a model. **It is not re-derived here and must not
+be quoted as if it were** — its words column reads *"outside the first 100"* because that run capped
+its list at 100.
+
+### What comparing the two rows actually shows
+
+**Same query. Same corpus size. Two backends.** That is the comparison
+[the working note](../docs/work-notes/plans/rag/03-working-note.md) said nothing had, because the jump
+from 59 to 360 moved corpus size and backend at once and neither number separated them.
+
+| Route | `lexical` at 360 | `model` at 360 | Reading |
+|---|---|---|---|
+| words | 118th of 360 | outside the first 100 | **The same, and it must be** — the words route is FTS5 and does not touch the embedding backend at all. Two runs agreeing where they cannot differ is a small check on both |
+| nearness | **194th of 360** | **19th** | **The trained encoder is worth roughly ten places in a hundred here.** Middle of the library against the top fifth |
+
+**So the degradation on the words route is CORPUS SIZE and the improvement on nearness is the
+BACKEND.** At 59 the duct filter was 17th of 59 by words (29%); at 360 it is 118th of 360 (33%). It is
+sinking in proportion to the library rather than falling out of it.
+
+**And the query is still the wrong instrument, which this file decided on 2026-08-30 and still means.**
+*"Show me every duct in the model"* is filter-then-show — a composition, which is what a **skill**
+names, not a fragment. Three fragments fairly claim it. It is kept for continuity with the rows above
+it and for nothing else.
+
+### Both checkers, run at 360 for the first time
+
+`check-routing.py` and `check-intrusion.py` were last recorded at **32** and **59** fragments. Both
+exit 0 at 360, on `lexical`:
+
+```bash
+python tools/check-routing.py
+python tools/check-intrusion.py
+```
+
+| | 2038 declared utterances, 360 fragments, `lexical` |
+|---|---|
+| words route | **#1 for 81%**, top three for **96%** |
+| nearness route | **#1 for 54%**, top three for **73%** |
+| worst intruder | `FRG-VIEW-094` `arrange-tags-to-view-edges`, in **64** shortlists it does not own |
+| correlation(purpose words, intrusions) | **0.151** |
+
+**The words route reached 100% in the top three once, at 59 fragments, and it is 96% at 360.** That is
+thirteen times the library for four points, and the four points are **not** a licence to reword
+anything: the section above this one says what is never the answer, and it still is not.
+
+**Neither number is comparable to a `model` run, because there is not one.** Both tools report the
+backend they ran on, which is the whole reason they print it.
+
+---
+
+---
+
+## 2026-09-11 — how contested a shortlist is, and why no floor was set
+
+**Stage 0b** of the RAG plan: retrieval now reports how contested its answer was — the winner's lead
+and the shortlist's spread in units of **one rank of fusion**, how many candidates both routes found,
+and the two magnitudes fusion discards. `heron_retrieve.Contest`, and `tests/test_contest.py`.
+
+The plan also asked for two things built on the same measurement: **drop a candidate with no claim**
+(R-56) and **refuse a question nothing covers** (R-58). **Neither was built, and this is the
+measurement that says why.**
+
+Twelve questions — six about BIM, six with no BIM content at all — at 360 fragments on `lexical`:
+
+| | winner's lead | words route matched | best bm25 | best nearness |
+|---|---|---|---|---|
+| six BIM questions | 2.1 – 8.1 ranks | 265 – 360 of 360 | −4.27 – −10.37 | 0.19 – 0.59 |
+| six not about BIM | 0.9 – 29.9 ranks | 245 – 360 of 360 | −0.00 – −6.59 | 0.15 – 0.47 |
+
+**Every column overlaps.** *"How do I bake sourdough bread"* has the **widest winning gap of all
+twelve** and the second most selective words route. *"Tag every mechanical equipment"* is less near
+than *"what is the best food for a cat"*. **A floor anywhere on any of these four columns cuts a real
+question in order to reach an unreal one.**
+
+**Why the fused score could never have been the answer.** Reciprocal rank fusion keeps **order** and
+discards **strength** by construction, so two shortlists look alike from the outside however different
+their contents. The cat question's top candidate scores **0.0254**; the tracked duct question's scores
+**0.0246**. The cat question scores **higher**.
+
+**Why the other two columns fail is not a surprise either, once it is said out loud.**
+`heron_embed.py`'s own docstring says of the built-in backend: **"IT IS NOT MEANING."** Asking it to
+tell a duct from a cat is asking it for the one thing it states it cannot do. And `_fts_query` joins
+words with `OR` so a missing word cannot empty a result — correct for a lookup, and it means a sentence
+made of ordinary English matches most of the library. *"What is the best food for a cat"* matched
+**360 of 360**, because *what*, *is*, *for* and *a* are in every fragment.
+
+> **So the floor is not set, and that is a result rather than a postponement.**
+> [R-60](../docs/work-notes/plans/rag/01-requirements.md) says the floor is derived from a measurement
+> and from nothing else. This is the measurement, and it says **not on this backend**. The run belongs
+> on the `model` backend, where nearness is meaning — and that needs a machine that can reach
+> `huggingface.co`.
+>
+> **A first shape was reported and then withdrawn by measuring more.** At three questions the words
+> route looked selective for real questions and not for unreal ones. At twelve it does not. **Three
+> questions is an observation; the twelve are the measurement**, and the first version of this note
+> said the opposite of what the second one says.
+
+**What was NOT done, deliberately.** No keyword list of BIM words (R-60) — it would be wrong the week
+it was written. No classifier in `brain/` (R-62) — [D-01](../docs/DECISIONS.md) gives classifying to
+the host. And no floor chosen to make the twelve questions sort nicely, which is
+[R-55](../docs/work-notes/plans/rag/01-requirements.md) and the same refusal that kept *"show me just
+these"* on the isolate fragment three times above.
+
+---
+
+## 2026-09-11 — the first document measurement, and it is a weak one on purpose
+
+**R-33: document retrieval gets its own measurement from its first day**, so that this half never
+reaches the state the fragment half nearly did — working, trusted, and unmeasured.
+
+**13 chunks, two documents, `lexical` backend.** Six questions asked the way a modeller would ask
+them, each with the clause it should return:
+
+| Asked | Wanted | Got |
+|---|---|---|
+| how thick should duct insulation be | 9.1.1 | **9.1.1** |
+| do I need a vapour barrier over insulation | 9.1.2 | **9.1.2** |
+| what fall for a soil drain | 12.1 | **12.1** |
+| what category should ducts carry | 4.1.2 | **4.1.2** |
+| when do ducts not need insulating | 4.1.1 | 9.1.1, then **4.1.1** |
+| what gradient for drainage | 12.1 | **12.1** |
+
+**P@1 five of six. Recall@3 six of six.**
+
+### Read the caveats before the numbers, because they are larger than the numbers
+
+- **The documents were written for the tests, by the same hand that wrote the questions.** They use
+  the vocabulary the questions use. **This is the weakest kind of measurement there is** and it is
+  recorded as a baseline to beat, never as evidence that chunking works. The real measurement is one
+  real numbered section, and S-4 is still open.
+- **13 chunks is below the pool of 20**, so *"both routes agree"* is true of everything here — the
+  system says so itself in every answer, which is R-61 doing its job on the document side from the
+  first run.
+- **`lexical` again.** The trained backend needs `huggingface.co`, still refused here.
+
+### The one miss is the more interesting row
+
+*"When do ducts not need insulating"* wanted the exception in **4.1.1** and got **9.1.1** first — the
+other document's insulation clause, which also carries an exception. **Both documents say something
+true about when insulation is not required.** That is not a retrieval defect; it is
+[R-24](../docs/work-notes/plans/rag/01-requirements.md) in miniature — two sources with a claim on
+one question — and today ranking silently picks one. **Recorded rather than tuned**, because the
+answer to it is *surface the conflict*, which is Stage 8.
+
+---
+
+## 2026-09-11 — the first fabrication rate, and the mechanism that was measured out
+
+**R-54: a fabrication rate is recorded with its date, its corpus size and ITS THRESHOLDS**, because
+without the thresholds beside it the number is not comparable to the next one. `brain/heron_ground.py`,
+`tests/test_ground.py`.
+
+**6 chunks, one document, `lexical` backend.** Twelve claims against the clauses they cite — six true,
+six invented:
+
+| | flagged | checked |
+|---|---|---|
+| six TRUE claims | **0** | 4 |
+| six FALSE claims | **6** | 6 |
+
+**No false positives. Every invention caught.** Two of the six true claims carried no fact at all and
+were **skipped rather than checked** — R-50, and it is why the denominator is 4 and not 6.
+
+**Thresholds in force:** `quote 0.90 coverage` · `reference, numeric, paraphrase — no ratio gate`.
+
+### The mechanism that was measured and rejected, which is the more useful half
+
+The first version of this check flagged on a **similarity ratio** against a per-kind threshold. It got
+**two of the six false claims wrong** — *"insulated to 25mm except within 10m"* against a source saying
+**3m**, and *"density 96 kg/m3"* against a source saying **48** — because the prose around the number
+was nearly identical and the ratio carried them over the line. **One character is the whole
+fabrication, and a ratio is at its blindest exactly there.**
+
+So the ratio was measured properly, on six true paraphrases and six wrong claims all carrying a fact
+the source did carry:
+
+| | range |
+|---|---|
+| six true paraphrases | **0.222 – 0.682** |
+| six wrong claims | **0.204 – 0.588** |
+
+**They overlap almost entirely.** *"25mm insulation is required on ducts"* — true — scores **0.222**,
+**below** *"drainage shall fall at 25mm"* at **0.236**. Any threshold on that column either flags a
+modeller's own wording or passes a wrong claim, and flagging a modeller's own wording is what
+[R-51](../docs/work-notes/plans/rag/01-requirements.md) exists to prevent.
+
+**So the ratio is reported and never enforced**, and what catches an invention is structural:
+
+> **An added fact is a flag, whatever the ratio says.** A number, a dimension, a gradient or a clause
+> reference the source does not carry is invented, and no amount of surrounding agreement vouches for
+> it.
+
+### And one gate that survived, because a quotation is a different claim
+
+A claim in quotation marks asserts it **IS** the source's words, so the right question is not *how
+similar* but **is it in there** — the share of the quoted text appearing verbatim in the source:
+
+| | coverage |
+|---|---|
+| true quotations | **1.000, 1.000** |
+| misquotations | **0.265, 0.167** |
+
+A clean separation with nothing between. **0.90 is not tuned to that gap** — it is what *"these are
+the source's words"* means, allowing an ellipsis and nothing more.
+
+> **This is not [R-55](../docs/work-notes/plans/rag/01-requirements.md) being bent.** R-55 forbids
+> lowering a threshold to reduce flags. What changed here is the **mechanism**, and it changed because
+> a measurement said the old one did not work — which is the one reason this repository accepts, and
+> the same method that settled the graph route at six settings.
+
+### Read the caveats, they are larger than the numbers
+
+- **Twelve claims, hand-written, against a document written for the tests by the same hand.** This is
+  a baseline to beat, not evidence the check is right.
+- **`lexical` again** — though this check does not use an embedding at all, so the backend affects
+  only which clauses the packet carried.
+- **It proves the answer did not invent the numbers in it. It does not prove the answer is good.**
+  Those are different claims and only the second one needs a person.
+
+---
+
+## 2026-09-11 — the document graph's density, and the route that still has no vote
+
+**Stage 5 begins with a count, not with code**, because the same idea over the **fragment** graph was
+measured at six settings and **lost every one** ([`34 §2.13`](../docs/34-patterns-adapted.md)) — and
+the property that decided it was **density**: a median of **50** neighbours per fragment, **worst
+230**, so *"the neighbours of the best hit"* was a large slice of the library added as competitors.
+
+**A document graph is a different graph, so the finding does not transfer. The test that decided it
+does.** `heron_graph.document_density()`:
+
+| | fragments | documents |
+|---|---|---|
+| chunks / fragments counted | 360 | **62** |
+| **median neighbours** | **50** | **7** |
+| **worst** | **230** | **12** |
+| isolated | — | 1 |
+
+**An order of magnitude sparser, and for a reason that is intelligible rather than lucky.** A
+fragment providing `IList<Element>` composes with most of the library — that is what made it dense.
+**A clause cannot do that.** Its neighbours are its one parent, the clauses sharing that parent, its
+own children, and the clauses its text names. **The document's own numbering bounds the count**, and
+no clause can be the parent of two hundred others unless the document really does number them that
+way — in which case they really are its subsections.
+
+### So the route is built and it still has NO WEIGHT, which is step 4 exactly
+
+`heron_graph.document_neighbours()` derives three kinds of edge — **parent**, **sibling**, and a
+clause whose **text names another clause's number**. The third is the only reason a graph route is
+worth considering at all: *"labelling shall be in accordance with 21.3.1"* links two clauses that
+share no subject and no vocabulary, so neither the words route nor the nearness route can find it.
+
+**Nothing in retrieval reads any of it**, and a test asserts that. Fusion still has exactly two
+weighted routes. **An edge route gets no vote until a measurement earns it one — the same bar the
+nearness route had to clear**, and the same bar `34 §2.13` set for the fragment graph before it
+failed.
+
+### What this count is NOT
+
+**62 chunks, in four documents, all written for these tests by the same hand.** The density is
+*structurally* bounded, which is the part that generalises; the *number* is about this corpus. A real
+QCS section with thirty clauses under one subsection would push the median up — and still nowhere
+near 50.
+
+**So the gate is passed provisionally and the weight is not granted.** Granting it needs a tracked
+question set on a real corpus, and a question set over documents this session wrote would measure the
+documents rather than the route.
+
+**D-40 holds: every edge is derived on demand.** There is no edge table, and a test asserts there is
+none — a stored document edge is a cache that goes stale the moment a document is re-ingested.
+
+---
+
+## 2026-09-11 — Stage 7: the re-ranker seam, and the half of it that cannot be measured here
+
+**Stage 7 asks for a before and an after at the same corpus size. Only the before exists, and this
+section is about being clear which is which.**
+
+`brain/heron_rerank.py` is the seam: a cross-encoder reads the top ~20 (question, passage) pairs
+together and may re-order them, which neither existing route can do because both score the question
+and the passage separately. `tests/test_rerank.py` is the check.
+
+### What was measured — 2026-09-11, 360 fragments, backend `lexical`, re-ranker `absent`
+
+`show me every duct in the model`, Revit 2024:
+
+| | |
+|---|---|
+| re-ranker reported | **`absent`** — printed by the tool, on the line under the route |
+| best | `FRG-SEL-030` `ZOOM_TO_ELEMENTS`, **0.0246** |
+| winner's lead | **2.1 rank(s)** |
+| shortlist spread | 31.6 rank(s) |
+| found by both routes | 3 of 5 |
+| best bm25 / best nearness | −4.3609 / 0.4924 |
+
+**The top score and the winner's lead are IDENTICAL to the Stage 0b run above** — 0.0246 and 2.1
+ranks, recorded before this file existed. That is the result: **with nothing installed the seam is
+inert, and it was checked against a recorded number rather than asserted in a docstring.**
+
+Its cost, on the same machine and the same question:
+
+| | |
+|---|---|
+| a whole `retrieve()` | **0.0074 s** (mean of 20) |
+| the seam, re-ranker absent, over 20 candidates | **0.000004 s** (mean of 200) |
+| share of one query | **0.05 %** |
+
+So the four-microsecond path builds twenty passage strings it then throws away, because `scores()` is
+asked before anything knows whether a backend exists. **Measured rather than tidied**: removing it
+would put a second place in the code that decides whether a re-ranker is present, and 0.05 % of a
+query is not a reason to have two.
+
+### What was NOT measured, and it is the half Stage 7 is actually about
+
+**No cross-encoder has ever run in this repository.** The weights need `huggingface.co`, and the
+container this was written in refuses it:
+
+```
+$ curl https://huggingface.co/api/models/...
+curl: (56) CONNECT tunnel failed, response 403
+```
+
+Re-checked 2026-09-11. `pypi.org` answers 200 from the same container, so this is that host's policy
+and not a broken network — the same block `heron_embed.py` recorded on 2026-08-28, still in force.
+
+**Nothing was estimated to fill the gap, and no number from a stub was written down as a result.**
+`tests/test_rerank.py` injects a stub scorer to prove the plumbing — that the order changes, that at
+most twenty pairs are scored, that a backend which throws is absorbed. A stub's opinion about which
+clause answers a question is this session's opinion wearing a model's clothes, and a re-ranker's whole
+claim is that it improves an order. **An improvement nobody measured is a feeling.**
+
+> **The after belongs on a machine that can reach a model**, at 360 fragments and 62 chunks, on the
+> same tracked question and the same twelve of the Stage 0b run. `A10` in
+> [`docs/NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) is that run.
+
+### The size, announced before anything downloads
+
+`python brain/heron_rerank.py` prints the package, what it is for, **500 MB to 2 GB**, and
+`pip install --user`, and it needs no network to print any of it — which is the only way an
+announcement can come before the download it is warning about (R-77, R-42, D-01). The figure is the
+one [R-79](../docs/work-notes/plans/rag/01-requirements.md) records from the field reading on
+2026-09-10; it is **not** measured here, because measuring it needs the host that is blocked.
+`pip download --no-deps sentence-transformers torch` is the command that confirms it.
 
 ---
 

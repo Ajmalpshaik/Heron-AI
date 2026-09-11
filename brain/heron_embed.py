@@ -220,7 +220,9 @@ def _load_model():
 
     try:
         from model2vec import StaticModel
-        model = StaticModel.from_pretrained(name or "minishlab/potion-base-8M")
+        which = name or "minishlab/potion-base-8M"
+        model = StaticModel.from_pretrained(which)
+        _WHICH_MODEL[0] = "model2vec:%s" % which
         _MODEL_CACHE.append(lambda t: list(model.encode([t])[0]))
         return _MODEL_CACHE[0]
     except Exception:
@@ -228,7 +230,9 @@ def _load_model():
 
     try:
         from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer(name or "all-MiniLM-L6-v2")
+        which = name or "all-MiniLM-L6-v2"
+        model = SentenceTransformer(which)
+        _WHICH_MODEL[0] = "sentence-transformers:%s" % which
         _MODEL_CACHE.append(lambda t: list(model.encode(t)))
         return _MODEL_CACHE[0]
     except Exception:
@@ -236,6 +240,31 @@ def _load_model():
 
     _MODEL_CACHE.append(None)
     return None
+
+
+# WHICH trained model, not just THAT one is trained - and the difference is a
+# corrupted index. A vector was stamped `backend = "model"`, so changing
+# HERON_EMBED_MODEL, or installing model2vec beside sentence-transformers,
+# produced a DIFFERENT encoder wearing the same label. Every unchanged chunk
+# then satisfied the cache check and kept vectors from the old model: at a
+# different dimension nearest() silently discards them all, and at the same
+# dimension it computes meaningless cross-model dot products. Either way the
+# semantic route quietly stops working and nothing says so. Found by a review
+# 2026-09-11.
+_WHICH_MODEL = [None]
+
+
+def stamp():
+    """What to record beside a vector so a changed encoder invalidates it.
+
+    The backend name for `lexical`, which is one built-in implementation and
+    cannot change under a caller. The backend name AND the model for `model`,
+    which can.
+    """
+    name, _why = backend()
+    if name == MODEL and _WHICH_MODEL[0]:
+        return "%s:%s" % (name, _WHICH_MODEL[0])
+    return name
 
 
 def backend():
@@ -249,6 +278,43 @@ def backend():
 def vector(text):
     got = model_vector(text)
     return got if got is not None else lexical_vector(text)
+
+
+def encoder():
+    """(stamp, a function from text to a vector) - TAKEN TOGETHER, once.
+
+    THE STAMP AND THE ENCODER HAVE TO BE ONE DECISION, and an indexing pass
+    that asked for them separately could store two encoders' work under one
+    name. stamp() is read once at the top of a pass and vector() consults the
+    loaded model on every row, so a warm-up finishing mid-pass meant:
+
+        row 1..k     lexical vectors, stamped "lexical"
+        row k+1..n   MODEL vectors, stamped "lexical"
+
+    in one table, under one backend name. At a different dimension nearest()
+    then discards the lot; at the same dimension it computes cross-model dot
+    products that mean nothing - and either way the semantic route quietly
+    stops working, which is exactly the failure the stamp was added to
+    prevent. Only a later pass repairs it, and only if something notices.
+    Found by a review 2026-09-11, against the fix for the first half of this.
+
+    So the model is resolved ONCE and closed over. A warm-up that finishes
+    half way through a pass now changes nothing until the next pass, which is
+    the honest behaviour: one pass, one encoder, one name.
+    """
+    model = _load_model()
+    if model is None:
+        return LEXICAL, lexical_vector
+
+    which = _WHICH_MODEL[0]
+    tag = "%s:%s" % (MODEL, which) if which else MODEL
+
+    def fixed(text):
+        got = model(text)
+        length = math.sqrt(sum(x * x for x in got))
+        return [x / length for x in got] if length else got
+
+    return tag, fixed
 
 
 # ---------------------------------------------------------------------------
@@ -289,6 +355,10 @@ def _try_vec_extension(db):
         return False
 
 
+FRAGMENT = "fragment"
+CHUNK = "chunk"
+
+
 def ensure_tables(store):
     store.db.executescript("""
         CREATE TABLE IF NOT EXISTS vectors (
@@ -298,6 +368,23 @@ def ensure_tables(store):
             embedding BLOB NOT NULL
         );
     """)
+    # ONE TABLE, TWO KINDS OF THING IN IT - and a column that says which.
+    #
+    # A chunk id and a fragment id cannot collide, so the rows could have
+    # shared this table silently. They must not: nearest() would then hand a
+    # caller asking about fragments a clause it never asked for, and index()
+    # walks the fragments, so chunk rows would be orphans nothing refreshed.
+    # A column is cheaper than a second table with a second hashing scheme.
+    #
+    # ADD COLUMN is the whole migration, the same one heron_search already
+    # does for `fingerprint`. A row written before this column reads NULL, and
+    # every row written before this column was a fragment - so NULL means
+    # fragment, and that is a fact about the history rather than a default.
+    try:
+        store.db.execute("ALTER TABLE vectors ADD COLUMN kind TEXT")
+    except sqlite3.OperationalError as exc:
+        if "duplicate column" not in str(exc):
+            raise
     store.db.commit()
 
 
@@ -322,7 +409,7 @@ def index(store, force=False):
     library for nothing. Keyed on content, that costs zero.
     """
     ensure_tables(store)
-    name, _why = backend()
+    name, embed = encoder()
     on_disk, _ = FRAG.load_all()
 
     embedded = skipped = 0
@@ -340,23 +427,96 @@ def index(store, force=False):
                 continue
 
         store.execute(
-            "INSERT OR REPLACE INTO vectors (id, text_hash, backend, embedding) "
-            "VALUES (?,?,?,?)", (row["id"], digest, name, _pack(vector(text))))
+            "INSERT OR REPLACE INTO vectors (id, text_hash, backend, embedding, "
+            "kind) VALUES (?,?,?,?,?)",
+            (row["id"], digest, name, _pack(embed(text)), FRAGMENT))
         embedded += 1
 
     store.db.commit()
     return embedded, skipped
 
 
-def nearest(store, text, limit=5):
-    """The closest fragments to this text. [(id, similarity), ...], best first.
+def index_chunks(store, force=False):
+    """Embed every chunk whose text has changed. Returns (embedded, skipped).
+
+    WHAT IS EMBEDDED IS THE HEADING PATH PLUS THE CHUNK, NOT THE CHUNK ALONE.
+    That is R-66, and it is the whole of it: a clause embedded in isolation
+    has lost the document it came from, and "21.3.2 Insulation" means nothing
+    without "Section 21 Mechanical - 21.3 Ductwork" in front of it. The
+    published version of this technique generates that context with a model
+    call per chunk; here it is read off the document's own structure, so it
+    costs nothing and cannot disagree with the hierarchy.
+
+    Returns (0, 0) when nothing has been ingested. A scope with no documents
+    is the normal case, not an error.
+    """
+    ensure_tables(store)
+    try:
+        rows = store.execute(
+            "SELECT id, heading_path, text FROM chunks").fetchall()
+    except sqlite3.OperationalError as exc:
+        # ONLY "THE TABLE IS NOT THERE". The last twin of a shape a review has
+        # now named four times in this repository: a locked, malformed or
+        # schema-shifted store counted as "nothing ingested", index_chunks()
+        # returned (0, 0), and the caller was told the meaning route had
+        # nothing to index rather than that the store is broken. Found while
+        # fixing the same line in heron_retrieve.find_documents, by grepping
+        # for the shape instead of waiting for the next review to find it.
+        if "no such table" not in str(exc):
+            raise
+        return 0, 0                      # no chunks table: nothing ingested
+
+    name, embed = encoder()
+    embedded = skipped = 0
+    for row in rows:
+        text = "%s\n%s" % (row["heading_path"] or "", row["text"] or "")
+        digest = hashlib.blake2b(text.encode("utf-8"),
+                                 digest_size=16).hexdigest()
+        if not force:
+            have = store.execute(
+                "SELECT text_hash, backend FROM vectors WHERE id = ?",
+                (row["id"],)).fetchone()
+            if have and have["text_hash"] == digest and have["backend"] == name:
+                skipped += 1
+                continue
+        store.execute(
+            "INSERT OR REPLACE INTO vectors (id, text_hash, backend, embedding, "
+            "kind) VALUES (?,?,?,?,?)",
+            (row["id"], digest, name, _pack(embed(text)), CHUNK))
+        embedded += 1
+
+    # A chunk that no longer exists leaves a vector behind, and a vector with
+    # no chunk is a hit that resolves to nothing. Forgetting them here is the
+    # same pass, so the two can never drift.
+    store.execute(
+        "DELETE FROM vectors WHERE kind = ? AND id NOT IN "
+        "(SELECT id FROM chunks)", (CHUNK,))
+    store.db.commit()
+    return embedded, skipped
+
+
+def nearest(store, text, limit=5, kind=FRAGMENT):
+    """The closest things to this text. [(id, similarity), ...], best first.
 
     Similarity, not distance: 1.0 is identical and 0.0 is unrelated, because
     every caller and every log line reads better that way round.
+
+    `kind` says WHAT to compare against, and it defaults to fragments because
+    every caller that existed before documents did meant fragments. Passing
+    CHUNK searches the ingested documents instead.
+
+    THE TWO ARE NEVER RETURNED TOGETHER, and that is a decision rather than an
+    omission. A chunk ranked first among a hundred and a fragment ranked first
+    among four hundred are not comparable numbers, and putting them in one
+    list would invent a comparison the scores cannot support - which is the
+    same reason Contest reports the discarded magnitudes rather than fusing
+    them. Two corpora, two questions, two answers, each labelled.
     """
     ensure_tables(store)
     want = vector(text)
-    rows = store.execute("SELECT id, embedding FROM vectors").fetchall()
+    rows = store.execute(
+        "SELECT id, embedding FROM vectors "
+        "WHERE COALESCE(kind, ?) = ?", (FRAGMENT, kind)).fetchall()
 
     scored = []
     for row in rows:

@@ -77,6 +77,40 @@ TOOLS = {
     # gives, and nothing else about the document.
     "heron_context":            (READ,    None),
 
+    # The grounding check (HERON-RAG-CIT-014, docs/05 s8). READ, and the
+    # operation is None for the same reason: it sends nothing to Revit. It
+    # takes a draft the HOST wrote and the clauses Heron already holds, and
+    # reports where the two disagree.
+    #
+    # READ rather than anything higher even though a DRAFT crosses into it,
+    # because the draft goes nowhere: it is compared in this process, against
+    # this machine's own store, with no model and no network (R-47), and the
+    # only thing that comes back is a report. And it can never change an
+    # answer - R-53 forbids a rewrite, which is what keeps a checker from
+    # quietly becoming an editor.
+    "heron_check":              (READ,    None),
+
+    # The multi-scope standards answer (HERON-RAG-LIB-001 and
+    # HERON-RAG-CNF-015, docs/20). READ, and the operation is None - it sends
+    # nothing to Revit and reads only this machine's own knowledge stores.
+    #
+    # IT OPENS MORE THAN ONE SCOPE AND THAT IS WORTH SAYING HERE, because it is
+    # the only tool that does. It does not POOL them: each is asked on its own
+    # and answers under its own label, which is the wall D-33 and Golden Rule 5
+    # describe. What crosses between them is a number and a clause number.
+    "heron_standards":          (READ,    None),
+
+    # Stage 9's two (HERON-RAG-RSH-017, docs/28). READ, operation None, and
+    # for these two that is a stronger claim than for the others: the Research
+    # agent is the one part of this plan whose NAME suggests reaching outside,
+    # and it does not. heron_research says what Heron's own knowledge missed
+    # and what an outside answer must carry; heron_research_check reports on
+    # the CITATIONS of what came back. Neither opens a socket - the host has
+    # the model and the network (D-01), and tests/test_research.py asserts the
+    # absence of a fetch rather than trusting this comment.
+    "heron_research":           (READ,    None),
+    "heron_research_check":     (READ,    None),
+
     # The Capability Gap report (HERON-AHR-GAP-001, docs/06 s6). READ, and the
     # operation is None for the same reason as the three above - it sends
     # nothing to Revit. What it reads is Heron's OWN audit trail, which is a
@@ -156,3 +190,31 @@ def describe():
         mark = "  <- CHANGES THE MODEL" if risk >= MODIFY else ""
         lines.append("  %-*s  %-8s%s" % (width, name, NAMES[risk], mark))
     return "\n".join(lines)
+
+
+def main():
+    """
+    Print the registry. THE INVENTORY IS DERIVED, NEVER TYPED.
+
+    Two places in this repository listed the MCP tools in prose - brain's
+    README said "four" and this server's own module header listed seven - and
+    adding `heron_check` and `heron_standards` left both of them wrong, on
+    exactly the descriptions a reviewer reads to find out what Heron can
+    reach and what it can change. A hand-typed list of callable surfaces is a
+    security claim with a half-life. Found by a review 2026-09-11.
+
+    So both now name this command instead, and this is the one place the
+    answer lives:
+
+        python mcp/server/heron_tools.py
+    """
+    print("Every MCP tool Heron declares, worst first. %d in all." % len(TOOLS))
+    print()
+    print(describe())
+    print()
+    print("Derived from heron_tools.TOOLS, which is what the server enforces.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

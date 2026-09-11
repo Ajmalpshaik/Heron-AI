@@ -1,4 +1,4 @@
-# Heron-Agent:  HERON-RAG-RNK-006, HERON-RAG-CTX-007
+# Heron-Agent:  HERON-RAG-RNK-006, HERON-RAG-CTX-007, HERON-RAG-LIB-001
 # Heron-Step:   11
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -22,6 +22,13 @@ THE ORDER MATTERS AND IT IS NOT NEGOTIABLE
   3. Reciprocal rank fusion, to make one list out of two.
   4. A small quality nudge, which may settle a near-tie and may not overturn a
      clearly better match.
+  4b. RE-READ THE TOP ~20, if a re-ranker is installed. It reads each question
+     and passage TOGETHER, which neither route above can do, so it is allowed
+     to overturn the order - and on a machine without one, nothing happens and
+     the answer says so. See heron_rerank.py.
+  5. SAY HOW CONTESTED THE RESULT WAS. Stages 1 to 4 already compute every
+     number this needs and used to throw all of them away, so a coin toss and
+     a clear winner came back wearing the same face. See Contest.
 
 WHY THE VERSION FILTER IS A WALL AND NOT A WEIGHTING (docs/05 s8)
 ----------------------------------------------------------------
@@ -47,6 +54,7 @@ opinion.
 """
 
 import os
+import sqlite3
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -56,12 +64,23 @@ import heron_scope as SCOPE                                   # noqa: E402
 import heron_search as SEARCH                                 # noqa: E402
 import heron_embed as EMBED                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
+import heron_rerank as RERANK                                 # noqa: E402
 
 # The constant in reciprocal rank fusion. 60 is the value the technique is
 # normally used with; what it does is stop rank 1 from dwarfing everything
 # below it, so a fragment both routes place 2nd or 3rd can still beat one that
 # only ONE route loved. That is the whole point of fusing rather than picking.
 RRF_K = 60
+
+# ONE RANK OF FUSION - the unit every spread on this page is measured in.
+#
+# Derived, never typed. It is what one place in a route's ranking is worth to
+# the fused score, and it is the yardstick the quality nudge below is already
+# held against: the nudge must be SMALLER than this, or status would outrank
+# matching. Measuring a shortlist's spread in the same unit means "the top two
+# are half a rank apart" reads against a number the file already lives by,
+# instead of against 0.0002 with nothing to compare it to.
+ONE_RANK = 1.0 / (RRF_K + 1) - 1.0 / (RRF_K + 2)
 
 # THE TWO ROUTES DO NOT GET AN EQUAL VOTE, AND THE REASON IS MEASURED.
 #
@@ -120,13 +139,41 @@ class Candidate(object):
         self.id = fragment_id
         self.row = row
         self.keyword_rank = None
+        self.keyword_score = None      # bm25, negative, lower is better
         self.vector_rank = None
-        self.vector_score = None
+        self.vector_score = None       # cosine, higher is better
         self.fused = 0.0
         self.quality = 0.0
+        # THE RE-RANKER'S OPINION IS CARRIED, NOT ADDED IN. Both stay None on a
+        # machine with no re-ranker installed, which is most machines.
+        self.rerank_score = None       # the cross-encoder's, higher is better
+        self.rerank_rank = None        # its position in that order, 1-based
+        # HOW MANY THE RE-RANKER ACTUALLY READ. Carried on the candidate so a
+        # list cut down to `limit` still knows - see Contest.
+        self.rerank_pool = None
+        # WHICH NEARNESS BACKEND PRODUCED vector_rank, written where the rank
+        # is used rather than asked for afterwards. It is the same name the
+        # FUSION WEIGHT was chosen from, so a report cannot name one backend
+        # while the arithmetic used another - and it cannot be changed by a
+        # warm-up finishing after the search. See ran().
+        self.vector_backend = None
+        self.vector_why = None
 
     @property
     def score(self):
+        """The FUSED score plus the quality nudge. The re-ranker is not in it.
+
+        DELIBERATE, and it is the one arithmetic decision in Stage 7. Every
+        number on this page is measured in ONE_RANK, the quality nudge is
+        bounded against ONE_RANK, and Contest reads every spread in ONE_RANK.
+        A cross-encoder's score is on an unrelated scale that differs by model,
+        so folding it in here would silently unbound the nudge and turn every
+        spread Contest reports into a mixture of two units.
+
+        So the re-ranker re-ORDERS the shortlist and leaves the score alone.
+        The fused score stays on record underneath it, which is also the only
+        reason a before-and-after measurement is possible at all.
+        """
         return self.fused + self.quality
 
     def why(self):
@@ -138,10 +185,245 @@ class Candidate(object):
         if not parts:
             parts.append("no route")
         agreed = self.keyword_rank is not None and self.vector_rank is not None
-        return "%s%s" % (" + ".join(parts), " - both agree" if agreed else "")
+        said = "%s%s" % (" + ".join(parts), " - both agree" if agreed else "")
+        if self.rerank_rank is not None:
+            said += ", re-ranker #%d" % self.rerank_rank
+        return said
 
     def __repr__(self):
         return "<%s %.4f %s>" % (self.id, self.score, self.why())
+
+
+class Contest(object):
+    """How contested a shortlist was. A MEASUREMENT, never a verdict.
+
+    docs/work-notes/plans/rag/00-structure.md s3.1: retrieval answers with the
+    same face whether it is sure or guessing, and the evidence was already on
+    record. At 14 fragments brain/retrieval-history.md called a top five
+    spanning 0.0021 "noise rather than ranking - a reader who takes the top hit
+    as 'the answer' is reading a coin toss", and nobody was told that at query
+    time. Every number below was computed by retrieve() before this class
+    existed and discarded on the way out.
+
+    WHAT IT REPORTS, AND WHY EACH ONE IS HERE
+
+      top_gap    the winner's lead over the runner-up, in ONE_RANK. The one
+                 number that answers "was this a coin toss?".
+      spread     first to last across the shortlist, same unit. What
+                 retrieval-history was describing in raw score.
+      agreed     how many of the shortlist both routes found. Agreement is the
+                 only signal in this file that is not an opinion - but see
+                 pool_is_evidence.
+      breadth    how many fragments the WORDS route matched at all.
+      best_words
+      best_near  the two MAGNITUDES fusion throws away. Reported, never ranked
+                 on - see the warning below.
+
+    THE THRESHOLD THAT IS NOT INVENTED. There is exactly one comparison here -
+    top_gap against ONE rank - and it is not a dial. A gap smaller than one
+    rank is a gap narrower than the quality nudge, which means the order could
+    have been produced by the fragments' STATUS rather than by either route
+    liking one more than the other. That is a fact about the arithmetic, and
+    R-55 - a threshold is never moved to make a report look better - has
+    nothing to bite on because there is no number here to move.
+
+    WHAT THIS DELIBERATELY DOES NOT DO - and it is the whole reason it stops
+    here. It does not DROP a candidate (R-56) and it does not REFUSE a question
+    nothing covers (R-58). Both need a floor, and R-60 says a floor is derived
+    from a measurement or it is not set at all.
+
+    THE FUSED SCORE CANNOT BE THAT MEASUREMENT, and this is arithmetic rather
+    than an opinion. Reciprocal rank fusion keeps ORDER and discards STRENGTH,
+    so every shortlist looks similar from the outside no matter what went into
+    it. Measured 2026-09-11 at 360 fragments on the lexical backend:
+
+        "what is the best food for a cat"    top 0.0254   gap 2.4 ranks
+        "show me every duct in the model"    top 0.0246   gap 2.1 ranks
+
+    The cat question scores HIGHER than the duct one. A floor on the fused
+    score would have to cut the real question to reach the unreal one.
+
+    NEITHER SURVIVING MAGNITUDE IS THAT MEASUREMENT EITHER, ON THIS BACKEND.
+    Three questions suggested they might be - a real question appeared to make
+    the words route select rather than match everything - so the run was
+    widened to twelve, six BIM and six with no BIM content at all, and the
+    shape did not survive it. Every column overlaps:
+
+                        gap        breadth     bm25          nearness
+        six BIM        2.1 - 8.1   265 - 360   -4.27 -10.37  0.19 - 0.59
+        six not BIM    0.9 - 29.9  245 - 360   -0.00 - -6.59 0.15 - 0.47
+
+    "how do I bake sourdough bread" has the widest winning gap of all twelve
+    and the second most selective words route. "tag every mechanical
+    equipment" is less near than the cat question. A floor anywhere on any of
+    these four columns cuts real questions to reach unreal ones.
+
+    SO NOTHING ACTS ON THEM, AND THE REASON IS NOT CAUTION - it is that the
+    numbers say the lexical backend has no opinion about meaning, which is
+    precisely what heron_embed's own docstring says about it: "IT IS NOT
+    MEANING". Asking it to tell a duct from a cat is asking it for the one
+    thing it says it cannot do. The measurement belongs on the MODEL backend,
+    where nearness is meaning, and it has not been run because the container
+    this was written in refuses huggingface.co - the same block heron_embed
+    recorded on 2026-08-28, still in force on 2026-09-11.
+
+    Reported, so the run on a machine that can reach a model has a before to
+    read against. brain/retrieval-history.md carries this run in full;
+    docs/work-notes/plans/rag/03-working-note.md carries it as W-8.
+    """
+
+    def __init__(self, ranked, eligible_count, pool, breadth, noun="fragment",
+                 nudged=True):
+        self.count = len(ranked)
+        self.eligible = eligible_count
+        self.pool = pool
+        self.breadth = breadth
+        # WHAT IT IS COUNTING. The first version said "fragment" whatever it
+        # had been given, so the document side reported "5 fragment(s) were
+        # eligible" about five clauses - a sentence that is wrong in the one
+        # word a reader uses to tell the two corpora apart.
+        self.noun = noun
+        # WHETHER A QUALITY NUDGE COULD HAVE SET THIS ORDER. It can on the
+        # fragment side, where status says how far a piece of code has been
+        # proved. It cannot on the document side, because documents get no
+        # nudge - a DRAFT clause is not a worse answer than a REVIEWED one,
+        # it is an unread one. Saying otherwise would explain a tie with a
+        # mechanism that is not running.
+        self.nudged = nudged
+
+        # WHETHER A RE-RANKER SET THIS ORDER. Derived from the candidates
+        # rather than passed in, so a caller cannot forget to say so - the
+        # same reason D-40 derives an edge instead of storing one.
+        self.reranked = any(getattr(c, "rerank_rank", None) is not None
+                            for c in ranked)
+        # AND HOW MANY IT READ, which is not the same as how many are here.
+        # find() builds this from the list AFTER the cut to `limit`, so with
+        # limit=5 the re-ranker had read twenty and this held five.
+        pools = [getattr(c, "rerank_pool", None) for c in ranked]
+        pools = [n for n in pools if n]
+        self.rerank_pool = max(pools) if pools else None
+
+        # SORTED DESCENDING, AND THAT IS NOT TIDINESS. Every number below is a
+        # fact about FUSION, and when a re-ranker has re-ordered the shortlist
+        # the list arrives in the re-ranker's order instead - at which point
+        # scores[0] - scores[1] is the gap between the re-ranker's first and
+        # second, which can be NEGATIVE. That would report a spread of -3.2
+        # ranks and call every re-ranked result a coin toss. Sorting recovers
+        # the fusion spread of the same set, and changes nothing at all when
+        # no re-ranker ran, because then the list is already in this order.
+        scores = sorted([c.score for c in ranked], reverse=True)
+        self.top_gap = ((scores[0] - scores[1]) / ONE_RANK
+                        if len(scores) > 1 else None)
+        self.spread = ((scores[0] - scores[-1]) / ONE_RANK
+                       if len(scores) > 1 else 0.0)
+        self.agreed = len([c for c in ranked
+                           if c.keyword_rank is not None
+                           and c.vector_rank is not None])
+
+        words = [c.keyword_score for c in ranked if c.keyword_score is not None]
+        near = [c.vector_score for c in ranked if c.vector_score is not None]
+        self.best_words = min(words) if words else None   # bm25: lower is better
+        self.best_near = max(near) if near else None
+
+    @property
+    def pool_is_evidence(self):
+        """Whether "both agree" means anything yet.
+
+        MEASURED LIMITATION, and it predates this class - it was a comment in
+        find(). The nearness route returns a similarity for EVERY eligible
+        fragment rather than a shortlist, so while the library is smaller than
+        the pool, every candidate is found by both routes and "both agree" is
+        true of everything, including a question about cats.
+        """
+        return self.eligible > self.pool
+
+    @property
+    def words_selected_nothing(self):
+        """The words route matched at least as much as the filter left.
+
+        Not a threshold - a comparison of two counts. When it is true the
+        route ranked the library rather than choosing from it, and a position
+        in that ranking says nothing about having a claim on the sentence.
+        """
+        return self.breadth >= self.eligible
+
+    def sentence(self):
+        """The same measurement in words, because words are the contract.
+
+        S-3 in 00-structure.md: a number and a sentence, and the sentence is
+        what survives. This file already spoke this way - "both agree" - and
+        this extends that vocabulary rather than starting a second one.
+        """
+        if self.count < 2:
+            return ("one candidate, so nothing was contested - a shortlist of "
+                    "one is not a ranking")
+
+        # A RE-RANKED ORDER IS NOT EXPLAINED BY THE FUSION GAP, and saying
+        # it was would be the most confident wrong sentence on this page. The
+        # gap describes the shortlist the re-ranker was HANDED; the order shown
+        # is the re-ranker's, set by reading each pair. Reporting "a coin toss"
+        # about an order something else decided would be describing a contest
+        # that did not settle anything.
+        if self.reranked:
+            said = ("the RE-RANKER set this order, reading each question-and-%s "
+                    "pair - so the fusion numbers here describe the shortlist "
+                    "it was given, not the order shown" % self.noun)
+            # WHAT THESE NUMBERS ARE ACTUALLY OVER. They are computed from the
+            # candidates in hand, and with a limit smaller than the re-rank
+            # pool that is a SUBSET of what the re-ranker read. Saying "the
+            # shortlist it was given" about five of twenty was a sentence
+            # describing a set it had never seen. Found by a review.
+            if self.rerank_pool and self.rerank_pool > self.count:
+                said += ("; it read %d, and these %d are the ones it put on "
+                         "top - the fusion numbers below are over THESE %d, "
+                         "not over all %d"
+                         % (self.rerank_pool, self.count, self.count,
+                            self.rerank_pool))
+            said += ("; they span %.1f fusion rank(s) and %d of %d were "
+                     "found by both routes"
+                     % (self.spread, self.agreed, self.count))
+        elif self.top_gap * ONE_RANK < QUALITY_SPAN and self.nudged:
+            # THE COMPARISON IS AGAINST WHAT STATUS CAN ACTUALLY MOVE, not
+            # against a whole rank. Across the statuses a fragment may be
+            # OFFERED at, the nudge spans about six tenths of one rank - so a
+            # gap of 0.8 ranks is below one rank and STILL wider than anything
+            # status could have produced. The old wording blamed status for
+            # those, in the one sentence here whose job is to say honestly
+            # what set an order. Found by a review 2026-09-11.
+            said = ("A COIN TOSS: the top two are %.1f of one fusion rank "
+                    "apart, which is inside the %.1f rank(s) the quality "
+                    "nudge spans - their order could have come from status "
+                    "alone, not from either route preferring one"
+                    % (self.top_gap, QUALITY_SPAN / ONE_RANK))
+        elif self.top_gap < 1.0:
+            said = ("A COIN TOSS: the top two are %.1f of one fusion rank "
+                    "apart, and one rank is the smallest difference either "
+                    "route can express - so their order carries no preference "
+                    "at all" % self.top_gap)
+        else:
+            said = ("the winner is %.1f rank(s) clear of the runner-up"
+                    % self.top_gap)
+
+        if not self.reranked:
+            said += ("; the shortlist spans %.1f rank(s); %d of %d found by "
+                     "both routes" % (self.spread, self.agreed, self.count))
+
+        if not self.pool_is_evidence:
+            said += (". Only %d %s(s) were eligible, no more than the pool "
+                     "of %d - every one of them is found by both routes, so "
+                     "'both agree' means nothing here yet"
+                     % (self.eligible, self.noun, self.pool))
+        if self.words_selected_nothing:
+            said += (". The words route matched %d %s(s) - at least as "
+                     "many as the %d the filter left - so it ranked the "
+                     "library rather than selecting from it"
+                     % (self.breadth, self.noun, self.eligible))
+        return said
+
+    def __repr__(self):
+        return ("<contest gap=%s spread=%.1f agreed=%d/%d>"
+                % ("-" if self.top_gap is None else "%.1f" % self.top_gap,
+                   self.spread, self.agreed, self.count))
 
 
 class Excluded(object):
@@ -169,6 +451,21 @@ class Excluded(object):
 # by default: they exist so a record is never destroyed (Golden Rule 4), not so
 # they can be handed back as answers.
 OFFERABLE = ("DISCOVERED", "DRAFT", "TESTING", "VALIDATED", "PROVEN", "PRODUCTION")
+
+# WHAT THE NUDGE CAN ACTUALLY MOVE, DERIVED FROM THE TABLE ABOVE.
+#
+# Contest used to say a gap below ONE rank "could have come from status
+# alone". It cannot: across the statuses a fragment may be OFFERED at, the
+# whole nudge spans less than one rank, so a gap wider than this span is a gap
+# status could not have produced however the shortlist was ordered. Saying
+# otherwise blames a mechanism that could not have done it - in the one
+# sentence on this page whose entire job is to be honest about what decided
+# an order. Found by a review 2026-09-11.
+#
+# Derived, never typed, for the same reason ONE_RANK is: change a value in
+# QUALITY and this follows.
+QUALITY_SPAN = (max(QUALITY[s] for s in OFFERABLE)
+                - min(QUALITY[s] for s in OFFERABLE))
 
 
 def eligible(store, revit=None, domain=None, kind=None, statuses=OFFERABLE):
@@ -207,6 +504,155 @@ def eligible(store, revit=None, domain=None, kind=None, statuses=OFFERABLE):
 
 
 # ---------------------------------------------------------------------------
+# Stage 4b - read the shortlist again, if there is anything to read it with
+# ---------------------------------------------------------------------------
+
+def ran(ranked):
+    """Which optional backends ACTUALLY RAN, read off the candidates.
+
+    NOT "WHAT IS INSTALLED", and the difference is a whole class of wrong
+    sentence. heron_brain asked EMBED.backend() and RERANK.backend() AFTER the
+    search and reported the answers as though they described the run, so:
+
+      * a warm-up finishing between find() and that question labelled a
+        lexically-answered query "model"
+      * a re-ranker that was loaded and returned NO scores - the shortlist too
+        short, the model declining - was reported as having answered
+
+    Both are a sentence about the machine wearing the words of a sentence
+    about the answer. Found by a review 2026-09-11, on a line written to fix
+    the identity-route half of exactly this.
+
+    A rank is the evidence, because a rank only exists if the route produced
+    it. The nearness backend's NAME is read off the candidate rather than
+    asked for here: the fusion loop writes it where it picks the fusion weight
+    from it, so this cannot report one backend while the arithmetic used
+    another, and nothing finishing later can change it.
+    """
+    near = [c for c in ranked if c.vector_rank is not None]
+    rerank_ran = any(getattr(c, "rerank_rank", None) is not None for c in ranked)
+    out = {}
+    if near:
+        out["nearness"] = near[0].vector_backend or "not said"
+        out["nearness_why"] = (near[0].vector_why
+                               or "the route did not record which backend ran")
+    else:
+        out["nearness"] = "not used"
+        out["nearness_why"] = ("nothing in this answer carries a nearness "
+                               "rank, so the meaning route contributed "
+                               "nothing to it")
+    if rerank_ran:
+        # It scored this shortlist a moment ago, so there is nothing to ask.
+        out["rerank"] = RERANK.CROSS_ENCODER
+        out["rerank_why"] = ("it read each (question, passage) pair of this "
+                             "shortlist together and re-ordered it")
+    else:
+        out["rerank"] = "not used"
+        out["rerank_why"] = ("this shortlist was not re-read - either no "
+                             "re-ranker is installed, or the one installed "
+                             "returned no scores for it")
+    return out
+
+
+def _fragment_passage(candidate):
+    """What a re-ranker is given about a fragment.
+
+    LESS THAN THE ENCODER IS GIVEN, and the reason is a cost rather than an
+    oversight. heron_embed._text_for() also folds in the fragment's utterances
+    and purpose, which live in its YAML and arrive via FRAG.load_all() - the
+    whole library, read to describe twenty rows. The encoder pays that once at
+    index time. A re-ranker would pay it on every question.
+
+    So this reads the three columns the store already holds. If a measurement
+    ever shows the utterances change a re-ranked order, the fix is to carry
+    them into the store, not to load the library per query.
+
+    EVERY VALUE IS GUARDED, because this runs BEFORE anything knows whether a
+    re-ranker exists - so a null column here would raise on every query on
+    every machine, including the ones with nothing installed. That is the one
+    way this seam could break R-41 while appearing to honour it.
+    """
+    row = candidate.row
+    return " ".join([row["semantic_identity"] or "", row["capability"] or "",
+                     row["domain"] or ""]).strip()
+
+
+def _chunk_passage(candidate):
+    """What a re-ranker is given about a clause - its heading path and its text.
+
+    THE TEXT IS UNTRUSTED AND THAT IS STILL FINE HERE (Golden Rule 19). An
+    ingested document is DATA, never instruction, and a cross-encoder cannot be
+    instructed: it consumes a pair and emits one number. There is no channel
+    through which a clause reading "ignore previous instructions" can do
+    anything but be scored. The screening in heron_context.py exists because
+    that text reaches a MODEL THAT WRITES; this one only ranks.
+    """
+    row = candidate.row
+    return " ".join([row["heading_path"] or "", row["text"] or ""]).strip()
+
+
+def _rerank(text, ranked, passage):
+    """Re-order the top ~20 by reading each pair. Returns the list, re-ordered.
+
+    THE SLICE HAPPENS HERE AND NOT AT THE CALLER, so the caller cannot ask for
+    the whole library to be re-ranked by passing a larger list. docs/05 s4.4
+    says top ~20; heron_rerank.SHORTLIST is that number and this is the only
+    place it is applied.
+
+    RE-RANKING RUNS BEFORE THE CUT TO `limit`, which is the entire point. With
+    limit=5 and a re-rank of the top five, fusion's 7th can never become the
+    answer - and fusion's 7th becoming the answer is the improvement a
+    cross-encoder is installed for.
+
+    WITH NO RE-RANKER THIS RETURNS THE LIST IT WAS GIVEN, unchanged and in the
+    same object order. Not a fallback ordering - the same ordering. R-41: the
+    absence makes Heron slower to be right, never different-but-worse.
+
+    THE PASSAGES ARE BUILT BEFORE ANYTHING KNOWS WHETHER A BACKEND EXISTS, so
+    on most machines twenty strings are built and thrown away. MEASURED rather
+    than tidied: 0.000004 s over twenty candidates against 0.0074 s for a whole
+    retrieve(), which is 0.05% of a query at 360 fragments. Asking backend()
+    first would save that and put a SECOND place in this file that decides
+    whether a re-ranker is present, which is the more expensive of the two.
+    """
+    if len(ranked) < 2:
+        return ranked
+
+    head = ranked[:RERANK.SHORTLIST]
+    tail = ranked[RERANK.SHORTLIST:]
+
+    got = RERANK.scores(text, [passage(c) for c in head])
+    if got is None:
+        return ranked
+
+    for candidate, value in zip(head, got):
+        candidate.rerank_score = value
+
+    scored = [c for c in head if c.rerank_score is not None]
+    if not scored:
+        return ranked
+    unscored = [c for c in head if c.rerank_score is None]
+
+    # The fused score is the tiebreak, then the id - the same shape the fusion
+    # sort uses. A cross-encoder returning the same score for two passages has
+    # no opinion about their order, and the route that did have one should keep
+    # the last word rather than handing it to the alphabet.
+    scored.sort(key=lambda c: (-c.rerank_score, -c.score, c.id))
+    for position, candidate in enumerate(scored, 1):
+        candidate.rerank_rank = position
+        # THE SIZE OF WHAT IT READ, RECORDED ON EACH SURVIVOR. find() builds
+        # its Contest from the list AFTER the cut to `limit`, so a report that
+        # said "the shortlist it was given" was describing five candidates
+        # while the re-ranker had read twenty. Found by a review 2026-09-11.
+        candidate.rerank_pool = len(head)
+
+    # The tail keeps its fusion order and stays behind everything the re-ranker
+    # looked at. It was never scored, so promoting any of it would be inventing
+    # an opinion nothing expressed.
+    return scored + unscored + tail
+
+
+# ---------------------------------------------------------------------------
 # Stages 2 to 4 - two searches, fused, then nudged
 # ---------------------------------------------------------------------------
 
@@ -234,20 +680,41 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
         return candidates[fragment_id]
 
     # -- stage 2a: keywords, filtered to the survivors --------------------
+    #
+    # THE WINDOW GROWS UNTIL IT HOLDS `pool` ELIGIBLE ROWS, which is what the
+    # document side has done since round seven and this side did not. Taking
+    # the top pool*3 of the UNFILTERED index and discarding afterwards means
+    # that once more than pool*3 higher-ranked rows are excluded - by status,
+    # by domain, by kind, or by the Revit version wall - an eligible match
+    # below the window is never considered at all, and the route reports
+    # nothing while a compatible fragment sits in the store.
+    #
+    # The same defect, in the same file, fixed on the document routes and left
+    # on the fragment ones. Found by a review 2026-09-11.
     rank = 0
-    for hit in SEARCH.keywords(store, text, limit=pool * 3):
-        if hit["id"] not in keep:
-            continue
+    for hit in _until_filled(SEARCH.keywords, store, text, keep, pool):
         rank += 1
-        candidate(hit["id"]).keyword_rank = rank
+        got = candidate(hit["id"])
+        got.keyword_rank = rank
+        got.keyword_score = hit.get("score")
         if rank >= pool:
             break
 
     # -- stage 2b: nearness, same treatment -------------------------------
+    # TAKEN BEFORE THE ROUTE RUNS, NOT AFTER IT. Read afterwards, a warm-up
+    # finishing mid-request meant the scores came from the LEXICAL encoder and
+    # both the fusion weight and the recorded name said `model` - the ranking
+    # arithmetic and the report describing a different encoder from the one
+    # that produced the numbers. The round before moved the REPORT onto the
+    # candidate and left the poll where it was, which fixed who was asked and
+    # not when. Found by a review 2026-09-11.
+    backend_name, backend_why = EMBED.backend()
     rank = 0
-    for fragment_id, score in EMBED.nearest(store, text, limit=pool * 3):
-        if fragment_id not in keep:
-            continue
+    # THE SAME GROWING WINDOW ON THE NEARNESS ROUTE. It orders by similarity
+    # over the whole index, so it excludes exactly the same rows in exactly
+    # the same order as the words route - both could come back empty together
+    # with a compatible fragment sitting below the window.
+    for fragment_id, score in _until_filled_fragments(store, text, keep, pool):
         rank += 1
         got = candidate(fragment_id)
         got.vector_rank = rank
@@ -256,7 +723,6 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
             break
 
     # -- stage 3: reciprocal rank fusion -----------------------------------
-    backend_name, _why = EMBED.backend()
     vector_weight = VECTOR_WEIGHT_BY_BACKEND.get(backend_name, 0.6)
 
     for got in candidates.values():
@@ -264,6 +730,7 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
             got.fused += KEYWORD_WEIGHT / (RRF_K + got.keyword_rank)
         if got.vector_rank is not None:
             got.fused += vector_weight / (RRF_K + got.vector_rank)
+            got.vector_backend, got.vector_why = backend_name, backend_why
 
     # -- stage 4: the quality nudge ----------------------------------------
     for got in candidates.values():
@@ -275,7 +742,394 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
                     key=lambda c: (-c.score,
                                    c.keyword_rank if c.keyword_rank else 999,
                                    c.id))
+
+    # -- stage 4b: read the shortlist again, if anything can ----------------
+    ranked = _rerank(text, ranked, _fragment_passage)
+
     return ranked[:limit], excluded
+
+
+# ---------------------------------------------------------------------------
+# The same stack, over documents
+# ---------------------------------------------------------------------------
+
+# Statuses a document may be OFFERED at. RETIRED is excluded the way
+# DEPRECATED is for fragments: the row survives so a record is never
+# destroyed, not so it can be handed back as an answer.
+#
+# BORROWED, NOT RE-TYPED. This was a second literal tuple, and heron_search
+# holds the one the FTS query filters on. Two copies of one lifecycle rule is
+# a rule that can disagree with itself: edit one and the words route would
+# filter on a set the ranker does not, silently. 00-structure.md s3.7 - the
+# measurement is built once - is the same rule about a constant.
+OFFERABLE_DOCUMENTS = SEARCH.OFFERABLE_DOCUMENTS
+
+
+def _until_filled(route, store, text, keep, pool, ceiling=20):
+    """Ask a words route repeatedly until `pool` ELIGIBLE rows are found.
+
+    The window grows rather than being guessed at once, and it stops at a
+    ceiling so a pathological store cannot turn one question into a scan.
+    """
+    want = pool * 3
+    seen = []
+    while True:
+        rows = route(store, text, limit=want)
+        seen = [r for r in rows if r["id"] in keep]
+        if len(seen) >= pool or len(rows) < want or want >= pool * ceiling:
+            break
+        want *= 2
+    return seen[:pool]
+
+
+def _until_filled_fragments(store, text, keep, pool, ceiling=20):
+    """EMBED.nearest over fragments, widened until `pool` eligible rows are in.
+
+    The fragment twin of _until_filled_pairs. It returns (id, score) pairs
+    rather than rows, which is why it cannot share _until_filled.
+    """
+    want = pool * 3
+    seen = []
+    while True:
+        rows = EMBED.nearest(store, text, limit=want)
+        seen = [pair for pair in rows if pair[0] in keep]
+        if len(seen) >= pool or len(rows) < want or want >= pool * ceiling:
+            break
+        want *= 2
+    return seen[:pool]
+
+
+def _until_filled_pairs(store, text, keep, pool, ceiling=20):
+    """The same, for the nearness route's (id, score) pairs."""
+    want = pool * 3
+    seen = []
+    while True:
+        rows = EMBED.nearest(store, text, limit=want, kind=EMBED.CHUNK)
+        seen = [pair for pair in rows if pair[0] in keep]
+        if len(seen) >= pool or len(rows) < want or want >= pool * ceiling:
+            break
+        want *= 2
+    return seen[:pool]
+
+
+def documents(store, text, limit=5, pool=20):
+    """The retrieval stack over ingested chunks. Returns (candidates, why).
+
+    THE REVIT VERSION FILTER IS NOT APPLIED HERE, AND THAT IS THE ONE PLACE
+    THIS COULD HAVE GONE WRONG QUIETLY. A fragment declares which releases it
+    supports; a clause in QCS does not, and never will. Run documents through
+    the fragment filter and EVERY DOCUMENT IS EXCLUDED for every question that
+    names a release - which looks exactly like "we have nothing on that".
+    docs/.../02-implementation.md s5 names this as the way this stage fails.
+
+    So documents get their own structured filter, and today it is one rule:
+    a RETIRED document is not an answer.
+    """
+    SEARCH.ensure_chunk_table(store)
+
+    try:
+        allowed = store.execute(
+            "SELECT c.id, c.document_id, c.locator, c.heading_path, c.text, "
+            "c.untrusted, d.title, d.status, d.path "
+            "FROM chunks c JOIN documents d ON d.id = c.document_id "
+            "WHERE d.status IN (%s)"
+            % ",".join("?" * len(OFFERABLE_DOCUMENTS)),
+            OFFERABLE_DOCUMENTS).fetchall()
+    except sqlite3.OperationalError as exc:
+        # ONLY "THE TABLE IS NOT THERE". A broken store, a missing column, a
+        # lock or a malformed file must NOT read as "no documents were ever
+        # ingested" - that is a plausible empty answer standing in for a fault,
+        # which is D-52's shape. heron_context._indexed already narrows for
+        # exactly this reason, and this did not follow it.
+        if "no such table" not in str(exc):
+            raise
+        return [], 0
+
+    if not allowed:
+        return [], 0
+
+    keep = set(row["id"] for row in allowed)
+    by_id = dict((row["id"], row) for row in allowed)
+    candidates = {}
+
+    def candidate(chunk_id):
+        if chunk_id not in candidates:
+            candidates[chunk_id] = Candidate(chunk_id, by_id[chunk_id])
+        return candidates[chunk_id]
+
+    # THE LIFECYCLE FILTER IS APPLIED AFTER EACH ROUTE HAS ALREADY LIMITED
+    # ITSELF, so retired chunks can consume the whole fetched window and hide
+    # an offerable one below them. Asking for far more than the pool is not a
+    # fix, it is a bigger window - so each route is asked until the pool is
+    # FILLED with eligible rows, or the index runs out.
+    #
+    # Cheap here because a retired document is rare and the store is local; the
+    # alternative is an answer that says "nothing matched" while the match sits
+    # one row past an arbitrary cut.
+    rank = 0
+    for hit in _until_filled(SEARCH.chunk_keywords, store, text, keep, pool):
+        rank += 1
+        got = candidate(hit["id"])
+        got.keyword_rank = rank
+        got.keyword_score = hit.get("score")
+        if rank >= pool:
+            break
+
+    rank = 0
+    # TAKEN BEFORE THE ROUTE RUNS, NOT AFTER IT. Read afterwards, a warm-up
+    # finishing mid-request meant the scores came from the LEXICAL encoder and
+    # both the fusion weight and the recorded name said `model` - the ranking
+    # arithmetic and the report describing a different encoder from the one
+    # that produced the numbers. The round before moved the REPORT onto the
+    # candidate and left the poll where it was, which fixed who was asked and
+    # not when. Found by a review 2026-09-11.
+    backend_name, backend_why = EMBED.backend()
+
+    for chunk_id, score in _until_filled_pairs(store, text, keep, pool):
+        rank += 1
+        got = candidate(chunk_id)
+        got.vector_rank = rank
+        got.vector_score = score
+        if rank >= pool:
+            break
+
+    vector_weight = VECTOR_WEIGHT_BY_BACKEND.get(backend_name, 0.6)
+    for got in candidates.values():
+        if got.keyword_rank is not None:
+            got.fused += KEYWORD_WEIGHT / (RRF_K + got.keyword_rank)
+        if got.vector_rank is not None:
+            got.fused += vector_weight / (RRF_K + got.vector_rank)
+            got.vector_backend, got.vector_why = backend_name, backend_why
+        # NO QUALITY NUDGE. The fragment nudge reads a fragment's status,
+        # which says how far a piece of Heron's own code has been proved. A
+        # document's status is a lifecycle, not a grade - a DRAFT clause is
+        # not a worse answer than a REVIEWED one, it is an unread one. Reusing
+        # the nudge here would be borrowing a number that means something
+        # else, which is how a ranking stops being explainable.
+
+    ranked = sorted(candidates.values(),
+                    key=lambda c: (-c.score,
+                                   c.keyword_rank if c.keyword_rank else 999,
+                                   c.id))
+    ranked = _rerank(text, ranked, _chunk_passage)
+
+    return ranked[:limit], len(allowed)
+
+
+def find_documents(store, text, limit=5):
+    """What a caller asks when it wants a clause rather than a fragment.
+
+    SEPARATE FROM find(), AND NOT MERGED INTO IT. R-20 asks that documents be
+    retrievable ALONGSIDE fragments and that a result say which kind each hit
+    is. Two labelled answers do that; one fused list does not, and it would
+    also invent a comparison the numbers cannot carry - reciprocal rank
+    fusion produces the same score for "first of seven chunks" and "first of
+    four hundred fragments". Contest already records that fusion keeps order
+    and discards strength; fusing across two corpora is that defect on
+    purpose.
+
+    It is the same argument R-38 makes about scopes one level up: when two
+    things must not be pooled, the answer is two queries and two labelled
+    answers, never one merged one.
+    """
+    SEARCH.ensure_chunk_table(store)
+
+    # R-19, AND THE THREE NOTHINGS ARE THREE DIFFERENT SENTENCES.
+    #
+    # This exact defect was found on the fragment side on 2026-08-30 BY
+    # MEASURING: a query against an empty store printed the same words as a
+    # genuine miss, so a number recorded from that run would have been a
+    # measurement of an empty database. It is already known. It is not being
+    # rediscovered here.
+    try:
+        total = store.execute("SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
+    except sqlite3.OperationalError as exc:
+        # ONLY "THE TABLE IS NOT THERE" - the same narrowing documents() above
+        # already does, and this line did not. A LOCKED OR MALFORMED STORE
+        # counted as zero documents and returned the `empty` route below,
+        # which tells the caller "nothing has been put in yet" about a store
+        # that is full and broken. That is D-52's plausible zero wearing the
+        # one message a reader would never doubt. Found by a review
+        # 2026-09-11, one file away from the fix for the same shape.
+        if "no such table" not in str(exc):
+            raise
+        total = 0
+    if not total:
+        return SEARCH.Answer(
+            "empty",
+            note="NO DOCUMENT IS INDEXED in this scope - this is not a search "
+                 "result and it is not 'nothing matched'. Nothing has been "
+                 "put in yet:  python brain/heron_ingest.py <file>")
+
+    # DOCUMENTS INGESTED BUT NOT INDEXED IS A THIRD STATE, and reporting it
+    # as "nothing matched" is the R-19 defect one level down: the chunks are
+    # there, the searchable text is not, and a miss and an unbuilt index read
+    # identically from the outside. Found by a test that ingested and forgot
+    # to index - which is exactly how a caller will meet it.
+    indexed = store.execute("SELECT COUNT(*) AS n FROM chunk_text").fetchone()["n"]
+    if not indexed:
+        return SEARCH.Answer(
+            "unindexed",
+            note="%d document(s) are ingested and NOT INDEXED - this is not a "
+                 "search result either. The searchable text is derived and "
+                 "has not been built:  heron_search.index_chunks(store) and "
+                 "heron_embed.index_chunks(store)" % total)
+
+    ranked, eligible_chunks = documents(store, text, limit=limit)
+    if not ranked:
+        retired = store.execute(
+            "SELECT COUNT(*) AS n FROM documents WHERE status = 'RETIRED'"
+        ).fetchone()["n"]
+        note = "nothing in the indexed documents matched"
+        if retired and retired == total:
+            note = ("%d document(s) are indexed and EVERY ONE IS RETIRED - "
+                    "they exist, they are just not offered as answers"
+                    % retired)
+        elif retired:
+            note += ". %d retired document(s) were not searched" % retired
+        return SEARCH.Answer("nothing", note=note, candidates=[])
+
+    best = ranked[0]
+    note = "%d chunk(s); best found by %s" % (len(ranked), best.why())
+    contest = Contest(ranked, eligible_chunks, 20,
+                      SEARCH.chunk_breadth(store, text,
+                                           statuses=OFFERABLE_DOCUMENTS),
+                      noun="chunk", nudged=False)
+    note += ". " + contest.sentence()
+
+    return SEARCH.Answer(
+        "documents", best.id,
+        candidates=[{"id": c.id, "kind": "chunk",
+                     "document": c.row["title"],
+                     # THE TITLE IS FOR READING, THIS IS FOR MATCHING. Two
+                     # documents may carry the same title - two revisions of
+                     # one standard, two projects' copies of one template -
+                     # and anything that grouped candidates by title merged
+                     # them into one source. heron_conflict did exactly that
+                     # and lost a disagreement between them. Found by a
+                     # review 2026-09-11.
+                     "document_id": c.row["document_id"],
+                     # R-22: A CITATION RESOLVES TO SOMETHING A HUMAN CAN
+                     # OPEN. The query already selected the path and the
+                     # result dropped it, so every citation named a title and
+                     # a clause number and nothing a person could actually
+                     # open - which matters most exactly when two documents
+                     # share a title or a clause number.
+                     "path": c.row["path"],
+                     "locator": c.row["locator"],
+                     "heading_path": c.row["heading_path"],
+                     "status": c.row["status"],
+                     "untrusted": c.row["untrusted"],
+                     "score": c.score, "why": c.why(),
+                     "words_score": c.keyword_score,
+                     "nearness_score": c.vector_score,
+                     "rerank_score": c.rerank_score} for c in ranked],
+        note=note, contest=contest,
+        backends=ran(ranked))
+
+
+# ---------------------------------------------------------------------------
+# The Librarian - which scope, and the trap in the question
+# ---------------------------------------------------------------------------
+
+class Asked(object):
+    """One scope, asked on its own, with its own answer. Never merged."""
+
+    def __init__(self, scope, project=None, answer=None, skipped=None):
+        self.scope = scope
+        self.project = project
+        self.answer = answer
+        self.skipped = skipped        # why it was not asked, or None
+
+    @property
+    def label(self):
+        if self.project:
+            return "%s (%s)" % (self.scope, self.project)
+        return self.scope
+
+    def __repr__(self):
+        return "<asked %s %s>" % (self.label,
+                                  self.skipped or (self.answer.route
+                                                   if self.answer else "-"))
+
+
+def librarian(text, scopes=None, project=None, limit=5, project_name=None):
+    """Ask each scope SEPARATELY. Returns one Asked per scope, labelled.
+
+    THE TRAP IN THIS WHOLE TRACK IS IN THE NAME OF THIS FUNCTION.
+    "An agent that decides which scopes to search" reads as "an agent that
+    searches several", and implemented that way it is a UNION - one client's
+    knowledge in the same result set as another's. D-33 calls that a
+    CONTRACTUAL problem rather than a technical one, and Golden Rule 5 exists
+    to make it impossible to write.
+
+    So the rule, written down before any of this was coded:
+
+        The Librarian decides WHICH ONE. If it needs two, it makes TWO
+        SEPARATE QUERIES and says which answer came from where. It never
+        merges them, and CrossScopeRefused stays exactly as it is.
+
+    THERE IS NO ARGUMENT HERE THAT COULD TAKE A MERGED QUERY, and that is the
+    design rather than an omission. Each scope is opened as its own Store,
+    asked its own question, and its answer is returned under its own label.
+    Nothing compares two scopes' scores, because a score from one store and a
+    score from another are not the same measurement - the same reason
+    find_documents() is separate from find().
+
+    AND IT DOES NOT CHOOSE (R-62, D-01). It reports what each scope holds.
+    Deciding what the user meant, and which answer to use, is the host's act -
+    which is S-1's "hand it back", taken as the plan's stated default.
+
+    In Revit terms: you can open two models side by side. You do not copy one
+    into the other to compare them.
+    """
+    wanted = list(scopes or [SCOPE.GLOBAL])
+    out = []
+    for scope in wanted:
+        if scope not in SCOPE.SCOPES:
+            out.append(Asked(scope, skipped="not a knowledge scope"))
+            continue
+
+        if scope == SCOPE.PROJECT and not project:
+            # D-33, and heron_scope already refuses this - the refusal is
+            # called rather than re-implemented. A guess here writes one
+            # client's knowledge into another's file.
+            out.append(Asked(scope, skipped=(
+                "no project is identified, so the project store is not opened "
+                "- guessing which project a question belongs to is how one "
+                "client's knowledge reaches another")))
+            continue
+
+        # THE PROJECT KEY LABELS THE PROJECT SCOPE AND NOTHING ELSE. It was
+        # attached to every answer at first, so a company answer came back
+        # labelled "company (Tower B)" - which reads as this being Tower B's
+        # copy of the company standard. It is not: it is the company's one
+        # store, and mislabelling whose knowledge something is, is the exact
+        # confusion Golden Rule 5 exists to prevent.
+        #
+        # AND THE LABEL IS THE NAME, NOT THE KEY. `project` names the STORE -
+        # since the last round that is the Project Information UniqueId, which
+        # is stable and completely unreadable. Shown as a label it turned
+        # "project (Tower B)" into "project (a7f3c2e1-0000-4b8d-...)" in every
+        # answer. The key identifies; the name is what a modeller recognises,
+        # and they are not interchangeable in either direction. Found by a
+        # review 2026-09-11, in the change that made the key stable.
+        label = ((project_name or project) if scope == SCOPE.PROJECT else None)
+
+        try:
+            store = SCOPE.open_scope(scope, project)
+        except Exception as why:
+            out.append(Asked(scope, project=label,
+                             skipped="could not be opened: %s" % why))
+            continue
+
+        try:
+            SEARCH.ensure_chunk_table(store)
+            out.append(Asked(scope, project=label,
+                             answer=find_documents(store, text, limit=limit)))
+        finally:
+            store.close()
+    return out
 
 
 def find(store, text, revit=None, limit=5):
@@ -335,27 +1189,26 @@ def find(store, text, revit=None, limit=5):
     if best.keyword_rank is None or best.vector_rank is None:
         note += (". NO candidate was found by both routes, so treat this as a "
                  "weak match - one route liking something is not two agreeing")
-    elif len(allowed) <= pool:
-        # MEASURED LIMITATION, worth more than the label above.
-        #
-        # The nearness route ranks EVERY eligible fragment - it returns a
-        # similarity for all of them, not a shortlist. So while the library is
-        # smaller than `pool`, every candidate is found by both routes and
-        # "both agree" is true of everything, including an unrelated question.
-        # It becomes real evidence only once there are more fragments than the
-        # pool and the routes have something to disagree about.
-        #
-        # Said out loud because a future reader will otherwise see "both agree"
-        # on a 7-fragment library and believe it.
-        note += (". Only %d fragment(s) were eligible, fewer than the pool of "
-                 "%d - every one of them is found by both routes, so 'both "
-                 "agree' means nothing here yet" % (len(allowed), pool))
+
+    # ONE MEASUREMENT, NOT TWO. The small-pool caveat used to be built here,
+    # in an `elif`, so it was only ever said when the best candidate happened
+    # to be found by both routes - the limitation is true either way. It now
+    # lives in Contest with the rest of the numbers, because 00-structure.md
+    # s3.7's rule is that this measurement is built ONCE: three copies of it
+    # become three numbers that disagree.
+    contest = Contest(ranked, len(allowed), pool,
+                      SEARCH.match_breadth(store, text, keep=keep))
+    note += ". " + contest.sentence()
+
     return SEARCH.Answer(
         "hybrid", best.id,
         candidates=[{"id": c.id, "capability": c.row["capability"],
                      "status": c.row["status"], "score": c.score,
-                     "why": c.why()} for c in ranked],
-        note=note)
+                     "why": c.why(), "words_score": c.keyword_score,
+                     "nearness_score": c.vector_score,
+                     "rerank_score": c.rerank_score} for c in ranked],
+        note=note, contest=contest,
+        backends=ran(ranked))
 
 
 def main(argv):
@@ -384,6 +1237,11 @@ def main(argv):
     try:
         SEARCH.index(store)
         EMBED.index(store)
+        # The document side of the same two indexes. Derived, rebuilt on
+        # demand, and free when nothing changed - the same contract, so a
+        # scope with no documents pays nothing and says nothing.
+        SEARCH.index_chunks(store)
+        EMBED.index_chunks(store)
 
         # An EMPTY store is not a retrieval result, and must never be printed as
         # one. On a fresh machine the store has no fragments in it yet, and this
@@ -400,15 +1258,66 @@ def main(argv):
 
         print("Asked:  %s%s" % (text, "   (Revit %s)" % revit if revit else ""))
         print("Route:  %s" % answer.route)
+
+        # WHICH RE-RANKER ANSWERED, AND ON MOST MACHINES THAT IS "absent".
+        #
+        # Stage 7's done-when, word for word: a run with the package
+        # uninstalled still answers AND SAYS IT IS NOT USING IT. An optional
+        # quality step that degrades in silence is indistinguishable from one
+        # that is working, and the person who most needs to know is the one
+        # comparing two machines' answers.
+        rerank_name, rerank_why = RERANK.backend()
+        print("Re-rank: %s - %s" % (rerank_name, rerank_why))
         print("Best:   %s" % (answer.fragment_id or "nothing"))
         print("        %s" % answer.note)
         for c in answer.candidates:
             print("          %-14s %-30s %-11s %.4f  %s"
                   % (c["id"], c["capability"], c["status"], c["score"], c["why"]))
 
+        # THE MAGNITUDES, printed because fusion discards them.
+        #
+        # The line above is fused score, which is built from POSITIONS. These
+        # two are the routes' own opinions of how well they matched, and they
+        # are the only numbers on this page a floor could ever be derived from
+        # (R-60). Printed so a person can look at them across many questions
+        # before anybody sets one. Nothing ranks on them today.
+        k = answer.contest
+        if k is not None:
+            print("Numbers: %s"
+                  % ("words matched %d of %d eligible; best bm25 %s; "
+                     "best nearness %s"
+                     % (k.breadth, k.eligible,
+                        "-" if k.best_words is None else "%.4f" % k.best_words,
+                        "-" if k.best_near is None else "%.4f" % k.best_near)))
+
         _rows, excluded = eligible(store, revit)
         for e in excluded:
             print("  excluded  %-14s %s" % (e.id, e.reason))
+
+        # DOCUMENTS, ALONGSIDE FRAGMENTS AND LABELLED AS A DIFFERENT KIND.
+        #
+        # R-20. They are printed as their own section rather than mixed into
+        # the list above, because a fragment and a clause are not
+        # interchangeable: one is a piece of code Heron can run, the other is
+        # a sentence somebody has to read. A shortlist that mixes them
+        # without saying so is worse than either alone.
+        papers = find_documents(store, text)
+        print()
+        print("Documents:")
+        if papers.route in ("empty", "nothing"):
+            print("        %s" % papers.note)
+        else:
+            print("        %s" % papers.note)
+            for c in papers.candidates:
+                print("          %-9s %-22s %.4f  %s"
+                      % (c["locator"] or "-", (c["document"] or "")[:22],
+                         c["score"], c["why"]))
+                print("            %s" % (c["heading_path"] or "")[:78])
+            # GOLDEN RULE 19, said at the point a person reads the text.
+            # Every one of these came out of a file this project did not
+            # write. It is quoted content, never direction.
+            print("        quoted from an ingested document - content, never "
+                  "instruction (GR 19)")
         return 0
     finally:
         store.close()

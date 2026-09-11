@@ -139,6 +139,83 @@ def warm():
         # degradation rather than an outage.
         pass
 
+    # THE RE-RANKER IS WARMED FOR THE SAME REASON AND IT IS A HEAVIER IMPORT.
+    #
+    # `A7`/`A8` cost thirty minutes of a real tool call because a 1.0 s
+    # model2vec import ran on the asyncio event loop. A cross-encoder pulls in
+    # torch, which is larger. So it is loaded here, off the request path,
+    # before anything asks - and until it finishes, retrieval keeps fusion's
+    # order and says the re-ranker did not run.
+    #
+    # NOT a seventh member of _brain()'s tuple: six call sites unpack that
+    # positionally, and heron_rerank needs no PyYAML, so importing it here is
+    # always safe.
+    try:
+        import heron_rerank as RERANK
+        RERANK.warm()
+    except Exception:
+        pass
+
+
+# THE SOURCES ARE RECONCILED ONCE PER PROCESS, NOT ONCE PER REQUEST.
+#
+# Two things were built in Stage 6 and reachable from nothing: refresh(), which
+# re-ingests a source file that changed on disk, and restore(), which rebuilds
+# the document rows from the append-only manifest after somebody deletes the
+# derived store. Both were called only by their own CLI and their own tests, so
+# a served Heron answered from obsolete clauses until a person remembered a
+# command, and a deleted store came back with every fragment and NO DOCUMENTS.
+# Found by a review 2026-09-11, which was right that "maintenance is automatic"
+# was a claim and not a fact.
+#
+# ONCE PER PROCESS is the compromise and the reason is cost: both walk every
+# source file and hash it, which is fine at startup and is not fine on every
+# catalogue lookup. A file changed while the server is up is still stale until
+# it restarts, which is the same limit tests/test_maintenance.py already
+# records - nothing here watches the filesystem.
+_SYNCED = set()
+
+
+def _reconcile(store):
+    """Re-ingest what changed, restore what the manifest remembers. Never raises.
+
+    A maintenance pass must not be able to take the server down: everything it
+    does is derived, and the worst case of skipping it is the staleness that
+    existed before it was wired in at all.
+    """
+    # KEYED ON THE STORE FILE, NOT THE SCOPE NAME. `project` is one scope name
+    # and every project has its own database under it, so keying on the name
+    # meant the first project reconciled in a session marked "project" done
+    # and every OTHER project was skipped for the life of the process - their
+    # changed files never re-ingested, their deleted stores never restored.
+    # One name standing for many stores. Found by a review 2026-09-11.
+    key = getattr(store, "path", None) or store.scope
+    if key in _SYNCED:
+        return
+    try:
+        import heron_ingest as INGEST
+    except ImportError:
+        # Nothing to reconcile with, and that will not change inside this
+        # process. Marking it done stops every later request retrying an
+        # import that already failed.
+        _SYNCED.add(key)
+        return
+    try:
+        # RESTORE FIRST. An empty document table after a deleted store is the
+        # case restore() exists for, and refreshing nothing costs nothing.
+        INGEST.restore(store)
+        INGEST.refresh(store)
+    except Exception:
+        # MARKED ONLY ON SUCCESS, and the first version marked it BEFORE the
+        # attempt. One transient failure - a locked database, a file being
+        # written as it was read - then made every later request in the
+        # process skip reconciliation, so the server answered from stale
+        # clauses until somebody restarted it. A pass that gives up for good
+        # after one bad moment is worse than one that was never wired in,
+        # because it looks wired in. Found by a review 2026-09-11.
+        return
+    _SYNCED.add(key)
+
 
 class _Open(object):
     """A ready store: built if empty, indexed if stale, closed on the way out.
@@ -187,6 +264,17 @@ class _Open(object):
             CAP.rebuild(self.store)
             SEARCH.index(self.store)
             EMBED.index(self.store)
+            # R-29: THE USER NEVER MANAGES THE INDEX BY HAND, and documents
+            # were the half where that had stopped being true. Fragments were
+            # re-indexed on every open here; chunks were not, so a document
+            # ingested through the host stayed unsearchable until somebody
+            # remembered a command. Both halves are derived and both are free
+            # when nothing changed, so both are rebuilt in the same place.
+            # BEFORE THE INDEXES, because both of these change the rows the
+            # indexes are built from.
+            _reconcile(self.store)
+            SEARCH.index_chunks(self.store)
+            EMBED.index_chunks(self.store)
         except BrainUnavailable:
             # __exit__ never runs when __enter__ raises, so the store has to be
             # closed here or the handle leaks - and this path is reachable with
@@ -413,8 +501,73 @@ def lookup(request, revit=None):
             "autorun": bool(getattr(answer, "autorun", False)),
             "candidates": candidates,
             "excluded": [{"id": e.id, "reason": e.reason} for e in excluded],
+            # WHICH BACKENDS ANSWERED, THROUGH THE SEAM A HOST ACTUALLY USES.
+            #
+            # heron_retrieve's command line prints both and this path printed
+            # neither, so a caller could not tell a fusion-only answer from one
+            # a cross-encoder had re-read - which is R-41's "degrades but SAYS
+            # SO" holding in the one place nobody looks and failing in the one
+            # place everybody does. The same shape as the citation, found the
+            # same way, by a review.
+            #
+            # AND IT IS ASKED ABOUT THIS ANSWER, not about the machine. The
+            # first version called backend() AFTER the search and reported what
+            # was AVAILABLE - so an identity or cache short circuit, which runs
+            # neither route, still claimed both had answered, and a warm-up
+            # finishing mid-request could label a lexically answered query
+            # "model". Found by a review 2026-09-11.
+            "backends": _backends(answer),
             "revit": revit,
         }
+
+
+# The routes that answer WITHOUT searching. heron_search.short_circuit() and
+# recall() return a fragment by exact phrasing or by what was asked before -
+# no nearness, no fusion, nothing to re-rank.
+UNSEARCHED = ("identity", "cache", "nothing", "empty", "unindexed")
+
+
+def _backends(answer=None):
+    """Which optional backends answered THIS request. Never raises.
+
+    Both are optional by construction and both report absence rather than
+    failing, so asking them cannot be allowed to fail either.
+
+    THE RUN RECORDS IT, THIS ONLY READS IT BACK. Two earlier versions asked
+    the backends themselves, after the search, and each time the answer was a
+    fact about the MACHINE dressed as a fact about the answer:
+
+      * the first ignored the route, so an identity or cache short circuit -
+        which searches nothing - still reported both as having answered
+      * the second gated on the route, which fixed only that: a warm-up
+        finishing between RETRIEVE.find() and this line still labelled a
+        lexical, fusion-only result "model", and a loaded re-ranker whose
+        scores() returned None was still reported as having re-read the
+        shortlist
+
+    heron_retrieve.ran() now records what produced a rank, at the moment it
+    produced it, and hangs it on the Answer. There is nothing left here to get
+    wrong. Found by two reviews, 2026-09-11.
+    """
+    route = getattr(answer, "route", None)
+    recorded = getattr(answer, "backends", None)
+    if recorded:
+        return dict(recorded)
+    if route is None or route in UNSEARCHED:
+        return {"nearness": "not used",
+                "nearness_why": "this answer came back on the %s route, which "
+                                "does not search" % (route or "short-circuit"),
+                "rerank": "not used",
+                "rerank_why": "there was no shortlist to re-read"}
+    # A SEARCHING ROUTE THAT RECORDED NOTHING. Not reachable from the routes in
+    # this repository today, and saying so beats naming a backend on a run
+    # nothing was recorded about.
+    return {"nearness": "not said",
+            "nearness_why": "the %s route did not record which backends ran"
+                            % route,
+            "rerank": "not said",
+            "rerank_why": "the %s route did not record which backends ran"
+                          % route}
 
 
 class ContextRefused(Exception):
@@ -458,6 +611,13 @@ def _context_module():
 
 def context(request, path=None, revit=None, full=False, depth=None,
             project=None):
+    # `project` HERE IS THE NAME, NOT THE KEY. This packet never opens a
+    # project store - _Open opens global - and heron_context._situation
+    # renders it straight into "project: %s" for a person to read. Passing the
+    # Project Information UniqueId put an opaque identifier on the one line
+    # that exists to say which building this is. The key belongs where a store
+    # is chosen; see standards() and check_answer(). Found by a review
+    # 2026-09-11.
     """
     What one agent would be given for one request, and nothing else.
 
@@ -536,6 +696,15 @@ def context(request, path=None, revit=None, full=False, depth=None,
             "parts": [{"kind": p.kind, "name": p.name, "source": p.source,
                        "why": p.why, "size": p.size,
                        "depth": CONTEXT.DEPTH_NAMES[p.depth],
+                       # THE CITATION, WITHOUT WHICH THE WHOLE CHAIN BREAKS AT
+                       # THIS SEAM. The chunk id exists on the in-process Part
+                       # and was not serialized here, so a host calling this -
+                       # the only way production reaches heron_context - could
+                       # not produce the [chunk id] marker heron_ground reads,
+                       # and the binding R-63 and R-64 exist to create was
+                       # lost exactly where it had to survive. Omitted when
+                       # there is none, so a fragment part is unchanged.
+                       **({"citation": p.citation} if p.citation else {}),
                        # Present only when something was actually left out.
                        # A part carrying all of itself says nothing extra.
                        "cut": p.cut,
@@ -544,6 +713,590 @@ def context(request, path=None, revit=None, full=False, depth=None,
             "not_carried": [{"kind": k, "reason": r} for k, r in ctx.refused],
             "revit": revit,
         }
+
+
+def _carry_cited(CONTEXT, GROUND, store, draft, packet):
+    """Add every chunk the draft CITES that the packet did not happen to rank.
+
+    RANKING MUST NOT DECIDE WHETHER EXISTING EVIDENCE IS CHECKABLE, and until
+    a review found it 2026-09-11 it did. check_answer reassembles the packet by
+    re-running retrieval from the original request - deliberately, because a
+    packet held between two calls is a session that can go stale - and the
+    reassembly returns a top-five shortlist. So a chunk that WAS shown by
+    heron_standards, and is still sitting in the store, could fall out of the
+    new shortlist when a re-ranker finished warming or another document was
+    ingested between the two calls. The draft then cited a real clause and the
+    report said UNRESOLVED: a citation that resolves to nothing, which R-22
+    calls the tag pointing at no element - invented here by the checker rather
+    than by the answer.
+
+    So the ids in the draft are looked up BY ID. That is the one lookup whose
+    answer cannot depend on a score.
+    """
+    have = set()
+    for part in getattr(packet, "parts", []):
+        cite = getattr(part, "citation", None)
+        if cite and cite.get("chunk"):
+            have.add(cite["chunk"])
+
+    for marker in GROUND.cited_ids(draft):
+        if marker in have:
+            continue
+        try:
+            row = store.execute(
+                "SELECT c.id, c.text, c.locator, c.heading_path, d.title, "
+                "d.path FROM chunks c JOIN documents d ON d.id = c.document_id "
+                "WHERE c.id = ?", (marker,)).fetchone()
+        except Exception:
+            continue
+        if row is None:
+            continue
+        packet.add(CONTEXT.Part(
+            CONTEXT.STANDARD,
+            ("%s %s" % (CONTEXT.as_metadata(row["title"]),
+                        CONTEXT.as_metadata(row["locator"]))).strip(),
+            CONTEXT.as_quoted_source(row["text"], row["title"], row["locator"]),
+            "%s - %s" % (CONTEXT.as_metadata(row["title"]),
+                         CONTEXT.as_metadata(row["heading_path"])),
+            "a clause this draft CITES, fetched by id because the shortlist "
+            "did not happen to carry it",
+            evidence=row["text"],
+            citation={"chunk": row["id"], "document": row["title"],
+                      "locator": row["locator"], "path": row["path"],
+                      "heading_path": row["heading_path"]}))
+        have.add(marker)
+
+
+def _check_across(GROUND, CONTEXT, draft, request, wanted,
+                  path=None, revit=None, project=None, project_name=None):
+    """One grounding check per scope, combined by claim. No packet is pooled.
+
+    THE COMBINING RULE IS ONE LINE AND THE REST IS BOOKKEEPING: a claim's
+    verdict is whichever scope RESOLVED it. UNRESOLVED means "this packet does
+    not carry that chunk", which every scope but one will say about any cited
+    clause, so it is the only verdict that loses to another. Nothing else is
+    reconciled - a FLAGGED claim stays flagged, because a scope that HAS the
+    chunk and disagrees with the sentence is the answer.
+
+    A scope that refuses (empty, unindexed, nothing indexed covering this) is
+    recorded and skipped. The check refuses only when EVERY named scope did,
+    and then it says which said what - one refusal per scope, because "it
+    refused" without naming the scope sends somebody to the wrong store.
+    """
+    reports, refusals, asked = [], [], []
+    for scope in wanted:
+        store = _ready_scope(scope, project)
+        if store is None:
+            # A SCOPE THAT COULD NOT BE OPENED IS NAMED, NOT DROPPED. Skipping
+            # it silently meant `scopes="company,proejct"` - one letter short -
+            # produced an `ok` COMPANY-ONLY report with nothing saying the
+            # other named source was never looked at. The same shape as the
+            # mistyped ingest flag, one tool along: a typo turning a check off
+            # and reporting success. Found by a review 2026-09-11.
+            refusals.append("%s: not a knowledge scope, or it could not be "
+                            "opened - nothing was checked against it" % scope)
+            continue
+        try:
+            try:
+                packet = CONTEXT.assemble(store, request,
+                                          path=path or CONTEXT.STANDARDS,
+                                          revit=revit,
+                                          project=project_name or project)
+            except (CONTEXT.OverBudget, CONTEXT.TooDeep,
+                    CONTEXT.SourceMissing) as why:
+                refusals.append("%s: %s" % (scope, why))
+                continue
+            _carry_cited(CONTEXT, GROUND, store, draft, packet)
+            reports.append(GROUND.check(draft, packet))
+            asked.append(scope)
+        finally:
+            store.close()
+
+    if not reports:
+        _audit().record("knowledge.ground", False,
+                        fields={"scope": ",".join(wanted),
+                                "refused": " | ".join(refusals)})
+        raise ContextRefused(
+            "every scope named refused to supply the clauses this check needs."
+            + ("\n  " + "\n  ".join(refusals) if refusals else
+               " None of them could be opened at all."))
+
+    first = reports[0]
+    claims = list(first.claims)
+    for other in reports[1:]:
+        for i, claim in enumerate(other.claims):
+            # Belt and braces: the same draft produces the same sentences in
+            # the same order every time, so the indexes line up. If a future
+            # change ever makes them not, this stops rather than pairing a
+            # verdict with somebody else's sentence.
+            if i >= len(claims) or claims[i].sentence != claim.sentence:
+                break
+            if claims[i].verdict == GROUND.UNRESOLVED:
+                claims[i] = claim
+                continue
+            # TWO SCOPES THAT BOTH RESOLVED IT AND DISAGREE IS AMBIGUOUS, NOT
+            # FIRST-WINS. A bare locator can exist in more than one store:
+            # company 4.1 says 25mm, project 4.1 says 50mm, and the draft
+            # claims 25mm. Keeping the first non-UNRESOLVED verdict meant
+            # `scopes="company,project"` passed it and `"project,company"`
+            # flagged the identical draft - REQUEST ORDER deciding a grounding
+            # result. Within one scope this case is already AMBIGUOUS_CITE;
+            # across scopes it was not, and the docstring recorded that as a
+            # limit rather than fixing it. Found by a review 2026-09-11.
+            if (claim.verdict != GROUND.UNRESOLVED
+                    and claim.verdict != claims[i].verdict):
+                claims[i] = GROUND.Claim(
+                    claims[i].sentence, GROUND.AMBIGUOUS_CITE,
+                    added=["more than one scope carries this citation and "
+                           "they do not agree - cite the chunk id"])
+
+    combined = GROUND.Report(claims, first.thresholds,
+                             sum(r.sources for r in reports))
+    _audit().record("knowledge.ground", combined.ok,
+                    fields={"scope": ",".join(asked),
+                            "refused": " | ".join(refusals)},
+                    numbers={"claims": len(combined.claims),
+                             "checked": combined.checked,
+                             "flagged": len(combined.flagged),
+                             "reversed": len(combined.reversed_claims),
+                             "uncited": len(combined.uncited)})
+    lines = combined.lines()
+    if refusals:
+        lines = list(lines) + [
+            "",
+            "%d of the scopes named supplied no clauses, so NOTHING WAS "
+            "CHECKED against them:" % len(refusals)]
+        lines.extend("  %s" % why for why in refusals)
+    return {
+        "ok": combined.ok,
+        "checked": combined.checked,
+        "sentences": len(combined.claims),
+        "sources": combined.sources,
+        "lines": lines,
+        "claims": [{"sentence": c.sentence, "verdict": c.verdict,
+                    "kind": c.kind, "ratio": c.ratio,
+                    "threshold": c.threshold, "added": c.added,
+                    "citation": c.citation} for c in combined.claims],
+    }
+
+
+def _ready_scope(scope, project=None):
+    """Open one named scope, reconciled and indexed, or None. Never raises.
+
+    BUILT ONCE, because the sequence is a rule rather than a convenience:
+    reconcile BEFORE indexing, because reconciling changes the rows the
+    indexes are built from. standards() and check_answer() both need it, and
+    00-structure.md s3.7's rule about a measurement being built once is the
+    same rule about an ordering - two copies of it become two orderings that
+    drift.
+
+    It returns an OPEN store and the caller closes it. That is deliberate:
+    every multi-scope caller in this file closes each store before opening the
+    next, and a helper that closed it here would have nothing to hand back.
+    """
+    try:
+        import heron_scope as SCOPE
+        import heron_search as SEARCH
+        import heron_embed as EMBED
+    except ImportError:
+        return None
+    if scope not in SCOPE.SCOPES:
+        return None
+    if scope == SCOPE.PROJECT and not project:
+        return None
+    try:
+        store = SCOPE.open_scope(scope, project)
+    except Exception:
+        return None
+    try:
+        _reconcile(store)
+        SEARCH.index_chunks(store)
+        EMBED.index_chunks(store)
+    except Exception:
+        # An index that cannot be built is a scope that answers "unindexed" by
+        # name, which find_documents already reports. It is not a reason to
+        # fail every other scope, and the store is still usable.
+        pass
+    return store
+
+
+def check_answer(draft, request, path=None, revit=None, project=None,
+                 scopes=None, project_name=None):
+    """A draft answer, and the request it answers. A grounding report, out.
+
+    THE HALF OF THE FABRICATION CHECK THAT DID NOT EXIST IN PRODUCTION.
+    heron_ground.check() was complete and tested and reachable from a command
+    line with a file on disk - which is to say, from nowhere a conversation
+    goes. A repo-wide search on 2026-09-11 found no tool, hook or host
+    instruction that called it, so a standards answer could be shown with the
+    pre-display gate never having run. This file's own docstring already names
+    that shape of mistake; the review was right that it had it.
+
+    D-01 IS NOT BROKEN BY THIS AND IT IS THE REASON FOR THE SIGNATURE. The
+    brain does not write the answer and does not see one until the host hands
+    it back. So the host drafts, calls this with the draft and the SAME
+    request, and Heron reassembles the packet and reports. It returns a report
+    and NEVER a rewrite (R-53).
+
+    THE PACKET IS REASSEMBLED RATHER THAN REMEMBERED, deliberately. A packet
+    held between two calls is a session, and a session is state that can go
+    stale and be pointed at the wrong answer. Reassembling is cheap, and it
+    checks the draft against what the store says NOW.
+
+    `scopes` NAMES WHERE THE EVIDENCE CAME FROM, and without it this check was
+    unusable for the workflow it was built for. It opened the GLOBAL store and
+    only the global store, so a draft written from a heron_standards answer -
+    the multi-scope tool, whose whole point is company and project - cited
+    chunks the global store has never heard of. Every marker came back
+    UNRESOLVED, or the reassembly refused outright because global holds no
+    documents. A gate that refuses every honest answer teaches people to stop
+    calling it. Found by a review 2026-09-11.
+
+    EACH SCOPE IS CHECKED ON ITS OWN AND THE VERDICTS ARE COMBINED. No packet
+    ever holds two scopes' clauses: the stores are opened one at a time and
+    closed before the next, which is the discipline heron_conflict keeps and
+    for the same reason (D-33, Golden Rule 5). A chunk id belongs to exactly
+    one store, so a claim resolves in at most one run and UNRESOLVED elsewhere
+    is the absence of that chunk, not a judgement about it.
+
+    ONE LIMIT, REPORTED RATHER THAN DISCOVERED: checking per scope cannot see
+    a citation that is ambiguous ACROSS scopes. Two documents in two different
+    stores sharing clause "4.1" each resolve cleanly in their own run, and a
+    draft citing the bare locator is checked against one of them without the
+    ambiguity being raised. Within a scope it is still raised.
+    """
+    CONTEXT = _context_module()
+    try:
+        import heron_ground as GROUND
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's grounding check needs the brain modules and they are not "
+            "importable: %s" % exc)
+
+    wanted = [w.strip().lower() for w in (scopes or []) if w and w.strip()]
+    if wanted:
+        return _check_across(GROUND, CONTEXT, draft, request, wanted,
+                             path=path, revit=revit, project=project,
+                             project_name=project_name)
+
+    with _Open() as store:
+        try:
+            # THE NAME, because this packet's `project` is only ever rendered
+            # for a person - _Open opens the global store and nothing here
+            # chooses one by key.
+            packet = CONTEXT.assemble(store, request,
+                                      path=path or CONTEXT.STANDARDS,
+                                      revit=revit,
+                                      project=project_name or project)
+        except (CONTEXT.OverBudget, CONTEXT.TooDeep,
+                CONTEXT.SourceMissing) as why:
+            # TRANSLATED, THE SAME WAY context() DOES IT. A refusal from the
+            # packet is an ANSWER - "nothing indexed covers this" is the
+            # sentence a caller needs. Without this the tool above had to catch
+            # every Exception to show it, which meant a real defect came back
+            # wearing the words of a normal answer.
+            _audit().record("knowledge.ground", False,
+                            fields={"scope": store.scope, "refused": str(why)})
+            raise ContextRefused(str(why))
+        report = GROUND.check(draft, packet)
+        _audit().record("knowledge.ground", report.ok,
+                        fields={"scope": store.scope},
+                        numbers={"claims": len(report.claims),
+                                 "checked": report.checked,
+                                 "flagged": len(report.flagged),
+                                 "reversed": len(report.reversed_claims),
+                                 "uncited": len(report.uncited)})
+        return {
+            "ok": report.ok,
+            "checked": report.checked,
+            "sentences": len(report.claims),
+            "sources": report.sources,
+            "lines": report.lines(),
+            "claims": [{"sentence": c.sentence, "verdict": c.verdict,
+                        "kind": c.kind, "ratio": c.ratio,
+                        "threshold": c.threshold, "added": c.added,
+                        "citation": c.citation} for c in report.claims],
+        }
+
+
+def research(request, scopes, project=None, limit=5, project_name=None):
+    """What Heron does not know about this question, and what an answer owes.
+
+    STAGE 9, AND HERON DOES NOT FETCH. D-01 puts every model call in the host
+    because Heron is a per-user install with no admin rights and no server; the
+    network is the same boundary, and docs/DECISIONS.md adds the offline
+    premise - "site visits, locked-down networks, a laptop on a plane". So this
+    seam hands the host a BRIEF and the host, which has both the model and the
+    connection, goes and finds out.
+
+    THE GAP IS READ OFF THE LIBRARIAN'S OWN ANSWER, not asked for a second
+    time. Stage 8 learned that the hard way: a second search gives a second
+    shortlist, and a sentence printed under an answer can then be about other
+    clauses than the ones above it.
+    """
+    try:
+        import heron_scope as SCOPE
+        import heron_retrieve as RETRIEVE
+        import heron_research as RESEARCH
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's knowledge layer needs PyYAML and it is not installed: %s\n"
+            "Install it with:  pip install --user pyyaml" % exc)
+
+    wanted = [one.strip().lower() for one in (scopes or []) if one.strip()]
+    if not wanted:
+        raise ValueError(
+            "name at least one scope to search before going outside. There "
+            "are %s - and Heron has to know what it does NOT hold before an "
+            "outside answer is worth anything." % ", ".join(SCOPE.SCOPES))
+
+    for scope in wanted:
+        store = _ready_scope(scope, project)
+        if store is not None:
+            store.close()
+
+    asked = RETRIEVE.librarian(request, scopes=wanted, project=project,
+                               limit=limit, project_name=project_name)
+    found = RESEARCH.gap(request, asked)
+
+    # D-62's trail. A question Heron could not answer is exactly what the
+    # Capability Gap Agent exists to count, and until this line nothing
+    # recorded one - the gaps report could only see what had been ASKED of
+    # Revit, never what the knowledge layer had missed.
+    _audit().record("knowledge.research", True,
+                    fields={"scopes": ",".join(wanted),
+                            "certain": str(found.certain)},
+                    numbers={"clauses": found.clauses,
+                             "searched": len(found.searched)})
+
+    return {
+        "request": request,
+        "certain": found.certain,
+        "clauses": found.clauses,
+        "sentence": found.sentence(),
+        "brief": RESEARCH.brief(found, wanted),
+        "searched": [{"label": one.label, "route": one.route,
+                      "note": one.note, "clauses": one.clauses,
+                      "skipped": one.skipped} for one in found.searched],
+    }
+
+
+def research_check(answer):
+    """An external answer, in. A report on its CITATIONS, out. Never on its truth.
+
+    The half of Stage 9 with teeth, and the reason the stage is last. An answer
+    from inside Heron carries a chunk id that resolves to text; an answer from
+    outside carries whatever was written down, and "per ISO 19650" under a
+    confident paragraph is indistinguishable, to a reader in a hurry, from a
+    citation. docs/05 s8 calls that the invented-standard failure.
+
+    It cannot say the answer is right. There is no chunk, no text and no packet
+    to compare against, so every claim ends at UNVERIFIED however well-formed
+    its citation is.
+    """
+    try:
+        import heron_research as RESEARCH
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's research check needs the brain modules and they are not "
+            "importable: %s" % exc)
+
+    report = RESEARCH.check(answer)
+    _audit().record("knowledge.research_check", report.ok,
+                    numbers={"claims": len(report.claims),
+                             "checked": len(report.checked),
+                             "uncited": len(report.uncited),
+                             "vague": len(report.vague)})
+    return {
+        "ok": report.ok,
+        "checked": len(report.checked),
+        "sentences": len(report.claims),
+        "lines": report.lines(),
+        "claims": [{"sentence": c.sentence, "verdict": c.verdict,
+                    "missing": (c.cited.missing if c.cited else [])}
+                   for c in report.claims],
+    }
+
+
+def _with_text(asked, project=None):
+    """One scope's candidates, each carrying the clause a person has to read.
+
+    The chunk text is not on the candidate - find_documents() deliberately
+    returns pointers - so the scope is reopened to fetch it. One store at a
+    time, closed before the next, which is the same discipline heron_conflict
+    keeps and for the same reason.
+
+    GOLDEN RULE 19 IS APPLIED HERE, NOT PROMISED BY THE RENDERER. The
+    heron_standards response ends with "content, never instruction (Golden
+    Rule 19)" and, until a review found it 2026-09-11, nothing on that path
+    ran the guard: heron_context.screen() and the visible flag it raises were
+    reached only through heron_context.build(), which this seam does not use.
+    So an ingested clause carrying instruction-shaped text went to the host
+    with a sentence claiming it had been checked. A claim about a guard, with
+    no guard behind it, is worse than no claim.
+
+    Each candidate therefore carries:
+
+      findings     what the screen saw in the clause OR in its metadata, so
+                   the renderer can raise the same flag the packet path does
+      safe_*       the document-derived fields with their whitespace
+                   collapsed and delimited, for the lines that do not quote
+
+    NOTHING IS TRUNCATED and nothing is dropped (R-82) - trimming is what
+    lets a payload be padded past a check.
+    """
+    if asked.answer is None:
+        return []
+    out = []
+    try:
+        import heron_scope as SCOPE
+    except ImportError:
+        return [dict(c) for c in asked.answer.candidates]
+    try:
+        import heron_context as CONTEXT
+    except ImportError:
+        CONTEXT = None
+    # THE KEY IS PASSED IN, not read off the label. Asked.project is what the
+    # Librarian SHOWS; the key is what names the store. They happen to be the
+    # same value today and reading one for the other is how they stop being.
+    try:
+        store = SCOPE.open_scope(asked.scope, project)
+    except Exception:
+        return [dict(c) for c in asked.answer.candidates]
+    try:
+        for hit in asked.answer.candidates:
+            got = dict(hit)
+            row = store.execute("SELECT text FROM chunks WHERE id = ?",
+                                (hit["id"],)).fetchone()
+            got["text"] = row["text"] if row else None
+            got["findings"] = []
+            if CONTEXT is not None:
+                # EVERY DOCUMENT-DERIVED FIELD, not only the body - the same
+                # set heron_context._standard_parts screens, and for the same
+                # reason: the title line is removed from the chunks during
+                # ingestion, so a body scan can never see it.
+                seen = CONTEXT.screen(hit["id"], "\n".join(
+                    str(bit) for bit in (got["text"], hit.get("document"),
+                                         hit.get("locator"),
+                                         hit.get("heading_path")) if bit))
+                got["findings"] = list(seen.findings)
+                got["safe_document"] = CONTEXT.as_metadata(hit.get("document"))
+                got["safe_locator"] = CONTEXT.as_metadata(hit.get("locator"))
+                got["safe_path"] = CONTEXT.as_metadata(hit.get("path"))
+            out.append(got)
+    finally:
+        store.close()
+    return out
+
+
+def standards(request, scopes, project=None, limit=5,
+              project_name=None):
+    """Each named scope asked on its own, and where their numbers disagree.
+
+    THE MULTI-SCOPE PATH HAD NO SEAM AT ALL, and that covered two stages.
+    `heron_retrieve.librarian()` (Stage 4) and `heron_conflict.disagreements()`
+    (Stage 8) were both callable only from a command line and their own tests -
+    so the scope wall Stage 4 built and the disagreement Stage 8 surfaces were
+    invisible to any host. A review found it on the conflict half; the librarian
+    half had been sitting there since Stage 4 and nobody had looked.
+
+    NOTHING IS POOLED AND THAT IS THE LIBRARIAN'S GUARANTEE, NOT THIS
+    FUNCTION'S. Each scope is asked separately and answers under its own label;
+    this returns a list of them, never a merged one. D-33 and Golden Rule 5.
+
+    R-29 IS KEPT HERE. Each scope's chunk indexes are built before it is asked,
+    for the same reason `_Open` does it for the global scope: a document put in
+    through the CLI must not stay unsearchable until somebody remembers a
+    command.
+    """
+    try:
+        import heron_scope as SCOPE
+        import heron_retrieve as RETRIEVE
+        import heron_conflict as CONFLICT
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's knowledge layer needs PyYAML and it is not installed: %s\n"
+            "Install it with:  pip install --user pyyaml" % exc)
+
+    wanted = [s.strip().lower() for s in (scopes or []) if s.strip()]
+    if not wanted:
+        raise ValueError(
+            "name at least one scope. There are %s - and naming TWO is what "
+            "makes a disagreement visible at all."
+            % ", ".join(SCOPE.SCOPES))
+
+    # RECONCILED AND INDEXED FIRST, one scope at a time, each closed before
+    # the next.
+    #
+    # THE MAINTENANCE PASS _Open GIVES THE GLOBAL SCOPE, and until a review
+    # found it 2026-09-11 this path had none. _Open only ever opens `global`,
+    # so a company standard edited on disk, or a project store deleted as the
+    # documented safe recovery action, stayed stale or stayed empty through
+    # every served standards request until somebody ran maintenance by hand -
+    # on exactly the scopes this tool exists to read.
+    for scope in wanted:
+        store = _ready_scope(scope, project)
+        if store is not None:
+            store.close()
+
+    # ONE SEARCH PER SCOPE, SHARED. Calling disagreements() without `asked`
+    # made it ask the Librarian again, so every served standards request
+    # searched - and, where a cross-encoder is installed, re-ranked - every
+    # scope twice. Worse than the waste: two shortlists that a finishing
+    # warm-up or a changed file could make different, so the disagreement shown
+    # could be about clauses other than the ones listed above it.
+    asked = RETRIEVE.librarian(request, scopes=wanted, project=project,
+                               limit=limit, project_name=project_name)
+    found = CONFLICT.disagreements(request, scopes=wanted, project=project,
+                                   limit=limit, asked=asked,
+                                   project_name=project_name)
+
+    # THE FOLDER INDEX LEARNS THE NAME WHILE BOTH ARE IN HAND. heron_scope
+    # keeps projects/labels.json so that somebody opening the folder can tell
+    # which .db is which - the key is the filename and the label is the only
+    # readable thing about it. Nothing on the served path had ever written to
+    # it, so every project store was an unreadable filename on disk.
+    if project and project_name:
+        try:
+            SCOPE.remember_label(project, project_name)
+        except Exception:
+            # A label nobody could write loses nothing that matters: the key
+            # is still the filename. Never let it fail a question.
+            pass
+
+    _audit().record("knowledge.standards", True,
+                    fields={"scopes": ",".join(wanted)},
+                    numbers={"answered": len([a for a in asked if a.answer]),
+                             "disagreements": len(found)})
+
+    return {
+        "request": request,
+        "scopes": [{
+            "scope": a.scope,
+            "label": a.label,
+            "skipped": a.skipped,
+            "route": a.answer.route if a.answer else None,
+            "note": a.answer.note if a.answer else None,
+            # THE CLAUSE ITSELF, not only its metadata. The tool's own closing
+            # line said "both clauses are above, each with its own citation"
+            # while the payload carried a title, a locator and a ranking
+            # reason - no text to read and no path to open. A sentence that
+            # describes something the response does not contain. Found by a
+            # review 2026-09-11, in wording written the same day.
+            "candidates": _with_text(a, project),
+        } for a in asked],
+        "disagreements": [{
+            "unit": d.unit,
+            "sources": ["%s - %s" % (label, doc) for label, doc in d.sources],
+            "same_locator": d.same_locator,
+            "would_be_preferred": d.would_be_preferred,
+            "sentence": d.sentence(),
+            "values": [{"label": v.label, "value": v.value, "unit": d.unit,
+                        "document": v.document, "locator": v.locator,
+                        "path": v.path, "chunk": v.chunk}
+                       for v in d.values],
+        } for d in found],
+    }
 
 
 def gaps(days=None):

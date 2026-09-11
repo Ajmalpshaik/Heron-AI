@@ -45,6 +45,8 @@ graph reports the break BEFORE any of its clean output is believed.
 """
 
 import os
+import re
+import sqlite3
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -208,6 +210,189 @@ def orphans(store):
                               "an action nothing can feed - nothing provides %s"
                               % ", ".join(unmet)))
     return found
+
+
+# ---------------------------------------------------------------------------
+# Document neighbours - Stage 5, and it begins with a COUNT rather than a route
+# ---------------------------------------------------------------------------
+
+# WHY THIS IS A COUNT AND NOT A FEATURE.
+#
+# docs/34 s2.13 measured a third retrieval stream over the FRAGMENT graph at
+# six settings and ALL SIX LOST - the gentlest cost 1.1 points of P@1, the
+# strongest 14, and P@5 never improved at any setting, so it did not widen
+# recall either, which is the one thing a graph stream is supposed to be good
+# at.
+#
+# And it named the property that decided it: DENSITY. Heron's composition
+# graph runs a median of 50 neighbours per fragment, worst 230. A fragment
+# providing IList<Element> composes with most of the library, so "the
+# neighbours of the best hit" is not a signal - it is a large slice of the
+# library added as competitors.
+#
+# A DOCUMENT GRAPH IS A DIFFERENT GRAPH, so that finding does not transfer
+# automatically. The TEST that decided it does. So this derives the edges and
+# counts them, and nothing reads them into retrieval until a count says it is
+# worth it.
+#
+# D-40: EVERY EDGE HERE IS DERIVED ON DEMAND. A stored document edge is a
+# cache that goes stale the moment a document is re-ingested.
+
+# A DOTTED NUMBER IS NOT AUTOMATICALLY A CLAUSE NUMBER, and reading it as one
+# put false edges into the only count that decides whether this route is worth
+# having. In a standard full of ordinary measurements - "shall fall 1.5m", "a
+# 2.5mm gap" - every one of those matched, and in a document that also happens
+# to number a clause 1.5 or 2.5 an edge appeared between two clauses that have
+# nothing to do with each other. Density is what Stage 5 measures; inflating it
+# with false edges is measuring the regex. Found by a review 2026-09-11.
+#
+# So a match counts only when the text says it is a reference:
+#
+#   * a unit or a percent directly after it means it is a MEASUREMENT, never
+#     a clause - checked first, because it is the common case; or
+#   * three or more segments (21.3.2) - no measurement is written that way; or
+#   * a citing word just before it - clause, section, table, appendix, part,
+#     paragraph, item, or "in accordance with".
+#
+# A real reference written as bare "1.5" with no citing word is missed. That is
+# the safe direction: a missing edge costs recall in a route that has no vote
+# yet, and a false edge corrupts the measurement that decides whether it ever
+# gets one.
+_CLAUSE_REFERENCE = re.compile(r"\b\d+(?:\.\d+)+\b")
+_MEASUREMENT_AFTER = re.compile(
+    r"\s*(?:%|mm|cm|m|km|in|ft|kg|g|t|l|ml|pa|kpa|bar|mbar|c|k|w|kw|mw|va|"
+    r"kva|hz|v|kv|a|ma|db|lux|lm|cfm|m2|m3)\b", re.I)
+# A BARE "to" IS NOT A CITING WORD, AND HAVING IT HERE MANUFACTURED EDGES.
+#
+#     "spacing varies from 1.5 to 2.5 times the diameter"
+#
+# "times" is not a unit, so the measurement guard let it through, and "to"
+# made 2.5 a reference to clause 2.5 wherever that locator existed. Every
+# numeric RANGE in a standard is written this way, and standards are mostly
+# ranges - so the false edges landed exactly where they are densest, in the
+# number that decides whether the graph route is viable at all. Found by a
+# review 2026-09-11, in a guard added a round earlier to fix the same class.
+#
+# The phrases that keep "to" are the ones that actually cite: refer to,
+# according to, pursuant to, subject to. Written out rather than made optional,
+# because "(refer\s+)?to" is the same bug with more characters.
+_CITING_WORD = re.compile(
+    r"(?:clause|section|sub-?clause|sub-?section|table|appendix|annex|part|"
+    r"paragraph|item|rule|in\s+accordance\s+with|as\s+per|per|see|"
+    r"refer(?:s|red|ring)?\s+to|according\s+to|pursuant\s+to|"
+    r"subject\s+to|conform(?:s|ing)?\s+to|comply(?:ing)?\s+with)\s*$",
+    re.I)
+
+
+def _is_clause_reference(text, match):
+    """Whether this dotted number is citing a clause rather than measuring."""
+    after = text[match.end():match.end() + 8]
+    if _MEASUREMENT_AFTER.match(after):
+        return False
+    if match.group(0).count(".") >= 2:
+        return True
+    return bool(_CITING_WORD.search(text[max(0, match.start() - 30):match.start()]))
+
+
+def document_neighbours(store, chunk_id=None):
+    """Every chunk's neighbours, derived. {chunk_id: set(chunk_id)}.
+
+    THREE KINDS OF EDGE, all read off what the document already says:
+
+      parent    the section a clause sits inside, and its clauses back
+      sibling   the clauses under one parent - "the rest of 21.3"
+      cites     a clause whose TEXT names another clause's number. This is
+                the one that finds what words alone miss: "insulation shall
+                comply with 21.3.2" links two clauses that share no subject.
+
+    Nothing is stored. Ask again after a re-ingest and the answer is rebuilt
+    from the rows, which is the whole of D-40.
+    """
+    try:
+        rows = store.execute(
+            "SELECT id, document_id, parent_id, locator, text "
+            "FROM chunks").fetchall()
+    except sqlite3.OperationalError as exc:
+        # ONLY "THE TABLE IS NOT THERE", and the broad version of this was the
+        # same defect heron_retrieve.documents() was corrected for a round
+        # earlier and this copy did not get. A locked database or a missing
+        # column returned {} - and document_density() then reported a
+        # zero-chunk, zero-density corpus, so the Stage 5 measurement that
+        # decides whether the graph route is ever worth a vote could record a
+        # clean empty reading where no measurement ran at all. That is D-52's
+        # plausible zero on the one number this module exists to produce.
+        if "no such table" not in str(exc):
+            raise
+        return {}
+
+    by_locator = {}
+    for row in rows:
+        if row["locator"]:
+            by_locator.setdefault((row["document_id"], row["locator"]),
+                                  row["id"])
+
+    children = {}
+    for row in rows:
+        if row["parent_id"]:
+            children.setdefault(row["parent_id"], []).append(row["id"])
+
+    edges = {}
+    for row in rows:
+        near = set()
+        if row["parent_id"]:
+            near.add(row["parent_id"])
+            for other in children.get(row["parent_id"], ()):
+                if other != row["id"]:
+                    near.add(other)          # sibling
+        near.update(children.get(row["id"], ()))
+
+        # A clause that names another clause's number, within the same
+        # document. Across documents it would be a guess - "4.1.1" means
+        # something different in every standard.
+        body = row["text"] or ""
+        for match in _CLAUSE_REFERENCE.finditer(body):
+            found = match.group(0)
+            if found == row["locator"]:
+                continue
+            if not _is_clause_reference(body, match):
+                continue
+            other = by_locator.get((row["document_id"], found))
+            if other:
+                near.add(other)
+
+        near.discard(row["id"])
+        edges[row["id"]] = near
+
+    if chunk_id is not None:
+        return {chunk_id: edges.get(chunk_id, set())}
+    return edges
+
+
+def document_density(store):
+    """The count Stage 5 turns on. Returns a dict a report can print.
+
+    WHAT THE NUMBER HAS TO BEAT. The fragment graph's median was 50 and its
+    worst 230, and at that density the neighbours of a good hit are
+    competitors rather than evidence. A document graph that looks like that
+    loses the same way for the same reason, and the route is not built.
+    """
+    edges = document_neighbours(store)
+    if not edges:
+        return {"chunks": 0, "median": 0, "worst": 0, "isolated": 0,
+                "total": 0}
+    counts = sorted(len(near) for near in edges.values())
+    # THE MEDIAN OF BOTH MIDDLE OBSERVATIONS, not the upper one. This number
+    # is what decides whether the graph route is viable at all, so a dataset
+    # whose two central counts differ was getting an overstated median and
+    # could cross the decision boundary for arithmetic reasons.
+    half = len(counts) // 2
+    middle = (counts[half] if len(counts) % 2
+              else (counts[half - 1] + counts[half]) / 2.0)
+    return {"chunks": len(counts),
+            "median": middle,
+            "worst": counts[-1],
+            "isolated": len([c for c in counts if c == 0]),
+            "total": sum(counts)}
 
 
 def main(argv):

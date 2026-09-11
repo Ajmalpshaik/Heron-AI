@@ -51,6 +51,7 @@ it may never be the reason an answer is right.
 
 import os
 import re
+import hashlib
 import sqlite3
 import sys
 
@@ -109,12 +110,31 @@ class Answer(object):
     """What a lookup found, and how."""
 
     def __init__(self, route, fragment_id=None, candidates=None, autorun=False,
-                 note=""):
+                 note="", contest=None, backends=None):
         self.route = route                 # identity | cache | keywords | nothing
         self.fragment_id = fragment_id
         self.candidates = candidates or []
         self.autorun = autorun
         self.note = note
+
+        # HOW CONTESTED THIS ANSWER WAS - a heron_retrieve.Contest, or None on
+        # the routes that do not rank anything (identity, cache, nothing).
+        # Carried rather than folded into `note` because a number a caller can
+        # read is worth more than a sentence it has to parse back out, and
+        # because docs/05 s4.4's re-ranker will be judged against it later.
+        self.contest = contest
+
+        # WHICH OPTIONAL BACKENDS ACTUALLY RAN ON THIS ANSWER, recorded by the
+        # route that ran them and never re-derived afterwards. Asking a
+        # backend whether it is INSTALLED, after the search, answers a
+        # different question: a warm-up finishing between the search and the
+        # question labels a lexically-answered query "model", and a re-ranker
+        # that was loaded but returned no scores reports as having answered.
+        # Both were live. Found by a review 2026-09-11.
+        #
+        # None on the routes that record nothing, which a caller reads as "not
+        # said" rather than as "not used".
+        self.backends = backends
 
     def __repr__(self):
         return "<Answer %s %s%s>" % (self.route, self.fragment_id or "-",
@@ -405,17 +425,244 @@ def forget_stale(store, on_disk=None):
 
 
 def keywords(store, text, limit=5):
-    """Route 3. FTS5 over the scope, best first."""
+    """Route 3. FTS5 over the scope, best first.
+
+    Each row carries FTS5's own `rank` as `score`. It is bm25, so it is
+    NEGATIVE and more negative is better. It is a MAGNITUDE, which the
+    position in this list is not: reciprocal rank fusion keeps the order and
+    throws the strength away by design, so this column is the only place the
+    words route's own opinion of how well it matched survives at all.
+
+    Nothing ranks on it. It is reported (heron_retrieve.Contest) so that a
+    floor can one day be derived from a measurement instead of invented.
+    """
     ensure_tables(store)          # asked before indexing is a normal order
     query = _fts_query(text)
     if not query:
         return []
     rows = store.execute(
-        "SELECT t.id, f.capability, f.status, f.kind "
+        "SELECT t.id, t.rank AS score, f.capability, f.status, f.kind "
         "FROM fragment_text t JOIN fragments f ON f.id = t.id "
         "WHERE fragment_text MATCH ? ORDER BY rank LIMIT ?",
         (query, limit)).fetchall()
     return [dict(r) for r in rows]
+
+
+def ensure_chunk_table(store):
+    """FTS5 over the ingested documents. Separate from `fragment_text`.
+
+    A DIFFERENT TABLE, NOT A WIDER ONE. A fragment and a clause have nothing
+    in common to index - a fragment has a capability and a domain, a clause
+    has a locator and a heading path - and one table with both sets of columns
+    half empty would rank on the emptiness.
+    """
+    store.db.executescript("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS chunk_text USING fts5(
+            id UNINDEXED,
+            document_id UNINDEXED,
+            locator,
+            heading_path,
+            text
+        );
+    """)
+    store.db.commit()
+
+
+def index_chunks(store):
+    """Rebuild the searchable text for every ingested chunk.
+
+    THE HEADING PATH IS AN INDEXED COLUMN, which is R-66 on the words side:
+    a question that uses a SECTION's vocabulary rather than the clause's own
+    can still reach the clause, because the section's words are in the row.
+
+    Returns the number indexed. Zero when nothing has been ingested, which is
+    the normal state of a fresh scope rather than a fault.
+    """
+    ensure_chunk_table(store)
+    try:
+        rows = store.execute(
+            "SELECT id, document_id, locator, heading_path, text "
+            "FROM chunks").fetchall()
+    except sqlite3.OperationalError as exc:
+        # ONLY "THE TABLE IS NOT THERE". A locked database or a missing column
+        # was read as "nothing has ever been ingested", so index_chunks()
+        # returned 0 and LEFT ANY EXISTING chunk_text IN PLACE - retrieval then
+        # went on answering from stale clauses with nothing saying the rebuild
+        # had failed. The THIRD copy of this pattern: heron_retrieve.documents()
+        # was corrected in one review round and heron_graph in another, and
+        # this one did not get either fix. Found by a review 2026-09-11.
+        if "no such table" not in str(exc):
+            raise
+        return 0                         # nothing has ever been ingested here
+
+    # FREE WHEN NOTHING CHANGED, and it was NOT until 2026-09-11.
+    #
+    # mcp/server/heron_brain.py calls this on EVERY request - a catalogue
+    # lookup, a fragment search, anything - and this function deleted the whole
+    # FTS table and reinserted every chunk each time, with a comment at the
+    # call site claiming it cost nothing when unchanged. That was true of the
+    # embedding half, which is content-hashed, and never true of this half.
+    # Found by a review.
+    #
+    # The fingerprint is over the ids and the text, so a re-ingest that changes
+    # a clause changes it, and a re-open that changes nothing does not. It is
+    # kept in `meta`, in the scope's own file, like every other derived fact.
+    digest = hashlib.blake2b(
+        "\n".join("%s\t%s" % (row["id"], row["text"] or "") for row in rows)
+        .encode("utf-8"), digest_size=16).hexdigest()
+    # AND THE DERIVED TABLE IS COUNTED, not assumed. The first version of
+    # this skipped on the fingerprint alone, which keys on the SOURCE - so
+    # emptying `chunk_text` and asking for a rebuild got a no-op and a silently
+    # unsearchable store. Golden Rule 11 says deleting a derived thing is a
+    # safe recovery action, and a rebuild that declines to rebuild breaks
+    # exactly that. tests/test_document_retrieval.py deletes the table and
+    # caught it inside a minute.
+    have = store.execute(
+        "SELECT value FROM meta WHERE key = 'chunk_text_fingerprint'"
+    ).fetchone()
+    built = store.execute("SELECT COUNT(*) AS n FROM chunk_text").fetchone()["n"]
+    if have and have["value"] == digest and built == len(rows):
+        return len(rows)
+
+    store.execute("DELETE FROM chunk_text")
+    for row in rows:
+        store.execute(
+            "INSERT INTO chunk_text (id, document_id, locator, heading_path, "
+            "text) VALUES (?,?,?,?,?)",
+            (row["id"], row["document_id"], row["locator"] or "",
+             row["heading_path"] or "", row["text"] or ""))
+    store.execute(
+        "INSERT OR REPLACE INTO meta (key, value) "
+        "VALUES ('chunk_text_fingerprint', ?)", (digest,))
+    store.db.commit()
+    return len(rows)
+
+
+# A document may be OFFERED at these. RETIRED is excluded the same way
+# DEPRECATED is for fragments: the row survives so a record is never destroyed,
+# not so it can be handed back as an answer.
+OFFERABLE_DOCUMENTS = ("DRAFT", "REVIEWED")
+
+
+def chunk_keywords(store, text, limit=5, statuses=OFFERABLE_DOCUMENTS):
+    """Route 3, over documents. Same FTS5 treatment, a different corpus.
+
+    THE LIFECYCLE FILTER IS IN THE QUERY, BEFORE THE LIMIT, and that is a
+    correction rather than a preference. It used to return whatever ranked
+    highest and let the caller drop the retired ones afterwards - so a document
+    with a long retained history could fill the whole fetched window with its
+    own old revisions, and the CURRENT standard, ranking just below them,
+    disappeared behind it. Growing the window (`_until_filled`) softened that
+    and could still hit its ceiling. Filtering here means the window is full of
+    offerable rows to begin with. Found by a review 2026-09-11.
+    """
+    ensure_chunk_table(store)
+    query = _fts_query(text)
+    if not query:
+        return []
+    try:
+        rows = store.execute(
+            "SELECT t.id, t.rank AS score, t.document_id, t.locator "
+            "FROM chunk_text t JOIN documents d ON d.id = t.document_id "
+            "WHERE chunk_text MATCH ? AND d.status IN (%s) "
+            "ORDER BY rank LIMIT ?" % ",".join("?" * len(statuses)),
+            (query,) + tuple(statuses) + (limit,)).fetchall()
+    except sqlite3.OperationalError as exc:
+        # No `documents` table means nothing was ever ingested, which is a
+        # normal state and not a fault. Anything else is.
+        if "no such table" not in str(exc):
+            raise
+        return []
+    return [dict(r) for r in rows]
+
+
+def chunk_breadth(store, text, statuses=None):
+    """How many chunks the words route matches at all. The document twin of
+    match_breadth, and it means the same thing: a route that matched
+    everything has ranked everything.
+
+    `statuses` NARROWS IT TO THE SAME CORPUS THE CALLER COUNTED AS ELIGIBLE,
+    and leaving it out was a defect rather than a default. Contest compares
+    this number against `eligible`, which is offerable chunks only - while
+    this counted every row in the index, RETIRED revisions included. A
+    document with a long retained history therefore pushed breadth above
+    eligible and the report said "the words route ranked the whole library"
+    about a query that had selected one clause out of it. Found by a review
+    2026-09-11. Two counts are only comparable over one corpus.
+    """
+    ensure_chunk_table(store)
+    query = _fts_query(text)
+    if not query:
+        return 0
+    if not statuses:
+        row = store.execute(
+            "SELECT COUNT(*) AS n FROM chunk_text WHERE chunk_text MATCH ?",
+            (query,)).fetchone()
+        return row["n"] if row else 0
+    try:
+        row = store.execute(
+            "SELECT COUNT(*) AS n FROM chunk_text t "
+            "JOIN documents d ON d.id = t.document_id "
+            "WHERE chunk_text MATCH ? AND d.status IN (%s)"
+            % ",".join("?" * len(statuses)),
+            (query,) + tuple(statuses)).fetchone()
+    except sqlite3.OperationalError as exc:
+        # No `documents` table means nothing was ever ingested. Anything else
+        # is a broken store and must not read as a breadth of zero.
+        if "no such table" not in str(exc):
+            raise
+        return 0
+    return row["n"] if row else 0
+
+
+def match_breadth(store, text, keep=None):
+    """How many fragments the words route matches AT ALL, not the top few.
+
+    THE NUMBER THAT SHOWS A ROUTE HAS STOPPED BEING SELECTIVE. _fts_query
+    joins the words with OR so that a missing word cannot empty the result -
+    which is right for a lookup, and means a sentence made mostly of ordinary
+    English matches most of the library. Measured 2026-09-11 at 360
+    fragments: "what is the best food for a cat" matched 360 of 360, because
+    "what", "is", "for" and "a" are in every fragment.
+
+    A route that matched everything has ranked everything, and a rank out of
+    everything is not evidence. Reported, never ranked on.
+
+    IT COSTS ONE QUERY, NOT A SECOND SEARCH - and the filter below made it
+    dearer, which is recorded rather than glossed. Measured 2026-09-11 at 360
+    fragments: as a bare COUNT it was 0.35 ms against a 9.6 ms lookup (3.6%);
+    fetching the matched ids to intersect them costs 0.83 ms against a 6.4 ms
+    lookup, so 13% of a call. Counting in SQL with an `id IN (...)` list was
+    measured at 0.86 ms - no cheaper - so the Python intersection stays,
+    because it is also right when the index holds a row the fragment table no
+    longer has. Worth measuring rather than assuming: A8 in NEEDS-CHECKING.md
+    records a Heron tool call that sat for thirty minutes because nobody
+    timed an import.
+
+    `keep` IS THE CALLER'S ELIGIBLE SET, AND WITHOUT IT THE TWO NUMBERS WERE
+    NOT COMPARABLE. Contest reads breadth against `eligible`, which is what
+    heron_retrieve.eligible() left after status, Revit version, domain and
+    kind were applied - while this counted matches across the WHOLE index. A
+    release with 20 eligible fragments, a query matching one of them and 20
+    fragments declared for another Revit version, and `breadth >= eligible`
+    turned true: the report then said the words route had ranked the entire
+    eligible library when it had selected one row out of it. Found by a
+    review 2026-09-11. The filter is a Python walk rather than a WHERE, so
+    the ids come back and the intersection is counted here.
+    """
+    ensure_tables(store)
+    query = _fts_query(text)
+    if not query:
+        return 0
+    if keep is None:
+        row = store.execute(
+            "SELECT COUNT(*) AS n FROM fragment_text WHERE fragment_text MATCH ?",
+            (query,)).fetchone()
+        return row["n"] if row else 0
+    rows = store.execute(
+        "SELECT id FROM fragment_text WHERE fragment_text MATCH ?",
+        (query,)).fetchall()
+    return len([r for r in rows if r["id"] in keep])
 
 
 def ask(store, text, limit=5):

@@ -61,7 +61,8 @@ namespace Heron.Revit.Addin
                     return CountElements(app);
 
                 case "select_by_category":
-                    return SelectByCategory(app, Json.ReadString(request, "category"));
+                    return SelectByCategory(app, Json.ReadString(request, "category"),
+                                            Json.ReadString(request, "expectProject"));
 
                 // D-28's executor. Reads only: it opens no transaction, so
                 // Revit itself refuses anything that would change the model.
@@ -167,6 +168,7 @@ namespace Heron.Revit.Addin
                 Json.Num("count", count),
                 Json.Str("document", doc.Title),
                 Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
+                Json.Str("projectKey", ProjectKey(doc)),
                 Json.Bool("unsaved", doc.IsModified),
                 Json.Str("counts", "placed elements, excluding types"));
         }
@@ -203,8 +205,23 @@ namespace Heron.Revit.Addin
         /// says so. "Selected 126 ducts" means something different in a view
         /// than in a model, and a modeller reading a number must not have to
         /// guess which was meant.
+        ///
+        /// GOLDEN RULE 20 IS CHECKED HERE, BEFORE THE SELECTION MOVES, and
+        /// checking it on the other side of the wire was not enough. The MCP
+        /// server compared the pin against the REPLY - which arrives after
+        /// SetElementIds has already run - so switching the active document
+        /// mid-conversation highlighted every duct in the wrong model and then
+        /// returned a refusal saying nothing had been sent to Revit. A refusal
+        /// that arrives after the act is a description, not a guard. Found by
+        /// a review 2026-09-11.
+        ///
+        /// `expectProject` is the caller's pinned project key, or empty when
+        /// the chat has not pinned one yet. Empty means "do not check": a
+        /// first request has nothing to compare against, and refusing it would
+        /// make the pin unobtainable.
         /// </summary>
-        private static string SelectByCategory(UIApplication app, string category)
+        private static string SelectByCategory(UIApplication app, string category,
+                                               string expectProject)
         {
             BuiltInCategory builtIn;
             var unknown = ResolveCategory(category, out builtIn);
@@ -218,6 +235,19 @@ namespace Heron.Revit.Addin
                     "No model is open in Revit. Open one and ask again.");
             }
 
+            if (!string.IsNullOrEmpty(expectProject))
+            {
+                var here = ProjectKey(doc);
+                if (here != expectProject)
+                {
+                    return Json.Error("wrong_document",
+                        "This chat has been working on another model, and the "
+                        + "one in front of Revit now is \"" + doc.Title
+                        + "\". NOTHING was selected. Say so explicitly if you "
+                        + "meant to change model.");
+                }
+            }
+
             var found = new FilteredElementCollector(doc)
                 .OfCategory(builtIn)
                 .WhereElementIsNotElementType()
@@ -229,6 +259,7 @@ namespace Heron.Revit.Addin
                 Json.Num("selected", found.Count),
                 Json.Str("category", category.Trim()),
                 Json.Str("document", doc.Title),
+                Json.Str("projectKey", ProjectKey(doc)),
                 Json.Str("scope", "the whole model, not just the active view"));
         }
 
@@ -240,6 +271,34 @@ namespace Heron.Revit.Addin
         /// when it MOVES - which is the kind of divergence that is invisible
         /// in review and obvious only in the model afterwards.
         /// </summary>
+        /// <summary>
+        /// The document's PROJECT KEY - what a knowledge scope is named after.
+        ///
+        /// heron_scope._safe_key states the contract: the key is the UniqueId
+        /// of the document's own Project Information element, chosen because
+        /// it is created with the document and survives save, rename and move.
+        /// The add-in already computed exactly this inside RevitWrite for the
+        /// preview/commit pairing and never SENT it, so the MCP server had no
+        /// way to obtain one - it built a path-based key instead and the
+        /// project store was named after a file name, or, in a read-only
+        /// conversation where no write tool had run, was not opened at all.
+        /// Found by a review 2026-09-11.
+        ///
+        /// NOT Document.CreationGUID, for the reason RevitWrite.DocumentKey
+        /// gives at length: it does not exist in Revit 2020, and D-05 does not
+        /// extrapolate a runtime table.
+        ///
+        /// A family document has no Project Information. Heron keeps no
+        /// project knowledge for those, and null says so rather than
+        /// inventing an identity they do not have.
+        /// </summary>
+        internal static string ProjectKey(Document doc)
+        {
+            if (doc == null) return null;
+            var info = doc.ProjectInformation;
+            return info == null ? null : info.UniqueId;
+        }
+
         internal static string ResolveCategory(string category, out BuiltInCategory builtIn)
         {
             builtIn = BuiltInCategory.INVALID;
