@@ -186,6 +186,25 @@ def quantity(fact):
     return unit, value
 
 
+def same_number(value):
+    """A value canonicalised for COMPARISON. The spelling is kept for display.
+
+    "30" and "30.0" are one measurement written two ways, and comparing the
+    raw strings reported a disagreement between two sources that agree - a
+    flag on nothing, which is the one thing that reliably teaches people to
+    stop reading flags. Found by a review 2026-09-11.
+
+    The display spelling is never touched: a clause that says 30.0mm is quoted
+    back saying 30.0mm, because the report's job is to show what each source
+    actually wrote.
+    """
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return value
+    return "%g" % number
+
+
 class Value(object):
     """One number a scope's answer carried, and enough to go and look at it."""
 
@@ -382,12 +401,19 @@ def _values_from(store, asked):
     return out
 
 
-def disagreements(text, scopes=None, project=None, limit=5):
+def disagreements(text, scopes=None, project=None, limit=5, asked=None):
     """Ask each scope on its own, and report where their numbers differ.
 
     ONE STORE IS OPEN AT A TIME. Each is opened, asked, reduced to values and
     closed before the next is opened, so no scope's text is ever in memory
     beside another's. The comparison at the end is over numbers.
+
+    `asked` IS THE LIBRARIAN'S ANSWER WHEN A CALLER ALREADY HAS ONE, and
+    passing it is not only an optimisation. A caller that displays the clauses
+    and then calls this got TWO searches of every scope - twice the work, and
+    two shortlists that a finishing warm-up or a changed file could make
+    different, so the disagreement reported could be about clauses other than
+    the ones shown above it. Found by a review 2026-09-11.
     """
     wanted = list(scopes or [])
     if len(wanted) < 2:
@@ -395,17 +421,20 @@ def disagreements(text, scopes=None, project=None, limit=5):
         # empty list that reads as "they agree".
         return []
 
+    if asked is None:
+        asked = RETRIEVE.librarian(text, scopes=wanted, project=project,
+                                   limit=limit)
+
     values = []
-    for asked in RETRIEVE.librarian(text, scopes=wanted, project=project,
-                                    limit=limit):
-        if asked.skipped or asked.answer is None:
+    for one in asked:
+        if one.skipped or one.answer is None:
             continue
         try:
-            store = SCOPE.open_scope(asked.scope, project)
+            store = SCOPE.open_scope(one.scope, project)
         except Exception:
             continue
         try:
-            values.extend(_values_from(store, asked))
+            values.extend(_values_from(store, one))
         finally:
             store.close()
 
@@ -431,9 +460,10 @@ def disagreements(text, scopes=None, project=None, limit=5):
         # Comparing SETS fixes both and fixes a third thing neither finding
         # named: two sources that both carry 25mm and 30mm AGREE, and reporting
         # "two sources, two values" about them would have been noise.
+        # KEYED ON THE CANONICAL NUMBER, holding the value as written.
         says = {}
         for value in group:
-            says.setdefault(value.source, {})[value.value] = value
+            says.setdefault(value.source, {})[same_number(value.value)] = value
         if len(says) < 2:
             continue
 

@@ -471,7 +471,16 @@ def index_chunks(store):
         rows = store.execute(
             "SELECT id, document_id, locator, heading_path, text "
             "FROM chunks").fetchall()
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as exc:
+        # ONLY "THE TABLE IS NOT THERE". A locked database or a missing column
+        # was read as "nothing has ever been ingested", so index_chunks()
+        # returned 0 and LEFT ANY EXISTING chunk_text IN PLACE - retrieval then
+        # went on answering from stale clauses with nothing saying the rebuild
+        # had failed. The THIRD copy of this pattern: heron_retrieve.documents()
+        # was corrected in one review round and heron_graph in another, and
+        # this one did not get either fix. Found by a review 2026-09-11.
+        if "no such table" not in str(exc):
+            raise
         return 0                         # nothing has ever been ingested here
 
     # FREE WHEN NOTHING CHANGED, and it was NOT until 2026-09-11.
@@ -517,16 +526,41 @@ def index_chunks(store):
     return len(rows)
 
 
-def chunk_keywords(store, text, limit=5):
-    """Route 3, over documents. Same FTS5 treatment, a different corpus."""
+# A document may be OFFERED at these. RETIRED is excluded the same way
+# DEPRECATED is for fragments: the row survives so a record is never destroyed,
+# not so it can be handed back as an answer.
+OFFERABLE_DOCUMENTS = ("DRAFT", "REVIEWED")
+
+
+def chunk_keywords(store, text, limit=5, statuses=OFFERABLE_DOCUMENTS):
+    """Route 3, over documents. Same FTS5 treatment, a different corpus.
+
+    THE LIFECYCLE FILTER IS IN THE QUERY, BEFORE THE LIMIT, and that is a
+    correction rather than a preference. It used to return whatever ranked
+    highest and let the caller drop the retired ones afterwards - so a document
+    with a long retained history could fill the whole fetched window with its
+    own old revisions, and the CURRENT standard, ranking just below them,
+    disappeared behind it. Growing the window (`_until_filled`) softened that
+    and could still hit its ceiling. Filtering here means the window is full of
+    offerable rows to begin with. Found by a review 2026-09-11.
+    """
     ensure_chunk_table(store)
     query = _fts_query(text)
     if not query:
         return []
-    rows = store.execute(
-        "SELECT t.id, t.rank AS score, t.document_id, t.locator "
-        "FROM chunk_text t WHERE chunk_text MATCH ? ORDER BY rank LIMIT ?",
-        (query, limit)).fetchall()
+    try:
+        rows = store.execute(
+            "SELECT t.id, t.rank AS score, t.document_id, t.locator "
+            "FROM chunk_text t JOIN documents d ON d.id = t.document_id "
+            "WHERE chunk_text MATCH ? AND d.status IN (%s) "
+            "ORDER BY rank LIMIT ?" % ",".join("?" * len(statuses)),
+            (query,) + tuple(statuses) + (limit,)).fetchall()
+    except sqlite3.OperationalError as exc:
+        # No `documents` table means nothing was ever ingested, which is a
+        # normal state and not a fault. Anything else is.
+        if "no such table" not in str(exc):
+            raise
+        return []
     return [dict(r) for r in rows]
 
 

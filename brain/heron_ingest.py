@@ -447,10 +447,23 @@ def _cut(text, limit=MAX_CHARS):
                 best, best_rank = at, rank
 
         if best is None:
-            # NOTHING MAY BE CUT, and that is a real outcome. The piece stays
-            # oversized and the caller flags it (R-82) - because a guard that
-            # trims is a guard that can be padded past.
-            break
+            # NOTHING MAY BE CUT WITHIN THE LIMIT, and that is a real outcome
+            # for the piece in hand (R-82: flagged, never truncated). It was
+            # NOT a real outcome for everything after it, and the first version
+            # ended the whole loop here - so one long opening sentence with no
+            # legal boundary inside the first window collapsed the ENTIRE
+            # remaining section into a single chunk, however many clean
+            # paragraph breaks came later. Measured: a 200-character
+            # unsplittable prefix turned a 269-character body into one piece.
+            # Found by a review 2026-09-11.
+            #
+            # So the oversized prefix is emitted at the FIRST legal boundary
+            # anywhere after it, and the rest goes on being split normally.
+            # Only when the remainder has no legal boundary at all is it truly
+            # one piece.
+            best = _first_legal_point(rest, limit)
+            if best is None:
+                break
 
         head = rest[:best].rstrip()
         tail = rest[best:].lstrip()
@@ -462,6 +475,26 @@ def _cut(text, limit=MAX_CHARS):
     if rest:
         pieces.append(rest)
     return pieces or [text]
+
+
+def _first_legal_point(rest, limit):
+    """The first legal cut anywhere AFTER `limit`, or None if there is none.
+
+    The escape hatch for a prefix that cannot be cut inside the window. It
+    scans past the window deliberately - that is the quadratic cost the window
+    exists to avoid, and it is paid only on the rare piece that has no boundary
+    at all in its first `limit` characters, rather than on every cut.
+    """
+    spans = protected_spans(rest)
+    for _rank, at in sorted(_split_points(rest), key=lambda p: p[1]):
+        if at <= limit or at >= len(rest):
+            continue
+        if any(start < at < end for start, end in spans):
+            continue                       # R-08. Never through a token.
+        if starts_a_qualification(rest[at:at + 40]):
+            continue                       # R-68. Never before a qualifier.
+        return at
+    return None
 
 
 # A title line, for a document that opens with one: short, not a sentence,
@@ -607,12 +640,23 @@ def chunk_document(text, title, drop_title_line=False):
         # return, and returning nothing while looking like an answer is the
         # failure this whole plan is about. So its text is what it actually
         # is: its own heading.
+        # CONTINUATIONS ARE SIBLINGS, NOT CHILDREN OF THE FIRST PIECE.
+        #
+        # They used to take the first piece as their parent while keeping the
+        # SAME depth, so a row was a child of something at its own level -
+        # which contradicts the parent-derived depth the schema relies on and
+        # gives anything reading the hierarchy two different trees. Found by a
+        # review 2026-09-11.
+        #
+        # They are siblings because that is what they ARE: one heading's body,
+        # cut for length. Nothing about the document says the second half of a
+        # clause sits underneath the first.
         pieces = _cut(body_text) if body_text else [heading.label()]
-        for i, piece in enumerate(pieces):
+        for piece in pieces:
             chunks.append(Chunk(
                 piece, heading.locator, path, depth,
                 "structure" if len(pieces) == 1 else "length",
-                parent_key=parent_key if i == 0 else key,
+                parent_key=parent_key,
                 key=len(chunks), locator_label=heading.label()))
 
         stack.append((heading.depth, key, heading.locator, heading.label()))
@@ -629,7 +673,15 @@ def chunk_document(text, title, drop_title_line=False):
 def _read_text(path):
     with open(path, "rb") as handle:
         raw = handle.read()
-    for encoding in ("utf-8", "utf-8-sig", "cp1252", "latin-1"):
+    # utf-8-sig FIRST, and the order was the whole defect. Python's plain
+    # utf-8 decoder ACCEPTS a byte-order mark and keeps it as a \ufeff
+    # character, so it never raised and utf-8-sig was unreachable. That
+    # invisible first character then sat in front of the document's first
+    # heading, which stopped its regex matching - so a BOM-prefixed standard,
+    # which is what Windows tools write by default, lost its top-level
+    # structure and leaked the mark into its own title. Found by a review
+    # 2026-09-11.
+    for encoding in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
         try:
             return raw.decode(encoding)
         except UnicodeDecodeError:

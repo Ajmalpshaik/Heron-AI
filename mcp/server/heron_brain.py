@@ -754,6 +754,40 @@ def check_answer(draft, request, path=None, revit=None, project=None):
         }
 
 
+def _with_text(asked, project=None):
+    """One scope's candidates, each carrying the clause a person has to read.
+
+    The chunk text is not on the candidate - find_documents() deliberately
+    returns pointers - so the scope is reopened to fetch it. One store at a
+    time, closed before the next, which is the same discipline heron_conflict
+    keeps and for the same reason.
+    """
+    if asked.answer is None:
+        return []
+    out = []
+    try:
+        import heron_scope as SCOPE
+    except ImportError:
+        return [dict(c) for c in asked.answer.candidates]
+    # THE KEY IS PASSED IN, not read off the label. Asked.project is what the
+    # Librarian SHOWS; the key is what names the store. They happen to be the
+    # same value today and reading one for the other is how they stop being.
+    try:
+        store = SCOPE.open_scope(asked.scope, project)
+    except Exception:
+        return [dict(c) for c in asked.answer.candidates]
+    try:
+        for hit in asked.answer.candidates:
+            got = dict(hit)
+            row = store.execute("SELECT text FROM chunks WHERE id = ?",
+                                (hit["id"],)).fetchone()
+            got["text"] = row["text"] if row else None
+            out.append(got)
+    finally:
+        store.close()
+    return out
+
+
 def standards(request, scopes, project=None, limit=5):
     """Each named scope asked on its own, and where their numbers disagree.
 
@@ -812,10 +846,16 @@ def standards(request, scopes, project=None, limit=5):
         finally:
             store.close()
 
+    # ONE SEARCH PER SCOPE, SHARED. Calling disagreements() without `asked`
+    # made it ask the Librarian again, so every served standards request
+    # searched - and, where a cross-encoder is installed, re-ranked - every
+    # scope twice. Worse than the waste: two shortlists that a finishing
+    # warm-up or a changed file could make different, so the disagreement shown
+    # could be about clauses other than the ones listed above it.
     asked = RETRIEVE.librarian(request, scopes=wanted, project=project,
                                limit=limit)
     found = CONFLICT.disagreements(request, scopes=wanted, project=project,
-                                   limit=limit)
+                                   limit=limit, asked=asked)
 
     _audit().record("knowledge.standards", True,
                     fields={"scopes": ",".join(wanted)},
@@ -830,7 +870,13 @@ def standards(request, scopes, project=None, limit=5):
             "skipped": a.skipped,
             "route": a.answer.route if a.answer else None,
             "note": a.answer.note if a.answer else None,
-            "candidates": a.answer.candidates if a.answer else [],
+            # THE CLAUSE ITSELF, not only its metadata. The tool's own closing
+            # line said "both clauses are above, each with its own citation"
+            # while the payload carried a title, a locator and a ranking
+            # reason - no text to read and no path to open. A sentence that
+            # describes something the response does not contain. Found by a
+            # review 2026-09-11, in wording written the same day.
+            "candidates": _with_text(a, project),
         } for a in asked],
         "disagreements": [{
             "unit": d.unit,

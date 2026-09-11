@@ -909,7 +909,7 @@ def heron_context(request: str, path: str = "", full: bool = False,
 
     try:
         got = brain.context(request, path=path or None, revit=revit, full=full,
-                            depth=depth or None, project=pinned.title)
+                            depth=depth or None, project=pinned.key)
     except brain.BrainUnavailable as why:
         return str(why)
     except ValueError as why:
@@ -1032,7 +1032,7 @@ def heron_check(draft: str, request: str) -> str:
     revit, _how = _revit_version()
     try:
         got = brain.check_answer(draft, request, revit=revit,
-                                 project=pinned.title)
+                                 project=pinned.key)
     except brain.BrainUnavailable as why:
         return str(why)
     except brain.ContextRefused as why:
@@ -1080,7 +1080,7 @@ def heron_standards(request: str, scopes: str = "company,project") -> str:
     """
     try:
         got = brain.standards(request, [s for s in scopes.split(",")],
-                              project=pinned.title)
+                              project=pinned.key)
     except brain.BrainUnavailable as why:
         return str(why)
     except ValueError as why:
@@ -1094,9 +1094,19 @@ def heron_standards(request: str, scopes: str = "company,project") -> str:
             continue
         lines.append("  %-18s %s" % (one["label"], one["note"] or ""))
         for c in one["candidates"]:
-            lines.append("      %-9s %-26s %s"
-                         % (c.get("locator") or "-",
-                            (c.get("document") or "")[:26], c.get("why") or ""))
+            lines.append("      %-9s %s"
+                         % (c.get("locator") or "-", c.get("document") or ""))
+            # THE CITATION, OPENABLE. R-22: it resolves to something a person
+            # can actually look at, which a title and a clause number are not
+            # when two documents share either.
+            lines.append("        cite  [%s]" % c.get("id", ""))
+            if c.get("path"):
+                lines.append("        file  %s" % c["path"])
+            # AND THE CLAUSE. The closing line of this tool claims both
+            # clauses are above; without this it listed neither.
+            for line in (c.get("text") or "").splitlines():
+                lines.append("        | %s" % line)
+            lines.append("")
         lines.append("")
 
     if got["disagreements"]:

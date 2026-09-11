@@ -8,7 +8,7 @@
 """
 One check per defect an automated review found on 2026-09-11, so none returns.
 
-Five rounds, each after the one before it was called done: 16, 15, 8, 7 and 8.
+Six rounds, each after the one before it was called done: 16, 15, 8, 7, 8 and 9.
 
     python tests/test_review_findings.py
 
@@ -51,8 +51,10 @@ LONG_CLAUSE = ("No ducts shall be installed within the ceiling void unless a "
 
 
 def main():
+    import heron_conflict as C
     import heron_ground as G
     import heron_graph as GRAPH
+    import heron_search as SEARCH
     import heron_ingest as I
     import heron_retrieve as R
     import heron_rerank as RERANK
@@ -594,6 +596,111 @@ def main():
           "a clean empty reading where no measurement ran")
     print()
 
+    print("28. AN UNSPLITTABLE OPENING DOES NOT SWALLOW THE REST")
+    body = ("A" * 200) + ". Beta gamma delta. Epsilon zeta eta.\n\nTheta iota."
+    pieces = I._cut(body, limit=80)
+    check(len(pieces) > 1,
+          "a 200-character prefix with no legal cut in it no longer collapses "
+          "the whole body into one chunk - the loop ENDED there, so however "
+          "many clean paragraph breaks came later, the rest of the section "
+          "became one enormous poorly-retrievable piece")
+    check(any(len(piece) <= 80 for piece in pieces),
+          "and everything after the prefix is split normally")
+    print()
+
+    print("29. A BYTE-ORDER MARK DOES NOT HIDE THE FIRST HEADING")
+    hold = tempfile.mkdtemp(prefix="heron-review-bom-")
+    try:
+        bom = os.path.join(hold, "bom.md")
+        with open(bom, "wb") as handle:
+            handle.write(u"\ufeff# Section 3 Ductwork\n\nDucts to 25mm.\n"
+                         .encode("utf-8"))
+        text = I.READERS[".md"](bom)
+        check(not text.startswith(u"\ufeff"),
+              "utf-8-sig is tried FIRST - plain utf-8 ACCEPTS a BOM and keeps "
+              "it as a character, so the utf-8-sig branch was unreachable and "
+              "an invisible mark sat in front of the first heading, stopping "
+              "its regex matching. Windows tools write that BOM by default")
+        check(text.startswith("# Section"),
+              "so the document's top-level structure survives")
+    finally:
+        shutil.rmtree(hold, ignore_errors=True)
+    print()
+
+    print("30. A LENGTH-SPLIT CONTINUATION IS A SIBLING, NOT ITS OWN CHILD")
+    long_body = "Ducts shall be lagged. " * 200
+    made = I.chunk_document("Spec\n\n3.1 Insulation\n\n" + long_body, "Spec")
+    parts = [c for c in made if c.locator == "3.1"]
+    check(len(parts) > 1, "the clause was split for length")
+    check(len(set(c.parent_key for c in parts)) == 1,
+          "every piece keeps the SAME parent - continuations used to point at "
+          "the first piece while keeping its depth, so a row was a child of "
+          "something at its own level and anything reading the hierarchy got "
+          "two different trees")
+    check(len(set(c.depth for c in parts)) == 1,
+          "and they are all at one depth, which is what being siblings means")
+    print()
+
+    print("31. 30mm AND 30.0mm ARE ONE MEASUREMENT")
+    check(C.same_number("30") == C.same_number("30.0"),
+          "they compare equal - the raw strings differed, so two sources that "
+          "AGREE were reported as a disagreement. A flag on nothing is what "
+          "teaches people to stop reading flags")
+    check(C.same_number("2.5") == "2.5",
+          "and a real fraction is not flattened")
+    print()
+
+    print("32. ONE SEARCH PER SCOPE ON THE SERVED PATH")
+    check("asked=asked" in brain_source,
+          "standards() hands the Librarian's answer to the conflict check - "
+          "without it every served request searched, and where a "
+          "cross-encoder is installed re-ranked, every scope TWICE, and the "
+          "two shortlists could differ so the disagreement shown was about "
+          "other clauses than the ones listed above it")
+    check("asked=None" in inspect.getsource(C.disagreements),
+          "and disagreements() still asks for itself when nobody hands it one")
+    print()
+
+    print("33. THE STANDARDS ANSWER CARRIES THE CLAUSE AND AN OPENABLE CITE")
+    check("_with_text" in brain_source,
+          "the clause body reaches the caller - the tool's closing line said "
+          "'both clauses are above, each with its own citation' while the "
+          "payload held a title, a locator and a ranking reason: nothing to "
+          "read and nothing to open")
+    check('c.get("path")' in server_source and '"        | %s"' in server_source,
+          "and the renderer prints the file path and the quoted clause")
+    print()
+
+    print("34. THE PROJECT KEY IS THE KEY, NOT THE DISPLAY TITLE")
+    check("project=pinned.title" not in server_source,
+          "no tool passes pinned.title into open_scope's project_key slot - "
+          "three did, so a project store was named after a display name that "
+          "changes when somebody renames a file")
+    check(server_source.count("project=pinned.key") == 3,
+          "all three pass the stable key, which is what DocumentPin's own "
+          "docstring says identity is: 'Title alone is NOT identity', written "
+          "after two Revit sessions here both had a document called Project1")
+    print()
+
+    print("35. A BROKEN STORE IS NOT AN EMPTY INDEX EITHER")
+    search_source = inspect.getsource(SEARCH)
+    check(search_source.count('if "no such table" not in str(exc)') >= 2,
+          "index_chunks() and chunk_keywords() re-raise anything but a missing "
+          "table - index_chunks() read a locked database as 'nothing ingested', "
+          "returned 0 and LEFT the old chunk_text in place, so retrieval went "
+          "on answering from stale clauses. THIRD copy of this pattern: "
+          "documents() was fixed in one round, the graph in another, and this "
+          "one got neither")
+    print()
+
+    print("36. A RETIRED REVISION CANNOT HIDE THE CURRENT STANDARD")
+    check("d.status IN" in search_source,
+          "the lifecycle filter is inside the words query, before its LIMIT - "
+          "it ran afterwards, so a document with a long retained history could "
+          "fill the whole fetched window with its own old revisions and the "
+          "current standard, ranking just below them, disappeared")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
@@ -603,12 +710,13 @@ def main():
     print("PASSED - every defect an automated review found on 2026-09-11 has")
     print("a check standing on it, and each one fails if it comes back.")
     print()
-    print("It proves nothing about the defects NOBODY has found yet. FIVE")
+    print("It proves nothing about the defects NOBODY has found yet. SIX")
     print("rounds of this review, each after the one before it was called")
     print("done, and each found real things - a value moved between two")
-    print("requirements of one clause, and a whole multi-scope path that two")
-    print("stages built and no host could reach.")
-    print("That is the honest measure of what a green suite is worth.")
+    print("requirements of one clause, a whole multi-scope path that two")
+    print("stages built and no host could reach, and a display title passed")
+    print("where a stable key was required, in the class written to stop")
+    print("exactly that. That is the honest measure of a green suite.")
     return 0
 
 

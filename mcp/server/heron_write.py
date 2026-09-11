@@ -164,6 +164,20 @@ class DocumentPin(object):
         return self._title
 
     @property
+    def key(self):
+        """The STABLE identity, which is what a scope store is named after.
+
+        `title` is for showing a person which model is pinned. It is NOT
+        identity - this class's own docstring says so, and says why: two Revit
+        sessions here really did have two documents both called Project1.
+        Three brain tools were passing `title` into `open_scope`'s
+        `project_key` slot anyway, so a project store was named after a display
+        name that changes when somebody renames a file. Found by a review
+        2026-09-11, in the class written to prevent exactly this.
+        """
+        return self._key
+
+    @property
     def is_pinned(self):
         return self._key is not None
 

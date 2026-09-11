@@ -1690,3 +1690,65 @@ fired on them.
 The same three shapes keep coming back: **a seam nobody wired**, **a comment that describes something
 the code below it does not do**, and **a fix applied in one place and not its twin**. None of them is
 a logic error, and a green suite catches none of them.
+
+---
+
+### 2026-09-11 — a sixth round, nine more, and a class that warned about its own misuse
+
+**Six rounds: 16, 15, 8, 7, 8, 9. Still no false positive in any of them.**
+
+### The one that had been wrong for longer than this plan
+
+`DocumentPin` exposes `title` and holds `_key`, and its docstring says why both exist:
+
+> *"Title alone is NOT identity, and that is not theoretical here: the first live run of the selection
+> tool had two Revit sessions with a document called Project1."*
+
+**Three brain tools were passing `pinned.title` into `open_scope`'s `project_key` slot** — including the
+one I added an hour earlier, where the project scope is the entire point. So a project store was named
+after a display name that changes when somebody renames a file, and in an ordinary read-only
+conversation `title` is `None` anyway, so the project scope was **silently skipped**. `pinned.key` now,
+at all three.
+
+**The class had written down the exact mistake it was later used to make.**
+
+### Two more in text written the same day
+
+- **`heron_standards` said *"both clauses are above, each with its own citation"*** while its payload
+  carried a title, a locator and a ranking reason — **nothing to read and nothing to open**. It carries
+  the clause body and the file path now.
+- **It searched every scope twice.** `standards()` asked the Librarian, then called
+  `disagreements()`, which asked again. Beyond the waste: two shortlists that a finishing warm-up or a
+  changed file could make different, so **the disagreement shown could have been about other clauses
+  than the ones listed above it**. One search, shared.
+
+### The chunker, twice
+
+- **An unsplittable opening swallowed the rest of the section.** When the first window held no legal
+  cut, the loop *ended* — so a long opening sentence collapsed everything after it into one chunk
+  however many clean paragraph breaks followed. Measured: a 200-character prefix turned a
+  269-character body into one piece. The oversized prefix is emitted at the first legal boundary after
+  it now, and splitting continues.
+- **A byte-order mark hid the first heading.** Python's plain `utf-8` decoder *accepts* a BOM and keeps
+  it as a character, so the `utf-8-sig` branch below it was **unreachable** — and that invisible mark
+  sat in front of the first heading and stopped its regex matching. Windows tools write that BOM by
+  default.
+
+### And the pattern that is now unmistakable
+
+**`index_chunks()` turned any database fault into "nothing was ever ingested"** — returning 0 and
+leaving the stale `chunk_text` in place, so retrieval went on answering from old clauses. That is the
+**third copy** of one defect: `documents()` was corrected in round two, `heron_graph` in round five,
+and this one had neither.
+
+| | |
+|---|---|
+| a **retired revision** could hide the current standard | the lifecycle filter ran after the route's LIMIT, so a document's own retained history could fill the window. It is inside the query now |
+| **30mm and 30.0mm** read as a disagreement | two sources that agree, flagged. A flag on nothing is what teaches people to stop reading flags |
+| a length-split **continuation** was its own sibling's child | same depth, parent set to the first piece — a row that is a child of something at its own level, and two different trees for anything reading the hierarchy |
+
+### Six rounds, and the shapes have not changed
+
+**A seam nobody wired. A comment that describes something the code below it does not do. A fix applied
+in one place and not its twin.** This round added a fourth: **a class whose docstring names the
+mistake, being used to make it.** None is a logic error. The suite was green through all six.
