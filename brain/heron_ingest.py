@@ -91,6 +91,7 @@ import datetime
 import hashlib
 import os
 import re
+import sqlite3
 import sys
 import zipfile
 
@@ -166,6 +167,19 @@ def ensure_tables(store):
         " FOREIGN KEY (document_id) REFERENCES documents(id))")
     store.execute("CREATE INDEX IF NOT EXISTS chunks_by_document "
                   "ON chunks (document_id, ordinal)")
+
+    # R-83's missing third. Identity is the content hash and lifecycle is the
+    # status, but a changed file becomes a DIFFERENT DOCUMENT and nothing
+    # joined it to the one it replaced - so "which edition is this clause
+    # from?" was answerable and "what did it say before?" was not.
+    #
+    # ADD COLUMN is the whole migration, the same one heron_search does for
+    # `fingerprint` and heron_embed for `kind`.
+    try:
+        store.db.execute("ALTER TABLE documents ADD COLUMN replaced_by TEXT")
+    except sqlite3.OperationalError as exc:
+        if "duplicate column" not in str(exc):
+            raise
     store.db.commit()
 
 
@@ -646,13 +660,15 @@ class Ingested(object):
     """What one call did, in numbers a caller can print rather than guess."""
 
     def __init__(self, document_id, title, kind, chunks, reused=False,
-                 oversized=None):
+                 oversized=None, duplicates=None):
         self.document_id = document_id
         self.title = title
         self.kind = kind
         self.chunks = chunks
         self.reused = reused
         self.oversized = oversized or []
+        # R-28, at WRITE time. (locator, other document id, other title).
+        self.duplicates = duplicates or []
 
     def __repr__(self):
         return "<ingested %s %d chunk(s)%s>" % (
@@ -782,7 +798,119 @@ def ingest(store, path, added_by=None, source_trust="unknown", title=None,
                  numbers={"chunks": len(chunks), "oversized": len(oversized)})
 
     return Ingested(document_id, shown, extension.lstrip("."), len(chunks),
-                    oversized=oversized)
+                    oversized=oversized,
+                    duplicates=duplicate_clauses(store, document_id))
+
+
+def duplicate_clauses(store, document_id):
+    """Clauses in this document that are BYTE-IDENTICAL to ones already here.
+
+    R-28, AT WRITE TIME. "The same standard ingested twice under two
+    filenames is the normal case, not the exotic one" - and a content hash
+    only catches the case where the two FILES are identical. Re-export the
+    same PDF, add a cover page, save it from a different tool, and the hash
+    differs while the clauses do not.
+
+    NO THRESHOLD, AND THAT IS DELIBERATE. This compares a clause's text for
+    exact equality at the same locator. W-8 is the record of what happens
+    when a number is invented to decide whether two things are "the same
+    enough": measured, it did not separate. Byte-equality needs no number.
+
+    REPORTED, NEVER REFUSED. A project specification that quotes a company
+    standard verbatim is not an error - it is Tuesday. What a person needs is
+    to be told it happened, so they can decide whether they have two copies
+    of one standard or two documents that legitimately agree.
+    """
+    ensure_tables(store)
+    rows = store.execute(
+        "SELECT c.locator, c.text FROM chunks c WHERE c.document_id = ? "
+        "AND c.locator != ''", (document_id,)).fetchall()
+    if not rows:
+        return []
+
+    out = []
+    for row in rows:
+        same = store.execute(
+            "SELECT d.id, d.title FROM chunks c "
+            "JOIN documents d ON d.id = c.document_id "
+            "WHERE c.document_id != ? AND c.locator = ? AND c.text = ? "
+            "LIMIT 1", (document_id, row["locator"], row["text"])).fetchone()
+        if same:
+            out.append((row["locator"], same["id"], same["title"]))
+    return out
+
+
+class Refreshed(object):
+    """What one re-index pass did. Numbers a caller prints rather than guesses."""
+
+    def __init__(self):
+        self.unchanged = []
+        self.changed = []          # (old id, new id, title)
+        self.missing = []          # (id, title, path) - the source has moved
+
+    @property
+    def touched(self):
+        return len(self.changed)
+
+    def __repr__(self):
+        return "<refreshed %d unchanged, %d changed, %d missing>" % (
+            len(self.unchanged), len(self.changed), len(self.missing))
+
+
+def refresh(store):
+    """Re-ingest every document whose SOURCE FILE has changed. R-27.
+
+    BY CONTENT HASH, NEVER BY mtime, and docs/05 s7 names the reason: a git
+    checkout moves every file's mtime and changes none of their content, so
+    anything keyed on time re-indexes the whole library for nothing. Keyed on
+    content, an unchanged file costs one hash and stops.
+
+    A CHANGED FILE IS A NEW DOCUMENT, AND THE OLD ONE IS RETIRED RATHER THAN
+    DELETED. Golden Rule 4: a record is never destroyed. The old row keeps its
+    chunks, gets status RETIRED so it is no longer offered as an answer
+    (heron_retrieve.OFFERABLE_DOCUMENTS), and names its successor in
+    `replaced_by` - which is what makes "what did this clause say before?"
+    answerable at all.
+
+    A MISSING SOURCE IS REPORTED AND NOTHING IS DELETED. Q-B: the store points
+    at the file and never copies it, so the chunks still hold the text and a
+    citation still READS correctly after the file moves - only the convenience
+    of opening it breaks. Deleting the knowledge because somebody tidied a
+    folder would be the opposite of what pointing at the file was for.
+
+    Returns a Refreshed. INDEXING IS THE CALLER'S: this re-ingests, and
+    heron_search.index_chunks / heron_embed.index_chunks rebuild from the rows.
+    """
+    ensure_tables(store)
+    out = Refreshed()
+
+    rows = store.execute(
+        "SELECT id, path, title, status, added_by, source_trust "
+        "FROM documents WHERE status != 'RETIRED'").fetchall()
+
+    for row in rows:
+        if not os.path.isfile(row["path"]):
+            out.missing.append((row["id"], row["title"], row["path"]))
+            continue
+
+        if file_hash(row["path"]) == row["id"]:
+            out.unchanged.append(row["id"])
+            continue
+
+        fresh = ingest(store, row["path"], added_by=row["added_by"],
+                       source_trust=row["source_trust"], status=row["status"])
+        store.execute(
+            "UPDATE documents SET status = 'RETIRED', replaced_by = ? "
+            "WHERE id = ?", (fresh.document_id, row["id"]))
+        store.db.commit()
+        out.changed.append((row["id"], fresh.document_id, fresh.title))
+
+    AUDIT.record("knowledge.refresh", True,
+                 fields={"scope": store.scope},
+                 numbers={"unchanged": len(out.unchanged),
+                          "changed": len(out.changed),
+                          "missing": len(out.missing)})
+    return out
 
 
 def forget(store, document_id):
@@ -843,10 +971,14 @@ def main(argv):
     project = _flag(argv, "--project")
     trust = _flag(argv, "--trust", "unknown")
     show = _flag(argv, "--boundaries")
+    do_refresh = "--refresh" in argv
+    if do_refresh:
+        argv.remove("--refresh")
 
-    if not argv and not show:
+    if not argv and not show and not do_refresh:
         print('  python brain/heron_ingest.py <file> --scope global')
         print('  python brain/heron_ingest.py --boundaries <document id>')
+        print('  python brain/heron_ingest.py --refresh')
         print("  a document is READ where it is. It is never moved, never")
         print("  changed, and never copied into Heron's folder.")
         return 2
@@ -875,6 +1007,27 @@ def main(argv):
             print("  for - and it will not announce itself later.")
             return 0
 
+        if do_refresh:
+            done = refresh(store)
+            print("Refreshed the %s scope." % scope)
+            print("  unchanged  %d - a file whose content has not changed "
+                  "costs one hash" % len(done.unchanged))
+            for old_id, new_id, title in done.changed:
+                print("  CHANGED    %s" % title)
+                print("             %s is RETIRED and names %s as its "
+                      "replacement" % (old_id[:12], new_id[:12]))
+            for doc_id, title, path in done.missing:
+                # Q-B. The store points at the file; it never held it.
+                print("  MOVED      %s" % title)
+                print("             the source file is no longer at %s" % path)
+                print("             NOTHING WAS DELETED - the clauses and "
+                      "their citations still read correctly. Only opening "
+                      "the original is broken")
+            if not done.changed and not done.missing:
+                print("  nothing to do. Re-indexing on an unchanged library "
+                      "is free, which is why it may be run at any time.")
+            return 0
+
         for path in argv:
             try:
                 got = ingest(store, path, source_trust=trust)
@@ -884,6 +1037,20 @@ def main(argv):
             print("%s  %s" % ("reused " if got.reused else "ingested", got.title))
             print("  id       %s" % got.document_id)
             print("  chunks   %d" % got.chunks)
+            if got.duplicates:
+                # R-28. REPORTED, never refused - a project spec quoting a
+                # company standard verbatim is Tuesday, not an error.
+                print("  DUPLICATE  %d clause(s) are byte-identical to "
+                      "clauses already in this scope:" % len(got.duplicates))
+                for locator, _other_id, other_title in got.duplicates[:5]:
+                    print("             %-10s also in %s" % (locator,
+                                                             other_title))
+                if len(got.duplicates) > 5:
+                    print("             ... and %d more"
+                          % (len(got.duplicates) - 5))
+                print("             Two copies of one standard, or two "
+                      "documents that legitimately agree? That is yours to "
+                      "say - nothing was refused")
             if got.oversized:
                 # R-82. FLAGGED, never truncated.
                 print("  FLAGGED  %d chunk(s) are over %d characters and were "

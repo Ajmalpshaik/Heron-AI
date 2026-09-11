@@ -36,7 +36,8 @@ and deliberately left alone.
 | Stage 3 — citation, refusal, fabrication check | **DONE 2026-09-11, with R-45 part-done and saying which part.** `heron_ground.py`, the guard, citations bound to the exact chunk |
 | Stage 4 — the Librarian picks the scope | **DONE 2026-09-11.** `heron_retrieve.librarian()` — one query per scope, two labelled answers, nothing pooled |
 | Stage 5 — document nodes, and the density count | **COUNTED 2026-09-11.** Edges derived, density an order of magnitude below the fragment graph, **and the route still has no weight** |
-| Stages 6 to 8 | **not started** |
+| Stage 6 — maintenance | **DONE 2026-09-11.** Re-index on change by content hash, duplicate clauses at write time, and the host rebuilds both halves |
+| Stages 7 and 8 | **not started.** Stage 7 needs the `model` backend |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
 
 ---
@@ -1157,4 +1158,61 @@ a test making the mistake a caller will make.**
 
 **Next.** Stage 6 — maintenance: re-index on change by content hash, and duplicate detection at write
 time.
+
+### 2026-09-11 — Stage 6: the index stays true without anybody remembering
+
+**Closes R-27, R-28, R-29 — and finishes R-83, which Stage 1 left open.**
+`tests/test_maintenance.py`, 18 checks.
+
+**R-27 — re-index on change, and the test proves the thing that is easy to get wrong.** It moves a
+file's mtime **10,000 seconds** and asserts **nothing re-indexes**. That is the case
+[`05 §7`](../../../05-heron-brain.md) names: a `git checkout` touches every file and changes none of
+them, so anything keyed on time re-indexes the whole library for nothing.
+
+```text
+$ python brain/heron_ingest.py --refresh
+  CHANGED    Acme Standard 2026
+             6f3aea899d79 is RETIRED and names db1c206a0f26 as its replacement
+```
+
+> ### The maintenance closed the gap Stage 1 had to leave open
+>
+> On the day Stage 1 landed, R-83 was marked **PART** with the reason written out: a changed file
+> becomes a **different document** and nothing joined it to the one it replaced, so *"which edition is
+> this clause from?"* was answerable and ***"what did it say before?"* was not.**
+>
+> **Re-indexing is the operation that needed the link**, so it built it. A changed file retires its
+> predecessor (Golden Rule 4 — a record is never destroyed) and names its successor in `replaced_by`.
+> **The old clauses stay**, so a citation written last month still resolves; they are simply no longer
+> offered as answers.
+
+**A missing source deletes nothing**, and the test counts the chunks either side to prove it. That is
+Q-B being kept: the store **points at** the file and never held it, so the text and the citations
+still read correctly after somebody tidies a folder. **Deleting the knowledge because a file moved
+would be the opposite of what pointing at it was for.**
+
+**R-28 — duplicates at write time, with no similarity number anywhere.** The content hash catches two
+identical FILES. It does not catch the normal case: the same standard re-exported, or saved with a
+cover line added. So a clause is compared for **byte-equality at the same locator** — exact, and
+needing no threshold. **W-8 is the record of what happens when a number is invented to decide whether
+two things are "the same enough".**
+
+**Reported, never refused.** A project specification quoting a company standard verbatim is Tuesday,
+not an error. What a person needs is to be **told**, so they can say which it is.
+
+**R-29, and it had quietly stopped being true.** The host re-indexed the **fragment** half on every
+open and **not the document half** — so a document ingested through the host stayed unsearchable until
+somebody remembered a command, which is precisely *"the user manages the index by hand"* wearing a
+different hat. Both halves now rebuild in the same place. `--rebuild` stays as recovery and has
+stopped being the only way.
+
+**What Stage 6 does NOT do, and the test says so.** **Nothing watches the filesystem.** The host
+rebuilds on open and a person can ask for a refresh; **a document changed while Heron is open stays
+stale until the next open.** A watcher is a different thing with different failure modes, and it was
+not asked for.
+
+**Next.** Stage 7 — the re-ranker — **needs the `model` backend and is therefore blocked here**, the
+same block as W-8 and Stage 0's missing row. Stage 8 is trust and conflict, and Stage 4 already
+produced its first real case: a company standard saying 30mm and a project spec saying 40mm, both
+correctly returned, with nothing surfacing that they disagree.
 

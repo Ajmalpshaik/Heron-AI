@@ -187,6 +187,14 @@ class _Open(object):
             CAP.rebuild(self.store)
             SEARCH.index(self.store)
             EMBED.index(self.store)
+            # R-29: THE USER NEVER MANAGES THE INDEX BY HAND, and documents
+            # were the half where that had stopped being true. Fragments were
+            # re-indexed on every open here; chunks were not, so a document
+            # ingested through the host stayed unsearchable until somebody
+            # remembered a command. Both halves are derived and both are free
+            # when nothing changed, so both are rebuilt in the same place.
+            SEARCH.index_chunks(self.store)
+            EMBED.index_chunks(self.store)
         except BrainUnavailable:
             # __exit__ never runs when __enter__ raises, so the store has to be
             # closed here or the handle leaks - and this path is reachable with
