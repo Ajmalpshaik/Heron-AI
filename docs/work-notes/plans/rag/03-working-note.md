@@ -1272,6 +1272,14 @@ production has into `heron_context` dropped the chunk id, and the host could nev
 | The density **median** took the upper middle | On an even count. That number decides whether a route is viable |
 | A **typed suite count** in the README | I had bumped it by hand at every stage — six times — while the same line named the command that derives it. **The bumping was the evidence.** The number is gone |
 
+**And one of the sixteen was only half fixed on the first pass, which is worth its own line.** The
+finding asked to *screen AND safely delimit* every document-derived metadata field. I screened them and
+**left them undelimited** — so the guard reported a hostile title and the title still sat unquoted in
+the part's name. **Screening says there is a problem; delimiting is what stops it mattering.** Every
+such value is now whitespace-collapsed and wrapped, because **a line break is the lever** that makes
+text read as a new speaker — and nothing is truncated, because R-82 does not stop applying when the
+field is small.
+
 **What this says about the tests I wrote.** They were good at asserting the thing I had just built and
 poor at asserting what it would do with input I had not thought of. **Every hole above is an input
 shape, not a logic error** — a lowercased pattern, a quotation without a number, a clause number that
