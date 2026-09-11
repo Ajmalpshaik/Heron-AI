@@ -61,6 +61,49 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+  reports:
+    name: The reports - a finding is a question
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
+      # These three exit 0 whatever they find, and that is deliberate: their
+      # findings are open questions with owners, not breaks. They are here so
+      # somebody reads them - until now they only ran when a person remembered
+      # to run them. This job never fails the build.
+      - name: Read the reports into the summary
+        shell: bash
+        run: |
+          echo "### Reports" >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo "These do not fail the build. A finding here is a question with" >> "$GITHUB_STEP_SUMMARY"
+          echo "an owner, not a regression." >> "$GITHUB_STEP_SUMMARY"
+          for r in check-reachable check-revit-gate agent-count; do
+            # Run it ONCE. Print it to the job log, and fold the same text
+            # into the summary.
+            python "tools/${r}.py" > "$RUNNER_TEMP/${r}.txt" 2>&1 || true
+            echo "----- ${r} -----"
+            cat "$RUNNER_TEMP/${r}.txt"
+            {
+              echo
+              echo "<details><summary>${r}</summary>"
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/${r}.txt"
+              echo '```'
+              echo
+              echo "</details>"
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+
   tests:
     name: Every suite, against the known-failure list
     runs-on: ubuntu-latest
