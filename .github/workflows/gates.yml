@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   gates:
-    name: The three that must pass
+    name: The gates that must pass
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -36,8 +36,9 @@ jobs:
       - name: Install PyYAML
         run: python -m pip install --quiet pyyaml
 
-      # A non-zero exit from any of these three is the change, not the machine.
-      # They need no compiler, no knowledge store and no Revit.
+      # The three the ship checklist calls "the three that must pass". A
+      # non-zero exit from any of them is the change, not the machine, and
+      # none needs a compiler, a knowledge store or Revit.
       - name: check-docs
         run: python tools/check-docs.py
 
@@ -46,6 +47,17 @@ jobs:
 
       - name: check-structure
         run: python tools/check-structure.py
+
+      # These two need somewhere to put a knowledge store, and say so rather
+      # than failing when there is none: "No %APPDATA% and no HERON_KNOWLEDGE".
+      # An empty directory is enough for them to run, so CI gives them one.
+      - name: check-routing and check-intrusion
+        env:
+          HERON_KNOWLEDGE: ${{ runner.temp }}/heron-kb
+        run: |
+          mkdir -p "$HERON_KNOWLEDGE"
+          python tools/check-routing.py
+          python tools/check-intrusion.py
 
       - name: Derive the fragment proof counts
         if: always()
@@ -123,6 +135,21 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           exit 1
+
+      # agent-map.html and fragment-catalog.html are gitignored, so they exist
+      # nowhere a reader can reach. The catalog is a browsable view of all 360
+      # fragments. Uploading it means anyone can open the current one from a
+      # run without installing Python or Revit.
+      - name: Upload the generated catalog and map
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: catalog-and-map
+          path: |
+            fragment-catalog.html
+            agent-map.html
+          if-no-files-found: error
+          retention-days: 30
 
   reports:
     name: The reports - a finding is a question

@@ -1,0 +1,21 @@
+# Who gets asked to review what.
+#
+# This does nothing on its own - GitHub only REQUIRES a code owner's review
+# when branch protection on main is set to require it. Without that it simply
+# adds the owner as a reviewer automatically, which is the point while this
+# repository has one maintainer and is inviting outside pull requests.
+
+# Everything, by default.
+*                       @Ajmalpshaik
+
+# The two places where a bad change is hardest to see in a diff: what runs in
+# CI, and what CI is allowed to do.
+/.github/workflows/     @Ajmalpshaik
+/.github/dependabot.yml @Ajmalpshaik
+/.github/CODEOWNERS     @Ajmalpshaik
+
+# The checks the whole repository is judged by.
+/tools/                 @Ajmalpshaik
+
+# The Revit vendor boundary - the one rule check-structure exists to protect.
+/revit/                 @Ajmalpshaik
