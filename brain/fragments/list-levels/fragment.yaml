@@ -45,8 +45,8 @@ contract:
       type: IDictionary<ElementId, double>
 
 proof:
-  date: "2026-09-06"
-  by: "Claude Opus 5, at Ajmal PS's PC"
+  date: '2026-09-13'
+  by: Ajmal PS
   model: >
     Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
   positive_case: >

@@ -49,8 +49,8 @@ contract:
       type: bool
 
 proof:
-  date: "2026-09-06"
-  by: "Claude Opus 5, at Ajmal PS's PC"
+  date: '2026-09-13'
+  by: Ajmal PS
   model: >
     Positive on 'Project1 work_ajmal.al' - a WORKSHARED local file, Revit
     2024.3. Negative on 'Snowdon Towers Sample HVAC.rvt' (9,628 elements) and
