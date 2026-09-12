@@ -77,6 +77,24 @@ import heron_config                            # noqa: E402
 # were refused - found 2026-09-06, one fragment into the first proving run.
 #
 # Setting it makes several commands one conversation, which is what they are.
+#
+# ONE ID PER PERSON, SET EVERYWHERE, and the reason is the case the paragraph
+# above does not cover: a single conversation that uses BOTH doors. An assistant
+# holding the MCP server open and also running this client from a command line
+# is one chat by any honest reading - and Heron saw two, refused the second, and
+# said "in use by another chat". That refusal is correct and it is not a bug in
+# the lease; it is the truth about two processes that had no way to agree on a
+# name. It cost five interruptions in one session on 2026-09-12.
+#
+# So `.mcp.json` sets HERON_CLIENT_ID for the server, the same value is exported
+# for anything run from a command line, and tools/batch-prove.py inherits it by
+# setdefault rather than pinning its own.
+#
+# BE HONEST ABOUT WHAT THAT GIVES UP. Two of the owner's own chats now share an
+# id and will NOT refuse each other, which is the protection D-22 exists for.
+# That is the trade he accepted: he works alone, and a lease that refuses him on
+# his own machine costs more than it saves. It stops being right the day a
+# second person shares this Revit.
 CLIENT_ID = os.environ.get("HERON_CLIENT_ID") or uuid.uuid4().hex[:12]
 
 # The three keys the request envelope owns. An operation argument that reuses
