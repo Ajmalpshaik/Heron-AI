@@ -1193,7 +1193,7 @@ because it is what exposed the `check-licence.py` defect, and it cannot be simul
 repository and `TEMP` share a filesystem. **The repair is still not re-proved on the setup it was
 written for.**
 
-**3. Independent review is pending** throughout, per §28.2 — self-review is not independent approval.
+**3. Independent review is pending** throughout, per §28.2 — self-review is not independent approval. **CLOSED 2026-09-12 — §50.** A session that did not write this work checked its claims against the code rather than reading them; one defect was found and it was later drift rather than this work's.
 
 ## 48. What this session recommends
 
@@ -1209,7 +1209,7 @@ The cheapest path to closure, in order:
    **Do not run this again expecting it to be outstanding.**
 2. Have someone who has not read this plan follow `README.md` → `AGENTS.md` → `docs/PROJECT-MAP.md`
    and try the five role tasks in §28.7. That closes the cold read.
-3. Review the branch. That closes §28.2.
+3. ~~Review the branch. That closes §28.2.~~ **DONE — §50.** Reviewed 2026-09-12 by a different session. **Do not run this again expecting it to be outstanding.**
 
 **Then the plan can be deleted, and its inbound links repaired** — `docs/work-notes/README.md` and
 this file both reference it, and `docs/README.md` does not. Nothing else does; that was checked.
@@ -1329,5 +1329,55 @@ separator-independent way.
 | The plan | **Deleted.** `docs/work-notes/plans/repository-housekeeping-and-ai-onboarding-plan.md` |
 | References repaired | This file (2 places) and [`docs/work-notes/README.md`](../README.md) (1). The whole repository was searched rather than trusting the list; there were no others |
 
-**§28.2's independent review is still pending.** A single agent verified and merged this; that is not
-two people, and it should not be recorded as if it were.
+**§28.2's independent review was still pending when this was written.** A single agent verified and
+merged this; that is not two people, and it should not be recorded as if it were. **It was done on
+2026-09-12 by a different session — §50.** §28.7's cold read is still open.
+
+
+---
+
+## 50. §28.2 — the independent review, 2026-09-12
+
+**Done by a different session** (`claude/heron-improvement-gate-1vzts2`) than the one that wrote this
+work (`claude/amazing-fermat-emyav7`). That is what §28.2 asks for and what
+[Golden Rule 7](../../14-golden-rules.md) means: one agent creates, another validates. It is **not** a
+cold read — see §50.3.
+
+The work reviewed is `5aa7f6d` → `bba1fb0`, 31 files.
+
+### 50.1 Claims checked against the code, not read
+
+| Claim | How it was checked | Result |
+|---|---|---|
+| §40: *"No executable code was modified"* | `git diff --name-only` over the range, filtered to `.py .cs .ps1 .sh .csproj .props .yml` | **True, and precisely worded.** One Python file is in the diff and the record **names it itself** as a deletion. A looser sentence would have been wrong; this one is not |
+| §40: the deleted `heron_guard.py` was byte-identical to the `.claude/` copy | SHA-256 of both blobs at `5aa7f6d` | **Identical.** Nothing was lost |
+| [HANDOVER](../../HANDOVER.md): *"five byte-identical"* of the seven deleted files | The same hashing, file by file | **Exactly five of the six `SKILL.md` files, plus the `.py`.** The sixth, `heron-guard/SKILL.md`, differed — and the **whole difference is two lines** naming a `.Codex/skills/` path. A stale variant pointing at a directory that never existed. **Deleting it lost nothing** |
+| The Codex configuration was broken | `grep` for `.agents/` and `.Codex/` across the tree | **The bug was real and is fixed.** `.codex/agents/*.toml` now point at `.claude/skills/`, and the only surviving mentions are in HANDOVER's own history record, where they belong |
+| The entry documents' paths resolve | Every backticked repo path in `README.md`, `AGENTS.md`, `PROJECT-MAP.md`, `CONTRIBUTING.md` and the three new `README`s — **151 of them** — resolved against the document's own folder and against the root | **All 151 exist.** Zero broken references. `proof-drafts/runs/` is a runtime output folder and `ideas/`/`fixes/` are marked *create when needed* in the table that names them |
+| [`tools/README.md`](../../../tools/README.md) covers the tools | Sections diffed against `ls tools/*.py`, both directions | **Complete as of the merge.** Nothing it names is gone. One gap has opened since — §50.2 |
+| [`tests/README.md`](../../../tests/README.md)'s exit-code vocabulary | Against what the suites actually do | **Honest, and better than honest.** It names the suites that do *not* follow it rather than smoothing them over |
+
+**A false finding, recorded because the method matters.** The path check first reported **95 of 151
+broken**. Every one was my own checker resolving a document-relative path against the repository root.
+The documents were right and the tool was wrong — which is the same shape as `test_graph` and
+`test_reachable` in this branch, and the third time in two days that a fixture described a repository
+rather than reading it.
+
+### 50.2 One defect found, and it is not this work's
+
+`tools/check-dependencies.py` has no section in `tools/README.md` — **the one document that lists the
+tools**. It arrived on `main` at `17e46a7`, *after* `bba1fb0`, so this is later drift and not a
+housekeeping miss. It is the failure the top of that file already confesses to twice, with the number
+taken out: a tool nobody can find from the document that exists to list them.
+
+**Fixed in the same change as this review**, with the tool read rather than guessed at.
+
+### 50.3 What this review does NOT close
+
+**§28.7's cold read is still open, and this session cannot close it.** By the time the review was done
+this session had read `HANDOVER.md`, `PROJECT-MAP.md` and `AGENTS.md` at length. §28.7 asks for somebody
+who has **not** — and §49.3 already applied exactly this reasoning to itself and declined to claim it.
+Naming it closed here would be the reclassification §27 forbids, one step further removed.
+
+**So the position after this review is: §28.2 CLOSED, §28.7 OPEN.** One of the two things that needed a
+non-author has had one.

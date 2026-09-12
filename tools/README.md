@@ -1100,3 +1100,33 @@ evaluated now**, and one this cannot parse is reported rather than assumed true.
 Whether Heron installs. Whether an upgrade keeps a user's settings. Whether a rollback recovers.
 Whether Revit finds the manifest. Each needs Windows and a Revit, and **the tool prints them as still
 owed on every run** — because a green run here is not an install and must never be reported as one.
+
+---
+
+## `check-dependencies.py` — which packages Heron has, and what each one buys
+
+```bash
+python tools/check-dependencies.py
+```
+
+**Added by another branch on 2026-09-11 and missing from this file until 2026-09-12**, when an
+independent review of the housekeeping work counted the sections against `ls tools/*.py`. The paragraph
+at the top of this file is about a number going stale; this is the same failure with the number removed
+— a tool nobody could find from the one document that lists them.
+
+**Exits 1 only when a REQUIRED package is missing.** A missing optional one exits 0, because that is
+what optional means and a checker that failed on it would be arguing with R-42's silent degradation.
+
+It reads [`requirements.txt`](../requirements.txt) and
+[`requirements-optional.txt`](../requirements-optional.txt) — **the same two files `pip` reads**, not a
+second copy. That is the whole design: a list cannot go stale if nothing types it twice.
+
+It exists because of one question the owner asked on 2026-09-10 — *does a new person installing from
+GitHub get this automatically?* — and the answer was no, twice. `setup.ps1` installs no Python package
+at all, and the only list anywhere said `pyyaml` while the code imports six things. Somebody following
+the instructions exactly got the weaker retrieval backend and was told nothing. **Silent degradation is
+correct; silent degradation plus an install list nobody can follow is how a person stays on the weaker
+backend believing they are on the better one.**
+
+**It does not install anything**, and it does not check that an installed version is the right one.
+Saying so is better than a tool that half-installs.
