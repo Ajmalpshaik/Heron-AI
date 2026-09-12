@@ -1,0 +1,63 @@
+# disallow-join, on two walls Ajmal drew for it. 2026-09-12.
+#
+#     python tools/batch-prove.py tools/jobs/project1-walls-2026-09-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-walls-2026-09-12.yaml
+#
+# THE MODEL WAS BUILT FOR THE TEST, which is the answer to rule 2 rather than a
+# way around it. The earlier attempt was abandoned because BOTH open models
+# report zero walls and zero structural framing in the host - they are inside
+# the six loaded links, and a linked element cannot be modified. Drawing two
+# real walls in the host is the arrangement that row was waiting for.
+#
+# Measured just now, not assumed: Walls 2, Ducts 10 in this view.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  # Two models are open and Snowdon-scratch is the ACTIVE one, which has no
+  # "1 - Mech" view at all. Named, never assumed.
+  in: Project1 work_ajmal.al
+
+  # risk: MODIFY. `write` is opt-in rather than read from the fragment's own
+  # risk, and --dry-run calls a job file runnable without it. Nothing is kept:
+  # validate never sends `apply`, so both phases roll back.
+  write: true
+
+  # select-by-category-name leaves `elements`; set-selection consumes them, and
+  # a chain reset drops the handover.
+  keep-chain: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Walls
+    inViewOnly: "1 - Mech"
+
+  negative-set:
+    # A DIFFERENT SELECTION that the model can actually fill. Ducts are neither
+    # wall nor structural framing, so the fragment should name all ten under
+    # `unsupported` and leave `changed` at zero. An empty category would refuse
+    # for the wrong reason and prove nothing.
+    categoryName: Ducts
+    inViewOnly: "1 - Mech"
+
+jobs:
+  - fragment: disallow-join
+    set:
+      # "both" is what somebody pointing at a corner means - the fragment's own
+      # purpose line says so, and a corner is what was drawn.
+      whichEnd: both
+      # FALSE is the disallow. True re-allows the join, which the fragment
+      # warns is a real change of its own: Revit cleans the corner back up.
+      allowJoin: false
+    negative-set:
+      whichEnd: both
+      allowJoin: false
+    note: >
+      `changed` is the only role: result - wasPinned and unsupported are both
+      accounting under D-52. Watch wasPinned: a pinned wall refuses SILENTLY,
+      returning normally and changing nothing, which is the whole reason that
+      count is reported at all. It should be 0 here; anything else means the
+      walls were pinned and the positive case is not testing what it looks like.

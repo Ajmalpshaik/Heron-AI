@@ -113,11 +113,48 @@ namespace Heron.Core
 
             return "Heron's ability to change the model is switched off, so nothing was sent " +
                    "to Revit. This is the default, and while the write path has never been " +
-                   "run against a real model it is the right default. To turn it on, set " +
+                   "run against a real model it is the right default. To turn it on, use the " +
+                   "lock button on the Heron AI ribbon, or set " +
                    WriteEnabledKey + " = true in " + HeronConfig.FilePath +
                    ". It takes effect straight away - Allows() reads that file fresh every " +
                    "time, so there is nothing to restart. Setting it back to false stops " +
                    "Heron changing anything again, just as immediately.";
+        }
+
+        /// <summary>
+        /// Whether writing is currently switched on.
+        ///
+        /// Allows() answers "may THIS risk proceed", which is the question a
+        /// caller has. This answers "what does the switch say", which is the
+        /// question a user interface has - a button showing the state must
+        /// show the setting itself, not the verdict for some particular risk.
+        /// Read fresh, for the same reason Allows() is.
+        /// </summary>
+        public static bool WriteEnabled()
+        {
+            return HeronConfig.Load().GetBool(WriteEnabledKey, false);
+        }
+
+        /// <summary>
+        /// Turns writing on or off, and says what it now is.
+        ///
+        /// HERE RATHER THAN IN THE CALLER, so the key and the spelling of its
+        /// value live in one place. A ribbon command writing
+        /// `config.Set("write.enabled", "true")` for itself is a second
+        /// definition of this setting, and the day the two disagree the
+        /// button reports a state the permission gate does not honour.
+        ///
+        /// HeronConfig.Save is ADMIN-level and documented as only ever
+        /// reached from a deliberate human action. That is what this is: a
+        /// person pressing a button. Nothing automatic may call it - Heron
+        /// must never grant itself permission to write.
+        /// </summary>
+        public static bool SetWriteEnabled(bool enabled)
+        {
+            var config = HeronConfig.Load();
+            config.Set(WriteEnabledKey, enabled ? "true" : "false");
+            config.Save();
+            return enabled;
         }
     }
 }

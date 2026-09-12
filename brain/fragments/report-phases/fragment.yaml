@@ -50,8 +50,8 @@ contract:
       type: int
 
 proof:
-  date: "2026-09-07"
-  by: "Claude Opus 5, at Ajmal PS's PC"
+  date: '2026-09-13'
+  by: Ajmal PS
   model: >
     Revit 2024.3, session 29340. Positive on 'Project1 work_ajmal.al' (3,435
     elements, a workshared local) AFTER the owner added three phases to it

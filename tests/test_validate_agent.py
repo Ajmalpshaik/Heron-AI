@@ -85,6 +85,29 @@ utterances:
 """
 
 
+def write_run_record(workspace, slug, positive=None, negative=None):
+    """The structured evidence `accept` re-reads, beside the draft it describes.
+
+    A draft is prose for a person. The record is the numbers the fragment
+    actually returned, and it is what decides whether the positive found
+    anything and the negative found nothing - the two questions a signature
+    is worth nothing without.
+    """
+    runs = os.path.join(workspace, "drafts", "runs")
+    if not os.path.isdir(runs):
+        os.makedirs(runs)
+    phases = []
+    if positive is not None:
+        phases.append({"phase": "positive", "provides": positive})
+    if negative is not None:
+        phases.append({"phase": "negative", "provides": negative})
+    path = os.path.join(runs, slug + ".json")
+    with io.open(path, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps({"fragment": slug, "phases": phases},
+                            indent=1, ensure_ascii=False))
+    return path
+
+
 def make_fragment(folder, text=SAMPLE, source="// nothing\n"):
     os.makedirs(os.path.join(folder, "impl", "any"))
     with io.open(os.path.join(folder, "fragment.yaml"), "w", encoding="utf-8") as fh:
@@ -280,6 +303,18 @@ def test_accept_records_a_proof_and_leaves_the_status_alone():
             "negative_case": "returned count 0 on an empty selection",
             "second_route": "count_elements agreed",
             "fingerprint": frag.fingerprint()}})
+
+        # THE RUN RECORD, because accept now RE-READS the evidence rather than
+        # trusting the draft's prose. The sentences above are written for a
+        # person; the numbers below are what can be judged, and a draft whose
+        # numbers cannot be found is refused.
+        #
+        # Added 2026-09-12 with that check. It is the fixture that changed, not
+        # the claim: "a complete draft is accepted" now means a draft whose
+        # evidence still says something, which is what it always should have.
+        write_run_record(workspace, "sample",
+                         positive={"elements": 5},
+                         negative={"elements": 0})
 
         code, message = HV.accept("sample", "A Person", library=[frag])
         check(code == 0, "a complete draft is accepted: %s" % message)

@@ -77,6 +77,24 @@ import heron_config                            # noqa: E402
 # were refused - found 2026-09-06, one fragment into the first proving run.
 #
 # Setting it makes several commands one conversation, which is what they are.
+#
+# ONE ID PER PERSON, SET EVERYWHERE, and the reason is the case the paragraph
+# above does not cover: a single conversation that uses BOTH doors. An assistant
+# holding the MCP server open and also running this client from a command line
+# is one chat by any honest reading - and Heron saw two, refused the second, and
+# said "in use by another chat". That refusal is correct and it is not a bug in
+# the lease; it is the truth about two processes that had no way to agree on a
+# name. It cost five interruptions in one session on 2026-09-12.
+#
+# So `.mcp.json` sets HERON_CLIENT_ID for the server, the same value is exported
+# for anything run from a command line, and tools/batch-prove.py inherits it by
+# setdefault rather than pinning its own.
+#
+# BE HONEST ABOUT WHAT THAT GIVES UP. Two of the owner's own chats now share an
+# id and will NOT refuse each other, which is the protection D-22 exists for.
+# That is the trade he accepted: he works alone, and a lease that refuses him on
+# his own machine costs more than it saves. It stops being right the day a
+# second person shares this Revit.
 CLIENT_ID = os.environ.get("HERON_CLIENT_ID") or uuid.uuid4().hex[:12]
 
 # The three keys the request envelope owns. An operation argument that reuses
@@ -976,7 +994,29 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False):
         # of results that look the same either way.
         verdict = reply.get("verdict")
         if verdict:
-            print("    %s  %s" % ("APPLIED" if reply.get("applied") else "ROLLED BACK", verdict))
+            # THE LABEL IS READ FROM `rolledBack`, NOT FROM `applied`.
+            #
+            # It used to be `"APPLIED" if applied else "ROLLED BACK"`, and a
+            # FAILED rollback is not applied - so the header read ROLLED BACK
+            # directly above the sentence "THE ROLLBACK DID NOT REPORT SUCCESS
+            # ... THE MODEL MAY STILL HOLD THIS CHANGE". The headline said the
+            # model was safe and the small print said it might not be.
+            #
+            # That is the same shape as the defect this line exists to prevent:
+            # the comment above says a rolled-back write and a kept one report
+            # identical counts, so the label was put first where it could not
+            # be missed - and then the label itself could not tell them apart.
+            # Three rollbacks failed before anybody noticed; a reader scanning
+            # headers would have been told each time that nothing was kept.
+            #
+            # Found 2026-09-12 while reading this path before running A16.
+            if reply.get("applied"):
+                state = "APPLIED"
+            elif reply.get("rolledBack"):
+                state = "ROLLED BACK"
+            else:
+                state = "NOT ROLLED BACK"
+            print("    %s  %s" % (state, verdict))
 
         provides = reply.get("provides") or {}
         if not provides:
@@ -1257,6 +1297,49 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
 
     phases = []
 
+    # WHICH SETUP STEPS HAVE TO TRAVEL WITH THE FRAGMENT.
+    #
+    # A step at MODIFY or above cannot run on the read path - it opens no
+    # transaction - and cannot usefully run as its own write, because that is
+    # its own transaction group, decided before the fragment under test runs.
+    # It goes in the request's `setup` array instead and the add-in runs it
+    # inside the same group, where `apply` still decides whether any of it
+    # survives.
+    #
+    # ONLY MEANINGFUL ON A WRITE PHASE. A read run has no group to put them in,
+    # and a read run needing a write to arrange it is a contradiction: the
+    # fragment under test cannot change anything either.
+    deferred_setup = set()
+    if writing:
+        for step in (setup or []):
+            step_risk = fragment_risk(os.path.join(root, "brain", "fragments",
+                                                   step, "fragment.yaml"))
+            if step_risk in ("MODIFY", "PUBLISH", "ADMIN"):
+                deferred_setup.add(step)
+
+    def deferred_specs():
+        """The deferred steps as the add-in wants them, in the declared order."""
+        specs = []
+        for step in (setup or []):
+            if step not in deferred_setup:
+                continue
+            step_path = os.path.join(root, "brain", "fragments", step,
+                                     "impl", "any", "fragment.cs")
+            if not os.path.isfile(step_path):
+                return None
+            with io.open(step_path, "r", encoding="utf-8") as fh:
+                step_source = fh.read()
+            step_needs = needs_for(root, step)
+            if step_needs is None:
+                return None
+            # `needs` crosses as the TEXT of its array: a step arrives at the
+            # add-in already flattened into a string dictionary, and re-reading
+            # one named array is cheaper than a second parser on a wire that is
+            # already parsed by hand.
+            specs.append({"name": step, "source": step_source,
+                          "needs": json.dumps(step_needs)})
+        return specs
+
     def arrange(document, using=None):
         """Re-make the arrangement before a phase, and say if it could not be.
 
@@ -1279,6 +1362,18 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
         the same selection, because then they are the same values.
         """
         for position, step in enumerate(setup or []):
+            # A STEP THAT CHANGES THE MODEL IS NOT RUN HERE. This path is
+            # run_fragment_read, which opens no transaction, so a MODIFY step
+            # throws - and sending it as its own write would make it its own
+            # transaction group, kept or rolled back before the fragment under
+            # test could see it. Either way there is no arrangement.
+            #
+            # Those steps travel WITH the fragment under test instead, in the
+            # request's `setup` array, and the add-in runs them inside the same
+            # group. See writing_setup below and RevitFragment.RunSetupSteps.
+            if step in deferred_setup:
+                continue
+
             step_path = os.path.join(root, "brain", "fragments", step,
                                      "impl", "any", "fragment.cs")
             if not os.path.isfile(step_path):
@@ -1333,6 +1428,21 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
             args["chain"] = "reset"
         if document:
             args["document"] = document
+
+        # THE ARRANGEMENT THAT HAD TO CHANGE THE MODEL, travelling with the
+        # fragment so the add-in can run it inside the same transaction group.
+        # Nothing here is kept either: the group is rolled back with everything
+        # in it unless `apply` is sent, and it never is from this path.
+        if deferred_setup:
+            specs = deferred_specs()
+            if specs is None:
+                record = {"phase": phase, "ok": False, "error": "setup_failed",
+                          "message": "the arrangement could not be read from disk",
+                          "arranged": arranged}
+                phases.append(record)
+                print("%-14s %s" % (phase, "setup_failed"))
+                return record
+            args["setup"] = specs
 
         # A MODIFY FRAGMENT IS PROVED WITHOUT KEEPING ANYTHING. `apply` is never
         # sent from here, so both phases run for real inside a transaction and

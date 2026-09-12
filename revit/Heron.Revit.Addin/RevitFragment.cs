@@ -288,6 +288,35 @@ namespace Heron.Revit.Addin
                 using (var group = new TransactionGroup(target, label))
                 {
                     group.Start();
+
+                    // SETUP THAT HAS TO CHANGE THE MODEL, inside this group.
+                    //
+                    // A proof arranges the model before the fragment under test
+                    // runs - select these, then set the selection. Those are
+                    // READ and EXECUTE, and the client runs them through
+                    // run_fragment_read, which opens no transaction.
+                    //
+                    // SOME ARRANGEMENTS NEED A WRITE. copy-parameter-value
+                    // needs a parameter that HAS a value; edit-text-values
+                    // needs a text note to edit. Sent as setup through the read
+                    // path those throw, and sent as their own write they are
+                    // their own transaction group - committed and kept, or
+                    // rolled back before the fragment under test ever sees
+                    // them. Neither is an arrangement.
+                    //
+                    // Here they are steps INSIDE the group the fragment under
+                    // test is already in: each commits so the next step and the
+                    // fragment can see it, and the GROUP decides whether any of
+                    // it survives. `apply` still means exactly what it meant -
+                    // assimilate the lot, or roll the lot back.
+                    //
+                    // ONLY ON THE WRITE PATH. A read run has no group to put
+                    // them in, and a setup step that writes has no business on
+                    // a path whose whole guarantee is that Revit refuses it.
+                    var setupError = RunSetupSteps(request, globals, target, uidoc,
+                                                   client, supplied, group, label);
+                    if (setupError != null) return setupError;
+
                     using (var transaction = new Transaction(target, label))
                     {
                         transaction.Start();
@@ -337,6 +366,144 @@ namespace Heron.Revit.Addin
         /// and the disagreement is worth reporting rather than smoothing over,
         /// because it means the gate is checking something the model is not.
         /// </summary>
+        /// <summary>
+        /// Runs the arrangement steps that have to change the model, each in
+        /// its own transaction inside the caller's group. Null when they all
+        /// ran; a refusal to hand straight back when one did not.
+        ///
+        /// EACH STEP COMMITS. The next step, and the fragment under test, have
+        /// to be able to SEE what this one wrote - a parameter filled by step
+        /// two is the thing step three exists to copy. Rolling each step back
+        /// would leave the arrangement unmade, which is the defect this method
+        /// was written for.
+        ///
+        /// THE GROUP STILL DECIDES. Committing a step is not keeping it: the
+        /// caller assimilates the group on `apply` and rolls it back otherwise,
+        /// so a proof run leaves the model exactly as it was, arrangement and
+        /// all. That is why they belong in the caller's group rather than in
+        /// one of their own.
+        ///
+        /// A STEP THAT FAILS STOPS EVERYTHING. A half-made arrangement is worse
+        /// than none: the fragment under test would run against a model that is
+        /// neither what it was nor what was asked for, and report about it with
+        /// complete confidence. The group is rolled back before returning.
+        /// </summary>
+        private static string RunSetupSteps(string request,
+                                            HeronFragmentGlobals globals,
+                                            Document target,
+                                            UIDocument uidoc,
+                                            string client,
+                                            Dictionary<string, string> supplied,
+                                            TransactionGroup group,
+                                            string label)
+        {
+            var steps = Json.ReadObjectArray(request, "setup");
+            if (steps == null || steps.Count == 0) return null;
+
+            for (var index = 0; index < steps.Count; index++)
+            {
+                var step = steps[index];
+
+                string stepSource;
+                step.TryGetValue("source", out stepSource);
+                if (string.IsNullOrEmpty(stepSource))
+                {
+                    SafeRollBack(group);
+                    return Json.Error("setup_no_source",
+                        "A setup step was sent with no source, so the arrangement could not "
+                        + "be made and nothing was run. This operation runs the C# it is "
+                        + "given; it does not read the fragment library itself.");
+                }
+
+                string stepName;
+                if (!step.TryGetValue("name", out stepName) || string.IsNullOrEmpty(stepName))
+                    stepName = "(unnamed setup step)";
+
+                // EACH STEP BINDS ITS OWN NEEDS, against the same chain. What
+                // step one leaves is what step two binds - that is the whole
+                // point of running them in order - so `bound` starts fresh per
+                // step while the chain behind it does not.
+                var stepBound = new HashSet<string>(StringComparer.Ordinal)
+                {
+                    "doc", "uidoc", "app"
+                };
+
+                var stepNeeds = ReadStepNeeds(step);
+
+                var stepPrologue = "";
+                if (stepNeeds != null)
+                {
+                    string stepBinding;
+                    var refusal = BindNeeds(stepNeeds, globals, target, uidoc, stepBound,
+                                            client, supplied, out stepPrologue, out stepBinding);
+                    if (refusal != null)
+                    {
+                        SafeRollBack(group);
+                        return Json.Error("setup_failed",
+                            "The arrangement step '" + stepName + "' could not be given what "
+                            + "it needs, so nothing was run and the model is as it was. "
+                            + refusal);
+                    }
+                }
+
+                Script<object> stepScript;
+                var compileError = Compile(stepPrologue + stepSource,
+                                           PrologueLines(stepPrologue), out stepScript);
+                if (compileError != null)
+                {
+                    SafeRollBack(group);
+                    return Json.Error("setup_failed",
+                        "The arrangement step '" + stepName + "' did not compile, so nothing "
+                        + "was run and the model is as it was. " + compileError);
+                }
+
+                using (var stepTransaction = new Transaction(target, label + " - " + stepName))
+                {
+                    stepTransaction.Start();
+
+                    ScriptState<object> stepState;
+                    var threw = RunScript(stepScript, globals, stepName, out stepState);
+                    if (threw != null)
+                    {
+                        SafeRollBack(stepTransaction);
+                        SafeRollBack(group);
+                        return threw;
+                    }
+
+                    if (stepTransaction.Commit() != TransactionStatus.Committed)
+                    {
+                        SafeRollBack(group);
+                        return Json.Error("setup_failed",
+                            "Revit did not accept the arrangement step '" + stepName
+                            + "', so nothing was run and the model is as it was.");
+                    }
+
+                    // WHAT IT LEFT, for the step after it and for the fragment
+                    // under test. Without this the chain ends at the first
+                    // setup step and the arrangement cannot be built up.
+                    Remember(stepName, stepState, target, stepBound, client, globals.__heron);
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// A setup step's `needs`, read out of the step rather than the
+        /// request. Json.ReadObjectArray reads a named array from a JSON
+        /// document; a step arrives already parsed into a flat dictionary, so
+        /// its needs come across as the text of that array and are re-read here
+        /// rather than parsed a second way.
+        /// </summary>
+        private static List<Dictionary<string, string>> ReadStepNeeds(
+            Dictionary<string, string> step)
+        {
+            string needsText;
+            if (!step.TryGetValue("needs", out needsText) || string.IsNullOrEmpty(needsText))
+                return null;
+            return Json.ReadObjectArray("{\"needs\":" + needsText + "}", "needs");
+        }
+
         private static string Compile(string source, int prologueLines, out Script<object> script)
         {
             script = null;

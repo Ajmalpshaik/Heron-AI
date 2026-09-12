@@ -1,0 +1,62 @@
+# The parameter tools, 2026-09-12. Ajmal's list.
+#
+#     python tools/batch-prove.py tools/jobs/project1-parameters-2026-09-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-parameters-2026-09-12.yaml
+#
+# THE FIRST ATTEMPT PUT write-element-parameters IN THE SETUP CHAIN, to fill a
+# parameter so the fragment under test had something to find. It threw: setup
+# steps run through `run_fragment_read`, which opens no transaction, so a
+# MODIFY step cannot be one. That is a real limit and it is recorded here
+# rather than worked around quietly.
+#
+# BUT THE WRITE WAS NEVER NEEDED. `Comments` is empty on these ducts, which is
+# why `copied 0` - and every duct already carries FILLED parameters: System
+# Name, System Type, Size, Width, Height. Rule 2 says ask for what the model
+# HAS, and the model has those. Copying a filled parameter into an empty one
+# needs no arrangement at all.
+#
+# The runner was about to be rebuilt for an arrangement that was simply wrong.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  # Two models are open and Snowdon-scratch is ACTIVE. Named, never assumed.
+  in: Project1 work_ajmal.al
+  write: true
+  keep-chain: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Ducts
+    inViewOnly: "1 - Mech"
+
+  negative-set:
+    # A DIFFERENT SELECTION the model can fill - 8 duct fittings are present.
+    categoryName: Duct Fittings
+    inViewOnly: "1 - Mech"
+
+jobs:
+  - fragment: copy-parameter-value
+    set:
+      # FILLED on every duct - the Properties palette shows "Supply Air 1".
+      fromName: System Name
+      # Empty, so a copy into it is a change that can be counted.
+      toName: Comments
+    negative-set:
+      # Duct fittings have no System Name to copy, so `copied` should stay 0
+      # while the fragment still reports that it looked.
+      fromName: System Name
+      toName: Comments
+
+  - fragment: remove-parameter-value
+    set:
+      # Clearing needs something THERE to clear. Comments is empty on both
+      # selections, so this job is expected to come back empty and is left in
+      # deliberately - it is the honest state of it until a filled, writable
+      # parameter exists. Its answer is the evidence for what to arrange next.
+      parameterName: Comments
+    negative-set:
+      parameterName: Comments

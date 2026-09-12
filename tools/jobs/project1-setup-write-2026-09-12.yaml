@@ -1,0 +1,64 @@
+# copy-parameter-value, with a setup step that CHANGES the model. 2026-09-12.
+#
+# THE ARRANGEMENT THAT WAS IMPOSSIBLE UNTIL TODAY. write-element-parameters
+# fills `Comments` so there is something to copy, and it runs INSIDE the same
+# transaction group as the fragment under test - so the fragment sees it and
+# the whole lot rolls back together. Sent through the old setup path it threw:
+#   'write-element-parameters' threw while running: Attempt to modify the ...
+#
+# THE FIRST NEGATIVE WAS WRONG AND SAID SO: `copied 8`. It varied the
+# SELECTION - duct fittings instead of ducts - but the setup filled Comments on
+# those too, so of course there was something to copy. A negative has to remove
+# the thing being tested, not just change who it is done to.
+#
+# So the negative varies the SOURCE instead: the same fittings, asked to copy
+# from a parameter that does not exist on them. `copied` must be 0 and `absent`
+# must name all eight - the fragment reporting that it looked and found no such
+# parameter, which is a different sentence from finding nothing to copy.
+#
+# The same shape as rename-elements' recorded negative, which searches for
+# ZZZNOTHINGHERE: when a fragment's job is "find X and act on it", a negative
+# that removes X is the honest one.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  in: Project1 work_ajmal.al
+  write: true
+  keep-chain: true
+  setup:
+    - select-by-category-name
+    - set-selection
+    - write-element-parameters
+  set:
+    categoryName: Ducts
+    inViewOnly: "1 - Mech"
+    parameterName: Comments
+    value: HERON-TEST-VALUE
+  negative-set:
+    # Still a selection the model can fill - 8 duct fittings are really there,
+    # so the arrangement is made rather than refused for being empty.
+    categoryName: Duct Fittings
+    inViewOnly: "1 - Mech"
+    parameterName: Comments
+    value: HERON-TEST-VALUE
+
+jobs:
+  - fragment: copy-parameter-value
+    set:
+      fromName: Comments
+      # NOT `Mark`. Ajmal stopped the first version of this job for copying one
+      # value into Mark on nine ducts: Mark is an IDENTIFIER, one per element,
+      # and repeating it raises "Elements have duplicate 'Mark' values" on every
+      # one. The run rolled back and left nothing, but an arrangement is allowed
+      # to be artificial and not allowed to be the kind a modeller cleans up.
+      #
+      # Type Comments is free text where repetition is harmless, and it is empty
+      # on these ducts, so a copy into it is a change that can be counted.
+      toName: Type Comments
+    negative-set:
+      # NO SUCH PARAMETER. Not a typo - the point. Nothing can be copied from a
+      # parameter that is not there, so `copied` has to be 0 for a reason that
+      # is about the fragment rather than about an empty selection.
+      fromName: HERON_NO_SUCH_PARAMETER
+      toName: Type Comments

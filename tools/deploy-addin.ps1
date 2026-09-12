@@ -137,9 +137,49 @@ if (Test-Path $resourceSource) {
     }
 }
 
+# The runtime metadata. A .NET build (Revit 2025+) emits deps.json - and for
+# some project shapes runtimeconfig.json - naming the runtime and every
+# dependency the host must resolve. THE ASSEMBLIES ALONE ARE NOT A DEPLOYMENT.
+#
+# This was missed until 2026-09-12: the check above reads deps.json to decide
+# whether the build is the right flavour, and then the copy took *.dll only,
+# so the file the check had just relied on was left behind. A guard that
+# passes while the thing it guards is broken is worse than no guard - it was
+# the reason nobody looked here.
+#
+# .NET Framework (2020-2024) emits neither, so there is nothing to copy and
+# nothing to check. That is why this went unnoticed: 2024 is the release
+# everything has been proved on.
+if ($isDotNet) {
+    $runtimeFiles = Get-ChildItem -Path $buildOut -Filter "*.json" |
+                    Where-Object { $_.Name -like "*.deps.json" -or $_.Name -like "*.runtimeconfig.json" }
+
+    if (-not $runtimeFiles) {
+        throw "Revit $RevitVersion needs .NET runtime metadata and the build in $buildOut has none. Revit would load the assembly and fail to resolve its dependencies, reporting only that it cannot run the external application. Rebuild first:`n  dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion"
+    }
+
+    $runtimeFiles | ForEach-Object {
+        Copy-Item $_.FullName -Destination $addinDir -Force
+        Write-Host "  $($_.Name)"
+    }
+}
+
 $pdb = Get-ChildItem -Path $buildOut -Filter *.pdb -ErrorAction SilentlyContinue
 if ($Configuration -eq "Debug" -and $pdb) {
     $pdb | ForEach-Object { Copy-Item $_.FullName -Destination $addinDir -Force }
+}
+
+# Verify what was WRITTEN, not what was intended. The deployed folder is what
+# Revit reads, and every failure this script has caused looked like success at
+# this point.
+$deployedDll  = Join-Path $addinDir "Heron.Revit.Addin.dll"
+$deployedDeps = Join-Path $addinDir "Heron.Revit.Addin.deps.json"
+
+if (-not (Test-Path $deployedDll)) {
+    throw "Deployment finished but $deployedDll is not there. Nothing was installed."
+}
+if ($isDotNet -and -not (Test-Path $deployedDeps)) {
+    throw "Deployment finished but $deployedDeps is not there, and Revit $RevitVersion needs it. Do not start Revit against this folder."
 }
 
 # Point the manifest at the deployed assembly.

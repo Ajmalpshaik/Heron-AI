@@ -43,6 +43,31 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+# THIS TEST PRINTS TEXT THAT CAME OUT OF A DOCUMENT, and a document's text is
+# arbitrary Unicode - it is the user's file, not ours. On Windows a bare
+# console is cp1252 and printing one character it cannot encode raises
+# UnicodeEncodeError, which kills the run where it stands.
+#
+# That is what happened here: heading_path joins its parts with U+2192 (an
+# arrow), check() printed it, and the suite died mid-file at section 5 with
+# eleven checks never reached. It reported as a failing test on Windows and
+# passed everywhere else, so nothing named it for two days.
+#
+# NOT fixed by replacing the arrow with ASCII. The same crash returns the
+# first time a real specification carries a degree sign, a micro sign, or a
+# line of Arabic - and a Qatar MEP spec carries all three. The rule is that
+# PRINTING A DOCUMENT'S CONTENT MUST NOT KILL THE PROCESS; the separator is
+# not the subject.
+#
+# errors="replace" rather than plain UTF-8: a console that cannot show the
+# character then prints a substitute instead of mojibake, and the check still
+# reports its own verdict, which is the thing being read.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass  # already unicode-safe, or redirected to something that cannot
+
 FAILURES = []
 
 

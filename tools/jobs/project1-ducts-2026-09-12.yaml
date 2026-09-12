@@ -1,0 +1,109 @@
+# Ajmal's pick, 2026-09-12. Arranged for the model he had open.
+#
+#     python tools/batch-prove.py tools/jobs/project1-ducts-2026-09-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-ducts-2026-09-12.yaml
+#
+# HE ASKED FOR FOUR. `disallow-join` is NOT here, and the reason is rule 2.
+# Its purpose line says it turns end-joining off "for walls and structural
+# framing" - and both open models report ZERO of each in the host. They are
+# inside the six loaded links, and a linked element cannot be modified. It
+# would have come back POSITIVE EMPTY and the fragment would have worn the
+# blame for a model that could not fill it.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  # NAMED, NEVER ASSUMED. Two models are open and the ACTIVE one is
+  # Snowdon-scratch, which has no "1 - Mech" view at all - so without this the
+  # arrangement would fail against a model nobody meant to test, and the
+  # fragments would wear it. `model:` above is only a note for the reader;
+  # this is the line Revit acts on.
+  in: Project1 work_ajmal.al
+
+  # BOTH FRAGMENTS HERE ARE risk: MODIFY, and `write` is opt-in rather than
+  # read from the fragment's own risk - so a job file that forgets this is
+  # accepted by --dry-run as "runnable as written" and then refused by Revit.
+  # Nothing is kept either way: validate never sends `apply`, so both phases
+  # run for real and are rolled back.
+  write: true
+
+  # THE SETUP CHAIN PRODUCES A VALUE, and a reset drops it.
+  # select-by-category-name leaves `elements`; set-selection consumes them.
+  # Without this the second step reports
+  #   'elements (IList<Element>) - nothing usable survived'
+  # which reads like a missing selection rather than a discarded chain.
+  keep-chain: true
+
+  # A rolled-back write clears the Revit selection, so the arrangement is
+  # re-made before EACH phase. Only the first step resets the chain.
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Ducts
+    # MEASURED, not assumed: 10 ducts and 8 duct fittings in this view, read
+    # back through `prove --in "Project1 work_ajmal.al"`. Ten is a small
+    # selection, which is rule 1 - a timeout says nothing about a fragment.
+    inViewOnly: "1 - Mech"
+
+  negative-set:
+    # A DIFFERENT SELECTION, not a cleared one. Duct fittings are present (8)
+    # so the arrangement can actually be made - and they are not MEP *curves*,
+    # which is what these fragments look for. An empty category would refuse
+    # for the wrong reason and prove nothing.
+    categoryName: Duct Fittings
+    inViewOnly: "1 - Mech"
+
+# WHAT THIS RUN ESTABLISHED, 2026-09-12: both fragments came back POSITIVE
+# EMPTY, and the runner was RIGHT. Each declares exactly one `role: result` -
+# `created` and `renamed` - and marks everything else `accounting` under D-52,
+# deliberately, so a refusal cannot masquerade as a finding.
+#
+# `expect:` cannot rescue them either: `openEnds` and `planned` are not
+# declared at all, and naming them is REFUSED. That is the contract being
+# strict rather than wrong.
+#
+# So this is rule 2, and the arrangement below is what is at fault:
+#   place-mep-fitting  needs a junction of two to four runs. This model's
+#                      junctions carry more, so it correctly refuses every one.
+#   rename-elements    renames every duct to ONE name, so all but the first
+#                      collide by design. It needs a find/replace that yields
+#                      DISTINCT names, on a category whose members differ.
+#
+# Left here unfixed on purpose: the values are the work, and guessing new ones
+# without a model in front of me is how the first set came to be wrong.
+
+jobs:
+  # Its existing draft records the negative as `setup_failed - the arrangement
+  # could not be re-made`, so the second leg has never run. The positive did:
+  # 22 open ends, and it REFUSED because a fitting joins two, three or four
+  # runs and it was handed 22. That refusal is the fragment working.
+  - fragment: place-mep-fitting
+    set:
+      toleranceMm: 25
+    negative-set:
+      toleranceMm: 25
+    note: >
+      Negative is duct fittings rather than ducts - they are not MEP curves,
+      so `notMepCurve` should account for all of them and `created` stay empty.
+
+  # The closest of the four to finished: its draft already carries BOTH legs.
+  # The only gap recorded is "no second route was run", so that is what this
+  # run is for.
+  - fragment: rename-elements
+    set:
+      find: Duct
+      replaceWith: HERONDUCT
+    negative-set:
+      # The negative here is the VALUE, not the selection - the same ducts,
+      # searched for something that is not in any of their names. It isolates
+      # the matching rather than the selecting, which is the half that could
+      # be wrong.
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+      find: ZZZNOTHINGHERE
+      replaceWith: HERONDUCT
+    note: >
+      A previous run reported planned 22, collisions 21, renamed 0 - renaming
+      every duct to one name collides by design. Read `planned`, not `renamed`.

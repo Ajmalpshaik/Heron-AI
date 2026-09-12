@@ -136,6 +136,31 @@ def describe(millimetres):
     return ("%.3f" % rounded).rstrip("0").rstrip(".") + " mm"
 
 
+def describe_vertical(millimetres):
+    """
+    A vertical move as a modeller says it: "up 200 mm", "down 50 mm".
+
+    THE SIGN IS NOT THE READER'S JOB. The caller used to write " up " itself
+    and pass the signed number to describe(), so asking to lower something
+    produced *"This would move 9 ducts up -50 mm"*. It did the right thing and
+    described it the way a programmer would.
+
+    Mirrors HeronUnits.DescribeVerticalMove on the C# side, which words the
+    same move in the add-in's own reply and in Revit's undo history. The two
+    have to agree: the user reads the preview here and the undo entry there,
+    about one operation.
+
+    Zero keeps no direction - "0 mm" moves nowhere, and claiming "up" would
+    name a direction the move does not have.
+    """
+    rounded = round(millimetres, 3)
+    if rounded == 0:
+        return describe(0)
+    if rounded < 0:
+        return "down " + describe(-millimetres)
+    return "up " + describe(millimetres)
+
+
 # ----------------------------------------------------------- document pinning
 
 

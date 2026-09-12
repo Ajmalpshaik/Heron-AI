@@ -119,5 +119,33 @@ namespace Heron.Core
             var text = rounded.ToString("0.###", CultureInfo.InvariantCulture);
             return text + " mm";
         }
+
+        /// <summary>
+        /// A vertical move as a modeller says it: "up 200 mm", "down 50 mm".
+        ///
+        /// THE SIGN IS NOT THE READER'S JOB. Every caller used to write
+        /// " up " itself and hand the signed number to DescribeMillimetres,
+        /// so asking to lower something produced *"move 9 ducts up -50 mm"* -
+        /// and the undo entry in Revit's own history said the same. It did the
+        /// right thing; it described it the way a programmer would.
+        ///
+        /// Down is a DIRECTION, not a negative up. Found in front of a model
+        /// on 2026-09-12 while proving D6, which exists to check exactly that
+        /// a negative distance is not treated as an error.
+        ///
+        /// Zero keeps no direction: "0 mm" moves nowhere, and "up 0 mm" would
+        /// be claiming a direction the move does not have.
+        /// </summary>
+        public static string DescribeVerticalMove(double millimetres)
+        {
+            if (double.IsNaN(millimetres) || double.IsInfinity(millimetres))
+                return DescribeMillimetres(millimetres);
+
+            if (Math.Round(millimetres, 3) == 0) return DescribeMillimetres(0);
+
+            return millimetres < 0
+                ? "down " + DescribeMillimetres(-millimetres)
+                : "up " + DescribeMillimetres(millimetres);
+        }
     }
 }

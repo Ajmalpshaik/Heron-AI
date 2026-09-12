@@ -58,7 +58,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import heron_bridge_client as bridge          # noqa: E402
 from heron_session import SessionBinding, NotBound   # noqa: E402
 from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
-                         describe, parse_millimetres)
+                         describe_vertical, parse_millimetres)
 from heron_failure import analyse, explain          # noqa: E402
 import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
@@ -477,9 +477,9 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
         approval.clear()
         return wrong_model
 
-    summary = "%s up %s in %s" % (
+    summary = "%s %s in %s" % (
         "{:,}".format(reply.get("willMove", 0)) + " " + str(reply.get("category")),
-        describe(millimetres), reply.get("document"))
+        describe_vertical(millimetres), reply.get("document"))
 
     # "approvalToken", not "token" - the add-in mints it under that name so it
     # cannot collide with the session token the bridge authenticates on.

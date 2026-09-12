@@ -49,8 +49,8 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: "2026-09-07"
-  by: "Claude Opus 5, at Ajmal PS's PC"
+  date: '2026-09-13'
+  by: Ajmal PS
   model: >
     Revit 2024.3, session 29340. Positive on 'Snowdon Towers Sample HVAC.rvt'
     (9,628 elements), which was the only model this session had seen at that
