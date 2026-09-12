@@ -231,7 +231,7 @@ MCP tool changes the risk table in `heron_tools.py`, which is a decision with a 
 
 ### Phase 7 — Packaging · `tools/check-package.py`
 
-**Nothing in this repository read `Heron.addin`.** Not one of twenty-five tools, and it is the first
+**Nothing in this repository read `Heron.addin`.** Not one tool in `tools/`, and it is the first
 file Revit opens.
 
 Four faults it catches that every other gate stays green through, listed in

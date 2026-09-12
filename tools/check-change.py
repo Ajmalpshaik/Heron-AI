@@ -621,9 +621,18 @@ def main(argv=None):
         reasons.append("%d file(s) are in no declared part and in no part a "
                        "declared part may depend on" % len(unrelated))
     elif blocking:
+        # Owed or not, a gate that was run and failed is worth stopping for -
+        # but the sentence has to say WHICH, because "a gate this change owes"
+        # is a different claim from "a gate somebody ran".
         status = "REVISE"
-        reasons.append("a gate this change owes was run and failed: %s"
-                       % ", ".join(blocking))
+        owed_failing = [g for g in blocking if g in owed]
+        other_failing = [g for g in blocking if g not in owed]
+        if owed_failing:
+            reasons.append("a gate this change owes was run and failed: %s"
+                           % ", ".join(owed_failing))
+        if other_failing:
+            reasons.append("a gate was run and failed, though this change did "
+                           "not owe it: %s" % ", ".join(other_failing))
     elif evidence_error:
         status = "REVISE"
         reasons.append("the evidence record could not be read - %s" % evidence_error)

@@ -1008,6 +1008,14 @@ tool runs none of them. A tool that did both would one day mark its own.
 **A change with no evidence record is `REVISE`, never `PASS`.** That is the whole point of the tool
 having two halves.
 
+**A gate that was already failing does not block** — but only when the evidence record was compared
+against a measured baseline, which is what `compared_to` in the record means. With no before-measurement
+the same record blocks, because nothing can tell a pre-existing failure from a new one and the tool says
+the cautious thing rather than the convenient one. This exists because two suites here exit **1** for
+want of the MCP SDK, so the tests gate reads FAIL on a plain container whatever anybody changed — and it
+is the same mechanism [`gates.yml`](../.github/workflows/gates.yml) already uses, comparing the **set**
+of failing suites against a known-failure list rather than counting them.
+
 ---
 
 ## `change-evidence.py` — before and after, measured the same way twice

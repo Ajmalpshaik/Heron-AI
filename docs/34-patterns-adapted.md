@@ -321,7 +321,7 @@ fact beats a declared one every time.
 | **Where from** | [OpenDesign](https://github.com/nexu-io/open-design), Apache-2.0. Its installed-acceptance step, read 2026-09-11 |
 | **Their mechanism** | After a release is published, a separate check reads the **installed** manifest, compares it against the publish receipt, verifies a digest sidecar, drives the lifecycle start to stop, and emits an acceptance record naming exactly what was accepted |
 | **Why it works** | Source tests and delivery are different questions, and only the second one reaches a user. Their check would fail on a manifest that no longer binds what was published even though every test passed |
-| **What Heron already had** | **Nothing read `Heron.addin` at all.** Not one of the twenty-five tools. It is the first file Revit opens |
+| **What Heron already had** | **Nothing read `Heron.addin` at all** — not one tool in `tools/`, and it is the first file Revit opens |
 | **What Heron built instead** | [`tools/check-package.py`](../tools/check-package.py), asking only what is answerable with no Windows, no Revit and no compiler - and **printing what it cannot answer on every run**, because a green run there is not an install |
 
 **Four faults it catches that were invisible to everything else**: an entry class that does not exist or
