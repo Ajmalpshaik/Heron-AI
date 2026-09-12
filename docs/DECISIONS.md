@@ -4176,8 +4176,13 @@ Three reasons, and they are why Claude's memory is not a substitute:
    is not there. Heron is.
 2. **It is a sorting number, not a conversation.** It changes which clause comes first *inside* Heron's
    retrieval, and nothing outside the store can reach that arithmetic.
-3. **[D-26](#d-26--the-model-file-is-never-uploaded) already governs what may leave the machine.**
-   Sending the history somewhere to be remembered is the thing that decision exists to prevent.
+3. **Nothing already covers it, and that is why this decision has to say it.** An earlier draft of this
+   row cited [D-26](#d-26--the-model-file-is-never-uploaded) as though it already forbade sending a
+   usage history. **It does not, and D-26's own header warns against exactly that reading**: it was
+   refined three times *away* from *nothing may travel* toward **the file may not travel**, and its
+   final rule says *"any project name, data, typing, or content being in the cloud is not an issue."*
+   **Local-only for this counter is therefore a NEW constraint introduced here**, not an inheritance —
+   caught by review before this decision landed.
 
 ### Decision
 
@@ -4195,13 +4200,21 @@ Numbers against a clause id. His own instruction on note-keeping, given the same
 shape is written down here rather than left to the implementer: *"if we keep everything by note that
 will be big."* **A counter does not grow with use the way a log does.**
 
+**That illustration is the SHAPE HE AGREED TO, and it is not yet a sufficient specification.**
+[`05 §4.4`](05-heron-brain.md) asks for **success rate** and **recency**. A bare cumulative count has
+**no denominator**, so no rate can be computed from it, and **no timestamp**, so no recency can. Review
+caught this before anything was built. **The exact fields are therefore left open** — at minimum a
+count needs something to divide by and a last-used time — and **R-25 is not buildable until they are
+settled.** What is settled is the ANSWER and the character of the thing: counts against a clause id,
+not a diary of sentences.
+
 **Three constraints follow and are not optional:**
 
 | | |
 |---|---|
-| **Deletable** | [Golden Rule 11](14-golden-rules.md) — everything derived must be safe to delete as a recovery action. Losing the counter must cost ranking quality and **nothing else** |
+| **NOT in the disposable index** | [Golden Rule 11](14-golden-rules.md) says the index is *rebuilt* if destroyed, so deleting it is always safe. **A usage count cannot be rebuilt from the source documents — it is canonical, not derived.** Putting it in the scope store would make deleting the index silently destroy learned ranking, which is the guarantee broken rather than kept. The counts live **outside** the disposable store — [Golden Rule 14](14-golden-rules.md)'s append-only local audit is the natural home — and the per-scope ranking value is derived from them. An earlier draft of this row had it inside the store and called that "deletable"; **review caught it** |
 | **Per scope** | one counter inside each store. A counter pooled across scopes would carry what a company store learned into a project answer, which is [Golden Rule 5](14-golden-rules.md) broken by the back door |
-| **Never leaves** | [D-26](#d-26--the-model-file-is-never-uploaded). It is not sent, not synced, not attached to a question going to a model |
+| **Never leaves** | **New here, on his words** — *"Your project data must stay on your PC"* was the third reason put to him and he answered yes to it. Not sent, not synced, not attached to a question going to a model. **This is D-70's own rule; [D-26](#d-26--the-model-file-is-never-uploaded) does not reach it** |
 
 ### What this does NOT settle, and must be asked separately
 
