@@ -5910,3 +5910,22 @@ machine this is not.
 **Green is not proven.** D-30 — the machine gathers evidence, a person signs. Every measurement above
 was taken on a Linux container with no Revit, and **no compiler and no test here can tell you whether a
 duct moves 200 millimetres or 200 feet.**
+
+## What I would do next — SUGGESTIONS, not decisions
+
+**Nothing in this list is agreed.** It is written down because the owner asked what the ideas were, and
+because a suggestion nobody wrote down gets rediscovered from scratch three sessions later. **Anything
+here can be ignored without consequence** — the TO DO table above is the real obligation.
+
+| | idea | why it is worth doing |
+|---|---|---|
+| **1** | **Build the usage counter** — R-16 and R-25, to the shape in [D-70](DECISIONS.md) | It is the only item on the list that is both **unblocked and code**. Everything else needs the owner, Revit, Windows, or a network this container has not got |
+| **2** | **Ask the question the counter left open** | D-70 covers a count against a clause id. **Whether the question TEXT is stored was never put to him**, and an implementer will otherwise decide it by accident |
+| **3** | **Close W-10** — `sqlite_vec` degrades with nothing said | One small, self-contained batch. It is the only optional package whose absence is invisible, and "degrade silently but say so" is the rule it half-keeps |
+| **4** | **Apply his own note rule backwards** | `03-working-note.md` is **150 KB of diary** — exactly what he objected to on 2026-09-12. The other session retired the housekeeping ledger the right way on the same day: move the durable part somewhere permanent, then delete the note. The RAG note deserves the same, once its open items are in the registers |
+| **5** | **Agree a convention for `HANDOVER.md`** | **Two sessions wrote handover sections into it within an hour today**, and only merge order stopped a conflict. A dated section per sitting, appended, never edited above — or one file per sitting — would remove the race |
+| **6** | **Re-read §1–10 of this file against the code** | They are from a different phase and nothing has checked them since. **This is a guess, not a finding** — I have not read them closely enough to say they are wrong, only that nothing says they are right |
+
+**The one I would actually start with is number 1**, and only because the owner's answer arrived. If one
+real numbered document turns up first, **that beats all six** — it is the only thing that tests whether
+any of this survives contact with a real specification.
