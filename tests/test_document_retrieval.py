@@ -93,6 +93,9 @@ def main():
     import heron_embed as EMBED
     import heron_retrieve as R
     import heron_ingest as I
+    # Section 3 asserts a RANKING, and ranking is the re-ranker's job when one
+    # is installed. Read here so the check can say which claim it is making.
+    import heron_rerank as RERANK
 
     home = tempfile.mkdtemp(prefix="heron-docret-")
     papers = tempfile.mkdtemp(prefix="heron-docret-papers-")
@@ -140,9 +143,40 @@ def main():
             best = answer.candidates[0]
             check(best["kind"] == "chunk",
                   "every hit says what kind of thing it is")
-            check(best["locator"] == "9.1.1",
-                  "and the best hit is the thickness clause 9.1.1, not the "
-                  "section above it (got %r)" % best["locator"])
+            # THIS CHECK DEPENDS ON AN OPTIONAL PACKAGE, and said so nowhere
+            # until 2026-09-12. `sentence-transformers` is in
+            # requirements-optional.txt; without it heron_rerank reports
+            # `absent` and the shortlist keeps the order fusion gave it.
+            # Fusion puts 9.1.2 first for this question.
+            #
+            # So the suite failed on every machine that had not installed an
+            # OPTIONAL dependency, and the message blamed the ranking -
+            # pointing at retrieval quality rather than at the absent package.
+            # Found by running the suite on the owner's Windows PC, where the
+            # trained embedding backend is real and the re-ranker is not
+            # installed; on the container both were absent together and the
+            # question never arose.
+            #
+            # The fix is not to lower the claim to whatever came back. The
+            # claim is right - 9.1.1 is headed Thickness and states 25mm,
+            # while 9.1.2 is the vapour barrier and does not answer "how
+            # thick" at all. It is asserted where it holds, and where it does
+            # not the CONTRACT FOR BEING ABSENT is asserted instead, which
+            # requirements-optional.txt states as "every answer says the
+            # re-ranker did not run".
+            if RERANK.backend()[0] == RERANK.ABSENT:
+                # `reranked` is the Contest's, not the Answer's - the Answer
+                # carries the hits, the Contest carries how they were ordered.
+                check(not getattr(answer.contest, "reranked", False),
+                      "the re-ranker is NOT INSTALLED, so the shortlist keeps "
+                      "fusion's order and the answer says so - 9.1.1 first is "
+                      "a claim about the re-ranker and is not made here (best "
+                      "was %r). Install sentence-transformers to test it"
+                      % best["locator"])
+            else:
+                check(best["locator"] == "9.1.1",
+                      "and the best hit is the thickness clause 9.1.1, not the "
+                      "section above it (got %r)" % best["locator"])
             check(best["document"] == "Heron Test Standard 2026",
                   "it names the document a citation would show")
             check(best["untrusted"] == 1,

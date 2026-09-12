@@ -136,8 +136,24 @@ def python_files():
             dirs[:] = [d for d in dirs if d != "__pycache__"]
             for name in files:
                 if name.endswith(".py"):
+                    # NORMALISED TO "/" HERE, AT THE ONE PLACE A PATH IS MADE,
+                    # because every comparison downstream is written with "/":
+                    # PRODUCTION is ("brain/", "mcp/", "platform/"), and hits()
+                    # asks startswith("tools/") and startswith("tests/").
+                    #
+                    # os.path.relpath returns "brain\thing.py" on Windows, so
+                    # every one of those was False there and hits() took its
+                    # `continue` for EVERY definition. The tool reported
+                    # nothing unreachable - not as an error, as a clean run.
+                    # A gate that passes because it cannot see is the failure
+                    # this repository keeps finding; it ran on every ship from
+                    # the owner's PC and always said 0.
+                    #
+                    # The same defect as the one fixed in test_context.py on
+                    # 2026-09-12, in its twin, found by running the suite on
+                    # Windows for the first time.
                     found.append(os.path.relpath(os.path.join(where, name),
-                                                 ROOT))
+                                                 ROOT).replace(os.sep, "/"))
     return sorted(found)
 
 
