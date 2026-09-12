@@ -109,7 +109,7 @@ jobs:
       # add-in fails MSB4019 on Revit 2025-2027, while the 10 SDK ships them and
       # builds all eight releases. An SDK builds target frameworks older than
       # itself, so the newest is the one to install.
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
