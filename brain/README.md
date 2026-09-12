@@ -111,9 +111,28 @@ layers would cost this one a great deal for no benefit.
 What this layer needs must still install **per-user with no administrator rights** — that is
 [D-01](../docs/DECISIONS.md)'s promise and Phase 0 proved it end to end on a real machine.
 
-| Needed by | For |
-|---|---|
-| `pyyaml` | reading `fragment.yaml`. `pip install --user pyyaml` |
+**The list is not here.** It is [`requirements.txt`](../requirements.txt) and
+[`requirements-optional.txt`](../requirements-optional.txt), where pip can read it, and this table used
+to be a second copy that said `pyyaml` while the code imported six things. Ask the machine instead:
+
+```bash
+python tools/check-dependencies.py       # present, missing, and what each one buys
+pip install --user -r requirements.txt   # the required half - one package
+```
+
+**Do not install the optional half in one command.** One of them is large enough that a person is
+entitled to know first — and the figure is **not written here**, because the code that performs the
+download owns it: `heron_rerank.announcement()` prints the size before any network call rather than
+during, and `check-dependencies.py` above reads it from there. A size copied into a README is a size
+that goes stale in the one place it had to be right.
+
+Every optional package degrades rather than breaks: Heron answers without all five and names the one
+that did not run.
+
+**What is still owed here, so nobody reads the above as more than it is:** nothing installs
+automatically ([R-74](../docs/work-notes/plans/rag/01-requirements.md), R-77 — `tools/setup.ps1` still
+deploys the add-in and no Python package), and *installed* above means *importable*, not *the right
+version* (R-78).
 
 ## Rules for this folder
 

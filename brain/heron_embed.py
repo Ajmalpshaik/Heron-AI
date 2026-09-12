@@ -267,12 +267,37 @@ def stamp():
     return name
 
 
+# What would lift `lexical` to `model`, said at the point the degradation is
+# REPORTED rather than in a README nobody has open. R-73.
+#
+# It is appended to `why` rather than offered as a separate call because every
+# reporter already prints `why` - heron_retrieve stores it on the candidate,
+# the CLI prints it, the measuring tools read it. A remedy behind a function
+# nobody calls is how this stayed PART.
+#
+# THE SECOND CLAUSE MATTERS AS MUCH AS THE FIRST. `pip install --user
+# model2vec` succeeds - pypi.org answers 200 - and then StaticModel.from_
+# pretrained has to reach huggingface.co for the weights, which is refused
+# from this container (403, recorded 2026-08-28 and re-checked 2026-09-11).
+# Naming the package without naming that condition sends somebody into exactly
+# the failure this repository has already written down twice.
+IMPROVED_BY = ("to fix it: pip install --user model2vec, which also needs "
+               "huggingface.co reachable once to fetch the weights")
+
+
 def backend():
-    """Which backend is in use, and what that means. Reported, never assumed."""
+    """Which backend is in use, and what that means. Reported, never assumed.
+
+    When it is the fallback, `why` also names what would improve it (R-73).
+    Nothing here promises a better ANSWER - it names the one difference that
+    was measured: A7 scored a flow-direction question with no shared words and
+    the trained backend ranked the right fragment FIRST where `lexical` ranked
+    it LAST.
+    """
     if _load_model() is not None:
         return MODEL, "a trained model - this one understands meaning"
     return LEXICAL, ("built-in character n-grams - tolerant of spelling and "
-                     "word order, but NOT meaning")
+                     "word order, but NOT meaning. " + IMPROVED_BY)
 
 
 def vector(text):
