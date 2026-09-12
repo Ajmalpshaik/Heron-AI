@@ -573,44 +573,27 @@ pay for the same discovery twice.
 
 ### Works anywhere, including mobile
 
+**There is no list of suites here any more, and that is the point.** This section used to name
+eighteen of them and state *"18 suites; 16 pass here… 514 individual `ok`/`PASS` lines"* — while
+calling that figure *"derived, not typed"*. On 2026-09-12 the repository held **57**, so the list was
+missing thirty-nine, including the whole RAG subsystem and every gate added since. A reader following
+it would have believed two thirds of what runs here does not exist.
+
+**Derive them:**
+
 ```bash
-python tools/check-docs.py             # links, Golden Rule / decision / question references
-python tools/check-metadata.py         # the standard, registry vs code, and version agreement
-python tools/check-structure.py        # layout, layering, paths, and the PowerShell ANSI trap
-python tests/test_session_binding.py   # one chat one Revit, all four cases — pure Python
-python tests/test_write_safety.py      # Step 6's CHAT half — distances, pinning, approval
-python tests/test_failure_analysis.py  # never blind-retries, and fails closed
-python tests/test_tool_registry.py     # both languages agree on what may write
-python tests/test_config_and_health.py # settings agree; health means something
-python tests/test_workflow.py          # stages resume, stale inputs re-run, no blind retry
-python tests/test_golden.py            # which proofs still stand against the current code
-
-# Phase 2, added 2026-08-28 / 29. All eight run anywhere, none needs Revit
-python tests/test_fragment_store.py    # identity survives a rename; a proof with no negative case is refused
-python tests/test_scope_store.py       # one file per scope, and a cross-scope query cannot be written
-python tests/test_search.py            # exact words - identity, cache, FTS5
-python tests/test_embed.py             # nearness, and the measured proof that it is NOT meaning
-python tests/test_retrieve.py          # the two fused, behind a hard Revit-version filter
-python tests/test_capability.py        # a provider is swapped and the call site does not change
-python tests/test_graph.py             # the deriver shown catching a break before it was believed
-python tests/test_skills.py            # a skill names capabilities, never fragments
-
-# The seam, added 2026-08-29. Also needs no Revit
-python tests/test_brain_reachable.py   # the host resolves through a capability, not a fragment id
-
-# Served by a REAL SDK, added 2026-08-31. Needs `pip install --user mcp`,
-# no Revit and no Windows. With no SDK it exits 3 and check-gaps reads that
-# as WAITING - a skip reported as `ok` is a green nobody earned
-python tests/test_mcp_serves.py        # every tool served, with its description and its arguments
-
-# The fragments, compiled for the first time - 2026-08-29. Needs the .NET SDK,
-# no Revit and no Windows. ~10 minutes for all eight releases
-python tools/check-fragments-compile.py   # every fragment, every release it claims
-
-# Did a new fragment make an OLD one unfindable? - added 2026-08-30.
-# Run it after adding any fragment. It never fails a build; it reports judgements
-python tools/check-routing.py             # every fragment, asked its own words back
+ls tests/test_*.py | wc -l                        # how many suites there are
+ls tests/test_*.py                                # which ones
+for f in tests/test_*.py; do
+  python "$f" >/dev/null 2>&1 && echo "pass  $f" || echo "FAIL  $f"
+done                                              # which pass on THIS machine
 ```
+
+**The last command is the one that matters, because the answer is machine-specific and has twice been
+reported as though it were not.** `test_ingest` fails on Windows for an encoding reason and passes on
+Linux; `test_document_retrieval` fails on the **trained** backend and passes on the fallback, so CI has
+only ever seen it green because CI cannot reach `huggingface.co`. Run it where you are, and read
+[`NEEDS-CHECKING`](NEEDS-CHECKING.md) `A14` before deciding a failure is yours.
 
 > **Set `HERON_KNOWLEDGE` before anything that touches `brain/`.** On Windows the stores go under
 > `%APPDATA%`; anywhere else there is no such folder and the store has nowhere to live, so the tools stop
@@ -618,10 +601,17 @@ python tools/check-routing.py             # every fragment, asked its own words 
 > stores are **derived** — deleting them is always a safe recovery, and `python brain/heron_scope.py
 > --rebuild` puts them back.
 
-**18 suites; 16 pass here with nothing installed at all, 514 individual `ok`/`PASS` lines** — derived,
-not typed: `for f in tests/test_*.py; do python3 "$f"; done | grep -cE '^\s*(ok|PASS)\b'`. The other two
-each want one thing first, and **neither is a Revit**: `test_bridge_roundtrip.py` needs its host built
-(below), and `test_mcp_serves.py` needs `pip install --user mcp`, which takes it to **531**.
+**The three checkers, and the two suites that need something installed first:**
+
+```bash
+python tools/check-docs.py             # links, rules, decisions, questions, and the generated table
+python tools/check-metadata.py         # the standard, registry vs code, and version agreement
+python tools/check-structure.py        # layout, layering, paths, and the PowerShell ANSI trap
+```
+
+`test_mcp_serves.py` needs `pip install --user mcp` and **exits 3 without it** — which `check-gaps`
+reads as WAITING, because a skip reported as `ok` is a green nobody earned. `test_bridge_roundtrip.py`
+needs its host built (below). Neither needs a Revit.
 
 **And one command that runs all of the above and then looks for what is missing:**
 
@@ -644,7 +634,7 @@ python tools/check-compile.py                  # Revit 2020-2027, all four proje
 
 dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 -p:HeronTfm=net8.0 \
     -p:OutputPath=bin/x64/Debug-net8.0/
-python tests/test_bridge_roundtrip.py          # 30 checks, including the whole lease
+python tests/test_bridge_roundtrip.py          # the whole lease, end to end
 ```
 
 The first needs the .NET SDK, which Linux distributions package — Microsoft's CDN is often blocked from a
@@ -785,7 +775,9 @@ connected being invisible is a safety property. **Put it back afterwards.**
 >   whose argument is *"go read that other repository"* becomes worthless on that day. State the
 >   reasoning here, in full, so it stands on its own.
 
-Twenty-two are in [docs/DECISIONS.md](DECISIONS.md). These are the load-bearing ones:
+**Twenty-two of them are listed below.** That is a selection, not the total — [DECISIONS.md](DECISIONS.md) holds every decision and its own generated table at the top is the index. This sentence read *"Twenty-two are in docs/DECISIONS.md"* until 2026-09-12, which was true of the list and false of the file, and the file had reached **D-70** by then.
+
+These are the load-bearing ones:
 
 | | |
 |---|---|
@@ -822,26 +814,38 @@ was deliberate: a rule that only binds once the code passes is not a rule the co
 
 ## 8. What is waiting on the owner
 
-**Every question is answered — 41 of 41 — and nothing blocks any phase.** What is left is **three review
-item at the PC** (`R1b` — `R1` and `R2` were closed on 2026-08-29) **and two choices Phase 2 created by
-finishing, both of which have since been made.** The copyright
-line was the last outstanding confirmation and it was given on 2026-08-28.
+> **The list is [`FOR-THE-OWNER.md`](FOR-THE-OWNER.md) and `python tools/owner-queue.py`.** It is
+> derived from [OPEN-QUESTIONS](OPEN-QUESTIONS.md), [NEEDS-CHECKING](NEEDS-CHECKING.md) and
+> [PROPOSALS](PROPOSALS.md) at the moment you ask, and grouped by what you need in front of you —
+> a decision, a numbered document, Revit open, the PC, or a network.
+
+**This section used to carry the list, and on 2026-09-12 it opened with *"Every question is answered —
+41 of 41 — and nothing blocks any phase."*** The file held **53 questions, 52 answered and three open**,
+and two of those three had been open for two days. Anyone reading this section would have concluded
+nothing was waiting on them.
+
+It was not wrong when written. It was written once, in a phase where 41 was the total, and never
+re-derived — the same failure as §1–§3, in the section whose entire job is telling the owner what he
+owes. **That is why it is a pointer now and not a table.**
+
+### What survives from it, because no register carries it
+
+Three items below are **history**, not queue. They record owner decisions whose reasoning would be lost
+if the section were simply deleted — which is the test `work-notes/README` sets before removing
+anything.
 
 | | |
 |---|---|
-| ~~`R1` — read the day's decisions back~~ | **DONE 2026-08-29.** All twenty-one read back, all confirmed. It happened in conversation rather than at the PC, and **after** Phase 2 was built rather than before — both recorded rather than smoothed over. What that cost turned out to be **nothing measurable**: the two that had been reversed within hours did not move a fourth time, and no missing detail surfaced. `R2` went with it — D-26 and D-32 were the two put to him individually |
-| **`R1b` — show him the trust model working** | [D-14](DECISIONS.md) stays **Proposed**. He agreed the direction and said *"show me it working at the PC first."* Use the framing that landed: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may not be called settled |
-| ~~Copyright~~ | **CONFIRMED 2026-08-28 — Ajmal PS is correct.** Checked consistent in all four places it appears: the Apache appendix in `LICENSE`, `NOTICE`, `<Company>` in `Directory.Build.props`, and `README.md`. The Apache appendix is filled in rather than left as the `[name of copyright owner]` placeholder, which is the one that is usually missed |
+| **`R1b` — show him the trust model working** | [D-14](DECISIONS.md) stays **Proposed**. He agreed the direction and said *"show me it working at the PC first."* Use the framing that landed: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may **not** be called settled. Still open — it is `R1b` in the register, and the queue prints it |
+| ~~`R1`, `R2` — read the decisions back~~ | **DONE 2026-08-29.** All twenty-one read back and confirmed. It happened in conversation rather than at the PC, and **after** Phase 2 was built rather than before — both recorded rather than smoothed over. What that cost was **nothing measurable**: the two reversed within hours did not move a fourth time |
+| ~~Copyright~~ | **CONFIRMED 2026-08-28 — Ajmal PS is correct.** Consistent in all four places: the Apache appendix in `LICENSE`, `NOTICE`, `<Company>` in `Directory.Build.props`, and `README.md`. The appendix is filled in rather than left as the `[name of copyright owner]` placeholder, which is the one usually missed |
 
-**And two choices that did not exist until Phase 2 was built.** Neither is a question the code is stuck
-on — both are the owner's to make, and both were deliberately left rather than decided quietly:
+**And one question that came out of building, still open and owned by nobody's register:** whether a
+layout that Revit refuses part of should place the rest or roll back entirely. [Golden Rule
+16](14-golden-rules.md) says roll back; a modeller may well want the 37 that worked. See
+`place-family-instances`.
 
-| | |
-|---|---|
-| ~~Write the seven missing capabilities, or wait?~~ | **DECIDED AND DONE 2026-08-29 — he asked for the no-PC work to be finished.** All seven are written and compile on all eight releases. The argument that settled it: **not writing them was itself outstanding non-Revit work.** Written, what remains is their PROOF, and proof is Revit-checking — which is exactly the only thing his standing instruction wants left. **One question came out of the work and is still open**: whether a layout that Revit refuses part of should place the rest or roll back entirely (Golden Rule 16 says roll back; a modeller may well want the 37). See `place-family-instances` |
-| ~~Wire the brain to the host now, or after the Revit checks?~~ | **DECIDED AND DONE 2026-08-29 — he chose to wire it now.** Three read-only tools on one seam; `check-gaps.py` reports nothing unfinished. It cost the register one new row (`A8`, two minutes at the PC) and moved no other row, so his standing instruction that *only Revit-checking should remain outstanding* holds: what remains is 47 Revit rows, 3 Windows, 1 network, 3 conversations |
-
-**Two things were answered by NOT answering them, and both are publication tasks rather than gaps:**
+**Two things were answered by NOT answering them**, and both are publication tasks rather than gaps:
 [Q-38](OPEN-QUESTIONS.md) — the public install command — and the Autodesk App Store requirements in
 [D-38](DECISIONS.md). Both need **current documentation read at the time**, and writing either from
 memory is the failure this repository has already had twice. `tools\setup.ps1` is the proven route
@@ -901,7 +905,10 @@ document, survives save, rename and move, and exists on every release from 2020 
 `test_bridge_roundtrip.py` asserted that nothing held the lease at a point where an earlier unknown-op
 probe had already claimed it — the bridge was right and the check was false. It had been written from
 reading, in a file that could not run on the machine it was written on. That file now runs on both
-platforms, one shim, one set of assertions, and passes 32 checks including the whole lease.
+platforms, one shim, one set of assertions, and passes the whole lease end to end.
+**Two different counts for this suite sat in this file until 2026-09-12** - "30 checks" here and
+"32 checks" in section 5 - and neither could be settled from this container, which has no built
+host. Both are gone rather than one being guessed at: the suite prints its own total when it runs.
 
 **What no compiler will ever do is tell you a duct moved the right distance.** `D3` is still the line
 that matters most in this repository.
@@ -1349,15 +1356,19 @@ still the line that matters most: move the ducts 200 mm, then measure one.*
 **Nothing here is code that can be written from this container.** Every row needs the owner, or a
 machine this is not.
 
+> **This table is a summary; the live list is `python tools/owner-queue.py`.** Several ids below
+> **moved on 2026-09-12** when the RAG working note was retired — a work note is deleted at the end
+> of its life, so anything still owed had to go to a register first. The new ids are in the rows.
+
 | | who | what |
 |---|---|---|
-| **S-4 · W-7** | **owner** | **one real numbered document.** Every test document so far was written to be easy. This single item unblocks the most — it settles whether the chunker survives a real spec, and replaces the invented clause number W-7 has carried since the start |
+| **W-7** *(`S-4` is ANSWERED — [`00-structure.md` §8](work-notes/plans/rag/00-structure.md): write the parser, let one real PDF decide)* | **owner** | **one real numbered document.** Every test document so far was written to be easy. This single item unblocks the most — it settles whether the chunker survives a real spec, and replaces the invented clause number W-7 has carried since the start |
 | ~~**Q-C**~~ | ~~owner~~ | ✅ **ANSWERED 2026-09-12 — yes, a counter.** [D-70](DECISIONS.md). Stage 8's trust half is **unblocked and still unbuilt** — the decision names the shape (clause id and a count, per scope, deletable, never sent) and deliberately sets **no weights**. **R-16 and R-25 are now the top buildable job.** One thing stays open inside it: whether the question TEXT is stored, which he was not asked and D-70 does not assume |
-| **Q-E** | owner | may an ingest read another scope? Contractual under D-33 |
+| **[Q-55](OPEN-QUESTIONS.md)** *(was `Q-E`)* | owner | may an INGEST read another scope? Contractual under [D-33](DECISIONS.md) — at read time the crossing is already authorised, at write time nothing has been asked of anybody |
 | **R-75 · R-76** | owner | the sizes and the package list are one command away rather than on the README page. Marked PART on his wording; one line each to change if he wants them on the page |
 | **A10** | a machine with `huggingface.co` | Stage 7's after-measurement. Nothing else stands between R-41 and DONE |
 | **A11** | Revit | the project key across a save, a rename and a move |
-| **W-10** | small job | `sqlite_vec` is the only optional package whose absence is **invisible** — Heron gets slower and says nothing. Its own batch |
+| **[F7](PROPOSALS.md)** *(was `W-10`)* | small job | `sqlite_vec` is the only optional package whose absence is **invisible** — Heron gets slower and says nothing, while the encoder, the re-ranker and the PDF reader all announce their fallback |
 | **R-74 · R-77** | Windows | nothing installs itself; `setup.ps1` deploys the add-in and no Python package |
 | **R-78 · R-79** | measurement | no version floor has ever been measured, and the disk total needs the packages present |
 
