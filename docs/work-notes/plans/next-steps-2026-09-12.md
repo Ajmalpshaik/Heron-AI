@@ -126,16 +126,28 @@ signs** — [D-30](../../DECISIONS.md) — so this track produces *drafts*, and 
 | The two-session race removed | A sitting now writes its **own file** and adds one index row. Two sessions wrote into `HANDOVER.md` within an hour on 2026-09-12 and only merge order stopped a conflict |
 | Sections 1–3 replaced | They described Phase 0 — *"the repository is private"*, *"fragments/ 7, all DRAFT"*, *"tests/ 17 suites"*, *"any way to RUN a fragment — not built"*. All four were false. Replaced with the commands that derive the answer; section 3's witnessed-proof table was kept because nothing on disk can re-derive it |
 
-### C2. Still to do — audit sections 4 to 10 of HANDOVER.md
+### C2. ✅ DONE 2026-09-12 — sections 4 to 10 audited against the code
 
-**Sections 1 to 3 were checked and were wrong, so the same doubt now applies to the rest and the
-question is no longer hypothetical.** They are more operational — traps, a checklist, the library
-recipe, the multi-session protocol — so they should have aged better. That is a reason to expect fewer
-findings, not a reason to skip the read.
+**Seven sections read, each claim checked against the code or the disk rather than against other
+prose.** The prediction was that they would age better than §1–§3 because they are operational. **That
+held: five of seven were clean.**
 
-Check each claim against the code, not against another document. Anything that cannot be checked
-without Revit or Windows goes to [NEEDS-CHECKING.md](../../NEEDS-CHECKING.md) rather than being
-deleted or believed.
+| | Verdict |
+|---|---|
+| **§4** The things that will bite you | **Clean.** Four code claims verified — `heron_fragment` really does refuse C# reserved words, `RevitWrite.cs` really does report `moved`/`partly`/`blocked`/`unverified`, `test_session_binding.py` exists, `E10` is in the register |
+| **§4a** Something looks wrong mid-job | **Clean.** A symptom index and a method. No counts to go stale |
+| **§5** What you can do without Revit | **STALE — the worst of the two.** Listed **18 suites and stated "18 suites… 514 `ok`/`PASS` lines"** while calling it *"derived, not typed"*. The repository holds **57**. Thirty-nine were unmentioned, including the entire RAG subsystem and every gate added since. Replaced with the commands, plus the warning that the pass set is **machine-specific** |
+| **§6** Return-to-the-machine checklist | **Clean, and well designed.** It *points at* `NEEDS-CHECKING.md` instead of copying it — *"two lists of the same thing drift"* — which is the rule the rest of this file broke |
+| **§7** Decisions you must not undo | **Wording fixed.** *"Twenty-two are in DECISIONS.md"* — true of the list beneath it, false of the file, which holds **71**. The Golden Rules claim (**21, all official**) is correct and gated |
+| **§8** What is waiting on the owner | **BADLY STALE.** Opened *"Every question is answered — 41 of 41 — and nothing blocks any phase."* There are **53 questions, 52 answered, three open**, two open for days. **In the section whose entire job is telling the owner what he owes.** Now a pointer to [FOR-THE-OWNER.md](../../FOR-THE-OWNER.md); the three items no register carries were kept |
+| **§9 / §9a / §9b** | **Clean.** Their numbers are records of specific past runs, which is legitimate. One inconsistency fixed: the same suite was given **30 checks** in §5 and **32** in §9, and neither could be settled here — both removed rather than one guessed |
+| **§10** How to work on this | **Clean.** Principles, and one of them is *"Every number in the docs should be derived, not typed"* — the rule §5 and §8 were breaking four screens above it |
+
+**The pattern across all of it:** nothing was ever wrong when written. Every stale line was written once
+in a phase where it was true, and never re-derived. **The sections that survived are the ones that
+point at a source instead of copying one** — §6 names the register, §4 names the code, §10 names a
+principle. The two that failed had typed a number.
+
 
 ### C3. ✅ DONE 2026-09-12 — `plans/rag/03-working-note.md` is retired
 
