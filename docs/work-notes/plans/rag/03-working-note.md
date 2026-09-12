@@ -38,7 +38,7 @@ and deliberately left alone.
 | Stage 5 — document nodes, and the density count | **COUNTED 2026-09-11.** Edges derived, density an order of magnitude below the fragment graph, **and the route still has no weight** |
 | Stage 6 — maintenance | **DONE 2026-09-11.** Re-index on change by content hash, duplicate clauses at write time, and the host rebuilds both halves |
 | Stage 7 — the re-ranker | **HALF DONE 2026-09-11, and the half that is done is the one this machine can prove.** [`brain/heron_rerank.py`](../../../../brain/heron_rerank.py) is the seam, bounded to twenty pairs in one place; `tests/test_rerank.py` asserts that with nothing installed the shortlist comes back in *exactly* fusion's order, and the tool says `Re-rank: absent` out loud. **The after-measurement is NOT taken** — no cross-encoder has ever run here, because the weights need `huggingface.co`. **W-9**, and `A10` in [NEEDS-CHECKING.md](../../../NEEDS-CHECKING.md) |
-| Stage 8 — trust and conflict | **HALF DONE 2026-09-11, and the halves split on who has to decide.** **Conflict is built** — [`brain/heron_conflict.py`](../../../../brain/heron_conflict.py), `tests/test_conflict.py`: company 30mm against project 40mm now says it disagrees, resolves nothing, and names the docs/20 §2 hierarchy while explicitly not applying it. **Trust is blocked on Q-C** — two of R-25's four signals do not exist, and whether Heron keeps a usage log is the owner's call. [02 §11](02-implementation.md) says the decision is written down BEFORE the weights move, so no weight moved |
+| Stage 8 — trust and conflict | **HALF DONE 2026-09-11, and the halves split on who has to decide.** **Conflict is built** — [`brain/heron_conflict.py`](../../../../brain/heron_conflict.py), `tests/test_conflict.py`: company 30mm against project 40mm now says it disagrees, resolves nothing, and names the docs/20 §2 hierarchy while explicitly not applying it. **Trust was blocked on Q-C and is not any more.** **Q-C is ANSWERED 2026-09-12 — yes, a counter** ([D-70](../../../DECISIONS.md)), so this is no longer blocked. **It is also not built**: the decision names the shape (clause id and a count, per scope, deletable, never sent) and deliberately does NOT set the weights. Whether the question TEXT is stored is a separate question D-70 leaves open. [02 §11](02-implementation.md) wanted the decision written down BEFORE the weights move; it is, and they have not |
 | Blocking anybody? | **No.** Nothing on this track needs Revit, the PC, or a model to be open |
 
 ---
@@ -214,7 +214,7 @@ choose.
 loses the knowledge"* — the same problem, already solved once for fragments. Whatever is chosen should
 be consistent with that.
 
-### Q-C — should Heron record success rate and recency of use?
+### Q-C — should Heron record success rate and recency of use? ✅ **ANSWERED 2026-09-12 — YES, as a counter**
 
 [`01-requirements.md` R-16 and R-25](01-requirements.md). Two of the four ranking signals
 [`05 §4.4`](../../../05-heron-brain.md) names **do not exist**, because nothing records them. Recording
@@ -222,6 +222,21 @@ them means Heron keeps a history of what was asked and what worked.
 
 *Worth saying out loud:* that is a usage log. D-26 settled what may leave the machine; it did not
 settle what is **kept on** it. This is the owner's call.
+
+> **ANSWERED 2026-09-12 — yes.** Written up as [D-70](../../../DECISIONS.md), which is what
+> [02 §11](02-implementation.md) required before any weight moves. **He asked the better question
+> first:** *"Claude already does this — why do we need it from Heron side?"* The three answers are in
+> the decision, and the first is the one that settles it: **Heron has to answer with no connection.**
+> Claude is not on the site; Heron is.
+>
+> **What he agreed to is a COUNTER** — `clause id → how many times it helped` — not a diary, and his own
+> note-keeping instruction the same day is why the shape is recorded rather than left open: *"if we keep
+> everything by note that will be big."* A counter does not grow the way a log does.
+>
+> **One thing deliberately NOT taken as answered: whether the question TEXT is stored.** It was described
+> to him twice, and the later, more precise description was the counter. He said yes to that. Storing the
+> sentences somebody typed is a different question and D-70 says so rather than letting an implementer
+> assume it.
 
 ### Q-D — is cloud embedding actually wanted?
 
@@ -1586,7 +1601,7 @@ cases somebody thought of still pass.
 | | |
 |---|---|
 | **Conflict** — R-24, `HERON-RAG-CNF-015` | **built.** `brain/heron_conflict.py`, `tests/test_conflict.py` |
-| **Trust** — R-16, R-25 | **blocked on Q-C.** Two of the four signals do not exist, and whether Heron keeps a usage log is the owner's call. **No weight moved** |
+| **Trust** — R-16, R-25 | **UNBLOCKED 2026-09-12** — Q-C answered yes, [D-70](../../../DECISIONS.md). The two missing signals may now be recorded. **Still not built, and no weight moved** |
 | **R-23** | **blocked on W-8**, through R-56 — the floor the measurement says cannot be derived on this backend |
 
 ### The case was already sitting in Stage 4's test
