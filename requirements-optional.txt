@@ -1,0 +1,35 @@
+# Heron - what the Python side can USE, and works without.
+#
+#     pip install --user -r requirements-optional.txt
+#
+# INSTALLING ALL OF THESE IS NOT RECOMMENDED AS ONE COMMAND. One of them
+# is 500 MB to 2 GB. Read what each buys first:
+#
+#     python tools/check-dependencies.py
+#
+# Every package here degrades rather than breaks - that is the rule these
+# entries have to keep, not a description of today's luck. Heron answers
+# with none of them installed, and says which one did not run.
+#
+# Same comment shape as requirements.txt:
+#     # <import name> | <what Heron uses it for> | <what happens without it>
+#
+# NO SIZES ARE WRITTEN HERE. Where the size is known it is stated by the
+# code that owns the download - heron_rerank.announcement() prints it
+# before any network call, and heron_ingest says it in the error a reader
+# actually hits. A number repeated here is a number that goes stale there.
+
+# model2vec | the trained embedding backend, so retrieval matches on meaning | retrieval falls back to character n-grams, which heron_embed's own docstring calls NOT MEANING
+model2vec
+
+# sqlite_vec | vector search inside SQLite instead of in Python | vectors are compared in Python - slower, same answers. Also absent on a hardened build with extension loading compiled out
+sqlite-vec
+
+# sentence_transformers | the cross-encoder re-ranker, re-reading the top 20 pairs | the shortlist keeps the order fusion gave it, and every answer says the re-ranker did not run
+sentence-transformers
+
+# pypdf | reading PDF documents into the knowledge store | PDFs cannot be ingested. .md, .txt and .docx need nothing
+pypdf
+
+# mcp | the MCP SDK, which serves Heron to a host like Claude Code | mcp/server cannot run and tests/test_mcp_serves skips. brain/ and the CLI tools are unaffected
+mcp

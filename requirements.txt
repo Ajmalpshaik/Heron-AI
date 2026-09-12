@@ -1,0 +1,21 @@
+# Heron - what the Python side REQUIRES.
+#
+#     pip install --user -r requirements.txt
+#
+# Per-user, no administrator rights: D-01. The optional packages are in
+# requirements-optional.txt, and every one of them degrades rather than
+# breaks - run `python tools/check-dependencies.py` to see which are here.
+#
+# THIS FILE IS THE LIST. brain/README.md points at it rather than repeating
+# it, because a list typed in two places is a list that goes stale in one.
+#
+# Each entry is preceded by a line of the form
+#     # <import name> | <what Heron uses it for> | <what happens without it>
+# and tools/check-dependencies.py reads it. Keep the shape if you add one.
+#
+# NO VERSION FLOORS ARE ASSERTED. Nothing here has been measured against an
+# older release, so a floor would be a guess wearing a number. Checking that
+# an installed version is the RIGHT one is R-78, and it is not built.
+
+# yaml | reading fragment.yaml, the skill definitions, and every generated report | nothing in brain/ or tools/ runs
+PyYAML
