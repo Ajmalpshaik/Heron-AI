@@ -40,6 +40,9 @@ namespace Heron.Revit.Addin
         internal const string ConnectedIcon = "BridgeConnected.png";
         internal const string DisconnectedIcon = "BridgeDisconnected.png";
 
+        internal const string WriteLockedIcon = "WriteLocked.png";
+        internal const string WriteUnlockedIcon = "WriteUnlocked.png";
+
         internal static BridgeServer Bridge { get; private set; }
 
         /// <summary>
@@ -51,6 +54,13 @@ namespace Heron.Revit.Addin
         /// it again - the ribbon API offers no way to look a button up later.
         /// </summary>
         internal static PushButton BridgeButton { get; private set; }
+
+        /// <summary>
+        /// The write-permission button, captured for the same reason the
+        /// bridge button is: its picture IS the state, and the ribbon API
+        /// offers no way to look a button up again.
+        /// </summary>
+        internal static PushButton WriteButton { get; private set; }
 
         /// <summary>
         /// The one way into the Revit API. Created on Revit's own thread
@@ -232,6 +242,48 @@ namespace Heron.Revit.Addin
             // this afterwards when it does.
             SetBridgeIcon(false);
 
+            // WHETHER HERON MAY CHANGE THE MODEL, shown on the ribbon.
+            //
+            // The setting existed from D-19 and was reachable only by editing
+            // heron.config in a text editor. Two things were wrong with that,
+            // and the second is the one that matters:
+            //
+            //   * a BIM modeller should not need a text editor to work, and
+            //   * NOTHING IN REVIT SAID WHICH STATE IT WAS IN. A session left
+            //     writable last week looked exactly like one that was not, so
+            //     the only way to answer "can Heron change this model right
+            //     now" was to go and read a file.
+            //
+            // A picture on the ribbon answers it without being asked, which is
+            // the same argument the bridge button already makes for connected
+            // and disconnected. Asked for by Ajmal on 2026-09-12.
+            //
+            // It does NOT weaken D-19: the default is still false, the gate
+            // still reads the file fresh on every call, and turning it on is
+            // still a deliberate act by a person - it is the same act with a
+            // shorter path. The confirmation lives on the ON direction only,
+            // in WriteToggleCommand.
+            var write = new PushButtonData(
+                "HeronWriteToggle",
+                "Changes",
+                assemblyPath,
+                typeof(WriteToggleCommand).FullName);
+            write.ToolTip = "Whether Heron may change this model. Click to turn it on or off.";
+            write.LongDescription =
+                "Closed padlock: Heron can read the model and nothing else. Open padlock: " +
+                "Heron may change it.\n\n" +
+                "The picture is the state, so a session left writable does not look like a " +
+                "safe one. Turning it on asks first; turning it off never does.\n\n" +
+                "This is the same setting as write.enabled in heron.config, and either way of " +
+                "changing it takes effect immediately.";
+
+            WriteButton = panel.AddItem(write) as PushButton;
+
+            // The switch's real value, not an assumption about it. It survives
+            // a Revit restart because it lives in the config, so starting this
+            // at 'locked' would be a picture that disagrees with the gate.
+            SetWriteIcon(HeronPermissions.WriteEnabled());
+
             // NO EMERGENCY STOP BUTTON - removed on Ajmal's instruction,
             // 2026-09-06 (D-46 in docs/DECISIONS.md). The switch behind it
             // survives on purpose: HeronStop and both gates that read it are
@@ -296,6 +348,32 @@ namespace Heron.Revit.Addin
 
             var small = loader.LoadSmall(fileName);
             if (small != null) button.Image = small;
+        }
+
+        /// <summary>
+        /// Puts the padlock in step with the write setting. After every
+        /// toggle, and once at startup.
+        ///
+        /// The text changes with the picture. An icon alone is ambiguous to
+        /// somebody who has not met it before - "locked" could as easily mean
+        /// the button is disabled - and the ribbon label is the cheapest place
+        /// to say which way round it is.
+        /// </summary>
+        internal static void SetWriteIcon(bool enabled)
+        {
+            var button = WriteButton;
+            if (button == null) return;
+
+            var loader = new IconLoader(Assembly.GetExecutingAssembly().Location);
+            var fileName = enabled ? WriteUnlockedIcon : WriteLockedIcon;
+
+            var large = loader.LoadLarge(fileName);
+            if (large != null) button.LargeImage = large;
+
+            var small = loader.LoadSmall(fileName);
+            if (small != null) button.Image = small;
+
+            button.ItemText = enabled ? "Changes ON" : "Changes off";
         }
 
         internal static void Log(string message)

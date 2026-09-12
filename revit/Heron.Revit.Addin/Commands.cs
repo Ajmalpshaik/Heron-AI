@@ -72,6 +72,86 @@ namespace Heron.Revit.Addin
     }
 
     /// <summary>
+    /// Turns Heron's ability to change the model on, or off. One button,
+    /// both ways - the same shape as ConnectCommand, for the same reason.
+    ///
+    /// This writes the SAME setting D-19 defined (write.enabled) and changes
+    /// nothing about how it is enforced: HeronPermissions.Allows still reads
+    /// the file fresh on every call, and the default is still false. What it
+    /// changes is that the state is now VISIBLE - a session somebody left
+    /// writable no longer looks identical to a safe one.
+    ///
+    /// Turning it ON asks first. Turning it OFF never does: making the safe
+    /// direction slower is how people learn to click through warnings, and
+    /// there is nothing to confirm about becoming read-only.
+    ///
+    /// NO TRANSACTION, and it touches no element. It edits a file in the
+    /// user's own data folder.
+    /// </summary>
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class WriteToggleCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            try
+            {
+                var enabled = HeronPermissions.WriteEnabled();
+
+                if (!enabled)
+                {
+                    // The one dialog this command is allowed: a confirmation
+                    // BEFORE a risky change, which is what turning this on is.
+                    // It names what becomes possible rather than asking "are
+                    // you sure" about nothing in particular.
+                    var ask = new TaskDialog("Let Heron change this model?")
+                    {
+                        MainInstruction = "Allow Heron to change models?",
+                        MainContent =
+                            "Heron will be able to move, edit and create elements when you ask it to. "
+                            + "It still previews first and still asks before keeping anything, and "
+                            + "every change is one Ctrl+Z.\n\n"
+                            + "This stays on until you turn it off, including after Revit restarts. "
+                            + "The ribbon padlock shows which state you are in.",
+                        CommonButtons = TaskDialogCommonButtons.None,
+                        AllowCancellation = true
+                    };
+                    ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
+                        "Turn changes on", "Heron may change models until you turn this off.");
+                    ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
+                        "Leave it off", "Heron keeps reading only. Nothing changes.");
+
+                    if (ask.Show() != TaskDialogResult.CommandLink1)
+                    {
+                        HeronApplication.Log("Write toggle: offered, declined. Still off.");
+                        return Result.Cancelled;
+                    }
+                }
+
+                var now = HeronPermissions.SetWriteEnabled(!enabled);
+                HeronApplication.SetWriteIcon(now);
+                HeronApplication.Log("Write permission set to " + now + " from the ribbon.");
+                return Result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                // The picture follows what the SETTING actually is, read back
+                // rather than assumed - the same rule ConnectCommand follows.
+                // A failed save that left the file unchanged must not leave a
+                // button claiming the change happened.
+                try { HeronApplication.SetWriteIcon(HeronPermissions.WriteEnabled()); }
+                catch { /* the icon is the lesser problem; report the real one */ }
+
+                HeronApplication.Log("Write toggle failed: " + ex);
+                message = "Could not change whether Heron may edit models. The setting is in "
+                        + HeronConfig.FilePath + " and can be changed there instead. Revit said: "
+                        + ex.Message;
+                return Result.Failed;
+            }
+        }
+    }
+
+    /// <summary>
     /// Reports bridge state. Reads nothing from the model.
     /// </summary>
     [Transaction(TransactionMode.Manual)]
