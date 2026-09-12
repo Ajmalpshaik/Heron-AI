@@ -26,6 +26,11 @@
 | **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
+> **If you are the owner, start at [FOR-THE-OWNER.md](FOR-THE-OWNER.md).** One page for
+> everything waiting on you, across every register — and it holds no list of its own, because
+> `python tools/owner-queue.py` derives one at the moment you ask. Three typed lists were found
+> stale on 2026-09-12, which is why.
+
 **52 answered · 3 open, and nothing gates any phase.** Two of the three, `Q-54` and `Q-55`, moved in on 2026-09-12 from a RAG work note that was retired — they had been owed for days while this line said one was open, which is why a question belongs in this register and nowhere else. `Q-43` to `Q-48` were all opened on
 2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
 than by reading. `Q-49` and `Q-50` followed the same day from reading someone else's repository at file

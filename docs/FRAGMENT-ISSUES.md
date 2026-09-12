@@ -7,6 +7,19 @@
 
 # Fragments with something wrong — the sit-down list
 
+> | | |
+> |---|---|
+> | **Type** | **Permanent register.** Append-only, and **never deleted** — this is where work notes empty into |
+> | **For** | Anyone proving fragments — **this file is the queue** |
+> | **Authority** | [DECISIONS](DECISIONS.md) and the [Golden Rules](14-golden-rules.md) win. A row here records what was seen, on the day it was seen |
+> | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
+> | **Adding to it** | One row per fragment or defect, with **the model it was seen on named**. A defect found while tidying is **recorded, not fixed** |
+> | **Its numbers** | Counts inside a row describe **the day it was written** and are deliberately not updated. Derive today's: `grep -rh '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` |
+
+> **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
+> says what is waiting on you, across every register, without holding a list of its own.
+
+
 **What this is.** Every fragment that was PUT IN FRONT OF A REAL MODEL and did not come away proved,
 with the reason. Opened 2026-09-08 at the owner's request: *"we will sit for this specially, that
 issued one we can do together."*
