@@ -5738,3 +5738,65 @@ times now**, something believed to be waiting on a machine was waiting on somebo
 newest was `A8`, filed under *needs Windows* when what it needed was `pip install mcp` — and trying it
 found that Heron's MCP server would not have started at all on a machine installing today. `D3` is
 still the line that matters most: move the ducts 200 mm, then measure one.*
+
+---
+
+# 11. Handover — 2026-09-12
+
+**Written to a rule the owner set on this date, and the rule is the first thing to carry forward:**
+
+> **Do not keep a diary of the work.** Not the daily activity, and **not the issues that were fixed** —
+> the code and the commit already say those. **Keep only three things:** something NEW that was made, a
+> MISTAKE worth not repeating, and anything still **TO DO**.
+>
+> His reason, and he is right: *"if we keep everything by note that will be big."* This file is 440 KB
+> and proves the point. **Sections 1 to 10 above are the old habit. This section is the new one.**
+
+## What is NEW since the last handover
+
+| | |
+|---|---|
+| **RAG — all nine stages** | merged as `e1f61a1`. Heron can take a document in, find the clause, cite it, refuse when it does not know, keep scopes apart, stay current, and say when two documents disagree |
+| **The install manifest** | merged as `7014b47`. `requirements.txt`, `requirements-optional.txt`, `tools/check-dependencies.py` |
+| **New modules** | `brain/heron_ingest.py`, `heron_ground.py`, `heron_conflict.py`, `heron_rerank.py`, `heron_research.py` |
+| **New checkers** | `tools/check-narrow-errors.py`, `tools/check-dependencies.py` |
+| **New suites** | `tests/test_review_findings.py` — one check per review finding — and `tests/test_dependencies.py` |
+| **CI exists now** | the `Gates` workflow. Five jobs, including the C# compile 2020–2027 |
+
+## Mistakes worth not repeating
+
+1. **A test that names a LINE instead of a RULE has a half-life.** Bit three times in one pull request.
+   Anchor on the behaviour, never on a quoted sentence or a line of code.
+2. **Fix one half, leave the twin.** Four of round ten's seven findings were the untouched other half
+   of a round-nine fix. After any fix, go looking for its pair.
+3. **`no dotnet on PATH` is not `cannot be compiled here`.** That was filed as a blocker; the SDK was
+   one `apt-get install` away. **Read what was measured, not what it suggests.**
+4. **Do not type a number another file owns.** A size written in a README goes stale in the one place
+   it had to be right. Name the command that derives it.
+5. **The shared checkout `/home/user/Heron-AI` goes stale after every push from the worktree** and git
+   reports it as pending changes. **Never commit those** — they are the OLD content and committing
+   writes it over the new. Verify, then
+   `git restore --source=HEAD --staged --worktree .`. (`git reset --hard` is blocked by auto mode.)
+
+## Still TO DO
+
+**Nothing here is code that can be written from this container.** Every row needs the owner, or a
+machine this is not.
+
+| | who | what |
+|---|---|---|
+| **S-4 · W-7** | **owner** | **one real numbered document.** Every test document so far was written to be easy. This single item unblocks the most — it settles whether the chunker survives a real spec, and replaces the invented clause number W-7 has carried since the start |
+| **Q-C** | **owner** | **still OPEN.** Whether Heron keeps a small usage counter to rank clauses. It was explained on 2026-09-12 — it is numbers, not notes; it stays on the PC; Claude cannot do this job because Heron must answer offline — and **no yes or no was given.** Stage 8's trust half stays unbuilt until it is |
+| **Q-E** | owner | may an ingest read another scope? Contractual under D-33 |
+| **R-75 · R-76** | owner | the sizes and the package list are one command away rather than on the README page. Marked PART on his wording; one line each to change if he wants them on the page |
+| **A10** | a machine with `huggingface.co` | Stage 7's after-measurement. Nothing else stands between R-41 and DONE |
+| **A11** | Revit | the project key across a save, a rename and a move |
+| **W-10** | small job | `sqlite_vec` is the only optional package whose absence is **invisible** — Heron gets slower and says nothing. Its own batch |
+| **R-74 · R-77** | Windows | nothing installs itself; `setup.ps1` deploys the add-in and no Python package |
+| **R-78 · R-79** | measurement | no version floor has ever been measured, and the disk total needs the packages present |
+
+## The one line that still matters most
+
+**Green is not proven.** D-30 — the machine gathers evidence, a person signs. Every measurement above
+was taken on a Linux container with no Revit, and **no compiler and no test here can tell you whether a
+duct moves 200 millimetres or 200 feet.**
