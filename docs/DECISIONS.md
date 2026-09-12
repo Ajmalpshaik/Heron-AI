@@ -4158,7 +4158,7 @@ checker is a layering rule that is sometimes not applied.
 
 **Status:** Accepted · **Date:** 2026-09-12 · **Found during:** Stage 8 of the RAG track, which could
 not build half of itself without it
-**Affects:** [R-16, R-25](work-notes/plans/rag/01-requirements.md), [Q-C](work-notes/plans/rag/03-working-note.md),
+**Affects:** [R-16, R-25](work-notes/plans/rag/01-requirements.md), [Q-C](work-notes/plans/rag/00-structure.md),
 [05 §4.4](05-heron-brain.md), [D-26](#d-26--the-model-file-is-never-uploaded), [Golden Rule 11](14-golden-rules.md)
 
 ### Context

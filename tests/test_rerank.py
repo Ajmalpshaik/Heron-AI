@@ -62,8 +62,8 @@ test may inject a scorer to prove the plumbing; a measurement may not.
 Stage 7 asks for a before and an after at the same corpus size. The before is
 in brain/retrieval-history.md. The after has NOT been taken - this container's
 network refuses huggingface.co, so no cross-encoder weights can be fetched.
-That clause is open, it is recorded as open in
-docs/work-notes/plans/rag/03-working-note.md, and nothing here stands in for it.
+That clause is open, it is recorded as open in docs/NEEDS-CHECKING.md as `A10`,
+and nothing here stands in for it.
 """
 
 import os

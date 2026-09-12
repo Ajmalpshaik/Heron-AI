@@ -137,17 +137,24 @@ Check each claim against the code, not against another document. Anything that c
 without Revit or Windows goes to [NEEDS-CHECKING.md](../../NEEDS-CHECKING.md) rather than being
 deleted or believed.
 
-### C3. Still to do — retire `plans/rag/03-working-note.md`
+### C3. ✅ DONE 2026-09-12 — `plans/rag/03-working-note.md` is retired
 
-**158 KB and 2,383 lines of diary** — the shape the owner objected to on 2026-09-12, and the same shape
-the housekeeping ledger was retired for on the same day. Apply the
-[lifecycle](../README.md): move the durable part into the register that owns each topic
-— decisions to [DECISIONS.md](../../DECISIONS.md), unanswered items to
-[OPEN-QUESTIONS.md](../../OPEN-QUESTIONS.md), unproven claims to
-[NEEDS-CHECKING.md](../../NEEDS-CHECKING.md) — then delete the note.
+**158 KB and 2,383 lines of diary, gone** — and the durable half moved first, which is the only order
+the [lifecycle](../README.md) allows. Nothing was summarised in place.
 
-**Do not delete it before that**, and do not summarise it in place. A note is finished when the durable
-part of it lives somewhere permanent and the note is gone.
+| What it held | Where it is now |
+|---|---|
+| The **first retrieval measurement ever taken on the trained backend** — 2026-09-10, 360 fragments | a dated section of [`retrieval-history.md`](../../../brain/retrieval-history.md) |
+| `W-8` — whether a confidence floor can be derived at all | [NEEDS-CHECKING](../../NEEDS-CHECKING.md) **A15** |
+| `W-10` — `sqlite_vec` degrades with nothing said | [PROPOSALS](../../PROPOSALS.md) **F7** |
+| `Q-D`, `Q-E` — two unanswered owner questions | [OPEN-QUESTIONS](../../OPEN-QUESTIONS.md) **Q-54**, **Q-55** |
+| `W-9`, `W-7` | already `A10` and [`00-structure.md` §3.3](rag/00-structure.md) — nothing to move |
+| `W-1`–`W-6`, `S-1`, `S-2`, `S-4`, `Q-A`–`Q-C` | closed or answered before it was retired |
+
+**The finding worth keeping:** `Q-D` and `Q-E` had been owed since 2026-09-10 and 2026-09-11 while
+`OPEN-QUESTIONS.md` said **one** question was open. Retiring the note moved that count to **three**.
+A question living in a file whose lifecycle ends in deletion is a question the register does not know
+about.
 
 ### C4. Still to do — two documents share the number 34
 
