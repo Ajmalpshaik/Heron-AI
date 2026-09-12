@@ -702,6 +702,68 @@ that is a question for the proper instruments above, not a conclusion.
 
 ---
 
+## 2026-09-12 — the trained backend puts the vapour barrier above the thickness clause
+
+**Measured on the owner's Windows PC, where the trained backend is actually installed.** This is the
+first time a *document* question has been asked of `model` rather than `lexical`, and it is the first
+recorded case of the trained backend being **worse** than the fallback on a specific question.
+
+`tests/test_document_retrieval.py` asks *"how thick should duct insulation be"* of a two-clause
+fixture:
+
+| Locator | Heading | Its text |
+|---|---|---|
+| `9.1.1` | Thickness | *"Ducts shall be insulated to 25mm…"* |
+| `9.1.2` | Vapour Barrier | *"A continuous vapour barrier shall be applied over the **insulation**."* |
+
+| Rank | Locator | Fused score |
+|---|---|---|
+| **1** | `9.1.2` Vapour Barrier | 0.032522474881015336 |
+| 2 | `9.1.1` Thickness | 0.032266458495966696 |
+| 3 | `9.1` Ductwork | 0.032002048131080390 |
+
+### The gap is one rank of fusion, which this repository already calls noise
+
+**0.000256** separates first from second — and that is exactly `1/62 − 1/63`.
+[`heron_retrieve.py`](heron_retrieve.py) says it in its own comment: *"One rank of fusion is
+1/(K+1) − 1/(K+2) = 0.000264 at K=60."* Both clauses are **rank 1 in one route and 2nd or 3rd in the
+other**; the entire result is decided by a single rank in a single route.
+
+**So the test asserts an ordering the retrieval layer says it cannot resolve.** This file has recorded
+the same thing twice before — *"the order among them is noise rather than ranking"* — about fragments.
+It is now true of chunks.
+
+### It is the BACKEND, and it was first filed as an operating-system difference
+
+Tested rather than argued, on one machine, one OS, one run each:
+
+```bash
+python tests/test_document_retrieval.py                      # backend model   -> exit 1
+HERON_EMBED_MODEL=definitely/not-a-real-model-xyz \
+  python tests/test_document_retrieval.py                    # backend lexical -> exit 0
+```
+
+**CI has only ever passed this because CI cannot reach `huggingface.co`** and falls back to `lexical`.
+Every machine that *can* — which is the owner's, and is the configuration Heron is meant to ship in —
+fails it. A green CI is not evidence here; it is evidence about CI's network.
+
+### What it says about the trained backend, which is the part worth keeping
+
+The encoder matched the **topic** and missed the **attribute**. *"How thick"* is a question about a
+quantity; `9.1.2` contains the word *insulation* and no quantity at all, while `9.1.1` holds the 25mm
+and heads itself **Thickness**. The fallback's exact-word route gets this right precisely because it is
+not trying to understand.
+
+**This is the same shape as `CREATE_DUCT` ranking nearness #1 for a sentence beginning *"show me"***,
+recorded in the 2026-09-10 section above. Twice now, on two different corpora, the trained backend has
+failed to separate *what kind of thing is being asked for* from *what the thing is about*.
+
+**Two measurements are not a conclusion**, and this one is a single question on a four-chunk fixture.
+It is the third instrument — [NEEDS-CHECKING `A15`](../docs/NEEDS-CHECKING.md) — that would settle it,
+and this row is a reason to run it rather than a substitute for it.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:

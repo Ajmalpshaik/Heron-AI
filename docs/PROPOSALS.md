@@ -709,5 +709,9 @@ says `test_served_claims.py` *"is the entire unfinished list on a plain containe
 
 **F5 is not wrong about Linux.** It is wrong about *"a plain container"* being the only machine anybody
 runs this on, which is the same assumption [A14](NEEDS-CHECKING.md) exists to test and the same one
-that made the suite total Linux-specific for weeks. The three failures are recorded on `A14` with their
-causes; **this row exists so F5 is not read as current.**
+that made the suite total Linux-specific for weeks. Two of the three are recorded on [`A14`](NEEDS-CHECKING.md) with their causes. **The third,
+`test_document_retrieval`, turned out not to be an operating-system difference at all** — it fails on
+the trained backend and passes on the fallback, on one machine, and its record is the 2026-09-12
+section of [`brain/retrieval-history.md`](../brain/retrieval-history.md). **This row exists so F5 is
+not read as current**, and so that the first attribution is not read as the final one: *three suites
+fail on Windows* was the obvious reading and it was wrong about a third of itself.
