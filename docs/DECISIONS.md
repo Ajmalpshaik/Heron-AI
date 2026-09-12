@@ -4151,3 +4151,67 @@ a module name owned by two parts is **reported rather than guessed**, because a 
 checker is a layering rule that is sometimes not applied.
 
 ---
+
+---
+
+## D-70 — Heron keeps a usage counter, on the machine, and it is numbers rather than a diary
+
+**Status:** Accepted · **Date:** 2026-09-12 · **Found during:** Stage 8 of the RAG track, which could
+not build half of itself without it
+**Affects:** [R-16, R-25](work-notes/plans/rag/01-requirements.md), [Q-C](work-notes/plans/rag/03-working-note.md),
+[05 §4.4](05-heron-brain.md), [D-26](#d-26--the-model-file-is-never-uploaded), [Golden Rule 11](14-golden-rules.md)
+
+### Context
+
+[`05 §4.4`](05-heron-brain.md) says re-rank by **status, success rate, recency and version match**.
+Status and version match exist. **Success rate and recency do not exist at all, because nothing records
+them** — and recording them means Heron keeps a history of what was asked and what worked, which
+[02 §11](work-notes/plans/rag/02-implementation.md) refused to let anybody build until the owner had
+decided it in writing. **No weight moved while it was open**, through the whole of Stage 8.
+
+He asked the sharper question back: **"Claude already does this — why do we need it on the Heron side?"**
+Three reasons, and they are why Claude's memory is not a substitute:
+
+1. **Heron has to answer with no connection** — a site visit, a basement, a locked-down network. Claude
+   is not there. Heron is.
+2. **It is a sorting number, not a conversation.** It changes which clause comes first *inside* Heron's
+   retrieval, and nothing outside the store can reach that arithmetic.
+3. **[D-26](#d-26--the-model-file-is-never-uploaded) already governs what may leave the machine.**
+   Sending the history somewhere to be remembered is the thing that decision exists to prevent.
+
+### Decision
+
+**Yes — Heron keeps a usage counter. It lives on the user's machine and nothing about it is sent
+anywhere.**
+
+**What was agreed is a COUNTER, and the shape matters as much as the answer:**
+
+```
+QCS clause 21.4   helped 12 times
+QCS clause 9.2    helped 0 times
+```
+
+Numbers against a clause id. His own instruction on note-keeping, given the same day, is the reason the
+shape is written down here rather than left to the implementer: *"if we keep everything by note that
+will be big."* **A counter does not grow with use the way a log does.**
+
+**Three constraints follow and are not optional:**
+
+| | |
+|---|---|
+| **Deletable** | [Golden Rule 11](14-golden-rules.md) — everything derived must be safe to delete as a recovery action. Losing the counter must cost ranking quality and **nothing else** |
+| **Per scope** | one counter inside each store. A counter pooled across scopes would carry what a company store learned into a project answer, which is [Golden Rule 5](14-golden-rules.md) broken by the back door |
+| **Never leaves** | [D-26](#d-26--the-model-file-is-never-uploaded). It is not sent, not synced, not attached to a question going to a model |
+
+### What this does NOT settle, and must be asked separately
+
+**Whether the QUESTION TEXT is stored.** It was described to him twice — once as a line holding the
+question, and once, later and more precisely, as a counter against a clause id. **He said yes to the
+counter.** Keeping the sentences a person typed is a materially different thing from keeping a tally
+against a clause number, and it is not covered by this decision. **Anybody building R-25 stores the
+clause id and the count; storing the question text needs its own answer.**
+
+**The weights themselves are still not set.** This decision unblocks R-16 and R-25 — it does not
+prescribe how much the new signals are worth. The nudge is bounded to less than one rank of fusion and
+its first version was **eight times too big**, caught only because a test asserted the arithmetic rather
+than the intention. The same discipline applies to these two.

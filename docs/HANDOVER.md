@@ -5896,7 +5896,7 @@ machine this is not.
 | | who | what |
 |---|---|---|
 | **S-4 · W-7** | **owner** | **one real numbered document.** Every test document so far was written to be easy. This single item unblocks the most — it settles whether the chunker survives a real spec, and replaces the invented clause number W-7 has carried since the start |
-| **Q-C** | **owner** | **still OPEN.** Whether Heron keeps a small usage counter to rank clauses. It was explained on 2026-09-12 — it is numbers, not notes; it stays on the PC; Claude cannot do this job because Heron must answer offline — and **no yes or no was given.** Stage 8's trust half stays unbuilt until it is |
+| ~~**Q-C**~~ | ~~owner~~ | ✅ **ANSWERED 2026-09-12 — yes, a counter.** [D-70](DECISIONS.md). Stage 8's trust half is **unblocked and still unbuilt** — the decision names the shape (clause id and a count, per scope, deletable, never sent) and deliberately sets **no weights**. **R-16 and R-25 are now the top buildable job.** One thing stays open inside it: whether the question TEXT is stored, which he was not asked and D-70 does not assume |
 | **Q-E** | owner | may an ingest read another scope? Contractual under D-33 |
 | **R-75 · R-76** | owner | the sizes and the package list are one command away rather than on the README page. Marked PART on his wording; one line each to change if he wants them on the page |
 | **A10** | a machine with `huggingface.co` | Stage 7's after-measurement. Nothing else stands between R-41 and DONE |
