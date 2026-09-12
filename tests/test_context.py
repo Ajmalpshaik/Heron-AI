@@ -62,6 +62,25 @@ def check(condition, what):
         FAILURES.append(what)
 
 
+def slashed(path):
+    """`path` spelled the way the repository writes paths, not the way the
+    machine does.
+
+    A source comes from heron_fragment.repo_relative(), which is os.path.relpath
+    and therefore spells a path with os.sep - `brain/fragments/...` on Linux and
+    `brain\\fragments\\...` on Windows. Comparing one against a hardcoded "/"
+    is a test that passes on the machine it was written on and fails on the
+    machine Heron ships to.
+
+    The same rule as heron_fragment.fingerprint() and tests/test_carried_sources
+    .py, written the same way on purpose: one spelling of one rule. Normalised
+    HERE and not inside repo_relative(), because that value is written into the
+    store's `fragments.folder` column and rewriting a persisted value is a much
+    larger change than the defect deserves.
+    """
+    return path.replace("\\", "/")
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-context-")
     os.environ["HERON_KNOWLEDGE"] = home
@@ -191,8 +210,20 @@ def main():
                   "and no part has an empty reason for being there")
             sources = [p.source for p in got.parts
                        if p.kind in (CONTEXT.NEIGHBOUR, CONTEXT.TESTS)]
-            check(all(s.startswith("brain/fragments/") for s in sources),
+            check(all(slashed(s).startswith("brain/fragments/")
+                      for s in sources),
                   "a part read from disk cites the file (%s)" % (sources or "-"))
+            # THE ASSERTION ABOVE USED TO HARDCODE THE SLASH, so it passed here
+            # and failed on the owner's Windows checkout - one check, reported
+            # as `brain\fragments\...`. It made the suite total 38 of 41 there
+            # while HANDOVER and the heron-ship skill both promised 39, and the
+            # skill's whole job is telling a later session which failures are
+            # theirs. Proved by the same helper the line above uses, so the two
+            # cannot drift apart and let the assumption back in.
+            check(slashed("brain\\fragments\\x\\fragment.yaml")
+                  .startswith("brain/fragments/"),
+                  "and that check is separator-independent, so it cannot pass "
+                  "on one operating system and fail on the other again")
 
             print()
             print("6b. The API part reads the EXECUTOR's list, not the fragment")

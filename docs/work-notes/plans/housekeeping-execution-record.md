@@ -1293,6 +1293,34 @@ Windows — which is worth noting given that is what this closure was verifying.
 fix. It needs a decision: correct the two sentences, or fix `test_context` to compare paths in a
 separator-independent way.
 
+> **DECIDED AND DONE, 2026-09-12**, on branch `claude/heron-improvement-gate-1vzts2` — **both**, because
+> the two are not alternatives: the count was wrong AND the test was wrong.
+>
+> **The fix.** `tests/test_context.py` normalises the separator at the comparison. Not inside
+> `heron_fragment.repo_relative()`, whose value is written into the store's `fragments.folder`
+> column by `heron_scope.put_fragment()` — rewriting a persisted value is a far larger change than
+> this defect deserves. Normalising at the consumer is also what this repository already does
+> **twice**: `heron_fragment.fingerprint()` (which met this same class of bug on 2026-09-06, and whose
+> docstring says why: *"which made the number a fact about Windows as much as about the code"*) and
+> `tests/test_carried_sources.py`. One rule, one spelling.
+>
+> **The proof.** The old rule returns `False` on `brain\fragments\...\fragment.yaml` and the new one
+> returns `True` on that and on the Linux spelling; the suite still exits 0 here. A second check
+> beside the first asserts the separator-independence itself, through the same helper, so the two
+> cannot drift apart and let the assumption back in.
+>
+> **What it does NOT prove.** The defect cannot appear on Linux, so the fix could not be *failed*
+> here first. [NEEDS-CHECKING](../../NEEDS-CHECKING.md) **A14** is the one Windows run that closes it.
+>
+> **The count corrected in both places** — `docs/HANDOVER.md` and the `heron-ship` skill — and the
+> skill now tells a reader to suspect a path assumption before their own change when a fourth failure
+> appears on one operating system only. That is twice now.
+>
+> **This finding also corrects §17 of this record.** The table there reads `test_context.py | fail,
+> 1 check | pass | Newly passing` — it was not newly passing. It was the same test passing on Linux
+> and failing on Windows, and the two were compared as if they were one machine. Which is the exact
+> hazard §17's own heading names.
+
 ### 5. What was merged and what was deleted
 
 | | |

@@ -100,13 +100,20 @@ that the failures **do not share a reason**, because a lump total is how a real 
 
 `test_mcp_serves.py` exits **3**, not 1, so `check-gaps.py` reports it as waiting rather than failing.
 
-**Nothing else fails here.** `test_graph.py` and `test_reachable.py` were on this list until
-2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository that
-had moved on, and neither test's claim changed. `.github/workflows/gates.yml` holds the same list and
-the two were removed from it in the same change.
+**Nothing else should fail on any machine.** `test_graph.py` and `test_reachable.py` were on this list
+until 2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository
+that had moved on, and neither test's claim changed. `.github/workflows/gates.yml` holds the same list
+and the two were removed from it in the same change.
 
-**A fourth failure is yours. So is any change to that list.** If one of the three starts passing,
-somebody installed something — say so rather than quietly recording a better number.
+**On Windows the list was WRONG until 2026-09-12, and silently.** `test_context.py` also failed there,
+on one check, because it compared a source path against a hardcoded `/` while the value arrives
+spelled `brain\fragments\...`. Nothing named it, so the machine showed three failures where this file
+promised two. Fixed at the comparison — but **fixed on Linux, where the defect cannot appear**, so if
+you are on Windows this is the first run that proves it: [NEEDS-CHECKING](../../../docs/NEEDS-CHECKING.md) **A14**.
+
+**A fourth failure is probably yours — check this section first, then say so either way.** If one of the
+three starts passing, somebody installed something. If a fourth appears only on your operating system,
+suspect a path assumption before you suspect your change: that is twice now.
 
 ## 3. The reports — a finding is a question, not a failure
 
