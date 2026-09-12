@@ -122,12 +122,21 @@ rather than reading one here — it moves whenever a module is added.
 HERON_KNOWLEDGE=/tmp/heron-kb python tools/check-gaps.py
 ```
 
-**`check-gaps` exits 1 while anything is UNFINISHED, and 0 while everything outstanding is only
-WAITING.** Both are the tool working, and the distinction is the whole of it. It exited 1 when this
-file was first written, on 218 fragments that had never met a Revit; proving has since moved the
-unfinished list to empty, so **it exits 0 today** while more than a hundred fragments remain unproven.
+**`check-gaps` exits 1 while anything is UNFINISHED, and 0 when everything outstanding is only
+WAITING.** Both are the tool working, and the distinction is the whole of it.
+
+**It exits 1 on a plain container, and the reason has changed.** This file used to give the reason as
+*"218 fragments have never met a Revit model"* — those fragments are all in the **WAITING** bucket now,
+and the single unfinished item is `test_served_claims.py FAILS`, which fails for want of the **MCP SDK**
+and exits **1 rather than 3**, so `check-gaps` cannot tell it from a real failure. Install the SDK and it
+exits 0.
+
 Its own closing line is the sentence to keep: *"Waiting is not failing — but a waiting item is still
 UNPROVEN."* **Read the buckets, not the exit code, and do not report either value as a break.**
+
+> **Read this tool's exit code with `code=$?` on its own line.** `python tools/check-gaps.py | tail -50;
+> echo $?` reports **`tail`'s** exit code, which is always 0 — and on 2026-09-12 that turned this very
+> section into a claim that the gate passes. Two characters, in the optimistic direction.
 
 ## 5. The six that need something this container has not got
 

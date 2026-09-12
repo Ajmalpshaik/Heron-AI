@@ -239,6 +239,11 @@ def compare(before, after):
     match.
     """
     regressions, improvements, incomparable = [], [], []
+    # The same facts as `regressions`, but as names rather than sentences, so a
+    # reader downstream does not have to parse English to find out WHICH gate
+    # moved. tools/check-change.py needs exactly that: a gate failing on both
+    # sides is pre-existing, and one that started failing is this change.
+    regressed = {"gates": [], "suites": []}
 
     b_gates = before.get("gates", {})
     a_gates = after.get("gates", {})
@@ -251,6 +256,7 @@ def compare(before, after):
             continue
         if was == PASS and now == FAIL:
             regressions.append("gate %s passed before and fails now" % name)
+            regressed["gates"].append(name)
         elif was == FAIL and now == PASS:
             improvements.append("gate %s failed before and passes now" % name)
 
@@ -271,6 +277,7 @@ def compare(before, after):
             continue
         if was == 0 and now not in (0, 3):
             regressions.append("suite %s passed before and does not now" % name)
+            regressed["suites"].append(name)
         elif was not in (0, 3) and now == 0:
             improvements.append("suite %s failed before and passes now" % name)
 
@@ -289,6 +296,7 @@ def compare(before, after):
         ruling = "NO CHANGE MEASURED"
 
     return {"ruling": ruling, "regressions": regressions,
+            "regressed": regressed,
             "improvements": improvements, "incomparable": incomparable,
             "counts_moved": moved}
 

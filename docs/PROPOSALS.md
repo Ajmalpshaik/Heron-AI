@@ -638,3 +638,23 @@ are tangled here and they should be untangled together rather than one at a time
   done, and it now carries a banner saying so. Whether it is deleted, moved or kept for its reasoning is
   the owner's call: it is the fullest written statement of how Heron studies an outside project, and
   that part has outlived the plan around it.
+
+### 🟡 F5. Two suites exit 1 when a dependency is missing, and one of them is the only thing `check-gaps` calls unfinished
+
+[`tests/README.md`](../tests/README.md) sets the rule: **0 is a pass, 1 is a failure, 3 means the suite
+could not run** and proves nothing either way. `test_mcp_serves.py` obeys it — no MCP SDK, exit 3, and
+[`check-gaps.py`](../tools/check-gaps.py) files it under *waiting*.
+
+`test_served_claims.py` needs the same SDK and exits **1**, so `check-gaps` files it under
+**UNFINISHED**, and since its exit code follows that list alone, **the whole gate exits 1 on any
+machine without the MCP SDK**. That is the entire unfinished list on a plain container. The same is
+true of `test_bridge_roundtrip.py` and its .NET test host, which `check-gaps` sidesteps by skipping the
+suite outright — a second answer to one question.
+
+`tests/README.md` already records the inconsistency as an observation — *"So an exit code alone does
+not tell you whether a failure is yours"* — rather than as something to fix. It is worth deciding which
+it is, because the cost is that the repository's clearest "is anything actually unfinished" signal reads
+red for a reason that is not work.
+
+**Not fixed here.** Changing a suite's exit code changes what CI, `check-gaps` and the ship checklist
+all read, and that deserves its own change rather than being a side effect of one about something else.

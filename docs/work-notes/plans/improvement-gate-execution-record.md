@@ -37,14 +37,24 @@ it can be run again.
 | `python tools/check-metadata.py` | **exit 0** — 132 source files, 250 registry agents, 77 implemented |
 | `python tools/check-structure.py` | **exit 0** — 3 project references checked, 6 layering rules |
 | `git diff --check` | **exit 0** |
-| `python tools/check-gaps.py` | **exit 0** — nothing UNFINISHED; 163 fragments and the whole Revit register are *waiting*, which is not failing |
+| `python tools/check-gaps.py` | **exit 1**, with **one** unfinished item: `test_served_claims.py FAILS`. Every fragment is in the *waiting* bucket |
 | every suite in `tests/` | see §0.2 |
 
-**`check-gaps.py` exits 0 today and the [`heron-ship`](../../../.claude/skills/heron-ship/SKILL.md)
-skill says it exits 1 "by design".** Both sentences were true when written. The skill's was measured on
-2026-09-09 against 218 unproven fragments; proving has since moved every genuinely *unfinished* item off
-that list, leaving only *waiting* ones, and the exit code follows the unfinished list alone. The skill
-is corrected in this change rather than left to be believed.
+**This row said "exit 0" for most of a day, and it was wrong.** The first run was
+`python tools/check-gaps.py 2>&1 | tail -50; echo "EXIT=$?"` — and `$?` after a pipeline is **`tail`'s**
+exit code, not the tool's. On the strength of that, the [`heron-ship`](../../../.claude/skills/heron-ship/SKILL.md)
+skill was "corrected" to say the gate exits 0, `AGENTS.md` and `HANDOVER.md` with it, and all three had
+to be put back. It is the same two-character mistake §0.2 records in the suite loop, made twice in one
+session, and both times it reported **better news than the truth**.
+
+Caught by `change-evidence.py` running the gate as a subprocess and reading its real exit code — which
+is an argument for measuring through a tool rather than through a shell, and the first thing this work
+built caught the first thing it claimed.
+
+**What the skill DID have stale is the reason, not the code.** It said the gate exits 1 because *"218
+fragments have never met a Revit model"*; those fragments are all in the WAITING bucket now, and the one
+genuinely unfinished item is a suite that fails for want of the MCP SDK — and **exits 1 rather than 3**,
+so `check-gaps` cannot tell it from a real failure. [PROPOSALS F5](../../PROPOSALS.md).
 
 ### 0.1 The tool count the ship skill states
 
@@ -59,8 +69,30 @@ than a total, for the reason `.github/workflows/gates.yml` already gives: a lump
 regression hides.
 
 ```bash
-for t in tests/test_*.py; do timeout 300 python3 "$t" >/dev/null 2>&1; echo "$(basename $t) $?"; done
+for t in tests/test_*.py; do
+  timeout 300 python3 "$t" >/dev/null 2>&1; code=$?; echo "$(basename "$t") $code"
+done
 ```
+
+**`code=$?` on its own line is not style, it is the whole thing working.** The obvious one-liner —
+`echo "$(basename $t) $?"` — reports **every suite as passing**, because the command substitution runs
+first and `$?` then holds `basename`'s exit code rather than the test's. It was written that way here,
+it printed a clean board of 52 zeroes, and the mistake was only caught because that board disagreed
+with a suite run by hand a minute earlier. A measurement that is wrong in the optimistic direction is
+the worst kind, and this one is two characters away from the right one.
+
+**The baseline, at `b464af0`: 52 suites, 5 not passing.**
+
+| | |
+|---|---|
+| `test_bridge_roundtrip.py` | exit 1 — needs a built .NET test host |
+| `test_served_claims.py` | exit 1 — needs the MCP SDK |
+| `test_mcp_serves.py` | exit **3** — needs the MCP SDK, and says so. NOT RUN, not a pass |
+| `test_graph.py` | exit 1 — **real**, and fixed in this work |
+| `test_reachable.py` | exit 1 — **real**, and fixed in this work |
+
+That set is exactly what `.github/workflows/gates.yml` and the `heron-ship` skill both listed, so the
+container agreed with the record before anything was changed.
 
 ---
 
@@ -85,7 +117,7 @@ The rule applied throughout: **do not build what a tool here already owns.**
 | **Intent vs. diff** | nothing | **Missing** |
 | **Reusable before/after evidence record** | nothing outside CI | **Missing** |
 | **Keep-or-revert ruling on a measured pair** | nothing | **Missing** |
-| **Capability availability with a reason** | `heron_capability.resolve()` returns `None` for five different reasons | **Missing, and it is a defect** — see §6 |
+| **Capability availability with a reason** | `heron_capability.resolve()` returns `None` for five different reasons | **Missing, and it is a defect** — see §1, Phase 6 |
 | **Packaging / delivery checks** | nothing. Not one check reads `Heron.addin` | **Missing** |
 | **One final status for a change** | nothing | **Missing** |
 
@@ -113,7 +145,7 @@ external-repository adoption note required, and as
 |---|---|---|
 | `nexu-io/open-design` | Apache-2.0 (repository `LICENSE`) | the CI scope classifier and its rule contract; the artefact lint pass; an injection-style capability registry; the installed-acceptance check in the release scripts |
 | `Shubhamsaboo/awesome-llm-apps` | Apache-2.0 (repository `LICENSE`); the skill read also declares `license: Apache-2.0` in its own front matter | the scope-creep skill brief, its diff classifier, its signal reference; the deterministic trigger-eval runner |
-| `OpenHands/OpenHands` | MIT | the mock-LLM end-to-end configuration and its scripted mock server |
+| `OpenHands/OpenHands` | MIT | its mock-model end-to-end configuration and the scripted stand-in server behind it |
 | `OpenHands/agent-canvas` | — | **not opened.** Archived, and [35 §5.1](../../35-independent-study-notes-open-design-awesome-llm-apps-openhands.md) already records that its content moved |
 
 **No file, name, structure or wording from any of them appears in Heron.** What was taken is listed in

@@ -214,6 +214,53 @@ def main():
           "and a result that is not PASS, FAIL or NOT_RUN is refused")
 
     print()
+    print("A gate that was already failing is not this change")
+    result = EVIDENCE.compare(before, worse)
+    check(result["regressed"]["suites"] == ["test_a.py"],
+          "the regression is reported as a NAME as well as a sentence, so a "
+          "reader downstream need not parse English")
+    check("test_b.py" not in result["regressed"]["suites"],
+          "and a suite failing on both sides is not in it")
+
+    both_red = {"gates": {"tests": {"result": "FAIL"}},
+                "tests": {"test_a.py": 1}, "counts": {},
+                "compared_to": {"label": "before"},
+                "regressed": {"gates": [], "suites": []},
+                "regressions": []}
+    import tempfile as _tf
+    handle = _tf.NamedTemporaryFile("w", suffix=".json", delete=False)
+    json.dump(both_red, handle)
+    handle.close()
+    try:
+        out = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "check-change.py"),
+                              "--intent", "anything", "--area",
+                              ",".join(sorted(CHANGE.layering().PARTS) +
+                                       sorted(CHANGE.layering().SUPPORT)),
+                              "--risk", "low", "--evidence", handle.name],
+                             capture_output=True, text=True, cwd=ROOT)
+        check("Failing before too:     tests" in out.stdout,
+              "a gate failing on BOTH sides is named as pre-existing")
+        check("a gate this change owes was run and failed" not in out.stdout,
+              "and is not given as a reason to revise - otherwise every verdict "
+              "on a machine without the MCP SDK would be REVISE for ever")
+
+        no_baseline = dict(both_red)
+        no_baseline.pop("compared_to")
+        io.open(handle.name, "w", encoding="utf-8").write(json.dumps(no_baseline))
+        out = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "check-change.py"),
+                              "--intent", "anything", "--area",
+                              ",".join(sorted(CHANGE.layering().PARTS) +
+                                       sorted(CHANGE.layering().SUPPORT)),
+                              "--risk", "low", "--evidence", handle.name],
+                             capture_output=True, text=True, cwd=ROOT)
+        check("was run and failed" in out.stdout,
+              "with NO before-measurement the same record blocks - nothing can "
+              "tell a pre-existing failure from a new one, so it says the "
+              "cautious thing")
+    finally:
+        os.unlink(handle.name)
+
+    print()
     print("The gate refuses to call an unevidenced change a pass")
     out = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "check-change.py"),
                           "--intent", "anything", "--area",

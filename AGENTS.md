@@ -87,9 +87,9 @@ rather than leaving it to judgement.
 
 `python tools/check-gaps.py` runs the suites and **its exit code follows the UNFINISHED list alone** —
 1 while anything is unfinished, 0 while everything left is only *waiting* for a Revit, a dependency or
-the owner. It exits 0 today with more than a hundred fragments still unproven, so read its buckets
-rather than its exit code. Some checkers are **reports** that exit 0 whatever they find — a hit is a
-question for a person, not a failure.
+the owner. **Read its buckets rather than its exit code**, and read that code with `code=$?` on its own
+line: after a pipe you get the pipe's. Some checkers are **reports** that exit 0 whatever they find — a
+hit is a question for a person, not a failure.
 
 **Separate the four states and never merge them:** PASS · FAIL · NOT RUN (say why) · NEEDS REAL REVIT.
 A test suite exiting **3** means it could not run for want of an optional dependency. That is **not a

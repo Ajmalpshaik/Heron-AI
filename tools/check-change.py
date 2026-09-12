@@ -575,13 +575,36 @@ def main(argv=None):
 
     ran = {}
     regressions = []
+    compared = False
+    regressed_gates = set()
     if evidence:
         ran = evidence.get("gates", {}) or {}
         regressions = evidence.get("regressions", []) or []
+        compared = bool(evidence.get("compared_to"))
+        regressed_gates = set((evidence.get("regressed") or {}).get("gates") or [])
 
     unmet = [g for g in owed if g not in ran]
     failed = sorted(g for g, r in ran.items()
                     if isinstance(r, dict) and r.get("result") == "FAIL")
+
+    # A GATE THAT WAS ALREADY FAILING IS NOT THIS CHANGE, and saying otherwise
+    # would make the verdict useless on any machine missing an optional
+    # dependency: two suites here exit 1 for want of the MCP SDK, so the tests
+    # gate reads FAIL on a plain container whatever anybody changed.
+    #
+    # It is only safe to say that when somebody MEASURED the before state -
+    # which is what `compared_to` means. With no comparison there is no way to
+    # tell a pre-existing failure from a new one, and the tool says the
+    # cautious thing instead of the convenient one.
+    #
+    # This is the same mechanism .github/workflows/gates.yml already uses: it
+    # compares the SET of failing suites against a known-failure list rather
+    # than counting them.
+    if compared:
+        blocking = [g for g in failed if g in regressed_gates]
+        pre_existing = [g for g in failed if g not in regressed_gates]
+    else:
+        blocking, pre_existing = failed, []
 
     # --- the verdict ---------------------------------------------------------
     unrelated = [r for r in rows if r["class"] == UNRELATED]
@@ -597,10 +620,10 @@ def main(argv=None):
         status = "SPLIT"
         reasons.append("%d file(s) are in no declared part and in no part a "
                        "declared part may depend on" % len(unrelated))
-    elif failed:
+    elif blocking:
         status = "REVISE"
         reasons.append("a gate this change owes was run and failed: %s"
-                       % ", ".join(failed))
+                       % ", ".join(blocking))
     elif evidence_error:
         status = "REVISE"
         reasons.append("the evidence record could not be read - %s" % evidence_error)
@@ -629,6 +652,7 @@ def main(argv=None):
         "gates_owed": owed,
         "gates_run": sorted(ran),
         "gates_failed": failed,
+        "gates_failing_before_too": pre_existing,
         "gates_unmet": unmet,
         "regressions": regressions,
     }
@@ -683,6 +707,10 @@ def report(result):
         w("Gates actually run:     %s\n" % ", ".join(result["gates_run"]))
     if result["gates_unmet"]:
         w("Not shown:              %s\n" % ", ".join(result["gates_unmet"]))
+    if result.get("gates_failing_before_too"):
+        w("Failing before too:     %s\n"
+          % ", ".join(result["gates_failing_before_too"]))
+        w("                        measured on both sides, so not this change\n")
     w("\n")
 
     w("%s\n" % result["status"])
