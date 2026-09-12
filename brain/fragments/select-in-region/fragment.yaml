@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -36,7 +36,13 @@ purpose: >
   cannot intersect anything and drops out. Those are counted rather than
   dropped, so a small exact answer beside a large fast one can be read.
 
-  **Corners are given in millimetres and converted here by dividing by 304.8.**
+  **Corners are typed in millimetres and arrive here ALREADY IN FEET.** The
+  add-in's point parser converts every XYZ with HeronUnits.MillimetresToFeet
+  before a fragment sees it, because Revit's internal unit is the foot. This
+  fragment converted a SECOND time until 2026-09-13, which divided every region
+  by 304.8 - a 200 m box became a 656 mm one and the answer was a calm "0
+  element(s)". 304.8 now appears once, turning feet back into the millimetres
+  the report speaks.**
   Nothing about this needs a units API, and the report states the volume in
   millimetres so a value handed in already converted shows up as an absurd box
   rather than as a quiet zero.
@@ -100,8 +106,9 @@ compatibility-note: >
   One implementation for every release. `Outline`,
   `BoundingBoxIntersectsFilter`, `ElementIntersectsSolidFilter`, `CurveLoop` and
   `GeometryCreationUtilities.CreateExtrusionGeometry` are present 2020 through
-  2027, compiled at both ends. Millimetres become feet by dividing by 304.8 as
-  plain arithmetic - no units API, which is what changed shape at 2021.
+  2027, compiled at both ends. Feet become millimetres by multiplying by 304.8
+  as plain arithmetic, for the REPORT only - no units API, which is what
+  changed shape at 2021.
 
 # ROUTING - repeated in FILTER_ELEMENTS_IN_ROOM, SELECT_TOUCHING and
 # FIND_CLASHES.
