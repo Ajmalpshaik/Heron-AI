@@ -319,10 +319,12 @@ fact beats a declared one every time.
 | | |
 |---|---|
 | **Where from** | [OpenDesign](https://github.com/nexu-io/open-design), Apache-2.0. Its installed-acceptance step, read 2026-09-11 |
-| **Their mechanism** | After a release is published, a separate check reads the **installed** manifest, compares it against the publish receipt, verifies a digest sidecar, drives the lifecycle start to stop, and emits an acceptance record naming exactly what was accepted |
+| **Their mechanism** | A published artefact is accepted against the **installed shell**, not against the tree it was built from: the artefact's bytes are hashed and declared with their digest and size, the installed shell's identity and updater snapshot decide whether it is `compatible` or `update-required` against a minimum version, and the release step composes a receipt naming each acceptance it requires — shell, target and artifact. Re-read at file level 2026-09-12: `apps/closure/src/index.ts` and `.github/scripts/pack.py` (`checked_description`, `finalize`) |
 | **Why it works** | Source tests and delivery are different questions, and only the second one reaches a user. Their check would fail on a manifest that no longer binds what was published even though every test passed |
 | **What Heron already had** | **Nothing read `Heron.addin` at all** — not one tool in `tools/`, and it is the first file Revit opens |
 | **What Heron built instead** | [`tools/check-package.py`](../tools/check-package.py), asking only what is answerable with no Windows, no Revit and no compiler - and **printing what it cannot answer on every run**, because a green run there is not an install |
+
+> **Corrected 2026-09-12, after re-opening the repository at the owner's instruction.** This row previously said their check *"drives the lifecycle start to stop"*. **It does not, and nothing in that repository does.** Checked at file level: `.github/scripts/pack.py` prepares and finalises release metadata and never installs or launches anything; `release-gate.yml` only counts open backport PRs; `release-prerelease-tests.yml` runs source suites against the commit that was built; `catalog-validate.yml` is pre-publication and starts no application; `convergence.py` coordinates result caching. `apps/packaged` does carry a launcher with an after-quit hook, but that is the product's own launcher, not an acceptance run. **The engineering principle this row exists for is unaffected** — checking the delivered thing rather than the build tree is exactly what they do, and `check-package.py` still does it for `Heron.addin`. Only the description of their mechanism was wrong, and a research record that overstates its source is worth no more than one that invents it.
 
 **Four faults it catches that were invisible to everything else**: an entry class that does not exist or
 is not an `IExternalApplication`; an assembly the project does not build; a `<ManifestSettings>` element,
@@ -399,3 +401,22 @@ runs on any machine at any time.**
 2026-09-11 round are Apache-2.0, Apache-2.0 and MIT at the exact paths inspected, and the licences are
 recorded because a repository-level assumption is not a provenance check
 ([35 §3.7](35-independent-study-notes-open-design-awesome-llm-apps-openhands.md)).
+
+### Re-read 2026-09-12 — every source opened again, at file level
+
+The owner asked for the sources to be checked a second time rather than trusted. Each was re-opened
+and the **implementation files** read, not the READMEs. Licences re-confirmed at the root of each:
+Apache-2.0, Apache-2.0, MIT.
+
+| Row | Verified against | Result |
+|---|---|---|
+| §2.15 | The scope-creep skill is present and still described as checking *"whether a diff grew beyond its stated intent"* with **keep, split or justify** | **Holds** |
+| §2.16 | `.github/scripts/scopes.py` | **Holds, verbatim.** The unmatched case really is `outputs = {effect: True for effect in contract.effects}` with `"escalated": True, "reason": "unmatched"`, and all four contract validations are there — duplicate ids, unknown effects, `re.compile` on each token, and a `stack` guarding `match://` cycles. The decision carries `ruleHits` and `escalations` |
+| §2.17 | `apps/closure/src/index.ts`, `.github/scripts/pack.py`, four release workflows | **Corrected.** One clause was an overstatement — see the note in that row |
+| §2.18 | `playwright.mock-llm.config.ts` and `playwright.mock-llm-docker.config.ts` | **Holds.** The predecessor repository is archived — 2026-07-27, folded into the main one — and was again **not opened** |
+| §2.19 | `apps/daemon/src/lint-artifact.ts`, `packages/contracts/src/api/artifact-lint.ts` | **Holds.** The three severities are `P0 (must fix)`, `P1 (should fix)`, `P2 (nice to have)` |
+
+**§2.19 was nearly recorded as a false correction.** It was not in `.github/scripts`, where the other
+two live, and a first search that covered only that folder found nothing. Widening the checkout found
+it immediately. *Absent from the folder I looked in* is not *absent*, and a correction is a claim that
+needs its own evidence exactly like the thing it corrects.
