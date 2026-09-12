@@ -313,6 +313,44 @@ counts what is left; believe it over this file.
 
 ---
 
+## HANDOVER — 2026-09-12 (the IMPROVEMENT-GATE track): a change now has to say what it is for, and two red suites went green
+
+**Nothing here has been near Revit, and no fragment status moved.** Full ledger, every phase note and
+every measurement: [`work-notes/plans/improvement-gate-execution-record.md`](work-notes/plans/improvement-gate-execution-record.md).
+
+**What exists now that did not before.** Four things, and each answers a question nothing in this
+repository was asking:
+
+| | |
+|---|---|
+| [`tools/check-change.py`](../tools/check-change.py) | Does this change do only what it said it would? Compares the diff against a declared `intent` / `area` / `risk`, using the **layering table** rather than word overlap — so `brain/` is *supporting* work for an `mcp/` change and `revit/` is not |
+| [`tools/change-evidence.py`](../tools/change-evidence.py) | Is it better than before? The same measurements twice, compared as sets, ruling `KEEP` · `REVERT` · **`NO CHANGE MEASURED`**. It cannot change anything, which is what makes the loop safe to point at a prompt or a fragment description |
+| [`tools/check-package.py`](../tools/check-package.py) | Would the delivered thing install? **Nothing in this repository read `Heron.addin`** — the first file Revit opens. Now a fourth gate that must pass |
+| [`mcp/server/heron_runtime.py`](../mcp/server/heron_runtime.py) | Why can Heron *not* do this? Six verdicts where `heron_capability.resolve()` had one `None` for five different reasons. **Wired to nothing yet, on purpose** — [PROPOSALS F1](PROPOSALS.md) |
+
+Plus the **Python half of the layering table**, enforced for the first time since Step 1 in
+[`check-structure.py`](../tools/check-structure.py) — its own source had admitted for a fortnight that
+two thirds of the repository went unchecked.
+
+**Two suites that were red on every machine are green, and both were the same defect.** `test_graph.py`
+and `test_reachable.py` each carried a fixture describing a repository that had moved on: one matched
+two exact adjacent lines and `role:` arrived between them, so it broke **none** of the 50 providers it
+meant to break; the other excused a function that had acquired a legitimate caller. **Neither test was
+edited until it passed** — both claims are unchanged. `.github/workflows/gates.yml` and the
+[`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill were corrected in the same change, because
+that workflow errors when a known failure starts passing and asks for exactly this.
+
+**What is owed.** The gate has only ever been run by the session that built it, which is
+[Golden Rule 7](14-golden-rules.md) unsatisfied. Two new rows in
+[NEEDS-CHECKING](NEEDS-CHECKING.md) — **A12** and **A13** — are the delivery questions no script can
+answer: whether the add-in loads, and whether an upgrade and a rollback work. Three defects found on the
+way are in [PROPOSALS Part F](PROPOSALS.md) rather than fixed.
+
+**Next:** use it on the next real task. `python tools/check-change.py --intent "..." --area <part>
+--risk low`, then `tools/change-evidence.py capture` before and after.
+
+---
+
 ## HANDOVER — 2026-09-10 (the HOUSEKEEPING track): three READMEs were wrong by more than a hundred, and the write path was documented as not existing
 
 **Documentation only. No executable code was modified** — `git diff --diff-filter=M` over `.py`, `.cs`,
@@ -344,7 +382,7 @@ and every measurement:
 | **Moved** | **Nothing.** Four candidate moves were assessed and all rejected with reasons. This file stays put because saved continuation prompts point at this exact path from outside the repository; it is **labelled** as the operational entry point instead |
 | **Links** | **4 broken → 0.** All four were wrong filenames; each right target was found by reading content |
 | **Also corrected** | The four specification parts disagreed about how many parts exist (1 of 2, 2 of 2, 3 of 3) · `CONTRIBUTING.md` said Phase 2 had never loaded into Revit · the `heron-ship` skill said *"35 of 38 pass"* when there are 41 suites, so its own *"a fourth failure is yours"* rule would have misled an agent |
-| **Checks passing** | `check-docs` (0 broken links), `check-metadata`, `check-structure`, `check-licence`, `check-routing`, `check-intrusion`, `agent-count`, `heron_fragment`, `git diff --check`. `check-gaps` exits 1 by design |
+| **Checks passing** | `check-docs` (0 broken links), `check-metadata`, `check-structure`, `check-licence`, `check-routing`, `check-intrusion`, `agent-count`, `heron_fragment`, `git diff --check`. `check-package`. `check-gaps` exits 0 today — its exit code follows the UNFINISHED list, which is now empty while the fragments below PROVEN remain *waiting* for a real Revit. Run it for the count; do not read one here |
 | **Could not run** | The three compile gates and `test_bridge_roundtrip` — **no .NET SDK.** `test_mcp_serves` and `test_served_claims` — **no MCP SDK.** None counted as a pass |
 | **Needs real Revit** | Everything in [NEEDS-CHECKING.md](NEEDS-CHECKING.md). Unchanged by this run |
 

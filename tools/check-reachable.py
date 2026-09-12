@@ -95,11 +95,20 @@ RECORDED = {
     ("brain/heron_fragment.py", "can_promote"):
         "DECISIONS.md already says it: 'that gate existed and nothing stood "
         "on it'",
-    ("brain/heron_fragment.py", "provide_role"):
-        "calling it was the BUG. FRAGMENT-ISSUES item 7 and the comment in "
-        "heron_validate.py: it answers 'result' for an entry with no role, so "
-        "every declared name looked explicitly declared and D-51/D-52's "
-        "patterns never ran - 102 names across 134 fragments misjudged",
+    # `provide_role` was listed here until 2026-09-12 and is gone. The excuse
+    # was that CALLING it was the bug - true of the one caller it had, which
+    # built a total map in heron_validate.py where "absent means result" made
+    # an undeclared name indistinguishable from a declared one. That caller is
+    # gone and the map is built from the declaration itself.
+    #
+    # What made the entry stale is a DIFFERENT caller: tools/generate-jobs.py
+    # has asked `provide_role(p) != "accounting"` since 2026-09-10, one entry at
+    # a time, which is exactly what the function is for and where "absent means
+    # result" is the safer read. A caller in tools/ counts as reached here, so
+    # the function stopped being a hit that day and the excuse has been standing
+    # over a closed gap ever since - which is the failure D-54 is about, and
+    # tests/test_reachable.py has been red for it since.
+
     # D-54: this said "Q-43 ... is an open question, not an oversight" until
     # 2026-09-09, when D-61 answered it. The function is STILL uncalled from
     # production and the entry stays - what changed is why, and a reader sent
@@ -109,6 +118,11 @@ RECORDED = {
         "is a required argument. It stays uncalled because the evidence cannot "
         "reach the brain - a run happens in the add-in and no workflow id "
         "crosses the seam. One named seam, not an undecided design",
+    ("mcp/server/heron_runtime.py", "snapshot"):
+        "built with nothing wired to it yet, deliberately. It is the provider "
+        "for planning code that does not exist - no MCP tool offers it, because "
+        "adding one changes the risk table in heron_tools.py, which docs/12 s71 "
+        "makes a declaration with a human in it. PROPOSALS.md F1",
 }
 
 

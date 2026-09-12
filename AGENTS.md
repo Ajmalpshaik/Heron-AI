@@ -74,12 +74,21 @@ skill has the order and, more importantly, which failures are the machine rather
 ```bash
 python tools/check-docs.py        # links, and every count that can be derived
 python tools/check-metadata.py    # the five-field header on every source file
-python tools/check-structure.py   # layering, and Autodesk.Revit staying inside revit/
+python tools/check-structure.py   # layering, in both languages, and Autodesk.Revit inside revit/
+python tools/check-package.py     # the manifest Revit reads before it reads anything else
 git diff --check
 ```
 
-`python tools/check-gaps.py` runs the suites and **exits 1 by design** while anything is unfinished.
-That is not a broken gate. Some checkers are **reports** that exit 0 whatever they find — a hit is a
+**Say what the change is for before you make it, and prove it afterwards.**
+`python tools/check-change.py --intent "one line" --area brain --risk low` compares the diff against
+the parts you said you would touch; `tools/change-evidence.py` captures the before and after and rules
+`KEEP`, `REVERT` or `NO CHANGE MEASURED`. **A change with no evidence is not a pass** — the gate says so
+rather than leaving it to judgement.
+
+`python tools/check-gaps.py` runs the suites and **its exit code follows the UNFINISHED list alone** —
+1 while anything is unfinished, 0 while everything left is only *waiting* for a Revit, a dependency or
+the owner. It exits 0 today with more than a hundred fragments still unproven, so read its buckets
+rather than its exit code. Some checkers are **reports** that exit 0 whatever they find — a hit is a
 question for a person, not a failure.
 
 **Separate the four states and never merge them:** PASS · FAIL · NOT RUN (say why) · NEEDS REAL REVIT.

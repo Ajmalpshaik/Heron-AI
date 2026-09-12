@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers the three gates that must pass, the reports whose findings are questions, the one checker that exits 1 by design, and the six checks that need a tool this container has not got.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates that must pass, the reports whose findings are questions, the checker whose exit code follows the unfinished list, and the six checks that need a tool this container has not got.
 allowed-tools:
   - Bash
   - Read
@@ -17,14 +17,36 @@ than the change.**
 Adapted from `garrytan/gstack`'s `ship` ([33 §5.7](../../../docs/33-external-repository-research.md)),
 which does the same job for a web product: merge the base branch, run the tests, review the diff, bump
 the version. **Heron's version is different because Heron's failures are different** — six of its checks
-need a compiler or a knowledge store this container has not got, and three of its tests fail for two
-unrelated reasons. Confusing any of those for a regression is the mistake this file prevents.
+need a compiler or a knowledge store this container has not got, and three of its suites cannot run here
+at all. Confusing any of those for a regression is the mistake this file prevents.
 
-Every number here was **measured on 2026-09-09**, not estimated.
+Every number here was **measured on 2026-09-12**, not estimated. The previous set was measured on
+2026-09-09 and four of them had gone stale by the time anyone read them again — which is why the counts
+below are commands wherever a command can produce them.
 
 ---
 
-## 1. The three that must pass
+## 0. Say what the change is for, before you run anything
+
+```bash
+python tools/check-change.py --intent "one line saying exactly what should change" \
+                             --area brain --risk low
+```
+
+It compares the diff against the parts the change said it would touch, and names any file that is in
+neither those parts nor a part they may depend on. **It refuses to call a change with no evidence a
+pass**, so it is run twice: once early to see the scope, once at the end with `--evidence`.
+
+```bash
+python tools/change-evidence.py capture --out before.json --tests all   # before
+python tools/change-evidence.py capture --out after.json --tests all --against before.json
+python tools/check-change.py --intent "..." --area brain --risk low --evidence after.json
+```
+
+`change-evidence` never changes anything — it measures, compares, and rules `KEEP`, `REVERT` or
+**`NO CHANGE MEASURED`**, which is the honest answer for a change whose effect nothing it can see moved.
+
+## 1. The four that must pass
 
 Fast, and they fail loudest. Run these first — a broken link or a missing header is cheaper to fix
 before the tests than after.
@@ -32,7 +54,8 @@ before the tests than after.
 ```bash
 python tools/check-docs.py        # ~1.2 s
 python tools/check-metadata.py    # ~0.1 s
-python tools/check-structure.py   # ~0.1 s
+python tools/check-structure.py   # ~0.2 s
+python tools/check-package.py     # ~0.1 s
 ```
 
 **A non-zero exit from any of these is your change.** They need no environment, no compiler and no
@@ -46,6 +69,10 @@ knowledge store.
   [`heron-guard`](../heron-guard/SKILL.md) now refuses that one at edit time; this still catches
   everything else and anything that reached disk another way.
 - **`check-metadata`** — every source file's header.
+- **`check-package`** — the delivery questions, and it is the only thing in the repository that reads
+  `Heron.addin`. An entry class that no longer exists, an assembly the project does not build, or a
+  `<ManifestSettings>` element (which **crashes Revit 2025 and older**) all leave every other gate on
+  this page green and cost a modeller the whole add-in.
 
 ## 2. The tests
 
@@ -53,7 +80,7 @@ knowledge store.
 for t in tests/test_*.py; do python "$t" >/dev/null 2>&1 || echo "FAIL $t"; done
 ```
 
-**41 suites** — `ls tests/test_*.py | wc -l`. Do not read a pass total here; derive it. What matters is
+Derive the number — `ls tests/test_*.py | wc -l`. Do not read a pass total here either. What matters is
 that the failures **do not share a reason**, because a lump total is how a real regression hides.
 
 **Three cannot run at all without an optional dependency.** They prove nothing either way:
@@ -66,19 +93,13 @@ that the failures **do not share a reason**, because a lump total is how a real 
 
 `test_mcp_serves.py` exits **3**, not 1, so `check-gaps.py` reports it as waiting rather than failing.
 
-**Two fail for real, on any machine, and are not yours** — measured 2026-09-10 and pre-dating this
-work:
+**Nothing else fails here.** `test_graph.py` and `test_reachable.py` were on this list until
+2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository that
+had moved on, and neither test's claim changed. `.github/workflows/gates.yml` holds the same list and
+the two were removed from it in the same change.
 
-| | |
-|---|---|
-| `test_graph.py` | 3 checks |
-| `test_reachable.py` | 1 check |
-
-So a plain container with neither dependency gets **36 of 41**, and a fully equipped machine gets
-**39 of 41** until somebody fixes those two.
-
-**A sixth failure is yours. So is any change to either list.** If one starts passing, somebody
-installed something or fixed something — say so rather than quietly recording a better number.
+**A fourth failure is yours. So is any change to that list.** If one of the three starts passing,
+somebody installed something — say so rather than quietly recording a better number.
 
 ## 3. The reports — a finding is a question, not a failure
 
@@ -90,10 +111,10 @@ python tools/check-revit-gate.py   # ~1.7 s  the fourteen Revit questions, as a 
 python tools/agent-count.py        # ~0.05 s the register reconciles
 ```
 
-`check-reachable` currently reports **4 unexplained**; `check-revit-gate` reports **62** for links and
-**59** for refusal reporting. Those are [`Q-46`](../../../docs/OPEN-QUESTIONS.md) and
-[`Q-48`](../../../docs/OPEN-QUESTIONS.md), open and waiting on the owner. **They are not new and they
-are not yours.**
+`check-revit-gate` reports **62** for links and **59** for refusal reporting. Those are
+[`Q-46`](../../../docs/OPEN-QUESTIONS.md) and [`Q-48`](../../../docs/OPEN-QUESTIONS.md), open and
+waiting on the owner. **They are not new and they are not yours.** Derive `check-reachable`'s count
+rather than reading one here — it moves whenever a module is added.
 
 ## 4. The one that exits 1 on purpose
 
@@ -101,9 +122,12 @@ are not yours.**
 HERON_KNOWLEDGE=/tmp/heron-kb python tools/check-gaps.py
 ```
 
-**`check-gaps` exits 1 while anything is unfinished, and 218 fragments have never met a Revit model, so
-it exits 1.** That is the tool working. Its own closing line says it: *"Waiting is not failing — but a
-waiting item is still UNPROVEN."* **Do not chase this to zero and do not report it as a break.**
+**`check-gaps` exits 1 while anything is UNFINISHED, and 0 while everything outstanding is only
+WAITING.** Both are the tool working, and the distinction is the whole of it. It exited 1 when this
+file was first written, on 218 fragments that had never met a Revit; proving has since moved the
+unfinished list to empty, so **it exits 0 today** while more than a hundred fragments remain unproven.
+Its own closing line is the sentence to keep: *"Waiting is not failing — but a waiting item is still
+UNPROVEN."* **Read the buckets, not the exit code, and do not report either value as a break.**
 
 ## 5. The six that need something this container has not got
 

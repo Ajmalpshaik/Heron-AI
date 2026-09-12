@@ -23,6 +23,7 @@ once, and then fixed.
 Exit 0 = clean.
 """
 
+import ast
 import io
 import os
 import re
@@ -62,6 +63,13 @@ SUPPORT = {
 # checked here at all. Writing the rule down is the point: the omission read as
 # a prohibition to anybody who opened this file.
 #
+# THE PYTHON SIDE IS CHECKED FROM 2026-09-12, and running it for the first time
+# settled what "tools": set() had always meant. It raised 34 imports, every one
+# of them a gate in tools/ reading brain/ - which is what D-48 asks those gates
+# to do. The row was written for ProjectReferences, and tools/ has no project
+# file, so it had never applied to anything. It stays as it is for C# and the
+# Python pass exempts tools/ explicitly, with the reason at the exemption.
+#
 # The isolation that matters is unchanged. revit and brain still never touch:
 # the brain must stay runnable, and testable, on a machine with no Revit on it.
 ALLOWED = {
@@ -77,6 +85,43 @@ ALLOWED = {
 # ONLY inside revit/. Anywhere else means the boundary has been crossed, and
 # the core has become untestable without Revit.
 REVIT_API = re.compile(r"\bAutodesk\.Revit\b")
+
+# The Python half of ALLOWED, and until 2026-09-12 it did not exist.
+#
+# The comment above has said since 2026-08-29 that this table "only ever ran
+# against C# ProjectReferences, so the Python side has never been checked here
+# at all". That was written as an admission and then left standing, which is
+# the worst of both: the rule reads as enforced and is not. Two thirds of this
+# repository is Python.
+#
+# Python here does not import by package path - brain/ and mcp/ put their own
+# folder on sys.path and then `import heron_fragment`. So a module's PART
+# cannot be read off the import line; it has to be looked up. That map is built
+# from disk, and a name owned by two parts is reported rather than guessed,
+# because a guess in a layering checker is a layering rule that is sometimes
+# not applied.
+#
+# READ WITH AST RATHER THAN GREPPED, and the difference matters here in a way
+# it does not for the Autodesk.Revit rule a few lines below. That one greps on
+# purpose - a vendor namespace named in a COMMENT is still a boundary being
+# discussed in the wrong file. An import is not like that: a docstring
+# containing the words "import heron_brain" is prose, and failing a build over
+# it would be a false positive in a gate, which teaches people to skim gates.
+def python_imports(text):
+    """Module names imported by this file, or None if it does not parse."""
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return None
+    names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                names.add(alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom):
+            if node.module and not node.level:
+                names.add(node.module.split(".")[0])
+    return names
 
 # Only the Path Manager may resolve a Windows special folder. Anything else
 # building its own path is how two parts of the system quietly disagree about
@@ -109,9 +154,39 @@ def part_of(path):
     return path.split("/")[0]
 
 
+def python_owners():
+    """
+    module name -> the part that owns it, built from disk.
+
+    Returns (owners, ambiguous). An ambiguous name is one two parts both
+    define; nothing is inferred for those, and they are reported instead.
+    """
+    seen = {}
+    ambiguous = {}
+    for part in PARTS:
+        if not os.path.isdir(part):
+            continue
+        for path in walk(part):
+            if not path.endswith(".py"):
+                continue
+            name = path.rsplit("/", 1)[-1][:-3]
+            if name in seen and seen[name] != part:
+                ambiguous.setdefault(name, {seen[name]}).add(part)
+            else:
+                seen[name] = part
+    return seen, ambiguous
+
+
 def main():
     problems = []
     notes = []
+    py_owner, py_ambiguous = python_owners()
+    py_imports = 0
+    tool_reach = {}
+    for name, parts in sorted(py_ambiguous.items()):
+        notes.append("module '%s' is defined in %s - this checker cannot say which "
+                     "part an import of it means, so it checks neither"
+                     % (name, " and ".join(sorted(parts))))
 
     # --- 1. every declared part exists -------------------------------------
     for name in PARTS:
@@ -154,6 +229,45 @@ def main():
                                     % (path, dep, part,
                                        ", ".join(sorted(ALLOWED.get(part, set()))) or "nothing"))
 
+            # Python imports, the same table applied to the other language.
+            #
+            # A file that does not parse is reported rather than skipped: an
+            # unchecked file in a layering gate is a layering rule that is
+            # sometimes not applied, and this is the one place that would never
+            # otherwise say so.
+            #
+            # tools/ IS EXEMPT, for the reason already written a few lines
+            # below about Autodesk.Revit: a script talks ABOUT the code rather
+            # than being it. Every gate in this folder reads the library
+            # through brain/heron_fragment.load_all() and D-48 says it should -
+            # the three that parsed fragment.yaml themselves each lost a
+            # malformed fragment silently. Forbidding that import would make
+            # the honest way the illegal way.
+            #
+            # Its reach is still printed, as a NOTE rather than a problem.
+            # "Which tools reach into the brain" is worth being able to see;
+            # "a tool reached into the brain" is not a defect.
+            if path.endswith(".py") and part in ALLOWED:
+                modules = python_imports(text)
+                if modules is None:
+                    problems.append("%s does not parse, so its imports could not "
+                                    "be checked against the layering rules" % path)
+                    modules = set()
+                for module in sorted(modules):
+                    dep = py_owner.get(module)
+                    if dep is None or dep == part or module in py_ambiguous:
+                        continue
+                    py_imports += 1
+                    if part == "tools":
+                        tool_reach.setdefault(path, set()).add(dep)
+                        continue
+                    if dep not in ALLOWED.get(part, set()):
+                        problems.append(
+                            "%s imports '%s', which belongs to '%s' - not allowed. "
+                            "%s may depend on: %s"
+                            % (path, module, dep, part,
+                               ", ".join(sorted(ALLOWED.get(part, set()))) or "nothing"))
+
             # The adapter boundary. tools/ is exempt: scripts talk ABOUT the
             # code rather than being it - and this very checker contains the
             # pattern, which it duly flagged on its first run.
@@ -174,6 +288,11 @@ def main():
     # --- report --------------------------------------------------------------
     print("Parts:            %s" % ", ".join(sorted(PARTS)))
     print("Project refs:     %d checked" % refs)
+    print("Python imports:   %d checked across %d module(s)" % (py_imports, len(py_owner)))
+    if tool_reach:
+        reached = sorted(set(p for parts in tool_reach.values() for p in parts))
+        print("Tools reading:    %d script(s) in tools/ read %s - allowed, D-48"
+              % (len(tool_reach), ", ".join(reached)))
     print("Layering rules:   %d" % len(ALLOWED))
     print()
 
@@ -224,8 +343,8 @@ def main():
             print("  - %s" % n)
         print()
 
-    print("Structure clean. Every part in its place, no layering violations,")
-    print("and Autodesk.Revit appears only inside revit/.")
+    print("Structure clean. Every part in its place, no layering violations")
+    print("in either language, and Autodesk.Revit appears only inside revit/.")
     return 0
 
 

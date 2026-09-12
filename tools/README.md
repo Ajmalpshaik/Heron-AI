@@ -935,3 +935,160 @@ sweep is the difference between *"the graph lost"* and *"the graph lost at every
 **Not a gate; exits 0.** It measures whether the fragment whose own sentence was typed comes back
 first — a proxy chosen because it is honest and available, not because it is the question.
 [D-30](../docs/DECISIONS.md) needs a real model, and nothing here has met one.
+
+---
+
+## `check-change.py` — does the change do only what it said it would
+
+```bash
+python tools/check-change.py --intent "one line" --area brain --risk low
+python tools/check-change.py --intent-file docs/work-notes/fixes/a-note.md --base main
+python tools/check-change.py --intent "..." --area tools --risk medium --evidence after.json --json
+```
+
+**Every other gate here asks about the repository. This one asks about the diff.** A change that
+compiles, passes and quietly rewrites three unrelated subsystems is exactly the shape nothing else
+notices, and it is the shape an AI-written change arrives in most often.
+
+### Three fields, and the reason it is not ten
+
+`intent`, `area`, `risk`. The plan this came from listed ten. [29 §4](../docs/29-metadata-standard.md)
+sets the test for a new field — *would a script fail the build over it?* — and only these three survive
+it. **Everything else the plan wanted is derived from the diff instead**: whether this needs a real
+Revit, which releases it touches, whether a public contract moved, whether delivery is affected. A
+field a script cannot act on belongs in prose, and a derived fact beats a declared one.
+
+**An intent that cannot be used stops the run** — exit 2, `BLOCKED`, nothing judged. An area that is
+not a part of this repository is a typo or a misunderstanding, and a confident report built on either
+is worse than no report.
+
+### Why the comparison is structural rather than lexical
+
+The obvious way to check a diff against a one-line intent is to count words shared between the sentence
+and the path. It is cheap, and it calls `heron_retrieve.py` unrelated to *"fix retrieval"*.
+
+Heron does not have to guess. [`check-structure.py`](check-structure.py) already holds the table of who
+may depend on whom, enforced on every push, so this **imports that table** and asks a structural
+question instead:
+
+| | |
+|---|---|
+| `required` | the file is in a part the change declared |
+| `supporting` | the file is in a part a declared part **may depend on** |
+| `tests` · `documentation` · `build/config` | counted, never questioned |
+| `unrelated` | neither — and this is the only class that raises |
+
+**The `supporting` row is the one that earns its keep.** An intent declaring `mcp` and a diff touching
+`brain/` is supporting work, because `mcp` may depend on `brain`. The same intent touching `revit/` is
+not, because it may not — and that is precisely the change a person should look at.
+
+`build/config` is tested **before** part membership, deliberately: a change to how Heron is built or
+installed is the one class that must never hide inside another, because it is what reaches a modeller's
+machine.
+
+### Signals decide which gates the change owes
+
+A signal is a fact about the diff, not a verdict, and each names the paths that raised it so the claim
+can be checked in one look. Touching a permission file owes a human review **whatever risk was
+declared** — the diff outranks the label. Touching a fragment owes a run against a real model, because
+[D-30](../docs/DECISIONS.md) is not satisfied by a compile.
+
+**It sets the homework and does not mark it.** Which gates ran is read out of an evidence record; this
+tool runs none of them. A tool that did both would one day mark its own.
+
+### The exit codes
+
+| | |
+|---|---|
+| 0 | `PASS` |
+| 1 | `SPLIT` · `REVISE` · `REVERT` |
+| 2 | `BLOCKED` — the intent is unusable, so nothing was judged |
+| 3 | `NEEDS REAL REVIT PROOF` — the same code [`tests/README.md`](../tests/README.md) uses for *could not run here*, and for the same reason: it must never read as a pass |
+
+**A change with no evidence record is `REVISE`, never `PASS`.** That is the whole point of the tool
+having two halves.
+
+---
+
+## `change-evidence.py` — before and after, measured the same way twice
+
+```bash
+python tools/change-evidence.py capture --out before.json --tests all
+python tools/change-evidence.py capture --out after.json --tests all --against before.json
+python tools/change-evidence.py compare before.json after.json
+```
+
+**"Better" is a comparison**, and until this existed there was nothing a person could run mid-task to
+hold the two states side by side. CI had half of it — `gates.yml` compares the **set** of failing suites
+against a known-failure list rather than counting them — and that half is the good half, taken
+deliberately: a total hides a regression that arrives the same day something else is fixed.
+
+It records only what a command derives — gate exits, the suite map, and the counts this repository has
+been wrong about in prose. **Not a dump of the tree.** A record big enough to hide a change in is a
+record nobody reads.
+
+### Three rulings, and the third is the one usually missing
+
+| | |
+|---|---|
+| `REVERT` | something that passed before does not pass now |
+| `KEEP` | something that failed before passes now, and nothing broke |
+| `NO CHANGE MEASURED` | neither — **not** *fine*, and **not** *better* |
+
+One fix and one break is `REVERT`: a fix does not pay for a regression.
+
+**Exit 3 is neither side of the comparison.** A suite that could not run before and passes now means
+somebody installed something, not that the code improved, and it is reported as *not comparable* rather
+than counted. Two unknowns are not a match.
+
+### A claim and a measurement are different kinds of fact
+
+`--stated check-compile=PASS:ran on the PC` records a gate that ran somewhere this container is not —
+a .NET SDK, a Windows machine, a Revit. It is stored marked **stated**, never **derived**, and printed
+that way. A record that let an assertion sit beside a measurement in identical type is a record in
+which the assertion eventually gets believed as one.
+
+### It cannot change anything, and that is the safety property
+
+The improvement loop this serves is *measure → change one thing → measure again → keep or revert*. This
+tool owns the two measurements and the ruling. **It owns no mutation**, so no prompt, no fragment
+description, no routing hint and no line of code can be rewritten by anything in it — which is what
+keeps a measuring tool from quietly becoming an editor.
+
+---
+
+## `check-package.py` — would the thing we deliver actually install
+
+```bash
+python tools/check-package.py
+```
+
+**Nothing else in this repository reads `Heron.addin`.** Rename the entry class and every test still
+passes, all eight releases still compile, and Revit says *"cannot run the external application Heron
+AI"* with nothing to say why. That failure reaches a modeller and reaches nobody else.
+
+It asks the delivery questions that can be asked honestly on a machine with no Windows, no Revit and no
+compiler — among them the four that are fatal and otherwise invisible:
+
+| | |
+|---|---|
+| a `FullClassName` naming no class, or one that is not an `IExternalApplication` | Revit refuses the add-in |
+| an `<Assembly>` the project does not build | the same |
+| a `<ManifestSettings>` element | **crashes Revit 2025 and older**, and one manifest is deployed to all eight releases |
+| a manifest the deploy rewrite no longer matches | `String.Replace` does not fail when it matches nothing — it installs pointing at the wrong path |
+
+It also holds the promises: **per-user install on every release**, one script owning the install path,
+and Autodesk's assemblies never redistributed.
+
+### The release table is evaluated, not searched
+
+Its first run raised Revit 2022 and 2023 as missing from `Directory.Build.props`. They are not: one row
+covers `>= 2021 AND <= 2024`, and the check was looking for the literal year. That is the crying-wolf
+failure `check-revit-gate.py` records at length above — a finding that sends somebody to add a row that is already there. **The conditions are
+evaluated now**, and one this cannot parse is reported rather than assumed true.
+
+### What it deliberately cannot say
+
+Whether Heron installs. Whether an upgrade keeps a user's settings. Whether a rollback recovers.
+Whether Revit finds the manifest. Each needs Windows and a Revit, and **the tool prints them as still
+owed on every run** — because a green run here is not an install and must never be reported as one.

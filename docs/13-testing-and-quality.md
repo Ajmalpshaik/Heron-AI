@@ -104,6 +104,53 @@ Tracked as [Q-14](OPEN-QUESTIONS.md).
 
 ---
 
+## 3a. Offline-provable, or real Revit — the line, and where it is drawn
+
+§3 recommends levels 1–4 against a mocked Revit boundary and 5–7 inside a real Revit. That is a
+recommendation; **this is the list**, and it exists because *"we should test more of it offline"* is
+not actionable and *"these things are already testable offline and these are not"* is.
+
+**The rule that decides the line:** a thing is offline-provable when the answer depends only on what
+Heron itself declares, computes or writes. It needs a real Revit the moment the answer depends on what
+**Autodesk's code does**.
+
+| Offline-provable | What proves it today |
+|---|---|
+| Which capability a request resolves to, and which fragment provides it | `heron_capability.py`, `tests/test_capability.py` |
+| Whether a fragment can still be found by its own declared words | `tools/check-routing.py`, `tools/check-intrusion.py` |
+| Whether a contract is well formed, and whether one fragment's `provides` satisfies another's `needs` | `heron_fragment.py`, `tests/test_graph.py` |
+| Lifecycle state, and whether a promotion is permitted | `heron_fragment.py`, `tests/test_fragment_store.py` |
+| Result and error contracts, and the refusal wording | `tests/test_write_safety.py`, `tests/test_failure_analysis.py` |
+| Whether an agent triggers on the right request and not on the wrong one | `tests/test_validate_agent.py`, `tests/test_skills.py` |
+| Report and catalogue generation | `tests/test_catalog.py` |
+| Which capabilities are available **and why one is not** | `mcp/server/heron_runtime.py`, `tests/test_runtime_snapshot.py` |
+| Layering, in both languages, and the adapter boundary | `tools/check-structure.py` |
+| Whether a change stayed inside the parts it declared | `tools/check-change.py`, `tests/test_change_gate.py` |
+| The add-in manifest, the install path, and the release-to-runtime map | `tools/check-package.py`, `tests/test_package_gate.py` |
+| That the C# compiles on every declared release | `tools/check-compile.py`, `tools/check-api-surface.py` — needs the .NET SDK, not Revit |
+
+| Needs a real Revit — and **no mock may stand in for it** | Why |
+|---|---|
+| Any call into the Revit API | The answer is Autodesk's, not Heron's |
+| Transactions, `TransactionGroup`, and one-undo behaviour | [Golden Rule 16](14-golden-rules.md) is a claim about Revit's undo stack |
+| Element creation, modification, deletion, geometry | The model is the thing being asserted about |
+| Units as the model stores them | A millimetre passed where feet were wanted produces no error — only a wrong model |
+| Connector behaviour, links, worksharing ownership | Behaviour that exists only in a live document |
+| Whether the add-in loads at all, on each release | Revit's own manifest reader decides |
+| Whether an install, upgrade or rollback works | Windows, a per-user folder, and a previous version |
+
+**A mocked Revit that returned plausible element counts would produce green suites and no knowledge
+whatever.** That is why nothing in `tests/` does it, and why [D-30](DECISIONS.md) asks for a named
+model, a negative case and a fingerprint instead. A compile is not a proof; a passing suite is not a
+proof; and a suite that *could not run* is not a pass either — [`tests/README.md`](../tests/README.md)
+keeps the three apart with exit codes.
+
+**Everything in the first table can be added to without asking anybody for a machine.** That is the
+practical point of drawing the line: it names where more automation is honest, and where more
+automation would only be more confident.
+
+---
+
 ## 4. Regression testing (§25)
 
 On every change to an existing fragment:

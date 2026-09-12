@@ -584,3 +584,57 @@ roll back. The user is told nothing happened while their elements have in fact m
 **The general rule, which is the part worth keeping:** a rollback is always the *second* thing going
 wrong, and cleanup and cosmetics must never be able to become the first thing reported. Neither of them
 is the work.
+
+---
+
+## Part F — Opened by building the Improvement Gate, 2026-09-12
+
+Three of these are questions about Heron's own tooling rather than about the specification. They are
+here rather than in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) because none of them blocks anything, and
+[work-notes/README](work-notes/README.md) puts a reviewed suggestion here.
+
+### 🟡 F1. Should the runtime capability snapshot become an MCP tool?
+
+[`mcp/server/heron_runtime.py`](../mcp/server/heron_runtime.py) turns the five different reasons
+`heron_capability.resolve()` returns `None` into six verdicts that mean six different things —
+`NO_PROVIDER`, `UNSUPPORTED_RELEASE`, `NOT_DETECTED`, `BLOCKED_BY_TRUST`, `NEEDS_REVIT`, `AVAILABLE`.
+A planner given `None` can only say *"I cannot"*; the sentences a modeller needs are *"Heron has no
+fragment for that"*, *"not on Revit 2020"*, *"press the Heron button"* and *"`write.enabled` is false"*,
+which are not the same answer at all.
+
+**Nothing is wired to it, and that was deliberate.** Offering it changes the risk table in
+[`heron_tools.py`](../mcp/server/heron_tools.py), which [12 §71](12-security-and-permissions.md) says
+is where risk is declared, and the add-in holds the matching half. That is a decision with a human in
+it, not a wiring job. `check-reachable.py` reports the function with this reason attached.
+
+**If it is taken**, it is `READ` with no bridge operation — it reads Heron's own library and facts the
+caller already has, and sends nothing to Revit — which puts it beside `heron_capabilities` rather than
+anywhere near the write path.
+
+### 🔵 F2. `ALL_VERSIONS` is declared twice
+
+[`check-compile.py`](../tools/check-compile.py) and [`check-api-surface.py`](../tools/check-api-surface.py)
+each own a copy of the supported release list. [`check-package.py`](../tools/check-package.py) imports
+the first rather than making it three, but two is already one too many for the fact that decides which
+Revit releases Heron claims to support. Merging them is a change to two working gates and deserves its
+own review.
+
+### 🔵 F3. The decision log's status summary stops at D-50
+
+[DECISIONS.md](DECISIONS.md)'s summary table ends at `D-50` while the log itself runs past `D-69`.
+Nothing enforces the table, so it drifted quietly. Completing it needs a careful one-line title per
+decision — worth doing in one pass by somebody reading them, not as a side effect of another change.
+
+### 🔵 F4. Two documents are numbered 34, and one of them is a plan
+
+[`34-patterns-adapted.md`](34-patterns-adapted.md) and
+[`34-project-perfection-and-continuous-upgrade-plan.md`](34-project-perfection-and-continuous-upgrade-plan.md)
+share a number, and `check-docs.py` does not object because nothing derives the numbering. Two things
+are tangled here and they should be untangled together rather than one at a time:
+
+- **The collision.** Renumbering touches every inbound link, including from [35](35-independent-study-notes-open-design-awesome-llm-apps-openhands.md).
+- **The placement.** The second is a *plan*, and by [work-notes/README](work-notes/README.md)'s own
+  test — *will this be deleted once its work is done?* — a plan belongs in `work-notes/`. Its work **is**
+  done, and it now carries a banner saying so. Whether it is deleted, moved or kept for its reasoning is
+  the owner's call: it is the fullest written statement of how Heron studies an outside project, and
+  that part has outlived the plan around it.

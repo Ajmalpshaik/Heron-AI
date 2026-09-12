@@ -7,7 +7,7 @@ Heron-Layer:  brain
 See docs/29-metadata-standard.md
 -->
 
-# 34 — The patterns behind the sixteen repositories, and what each becomes here
+# 34 — The patterns behind the studied repositories, and what each becomes here
 
 **[33](33-external-repository-research.md) asked *what are these projects*. This asks *how do they get
 their result*, and answers *what is that worth to a BIM modeller*.**
@@ -15,7 +15,7 @@ their result*, and answers *what is that worth to a BIM modeller*.**
 The difference matters. A matrix row says `agentmemory` fuses three retrieval streams. A **pattern**
 says *why fusing beats picking, and what it costs* — and that is the part that survives being moved into
 another project. [D-25](DECISIONS.md) is the rule: **studied and re-authored, never imported.** Nothing
-here is code from any of the sixteen.
+here is code from any of them.
 
 **Read [32 §1](32-master-architecture-reconciliation.md) first.** Heron is a **BIM-modeller-facing
 platform**, not a developer-assist harness. Most of these projects are the second thing. The pattern
@@ -27,9 +27,10 @@ transfers; the shape almost never does.
 
 | | |
 |---|---|
-| **Patterns extracted** | **15**, from **17** repositories — `gbrain` was added by the owner on 2026-09-09 and is the only one that **measured** a question Heron has open |
-| **Adopted and built** | **3** — tiered depth, the cut marker, and **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)). All three tested |
-| **Already held** | **6** — Heron had them, and in four cases more strictly |
+| **Patterns extracted** | **20**, from **20** repositories — `gbrain` was added by the owner on 2026-09-09 and is the only one that **measured** a question Heron has open. §2.15 to §2.19 came from a second round on 2026-09-11, against three repositories named by the improvement-gate plans |
+| **Adopted and built** | **6** — tiered depth, the cut marker, **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)), and the three the improvement gate is made of ([§2.15](#215-built---compare-the-finished-diff-against-what-the-change-said-it-was-for), [§2.16](#216-built---a-file-no-rule-recognises-widens-the-checks-rather-than-passing-quietly), [§2.17](#217-built---check-the-thing-that-gets-delivered-not-the-tree-it-was-built-from)). All tested |
+| **Adopted as a rule rather than as code** | **1** — [§2.18](#218-adopted-as-a-rule---mock-only-the-thing-you-genuinely-cannot-have) |
+| **Already held** | **7** — Heron had them, and in five cases more strictly |
 | **Blocked on an owner decision** | **2** — `Q-50`, `Q-51`, `Q-53`. `Q-49` was answered and built; `Q-52` was answered by **measuring it** |
 | **Rejected with a reason** | **3** — one of them **measured and rejected**, not argued ([§2.13](#213--measured-and-rejected--a-third-retrieval-stream-tried-at-six-settings)) |
 
@@ -279,11 +280,91 @@ be `Response B` and a position bias would become a systematic bias. **Anonymise 
 disagreeing replicas is right"*. Heron has **one Revit, one pipe, one queue, one handler**
 ([D-09](DECISIONS.md)) and **14 MCP tools against their 314**.
 
+### 2.15 BUILT - compare the finished diff against what the change said it was for
+
+| | |
+|---|---|
+| **Where from** | [awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps), Apache-2.0 both at the repository root and in the skill's own front matter. Read at implementation time on 2026-09-11: the skill brief, its diff classifier and its signal reference |
+| **Their mechanism** | A stated one-line intent is tokenised, each changed path is tokenised, and a file sharing at least one token is *in scope* while one sharing none is *likely creep*. Signals - a new dependency, a public rename, a config edit, an oversized hunk, a formatting-only file - are attached to the file that raised them, and every item gets **keep, split or justify** |
+| **Why it works** | Not the scoring. The scoring is weak and its own reference says so: *"a cheap, deterministic proxy"*. What works is the **discipline of writing the intent down first**, and the refusal to treat a signal as a verdict |
+| **What Heron already had** | Nothing. `check-structure.py` asks whether the repository is laid out correctly; nothing asked whether **this change** is |
+| **What Heron built instead** | [`tools/check-change.py`](../tools/check-change.py). The classification is **structural, not lexical** - it imports the layering table out of `check-structure.py` and asks whether each file is in a declared part, in a part a declared part **may depend on**, or in neither. Word overlap would call `heron_retrieve.py` unrelated to *"fix retrieval"*; the layering table cannot |
+
+**The `supporting` class is the whole gain, and it is only possible because Heron has the table.** An
+intent declaring `mcp` and a diff touching `brain/` is supporting work, because `mcp` may depend on
+`brain`. The same intent touching `revit/` is not. That distinction is invisible to any amount of
+tokenising and it is exactly the one a reviewer needs.
+
+**Their ten input fields became three.** [29 §4](29-metadata-standard.md)'s test - *would a script fail
+the build over this field?* - leaves `intent`, `area` and `risk`. Whether a change needs a real Revit,
+which releases it touches and whether a contract moved are all **derived from the diff**, and a derived
+fact beats a declared one every time.
+
+---
+
+### 2.16 BUILT - a file no rule recognises widens the checks rather than passing quietly
+
+| | |
+|---|---|
+| **Where from** | [OpenDesign](https://github.com/nexu-io/open-design), Apache-2.0. Its CI scope classifier and the rule contract that feeds it, read 2026-09-11 |
+| **Their mechanism** | A declarative table maps path patterns to *effects* - which test lanes a change requires. A file matching **no** rule sets **every** effect true, and the decision carries a trace naming which rules matched which file and why each escalation happened. The contract is validated before it is used: unknown effects, duplicate ids, uncompilable regexes and reference cycles all fail loudly |
+| **Why it works** | The default. Almost every classifier's unmatched case is "ignore"; theirs is "assume the worst", because an unrecognised path is precisely the case a classifier is least able to judge |
+| **What Heron already had** | The opposite default in one place - `heron_fragment.load_all()` returns its problems rather than swallowing them ([D-48](DECISIONS.md)) - and nothing like it for a change |
+| **What Heron built instead** | An unknown top-level folder is `unrelated` **even when the change declared it**, and an unusable intent exits 2 `BLOCKED` with nothing judged rather than producing a confident report from nonsense |
+
+---
+
+### 2.17 BUILT - check the thing that gets delivered, not the tree it was built from
+
+| | |
+|---|---|
+| **Where from** | [OpenDesign](https://github.com/nexu-io/open-design), Apache-2.0. Its installed-acceptance step, read 2026-09-11 |
+| **Their mechanism** | After a release is published, a separate check reads the **installed** manifest, compares it against the publish receipt, verifies a digest sidecar, drives the lifecycle start to stop, and emits an acceptance record naming exactly what was accepted |
+| **Why it works** | Source tests and delivery are different questions, and only the second one reaches a user. Their check would fail on a manifest that no longer binds what was published even though every test passed |
+| **What Heron already had** | **Nothing read `Heron.addin` at all.** Not one of the twenty-five tools. It is the first file Revit opens |
+| **What Heron built instead** | [`tools/check-package.py`](../tools/check-package.py), asking only what is answerable with no Windows, no Revit and no compiler - and **printing what it cannot answer on every run**, because a green run there is not an install |
+
+**Four faults it catches that were invisible to everything else**: an entry class that does not exist or
+is not an `IExternalApplication`; an assembly the project does not build; a `<ManifestSettings>` element,
+which arrived at Revit 2026 and **crashes 2025 and older** while Heron ships one manifest to all eight
+releases; and a manifest the deploy script's literal rewrite no longer matches, where `String.Replace`
+does not fail - it silently installs a manifest pointing at the wrong path.
+
+---
+
+### 2.18 ADOPTED AS A RULE - mock only the thing you genuinely cannot have
+
+| | |
+|---|---|
+| **Where from** | [OpenHands](https://github.com/OpenHands/OpenHands), MIT. Its mock-model end-to-end configuration and the scripted stand-in server behind it, read 2026-09-11. Its predecessor is archived and was **not** opened ([35 §5.1](35-independent-study-notes-open-design-awesome-llm-apps-openhands.md)) |
+| **Their mechanism** | The end-to-end run starts the **real published entry point** - the same binary users install - and replaces exactly one thing: the model. The stand-in serves a fixed scripted trajectory whose replies carry recognisable marker tokens, and it can produce the real **failure** modes as well as the happy path |
+| **Why it works** | Two properties, and the second is the one usually missing. The mock replaces the part that cannot be made deterministic and **nothing else**, so the test exercises the delivered artefact. And its output is *identifiable as a mock*, so a mocked result cannot be mistaken for a real one |
+| **What Heron already had** | The stronger half already, and written down: [13 §3](13-testing-and-quality.md) says levels 1-4 run against a mocked Revit boundary and 5-7 need a real Revit, and [D-30](DECISIONS.md) refuses to call anything proven without a named model, a negative case and a fingerprint |
+| **What Heron took** | The rule, stated where it can be acted on: [13 §3a](13-testing-and-quality.md) now carries the offline/real-Revit matrix as a table rather than as a recommendation, and the three suites added by this work each say in their own docstring what they do **not** prove |
+
+**Heron's version of their line is harder, and it stays harder.** They mock a model; Heron would be
+mocking *the thing the product exists to change*. A mocked Revit that returned plausible element counts
+would produce green suites and no knowledge whatever, which is why nothing here does it.
+
+---
+
+### 2.19 ALREADY HELD, and given a second home - a finding carries the evidence that settles it
+
+| | |
+|---|---|
+| **Where from** | [OpenDesign](https://github.com/nexu-io/open-design), Apache-2.0. Its artefact lint pass, read 2026-09-11 |
+| **Their mechanism** | Deterministic text checks produce structured findings at three severities - must fix, should fix, nice to have. Each finding carries the snippet that raised it, and the set is rendered back to the agent so it can correct itself. Its own header accepts false positives *because* each finding carries its evidence |
+| **Why it works** | Severity says what must happen; the snippet lets a reader settle it in one look instead of trusting the tool |
+| **What Heron already had** | Both halves, more strictly. `check-revit-gate.py` has four verdicts about **evidence** rather than severity, and `check-routing.py` exits 0 on purpose because *"a tool that failed a build over two fragments both answering to 'grey the background' would teach people to weaken their own utterances to buy a green tick"* |
+| **What was added** | The same habit in the new gates: every signal in `check-change.py` names the paths that raised it, and every packaging problem names the file and what Revit would do about it |
+
+---
+
 ---
 
 ## 3. The pattern behind the patterns
 
-Three of the sixteen taught the same lesson from different directions, and it is the one worth keeping:
+Three of them taught the same lesson from different directions, and it is the one worth keeping:
 
 > **A rule in code beats a rule in prose.**
 
@@ -310,7 +391,11 @@ third.
 ## 4. What none of this is
 
 **None of it has been near Revit.** [D-30](DECISIONS.md) is untouched, no fragment status moves, and
-218 fragments have still never met a model. **That is the critical path and every line above runs on any
-machine at any time.**
+the fragments below `PROVEN` have still never met a model — `python tools/check-gaps.py` for how many,
+because that number changes and a typed one goes stale. **That is the critical path and every line above
+runs on any machine at any time.**
 
-**Nothing was adopted as code from any of the sixteen.** [D-25](DECISIONS.md).
+**Nothing was adopted as code from any of them.** [D-25](DECISIONS.md). The three read in the
+2026-09-11 round are Apache-2.0, Apache-2.0 and MIT at the exact paths inspected, and the licences are
+recorded because a repository-level assumption is not a provenance check
+([35 §3.7](35-independent-study-notes-open-design-awesome-llm-apps-openhands.md)).
