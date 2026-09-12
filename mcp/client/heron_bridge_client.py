@@ -1279,6 +1279,49 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
 
     phases = []
 
+    # WHICH SETUP STEPS HAVE TO TRAVEL WITH THE FRAGMENT.
+    #
+    # A step at MODIFY or above cannot run on the read path - it opens no
+    # transaction - and cannot usefully run as its own write, because that is
+    # its own transaction group, decided before the fragment under test runs.
+    # It goes in the request's `setup` array instead and the add-in runs it
+    # inside the same group, where `apply` still decides whether any of it
+    # survives.
+    #
+    # ONLY MEANINGFUL ON A WRITE PHASE. A read run has no group to put them in,
+    # and a read run needing a write to arrange it is a contradiction: the
+    # fragment under test cannot change anything either.
+    deferred_setup = set()
+    if writing:
+        for step in (setup or []):
+            step_risk = fragment_risk(os.path.join(root, "brain", "fragments",
+                                                   step, "fragment.yaml"))
+            if step_risk in ("MODIFY", "PUBLISH", "ADMIN"):
+                deferred_setup.add(step)
+
+    def deferred_specs():
+        """The deferred steps as the add-in wants them, in the declared order."""
+        specs = []
+        for step in (setup or []):
+            if step not in deferred_setup:
+                continue
+            step_path = os.path.join(root, "brain", "fragments", step,
+                                     "impl", "any", "fragment.cs")
+            if not os.path.isfile(step_path):
+                return None
+            with io.open(step_path, "r", encoding="utf-8") as fh:
+                step_source = fh.read()
+            step_needs = needs_for(root, step)
+            if step_needs is None:
+                return None
+            # `needs` crosses as the TEXT of its array: a step arrives at the
+            # add-in already flattened into a string dictionary, and re-reading
+            # one named array is cheaper than a second parser on a wire that is
+            # already parsed by hand.
+            specs.append({"name": step, "source": step_source,
+                          "needs": json.dumps(step_needs)})
+        return specs
+
     def arrange(document, using=None):
         """Re-make the arrangement before a phase, and say if it could not be.
 
@@ -1301,6 +1344,18 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
         the same selection, because then they are the same values.
         """
         for position, step in enumerate(setup or []):
+            # A STEP THAT CHANGES THE MODEL IS NOT RUN HERE. This path is
+            # run_fragment_read, which opens no transaction, so a MODIFY step
+            # throws - and sending it as its own write would make it its own
+            # transaction group, kept or rolled back before the fragment under
+            # test could see it. Either way there is no arrangement.
+            #
+            # Those steps travel WITH the fragment under test instead, in the
+            # request's `setup` array, and the add-in runs them inside the same
+            # group. See writing_setup below and RevitFragment.RunSetupSteps.
+            if step in deferred_setup:
+                continue
+
             step_path = os.path.join(root, "brain", "fragments", step,
                                      "impl", "any", "fragment.cs")
             if not os.path.isfile(step_path):
@@ -1355,6 +1410,21 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
             args["chain"] = "reset"
         if document:
             args["document"] = document
+
+        # THE ARRANGEMENT THAT HAD TO CHANGE THE MODEL, travelling with the
+        # fragment so the add-in can run it inside the same transaction group.
+        # Nothing here is kept either: the group is rolled back with everything
+        # in it unless `apply` is sent, and it never is from this path.
+        if deferred_setup:
+            specs = deferred_specs()
+            if specs is None:
+                record = {"phase": phase, "ok": False, "error": "setup_failed",
+                          "message": "the arrangement could not be read from disk",
+                          "arranged": arranged}
+                phases.append(record)
+                print("%-14s %s" % (phase, "setup_failed"))
+                return record
+            args["setup"] = specs
 
         # A MODIFY FRAGMENT IS PROVED WITHOUT KEEPING ANYTHING. `apply` is never
         # sent from here, so both phases run for real inside a transaction and

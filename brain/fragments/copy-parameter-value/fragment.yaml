@@ -63,6 +63,31 @@ contract:
       role: accounting
       type: bool
 
+proof:
+  date: '2026-09-12'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,447 elements), Revit 2024, session 65196
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection, write-element-parameters with this phase's own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned copied 9, pairs 9 item(s) [[Autodesk.Revit.DB.Parameter, Autodesk.Revit.DB.Parameter],
+    [Autodesk.Revit.DB.Parameter, Autodesk.Revit.DB.Parameter], [Autodesk.Revit.DB.Parameter,
+    Autodesk.Revit.DB.Parameter], ...], refused 0 item(s), sourceEmpty 0 item(s), typeMismatch
+    false. inputs came elements from set-selection (9); fromName as given; toName as given.
+    on Project1 work_ajmal.al
+  negative_case: run with categoryName=Duct Fittings, fromName=HERON_NO_SUCH_PARAMETER, inViewOnly=1
+    - Mech, parameterName=Comments, toName=Mark, value=HERON-TEST-VALUE instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running select-by-category-name, set-selection, write-element-parameters with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned copied 0, pairs 0 item(s), refused 8 item(s) [925657, 925663,
+    925708, ...], sourceEmpty 0 item(s), typeMismatch false. inputs came elements from set-selection
+    (8); fromName as given; toName as given. on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 62ed358f278d7b82
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -1,0 +1,42 @@
+# remove-parameter-value, 2026-09-12.
+#
+# CLEARING NEEDS SOMETHING THERE TO CLEAR, and `Comments` is empty on every
+# duct - which is why this came back `cleared 0` and was read as the fragment
+# failing. The setup fills it first, inside the same transaction group, so the
+# fragment has real work to do and the whole lot rolls back together.
+#
+# The arrangement that was impossible until the add-in could run a MODIFY setup
+# step: sent through the read path it threw "Attempt to modify the model".
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  in: Project1 work_ajmal.al
+  write: true
+  keep-chain: true
+  setup:
+    - select-by-category-name
+    - set-selection
+    - write-element-parameters
+  set:
+    categoryName: Ducts
+    inViewOnly: "1 - Mech"
+    parameterName: Comments
+    value: HERON-TEST-VALUE
+  negative-set:
+    categoryName: Duct Fittings
+    inViewOnly: "1 - Mech"
+    parameterName: Comments
+    value: HERON-TEST-VALUE
+
+jobs:
+  - fragment: remove-parameter-value
+    set:
+      # The parameter the setup just filled. Clearing it is a change that can
+      # be counted, on nine ducts.
+      parameterName: Comments
+    negative-set:
+      # NO SUCH PARAMETER, so there is nothing to clear for a reason that is
+      # about the fragment rather than about an empty selection. The same shape
+      # as copy-parameter-value's negative, which passed on it.
+      parameterName: HERON_NO_SUCH_PARAMETER
