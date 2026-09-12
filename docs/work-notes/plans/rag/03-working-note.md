@@ -122,6 +122,8 @@ Each of these is a sentence that was true when written and is false now.
 
 | **W-9** | Stage 7's own done-when, in [`02-implementation.md` §10](02-implementation.md) | a before-and-after measurement exists at the same corpus size | **only the before exists.** The seam is built and the absent half is measured — at 360 fragments the tracked question comes back at **0.0246 with a 2.1-rank lead, identical to the Stage 0b run**, so the seam is provably inert when nothing is installed. **No cross-encoder has ever run in this repository.** `huggingface.co` answers `CONNECT tunnel failed, response 403` from this container (re-checked 2026-09-11) while `pypi.org` answers 200, so it is that host's policy rather than a broken network — the same block [`heron_embed.py`](../../../../brain/heron_embed.py) recorded on 2026-08-28. **Nothing was estimated to fill the gap and no stub's number was written down as a result.** `A10` is the run |
 
+| **W-10** | [`brain/heron_embed.py`](../../../../brain/heron_embed.py), `_try_vec_extension` | — | **`sqlite_vec` is the one optional package that degrades with NOTHING SAID.** It returns `False` on ImportError and the caller falls back to comparing vectors in Python; no `backend()`, no report line, no error carries it, so a person cannot tell the fast path from the slow one. **The rule is degrade silently but SAY SO**, and this is the half that is missing — `heron_embed` says it for the encoder, `heron_rerank` for the re-ranker, `heron_ingest` for the PDF reader, and this one for nothing. **Found 2026-09-11 while closing R-73, by checking the other fallbacks rather than assuming the one in front of me was the only gap.** Recorded, not fixed: it is a second module in a batch that had no business growing |
+
 **W-5 and W-6 were found on 2026-09-10 by the owner asking a question** — *does a new person
 installing from GitHub get this automatically?* The answer is that the **add-in half installs itself
 and the Python half does not**, and this track makes it sharper rather than causing it: the plan adds
@@ -2320,3 +2322,47 @@ exactly that reason — the list is no longer wrong, and it is still nobody's jo
 **W-7 was checked and is still blocked.** Q-A is answered, which looks like the release W-7 waits on —
 its answer names *whichever numbered document he can hand over first*, not a clause. The blocker reads
 as cleared and is not.
+
+---
+
+### 2026-09-11 — the fallback said what was wrong and not what to do
+
+**R-73 moved, and checking the other fallbacks found one that says nothing at all.**
+
+`heron_embed.backend()` reported `built-in character n-grams … but NOT meaning` and stopped. A person
+reading that knows something is degraded and **not one thing they can do about it** — which, with
+[W-5](#4-defects-found-while-planning--recorded-not-fixed) closed the same day, was the last place the
+install story broke down.
+
+**Appended to `why`, not put behind a new call.** Every reporter already prints `why` —
+`heron_retrieve` stores it on the candidate, the CLI prints it, the measuring tools read it. A remedy
+behind a function nobody calls is exactly how R-73 stayed PART since it was written.
+
+**And the second clause is the one that will save somebody an evening.** `pip install --user model2vec`
+succeeds — `pypi.org` answers 200 — and then `StaticModel.from_pretrained` has to reach
+`huggingface.co`, which is **refused from this container** (403, recorded 2026-08-28, re-checked
+2026-09-11). Naming the package without naming the condition sends a reader into a failure this
+repository has already written down twice.
+
+**The check is anchored on the rule and reads the package name from the manifest**, so renaming the
+package moves both at once and the test cannot go stale on a quoted sentence. **That trap has bitten
+this repository three times**, and it is the reason the check does not quote the message.
+
+### Checking the neighbours found W-10
+
+R-73 says *a component*, so the other fallbacks were read rather than assumed:
+
+| component | says it is degraded | names the remedy |
+|---|---|---|
+| `heron_embed` | yes | **yes, now** |
+| `heron_ingest` (PDF) | yes — in the error a reader actually hits | yes |
+| `heron_rerank` | yes | **only in its CLI**, via `announcement()`; `why` alone does not |
+| `sqlite_vec` | **no — nothing at all** | no |
+
+**`sqlite_vec` is [W-10](#4-defects-found-while-planning--recorded-not-fixed).** It is the one optional
+package whose absence is invisible: `_try_vec_extension` returns `False`, vectors get compared in
+Python, and no report line anywhere distinguishes the fast path from the slow one. *Degrade silently
+but say so* — this one does the first half only.
+
+**Both are recorded rather than fixed**, and deliberately: they are two more modules in a batch that had
+no business growing, and R-73's row now names them instead of the row claiming more than is true.

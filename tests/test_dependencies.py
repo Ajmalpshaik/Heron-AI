@@ -158,6 +158,36 @@ def main():
               "%s imports %s, and it has to run on a locked-down machine with "
               "nothing installed" % (area, ", ".join(sorted(bare))))
 
+    # 6. R-73 - a component in fallback mode names what would improve it.
+    #
+    # Anchored on the RULE, not on the sentence: the package name is read from
+    # the manifest rather than typed here, so renaming the package moves both
+    # at once and quoting the message cannot go stale. A test that names a
+    # line instead of a rule is a test with a half-life - that trap has bitten
+    # this repository three times.
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    try:
+        import heron_embed
+    except ImportError as problem:
+        check(False, "brain/heron_embed.py will not import: %s" % problem)
+    else:
+        name, why = heron_embed.backend()
+        if name == heron_embed.LEXICAL:
+            fixer = listed.get("model2vec")
+            check(fixer is not None,
+                  "model2vec is what lifts the fallback and it is in no manifest")
+            if fixer is not None:
+                check(fixer.pip_name in why,
+                      "the fallback backend does not name `%s`, the package "
+                      "that would improve it (R-73)" % fixer.pip_name)
+            check("pip install" in why,
+                  "the fallback backend names no install command, so a reader "
+                  "is told what is wrong and not what to do (R-73)")
+        else:
+            print("NOTE: the trained backend is installed here, so the fallback")
+            print("message could not be checked this run. That is reported")
+            print("rather than counted as a pass.")
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
