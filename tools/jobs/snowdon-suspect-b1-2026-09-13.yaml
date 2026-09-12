@@ -1,0 +1,114 @@
+# GROUP B, BATCH 1 - three of the twenty whose NEGATIVE CASE DID SOMETHING.
+# 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/snowdon-suspect-b1-2026-09-13.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/snowdon-suspect-b1-2026-09-13.yaml
+#
+# WHAT GROUP B ACTUALLY IS, AND WHY MOST OF IT IS NOT A FAULT. Twenty-one
+# fragments came back with a negative case that returned content. Read the
+# numbers together and the pattern is loud: `copies 5`, `moved 5`, `rotated 5`,
+# `enclosed 5`, `enclosed 5`, `shown 5`, `byKind 5`, `rows 5`. The same 5, over
+# and over, is not twenty faults - it is one arrangement mistake made twenty
+# times. The negative changed WHO the work was done to and not WHETHER the
+# thing being tested was there, so a fragment that moves things was handed five
+# different things and moved them, correctly.
+#
+# THE REAL SPLIT IS D-53. A fragment whose action always succeeds on valid
+# input - move, rotate, copy, zoom - has NO empty arrangement, and D-30's
+# negative leg cannot be met by one. Those are proved by TRACKING instead.
+# The three below are NOT of that kind: each has a real input it must refuse,
+# so each keeps a true empty negative and belongs here rather than in a
+# tracking run.
+#
+# MEASURED FIRST, on 2026-09-13: Ducts in HERONL2 -> 191. list-sheets -> 17
+# sheets, M000 is "Cover Sheet". (Views read HERONL* because a rename survived
+# a rollback earlier today - FRAGMENT-ISSUES row 19.)
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  in: Snowdon-scratch_ajmal.al
+  write: true
+
+jobs:
+  # ------------------------------------------------------------------ 1
+  - fragment: hide-elements
+    setup:
+      - select-by-category-name
+      - set-selection
+    keep-chain: true
+    set:
+      categoryName: Ducts
+      inViewOnly: HERONL2
+      view: HERONL2
+      # TEMPORARY IN BOTH LEGS, so the only thing that differs is the view.
+      # This is the mode that HAS a refusal: a permanent hide is an ordinary
+      # view setting and the fragment does not gate it, but a temporary one
+      # needs CanUseTemporaryVisibilityModes, which a sheet does not have.
+      permanent: "false"
+    negative-set:
+      # THE VIEW IS THE NEGATIVE, AND IT IS A DIFFERENT KEY FROM THE ONE THE
+      # SETUP USES. `inViewOnly` still names HERONL2, so the same 191 ducts are
+      # selected and handed over - what changes is the view they are asked to
+      # be hidden IN. A SHEET is a real View that cannot hide a model element,
+      # so `viewRefused` should account for it with `hidden` at 0. That
+      # separates CAN IT HIDE from WAS THERE ANYTHING TO HIDE, and the previous
+      # arrangement conflated them by handing it two different elements.
+      categoryName: Ducts
+      inViewOnly: HERONL2
+      view: Cover Sheet
+      permanent: "false"
+    note: >
+      `hidden` is the only role: result - cannotHide and viewRefused are both
+      accounting under D-52. The old negative returned `hidden 2`, which was
+      the fragment correctly hiding two other elements.
+
+  # ------------------------------------------------------------------ 2
+  - fragment: set-category-visibility
+    # ZERO SETUP. view, categories and visible are all source: request.
+    set:
+      # A VIEW THAT OWNS ITS OWN VISIBILITY. HERONL2 was tried first and the
+      # fragment returned `refused: [Ducts]` in BOTH legs - correctly, because
+      # audit-view-filters reports that view as templateOwned, so its category
+      # visibility belongs to the 'Mechanical Plan' template and not to the
+      # view. find-views-without-template names nine that are free; this is one.
+      view: Project View
+      categories: Ducts
+      # Ducts are visible in this view - 191 were just collected from it - so
+      # turning them OFF is a real change and `changed` should be 1.
+      visible: "false"
+    negative-set:
+      view: Project View
+      categories: Ducts
+      # ASKING FOR THE STATE IT IS ALREADY IN. Each phase runs on a fresh
+      # rollback, so the ducts are visible again when this runs; setting them
+      # visible changes nothing and `changed` must be 0. This is the cleanest
+      # kind of negative there is - not a refusal, not an empty selection, but
+      # the fragment correctly declining to report work it did not do.
+      visible: "true"
+    note: >
+      `changed` is the only role: result - notControllable and refused are
+      accounting. A fragment that reported what it was ASKED for rather than
+      what it DID would return 1 here, which is the fault this catches.
+
+  # ------------------------------------------------------------------ 3
+  - fragment: create-view-template-from-view
+    set:
+      sourceView: HERONL2
+      newTemplateName: HERON_TEST_TEMPLATE
+      # FALSE, deliberately. Applying it to the source is a second change and
+      # `appliedToSource` is its own result; leaving it off keeps this leg
+      # about making the template.
+      applyToSource: "false"
+    negative-set:
+      # A SHEET HAS NO VIEW TEMPLATE TO MAKE. It is a real View, it resolves by
+      # name, and Revit refuses it - so `refused` accounts for it while
+      # `templateId` and `templateName` stay empty.
+      sourceView: Cover Sheet
+      newTemplateName: HERON_TEST_TEMPLATE
+      applyToSource: "false"
+    note: >
+      templateId, templateName and appliedToSource are all role: result -
+      refused is accounting. The old negative returned a real templateId and
+      the name "1 - Mech Copy 1", which is the fragment working on a view it
+      was handed rather than failing.

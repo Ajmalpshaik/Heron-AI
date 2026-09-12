@@ -1,0 +1,54 @@
+# test-view-filter-match, and an honest partial. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/snowdon-viewfilter-2026-09-13.yaml
+#
+# WHAT THIS PROVES AND WHAT IT DOES NOT - stated first, because the limitation
+# is the interesting part.
+#
+# The fragment answers, for each element, one of three things: it MATCHES the
+# filter's rules, it fails them, or the filter does not cover its category at
+# all. Two of those are declared role: result - `matched` and `outOfScope`.
+#
+# THIS RUN EXERCISES `outOfScope` AND NOT `matched`. Three of this model's
+# filters were tried against the 191 ducts - "Domestic" and "ABL - General
+# Power" both returned outOfScope 191, and no filter in this project lists
+# Ducts among its categories. So a MATCH cannot be arranged here, and pretending
+# otherwise by varying the selection until a number appeared is the exact
+# mistake this method exists to prevent.
+#
+# It is still a real proof of a real behaviour: handed a genuine filter and 191
+# genuine elements, the fragment reads the filter's category list and correctly
+# reports that none of them are in its scope - rather than silently answering
+# "no match", which is a different and much more misleading statement.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  in: Snowdon-scratch_ajmal.al
+  keep-chain: true
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: test-view-filter-match
+    set:
+      # A REAL FILTER IN THIS PROJECT. report-view-filters lists 13; this is
+      # one of them, and audit-view-filters confirms it is applied to HERONL2.
+      filterName: Domestic
+      categoryName: Ducts
+      inViewOnly: HERONL2
+    negative-set:
+      # A FILTER THAT IS NOT THERE. The same 191 ducts, a name no filter
+      # carries - so nothing is tested and BOTH results stay at zero. That is
+      # what makes it a true empty answer rather than a refusal: `outOfScope`
+      # would be 191 if a real filter were named, so zero here means the
+      # fragment declined to classify anything at all.
+      filterName: ZZZNOSUCHFILTER
+      categoryName: Ducts
+      inViewOnly: HERONL2
+    note: >
+      matched and outOfScope are both role: result; findings carries no count.
+      GAP, recorded deliberately - `matched` was never moved off zero, because
+      no filter in this model covers Ducts. A model with a duct filter would
+      finish this proof.

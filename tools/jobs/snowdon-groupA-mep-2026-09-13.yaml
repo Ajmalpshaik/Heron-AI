@@ -1,0 +1,87 @@
+# GROUP A, BATCH 2 - the two whose negative is a DIFFERENT CATEGORY. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/snowdon-groupA-mep-2026-09-13.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/snowdon-groupA-mep-2026-09-13.yaml
+#
+# WHY THESE TWO AND NOT THE OTHER TWENTY-FOUR. Setup steps and the fragment
+# under test SHARE ONE `set:` NAMESPACE - a key means the same thing to both.
+# That is fine when setup only SELECTS, and it is a trap when setup CREATES the
+# very thing the fragment then looks for: `create-selection-filter` would build
+# the filter that `select-from-saved-set` is supposed to fail to find, so the
+# negative would quietly pass by making its own haystack.
+#
+# These two are the shape that has no such trap. Setup only selects; the
+# negative changes WHICH CATEGORY is selected, and the fragment's own
+# accounting is what proves it looked and correctly declined.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  in: Snowdon-scratch_ajmal.al
+
+  # BOTH ARE risk: MODIFY, and `write` is opt-in rather than read from the
+  # fragment's own risk - a job file that forgets it is accepted by --dry-run
+  # and then refused by Revit. Nothing is kept either way: validate never sends
+  # `apply`, so both phases run for real and are rolled back.
+  write: true
+
+  # select-by-category-name leaves `elements`; set-selection consumes them, and
+  # a chain reset drops the handover - defect row 11.
+  keep-chain: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  # ------------------------------------------------------------------ 1
+  - fragment: set-mep-justification
+    set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: L2"
+      # A REAL CHANGE, NOT ZERO. Justification is an offset within the duct's
+      # own section; writing 0,0 is a legitimate value and would be
+      # indistinguishable from "it did nothing". 50/25 is small enough to be
+      # harmless and large enough to be an edit.
+      horizontalOffsetMm: "50"
+      verticalOffsetMm: "25"
+    negative-set:
+      # DUCT FITTINGS ARE A REAL SELECTION THAT CANNOT TAKE THIS. They are not
+      # MEP curves, so they carry no justification parameters at all -
+      # `withoutOffsets` should account for every one of them while `set` stays
+      # at zero. An empty category would refuse for the wrong reason.
+      categoryName: Duct Fittings
+      inViewOnly: "FloorPlan: L2"
+      horizontalOffsetMm: "50"
+      verticalOffsetMm: "25"
+    note: >
+      `set` is the only role: result - withoutOffsets is accounting under D-52
+      and findings carries no count. Read `set`, not the sentence.
+
+  # ------------------------------------------------------------------ 2
+  - fragment: snap-to-grid
+    set:
+      # AIR TERMINALS ARE THE CASE THIS FRAGMENT IS FOR. Its own purpose line
+      # names diffusers first: point-based things that should sit on a ceiling
+      # grid and do not.
+      categoryName: Air Terminals
+      inViewOnly: "FloorPlan: L2"
+      anchor: "0, 0, 0"
+      # A 600 mm ceiling grid, which is what a diffuser is set out to.
+      spacingX: "600"
+      spacingY: "600"
+    negative-set:
+      # DUCTS ARE NOT POINT-BASED. They are curves with two ends, so there is
+      # no single point to move - `notPointBased` should account for all of
+      # them and `snapped` stay at zero. That is the fragment reading the
+      # geometry and declining, which is exactly what the negative must show.
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: L2"
+      anchor: "0, 0, 0"
+      spacingX: "600"
+      spacingY: "600"
+    note: >
+      `snapped` is the only role: result - notPointBased and blocked are both
+      accounting. A diffuser already ON a cell centre moves zero distance and
+      may or may not count as snapped; if the positive is zero, check that
+      before blaming the fragment.

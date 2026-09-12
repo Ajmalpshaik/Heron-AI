@@ -1,0 +1,79 @@
+# GROUP A - duplicate-views and place-views-on-sheet. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/snowdon-groupA-sheets-2026-09-13.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/snowdon-groupA-sheets-2026-09-13.yaml
+#
+# MEASURED FIRST, NOT ASSUMED, on 2026-09-13:
+#   list-sheets  ->  17 sheets. M002 "Notes, Symbols & Schedules" holds 0 views
+#                    and is reported EMPTY, which is why it is the target below.
+#   find-views   ->  11 FloorPlan views (renamed HERONL* by an earlier run whose
+#                    rollback did not hold - FRAGMENT-ISSUES row 19)
+#
+# BOTH NEGATIVES ARE A REFUSED *VALUE*, READ OUT OF THE SOURCE RATHER THAN
+# GUESSED AT. That matters here because the obvious negative - "hand it views
+# that cannot be duplicated" - needs a kind of view this model may not have,
+# and an arrangement that cannot be made proves nothing.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  in: Snowdon-scratch_ajmal.al
+
+  # BOTH ARE risk: MODIFY. Nothing is meant to be kept - validate never sends
+  # `apply`. READ FRAGMENT-ISSUES ROW 19 BEFORE TRUSTING THAT SENTENCE: a
+  # rename survived a rollback that reported success on this very model today.
+  write: true
+
+  # The setup fragment leaves `elements`; the fragment under test consumes
+  # them. A chain reset drops the handover - defect row 11.
+  keep-chain: true
+
+jobs:
+  # ------------------------------------------------------------------ 1
+  - fragment: duplicate-views
+    setup:
+      - find-views
+    set:
+      viewType: FloorPlan
+      nameContains: ""
+      duplicateOption: Duplicate
+    negative-set:
+      viewType: FloorPlan
+      nameContains: ""
+      # AN UNRECOGNISED OPTION, AND THE FRAGMENT SAYS SO BY DESIGN. Its own
+      # comment: "an unfamiliar word is REPORTED rather than quietly becoming a
+      # default", because silently duplicating with detailing when somebody
+      # asked for a dependent view is wrong in a way that shows up much later.
+      # So this takes the `optionRecognised == false` branch, nothing is
+      # touched, and every view comes back under `notDuplicated` - which is
+      # accounting, leaving `duplicated` and `newViewIds` at zero.
+      duplicateOption: ZZZNOTANOPTION
+    note: >
+      `duplicated` and `newViewIds` are the role: result pair - notDuplicated is
+      accounting under D-52. The same 11 views go through both legs, so what
+      changes is only whether the option was understood.
+
+  # ------------------------------------------------------------------ 2
+  - fragment: place-views-on-sheet
+    setup:
+      # NOT find-views. A view already on a sheet cannot be placed on another,
+      # so feeding it every floor plan would report `notPlaced` for the ones
+      # that are already placed and read as a failure. find-unplaced-views asks
+      # exactly the right question and is PROVEN.
+      - find-unplaced-views
+    set:
+      # THE ONE SHEET THAT list-sheets CALLS EMPTY. Placing onto a sheet that
+      # already carries viewports risks overlapping them, and `distinctPositions`
+      # would then be measuring the arrangement rather than the fragment.
+      sheetNumber: M002
+    negative-set:
+      # A SHEET NUMBER THAT IS NOT IN THE PROJECT. The same views, a sheet that
+      # does not exist - so `sheetProblem` accounts for it and `placed` stays
+      # at zero. It isolates FINDING THE SHEET from PLACING ON IT, which is the
+      # half that could be wrong.
+      sheetNumber: ZZZ999
+    note: >
+      `placed` and `distinctPositions` are both role: result - notPlaced and
+      sheetProblem are accounting. distinctPositions is the one that matters:
+      placed 11 with distinctPositions 1 would mean eleven viewports stacked on
+      the same spot, which is a pass by count and a failure by eye.

@@ -63,6 +63,38 @@ contract:
       role: accounting
       type: IList<string>
 
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 47740
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    find-views with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned collisions 0 item(s), notMatched
+    3 item(s) [1363453, 1363463, 1363483], planned 8 item(s) [[Autodesk.Revit.DB.ViewPlan,
+    HERONHERONL1 - Block 35], [Autodesk.Revit.DB.ViewPlan, HERONHERONL1 - Block 37], [Autodesk.Revit.DB.ViewPlan,
+    HERONHERONL1 - Block 43], ...], refused 0 item(s), renamed 8. inputs came elements from
+    find-views (11); find as given; replaceWith as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with find=ZZZNOTHINGHERE, nameContains=, replaceWith=HERONL, viewType=FloorPlan
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running find-views with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned collisions 0
+    item(s), notMatched 11 item(s) [1363403, 1363413, 32, ...], planned 0 item(s), refused
+    0 item(s), renamed 0. inputs came elements from find-views (11); find as given; replaceWith
+    as given. on Snowdon-scratch_ajmal.al
+  caveat: THE SENTENCE ABOVE SAYING THE TRANSACTION GROUP ROLLED BACK IS WHAT REVIT REPORTED,
+    AND IT WAS NOT TRUE OF THE FIRST RUN. An earlier run of this same job renamed 8 views
+    L1 - Block 35 to HERONL1 - Block 35 and they STAYED renamed - read back minutes later
+    from a separate process, with the element count unchanged at 9,638 so no count could
+    see it. This run, starting from those names, planned HERONHERONL1 - Block 35 (see the
+    planned list above) and DID roll back. One rename survived and the next did not.
+    What this proof establishes is what the fragment DOES - 8 renamed with 0 collisions,
+    and 0 renamed when nothing matched. What it does NOT establish is that nothing was
+    kept. See docs/FRAGMENT-ISSUES.md row 19.
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 9760e6dfb27cc2fd
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

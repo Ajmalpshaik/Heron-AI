@@ -1,0 +1,67 @@
+# GROUP A - show-elements, and the one negative its contract allows.
+# 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/snowdon-groupA-show-2026-09-13.yaml
+#
+# THE NEGATIVE IS `permanent`, AND THAT IS FORCED RATHER THAN CHOSEN. Setup
+# steps and the fragment under test share ONE `set:` namespace, and here the
+# overlap is total: `hide-elements` and `show-elements` both need `view`,
+# `elements` and `permanent`, and all three mean the same thing to both. So
+# "hide category A, then try to show category B" cannot be written - one chain
+# carries one set of elements - and the only value that can differ between the
+# legs while still naming a real case is `permanent`.
+#
+# IT IS STILL A TRUE NEGATIVE, and the fragment's own header says why:
+#
+#     permanent   element by element. UnhideElements takes exactly the ids
+#                 given, so the count reported is the count that changed
+#     temporary   ALL OR NOTHING. Revit offers no way to un-hide one
+#                 temporarily hidden element - the only exit is leaving the
+#                 mode... So the temporary path deliberately IGNORES its
+#                 element list. Reporting `shown = 4` there would be a lie of
+#                 exactly the shape this project keeps meeting: the number
+#                 ASKED FOR reported as the number that HAPPENED.
+#
+# So with permanent=false, `shown` MUST be 0 - not because nothing was hidden,
+# but because the fragment refuses to count elements it did not individually
+# un-hide. That refusal is the thing worth proving, and it is exactly what a
+# fragment that inflated its numbers would fail.
+#
+# MEASURED FIRST: select-by-category-name Ducts in HERONL2 -> 191.
+# (The view is HERONL2 rather than L2 because a rename survived a rollback
+# earlier today - FRAGMENT-ISSUES row 19.)
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  in: Snowdon-scratch_ajmal.al
+  write: true
+  keep-chain: true
+  setup:
+    - select-by-category-name
+    - set-selection
+    - hide-elements
+
+jobs:
+  - fragment: show-elements
+    set:
+      categoryName: Ducts
+      inViewOnly: HERONL2
+      view: HERONL2
+      # TRUE IN BOTH STEPS: hide-elements hides them in the view for real, and
+      # show-elements then un-hides those same ids one by one. `shown` is then
+      # the count that actually changed.
+      permanent: "true"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: HERONL2
+      view: HERONL2
+      # FALSE IN BOTH STEPS: a TEMPORARY hide, then the temporary path. Revit
+      # cannot un-hide one temporarily hidden element, so the fragment clears
+      # the mode and reports `temporaryModeCleared` instead of a count.
+      permanent: "false"
+    note: >
+      `shown` and `temporaryModeCleared` are both role: result - notHidden and
+      viewRefused are accounting. `temporaryModeCleared` is a BOOLEAN, and
+      looks_empty treats a boolean as a flag rather than a quantity, so the
+      negative still reads as empty with it set. `shown` is the number to read.

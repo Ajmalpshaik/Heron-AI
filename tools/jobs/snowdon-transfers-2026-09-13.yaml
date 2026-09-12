@@ -1,0 +1,79 @@
+# THE TRANSFER CLUSTER - three tools, one second document. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/snowdon-transfers-2026-09-13.yaml
+#
+# WHY THESE THREE TOGETHER. The sweep's second-largest clean cluster: all three
+# ask for a `sourceDocumentTitle`, and the answer is the same for all three
+# because Ajmal has BOTH models open. That is the whole unblock - no new
+# arrangement, no drawing, just naming the project already on screen.
+#
+# AND THEY SHARE ONE NEGATIVE. Each takes a `nameContains` filter, so the
+# negative is a name nothing in the source carries: the same source document,
+# the same transfer machinery, a filter that matches nothing. It isolates
+# MATCHING from COPYING, which is the half that could be wrong - and it is a
+# true empty answer rather than a refusal.
+#
+# THE THIRD ONE IS ALSO A QUESTION ABOUT HERON ITSELF. It is risk: ADMIN, and
+# FRAGMENT-ISSUES row 21 found that PUBLISH has no runnable path at all - one
+# door refuses the class outright, the other opens a transaction it must not
+# have. HeronPermissions names Publish and Admin together. So whatever this
+# returns settles whether ADMIN is in the same hole, which decides 4 more
+# fragments.
+#
+# MEASURED FIRST, 2026-09-13: report-open-documents returns 2 documents -
+# Snowdon-scratch_ajmal.al (active) and Project1 work_ajmal.al.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  # The DESTINATION. Things are copied INTO this one.
+  in: Snowdon-scratch_ajmal.al
+  write: true
+
+  set:
+    # The SOURCE. Named exactly as Revit lists it - report-open-documents is
+    # where this string came from, not a guess at the file name.
+    sourceDocumentTitle: Project1 work_ajmal.al
+
+  negative-set:
+    sourceDocumentTitle: Project1 work_ajmal.al
+    nameContains: ZZZNOTHINGHERE
+
+jobs:
+  - fragment: transfer-materials-between-documents
+    set:
+      # Project1 is a small MEP model; "Default" is the prefix Revit's own
+      # starter materials carry, so it matches something real rather than
+      # something hoped for.
+      nameContains: Default
+    note: >
+      copied and weakened are the role: result pair - clashed and refused are
+      accounting under D-52. `weakened` matters: a material that arrives
+      without its appearance asset is still a copy, and reporting it separately
+      is the fragment being honest about a partial result.
+
+  - fragment: transfer-views-between-documents
+    set:
+      viewKind: Drafting
+      nameContains: ""
+    negative-set:
+      sourceDocumentTitle: Project1 work_ajmal.al
+      viewKind: Drafting
+      nameContains: ZZZNOTHINGHERE
+    note: >
+      copied and weakened are role: result. If the positive is 0, read it as
+      "Project1 holds no drafting views" before blaming the fragment - that is
+      rule 2, and it is the mistake this whole day has been avoiding.
+
+  - fragment: transfer-project-parameters-between-documents
+    set:
+      sharedParameterFile: ""
+      nameContains: ""
+    negative-set:
+      sourceDocumentTitle: Project1 work_ajmal.al
+      sharedParameterFile: ""
+      nameContains: ZZZNOTHINGHERE
+    note: >
+      RISK ADMIN. Expected to be REFUSED before Revit is touched, the way
+      PUBLISH is - and that refusal is the finding, not a failure. bound and
+      regrouped are the role: result pair.

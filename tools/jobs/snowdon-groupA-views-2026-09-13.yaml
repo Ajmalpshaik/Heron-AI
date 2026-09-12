@@ -1,0 +1,88 @@
+# GROUP A - the two that work on VIEWS. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/snowdon-groupA-views-2026-09-13.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/snowdon-groupA-views-2026-09-13.yaml
+#
+# MEASURED FIRST, NOT ASSUMED, on 2026-09-13:
+#   find-views  FloorPlan  ->  11 views (L1 - Block 35, L1 - Block 37, L2, ...)
+#   find-views  ThreeD     ->  2 views  ({3D}, 3D Plumbing)
+#   list-levels            ->  11 levels (Parking, L1 - Block 35, ...)
+#
+# WHY VIEWS AND NOT DUCTS. Both of these have a negative that is a DIFFERENT
+# VALUE rather than a different setup - which is the only shape that is safe
+# when setup steps and the fragment under test share one `set:` namespace. A
+# setup that CREATES what the fragment is meant to fail to find would build its
+# own haystack and the negative would pass for the wrong reason.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  in: Snowdon-scratch_ajmal.al
+
+  # BOTH ARE risk: MODIFY. Nothing is kept: validate never sends `apply`, so
+  # both phases run for real and the transaction group rolls back.
+  write: true
+
+jobs:
+  # ------------------------------------------------------------------ 1
+  - fragment: rename-elements
+    setup:
+      - find-views
+    # find-views leaves `elements`; rename-elements consumes them. A chain
+    # reset drops the handover - defect row 11.
+    keep-chain: true
+    set:
+      viewType: FloorPlan
+      nameContains: ""
+      # DISTINCT NAMES, WHICH IS THE WHOLE POINT. The previous attempt renamed
+      # every duct to ONE name and 21 of 22 collided by design, so `renamed`
+      # was 0 and read as a broken fragment. A find/replace on view names
+      # yields a different result per view - "L2" becomes "HERONL2",
+      # "L1 - Block 35" becomes "HERONL1 - Block 35" - so nothing collides.
+      find: "L"
+      replaceWith: "HERONL"
+    negative-set:
+      # THE VALUE IS THE NEGATIVE, NOT THE SELECTION. The same 11 views,
+      # searched for text that is in none of their names. It isolates the
+      # MATCHING from the SELECTING, which is the half that could be wrong -
+      # and `notMatched` should account for all 11 while `renamed` stays 0.
+      viewType: FloorPlan
+      nameContains: ""
+      find: "ZZZNOTHINGHERE"
+      replaceWith: "HERONL"
+    note: >
+      `renamed` is the only role: result - notMatched, refused and collisions
+      are all accounting under D-52. Watch `collisions`: anything above 0 means
+      two views ended up wanting the same name and the positive is not testing
+      what it looks like.
+
+  # ------------------------------------------------------------------ 2
+  - fragment: set-view-underlay
+    # ZERO SETUP. `views`, `baseLevel` and `topLevel` are all source: request,
+    # so they are named here and nothing is selected or chained.
+    set:
+      # A UNIQUELY-NAMED VIEW, AND THAT IS NOT A STYLE CHOICE. "FloorPlan: L2"
+      # - the qualified form Heron itself suggests when a name is ambiguous -
+      # resolves fine for a single `View` need (select-by-category-name took it
+      # and returned 191 ducts) and is REFUSED for this `IList<View>` one, with
+      # "No view called \"FloorPlan: L2\"". Both branches call the same OneView
+      # and Parts() splits on commas only, so the two should agree. WHY THEY DO
+      # NOT IS NOT YET EXPLAINED, and it is written down here rather than
+      # guessed at. "L1 - Block 35" is unique, so it sidesteps the question
+      # instead of answering it.
+      views: "L1 - Block 35"
+      baseLevel: "Parking"
+      topLevel: "L1 - Block 37"
+      lookingDown: "true"
+    negative-set:
+      # A 3D VIEW IS A REAL VIEW THAT CANNOT HAVE AN UNDERLAY. An underlay is a
+      # plan-view property, so `notPlanViews` should account for it while
+      # `changed` stays 0. That is the fragment reading the view type and
+      # declining - not a refusal, not a missing name, not an empty list.
+      views: "{3D}"
+      baseLevel: "Parking"
+      topLevel: "L1 - Block 37"
+      lookingDown: "true"
+    note: >
+      `changed` is the only role: result - notPlanViews is accounting and
+      findings carries no count.
