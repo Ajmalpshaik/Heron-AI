@@ -1163,3 +1163,33 @@ what "open" means: no `✅` in the heading, and no real text after an `**Answer:
 character replacement if it cannot. The registers are full of em dashes, the owner runs this on Windows
 where the console is cp1252, and the first run printed `server receives ?` — which is `test_ingest`'s
 failure (`A14`) reproduced inside the tool written to report it.
+
+## `generate-decision-summary.py` — the decision index, rebuilt from the decisions
+
+```bash
+python tools/generate-decision-summary.py            # rewrite in place
+python tools/generate-decision-summary.py --check    # exit 1 if stale
+```
+
+Rebuilds the **Status summary** table at the top of [`DECISIONS.md`](../docs/DECISIONS.md) from the
+`## D-NN — Title` headings and each decision's own `**Status:**` line.
+
+**It exists because that table was hand-written and stopped at `D-50` while the file reached `D-70`** —
+**twenty decisions missing from the index of decisions**, including `D-70`, which the owner had answered
+the day before. Nobody removed them; the table simply stopped being updated and nothing could notice.
+[PROPOSALS](../docs/PROPOSALS.md) `F3` had recorded it as *"stops at D-50"* without measuring how far
+behind it had fallen.
+
+**A status cell that already exists is kept VERBATIM.** *"✔ read back 2026-09-06"* records a
+conversation, not a fact on disk — it is not derivable and must never be regenerated away. The tool only
+builds rows that do not exist yet. **That is the difference between generating a file and overwriting
+one**, and a version that discarded those dates would have looked like tidying.
+
+**The gate is inside [`check-docs.py`](check-docs.py) §8, not in `gates.yml`** where the other three
+generators are diffed. The reason is worth stating: this repository's `gh` token carries `repo` but not
+`workflow`, so no session can push a change to that workflow file — **a gate nobody can install is not a
+gate**. `check-docs.py` already runs inside *The gates that must pass*, so this rides in with it. Moving
+it beside the other generators would be tidier and would catch exactly the same thing.
+
+**Proved by breaking it**: deleting the `D-70` row makes `check-docs.py` exit 1 naming `D-70`, and
+restoring it returns to 0.

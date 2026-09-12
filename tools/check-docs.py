@@ -496,4 +496,35 @@ else:
         out("  can be derived, and every Constitution status claim agrees with\n")
         out("  the source that owns it\n")
 
+
+# ---------- 8. the generated table in DECISIONS.md ----------
+#
+# DECISIONS.md's Status summary is generated now, and a generated file that is
+# COMMITTED can be stale - which is worse than one that is absent, because it
+# is believed. It was hand-written until 2026-09-12 and by then it stopped at
+# D-50 while the file had reached D-70: twenty decisions missing from the index
+# of decisions, and no gate able to notice.
+#
+# The check lives HERE rather than in .github/workflows/gates.yml, where the
+# other three generators are diffed, for a reason worth writing down: the
+# repository's gh token carries `repo` but not `workflow`, so a session cannot
+# push a change to that file at all. A gate nobody can install is not a gate.
+# check-docs.py already runs inside "The gates that must pass", so this rides
+# in with it. If the workflow is ever edited by hand, moving this beside the
+# other generators would be tidier and would change nothing about what it
+# catches.
+out("\n=== 8. THE GENERATED DECISION TABLE ===\n")
+_gen = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                    'generate-decision-summary.py')
+if not os.path.exists(_gen):
+    out("  generate-decision-summary.py is gone - nothing to check\n")
+else:
+    import subprocess
+    _r = subprocess.run([sys.executable, _gen, '--check'],
+                        capture_output=True, text=True)
+    for _line in (_r.stdout or '').rstrip('\n').split('\n'):
+        out("  %s\n" % _line)
+    if _r.returncode != 0:
+        failed = True
+
 sys.exit(1 if failed else 0)

@@ -57,25 +57,34 @@ an edit.
 
 ## Status summary
 
+> **Generated — do not edit this table by hand.** `python tools/generate-decision-summary.py`
+> rebuilds it from the decisions below, and CI fails if it is stale. It was hand-written until
+> 2026-09-12, by which time it stopped at **D-50** while the file had reached **D-70** — twenty
+> decisions missing from the index of decisions, with nothing able to notice.
+>
+> **A status cell is kept verbatim once written.** *"read back 2026-09-06"* records a
+> conversation, not a fact on disk, so the generator never overwrites one — it only fills in
+> rows that do not exist yet.
+
 | # | Decision | Status |
 |---|---|---|
 | [D-00](#d-00--documentation-first-no-implementation-yet) | Documentation first, no implementation yet | ✔ **Fulfilled** · read back 2026-09-06 |
-| [D-01](#d-01--execution-host-claude-code-plugin) | Execution host — Claude Code plugin | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-02](#d-02--mcp--add-in-transport-named-pipes) | MCP ↔ add-in transport — named pipes | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-03](#d-03--mcp-tool-granularity-thick-and-specific) | MCP tool granularity — thick and specific | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-04](#d-04--generated-code-execution-hybrid) | Generated code execution — hybrid | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-05](#d-05--revit-version-support-2020-to-latest) | Revit version support — 2020 → latest | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-06](#d-06--implementation-languages-c-for-revit-python-for-brain) | Languages — C# for Revit, Python for brain | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-01](#d-01--execution-host-claude-code-plugin) | Execution host: Claude Code plugin | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-02](#d-02--mcp--add-in-transport-named-pipes) | MCP ↔ add-in transport: named pipes | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-03](#d-03--mcp-tool-granularity-thick-and-specific) | MCP tool granularity: thick and specific | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-04](#d-04--generated-code-execution-hybrid) | Generated code execution: hybrid | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-09](#d-09--revit-thread-marshalling-externalevent) | Revit thread marshalling: ExternalEvent | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-05](#d-05--revit-version-support-2020-to-latest) | Revit version support: 2020 to latest | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-06](#d-06--implementation-languages-c-for-revit-python-for-brain) | Implementation languages: C# for Revit, Python for brain | ✅ Accepted · ✔ read back 2026-09-06 |
 | [D-07](#d-07--free-open-source-on-public-github) | Free open source on public GitHub | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-08](#d-08--licence-apache-20) | Licence — Apache 2.0 | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-09](#d-09--revit-thread-marshalling-externalevent) | Revit thread marshalling — ExternalEvent | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-10](#d-10--repository-stays-private-until-working-code-exists) | Repo stays private until code exists | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system) | Adopt Master Specification Part 2 (Agent OS) | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-12](#d-12--adopt-the-master-handover-baseline-part-3-and-its-fifteen-golden-rules) | Adopt Baseline (Part 3) + 15 Golden Rules | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-13](#d-13--adopt-additional-requirements-part-4-kernel-workflow-engine-constitution) | Adopt Part 4 — Kernel, Workflow Engine, Constitution | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes) | Unify six status vocabularies into two axes | ⏳ Proposed · ✔ re-put 2026-09-06, answer unchanged |
-| [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour) | Field notes authoritative on bridge behaviour | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope) | Live session list; freeze out of scope | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-08](#d-08--licence-apache-20) | Licence: Apache 2.0 | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-10](#d-10--repository-stays-private-until-working-code-exists) | Repository stays private until working code exists | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-11](#d-11--adopt-master-specification-part-2-agent-operating-system) | Adopt Master Specification Part 2 (Agent Operating System) | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-12](#d-12--adopt-the-master-handover-baseline-part-3-and-its-fifteen-golden-rules) | Adopt the Master Handover Baseline (Part 3) and its fifteen Golden Rules | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-13](#d-13--adopt-additional-requirements-part-4-kernel-workflow-engine-constitution) | Adopt Additional Requirements (Part 4): Kernel, Workflow Engine, Constitution | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-14](#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes) | Unify six status vocabularies into two orthogonal axes | ⏳ Proposed · ✔ re-put 2026-09-06, answer unchanged |
+| [D-15](#d-15--adopt-the-field-notes-as-authoritative-on-bridge-behaviour) | Adopt the field notes as authoritative on bridge behaviour | ✅ Accepted · ✔ read back 2026-09-06 |
+| [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope) | The session list is built live, and the Revit freeze is out of scope | ✅ Accepted · ✔ read back 2026-09-06 |
 | [D-17](#d-17--runtime-state-is-machine-local-not-roaming) | Runtime state is machine-local, not roaming | ✅ Accepted · ✔ read back 2026-09-06 |
 | [D-18](#d-18--the-transaction-agent-belongs-to-step-6-not-step-2) | The Transaction Agent belongs to Step 6, not Step 2 | ✅ Accepted · ✔ read back 2026-09-06 |
 | [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) | Writing is off by default until the write path has met a real Revit | ✅ Accepted · ✔ read back 2026-09-06 |
@@ -89,32 +98,47 @@ an edit.
 | [D-27](#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape) | One voice, and the answer's shape follows the question's shape | ✅ Accepted · ✔ read back 2026-08-29 |
 | [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) | Generated code is C#, compiled at run time, in process | ✅ Accepted |
 | [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer) | A fragment is a composable piece, not a whole answer | ✅ Accepted |
-| [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) | A fragment is promoted by one recorded proof, not a count of runs | ✅ Accepted |
-| [D-31](#d-31--product-data-and-derived-are-already-separated-and-the-code-is-the-record) | Product, data and derived are already separated | ✅ Accepted |
-| [D-32](#d-32--v1-must-be-able-to-change-the-model-and-reading-is-what-gets-used-first) | v1 must change the model; reading is used first | ✅ Accepted · ✔ read back 2026-08-29 |
+| [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) | A fragment is promoted by one recorded proof, not by a count of runs | ✅ Accepted |
+| [D-31](#d-31--product-data-and-derived-are-already-separated-and-the-code-is-the-record) | Product, data and derived are already separated, and the code is the record | ✅ Accepted |
+| [D-32](#d-32--v1-must-be-able-to-change-the-model-and-reading-is-what-gets-used-first) | v1 must be able to change the model, and reading is what gets used first | ✅ Accepted · ✔ read back 2026-08-29 |
 | [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) | Heron never assumes an input. It asks — and it asks once | ✅ Accepted · ✔ read back 2026-08-29 |
 | [D-34](#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job) | Heron's own wording is English; understanding the user is not Heron's job | ✅ Accepted · ✔ read back 2026-08-29 |
-| [D-35](#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about) | A shared fragment may carry code; an unapproved one is refused, not warned about | ✅ Accepted · ✔ read back 2026-08-29 |
-| [D-36](#d-36--no-warranty--the-standard-position-and-it-is-already-in-place-twice) | No warranty — the standard position, already in place twice | ✅ Accepted |
+| [D-35](#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about) | A shared fragment may carry code, and an unapproved one is refused, not warned about | ✅ Accepted · ✔ read back 2026-08-29 |
+| [D-36](#d-36--no-warranty--the-standard-position-and-it-is-already-in-place-twice) | No warranty — the standard position, and it is already in place twice | ✅ Accepted |
 | [D-37](#d-37--the-name-is-heron-ai-and-no-trademark-check-has-been-done) | The name is Heron AI, and no trademark check has been done | ✅ Accepted |
 | [D-38](#d-38--github-now-app-store-kept-possible-and-nothing-built-for-it) | GitHub now, App Store kept possible, and nothing built for it | ✅ Accepted |
 | [D-39](#d-39--shadow-mode-is-approved-on-an-analysed-disagreement-not-a-count-of-agreements) | Shadow mode is approved on an analysed disagreement, not a count of agreements | ✅ Accepted |
 | [D-40](#d-40--the-dependency-graph-is-sqlite-and-an-edge-is-derived-before-it-is-stored) | The dependency graph is SQLite, and an edge is derived before it is stored | ✅ Accepted |
-| [D-41](#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer) | Single-user now; company knowledge is a git repo and the admin is the reviewer | ✅ Accepted |
-| [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is setup.ps1 | ✅ Accepted |
+| [D-41](#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer) | Single-user now; company knowledge is a git repo, and the admin is the reviewer | ✅ Accepted |
+| [D-42](#d-42--the-public-install-command-is-not-settled-the-proven-one-is-setupps1) | The public install command is not settled; the proven one is `setup.ps1` | ✅ Accepted |
 | [D-43](#d-43--the-constitution-is-accepted--all-30-articles-binding) | The Constitution is accepted — all 30 Articles, binding | ✅ Accepted |
 | [D-44](#d-44--a-re-authored-fragment-starts-unproven-in-heron-whatever-it-was-elsewhere) | A re-authored fragment starts unproven in Heron, whatever it was elsewhere | ✅ Accepted · ✔ read back 2026-09-06 |
 | [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases) | Heron tracks the MCP SDK across major versions, the way it tracks Revit releases | ✅ Accepted · ✔ read back 2026-09-06 |
 | [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays) | The Emergency Stop button is removed, the switch behind it stays | ✅ Accepted · ✔ read back 2026-09-06 |
-| [D-47](#d-47--a-job-can-cross-projects--both-repeating-it-and-copying-content--and-undo-does-not-cross-with-it) | A job can cross projects; undo does not cross with it | ✅ Accepted |
+| [D-47](#d-47--a-job-can-cross-projects--both-repeating-it-and-copying-content--and-undo-does-not-cross-with-it) | A job can cross projects — both repeating it and copying content — and undo does not cross with it | ✅ Accepted |
 | [D-48](#d-48--one-broken-part-costs-one-part-never-the-whole-library) | One broken part costs one part, never the whole library | ✅ Accepted |
 | [D-49](#d-49--a-heavy-optional-import-never-happens-on-a-request-thread) | A heavy optional import never happens on a request thread | ✅ Accepted |
 | [D-50](#d-50--revit-says-out-loud-what-heron-is-doing-to-it-and-whether-it-is-reading-or-changing) | Revit says out loud what Heron is doing to it, and whether it is reading or changing | ✅ Accepted |
-
-**All Tier 1 blocking questions are now answered.** Phase 0 is unblocked — awaiting the owner's
-go-ahead to start building ([D-00](#d-00--documentation-first-no-implementation-yet)).
-
----
+| [D-51](#d-51--a-negative-case-is-judged-by-its-counts-not-by-whether-the-fragment-stayed-silent) | A negative case is judged by its counts, not by whether the fragment stayed silent | ✅ Accepted · 2026-09-07 |
+| [D-52](#d-52--a-count-of-what-was-turned-down-is-not-a-count-of-what-was-found) | A count of what was turned down is not a count of what was found | ✅ Accepted · 2026-09-07 |
+| [D-53](#d-53--a-fragment-that-cannot-come-back-empty-is-proved-by-tracking-instead) | A fragment that cannot come back empty is proved by TRACKING instead | ✅ Accepted · 2026-09-07 |
+| [D-54](#d-54--the-callers-half-arrives-as-text-and-revit-is-what-turns-it-into-a-view) | The caller's half arrives as text, and Revit is what turns it into a view | ✅ Accepted · 2026-09-08 |
+| [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back) | A fragment's preview is the run itself, rolled back | ✅ Accepted · 2026-09-08 |
+| [D-56](#d-56--the-banner-counts-in-flight-off-the-dispatcher-because-an-end-can-arrive-before-its-own-begin) | The banner counts in flight off the dispatcher, because an End can arrive before its own Begin | ✅ Accepted · 2026-09-08 |
+| [D-57](#d-57--the-master-architecture-document-is-a-research-brief-not-a-fifth-part-of-the-specification) | The Master Architecture document is a research brief, not a fifth part of the specification | ✅ Accepted · 2026-09-09 |
+| [D-58](#d-58--heron-measures-what-it-can-see-and-the-cost-meter-belongs-to-the-host) | Heron measures what it can see, and the cost meter belongs to the host | ✅ Accepted · 2026-09-09 |
+| [D-59](#d-59--reading-spans-loaded-links-only-when-the-modeller-asks-and-the-answer-says-how-many-it-read) | Reading spans loaded links only when the modeller asks, and the answer says how many it read | ✅ Accepted · 2026-09-09 |
+| [D-60](#d-60--a-preview-selects-what-it-would-change-and-what-it-would-skip-up-to-500) | A preview selects what it would change and what it would skip, up to 500 | ✅ Accepted · 2026-09-09 |
+| [D-61](#d-61--only-a-run-that-came-back-may-be-cached-and-re-indexing-forgets-what-changed-underneath-it) | Only a run that came back may be cached, and re-indexing forgets what changed underneath it | ✅ Accepted · 2026-09-09 |
+| [D-62](#d-62--the-brain-writes-its-own-audit-file-and-the-reader-that-already-merges-does-the-merging) | The brain writes its own audit file, and the reader that already merges does the merging | ✅ Accepted · 2026-09-09 |
+| [D-63](#d-63--a-want-is-recorded-when-a-capability-is-asked-for-by-name-and-nobody-provides-it) | A want is recorded when a capability is asked for BY NAME and nobody provides it | ✅ Accepted · 2026-09-09 |
+| [D-64](#d-64--a-fragment-that-goes-looking-declares-what-it-dropped-and-the-marker-rides-only-on-the-empty-answer) | A fragment that goes looking declares what it dropped, and the marker rides only on the empty answer | ✅ Accepted · 2026-09-09 |
+| [D-65](#d-65--heron-keeps-the-degraded-result-rule-and-hands-routing-to-the-host) | Heron keeps the degraded-result rule and hands routing to the host | ✅ Accepted · 2026-09-09 |
+| [D-66](#d-66--heron-checks-the-licence-of-what-it-ships-by-reading-the-files-not-the-landing-page) | Heron checks the licence of what it ships by reading the files, not the landing page | ✅ Accepted · 2026-09-09 |
+| [D-67](#d-67--a-point-crosses-as-three-millimetre-numbers) | A point crosses as three millimetre numbers | ✅ Accepted · 2026-09-09 |
+| [D-68](#d-68--a-significant-change-states-its-intent-before-it-is-made-and-is-judged-against-it-afterwards) | A significant change states its intent before it is made, and is judged against it afterwards | ✅ Accepted · 2026-09-12 |
+| [D-69](#d-69--a-script-in-tools-reads-the-code-it-checks-and-that-is-not-a-layering-violation) | A script in `tools/` reads the code it checks, and that is not a layering violation | ✅ Accepted · 2026-09-12 |
+| [D-70](#d-70--heron-keeps-a-usage-counter-on-the-machine-and-it-is-numbers-rather-than-a-diary) | Heron keeps a usage counter, on the machine, and it is numbers rather than a diary | ✅ Accepted · 2026-09-12 |
 
 ## Format
 
