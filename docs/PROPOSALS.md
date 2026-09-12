@@ -632,11 +632,17 @@ the first rather than making it three, but two is already one too many for the f
 Revit releases Heron claims to support. Merging them is a change to two working gates and deserves its
 own review.
 
-### 🔵 F3. The decision log's status summary stops at D-50
+### ✅ F3. The decision log's status summary stops at D-50 — CLOSED 2026-09-12, and it was twenty decisions behind
 
 [DECISIONS.md](DECISIONS.md)'s summary table ends at `D-50` while the log itself runs past `D-69`.
 Nothing enforces the table, so it drifted quietly. Completing it needs a careful one-line title per
 decision — worth doing in one pass by somebody reading them, not as a side effect of another change.
+
+**CLOSED 2026-09-12 by generating it.** This row said the summary *"stops at D-50"*. It did — and nobody had measured the gap: the file had reached **D-70**, so **twenty decisions were missing from the index of decisions**, `D-70` among them, answered by the owner the day before.
+
+`tools/generate-decision-summary.py` rebuilds the table from the decisions themselves and `check-docs.py` §8 fails if it drifts. **Existing status cells are kept verbatim** — *"read back 2026-09-06"* records a conversation, not a fact on disk, and regenerating it away would have destroyed the record of every read-back the owner has done.
+
+**The gate is in `check-docs.py`, not `gates.yml`.** The `gh` token here carries `repo` but not `workflow`, so no session can push a change to that workflow file — a gate nobody can install is not a gate. Worth revisiting whenever that scope is granted.
 
 ### 🔵 F4. Two documents are numbered 34, and one of them is a plan
 
