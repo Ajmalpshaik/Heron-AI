@@ -268,8 +268,9 @@ class Contest(object):
     recorded on 2026-08-28, still in force on 2026-09-11.
 
     Reported, so the run on a machine that can reach a model has a before to
-    read against. brain/retrieval-history.md carries this run in full;
-    docs/work-notes/plans/rag/03-working-note.md carries it as W-8.
+    read against. brain/retrieval-history.md carries this run in full, and
+    docs/NEEDS-CHECKING.md `A15` is the run that settles it - carried there
+    from a working note (as W-8) when that note was retired 2026-09-12.
     """
 
     def __init__(self, ranked, eligible_count, pool, breadth, noun="fragment",

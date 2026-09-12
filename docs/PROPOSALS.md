@@ -677,3 +677,37 @@ somebody else's checker from the outside is how a README comes to say something 
 It is also **not in `.github/workflows/gates.yml`**. That may be deliberate — it reports on the
 *machine*, not on the change, and CI's machine is not anybody's — but it is worth deciding rather than
 leaving unstated.
+
+### 🟡 F7. `sqlite_vec` is the one optional package that degrades with NOTHING SAID
+
+**Carried in from `docs/work-notes/plans/rag/03-working-note.md` as `W-10` when that note was retired,
+2026-09-12.** It was the only record of it.
+
+The rule this repository keeps is **degrade silently but SAY SO**, and three of four places keep it:
+`heron_embed` says it for the encoder, `heron_rerank` for the re-ranker, `heron_ingest` for the PDF
+reader. **`_try_vec_extension` in [`brain/heron_embed.py`](../brain/heron_embed.py) says it for
+nothing** — it returns `False` on `ImportError` and the caller falls back to comparing vectors in
+Python. No `backend()` line, no report line, no error carries it.
+
+**So a person cannot tell the fast path from the slow one**, and the failure mode is the bad one: Heron
+gets slower and stays that way, and nobody knows there is anything to install. That is the same shape
+as `W-5`, where the install list said `pyyaml` and the code imported six things — a user ends up on the
+weaker path **permanently**, because nothing ever told them there was a better one.
+
+**Found 2026-09-11 while closing R-73, by checking the other fallbacks rather than assuming the one in
+front of me was the only gap.** Recorded rather than fixed then because it was a second module in a
+batch that had no business growing; recorded rather than fixed **now** because it is not what retiring
+a note is for. It is a small, self-contained batch of its own.
+
+### 🔵 F8. F5's closing claim is now false, and the reason is worth more than the fix
+
+[F5](#f5-two-suites-exit-1-when-a-dependency-is-missing-and-one-of-them-is-the-only-thing-check-gaps-calls-unfinished)
+says `test_served_claims.py` *"is the entire unfinished list on a plain container."* On the owner's
+**Windows** checkout on 2026-09-12, `check-gaps.py` named **three** unfinished suites and
+`test_served_claims` was **not among them** — `test_ingest`, `test_reachable` and
+`test_document_retrieval` were.
+
+**F5 is not wrong about Linux.** It is wrong about *"a plain container"* being the only machine anybody
+runs this on, which is the same assumption [A14](NEEDS-CHECKING.md) exists to test and the same one
+that made the suite total Linux-specific for weeks. The three failures are recorded on `A14` with their
+causes; **this row exists so F5 is not read as current.**

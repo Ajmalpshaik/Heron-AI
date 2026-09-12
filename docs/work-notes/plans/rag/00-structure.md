@@ -11,7 +11,9 @@
 > when it is written, not now** — `check-docs.py` refuses a decision number that nothing defines, and
 > it refused the one this note first guessed at.
 > **Read this first.** [`01-requirements.md`](01-requirements.md) says *what*,
-> [`02-implementation.md`](02-implementation.md) says *how*, [`03-working-note.md`](03-working-note.md)
+> [`02-implementation.md`](02-implementation.md) says *how*, and the working note that carried the
+> live log was **retired 2026-09-12** - its durable half is in the registers, and git history holds
+> the rest. What it used to say
 > says *where it stands*. **Structure decides all three**, so it sits ahead of them.
 
 ---
@@ -787,15 +789,18 @@ one.
 |---|---|---|
 | [`01-requirements.md`](01-requirements.md) | A new section **G** — the structural requirements the six create, R-34 onward | **yes** |
 | [`02-implementation.md`](02-implementation.md) | Its stage list is superseded by §6 above; a pointer added at its head | **yes** |
-| [`03-working-note.md`](03-working-note.md) | The decision logged, dated | **yes** |
+| ~~`03-working-note.md`~~ | The decision logged, dated | **yes** - note retired 2026-09-12 |
 
 ---
 
 ## 8. Still not decided
 
-The four owner questions in [`03-working-note.md` §5](03-working-note.md) stand — which documents
-first, whether the store keeps the file or points at it, whether Heron records success rate and
-recency, and whether cloud embedding is wanted at all. **None blocks Stage 0 or 0b.**
+Of the four owner questions this section used to point at, **two were answered** — which documents
+first (Q-A) and whether the store keeps the file or points at it (Q-B) — and a third, whether Heron
+records success rate and recency, is [D-70](../../../DECISIONS.md). **The fourth stands**: whether
+cloud embedding is wanted at all, now [Q-54](../../../OPEN-QUESTIONS.md), joined by
+[Q-55](../../../OPEN-QUESTIONS.md). Both moved there when the working note was retired 2026-09-12.
+**None blocks Stage 0 or 0b.**
 
 Deciding all six adds three more, and each is small enough to answer in a sentence when we reach it:
 

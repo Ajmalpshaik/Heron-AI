@@ -300,16 +300,16 @@ python brain/heron_retrieve.py "show me every duct in the model" --revit 2024
 `heron_embed.py` reports `Backend: lexical`. That is the **same block `heron_embed.py` recorded on
 2026-08-28**, still in force, and it is a fact about **one container** rather than about Heron.
 
-The `2026-09-10 / model` row above is carried across from
-[`docs/work-notes/plans/rag/03-working-note.md` §3](../docs/work-notes/plans/rag/03-working-note.md),
-where it was measured on a machine that could reach a model. **It is not re-derived here and must not
+The `2026-09-10 / model` row above was carried across from a RAG working note (§3), retired
+2026-09-12, where it was measured on a machine that could reach a model. **It now lives in this file
+and nowhere else** - see the 2026-09-10 section above. **It is not re-derived here and must not
 be quoted as if it were** — its words column reads *"outside the first 100"* because that run capped
 its list at 100.
 
 ### What comparing the two rows actually shows
 
-**Same query. Same corpus size. Two backends.** That is the comparison
-[the working note](../docs/work-notes/plans/rag/03-working-note.md) said nothing had, because the jump
+**Same query. Same corpus size. Two backends.** That is the comparison the working note (retired
+2026-09-12) said nothing had, because the jump
 from 59 to 360 moved corpus size and backend at once and neither number separated them.
 
 | Route | `lexical` at 360 | `model` at 360 | Reading |
@@ -645,6 +645,60 @@ announcement can come before the download it is warning about (R-77, R-42, D-01)
 one [R-79](../docs/work-notes/plans/rag/01-requirements.md) records from the field reading on
 2026-09-10; it is **not** measured here, because measuring it needs the host that is blocked.
 `pip download --no-deps sentence-transformers torch` is the command that confirms it.
+
+---
+
+## 2026-09-10 — the first `model` backend numbers ever recorded, 360 fragments
+
+**Moved here 2026-09-12 from `docs/work-notes/plans/rag/03-working-note.md` §3, when that note was
+retired.** It was held there because the track *"has not yet earned a section in this file"*; the track
+is finished, so the measurement belongs where every other measurement lives. **Recorded as taken, not
+re-run** — the container that produced it could reach `huggingface.co` and the one retiring the note
+cannot, and a borrowed number presented as today's run is the drift this file exists to prevent.
+
+```bash
+python brain/heron_embed.py                     # Backend: model
+python brain/heron_fragment.py | tail -3        # 360 well-formed, 180 PROVEN
+python brain/heron_retrieve.py "show me every duct in the model" --revit 2024
+```
+
+**`show me every duct in the model`, Revit 2024, 360 fragments, backend `model`:**
+
+| Fragment | Status | Score | Found by |
+|---|---|---|---|
+| `FRG-MEP-031` `SELECT_BY_INSULATION` | PROVEN | 0.0318 | words #3 + nearness #3 — both agree |
+| `FRG-SEL-009` `SELECT_BY_HOST` | DRAFT | 0.0278 | words #13 + nearness #11 |
+| `FRG-MEP-030` `SELECT_BY_MEP_SYSTEM` | PROVEN | 0.0254 | words #18 + nearness #20 |
+| `FRG-VIEW-002` `ISOLATE_ELEMENTS` | DRAFT | 0.0164 | words #1 |
+| `FRG-MEP-003` `CREATE_DUCT` | DRAFT | 0.0164 | nearness #1 |
+
+The duct filter itself, `FRG-ELE-001`, measured by `test_embed.py`: **`#- of 100` by words, #19 of 100
+by nearness.** Against the last recorded line — 2026-08-31, 59 fragments, `lexical` — **17th of 59 by
+words, 36th of 59 by nearness.**
+
+### How to read that, and how not to
+
+**Two variables moved at once.** The corpus went 59 → 360 *and* the backend went `lexical` → `model`.
+Neither number separates them and no honest reading of this pair can. `check-routing.py` and
+`check-intrusion.py` are what separate them, and **neither has been run on the trained backend.**
+
+**`#- of 100` means outside the first hundred, not 360th** — the list is capped at 100. A real
+degradation on the words route, and not as large as it looks.
+
+**The nearness route improved.** 36th of 59 is mid-library; 19th of 100 is the top fifth. That is the
+trained encoder doing something the character n-grams did not.
+
+**This query was already retired as an instrument, and that still holds.** This file concluded on
+2026-08-30 that *"show me every duct in the model"* is **filter-then-show — a composition, and a
+composition is what a skill names, not a fragment.** Three fragments fairly claim that sentence, so a
+poor result here is partly the question being asked of the wrong layer. **It must not be reported as
+the trained backend failing.** Kept for continuity with the earlier rows and nothing more.
+
+**One thing is worth a second look regardless.** `CREATE_DUCT` — a fragment that **writes** — is
+nearness #1 for a sentence beginning *"show me"*. The same shape appeared at 59 fragments on `lexical`,
+where two dimensioning fragments that write reached a shortlist for the same question. A trained
+encoder was expected to separate *"show me"* from *"make me"*. **On this evidence it has not**, and
+that is a question for the proper instruments above, not a conclusion.
 
 ---
 

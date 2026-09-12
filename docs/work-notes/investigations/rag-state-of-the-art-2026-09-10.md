@@ -157,7 +157,7 @@ has taken exactly one, and *"install this and it downloads models"* is a differe
 [D-01](../../DECISIONS.md)'s.
 
 **Not decided here. It is the owner's, and it is worth ten minutes of his attention rather than a
-default.** Recorded as **S-4** in [`03-working-note.md`](../plans/rag/03-working-note.md).
+default.** Recorded as **S-4**, and answered in [`00-structure.md` §8](../plans/rag/00-structure.md).
 
 ---
 

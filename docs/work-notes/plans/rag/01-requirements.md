@@ -27,7 +27,7 @@ The other two notes in this folder:
 |---|---|
 | [`00-structure.md`](00-structure.md) | **What kind of RAG this is** — the six structural decisions. **Read it first; structure decides these requirements** |
 | [`02-implementation.md`](02-implementation.md) | **How** it gets built — stages, and what proves each one |
-| [`03-working-note.md`](03-working-note.md) | **Where it actually stands** — the live log, dated |
+| ~~`03-working-note.md`~~ | **Retired 2026-09-12.** Its measurement is in [`retrieval-history.md`](../../../../brain/retrieval-history.md); its open items are in the registers |
 
 ---
 
@@ -218,7 +218,7 @@ means it cannot start until an earlier row lands.
 >
 > [`retrieval-history.md`](../../../../brain/retrieval-history.md) now carries rows at **360**, both
 > checkers have a run there, and the two backends are compared **at the same corpus size** — which is
-> the comparison [`03-working-note.md` §3.2](03-working-note.md) said nothing had, because the jump
+> the comparison the working note (§3.2, retired 2026-09-12) said nothing had, because the jump
 > from 59 to 360 moved corpus size and backend at once. Measuring the **old backend at the new size**
 > separates them for nothing: the words route's decline is **corpus size**, the nearness route's
 > improvement is **the backend**.
@@ -233,8 +233,10 @@ means it cannot start until an earlier row lands.
 says `lexical`**. The last is 2026-08-31 at **59** fragments. Today the library is **360** and the
 backend is **`model`**. The record is six times out of date on corpus size and wrong on the backend —
 which is the exact failure that file was written to prevent, happening to that file. The measurement
-taken today is in [`03-working-note.md`](03-working-note.md) and has **not** been moved into it,
+taken today was held in the working note and has **not** been moved into it,
 because this folder's own rule is that **a defect found while planning is recorded, not fixed.**
+**It was moved on 2026-09-12**, when that note was retired - it is the `2026-09-10 / model` section of
+[`retrieval-history.md`](../../../../brain/retrieval-history.md).
 
 ### G — The structure decided on 2026-09-10
 
@@ -331,7 +333,7 @@ yes, is that the right one, or does it need to update. And they need to understa
 items, like system requirements."* **R-78 and R-79 come from the second half, and neither was in the
 plan before he said it.** Raised by him after asking whether a new person cloning from GitHub gets the dependencies
 automatically — the answer was **no**, recorded as **W-5** and **W-6** in
-[`03-working-note.md` §4](03-working-note.md).
+the working note §4, retired 2026-09-12.
 
 **This belongs to [`docs/07`](../../../07-installation-and-update.md), not to RAG.** It is written here
 because **this track is what makes it urgent**: every piece the plan adds is optional and **degrades
@@ -343,7 +345,7 @@ and leave this note.
 |---|---|---|---|---|
 | **R-71** | **A dependency manifest exists** — the list of packages is a file a machine reads, not prose in a README somebody edits | W-6 | **DONE 2026-09-11** | [`requirements.txt`](../../../../requirements.txt) and [`requirements-optional.txt`](../../../../requirements-optional.txt), both `pip install -r`-able. The packages were **derived from the code by walking every import**, not listed from memory: six third-party names, and `mcp/client/` and `platform/` import none, which is the layering rule holding rather than being asserted. Each entry carries `# <import name> \| <what it is for> \| <what happens without it>` and **`check-dependencies.py` parses that same line**, so nothing types it twice |
 | **R-72** | One command reports **every optional dependency: present or missing, and what is lost without it** | [00 §3.9](00-structure.md) | **DONE 2026-09-11** | `python tools/check-dependencies.py`. Reads the manifests rather than a second list, and for each absent package prints what is lost and the `--user` install line. **It exits 1 only on a missing REQUIRED package** — failing on an absent optional one would be arguing with R-42. It also fails on a malformed manifest entry, proved by introducing both shapes and watching it exit 1. **Size is never typed**: where the code that downloads owns the figure, it is read from there — `sentence-transformers` comes back `500 MB to 2 GB` out of `heron_rerank.announcement()` |
-| **R-73** | A component running in **fallback mode says so, and names what would improve it** | R-72, W-5 | **STILL PART 2026-09-11, and now it says which components** | **`heron_embed` done** — the fallback `why` carries `pip install --user model2vec` *and* the condition that install needs, because pypi.org answers 200 and `huggingface.co` does not, and naming the package without the condition sends somebody into a failure this repository has recorded twice. Appended to `why` rather than put behind a new call, because every reporter already prints `why` — a remedy behind a function nobody calls is how this stayed PART. **Two components still do not:** `heron_rerank.backend()`'s `why` names no install (its CLI prints `announcement()`, so the tool's own user sees it and a report printing only `why` does not), and **`sqlite_vec` degrades with nothing said at all** — [W-10](03-working-note.md) |
+| **R-73** | A component running in **fallback mode says so, and names what would improve it** | R-72, W-5 | **STILL PART 2026-09-11, and now it says which components** | **`heron_embed` done** — the fallback `why` carries `pip install --user model2vec` *and* the condition that install needs, because pypi.org answers 200 and `huggingface.co` does not, and naming the package without the condition sends somebody into a failure this repository has recorded twice. Appended to `why` rather than put behind a new call, because every reporter already prints `why` — a remedy behind a function nobody calls is how this stayed PART. **Two components still do not:** `heron_rerank.backend()`'s `why` names no install (its CLI prints `announcement()`, so the tool's own user sees it and a report printing only `why` does not), and **`sqlite_vec` degrades with nothing said at all** — [W-10, now F7](../../../PROPOSALS.md) |
 | **R-74** | Setup installs the **Python side as well as the add-in**, per-user, with no administrator rights | W-6, D-01 | **NONE** | [`tools/setup.ps1`](../../../../tools/setup.ps1) builds and deploys the add-in for every Revit on the machine in one command, and installs no Python package at all |
 | **R-75** | The README states **what is required, what is optional, what each optional one costs in size, and what it buys** | W-5 | **PART 2026-09-11, and the missing part is deliberate** | required, optional and *what it buys* are one command away and complete. **The sizes are NOT in the README, and this is a reading of R-75 rather than a completion of it.** Writing `500 MB to 2 GB` there makes a second copy of a number `heron_rerank.announcement()` owns and prints before the download — the copy that goes stale is the one nobody re-reads. So the README names the command and the command reads the owner. **If the owner wants the figure on the page, that is a one-line change and this row is why it was not made silently** |
 | **R-76** | The README **names every package as a Heron dependency and says what Heron uses it for** — not a bare list | owner, 2026-09-10 | **PART 2026-09-11** | every package now carries a purpose **and** what is lost without it, which is more than the row asked for — but it carries them **in the manifest**, and the README points at it. The owner's requirement says *the README*. Counted PART rather than DONE on that word alone: the information exists and is one command away, and whether a pointer satisfies *names* is his call, not mine |

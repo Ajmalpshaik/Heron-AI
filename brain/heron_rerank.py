@@ -74,8 +74,9 @@ heron_embed.py recorded the same block on 2026-08-28.
 
 **No number here was estimated to fill the gap.** A re-ranker's whole claim is
 that it improves an order, and an improvement nobody measured is a feeling.
-docs/.../03-working-note.md carries the open clause as W-9; NEEDS-CHECKING.md
-`A10` is the run on a machine that can reach a model. (`A7` is the ENCODER's
+NEEDS-CHECKING.md `A10` is the run on a machine that can reach a model, and
+it is now the only record of the open clause - the working note that carried
+it as W-9 was retired 2026-09-12. (`A7` is the ENCODER's
 version of the same row, closed 2026-09-06 on the owner's PC - which is the
 evidence that a trained model can be installed per-user at all.)
 

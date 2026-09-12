@@ -6,7 +6,13 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 52 answered · 1 open · nothing blocking any phase**
+**Progress: 52 answered · 3 open · nothing blocking any phase**
+
+**The count moved 1 → 3 on 2026-09-12 without anybody asking anything new.** `Q-54` and `Q-55` were
+raised on 2026-09-10 and 2026-09-11 and had been living in a work note — `Q-D` and `Q-E` in
+`docs/work-notes/plans/rag/03-working-note.md` — which is a file whose lifecycle ends in deletion. They
+were carried here when it was retired. **Two questions were owed the whole time and this register did
+not know**, which is the argument for a question never living anywhere but this file.
 
 **This line is checked, not trusted.** `python tools/check-docs.py` derives both numbers from the
 questions themselves and fails if they disagree with this sentence. It said *14 answered · 26 open* until
@@ -521,6 +527,47 @@ one and does not pretend to. It answers one question — *is Heron still only ca
 which is the question whose answer changing is what makes this one urgent.
 
 **So this question stays open on purpose**, and it is no longer something anybody has to remember.
+
+---
+
+### 🔵 Q-54 — Is the cloud-embedding opt-in worth building, or is it a switch nobody will turn on? *(moved here 2026-09-12)*
+
+**Carried in as `Q-D` from `docs/work-notes/plans/rag/03-working-note.md` §5 when that note was
+retired.** It was the note's only home and a work note is deleted at the end of its life, so it comes
+here rather than going with it.
+
+[D-24](DECISIONS.md) already says **local by default, cloud opt-in per scope** — and
+[Q-11](#q-11--local-or-cloud-embeddings) is where that was settled. **This is the sharper question
+that survived it:** there is **no opt-in path and no per-scope setting**, so the choice D-24 describes
+cannot currently be made at all. That is `R-30`.
+
+Given [D-26](DECISIONS.md) allows project content in the cloud, the opt-in may be worth building — or
+it may be a switch with no user.
+
+*Cheapest honest answer if unsure:* leave it unbuilt and **record that decision**, rather than building
+a switch nobody turns on. An unbuilt setting that is written down is cheaper than a built one that is
+not used, and either is better than a specification promising a choice the code cannot offer.
+
+---
+
+### 🟡 Q-55 — May an INGEST read another scope? *(raised 2026-09-11 by building Stage 8; moved here 2026-09-12)*
+
+**Carried in as `Q-E` from `docs/work-notes/plans/rag/03-working-note.md` §5 when that note was
+retired.**
+
+[docs/20 §4](20-knowledge-trust-and-conflict.md) asks for conflict detection **at write time** as well
+as read time, with a good reason: resolving a conflict once, at ingest, is far cheaper than resolving
+it on every query, and it stops the knowledge base accumulating contradictions in the first place.
+
+**It cannot be built without answering a contractual question first.** At read time the crossing is
+already authorised — a host asked one question of two named scopes, and `librarian()` opens each on its
+own. **At write time nothing has been asked of anybody.** Finding a conflict at ingest means reading
+ANOTHER scope while writing into this one, and [D-33](DECISIONS.md) makes cross-scope a **contractual**
+matter rather than a technical one.
+
+*Worth saying out loud:* the read-time version already crosses, and deliberately keeps that crossing to
+**a number and a clause number, never a clause**. A write-time version could hold to the same limit.
+Whether it may happen at all is still the owner's call.
 
 ---
 

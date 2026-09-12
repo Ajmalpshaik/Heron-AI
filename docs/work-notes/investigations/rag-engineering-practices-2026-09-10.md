@@ -173,7 +173,7 @@ The cap is the part worth copying. An agentic loop with no bound is a cost and l
 
 **The open question is who loops.** [D-01](../../DECISIONS.md) puts classification with the host, so the
 natural shape here is *the brain reports weakness, the host rephrases* — not a loop inside `brain/`.
-That is [S-1](../plans/rag/03-working-note.md)'s shape and it needs the owner's word.
+That is [S-1](../plans/rag/00-structure.md)'s shape and it needs the owner's word.
 
 ---
 

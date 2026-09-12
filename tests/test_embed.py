@@ -362,7 +362,8 @@ def main():
     # network is not a finding, it is a guess about the machine.
     #
     # So it says which backend actually answered THIS run. Recorded as W-3 in
-    # docs/work-notes/plans/rag/03-working-note.md and closed here.
+    # a RAG working note, and closed here. That note was retired 2026-09-12;
+    # this comment is the surviving record of why the sentence is shaped so.
     name, _why = E.backend()
     print("It is NOT meaning, and check 3 says so in numbers. A trained model")
     print("is the backend that would be.")

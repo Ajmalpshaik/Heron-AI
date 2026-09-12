@@ -7,7 +7,8 @@
 > **Reads with:** [`00-structure.md`](00-structure.md) — what kind of RAG this is, and the order ·
 > [`01-requirements.md`](01-requirements.md) — every stage below closes numbered rows from its §6,
 > and a stage that closes no row should not be built.
-> **Progress is not recorded here.** It is recorded in [`03-working-note.md`](03-working-note.md).
+> **Progress is not recorded here.** It was recorded in a working note, **retired 2026-09-12** - the
+> registers carry what is still owed, and git history carries the rest.
 > This file says what the plan *is*; that one says what actually happened.
 
 > **Stage map — this file and [`00-structure.md` §6](00-structure.md) now agree.**
@@ -93,7 +94,7 @@ python tools/check-intrusion.py
 
 **What to write:** a new dated section in `retrieval-history.md` — not an edit to the old rows, which
 are true of the backend they name. The measurement already taken is in
-[`03-working-note.md`](03-working-note.md); it is evidence, not a substitute for running it again on
+the working note, retired 2026-09-12; it is evidence, not a substitute for running it again on
 the machine that will carry the work.
 
 **What NOT to do.** Both suites carry a prediction that the trained backend would break them. It did
@@ -513,5 +514,5 @@ The repository has been bitten by *done* meaning *a note says so*. For every sta
 4. **The durable part written down** — in [`docs/05`](../../../05-heron-brain.md) for behaviour, in
    [DECISIONS.md](../../../DECISIONS.md) for a choice, in
    [`retrieval-history.md`](../../../../brain/retrieval-history.md) for a number.
-5. **A dated line in [`03-working-note.md`](03-working-note.md)** saying what happened, including what
+5. **A dated line in [`retrieval-history.md`](../../../../brain/retrieval-history.md)** saying what happened, including what
    failed. **A stage that records no surprises probably was not measured.**
