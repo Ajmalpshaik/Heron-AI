@@ -215,7 +215,7 @@ jobs:
       # run without installing Python or Revit.
       - name: Upload the generated catalog and map
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: catalog-and-map
           path: |
