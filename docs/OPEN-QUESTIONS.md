@@ -1,5 +1,18 @@
 # Open Questions
 
+> | | |
+> |---|---|
+> | **Type** | **Permanent register.** Append-only, and **never deleted** — this is where work notes empty into |
+> | **For** | Anyone about to guess at something the owner has not decided |
+> | **Authority** | An answer here is **promoted into [DECISIONS](DECISIONS.md)** and that entry becomes the authority |
+> | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
+> | **Adding to it** | **A question must never live only in `work-notes/`** — that folder is deleted at the end of its life. On 2026-09-12 two questions were found doing exactly that while this file said one was open |
+> | **Its numbers** | `python tools/check-docs.py` derives answered-vs-open and **fails** if the Progress line disagrees |
+
+> **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
+> says what is waiting on you, across every register, without holding a list of its own.
+
+
 > Everything that must be decided before Heron AI can be built, gathered from reviewing the
 > [Master Specification](00-master-specification.md).
 > Answer inline under each question. Once answered, the answer is promoted into [DECISIONS.md](DECISIONS.md).

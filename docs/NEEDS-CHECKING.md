@@ -1,5 +1,18 @@
 # Needs checking — the register
 
+> | | |
+> |---|---|
+> | **Type** | **Permanent register.** Append-only, and **never deleted** — this is where work notes empty into |
+> | **For** | Anyone about to believe a green gate — **this is the list of what nothing has proved** |
+> | **Authority** | A row here **outranks any claim that something works**. Green is not proven — [D-30](DECISIONS.md) |
+> | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
+> | **Adding to it** | A row names the **command**, the **machine it needs**, and what **pass looks like** — including what a FAIL would prove, which is worth the same |
+> | **Its numbers** | **Do not read the stated totals as today's.** Derive the Group A ids: `grep -oE '\*\*A[0-9]+\*\*|~~\*\*A[0-9]+\*\*~~' docs/NEEDS-CHECKING.md | grep -oE 'A[0-9]+' | sort -uV` |
+
+> **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
+> says what is waiting on you, across every register, without holding a list of its own.
+
+
 > ## 📌 This is a RECORD now, not a gate — 2026-08-28
 >
 > **The owner's instruction:** *"checking in Revit is not possible within 1 week, so keep the checking

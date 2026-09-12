@@ -1,5 +1,18 @@
 # Decision Log
 
+> | | |
+> |---|---|
+> | **Type** | **Permanent register.** Append-only, and **never deleted** — this is where work notes empty into |
+> | **For** | Anyone asking **what was decided, and why** |
+> | **Authority** | The [Constitution](../HERON_CONSTITUTION.md) and [Golden Rules](14-golden-rules.md) win over this file. This file wins over every work note |
+> | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
+> | **Adding to it** | A settled answer is **promoted here from [OPEN-QUESTIONS](OPEN-QUESTIONS.md)**. A reversal gets a **new entry** that supersedes the old — the original stays, so the reasoning is never lost |
+> | **Its numbers** | Derive the highest decision: `grep -oE '^#+ *D-[0-9]+' docs/DECISIONS.md | grep -oE '[0-9]+' | sort -n | tail -1` |
+
+> **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
+> says what is waiting on you, across every register, without holding a list of its own.
+
+
 > Every architectural decision that has been **made**, with the reasoning behind it.
 > Answers from [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) are promoted here once settled.
 >

@@ -1,5 +1,18 @@
 # Proposals — Gaps, Additions & Ideas
 
+> | | |
+> |---|---|
+> | **Type** | **Permanent register.** Append-only, and **never deleted** — this is where work notes empty into |
+> | **For** | The owner, deciding what to accept, reject or defer |
+> | **Authority** | **Nothing here overrides the specification.** These are findings, not decisions — a accepted one becomes a [DECISION](DECISIONS.md) |
+> | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
+> | **Adding to it** | A reviewed gap, risk or idea. **Raw ideas go to `work-notes/ideas/` instead**, until they are worth putting in front of somebody |
+> | **Its numbers** | Derive the open ones: `python tools/owner-queue.py` |
+
+> **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
+> says what is waiting on you, across every register, without holding a list of its own.
+
+
 > Engineering review of the Master Specification, carried out 2026-08-27.
 > Covers **[Part 1](00-master-specification.md)** (the platform) and
 > **[Part 2](00b-master-specification-agent-os.md)** (the Agent Operating System).
@@ -665,7 +678,7 @@ all read, and that deserves its own change rather than being a side effect of on
 `requirements.txt` and `requirements-optional.txt`. The tool is good and it closes a real gap — the
 only install list used to be one row of a table that said `pyyaml` while the code imported six things.
 
-**But [`tools/README.md`](../tools/README.md) has no section for it**, and that file's whole structure
+**~~But [`tools/README.md`](../tools/README.md) has no section for it~~ — CLOSED 2026-09-12: it has one now, and this row was checked rather than assumed still true when a second tool was added to the same file.** That file's whole structure
 is one section per tool. A tool nobody can find is a tool nobody runs, which is the same failure the
 tool itself was written to fix one level down.
 

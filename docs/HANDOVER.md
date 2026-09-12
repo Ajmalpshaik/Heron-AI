@@ -16,11 +16,16 @@ That is enough. This file is the memory; nothing else has to be remembered or re
 branch, the numbers, the decisions, and what comes next. Two things worth adding **only if they apply
 that day**:
 
-> **If you want the next stretch as an ordered list rather than as a file to read, open
-> [`work-notes/plans/next-steps-2026-09-12.md`](work-notes/plans/next-steps-2026-09-12.md).** It splits
-> the work into the track you can run on your own machine — **114 proven `READ` fragments are safe on a
-> live project today** — and the track that continues here without Revit. It is a schedule and it will
-> be deleted when it is spent; **this file stays the authority.**
+> **If you are the owner and you want only what is waiting on YOU, read
+> [`FOR-THE-OWNER.md`](FOR-THE-OWNER.md) and run `python tools/owner-queue.py`.** The page is the
+> structure; the tool is the list, derived from the registers at the moment you ask so that it cannot
+> go stale. It also says what is **safe to use today** — **114 proven `READ` fragments cannot modify a
+> model**, so they are safe on a live project now.
+>
+> **For the next stretch as an ordered plan**, open
+> [`work-notes/plans/next-steps-2026-09-12.md`](work-notes/plans/next-steps-2026-09-12.md) — the track
+> you can run on your own machine and the track that continues here without Revit. It is a schedule and
+> it will be deleted when it is spent; **this file stays the authority.**
 
 - **"Revit is open"** — and say WHICH model, because that now decides what can be proved. Until
   2026-09-06 this line said Revit was "the one thing months of work here have been waiting on", and

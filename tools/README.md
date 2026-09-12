@@ -1130,3 +1130,36 @@ backend believing they are on the better one.**
 
 **It does not install anything**, and it does not check that an installed version is the right one.
 Saying so is better than a tool that half-installs.
+
+## `owner-queue.py` — what is waiting on the OWNER, derived rather than typed
+
+```bash
+python tools/owner-queue.py
+```
+
+Reads [`OPEN-QUESTIONS.md`](../docs/OPEN-QUESTIONS.md), [`NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md)
+and [`PROPOSALS.md`](../docs/PROPOSALS.md) **as they are right now** and groups everything waiting on
+the owner by **what he has to have in front of him** — a decision, a numbered document, Revit open, the
+PC, or a network that can reach a model host. [`docs/FOR-THE-OWNER.md`](../docs/FOR-THE-OWNER.md) is the
+structure; this is the content.
+
+**It exists because every typed version of this list has gone stale.** Three of them on 2026-09-12
+alone: `OPEN-QUESTIONS.md` said *"1 open"* while three were, `NEEDS-CHECKING.md` said *"two rows have
+been added"* while it was six, and `HANDOVER.md` §1–§3 described a repository of 7 `DRAFT` fragments and
+17 suites against 360, 197 proven, and 57. None was wrong when written. Each was written once and never
+re-derived.
+
+**It decides nothing.** A row it cannot classify prints under **UNCLASSIFIED** rather than being
+dropped — a queue that silently loses an item is worse than no queue — and each line is a *summary*,
+with the register it names remaining the authority.
+
+**It always exits 0.** A list of work waiting on a person is not a build failure, so it is a report and
+never a gate.
+
+**The open-question rule is copied from `check-docs.py` deliberately**, so the two cannot disagree about
+what "open" means: no `✅` in the heading, and no real text after an `**Answer:**` marker.
+
+**One thing it has that most tools here do not:** it reconfigures stdout to UTF-8 and degrades to
+character replacement if it cannot. The registers are full of em dashes, the owner runs this on Windows
+where the console is cp1252, and the first run printed `server receives ?` — which is `test_ingest`'s
+failure (`A14`) reproduced inside the tool written to report it.
