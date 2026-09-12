@@ -186,7 +186,7 @@ namespace Heron.Revit.Addin
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
                 Json.Num("expiresInSeconds", (long)PreviewLifetime.TotalSeconds),
                 Json.Str("summary", Describe(movable.Count, skipped.Count, preview.Category) +
-                                    " up " + HeronUnits.DescribeMillimetres(millimetres) +
+                                    " " + HeronUnits.DescribeVerticalMove(millimetres) +
                                     " in " + doc.Title));
         }
 
@@ -299,8 +299,12 @@ namespace Heron.Revit.Addin
             }
 
             var up = new XYZ(0, 0, HeronUnits.MillimetresToFeet(preview.MillimetresUp));
-            var name = "Heron: move " + preview.Category + " up " +
-                       HeronUnits.DescribeMillimetres(preview.MillimetresUp);
+            // WHAT REVIT'S OWN UNDO HISTORY WILL SAY, so it has to read like
+            // something a person did - "Heron: move ducts down 50 mm", never
+            // "up -50 mm". Golden Rule 16 makes this the one entry the user
+            // sees for the whole operation; it is the label on their undo.
+            var name = "Heron: move " + preview.Category + " " +
+                       HeronUnits.DescribeVerticalMove(preview.MillimetresUp);
 
             var handler = new CollectWarnings();
             var workflow = HeronAudit.NewWorkflowId();
@@ -424,7 +428,11 @@ namespace Heron.Revit.Addin
                 Json.Num("blocked", blocked),
                 Json.Num("unverified", unverified),
                 Json.Str("category", preview.Category),
-                Json.Str("distance", HeronUnits.DescribeMillimetres(preview.MillimetresUp)),
+                // Carries its DIRECTION, because the one caller that reads
+                // this builds the sentence "Moved 9 ducts <distance> in X" -
+                // and a bare "-50 mm" there is how the reply came to say
+                // "Moved 9 ducts -50 mm".
+                Json.Str("distance", HeronUnits.DescribeVerticalMove(preview.MillimetresUp)),
                 Json.Str("document", doc.Title),
                 Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),

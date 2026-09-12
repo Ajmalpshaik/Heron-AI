@@ -40,7 +40,8 @@ sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 
 from heron_write import (                                  # noqa: E402
-    BadDistance, DocumentPin, PendingApproval, describe, parse_millimetres)
+    BadDistance, DocumentPin, PendingApproval, describe, describe_vertical,
+    parse_millimetres)
 
 FAILURES = []
 
@@ -172,6 +173,38 @@ def main():
     print("Nothing to approve is not the same as approving nothing")
     fresh = PendingApproval()
     check(fresh.take() == (None, None), "an unoffered approval yields no token")
+
+    print()
+    print("Down is a direction, not a negative up")
+    # THE RULE, NOT THE SENTENCE. These check that a lowering move never
+    # describes itself with a minus sign and never calls itself "up" - not
+    # that any particular wording survives. A test quoting the whole phrase
+    # would fail the next time somebody improves it, which is how a test
+    # comes to be edited rather than read.
+    #
+    # Found in front of a model on 2026-09-12 proving D6, the check that
+    # exists precisely because a negative distance must not be an error. It
+    # was not an error: it answered "move 9 ducts up -50 mm" and named Revit's
+    # own undo entry the same way.
+    down = describe_vertical(-50)
+    check("down" in down, "a downward move says down (%r)" % down)
+    check("-" not in down, "and carries no minus sign - the sign IS the word")
+    check("up" not in down, "and never says up")
+
+    up = describe_vertical(200)
+    check(up.startswith("up ") and "200" in up,
+          "an upward move still says up (%r)" % up)
+
+    # Zero has no direction to claim. "up 0 mm" would name one it does not have.
+    still = describe_vertical(0)
+    check("up" not in still and "down" not in still,
+          "a zero move claims no direction (%r)" % still)
+
+    # The magnitude is the same either way - only the word differs, so a
+    # reader comparing two replies is comparing distances, not signs.
+    check(describe(50) in describe_vertical(-50)
+          and describe(50) in describe_vertical(50),
+          "and the distance itself reads identically in both directions")
 
     print()
     if FAILURES:
