@@ -658,3 +658,22 @@ red for a reason that is not work.
 
 **Not fixed here.** Changing a suite's exit code changes what CI, `check-gaps` and the ship checklist
 all read, and that deserves its own change rather than being a side effect of one about something else.
+
+### 🟡 F6. `check-dependencies.py` is documented nowhere
+
+`tools/check-dependencies.py` and `tests/test_dependencies.py` arrived on `main` in #124, with
+`requirements.txt` and `requirements-optional.txt`. The tool is good and it closes a real gap — the
+only install list used to be one row of a table that said `pyyaml` while the code imported six things.
+
+**But [`tools/README.md`](../tools/README.md) has no section for it**, and that file's whole structure
+is one section per tool. A tool nobody can find is a tool nobody runs, which is the same failure the
+tool itself was written to fix one level down.
+
+The [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill now names it — added here, because this
+change rewrote that checklist and leaving a fifth checker out of a list claiming to be complete makes
+the checklist wrong. **The `tools/README.md` section is left to whoever wrote the tool**: describing
+somebody else's checker from the outside is how a README comes to say something almost true.
+
+It is also **not in `.github/workflows/gates.yml`**. That may be deliberate — it reports on the
+*machine*, not on the change, and CI's machine is not anybody's — but it is worth deciding rather than
+leaving unstated.

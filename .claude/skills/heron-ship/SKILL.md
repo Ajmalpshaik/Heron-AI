@@ -74,6 +74,13 @@ knowledge store.
   `<ManifestSettings>` element (which **crashes Revit 2025 and older**) all leave every other gate on
   this page green and cost a modeller the whole add-in.
 
+**A fifth is not on that list, and should be**: `python tools/check-dependencies.py`. It exits 1 only
+when a **required** package is missing, so it says nothing about your change — it says whether this
+machine can run Heron at all. Run it after a fresh clone, after touching `requirements.txt` or
+`requirements-optional.txt`, and when a suite fails for a reason that smells like an absent import. A
+missing **optional** package exits 0 on purpose: silent degradation is the designed behaviour, and a
+checker that failed on one would be arguing with the requirement that allows it.
+
 ## 2. The tests
 
 ```bash

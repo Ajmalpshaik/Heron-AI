@@ -376,6 +376,32 @@ stayed where it said it would — not that what it does is right."*
 
 ---
 
+## 6a. Merged with `main`, 2026-09-12, and what the merge proved
+
+`main` gained four commits while this branch was being built — a dependency gate, its suite, and the
+repository's first `requirements.txt` and `requirements-optional.txt`. **No file overlapped**, so git
+merged it clean, and all four gates plus main's own `check-dependencies.py` pass on the result.
+
+The merge was done rather than deferred because `main`'s own history carries the reason:
+*"Merge main before merging: the gates read every markdown file."* A derived-count gate can fail on the
+combined tree while passing on each side alone, and finding that out at merge time is finding it out
+too late.
+
+**Three things the merge settled that were until then only claimed:**
+
+| | |
+|---|---|
+| `check-change.py`'s `dependency` signal | Written when **no `requirements.txt` existed anywhere** — the rule was speculative. Appending one line to the real file now raises the signal and adds `check-licence` to the owed gates. Verified, then the file was restored |
+| `--base origin/main` | Returned `BLOCKED: no merge base` before, on a shallow clone. With `main` fetched it works and gives the **right** answer — 31 files, main's merged commits correctly excluded, because the three-dot form compares against the merge base. The earlier refusal was the environment, and the error message added in this branch said so in those words |
+| `brain/` classified as `supporting` | The first time that row has been exercised on a real diff rather than a test fixture: `mcp` may depend on `brain`, so `heron_embed.py` arriving from main reads as supporting work rather than as a question |
+
+**One finding, recorded rather than fixed:** `check-dependencies.py` has no section in
+[`tools/README.md`](../../../tools/README.md), whose entire structure is one section per tool, and it
+is not in CI. [PROPOSALS F6](../../PROPOSALS.md). The `heron-ship` skill now names it, because this
+change rewrote that checklist and a list claiming to be complete must be.
+
+---
+
 ## 7. What is left
 
 | | |
