@@ -976,7 +976,29 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False):
         # of results that look the same either way.
         verdict = reply.get("verdict")
         if verdict:
-            print("    %s  %s" % ("APPLIED" if reply.get("applied") else "ROLLED BACK", verdict))
+            # THE LABEL IS READ FROM `rolledBack`, NOT FROM `applied`.
+            #
+            # It used to be `"APPLIED" if applied else "ROLLED BACK"`, and a
+            # FAILED rollback is not applied - so the header read ROLLED BACK
+            # directly above the sentence "THE ROLLBACK DID NOT REPORT SUCCESS
+            # ... THE MODEL MAY STILL HOLD THIS CHANGE". The headline said the
+            # model was safe and the small print said it might not be.
+            #
+            # That is the same shape as the defect this line exists to prevent:
+            # the comment above says a rolled-back write and a kept one report
+            # identical counts, so the label was put first where it could not
+            # be missed - and then the label itself could not tell them apart.
+            # Three rollbacks failed before anybody noticed; a reader scanning
+            # headers would have been told each time that nothing was kept.
+            #
+            # Found 2026-09-12 while reading this path before running A16.
+            if reply.get("applied"):
+                state = "APPLIED"
+            elif reply.get("rolledBack"):
+                state = "ROLLED BACK"
+            else:
+                state = "NOT ROLLED BACK"
+            print("    %s  %s" % (state, verdict))
 
         provides = reply.get("provides") or {}
         if not provides:
