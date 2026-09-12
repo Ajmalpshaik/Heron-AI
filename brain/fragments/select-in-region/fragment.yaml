@@ -72,6 +72,26 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 47740
+  positive_case: run as it would normally be run. returned MillimetresPerFoot 304.8, elements
+    1053 item(s) [Tees, Tees, Tees, ...], exact false, findings 2 item(s) [1053 element(s)
+    in a 200000 x 200000 x 70000 mm volume, by t..., A bounding box is axis-aligned, so a
+    sloped or rotated eleme...], withoutGeometry 0. inputs came minMm as given; maxMm as given;
+    exact as given; categories as given (1). on Snowdon-scratch_ajmal.al
+  negative_case: run with categories=Ducts, exact=false, maxMm=50100000, 50100000, 100000,
+    minMm=50000000, 50000000, 0 instead - chosen because it should not contain what this fragment
+    reports. returned MillimetresPerFoot 304.8, elements 0 item(s), exact false, findings
+    2 item(s) [0 element(s) in a 100000 x 100000 x 100000 mm volume, by the..., A bounding
+    box is axis-aligned, so a sloped or rotated eleme...], withoutGeometry 0. inputs came
+    minMm as given; maxMm as given; exact as given; categories as given (1). on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d1bd8e89d6255cad
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

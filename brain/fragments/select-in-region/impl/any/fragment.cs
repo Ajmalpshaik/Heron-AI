@@ -12,9 +12,20 @@
 // elements. Those are COUNTED, so a small exact answer beside a large fast one
 // can be read rather than guessed at.
 //
-// MILLIMETRES TO FEET BY 304.8, PLAIN ARITHMETIC. No units API - that is what
-// changed shape at 2021. The report states the box in millimetres so a value
-// handed in already converted shows up as an absurd volume, not as a quiet zero.
+// THE CORNERS ARRIVE IN FEET, NOT MILLIMETRES, AND THAT COST THIS FRAGMENT A
+// PROOF. A caller types millimetres - the names say so - but the add-in's own
+// point parser converts every XYZ with HeronUnits.MillimetresToFeet BEFORE a
+// fragment sees it, because Revit's internal unit is the foot and every other
+// XYZ fragment here relies on that. This one converted a SECOND time.
+//
+// The effect was invisible and total: a region was divided by 304.8, so a
+// 200 m box became a 656 mm one and the answer was a perfectly calm "0
+// element(s)". The report even printed "656 mm", which was the truth about the
+// box it searched and read as the truth about the box that was asked for.
+// Found on 2026-09-13 by proving it against 1,053 ducts and getting nothing.
+//
+// So: `low`/`high` are used AS GIVEN, and 304.8 appears exactly once - turning
+// feet back into the millimetres the report speaks.
 
 const double MillimetresPerFoot = 304.8;
 
@@ -33,9 +44,13 @@ else
     var lowMm = new XYZ(Math.Min(minMm.X, maxMm.X), Math.Min(minMm.Y, maxMm.Y), Math.Min(minMm.Z, maxMm.Z));
     var highMm = new XYZ(Math.Max(minMm.X, maxMm.X), Math.Max(minMm.Y, maxMm.Y), Math.Max(minMm.Z, maxMm.Z));
 
-    var width = highMm.X - lowMm.X;
-    var depth = highMm.Y - lowMm.Y;
-    var height = highMm.Z - lowMm.Z;
+    // IN MILLIMETRES, FOR THE REPORT ONLY. The corners themselves stay in the
+    // feet Revit works in; these three exist so the sentence can say "mm" and
+    // mean it. A caller who hands in a value already converted still sees an
+    // absurd volume rather than a quiet zero, which is what this was for.
+    var width = (highMm.X - lowMm.X) * MillimetresPerFoot;
+    var depth = (highMm.Y - lowMm.Y) * MillimetresPerFoot;
+    var height = (highMm.Z - lowMm.Z) * MillimetresPerFoot;
 
     if (width <= 0 || depth <= 0 || height <= 0)
     {
@@ -44,8 +59,9 @@ else
     }
     else
     {
-        var low = new XYZ(lowMm.X / MillimetresPerFoot, lowMm.Y / MillimetresPerFoot, lowMm.Z / MillimetresPerFoot);
-        var high = new XYZ(highMm.X / MillimetresPerFoot, highMm.Y / MillimetresPerFoot, highMm.Z / MillimetresPerFoot);
+        // AS GIVEN. Already feet - see the note at the top of this file.
+        var low = lowMm;
+        var high = highMm;
 
         var collector = new FilteredElementCollector(doc).WhereElementIsNotElementType();
         if (categories != null && categories.Count > 0)

@@ -1,0 +1,73 @@
+# GROUP A - select-in-region, and the defect that was hiding inside it.
+# 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/snowdon-groupA-selects-2026-09-13.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/snowdon-groupA-selects-2026-09-13.yaml
+#
+# WHY IT WAS IN GROUP A, AND IT WAS NOT THE ARRANGEMENT. The fragment divided
+# the region it was handed by 304.8 - a second time. The add-in's point parser
+# already converts every XYZ with HeronUnits.MillimetresToFeet before a
+# fragment sees it, because Revit works in feet and every other XYZ fragment
+# relies on that. This one converted again, so a 200 m box became a 656 mm box
+# and the answer was a calm, correct-looking "0 element(s)".
+#
+# The report even printed "656 mm", which was the truth about the box it
+# searched and read as the truth about the box that was asked for. That is the
+# invisible kind of defect: it reports success while being wrong.
+#
+# MEASURED FIRST, NOT ASSUMED. report-bounding-box on the same 191 ducts:
+# 49919 x 22475 x 7137 mm, within +/-30 m of the internal origin. So the 200 m
+# box below always DID contain them, which is what made the empty answer a
+# fragment fault rather than an arrangement fault.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  # NAMED, NEVER ASSUMED. Two models are open and the active one has changed
+  # three times today. `model:` above is a note for the reader; this is the
+  # line Revit acts on.
+  in: Snowdon-scratch_ajmal.al
+
+  # risk: READ. No `write:` anywhere in this file, deliberately.
+
+jobs:
+  - fragment: select-in-region
+    # ZERO SETUP. Every need is `source: request`, so nothing is selected and
+    # nothing is chained - there is no arrangement here that could be wrong.
+    set:
+      # A 200 m cube about the origin. The ducts span 50 m inside it.
+      minMm: "-100000, -100000, -20000"
+      maxMm: "100000, 100000, 50000"
+      # INTERSECTING, not fully-contained. `exact` true swaps to a solid
+      # geometry test, which is a different claim and a much slower one.
+      exact: "false"
+      categories: Ducts
+    negative-set:
+      # FIFTY KILOMETRES AWAY, and a 100 m cube there. The cleanest negative in
+      # the group: same fragment, same categories, same everything - a real
+      # region that genuinely holds nothing. Not a refusal, not an empty
+      # category, not a cleared selection. The fragment looks somewhere real
+      # and correctly finds nothing.
+      minMm: "50000000, 50000000, 0"
+      maxMm: "50100000, 50100000, 100000"
+      exact: "false"
+      categories: Ducts
+    note: >
+      `elements` is the only role: result - withoutGeometry is accounting under
+      D-52 and findings carries no count. SECOND ROUTE, run separately on
+      2026-09-13: select-by-category-name with categoryName=Ducts inViewOnly={3D}
+      reports 1053 ducts model-wide, and this fragment found 1053 in a box that
+      contains the whole building. Two unrelated mechanisms - a category
+      collector and a bounding-box intersection - reaching the same number.
+
+# NOT IN THIS FILE, AND WHY. `select-subcomponents` was arranged here first and
+# is removed rather than retried. Its positive was run three ways on
+# 2026-09-13 - 9 mechanical equipment in FloorPlan: L2, then all 37 model-wide,
+# then all 509 air terminals - and every one came back
+# `withoutSubComponents` equal to the whole selection with `elements` at zero.
+#
+# THAT IS THE FRAGMENT WORKING. Snowdon holds no nested shared families at all,
+# so there is nothing under any parent to return. Rule 2: the model cannot fill
+# it, and the honest thing is to say so rather than vary the arrangement until
+# something appears. It needs a model with a nested family in it - a piece of
+# MEP equipment with a shared component inside - and that is a different day.

@@ -1,0 +1,94 @@
+# THE EXPORT CLUSTER - three tools, one shared shape of negative. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/snowdon-exports-2026-09-13.yaml
+#
+# WHY THESE THREE TOGETHER. The 2026-09-13 sweep ran all 161 DRAFT fragments in
+# one pass and 148 came back NEEDS_REQUEST_VALUES - not blocked by the model,
+# blocked by a value nobody had said. Grouped by what they ask for, the largest
+# clean cluster is the exporters: eleven asks for a `folder`, `exportFolder`,
+# `fileName` or `csvPath` across nine tools. One decision - a writable scratch
+# folder - answers all of them.
+#
+# AND THEY SHARE A NEGATIVE THAT IS WORTH PROVING ON ITS OWN. An exporter
+# handed a folder it cannot write to must REFUSE and say so, not report success
+# over a file that was never created. Q: is not a drive on this machine
+# (C, D, E, Y, Z are), so the path below cannot exist and cannot be created.
+#
+# NOT IN THIS FILE, AND WHY:
+#   export-views-to-fbx      already carries a proof signed by Ajmal PS
+#   export-schedule-to-csv   find-views viewType=Schedule returns 0 in this
+#                            model - there is no schedule to export, so it
+#                            would fail for the model's reasons, not its own
+#   export-model-to-ifc/nwc  both need a scopeViewId (ElementId), which is the
+#                            next cluster, not this one
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  in: Snowdon-scratch_ajmal.al
+
+  # PUBLISH and MODIFY both need it. Note that a PUBLISH fragment writes
+  # OUTSIDE the model, so the transaction rollback does not reach the files -
+  # they are really created, in a scratch folder, on purpose.
+  write: true
+
+jobs:
+  # ------------------------------------------------------------------ 1
+  - fragment: export-families
+    set:
+      folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/65638f84-9102-4517-9202-e647157da461/scratchpad/exports"
+      # NOT "Duct", WHICH WAS TRIED FIRST AND MATCHED THE WRONG KIND. It found
+      # two families - "Flex Duct Tag Round" and "Duct Size Tag" - and Revit
+      # refused both with "Revit refused to open it for editing". They are TAG
+      # families: annotation, which a project will not open for editing. The
+      # matching was right and the export was correctly refused, so the
+      # arrangement was at fault rather than the fragment. Air terminals are
+      # real loadable model families, and this model has 94 families in all.
+      nameContains: "Air Terminal"
+    negative-set:
+      folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/65638f84-9102-4517-9202-e647157da461/scratchpad/exports"
+      # THE VALUE IS THE NEGATIVE, NOT THE FOLDER. Same writable folder, a name
+      # no family carries - so `saved` must stay 0 while nothing is refused and
+      # nothing collides. It isolates MATCHING from WRITING.
+      nameContains: "ZZZNOTHINGHERE"
+    note: >
+      saved and savedAs are the role: result pair - nameCollisions and refused
+      are accounting under D-52.
+
+  # ------------------------------------------------------------------ 2
+  - fragment: export-sheets-to-pdf
+    setup:
+      - find-sheets
+    keep-chain: true
+    set:
+      numberOrNameContains: "M000"
+      exportFolder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/65638f84-9102-4517-9202-e647157da461/scratchpad/exports"
+      combinedFileName: "heron-test-sheets"
+    negative-set:
+      numberOrNameContains: "M000"
+      # A FOLDER THAT CANNOT EXIST. Q: is not a drive on this machine, so this
+      # cannot be created. `folderProblem` should account for it and `exported`
+      # stay 0. An exporter that reported success here would be claiming a file
+      # that is not on disk, which is the worst failure an exporter has.
+      exportFolder: "Q:/heron-no-such-drive"
+      combinedFileName: "heron-test-sheets"
+    note: >
+      exported is the only role: result - notExported and folderProblem are
+      accounting.
+
+  # ------------------------------------------------------------------ 3
+  - fragment: export-view-image
+    set:
+      views: "{3D}"
+      folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/65638f84-9102-4517-9202-e647157da461/scratchpad/exports"
+      filePrefix: "heron-test"
+      # SMALL ON PURPOSE. Rule 1: a timeout says nothing about a fragment, and
+      # an image export is the slowest thing in this file.
+      pixelWidth: "800"
+    negative-set:
+      views: "{3D}"
+      folder: "Q:/heron-no-such-drive"
+      filePrefix: "heron-test"
+      pixelWidth: "800"
+    note: >
+      exported is the only role: result - findings carries no count.

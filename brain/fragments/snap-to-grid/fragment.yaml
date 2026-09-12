@@ -62,6 +62,29 @@ contract:
       role: accounting
       type: IList<ElementId>
 
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 47740
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned blocked 0 item(s),
+    notPointBased 0 item(s), snapped 70, spacingX 600, spacingY 600, tolerance 0.00328083989501312.
+    inputs came elements from set-selection (70); anchor as given; spacingX as given; spacingY
+    as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with anchor=0, 0, 0, categoryName=Ducts, inViewOnly=FloorPlan: L2, spacingX=600,
+    spacingY=600 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned blocked 0 item(s), notPointBased 191 item(s) [1365662,
+    1365687, 1379374, ...], snapped 0, spacingX 600, spacingY 600, tolerance 0.00328083989501312.
+    inputs came elements from set-selection (191); anchor as given; spacingX as given; spacingY
+    as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: e920bd7e1660c8af
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

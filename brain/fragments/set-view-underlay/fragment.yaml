@@ -71,6 +71,27 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 47740
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned changed 1, clearing false, findings
+    1 item(s) [1 plan view(s) now show Parking to L1 - Block 37, looking do...], lookingDown
+    true, notPlanViews 0 item(s), orientation UnderlayOrientation. inputs came views as given
+    (1); baseLevel as given; topLevel as given; lookingDown as given. on Snowdon-scratch_ajmal.al
+  negative_case: run with baseLevel=Parking, lookingDown=true, topLevel=L1 - Block 37, views={3D}
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    changed 0, clearing false, findings 1 item(s) [0 plan view(s) now show Parking to L1 -
+    Block 37, looking do...], lookingDown true, notPlanViews 1 item(s) [{3D} (not a plan view
+    - only plans have an underlay)], orientation UnderlayOrientation. inputs came views as
+    given (1); baseLevel as given; topLevel as given; lookingDown as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: e3b9a84d9d822248
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

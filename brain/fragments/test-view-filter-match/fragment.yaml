@@ -57,6 +57,38 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 47740
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values. returned findings
+    2 item(s) ['Domestic' is a RULE filter scoped to 4 category/categories...., Those 191
+    can NEVER match, however well they satisfy the rul...], matched 0 item(s), outOfScope
+    191, wanted Domestic. inputs came filterName as given; elements from set-selection (191).
+    on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Ducts, filterName=ZZZNOSUCHFILTER, inViewOnly=HERONL2
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase''s
+    own values. returned findings 1 item(s) [No filter is called ''ZZZNOSUCHFILTER''. This
+    model has: Mecha...], matched 0 item(s), outOfScope 0, wanted ZZZNOSUCHFILTER. inputs
+    came filterName as given; elements from set-selection (191). on Snowdon-scratch_ajmal.al'
+  caveat: >-
+    THIS PROOF EXERCISES outOfScope AND NOT matched, and that is a real gap rather
+    than a wording problem. The fragment declares both as results. Three of this
+    model's filters were tried against the same 191 ducts on 2026-09-13 -
+    'Domestic' and 'ABL - General Power' each returned outOfScope 191 - and NO
+    filter in Snowdon-scratch_ajmal.al lists Ducts among its categories, so a MATCH
+    cannot be arranged here at all. WHAT IS ESTABLISHED - handed a real filter and
+    191 real elements it reads the filter's category list and reports them outside
+    its scope, rather than answering the much more misleading 'no match'. WHAT IS
+    NOT - that it recognises an element the filter's rules actually select. A model
+    with a duct filter in it would finish this proof.
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2cfe4e5faca142d4
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
