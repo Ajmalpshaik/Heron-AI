@@ -834,6 +834,101 @@ def _is_helper_object(value):
     return False
 
 
+def contract_of(frag):
+    """(roles, names) in the shape looks_empty expects.
+
+    `names` is WHAT TO JUDGE, so the fragment's own working values are dropped;
+    `roles` is only the names carrying an explicit `role:`, so a name the author
+    said nothing about still reaches the naming patterns.
+
+    HERE RATHER THAN IN tools/batch-prove.py, where it used to live alone. Two
+    callers need it now - the batch runner and `accept` - and a rule with two
+    copies is a rule that will disagree with itself.
+    """
+    declaration = frag.provides() or []
+    roles = dict((d.get("name"), d["role"]) for d in declaration
+                 if isinstance(d, dict) and d.get("name") and d.get("role"))
+    names = set(d.get("name") for d in declaration
+                if isinstance(d, dict) and d.get("name"))
+    return roles, names
+
+
+def positive_worked(phase, frag, expect=None):
+    """Did the POSITIVE move a declared result off zero? (reason, detail).
+
+    `reason` is None when it worked.
+
+    MOVED HERE FROM tools/batch-prove.py ON 2026-09-12, unchanged, because the
+    SIGNING GATE needs the same question and was not asking it. batch-prove's
+    own note called this HOLE 2: heron_validate asked whether the NEGATIVE came
+    back empty - D-30's leg, which a fragment that does nothing satisfies
+    without trying - and nothing asked the opposite question.
+
+    It was answered in the batch runner and left unanswered in `accept`, so a
+    draft whose real result was 0 in BOTH legs read as complete and could be
+    signed. Found by checking 65 waiting drafts against it: three passed.
+
+    THREE RULES, EACH FROM A FRAGMENT THAT GOT PAST THE OTHER TWO:
+
+      * **Only what the fragment declared.** The executor reports every variable
+        left in scope, including its own working constants, and `MetresPerFoot`
+        is never zero.
+      * **Only results, never accounting.** Every provide declares which it is,
+        so nothing here reads a NAME. `jointsChecked: 15` is a count of work
+        done, and `check-flow-direction` passed on it while `bothIn` and
+        `bothOut` were 0 in both legs.
+      * **Unreadable is not work.** An `OverrideGraphicSettings` object is not a
+        count that could have been zero.
+    """
+    provides = phase.get("provides") or {}
+    roles, names = contract_of(frag)
+
+    if expect:
+        judged = [(k, provides.get(k)) for k in expect]
+        absent = [k for k, v in judged if v is None]
+        if absent:
+            return ("POSITIVE UNREADABLE",
+                    "the run never reported %s, which `expect:` asked for"
+                    % ", ".join(absent))
+    else:
+        judged = []
+        for key, value in provides.items():
+            if key not in names:
+                continue                        # a working value, not a result
+            if roles.get(key) == "accounting":
+                continue                        # declared as bookkeeping
+            if key in NOTE_KEYS:
+                continue                        # prose, never a quantity
+            if _is_helper_object(value):
+                continue                        # a type name, not a quantity
+            judged.append((key, value))
+
+    if not judged:
+        return ("POSITIVE UNREADABLE",
+                "nothing it returned is a declared result that can be read as a "
+                "quantity, so there is no evidence it did anything")
+
+    unreadable, zeros = [], []
+    for key, value in judged:
+        count = _as_count(value)
+        if count is None:
+            unreadable.append("%s %s" % (key, value))
+        elif count != 0:
+            return None, "%s %s" % (key, value)
+        else:
+            zeros.append(key)
+
+    if unreadable:
+        return ("POSITIVE UNREADABLE",
+                "%s cannot be read as a quantity%s"
+                % ("; ".join(unreadable),
+                   ", and everything readable was zero (%s)" % ", ".join(zeros)
+                   if zeros else ""))
+
+    return ("POSITIVE EMPTY",
+            "every declared result came back zero (%s)" % ", ".join(sorted(zeros)))
+
+
 def looks_empty(phase, declared=None, declared_names=None):
     """Whether a phase's numbers really do read as nothing.
 
@@ -1036,6 +1131,60 @@ def read_draft(slug):
         return yaml.safe_load(fh.read())
 
 
+def _evidence_refusal(slug, frag, proof):
+    """Why this draft must not be signed, or None.
+
+    RE-READ FROM THE RUN RECORD, not from the draft's prose. The draft's
+    `positive_case` is a sentence for a person; the record beside it holds the
+    numbers the fragment actually returned, and those are what can be judged.
+
+    A RECORD THAT CANNOT BE FOUND IS A REFUSAL, not a pass. The alternative is
+    signing on the strength of a sentence nothing can check, which is the shape
+    of every defect this file exists to catch.
+    """
+    for phase_name in ("positive_case", "negative_case"):
+        text = str(proof.get(phase_name) or "")
+        if "NOT ESTABLISHED" in text:
+            return ("the %s says NOT ESTABLISHED. A phase that did not run is "
+                    "an absence, and an absence cannot be signed."
+                    % phase_name.replace("_", " "))
+
+    record_path = os.path.join(DRAFTS_DIR, "runs", slug + ".json")
+    if not os.path.isfile(record_path):
+        return ("no run record at %s, so the evidence cannot be re-checked. "
+                "The draft's wording is a sentence for a person; the record is "
+                "what a machine can judge, and without it nothing here is "
+                "verifiable. Re-run the fragment." % record_path)
+
+    try:
+        with io.open(record_path, "r", encoding="utf-8") as fh:
+            record = json.load(fh)
+    except (ValueError, OSError) as exc:
+        return "the run record at %s cannot be read: %s" % (record_path, exc)
+
+    phases = {p.get("phase"): p for p in record.get("phases", [])}
+
+    positive = phases.get("positive")
+    if positive is None:
+        return "the run record has no positive phase in it"
+    reason, detail = positive_worked(positive, frag)
+    if reason:
+        return ("%s - %s. The positive case is the evidence it DOES something; "
+                "without it the negative proves only that a fragment which does "
+                "nothing also finds nothing." % (reason, detail))
+
+    negative = phases.get("negative")
+    if negative is None:
+        return "the run record has no negative phase in it"
+    roles, names = contract_of(frag)
+    if not looks_empty(negative, roles, names):
+        return ("the negative case came back with content, so it is a FINDING "
+                "rather than a proof. The leg that must find nothing found "
+                "something - read the draft and the run record before signing.")
+
+    return None
+
+
 def accept(slug, by, library=None):
     """A PERSON confirms a draft. Copies the proof in; never touches the status.
 
@@ -1071,6 +1220,24 @@ def accept(slug, by, library=None):
         return 2, ("the draft is not complete - no %s. A draft with a gap in it "
                    "is a finding to act on, not a proof to accept"
                    % ", ".join(missing))
+
+    # A FILLED FIELD IS NOT EVIDENCE. Everything above asks whether the draft
+    # has the shape of a proof; nothing asked whether it SAYS anything.
+    #
+    # Both of these read as complete here until 2026-09-12:
+    #   duplicate-views   given 5 views, `duplicated 0` in BOTH legs
+    #   copy-elements     the leg that had to find nothing made 5 copies
+    #
+    # 62 of the 65 drafts then waiting were one of those two shapes. Signing
+    # them would have moved Heron from 198 proven to 260 on evidence that
+    # demonstrates nothing - which is worse than leaving them unproven, because
+    # a wrong answer wearing a signature is the one nobody re-checks.
+    #
+    # The question is batch-prove's, which had it right and could not reach
+    # here; positive_worked now lives beside looks_empty so both callers ask it.
+    problem = _evidence_refusal(slug, frag, proof)
+    if problem:
+        return 2, problem
 
     proof["by"] = by.strip()
 

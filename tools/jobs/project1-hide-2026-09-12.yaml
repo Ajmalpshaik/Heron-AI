@@ -1,0 +1,65 @@
+# hide-elements, 2026-09-12.
+#
+# ITS EXISTING DRAFT FAILED ON THE NEGATIVE, and the reason is worth keeping:
+# the recorded negative used categoryName=Ducts in the SAME view with only
+# `permanent` flipped, so it hid five elements again and the gap reads "the
+# negative case returned content instead of nothing". Flipping a flag is not a
+# different case.
+#
+# The difficulty is real: hide-elements hides whatever it is handed, so no
+# SELECTION can make it come back empty. What can is the VIEW. The selection
+# and the target view are separate inputs here, so the negative keeps a valid
+# selection of ten ducts and asks a DIFFERENT view to hide them - one they are
+# not visible in. `cannotHide` should then name them and `hidden` stay at zero.
+#
+# Whether the ceiling plan actually refuses them is not known in advance. If it
+# hides all ten as well, this negative is wrong and the run must say so rather
+# than be quietly re-arranged until it passes.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  in: Project1 work_ajmal.al
+  write: true
+  keep-chain: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Ducts
+    inViewOnly: "1 - Mech"
+
+jobs:
+  - fragment: hide-elements
+    set:
+      view: "1 - Mech"
+      # TEMPORARY, deliberately. The fragment's own note says a permanent hide
+      # is saved into the view and survives closing the model - and this runs
+      # on Ajmal's own scratch model. A rollback should undo it either way;
+      # choosing the reversible one anyway is the cheaper mistake.
+      permanent: false
+    negative-set:
+      inViewOnly: "1 - Mech"
+      # SECOND ATTEMPT. The ceiling plan hid all ten as well, so varying the
+      # VIEW does not make this fragment empty either - recorded rather than
+      # quietly re-arranged.
+      #
+      # This run is no longer hunting an empty case. hide-elements hides
+      # whatever it is handed, so it belongs to the class D-53 covers: the
+      # second leg is met by TRACKING - the answer following the input across
+      # different inputs - not by an empty answer that cannot exist.
+      #
+      # So the two phases are now two DIFFERENT COUNTS in the same view:
+      # ten ducts and two walls. The verdict will read NEG NOT EMPTY, which is
+      # correct and expected; what matters is whether `hidden` comes back 10
+      # and then 2. A fragment falling back to the active view or the whole
+      # model cannot match both.
+      categoryName: Walls
+      view: "1 - Mech"
+      permanent: false
+    note: >
+      `hidden` is the only role: result. cannotHide and viewRefused are both
+      accounting under D-52 - the evidence it looked and said no, never a
+      change it made.

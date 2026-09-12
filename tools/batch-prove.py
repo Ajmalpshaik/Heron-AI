@@ -137,6 +137,13 @@ DEFAULT_TIMEOUT = 900
 
 PASS = "PASS"
 WOULD_RUN = "WOULD RUN"
+# THE RULE THESE TWO NAMES ANSWER NOW LIVES IN heron_validate, beside
+# looks_empty. It was defined here alone, and `accept` - the signing gate -
+# could not reach it, so a draft whose result was 0 in BOTH legs read as
+# complete and was signable. One definition, two callers, 2026-09-12.
+contract_of = HV.contract_of
+positive_worked = HV.positive_worked
+
 ALREADY = "ALREADY"
 NO_FRAGMENT = "NO FRAGMENT"
 REFUSED = "REFUSED"
@@ -301,95 +308,6 @@ def job_refusal(job, library):
 # 3. Judging - and the half heron_validate does not do
 # ---------------------------------------------------------------------------
 
-def contract_of(frag):
-    """(roles, names) in the shape heron_validate.looks_empty expects.
-
-    Built the same way `draft_from_record` builds them, and for the same reason:
-    `names` is WHAT TO JUDGE, so the fragment's own working values are dropped;
-    `roles` is only the names carrying an explicit `role:`, so a name the author
-    said nothing about still reaches the naming patterns.
-    """
-    declaration = frag.provides() or []
-    roles = dict((d.get("name"), d["role"]) for d in declaration
-                 if isinstance(d, dict) and d.get("name") and d.get("role"))
-    names = set(d.get("name") for d in declaration
-                if isinstance(d, dict) and d.get("name"))
-    return roles, names
-
-
-def positive_worked(phase, frag, expect=None):
-    """Did the POSITIVE move a declared result off zero?
-
-    HOLE 2. `heron_validate` asks whether the NEGATIVE came back empty, which is
-    D-30's leg and which a fragment that does nothing satisfies without trying.
-    Nothing asked the opposite question until a batch passed two fragments whose
-    real results were 0 in both legs.
-
-    Returns (verdict, reason). The verdict is None when it worked.
-
-    THREE RULES, EACH FROM A FRAGMENT THAT GOT PAST THE OTHER TWO:
-
-      * **Only what the fragment declared.** The executor reports every variable
-        left in scope, including its own working constants, and `MetresPerFoot`
-        is never zero.
-      * **Only results, never accounting.** Every provide declares which it
-        is, so nothing here reads a NAME. `jointsChecked: 15` and
-        `bidirectionalSkipped: 25` are counts of work done, and
-        `check-flow-direction` passed on them while `bothIn` and `bothOut` were 0
-        in both legs.
-      * **Unreadable is not work.** An `OverrideGraphicSettings` object is not a
-        count that could have been zero. `read-graphic-overrides` passed on one.
-    """
-    provides = phase.get("provides") or {}
-    roles, names = contract_of(frag)
-
-    if expect:
-        # THE JOB FILE'S OWN JUDGEMENT, and it beats every rule below. Somebody
-        # who knows this fragment can name the result that has to move; the
-        # patterns are only what to do when nobody has.
-        judged = [(k, provides.get(k)) for k in expect]
-        absent = [k for k, v in judged if v is None]
-        if absent:
-            return (POSITIVE_UNREADABLE,
-                    "the run never reported %s, which `expect:` asked for"
-                    % ", ".join(absent))
-    else:
-        judged = []
-        for key, value in provides.items():
-            if key not in names:
-                continue                        # a working value, not a result
-            if roles.get(key) == "accounting":
-                continue                        # declared as bookkeeping
-            if key in HV.NOTE_KEYS:
-                continue                        # prose, never a quantity
-            if HV._is_helper_object(value):
-                continue                        # a type name, not a quantity
-            judged.append((key, value))
-
-    if not judged:
-        return (POSITIVE_UNREADABLE,
-                "nothing it returned is a declared result that can be read as a "
-                "quantity, so there is no evidence it did anything")
-
-    unreadable, zeros = [], []
-    for key, value in judged:
-        count = HV._as_count(value)
-        if count is None:
-            unreadable.append("%s %s" % (key, value))
-        elif count != 0:
-            return None, "%s %s" % (key, value)
-        else:
-            zeros.append(key)
-
-    if unreadable:
-        return (POSITIVE_UNREADABLE,
-                "%s cannot be read as a quantity%s"
-                % ("; ".join(unreadable),
-                   ", and everything readable was zero (%s)" % ", ".join(zeros)
-                   if zeros else ""))
-
-    return (POSITIVE_EMPTY,
-            "every declared result came back zero (%s)" % ", ".join(sorted(zeros)))
 
 
 def why_not_empty(phase, roles, names):
