@@ -13,6 +13,26 @@ See docs/29-metadata-standard.md
 >
 > **Primary rule:** external repositories are research references, not source-code suppliers.
 
+> ### ✅ EXECUTED — 2026-09-12. Do not run this again without reading what it produced.
+>
+> Everything below was carried out. The **Improvement Gate** exists:
+> [`check-change.py`](../tools/check-change.py) (intent against diff),
+> [`change-evidence.py`](../tools/change-evidence.py) (before and after, and the keep/revert ruling),
+> [`check-package.py`](../tools/check-package.py) (the delivery questions),
+> [`heron_runtime.py`](../mcp/server/heron_runtime.py) (what Heron can do right now, and why not), and
+> the Python half of the layering table in [`check-structure.py`](../tools/check-structure.py).
+>
+> **Where its durable output went:** [D-68](DECISIONS.md) and [D-69](DECISIONS.md) ·
+> [34 §2.15–2.19](34-patterns-adapted.md) for the external patterns and the licence of each path read ·
+> [13 §3a](13-testing-and-quality.md) for the offline-versus-real-Revit line ·
+> [04 §6b](04-heron-mcp.md) for the capability-verdict rule · [PROPOSALS Part F](PROPOSALS.md) for what
+> was left open. The three work notes that drove the execution retired with it.
+>
+> **This document is kept for its reasoning, not as an instruction.** The research rule in §"Mandatory
+> research rule during implementation" still stands for the *next* piece of work — it was followed for
+> this one, and the exact files and licences read are recorded in
+> [34 §2.15–2.19](34-patterns-adapted.md).
+
 ---
 
 ## 1. Goal

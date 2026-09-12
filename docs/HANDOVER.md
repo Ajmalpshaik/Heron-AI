@@ -85,7 +85,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](#2026-09
 | Proven | **197 of 360** as of 2026-09-11 (was 198; `export-views-to-fbx` was put BACK to `DRAFT` by the owner on 2026-09-11 — it is `risk: PUBLISH` and was proved through `validate`, which does not apply the risk gate `fragment` and `prove` both apply. Its proof block was kept; only the status claim was withdrawn. Before that 196; PR #108 promoted `import-parameter-values` and `export-views-to-fbx` — the first found by WRITING the CSV it reads rather than waiting for the model to hold one. Before that 188; PR #104 promoted eight found by SWEEPING fifty-one fragments in two bulk passes instead of probing one at a time — including `sum-by-group`, which with `group-and-count` completes the pair the `keep-chain` fix was built for. Before that 186; PR #99 promoted `flip-elements` and `dimension-wall-openings`, both blocked on Snowdon because its architecture is in a link and both proved on `Project1`'s hand-drawn walls and door — the third and fourth times a triage row named the model that would work. Before that 185; PR #96 promoted `set-mep-slope`, proved on `Project1` after Snowdon refused all 22 of its ducts — the second time a triage row named the model that would work and was right. Before that 180; PR #92 promoted five proved on `Snowdon-scratch` — four re-runs whose earlier records were same-day and therefore stale, plus `check-flow-direction`, which `Project1` could not feed because its ducts carry no system. Before that 178; PR #88 promoted the last two proved on `Project1`. Before that 175; PR #86 promoted three proved on the same model, one built by hand for the purpose — including `find-dead-ends`, which §3b had set aside three times on Snowdon and which needed only a duct run with a loose end. Before that, 167; PR #79 promoted eight — the first WRITE fragments this repository has promoted) — 142 at the start of the day's second proving track, **+18 from it**, and `set-view-section-box` back to `DRAFT` when its implementation changed after its proof was signed. Each carries a recorded proof with a negative case and a staleness fingerprint (D-30). Moving hourly — derive it, do not read it here |
 | Compile gate | green, Revit 2020–2027 |
 | Other gates | metadata, docs, gaps, agent-count, **structure** — all green. **`check-licence` added 2026-09-09 and it EXITS 1 on a finding**, unlike the other reports; 370 units, all clean today ([D-66](DECISIONS.md)). `check-revit-gate` and `check-reachable` are reports and exit 0, so their findings are questions and two of them are now worklists. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
-| Tests | **41 suites when this was measured, on 2026-09-10, of which 36 passed in a plain Linux container — derive the count now with `ls tests/test_*.py | wc -l`, because it moves whenever anybody adds a file. Three failures are the MACHINE, with two causes not one** — `test_mcp_serves` and `test_served_claims` need the MCP SDK, `test_bridge_roundtrip` needs a built .NET test host. On a machine with both, those three should pass. **Two more are NOT the machine** — `test_graph` and `test_reachable` fail wherever they are run and pre-date this work, so 39 of 41 is the best a fully equipped machine gets until somebody fixes them. **Do not fix them by editing the tests.** `test_embed` and `test_retrieve` were re-based against the model backend in PART 5, not edited until green |
+| Tests | **41 suites when this was measured, on 2026-09-10, of which 36 passed in a plain Linux container — derive the count now with `ls tests/test_*.py | wc -l`, because it moves whenever anybody adds a file. Three failures are the MACHINE, with two causes not one** — `test_mcp_serves` and `test_served_claims` need the MCP SDK, `test_bridge_roundtrip` needs a built .NET test host. On a machine with both, those three should pass. **`test_graph` and `test_reachable` were the two that were NOT the machine, and both were fixed on 2026-09-12** — each carried a fixture describing a repository that had moved on, and neither test's claim changed (see the PART record below). **Do not fix a test by editing it until it passes**; `test_embed` and `test_retrieve` were re-based against the model backend in PART 5, not edited until green. **The count was also Linux-specific and nobody knew**: `test_context` failed on the owner's Windows checkout on one check, comparing a path against a hardcoded `/` — so Windows saw one fewer pass than every document here promised. Fixed 2026-09-12 at the comparison; **unproved on Windows**, which is what [NEEDS-CHECKING](NEEDS-CHECKING.md) **A14** is for. Derive the number, never read it here |
 | Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | **THAT CLAIM WAS WRONG AND IS CORRECTED. Rebuilt and redeployed 2026-09-10, to Revit 2020, 2024 AND 2027**, verified at binary level. The binary Revit had loaded was dated 2026-09-08 23:06 while `RevitFragment.cs` was written 2026-09-09 23:14 - so D-67's caller-value widening and the rollback check had NEVER reached the machine ([FRAGMENT-ISSUES](FRAGMENT-ISSUES.md) rows 8 and 12). Deploy ONE release at a time. Rebuild it after ANY change under `revit/` — and check the framework first: `check-compile.py` builds 2020–2027 into one folder and the newest wins, so a run of it leaves .NET 10 binaries that Revit 2024 refuses with *"Revit cannot run the external application"*. `deploy-addin.ps1` now guards this rather than trusting the operator |
 | Agents | **71 of 250 have code**, 4 host-provided by D-01, 175 left — `python tools/agent-count.py`. The 71st is `HERON-RAG-CTX-007`, the Context Manager, on 2026-09-09. Phase 0/1's agent list is COMPLETE |
@@ -313,12 +313,122 @@ counts what is left; believe it over this file.
 
 ---
 
+## HANDOVER — 2026-09-12 (the SECOND SITTING of the improvement-gate track): a Windows-only failure nobody knew about, the sources re-read, and the housekeeping ledger retired
+
+**Start here if you are picking this up.** The gate work below is merged. This sitting did three
+things on top of it, all at the owner's direction, and each one found something.
+
+### 1. The suite total was Linux-specific, and every document promised the wrong number
+
+`tests/test_context.py` compared a source path against a hardcoded `/`. The value comes from
+`heron_fragment.repo_relative()`, which is `os.path.relpath` and spells the path the way the **machine**
+does — so the check passed here and failed on the owner's Windows PC, reported as
+`brain\fragments\...`. **That machine saw 38 of 41 where this file and the `heron-ship` skill both
+promised 39**, and that skill's only job is telling a later session which failures are theirs.
+
+Fixed at the comparison, **not** inside `repo_relative()` — that value is written into the store's
+`fragments.folder` column, and rewriting a persisted value is a far larger change than the defect
+deserves. Normalising at the consumer is what this repository already does twice, in
+`heron_fragment.fingerprint()` and `tests/test_carried_sources.py`.
+
+**It could not be failed first on Linux**, so `change-evidence.py` ruled it `NO CHANGE MEASURED`, which
+is the correct verdict and not a passing one. **[NEEDS-CHECKING](NEEDS-CHECKING.md) A14 is the one run
+that closes it** — on the PC, `python tests/test_context.py` should exit 0 with no fourth failure.
+
+### 2. Every external source opened again, and one of my own claims did not survive
+
+The brief's rule is to re-open each source and read the **implementation files**, not the READMEs. Four
+of the five rows in [34 §2.15–2.19](34-patterns-adapted.md) hold, one verified verbatim. **§2.17 did
+not**: it said their check *"drives the lifecycle start to stop"*, and nothing in that repository does
+— checked across the packaging script, the release gate, the prerelease tests, catalogue validation and
+the convergence script. Corrected to what they actually do. **The Heron side is unaffected** —
+`check-package.py` reading `Heron.addin` is still right; only the description of the source was wrong.
+
+**A near-miss worth keeping.** §2.19 was almost written up as a second correction, because its three
+severities were not in the folder the other two rows live in. Widening the search found them at once,
+spelled exactly as recorded. *Absent from the folder I looked in* is not *absent*, and **a correction
+needs its own evidence exactly like the thing it corrects.**
+
+### 3. The independent review happened, and the housekeeping ledger retired
+
+[Golden Rule 7](14-golden-rules.md) wants one agent to create and another to validate. A different
+session reviewed the 2026-09-10 housekeeping work by checking its claims **against the code** rather
+than reading them. It holds up: *"no executable code was modified"* is true and precisely worded, the
+deleted duplicate really was byte-identical, the Codex path bug was real, and **all 151 repository
+paths named in the seven entry documents resolve.** One defect found — `tools/check-dependencies.py`
+had no section in `tools/README.md` — and it was **later drift, not that work's**. Documented.
+
+**The reviewer's own false finding is recorded too**, because the method is the point: the path check
+first reported 95 of 151 broken, and every one was the checker resolving a document-relative path
+against the repository root. The documents were right and the tool was wrong — the same shape as
+`test_graph` and `test_reachable`, and the third time in two days.
+
+**So the housekeeping execution record was retired**, which is what work notes do. Its last open item
+moved to a permanent register first: **the cold read is now [NEEDS-CHECKING](NEEDS-CHECKING.md) R3.**
+
+### What is owed, and by whom
+
+| | |
+|---|---|
+| **A14** | On the PC: `python tests/test_context.py` exits 0, and no fourth failure in the suite |
+| **A12 · A13** | The add-in loads on each release; an upgrade and a rollback work |
+| **R3** | **The cold read — and it needs a stranger.** Nobody who has worked in this repository can close it, which is why two sessions in a row have declined to |
+| **Golden Rule 7, for the gate itself** | `check-change.py` has still only ever been run by the sessions that built it. `work-notes/plans/improvement-gate-execution-record.md` stays until somebody else points it at their own change |
+
+**Measured here, on Linux, this sitting:** all gates exit 0 — `check-docs`, `check-metadata`,
+`check-structure`, `check-package`, `check-licence`, `check-dependencies`. Derive the suite board
+rather than reading a number here; the three that do not pass need the MCP SDK and a built .NET test
+host. **`code=$?` on its own line** — `$?` after a pipe is the pipe's exit code, and that mistake
+produced two optimistic numbers in this branch before `change-evidence.py` caught them.
+
+---
+
+## HANDOVER — 2026-09-12 (the IMPROVEMENT-GATE track): a change now has to say what it is for, and two red suites went green
+
+**Nothing here has been near Revit, and no fragment status moved.** Full ledger, every phase note and
+every measurement: [`work-notes/plans/improvement-gate-execution-record.md`](work-notes/plans/improvement-gate-execution-record.md).
+
+**What exists now that did not before.** Four things, and each answers a question nothing in this
+repository was asking:
+
+| | |
+|---|---|
+| [`tools/check-change.py`](../tools/check-change.py) | Does this change do only what it said it would? Compares the diff against a declared `intent` / `area` / `risk`, using the **layering table** rather than word overlap — so `brain/` is *supporting* work for an `mcp/` change and `revit/` is not |
+| [`tools/change-evidence.py`](../tools/change-evidence.py) | Is it better than before? The same measurements twice, compared as sets, ruling `KEEP` · `REVERT` · **`NO CHANGE MEASURED`**. It cannot change anything, which is what makes the loop safe to point at a prompt or a fragment description |
+| [`tools/check-package.py`](../tools/check-package.py) | Would the delivered thing install? **Nothing in this repository read `Heron.addin`** — the first file Revit opens. Now a fourth gate that must pass |
+| [`mcp/server/heron_runtime.py`](../mcp/server/heron_runtime.py) | Why can Heron *not* do this? Six verdicts where `heron_capability.resolve()` had one `None` for five different reasons. **Wired to nothing yet, on purpose** — [PROPOSALS F1](PROPOSALS.md) |
+
+Plus the **Python half of the layering table**, enforced for the first time since Step 1 in
+[`check-structure.py`](../tools/check-structure.py) — its own source had admitted for a fortnight that
+two thirds of the repository went unchecked.
+
+**Two suites that were red on every machine are green, and both were the same defect.** `test_graph.py`
+and `test_reachable.py` each carried a fixture describing a repository that had moved on: one matched
+two exact adjacent lines and `role:` arrived between them, so it broke **none** of the 50 providers it
+meant to break; the other excused a function that had acquired a legitimate caller. **Neither test was
+edited until it passed** — both claims are unchanged. `.github/workflows/gates.yml` and the
+[`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill were corrected in the same change, because
+that workflow errors when a known failure starts passing and asks for exactly this.
+
+**What is owed.** The gate has only ever been run by the session that built it, which is
+[Golden Rule 7](14-golden-rules.md) unsatisfied. Two new rows in
+[NEEDS-CHECKING](NEEDS-CHECKING.md) — **A12** and **A13** — are the delivery questions no script can
+answer: whether the add-in loads, and whether an upgrade and a rollback work. Three defects found on the
+way are in [PROPOSALS Part F](PROPOSALS.md) rather than fixed.
+
+**Next:** use it on the next real task. `python tools/check-change.py --intent "..." --area <part>
+--risk low`, then `tools/change-evidence.py capture` before and after.
+
+---
+
 ## HANDOVER — 2026-09-10 (the HOUSEKEEPING track): three READMEs were wrong by more than a hundred, and the write path was documented as not existing
 
 **Documentation only. No executable code was modified** — `git diff --diff-filter=M` over `.py`, `.cs`,
-`.csproj`, `.props` and `.ps1` across the whole batch returns nothing. Full evidence, every disposition
-and every measurement:
-[`docs/work-notes/plans/housekeeping-execution-record.md`](work-notes/plans/housekeeping-execution-record.md).
+`.csproj`, `.props` and `.ps1` across the whole batch returns nothing. Its full ledger was a work note and was
+**retired on 2026-09-12** once its last open item moved to a permanent register — the cold read is now
+[NEEDS-CHECKING](NEEDS-CHECKING.md) **R3**, and the Windows-only suite failure it found is **A14**. The
+sections below are what survived it; the ledger itself is in git history, which is recovery evidence
+rather than something to go looking in.
 
 **The three findings worth knowing about:**
 
@@ -344,7 +454,7 @@ and every measurement:
 | **Moved** | **Nothing.** Four candidate moves were assessed and all rejected with reasons. This file stays put because saved continuation prompts point at this exact path from outside the repository; it is **labelled** as the operational entry point instead |
 | **Links** | **4 broken → 0.** All four were wrong filenames; each right target was found by reading content |
 | **Also corrected** | The four specification parts disagreed about how many parts exist (1 of 2, 2 of 2, 3 of 3) · `CONTRIBUTING.md` said Phase 2 had never loaded into Revit · the `heron-ship` skill said *"35 of 38 pass"* when there are 41 suites, so its own *"a fourth failure is yours"* rule would have misled an agent |
-| **Checks passing** | `check-docs` (0 broken links), `check-metadata`, `check-structure`, `check-licence`, `check-routing`, `check-intrusion`, `agent-count`, `heron_fragment`, `git diff --check`. `check-gaps` exits 1 by design |
+| **Checks passing** | `check-docs` (0 broken links), `check-metadata`, `check-structure`, `check-licence`, `check-routing`, `check-intrusion`, `agent-count`, `heron_fragment`, `git diff --check`. `check-package`. `check-gaps` exits 1 on a plain container — its exit code follows the UNFINISHED list, whose only entry is `test_served_claims.py`, failing for want of the MCP SDK. Every fragment below PROVEN is in the *waiting* bucket. Run it for the counts; do not read one here |
 | **Could not run** | The three compile gates and `test_bridge_roundtrip` — **no .NET SDK.** `test_mcp_serves` and `test_served_claims` — **no MCP SDK.** None counted as a pass |
 | **Needs real Revit** | Everything in [NEEDS-CHECKING.md](NEEDS-CHECKING.md). Unchanged by this run |
 

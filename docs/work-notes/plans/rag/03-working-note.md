@@ -842,9 +842,9 @@ takes a deliberate hand rather than a quiet edit.
 **Found while working, and fixed rather than recorded, because this change caused it.** Adding a test
 suite made a stated count wrong in [`README.md`](../../../../README.md) — it said *"41 test suites"* —
 and made a dated count in [`HANDOVER.md`](../../../HANDOVER.md) read as a current one. `check-docs.py` caught both.
-[The execution record](../housekeeping-execution-record.md) **quotes** the old README line, so it is
+The housekeeping execution record **quoted** the old README line, so it was
 marked as a quotation instead of rewritten — **rewriting a record of what a file said is how a record
-stops being one.**
+stops being one.** (That record was itself retired on 2026-09-12, which is what work notes do.)
 
 **Next.** Stage 1 — the `documents` and `chunks` tables and `brain/heron_ingest.py`
 ([`02-implementation.md` §4](02-implementation.md)). **It is blocked by none of this**: no network, no

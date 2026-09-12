@@ -4044,3 +4044,110 @@ It unblocks **20 fragments** — the arrangeable library goes from 20 to 40 — 
 proving. [D-30](DECISIONS.md) is unchanged.
 
 ---
+
+## D-68 — A significant change states its intent before it is made, and is judged against it afterwards
+
+**Status:** Accepted · **Date:** 2026-09-12 · **Found during:** building the improvement gate the
+work-note plans asked for
+**Affects:** [`check-change.py`](../tools/check-change.py), [`change-evidence.py`](../tools/change-evidence.py),
+[`AGENTS.md`](../AGENTS.md), [`heron-ship`](../.claude/skills/heron-ship/SKILL.md), [13 §3a](13-testing-and-quality.md)
+
+### Context
+
+Every gate in this repository asks a question about **the repository**. None asked a question about
+**the change**. A diff that compiles, passes every suite and quietly rewrites three unrelated
+subsystems is invisible to all of them — and it is the shape an AI-written change arrives in most
+often, because a model asked to fix one thing will happily tidy four others on the way.
+
+[AGENTS.md](../AGENTS.md) already said *"make the smallest safe change"* and *"a defect you find while
+doing something else is recorded, not fixed"*. Both were prose, and [34 §3](34-patterns-adapted.md)
+records the lesson three separate outside projects taught this repository: **a rule in code beats a rule
+in prose.**
+
+### Decision
+
+**Three fields, written down before the work: `intent`, `area`, `risk`.** At review time every changed
+file is classified against them, and the classification is **structural, not lexical** — the layering
+table in [`check-structure.py`](../tools/check-structure.py) decides whether a file is in a declared
+part, in a part a declared part may depend on, or in neither.
+
+**Only the last class raises.** Tests, documentation and build/config are counted and never questioned.
+Build and config are separated **before** part membership, because a change to how Heron is built or
+installed is the one class that must never hide inside another.
+
+**And a change with no evidence record is `REVISE`, never `PASS`.** `change-evidence.py` captures the
+same measurements before and after, compares them as **sets** rather than totals, and rules `KEEP`,
+`REVERT` or **`NO CHANGE MEASURED`** — which is the honest verdict for a change whose effect nothing
+measurable moved, and is not the same sentence as *"no harm done"*.
+
+### Why three fields and not the ten the plan asked for
+
+[29 §4](29-metadata-standard.md) sets the test for a new field: **would a script fail the build over
+it?** Only these three survive it. Everything else the plan listed is either derived from the diff —
+whether this needs a real Revit, which releases it touches, whether a public contract moved, whether
+delivery is affected — or is prose a script cannot check, such as acceptance criteria. **A derived fact
+beats a declared one**, which is the same rule [D-40](DECISIONS.md) applies to graph edges and
+[`heron_capability.py`](../brain/heron_capability.py) applies to risk.
+
+### The two properties that keep it honest
+
+**It sets the homework and does not mark it.** `check-change.py` runs no gate; which gates ran is read
+out of an evidence record. A tool that did both would one day mark its own.
+
+**`change-evidence.py` cannot change anything.** It measures, compares and rules. The improvement loop
+it serves — *measure, change one thing, measure again, keep or revert* — is safe to point at a prompt,
+a fragment description or a routing hint precisely because the tool owning the ruling owns no mutation.
+Core architecture, Revit write paths, trust rules, the installer and public contracts are outside it by
+construction rather than by policy.
+
+### The compensating control this replaces nothing of
+
+**It is not a proof and says so on every run.** A clean scope report says a change stayed where it said
+it would — not that what it does is right. [D-30](DECISIONS.md) is untouched: a fragment's behaviour
+still needs a named model, a negative case and a fingerprint, and the gate returns
+`NEEDS REAL REVIT PROOF` (exit 3, the same code [`tests/README.md`](../tests/README.md) uses for *could
+not run here*) rather than a pass.
+
+---
+
+## D-69 — A script in `tools/` reads the code it checks, and that is not a layering violation
+
+**Status:** Accepted · **Date:** 2026-09-12 · **Found during:** the first run of the Python half of the
+layering check, which raised 34 imports
+**Affects:** [`check-structure.py`](../tools/check-structure.py), [D-48](DECISIONS.md), [PROJECT-MAP §B](PROJECT-MAP.md)
+
+### Context
+
+`check-structure.py` has held a table of who may depend on whom since Step 1, and its own comment has
+said since 2026-08-29 that it *"only ever ran against C# `ProjectReference`s, so the Python side has
+never been checked here at all"*. That admission sat in the file for a fortnight while two thirds of the
+repository went unchecked, and the comment itself warned why: **the omission read as a prohibition to
+anybody who opened the file.**
+
+Checking it raised **34 imports**, every one of them a gate in `tools/` reading `brain/`.
+
+### Decision
+
+**The table stays exactly as it is, and `tools/` is exempt from the Python pass, with the reason at the
+exemption.** Its `set()` row was written for `ProjectReference`s and `tools/` has no project file, so it
+had never applied to anything.
+
+**A gate reads the code it checks.** [D-48](DECISIONS.md) settled that the three tools which parsed
+`fragment.yaml` themselves each lost a malformed fragment silently, and that they must go through
+`heron_fragment.load_all()` instead. Forbidding that import would make the honest way the illegal way.
+It is the same reasoning already written beside the `Autodesk.Revit` rule a few lines below it: **a
+script talks about the code rather than being it.**
+
+**What tools reach is still printed** — as a note, not a problem. *Which* scripts read the brain is
+worth being able to see; *that* a script reads the brain is not a defect.
+
+### Why this is not a rule bent to fit the code
+
+The test is [AGENTS.md](../AGENTS.md)'s: *a rule is never edited to match code that broke it.* Nothing
+broke this rule, because the rule had never covered this case — `PROJECT-MAP §B`'s dependency table
+lists `platform`, `revit`, `brain`, `mcp` and `tests`, and has never listed `tools` at all. The new pass
+is stricter everywhere the rule does apply: `brain/` importing an `mcp/` module now fails the build, and
+a module name owned by two parts is **reported rather than guessed**, because a guess in a layering
+checker is a layering rule that is sometimes not applied.
+
+---

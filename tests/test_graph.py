@@ -33,29 +33,55 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 FAILURES = []
 
-PROVIDES_ELEMENTS = ("    - name: elements\n"
-                     "      type: IList<Element>")
+PROVIDES_LINE = "    - name: elements"
 
 
 def break_elements(text):
     """Rename `elements` where a fragment PROVIDES it, and nowhere else.
 
-    The same two lines appear under `needs:` on most of the library, and
-    renaming those breaks the composition from the CONSUMER's side - which
-    orphans everything, passes for the wrong reason, and hides whatever this
-    test was actually asking. Only the tail after `provides:` is touched.
+    The same name appears under `needs:` on most of the library, and renaming
+    those breaks the composition from the CONSUMER's side - which orphans
+    everything, passes for the wrong reason, and hides whatever this test was
+    actually asking. So only the `provides:` block is touched, and only up to
+    the next key at its own indent or shallower.
 
     Returns the new text, or None if this fragment does not provide it.
+
+    IT MATCHED TWO EXACT ADJACENT LINES UNTIL 2026-09-12, and by then it
+    matched NOTHING. `- name: elements` was followed by `type:` when this was
+    written; D-51 and D-52's work put `role:` between them, so the fixture
+    stopped finding any of the 50 fragments that provide `elements`,
+    break_providers() became a no-op, and the three checks below failed while
+    the library and the deriver were both perfectly correct.
+
+    That is the failure providers_of_elements() already carries a docstring
+    about - it derives the FILE LIST for exactly this reason - and the pattern
+    inside it was left hardcoded, so the test expired the next time somebody
+    did the thing this repository is for. Matching the entry by its `name:`
+    line and nothing else is what makes it survive another key arriving.
     """
     at = text.find("  provides:")
     if at < 0:
         return None
     head, tail = text[:at], text[at:]
-    if PROVIDES_ELEMENTS not in tail:
-        return None
-    return head + tail.replace(PROVIDES_ELEMENTS,
-                               "    - name: somethingElse\n"
-                               "      type: IList<Element>", 1)
+
+    lines = tail.splitlines(True)
+    end = len(lines)
+    for index, line in enumerate(lines[1:], start=1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if indent <= 2:
+            end = index
+            break
+
+    for index in range(1, end):
+        if lines[index].rstrip("\n").rstrip() == PROVIDES_LINE:
+            lines[index] = lines[index].replace("name: elements",
+                                                "name: somethingElse")
+            return head + "".join(lines)
+    return None
 
 
 def providers_of_elements():

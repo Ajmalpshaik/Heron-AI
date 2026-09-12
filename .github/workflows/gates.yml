@@ -62,6 +62,12 @@ jobs:
       - name: check-structure
         run: python tools/check-structure.py
 
+      # The delivery questions. It reads Heron.addin, which nothing else here
+      # does - and a manifest fault costs a modeller their whole add-in while
+      # every other gate on this page stays green.
+      - name: check-package
+        run: python tools/check-package.py
+
       # These two need somewhere to put a knowledge store, and say so rather
       # than failing when there is none: "No %APPDATA% and no HERON_KNOWLEDGE".
       # An empty directory is enough for them to run, so CI gives them one.
@@ -282,8 +288,6 @@ jobs:
           # pass total is how a real regression hides, so the build compares
           # the SET of failures instead of counting them.
           #
-          #   test_graph.py            real, and pre-dates this workflow
-          #   test_reachable.py        real, and pre-dates this workflow
           #   test_bridge_roundtrip.py needs a built .NET test host
           #   test_mcp_serves.py       needs the MCP SDK
           #   test_served_claims.py    needs the MCP SDK
@@ -291,11 +295,26 @@ jobs:
           # The MCP SDK and the .NET host are left out on purpose: both drag in
           # native dependencies that break for reasons that have nothing to do
           # with this repository. Those three prove nothing either way here.
+          #
+          # test_graph.py and test_reachable.py were on this list until
+          # 2026-09-12 and are gone, because both were fixed rather than
+          # excused. Each had the same shape - a fixture describing a repository
+          # that had moved on:
+          #
+          #   test_graph      it renamed a provide by matching two exact
+          #                   adjacent lines, and `role:` arrived between them,
+          #                   so it broke NONE of the 50 providers it meant to
+          #                   break and the three checks that follow failed
+          #                   against a library that was correct
+          #   test_reachable  a recorded excuse for a function that had since
+          #                   acquired a legitimate caller, which its own
+          #                   stale-record check duly reported
+          #
+          # Neither test was edited until it passed: the claims are unchanged
+          # and both still fail if the thing they assert stops being true.
           printf '%s\n' \
             test_bridge_roundtrip.py \
-            test_graph.py \
             test_mcp_serves.py \
-            test_reachable.py \
             test_served_claims.py \
             | sort > "$RUNNER_TEMP/known-failures.txt"
 

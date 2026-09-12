@@ -132,6 +132,40 @@ The spec's rule applies at every level: **do not blindly retry the same failed a
 
 ---
 
+## 6b. **[NOTE]** Unavailable, unsupported and not-detected are three different answers
+
+§6 separates five failure conditions because collapsing them produces one useless sentence. The same
+rule applies one level up, to the question *"can Heron do this right now?"*, and it was not being
+applied.
+
+[`heron_capability.resolve()`](../brain/heron_capability.py) returns `None`, correctly, for reasons that
+are not alike: nothing provides the capability at all · something does, but not on this Revit release ·
+something does, and nothing has told Heron which release this is · something does, and the trust gate
+will not permit it · something does, and there is no Revit connected to run it in.
+
+**A planner given `None` can only say "I cannot".** The five sentences a modeller needs are completely
+different — a capability gap, a version answer, a button to press, a setting to change, and *"nothing
+has told me which Revit this is"* — and only the last four are actionable.
+
+So the verdict carries its reason. [`mcp/server/heron_runtime.py`](../mcp/server/heron_runtime.py) turns
+the five into named outcomes beside `AVAILABLE`, and two properties of it are the part worth keeping
+rather than the vocabulary:
+
+**Every fact arrives as an argument.** It discovers nothing itself, exactly as
+[`heron_health.assess()`](../mcp/server/heron_health.py) does, which is what makes it testable on a
+machine with no Revit, no bridge and no config — and that is the only way it was ever going to be tested.
+
+**Not detected is not unavailable.** If nothing has said which Revit is in front of Heron, whether a
+2027-only provider applies is *unknown*, not *no*. Reporting unknown as a refusal is a guess presented
+as a finding, and it is what makes a platform feel broken when it is merely uninformed. The order the
+verdicts are decided in follows from that: the certain facts answer first, and a release nobody has
+stated cannot answer before a provider list that genuinely has nothing.
+
+**Nothing offers it as a tool yet**, deliberately — that changes the risk table in §4's sense and is a
+decision with a human in it. [`PROPOSALS.md` F1](PROPOSALS.md).
+
+---
+
 ## 6a. **[NOTE]** Units — fix the convention at the tool boundary
 
 Revit stores lengths internally in **decimal feet**, regardless of what the user sees on screen.

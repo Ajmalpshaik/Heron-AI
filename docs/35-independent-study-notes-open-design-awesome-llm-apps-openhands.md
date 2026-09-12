@@ -13,6 +13,18 @@ See docs/29-metadata-standard.md
 
 This note is intentionally separate from the implementation plan. It records what was actually observed in the repositories and what Heron should or should not take from them.
 
+> ### ✅ ACTED ON — 2026-09-12
+>
+> §9's rule — *"when implementation starts, this note is not enough; return to the current external
+> repositories and inspect the exact relevant files again"* — was followed. All three were re-opened at
+> implementation time and read at source level rather than from their landing pages; the archived
+> predecessor named in §5.1 was **not** opened. What was taken, what was refused, and the licence at each
+> exact path read are in [34 §2.15–2.19](34-patterns-adapted.md), and the built result is
+> [D-68](DECISIONS.md) and [D-69](DECISIONS.md).
+>
+> §3.7's rule about path-specific provenance is the one that changed how the research was done: the
+> licence was checked at each path rather than assumed from the repository name.
+
 ---
 
 ## 1. Audit result for document 34

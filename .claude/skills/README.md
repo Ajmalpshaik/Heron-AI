@@ -13,7 +13,7 @@ no individual, and assume no knowledge of any other project.
 | [revit-ribbon-and-windows](revit-ribbon-and-windows/SKILL.md) | Ribbon buttons, why one fails to appear, and the `ExternalEvent` pattern a modeless window must use to reach the Revit API without crashing Revit |
 | [fragment-proving](fragment-proving/SKILL.md) | How to arrange a fragment's proof so the answer means something, the five mistakes that account for nearly every failed one, and how to run a batch of them |
 | [heron-guard](heron-guard/SKILL.md) | **A hook, not a document.** Refuses an edit that would put the Revit vendor namespace outside `revit/` **at the moment the edit is proposed**, rather than when somebody remembers the sweep. Deny-tier, fails closed, `HERON_GUARD=off` turns it off |
-| [heron-ship](heron-ship/SKILL.md) | **What to run before pushing, in what order, and which failures are the machine rather than the change** — the three gates that must pass, the reports whose findings are questions, the one checker that exits 1 by design, and the six that need a compiler or a store this container has not got |
+| [heron-ship](heron-ship/SKILL.md) | **What to run before pushing, in what order, and which failures are the machine rather than the change** — stating a change's intent and its before/after evidence, the four gates that must pass, the reports whose findings are questions, the checker whose exit code follows the unfinished list, and the six that need a compiler or a store this container has not got |
 
 ## What belongs here
 
