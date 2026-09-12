@@ -333,3 +333,54 @@ that.
 | **13. Are the work notes updated honestly?** | This record carries the three defects found and not fixed, the two false positives the packaging gate raised on its first run, the two traps the change gate hit on its own diff, and §4's admission |
 | **14. Are durable findings moved to their permanent owner docs?** | [D-68](../../DECISIONS.md) · [D-69](../../DECISIONS.md) · [34 §2.15–2.19](../../34-patterns-adapted.md) · [13 §3a](../../13-testing-and-quality.md) · [04 §6b](../../04-heron-mcp.md) · [PROPOSALS Part F](../../PROPOSALS.md). The three plan notes were deleted afterwards, not before |
 
+---
+
+## 6. The gate's verdict on the change that built it
+
+Run over the whole branch, against the evidence record, on 2026-09-12:
+
+```bash
+python tools/change-evidence.py capture --out gate-after.json --tests all --gaps \
+       --gate check-package,check-licence --stated 'history-check=PASS:…' \
+       --against baseline.json
+python tools/check-change.py --range b464af0..HEAD \
+       --intent "build a reusable improvement gate: intent-vs-diff, before/after evidence,
+                 packaging and capability-availability checks" \
+       --area tools,mcp --risk medium --evidence gate-after.json
+```
+
+**`PASS`, exit 0.**
+
+| | |
+|---|---|
+| **31 files** | 6 required · 5 tests · 19 documentation · 1 build/config · **0 unrelated** |
+| **Signals** | one — `deletion`, naming the three retired plan notes, which owes a history check |
+| **Gates owed** | check-docs · check-metadata · check-structure · tests · check-gaps · history-check |
+| **Gates run** | all six, plus check-licence and check-package |
+| **Failing on both sides** | `check-gaps` and `tests` — measured before and after, so not this change |
+
+The evidence pair's own ruling is **`KEEP`**: `test_graph.py` and `test_reachable.py` failed before and
+pass now, with **no regression anywhere**. The baseline was captured in a clean worktree at `b464af0`,
+not asserted from memory.
+
+**Two things the record gets slightly wrong, and they are worth naming rather than trimming:**
+
+- **`tools: 24 → 26`.** The baseline says 24 where the commit has 23, because `change-evidence.py` had
+  to be copied into that worktree to run there and then counted itself. A measurement that perturbs what
+  it measures, in the most literal way available.
+- **`history-check` is `(stated)`, not derived.** A person read `git log -S` for each deleted note; no
+  script can. The record prints it marked, which is the whole point of the distinction.
+
+**The gate's own limits, from its own output:** *"A clean scope report is not a proof. It says the change
+stayed where it said it would — not that what it does is right."*
+
+---
+
+## 7. What is left
+
+| | |
+|---|---|
+| **Owed** | An independent run by somebody who did not build it — [Golden Rule 7](../../14-golden-rules.md) |
+| **Owed, and needs a machine** | `A12` and `A13` in [NEEDS-CHECKING](../../NEEDS-CHECKING.md): whether the add-in loads, and whether an upgrade and a rollback work |
+| **Open, with owners** | [PROPOSALS Part F](../../PROPOSALS.md) — F1 to F5 |
+| **Retires when** | somebody who did not write it has used the gate on a real task, and F1 has an answer. Its durable half is already moved, so what is left in this note is the audit, the pilot record and §5's admission |
