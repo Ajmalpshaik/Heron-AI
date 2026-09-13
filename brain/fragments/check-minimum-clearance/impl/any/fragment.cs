@@ -21,6 +21,13 @@
 // is. For a clearance check that is the safe direction - it over-reports rather
 // than missing a clash - but it is not a certified figure.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+defaultClearance = defaultClearance / MillimetresPerFoot;
+
 var tooClose = new List<string>();
 var gaps = new Dictionary<string, double>();
 var judgedBy = new Dictionary<string, string>();

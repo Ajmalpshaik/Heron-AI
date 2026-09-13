@@ -25,6 +25,13 @@
 // from 2020 to 2027, which sidesteps 2024's widening of ElementId rather than
 // assuming it hashes the same way on both sides of that change.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+tolerance = tolerance / MillimetresPerFoot;
+
 Func<Element, ConnectorManager> managerOf = e =>
 {
     var curve = e as MEPCurve;

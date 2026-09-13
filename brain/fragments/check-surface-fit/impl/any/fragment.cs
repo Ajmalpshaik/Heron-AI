@@ -20,6 +20,13 @@
 // LINKED MODELS ARE NOT HIT. If the ceilings and slabs are a link, everything
 // reports as finding nothing, which looks exactly like a real finding.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+maxDistance = maxDistance / MillimetresPerFoot;
+
 var findings = new List<string>();
 var unsafeToMove = new List<ElementId>();
 var clean = 0;

@@ -21,6 +21,13 @@
 // CEILING count in an area known to have one is usually that. Said in the
 // report rather than left to read as a hundred real faults.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+tolerance = tolerance / MillimetresPerFoot;
+
 var findings = new List<string>();
 var outOfPlane = new List<ElementId>();
 var noCeilingAbove = new List<ElementId>();

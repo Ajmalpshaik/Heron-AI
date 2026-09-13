@@ -23,6 +23,16 @@
 // links and are exactly what blocks access, so a clean result there has checked
 // nothing. The host-model candidate count is reported for that reason.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+frontClearance = frontClearance / MillimetresPerFoot;
+sideClearance = sideClearance / MillimetresPerFoot;
+backClearance = backClearance / MillimetresPerFoot;
+topClearance = topClearance / MillimetresPerFoot;
+
 var findings = new List<string>();
 var blocked = new List<ElementId>();
 var unreadable = 0;

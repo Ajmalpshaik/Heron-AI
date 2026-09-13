@@ -23,6 +23,13 @@
 // floor between them that nothing covers. That is the comparison that finds a
 // hole in a layout, and it is per element rather than a single verdict.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+coverageRadius = coverageRadius / MillimetresPerFoot;
+
 double areaEach = Math.PI * coverageRadius * coverageRadius;
 double areaTotal = 0;
 var nearestNeighbour = new Dictionary<ElementId, double>();

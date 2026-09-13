@@ -21,6 +21,13 @@
 // IT READS WHAT THE FAMILY DECLARES. Connectors drawn at the wrong size agree
 // with each other and are wrong together.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+sizeTolerance = sizeTolerance / MillimetresPerFoot;
+
 var findings = new List<string>();
 var mismatched = new List<ElementId>();
 var unconnectedSpigots = 0;

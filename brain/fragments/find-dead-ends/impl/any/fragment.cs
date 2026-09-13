@@ -21,6 +21,13 @@
 // usually deliberate and occasionally the whole problem. Folded into deadEnds
 // it is a false alarm; dropped it is a missed one.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+stubLength = stubLength / MillimetresPerFoot;
+
 var deadEnds = new List<ElementId>();
 var stubs = new List<ElementId>();
 var served = new List<ElementId>();

@@ -20,6 +20,14 @@
 // usual ones are tried and the one that answered is NAMED per row, so a family
 // calling it something else reads as unreadable rather than as passing.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+annularClearance = annularClearance / MillimetresPerFoot;
+maxOversize = maxOversize / MillimetresPerFoot;
+
 var findings = new List<string>();
 var undersized = new List<ElementId>();
 var orphaned = new List<ElementId>();
