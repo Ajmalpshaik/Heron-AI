@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 15
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -58,6 +58,31 @@ contract:
       # (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,509 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned created 1 item(s)
+    [id 926327], notMepCurve 0 item(s), openEnds 2 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...,
+    System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...], refused (null), runs
+    2 item(s) [Standard, Standard], tolerance 1.64041994750656, toleranceMm 500. inputs came
+    elements from the selection (2); toleranceMm as given. on test projject
+  negative_case: run with categoryName=Levels, inViewOnly={3D}, toleranceMm=500 instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase's own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned created (null), notMepCurve 2 item(s) [311, 694], openEnds 0 item(s),
+    refused a fitting joins two, three or four runs - 0 were given. Two makes an elbow, a
+    union or a transition, three a tee, four a cross, runs 0 item(s), tolerance 1.64041994750656,
+    toleranceMm 500. inputs came elements from the selection (2); toleranceMm as given. on
+    test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 8bfec35c261bd5e7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
