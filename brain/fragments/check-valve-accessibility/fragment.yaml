@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -73,31 +73,32 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-09'
+  date: '2026-09-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 17356
+  model: test projject (3,536 elements), Revit 2024, session 40932
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values. returned ceilingIds
-    0 item(s), envelope 99999, findings 12 item(s) [10 accessory(ies): 10 obstructed, 0 needing
-    an access panel,..., no ceilings in the HOST model. If the architecture is a LINK...,
-    Heat Recovery Unit (HRU) (id 1366299) - ROOM: BLOCKED by Mec..., ...], maxReachHeight
-    0, needAccessPanel 0 item(s), obstructed 10 item(s) [1366299, 1367115, 1367128, ...],
-    outOfReach 10 item(s) [1366299, 1367115, 1367128, ...], rayView View3D. inputs came accessories
-    from the selection (10); envelope as given; maxReachHeight as given. on Snowdon-scratch_ajmal.al'
-  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, envelope=99999,
-    maxReachHeight=0 instead - chosen because it should not contain what this fragment reports
-    - the arrangement was re-made first by running select-by-category-name, set-selection
-    with this phase''s own values. returned ceilingIds 0 item(s), envelope 99999, findings
-    11 item(s) [9 accessory(ies): 0 obstructed, 0 needing an access panel, 0..., no ceilings
-    in the HOST model. If the architecture is a LINK..., Duct Size Tag (id 1491217): no readable
-    geometry - not check..., ...], maxReachHeight 0, needAccessPanel 0 item(s), obstructed
-    0 item(s), outOfReach 0 item(s), rayView View3D. inputs came accessories from the selection
-    (9); envelope as given; maxReachHeight as given. on Snowdon-scratch_ajmal.al'
+    select-in-region, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, ceilingIds 1 item(s) [926460], envelope 16.4041994750656, findings 4 item(s) [3
+    accessory(ies): 3 obstructed, 3 needing an access panel, 0..., 03 (id 926501) - ROOM:
+    BLOCKED by Walls 925629, Walls 925630..., 03 (id 926502) - ROOM: BLOCKED by Floors 926428,
+    Ceilings 92..., ...], maxReachHeight 32.8083989501312, needAccessPanel 3 item(s) [926501,
+    926502, 926503], obstructed 3 item(s) [926501, 926502, 926503], outOfReach 0 item(s),
+    rayView View3D. inputs came accessories from the selection (3); envelope as given; maxReachHeight
+    as given. on test projject'
+  negative_case: 'run with minMm=0,0,3500, maxMm=48000,31000,6000, exact=false, categories=Mechanical
+    Equipment, envelope=1, maxReachHeight=100000 instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-in-region,
+    set-selection with this phase''s own values. returned MillimetresPerFoot 304.8, ceilingIds
+    1 item(s) [926460], envelope 0.00328083989501312, findings 4 item(s) [3 accessory(ies):
+    0 obstructed, 0 needing an access panel, 0..., 03 (id 926504) - ROOM: clear  |  CEILING:
+    none over it  |  H..., 03 (id 926505) - ROOM: clear  |  CEILING: none over it  |  H...,
+    ...], maxReachHeight 328.083989501312, needAccessPanel 0 item(s), obstructed 0 item(s),
+    outOfReach 0 item(s), rayView View3D. inputs came accessories from the selection (3);
+    envelope as given; maxReachHeight as given. on test projject'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 225851a57f051cfc
-
+  fingerprint: 2cfb6975ad2518f4
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

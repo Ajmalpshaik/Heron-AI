@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -66,29 +66,28 @@ contract:
       type: int
 
 proof:
-  date: '2026-09-09'
+  date: '2026-09-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32940
+  model: test projject (3,533 elements), Revit 2024, session 40932
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values. returned describe
-    Func`2, findings 33 item(s) [10 unit(s) checked: 22 with a mismatched joint, 10 spigot(s)...,
-    Heat Recovery Unit (HRU) (id 1366299) connector 1 [(size unr..., Heat Recovery Unit (HRU)
-    (id 1366299) connector 2: DOMAIN MI..., ...], mismatched 22 item(s) [1366299, 1366299,
-    1366299, ...], sizeTolerance 0, unconnectedSpigots 10. inputs came equipment from the
-    selection (10); sizeTolerance as given. on Snowdon-scratch_ajmal.al'
-  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, sizeTolerance=0
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running select-by-category-name, set-selection with this phase''s
-    own values. returned describe Func`2, findings 10 item(s) [9 unit(s) checked: 0 with a
-    mismatched joint, 0 spigot(s) wi..., Duct Size Tag (id 1491217): not a placed family instance
-    - i..., Duct Size Tag (id 1491220): not a placed family instance - i..., ...], mismatched
-    0 item(s), sizeTolerance 0, unconnectedSpigots 0. inputs came equipment from the selection
-    (9); sizeTolerance as given. on Snowdon-scratch_ajmal.al'
+    select-by-category-name, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, describe Func`2, findings 19 item(s) [3 unit(s) checked: 0 with a mismatched joint,
+    18 spigot(s) w..., 03 (id 926501) connector 1 [round 10 mm dia]: NOTHING PLUGGE..., 03
+    (id 926501) connector 2 [round 19 mm dia]: NOTHING PLUGGE..., ...], mismatched 0 item(s),
+    sizeTolerance 0.00328083989501312, unconnectedSpigots 18. inputs came equipment from the
+    selection (3); sizeTolerance as given. on test projject'
+  negative_case: 'run with categoryName=Walls, inViewOnly={3D}, sizeTolerance=1 instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase''s own
+    values. returned MillimetresPerFoot 304.8, describe Func`2, findings 20 item(s) [19 unit(s)
+    checked: 0 with a mismatched joint, 0 spigot(s) w..., Exterior - Brick on Mtl. Stud (id
+    925629): not a placed fami..., Exterior - Brick on Mtl. Stud (id 925630): not a placed
+    fami..., ...], mismatched 0 item(s), sizeTolerance 0.00328083989501312, unconnectedSpigots
+    0. inputs came equipment from the selection (19); sizeTolerance as given. on test projject'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: a4ac6c32aea1e266
-
+  fingerprint: cce6f85ca9eff4fc
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
