@@ -154,16 +154,26 @@ else
                 // refused 0, elevationChanged 0`. The base path was never the
                 // problem.
                 //
-                // If the offset is STILL read-only once the wall is bound, that
-                // is a case nobody has seen and the wall has already been
-                // changed. It is counted as refused and the transaction decides
-                // what happens to it, rather than being quietly reported as
-                // done.
+                // If the offset is STILL read-only once the wall is bound, the
+                // CONSTRAINT IS PUT BACK BEFORE REFUSING. An earlier version
+                // said "the transaction decides what happens to it" and that was
+                // wrong: on a normal return with `apply=true` the transaction
+                // group is assimilated, so the wall kept its new top level with
+                // no offset re-solved - exactly the half-set wall this
+                // fragment's own cases.yaml forbids in as many words, "the id in
+                // `refused` and no half-set wall - the level must not be
+                // changed". Found by review on PR #138.
+                //
+                // THE OLD VALUE IS READ BEFORE THE WRITE, not reconstructed
+                // after it. A restore that guesses what the value used to be is
+                // a second write dressed as an undo.
+                var wasTopConstraint = constraint.AsElementId();
                 constraint.Set(topLevelId);
 
                 var offset = wall.get_Parameter(BuiltInParameter.WALL_TOP_OFFSET);
                 if (offset == null || offset.IsReadOnly)
                 {
+                    try { constraint.Set(wasTopConstraint); } catch { }
                     refused.Add(wall.Id);
                     continue;
                 }

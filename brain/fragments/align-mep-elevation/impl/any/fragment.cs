@@ -1,7 +1,19 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `edge` and `targetZ` are in scope;
 // leaves `aligned`, `noSize` and `notCurveBased` behind.
 //
-// ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Heights are internal FEET.
+// ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
+//
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+//
+// THIS HEADER SAID "Heights are internal FEET" UNTIL 2026-09-13, and the code
+// matched it: `targetZ` went straight into Revit's coordinates unconverted. A
+// modeller asking for 2700 got 2700 FEET - 823 metres - which is the 914-metre
+// wall of D-71's opening paragraph wearing a different fragment's name. The
+// fragment was PROVEN when this was found, on a proof that never measured the
+// resulting height.
 //
 // WHY THIS IS NOT "MOVE THEM ALL TO ONE Z".
 //
@@ -55,6 +67,9 @@ var wanted = (edge ?? "").Trim().ToLowerInvariant();
 var aligned = 0;
 var noSize = new List<ElementId>();
 var notCurveBased = new List<ElementId>();
+
+const double MillimetresPerFoot = 304.8;
+targetZ = targetZ / MillimetresPerFoot;
 
 foreach (var element in elements)
 {

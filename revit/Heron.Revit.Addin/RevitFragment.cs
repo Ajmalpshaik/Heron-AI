@@ -1724,6 +1724,32 @@ namespace Heron.Revit.Addin
             problem = null;
             var name = need ?? "";
 
+            // "NO ELEMENT" IS A REAL ANSWER FOR AN ID, AND THERE WAS NO WAY TO
+            // SAY IT. Four fragments declare cases that turn on
+            // `ElementId.InvalidElementId` meaning DELIBERATELY NONE:
+            // `cap-open-pipe-ends` (capTypeId - let Revit choose the cap),
+            // `create-sheet` (titleblockTypeId - a sheet with no title block),
+            // `export-model-to-nwc` (scopeViewId - the WHOLE model rather than
+            // one view), and the same shape for setting only one of Phase or
+            // Phase Filter. Every one of them was unreachable, because this
+            // function tried to resolve the text to an existing named element
+            // and `BindNeeds` forbids omitting the value. Found by review on
+            // PR #138.
+            //
+            // BLANK COUNTS, AND ONLY BECAUSE AN OMISSION CANNOT REACH HERE.
+            // `BindNeeds` reports a need nobody supplied as unbound and never
+            // calls this, so blank text means the caller typed nothing on
+            // purpose. `none` is spelled out for the same reason `selected` is:
+            // the obvious word, not a syntax to learn.
+            var said = (text ?? "").Trim();
+            if (said.Length == 0
+                || string.Equals(said, "none", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(said, "invalid", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(said, "InvalidElementId", StringComparison.OrdinalIgnoreCase))
+            {
+                return ElementId.InvalidElementId;
+            }
+
             Type wanted = null;
             string kind = null;
 
@@ -1739,9 +1765,46 @@ namespace Heron.Revit.Addin
             {
                 wanted = typeof(PhaseFilter); kind = "phase filter";
             }
-            else if (name == "sheetId")
+            // A SHEET IS NAMED BY ITS NUMBER, NOT BY ITS TITLE. `OneOfClass`
+            // matches `Element.Name`, and on a ViewSheet that is the TITLE -
+            // "Ground Floor Services", often shared between sheets and often
+            // just "Unnamed". The identifier a modeller says out loud is the
+            // SheetNumber: this repository's own utterance is "put the door
+            // schedule on sheet A101". Typing A101 found nothing and typing a
+            // common title was refused as ambiguous, so sheet-placing fragments
+            // were unreachable by the only name anybody uses.
+            //
+            // NUMBER FIRST, THEN TITLE, AND AMBIGUITY STILL REFUSED. The number
+            // is unique in Revit by construction, so it can never be the
+            // ambiguous half; falling back to the title keeps the old spelling
+            // working for anyone whose sheets are titled uniquely.
+            if (name == "sheetId")
             {
-                wanted = typeof(ViewSheet); kind = "sheet";
+                var byNumber = new List<ViewSheet>();
+                var byTitle = new List<ViewSheet>();
+                foreach (ViewSheet sheet in new FilteredElementCollector(doc)
+                             .OfClass(typeof(ViewSheet)).WhereElementIsNotElementType())
+                {
+                    if (sheet == null) continue;
+                    if (string.Equals(sheet.SheetNumber, (text ?? "").Trim(),
+                                      StringComparison.OrdinalIgnoreCase))
+                        byNumber.Add(sheet);
+                    else if (string.Equals(sheet.Name, (text ?? "").Trim(),
+                                           StringComparison.OrdinalIgnoreCase))
+                        byTitle.Add(sheet);
+                }
+                var hits = byNumber.Count > 0 ? byNumber : byTitle;
+                if (hits.Count == 1) return hits[0].Id;
+                if (hits.Count > 1)
+                {
+                    problem = "\"" + text + "\" is the TITLE of " + hits.Count + " sheets in "
+                            + doc.Title + ", so it does not say which one. Use the sheet "
+                            + "NUMBER - it is unique.";
+                    return null;
+                }
+                problem = "No sheet numbered or titled \"" + text + "\" in " + doc.Title
+                        + ". A sheet is normally named by its NUMBER, like \"A101\".";
+                return null;
             }
             else if (name == "planViewId" || name == "scopeViewId"
                      || name == "targetViewId" || name == "templateId")
@@ -2140,8 +2203,20 @@ namespace Heron.Revit.Addin
                     if (one == null) return null;
                     ids.Add(one);
                 }
+                // AN EXPLICITLY EMPTY LIST IS A VALUE, NOT A MISSING ONE, and
+                // refusing it here blocked a case the fragment itself declares.
+                // `set-sheet-revisions/tests/cases.yaml` names "an empty revision
+                // list -> nothing changed on any sheet" as a case that must run,
+                // and this branch turned it into `bad_request_value` so the
+                // fragment never executed. Found by review on PR #138.
+                //
+                // A BLANK IS DIFFERENT FROM AN OMISSION and only one of them
+                // reaches here: `BindNeeds` reports a need nobody supplied as
+                // unbound and never calls this at all. So arriving with blank
+                // text means the caller TYPED nothing, deliberately.
                 if (ids.Count == 0)
                 {
+                    if (string.IsNullOrWhiteSpace(text)) return ids;
                     problem = "Nothing was named. Separate several with commas.";
                     return null;
                 }
