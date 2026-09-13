@@ -62,6 +62,13 @@ jobs:
       - name: check-structure
         run: python tools/check-structure.py
 
+      # A signature is the scarcest input this library has - only a PERSON may
+      # sign a proof, and `accept` deliberately does not promote. That gap let
+      # thirteen signed fragments sit at DRAFT, so the next round offered them
+      # to be proved AGAIN. Found by the owner, not by a tool (2026-09-13).
+      - name: check-signatures
+        run: python tools/check-signatures.py
+
       # The delivery questions. It reads Heron.addin, which nothing else here
       # does - and a manifest fault costs a modeller their whole add-in while
       # every other gate on this page stays green.
