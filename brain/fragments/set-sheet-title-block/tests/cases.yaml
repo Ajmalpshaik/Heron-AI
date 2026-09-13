@@ -45,7 +45,16 @@ negative:
     expect: >
       one placed, and the sheet named in replaced - not counted as a swap. A
       sheet that never had a border and one that lost its data are different
-      outcomes, and only one of them needs checking afterwards
+      outcomes, and only one of them needs checking afterwards, so the line
+      says NOTHING WAS LOST rather than borrowing the replace wording
+
+  - given: >
+      a sheet ALREADY carrying the exact type being asked for - the ordinary
+      case when a project has one title block loaded
+    expect: >
+      swappedInPlace 0 and alreadyCarried 1. The assignment still runs and
+      still succeeds; it changes nothing, and counting it reports "1 sheet
+      updated" to somebody whose drawing set is untouched
 
 second_route: >
   Revit's own route - select the title block on a sheet and change its Type in
