@@ -14,8 +14,8 @@ jobs:
 
   - fragment: transfer-views-between-documents
     write: true
-    set:      { sourceDocumentTitle: "Snowdon-scratch_ajmal.al", viewKind: "Schedule", nameContains: "" }
-    negative-set: { sourceDocumentTitle: "Snowdon-scratch_ajmal.al", viewKind: "Schedule", nameContains: "ZZZ NO SUCH VIEW" }
+    set:      { sourceDocumentTitle: "Snowdon-scratch_ajmal.al", viewKind: "schedules", nameContains: "" }
+    negative-set: { sourceDocumentTitle: "Snowdon-scratch_ajmal.al", viewKind: "schedules", nameContains: "ZZZ NO SUCH VIEW" }
 
   - fragment: transfer-project-parameters-between-documents
     write: true

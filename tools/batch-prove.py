@@ -436,6 +436,25 @@ def run_one(job, env, quiet=True):
     record_path = os.path.join(RUNS, "%s.json" % job["fragment"])
     argv = validate_command(job, record_path)
 
+    # THE OLD RECORD GOES BEFORE THE RUN, BECAUSE "the file is there" IS NOT
+    # "this run wrote it". The check below only ever asked whether the path
+    # exists, so a record left by ANY earlier run - another session, another
+    # model, another day - was read and judged as if it were this one.
+    #
+    # Measured 2026-09-14. `transfer-project-parameters-between-documents` is
+    # risk: ADMIN, so `validate` refused it and wrote nothing; the runner read a
+    # record from 01:45 the previous day, on a different Revit session, and
+    # reported POSITIVE EMPTY with numbers nobody had just measured. A refusal
+    # had been turned into a result.
+    #
+    # Deleting first makes the existing check honest: no file means nothing ran,
+    # which is exactly what DID NOT RUN is for.
+    try:
+        if os.path.isfile(record_path):
+            os.remove(record_path)
+    except OSError:
+        pass
+
     try:
         # stdin is closed rather than inherited. `validate` with no negative
         # arrangement stops and waits at the keyboard, and job_refusal already
