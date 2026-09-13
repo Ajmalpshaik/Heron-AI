@@ -1149,6 +1149,31 @@ def _evidence_refusal(slug, frag, proof):
                     "an absence, and an absence cannot be signed."
                     % phase_name.replace("_", " "))
 
+    # A DRAFT TAKEN AGAINST CODE THAT HAS SINCE CHANGED CANNOT BE USED, AND
+    # SIGNING IT SPENDS THE ONE THING ONLY A PERSON CAN GIVE. `accept` writes
+    # the draft's fingerprint through unchanged, so the proof lands already
+    # stale and `can_promote` refuses it for ever - the signature is real, the
+    # fragment stays DRAFT, and the next round offers it up again. That loop is
+    # row 44, found by the owner rather than by a tool:
+    #
+    #   "becose i signed item i have to do again i sow lkike that for
+    #    exambple set view crop i singe multiple time"
+    #
+    # Measured 2026-09-13: `check-ceiling-coordination` held a draft from before
+    # the D-71 units work, fingerprint c905e58bb9224d02 against a current
+    # 4db71c18b96ed9bb, and every other check here passed it. Re-running is
+    # cheap and a wasted signature is not, so the refusal belongs before the
+    # name is typed rather than after.
+    recorded = (proof.get("fingerprint") or "").strip()
+    current = frag.fingerprint()
+    if recorded and current and recorded != current:
+        return ("the draft was taken against different code - it records "
+                "fingerprint %s and the fragment is now %s. Signing it would "
+                "write a proof that is stale the moment it lands, so it could "
+                "never be promoted and the signature would be spent for "
+                "nothing. Re-run the fragment and draft it again."
+                % (recorded, current))
+
     record_path = os.path.join(DRAFTS_DIR, "runs", slug + ".json")
     if not os.path.isfile(record_path):
         return ("no run record at %s, so the evidence cannot be re-checked. "
@@ -1172,6 +1197,40 @@ def _evidence_refusal(slug, frag, proof):
         return ("%s - %s. The positive case is the evidence it DOES something; "
                 "without it the negative proves only that a fragment which does "
                 "nothing also finds nothing." % (reason, detail))
+
+    # SOME FRAGMENTS HAVE NO EMPTY CASE, AND `draft` HAS KNOWN THAT SINCE D-53
+    # WHILE THIS FUNCTION DID NOT. `count-elements` describes whatever it is
+    # handed; every Revit view hides something, so a visibility report always
+    # reports. For those the leg D-30 wants is met by TRACKING - the answer
+    # following the input across several different inputs - and `draft` writes
+    # exactly that negative_case from `record["tracking"]`.
+    #
+    # This function then refused it twice over, and both refusals read as though
+    # the fragment were at fault: with the negative phase dropped, "the run
+    # record has no negative phase in it"; with it kept, "the negative case came
+    # back with content". Measured 2026-09-13 on `report-filterable-parameters`,
+    # which cannot come back empty - any category it is given is either
+    # filterable or is reported as unfilterable, so one of its results is always
+    # non-zero. A D-53 proof could be drafted and never signed, which quietly
+    # closed the route the decision exists to open.
+    #
+    # THE BAR IS THE VARIATION, NOT THE ROW COUNT. Rows that all carry the same
+    # value are what a fragment ignoring its input produces, so identical rows
+    # are refused here rather than counted - the same question D-30 asks of the
+    # negative case, put to the tracking set instead.
+    tracking = record.get("tracking") or []
+    if tracking:
+        values = [str(t.get("value")) for t in tracking]
+        if len(tracking) < 3:
+            return ("the tracking set has only %d row(s). D-53 asks for the "
+                    "answer to follow the input across SEVERAL different "
+                    "inputs; two cannot show that." % len(tracking))
+        if len(set(values)) < 2:
+            return ("every tracking row came back %s. A fragment ignoring its "
+                    "input produces exactly that, which is what tracking exists "
+                    "to rule out - vary the input until the answer moves."
+                    % values[0])
+        return None
 
     negative = phases.get("negative")
     if negative is None:
