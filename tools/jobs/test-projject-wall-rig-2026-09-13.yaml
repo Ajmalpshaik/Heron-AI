@@ -1,0 +1,194 @@
+# THE RIG HERON BUILT FOR ITSELF, in a fresh model. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/test-projject-wall-rig-2026-09-13.yaml --dry-run
+#
+# THE OWNER'S METHOD, WRITTEN DOWN. He opened an empty project and said: if a
+# tool needs ducts to test it, use another tool to make the ducts. Two fragments
+# get proved for the price of one arrangement, and nothing depends on a sample
+# model happening to contain the right thing.
+#
+# It worked, and the first thing it found was a defect in a PROVEN fragment.
+#
+# ---------------------------------------------------------------------------
+# WHAT WAS BUILT, IN ORDER. Every step is `fragment ... --write --apply`, run
+# by hand, because a MODIFY setup step is DEFERRED until after binding and so
+# cannot make a thing the fragment under test has to be handed.
+#
+#   1. create-wall   4 walls, closed 8000 x 6000 box at the origin, Level 1
+#   2. create-wall   2 walls at x=20000, an open corner
+#   3. group-elements  --apply   those 2 into "Group 1"    <- the negative rig
+#   4. create-wall   2 walls near y=12000 that do NOT meet <- the trim rig
+#   5. place-room-at-point  3 rooms: 1 inside the box, 2 out in the open
+#
+# READ EVERYTHING BACK BEFORE TESTING ON IT. `create-wall` reported "4 wall(s)
+# built at 914400 mm high" for a height of 3000, and `report-bounding-box`
+# agreed from a separate process: 8200 x 6200 x 914400 mm. The plan was right
+# and only the height was wrong, because an XYZ is converted at the boundary
+# and a plain `double` is not. FRAGMENT-ISSUES row 27. Every height below is
+# therefore in FEET, and that is the defect, not a preference.
+#
+# ---------------------------------------------------------------------------
+# THE ONE IDEA THE WHOLE RIG TURNS ON: A REVIT GROUP IS A REFUSAL YOU CAN BUILD.
+#
+# `move-elements` says it in its own purpose text - "a member of a group is the
+# case that gets through, because it is not pinned and so passes every filter
+# that looks for pinning. No exception, no warning." `group-elements` says the
+# other half - "Creating a group creates that condition, so a caller that
+# groups and then moves must expect the second to report blocked."
+#
+# So the negative for move and rotate is not a missing selection and not an
+# empty view. It is the SAME kind of element, the SAME offset, twelve metres
+# away, inside a group. Nothing about the arrangement differs except the one
+# thing under test.
+
+model: test projject, Revit 2024   # a fresh metric MEP template, 3,410 elements
+
+defaults:
+  in: test projject
+  write: true
+
+  # SELECTION BY REGION, because the rig is laid out in space on purpose: the
+  # loose walls at the origin, the grouped ones at x=20000, the trim pair at
+  # y=12000. `select-in-region` then separates them with no clicking at all.
+  # It is PROVEN and its double-conversion defect was fixed on 2026-09-13.
+  setup: [select-in-region, set-selection]
+
+jobs:
+  - fragment: move-elements
+    set:
+      minMm: "-1000,-1000,-1000"
+      maxMm: "9000,7000,4000"
+      exact: "false"
+      categories: Walls
+      offset: "500,0,0"
+    negative-set:
+      minMm: "19000,-1000,-1000"
+      maxMm: "29000,7000,4000"
+      exact: "false"
+      categories: Walls
+      offset: "500,0,0"
+    note: >
+      moved 4 / blocked 0, then moved 0 / blocked 2. THE FIRST ATTEMPT USED
+      offset "0,0,200" AND THE POSITIVE CAME BACK EMPTY TOO - blocked 4. A wall
+      does not move in Z: its base is constrained to its level. That is rule 2
+      of the proving skill and it cost one run to learn. Move a wall sideways.
+
+  - fragment: rotate-elements
+    set:
+      minMm: "-1000,-1000,-1000"
+      maxMm: "9000,7000,4000"
+      exact: "false"
+      categories: Walls
+      angleRadians: "0.7853981634"
+      pivot: "4000,3000,0"
+    negative-set:
+      minMm: "19000,-1000,-1000"
+      maxMm: "29000,7000,4000"
+      exact: "false"
+      categories: Walls
+      angleRadians: "0.7853981634"
+      pivot: "24000,3000,0"
+    note: rotated 4 / blocked 0, then rotated 0 / blocked 2. The same rig as move.
+
+  - fragment: group-elements
+    set:
+      minMm: "-1000,-1000,-1000"
+      maxMm: "9000,7000,4000"
+      exact: "false"
+      categories: Walls
+    # ONE WALL. `fragment.cs:35` is `if (ids.Count < 2) refused = true` - Revit
+    # would make a group of one and nobody wants it, so the fragment refuses
+    # first. The tight box catches the east wall only: the north and south
+    # walls run through x=8000 but sit at y~0 and y~6000, outside 2000..4000.
+    negative-set:
+      minMm: "7500,2000,-1000"
+      maxMm: "8500,4000,4000"
+      exact: "false"
+      categories: Walls
+    note: grouped 4 / refused false, then grouped 0 / groupId null / refused true.
+
+  - fragment: ungroup-elements
+    # THE GROUP ITSELF, by its own category. Model Groups have a bounding box.
+    set:
+      minMm: "19000,-1000,-1000"
+      maxMm: "29000,7000,4000"
+      exact: "false"
+      categories: OST_IOSModelGroups
+    negative-set:
+      minMm: "-1000,-1000,-1000"
+      maxMm: "9000,7000,4000"
+      exact: "false"
+      categories: Walls
+    note: ungrouped 1 and 2 walls handed back, then ungrouped 0 / notGroups 4.
+
+  - fragment: trim-extend-elements
+    # TWO WALLS THAT MISS EACH OTHER. Corner solved at (19.685, 39.37) feet =
+    # (6000, 12000) mm, exactly where the two lines cross.
+    set:
+      minMm: "-1000,9000,-1000"
+      maxMm: "7000,15000,4000"
+      exact: "false"
+      categories: Walls
+    # TWO PARALLEL WALLS - the box's north and south. Parallel lines have no
+    # corner, and Revit is not involved in saying so. The band 2000..6000 in x
+    # excludes the east and west walls.
+    negative-set:
+      minMm: "2000,-1000,-1000"
+      maxMm: "6000,7000,4000"
+      exact: "false"
+      categories: Walls
+    note: >
+      moved 2, then moved 0 - "The two are parallel in plan, so there is no
+      corner to meet".
+
+  - fragment: create-from-room-boundaries
+    set:
+      minMm: "-1000,-1000,-1000"
+      maxMm: "9000,7000,4000"
+      exact: "false"
+      categories: Rooms
+      hostType: "Compound Ceiling: 600 x 600mm Grid"
+      heightAboveLevel: "8.858267716535433"
+    # FOUR WALLS INSTEAD OF A ROOM. Same box, same region, different category.
+    negative-set:
+      minMm: "-1000,-1000,-1000"
+      maxMm: "9000,7000,4000"
+      exact: "false"
+      categories: Walls
+      hostType: "Compound Ceiling: 600 x 600mm Grid"
+      heightAboveLevel: "8.858267716535433"
+    note: >
+      created 1 entry, then created 0 with refused ["Not a room or space:
+      925629", ...]. heightAboveLevel IS IN FEET - 8.858 is 2700 mm. Row 27.
+
+  # NO SETUP CHAIN - both needs are source: request.
+  - fragment: select-unenclosed-rooms
+    setup: []
+    set:
+      includeRooms: "true"
+      includeSpaces: "false"
+    # SPACES, NOT ROOMS. This model has no MEP spaces at all, and a space is a
+    # genuinely different element rather than the same question asked quietly.
+    negative-set:
+      includeRooms: "false"
+      includeSpaces: "true"
+    note: >
+      2 of 3 rooms named unenclosed - the same ids 925712 and 925713 that
+      place-room-at-point had reported when it made them. Then roomsChecked 0.
+
+# ---------------------------------------------------------------------------
+# ONE THAT CANNOT BE PROVED AS CONTRACTED, and it is not a failure of the run.
+#
+# `place-room-at-point` says so itself: "A POINT OUTSIDE AN ENCLOSED REGION
+# STILL MAKES A ROOM." So `created`, its first result, can never come back
+# empty - the only path to `refused` is a null point, and the caller's parser
+# rejects those before the fragment sees one. Measured both ways:
+#
+#   inside the walls   created 1, unenclosed 0
+#   open ground        created 1, unenclosed 1
+#
+# `unenclosed` IS provable and is the thing the fragment actually claims - it
+# measures every room it places and names the ones with no area. Proved in that
+# direction it holds: 2 points on open ground gave unenclosed 2, 1 point inside
+# the box gave unenclosed 0. But `created` stays non-zero in both legs and the
+# gate refuses it, correctly. The same shape as FRAGMENT-ISSUES row 26.

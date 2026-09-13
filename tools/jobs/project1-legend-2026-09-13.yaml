@@ -1,0 +1,50 @@
+# create-legend-view, on the active model. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/project1-legend-2026-09-13.yaml
+#
+# THE SAME SHAPE THAT WORKED FOR create-view-template-from-view an hour ago,
+# and it works for the same reason. FRAGMENT-ISSUES row 24 found that a sheet
+# ACCEPTS a crop and an isolate - Revit permits both meaninglessly, so neither
+# fragment gets a refusal from one. This is a different kind of question: a
+# legend is COPIED FROM ANOTHER LEGEND, and there is no such thing as copying
+# one from a floor plan. Revit says no, and `findings` carries the reason.
+#
+# So the rule that is emerging, and worth carrying to the next arrangement:
+#
+#   A VIEW TYPE IS A USABLE NEGATIVE ONLY WHERE REVIT ITSELF REFUSES.
+#   Where Revit merely allows something pointless, `viewRefused` never fires
+#   and the leg cannot be built from a view type at all.
+#
+# MEASURED, 2026-09-13: Legend views 1 ("Legend 1", 15 text notes, 0 ducts),
+# FloorPlan 4, Sheets 1, Section 1, ThreeD 2, CeilingPlan 2.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  in: Project1 work_ajmal.al
+
+  # risk: MODIFY - a legend view is a real element. Nothing is kept: validate
+  # never sends `apply`.
+  write: true
+
+jobs:
+  - fragment: create-legend-view
+    # ZERO SETUP. All three needs are source: request.
+    set:
+      sourceLegend: "Legend 1"
+      newName: HERON_TEST_LEGEND
+      # TRUE, so the copy carries the 15 text notes across. That is the whole
+      # point of duplicating a legend rather than making an empty one, and it
+      # is the part most likely to be silently skipped.
+      withContents: "true"
+    negative-set:
+      # A FLOOR PLAN IS NOT A LEGEND. It resolves by name, it is a real view,
+      # and Revit will not make a legend from it - so `created` must stay empty
+      # while `findings` says why. Not a missing name, not an empty selection.
+      sourceLegend: "1 - Mech"
+      newName: HERON_TEST_LEGEND
+      withContents: "true"
+    note: >
+      `created` is the only role: result - findings carries no count. If the
+      positive creates the legend but WITHOUT its text notes, that is a finding
+      worth a row rather than a pass: withContents true is what was asked for.
