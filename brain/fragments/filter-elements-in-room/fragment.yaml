@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -56,6 +56,25 @@ contract:
       role: accounting
       type: IList<ElementId>
 
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,453 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values. returned asRoom Room, asSpace
+    (null), elements 1 item(s) [Radius Elbows / Taps], inside 1 item(s) [Radius Elbows / Taps],
+    noPoint 0 item(s), outside 0 item(s). inputs came room as given; elements from the selection
+    (1). on test projject
+  negative_case: run with minMm=44500,5000,1000, maxMm=47500,7000,2000, exact=false, categories=Ducts,
+    room=Room 4 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-in-region, set-selection with this
+    phase's own values. returned asRoom Room, asSpace (null), elements 0 item(s), inside 0
+    item(s), noPoint 0 item(s), outside 1 item(s) [926004]. inputs came room as given; elements
+    from the selection (1). on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 51398e8e77745b6d
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
