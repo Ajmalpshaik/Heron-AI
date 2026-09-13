@@ -1,0 +1,73 @@
+# Snowdon-scratch round 2. Mixed on purpose: some of these will fail, and the
+# point of the batch is that each failure names its own cause in one sitting.
+model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 29048
+
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+  negative-set:
+    categoryName: "Air Terminals"
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  # No inputs at all - does this model carry Area schemes or design options?
+  - fragment: report-areas
+    setup: []
+    set: { schemeNameContains: "", listEachArea: true }
+    negative-set: { schemeNameContains: "ZZZ NO SUCH SCHEME", listEachArea: true }
+
+  - fragment: select-openings
+    setup: []
+    set: { inViewOnly: "FloorPlan: M1" }
+    negative-set: { inViewOnly: "FloorPlan: L1 - Block 35" }
+
+  - fragment: set-design-option
+    write: true
+    set: { designOptionName: "Option 1" }
+    negative-set: { designOptionName: "ZZZ NO SUCH OPTION" }
+
+  - fragment: create-assembly-views
+    write: true
+    set: { withPartList: true, withMaterialTakeoff: true }
+    negative-set: { withPartList: false, withMaterialTakeoff: false }
+
+  - fragment: auto-size-pipe
+    write: true
+    set:
+      categoryName: Pipes
+      targetVelocity: 3
+      nominalSizesMm: "15, 20, 25, 32, 40, 50, 65, 80, 100"
+      boresMm: "16, 22, 28, 35, 42, 54, 67, 80, 105"
+    negative-set:
+      categoryName: Ducts
+      targetVelocity: 3
+      nominalSizesMm: "15, 20, 25, 32, 40, 50, 65, 80, 100"
+      boresMm: "16, 22, 28, 35, 42, 54, 67, 80, 105"
+
+  # `values` is a dictionary from another fragment - expected to be unreachable,
+  # and the run is the cheapest way to confirm which half blocks it.
+  - fragment: show-analysis-heatmap
+    write: true
+    set: { view: "FloorPlan: M1", measurementName: "Pressure Drop" }
+    negative-set: { view: "FloorPlan: M1", measurementName: "ZZZ NOTHING" }
+
+  - fragment: find-overlapping-lines
+    set: { toleranceMm: 25 }
+    negative-set: { toleranceMm: 25 }
+
+  - fragment: place-flow-arrows
+    write: true
+    set:
+      view: "FloorPlan: M1"
+      arrowFamilyName: "M_Air Flow Arrow"
+      arrowTypeName: "Standard"
+      spacingMm: 3000
+    negative-set:
+      view: "FloorPlan: M1"
+      arrowFamilyName: "ZZZ NO SUCH FAMILY"
+      arrowTypeName: "Standard"
+      spacingMm: 3000
