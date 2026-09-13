@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -45,6 +45,30 @@ contract:
       # not, never a thing it did (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,509 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned copies 19 item(s)
+    [926379, 926380, 926381, ...], notCopied 0, source 19 item(s) [925629, 925630, 925631,
+    ...]. inputs came elements from the selection (19); offset as given. on test projject
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). copy-elements\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 4 different inputs:\n\n      selection \"Ducts in {3D}\" (6), offset 5000,0,0\
+    \ -> copies 6\n      selection \"Walls in {3D}\" (19), offset 5000,0,0 -> copies 19\n\
+    \      selection \"Pipes in {3D}\" (2), offset 5000,0,0 -> copies 2\n      selection \"\
+    Ducts in {3D}\" (6), offset 0,0,0 - the OFFSET changed, the count did not -> copies 6\n\
+    \n    Different inputs, exact matches every time. A fragment falling back to the active\
+    \ view, the whole model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b119e7eb2130792c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
