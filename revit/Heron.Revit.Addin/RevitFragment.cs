@@ -1425,6 +1425,415 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// PAIRS of points: a PIPE between pairs, a semicolon between the two
+        /// points of one pair, commas within a point.
+        ///
+        ///     "0,0,0; 5000,0,0 | 5000,0,0; 5000,3000,0"
+        ///
+        /// A THIRD SEPARATOR, AND ONLY NOW. The refusal that stood here said a
+        /// third separator is a decision to make when a second fragment wants
+        /// one, rather than on the strength of a single need. It stayed a
+        /// refusal for as long as that was honest. `create-line` is the one
+        /// fragment, `pointPairs` was the ONLY need in the library that could
+        /// not be typed at all, and the owner asked for it by name - so the
+        /// decision is made, and the reason is written here rather than left to
+        /// be re-derived.
+        ///
+        /// THE PIPE IS NOT A STYLE CHOICE. It has to be a character that cannot
+        /// appear inside a number and has to look nothing like the two already
+        /// in use, because the mistake this shape invites is a PAIR boundary
+        /// read as a POINT boundary - which draws a valid-looking set of the
+        /// wrong lines instead of raising anything.
+        ///
+        /// EXACTLY TWO POINTS PER PAIR, REFUSED OTHERWISE. Three in a pair is a
+        /// mistyped semicolon, and taking the first two would draw one line and
+        /// silently drop a point somebody meant to use.
+        /// </summary>
+        private static List<IList<XYZ>> PointPairs(string text, out string problem)
+        {
+            problem = null;
+
+            var pairs = new List<IList<XYZ>>();
+            foreach (var piece in (text ?? "").Split('|'))
+            {
+                var trimmed = piece.Trim();
+                if (trimmed.Length == 0) continue;
+
+                var points = ManyPoints(trimmed, out problem);
+                if (points == null) return null;
+
+                if (points.Count != 2)
+                {
+                    problem = "\"" + trimmed + "\" has " + points.Count + " point"
+                            + (points.Count == 1 ? "" : "s") + " in it, and a line is drawn "
+                            + "between TWO. Separate the two ends of one line with a "
+                            + "SEMICOLON and one line from the next with a PIPE - "
+                            + "\"0,0,0; 5000,0,0 | 0,0,0; 0,5000,0\" is two lines.";
+                    return null;
+                }
+                pairs.Add(points);
+            }
+
+            if (pairs.Count == 0)
+            {
+                problem = "No point pairs were given. One line is two points in millimetres "
+                        + "separated by a semicolon - \"0,0,0; 5000,0,0\" - and one line is "
+                        + "separated from the next by a pipe.";
+                return null;
+            }
+            return pairs;
+        }
+
+        /// <summary>
+        /// The graphic overrides a view carries, written the way Revit's own
+        /// override dialog puts them.
+        ///
+        ///     "halftone=true; transparency=50; projection-line-colour=255,0,0"
+        ///
+        /// SEMICOLONS BETWEEN SETTINGS, because a colour is already three
+        /// comma-separated numbers and a comma cannot do both jobs.
+        ///
+        /// NINE SETTINGS, NOT TWENTY-FOUR, AND THE SHORT LIST IS THE POINT.
+        /// OverrideGraphicSettings carries far more than this; what is here is
+        /// what the Visibility/Graphics override dialog puts in front of a
+        /// modeller. A property nobody asked for is a property nobody checks,
+        /// and an unknown key is refused by NAMING the nine - so a wrong
+        /// spelling is one line away from a right one rather than a shrug.
+        ///
+        /// THE FILL PATTERNS ARE LEFT OUT ON PURPOSE. A pattern is an ELEMENT,
+        /// and naming one is a filter's job rather than a string parse - the
+        /// same split that keeps finding a FamilySymbol out of
+        /// SET_SHEET_TITLE_BLOCK. Their COLOURS are here, because a colour is
+        /// three numbers and nothing else.
+        ///
+        /// AMERICAN SPELLING IS ACCEPTED WHEREVER BRITISH IS. The Revit API
+        /// spells it one way and this repository the other, and refusing over
+        /// that would be the tool being right about nothing.
+        /// </summary>
+        private static object OneOverride(string text, out string problem)
+        {
+            problem = null;
+
+            var settings = new OverrideGraphicSettings();
+            var given = 0;
+
+            foreach (var piece in (text ?? "").Split(';'))
+            {
+                var trimmed = piece.Trim();
+                if (trimmed.Length == 0) continue;
+
+                var split = trimmed.IndexOf('=');
+                if (split <= 0)
+                {
+                    problem = "\"" + trimmed + "\" is not a setting. Each one is a name, an "
+                            + "equals sign and a value - \"halftone=true\" - and several are "
+                            + "separated with semicolons.";
+                    return null;
+                }
+
+                var key = trimmed.Substring(0, split).Trim().ToLowerInvariant()
+                                 .Replace("color", "colour").Replace(" ", "-");
+                var value = trimmed.Substring(split + 1).Trim();
+                given++;
+
+                if (key == "halftone")
+                {
+                    bool flag;
+                    if (!bool.TryParse(value, out flag))
+                    {
+                        problem = "\"" + value + "\" is not true or false, and halftone is "
+                                + "one or the other.";
+                        return null;
+                    }
+                    settings.SetHalftone(flag);
+                    continue;
+                }
+
+                if (key == "transparency" || key == "surface-transparency")
+                {
+                    int percent;
+                    if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture,
+                                      out percent) || percent < 0 || percent > 100)
+                    {
+                        problem = "\"" + value + "\" is not a percentage from 0 to 100, which "
+                                + "is what Revit's surface transparency is.";
+                        return null;
+                    }
+                    settings.SetSurfaceTransparency(percent);
+                    continue;
+                }
+
+                if (key == "projection-line-weight" || key == "cut-line-weight")
+                {
+                    int weight;
+                    if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture,
+                                      out weight) || weight < 1 || weight > 16)
+                    {
+                        problem = "\"" + value + "\" is not a line weight. Revit's are whole "
+                                + "numbers from 1 to 16.";
+                        return null;
+                    }
+                    if (key == "projection-line-weight") settings.SetProjectionLineWeight(weight);
+                    else settings.SetCutLineWeight(weight);
+                    continue;
+                }
+
+                if (key == "detail-level")
+                {
+                    var wantedLevel = value.Trim().ToLowerInvariant();
+                    if (wantedLevel == "coarse") settings.SetDetailLevel(ViewDetailLevel.Coarse);
+                    else if (wantedLevel == "medium") settings.SetDetailLevel(ViewDetailLevel.Medium);
+                    else if (wantedLevel == "fine") settings.SetDetailLevel(ViewDetailLevel.Fine);
+                    else
+                    {
+                        problem = "\"" + value + "\" is not a detail level. Revit's are "
+                                + "Coarse, Medium and Fine.";
+                        return null;
+                    }
+                    continue;
+                }
+
+                if (key == "projection-line-colour" || key == "cut-line-colour"
+                    || key == "surface-colour" || key == "cut-colour")
+                {
+                    var colour = OneColour(value, out problem) as Color;
+                    if (colour == null) return null;
+                    if (key == "projection-line-colour") settings.SetProjectionLineColor(colour);
+                    else if (key == "cut-line-colour") settings.SetCutLineColor(colour);
+                    else if (key == "surface-colour") settings.SetSurfaceForegroundPatternColor(colour);
+                    else settings.SetCutForegroundPatternColor(colour);
+                    continue;
+                }
+
+                problem = "\"" + key + "\" is not a graphic override Heron can set. It takes "
+                        + "halftone, transparency, detail-level, projection-line-colour, "
+                        + "cut-line-colour, surface-colour, cut-colour, "
+                        + "projection-line-weight and cut-line-weight - separated with "
+                        + "semicolons, like \"halftone=true; transparency=50\".";
+                return null;
+            }
+
+            if (given == 0)
+            {
+                problem = "No overrides were given, and an empty set of them would leave the "
+                        + "view exactly as it is while reporting that it had been changed. "
+                        + "Name at least one - \"halftone=true\".";
+                return null;
+            }
+            return settings;
+        }
+
+        /// <summary>
+        /// The KIND of value a parameter holds - a length, a number, a yes/no -
+        /// as Revit's own SpecTypeId.
+        ///
+        /// BY REFLECTION, AND NOT BECAUSE REFLECTION IS PLEASANT. ForgeTypeId
+        /// and SpecTypeId arrived at Revit 2021, and this file compiles for 2020
+        /// to 2027 from ONE source with no version #if anywhere in it (D-05).
+        /// Naming either type here would break the 2020 build outright. The
+        /// fragments that want one already declare revit: ["2022", ...], so a
+        /// caller on 2020 is never asked for it - and if one is, this refuses in
+        /// words rather than the add-in failing to load.
+        ///
+        /// THE SPEC IS NAMED BY WHAT THE PARAMETER HOLDS, not by an API
+        /// identifier. Somebody adding a parameter says "it's a length"; nobody
+        /// says "autodesk.spec.aec:length-2.0.0", and asking them to would be
+        /// this library doing the opposite of its job.
+        ///
+        /// TEXT AND YES/NO LIVE ON NESTED CLASSES - SpecTypeId.String.Text and
+        /// SpecTypeId.Boolean.YesNo - which is why the table below carries an
+        /// owner as well as a member.
+        /// </summary>
+        private static object OneSpecTypeId(string text, out string problem)
+        {
+            problem = null;
+
+            var said = (text ?? "").Trim();
+            var lowered = said.ToLowerInvariant().Replace(" ", "").Replace("-", "")
+                              .Replace("/", "").Replace("_", "");
+
+            string owner = null;
+            string member = null;
+
+            if (lowered == "length" || lowered == "distance") member = "Length";
+            else if (lowered == "number" || lowered == "decimal") member = "Number";
+            else if (lowered == "angle") member = "Angle";
+            else if (lowered == "area") member = "Area";
+            else if (lowered == "volume") member = "Volume";
+            else if (lowered == "currency" || lowered == "cost") member = "Currency";
+            else if (lowered == "mass") member = "Mass";
+            else if (lowered == "text" || lowered == "string")
+            {
+                owner = "String"; member = "Text";
+            }
+            else if (lowered == "yesno" || lowered == "boolean" || lowered == "bool")
+            {
+                owner = "Boolean"; member = "YesNo";
+            }
+            else if (lowered == "integer" || lowered == "wholenumber")
+            {
+                owner = "Int"; member = "Integer";
+            }
+            else
+            {
+                problem = "\"" + said + "\" is not a kind of value Heron knows. Say what the "
+                        + "parameter HOLDS - Length, Number, Integer, Angle, Area, Volume, "
+                        + "Mass, Currency, Text or YesNo.";
+                return null;
+            }
+
+            try
+            {
+                var specs = typeof(Document).Assembly.GetType("Autodesk.Revit.DB.SpecTypeId");
+                if (specs == null)
+                {
+                    problem = "This Revit release has no SpecTypeId, so the kind of a value "
+                            + "cannot be named here. It arrived at Revit 2021.";
+                    return null;
+                }
+
+                var holder = specs;
+                if (owner != null)
+                {
+                    holder = specs.GetNestedType(owner, System.Reflection.BindingFlags.Public);
+                    if (holder == null)
+                    {
+                        problem = "This Revit release has no SpecTypeId." + owner + ", so \""
+                                + said + "\" cannot be named on it.";
+                        return null;
+                    }
+                }
+
+                var property = holder.GetProperty(member,
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (property == null)
+                {
+                    problem = "This Revit release has no SpecTypeId"
+                            + (owner == null ? "" : "." + owner) + "." + member + ", so \""
+                            + said + "\" cannot be named on it.";
+                    return null;
+                }
+
+                var built = property.GetValue(null, null);
+                if (built == null)
+                {
+                    problem = "Revit returned nothing for SpecTypeId"
+                            + (owner == null ? "" : "." + owner) + "." + member + ".";
+                    return null;
+                }
+                return built;
+            }
+            catch (Exception ex)
+            {
+                problem = "\"" + said + "\" could not be turned into a Revit value kind: "
+                        + ex.Message;
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// A value to put INTO a parameter, carrying its own type - Revit's
+        /// ParameterValue.
+        ///
+        ///     "length 2700"   "number 4.5"   "integer 3"
+        ///     "text Level 2"  "yesno true"
+        ///
+        /// THE KIND COMES FIRST BECAUSE THE VALUE CANNOT SAY IT. "2700" is a
+        /// length, a count and a price depending on the parameter it is going
+        /// into, and a built ParameterValue is an OBJECT with that choice
+        /// already made inside it. Guessing from the digits would put a double
+        /// into an integer parameter and be refused by Revit - or worse, be
+        /// accepted somewhere it means something else.
+        ///
+        /// AND THIS IS WHERE A LENGTH IS CONVERTED, WHICH IS D-71's EXCEPTION
+        /// RATHER THAN A BREACH OF IT. D-71 says a FRAGMENT converts its own
+        /// millimetres, because the fragment is what knows which of its values
+        /// are lengths. Here the value crosses as a finished object, and
+        /// SET_GLOBAL_PARAMETER's contract says so itself - "Already built,
+        /// carrying its own type. A length arrives in internal feet." A fragment
+        /// handed a DoubleParameterValue cannot tell a length from a count, so
+        /// it cannot be the one to convert; the only place that knows is the
+        /// line where the caller typed the word "length".
+        /// </summary>
+        private static object OneParameterValue(string text, out string problem)
+        {
+            problem = null;
+
+            var said = (text ?? "").Trim();
+            var space = said.IndexOf(' ');
+            var kind = space > 0 ? said.Substring(0, space).Trim().ToLowerInvariant() : "";
+            var rest = space > 0 ? said.Substring(space + 1).Trim() : "";
+
+            if (kind == "text" || kind == "string") return new StringParameterValue(rest);
+
+            if (kind == "yesno" || kind == "boolean" || kind == "bool")
+            {
+                bool flag;
+                if (!bool.TryParse(rest, out flag))
+                {
+                    problem = "\"" + rest + "\" is not true or false, and a yes/no parameter "
+                            + "holds one or the other.";
+                    return null;
+                }
+                return new IntegerParameterValue(flag ? 1 : 0);
+            }
+
+            if (kind == "integer" || kind == "whole")
+            {
+                int whole;
+                if (!int.TryParse(rest, NumberStyles.Integer, CultureInfo.InvariantCulture,
+                                  out whole))
+                {
+                    problem = "\"" + rest + "\" is not a whole number. Type digits only - 3, "
+                            + "not 3.0 and not 3mm.";
+                    return null;
+                }
+                return new IntegerParameterValue(whole);
+            }
+
+            if (kind == "number")
+            {
+                double number;
+                if (!double.TryParse(rest, NumberStyles.Float, CultureInfo.InvariantCulture,
+                                     out number))
+                {
+                    problem = "\"" + rest + "\" is not a number. Type digits only - 4.5, not "
+                            + "4.5mm.";
+                    return null;
+                }
+                return new DoubleParameterValue(number);
+            }
+
+            if (kind == "length")
+            {
+                double millimetres;
+                if (!double.TryParse(rest, NumberStyles.Float, CultureInfo.InvariantCulture,
+                                     out millimetres))
+                {
+                    problem = "\"" + rest + "\" is not a number, and a length is one in "
+                            + "MILLIMETRES. Type digits only - 2700, not 2700mm.";
+                    return null;
+                }
+                if (millimetres > HeronUnits.MaxMillimetres
+                    || millimetres < -HeronUnits.MaxMillimetres)
+                {
+                    problem = "\"" + rest + "\" is longer than 100 km, which is not a length "
+                            + "in any building. Heron reads a length in MILLIMETRES - a number "
+                            + "this size usually means it was typed in another unit.";
+                    return null;
+                }
+                return new DoubleParameterValue(HeronUnits.MillimetresToFeet(millimetres));
+            }
+
+            problem = "A parameter value has to say what KIND it is first, because \"" + said
+                    + "\" on its own could be a length, a count or a price and those are "
+                    + "different things inside Revit. Type one of \"length 2700\" "
+                    + "(millimetres), \"number 4.5\", \"integer 3\", \"text Level 2\" or "
+                    + "\"yesno true\".";
+            return null;
+        }
+
+        /// <summary>
         /// Every element of a given CLASS whose name matches, read the way Revit
         /// writes it.
         ///
@@ -1991,18 +2400,38 @@ namespace Heron.Revit.Addin
         /// WHAT IS DELIBERATELY NOT HERE, and why - because an absent type
         /// looks identical to an overlooked one:
         ///
+        ///   IList&lt;Reference&gt;   A Reference is a FACE: a particular solid, on a
+        ///                  particular element, seen in a particular view,
+        ///                  produced by a mouse coming to rest on geometry.
+        ///                  There is no text that names one - not a name, not a
+        ///                  number, not a coordinate - so this is not a rule
+        ///                  waiting to be written. THE KEYBOARD CANNOT SAY IT.
+        ///                  `place-family-on-face` needs Revit's own picking,
+        ///                  which is a different mechanism from anything here.
+        ///                  D-72.
+        ///
+        ///   IDictionary    one blank holds one value, and a pair needs two.
+        ///
+        /// Both are refused BY NAME below, saying so.
+        ///
+        /// AND FOUR THAT USED TO BE ON THIS LIST, left here because a list that
+        /// only ever gets shorter is how a claim disappears unnoticed:
+        ///
         ///   XYZ            WAS here, until the unit was settled: a point is
-        ///                  three numbers in MILLIMETRES. See OnePoint. The
-        ///                  refusal that stood in its place said the decision
-        ///                  had not been made, which was true and is not any
-        ///                  more.
+        ///                  three numbers in MILLIMETRES. See OnePoint. PAIRS of
+        ///                  points joined it on 2026-09-14 - see PointPairs, and
+        ///                  the pipe that separates them.
         ///
         ///   ElementId      its constructor changed from int to long at Revit
-        ///                  2024. Nothing in this add-in carries a version #if,
-        ///                  and the first one should not arrive as a side effect
-        ///                  of a proving session.
+        ///                  2024. Resolved by NAMING the thing it belongs to and
+        ///                  taking `.Id`, so the constructor is never reached;
+        ///                  and a LIST of them also takes the word `selected`.
         ///
-        /// It is refused BY NAME below, saying so.
+        ///   OverrideGraphicSettings, ForgeTypeId, ParameterValue
+        ///                  objects with no name to look up, so each is BUILT
+        ///                  from what was typed. Added 2026-09-14 at the owner's
+        ///                  request - see OneOverride, OneSpecTypeId and
+        ///                  OneParameterValue. D-72.
         ///
         /// AND ONE THAT IS HALF HERE. `Element` resolves to an element TYPE by
         /// name and refuses a specific INSTANCE, because an instance has no name
@@ -2064,6 +2493,15 @@ namespace Heron.Revit.Addin
             if (wanted == "IList<XYZ>" || wanted == "List<XYZ>"
                 || wanted == "ICollection<XYZ>" || wanted == "IEnumerable<XYZ>")
                 return ManyPoints(text, out problem);
+
+            // PAIRS OF POINTS - one need in the whole library (`create-line`'s
+            // `pointPairs`) and, until 2026-09-14, the only need that could not
+            // be typed at all. A pipe between pairs; see PointPairs for why a
+            // third separator was held back until a fragment actually wanted it.
+            if (wanted == "IList<IList<XYZ>>" || wanted == "List<IList<XYZ>>"
+                || wanted == "IList<List<XYZ>>" || wanted == "List<List<XYZ>>"
+                || wanted == "ICollection<IList<XYZ>>" || wanted == "IEnumerable<IList<XYZ>>")
+                return PointPairs(text, out problem);
 
             // THE NARROWED ONES. Each row is a deliberate act of declaring a
             // type receivable, and the list is short because it is exactly the
@@ -2196,6 +2634,30 @@ namespace Heron.Revit.Addin
             if (wanted == "IList<ElementId>" || wanted == "List<ElementId>"
                 || wanted == "ICollection<ElementId>" || wanted == "IEnumerable<ElementId>")
             {
+                // `selected` MEANS THE WHOLE SELECTION HERE, where for a
+                // singular `Element` it means exactly ONE (see OneElement).
+                // That is not an inconsistency: the ambiguity OneElement
+                // refuses - which of three did you mean - cannot arise when the
+                // answer is allowed to be plural.
+                //
+                // ROW 68 LISTED `filter-elements-by-id` AMONG THE THIRTEEN
+                // `selected` UNBLOCKED, AND IT WAS WRONG. The word reached
+                // OneElement and never reached here, so `elementIds` fell
+                // through to OneIdNamed - which has no rule for that name and
+                // correctly refuses. The fragment stayed unreachable for four
+                // days while the register said it was not.
+                if (IsSelectionWord(text))
+                {
+                    if (selected == null || selected.Count == 0)
+                    {
+                        problem = "\"" + (text ?? "").Trim() + "\" means what is selected in "
+                                + "Revit, and nothing is selected. Select the elements and run "
+                                + "this again.";
+                        return null;
+                    }
+                    return new List<ElementId>(selected);
+                }
+
                 var ids = new List<ElementId>();
                 foreach (var part in Parts(text))
                 {
@@ -2243,6 +2705,13 @@ namespace Heron.Revit.Addin
                 }
                 return colours;
             }
+
+            // THE STRUCTURED VALUES. Each is an object a caller cannot name -
+            // it has to be BUILT from what they typed - and each was a named
+            // refusal until a fragment the owner asked for needed it.
+            if (wanted == "OverrideGraphicSettings") return OneOverride(text, out problem);
+            if (wanted == "ForgeTypeId") return OneSpecTypeId(text, out problem);
+            if (wanted == "ParameterValue") return OneParameterValue(text, out problem);
 
             if (wanted == "Category")
             {
@@ -2373,17 +2842,33 @@ namespace Heron.Revit.Addin
 
             // ---- named refusals, so an absent type is not read as an oversight
 
-            // WHAT IS LEFT OF THE OLD POINT REFUSAL. A point and a list of points
-            // are accepted above; a list OF LISTS of points is not, and it is one
-            // need in the whole library (`pointPairs`). It would want a third
-            // separator, and a third separator is a decision that should be made
-            // when a second fragment wants one rather than on the strength of
-            // this one.
+            // WHAT IS LEFT OF THE OLD POINT REFUSAL. A point, a list of points
+            // and a list of PAIRS are all accepted above. Anything nesting them
+            // deeper than that is not, and this refusal is kept rather than
+            // deleted for the same reason it was written: an absent type must
+            // not read as an overlooked one.
             if (wanted.IndexOf("XYZ", StringComparison.Ordinal) >= 0)
             {
-                problem = "A point is three numbers in millimetres and a list of points is "
-                        + "written \"0,0,0; 5000,0,0\", but \"" + type + "\" nests them "
-                        + "deeper than that and there is no way to write it yet.";
+                problem = "A point is three numbers in millimetres, a list of points is "
+                        + "written \"0,0,0; 5000,0,0\" and pairs of them are separated with "
+                        + "a pipe, but \"" + type + "\" nests them deeper than that and "
+                        + "there is no way to write it yet.";
+                return null;
+            }
+
+            // A FACE, AND IT IS NOT A MISSING RULE. Without this the catch-all
+            // below ends "this is not one of them yet", and `yet` is exactly
+            // wrong: a Reference is produced by a mouse coming to rest on
+            // geometry, and no text names one. `place-family-on-face` needs
+            // Revit's own picking, which is a different mechanism from anything
+            // in this method. D-72.
+            if (wanted.IndexOf("Reference", StringComparison.Ordinal) >= 0)
+            {
+                problem = "A face cannot be typed in, and this is not a rule waiting to be "
+                        + "written. Revit identifies a face as a particular solid, on a "
+                        + "particular element, seen in a particular view - it is what a mouse "
+                        + "lands on, and no name, number or coordinate says which one. This "
+                        + "needs Revit's own picking.";
                 return null;
             }
 

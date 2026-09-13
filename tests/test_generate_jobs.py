@@ -144,11 +144,9 @@ def test_the_shapes_d54_refuses_are_refused_here():
     #
     # They are asserted in the direction they moved, just below, rather than
     # quietly dropped - a shorter list is how a claim disappears unnoticed.
-    for kind in ("IList<IList<XYZ>>",
-                 "IDictionary<ElementId, string>",
+    for kind in ("IDictionary<ElementId, string>",
                  "IList<Element>",
-                 "OverrideGraphicSettings",
-                 "ForgeTypeId", "ParameterValue", "IList<Reference>",
+                 "IList<Reference>",
                  "IFCVersion", "FamilyInstance"):
         ok, why = GJ.receivable(kind)
         check(not ok and why, "%s is refused, with a reason" % kind)
@@ -158,6 +156,21 @@ def test_the_shapes_d54_refuses_are_refused_here():
                  "View3D", "Color", "Material"):
         ok, _ = GJ.receivable(kind)
         check(ok, "%s can be typed in - it could not before 2026-09-13" % kind)
+
+    # FOUR MORE MOVED ON 2026-09-14, at the owner's request, and they are
+    # asserted in the direction they moved for the same reason the six above
+    # are: a list that only ever gets shorter is how a claim disappears without
+    # anybody deciding to drop it.
+    #
+    # `IList<Reference>` STAYED, and the difference is worth stating. A
+    # Reference is a FACE - picked with a mouse, on a particular solid, in a
+    # particular view. There is no text that names one, so it is not a rule
+    # waiting to be written; it is a thing a keyboard cannot say.
+    # FRAGMENT-ISSUES row 91.
+    for kind in ("IList<IList<XYZ>>", "OverrideGraphicSettings",
+                 "ForgeTypeId", "ParameterValue"):
+        ok, _ = GJ.receivable(kind)
+        check(ok, "%s can be typed in - it could not before 2026-09-14" % kind)
 
     # And the reason is the ONE Revit gives, not a restatement of the type name.
     # A reader learning that a point waits on a UNITS decision and an id on a
@@ -172,9 +185,19 @@ def test_the_shapes_d54_refuses_are_refused_here():
     check("pairs" in mapping,
           "a dictionary says it is the PAIR that cannot be typed: %r" % mapping)
 
-    _, nested = GJ.receivable("IList<IList<XYZ>>")
-    check("nests them" in nested,
-          "and nested points say it is the nesting, not the point, that is refused")
+    # AND WHAT IS LEFT OF THE NESTING REFUSAL. Pairs are typeable now; a THIRD
+    # level of nesting is not, and the row is kept rather than deleted so that
+    # an absent shape does not read as an overlooked one.
+    _, nested = GJ.receivable("IList<IList<IList<XYZ>>>")
+    check(nested and "nests them" in nested,
+          "points nested deeper than pairs say it is the NESTING that is "
+          "refused, not the point: %r" % nested)
+
+    # THE PIPE IS THE HALF THAT IS EASY TO MISS, so the hint has to carry it.
+    # "semicolons" alone is true WITHIN a pair and silently wrong between them.
+    pairs = GJ.how_to_type("IList<IList<XYZ>>")
+    check("PIPE" in pairs, "pairs of points name the pipe: %r" % pairs)
+    check("MILLIMETRES" in pairs, "and still name the unit")
 
 
 def test_a_point_is_millimetres_and_says_so():
@@ -202,10 +225,16 @@ def test_a_point_is_millimetres_and_says_so():
     check("comma separated" not in many,
           "and does not offer the flat comma list every other list uses")
 
-    # Nested deeper is still refused, and the refusal blames the nesting rather
-    # than the point - the unit question is settled and must not read as open.
-    ok, why = GJ.receivable("IList<IList<XYZ>>")
-    check(not ok, "points nested a level deeper are still refused")
+    # PAIRS OF POINTS BECAME TYPEABLE ON 2026-09-14 - `create-line` wanted them
+    # and the third separator was decided rather than deferred again. Nested a
+    # level deeper than THAT is still refused, and the refusal blames the
+    # NESTING rather than the point: the unit question is settled and must not
+    # read as open.
+    ok, _ = GJ.receivable("IList<IList<XYZ>>")
+    check(ok, "pairs of points can be typed in")
+
+    ok, why = GJ.receivable("IList<IList<IList<XYZ>>>")
+    check(not ok, "points nested a level deeper than pairs are still refused")
     check(why and "millimetre" in why,
           "and the refusal states the settled rule rather than reopening it")
 
