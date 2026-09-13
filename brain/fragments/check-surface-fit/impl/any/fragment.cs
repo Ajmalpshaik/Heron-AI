@@ -27,6 +27,15 @@
 const double MillimetresPerFoot = 304.8;
 maxDistance = maxDistance / MillimetresPerFoot;
 
+// AND `evenness` IS A LENGTH TOO, which the first pass of this block missed.
+// It is compared against `spread`, and `spread` is the difference between two
+// ReferenceIntersector distances - Revit's own units, feet. So an unconverted
+// `evenness` of 5 meant FIVE FEET, a flatness tolerance 304.8x looser than the
+// 5 mm the caller typed, and a surface a metre and a half out of true reported
+// as sitting flush. The giveaway was in this file the whole time: the message
+// it prints does `spread * 304.8` to turn the same number into millimetres.
+evenness = evenness / MillimetresPerFoot;
+
 var findings = new List<string>();
 var unsafeToMove = new List<ElementId>();
 var clean = 0;
