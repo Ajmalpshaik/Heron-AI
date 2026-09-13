@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,6 +57,40 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,500 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, insulated 3, refused 0 item(s), replaced 0, thickness 0.0820209973753281, thicknessMm
+    25. inputs came elements from the selection (3); insulationTypeId as given; thicknessMm
+    as given. on test projject
+  negative_case: 'run with minMm=-1000,-1000,-1000, maxMm=9000,7000,3900, exact=false, categories=Walls,
+    insulationTypeId=Duct Insulation: Duct Wrap, thicknessMm=25 instead - chosen because it
+    should not contain what this fragment reports - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, insulated 0, refused 4 item(s) [925629, 925630, 925631, ...], replaced 0, thickness
+    0.0820209973753281, thicknessMm 25. inputs came elements from the selection (4); insulationTypeId
+    as given; thicknessMm as given. on test projject'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE DECLARED NEGATIVE NEEDS DUCT FITTINGS AND THIS MODEL HAS NONE - measured, 0 in a 200 x
+    200 x 100 metre box covering everything built. tests/cases.yaml asks for a selection of
+    ducts AND their fittings, expecting the fitting ids in refused, NAMED rather than skipped,
+    because 'fittings between insulated ducts are exactly what gets missed, and it shows on
+    site rather than on the drawing'. The ducts here were drawn by create-duct, which states in
+    its own purpose that it connects nothing and makes no fittings, so there are none to hand
+    in. WHAT RAN INSTEAD was four WALLS against the same call: insulated 0, replaced 0, refused
+    4 BY ID. That proves the refusal is by id and not a silent skip - the property the case is
+    really about - but a wall is obviously not insulable where a duct FITTING looks exactly
+    like the thing that is.
+  fingerprint: d5645b81e8af4f08
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
