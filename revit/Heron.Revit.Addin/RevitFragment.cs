@@ -1064,7 +1064,8 @@ namespace Heron.Revit.Addin
                     // back to "unbound" here would report a missing value the
                     // caller can see they supplied.
                     string problem;
-                    var given = FromRequest(givenText, type, name, target, out problem);
+                    var given = FromRequest(givenText, type, name, target, selected,
+                                            out problem);
                     if (problem != null) return Json.Error("bad_request_value", problem);
 
                     globals.__heron[name] = given;
@@ -1559,8 +1560,26 @@ namespace Heron.Revit.Addin
         /// in the model may not be. This branch stays for the needs that really
         /// are "some type", and for contracts nobody has narrowed yet.
         /// </summary>
+        /// <summary>
+        /// Does this text mean "the element I have selected in Revit"?
+        ///
+        /// ONE WORD, SPELLED A FEW WAYS, AND NOTHING CLEVERER. A modeller typing
+        /// this is answering the refusal above, which says SELECT IT IN REVIT -
+        /// so the word has to be the obvious one rather than a syntax to learn.
+        /// It is compared case-insensitively and trimmed, and that is all: no
+        /// prefix matching, because "selection set" is a different thing in
+        /// Revit and must not quietly resolve to this.
+        /// </summary>
+        private static bool IsSelectionWord(string text)
+        {
+            var trimmed = (text ?? "").Trim();
+            return string.Equals(trimmed, "selected", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(trimmed, "selection", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(trimmed, "the selected one", StringComparison.OrdinalIgnoreCase);
+        }
+
         private static object OneElement(Document doc, string need, string text,
-                                         out string problem)
+                                         IList<ElementId> selected, out string problem)
         {
             // THE NEED'S NAME DECIDES, BECAUSE THE TYPE CANNOT. `wallType` and
             // `reference` are both written `Element` in a contract and mean
@@ -1576,13 +1595,59 @@ namespace Heron.Revit.Addin
             // than guessed at, and a guess here is a confident wrong answer.
             if (!IsTypeNeedName(need))
             {
+                // "SELECT IT IN REVIT AND RUN THIS AGAIN" WAS ADVICE WITH NO WAY
+                // TO TAKE IT. The refusal below has told callers to select the
+                // element since 2026-09-10 and there was no word they could then
+                // type to mean it, so THIRTEEN fragments were unreachable on a
+                // sentence that read like a workaround. Measured 2026-09-13:
+                // align-elements, distribute-along-run, filter-elements-by-type,
+                // join-geometry, match-element-type, measure-available-fall,
+                // measure-distance, read-ceiling-grid, select-by-host,
+                // select-group-members, select-touching, trace-connectivity.
+                //
+                // `selected` IS THE WORD, AND IT MEANS EXACTLY ONE. Not "the
+                // first of them" - a Revit selection has no order this code may
+                // rely on, and picking one of three would be a confident wrong
+                // answer wearing a right one's clothes, which is the defect this
+                // whole function exists to refuse. Zero and many are both
+                // refused, and both say how many were found so the caller can
+                // see what happened without guessing.
+                if (IsSelectionWord(text))
+                {
+                    problem = null;
+                    if (selected == null || selected.Count == 0)
+                    {
+                        problem = "'" + need + "' means one particular element and \"" + text
+                                + "\" means the one selected in Revit - but NOTHING is selected. "
+                                + "Click the element in the model and run this again.";
+                        return null;
+                    }
+                    if (selected.Count != 1)
+                    {
+                        problem = "'" + need + "' means ONE particular element and \"" + text
+                                + "\" means the one selected in Revit - but " + selected.Count
+                                + " are selected. A Revit selection has no order this can rely "
+                                + "on, so taking one of them would be a guess. Select just the "
+                                + "one that is meant.";
+                        return null;
+                    }
+                    var picked = doc.GetElement(selected[0]);
+                    if (picked == null)
+                    {
+                        problem = "The selected element is not in " + doc.Title + ".";
+                        return null;
+                    }
+                    return picked;
+                }
+
                 problem = "'" + need + "' asks for ONE PARTICULAR ELEMENT in the model, "
                         + "and a typed name cannot say which one. An instance has no name "
                         + "of its own - Element.Name on one returns its TYPE's name, so \""
                         + text + "\" would match every element of that type rather than "
-                        + "the one that was meant. SELECT IT IN REVIT and run this again. "
-                        + "(A need named like 'wallType' or 'floorType' is a type to build "
-                        + "with, and that one is typed by name.)";
+                        + "the one that was meant. SELECT IT IN REVIT and pass \"selected\", "
+                        + "or name a TYPE if that is what was meant. (A need named like "
+                        + "'wallType' or 'floorType' is a type to build with, and that one "
+                        + "is typed by name.)";
                 return null;
             }
             return OneOfClass(doc, typeof(ElementType), "element type", text, out problem);
@@ -1886,7 +1951,8 @@ namespace Heron.Revit.Addin
         /// instead, because every one of these is fixable at the keyboard.
         /// </summary>
         private static object FromRequest(string text, string type, string need,
-                                          Document doc, out string problem)
+                                          Document doc, IList<ElementId> selected,
+                                          out string problem)
         {
             problem = null;
             var wanted = (type ?? "").Replace(" ", "");
@@ -1926,7 +1992,8 @@ namespace Heron.Revit.Addin
 
             if (wanted == "View") return OneView(doc, text, out problem);
             if (wanted == "Level") return OneLevel(doc, text, out problem);
-            if (wanted == "Element") return OneElement(doc, need, text, out problem);
+            if (wanted == "Element")
+                return OneElement(doc, need, text, selected, out problem);
 
             // A POINT, IN MILLIMETRES. See OnePoint for why that unit and
             // why a direction needs no separate rule.
