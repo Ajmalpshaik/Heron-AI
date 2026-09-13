@@ -26,6 +26,7 @@
 // answer, and a stack trace is not.
 
 var changed = 0;
+var alreadyThatWay = 0;
 var notControllable = new List<string>();
 var refused = new List<string>();
 
@@ -43,8 +44,24 @@ foreach (var category in categories)
     {
         // Revit's own call is phrased as HIDDEN, and this fragment is phrased
         // as VISIBLE, because that is how the question is asked out loud.
+        //
+        // READ FIRST, WRITE, READ BACK - and `changed` used to be `changed++`
+        // straight after the Set, which counted the CALL rather than the
+        // change. Asked to hide a category already hidden it answered
+        // `changed 1`, and a caller checking whether their instruction did
+        // anything was told yes when nothing moved. Measured 2026-09-13 on
+        // `test projject`: Walls hidden in '{3D}', then hidden again, changed 1.
+        // Same shape as FRAGMENT-ISSUES row 20, where `hidden = ids.Count`.
+        //
+        // A category that was already the way it was asked for is NOT a
+        // failure, so it is named rather than dropped - the sibling fragments
+        // all do this: set-element-phase has alreadySet, apply-view-template
+        // has alreadyOnIt, change-element-type has alreadyThatType.
+        var was = view.GetCategoryHidden(category.Id);
         view.SetCategoryHidden(category.Id, !visible);
-        changed++;
+
+        if (view.GetCategoryHidden(category.Id) != was) changed++;
+        else alreadyThatWay++;
     }
     catch
     {
