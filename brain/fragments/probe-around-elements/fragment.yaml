@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -75,6 +75,28 @@ contract:
       # The evidence it looked, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,509 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values. returned MillimetresPerFoot
+    304.8, hits 6 entry(ies), intersector ReferenceIntersector, maxDistance 164.041994750656,
+    noOrigin 0 item(s), nothingHit 0 item(s). inputs came view3d as given; elements from the
+    selection (6); directions as given (6); maxDistance as given. on test projject
+  negative_case: run with categoryName=Ducts, inViewOnly={3D}, view3d={3D}, directions=1000,0,0;
+    -1000,0,0; 0,1000,0; 0,-1000,0; 0,0,1000; 0,0,-1000, maxDistance=1 instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running select-by-category-name, set-selection with this phase's own values. returned
+    MillimetresPerFoot 304.8, hits 0 entry(ies), intersector ReferenceIntersector, maxDistance
+    0.00328083989501312, noOrigin 0 item(s), nothingHit 6 item(s) [925780, 925782, 925784,
+    ...]. inputs came view3d as given; elements from the selection (6); directions as given
+    (6); maxDistance as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2e8aacec525bb916
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

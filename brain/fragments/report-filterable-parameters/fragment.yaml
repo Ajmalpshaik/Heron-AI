@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -67,6 +67,31 @@ contract:
       # exception naming none of them.
       role: result
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,509 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run. returned allFilterable 205 item(s) [-2009665,
+    -2009664, -2009662, ...], commonParameters 29 entry(ies), filterableCategories 3 item(s)
+    [-2008000, -2008044, -2000011], perCategory 3 entry(ies), unfilterableCategories 0 item(s).
+    inputs came categoryIds as given (3). on test projject
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-filterable-parameters\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 6 different inputs:\n\n      categoryIds \"Ducts\" -> commonParameters 69\n \
+    \     categoryIds \"Pipes\" -> commonParameters 74\n      categoryIds \"Walls\" -> commonParameters\
+    \ 60\n      categoryIds \"Ducts,Pipes\" - the INTERSECTION, narrower than either alone\
+    \ -> commonParameters 48\n      categoryIds \"Ducts,Pipes,Walls\" - narrower again ->\
+    \ commonParameters 29\n      categoryIds \"Revision Clouds\" - unfilterable, so nothing\
+    \ to share -> commonParameters 0\n\n    Different inputs, exact matches every time. A\
+    \ fragment falling back to the active view, the whole model, or a previous run could not\
+    \ do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4382368503ab78c0
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
