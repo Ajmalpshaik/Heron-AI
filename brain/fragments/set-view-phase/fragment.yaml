@@ -92,6 +92,31 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,493 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    find-views, set-selection with this phase's own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned alreadySet 0 item(s),
+    findings 0 item(s), phaseFilterSet 7 item(s) [142575, 142583, 215078, ...], phaseSet 7
+    item(s) [142575, 142583, 215078, ...], templateControlled 0 item(s), unsupported 0 item(s),
+    wantPhase true, wantPhaseFilter true. inputs came elements from the selection (7); phaseId
+    as given; phaseFilterId as given. on test projject
+  negative_case: run with nameContains=Mech, viewType=, phaseId=Existing, phaseFilterId=Show
+    Complete instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running find-views, set-selection with this phase's own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned alreadySet 8 item(s) [312, 316, 695, ...], findings 1 item(s) [2
+    view(s) refused because a view template is holding the pro...], phaseFilterSet 0 item(s),
+    phaseSet 0 item(s), templateControlled 2 item(s) [312, 695], unsupported 0 item(s), wantPhase
+    true, wantPhaseFilter true. inputs came elements from the selection (8); phaseId as given;
+    phaseFilterId as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 40ac4b04d9d5ec2e
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
