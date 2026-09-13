@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -70,6 +70,39 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,492 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned changed 3, deleted
+    false, missing 0, operation add, refused , set SelectionFilterElement, setSize 7, wanted
+    HERON WALL SET. inputs came elements from the selection (3); setName as given; mode as
+    given. on test projject
+  negative_case: run with minMm=-2000,23000,0, maxMm=14000,32000,4000, exact=false, categories=Ducts,
+    setName=ZZZ NO SUCH SET, mode=add instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-in-region,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned changed 0, deleted false, missing
+    0, operation add, refused No saved set called 'ZZZ NO SUCH SET'. Creating one is CREATE_SELECTION_FILTER
+    - a name typed differently would otherwise leave two sets, each holding half the work.,
+    set (null), setSize 0, wanted ZZZ NO SUCH SET. inputs came elements from the selection
+    (3); setName as given; mode as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE DECLARED NEGATIVE WAS RUN AND HELD, and is recorded here rather than as the leg because
+    it is not an EMPTY case. tests/cases.yaml asks for mode 'add' with elements ALREADY in the
+    set, expecting changed 0 and setSize unchanged - 'counting them would report twenty added
+    when none were, and the set is the thing somebody checks'. Measured 2026-09-13: the four
+    walls already in 'HERON WALL SET' re-added gave changed 0, setSize 4, missing 0. setSize is
+    a legitimate non-zero state report there, so the D-30 leg uses a set that does not exist
+    instead - setSize 0, changed 0, and a refusal naming CREATE_SELECTION_FILTER as the way to
+    make one.
+  fingerprint: 5c34a0b218c534a4
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -64,6 +64,34 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,490 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned changed 2, refused 0 item(s), wantAnnotation
+    0, wantCrop 1, wantLine 1, wanted Func`2. inputs came views as given (2); cropActive as
+    given; cropVisible as given; annotationCrop as given. on test projject
+  negative_case: run with views=1 - Mech, 2 - Mech, cropActive=, cropVisible=, annotationCrop=
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    changed 0, refused 1 item(s) [all three flags were left empty - nothing to change], wantAnnotation
+    -1, wantCrop -1, wantLine -1, wanted Func`2. inputs came views as given (2); cropActive
+    as given; cropVisible as given; annotationCrop as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE CASE ITS OWN FILE CALLS FIRST WAS RUN SEPARATELY AND HELD. tests/cases.yaml asks for
+    annotationCrop 'on' on a view where cropping is OFF, and expects the flag SET and a line
+    saying Revit ignores it until cropping is on - because 'silence here reads as the call
+    having failed, and somebody then sets it again and again'. Measured 2026-09-13 on '1 -
+    Plumbing' with cropActive off and annotationCrop on: changed 1, and refused carrying "'1 -
+    Plumbing': the annotation crop was set, but cropping is...". Both halves. It is not an
+    emptiness case, so it cannot be a D-30 leg; the leg used is all three flags left empty,
+    which the fragment refuses as 'nothing to change'.
+  fingerprint: 984c6712d44775cc
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
