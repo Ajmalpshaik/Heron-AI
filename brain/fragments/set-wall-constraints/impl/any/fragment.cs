@@ -131,13 +131,42 @@ else
             try
             {
                 var constraint = wall.get_Parameter(BuiltInParameter.WALL_HEIGHT_TYPE);
-                var offset = wall.get_Parameter(BuiltInParameter.WALL_TOP_OFFSET);
-                if (constraint == null || constraint.IsReadOnly || offset == null || offset.IsReadOnly)
+                if (constraint == null || constraint.IsReadOnly)
                 {
                     refused.Add(wall.Id);
                     continue;
                 }
+
+                // THE CONSTRAINT FIRST, THE OFFSET AFTER, AND THAT ORDER IS THE
+                // WHOLE FIX. On a wall with an UNCONNECTED top there is no top
+                // level to measure an offset from, so Revit makes
+                // WALL_TOP_OFFSET READ-ONLY and greys it out. Reading it before
+                // the constraint is set therefore refused every unconnected
+                // wall - which is precisely the case
+                // `allowUnconnectedToBecomeBound` exists to permit, so the flag
+                // could never do the one thing it is for.
+                //
+                // MEASURED 2026-09-13 on `test projject`: four plain walls with
+                // base Level 1 and an unconnected 3000 mm top, asked for top
+                // Level 2 with the flag TRUE, came back `rehosted 0, refused 4`.
+                // The same four through the base path alone - the flag FALSE, so
+                // this block is skipped entirely - came back `rehosted 4,
+                // refused 0, elevationChanged 0`. The base path was never the
+                // problem.
+                //
+                // If the offset is STILL read-only once the wall is bound, that
+                // is a case nobody has seen and the wall has already been
+                // changed. It is counted as refused and the transaction decides
+                // what happens to it, rather than being quietly reported as
+                // done.
                 constraint.Set(topLevelId);
+
+                var offset = wall.get_Parameter(BuiltInParameter.WALL_TOP_OFFSET);
+                if (offset == null || offset.IsReadOnly)
+                {
+                    refused.Add(wall.Id);
+                    continue;
+                }
                 offset.Set(was[1] - newTop.Elevation);
                 touched = true;
             }

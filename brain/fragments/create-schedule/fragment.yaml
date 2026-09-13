@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 15
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -58,6 +58,36 @@ contract:
       # (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,432 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created 1 item(s) [id 925865],
+    missingFields 0 item(s), name HERON TEST SCHEDULE, refused (null), wanted 2 item(s) [Family
+    and Type, Length]. inputs came categoryId as given; fieldNames as given (2); scheduleName
+    as given. on test projject
+  negative_case: 'run with categoryId=Views, fieldNames=Family and Type,Length, scheduleName=HERON
+    TEST SCHEDULE 2 instead - chosen because it should not contain what this fragment reports
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned created (null), missingFields 0 item(s), name HERON TEST SCHEDULE 2, refused
+    Revit declined to create a schedule for that category - not every category can be scheduled.
+    Revit said: categoryId is not a valid category for a regular schedule.  Parameter name:
+    categoryId, wanted 2 item(s) [Family and Type, Length]. inputs came categoryId as given;
+    fieldNames as given (2); scheduleName as given. on test projject'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE CODE WAS FIXED TO MAKE THE NEGATIVE POSSIBLE. ViewSchedule.CreateSchedule THROWS for a
+    category that cannot be scheduled - it does not return null - so the `schedule == null`
+    refusal at the heart of this fragment could never run, and asked for a schedule of Views it
+    crashed where it meant to say no. It now catches and passes on Revit's own sentence. ALSO:
+    missingFields was never moved off zero. tests/cases.yaml calls a field name the category
+    does not have its first negative, and expects the schedule STILL made with the rest; both
+    fields asked for here existed, so that leg is untested.
+  fingerprint: 263dab0e207be958
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -36,12 +36,32 @@ if (categoryId == null || categoryId == ElementId.InvalidElementId)
 }
 else
 {
-    var schedule = ViewSchedule.CreateSchedule(doc, categoryId);
+    // REVIT THROWS HERE, IT DOES NOT RETURN NULL, and the `schedule == null`
+    // test below could therefore never run. Asked for a schedule of Views it
+    // raises ArgumentException - "categoryId is not a valid category for a
+    // regular schedule" - so the fragment CRASHED at exactly the point it was
+    // written to refuse politely. Measured 2026-09-13 on `test projject`:
+    // categoryId Ducts created one, categoryId Views threw.
+    //
+    // Revit's own sentence is kept and passed on, because "not every category
+    // can be scheduled" does not say WHICH rule was broken and Revit's does.
+    ViewSchedule schedule = null;
+    string revitSaid = null;
+    try
+    {
+        schedule = ViewSchedule.CreateSchedule(doc, categoryId);
+    }
+    catch (Exception failure)
+    {
+        revitSaid = failure.Message;
+    }
 
     if (schedule == null)
     {
         refused = "Revit declined to create a schedule for that category - not every "
-                + "category can be scheduled";
+                + "category can be scheduled"
+                + (revitSaid == null ? "" : ". Revit said: "
+                        + string.Join(" ", revitSaid.Split()));
     }
     else
     {
