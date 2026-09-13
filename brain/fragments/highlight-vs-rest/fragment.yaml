@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -71,6 +71,33 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,509 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned findings 1 item(s)
+    [6 element(s) brought forward, 34 greyed back, out of 40 in '...], greyLook OverrideGraphicSettings,
+    greyed 34, highlightLook OverrideGraphicSettings, highlighted 6, inView 40 item(s) [Level
+    1, Level 2, ExtentElem, ...], inViewIds HashSet`1, look Func`2, solid OverrideGraphicSettings,
+    toAdd 0 item(s), wanted HashSet`1, wrapsFollowed 0. inputs came view as given; elements
+    from the selection (6); highlight as given; grey as given. on test projject
+  negative_case: run with categoryName=Ducts, inViewOnly={3D}, view=HERON DUCT SCHEDULE, highlight=255,0,0,
+    grey=200,200,200 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned findings 1 item(s) [0 element(s) brought forward,
+    0 greyed back, out of 6 in 'HE...], greyLook OverrideGraphicSettings, greyed 0, highlightLook
+    OverrideGraphicSettings, highlighted 0, inView 6 item(s) [Radius Elbows / Taps, Radius
+    Elbows / Taps, Radius Elbows / Taps, ...], inViewIds HashSet`1, look Func`2, solid OverrideGraphicSettings,
+    toAdd 0 item(s), wanted HashSet`1, wrapsFollowed 0. inputs came view as given; elements
+    from the selection (6); highlight as given; grey as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 8f3afbea2aab6ea8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

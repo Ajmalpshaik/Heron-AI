@@ -92,9 +92,14 @@ RECORDED = {
     # calls that engine yet and that it is deliberate; the tool simply has
     # nothing to say about it. Removed after its own stale-record check named
     # all three, one day after that check was written.
-    ("brain/heron_fragment.py", "can_promote"):
-        "DECISIONS.md already says it: 'that gate existed and nothing stood "
-        "on it'",
+    # `can_promote` was listed here until 2026-09-13 and is gone. The excuse
+    # quoted DECISIONS.md - "that gate existed and nothing stood on it" - and
+    # it was true for as long as nothing asked the question. `tools/check-
+    # signatures.py` now asks it about every signed fragment, because telling
+    # an UNUSED signature from a STALE one is exactly what `can_promote`
+    # decides, and re-deriving that answer beside it would have been a second
+    # rule to keep in step with the first. The gate now has something standing
+    # on it, so the excuse goes.
     # `provide_role` was listed here until 2026-09-12 and is gone. The excuse
     # was that CALLING it was the bug - true of the one caller it had, which
     # built a total map in heron_validate.py where "absent means result" made

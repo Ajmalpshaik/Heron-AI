@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -73,29 +73,30 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-10'
+  date: '2026-09-13'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,445 elements), Revit 2024, session 24688
+  model: test projject (3,530 elements), Revit 2024, session 40932
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values. returned findings
-    309 item(s) [307 device(s) checked against 0 host-model ceiling(s): 0 out..., no ceilings
-    in the HOST model. If the architecture is a LINK..., Tees (id 1395899): NO CEILING above
-    it. Fine in an open soff..., ...], hostCeilings 0, noCeilingAbove 307 item(s) [1395899,
-    1395935, 1395946, ...], outOfPlane 0 item(s), rayView View3D, tolerance 99999. inputs
-    came devices from the selection (307); tolerance as given. on Snowdon-scratch_ajmal.al'
-  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, tolerance=99999
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running select-by-category-name, set-selection with this phase''s
-    own values. returned findings 11 item(s) [9 device(s) checked against 0 host-model ceiling(s):
-    0 out o..., no ceilings in the HOST model. If the architecture is a LINK..., Duct Size
-    Tag (id 1491217): no readable position - not check..., ...], hostCeilings 0, noCeilingAbove
-    0 item(s), outOfPlane 0 item(s), rayView View3D, tolerance 99999. inputs came devices
-    from the selection (9); tolerance as given. on Snowdon-scratch_ajmal.al'
+    select-by-category-name, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, findings 7 item(s) [6 device(s) checked against 1 host-model ceiling(s): 6 out
+    o..., Radius Elbows / Taps (id 925780): 500 mm BELOW the ceiling -..., Radius Elbows /
+    Taps (id 925782): 500 mm BELOW the ceiling -..., ...], hostCeilings 1, noCeilingAbove
+    0 item(s), outOfPlane 6 item(s) [925780, 925782, 925784, ...], rayView View3D, tolerance
+    0.00328083989501312. inputs came devices from the selection (6); tolerance as given. on
+    test projject'
+  negative_case: 'run with categoryName=Ducts, inViewOnly={3D}, tolerance=100000 instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase''s own
+    values. returned MillimetresPerFoot 304.8, findings 7 item(s) [6 device(s) checked against
+    1 host-model ceiling(s): 0 out o..., Radius Elbows / Taps (id 925780): AT the ceiling,
+    500 mm bel..., Radius Elbows / Taps (id 925782): AT the ceiling, 500 mm bel..., ...],
+    hostCeilings 1, noCeilingAbove 0 item(s), outOfPlane 0 item(s), rayView View3D, tolerance
+    328.083989501312. inputs came devices from the selection (6); tolerance as given. on test
+    projject'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: c905e58bb9224d02
-
+  fingerprint: 4db71c18b96ed9bb
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

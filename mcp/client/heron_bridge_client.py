@@ -1185,7 +1185,7 @@ def cmd_prove(names, in_document=None, values=None):
 
 def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
                  values=None, negative_values=None, writing=False, setup=None,
-                 keep_chain=False):
+                 keep_chain=False, allow_publish=False):
     """
     Run ONE fragment through the phases a proof needs, and record what came back.
 
@@ -1244,6 +1244,32 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
         print("survive is whatever an earlier run left behind - which is what")
         print("the chain reset exists to prevent.")
         return 2
+
+    # THE RISK GATE APPLIES HERE TOO, AND DID NOT UNTIL 2026-09-13. `cmd_fragment`
+    # and `cmd_prove` have both asked `risk_refusal` since 2026-09-08; this
+    # function never did. So the one path that actually RUNS fragments all day -
+    # proving - was the one path a PUBLISH or ADMIN fragment could reach, and
+    # RUNNABLE_RISKS' own comment names the accident exactly: "somebody proving
+    # fragments alphabetically and reaching `export-*`".
+    #
+    # That is not hypothetical. `export-parameters-to-csv` (PUBLISH) was proved
+    # through here the same day, writing four real CSV files to disk, and the
+    # gate said nothing. The evidence it produced is good and the proof stands;
+    # what was missing was anybody DECIDING to run a Publish fragment.
+    #
+    # SO REFUSE BY DEFAULT AND MAKE THE EXCEPTION VISIBLE, rather than block it
+    # outright. Proving these is real work that has to happen - four PUBLISH
+    # fragments and one ADMIN are already PROVEN - and a gate that makes the
+    # necessary thing impossible gets worked around instead of obeyed.
+    # `--allow-publish` is typed per run, appears in the shell history, and is
+    # the difference between a decision and an accident.
+    if not allow_publish:
+        refusal = risk_refusal(root, name)
+        if refusal:
+            print(refusal)
+            print("")
+            print("If you mean to prove it, say so: add --allow-publish.")
+            return 2
 
     source_path = os.path.join(root, "brain", "fragments", name, "impl", "any",
                                "fragment.cs")
@@ -1832,6 +1858,10 @@ def main(argv):
         # chain outranks the selection - see cmd_validate.
         keep_chain = "--keep-chain" in rest
         rest = [r for r in rest if r != "--keep-chain"]
+        # --allow-publish runs a fragment declaring PUBLISH or ADMIN. Refused
+        # without it; see the note beside the check in cmd_validate.
+        allow_publish = "--allow-publish" in rest
+        rest = [r for r in rest if r != "--allow-publish"]
         # --setup names a fragment to run BEFORE each phase, repeatable and in
         # order. It re-makes the arrangement - typically select-by-category-name
         # then set-selection - because a rolled-back write clears the selection.
@@ -1867,6 +1897,8 @@ def main(argv):
             print("  --negative-view \"X\"  the view for the NEGATIVE case - one that")
             print("                       should NOT have what this reports")
             print("  --negative-set n=v    any other value for the negative case")
+            print("  --allow-publish       run a PUBLISH or ADMIN fragment. Refused")
+            print("                        without it - proving one is a decision")
             print("  --write               a MODIFY fragment - both phases run inside a")
             print("                        transaction and are ROLLED BACK, keeping nothing")
             print("  --setup <fragment>    run this BEFORE each phase to re-make the")
@@ -1889,7 +1921,8 @@ def main(argv):
             return 2
         return cmd_validate(rest[0], values=values,
                             negative_values=negative_values, writing=writing,
-                            setup=setup, keep_chain=keep_chain, **options)
+                            setup=setup, keep_chain=keep_chain,
+                            allow_publish=allow_publish, **options)
 
     print(__doc__.strip())
     return 2

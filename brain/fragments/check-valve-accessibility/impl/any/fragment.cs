@@ -31,6 +31,14 @@
 const double MillimetresPerFoot = 304.8;
 maxReachHeight = maxReachHeight / MillimetresPerFoot;
 
+// AND `envelope` IS THE OTHER LENGTH, which the first pass of this block
+// missed. It is added to and subtracted from `centre`, an XYZ in Revit's own
+// units, to build the operating zone - so an unconverted 500 meant 500 FEET
+// and put a 152-metre box around every valve. Everything within reach of a
+// building would have read as an obstruction, and the check that exists to
+// find crowded valves would have condemned all of them.
+envelope = envelope / MillimetresPerFoot;
+
 var findings = new List<string>();
 var obstructed = new List<ElementId>();
 var needAccessPanel = new List<ElementId>();

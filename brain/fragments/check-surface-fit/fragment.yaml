@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -73,6 +73,31 @@ contract:
       # nothing else (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,520 elements), Revit 2024, session 40932
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, clean 0, evenness 0.0164041994750656, findings 7 item(s) [6 element(s): 0 sit flat,
+    6 do NOT and should not be moved a..., Radius Elbows / Taps (id 925780): NOTHING within
+    reach in th..., Radius Elbows / Taps (id 925782): NOTHING within reach in th..., ...],
+    maxDistance 164.041994750656, rayView View3D, unsafeToMove 6 item(s) [925780, 925782,
+    925784, ...]. inputs came elements from the selection (6); direction as given; maxDistance
+    as given; evenness as given. on test projject'
+  negative_case: 'run with categoryName=Ducts, inViewOnly={3D}, direction=0,0,-1000, maxDistance=50000,
+    evenness=5 instead - chosen because it should not contain what this fragment reports -
+    the arrangement was re-made first by running select-by-category-name, set-selection with
+    this phase''s own values. returned MillimetresPerFoot 304.8, clean 6, evenness 0.0164041994750656,
+    findings 1 item(s) [6 element(s): 6 sit flat, 0 do NOT and should not be moved a...],
+    maxDistance 164.041994750656, rayView View3D, unsafeToMove 0 item(s). inputs came elements
+    from the selection (6); direction as given; maxDistance as given; evenness as given. on
+    test projject'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ec2fc5d9ab13e64d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

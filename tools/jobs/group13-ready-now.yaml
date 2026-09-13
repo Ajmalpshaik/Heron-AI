@@ -1,0 +1,109 @@
+# Group 13 - everything the model in front of us might already feed.
+#
+# Written to be DRY-RUN FIRST. The point is not that every job here is
+# arrangeable; it is that the runner should say which are not, before Revit is
+# touched, instead of me guessing one at a time.
+#
+#     python tools/batch-prove.py tools/jobs/group13-ready-now.yaml --dry-run
+#
+# The model: test projject, Revit 2024. Built during this session -
+#   6 ducts + 2 stacked ducts in an empty box   20 walls   2 pipes   2 levels
+#   1 floor (Level 1)   1 ceiling (3000mm)   6 mechanical equipment (3 on each level)
+model: test projject, Revit 2024, session 40932
+
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly: "{3D}"
+  negative-set:
+    # A DIFFERENT selection, not a cleared one. Levels are in the 3D view, are
+    # not MEP curves, and there are exactly 2 of them.
+    categoryName: Levels
+    inViewOnly: "{3D}"
+
+jobs:
+  # Point-based, and the equipment placed today is the first point-based content
+  # this model has ever had. Rays DOWN onto the floor built earlier.
+  - fragment: move-to-ray-hit
+    write: true
+    set:
+      categoryName: Mechanical Equipment
+      view3d: "{3D}"
+      direction: "0,0,-1000"
+      maxDistance: 50000
+      offsetAlongRay: 0
+    negative-set:
+      categoryName: Mechanical Equipment
+      view3d: "{3D}"
+      direction: "0,0,1000"      # UP, into empty air above Level 2
+      maxDistance: 50000
+      offsetAlongRay: 0
+
+  # The 2 pipes. If they carry no flow the positive will come back empty and
+  # that is the model's answer, not the fragment's.
+  - fragment: auto-size-pipe
+    write: true
+    set:
+      categoryName: Pipes
+      targetVelocity: 3
+      nominalSizesMm: "15, 20, 25, 32, 40, 50, 65, 80, 100"
+      boresMm: "16, 22, 28, 35, 42, 54, 67, 80, 105"
+    negative-set:
+      categoryName: Levels
+      targetVelocity: 3
+      nominalSizesMm: "15, 20, 25, 32, 40, 50, 65, 80, 100"
+      boresMm: "16, 22, 28, 35, 42, 54, 67, 80, 105"
+
+  - fragment: set-design-option
+    write: true
+    set:
+      designOptionName: "Option 1"
+    negative-set:
+      designOptionName: "ZZZ NO SUCH OPTION"
+
+  - fragment: select-openings
+    setup: []
+    set:
+      inViewOnly: "{3D}"
+    negative-set:
+      inViewOnly: "HERON DUCT SCHEDULE"
+
+  - fragment: select-by-electrical-circuit
+    setup: []
+    set:
+      circuitKind: "Power"
+      circuitName: ""
+    negative-set:
+      circuitKind: "Power"
+      circuitName: "ZZZ NO SUCH CIRCUIT"
+
+  - fragment: create-assembly-views
+    write: true
+    set:
+      withPartList: true
+      withMaterialTakeoff: true
+    negative-set:
+      withPartList: false
+      withMaterialTakeoff: false
+
+  - fragment: connect-air-terminals
+    write: true
+    set:
+      categoryName: Air Terminals
+    negative-set:
+      categoryName: Levels
+
+  - fragment: select-subcomponents
+    set:
+      recursive: true
+    negative-set:
+      recursive: false
+
+  - fragment: find-clashes
+    set:
+      against: Walls
+    negative-set:
+      against: Levels

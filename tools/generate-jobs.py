@@ -230,12 +230,21 @@ NAMED_REFUSALS = [
 ]
 
 
+# NO LONGER A REFUSAL, AS OF 2026-09-13. `RevitFragment.OneElement` now accepts
+# the word `selected` for these, meaning the ONE element chosen in Revit - so a
+# need like `host` or `target` is arrangeable rather than blocked, and the job
+# file says so instead of listing it as unreachable. Thirteen fragments were
+# sitting behind the old sentence, which told the caller to select the element
+# and gave them no word to then type.
+#
+# STILL EXACTLY ONE. Zero selected and two selected are both refused by the
+# add-in, because a Revit selection has no order this may rely on and taking
+# one of three would be a guess.
 ELEMENT_INSTANCE_REASON = (
-    "one PARTICULAR element, and a typed name cannot say which one. An instance "
-    "has no name of its own - Element.Name on one returns its TYPE's name, so a "
-    "typed name would match every element of that type rather than the one "
-    "meant. Select it in Revit instead. (A need named like `wallType` is a type "
-    "to build with, and that one IS typed by name)")
+    "one PARTICULAR element. Select it in Revit and pass `selected` - the "
+    "add-in binds the ONE element chosen, and refuses if none or several are. "
+    "(A need named like `wallType` is a type to build with, and that one IS "
+    "typed by name)")
 
 
 def is_type_need_name(need_name):

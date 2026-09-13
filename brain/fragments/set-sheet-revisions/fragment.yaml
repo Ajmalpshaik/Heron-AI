@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -71,8 +71,40 @@ contract:
       # CAN MAKE REVIT PURGE AN UNUSED REVISION - one on no sheet and in no
       # cloud can vanish project-wide, and this is the only number that shows
       # it.
-      role: result
+      #
+      # ACCOUNTING, NOT A RESULT, AND THE TRIPWIRE ABOVE IS WHY RATHER THAN AN
+      # ARGUMENT AGAINST. It counts revisions the PROJECT still has - state
+      # that is there whether this fragment did anything or nothing, and it
+      # reads 2 on a run that changed two sheets and 2 on a run that changed
+      # none (measured 2026-09-13, both phases). A number that cannot tell
+      # those apart is not evidence of work, which is D-52's rule: never a
+      # thing it FOUND. What makes it useful is the COMPARISON across a call,
+      # and a reader still gets it - `accounting` is reported in full, it is
+      # only kept out of the judgement about whether the fragment did anything.
+      role: accounting
       type: int
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,509 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    list-sheets with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned attach true, cloudDriven 0 item(s),
+    notASheet 0 item(s), revisionsRemaining 2, sheetsChanged 2, wanted 1 item(s) [49030].
+    inputs came elements from list-sheets (2); revisionIds as given (1); attach as given.
+    on test projject
+  negative_case: run with revisionIds=Seq. 1 - Revision 1, attach=false instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running list-sheets with this phase's own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned attach false, cloudDriven
+    2 item(s) [926022, 926119], notASheet 0 item(s), revisionsRemaining 2, sheetsChanged 0,
+    wanted 1 item(s) [49030]. inputs came elements from list-sheets (2); revisionIds as given
+    (1); attach as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 8629c43e77e3836c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

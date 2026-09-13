@@ -49,7 +49,18 @@ contract:
       role: result
       type: IList<Element>
     - name: byKind
-      role: result
+      # ACCOUNTING, AND THE REASON IS IN THE IMPLEMENTATION RATHER THAN HERE.
+      # Every opening category is seeded at zero on purpose - "no shafts at all
+      # is a finding on a building with risers in it" - so this dictionary
+      # ALWAYS holds exactly 5 entries whatever the model contains. The judge
+      # reads an entry COUNT, so as a `result` it reported `5 entry(ies)` in a
+      # negative leg that had found nothing, and `select-openings` came back
+      # NEG NOT EMPTY on a model with no openings at all (measured 2026-09-13).
+      #
+      # The VALUES inside it are the finding and are still reported in full;
+      # the SHAPE is a constant, and a constant is not evidence of work (D-52).
+      # `found` and `elements` beside it are the results that move.
+      role: accounting
       type: IDictionary<string, int>
     - name: found
       role: result

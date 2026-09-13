@@ -853,6 +853,34 @@ def contract_of(frag):
     return roles, names
 
 
+
+def _result_appeared(positive, negative, frag):
+    """Is a declared result PRESENT in the positive and GONE in the negative?
+
+    The comparison D-30 asks for, for fragments whose result is a thing rather
+    than a count. Returns False on anything doubtful - no negative phase, a
+    value that is empty in both, a value that is present in both - so it can
+    only ever rescue a positive that has a real contrast behind it.
+    """
+    if not negative:
+        return False
+
+    roles, names = contract_of(frag)
+    before = positive.get("provides") or {}
+    after = negative.get("provides") or {}
+
+    def empty(value):
+        text = ("" if value is None else str(value)).strip()
+        return text in ("", "(null)", "None") or _as_count(value) == 0
+
+    for key, value in before.items():
+        if key not in names or roles.get(key) == "accounting" or key in NOTE_KEYS:
+            continue
+        if not empty(value) and empty(after.get(key)):
+            return True
+    return False
+
+
 def positive_worked(phase, frag, expect=None):
     """Did the POSITIVE move a declared result off zero? (reason, detail).
 
@@ -1149,6 +1177,57 @@ def _evidence_refusal(slug, frag, proof):
                     "an absence, and an absence cannot be signed."
                     % phase_name.replace("_", " "))
 
+    # ALREADY PROVEN, AND THE PROOF STILL DESCRIBES THE CURRENT CODE. Signing
+    # again overwrites a good proof with an identical one and buys nothing -
+    # and it is ROW 44'S COMPLAINT ARRIVING FROM THE OTHER SIDE. `accept` does
+    # not delete the draft it consumed, so a proved fragment keeps a draft file
+    # sitting in `brain/proof-drafts/` for ever, and anything that offers up
+    # "every draft on disk" offers it again.
+    #
+    # Measured 2026-09-13, by walking straight into it: an audit of all 72
+    # drafts reported 16 ready to sign, and NINE of those were already PROVEN -
+    # `audit-mep-openings`, `disallow-join`, `report-connectors` and six more.
+    # They were handed to the owner as work waiting for him. He had already
+    # done every one. The message he got back the last time he signed one of
+    # these read "Status is still DRAFT" while the file said PROVEN, so nothing
+    # on screen told him either.
+    #
+    # STALE IS THE EXCEPTION AND IT IS THE WHOLE POINT OF THE RULE. A PROVEN
+    # fragment whose code has moved under it has a proof that no longer
+    # describes what runs, and re-proving it is exactly what D-30 asks for - so
+    # that case falls through to the fingerprint check below and is allowed.
+    if frag.status in ("PROVEN", "PRODUCTION") and not frag.proof_is_stale():
+        return ("'%s' is already %s, and its recorded proof still matches the "
+                "current code. Signing it again would overwrite a good proof "
+                "with the same thing and change nothing. The draft left in "
+                "brain/proof-drafts/ is a leftover from when it WAS proved, "
+                "not work waiting to be done." % (slug, frag.status))
+
+    # A DRAFT TAKEN AGAINST CODE THAT HAS SINCE CHANGED CANNOT BE USED, AND
+    # SIGNING IT SPENDS THE ONE THING ONLY A PERSON CAN GIVE. `accept` writes
+    # the draft's fingerprint through unchanged, so the proof lands already
+    # stale and `can_promote` refuses it for ever - the signature is real, the
+    # fragment stays DRAFT, and the next round offers it up again. That loop is
+    # row 44, found by the owner rather than by a tool:
+    #
+    #   "becose i signed item i have to do again i sow lkike that for
+    #    exambple set view crop i singe multiple time"
+    #
+    # Measured 2026-09-13: `check-ceiling-coordination` held a draft from before
+    # the D-71 units work, fingerprint c905e58bb9224d02 against a current
+    # 4db71c18b96ed9bb, and every other check here passed it. Re-running is
+    # cheap and a wasted signature is not, so the refusal belongs before the
+    # name is typed rather than after.
+    recorded = (proof.get("fingerprint") or "").strip()
+    current = frag.fingerprint()
+    if recorded and current and recorded != current:
+        return ("the draft was taken against different code - it records "
+                "fingerprint %s and the fragment is now %s. Signing it would "
+                "write a proof that is stale the moment it lands, so it could "
+                "never be promoted and the signature would be spent for "
+                "nothing. Re-run the fragment and draft it again."
+                % (recorded, current))
+
     record_path = os.path.join(DRAFTS_DIR, "runs", slug + ".json")
     if not os.path.isfile(record_path):
         return ("no run record at %s, so the evidence cannot be re-checked. "
@@ -1168,10 +1247,69 @@ def _evidence_refusal(slug, frag, proof):
     if positive is None:
         return "the run record has no positive phase in it"
     reason, detail = positive_worked(positive, frag)
+    if reason == "POSITIVE UNREADABLE" and _result_appeared(positive,
+                                                            phases.get("negative"),
+                                                            frag):
+        # A FRAGMENT THAT MAKES ONE THING RETURNS THE THING, NOT A COUNT, AND
+        # `positive_worked` CAN ONLY COUNT. It sees `created` rendered as
+        # `MechanicalSystemType` - a bare CamelCase word - and `_is_helper_object`
+        # cannot tell that from `OverrideGraphicSettings`, so a real result is
+        # discarded as a working value and the positive reads UNREADABLE.
+        #
+        # Measured 2026-09-13 on `create-mep-system-type`, which duplicates a
+        # duct system type. Positive: `created MechanicalSystemType`,
+        # `classification SupplyAir`. Negative, given a name the model has not
+        # got: `created (null)`, `classification ""`. The evidence is plainly
+        # there and is not a number, and the same heuristic reads the NEGATIVE
+        # correctly - `(null)` and `""` count as zero - so only the positive leg
+        # was ever mis-read.
+        #
+        # SO ASK THE QUESTION D-30 ACTUALLY ASKS, WHICH IS A COMPARISON. This is
+        # stronger than counting one leg, not weaker: a fragment succeeding while
+        # doing nothing returns the SAME value in both phases and cannot pass it,
+        # and a genuine working object - the `OverrideGraphicSettings` the rule
+        # above exists for - is present in both legs and cannot pass it either.
+        # Only a declared result that is THERE in the positive and GONE in the
+        # negative gets through.
+        reason = None
     if reason:
         return ("%s - %s. The positive case is the evidence it DOES something; "
                 "without it the negative proves only that a fragment which does "
                 "nothing also finds nothing." % (reason, detail))
+
+    # SOME FRAGMENTS HAVE NO EMPTY CASE, AND `draft` HAS KNOWN THAT SINCE D-53
+    # WHILE THIS FUNCTION DID NOT. `count-elements` describes whatever it is
+    # handed; every Revit view hides something, so a visibility report always
+    # reports. For those the leg D-30 wants is met by TRACKING - the answer
+    # following the input across several different inputs - and `draft` writes
+    # exactly that negative_case from `record["tracking"]`.
+    #
+    # This function then refused it twice over, and both refusals read as though
+    # the fragment were at fault: with the negative phase dropped, "the run
+    # record has no negative phase in it"; with it kept, "the negative case came
+    # back with content". Measured 2026-09-13 on `report-filterable-parameters`,
+    # which cannot come back empty - any category it is given is either
+    # filterable or is reported as unfilterable, so one of its results is always
+    # non-zero. A D-53 proof could be drafted and never signed, which quietly
+    # closed the route the decision exists to open.
+    #
+    # THE BAR IS THE VARIATION, NOT THE ROW COUNT. Rows that all carry the same
+    # value are what a fragment ignoring its input produces, so identical rows
+    # are refused here rather than counted - the same question D-30 asks of the
+    # negative case, put to the tracking set instead.
+    tracking = record.get("tracking") or []
+    if tracking:
+        values = [str(t.get("value")) for t in tracking]
+        if len(tracking) < 3:
+            return ("the tracking set has only %d row(s). D-53 asks for the "
+                    "answer to follow the input across SEVERAL different "
+                    "inputs; two cannot show that." % len(tracking))
+        if len(set(values)) < 2:
+            return ("every tracking row came back %s. A fragment ignoring its "
+                    "input produces exactly that, which is what tracking exists "
+                    "to rule out - vary the input until the answer moves."
+                    % values[0])
+        return None
 
     negative = phases.get("negative")
     if negative is None:

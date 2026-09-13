@@ -23,9 +23,18 @@ Neither may sign. Accepting a draft is a person typing their own name
 ## Before anything else: only attempt what is unproven
 
 ```bash
+python tools/check-signatures.py
 grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
 python brain/heron_validate.py plan
 ```
+
+**`check-signatures.py` comes first, and the grep alone is not enough.** `accept` writes the proof and
+never writes `heron-status` — so a fragment can be SIGNED and still read `DRAFT`, and the grep counts
+it as unproved. On 2026-09-13 thirteen were in that state, the oldest six days old, and the owner
+found it rather than a tool: *"becose i signed item i have to do again"*. Proving something he has
+already signed spends the one input only he can give, twice, and the remaining count never moves.
+The tool separates the two cases the grep merges — **UNUSED** (signed, nothing blocking, promote it
+now) from **STALE** (the code changed after signing, so re-proving is correct). Row 44.
 
 Picking names off a capability list, a to-do note or a conversation is how one batch came to be **15
 of 16 fragments already PROVEN** — the run reported six passes and produced nothing. `batch-prove`

@@ -62,7 +62,19 @@ contract:
       # usually means the analysis was never run. The finding somebody has to
       # act on, and the reason reporting the three figures alone would
       # mislead.
-      role: result
+      #
+      # ALL OF WHICH IS TRUE, AND STILL MAKES IT ACCOUNTING. It counts spaces
+      # this fragment COULD NOT READ, and D-52 is about exactly that: a refusal
+      # count is never evidence something was found. `accounting` does not mean
+      # unimportant - `notSpaces` beside it is equally worth acting on and has
+      # always carried it; it means the judge may not read it as work done.
+      #
+      # Measured 2026-09-13, and it was one signature away from mattering: the
+      # draft's positive case read 5 spaces and returned `heatingW 0`,
+      # `coolingW 0`, `airflowLs 0` - nothing at all - while `noLoad 5` carried
+      # it past every check and left it READY TO SIGN. Proving the fragment
+      # works needs a model whose spaces have been analysed; Snowdon's have not.
+      role: accounting
       type: IList<ElementId>
 
 proof:

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -59,6 +59,33 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,509 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values. returned findings
+    2 item(s) [19 row(s) and 1 parameter column(s) written to 'C:/Users/Ajm..., Values are
+    written as Revit DISPLAYS them - a length as mill...], rows 19. inputs came elements from
+    the selection (19); parameterNames as given (1); csvPath as given. on test projject
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). export-parameters-to-csv\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 4 different inputs:\n\n      selection \"Ducts in {3D}\" (6) -> rows 6\n    \
+    \  selection \"Walls in {3D}\" (19) -> rows 19\n      selection \"Pipes in {3D}\" (2)\
+    \ -> rows 2\n      selection \"Ducts in {3D}\" (6), parameter name the model has not got\
+    \ - still one row per ELEMENT -> rows 6\n\n    Different inputs, exact matches every time.\
+    \ A fragment falling back to the active view, the whole model, or a previous run could\
+    \ not do that."
+  second_route: the CSV files these runs wrote were read back OFF DISK and their data lines
+    counted, independently of anything the fragment reported - the file is the work, and counting
+    it does not take the fragment's word for what it did. returned ducts.csv 6 data line(s),
+    fragment said 6, none.csv 6 data line(s), fragment said 6, pipes.csv 2 data line(s), fragment
+    said 2, walls.csv 19 data line(s), fragment said 19. inputs came the four files written
+    by the runs above. on test projject (3,509 elements), Revit 2024, session 40932
+  fingerprint: 8df4c1d806624229
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

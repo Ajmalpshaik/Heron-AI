@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -109,6 +109,29 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-11'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 24688
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned allowProjectFiles false, failed
+    0 item(s), findings 1 item(s) [Upgraded 1 file(s) into the destination folder, 0 failed,
+    0 ...], maxFiles 10, skipped 0 item(s), upgraded 1 entry(ies). inputs came sourceFiles
+    as given (1); destinationFolder as given; allowProjectFiles as given; maxFiles as given.
+    on Snowdon-scratch_ajmal.al
+  negative_case: run with allowProjectFiles=False, destinationFolder=C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/famsout,
+    maxFiles=10, sourceFiles=C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/params-real.csv
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    allowProjectFiles false, failed 0 item(s), findings 1 item(s) [Upgraded 0 file(s) into
+    the destination folder, 0 failed, 1 ...], maxFiles 10, skipped 1 item(s) [C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Prog...],
+    upgraded 0 entry(ies). inputs came sourceFiles as given (1); destinationFolder as given;
+    allowProjectFiles as given; maxFiles as given. on Snowdon-scratch_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 60e936160823a299
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

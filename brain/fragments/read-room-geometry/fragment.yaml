@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -89,6 +89,32 @@ contract:
       # different answers.
       role: result
       type: bool
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,562 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run. returned area 403.000806001612, boundary
+    4 item(s) [Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line, ...],
+    height 8, heightKnown true, heightParameter Parameter, holes 0 item(s), options SpatialElementBoundaryOptions,
+    segments 1 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.Boundary...],
+    unbounded false. inputs came room as given. on test projject
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). read-room-geometry\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      room \"Room 5\" - 8800 x 6800 mm enclosed -> area\
+    \ 644.11\n      room \"Room 7\" - 7800 x 4800 mm enclosed -> area 403.00\n      room \"\
+    Room 6\" - placed in open ground, nothing enclosing it -> area 0\n\n    Different inputs,\
+    \ exact matches every time. A fragment falling back to the active view, the whole model,\
+    \ or a previous run could not do that."
+  second_route: the two enclosed rooms were built to KNOWN wall lines during this session,
+    so their areas can be computed from the geometry without asking the fragment anything
+    - 9000x7000 mm of 200 mm wall encloses 8800x6800, and 8000x5000 encloses 7800x4800. returned
+    Room 5 computed 644.112399 ft2, fragment said 644.112399, Room 7 computed 403.000806 ft2,
+    fragment said 403.000806, largest difference 0.000000000 ft2. inputs came the wall coordinates
+    used to build them. on test projject (3,562 elements), Revit 2024, session 40932
+  fingerprint: cae7b6de7203d194
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
