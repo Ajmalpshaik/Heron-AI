@@ -65,11 +65,33 @@ else
         if (titleblock == null) titleblock = ElementId.InvalidElementId;
         if (titleblock == ElementId.InvalidElementId) noTitleblock = true;
 
-        var sheet = ViewSheet.Create(doc, titleblock);
+        // REVIT THROWS HERE, IT DOES NOT RETURN NULL, so the `sheet == null`
+        // refusal below could never run. Handed the id of a family type that
+        // is not a title block it raises ArgumentException - "The ElementId
+        // titleBlockTypeId does not correspond to a TitleBlock type" - and the
+        // fragment CRASHED at exactly the point it was written to refuse.
+        // Measured 2026-09-13 on `test projject`: "A1 metric: A1 metric" made
+        // the sheet, a Detail Item family type threw. Same shape as
+        // CREATE_SCHEDULE, found the same day.
+        //
+        // Revit's own sentence is kept and passed on, because "Revit declined"
+        // does not say WHICH rule was broken and Revit's does.
+        ViewSheet sheet = null;
+        string revitSaid = null;
+        try
+        {
+            sheet = ViewSheet.Create(doc, titleblock);
+        }
+        catch (Exception failure)
+        {
+            revitSaid = failure.Message;
+        }
 
         if (sheet == null)
         {
-            refused = "Revit declined to create the sheet";
+            refused = "Revit declined to create the sheet"
+                    + (revitSaid == null ? ""
+                       : ". Revit said: " + string.Join(" ", revitSaid.Split()));
         }
         else
         {
