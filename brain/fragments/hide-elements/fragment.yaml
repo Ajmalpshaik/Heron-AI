@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -55,6 +55,37 @@ contract:
       # change it made (D-52).
       role: accounting
       type: bool
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,509 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned cannotHide 0
+    item(s), hidden 3, permanent false, viewRefused false. inputs came view as given; elements
+    from the selection (3); permanent as given. on test projject
+  negative_case: run with minMm=-2000,23000,0, maxMm=14000,32000,4000, exact=false, categories=Ducts,
+    view=HERON DUCT SCHEDULE, permanent=false instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-in-region,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned cannotHide 0 item(s), hidden 0,
+    permanent false, viewRefused true. inputs came view as given; elements from the selection
+    (3); permanent as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    `hidden` IS THE COUNT ASKED FOR, NOT A READ-BACK - `fragment.cs:56` is `hidden =
+    ids.Count;` and FRAGMENT-ISSUES row 20 says so. IT WAS THEREFORE CHECKED FROM OUTSIDE
+    rather than trusted. Measured 2026-09-13 on `test projject` with `permanent: true` applied
+    for real: select-by-category-name reported 6 ducts visible in '{3D}' before, hide-elements
+    answered hidden 3, and the same count from a separate process reported 3 after;
+    show-elements then answered shown 3 and the count returned to 6. The number is true here
+    and the fragment still does not read it back. THE LEGS ABOVE USE `permanent: false`,
+    because the view guard (CanUseTemporaryVisibilityModes) covers ONLY the temporary path -
+    with `permanent: true` the same schedule answered viewRefused false and hidden 3.
+  fingerprint: 9bbb751669eaa19a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
