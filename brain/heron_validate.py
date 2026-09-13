@@ -1149,6 +1149,32 @@ def _evidence_refusal(slug, frag, proof):
                     "an absence, and an absence cannot be signed."
                     % phase_name.replace("_", " "))
 
+    # ALREADY PROVEN, AND THE PROOF STILL DESCRIBES THE CURRENT CODE. Signing
+    # again overwrites a good proof with an identical one and buys nothing -
+    # and it is ROW 44'S COMPLAINT ARRIVING FROM THE OTHER SIDE. `accept` does
+    # not delete the draft it consumed, so a proved fragment keeps a draft file
+    # sitting in `brain/proof-drafts/` for ever, and anything that offers up
+    # "every draft on disk" offers it again.
+    #
+    # Measured 2026-09-13, by walking straight into it: an audit of all 72
+    # drafts reported 16 ready to sign, and NINE of those were already PROVEN -
+    # `audit-mep-openings`, `disallow-join`, `report-connectors` and six more.
+    # They were handed to the owner as work waiting for him. He had already
+    # done every one. The message he got back the last time he signed one of
+    # these read "Status is still DRAFT" while the file said PROVEN, so nothing
+    # on screen told him either.
+    #
+    # STALE IS THE EXCEPTION AND IT IS THE WHOLE POINT OF THE RULE. A PROVEN
+    # fragment whose code has moved under it has a proof that no longer
+    # describes what runs, and re-proving it is exactly what D-30 asks for - so
+    # that case falls through to the fingerprint check below and is allowed.
+    if frag.status in ("PROVEN", "PRODUCTION") and not frag.proof_is_stale():
+        return ("'%s' is already %s, and its recorded proof still matches the "
+                "current code. Signing it again would overwrite a good proof "
+                "with the same thing and change nothing. The draft left in "
+                "brain/proof-drafts/ is a leftover from when it WAS proved, "
+                "not work waiting to be done." % (slug, frag.status))
+
     # A DRAFT TAKEN AGAINST CODE THAT HAS SINCE CHANGED CANNOT BE USED, AND
     # SIGNING IT SPENDS THE ONE THING ONLY A PERSON CAN GIVE. `accept` writes
     # the draft's fingerprint through unchanged, so the proof lands already
