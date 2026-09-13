@@ -71,7 +71,17 @@ contract:
       # CAN MAKE REVIT PURGE AN UNUSED REVISION - one on no sheet and in no
       # cloud can vanish project-wide, and this is the only number that shows
       # it.
-      role: result
+      #
+      # ACCOUNTING, NOT A RESULT, AND THE TRIPWIRE ABOVE IS WHY RATHER THAN AN
+      # ARGUMENT AGAINST. It counts revisions the PROJECT still has - state
+      # that is there whether this fragment did anything or nothing, and it
+      # reads 2 on a run that changed two sheets and 2 on a run that changed
+      # none (measured 2026-09-13, both phases). A number that cannot tell
+      # those apart is not evidence of work, which is D-52's rule: never a
+      # thing it FOUND. What makes it useful is the COMPARISON across a call,
+      # and a reader still gets it - `accounting` is reported in full, it is
+      # only kept out of the judgement about whether the fragment did anything.
+      role: accounting
       type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
