@@ -1589,6 +1589,148 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// A colour, three numbers 0 to 255, comma separated.
+        ///
+        /// THERE IS NO NAME TO LOOK UP, and that is the whole reason this is
+        /// three numbers rather than a word. Revit stores a colour as three
+        /// bytes and calls it nothing; accepting "red" would be this file
+        /// choosing a red, and somebody else living with it on a drawing they
+        /// signed. The same argument as OnePoint's, for the same kind of value.
+        /// </summary>
+        private static object OneColour(string text, out string problem)
+        {
+            problem = null;
+
+            var parts = Parts(text);
+            if (parts.Count != 3)
+            {
+                problem = "\"" + text + "\" is not a colour. Type three numbers from 0 to "
+                        + "255, comma separated - \"255,0,0\" is red.";
+                return null;
+            }
+
+            var channels = new byte[3];
+            for (int i = 0; i < 3; i++)
+            {
+                int number;
+                if (!int.TryParse(parts[i], NumberStyles.Integer, CultureInfo.InvariantCulture,
+                                  out number) || number < 0 || number > 255)
+                {
+                    problem = "\"" + parts[i] + "\" is not a number from 0 to 255, and a "
+                            + "colour is three of them - \"255,0,0\" is red.";
+                    return null;
+                }
+                channels[i] = (byte)number;
+            }
+
+            return new Color(channels[0], channels[1], channels[2]);
+        }
+
+        /// <summary>
+        /// An `ElementId`, resolved the way everything else here is: by NAMING
+        /// the thing and taking its id.
+        ///
+        /// A CALLER DOES NOT KNOW AN ID AND SHOULD NOT HAVE TO. Revit shows a
+        /// level called "Level 1" and a title block called "A1 metric"; the
+        /// number underneath is bookkeeping that changes when the file is copied
+        /// and appears in no dialog a modeller opens. So the caller types the
+        /// name and this takes `.Id` off whatever came back.
+        ///
+        /// WHICH ALSO KEEPS THIS FILE CLEAR OF `new ElementId(int)` - the
+        /// constructor that became `long` at Revit 2024 and has no version `#if`
+        /// anywhere in this add-in (D-05). An id that is never CONSTRUCTED
+        /// cannot break on the release where constructing one changed.
+        ///
+        /// THE NEED'S NAME DECIDES THE CLASS, the same rule and the same reason
+        /// as OneElement. `levelId` and `sheetId` are both written `ElementId`
+        /// in a contract and mean completely different searches; the declared
+        /// type cannot tell them apart and the name can.
+        ///
+        /// AND A NAME THIS TABLE DOES NOT HOLD IS REFUSED, not resolved against
+        /// every element in the model. `elementIds` and `linkedElementIds` mean
+        /// *those ones there* - the same case OneElement refuses - and searching
+        /// for them by text would turn a missing rule into a confident wrong
+        /// answer. Refusing by default means the NEXT contract to declare an id
+        /// is refused rather than guessed at.
+        /// </summary>
+        private static object OneIdNamed(Document doc, string need, string text,
+                                         out string problem)
+        {
+            problem = null;
+            var name = need ?? "";
+
+            Type wanted = null;
+            string kind = null;
+
+            if (name == "levelId" || name == "baseLevelId" || name == "topLevelId")
+            {
+                wanted = typeof(Level); kind = "level";
+            }
+            else if (name == "phaseId")
+            {
+                wanted = typeof(Phase); kind = "phase";
+            }
+            else if (name == "phaseFilterId")
+            {
+                wanted = typeof(PhaseFilter); kind = "phase filter";
+            }
+            else if (name == "sheetId")
+            {
+                wanted = typeof(ViewSheet); kind = "sheet";
+            }
+            else if (name == "planViewId" || name == "scopeViewId"
+                     || name == "targetViewId" || name == "templateId")
+            {
+                wanted = typeof(View); kind = "view";
+            }
+            else if (name == "viewFamilyTypeId")
+            {
+                wanted = typeof(ViewFamilyType); kind = "view family type";
+            }
+            else if (name == "revisionId" || name == "revisionIds")
+            {
+                wanted = typeof(Revision); kind = "revision";
+            }
+            else if (name == "textTypeId")
+            {
+                wanted = typeof(TextNoteType); kind = "text type";
+            }
+            else if (name == "titleblockTypeId" || name == "tagTypeId"
+                     || name == "tagTypeHintId" || name == "capTypeId")
+            {
+                wanted = typeof(FamilySymbol); kind = "family type";
+            }
+            else if (name == "newTypeId" || name == "insulationTypeId")
+            {
+                wanted = typeof(ElementType); kind = "element type";
+            }
+
+            if (wanted != null)
+            {
+                var found = OneOfClass(doc, wanted, kind, text, out problem) as Element;
+                return found == null ? null : found.Id;
+            }
+
+            // A CATEGORY IS NOT AN ELEMENT and has its own lookup, which already
+            // handles both the Visibility/Graphics spelling and the API one.
+            if (name == "categoryId" || name == "categoryIds")
+            {
+                var single = OneCategory(doc, text);
+                if (single != null) return single.Id;
+                problem = "No category called \"" + text + "\" in " + doc.Title + ".";
+                return null;
+            }
+
+            problem = "'" + need + "' is an id, and Heron resolves one by NAMING the thing "
+                    + "it belongs to - a level, a sheet, a view, a type. There is no rule "
+                    + "for this name yet, so it refuses rather than searching every element "
+                    + "in " + doc.Title + " and binding whatever happened to match \""
+                    + text + "\". If it means one particular element, SELECT IT IN REVIT "
+                    + "and the contract should ask for the element rather than its id.";
+            return null;
+        }
+
+        /// <summary>
         /// Does this need-name mean a TYPE to build with, rather than one
         /// particular element in the model?
         ///
@@ -1839,6 +1981,126 @@ namespace Heron.Revit.Addin
                 return OneOfClass(doc, typeof(Phase), "phase", text, out problem);
             if (wanted == "FilterElement")
                 return OneOfClass(doc, typeof(FilterElement), "view filter", text, out problem);
+
+            // THE MEP TYPE CLASSES. Six rows, and every one of them was already
+            // reachable - `DuctType`, `PipeType` and `FlexDuctType` all derive
+            // from `MEPCurveType`, which this file has accepted since 2026-09-09.
+            // Only the STRING MATCH stood in the way: the dispatch compares the
+            // name a contract declared, so a contract saying `DuctType` fell
+            // through to the refusal while the identical object arrived happily
+            // under `MEPCurveType`. Found 2026-09-13, on `create-duct`'s first
+            // call, and it is FRAGMENT-ISSUES row 28's cheapest half.
+            //
+            // Fully qualified rather than imported. `Mechanical`, `Plumbing` and
+            // `Architecture` each carry names that collide with `DB` on some
+            // release - `Space`, `Opening` - and this file compiles on eight.
+            if (wanted == "DuctType")
+                return OneOfClass(doc, typeof(Autodesk.Revit.DB.Mechanical.DuctType),
+                                  "duct type", text, out problem);
+            if (wanted == "FlexDuctType")
+                return OneOfClass(doc, typeof(Autodesk.Revit.DB.Mechanical.FlexDuctType),
+                                  "flexible duct type", text, out problem);
+            if (wanted == "MechanicalSystemType")
+                return OneOfClass(doc, typeof(Autodesk.Revit.DB.Mechanical.MechanicalSystemType),
+                                  "duct system type", text, out problem);
+            if (wanted == "PipeType")
+                return OneOfClass(doc, typeof(Autodesk.Revit.DB.Plumbing.PipeType),
+                                  "pipe type", text, out problem);
+            if (wanted == "PipingSystemType")
+                return OneOfClass(doc, typeof(Autodesk.Revit.DB.Plumbing.PipingSystemType),
+                                  "pipe system type", text, out problem);
+            if (wanted == "MEPSystemType")
+                return OneOfClass(doc, typeof(MEPSystemType),
+                                  "duct or pipe system type", text, out problem);
+
+            // A 3D VIEW BY NAME. Narrower than `View` on purpose: the three
+            // fragments that ask for one cast a ray through it, and a floor plan
+            // handed to `ReferenceIntersector` is a run that cannot work.
+            if (wanted == "View3D")
+                return OneOfClass(doc, typeof(View3D), "3D view", text, out problem);
+
+            if (wanted == "Material")
+                return OneOfClass(doc, typeof(Material), "material", text, out problem);
+
+            if (wanted == "RevitLinkInstance")
+                return OneOfClass(doc, typeof(RevitLinkInstance), "linked model",
+                                  text, out problem);
+
+            // A ROOM OR A SPACE BY NAME, AND THIS ONE IS NOT THE INSTANCE TRAP.
+            // `Element.Name` on an ordinary instance returns its TYPE's name,
+            // which is why OneElement refuses instances outright. A Room's Name
+            // is its own Name PARAMETER - "Office 101", typed by whoever laid
+            // the room out - so it names one room and not a thousand.
+            if (wanted == "SpatialElement")
+                return OneOfClass(doc, typeof(SpatialElement), "room or space",
+                                  text, out problem);
+
+            // AN ENUM THE CALLER TYPES BY NAME. Only this one: its three values
+            // have not moved 2020 to 2027. IFCVersion is deliberately NOT here -
+            // its members differ per release, and a name that resolves on 2024
+            // and refuses on 2021 is worse than a refusal on both.
+            if (wanted == "ViewDuplicateOption")
+            {
+                foreach (ViewDuplicateOption option in
+                         Enum.GetValues(typeof(ViewDuplicateOption)))
+                {
+                    if (string.Equals(option.ToString(), text,
+                                      StringComparison.OrdinalIgnoreCase))
+                        return option;
+                }
+                problem = "\"" + text + "\" is not one of Revit's duplicate options. "
+                        + "Type Duplicate, WithDetailing or AsDependent.";
+                return null;
+            }
+
+            // A COLOUR, THREE NUMBERS 0-255. The same shape as a point and for
+            // the same reason - there is no name to look up, and "red" is a
+            // preference rather than a value.
+            if (wanted == "Color")
+                return OneColour(text, out problem);
+
+            // AN ID IS THE THING, NOT A NUMBER. See OneIdNamed.
+            if (wanted == "ElementId")
+                return OneIdNamed(doc, need, text, out problem);
+
+            if (wanted == "IList<ElementId>" || wanted == "List<ElementId>"
+                || wanted == "ICollection<ElementId>" || wanted == "IEnumerable<ElementId>")
+            {
+                var ids = new List<ElementId>();
+                foreach (var part in Parts(text))
+                {
+                    var one = OneIdNamed(doc, need, part, out problem) as ElementId;
+                    if (one == null) return null;
+                    ids.Add(one);
+                }
+                if (ids.Count == 0)
+                {
+                    problem = "Nothing was named. Separate several with commas.";
+                    return null;
+                }
+                return ids;
+            }
+
+            if (wanted == "IList<Color>" || wanted == "List<Color>")
+            {
+                var colours = new List<Color>();
+                foreach (var piece in (text ?? "").Split(';'))
+                {
+                    var trimmed = piece.Trim();
+                    if (trimmed.Length == 0) continue;
+                    var one = OneColour(trimmed, out problem) as Color;
+                    if (one == null) return null;
+                    colours.Add(one);
+                }
+                if (colours.Count == 0)
+                {
+                    problem = "No colours were given. Separate them with semicolons and "
+                            + "their three 0-255 components with commas - "
+                            + "\"255,0,0; 0,0,255\".";
+                    return null;
+                }
+                return colours;
+            }
 
             if (wanted == "Category")
             {

@@ -105,6 +105,15 @@ Three things the shape of the file is doing:
 - **`setup:` is re-run before each phase, in order.** A rolled-back write clears the Revit selection,
   so the arrangement has to be re-made rather than made once. Only the first step resets the chain —
   step two consumes what step one left.
+- **A need that can ONLY come from the chain wants `--keep-chain`, and without it the setup's work is
+  thrown away.** The fragment under test resets the chain by default, *after* the setup steps filled
+  it — so `group-and-count` asking for `values` was told *"no earlier fragment in this session left a
+  value of that name"* while `read-element-parameters`, one step earlier in the same run, had just
+  produced 25 of them. **Selection-shaped needs do not show this**, because `set-selection` writes
+  Revit's own selection and a chain reset cannot touch that; every proof that chains
+  `select-in-region → set-selection` works without the flag and hides the problem. With it:
+  `values from read-element-parameters (25)`. The flag is deliberately opt-in — see `cmd_validate`
+  and defect row 11 — because a kept chain outranks the selection.
 - **A job with no `negative-set:` or `negative-in:` is refused.** Without one, `validate` stops and
   waits for somebody at the keyboard, which in a batch is a hang. It is also the leg D-30 exists for.
 

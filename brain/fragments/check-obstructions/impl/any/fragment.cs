@@ -24,6 +24,13 @@
 // tested is not a clear point, and adding it to `clear` would be the most
 // expensive kind of wrong answer this fragment could give.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+maxDistance = maxDistance / MillimetresPerFoot;
+
 var blocked = new List<XYZ>();
 var clear = new List<XYZ>();
 var notChecked = 0;

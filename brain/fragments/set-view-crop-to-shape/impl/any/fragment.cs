@@ -16,6 +16,13 @@
 // A CROP THAT IS OFF LOOKS EXACTLY LIKE A CROP THAT DID NOT APPLY. Both the
 // crop and its visibility are switched on here.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+joinTolerance = joinTolerance / MillimetresPerFoot;
+
 var applied = false;
 var worstGap = 0.0;
 var refused = new List<string>();

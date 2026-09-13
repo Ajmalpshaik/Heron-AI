@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -65,6 +65,32 @@ contract:
       role: accounting
       type: int
 
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,476 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run. returned MillimetresPerFoot 304.8, blocked
+    1 item(s) [(13.123359580, 9.842519685, 4.921259843)], clear 0 item(s), maxDistance 19.6850393700787,
+    notChecked 0. inputs came view3d as given; points as given (1); direction as given; maxDistance
+    as given. on test projject
+  negative_case: run with view3d=HERON NO WALLS, points=4000,3000,1500, direction=1,0,0, maxDistance=6000
+    instead - chosen because it should not contain what this fragment reports. returned MillimetresPerFoot
+    304.8, blocked 0 item(s), clear 1 item(s) [(13.123359580, 9.842519685, 4.921259843)],
+    maxDistance 19.6850393700787, notChecked 0. inputs came view3d as given; points as given
+    (1); direction as given; maxDistance as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE NEGATIVE HERE IS NOT A FAULT AND MUST NOT BE READ AS ONE. Both legs used the SAME
+    point, the SAME direction and the SAME distance in the SAME model; the only difference is
+    that Walls are switched off in Visibility/Graphics in 'HERON NO WALLS'. blocked 1 became
+    clear 1. That is ReferenceIntersector doing exactly what it documents - it sees what the
+    view sees - and it is the case tests/cases.yaml calls "the fragment behaving correctly
+    while giving a dangerous answer". A clearance check run in a view with a category hidden
+    reports clear and is not lying. WHAT THIS PROOF DOES NOT ESTABLISH is that any caller
+    checks the view first, and nothing in this fragment does it for them.
+  fingerprint: dce0b27fd642fd88
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

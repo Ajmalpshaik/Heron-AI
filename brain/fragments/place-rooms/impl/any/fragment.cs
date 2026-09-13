@@ -98,6 +98,18 @@ else
     }
     else if (placed != null)
     {
+        // A ROOM HAS NO AREA UNTIL REVIT WORKS ONE OUT, and it does that on
+        // regeneration rather than on creation. Reading ROOM_AREA in the same
+        // breath as NewRooms2 therefore returns 0 for every room just placed -
+        // including the ones sitting correctly inside four walls - and 0 is
+        // precisely the test below for "Not Enclosed". So a healthy run reported
+        // every room it made as unbounded, which is the opposite of the truth.
+        //
+        // MEASURED 2026-09-13 on `test projject`: a 7200 x 5200 x 3000 box built
+        // on Level 2, read back and confirmed at Z 4000 to 7000, gave
+        // `created 1, unbounded 1`.
+        doc.Regenerate();
+
         foreach (var id in placed)
         {
             if (id == null || id == ElementId.InvalidElementId) continue;

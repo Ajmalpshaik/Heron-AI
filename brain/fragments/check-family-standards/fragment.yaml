@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -72,6 +72,27 @@ contract:
       role: accounting
       type: int
       
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,501 elements), Revit 2024, session 40932
+  positive_case: 'run as it would normally be run. returned countByType 1 entry(ies), findings
+    185 item(s) [184 family type(s) off standard, 0 not checked for connector..., M_Section
+    Head - Filled : M_Section Head - Filled  (0 placed..., M_Callout Head : Metric Callout  (0
+    placed)  - name does not..., ...], mustHaveConnectors false, notChecked 0, offStandard
+    184, sampleByType 1 entry(ies), systemFamilies 0. inputs came namePattern as given; requiredParameters
+    as given (0); mustHaveConnectors as given. on test projject'
+  negative_case: run with namePattern=, requiredParameters=, mustHaveConnectors=false instead
+    - chosen because it should not contain what this fragment reports. returned countByType
+    1 entry(ies), findings 1 item(s) [0 family type(s) off standard, 0 not checked for connectors....],
+    mustHaveConnectors false, notChecked 0, offStandard 0, sampleByType 1 entry(ies), systemFamilies
+    0. inputs came namePattern as given; requiredParameters as given (0); mustHaveConnectors
+    as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5ae709e8b93bb5d6
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

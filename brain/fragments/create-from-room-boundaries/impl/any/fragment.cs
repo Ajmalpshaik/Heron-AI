@@ -20,6 +20,13 @@
 // compiling on the other half of the range, so both are found at run time -
 // and a release with no ceiling call says so rather than failing to build.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+heightAboveLevel = heightAboveLevel / MillimetresPerFoot;
+
 var created = new Dictionary<ElementId, ElementId>();
 var withHoles = new List<ElementId>();
 var unenclosed = new List<ElementId>();

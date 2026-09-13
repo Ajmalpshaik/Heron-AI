@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -65,26 +65,35 @@ contract:
 proof:
   date: '2026-09-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 47740
+  model: test projject (3,509 elements), Revit 2024, session 40932
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned blocked 0 item(s),
-    notPointBased 0 item(s), snapped 70, spacingX 600, spacingY 600, tolerance 0.00328083989501312.
-    inputs came elements from set-selection (70); anchor as given; spacingX as given; spacingY
-    as given. on Snowdon-scratch_ajmal.al
-  negative_case: 'run with anchor=0, 0, 0, categoryName=Ducts, inViewOnly=FloorPlan: L2, spacingX=600,
-    spacingY=600 instead - chosen because it should not contain what this fragment reports
-    - the arrangement was re-made first by running select-by-category-name, set-selection
-    with this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned blocked 0 item(s), notPointBased 191 item(s) [1365662,
-    1365687, 1379374, ...], snapped 0, spacingX 600, spacingY 600, tolerance 0.00328083989501312.
-    inputs came elements from set-selection (191); anchor as given; spacingX as given; spacingY
-    as given. on Snowdon-scratch_ajmal.al'
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, blocked 0 item(s), notPointBased 0 item(s), snapped 2, spacingX 1.96850393700787,
+    spacingY 1.96850393700787, tolerance 0.00328083989501312. inputs came elements from the
+    selection (2); anchor as given; spacingX as given; spacingY as given. on test projject
+  negative_case: run with minMm=-2000,23000,0, maxMm=14000,32000,4000, exact=false, categories=Ducts,
+    anchor=0,0,0, spacingX=600, spacingY=600 instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-in-region,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, blocked
+    0 item(s), notPointBased 3 item(s) [925780, 925782, 925784], snapped 0, spacingX 1.96850393700787,
+    spacingY 1.96850393700787, tolerance 0.00328083989501312. inputs came elements from the
+    selection (3); anchor as given; spacingX as given; spacingY as given. on test projject
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: e920bd7e1660c8af
-
+  caveat: >-
+    THIS CLOSES FRAGMENT-ISSUES ROW 22, and the units were MEASURED rather than assumed. Row 22
+    found that spacingX and spacingY were used as internal FEET, so a 600 mm ceiling grid
+    became a 183 METRE one and the fragment reported success. D-71 fixed it. To check the fix
+    rather than trust it, the snap was APPLIED for real: two enclosed rooms snapped to a 600
+    grid, then select-unenclosed-rooms was run from a separate process and still named exactly
+    the two rooms placed in open ground. A 600-FOOT grid would have thrown both enclosed rooms
+    about 183 m from their walls and made them unenclosed. They were not. THE POSITIVE USES
+    ROOMS because this fragment is point-based: the ducts in the negative are curve-based and
+    come back in notPointBased, which is the honest refusal and not a failure.
+  fingerprint: ad9dcc87cce891e6
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

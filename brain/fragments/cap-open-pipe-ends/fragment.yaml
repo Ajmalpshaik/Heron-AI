@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -92,6 +92,31 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,507 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyClosed
+    0 item(s), capped 2 item(s) [926204, 926207], endsCapped 4, findings 1 item(s) [Capped
+    4 end(s) on 2 pipe(s). The number that matters is end...], notPipes 0 item(s), openEndsOf
+    Func`2, stillOpen 0 item(s). inputs came elements from the selection (2); capTypeId as
+    given. on test projject
+  negative_case: 'run with minMm=-1000,-1000,-1000, maxMm=9000,7000,3900, exact=false, categories=Walls,
+    capTypeId=M_Cap - Generic: Standard instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-in-region,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyClosed 0 item(s), capped
+    0 item(s), endsCapped 0, findings 2 item(s) [Capped 0 end(s) on 0 pipe(s). The number
+    that matters is end..., 4 element(s) in the set are not pipes and were not touched. ...],
+    notPipes 4 item(s) [925629, 925630, 925631, ...], openEndsOf Func`2, stillOpen 0 item(s).
+    inputs came elements from the selection (4); capTypeId as given. on test projject'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 22c826b87e0c60f8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

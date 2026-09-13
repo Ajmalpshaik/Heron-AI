@@ -135,23 +135,42 @@ def test_receivable_agrees_with_the_add_in():
 def test_the_shapes_d54_refuses_are_refused_here():
     print("The shapes D-54 refuses are marked, not emitted")
 
-    # The five named in FRAGMENT-ISSUES section 6, plus the collection forms
-    # that reach the same refusal by a different route.
+    # SIX NAMES LEFT THIS LIST ON 2026-09-13, and the list is shorter on
+    # purpose rather than by neglect. `ElementId` and its collection forms,
+    # `View3D`, `Color` and `Material` are all RECEIVABLE now - an id is
+    # resolved by NAMING the thing it belongs to and taking its `.Id`, which is
+    # also why the add-in never constructs one and so never meets the 2024 type
+    # change that was this row's whole reason. FRAGMENT-ISSUES row 28.
+    #
+    # They are asserted in the direction they moved, just below, rather than
+    # quietly dropped - a shorter list is how a claim disappears unnoticed.
     for kind in ("IList<IList<XYZ>>",
-                 "ElementId", "IList<ElementId>", "ICollection<ElementId>",
                  "IDictionary<ElementId, string>",
                  "IList<Element>",
                  "OverrideGraphicSettings",
-                 "View3D", "Color", "Material", "ForgeTypeId"):
+                 "ForgeTypeId", "ParameterValue", "IList<Reference>",
+                 "IFCVersion", "FamilyInstance"):
         ok, why = GJ.receivable(kind)
         check(not ok and why, "%s is refused, with a reason" % kind)
+
+    # AND THE SIX THAT MOVED. This half fails if somebody takes them back out.
+    for kind in ("ElementId", "IList<ElementId>", "ICollection<ElementId>",
+                 "View3D", "Color", "Material"):
+        ok, _ = GJ.receivable(kind)
+        check(ok, "%s can be typed in - it could not before 2026-09-13" % kind)
 
     # And the reason is the ONE Revit gives, not a restatement of the type name.
     # A reader learning that a point waits on a UNITS decision and an id on a
     # 2024 TYPE CHANGE has learned two different problems with two different
     # fixes; "unsupported" twice teaches neither.
-    _, ident = GJ.receivable("ElementId")
-    check("2024" in ident, "an id says which change it waits on")
+    # THIS USED TO ASK AN ID WHICH CHANGE IT WAS WAITING ON, and an id waits on
+    # nothing now. A dictionary took its place because it is the clearest
+    # surviving case of a reason that teaches something: the blank holds one
+    # value and a pair needs two, which is a different problem from "not
+    # supported" and has a different fix.
+    _, mapping = GJ.receivable("IDictionary<ElementId, string>")
+    check("pairs" in mapping,
+          "a dictionary says it is the PAIR that cannot be typed: %r" % mapping)
 
     _, nested = GJ.receivable("IList<IList<XYZ>>")
     check("nests them" in nested,

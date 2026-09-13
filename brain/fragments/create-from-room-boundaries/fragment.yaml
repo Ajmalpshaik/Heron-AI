@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -81,6 +81,31 @@ contract:
       role: accounting
       type: IList<string>
 
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,509 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, ceilingCreate RuntimeMethodInfo, created 1 entry(ies), floorNewStyle RuntimeMethodInfo,
+    floorOldStyle (null), heightAboveLevel 8.85826771653543, refused 0 item(s), unenclosed
+    0 item(s), wantCeiling true, wantFloor false, withHoles 0 item(s). inputs came elements
+    from the selection (1); hostType as given; heightAboveLevel as given. on test projject
+  negative_case: 'run with minMm=-1000,-1000,-1000, maxMm=9000,7000,3900, exact=false, categories=Walls,
+    hostType=Compound Ceiling: 600 x 600mm Grid, heightAboveLevel=2700 instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, ceilingCreate RuntimeMethodInfo, created 0 entry(ies), floorNewStyle RuntimeMethodInfo,
+    floorOldStyle (null), heightAboveLevel 8.85826771653543, refused 4 item(s) [Not a room
+    or space: 925629, Not a room or space: 925630, Not a room or space: 925631, ...], unenclosed
+    0 item(s), wantCeiling true, wantFloor false, withHoles 0 item(s). inputs came elements
+    from the selection (4); hostType as given; heightAboveLevel as given. on test projject'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2c42231efda786a5
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

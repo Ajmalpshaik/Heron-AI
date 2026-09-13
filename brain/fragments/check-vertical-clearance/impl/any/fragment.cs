@@ -17,6 +17,13 @@
 // the box is the whole rise, so the gap comes out smaller than the truth. It
 // over-reports and never misses, and those runs are COUNTED so that is visible.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+requiredGap = requiredGap / MillimetresPerFoot;
+
 var findings = new List<string>();
 var tooClose = 0;
 var clashing = 0;

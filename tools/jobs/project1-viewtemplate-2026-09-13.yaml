@@ -1,0 +1,47 @@
+# create-view-template-from-view, on the active model. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/project1-viewtemplate-2026-09-13.yaml
+#
+# WHY THIS ONE NOW. A SHEET IS A GENUINE REFUSER HERE, unlike for the three in
+# FRAGMENT-ISSUES row 24. A crop box and a temporary-hide mode are things Revit
+# lets a sheet accept meaninglessly; a VIEW TEMPLATE is not - there is no such
+# thing as a template made from a sheet, and the fragment declares `refused`
+# for exactly that.
+#
+# It passed once already, on 2026-09-13 against Snowdon with "Cover Sheet" as
+# the negative, but was never signed. Ajmal has since made sheet A101 in this
+# model, so the same shape can be re-taken here against the model he is
+# actually working in.
+#
+# MEASURED, 2026-09-13: 4 FloorPlan views, 1 sheet (A101 "Unnamed", 0 views),
+# 1 Legend, 1 Section, 2 ThreeD, 2 CeilingPlan.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  in: Project1 work_ajmal.al
+
+  # risk: MODIFY - a template is a real element. Nothing is kept: validate
+  # never sends `apply`.
+  write: true
+
+jobs:
+  - fragment: create-view-template-from-view
+    # ZERO SETUP. All three needs are source: request.
+    set:
+      sourceView: "1 - Mech"
+      newTemplateName: HERON_TEST_TEMPLATE
+      # FALSE, deliberately. Applying it to the source is a second change and
+      # `appliedToSource` is its own result; leaving it off keeps this leg
+      # about MAKING the template.
+      applyToSource: "false"
+    negative-set:
+      # THE SHEET. A real view that resolves by name and cannot be the source
+      # of a view template - so `refused` accounts for it while templateId,
+      # templateName and appliedToSource all stay empty.
+      sourceView: "Unnamed"
+      newTemplateName: HERON_TEST_TEMPLATE
+      applyToSource: "false"
+    note: >
+      templateId, templateName and appliedToSource are all role: result -
+      refused is accounting under D-52. All three must be empty in the negative.

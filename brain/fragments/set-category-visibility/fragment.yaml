@@ -43,6 +43,15 @@ contract:
     - name: changed
       role: result
       type: int
+    - name: alreadyThatWay
+      # Categories that were ALREADY the way they were asked to be. Never a
+      # thing this call did, so it must not count toward "did this come back
+      # empty" (D-52) - but it is the difference between "your instruction did
+      # nothing because it was already done" and "your instruction did nothing
+      # and something is wrong", and a caller needs to tell those apart.
+      # Added 2026-09-13, with the read-back that makes it measurable.
+      role: accounting
+      type: int
     - name: notControllable
       # Categories this view will not let be switched. The evidence it looked
       # and could not, never a thing it did (D-52).

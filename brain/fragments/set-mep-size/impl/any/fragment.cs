@@ -39,6 +39,15 @@
 // is a normal thing to be handed, so those are named separately from a genuine
 // refusal.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+width = width / MillimetresPerFoot;
+height = height / MillimetresPerFoot;
+diameter = diameter / MillimetresPerFoot;
+
 var sized = 0;
 var snapped = new List<ElementId>();
 var notApplicable = new List<ElementId>();

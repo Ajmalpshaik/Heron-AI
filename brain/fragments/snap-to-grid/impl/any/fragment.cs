@@ -17,6 +17,14 @@
 // returns normally and moves nothing for a member of a group. Here the check is
 // cheap - these are point-based elements, so the position is one read.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+spacingX = spacingX / MillimetresPerFoot;
+spacingY = spacingY / MillimetresPerFoot;
+
 var snapped = 0;
 var notPointBased = new List<ElementId>();
 var blocked = new List<ElementId>();

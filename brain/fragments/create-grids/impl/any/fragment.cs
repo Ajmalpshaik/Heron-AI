@@ -16,6 +16,14 @@
 // created, carrying Revit's own name, rather than the whole run being lost to
 // one collision in the middle of somebody's setting-out.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+spacingsAcross = spacingsAcross.Select(v => v / MillimetresPerFoot).ToList();
+spacingsUp = spacingsUp.Select(v => v / MillimetresPerFoot).ToList();
+
 var created = new List<Element>();
 var namedAs = new List<string>();
 var refused = new List<string>();

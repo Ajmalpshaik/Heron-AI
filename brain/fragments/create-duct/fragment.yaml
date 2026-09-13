@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -68,6 +68,25 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,432 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created 3 item(s) [Duct, Duct,
+    Duct], refused 0, shortest 0.00256026455729167, tooShort 0. inputs came systemType as
+    given; ductType as given; level as given; points as given (4). on test projject
+  negative_case: 'run with systemType=Supply Air, ductType=Rectangular Duct: Radius Elbows
+    / Taps, level=Level 1, points=0,40000,2500; 0,40000,2500 instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created 0 item(s), refused 0, shortest
+    0.00256026455729167, tooShort 1. inputs came systemType as given; ductType as given; level
+    as given; points as given (2). on test projject'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b0096be3562f5b21
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

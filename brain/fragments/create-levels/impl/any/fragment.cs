@@ -25,6 +25,13 @@
 // every view range and every "which level is this on" answer ambiguous. It is
 // also exactly the shape a RE-RUN of this job takes if nothing guards it.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+elevations = elevations.Select(v => v / MillimetresPerFoot).ToList();
+
 var created = new List<ElementId>();
 var namedAs = new Dictionary<ElementId, string>();
 var elevationOf = new Dictionary<ElementId, double>();

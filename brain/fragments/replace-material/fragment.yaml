@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,7 +74,16 @@ contract:
       # because editing a type changes every instance of it in the project.
       # The reach of the change, which is Revit working correctly and still
       # surprises people.
-      role: result
+      #
+      # ACCOUNTING, NOT RESULT, corrected 2026-09-13. It is the REACH of the
+      # call, not its work: a type appears here when it was examined, whether
+      # or not anything in it changed. Proving the fragment showed why - asked
+      # to replace a material that nothing uses, it answered layersChanged 0,
+      # parametersChanged 0 and typesTouched 1, and the gate read that 1 as the
+      # negative case returning content. The work is layersChanged and
+      # parametersChanged; this is the hazard warning beside them and is worth
+      # keeping for exactly that.
+      role: accounting
       type: IList<ElementId>
     - name: skippedInGroup
       # What it passed over. The evidence it looked, never a thing it
@@ -84,6 +93,48 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,509 elements), Revit 2024, session 40932
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyDone
+    Func`2, dataTypeMethod RuntimeMethodInfo, definitionType RuntimeType, findings 3 item(s)
+    [''Exterior - Brick on Mtl. Stud'': 1 layer(s) changed, 1 now c..., ''Brick, Common''
+    replaced by ''HERON MAT A'': 1 layer(s) and 0 ..., 1 TYPE(s) were edited, which changes
+    EVERY element of those ...], holdsAMaterial Func`2, layersChanged 1, parameterTypeProperty
+    (null), parametersChanged 0, refusals 0, skipFamilies 3 item(s) [Curtain Wall, Sloped
+    Glazing, Basic Ceiling], skippedInGroup 0 item(s), typesTouched 1 item(s) [397]. inputs
+    came elements from the selection (4); findMaterial as given; replaceMaterial as given.
+    on test projject'
+  negative_case: 'run with minMm=-1000,-1000,-1000, maxMm=9000,7000,3900, exact=false, categories=Walls,
+    findMaterial=HERON MAT B, replaceMaterial=HERON MAT A instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyDone
+    Func`2, dataTypeMethod RuntimeMethodInfo, definitionType RuntimeType, findings 2 item(s)
+    [''HERON MAT B'' replaced by ''HERON MAT A'': 0 layer(s) and 0 pa..., 1 TYPE(s) were edited,
+    which changes EVERY element of those ...], holdsAMaterial Func`2, layersChanged 0, parameterTypeProperty
+    (null), parametersChanged 0, refusals 0, skipFamilies 3 item(s) [Curtain Wall, Sloped
+    Glazing, Basic Ceiling], skippedInGroup 0 item(s), typesTouched 1 item(s) [397]. inputs
+    came elements from the selection (4); findMaterial as given; replaceMaterial as given.
+    on test projject'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE FIRST ARRANGEMENT CAME BACK EMPTY ON BOTH LEGS and the reason is worth carrying. Asked
+    to replace 'Default Wall' on four 'Generic - 200mm' walls it answered layersChanged 0 -
+    even though select-by-material reports those same nine walls as USING 'Default Wall'. The
+    two fragments are asking different questions: select-by-material matches the material a
+    wall resolves to, while this one edits the TYPE's CompoundStructure layers, and a Generic
+    wall's layer carries no named material to find. change-element-type moved the four to
+    'Exterior - Brick on Mtl. Stud', whose layers do name materials, and the same call then
+    answered layersChanged 1. A material a fragment can SEE is not necessarily one it can
+    REPLACE.
+  fingerprint: 6976ac836ad90050
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

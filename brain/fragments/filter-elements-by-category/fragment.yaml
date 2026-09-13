@@ -3,7 +3,7 @@
 # one home and this repository has been bitten by the alternative.
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 7
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -56,6 +56,28 @@ contract:
 # An explicit list, never a range. ">=2020" would claim 2028 and every release
 # after it, which is exactly what D-05 forbids - an unlisted release is an
 # error, never a guess.
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,432 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values. returned category BuiltInCategory,
+    elements 9 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], levelOf Func`2,
+    levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM,
+    ...], matching 9 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], unresolvedLevel
+    0. inputs came category as given; levelId as given. on test projject
+  negative_case: run with minMm=-1000,-1000,-1000, maxMm=9000,7000,4000, exact=false, categories=Walls,
+    category=Walls, levelId=Level 2 instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running select-in-region, set-selection
+    with this phase's own values. returned category BuiltInCategory, elements 0 item(s), levelOf
+    Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM,
+    ...], matching 9 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], unresolvedLevel
+    0. inputs came category as given; levelId as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: daa3a5fa00964859
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

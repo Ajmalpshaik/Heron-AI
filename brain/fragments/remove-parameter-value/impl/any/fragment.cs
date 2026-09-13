@@ -69,7 +69,39 @@ foreach (var element in elements)
     }
     catch (Exception ex)
     {
-        refused.Add(string.Format("{0} (id {1}): {2}", element.Name, element.Id, ex.Message));
+        // REVIT REFUSES ClearValue ON A PLAIN TEXT BUILT-IN, and the header at
+        // the top of this file assumed it "works on all four". It does not.
+        // Measured 2026-09-13 on `test projject`: Comments written to four
+        // walls and then cleared, every one refused with "Cannot call
+        // Clear...". That is the commonest field anybody wants emptied, so the
+        // fragment's main path failed on its main case.
+        //
+        // FOR A STRING PARAMETER THE EMPTY STRING IS THE EMPTY STATE - this
+        // file says exactly that five lines above - so that is the fallback,
+        // and it is read back rather than assumed.
+        //
+        // ONLY FOR String. A length, an airflow or one pointing at another
+        // element still refuses rather than being set to zero, because "an
+        // empty parameter and a zero are not the same thing" is the whole
+        // reason this fragment exists and a fallback must not quietly break it.
+        var handled = false;
+
+        if (parameter.StorageType == StorageType.String)
+        {
+            try
+            {
+                parameter.Set(string.Empty);
+                if (!parameter.HasValue || string.IsNullOrEmpty(parameter.AsString()))
+                {
+                    cleared++;
+                    handled = true;
+                }
+            }
+            catch { }
+        }
+
+        if (!handled)
+            refused.Add(string.Format("{0} (id {1}): {2}", element.Name, element.Id, ex.Message));
     }
 }
 

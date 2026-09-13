@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -67,6 +67,34 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,432 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run. returned elements 9 item(s) [Generic - 200mm,
+    Generic - 200mm, Generic - 200mm, ...], findings 1 item(s) [9 of 9 scanned element(s)
+    use 'Default Wall', within 1 categ...], includePaint false, scanned 9, wanted Default
+    Wall. inputs came materialName as given; includePaint as given; categories as given (1).
+    on test projject
+  negative_case: run with materialName=Brick, Common, includePaint=false, categories=Walls
+    instead - chosen because it should not contain what this fragment reports. returned elements
+    0 item(s), findings 1 item(s) [0 of 9 scanned element(s) use 'Brick, Common', within 1
+    cate...], includePaint false, scanned 9, wanted Brick, Common. inputs came materialName
+    as given; includePaint as given; categories as given (1). on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE LEG ITS OWN TEST FILE CALLS "THE FIRST CASE TO RUN" WAS NOT RUN. tests/cases.yaml asks
+    for a wall PAINTED with a material it is not made of, read once with includePaint false and
+    once true, and expects it absent from the first answer and present in the second - because
+    if both answers match then "what is this made of" has quietly become "what has this
+    material touched". includePaint was FALSE in both legs here and nothing in `test projject`
+    is painted, so that distinction is untested. What IS proved is the material match itself,
+    and the same nine walls were scanned both times: 9 of 9 use 'Default Wall', 0 of 9 use
+    'Brick, Common' - a material that exists in the model and is on nothing.
+  fingerprint: c3e971010738026c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

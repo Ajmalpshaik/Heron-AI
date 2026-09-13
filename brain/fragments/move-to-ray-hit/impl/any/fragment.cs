@@ -38,6 +38,14 @@
 // snapped to. That is what `offsetAlongRay` is for - negative pulls it back
 // along the ray. Check ONE element by eye before running a batch.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+maxDistance = maxDistance / MillimetresPerFoot;
+offsetAlongRay = offsetAlongRay / MillimetresPerFoot;
+
 var snapped = 0;
 var noHit = new List<ElementId>();
 var notPointBased = new List<ElementId>();

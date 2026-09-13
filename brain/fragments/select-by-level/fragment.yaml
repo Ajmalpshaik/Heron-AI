@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,33 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,432 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run. returned elements 9 item(s) [Generic - 200mm,
+    Generic - 200mm, Generic - 200mm, ...], findings 1 item(s) [9 of 9 scanned element(s)
+    are on level 'Level 1', within 1 c...], level Level, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
+    SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], unresolvedLevel 0. inputs came levelId as given;
+    categories as given (1). on test projject
+  negative_case: run with levelId=Level 2, categories=Walls instead - chosen because it should
+    not contain what this fragment reports. returned elements 0 item(s), findings 1 item(s)
+    [0 of 9 scanned element(s) are on level 'Level 2', within 1 c...], level Level, levelParameterOrder
+    5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], unresolvedLevel
+    0. inputs came levelId as given; categories as given (1). on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE LEG ITS OWN TEST FILE CALLS "THE FIRST CASE TO RUN" WAS NOT RUN, and this proof is
+    narrower than it looks. tests/cases.yaml asks for the level LOOKUP ORDER to be exercised -
+    ducts on Level 2, asked for Level 2, with the last entry of the order removed - because the
+    other four parameters are ABSENT on an MEP curve rather than empty, so nothing throws and
+    nothing warns. What ran here was 9 walls, which resolve through WALL_BASE_CONSTRAINT alone.
+    One route through a five-entry order is proved; the fallback between them is not.
+    levelParameterOrder came back with all 5 entries and unresolvedLevel 0 in both legs.
+  fingerprint: d9d64100a2487a33
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

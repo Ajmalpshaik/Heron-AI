@@ -152,18 +152,37 @@ else
         {
             unsupported.Add(view.Id);
         }
-        else if (refused && !touched)
+        else if (refused)
         {
+            // `&& !touched` USED TO BE HERE AND IT SWALLOWED HALF THE ANSWER.
+            // `touched` goes true the moment the PHASE is written, so a view
+            // whose phase set and whose phase FILTER was refused in the same
+            // call satisfied `!touched == false` and was added to nothing -
+            // reported as a clean success with phaseFilterSet silently one
+            // short.
+            //
+            // MEASURED 2026-09-13 on `test projject`, view '1 - Mech', asked
+            // for phase New Construction and filter Show All: phaseSet 1,
+            // phaseFilterSet 0, alreadySet 0, templateControlled 0,
+            // unsupported 0, findings 0. Nothing anywhere said the filter had
+            // not taken. `alreadySet` being empty is what rules out "it was
+            // already Show All" - that path adds to it at line 129.
+            //
+            // A refusal is a refusal whether or not the OTHER property went
+            // through. The read-back already catches it; only the reporting
+            // was throwing it away.
             templateControlled.Add(view.Id);
         }
     }
 
     if (templateControlled.Count > 0)
     {
-        findings.Add(templateControlled.Count + " view(s) refused because a view template is "
-            + "holding the property. REPORT_VIEW_TEMPLATE_CONTROL says which template and what "
-            + "it holds; the fix is to change the template or release the property, not to try "
-            + "again.");
+        findings.Add(templateControlled.Count + " view(s) refused the phase or the phase filter - "
+            + "the value was written and read back unchanged. A VIEW TEMPLATE HOLDING THE PROPERTY "
+            + "is much the commonest reason: REPORT_VIEW_TEMPLATE_CONTROL says which template and "
+            + "what it holds, and the fix is to change the template or release the property rather "
+            + "than to try again. It is not the ONLY reason, so the sentence no longer claims it is; "
+            + "a view listed here had SOMETHING refuse, and the template is where to look first.");
     }
 
     if (unsupported.Count > 0)

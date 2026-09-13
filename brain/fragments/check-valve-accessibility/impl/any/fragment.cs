@@ -24,6 +24,13 @@
 // two heights and only one is in the same space as a point in the model. A
 // raised floor makes the real reach shorter than this number.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+maxReachHeight = maxReachHeight / MillimetresPerFoot;
+
 var findings = new List<string>();
 var obstructed = new List<ElementId>();
 var needAccessPanel = new List<ElementId>();

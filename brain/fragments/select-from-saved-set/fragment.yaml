@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,34 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,492 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run. returned elements 6 item(s) [Radius Elbows
+    / Taps, Radius Elbows / Taps, Radius Elbows / Taps, ...], findings 1 item(s) ['HERON RULESupply
+    Air' is a RULE. It matches 6 element(s) in...], missing 0, wanted HERON RULESupply Air.
+    inputs came filterName as given; view as given. on test projject
+  negative_case: run with filterName=HERON RULESupply Air, view=2 - Mech instead - chosen
+    because it should not contain what this fragment reports. returned elements 0 item(s),
+    findings 1 item(s) ['HERON RULESupply Air' is a RULE. It matches 0 element(s) in...],
+    missing 0, wanted HERON RULESupply Air. inputs came filterName as given; view as given.
+    on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE CASE ITS OWN FILE CALLS FIRST CANNOT BE REACHED FROM A CALLER AT ALL, and that is worth
+    more than the proof. tests/cases.yaml asks for a view filter named with NO view, expecting
+    REFUSED and told it is a rule - the fragment has that branch, at fragment.cs:79. But `view`
+    is declared `View` at `source: request`, so an empty one is rejected by the add-in's binder
+    as a bad_request_value BEFORE the fragment runs. The refusal is real, correct and
+    unreachable from the command line. WHAT WAS PROVED INSTEAD IS THE DISTINCTION THE FRAGMENT
+    EXISTS FOR: the same rule filter, 'HERON RULESupply Air', matched 6 elements in '1 - Mech'
+    and 0 in '2 - Mech'. A SAVED LIST would have answered 4 in both - measured, on 'HERON WALL
+    SET', before the rule filter was made.
+  fingerprint: c6b8aa7f23b78f81
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

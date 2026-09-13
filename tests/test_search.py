@@ -77,6 +77,20 @@ def main():
 
             print()
             print("3. Only a PROVEN fragment runs without asking")
+            # THE FIXTURE NOW SAYS WHAT IT MEANS. The claim below is that a
+            # DRAFT fragment is OFFERED rather than run, and it needs a DRAFT
+            # fragment to say it about. It used to get one BY ACCIDENT, from
+            # whatever status FRG-ELE-001 happened to ship with - and on
+            # 2026-09-13 that fragment was proved against a real model and
+            # promoted, so the exact match autoran and this check failed
+            # against a library that was correct. The store is a throwaway in
+            # a temp directory, so this touches no fragment on disk, and both
+            # claims below are unchanged.
+            store.execute("UPDATE fragments SET status = 'DRAFT' "
+                          "WHERE id = 'FRG-ELE-001'")
+            store.db.commit()
+            SEARCH.index(store)
+
             a = SEARCH.ask(store, "select all ducts")
             check(not a.autorun,
                   "a DRAFT fragment matching exactly is OFFERED, not run")

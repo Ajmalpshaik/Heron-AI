@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,6 +74,24 @@ contract:
       # to doubt it (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,425 elements), Revit 2024, session 20224
+  positive_case: run as it would normally be run. returned candidates 3 item(s) [Room 1, Room
+    2, Room 3], elements 2 item(s) [Room 2, Room 3], includeRooms true, includeSpaces false,
+    roomsChecked 3, unenclosed 2 item(s) [925712, 925713], unplaced 0 item(s). inputs came
+    includeRooms as given; includeSpaces as given. on test projject
+  negative_case: run with includeRooms=false, includeSpaces=true instead - chosen because
+    it should not contain what this fragment reports. returned candidates 0 item(s), elements
+    0 item(s), includeRooms false, includeSpaces true, roomsChecked 0, unenclosed 0 item(s),
+    unplaced 0 item(s). inputs came includeRooms as given; includeSpaces as given. on test
+    projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bb00b9831629bf23
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

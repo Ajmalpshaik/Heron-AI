@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,6 +74,42 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,494 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    list-sheets, set-selection with this phase's own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned aligned 1, ambiguous
+    0 item(s), master ViewSheet, masterViewport Viewport, onlyViewportOf Func`2, refused 0
+    item(s), scaleMismatch 0 item(s), titleBlockMoved 0 item(s), titleBlockOf Func`2, wantedMaster
+    HERON-01. inputs came elements from the selection (2); masterSheetNumber as given. on
+    test projject
+  negative_case: run with masterSheetNumber=HERON-99 instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running list-sheets,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned aligned 0, ambiguous 0 item(s),
+    master (null), masterViewport (null), onlyViewportOf Func`2, refused 2 item(s) [926022,
+    926119], scaleMismatch 0 item(s), titleBlockMoved 0 item(s), titleBlockOf Func`2, wantedMaster
+    HERON-99. inputs came elements from the selection (2); masterSheetNumber as given. on
+    test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE CASE ITS FILE CALLS FIRST WAS BUILT AND HELD, and it is not an emptiness case so it
+    cannot be a leg. tests/cases.yaml asks for a sheet whose view is at 1:50 while the master
+    is 1:100, expecting its id in scaleMismatch and NOT moved - because 'two scales cannot line
+    up by their centres, the same centre puts different amounts of building in the box, and
+    aligning it makes it differently wrong'. Measured 2026-09-13 on `test projject`:
+    set-view-scale put '1 - Ceiling Mech' to 50 against the 1:100 master on HERON-01, and the
+    same call answered aligned 0, scaleMismatch 1 [926119], refused 0 - the sheet named and
+    nothing moved. The scale was then set back to 100, so the legs recorded above reproduce
+    against the model as it now stands. WHAT IS NOT PROVED is the second declared negative, a
+    sheet carrying THREE viewports reported as ambiguous: every sheet in this model holds
+    exactly one.
+  fingerprint: e87529a65effd331
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

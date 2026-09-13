@@ -23,6 +23,13 @@
 // IN PLACE ONLY. A parallel COPY is COPY_ELEMENTS and then this, which is the
 // composition doing its job rather than a mode this fragment has to grow.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+distance = distance / MillimetresPerFoot;
+
 var offset = 0;
 var notLinear = new List<ElementId>();
 var refused = new List<ElementId>();

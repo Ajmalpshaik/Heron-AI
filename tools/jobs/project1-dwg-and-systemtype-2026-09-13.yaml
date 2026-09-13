@@ -1,0 +1,79 @@
+# Two more with a refusal Revit itself supplies. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/project1-dwg-and-systemtype-2026-09-13.yaml
+#
+# THE RULE THAT IS WORKING TODAY, and both of these follow it:
+#
+#   A NEGATIVE HOLDS ONLY WHERE THE REFUSAL IS REAL. FRAGMENT-ISSUES row 24
+#   found that a sheet ACCEPTS a crop and an isolate - Revit permits both
+#   meaninglessly - so no view type could ever build those legs. A template
+#   from a sheet and a legend from a floor plan are different: Revit says no,
+#   and both were proved this afternoon on the strength of it.
+#
+# NEITHER OF THESE LEANS ON A VIEW TYPE AT ALL:
+#   export-views-to-dwg     a folder on a drive that does not exist
+#   create-mep-system-type  a system type to copy from that is not in the model
+#
+# ON export-views-to-dwg AND THE PUBLISH DECISION. It writes files outside the
+# model, but it is declared risk: MODIFY, and the owner's 2026-09-11 decision
+# was about the PUBLISH TIER specifically - export-sheets-to-pdf and
+# export-view-image are held back for that reason and this one is not. If that
+# reading is wrong the fix is the fragment's risk, not this file.
+#
+# MEASURED, 2026-09-13: drive letters in use are C, D, E, Y, Z - so Q: cannot
+# exist and cannot be created.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  in: Project1 work_ajmal.al
+  write: true
+
+jobs:
+  - fragment: export-views-to-dwg
+    set:
+      views: "1 - Mech"
+      folder: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/65638f84-9102-4517-9202-e647157da461/scratchpad/exports"
+      # EMPTY ON PURPOSE - Revit's default DWG export setup. Naming one that
+      # does not exist would be a different test, and a worse one: it would
+      # refuse for the setup rather than for the folder.
+      setupName: ""
+    negative-set:
+      views: "1 - Mech"
+      # A FOLDER THAT CANNOT EXIST. The same view, the same setup, a path on a
+      # drive this machine does not have - so `refused` accounts for it and
+      # `created` stays empty. An exporter that reported success here would be
+      # claiming a file that is not on disk, which is the worst thing an
+      # exporter can do.
+      folder: "Q:/heron-no-such-drive"
+      setupName: ""
+    note: >
+      `created` is the only role: result - refused and wouldOverwrite are
+      accounting under D-52.
+
+  - fragment: create-mep-system-type
+    set:
+      # Snowdon and Project1 are Autodesk MEP samples, so the stock duct system
+      # types are present. If this refuses, read WHICH name it could not find
+      # before changing anything else.
+      copyFromName: "Supply Air"
+      newName: HERON_TEST_SYSTEM
+      abbreviation: HTS
+    negative-set:
+      # NOTHING TO COPY FROM. A name no system type in this model carries, so
+      # the fragment looks properly and correctly creates nothing.
+      copyFromName: "ZZZNOSUCHSYSTEM"
+      newName: HERON_TEST_SYSTEM
+      abbreviation: HTS
+    # `created` RETURNS THE OBJECT, NOT A COUNT. It came back as the literal
+    # text "MechanicalSystemType", which the runner reports as POSITIVE
+    # UNREADABLE - correctly, because an object is not a number that could have
+    # been zero. `classification` is the readable result: "SupplyAir" when it
+    # copied one, empty when it did not. So the runner is told to judge that.
+    expect: classification
+    note: >
+      created and classification are both role: result, but only classification
+      can be read as a quantity - hence `expect:`. The run itself was right
+      both times: positive created a MechanicalSystemType classified SupplyAir;
+      negative said "no system type called 'ZZZNOSUCHSYSTEM'" and created
+      nothing. What failed was the JUDGING, not the fragment.

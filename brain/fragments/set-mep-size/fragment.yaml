@@ -77,31 +77,31 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-09'
+  date: '2026-09-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 17356
+  model: test projject (3,436 elements), Revit 2024, session 40932
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned diameter 250, height
-    0, notApplicable 0 item(s), numericValue Func`2, pending 22 item(s) [Duct, Duct, Duct,
-    ...], pendingAsked 22 item(s) [250, 250, 250, ...], pendingParam 22 item(s) [RBS_CURVE_DIAMETER_PARAM,
-    RBS_CURVE_DIAMETER_PARAM, RBS_CURVE_DIAMETER_PARAM, ...], refused 0 item(s), sized 22,
-    snapped 0 item(s), width 0. inputs came elements from the selection (22); width as given;
-    height as given; diameter as given. on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: M1, width=0, height=0,
-    diameter=250 instead - chosen because it should not contain what this fragment reports
-    - the arrangement was re-made first by running select-by-category-name, set-selection
-    with this phase''s own values - run inside a transaction and ROLLED BACK, so the model
-    was left exactly as it was. returned diameter 250, height 0, notApplicable 9 item(s) [1491217,
-    1491220, 1491225, ...], numericValue Func`2, pending 0 item(s), pendingAsked 0 item(s),
-    pendingParam 0 item(s), refused 0 item(s), sized 0, snapped 0 item(s), width 0. inputs
-    came elements from the selection (9); width as given; height as given; diameter as given.
-    on Snowdon-scratch_ajmal.al'
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, diameter 0, height 0.984251968503937, notApplicable 0 item(s), numericValue Func`2,
+    pending 6 item(s) [Radius Elbows / Taps, Radius Elbows / Taps, Radius Elbows / Taps, ...],
+    pendingAsked 6 item(s) [1.31233595800525, 0.984251968503937, 1.31233595800525, ...], pendingParam
+    6 item(s) [RBS_CURVE_WIDTH_PARAM, RBS_CURVE_HEIGHT_PARAM, RBS_CURVE_WIDTH_PARAM, ...],
+    refused 0 item(s), sized 3, snapped 0 item(s), width 1.31233595800525. inputs came elements
+    from the selection (3); width as given; height as given; diameter as given. on test projject
+  negative_case: run with minMm=-1000,-1000,-1000, maxMm=9000,7000,4000, exact=false, categories=Walls,
+    width=400, height=300, diameter=0 instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-in-region,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, diameter
+    0, height 0.984251968503937, notApplicable 8 item(s) [925629, 925630, 925631, ...], numericValue
+    Func`2, pending 0 item(s), pendingAsked 0 item(s), pendingParam 0 item(s), refused 0 item(s),
+    sized 0, snapped 0 item(s), width 1.31233595800525. inputs came elements from the selection
+    (8); width as given; height as given; diameter as given. on test projject
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: f792c7175623e7f2
-
+  fingerprint: c37a4c2babec5fb9
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

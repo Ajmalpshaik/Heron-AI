@@ -24,6 +24,13 @@
 // It sees only what is directly in line with the centre: a pipe passing the
 // corner of an air handling unit is invisible to it.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+maxDistance = maxDistance / MillimetresPerFoot;
+
 var hits = new Dictionary<ElementId, IList<string>>();
 var nothingHit = new List<ElementId>();
 var noOrigin = new List<ElementId>();

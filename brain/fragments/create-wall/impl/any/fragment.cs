@@ -21,6 +21,13 @@
 // here, and whether Revit joins them itself is not claimed. JOIN_GEOMETRY is
 // what makes two elements agree about which one cuts the other.
 
+// MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
+// millimetres. The add-in converts an XYZ at the boundary and cannot convert a
+// bare double - nothing in a contract says which doubles are lengths - so the
+// conversion belongs here, once, before the value is used for anything.
+const double MillimetresPerFoot = 304.8;
+height = height / MillimetresPerFoot;
+
 var created = new List<Element>();
 var tooShort = 0;
 var refused = 0;
