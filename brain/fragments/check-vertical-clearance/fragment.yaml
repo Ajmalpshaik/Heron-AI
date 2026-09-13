@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,32 +69,30 @@ contract:
       type: int
 
 proof:
-  date: '2026-09-09'
+  date: '2026-09-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32940
+  model: test projject (3,540 elements), Revit 2024, session 40932
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values. returned boxes 307
-    item(s) [[Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi..., [Autodesk.Revit.DB.Mechanical.Duct,
-    Autodesk.Revit.DB.Boundi..., [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...,
-    ...], clashing 5, describe Func`2, findings 24 item(s) [307 service(s) checked against
-    a 152400 mm vertical rule: 18..., TIGHT: Ducts 1395946 is above Ducts 1396679 by 50.8
-    mm - 152..., TIGHT: Ducts 1396164 is above Ducts 1397657 by 196.9 mm - 15..., ...], noGeometry
-    0, requiredGap 500, slopedOrVertical 0, tooClose 18. inputs came services from the selection
-    (307); requiredGap as given. on Snowdon-scratch_ajmal.al'
-  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1, requiredGap=500 instead
-    - chosen because it should not contain what this fragment reports - the arrangement was
-    re-made first by running select-by-category-name, set-selection with this phase''s own
-    values. returned boxes 22 item(s) [[Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...,
-    [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi..., [Autodesk.Revit.DB.Mechanical.Duct,
-    Autodesk.Revit.DB.Boundi..., ...], clashing 0, describe Func`2, findings 1 item(s) [22
-    service(s) checked against a 152400 mm vertical rule: 0 p...], noGeometry 0, requiredGap
-    500, slopedOrVertical 0, tooClose 0. inputs came services from the selection (22); requiredGap
-    as given. on Snowdon-scratch_ajmal.al'
+    select-in-region, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, boxes 2 item(s) [[Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...,
+    [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...], clashing 0, describe
+    Func`2, findings 2 item(s) [2 service(s) checked against a 2000 mm vertical rule: 1 pair...,
+    TIGHT: Ducts 926509 is above Ducts 926511 by 695.2 mm - 1304...], noGeometry 0, requiredGap
+    6.56167979002625, slopedOrVertical 0, tooClose 1. inputs came services from the selection
+    (2); requiredGap as given. on test projject'
+  negative_case: 'run with minMm=30000,18000,0, maxMm=42000,26000,4000, exact=false, categories=Ducts,
+    requiredGap=1 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-in-region, set-selection with this
+    phase''s own values. returned MillimetresPerFoot 304.8, boxes 2 item(s) [[Autodesk.Revit.DB.Mechanical.Duct,
+    Autodesk.Revit.DB.Boundi..., [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...],
+    clashing 0, describe Func`2, findings 1 item(s) [2 service(s) checked against a 1 mm vertical
+    rule: 0 pair(s)...], noGeometry 0, requiredGap 0.00328083989501312, slopedOrVertical 0,
+    tooClose 0. inputs came services from the selection (2); requiredGap as given. on test
+    projject'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 94cd7e33f37641d3
-
+  fingerprint: 375c5c847641c01e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
