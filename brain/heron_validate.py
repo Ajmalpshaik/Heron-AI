@@ -853,6 +853,34 @@ def contract_of(frag):
     return roles, names
 
 
+
+def _result_appeared(positive, negative, frag):
+    """Is a declared result PRESENT in the positive and GONE in the negative?
+
+    The comparison D-30 asks for, for fragments whose result is a thing rather
+    than a count. Returns False on anything doubtful - no negative phase, a
+    value that is empty in both, a value that is present in both - so it can
+    only ever rescue a positive that has a real contrast behind it.
+    """
+    if not negative:
+        return False
+
+    roles, names = contract_of(frag)
+    before = positive.get("provides") or {}
+    after = negative.get("provides") or {}
+
+    def empty(value):
+        text = ("" if value is None else str(value)).strip()
+        return text in ("", "(null)", "None") or _as_count(value) == 0
+
+    for key, value in before.items():
+        if key not in names or roles.get(key) == "accounting" or key in NOTE_KEYS:
+            continue
+        if not empty(value) and empty(after.get(key)):
+            return True
+    return False
+
+
 def positive_worked(phase, frag, expect=None):
     """Did the POSITIVE move a declared result off zero? (reason, detail).
 
@@ -1219,6 +1247,31 @@ def _evidence_refusal(slug, frag, proof):
     if positive is None:
         return "the run record has no positive phase in it"
     reason, detail = positive_worked(positive, frag)
+    if reason == "POSITIVE UNREADABLE" and _result_appeared(positive,
+                                                            phases.get("negative"),
+                                                            frag):
+        # A FRAGMENT THAT MAKES ONE THING RETURNS THE THING, NOT A COUNT, AND
+        # `positive_worked` CAN ONLY COUNT. It sees `created` rendered as
+        # `MechanicalSystemType` - a bare CamelCase word - and `_is_helper_object`
+        # cannot tell that from `OverrideGraphicSettings`, so a real result is
+        # discarded as a working value and the positive reads UNREADABLE.
+        #
+        # Measured 2026-09-13 on `create-mep-system-type`, which duplicates a
+        # duct system type. Positive: `created MechanicalSystemType`,
+        # `classification SupplyAir`. Negative, given a name the model has not
+        # got: `created (null)`, `classification ""`. The evidence is plainly
+        # there and is not a number, and the same heuristic reads the NEGATIVE
+        # correctly - `(null)` and `""` count as zero - so only the positive leg
+        # was ever mis-read.
+        #
+        # SO ASK THE QUESTION D-30 ACTUALLY ASKS, WHICH IS A COMPARISON. This is
+        # stronger than counting one leg, not weaker: a fragment succeeding while
+        # doing nothing returns the SAME value in both phases and cannot pass it,
+        # and a genuine working object - the `OverrideGraphicSettings` the rule
+        # above exists for - is present in both legs and cannot pass it either.
+        # Only a declared result that is THERE in the positive and GONE in the
+        # negative gets through.
+        reason = None
     if reason:
         return ("%s - %s. The positive case is the evidence it DOES something; "
                 "without it the negative proves only that a fragment which does "
