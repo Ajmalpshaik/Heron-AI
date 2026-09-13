@@ -73,6 +73,23 @@ def main():
             def call_site():
                 return CAP.best_provider(store, "FILTER_ELEMENTS_BY_CATEGORY")
 
+            # THE FIXTURE NOW SAYS WHAT IT MEANS. This block's claim is that
+            # TRUST decides, and it needs a DRAFT original and a PROVEN
+            # newcomer. It used to get the DRAFT half BY ACCIDENT, from
+            # whatever status FRG-ELE-001 happened to ship with - and on
+            # 2026-09-13 that fragment was proved against a real model and
+            # promoted, so both providers were PROVEN, the newcomer outranked
+            # nothing, and this check failed against a library that was
+            # correct. Same shape as test_graph and test_reachable on
+            # 2026-09-12. The store here is a throwaway in a temp directory,
+            # so setting the status is a fixture and touches no fragment on
+            # disk - and the claim below is unchanged and still fails if
+            # trust stops deciding.
+            store.execute("UPDATE fragments SET status = 'DRAFT' "
+                          "WHERE id = 'FRG-ELE-001'")
+            store.db.commit()
+            CAP.rebuild(store)
+
             before = call_site()
             add(store, "FRG-ELE-777", "FILTER_ELEMENTS_BY_CATEGORY",
                 status="PROVEN", risk="READ", domain="revit.elements")

@@ -255,6 +255,26 @@ def main():
         # the retirement working and the test being wrong about the order.
         print()
         print("Add a provider, retire a provider - and the call site is one line")
+        # THE FIXTURE NOW SAYS WHAT IT MEANS. This block's claim is that
+        # TRUST decides, and it needs a DRAFT original and a PROVEN
+        # newcomer. It used to get the DRAFT half BY ACCIDENT, from
+        # whatever status FRG-ELE-001 happened to ship with - and on
+        # 2026-09-13 that fragment was proved against a real model and
+        # promoted, so both providers were PROVEN, the newcomer outranked
+        # nothing, and this check failed against a library that was
+        # correct. Same shape as test_graph and test_reachable on
+        # 2026-09-12. The store here is a throwaway in a temp directory,
+        # so setting the status is a fixture and touches no fragment on
+        # disk - and the claim below is unchanged and still fails if
+        # trust stops deciding.
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            store.execute("UPDATE fragments SET status = 'DRAFT' "
+                          "WHERE id = 'FRG-ELE-001'")
+            store.db.commit()
+        finally:
+            store.close()
+
         first = BRAIN.resolve("FILTER_ELEMENTS_BY_CATEGORY", revit="2024")
         check(first["providers"][0]["id"] == "FRG-ELE-001",
               "FILTER_ELEMENTS_BY_CATEGORY resolves to %s"

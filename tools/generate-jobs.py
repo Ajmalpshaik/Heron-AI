@@ -172,6 +172,34 @@ RECEIVABLE = frozenset([
     "IList<View>", "List<View>", "ICollection<View>", "IEnumerable<View>",
     "IList<BuiltInCategory>", "List<BuiltInCategory>", "ICollection<BuiltInCategory>",
     "IList<Category>", "List<Category>", "ICollection<Category>",
+    # ADDED 2026-09-13, when `create-duct` turned out to be unreachable behind a
+    # string comparison. The six MEP type classes were the cheapest of the lot -
+    # `DuctType`, `PipeType` and `FlexDuctType` all derive from `MEPCurveType`,
+    # which was already accepted, so only the name a contract DECLARED stood in
+    # the way. FRAGMENT-ISSUES row 28.
+    "MechanicalSystemType", "DuctType", "FlexDuctType",
+    "PipingSystemType", "PipeType", "MEPSystemType",
+    # A 3D view is narrower than `View` on purpose: the three fragments asking
+    # for one cast a ray through it, and a floor plan handed to
+    # `ReferenceIntersector` is a run that cannot work.
+    "View3D", "Material", "RevitLinkInstance",
+    # A Room's Name is its own Name PARAMETER - "Office 101" - not its type's,
+    # so unlike an ordinary instance it names one room and not a thousand.
+    "SpatialElement",
+    # The only enum taken by name. Its three values have not moved 2020 to 2027;
+    # `IFCVersion` stays refused because its members differ per release.
+    "ViewDuplicateOption",
+    # Three numbers 0-255. There is no name to look up, and "red" would be this
+    # file choosing a red for somebody else's drawing.
+    "Color", "IList<Color>", "List<Color>",
+    # AN ID IS THE THING, NOT A NUMBER. Resolved by naming what it belongs to
+    # and taking `.Id` - which also keeps the add-in clear of
+    # `new ElementId(int)`, the constructor that became `long` at 2024. The
+    # need's NAME decides the class, and a name the table does not hold is
+    # refused rather than guessed at.
+    "ElementId",
+    "IList<ElementId>", "List<ElementId>",
+    "ICollection<ElementId>", "IEnumerable<ElementId>",
 ])
 
 # The two `FromRequest` refuses BY NAME, with the reason it gives. Everything
@@ -188,10 +216,17 @@ NAMED_REFUSALS = [
      "points nested deeper than a list - a point is three millimetre numbers "
      "and a list of them is written \"0,0,0; 5000,0,0\", but this nests them "
      "further and there is no way to write that yet"),
-    ("ElementId",
-     lambda t: "ElementId" in t,
-     "an element id. Its type changed size at Revit 2024 and the add-in builds "
-     "2020 to 2027 from one source. Name the thing instead, or select it"),
+    # THE ElementId ROW LEFT THIS LIST ON 2026-09-13. It used to read "its type
+    # changed size at Revit 2024 and the add-in builds 2020 to 2027 from one
+    # source. Name the thing instead, or select it" - and naming the thing is
+    # exactly what the add-in now does: it resolves the level, the sheet or the
+    # type by name and takes `.Id` off it. An id that is never CONSTRUCTED never
+    # meets the constructor that changed, so the reason retired itself.
+    # FRAGMENT-ISSUES row 28.
+    ("IDictionary",
+     lambda t: t.startswith("IDictionary") or t.startswith("Dictionary"),
+     "pairs of values, and there is no way to type a pair in yet - one blank "
+     "holds one value. Two lists, or a fragment that takes them separately"),
 ]
 
 
