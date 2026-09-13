@@ -1,0 +1,108 @@
+# Rooms group + sheets group, run together.
+# Model: test projject, Revit 2024 - now holds 3 rooms, 2 spaces, 8 walls in two
+# closed boxes, 6 mechanical equipment, a floor, a ceiling, 2 sheets.
+model: test projject, Revit 2024, session 40932
+
+defaults:
+  setup:
+    - select-in-region
+    - set-selection
+  set:
+    minMm: "0,30000,-500"
+    maxMm: "48000,46000,4500"
+    exact: false
+    categories: Rooms
+  negative-set:
+    minMm: "0,30000,-500"
+    maxMm: "48000,46000,4500"
+    exact: false
+    categories: Walls
+
+jobs:
+  - fragment: check-room-mep-completeness
+    set:
+      devices: "03"
+      ruleRoomNames: "Room"
+      ruleCategories: "Mechanical Equipment"
+      ruleMinimums: "1"
+    negative-set:
+      devices: "03"
+      ruleRoomNames: "ZZZ NO SUCH ROOM NAME"
+      ruleCategories: "Mechanical Equipment"
+      ruleMinimums: "1"
+
+  - fragment: create-hvac-zone
+    write: true
+    set:
+      categories: "MEP Spaces"
+      zoneName: "HERON TEST ZONE"
+      level: "Level 1"
+      phase: "New Construction"
+    negative-set:
+      categories: Walls
+      zoneName: "HERON TEST ZONE 2"
+      level: "Level 1"
+      phase: "New Construction"
+
+  - fragment: set-sheet-title-block
+    write: true
+    keep-chain: true
+    setup: [list-sheets]
+    set:
+      symbol: "A1 metric"
+    negative-set:
+      symbol: "A1 metric"
+
+  - fragment: export-views-to-dwg
+    write: true
+    setup: []
+    set:
+      views: "{3D}"
+      folder: "C:/Users/AjmalAlavudheen/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/65638f84-9102-4517-9202-e647157da461/scratchpad/dwg"
+      setupName: ""
+    negative-set:
+      views: "HERON DUCT SCHEDULE"
+      folder: "C:/Users/AjmalAlavudheen/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/65638f84-9102-4517-9202-e647157da461/scratchpad/dwg2"
+      setupName: ""
+
+  - fragment: describe-blank-parameters
+    keep-chain: true
+    setup: [select-by-category-name, set-selection, read-element-parameters]
+    set:
+      categoryName: Walls
+      inViewOnly: "{3D}"
+      parameterNames: "Comments"
+      parameterName: "Comments"
+    negative-set:
+      categoryName: Walls
+      inViewOnly: "{3D}"
+      parameterNames: "Comments"
+      parameterName: "ZZZ NO SUCH PARAMETER"
+
+  - fragment: report-findings
+    keep-chain: true
+    setup: [list-levels]
+    set:
+      checkedCount: 2
+      whatWasChecked: "the levels in this model"
+    negative-set:
+      checkedCount: 0
+      whatWasChecked: "nothing at all"
+
+  - fragment: select-subcomponents
+    setup: [select-in-region, set-selection]
+    set:
+      categories: "Mechanical Equipment"
+      minMm: "0,0,-1000"
+      maxMm: "48000,31000,6000"
+      recursive: true
+    negative-set:
+      categories: Levels
+      minMm: "0,0,-1000"
+      maxMm: "48000,31000,6000"
+      recursive: true
+
+  - fragment: find-unused-materials
+    setup: []
+    set: {}
+    negative-set: {}

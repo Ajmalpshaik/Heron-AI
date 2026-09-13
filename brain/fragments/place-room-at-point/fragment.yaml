@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -68,6 +68,27 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,562 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asSpace false, created 5 item(s)
+    [926552, 926553, 926554, ...], refused 0, unenclosed 5 item(s) [926552, 926553, 926554,
+    ...]. inputs came level as given; points as given (5); asSpace as given. on test projject
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). place-room-at-point\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 4 different inputs:\n\n      1 point -> created 1\n      2 points -> created\
+    \ 2\n      3 points -> created 3\n      5 points -> created 5\n\n    Different inputs,\
+    \ exact matches every time. A fragment falling back to the active view, the whole model,\
+    \ or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 84f7310db260ce9b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
