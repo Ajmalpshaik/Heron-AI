@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,6 +57,33 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,493 elements), Revit 2024, session 40932
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned placed 1 item(s) [926170], refused
+    0 item(s). inputs came sheetId as given; views as given (1); at as given. on test projject
+  negative_case: run with sheetId=PLAIN SHEET, views=1 - Plumbing, at=200,200,0 instead -
+    chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned placed 0 item(s),
+    refused 1 item(s) [142575]. inputs came sheetId as given; views as given (1); at as given.
+    on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  caveat: >-
+    THE MIXED BATCH ITS FILE ASKS FOR WAS RUN SEPARATELY AND HELD. tests/cases.yaml wants a
+    batch where some views are ALREADY on other sheets, expecting those in refused - asked via
+    CanAddViewToSheet BEFORE attempting - and THE REST STILL PLACED, because 'a reader of
+    "placed 11 of 30" needs to know that is why'. Measured 2026-09-13: '1 - Plumbing', already
+    on HERON TEST SHEET, handed in beside '2 - Plumbing' gave placed 1, refused 1 [142575]. The
+    batch was not abandoned on the first refusal. It is not an emptiness case, so it cannot be
+    a D-30 leg. A further arrangement was also run and held - two free views giving placed 2,
+    against two already placed giving placed 0 and refused 2 [142575, 316] - so the all-refused
+    end of the range is measured too.
+  fingerprint: 0b724478ecce6d08
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
