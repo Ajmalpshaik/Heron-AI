@@ -2404,12 +2404,41 @@ namespace Heron.Revit.Addin
             return null;
         }
 
+        /// <summary>
+        /// A carried value, turned into the shape the next fragment declared -
+        /// or null when there is genuinely nothing usable in it.
+        ///
+        /// AN EMPTY LIST AND A LIST THAT RESOLVED TO NOTHING ARE DIFFERENT
+        /// EVENTS, AND UNTIL 2026-09-14 THIS RETURNED null FOR BOTH. The caller
+        /// reports a null as "nothing usable survived", so a fragment whose
+        /// input is legitimately empty could never run at all.
+        ///
+        /// `describe-blank-parameters` is the proof. It needs `blank` AND
+        /// `absent`, both left by `read-element-parameters`, and those two are
+        /// mutually exclusive by construction: on 22 ducts, asking for
+        /// "Comments" gives `blank 22, absent 0`, and asking for a name nothing
+        /// carries gives `absent 22, blank 0`. One of the pair is ALWAYS empty,
+        /// the empty one was nulled, and the run stopped on it every time.
+        ///
+        /// THE OTHER CASE IS REAL AND MUST KEEP FAILING. A list that HELD ids
+        /// and resolved none of them is the linked-element hazard: a linked
+        /// element's id belongs to the link's document, so `doc.GetElement`
+        /// finds nothing - or worse, finds an unrelated host element that
+        /// happens to share the number. Carrying an empty list there would say
+        /// "there were none" about something nobody could look at.
+        ///
+        /// So: empty IN means empty OUT, and ids that all fail to resolve still
+        /// mean null. The distinction Codex asked for in the dispatch on
+        /// PR #138, one layer over.
+        /// </summary>
         private static object Shape(object value, string type, Document doc)
         {
             var ids = value as IList<ElementId>;
 
             if (ids != null && IsElementList(type))
             {
+                if (ids.Count == 0) return new List<Element>();
+
                 var live = new List<Element>();
                 foreach (var id in ids)
                 {
@@ -2417,17 +2446,18 @@ namespace Heron.Revit.Addin
                     try { found = doc.GetElement(id); } catch { }
                     if (found != null) live.Add(found);
                 }
+                // Held ids, resolved none - not the same as having been empty.
                 return live.Count == 0 ? null : (object)live;
             }
 
             if (ids != null && type.IndexOf("ElementId", StringComparison.Ordinal) >= 0)
             {
-                return ids.Count == 0 ? null : value;
+                return value;
             }
 
             var already = value as IList<Element>;
             if (already != null && IsElementList(type))
-                return already.Count == 0 ? null : value;
+                return value;
 
             return value;
         }
