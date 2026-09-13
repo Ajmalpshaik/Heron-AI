@@ -59,6 +59,17 @@ else
         refused.Add("The route measures " + Math.Round(lengthMm) + " mm, over the "
             + Math.Round(maxLengthMm) + " mm limit given, so NOTHING WAS CREATED. "
             + "Shorten the route or raise the limit deliberately.");
+
+        // AND THE LENGTH GOES BACK TO ZERO, because the contract says lengthMm
+        // is "how long the flex actually came out" and nothing came out. The
+        // branch immediately above already does this for an empty point; this
+        // one did not, so a refused over-length route reported lengthMm 9000
+        // beside created null - which reads as a 9000 mm flex duct existing.
+        // The route's real length is not lost: it is in the refusal sentence
+        // just added, which is where a measurement of what was ASKED FOR
+        // belongs. Measured 2026-09-13 on `test projject`, proving this
+        // fragment: a 9000 mm route against a 3000 mm limit.
+        lengthMm = 0.0;
     }
     else
     {
@@ -72,6 +83,7 @@ else
             if (created == null)
             {
                 refused.Add("Revit returned no flex duct and raised no error.");
+                lengthMm = 0.0;
             }
             else
             {
