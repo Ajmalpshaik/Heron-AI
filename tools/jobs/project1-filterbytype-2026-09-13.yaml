@@ -1,0 +1,74 @@
+# filter-elements-by-type, arranged entirely by fragments. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/project1-filterbytype-2026-09-13.yaml
+#
+# `exemplar` ASKS FOR ONE PARTICULAR ELEMENT, and it will not take a typed id.
+# Heron refuses that by name and says why:
+#
+#     'exemplar' asks for ONE PARTICULAR ELEMENT in the model, and a typed name
+#     cannot say which one. An instance has no name of its own - Element.Name
+#     on one returns its TYPE's name, so "925641" would match every element of
+#     that type rather than the one that was meant. SELECT IT IN REVIT.
+#
+# THE SELECTION IS MADE BY FRAGMENTS RATHER THAN BY HAND, which is Ajmal's
+# point and the better answer: an arrangement a person clicks cannot be
+# re-made by anybody else, and this one can. `select-in-region` is PROVEN as of
+# today, and a region tight enough around one duct gives exactly one element.
+#
+# MEASURED, NOT GUESSED. report-bounding-box on the 9 ducts in "1 - Mech":
+#   whole set   19950 x 16000 x 300 mm, X -9890..10060, Y -4561..11439,
+#               Z 2800..3100 (all millimetres, converted from the feet it
+#               reports)
+# then the region below was found by narrowing until the count reached one:
+#   X -9890..-8500, Y -4600..11500   2 ducts
+#   ... Y 3000..6000                 0 ducts
+#   ... Y 6000..9000                 1 duct   <- this one
+#
+# MEASURED TOO: Ducts in "1 - Mech" = 9, in "Legend 1" = 0.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  in: Project1 work_ajmal.al
+
+  # risk: READ. No `write:` anywhere - nothing can be written and nothing can
+  # be left behind, which is why this one is safe to run unattended.
+
+  # select-in-region leaves `elements`; set-selection consumes them and writes
+  # the real Revit selection, which is where `exemplar` binds from. A chain
+  # reset drops the handover - defect row 11.
+  keep-chain: true
+
+  setup:
+    - select-in-region
+    - set-selection
+
+  set:
+    minMm: "-9890, 6000, 2700"
+    maxMm: "-8500, 9000, 3200"
+    exact: "false"
+    categories: Ducts
+
+  negative-set:
+    # THE SAME REGION, so the SAME duct is the exemplar in both legs. Only the
+    # view being searched changes.
+    minMm: "-9890, 6000, 2700"
+    maxMm: "-8500, 9000, 3200"
+    exact: "false"
+    categories: Ducts
+
+jobs:
+  - fragment: filter-elements-by-type
+    set:
+      inViewOnly: "1 - Mech"
+    negative-set:
+      # A LEGEND HOLDS NO DUCTS. Measured: 15 text notes, 0 ducts. So the
+      # fragment looks in a real view, with a real exemplar, and correctly
+      # finds nothing - which is a true empty answer rather than a refusal or
+      # an unbound need. That is the leg set-view-crop and isolate-elements
+      # could not produce today (row 24).
+      inViewOnly: "Legend 1"
+    note: >
+      elements and found are both role: result, so BOTH must reach zero in the
+      negative. If the positive returns all 9, every duct in that view is the
+      same type - worth knowing, and it does not weaken the leg.

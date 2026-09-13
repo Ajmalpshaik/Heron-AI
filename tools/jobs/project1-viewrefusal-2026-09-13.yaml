@@ -1,0 +1,83 @@
+# set-view-crop and isolate-elements, with the refusing view BUILT BY THE TEST.
+# 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/project1-viewrefusal-2026-09-13.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-viewrefusal-2026-09-13.yaml
+#
+# THE PROBLEM THESE TWO HAD. Both declare `viewRefused` as their accounting for
+# a view that cannot do the thing - no crop box, no temporary visibility modes.
+# That is the honest negative and it needs a view that REFUSES. Measured on
+# 2026-09-13, every view in this model ACCEPTS both:
+#
+#     set-view-crop      1 - Mech, {3D}, Section 1, 1 - Ceiling Mech  -> applied true, enclosed 9
+#     isolate-elements   1 - Mech, {3D}, Section 1                    -> isolated 9, viewRefused false
+#
+# There are no sheets, no legends and no schedules here, so there was nothing
+# to refuse with. `create-sheets` cannot help: it reports
+# `titleBlockNotFound: true` because no title block family is loaded.
+#
+# BUILDING IT IN SETUP WAS TRIED FIRST AND CANNOT WORK. `create-key-schedule`
+# ran as a setup step, created the schedule, and both jobs still came back
+#
+#     NO NEGATIVE  bad_request_value: No view called "HERON TEST KS"
+#
+# The reason is an ordering that is worth knowing: `BindNeeds` runs at
+# RevitFragment.cs:248 and `RunSetupSteps` at :316. A setup step at MODIFY or
+# above is DEFERRED - it travels in the request's `setup` array and runs inside
+# the group, AFTER the fragment's needs are already bound. READ and EXECUTE
+# steps are different: the client runs those as their own requests BEFORE the
+# main call, which is why `select-by-category-name` then `set-selection` can
+# arrange a selection and this cannot arrange a view.
+#
+#     A deferred setup step can change the MODEL the script reads.
+#     It cannot create something the fragment must BIND BY NAME.
+#
+# So the refusing view has to exist before the run. Ajmal made sheet A101 by
+# hand - the title block family was loaded but unused, which is why
+# `create-sheets` reported `titleBlockNotFound` - and a sheet has neither a
+# crop box nor temporary visibility modes.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  in: Project1 work_ajmal.al
+
+  # create-key-schedule is MODIFY, so the group is needed even for the EXECUTE
+  # fragment. Nothing is kept - validate never sends `apply`.
+  write: true
+
+  keep-chain: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Ducts
+    inViewOnly: "1 - Mech"
+
+  negative-set:
+    categoryName: Ducts
+    inViewOnly: "1 - Mech"
+    # THE SHEET. A real view, resolved by name, that genuinely has no crop box
+    # and no temporary visibility modes.
+    view: Unnamed
+
+jobs:
+  - fragment: set-view-crop
+    set:
+      view: "1 - Mech"
+      marginMm: "500"
+    negative-set:
+      marginMm: "500"
+    note: >
+      applied and enclosed are the role: result pair - noGeometry and
+      viewRefused are accounting under D-52. Measured first: Ducts in
+      "1 - Mech" = 9.
+
+  - fragment: isolate-elements
+    set:
+      view: "1 - Mech"
+    note: >
+      isolated is the only role: result - viewRefused is accounting. EXECUTE
+      rather than MODIFY: a temporary isolate is view state, not model content.

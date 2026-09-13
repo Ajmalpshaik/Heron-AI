@@ -1,0 +1,69 @@
+# set-view-section-box, re-proved. 2026-09-13.
+#
+#     python tools/batch-prove.py tools/jobs/project1-sectionbox-2026-09-13.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-sectionbox-2026-09-13.yaml
+#
+# WHY THIS ONE AGAIN. It already carries a proof signed by Ajmal PS, and the
+# signing gate now REFUSES it: the negative case came back with content. Reading
+# the run record says why in one line -
+#
+#     positive  enclosed 5
+#     negative  enclosed 5
+#
+# The negative changed WHICH FIVE ELEMENTS were boxed, not whether the view
+# could be boxed at all. A fragment that encloses whatever it is handed will
+# enclose a different five just as happily, so that leg proved nothing. Its
+# proof is also STALE - the fragment has changed since it was written.
+#
+# THE NEGATIVE THE CONTRACT ACTUALLY OFFERS is `viewRefused`. A section box
+# belongs to a 3D view; a plan has none to set. So the view is what varies, and
+# the same nine ducts go through both legs.
+#
+# MEASURED FIRST, 2026-09-13, on the ACTIVE model: Ducts in "1 - Mech" = 9.
+# find-views reports 4 FloorPlan, 2 ThreeD, 2 CeilingPlan, 0 Section, 0 sheets.
+# Nine is rule 1 - small enough that a timeout cannot be mistaken for a fault.
+
+model: Project1 work_ajmal.al, Revit 2024
+
+defaults:
+  in: Project1 work_ajmal.al
+
+  # risk: MODIFY. Nothing is meant to be kept - validate never sends `apply`.
+  # FRAGMENT-ISSUES row 19 and NEEDS-CHECKING A16b: that sentence is a report of
+  # what Revit SAID, and it has been false once. Read a value back before
+  # believing the model is untouched.
+  write: true
+
+  # select-by-category-name leaves `elements`; set-selection consumes them, and
+  # a chain reset drops the handover - defect row 11.
+  keep-chain: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: set-view-section-box
+    set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+      # THE 3D VIEW IS THE ONE THAT HAS A SECTION BOX. `view` and `inViewOnly`
+      # are different keys, so the setup still selects in the plan while the
+      # fragment acts on the 3D view - which is the real working habit: find it
+      # in the plan, box it in 3D.
+      view: "{3D}"
+      marginMm: "500"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+      # A PLAN HAS NO SECTION BOX. Same nine ducts, same margin, a real view
+      # that resolves by name and genuinely cannot do this - so `viewRefused`
+      # should account for it while `applied` and `enclosed` stay at zero.
+      # Not a refusal to resolve, not an empty selection: the fragment reading
+      # the view type and declining.
+      view: "1 - Mech"
+      marginMm: "500"
+    note: >
+      applied and enclosed are the role: result pair - noGeometry, viewRefused
+      and refusalReasons are accounting under D-52. The old negative moved
+      `enclosed` to 5 and that is exactly what must not happen here.
