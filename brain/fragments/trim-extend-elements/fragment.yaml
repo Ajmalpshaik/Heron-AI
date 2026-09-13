@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,27 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-13'
+  by: Ajmal PS
+  model: test projject (3,419 elements), Revit 2024, session 20224
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned corner XYZ,
+    findings 2 item(s) [Corner solved at (19.685, 39.37) in feet. 2 of 2 element(s) ..., Any
+    MEP connection at a moved end is now broken - Revit does...], moved 2. inputs came elements
+    from the selection (2). on test projject
+  negative_case: run with minMm=2000,-1000,-1000, maxMm=6000,7000,4000, exact=false, categories=Walls
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-in-region, set-selection with this phase's own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned corner XYZ, findings 1 item(s) [The two are parallel in plan, so there is no
+    corner to meet ...], moved 0. inputs came elements from the selection (2). on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5ca3e4b5f4758dd6
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
