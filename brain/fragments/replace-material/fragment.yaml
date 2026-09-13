@@ -74,7 +74,16 @@ contract:
       # because editing a type changes every instance of it in the project.
       # The reach of the change, which is Revit working correctly and still
       # surprises people.
-      role: result
+      #
+      # ACCOUNTING, NOT RESULT, corrected 2026-09-13. It is the REACH of the
+      # call, not its work: a type appears here when it was examined, whether
+      # or not anything in it changed. Proving the fragment showed why - asked
+      # to replace a material that nothing uses, it answered layersChanged 0,
+      # parametersChanged 0 and typesTouched 1, and the gate read that 1 as the
+      # negative case returning content. The work is layersChanged and
+      # parametersChanged; this is the hazard warning beside them and is worth
+      # keeping for exactly that.
+      role: accounting
       type: IList<ElementId>
     - name: skippedInGroup
       # What it passed over. The evidence it looked, never a thing it
