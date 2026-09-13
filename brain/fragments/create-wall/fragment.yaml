@@ -78,27 +78,27 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-10'
+  date: '2026-09-13'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,435 elements), Revit 2024, session 24688
+  model: test projject (3,432 elements), Revit 2024, session 40932
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned created 4 item(s) [Wall, Wall,
-    Wall, ...], findings 1 item(s) [4 wall(s) built on 'Level 1' at 3048 mm high, unconnected
-    to...], height 10, refused 0, shortest 0.00256026455729167, structural false, tooShort
-    0, z 0. inputs came level as given; wallType as given; points as given (5); height as
-    given; structural as given. on Project1 work_ajmal.al
-  negative_case: run with height=10, level=Level 1, points=0,0,0; 0,0,0, structural=False,
-    wallType=Generic - 200mm instead - chosen because it should not contain what this fragment
-    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
-    afterwards. returned created 0 item(s), findings 1 item(s) [0 wall(s) built on 'Level
-    1' at 3048 mm high, unconnected to...], height 10, refused 0, shortest 0.00256026455729167,
-    structural false, tooShort 1, z 0. inputs came level as given; wallType as given; points
-    as given (2); height as given; structural as given. on Project1 work_ajmal.al
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, created
+    2 item(s) [Wall, Wall], findings 1 item(s) [2 wall(s) built on 'Level 1' at 3000 mm high,
+    unconnected to...], height 9.84251968503937, refused 0, shortest 0.00256026455729167,
+    structural false, tooShort 0, z 0. inputs came level as given; wallType as given; points
+    as given (3); height as given; structural as given. on test projject
+  negative_case: run with level=Level 1, wallType=Generic - 200mm, points=0,60000,0; 0,60000,0,
+    height=3000, structural=false instead - chosen because it should not contain what this
+    fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, created 0 item(s), findings
+    1 item(s) [0 wall(s) built on 'Level 1' at 3000 mm high, unconnected to...], height 9.84251968503937,
+    refused 0, shortest 0.00256026455729167, structural false, tooShort 1, z 0. inputs came
+    level as given; wallType as given; points as given (2); height as given; structural as
+    given. on test projject
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4fd38c41b81b55e1
-
+  fingerprint: 4ff1c08aab81db1b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
