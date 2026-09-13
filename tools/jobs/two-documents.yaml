@@ -1,0 +1,28 @@
+# Both projects open at once - `test projject` (active) and
+# `Snowdon-scratch_ajmal.al`. report-open-documents confirms count 2.
+# These five were blocked purely because only one document was open.
+model: test projject + Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: transfer-materials-between-documents
+    write: true
+    set:      { sourceDocumentTitle: "Snowdon-scratch_ajmal.al", nameContains: "" }
+    negative-set: { sourceDocumentTitle: "Snowdon-scratch_ajmal.al", nameContains: "ZZZ NO SUCH MATERIAL" }
+
+  - fragment: transfer-views-between-documents
+    write: true
+    set:      { sourceDocumentTitle: "Snowdon-scratch_ajmal.al", viewKind: "Schedule", nameContains: "" }
+    negative-set: { sourceDocumentTitle: "Snowdon-scratch_ajmal.al", viewKind: "Schedule", nameContains: "ZZZ NO SUCH VIEW" }
+
+  - fragment: transfer-project-parameters-between-documents
+    write: true
+    set:      { sourceDocumentTitle: "Snowdon-scratch_ajmal.al", sharedParameterFile: "", nameContains: "" }
+    negative-set: { sourceDocumentTitle: "Snowdon-scratch_ajmal.al", sharedParameterFile: "", nameContains: "ZZZ NO SUCH PARAM" }
+
+  - fragment: switch-active-project
+    write: true
+    set:      { target: "Snowdon-scratch_ajmal.al", viewName: "" }
+    negative-set: { target: "ZZZ NO SUCH PROJECT", viewName: "" }
