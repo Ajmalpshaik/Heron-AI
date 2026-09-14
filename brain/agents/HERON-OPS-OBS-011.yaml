@@ -1,0 +1,64 @@
+# Observability Agent - HERON-OPS-OBS-011
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+#
+# The register row was corrected by D-58: three of its four original fields
+# describe something Heron cannot see. They are in the OUTPUT below, named,
+# with the reason - not left out.
+
+agent: HERON-OPS-OBS-011
+version: 1.0.0
+
+input:
+  requests:
+    type: list
+    required: true
+    description: >
+      Request records, each naming the `route` that answered it and
+      optionally how many `milliseconds` it took. The route is
+      heron_search.ask()'s own word - identity, cache, keywords or
+      nothing - so this counts what is already being reported rather than
+      asking anybody for anything new.
+
+output:
+  latency:
+    type: map
+    description: >
+      Median, slowest 5% and slowest, with how many of the records
+      actually carried a duration. The MEAN is deliberately absent: it
+      hides the tail, and the tail is why anybody measures latency.
+  thinking:
+    type: map
+    description: >
+      How many were answered with no model needed at all, how many after
+      searching, the share, and any route this agent does not recognise
+      counted separately. The share is null rather than 0 when nothing
+      could be counted - "0% answered without thinking" reads as a system
+      that thinks about everything.
+  host_provided:
+    type: map
+    description: >
+      Token usage, cost per request and model calls per request, each with
+      the reason it is not here (D-58). Present and answered "no" rather
+      than absent: a missing key reads as an oversight.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. What was not measured and why, including records
+      with no duration and routes nobody recognised.
+  why:
+    type: string
+    description: The three numbers in a sentence.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOTHING_TO_OBSERVE
+  - NOT_REQUEST_RECORDS
+
+retry:
+  attempts: 0
+  on-failures: []
