@@ -205,6 +205,10 @@ def record(agent_id, agents=None, claims=None, host=None, deals=None):
         "role": row.get("does"),
         "department": row["dept"],
         "tier": row["tier"],
+        # None means NOBODY HAS ASSIGNED ONE, which is not READ. The Trainer
+        # refuses to train an agent whose permissions nobody has decided, and
+        # it can only do that because this field keeps the two apart.
+        "risk": row.get("risk"),
         "step": row["step"],
         "state": state,
         "files": files,
