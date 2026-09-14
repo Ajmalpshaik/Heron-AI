@@ -1,0 +1,110 @@
+# Shadow Execution Agent - HERON-OPS-SHD-012
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ, and it executes neither side - see `unjudged` and Q-56.
+
+agent: HERON-OPS-SHD-012
+version: 1.0.0
+
+input:
+  tier:
+    type: string
+    required: false
+    description: >
+      T1, T2 or T3 - for `constraints`. Q-29's table is keyed on tier for
+      how a candidate is exercised and on risk for what it may touch, so
+      both are read and the rows COMPOSE.
+  risk:
+    type: string
+    required: false
+    description: >
+      The candidate's risk from docs/28. MODIFY adds the preview-only
+      rule. EXECUTE, PUBLISH and ADMIN are not in Q-29's table at all and
+      are refused by name rather than defaulted - what "observe without
+      modifying" means for them is a decision, not a gap to fill in.
+  production:
+    type: map
+    required: false
+    description: >
+      For `compare` - the production path's result. One side missing is a
+      run that did not happen, not a quiet agreement.
+  candidate:
+    type: map
+    required: false
+    description: For `compare` - the shadow candidate's result.
+  log:
+    type: list
+    required: false
+    description: >
+      For `verdict` - the entries `compare` produced. A disagreement must
+      also carry `differed`, `right` and `why`, which are the three things
+      D-39 asks for and the three a machine cannot write.
+  reason:
+    type: string
+    required: false
+    description: >
+      Where no disagreement occurred - why not. Too few runs, a case never
+      exercised, an input the shadow could not see. "It always matched" is
+      refused by name: agreement is the observation being explained, so it
+      cannot also be the explanation.
+  signature:
+    type: map
+    required: false
+    description: >
+      Who signed and when. Evidence plus a name (D-39, Golden Rule 7) -
+      required whether the evidence is a disagreement or a reason there
+      was none.
+
+output:
+  constraints:
+    type: list
+    description: Every rule that applies to this candidate, with where it came from.
+  agreed:
+    type: boolean
+    description: >
+      From `compare`. Which one was RIGHT is deliberately not here - that
+      is the sentence a person writes, and a machine picking a winner is
+      the failure D-39 guards against.
+  differed:
+    type: list
+    description: The keys whose values were not the same.
+  promote:
+    type: boolean
+    description: Whether the candidate may leave shadow.
+  analysed:
+    type: integer
+    description: >
+      How many disagreements were examined and explained. A COUNT of
+      recorded runs, which is arithmetic - nothing divides it by anything.
+      D-39 refused the rate: a percentage invites a threshold.
+  agreements:
+    type: integer
+    description: >
+      How many runs matched. Reported and explicitly not evidence.
+  why:
+    type: string
+    description: The verdict and what it rested on.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing here enforces the constraints (Q-56),
+      that the agreements are not evidence, and that where the candidate
+      goes next belongs to the deployment ladder.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - SHADOW_BEHAVIOUR_UNDEFINED
+  - NOT_A_RUN_PAIR
+  - NO_RUNS
+  - NOT_ANALYSED
+  - NEVER_DISAGREED
+  - REASON_IS_THAT_IT_MATCHED
+  - NOT_SIGNED
+
+retry:
+  attempts: 0
+  on-failures: []
