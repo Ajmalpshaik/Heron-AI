@@ -1,0 +1,45 @@
+# Event Bus - HERON-KRN-EVT-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-KRN-EVT-004
+version: 1.0.0
+
+input:
+  event:
+    type: string
+    required: true
+    description: >
+      The name of what happened, in the past tense - fragment.proved,
+      revit.lost, budget.exceeded. Never a command.
+  payload:
+    type: map
+    required: false
+    description: >
+      What the handlers are told about it. Each handler is given its own
+      copy, so one handler cannot change what the next one sees.
+
+output:
+  delivered:
+    type: integer
+    description: How many handlers ran to completion.
+  failed:
+    type: list
+    description: >
+      One entry per handler that raised, naming the handler and what it
+      raised. Never empty because a failure was swallowed - a handler that
+      fails is recorded and the remaining handlers still run.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - HANDLER_FAILED
+  - HANDLER_MAY_NOT_MODIFY
+  - EVENT_CYCLE
+
+retry:
+  attempts: 0
+  on-failures: []
