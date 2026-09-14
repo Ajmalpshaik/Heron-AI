@@ -144,6 +144,24 @@ def contracts():
     return found
 
 
+def _supply(agents, claims, host):
+    """
+    Fill in whichever of the three the caller did not bring.
+
+    Until 2026-09-14 every entry point here filled all three only when
+    `agents` was None, so a caller that already had the register - which is
+    every caller that did not want it parsed twice - got claims=None and an
+    AttributeError from deep inside record(). A partial call is the normal
+    call, and it has to work or say why, not raise from three frames down.
+    """
+    if agents is None or claims is None or host is None:
+        fresh_agents, fresh_claims, fresh_host = _agent_count()
+        agents = fresh_agents if agents is None else agents
+        claims = fresh_claims if claims is None else claims
+        host = fresh_host if host is None else host
+    return agents, claims, host
+
+
 def record(agent_id, agents=None, claims=None, host=None, deals=None):
     """
     One agent's whole record, assembled from whoever owns each field.
@@ -152,8 +170,7 @@ def record(agent_id, agents=None, claims=None, host=None, deals=None):
     in the register does not exist, and inventing a record for one would be
     the register describing the system instead of being it.
     """
-    if agents is None:
-        agents, claims, host = _agent_count()
+    agents, claims, host = _supply(agents, claims, host)
     deals = contracts() if deals is None else deals
 
     row = agents.get(agent_id)
@@ -210,8 +227,7 @@ def records(agents=None, claims=None, host=None, deals=None):
     {agent id: record} for the whole register - what the contract promises
     when no single agent is named.
     """
-    if agents is None:
-        agents, claims, host = _agent_count()
+    agents, claims, host = _supply(agents, claims, host)
     deals = contracts() if deals is None else deals
     return dict((agent_id, record(agent_id, agents, claims, host, deals))
                 for agent_id in agents)
@@ -219,8 +235,7 @@ def records(agents=None, claims=None, host=None, deals=None):
 
 def disagreements(agents=None, claims=None, host=None, deals=None):
     """Where the sources describing one agent do not agree. Never resolved."""
-    if agents is None:
-        agents, claims, host = _agent_count()
+    agents, claims, host = _supply(agents, claims, host)
     deals = contracts() if deals is None else deals
     found = []
 
@@ -246,8 +261,7 @@ def without_contract(agents=None, claims=None, deals=None):
     under the common, expected one. A report nobody can skim is a report
     nobody reads.
     """
-    if agents is None:
-        agents, claims, _host = _agent_count()
+    agents, claims, _host = _supply(agents, claims, None)
     deals = contracts() if deals is None else deals
     found = []
     for agent_id in sorted(claims):
