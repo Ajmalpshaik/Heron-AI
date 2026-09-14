@@ -1,0 +1,59 @@
+# Token & Cost Budget - HERON-KRN-TOK-015
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-KRN-TOK-015
+version: 1.0.0
+
+input:
+  scope:
+    type: string
+    required: true
+    description: >
+      Which budget the call is drawn against - request, session or
+      background. Background is work Heron started on its own, and it
+      yields before the user's work does.
+  amount:
+    type: number
+    required: false
+    description: >
+      What the call cost, in the budget's own unit, as REPORTED BY the
+      provider after the fact. Heron has no tokeniser and never invents
+      one (D-58).
+  unit:
+    type: string
+    required: false
+    description: >
+      The unit the amount is in. It must match the unit the budget was
+      declared in; a spend in another unit is refused, not converted.
+
+output:
+  allowed:
+    type: boolean
+    description: Whether the call may proceed.
+  posture:
+    type: string
+    description: >
+      NORMAL, TIGHT or STOPPED. TIGHT is the signal to ask for cheaper
+      thinking where cheaper thinking will do - this agent never picks the
+      provider itself.
+  why:
+    type: string
+    description: >
+      The numbers behind the answer - spent, budget and remaining, in the
+      unit - so the cost meter and the refusal say the same thing.
+
+allowed-tools: []
+
+timeout-seconds: 5
+
+failures:
+  - BUDGET_EXCEEDED
+  - UNKNOWN_SCOPE
+  - UNIT_MISMATCH
+  - NO_BUDGET_SET
+
+retry:
+  attempts: 0
+  on-failures: []
