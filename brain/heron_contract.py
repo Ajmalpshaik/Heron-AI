@@ -103,7 +103,17 @@ OWNED_BY_THE_REGISTRY = ("tier", "risk")
 # The shapes a field may take. Deliberately small: a contract is read by the
 # person writing the next agent, and a type list long enough to need looking up
 # is a type list nobody reads.
-TYPES = ("string", "integer", "number", "boolean", "list", "map", "path")
+#
+# `callable` was added 2026-09-14, and the argument for one more word is the
+# argument against the alternative. Three agents take a READER rather than a
+# value - HERON-OPS-SCH-001 asks whether a person is working, HERON-OPS-UPD-010
+# whether Revit holds unsaved work, HERON-INS-DEP-005 what actually imports -
+# because a caller that can STATE those answers is a caller that can state the
+# convenient one. Declared as `map`, each contract then spent four lines of
+# description explaining that it is not a map: the declaration saying one thing
+# and the prose correcting it is worse than an eighth word.
+TYPES = ("string", "integer", "number", "boolean", "list", "map", "path",
+         "callable")
 
 
 def registry_ids():

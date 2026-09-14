@@ -1,209 +1,291 @@
-# Heron-Agent:  none
-# Heron-Step:   17
+# -*- coding: utf-8 -*-
+# Heron-Agent:  HERON-INS-DEP-005
+# Heron-Step:   15
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
 # Heron-Layer:  test
-# See docs/29-metadata-standard.md
 
 """
-The dependency manifest describes the code, and keeps describing it.
+Dependencies - confirm, never automatic, and degrade only out loud.
 
     python tests/test_dependencies.py
 
 WHAT IT PROVES
-  1. EVERY THIRD-PARTY IMPORT IN THE REPOSITORY IS IN A MANIFEST. Derived by
-     walking the imports, not by reading a list - which is the only version of
-     this check worth having. Add an import and forget the manifest and this
-     fails, which is the exact way W-5 happened: brain/README.md said `pyyaml`
-     while the code imported six things, and nothing anywhere noticed.
+  1. EVERY DEGRADED PATH COMES BACK WITH THE SENTENCE THAT HAS TO BE SAID,
+     as its own output rather than a field inside another one. PROPOSALS
+     F7 is the gap between a sentence existing in a file and a person
+     reading it.
 
-  2. NOTHING IS IN A MANIFEST THAT THE CODE DOES NOT IMPORT. The opposite
-     staleness, and the one that makes people install things for no reason.
+  2. AN OPTIONAL DEPENDENCY WITH NO STATED COST IS REFUSED - the exact
+     shape F7's failure takes, made impossible by construction.
 
-  3. EVERY ENTRY SAYS WHAT IT IS FOR AND WHAT IS LOST WITHOUT IT. A name with
-     no purpose beside it is a thing nobody dares remove (R-76), and the
-     checker's whole report is built out of those two fields.
+  3. REQUIRED OR OPTIONAL IS DECLARED, NEVER GUESSED, in either direction.
 
-  4. REQUIRED AND OPTIONAL DO NOT OVERLAP. A package in both lists makes
-     "optional" meaningless and the checker's exit code arbitrary.
+  4. WHAT IS INSTALLED IS ASKED, NOT STATED, and fails closed four ways.
 
-  5. `mcp/client/` AND `platform/` IMPORT NOTHING THIRD-PARTY. The bridge
-     client has to run on a locked-down machine with nothing installed on it -
-     brain/README.md states that rule, and until now nothing enforced it. This
-     is the one check here that guards a promise rather than a document.
+  5. NOTHING MISSING IS A REAL ANSWER, not a refusal - deliberately unlike
+     HERON-OPS-HEA-006, and the answer says why.
 
-WHAT IT DELIBERATELY DOES NOT PROVE
-  Nothing here installs a package or asserts one is present. The suite runs on
-  a machine with five of the six absent, and that is the state R-42 requires to
-  be fine. Whether an installed version is the RIGHT one is R-78, not built.
+  6. INSTALLING IS A SECOND DECISION, PER PACKAGE, and the consent must
+     name the package.
+
+  7. IT SAYS THAT A pip install IS NOT THE GATE A HERON PACKAGE GOES
+     THROUGH, so the quieter route does not look like the safer one.
+
+  8. THE REAL REQUIREMENTS FILES PASS THEIR OWN AGENT.
+
+  9. EVERY FAILURE THE CONTRACT DECLARES IS NAMED BY THE CODE AND REACHED.
 """
 
-from __future__ import annotations
-
-import ast
 import os
+import re
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
-sys.path.insert(0, os.path.join(ROOT, "tools"))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "brain"))
+
+import heron_dependencies as DEP                               # noqa: E402
+import heron_contract as CON                                   # noqa: E402
 
 FAILURES = []
 
 
-def check(condition, message):
+def check(condition, what):
+    print("  %-5s %s" % ("ok" if condition else "FAIL", what))
     if not condition:
-        FAILURES.append(message)
+        FAILURES.append(what)
 
 
-def _load_checker():
-    """Import tools/check-dependencies.py, whose name is not an identifier."""
-    import importlib.util
-    path = os.path.join(ROOT, "tools", "check-dependencies.py")
-    spec = importlib.util.spec_from_file_location("check_dependencies", path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def _third_party(area):
-    """Every top-level third-party module imported under `area`.
-
-    Standard library and this repository's own modules are excluded by name,
-    the same way check-dependencies has to think about it.
-    """
-    stdlib = set(sys.stdlib_module_names)
-    local = set()
-    for base, _dirs, files in os.walk(ROOT):
-        if ".git" in base:
-            continue
-        for name in files:
-            if name.endswith(".py"):
-                local.add(name[:-3])
-
-    found = {}
-    start = os.path.join(ROOT, area)
-    if not os.path.isdir(start):
-        return found
-    for base, dirs, files in os.walk(start):
-        dirs[:] = [d for d in dirs if d not in ("__pycache__", ".git")]
-        for name in sorted(files):
-            if not name.endswith(".py"):
-                continue
-            path = os.path.join(base, name)
-            with open(path, "r", encoding="utf-8", errors="replace") as handle:
-                try:
-                    tree = ast.parse(handle.read())
-                except SyntaxError:
-                    continue
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    names = [a.name.split(".")[0] for a in node.names]
-                elif isinstance(node, ast.ImportFrom) and not node.level:
-                    names = [(node.module or "").split(".")[0]]
-                else:
-                    continue
-                for module in names:
-                    if module and module not in stdlib and module not in local:
-                        found.setdefault(module, os.path.relpath(path, ROOT))
-    return found
+def listed():
+    return [{"name": "yaml", "kind": "required", "uses": "reading yaml",
+             "lost": "nothing in brain/ runs"},
+            {"name": "model2vec", "kind": "optional",
+             "uses": "the trained embedding backend",
+             "lost": "retrieval falls back to character n-grams"},
+            {"name": "sqlite_vec", "kind": "optional",
+             "uses": "vector search inside SQLite",
+             "lost": "vectors are compared in Python - slower, same answers"}]
 
 
 def main():
-    checker = _load_checker()
+    reached = set()
+    source = open(os.path.join(ROOT, "brain", "heron_dependencies.py"),
+                  encoding="utf-8").read()
 
-    required, problems = checker.read_manifest(checker.REQUIRED)
-    optional, more = checker.read_manifest(checker.OPTIONAL)
-    problems += more
+    # A SENTINEL, not None: half of what this agent is for is that None
+    # means "nothing could look", and a helper that quietly filled it in
+    # would be testing the helper.
+    DEFAULT = object()
 
-    # 3. Both manifests parse, and every entry carries all three fields.
-    check(not problems,
-          "the manifests do not parse cleanly: %s" % "; ".join(problems))
-    check(required, "requirements.txt lists no package at all")
-    check(optional, "requirements-optional.txt lists no package at all")
+    def look(dependencies=None, importable=DEFAULT):
+        if importable is DEFAULT:
+            importable = lambda names: ["yaml"]          # noqa: E731
+        answer = DEP.review(listed() if dependencies is None
+                            else dependencies, importable=importable)
+        if answer.get("refused"):
+            reached.add(answer["refused"])
+        return answer
 
-    for package in required + optional:
-        check(package.purpose.strip(),
-              "%s has no `for` text - nobody will dare remove it" % package.pip_name)
-        check(package.without.strip(),
-              "%s does not say what is lost without it" % package.pip_name)
+    def ask(package="model2vec", **kw):
+        settings = {"origin": "user",
+                    "consent": {"by": "ajmal", "package": package}}
+        settings.update(kw)
+        answer = DEP.approve({"name": package}, **settings)
+        if answer.get("refused"):
+            reached.add(answer["refused"])
+        return answer
 
-    listed = {p.module: p for p in required + optional}
+    print("1. Every degraded path comes back with the sentence")
+    answer = look()
+    check(len(answer["say"]) == 2, "two optional packages absent, two "
+                                   "sentences")
+    check(all(isinstance(line, str) and len(line) > 40
+              for line in answer["say"]),
+          "each a sentence, not a flag")
+    for entry in answer["degraded"]:
+        check(entry["lost"] in entry["say"],
+              "%s's sentence carries what is LOST, verbatim from the "
+              "declaration" % entry["package"])
+        check(entry["package"] in entry["say"]
+              and "pip install --user %s" % entry["package"] in entry["say"],
+              "and names the package and the one command that fixes it")
+    check("say" in answer and answer["say"] ==
+          [entry["say"] for entry in answer["degraded"]],
+          "`say` is its own output, not a field to go looking for")
+    check("F7" in source, "and the code names the finding it is about")
 
-    # 4. Required and optional are disjoint.
-    overlap = {p.module for p in required} & {p.module for p in optional}
-    check(not overlap,
-          "in BOTH manifests, so `optional` means nothing for it: %s"
-          % ", ".join(sorted(overlap)))
+    print()
+    print("2. An optional dependency with no stated cost is refused")
+    for entry, missing in (({"name": "x", "kind": "optional", "uses": "u"},
+                            "what happens without it"),
+                           ({"name": "x", "kind": "optional", "lost": "l"},
+                            "what Heron uses it for"),
+                           ({"name": "x", "kind": "optional"}, "both"),
+                           ({"name": "x", "kind": "optional", "uses": " ",
+                             "lost": ""}, "blank is not stated")):
+        answer = look([entry])
+        check(answer.get("refused") == "WHAT_IS_LOST_NOT_SAID",
+              "missing %s is refused" % missing)
+    answer = look([{"name": "x", "kind": "optional", "uses": "u"}])
+    check("permanently on a weaker path" in answer["why"],
+          "and the refusal says what the silence actually costs")
+    check(answer["wants"] == ["what happens without it"],
+          "naming which field, in the words requirements-optional.txt uses")
+    # A REQUIRED one needs no `lost` - it breaks everything, and that is
+    # the one case where the sentence adds nothing.
+    check(look([{"name": "yaml", "kind": "required"}]).get("refused") is None,
+          "while a REQUIRED dependency needs no such sentence")
 
-    # 1 and 2. The manifest and the imports describe each other.
-    imported = {}
-    for area in ("brain", "mcp", "tools", "tests", "platform", "revit"):
-        imported.update(_third_party(area))
+    print()
+    print("3. Required or optional is declared, never guessed")
+    for kind in (None, "", "maybe", "REQUIRED-ISH", "nice-to-have", True):
+        answer = look([{"name": "x", "kind": kind, "uses": "u", "lost": "l"}])
+        check(answer.get("refused") == "KIND_NOT_DECLARED",
+              "kind %r is refused" % (kind,))
+    answer = look([{"name": "x", "uses": "u", "lost": "l"}])
+    check("turns a failure into silence, which is worse" in answer["why"],
+          "and it says why neither default is safe")
+    check(DEP.KINDS == ("required", "optional"), "there are exactly two kinds")
+    check(look([{"name": "x", "kind": "OPTIONAL", "uses": "u",
+                 "lost": "l"}]).get("refused") is None,
+          "and the word is read case-insensitively, not refused on spelling")
 
-    for module, where in sorted(imported.items()):
-        check(module in listed,
-              "`%s` is imported by %s and is in NEITHER manifest - the exact "
-              "shape of W-5" % (module, where))
+    print()
+    print("4. What is installed is asked, not stated")
+    for reader, label in ((None, "no reader"),
+                          (["yaml"], "a list in its place"),
+                          ("yaml", "a string in its place"),
+                          (lambda names: 1 / 0, "a reader that raises"),
+                          (lambda names: None, "a reader answering None"),
+                          (lambda names: "yaml", "a reader answering a "
+                                                 "string")):
+        answer = look(importable=reader)
+        check(answer.get("refused") == "CANNOT_SEE_WHAT_IS_INSTALLED",
+              "%s -> nothing is judged" % label)
+    check("nobody checked" in look(importable=None)["why"],
+          "and it says the answer would describe a machine nobody checked")
+    check("worse than saying so" in look(importable=None)["proposal"],
+          "and that reporting a healthy system nobody looked at is worse")
+    seen = {}
+    answer = look(importable=lambda names: seen.setdefault("asked",
+                                                           names) and [])
+    check(sorted(seen["asked"]) == ["model2vec", "sqlite_vec", "yaml"],
+          "the reader is asked about every name in the list, once")
+    check(answer["required_missing"][0]["package"] == "yaml",
+          "and a missing REQUIRED package is reported as one")
+    check("REQUIRED" in answer["required_missing"][0]["why"],
+          "saying so in the entry, not only by which list it is in")
 
-    for module, package in sorted(listed.items()):
-        check(module in imported,
-              "`%s` is in a manifest and nothing imports it - people would "
-              "install it for no reason" % package.pip_name)
+    print()
+    print("5. Nothing missing is a real answer")
+    answer = look(importable=lambda names: list(names))
+    check(answer.get("refused") is None, "everything importable is not a "
+                                         "refusal")
+    check(answer["required_missing"] == [] and answer["degraded"] == []
+          and answer["say"] == [],
+          "and comes back with three empty lists")
+    check(len(answer["present"]) == 3, "with all three present")
+    check(any("NOTHING MISSING IS A REAL ANSWER" in note
+              for note in answer["unjudged"]),
+          "the answer says so itself")
+    check(any("HERON-OPS-HEA-006" in note for note in answer["unjudged"]),
+          "naming the agent it deliberately differs from")
+    check(any("different from a degraded path with nothing to say"
+              in note for note in answer["unjudged"]),
+          "and that an empty `say` is not the same as a silent degradation")
 
-    # 5. The layers that promise to need nothing, need nothing.
-    for area in ("mcp/client", "platform"):
-        bare = _third_party(area)
-        check(not bare,
-              "%s imports %s, and it has to run on a locked-down machine with "
-              "nothing installed" % (area, ", ".join(sorted(bare))))
+    print()
+    print("6. Installing is a second decision, per package")
+    good = ask()
+    check(good["install"] is True, "a named confirmation goes through")
+    check(good["command"] == "pip install --user model2vec",
+          "and returns the command")
+    check("returned, not run" in good["why"], "as text, not as an action")
+    for label, kw in (("nothing signed", {"consent": None}),
+                      ("a bare True", {"consent": True}),
+                      ("signed by nobody", {"consent": {"package":
+                                                        "model2vec"}}),
+                      ("naming no package", {"consent": {"by": "ajmal"}}),
+                      ("naming another package",
+                       {"consent": {"by": "ajmal", "package": "pypdf"}})):
+        check(ask(**kw).get("refused") == "NOT_CONSENTED",
+              "%s is refused" % label)
+    check("scrolled past" in ask(consent={"by": "a", "package": "pypdf"})["why"],
+          "and one confirmation for a scrolled-past list is named as the "
+          "thing this prevents")
+    for origin in ("a document Heron read", "a community package", None, "",
+                   "the installer"):
+        check(ask(origin=origin).get("refused") == "NOT_FROM_THE_USER",
+              "%r cannot ask for an install" % origin)
+    check(ask(installed=["model2vec"]).get("refused") == "NOT_MISSING",
+          "and a package that already imports is not installed over")
+    check("looks like progress" in ask(installed=["model2vec"])["why"],
+          "because a reinstall that looks like progress is not progress")
+    check(DEP.approve({}).get("refused") == "NO_DEPENDENCY_LIST",
+          "a request naming nothing is refused")
 
-    # 6. R-73 - a component in fallback mode names what would improve it.
-    #
-    # Anchored on the RULE, not on the sentence: the package name is read from
-    # the manifest rather than typed here, so renaming the package moves both
-    # at once and quoting the message cannot go stale. A test that names a
-    # line instead of a rule is a test with a half-life - that trap has bitten
-    # this repository three times.
-    sys.path.insert(0, os.path.join(ROOT, "brain"))
-    try:
-        import heron_embed
-    except ImportError as problem:
-        check(False, "brain/heron_embed.py will not import: %s" % problem)
-    else:
-        name, why = heron_embed.backend()
-        if name == heron_embed.LEXICAL:
-            fixer = listed.get("model2vec")
-            check(fixer is not None,
-                  "model2vec is what lifts the fallback and it is in no manifest")
-            if fixer is not None:
-                check(fixer.pip_name in why,
-                      "the fallback backend does not name `%s`, the package "
-                      "that would improve it (R-73)" % fixer.pip_name)
-            check("pip install" in why,
-                  "the fallback backend names no install command, so a reader "
-                  "is told what is wrong and not what to do (R-73)")
-        else:
-            print("NOTE: the trained backend is installed here, so the fallback")
-            print("message could not be checked this run. That is reported")
-            print("rather than counted as a pass.")
+    print()
+    print("7. A pip install is not the gate a Heron package goes through")
+    note = [line for line in good["unjudged"] if "SUP-013" in line]
+    check(note, "the approval says which gate this is NOT")
+    check("no register, no approver and no hash" in note[0],
+          "naming exactly what is absent on this path")
+    check("Not a refusal" in note[0],
+          "while being clear it is not a refusal - Heron needs these")
+    check("which of the two gates they are standing at" in note[0],
+          "and that the person approving should be told which one")
+    for word in ("subprocess", "os.system", "exec(", "eval(", "open(",
+                 "import requests", "urllib", "importlib", "__import__"):
+        check(word not in source,
+              "the source has no %s - it imports nothing on anyone's "
+              "behalf" % word)
 
+    print()
+    print("8. The real requirements files pass their own agent")
+    real = []
+    for path, kind in (("requirements.txt", "required"),
+                       ("requirements-optional.txt", "optional")):
+        text = open(os.path.join(ROOT, path), encoding="utf-8").read()
+        for line in text.splitlines():
+            found = re.match(r"^# (\w[\w.-]*) \| (.+?) \| (.+)$", line)
+            if found:
+                real.append({"name": found.group(1), "kind": kind,
+                             "uses": found.group(2), "lost": found.group(3)})
+    check(len(real) >= 6, "%d declarations read out of the two real files"
+                          % len(real))
+    answer = DEP.review(real, importable=lambda names: ["yaml"])
+    check(answer.get("refused") is None,
+          "and this agent accepts every one of them - the format it "
+          "enforces is the format those files already keep")
+    check(len(answer["say"]) == len(real) - 1,
+          "with a sentence for each absent optional one")
+    check(any("sqlite_vec" in line and "compared in Python" in line
+              for line in answer["say"]),
+          "including the one PROPOSALS F7 is about, said out loud")
+
+    print()
+    print("9. Every failure the contract declares is named and reached")
+    contract = CON.load(os.path.join(ROOT, "brain", "agents",
+                                     "HERON-INS-DEP-005.yaml"))
+    named = contract.get("failures") or []
+    for failure in named:
+        check(failure in source, "the code names %s" % failure)
+    check(look([]).get("refused") == "NO_DEPENDENCY_LIST",
+          "an empty list is refused")
+    check(look([{"kind": "required"}]).get("refused") == "NO_DEPENDENCY_LIST",
+          "and so is an entry with no name")
+    unreached = sorted(set(named) - reached)
+    check(not unreached,
+          "and every one was reached above%s"
+          % ("" if not unreached else ": %s" % ", ".join(unreached)))
+
+    print()
     if FAILURES:
-        print("FAILED - %d check(s):" % len(FAILURES))
+        print("FAILED  %d check(s)" % len(FAILURES))
         for line in FAILURES:
-            print("  %s" % line)
+            print("  - %s" % line)
         return 1
-
-    print("PASSED - every third-party import in this repository is in a")
-    print("manifest, every manifest entry is imported by something, and each")
-    print("one says what it is for and what is lost without it.")
-    print()
-    print("Counts are derived rather than written here: run")
-    print("`python tools/check-dependencies.py` for the list and what is")
-    print("installed on THIS machine.")
-    print()
-    print("IT PROVES NOTHING ABOUT WHETHER A PACKAGE IS INSTALLED. Five of the")
-    print("six are absent here and that is the state R-42 requires to be fine.")
+    print("PASS    confirm, never automatic, and degrade only out loud")
     return 0
 
 

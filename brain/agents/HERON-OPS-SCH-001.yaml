@@ -16,7 +16,7 @@ input:
       HERON-OPS-QUE-002's queue. This agent keeps none of its own - two
       queues is one queue and one bug.
   busy:
-    type: map
+    type: callable
     required: false
     description: >
       A READER asked, at the moment of the decision, whether a user task
