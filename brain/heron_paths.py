@@ -114,9 +114,15 @@ MEANING = {
     UNKNOWN: "not one of the twenty folders docs/06 s2 names.",
 }
 
-# What each operation may touch. The five are the operations agents in
-# this repository actually perform, and each row is that agent's rule
-# rather than a general policy invented here.
+# Whether a class is IN SCOPE for an operation - and what being in scope
+# MEANS differs per operation, which is why each row carries its own
+# `why` rather than sharing a verb. A product update WRITES, an uninstall
+# and a cleanup REMOVE, a repair REGENERATES, a backup COPIES. Flattening
+# those into one verb would make backup's row read as permission to
+# delete the data class.
+#
+# The five are the operations agents in this repository actually perform,
+# and each row is that agent's own rule rather than a policy invented here.
 OPERATIONS = {
     "product-update": {
         PRODUCT: True, DERIVED: True, DATA: False,
@@ -186,7 +192,12 @@ def classify(path):
 
 def may(operation, path):
     """
-    {allowed, class, why} - may this operation touch this path?
+    {allowed, class, why} - is this class in scope for this operation?
+
+    In scope means different things per operation - write, remove,
+    regenerate, copy - and the `why` says which. A caller reading only
+    `allowed` for `backup` would have permission to COPY, never to
+    delete.
 
     UNKNOWN is read as DATA here and only here. Not because it is, but
     because nothing can show it is not, and treating data as product
