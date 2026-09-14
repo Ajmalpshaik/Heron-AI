@@ -183,7 +183,12 @@ def retire(agent_id, to_stage, reason=None, approved_by=None, successor=None,
     # Rollback is only possible if what comes back is described. Checked here
     # rather than trusted, because "archive" that cannot be reversed is the
     # deletion this agent exists to refuse.
-    missing = [field for field in ("id", "name", "department", "files")
+    # EVERY FIELD THE RECORD CLAIMS TO KEEP. The check used to stop at four
+    # while the record stored eight, so a retirement could return retired:
+    # true and then store None for the contract, its version and the stage the
+    # agent left - the three that actually say what to put back.
+    missing = [field for field in ("id", "name", "department", "files",
+                                   "contract", "contract_version", "state")
                if not record_of.get(field)]
     if missing:
         return {"retired": False, "refused": "NOTHING_TO_RETIRE",

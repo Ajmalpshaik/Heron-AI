@@ -94,18 +94,50 @@ def _gate(agent_id, to_stage, evidence, validation):
             return False, ("TESTING needs a test written by somebody other "
                            "than the implementer (Golden Rule 7). Nothing "
                            "tests %s." % agent_id)
-        return True, "tested by %s" % ", ".join(tests)
+        # A PATH IS NOT AN AUTHOR. The existence of a file under tests/ says
+        # nothing about who wrote it, and the gate's whole point is that it
+        # was somebody else. So the two names are asked for and compared, and
+        # an absent answer is a refusal rather than an assumption.
+        wrote_it = str(evidence.get("implemented-by") or "").strip()
+        tested_it = str(evidence.get("test-author") or "").strip()
+        if not wrote_it or not tested_it:
+            return False, ("TESTING needs the test's author and the "
+                           "implementer named, because the gate is that they "
+                           "are different people (Golden Rule 7). A file "
+                           "under tests/ only says a file exists.")
+        if wrote_it.lower() == tested_it.lower():
+            return False, ("%s both implemented and tested %s. docs/24 puts "
+                           "TESTING behind a test written by somebody else."
+                           % (tested_it, agent_id))
+        return True, "tested by %s, who did not implement it" % tested_it
 
     if to_stage == "VALIDATED":
         if (validation or {}).get("verdict") != "PASS":
             return False, ("VALIDATED needs the full matrix green. Validation "
                            "says %s." % (validation or {}).get("verdict",
                                                                "nothing"))
-        if not evidence.get("matrix"):
+        matrix = evidence.get("matrix")
+        if not matrix:
             return False, ("VALIDATED needs a matrix result - which versions "
                            "it was run against. None was offered, and this "
                            "module will not assume one.")
-        return True, "validation passed and a matrix was offered"
+        # ANY TRUTHY VALUE USED TO OPEN THIS. {"matrix": "FAIL"} passed, and
+        # so did an unrelated sentence. The validation agent's PASS covers the
+        # repository's checks, not the supported-version matrix, so the matrix
+        # has to carry its own per-version results.
+        if not isinstance(matrix, dict) or not matrix:
+            return False, ("VALIDATED needs the matrix as results per "
+                           "version - {\"2024\": \"pass\", ...} - not as "
+                           "'%s'. A word is not a matrix." % (matrix,))
+        failed = [version for version, outcome in sorted(matrix.items())
+                  if str(outcome).strip().lower() not in ("pass", "passed",
+                                                          "ok", "green",
+                                                          "true")]
+        if failed:
+            return False, ("VALIDATED needs the FULL matrix green. %s did not "
+                           "pass." % ", ".join(failed))
+        return True, ("validation passed and %d version(s) are green: %s"
+                      % (len(matrix), ", ".join(sorted(matrix))))
 
     if to_stage == "SHADOW":
         if not evidence.get("shadow-plan"):
@@ -132,14 +164,36 @@ def _gate(agent_id, to_stage, evidence, validation):
                                              len(runs) if isinstance(
                                                  runs, (list, tuple))
                                              else "nothing"))
-        nameless = [index for index, run in enumerate(runs)
-                    if not isinstance(run, dict)
-                    or not run.get("run") or not run.get("model")]
-        if nameless:
-            return False, ("%d of the %d runs offered name no run id or no "
-                           "model. A run that cannot be looked up is not a "
-                           "run anybody can check (D-30)."
-                           % (len(nameless), len(runs)))
+        # WHAT D-30 ACTUALLY ASKS FOR. A run id and a model name are the
+        # two identity fields; they say the run can be looked up, not that it
+        # proved anything. The proof is the negative case, the staleness
+        # fingerprint, and the run having actually succeeded on its own
+        # merits - not degraded onto a fallback, not sandboxed against a stub,
+        # not corrected by the user afterwards.
+        thin = []
+        for index, run in enumerate(runs):
+            if not isinstance(run, dict):
+                thin.append((index, "is not a record"))
+                continue
+            for field in ("run", "model", "negative-case", "fingerprint"):
+                if not run.get(field):
+                    thin.append((index, "names no %s" % field))
+                    break
+            else:
+                if run.get("degraded") or run.get("sandboxed"):
+                    thin.append((index, "was degraded or sandboxed, so it is "
+                                        "evidence about the fallback or the "
+                                        "stub"))
+                elif run.get("user-corrected"):
+                    thin.append((index, "was corrected by the user, which "
+                                        "docs/24 counts against PROVEN"))
+        if thin:
+            index, why = thin[0]
+            return False, ("%d of the %d runs offered are not proof: run %d %s."
+                           " D-30 wants a recorded run against a named real "
+                           "model, with a negative case and a staleness "
+                           "fingerprint."
+                           % (len(thin), len(runs), index, why))
         if evidence.get("unexplained-failures"):
             return False, ("PROVEN needs no unexplained failures, and %s were "
                            "offered with the runs."
@@ -154,7 +208,7 @@ def _gate(agent_id, to_stage, evidence, validation):
     return False, "'%s' is not a stage in docs/24" % to_stage
 
 
-def activate(agent_id, to_stage, record=None, approved_by=None,
+def activate(agent_id, to_stage, record=None, approval=None,
              evidence=None, validation=None):
     """
     {activated, record, why} - or a refusal. It never edits a file.
@@ -227,17 +281,49 @@ def activate(agent_id, to_stage, record=None, approved_by=None,
                            "and belongs to HERON-AHR-RET-010."
                            % (to_stage, from_stage)}
 
+    # AN APPROVAL IS A RECORD, SCOPED TO THIS PROMOTION. A display string
+    # let `approved_by="build-bot"` through: a machine signing by not looking
+    # like one. A record has to say what it approved, so a signature for one
+    # agent's SHADOW cannot be spent on another's PRODUCTION, and the same
+    # label cannot be reused for every promotion there is.
+    approved_by = None
+    if approval is not None:
+        if not isinstance(approval, dict):
+            return {"activated": False, "refused": "NEEDS_HUMAN_APPROVAL",
+                    "why": "an approval is a record - who signed, when, and "
+                           "what for - not the text '%s'. A name on its own "
+                           "cannot say which promotion it approved."
+                           % (approval,)}
+        approved_by = str(approval.get("by") or "").strip()
+        if not approved_by:
+            return {"activated": False, "refused": "NEEDS_HUMAN_APPROVAL",
+                    "why": "the approval names nobody."}
+        if approved_by.upper().startswith(AGENT_ID):
+            return {"activated": False, "refused": "MACHINE_MAY_NOT_SIGN",
+                    "why": "'%s' is a Heron agent. No agent approves itself "
+                           "(Golden Rule 7), and another agent signing is the "
+                           "same rule broken by one more step." % approved_by}
+        for field, expected in (("agent", agent_id), ("stage", to_stage)):
+            given = str(approval.get(field) or "").strip().upper()
+            if not given:
+                return {"activated": False, "refused": "NEEDS_HUMAN_APPROVAL",
+                        "why": "the approval does not say which %s it is for. "
+                               "An unscoped signature is one that can be "
+                               "spent anywhere." % field}
+            if given != str(expected).strip().upper():
+                return {"activated": False, "refused": "NEEDS_HUMAN_APPROVAL",
+                        "why": "the approval is for %s %s, and this is %s %s."
+                               % (field, approval.get(field), field, expected)}
+        if not approval.get("at"):
+            return {"activated": False, "refused": "NEEDS_HUMAN_APPROVAL",
+                    "why": "the approval carries no time. docs/24 asks for a "
+                           "signature that is explicit AND recorded."}
+
     if to_stage in NEEDS_A_PERSON and not approved_by:
         return {"activated": False, "refused": "NEEDS_HUMAN_APPROVAL",
                 "why": "%s is trusted by default, so docs/24 asks for human "
                        "approval, explicit and recorded. Nothing was signed."
                        % to_stage}
-
-    if approved_by and str(approved_by).upper().startswith(AGENT_ID):
-        return {"activated": False, "refused": "MACHINE_MAY_NOT_SIGN",
-                "why": "'%s' is a Heron agent. No agent approves itself "
-                       "(Golden Rule 7), and another agent signing is the "
-                       "same rule broken by one more step." % approved_by}
 
     if validation and validation.get("verdict") == "REFUSED" \
             and to_stage not in ("DISCOVERED", "DRAFT"):
@@ -272,26 +358,37 @@ def main(argv):
 
     print("AGENT DEPLOYMENT   one agent walked up the ladder")
     print("=" * 70)
+    proof = [{"run": "w-%d" % n, "model": "Snowdon Towers Sample HVAC",
+              "negative-case": "a view with no ducts returned 0",
+              "fingerprint": "a1b2c3", "degraded": False, "sandboxed": False}
+             for n in range(12)]
+    signed = {"by": "the owner", "at": "2026-09-14T03:00:00Z",
+              "agent": agent, "stage": "PRODUCTION"}
     steps = [
         ("DRAFT", {}, None),
         ("TESTING", {}, None),
-        ("VALIDATED", {"matrix": "python 3.11 on linux"}, None),
+        ("TESTING", {"implemented-by": "a session", "test-author": "a session"},
+         None),
+        ("TESTING", {"implemented-by": "a session",
+                     "test-author": "the owner"}, None),
+        ("VALIDATED", {"matrix": "green"}, None),
+        ("VALIDATED", {"matrix": {"2024": "pass", "2027": "fail"}}, None),
+        ("VALIDATED", {"matrix": {"2024": "pass", "2027": "pass"}}, None),
         ("SHADOW", {}, None),
         ("SHADOW", {"shadow-plan": "run beside the log writer for a week"},
          None),
         ("PROVEN", {"real-runs": 3}, None),
-        ("PROVEN", {"real-runs": [{"run": "w-%d" % n,
-                                   "model": "Snowdon Towers Sample HVAC"}
-                                  for n in range(12)]}, None),
+        ("PROVEN", {"real-runs": proof}, None),
         ("PRODUCTION", {}, None),
-        ("PRODUCTION", {}, "HERON-AHR-CRT-006"),
         ("PRODUCTION", {}, "the owner"),
+        ("PRODUCTION", {}, dict(signed, by="HERON-AHR-CRT-006")),
+        ("PRODUCTION", {}, signed),
     ]
     stage = "DISCOVERED"
     for to_stage, evidence, approver in steps:
         answer = activate(agent, to_stage,
                           record={"id": agent, "state": stage},
-                          approved_by=approver, evidence=evidence,
+                          approval=approver, evidence=evidence,
                           validation=validation)
         mark = "ok" if answer["activated"] else answer["refused"]
         print("  %-11s -> %-11s %-22s %s"

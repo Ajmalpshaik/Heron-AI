@@ -10,7 +10,12 @@ agent: HERON-AHR-DEP-012
 # to PRODUCTION on one signature. The stage is read from the registry record
 # now, so `from-stage` is gone and `record` is required. `validation` is
 # declared too: activate() always needed it and the contract never said so.
-version: 3.0.0
+# 4.0.0. `approved-by` was a string, so any label that did not look like an
+# agent id passed as a person - "build-bot" among them - and a signature could
+# be reused for any promotion at all. It is a RECORD now, scoped to one agent
+# and one stage, and the evidence each gate wants is named rather than left to
+# be guessed at.
+version: 4.0.0
 
 input:
   agent:
@@ -37,19 +42,24 @@ input:
     description: >
       The stage it would enter, from docs/24's one vocabulary. One step
       at a time - the gates are what the stages mean.
-  approved-by:
-    type: string
+  approval:
+    type: map
     required: false
     description: >
-      The person who signed. A Heron agent id here is refused: a machine
-      cannot be the signature its own promotion needs.
+      The signature, as a record - who signed (`by`), when (`at`), and
+      what it was for (`agent`, `stage`). Scoped on purpose: a signature
+      for one agent's SHADOW cannot be spent on another's PRODUCTION, and
+      a Heron agent id in `by` is refused.
   evidence:
     type: map
     required: false
     description: >
-      What is being offered for the gate - a shadow plan, a count of real
-      runs, a matrix result. Absent evidence is a refusal, never a
-      downgrade to a lesser stage.
+      What is being offered for the gate, in the shape that gate wants:
+      `implemented-by` and `test-author` for TESTING, a `matrix` of
+      per-version results for VALIDATED, a `shadow-plan` for SHADOW, and
+      for PROVEN a list of `real-runs`, each naming its run, model,
+      negative case and fingerprint, and none degraded or sandboxed.
+      Absent evidence is a refusal, never a downgrade to a lesser stage.
 
 output:
   activated:

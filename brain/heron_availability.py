@@ -130,9 +130,10 @@ def resolve(router, intent, probes, needs_context=0, confidential=False,
                 "why": routed.get("why", "no adapter offers %s" % intent),
                 "degraded": False}
 
-    tried = []
+    tried, states = [], []
     for position, name in enumerate(candidates):
         state, why = judge(probes.get(name), needs_context, slow_ms)
+        states.append(state)
         if state == OK:
             if position == 0:
                 return {"adapter": name, "degraded": False,
@@ -157,6 +158,17 @@ def resolve(router, intent, probes, needs_context=0, confidential=False,
                        "this scope is confidential, so it was not used."
                        % "; ".join("%s %s" % (n, w) for n, w in tried)}
 
+    # WHEN EVERY FAILURE WAS THE PROBE ITSELF, SAY SO. The contract retries
+    # PROBE_FAILED and nothing else, on purpose: not managing to ask is the
+    # one state worth asking again. Collapsing it into NOTHING_AVAILABLE threw
+    # away the retry the contract promises.
+    if states and all(state == PROBE_FAILED for state in states):
+        return {"refused": "PROBE_FAILED", "degraded": False,
+                "why": "no probe for %s completed, so nothing is known about "
+                       "any provider either way: %s"
+                       % (intent, "; ".join("%s %s" % (n, w)
+                                            for n, w in tried))}
+
     return {"refused": "NOTHING_AVAILABLE", "degraded": False,
             "why": "no adapter for %s is available: %s"
                    % (intent, "; ".join("%s %s" % (n, w) for n, w in tried))}
@@ -169,7 +181,12 @@ def counts_as_evidence(result):
     One line, in one place, so that no caller decides it privately. A refusal
     is not evidence either - there is no result to weigh.
     """
-    return bool(result) and "adapter" in result and not result.get("degraded")
+    # `is False`, not `not ...`. A result that omits the marker, or carries
+    # None, used to count as evidence - so an older or malformed provider
+    # result could become proof without ever saying whether a fallback
+    # happened. Only an explicit first-choice outcome counts.
+    return bool(result) and "adapter" in result \
+        and result.get("degraded") is False
 
 
 def main(argv):

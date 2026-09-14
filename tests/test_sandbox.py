@@ -114,6 +114,20 @@ def main():
           "and the record is still complete")
 
     print()
+    print("5b. An agent's exception goes through the redactor")
+    leaky_token = "AK" + "IA" + "IOSFODNN7EXAMPLE"
+
+    def leaks(world, payload):
+        raise RuntimeError("provider refused key %s" % leaky_token)
+
+    record = BOX.run("L", leaks)
+    check(leaky_token not in record["failed"],
+          "the credential in the message does not reach the record")
+    check("AGENT_RAISED" in record["failed"] and "provider refused"
+          in record["failed"],
+          "and everything that was not a secret survives")
+
+    print()
     print("6. An overrun is reported, and the limitation is stated")
     def dawdles(world, payload):
         end = __import__("time").time() + 0.05

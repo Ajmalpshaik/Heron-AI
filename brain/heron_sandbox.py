@@ -67,8 +67,12 @@ is why they are one question and not two.
 """
 
 import copy
+import os
 import sys
 import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import heron_secrets as SECRETS                               # noqa: E402
 
 # Where a sandboxed agent may write. Everything else in docs/10 is production
 # in the sense that matters: somebody's real work depends on it being true.
@@ -113,6 +117,20 @@ class SandboxWorld(object):
         return self.writes.get((scope, key), default)
 
 
+def _safe(text):
+    """
+    Anything from the agent, through the redactor before it is kept.
+
+    A new agent's exception is exactly where a credential turns up - a
+    provider error quoting the request it failed on, for instance - and this
+    record exists to be read by a supervisor and written to a log. docs/12
+    s5a.2 puts one redactor on everything going out, and "everything" has to
+    include the text somebody else's code chose.
+    """
+    clean, _found = SECRETS.Secrets().redact(text)
+    return clean
+
+
 def run(agent_id, handler, payload=None, timeout_seconds=None, world=None):
     """
     Run one agent in the sandbox. Returns a record; never raises on its behalf.
@@ -137,11 +155,12 @@ def run(agent_id, handler, payload=None, timeout_seconds=None, world=None):
         record["result"] = handler(
             world, copy.deepcopy(payload) if payload else {})
     except Refused as exc:
-        record["failed"] = "REFUSED: %s" % exc
+        record["failed"] = _safe("REFUSED: %s" % exc)
     except Exception as exc:                                 # noqa: BLE001
         # Deliberately broad: the agent is new, and "it threw something
         # nobody expected" is the most likely thing a first run produces.
-        record["failed"] = "AGENT_RAISED: %s: %s" % (type(exc).__name__, exc)
+        record["failed"] = _safe("AGENT_RAISED: %s: %s"
+                                 % (type(exc).__name__, exc))
 
     record["seconds"] = round(time.time() - started, 3)
     if timeout_seconds and record["seconds"] > timeout_seconds:

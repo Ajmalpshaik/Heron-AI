@@ -4,7 +4,12 @@
 # status (the module's Heron-Status header owns it).
 
 agent: HERON-KRN-SEC-012
-version: 1.0.0
+# 2.0.0: `text` was declared as a path and is a string. redact() takes the
+# outgoing text itself - an audit line, an error, a payload bound for a model -
+# and a caller enforcing version 1 would either refuse the real string or hand
+# over a filename whose contents were never looked at, which is the redaction
+# boundary being walked straight past.
+version: 2.0.0
 
 input:
   handle:
@@ -14,7 +19,7 @@ input:
       The name a secret is known by - heron:secret/github-token. What a
       fragment or an agent is given. Never the value (docs/12 s5a.3).
   text:
-    type: path
+    type: string
     required: false
     description: >
       Anything on its way out - an audit line, an error message, an

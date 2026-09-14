@@ -179,6 +179,16 @@ def main():
           "no evaluation case is a refusal, not a warning")
 
     print()
+    print("5b. A case that asserts nothing is not a case")
+    empty_case = {
+        "z": {"id": "z", "version": "1.0.0", "purpose": "p", "text": "Z",
+              "cases": [{"name": "smoke"}], "_path": "z.yaml"}
+    }
+    check(any("asserts nothing" in p
+              for p in INS.validate(empty_case, rules)),
+          "a case with a name and no assertion is refused")
+
+    print()
     print("6. The registry in this repository")
     known = INS.instructions()
     check(len(known) >= 3, "there are instructions to check")

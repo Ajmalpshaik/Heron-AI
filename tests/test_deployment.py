@@ -72,8 +72,19 @@ BELOW = {"DISCOVERED": "DISCOVERED", "DRAFT": "DISCOVERED",
          "PROVEN": "SHADOW", "PRODUCTION": "PROVEN"}
 
 # Ten recorded runs, each naming what it ran against. A count is not evidence.
-RUNS = [{"run": "w-%d" % n, "model": "Snowdon Towers Sample HVAC"}
+RUNS = [{"run": "w-%d" % n, "model": "Snowdon Towers Sample HVAC",
+         "negative-case": "a view with no ducts returned 0",
+         "fingerprint": "a1b2c3", "degraded": False, "sandboxed": False}
         for n in range(12)]
+
+# The evidence each gate actually wants, in the shape it wants it.
+AUTHORS = {"implemented-by": "a session", "test-author": "the owner"}
+MATRIX = {"matrix": {"2024": "pass", "2027": "pass"}}
+
+
+def SIGNED(stage="PRODUCTION"):
+    return {"by": "the owner", "at": "2026-09-14T03:00:00Z",
+            "agent": "HERON-KRN-EVT-004", "stage": stage}
 
 
 def REC(stage):
@@ -93,8 +104,8 @@ def main():
     print("1. Each gate refuses without its own evidence")
     cases = [
         ("DRAFT", {}, {"verdict": "PASS", "files": []}, "an implementation"),
-        ("TESTING", {}, {"verdict": "PASS",
-                         "files": ["brain/heron_events.py"]}, "a test"),
+        ("TESTING", AUTHORS, {"verdict": "PASS",
+                              "files": ["brain/heron_events.py"]}, "a test"),
         ("VALIDATED", {}, PASSED, "a matrix"),
         ("SHADOW", {}, PASSED, "a shadow plan"),
         ("PROVEN", {"real-runs": 3}, PASSED, "ten recorded runs"),
@@ -112,8 +123,8 @@ def main():
     print("   ... and each one passes when its evidence is there")
     for stage, evidence in (("DISCOVERED", {"purpose": "to notify"}),
                             ("DRAFT", {}),
-                            ("TESTING", {}),
-                            ("VALIDATED", {"matrix": "3.11 on linux"}),
+                            ("TESTING", AUTHORS),
+                            ("VALIDATED", MATRIX),
                             ("SHADOW", {"shadow-plan": "beside the log"}),
                             ("PROVEN", {"real-runs": RUNS})):
         answer = DEP.activate(agent, stage, record=REC(BELOW[stage]),
@@ -128,19 +139,34 @@ def main():
           "PRODUCTION without a signature is refused")
     for machine in ("HERON-AHR-CRT-006", "heron-ahr-bld-004"):
         answer = DEP.activate(agent, "PRODUCTION", record=REC("PROVEN"),
-                              approved_by=machine, validation=PASSED)
+                              approval=dict(SIGNED(), by=machine), validation=PASSED)
         check(answer["refused"] == "MACHINE_MAY_NOT_SIGN",
               "'%s' cannot sign" % machine)
         check("Golden Rule 7" in answer["why"], "and the rule is cited")
     answer = DEP.activate(agent, "PRODUCTION", record=REC("PROVEN"),
-                          approved_by="the owner", validation=PASSED)
+                          approval=SIGNED(), validation=PASSED)
     check(answer["activated"] and answer["record"]["approved_by"] == "the owner",
           "a person signs, and the record says who")
+    check(DEP.activate(agent, "PRODUCTION", record=REC("PROVEN"),
+                       approval="build-bot",
+                       validation=PASSED).get("refused")
+          == "NEEDS_HUMAN_APPROVAL",
+          "a display name is not a signature - 'build-bot' is refused")
+    check(DEP.activate(agent, "PRODUCTION", record=REC("PROVEN"),
+                       approval=SIGNED("SHADOW"),
+                       validation=PASSED).get("refused")
+          == "NEEDS_HUMAN_APPROVAL",
+          "a signature for another STAGE cannot be spent here")
+    check(DEP.activate(agent, "PRODUCTION", record=REC("PROVEN"),
+                       approval=dict(SIGNED(), agent="HERON-OTHER-001"),
+                       validation=PASSED).get("refused")
+          == "NEEDS_HUMAN_APPROVAL",
+          "nor one for another AGENT")
 
     print()
     print("4. The ladder is a ladder")
     answer = DEP.activate(agent, "PRODUCTION", record=REC("DRAFT"),
-                          approved_by="the owner", validation=PASSED)
+                          approval=SIGNED(), validation=PASSED)
     check(answer["refused"] == "STAGE_SKIPPED",
           "DRAFT straight to PRODUCTION is refused")
     check("TESTING" in answer["why"] and "SHADOW" in answer["why"],
@@ -205,7 +231,7 @@ def main():
 
     print()
     print("9. A promotion with no current stage is refused")
-    answer = DEP.activate(agent, "PRODUCTION", approved_by="the owner",
+    answer = DEP.activate(agent, "PRODUCTION", approval=SIGNED(),
                           validation=PASSED)
     check(answer.get("refused") == "NO_RECORD",
           "PRODUCTION with no registry record is refused, signature or not")
@@ -228,14 +254,23 @@ def main():
           and "A count is not evidence" in answer["why"],
           "the integer that used to pass is refused, and told why")
     check("D-30" in answer["why"], "and the decision that settles it is cited")
-    nameless = [{"run": "w-%d" % n} for n in range(12)]
-    answer = DEP.activate(agent, "PROVEN", record=REC("SHADOW"),
-                          evidence={"real-runs": nameless},
-                          validation=PASSED)
-    check(not answer["activated"] and "name no run id or no model"
-          in answer["why"],
-          "runs that name no model are refused - a run nobody can look up "
-          "is not a run anybody can check")
+    for missing, what in (("model", "a run that names no model"),
+                          ("negative-case", "a run with no negative case"),
+                          ("fingerprint", "a run with no staleness "
+                                          "fingerprint")):
+        thin = [{k: v for k, v in run.items() if k != missing}
+                for run in RUNS]
+        answer = DEP.activate(agent, "PROVEN", record=REC("SHADOW"),
+                              evidence={"real-runs": thin}, validation=PASSED)
+        check(not answer["activated"] and "names no %s" % missing
+              in answer["why"], "%s is not proof" % what)
+    for marker in ("degraded", "sandboxed", "user-corrected"):
+        marked = [dict(run, **{marker: True}) for run in RUNS]
+        answer = DEP.activate(agent, "PROVEN", record=REC("SHADOW"),
+                              evidence={"real-runs": marked},
+                              validation=PASSED)
+        check(not answer["activated"],
+              "a run marked %s is evidence about something else" % marker)
     answer = DEP.activate(agent, "PROVEN", record=REC("SHADOW"),
                           evidence={"real-runs": RUNS[:3]},
                           validation=PASSED)

@@ -113,6 +113,20 @@ def main():
                           unit="calls")["allowed"],
           "an estimate that fits is allowed")
 
+    for bad in (float("nan"), float("inf"), -5, "some"):
+        answer = small.may_spend(BUDGET.REQUEST, estimate=bad, unit="calls")
+        check(not answer["allowed"],
+              "an estimate of %r is refused, not weighed" % (bad,))
+
+    print()
+    print("2b. A unit is required whether or not a budget exists yet")
+    fresh = BUDGET.Budget()
+    check(raises(lambda: fresh.record(BUDGET.SESSION, 5, None, "adapter")),
+          "a spend with no unit is refused before any budget is set")
+    fresh.record(BUDGET.SESSION, 5, "calls", "adapter")
+    check(raises(lambda: fresh.record(BUDGET.SESSION, 5, "usd", "adapter")),
+          "and a second spend in another unit is refused too")
+
     print()
     print("3. Units are matched, never converted")
     answer = small.may_spend(BUDGET.REQUEST, estimate=1, unit="usd")

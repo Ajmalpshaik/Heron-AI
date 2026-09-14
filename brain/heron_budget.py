@@ -169,6 +169,25 @@ class Budget(object):
                     "refused": "BUDGET_EXCEEDED", "why": why}
 
         if estimate is not None:
+            # The same three checks record() makes. An estimate of NaN made
+            # every comparison below it false and returned allowed: true, and
+            # the call had already cost its money by the time record() could
+            # correct the posture.
+            try:
+                estimate = float(estimate)
+            except (TypeError, ValueError):
+                return {"allowed": False, "posture": posture,
+                        "refused": "BUDGET_EXCEEDED",
+                        "why": "'%s' is not an estimate a budget can weigh."
+                               % (estimate,)}
+            if estimate != estimate or estimate in (float("inf"),
+                                                    float("-inf")) \
+                    or estimate < 0:
+                return {"allowed": False, "posture": posture,
+                        "refused": "BUDGET_EXCEEDED",
+                        "why": "an estimate of %s cannot be weighed against a "
+                               "budget - it is not a finite, non-negative "
+                               "number." % estimate}
             if unit and unit != budget_unit:
                 return {"allowed": False, "posture": posture,
                         "refused": "UNIT_MISMATCH",
@@ -232,10 +251,27 @@ class Budget(object):
             raise ValueError(
                 "a spend with no source is a guess. Heron has no tokeniser "
                 "(D-58) - record what the provider reported, and name it.")
+        # A UNIT IS REQUIRED WHETHER OR NOT A BUDGET EXISTS YET. Without
+        # this, record("session", 5, None, ...) was accepted before any limit
+        # was set, and a later set_budget(..., "calls") inherited five
+        # somethings as five calls - the meter and the enforcement both wrong,
+        # from a number that never said what it was.
+        if not unit:
+            raise ValueError(
+                "a spend with no unit is a number nobody can check. Say what "
+                "it counts, even when no budget is set yet.")
         if scope in self._limit and unit != self._limit[scope][1]:
             raise ValueError(
                 "spend is in %s and the %s budget is in %s. Units are matched "
                 "here, never converted." % (unit, scope, self._limit[scope][1]))
+        if scope not in self._limit:
+            seen = {u for s, _a, u, _r in self.ledger if s == scope}
+            if seen and unit not in seen:
+                raise ValueError(
+                    "%s has already been recorded in %s and this spend is in "
+                    "%s. Units are matched, never converted - and there is no "
+                    "budget yet to match against."
+                    % (scope, ", ".join(sorted(seen)), unit))
         self._spent[scope] = self._spent.get(scope, 0.0) + float(amount)
         self.ledger.append((scope, float(amount), unit, reported_by))
         return self._spent[scope]

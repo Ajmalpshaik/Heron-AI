@@ -134,6 +134,31 @@ def main():
           "a refusal is not evidence either - there is no result to weigh")
 
     print()
+    print("6b. A probe that did not complete keeps its retryable name")
+    router = two_adapters()
+    all_failed = AVAIL.resolve(router, "CLASSIFY",
+                               {"on-machine": {"error": "timed out"},
+                                "claude-code": {"error": "timed out"}})
+    check(all_failed.get("refused") == "PROBE_FAILED",
+          "when every probe failed, the answer is PROBE_FAILED")
+    check("nothing is known about any provider" in all_failed["why"],
+          "and it says nothing is known either way")
+    mixed = AVAIL.resolve(router, "CLASSIFY",
+                          {"on-machine": {"error": "timed out"},
+                           "claude-code": {"reachable": False}})
+    check(mixed.get("refused") == "NOTHING_AVAILABLE",
+          "a mix of a failed probe and a dead provider is not retryable")
+
+    print()
+    print("6c. A missing degradation marker is not evidence")
+    for result in ({"adapter": "x"}, {"adapter": "x", "degraded": None},
+                   {"adapter": "x", "degraded": "no"}):
+        check(not AVAIL.counts_as_evidence(result),
+              "%r does not count - only an explicit False does" % (result,))
+    check(AVAIL.counts_as_evidence({"adapter": "x", "degraded": False}),
+          "and an explicit first-choice outcome does")
+
+    print()
     print("7. Nothing available names everything tried")
     router = ROUTER.Router()
     router.register("first", ROUTER.HOST)

@@ -225,6 +225,25 @@ def main():
           or True, "comparing it with itself is also survivable")
 
     print()
+    print("10c. Two more things compare() must not wave through")
+    shorter = copy.deepcopy(base)
+    shorter["timeout-seconds"] = 1
+    shorter["version"] = "1.1.0"
+    verdict, reasons = CON.compare(base, shorter)
+    check(verdict == "BREAKING" and said(reasons, "the timeout fell"),
+          "lowering a timeout is breaking - a call that fitted can now fail")
+    longer = copy.deepcopy(base)
+    longer["timeout-seconds"] = 60
+    longer["version"] = "1.1.0"
+    check(CON.compare(base, longer)[0] == "COMPATIBLE",
+          "raising it costs nobody anything")
+    other = copy.deepcopy(base)
+    other["agent"] = "HERON-KRN-PRO-011"
+    verdict, reasons = CON.compare(base, other)
+    check(verdict == "BREAKING" and said(reasons, "different agents"),
+          "two contracts for different agents are not two versions of one")
+
+    print()
     print("11. Every contract in the repository validates")
     known = CON.registry_ids()
     found = CON.contracts()

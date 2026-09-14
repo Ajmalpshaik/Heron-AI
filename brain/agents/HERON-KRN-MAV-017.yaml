@@ -4,7 +4,11 @@
 # status (the module's Heron-Status header owns it).
 
 agent: HERON-KRN-MAV-017
-version: 1.0.0
+# 2.0.0: `probes` is a REQUIRED input that was missing. resolve() calls
+# probes.get() immediately, so a caller built from version 1 could not judge
+# any provider at all - it failed at the Python boundary instead of returning
+# one of the outcomes this contract advertises.
+version: 2.0.0
 
 input:
   intent:
@@ -19,6 +23,14 @@ input:
       How much context the request will occupy. An adapter whose limit is
       smaller is not available FOR THIS REQUEST, which is different from
       being down.
+  probes:
+    type: map
+    required: true
+    description: >
+      What each adapter answered when it was asked - reachable, auth,
+      latency_ms, context_limit, or an error if the probe itself did not
+      complete. An adapter with no probe is treated as unreachable, never
+      as fine.
   confidential:
     type: boolean
     required: false

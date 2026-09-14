@@ -223,10 +223,17 @@ def main():
     print()
     print("11. Deployment - the gates, one at a time")
     stage = "DISCOVERED"
-    runs = [{"run": "w-%d" % n, "model": "Snowdon Towers Sample HVAC"}
+    # Each gate's evidence in the shape that gate asks for - the proof runs
+    # carrying a negative case and a fingerprint, and the two names TESTING
+    # compares because a file under tests/ does not say who wrote it.
+    runs = [{"run": "w-%d" % n, "model": "Snowdon Towers Sample HVAC",
+             "negative-case": "a view with no ducts returned 0",
+             "fingerprint": "a1b2c3", "degraded": False, "sandboxed": False}
             for n in range(12)]
-    walk = [("DRAFT", {}), ("TESTING", {}),
-            ("VALIDATED", {"matrix": "python 3.11 on linux"}),
+    walk = [("DRAFT", {}),
+            ("TESTING", {"implemented-by": "a session",
+                         "test-author": "the owner"}),
+            ("VALIDATED", {"matrix": {"3.11-linux": "pass"}}),
             ("SHADOW", {"shadow-plan": "beside the log writer"}),
             ("PROVEN", {"real-runs": runs})]
     for to_stage, evidence in walk:
@@ -245,7 +252,11 @@ def main():
           "and PRODUCTION stops dead without a person")
     signed = DEP.activate(SUBJECT, "PRODUCTION",
                           record={"id": SUBJECT, "state": stage},
-                          approved_by="the owner", validation=validation)
+                          approval={"by": "the owner",
+                                    "at": "2026-09-14T03:00:00Z",
+                                    "agent": SUBJECT,
+                                    "stage": "PRODUCTION"},
+                          validation=validation)
     check(signed["activated"] and signed["record"]["applied"] is False,
           "a person signs, and even then nothing is applied by a machine")
 

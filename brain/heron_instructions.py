@@ -243,6 +243,17 @@ def validate(known=None, rules=None):
             problems.append(
                 "%s: has no evaluation case - an instruction nothing tests is "
                 "a wording change nobody can catch (docs/23 s9)" % where)
+        for case in cases:
+            case = case if isinstance(case, dict) else {}
+            if not (case.get("must-contain") or case.get("must-not-contain")):
+                # A case with a name and no assertion passed the "has cases"
+                # check and then ran zero assertions, so an instruction could
+                # be fully untested while looking tested.
+                problems.append(
+                    "%s: case '%s' asserts nothing. A case needs at least one "
+                    "must-contain or must-not-contain, or it is a name where "
+                    "a test should be."
+                    % (where, case.get("name", "unnamed")))
 
         for number in declaration.get("articles") or []:
             if str(number) not in rules:

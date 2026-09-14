@@ -91,6 +91,15 @@ def main():
     check(not raised, "publishing an event with a broken listener does not raise")
 
     print()
+    print("3b. History keeps its own copy of the failures")
+    kept = len(bus.history)
+    outcome = bus.publish("revit.lost", {})
+    outcome["failed"].clear()
+    check(bus.history[-1][2],
+          "clearing the returned list does not erase the recorded failure")
+    check(len(bus.history) == kept + 1, "and the publish was still recorded")
+
+    print()
     print("4. A handler may notify. It may not act")
     for risk in ("MODIFY", "EXECUTE", "PUBLISH", "ADMIN", "SUGGEST"):
         refused = False

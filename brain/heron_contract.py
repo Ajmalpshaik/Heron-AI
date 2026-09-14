@@ -281,6 +281,17 @@ def compare(old, new):
     """
     reasons = []
 
+    # ONE CANNOT BE A VERSION OF THE OTHER. Two contracts naming different
+    # agents with the same interface used to compare IDENTICAL, so picking the
+    # wrong pair of files passed the change gate without a word.
+    old_agent = old.get("agent") if isinstance(old, dict) else None
+    new_agent = new.get("agent") if isinstance(new, dict) else None
+    if old_agent and new_agent and old_agent != new_agent:
+        return "BREAKING", [
+            "these are contracts for different agents - %s and %s. One cannot "
+            "be a version of the other, so there is no change to judge."
+            % (old_agent, new_agent)]
+
     for side in ("input", "output"):
         was, now = _fields(old, side), _fields(new, side)
         for name in sorted(set(was) - set(now)):
@@ -306,6 +317,18 @@ def compare(old, new):
     for name in sorted(now_f - was_f):
         reasons.append("failure state '%s' was added - a caller that handles "
                        "failures exhaustively has no branch for it" % name)
+
+    # A SHORTER TIMEOUT IS BREAKING. A call that legitimately finished under
+    # the old promise can time out under the new one, which is a caller that
+    # was correct becoming a caller that fails. Raising it costs nobody
+    # anything, so only the downward direction counts.
+    was_timeout, now_timeout = (old.get("timeout-seconds"),
+                                new.get("timeout-seconds"))
+    if isinstance(was_timeout, int) and isinstance(now_timeout, int) \
+            and now_timeout < was_timeout:
+        reasons.append("the timeout fell from %ds to %ds - a call that "
+                       "finished inside the old promise can fail under the "
+                       "new one" % (was_timeout, now_timeout))
 
     if reasons:
         verdict = "BREAKING"
@@ -369,6 +392,10 @@ def main(argv):
     for path, data in found:
         broken = validate(data, known, os.path.basename(path))
         problems.extend(broken)
+        # A contract whose root is a list or a scalar is exactly what
+        # validate() just reported on, so the line reporting it must not be
+        # the line that raises AttributeError on data.get().
+        data = data if isinstance(data, dict) else {}
         print("  %-5s %-26s v%-8s %d in, %d out, %d failure(s)"
               % ("FAIL" if broken else "ok",
                  data.get("agent", "?"), data.get("version", "?"),

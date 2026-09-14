@@ -242,6 +242,13 @@ def main(argv):
     part = "brain"
     step = DEFAULT_STEP
     rest = argv[2:]
+    if len(rest) % 2:
+        # zip() silently dropped a trailing flag, so `--part` with no value
+        # scaffolded three files into the DEFAULT part and said nothing. A
+        # malformed command writes nothing and says so.
+        print("'%s' has no value. Every option takes one: --part %s, --step N"
+              % (rest[-1], "|".join(PARTS)))
+        return 2
     for flag, value in zip(rest[::2], rest[1::2]):
         if flag == "--part":
             part = value

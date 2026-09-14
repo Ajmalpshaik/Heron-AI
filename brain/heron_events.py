@@ -149,7 +149,10 @@ class Bus(object):
                 failed.append((None, "EVENT_CYCLE: %s" % chain))
             self._cycles = []
 
-        self.history.append((event, delivered, failed))
+        # HISTORY KEEPS ITS OWN LIST. Handing the caller the same object
+        # meant a publisher that cleared its result also erased the only
+        # persistent account this bus keeps of a stopped or broken delivery.
+        self.history.append((event, delivered, list(failed)))
         return {"delivered": delivered, "failed": failed, "order": order}
 
 

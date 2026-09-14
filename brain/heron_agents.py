@@ -130,7 +130,16 @@ def contracts():
         path = os.path.join(CONTRACTS_DIR, name)
         with io.open(path, encoding="utf-8") as fh:
             data = yaml.safe_load(fh) or {}
-        key = data.get("agent") or os.path.splitext(name)[0]
+        key = data.get("agent") if isinstance(data, dict) else None
+        key = key or os.path.splitext(name)[0]
+        if key in found:
+            # The same rule the instruction registry has, for the same reason:
+            # sort order is not a way to settle which of two files is an
+            # agent's interface.
+            raise ValueError(
+                "CONTRACT_DUPLICATED: %s and brain/agents/%s both declare "
+                "'%s'. One would silently replace the other as that agent's "
+                "interface." % (found[key][0], name, key))
         found[key] = ("brain/agents/" + name, data)
     return found
 

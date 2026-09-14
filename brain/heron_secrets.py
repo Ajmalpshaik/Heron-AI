@@ -166,7 +166,17 @@ class Secrets(object):
                 "so '%s' cannot be "
                 "resolved. Heron does not keep credentials in the workspace "
                 "(Article 17)." % name)
-        value = self._backend(name)
+        try:
+            value = self._backend(name)
+        except Exception as exc:                             # noqa: BLE001
+            # Deliberately broad: the backend is Windows Credential Manager or
+            # whatever else a machine has, and an outage there is an
+            # operational failure the contract already declares and retries.
+            # Letting it escape meant the one failure worth retrying could
+            # never take the retry path the contract promises.
+            raise LookupError("BACKEND_UNAVAILABLE: the credential store "
+                              "could not be reached - %s: %s"
+                              % (type(exc).__name__, exc))
         if value is None:
             raise LookupError("NO_SUCH_HANDLE: the credential store has "
                               "no '%s'" % name)

@@ -180,6 +180,21 @@ def main():
     check(bad, "a handle without the prefix is refused when it is made")
 
     print()
+    print("7b. A backend that breaks is BACKEND_UNAVAILABLE")
+    def broken_store(name):
+        raise OSError("the credential manager is not running")
+
+    angry = SECRETS.Secrets(backend=broken_store, workspace=ROOT)
+    raised = ""
+    try:
+        angry.resolve(handle)
+    except LookupError as exc:
+        raised = str(exc)
+    check("BACKEND_UNAVAILABLE" in raised,
+          "an outage in the store takes the failure state the contract "
+          "declares and retries")
+
+    print()
     print("8. A secret offered as a fragment input is refused")
     offending = secrets.refuse_secret_input({
         "category": "OST_DuctCurves",
