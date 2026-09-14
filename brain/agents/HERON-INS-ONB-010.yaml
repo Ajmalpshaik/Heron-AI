@@ -1,0 +1,82 @@
+# First-Run Onboarding Agent - HERON-INS-ONB-010
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register marks this
+# row T2 - and the one scoped call that makes it T2 is the HOST's (D-01),
+# which is why nothing in the module calls a model.
+
+agent: HERON-INS-ONB-010
+version: 1.0.0
+
+input:
+  install:
+    type: map
+    required: true
+    description: >
+      HERON-INS-HLT-009's REPORT - not its `complete()`. Those are
+      different questions: `complete()` is all-or-nothing, so taking it
+      would let one WARNING anywhere silence the entire guide, and most
+      first runs have one. A FAILED install gets nothing; anything less
+      is guided minus the topics whose own step is not HEALTHY.
+  already_guided:
+    type: boolean
+    required: false
+    description: >
+      Whether this install has been guided. HANDED IN - it is a fact about
+      the install that outlives any one process, and an agent keeping it
+      in memory would introduce itself again after every restart.
+  degraded:
+    type: list
+    required: false
+    description: >
+      HERON-INS-DEP-005's degraded list. Its `say` sentences are passed
+      through rather than reworded, so nothing here invents an
+      explanation for a capability it does not own.
+
+output:
+  guide:
+    type: boolean
+    description: >
+      Whether to speak at all. A second run is REFUSED, not shortened -
+      there is no shorter second version to fall back on, and an agent
+      with one of those is an agent that will be run twice.
+  topics:
+    type: list
+    description: >
+      What is worth showing, in order, with what each rests on. TOPICS,
+      not sentences: D-01 gives the wording and the level to the host.
+  left_out:
+    type: list
+    description: >
+      Topics dropped because the step they rest on is not HEALTHY, each
+      saying so. Showing one would demonstrate something that does not
+      work.
+  say_about_degraded:
+    type: list
+    description: HERON-INS-DEP-005's own sentences, unchanged.
+  state:
+    type: string
+    description: On INSTALL_FAILED - the state step 15 reported.
+  why:
+    type: string
+    description: The counts, or the refusal.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty when it guides. That this is what to say and not
+      how, that "already guided" was handed in, and that nothing was
+      recorded - including the fact that it ran.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - ALREADY_GUIDED
+  - NO_INSTALL_REPORT
+  - INSTALL_FAILED
+  - NOTHING_WORKS_YET
+
+retry:
+  attempts: 0
+  on-failures: []
