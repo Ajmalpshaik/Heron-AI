@@ -80,6 +80,19 @@ def main():
           "a reported spend is recorded with the source that reported it")
 
     print()
+    print("1b. A reported number that is not a number, or is negative")
+    for bad, what in ((-5, "a negative spend"), (float("nan"), "a NaN spend"),
+                      (float("inf"), "an infinite spend"),
+                      ("lots", "a spend that is not a number"),
+                      (None, "a spend of None")):
+        check(raises(lambda: book.record(BUDGET.SESSION, bad, "calls",
+                                         "the adapter")),
+              "%s is refused" % what)
+    check(book.remaining(BUDGET.SESSION) == 95,
+          "and none of them moved the budget")
+    check(len(book.ledger) == 1, "nor reached the ledger")
+
+    print()
     print("2. An estimate is judged as an estimate")
     small = BUDGET.Budget()
     small.set_budget(BUDGET.REQUEST, 10, "calls")

@@ -114,6 +114,16 @@ def main():
           "validate() names it INCLUDE_CYCLE rather than hanging on it")
 
     print()
+    print("3b. An included instruction's articles arrive once, not twice")
+    modify, used = INS.compose("agent.modify")
+    check(len(used) == len(set(used)), "no article number is collected twice")
+    first_line = rules["22"].splitlines()[0]
+    check(modify.count(first_line) == 1,
+          "agent.base's article 22 appears once in agent.modify")
+    check(modify.count("Rules you may not violate") == 1,
+          "and the line that introduces them appears once")
+
+    print()
     print("4. Missing things raise, one per declared failure state")
     check(raises(lambda: INS.compose("no.such.instruction"), KeyError),
           "an unknown instruction raises")

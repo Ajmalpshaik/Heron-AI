@@ -139,13 +139,22 @@ def _shingles(text, size=COPY_WINDOW):
 
 
 def compose(instruction_id, known=None, rules=None, extra_articles=(),
-            _seen=None):
+            _seen=None, _render=True):
     """
     (text, articles_used) - the words an agent is actually given.
 
     Order is fixed and not a preference: the instruction's own purpose and
     text first, then what it includes, then the Constitution articles. A rule
     read last is the one that stays read.
+
+    THE ARTICLES ARE RENDERED ONCE, AT THE OUTERMOST CALL. An included
+    instruction returns its words and the NUMBERS it declared, not the article
+    text - because the parent appends everything it collected at the end, and
+    a nested call that had already rendered its own would put every article of
+    agent.base into agent.modify twice. It did, until 2026-09-14: article 22
+    arrived in the real agent.modify instruction two times, along with a second
+    copy of the line introducing them. A rule an agent is told twice is a rule
+    weighted twice, in the one place where weighting is invisible.
 
     Raises KeyError for a missing instruction, article or include, and
     ValueError for a cycle - each of which is a failure state the contract
@@ -172,9 +181,11 @@ def compose(instruction_id, known=None, rules=None, extra_articles=(),
         if included not in known:
             raise KeyError("INCLUDE_NOT_FOUND: %s includes '%s', which "
                            "does not exist" % (instruction_id, included))
-        text, inner = compose(included, known, rules, (), seen)
+        text, inner = compose(included, known, rules, (), seen, _render=False)
         parts.append(text)
-        used.extend(inner)
+        for number in inner:
+            if number not in used:
+                used.append(number)
 
     wanted = [str(a) for a in (declaration.get("articles") or [])]
     wanted += [str(a) for a in extra_articles]
@@ -186,7 +197,7 @@ def compose(instruction_id, known=None, rules=None, extra_articles=(),
             continue
         used.append(number)
 
-    if used:
+    if used and _render:
         parts.append("Rules you may not violate, from HERON_CONSTITUTION.md:")
         parts.extend(rules[n] for n in used)
 

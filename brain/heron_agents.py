@@ -152,7 +152,13 @@ def record(agent_id, agents=None, claims=None, host=None, deals=None):
         return None
 
     files = sorted(claims.get(agent_id, []))
-    head = header_of(files[0]) if files else {}
+    # THE HEADER COMES FROM AN IMPLEMENTATION, NEVER FROM A TEST. Sorted, a
+    # path under tests/ comes before one under tools/, so files[0] was reading
+    # status, layer and since off the test for every agent implemented in
+    # tools/ - three of them reported `layer: test`, and a test left at DRAFT
+    # would have overridden a PROVEN implementation.
+    implementations = [f for f in files if not f.startswith("tests/")]
+    head = header_of((implementations or files)[0]) if files else {}
     contract_path, contract = deals.get(agent_id, (None, None))
 
     if agent_id in (host or {}):

@@ -59,6 +59,7 @@ publishes the length, and a length is a meaningful clue about which credential
 it was.
 """
 
+import os
 import re
 import sys
 
@@ -77,6 +78,33 @@ PATTERNS = (
     ("slack token",     re.compile(r"\bxox[baprs]-[A-Za-z0-9\-]{10,}")),
     ("bearer token",    re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._\-]{20,}")),
 )
+
+
+def _inside(path, workspace):
+    """
+    Is `path` inside `workspace`, compared as paths rather than as text.
+
+    Three things a startswith() on raw strings gets wrong, and the third is
+    the one that matters:
+
+      case      Windows paths are case-insensitive, so C:\\Heron-AI and
+                c:\\heron-ai are one folder. A case-sensitive compare lets a
+                store inside the repository through the boundary.
+      shape     ./Heron-AI/../Heron-AI/.secrets is inside, and reads as a
+                different string.
+      boundary  "Heron-AI-notes" starts with "Heron-AI" and is NOT inside it.
+                A prefix test says it is, and would refuse a store that was
+                perfectly safe - the failure that teaches people to pass the
+                check a folder name it does not complain about.
+
+    So both are made absolute, normalised for the platform, and compared
+    COMPONENT BY COMPONENT.
+    """
+    here = os.path.normcase(os.path.abspath(str(path))).replace("\\", "/")
+    root = os.path.normcase(os.path.abspath(str(workspace))).replace("\\", "/")
+    here_parts = [p for p in here.split("/") if p]
+    root_parts = [p for p in root.split("/") if p]
+    return here_parts[:len(root_parts)] == root_parts
 
 
 class Handle(object):
@@ -164,8 +192,7 @@ class Secrets(object):
         a secret one `git add -A` away from a public repository, and D-07 makes
         that permanent.
         """
-        if self._workspace and str(path).replace("\\", "/").startswith(
-                str(self._workspace).replace("\\", "/")):
+        if self._workspace and _inside(path, self._workspace):
             raise ValueError(
                 "STORE_INSIDE_WORKSPACE: that credential store is inside "
                 "the workspace. Anything in "
@@ -210,16 +237,32 @@ class Secrets(object):
         `token` is not what makes it dangerous.
         """
         offending = []
-        for key, value in sorted((payload or {}).items()):
+
+        def look(where, value):
             if isinstance(value, Handle):
-                continue
-            if not isinstance(value, str):
-                continue
-            if value.startswith(HANDLE_PREFIX):
-                continue
+                return
+            if isinstance(value, dict):
+                for key, inner in sorted(value.items()):
+                    look("%s.%s" % (where, key) if where else str(key), inner)
+                return
+            if isinstance(value, (list, tuple)):
+                for index, inner in enumerate(value):
+                    look("%s[%d]" % (where, index), inner)
+                return
+            if not isinstance(value, str) or value.startswith(HANDLE_PREFIX):
+                return
             _clean, found = self.redact(value)
             if found:
-                offending.append((key, "VALUE_OFFERED_AS_INPUT", found[0]))
+                offending.append((where, "VALUE_OFFERED_AS_INPUT", found[0]))
+
+        # NESTED VALUES ARE LOOKED AT, because the contract allows a `map`
+        # payload and this method is the boundary that enforces
+        # VALUE_OFFERED_AS_INPUT. Stopping at top-level strings meant
+        # {"auth": {"token": "..."}} passed clean, which is exactly how a
+        # credential would actually be handed to a fragment - nobody puts it
+        # in a bare top-level field called `secret`.
+        for key, value in sorted((payload or {}).items()):
+            look(str(key), value)
         return offending
 
 

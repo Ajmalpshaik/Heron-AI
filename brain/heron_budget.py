@@ -185,6 +185,28 @@ class Budget(object):
         """
         if scope not in SCOPES:
             raise ValueError("'%s' is not a budget scope" % scope)
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError):
+            raise ValueError(
+                "'%s' is not an amount. A spend that is not a number cannot "
+                "be added to a budget." % (amount,))
+        if amount != amount or amount in (float("inf"), float("-inf")):
+            # NaN compares false against everything, so a NaN spend would make
+            # every posture and overrun test false - the budget would still be
+            # there and would have stopped meaning anything.
+            raise ValueError(
+                "a spend of %s is not a number a budget can hold. NaN and "
+                "infinity make every comparison below them false, which "
+                "disables the budget silently rather than loudly." % amount)
+        if amount < 0:
+            # A negative spend would REFUND the budget and could move a
+            # STOPPED scope back to NORMAL. A correction is somebody's
+            # decision, not something a provider's reply may do on its own.
+            raise ValueError(
+                "a spend of %s is negative. Money and tokens do not come "
+                "back from a provider's reply - a correction is a decision "
+                "somebody makes, not something a report may do." % amount)
         if not reported_by:
             raise ValueError(
                 "a spend with no source is a guess. Heron has no tokeniser "

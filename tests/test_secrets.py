@@ -132,6 +132,33 @@ def main():
           "a store outside it is allowed")
 
     print()
+    print("6b. The workspace boundary is a path, not a prefix of a string")
+    check(SECRETS._inside(os.path.join(ROOT, "a", ".secrets"), ROOT),
+          "a file deeper inside the workspace is inside it")
+    check(not SECRETS._inside(ROOT + "-notes/store.json", ROOT),
+          "a SIBLING whose name starts the same is not inside it")
+    check(SECRETS._inside(os.path.join(ROOT, "x", "..", ".secrets"), ROOT),
+          "and a path that walks back into it still is")
+    check(SECRETS._inside(ROOT.upper() + "/.secrets", ROOT)
+          == (os.path.normcase("A") == os.path.normcase("a")),
+          "case is compared the way this platform compares it")
+
+    print()
+    print("6c. A secret nested in a map or a list is still a secret")
+    nested = secrets.refuse_secret_input({
+        "auth": {"token": CLOUD},
+        "headers": [{"Authorization": "Bearer " + ("z" * 40)}],
+        "category": "OST_DuctCurves",
+    })
+    where = [key for key, _code, _why in nested]
+    check("auth.token" in where,
+          "a credential one level down is found, and its path is named")
+    check(any(key.startswith("headers[0]") for key in where),
+          "and one inside a list inside a map")
+    check(not any(key.startswith("category") for key in where),
+          "while an ordinary value is left alone")
+
+    print()
     print("7. A missing secret raises rather than returning None")
     for call, what in (
             (lambda: secrets.resolve(SECRETS.Handle(

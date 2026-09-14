@@ -88,6 +88,21 @@ def main():
           "a host-provided agent reads HOST, not NOT BUILT")
 
     print()
+    print("1b. The header comes from an implementation, never from a test")
+    sorted_test_first = {
+        "HERON-KRN-EVT-004": ["tests/test_events.py", "brain/heron_events.py"]}
+    from_impl = REG.record("HERON-KRN-EVT-004", agents, sorted_test_first,
+                           host, deals)
+    check(from_impl["layer"] == "brain",
+          "with a test sorting first, the layer is still the module's")
+    for agent_id in ("HERON-DOC-FRG-004", "HERON-WSP-BAK-010",
+                     "HERON-WSP-RST-011"):
+        if agent_id in claims:
+            found_one = REG.record(agent_id, agents, claims, host, deals)
+            check(found_one["layer"] != "test",
+                  "%s no longer reports layer: test" % agent_id)
+
+    print()
     print("2. Nothing is stored")
     source = io.open(os.path.join(ROOT, "brain", "heron_agents.py"),
                      encoding="utf-8").read()

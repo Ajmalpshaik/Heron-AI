@@ -4,13 +4,24 @@
 # status (the module's Heron-Status header owns it).
 
 agent: HERON-AHR-DEP-012
-version: 1.0.0
+# 2.0.0, not 1.1.0: `from-stage` is a REQUIRED input that was not there
+# before, and NO_CURRENT_STAGE is a failure state a caller had no branch for.
+# Both are breaking by brain/heron_contract.py's own rule, and the rule is not
+# waived because the change is an improvement.
+version: 2.0.0
 
 input:
   agent:
     type: string
     required: true
     description: The agent being moved to its next stage.
+  from-stage:
+    type: string
+    required: true
+    description: >
+      The stage it is in NOW, read from the register. Without it no gate
+      can be checked - a promotion with no current stage is every gate
+      below the target skipped at once.
   to-stage:
     type: string
     required: true
@@ -49,6 +60,7 @@ allowed-tools: []
 timeout-seconds: 30
 
 failures:
+  - NO_CURRENT_STAGE
   - NOT_VALIDATED
   - GATE_NOT_MET
   - NEEDS_HUMAN_APPROVAL

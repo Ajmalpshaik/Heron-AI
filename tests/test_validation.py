@@ -90,6 +90,13 @@ def main():
                 built_by="HERON-AHR-BLD-004")["verdict"] == "PASS",
           "a different builder is fine")
 
+    for spelling in (VAL.SELF.lower(), " " + VAL.SELF + " ",
+                     VAL.SELF.title()):
+        check(judge("HERON-KRN-EVT-004",
+                    built_by=spelling).get("refused")
+              == "VALIDATOR_IS_THE_BUILDER",
+              "'%s' is the same builder, whatever the shift key did" % spelling)
+
     print()
     print("2. Nothing to validate is refused, and says which nothing")
     answer = judge("HERON-MADE-UP-999")

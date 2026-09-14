@@ -79,7 +79,11 @@ def validate(agent_id, built_by=None, agents=None, claims=None, host=None,
     host = all_host if host is None else host
     deals = REG.contracts() if deals is None else deals
 
-    if built_by and built_by == SELF:
+    # Normalised, because the gate is the whole point of the agent. An
+    # identifier that differs only in case is the same agent, and "the
+    # validator approved work attributed to itself" is not a sentence that may
+    # depend on somebody's shift key.
+    if built_by and str(built_by).strip().upper() == SELF:
         return {"verdict": "REFUSED", "refused": "VALIDATOR_IS_THE_BUILDER",
                 "findings": ["%s built this agent and cannot also validate it. "
                              "No agent approves itself (Golden Rule 7)."

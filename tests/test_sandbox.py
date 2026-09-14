@@ -141,6 +141,20 @@ def main():
           "what the caller still holds is untouched")
 
     print()
+    print("7b. The copy is deep, because a payload may be a map")
+    def rummages(world, payload):
+        payload["nested"]["category"] = "pipes"
+        payload["list"].append("added")
+        return "changed what it was given"
+
+    mine = {"nested": {"category": "ducts"}, "list": ["one"]}
+    record = BOX.run("G", rummages, mine)
+    check(mine["nested"]["category"] == "ducts" and mine["list"] == ["one"],
+          "a nested value the caller still holds is untouched")
+    check(record["payload"]["nested"]["category"] == "ducts",
+          "and the agent could not rewrite the record of what it was given")
+
+    print()
     print("8. The record stands alone afterwards")
     record = BOX.run("F", lambda w, p: w.write("temporary", "seen", 7))
     check(record["wrote"] == {("temporary", "seen"): 7},

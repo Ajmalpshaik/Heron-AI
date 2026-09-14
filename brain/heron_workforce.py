@@ -17,11 +17,13 @@ WHAT IT IS FOR (docs/28, HERON-AHR-WFP-015)
 existing agent be extended, is this a fragment rather than an agent? THIS IS
 THE GUARD AGAINST AGENT EXPLOSION."
 
-250 agents is a number this repository had to correct once already, upward,
-because departments were added faster than anybody added them up. The failure
-mode is not one bad agent - it is thirty agents that each do a tenth of
-something an existing one already does, and a register nobody can hold in their
-head.
+The register's size is a number this repository had to correct once already,
+upward, because departments were added faster than anybody added them up - so
+it is not typed here either. `python tools/agent-count.py` derives it.
+
+The failure mode is not one bad agent - it is thirty agents that each do a
+tenth of something an existing one already does, and a register nobody can hold
+in their head.
 
 So this is built BEFORE the factory that can create agents, not after it. Built
 after, it guards nothing: by then the 125 department agents exist.

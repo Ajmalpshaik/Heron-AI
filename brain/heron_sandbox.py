@@ -47,6 +47,7 @@ than left for somebody to discover, and the day a sandbox needs to survive
 that, it needs a subprocess and not a cleverer timer.
 """
 
+import copy
 import sys
 import time
 
@@ -103,11 +104,19 @@ def run(agent_id, handler, payload=None, timeout_seconds=None, world=None):
     """
     world = world or SandboxWorld()
     started = time.time()
-    record = {"agent": agent_id, "sandboxed": True, "payload": payload or {},
+    # THREE INDEPENDENT COPIES, not one shallow one. A contract may declare a
+    # `map` payload, so a nested dictionary or list inside it is normal - and
+    # dict(payload) copies only the outer mapping, leaving every nested object
+    # shared with the caller AND with the record. A new agent could then edit
+    # the caller's data and rewrite the audit record of what it was given,
+    # during the very run the record exists to describe.
+    record = {"agent": agent_id, "sandboxed": True,
+              "payload": copy.deepcopy(payload) if payload else {},
               "result": None, "failed": None, "attempts": world.attempts}
 
     try:
-        record["result"] = handler(world, dict(payload or {}))
+        record["result"] = handler(
+            world, copy.deepcopy(payload) if payload else {})
     except Refused as exc:
         record["failed"] = "REFUSED: %s" % exc
     except Exception as exc:                                 # noqa: BLE001

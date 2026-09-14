@@ -148,7 +148,27 @@ def activate(agent_id, to_stage, from_stage=None, approved_by=None,
                        "fragments, skills, capabilities and agents: %s."
                        % (to_stage, ", ".join(LADDER))}
 
-    if from_stage and from_stage in LADDER:
+    # A PROMOTION WITHOUT A CURRENT STAGE IS EVERY GATE SKIPPED. Until
+    # 2026-09-14 this check ran only `if from_stage and from_stage in LADDER`,
+    # so omitting it - which is what a caller built from the contract did,
+    # because the contract did not declare the field - walked straight to
+    # PRODUCTION on one signature, past DISCOVERED, DRAFT, TESTING, VALIDATED,
+    # SHADOW and PROVEN. The ladder is the trust model; an optional rung is
+    # not a rung.
+    if not from_stage:
+        return {"activated": False, "refused": "NO_CURRENT_STAGE",
+                "why": "nothing said what stage %s is in now, and a gate can "
+                       "only be checked against the one below it. Read the "
+                       "current stage from the register and pass it."
+                       % agent_id}
+
+    if from_stage not in LADDER:
+        return {"activated": False, "refused": "UNKNOWN_STAGE",
+                "why": "'%s' is not a stage in docs/24, so nothing can be "
+                       "promoted out of it. The ladder is: %s."
+                       % (from_stage, ", ".join(LADDER))}
+
+    if True:
         step = LADDER.index(to_stage) - LADDER.index(from_stage)
         if step > 1:
             return {"activated": False, "refused": "STAGE_SKIPPED",
@@ -158,7 +178,10 @@ def activate(agent_id, to_stage, from_stage=None, approved_by=None,
                            % (from_stage, to_stage,
                               ", ".join(LADDER[LADDER.index(from_stage) + 1:
                                                LADDER.index(to_stage)]))}
-        if step <= 0:
+        # DISCOVERED is the bottom rung, so entering it from itself is the
+        # one move that is not a move: an agent gets its identity once, and
+        # there is no stage below the stage where identity is assigned.
+        if step <= 0 and not (to_stage == LADDER[0] == from_stage):
             return {"activated": False, "refused": "STAGE_SKIPPED",
                     "why": "%s is not above %s. Going back down is retirement "
                            "and belongs to HERON-AHR-RET-010."
