@@ -245,6 +245,25 @@ def validate(known=None, rules=None):
                 "a wording change nobody can catch (docs/23 s9)" % where)
         for case in cases:
             case = case if isinstance(case, dict) else {}
+            for field in ("must-contain", "must-not-contain"):
+                stated = case.get(field)
+                if stated is None:
+                    continue
+                if isinstance(stated, str) or not isinstance(stated, (list,
+                                                                      tuple)):
+                    # "do" is truthy and iterable, so run_cases() scored it as
+                    # two assertions, 'd' and 'o' - both trivially present.
+                    # A malformed case made an instruction look tested.
+                    problems.append(
+                        "%s: case '%s' declares %s as '%s'. It must be a "
+                        "LIST of phrases - a bare string is iterated one "
+                        "character at a time and passes trivially."
+                        % (where, case.get("name", "unnamed"), field, stated))
+                elif any(not isinstance(p, str) or not p.strip()
+                         for p in stated):
+                    problems.append(
+                        "%s: case '%s' has an empty or non-text phrase in %s."
+                        % (where, case.get("name", "unnamed"), field))
             if not (case.get("must-contain") or case.get("must-not-contain")):
                 # A case with a name and no assertion passed the "has cases"
                 # check and then ran zero assertions, so an instruction could
@@ -310,6 +329,12 @@ def run_cases(known=None, rules=None):
         lowered = text.lower()
         for case in declaration.get("cases") or []:
             name = case.get("name", "unnamed case")
+            if any(isinstance(case.get(f), str)
+                   for f in ("must-contain", "must-not-contain")):
+                failures.append("%s / %s: an assertion is a bare string, "
+                                "which validate() refuses - not run here"
+                                % (key, name))
+                continue
             for phrase in case.get("must-contain") or []:
                 if phrase.lower() in lowered:
                     passed += 1

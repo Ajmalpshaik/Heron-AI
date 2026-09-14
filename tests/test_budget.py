@@ -127,6 +127,12 @@ def main():
     check(raises(lambda: fresh.record(BUDGET.SESSION, 5, "usd", "adapter")),
           "and a second spend in another unit is refused too")
 
+    check(raises(lambda: fresh.set_budget(BUDGET.SESSION, 10, "usd")),
+          "and a budget in another unit cannot rename what was already spent")
+    check(fresh.meter()[0]["spent"] == 5
+          and fresh.meter()[0]["limit"] is None,
+          "the meter shows measured spend even with no limit set")
+
     print()
     print("3. Units are matched, never converted")
     answer = small.may_spend(BUDGET.REQUEST, estimate=1, unit="usd")

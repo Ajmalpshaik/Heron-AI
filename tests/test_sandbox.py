@@ -128,6 +128,18 @@ def main():
           "and everything that was not a secret survives")
 
     print()
+    print("5c. And so does what it RETURNS, at any depth")
+    def hands_it_back(world, payload):
+        return {"reply": {"headers": ["Bearer " + leaky_token]},
+                "count": 4}
+
+    record = BOX.run("M", hands_it_back)
+    check(leaky_token not in str(record["result"]),
+          "a credential nested in the result is redacted too")
+    check(record["result"]["count"] == 4,
+          "and everything that was not a secret comes back unchanged")
+
+    print()
     print("6. An overrun is reported, and the limitation is stated")
     def dawdles(world, payload):
         end = __import__("time").time() + 0.05

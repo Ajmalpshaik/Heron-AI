@@ -100,8 +100,12 @@ def _inside(path, workspace):
     So both are made absolute, normalised for the platform, and compared
     COMPONENT BY COMPONENT.
     """
-    here = os.path.normcase(os.path.abspath(str(path))).replace("\\", "/")
-    root = os.path.normcase(os.path.abspath(str(workspace))).replace("\\", "/")
+    # realpath, not abspath. A path whose parent is a symlink or a junction
+    # pointing into the workspace compares as outside it lexically, and a
+    # backend following that alias writes the credential file into the
+    # repository anyway - the boundary walked around rather than through.
+    here = os.path.normcase(os.path.realpath(str(path))).replace("\\", "/")
+    root = os.path.normcase(os.path.realpath(str(workspace))).replace("\\", "/")
     here_parts = [p for p in here.split("/") if p]
     root_parts = [p for p in root.split("/") if p]
     return here_parts[:len(root_parts)] == root_parts

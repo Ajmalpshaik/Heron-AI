@@ -56,6 +56,7 @@ signing.
 import io
 import os
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
@@ -148,7 +149,13 @@ def retire(agent_id, to_stage, reason=None, approved_by=None, successor=None,
                        "produces a record that cannot roll either back."
                        % (record_of.get("id"), agent_id)}
 
-    files = record_of.get("files") or []
+    # ITS OWN CONTRACT IS NOT A REFERENCE. The contract file names the
+    # agent by definition, and it is not in record["files"] - so every
+    # contracted agent looked externally depended-on and could not be archived
+    # without naming a successor it did not need.
+    files = list(record_of.get("files") or [])
+    if record_of.get("contract"):
+        files.append(record_of["contract"])
     pointing = references(agent_id, files)
     # A SUCCESSOR IS AN AGENT, NOT A STRING. Any truthy value used to open
     # the gate, so a typo or a placeholder retired a referenced agent with
@@ -157,16 +164,14 @@ def retire(agent_id, to_stage, reason=None, approved_by=None, successor=None,
     if successor:
         if str(successor).strip().upper() == str(agent_id).strip().upper():
             return {"retired": False, "refused": "STILL_REFERENCED",
-                    "references": references(agent_id,
-                                             record_of.get("files") or []),
+                    "references": pointing,
                     "why": "%s cannot succeed itself." % agent_id}
         if known_agents is None:
             import heron_agents as REG
             known_agents, _claims, _host = REG._agent_count()
         if successor not in known_agents:
             return {"retired": False, "refused": "STILL_REFERENCED",
-                    "references": references(agent_id,
-                                             record_of.get("files") or []),
+                    "references": pointing,
                     "why": "'%s' is not in docs/28-agent-registry.md, so "
                            "nothing would actually take this agent's work. A "
                            "successor that does not exist is a typo holding a "
@@ -208,6 +213,10 @@ def retire(agent_id, to_stage, reason=None, approved_by=None, successor=None,
             "reason": reason,
             "approved_by": approved_by,
             "successor": successor,
+            # docs/18 asks a record to say WHEN. Without it, two retirements
+            # cannot be put in order and nobody can say when the approval was
+            # spent.
+            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "kept": {
                 "name": record_of.get("name"),
                 "role": record_of.get("role"),

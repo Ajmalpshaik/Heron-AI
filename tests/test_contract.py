@@ -244,6 +244,26 @@ def main():
           "two contracts for different agents are not two versions of one")
 
     print()
+    print("10d. An input must say whether it is required")
+    silent = copy.deepcopy(base)
+    silent["input"]["topic"].pop("required", None)
+    check(said(CON.validate(silent, KNOWN), "does not say whether it is "
+                                            "required"),
+          "an input with no required marker is refused")
+    quoted = copy.deepcopy(base)
+    quoted["input"]["topic"]["required"] = "false"
+    check(said(CON.validate(quoted, KNOWN), "is not true or false"),
+          "and a quoted 'false' - which reads as required - is refused")
+    for root in ([1, 2], "a contract", None):
+        raised = False
+        try:
+            CON.compare(root, base)
+            CON.compare(base, root)
+        except Exception:                                    # noqa: BLE001
+            raised = True
+        check(not raised, "comparing against %r does not raise" % (root,))
+
+    print()
     print("11. Every contract in the repository validates")
     known = CON.registry_ids()
     found = CON.contracts()

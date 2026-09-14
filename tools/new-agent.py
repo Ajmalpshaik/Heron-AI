@@ -289,13 +289,29 @@ def main(argv):
           % (row["dept"], row["tier"], part))
     print()
 
+    # ALL THREE, OR NONE. Writing them one at a time meant a single existing
+    # path left a contract with no module, or a module with no test, and still
+    # reported success because something had been written.
+    destinations = [
+        (os.path.join(ROOT, "brain", "agents", "%s.yaml" % agent),
+         CONTRACT.format(**fields)),
+        (os.path.join(ROOT, part, "heron_%s.py" % module),
+         MODULE.format(**fields)),
+        (os.path.join(ROOT, "tests", "test_%s.py" % module),
+         TEST.format(**fields)),
+    ]
+    taken = [path for path, _text in destinations if os.path.exists(path)]
+    if taken:
+        for path in taken:
+            print("  refused   %s already exists"
+                  % os.path.relpath(path, ROOT).replace(os.sep, "/"))
+        print("  Nothing was written. A half-scaffolded agent - a contract "
+              "with no module, or a module with no test - is worse than none.")
+        return 1
+
     written = []
-    write(os.path.join(ROOT, "brain", "agents", "%s.yaml" % agent),
-          CONTRACT.format(**fields), written)
-    write(os.path.join(ROOT, part, "heron_%s.py" % module),
-          MODULE.format(**fields), written)
-    write(os.path.join(ROOT, "tests", "test_%s.py" % module),
-          TEST.format(**fields), written)
+    for path, text in destinations:
+        write(path, text, written)
 
     for path in written:
         print("  written   %s" % path)

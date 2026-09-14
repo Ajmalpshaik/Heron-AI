@@ -103,6 +103,26 @@ def main():
                   "%s no longer reports layer: test" % agent_id)
 
     print()
+    print("1c. A test-only claim is not an implementation")
+    test_only = {"HERON-KRN-EVT-004": ["tests/test_events.py"]}
+    check(REG.record("HERON-KRN-EVT-004", agents, test_only, host,
+                     deals)["state"] == "NOT BUILT",
+          "an agent claimed only by a test reads NOT BUILT")
+    for agent_id in ("HERON-RAG-RIX-011", "HERON-RAG-DUP-012"):
+        if agent_id in claims:
+            check(REG.record(agent_id, agents, claims, host,
+                             deals)["state"] == "NOT BUILT",
+                  "%s is no longer DRAFT off its test's header" % agent_id)
+
+    print()
+    print("1d. The whole register comes back when no agent is named")
+    everything = REG.records(agents, claims, host, deals)
+    check(len(everything) == len(agents),
+          "every agent in the register has a record")
+    check(everything["HERON-KRN-EVT-004"]["name"] == "Event Bus",
+          "and each one is the record, not a tally")
+
+    print()
     print("2. Nothing is stored")
     source = io.open(os.path.join(ROOT, "brain", "heron_agents.py"),
                      encoding="utf-8").read()

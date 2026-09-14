@@ -131,6 +131,26 @@ def _safe(text):
     return clean
 
 
+def _scrub(value, _depth=0):
+    """
+    The same redactor, through whatever shape an agent returned.
+
+    Only the exception text went through it at first, which left the SUCCESSFUL
+    path - a result carrying a provider's reply, token and all - going into the
+    record raw. The record is made to be read by a supervisor and written to a
+    log, so both paths are the outbound boundary docs/12 s5a.2 describes.
+    """
+    if _depth > 12:                      # a self-referencing result, not a bug
+        return "[too deeply nested to scrub]"
+    if isinstance(value, str):
+        return _safe(value)
+    if isinstance(value, dict):
+        return {key: _scrub(inner, _depth + 1) for key, inner in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_scrub(inner, _depth + 1) for inner in value]
+    return value
+
+
 def run(agent_id, handler, payload=None, timeout_seconds=None, world=None):
     """
     Run one agent in the sandbox. Returns a record; never raises on its behalf.
@@ -152,8 +172,8 @@ def run(agent_id, handler, payload=None, timeout_seconds=None, world=None):
               "result": None, "failed": None, "attempts": world.attempts}
 
     try:
-        record["result"] = handler(
-            world, copy.deepcopy(payload) if payload else {})
+        record["result"] = _scrub(handler(
+            world, copy.deepcopy(payload) if payload else {}))
     except Refused as exc:
         record["failed"] = _safe("REFUSED: %s" % exc)
     except Exception as exc:                                 # noqa: BLE001

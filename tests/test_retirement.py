@@ -168,6 +168,19 @@ def main():
           "the reason is kept in the record, not only in the log line")
 
     print()
+    print("7b. The record says when, and its own contract is not a caller")
+    kept_when = ask(reason="superseded", approved_by="the owner",
+                    successor="HERON-KRN-WFL-007")["record"]
+    check(kept_when.get("at", "").endswith("Z"),
+          "the retirement is stamped in UTC")
+    quiet = REG.record("HERON-AHR-CON-017")
+    pointing = RET.references("HERON-AHR-CON-017",
+                              list(quiet["files"]) + [quiet["contract"]])
+    check(quiet["contract"] not in pointing,
+          "an agent's own contract is not counted as something depending "
+          "on it")
+
+    print()
     print("8. Only the two retirement stages")
     for stage in ("PRODUCTION", "RETIRED", "GONE", ""):
         check(RET.retire(agent, stage, reason="x", approved_by="the owner",

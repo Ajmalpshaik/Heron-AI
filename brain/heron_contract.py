@@ -216,6 +216,21 @@ def validate(contract, known_ids, where="contract"):
             if not str(spec.get("description", "")).strip():
                 say("%s field '%s' has no description - the reader is the "
                     "person writing the next agent" % (side, name))
+            if side == "input":
+                marker = spec.get("required")
+                if marker is None:
+                    problems.append(
+                        "input field '%s' does not say whether it is "
+                        "required. A missing marker reads as optional, and a "
+                        "caller generated from it sends the wrong shape."
+                        % name)
+                elif not isinstance(marker, bool):
+                    # "false" is a non-empty string, so it read as REQUIRED -
+                    # the opposite of what somebody wrote.
+                    problems.append(
+                        "input field '%s' declares required: %r, which is not "
+                        "true or false. A quoted 'false' is a non-empty "
+                        "string and reads as required." % (name, marker))
             if side == "output" and "required" in spec:
                 say("output field '%s' declares 'required' - an output is "
                     "either promised or not declared at all" % name)
@@ -280,6 +295,13 @@ def compare(old, new):
     treated as empty rather than as a reason to stop.
     """
     reasons = []
+
+    # BOTH ROOTS NORMALISED FIRST. _fields() tolerated a list or scalar root,
+    # and then the identity check below reached .get() on it - so the two-file
+    # gate still ended in AttributeError for exactly the malformed contract it
+    # is run against.
+    old = old if isinstance(old, dict) else {}
+    new = new if isinstance(new, dict) else {}
 
     # ONE CANNOT BE A VERSION OF THE OTHER. Two contracts naming different
     # agents with the same interface used to compare IDENTICAL, so picking the

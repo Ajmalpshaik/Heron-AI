@@ -189,6 +189,20 @@ def main():
           "a case with a name and no assertion is refused")
 
     print()
+    print("5c. An assertion list written as a string is refused")
+    as_string = {
+        "y": {"id": "y", "version": "1.0.0", "purpose": "p", "text": "doing",
+              "cases": [{"name": "c", "must-contain": "do"}], "_path": "y.yaml"}
+    }
+    problems = INS.validate(as_string, rules)
+    check(any("one character at a time" in p for p in problems),
+          "a bare string would be scored one character at a time, and is "
+          "refused")
+    _passed, case_failures = INS.run_cases(as_string, rules)
+    check(any("bare string" in f for f in case_failures),
+          "and run_cases() refuses to score it rather than passing it")
+
+    print()
     print("6. The registry in this repository")
     known = INS.instructions()
     check(len(known) >= 3, "there are instructions to check")

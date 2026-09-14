@@ -1,4 +1,4 @@
-# The build order for the 146 agents that need no Revit
+# The build order for the agents that need no Revit
 
 **Status: ACTIVE.** Written 2026-09-13, after the owner asked for the order that makes each agent
 easier to build than the one before it — *"if we create something it can be used for next creation
@@ -17,15 +17,32 @@ schedule, not a register.
 
 ## The numbers, and where they come from
 
-**Never read these as today's.** Derive them:
+**There are none written here.** This plan was drafted against a snapshot and the snapshot moved
+within the same day it was written, which is the whole argument. Derive them instead:
 
 ```bash
-python tools/agent-count.py
+python tools/agent-count.py                       # planned, built, host, left
+python brain/heron_validation.py --all            # how many of the built ones pass
 ```
 
-On 2026-09-13 that returned **250 planned · 81 built · 4 host-provided · 165 left**. Of the 165,
-**19 are Revit Engineering** — C# that must run inside `Revit.exe`, so they cannot be finished on a
-machine with no Revit. **The other 146 can be built here.**
+The one split this plan actually rests on is **Revit Engineering against everything else**: those
+agents are C# that must run inside `Revit.exe`, so they cannot be finished on a machine with no Revit,
+and every other department can. Derive that too rather than reading a number here:
+
+```bash
+python - <<'PY'
+import importlib.util
+spec = importlib.util.spec_from_file_location("ac", "tools/agent-count.py")
+ac = importlib.util.module_from_spec(spec); spec.loader.exec_module(ac)
+agents, _h, _t = ac.registry(); built = ac.built(); host = set(ac.host_provided() or {})
+left = [(a, d) for a, d in agents.items() if a not in built and a not in host]
+revit = [a for a, d in left if d["dept"] == "Revit Engineering"]
+print("%d left, %d of them Revit, %d buildable with no Revit"
+      % (len(left), len(revit), len(left) - len(revit)))
+PY
+```
+
+**The blocks below are the order, not the arithmetic.**
 
 ---
 
@@ -41,9 +58,9 @@ Three seams carry almost all of that leverage:
 
 | Seam | Reused by |
 |---|---|
-| **The agent contract** — what an agent declares | all 146 |
+| **The agent contract** — what an agent declares | every agent in the plan |
 | **The model-call path** — intent in, answer out | the 51 T2 and 18 T3 |
-| **The agent registry and sandbox** — how one is registered, run and retired | all 146 |
+| **The agent registry and sandbox** — how one is registered, run and retired | every agent in the plan |
 
 Built in that order, every later agent is **assembly rather than invention**.
 
@@ -110,7 +127,7 @@ under [D-01](../../DECISIONS.md) the host owns the conversational half of that.
 
 **Workforce Planning is in this block on purpose.** It is the agent that says *no* — does a capability
 already cover this, can an existing agent be extended, is this a fragment rather than an agent. Built
-late, it guards nothing; built here, it guards the 125 agents of block 4.
+late, it guards nothing; built here, it guards every agent of block 4.
 
 **What this block found, the day it was built:** validation refused nine of the ten agents already in
 the branch, every one for the same thing — a contract declaring failure states its code never named.
@@ -135,7 +152,7 @@ the factory produces evidence, a person still signs.
 
 ---
 
-## Block 4 — the departments · 125 agents
+## Block 4 — the departments
 
 In this order, because each one reuses the blocks above and, where it matters, the department before it.
 

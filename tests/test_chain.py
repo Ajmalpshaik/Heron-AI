@@ -237,21 +237,24 @@ def main():
             ("SHADOW", {"shadow-plan": "beside the log writer"}),
             ("PROVEN", {"real-runs": runs})]
     for to_stage, evidence in walk:
-        # The stage it is in now comes from a RECORD, never from the caller.
+        # The stage it is in now is FETCHED, never handed over. The chain
+        # supplies a reader so the walk can be simulated; a real caller gets
+        # the register, and there is no argument that states a stage.
         answer = DEP.activate(SUBJECT, to_stage,
-                              record={"id": SUBJECT, "state": stage},
+                              records=lambda a, at=stage: {"id": a,
+                                                           "state": at},
                               evidence=evidence, validation=validation)
         check(answer["activated"],
               "%s -> %s on VALIDATION's own verdict" % (stage, to_stage))
         if answer["activated"]:
             stage = to_stage
     refused = DEP.activate(SUBJECT, "PRODUCTION",
-                           record={"id": SUBJECT, "state": stage},
+                           records=lambda a, at=stage: {"id": a, "state": at},
                            validation=validation)
     check(refused["refused"] == "NEEDS_HUMAN_APPROVAL",
           "and PRODUCTION stops dead without a person")
     signed = DEP.activate(SUBJECT, "PRODUCTION",
-                          record={"id": SUBJECT, "state": stage},
+                          records=lambda a, at=stage: {"id": a, "state": at},
                           approval={"by": "the owner",
                                     "at": "2026-09-14T03:00:00Z",
                                     "agent": SUBJECT,

@@ -96,6 +96,16 @@ class Budget(object):
         if not unit:
             raise ValueError("a budget with no unit is a number nobody can "
                              "check - say what it counts")
+        # A LIMIT MAY NOT RENAME WHAT WAS ALREADY SPENT. Five calls
+        # recorded before any budget existed became five USD the moment a USD
+        # limit was set - the meter and the enforcement both wrong, from a
+        # unit nobody changed.
+        seen = {u for s, _a, u, _r in self.ledger if s == scope}
+        if seen and unit not in seen:
+            raise ValueError(
+                "%s already has spend recorded in %s, and this budget is in "
+                "%s. A limit does not rename what was already spent."
+                % (scope, ", ".join(sorted(seen)), unit))
         self._limit[scope] = (float(amount), unit)
         self._spent.setdefault(scope, 0.0)
 
@@ -281,12 +291,20 @@ class Budget(object):
         """What the visible cost meter shows. Only measured numbers reach it."""
         rows = []
         for scope in SCOPES:
-            if scope not in self._limit:
+            spent = self._spent.get(scope, 0.0)
+            if scope in self._limit:
+                limit, unit = self._limit[scope]
+            elif spent:
+                # REAL MONEY WITH NO LIMIT IS STILL REAL MONEY. Iterating
+                # only the configured limits hid measured spend from the
+                # visible meter for as long as nobody set one.
+                limit = None
+                unit = next((u for s, _a, u, _r in self.ledger if s == scope),
+                            None)
+            else:
                 continue
-            limit, unit = self._limit[scope]
-            rows.append({"scope": scope, "spent": self._spent.get(scope, 0.0),
-                         "limit": limit, "unit": unit,
-                         "posture": self.posture(scope)})
+            rows.append({"scope": scope, "spent": spent, "limit": limit,
+                         "unit": unit, "posture": self.posture(scope)})
         return rows
 
 

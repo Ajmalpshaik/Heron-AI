@@ -172,9 +172,12 @@ def record(agent_id, agents=None, claims=None, host=None, deals=None):
 
     if agent_id in (host or {}):
         state = "HOST"
-    elif files:
+    elif implementations:
         state = head.get("status", "DRAFT")
     else:
+        # A TEST IS NOT AN IMPLEMENTATION. Two agents were claimed only by
+        # tests/test_maintenance.py and reported DRAFT, off the test's own
+        # header, with nothing implementing them at all.
         state = "NOT BUILT"
 
     return {
@@ -200,6 +203,18 @@ def record(agent_id, agents=None, claims=None, host=None, deals=None):
         "retry": (contract or {}).get("retry") or {},
         "unmeasured": list(UNMEASURED),
     }
+
+
+def records(agents=None, claims=None, host=None, deals=None):
+    """
+    {agent id: record} for the whole register - what the contract promises
+    when no single agent is named.
+    """
+    if agents is None:
+        agents, claims, host = _agent_count()
+    deals = contracts() if deals is None else deals
+    return dict((agent_id, record(agent_id, agents, claims, host, deals))
+                for agent_id in agents)
 
 
 def disagreements(agents=None, claims=None, host=None, deals=None):
@@ -272,8 +287,11 @@ def main(argv):
     print("=" * 72)
     states = {}
     with_contract = 0
-    for agent_id in agents:
-        found = record(agent_id, agents, claims, host, deals)
+    # KEPT, NOT JUST COUNTED. The contract promises every agent and its state
+    # when no single agent is asked for, and this loop used to reduce them all
+    # to a tally and throw the records away.
+    everything = records(agents, claims, host, deals)
+    for agent_id, found in everything.items():
         states[found["state"]] = states.get(found["state"], 0) + 1
         if found["contract"]:
             with_contract += 1

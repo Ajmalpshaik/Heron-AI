@@ -53,6 +53,7 @@ would be a second opinion nobody asked for, in the one place that must be
 predictable.
 """
 
+import copy
 import os
 import sys
 import time
@@ -208,7 +209,13 @@ def _gate(agent_id, to_stage, evidence, validation):
     return False, "'%s' is not a stage in docs/24" % to_stage
 
 
-def activate(agent_id, to_stage, record=None, approval=None,
+def _canonical(agent_id):
+    """The registry's own record. The default source, and the only one."""
+    import heron_agents as REG
+    return REG.record(agent_id)
+
+
+def activate(agent_id, to_stage, records=None, approval=None,
              evidence=None, validation=None):
     """
     {activated, record, why} - or a refusal. It never edits a file.
@@ -223,16 +230,25 @@ def activate(agent_id, to_stage, record=None, approval=None,
     """
     to_stage = (to_stage or "").upper()
 
+    # THE RECORD IS FETCHED, NOT ACCEPTED. Version 3 took a record from the
+    # caller and read the stage out of it, which is the same hole as taking
+    # `from_stage`: a caller that can hand over {"state": "PROVEN"} for an
+    # agent the register has at DRAFT walks to PRODUCTION past every gate.
+    # `records` exists so a test can supply a reader, not a value - in every
+    # real caller it is the registry, and there is no argument that says what
+    # stage the agent is in.
+    record = (records or _canonical)(agent_id)
+
     if not isinstance(record, dict) or not record.get("id"):
         return {"activated": False, "refused": "NO_RECORD",
-                "why": "no registry record for %s was given, and the stage it "
-                       "is in now is read from that record rather than taken "
+                "why": "the register has no record for %s, and the stage it "
+                       "is in now is read from the register rather than taken "
                        "on trust." % agent_id}
 
     if str(record.get("id")).strip().upper() != str(agent_id).strip().upper():
         return {"activated": False, "refused": "RECORD_IS_NOT_THIS_AGENT",
-                "why": "the record given is for %s, and the promotion asked "
-                       "for is %s." % (record.get("id"), agent_id)}
+                "why": "the register returned a record for %s when asked "
+                       "about %s." % (record.get("id"), agent_id)}
 
     from_stage = str(record.get("state") or "").strip().upper() or None
 
@@ -343,7 +359,11 @@ def activate(agent_id, to_stage, record=None, approval=None,
             "from": from_stage,
             "to": to_stage,
             "approved_by": approved_by,
-            "evidence": dict(evidence or {}),
+            # A DEEP COPY. A shallow one kept the caller's list and run
+            # dictionaries by reference, so clearing or editing them after
+            # activate() returned rewrote the audit record of the proof that
+            # opened the gate.
+            "evidence": copy.deepcopy(evidence or {}),
             "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "applied": False,
         },
