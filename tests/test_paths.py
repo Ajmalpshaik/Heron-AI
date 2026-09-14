@@ -72,6 +72,29 @@ def main():
         check(klass in PATHS.MEANING and len(PATHS.MEANING[klass]) > 30,
               "'%s' says what it means, in a sentence" % klass)
 
+    # AND THE PLATFORM HALF, WHICH CARRIES THE SAME AGENT ID, MUST AGREE
+    # ABOUT WHAT THE THREE WORDS MEAN. Two implementations of one agent
+    # that disagree about DATA is the drift this module exists to prevent,
+    # one layer up.
+    # The /// markers are stripped first: without that, "must survive every
+    # update, uninstall /// and reinstall" reads as two phrases and the
+    # check passes or fails on where somebody wrapped a line.
+    csharp = open(os.path.join(ROOT, "platform", "Heron.Core",
+                               "HeronPaths.cs"), encoding="utf-8").read()
+    csharp = " ".join(csharp.replace("///", " ").split()).lower()
+    check("heron-agent:  heron-wsp-pth-007" in csharp
+          or "heron-wsp-pth-007" in csharp,
+          "platform/Heron.Core/HeronPaths.cs carries this same agent id")
+    for klass, phrase in (
+            (PATHS.PRODUCT, "replaced wholesale on update"),
+            (PATHS.PRODUCT, "the user never edits it"),
+            (PATHS.DATA, "must survive every update, uninstall and reinstall"),
+            (PATHS.DERIVED, "safe to delete at any")):
+        check(phrase in csharp,
+              "the C# half defines %s with '%s'..." % (klass, phrase))
+        check(phrase in " ".join(PATHS.MEANING[klass].split()).lower(),
+              "...and this half says the same words")
+
     print()
     print("2. Data is tested first")
     check(PATHS.FOLDERS[0][0] == PATHS.DATA, "data is the first list tested")

@@ -17,6 +17,30 @@ WHAT IT IS FOR (docs/28, HERON-WSP-PTH-007)
 says ENFORCED, not described, which is the difference between a table in a
 document and a function other agents ask.
 
+THERE IS ALREADY A PLATFORM HALF, AND IT ANSWERS A DIFFERENT QUESTION
+-----------------------------------------------------------------------
+`platform/Heron.Core/HeronPaths.cs` carries the same agent id and was
+built at Step 1. **It was found by running tools/agent-count.py after
+this module was written, not before** - the search that preceded it
+looked at brain, mcp, revit and tools and missed platform, which is the
+same class of mistake as a grep that finds nothing because the pattern
+cannot see what is there.
+
+They are not duplicates, and the split is worth stating rather than
+assuming:
+
+  HeronPaths.cs   WHERE things live - the three root directories, built
+                  for the add-in and the .NET side. "Nothing else may
+                  build a Heron path."
+  this module     WHICH CLASS a name belongs to, and which operation may
+                  touch it. Built for the agents, which reason about
+                  names long before anything opens a file.
+
+What they must agree on is the meaning of the three words, and the suite
+asserts that by reading the C# file's own definitions - because two
+implementations of one agent that disagree about what DATA means is
+exactly the drift this module exists to prevent, one layer up.
+
 WHY THIS EXISTS AT ALL
 ------------------------
 docs/06 s2 splits the workspace three ways and four agents built before
