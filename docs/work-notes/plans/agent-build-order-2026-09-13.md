@@ -74,18 +74,26 @@ agent of its own (`Heron-Agent: none`), and it is what makes block 1 onwards che
 
 ---
 
-## Block 1 — the kernel seams · 6 agents
+## Block 1 — the kernel seams · 6 agents *(built 2026-09-14)*
 
-Everything with a model call in it waits on these, so they come before the 69 agents that have one.
+Everything with a model call in it waited on these, so they came before the 69 agents that have one.
 
-| Agent | Tier | Why here |
+| Agent | Where | What it settles |
 |---|---|---|
-| `HERON-KRN-PRO-011` Prompt / Instruction Registry | T1 | every T2 and T3 agent reads its instruction from one versioned, testable place ([23 §9](../../23-heron-kernel.md)) |
-| `HERON-KRN-MDL-010` Model Router | T1 | Heron declares **intent**, the adapter resolves the model ([23 §8](../../23-heron-kernel.md), closes the [D-11](../../DECISIONS.md) tension) |
-| `HERON-KRN-MAV-017` Model Availability & Fallback | T1 | what a T2 agent does when the model is not there |
-| `HERON-KRN-TOK-015` Token & Cost Budget | T1 | the cost meter every T2 call is measured by |
-| `HERON-KRN-SEC-012` Secret Manager | T1 | one place a provider key can live; nothing else reads one |
-| `HERON-KRN-EVT-004` Event Bus | T1 | how agents reach each other without depending on each other ([23 §1](../../23-heron-kernel.md)) |
+| `HERON-KRN-PRO-011` Prompt / Instruction Registry | `brain/heron_instructions.py` | versioned, testable, and Constitution articles **assembled, never copied** — an instruction repeating an article's wording is refused ([23 §9](../../23-heron-kernel.md)) |
+| `HERON-KRN-MDL-010` Model Router | `brain/heron_router.py` | Heron declares **intent**; no model id is written anywhere ([23 §8](../../23-heron-kernel.md), closes the [D-11](../../DECISIONS.md) tension). Confidential narrows and never widens |
+| `HERON-KRN-MAV-017` Model Availability & Fallback | `brain/heron_availability.py` | a fallback answer is marked degraded, and a degraded answer is **not evidence toward promotion** ([24](../../24-trust-model.md)) |
+| `HERON-KRN-TOK-015` Token & Cost Budget | `brain/heron_budget.py` | spend is only what a provider reported — Heron has no tokeniser ([D-58](../../DECISIONS.md)). Background yields before a person's work |
+| `HERON-KRN-SEC-012` Secret Manager | `brain/heron_secrets.py` | a handle travels, a value does not, and nothing prints one (Article 17, [12 §5a](../../12-security-and-permissions.md)) |
+| `HERON-KRN-EVT-004` Event Bus | `brain/heron_events.py` | handlers notify and may not act; order kept, failures recorded, cycles stopped ([23 §1](../../23-heron-kernel.md)) |
+
+**Three instructions exist so far**, keyed by permission level as the Constitution asks — `agent.base`,
+`agent.read`, `agent.modify` — and 13 of the 30 articles are assembled by something.
+
+**What Block 1 deliberately did not do:** none of these calls a model. The router says *who* should
+answer, availability says *whether they are there*, the budget says *whether it may be afforded*, and
+the instruction registry says *what they would be told*. The call itself belongs to the adapter, and
+under [D-01](../../DECISIONS.md) the host owns the conversational half of that.
 
 ---
 
