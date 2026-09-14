@@ -4,7 +4,11 @@
 # status (the module's Heron-Status header owns it).
 
 agent: HERON-KRN-TOK-015
-version: 1.0.0
+# 2.0.0: `reported-by` is a REQUIRED input that was missing. record()
+# always refused a spend without one - Heron has no tokeniser, so a number
+# with no source is a guess - and a caller built from version 1 could
+# therefore record nothing at all.
+version: 2.0.0
 
 input:
   scope:
@@ -21,6 +25,13 @@ input:
       What the call cost, in the budget's own unit, as REPORTED BY the
       provider after the fact. Heron has no tokeniser and never invents
       one (D-58).
+  reported-by:
+    type: string
+    required: true
+    description: >
+      What reported the amount - the adapter, the provider's reply. A
+      spend with no source is a guess, and Heron has no tokeniser to
+      make one with (D-58). Required whenever an amount is given.
   unit:
     type: string
     required: false

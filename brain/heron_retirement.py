@@ -98,7 +98,7 @@ def references(agent_id, own_files=()):
 
 
 def retire(agent_id, to_stage, reason=None, approved_by=None, successor=None,
-           record_of=None):
+           record_of=None, known_agents=None):
     """
     {retired, record, references} or a refusal. It deletes nothing, ever.
 
@@ -136,8 +136,42 @@ def retire(agent_id, to_stage, reason=None, approved_by=None, successor=None,
                        "and a retirement that cannot be undone is a deletion "
                        "with better manners." % agent_id}
 
+    # THE RECORD MUST BE THIS AGENT'S. Nothing checked, so a record for a
+    # different agent was archived under the requested one's name: an audit
+    # entry naming one agent while preserving another, and useless for the
+    # rollback it exists to make possible.
+    if str(record_of.get("id") or "").strip().upper() \
+            != str(agent_id).strip().upper():
+        return {"retired": False, "refused": "NOTHING_TO_RETIRE",
+                "why": "the record given is for %s and the retirement asked "
+                       "for is %s. Archiving one under the other's name "
+                       "produces a record that cannot roll either back."
+                       % (record_of.get("id"), agent_id)}
+
     files = record_of.get("files") or []
     pointing = references(agent_id, files)
+    # A SUCCESSOR IS AN AGENT, NOT A STRING. Any truthy value used to open
+    # the gate, so a typo or a placeholder retired a referenced agent with
+    # nothing actually taking its work - which is the one outcome this gate
+    # exists to prevent.
+    if successor:
+        if str(successor).strip().upper() == str(agent_id).strip().upper():
+            return {"retired": False, "refused": "STILL_REFERENCED",
+                    "references": references(agent_id,
+                                             record_of.get("files") or []),
+                    "why": "%s cannot succeed itself." % agent_id}
+        if known_agents is None:
+            import heron_agents as REG
+            known_agents, _claims, _host = REG._agent_count()
+        if successor not in known_agents:
+            return {"retired": False, "refused": "STILL_REFERENCED",
+                    "references": references(agent_id,
+                                             record_of.get("files") or []),
+                    "why": "'%s' is not in docs/28-agent-registry.md, so "
+                           "nothing would actually take this agent's work. A "
+                           "successor that does not exist is a typo holding a "
+                           "gate open." % successor}
+
     if pointing and not successor:
         return {"retired": False, "refused": "STILL_REFERENCED",
                 "references": pointing,

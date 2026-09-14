@@ -39,6 +39,7 @@ WHAT IT PROVES
      still carries that case, because the case is the guard.
 """
 
+import io
 import os
 import sys
 
@@ -142,6 +143,31 @@ def main():
     check(any("not in HERON_CONSTITUTION.md" in p
               for p in INS.validate(missing_article, rules)),
           "and validate() says which article it was")
+
+    print()
+    print("4b. Two files claiming one id is refused, not silently merged")
+    import tempfile, shutil
+    workspace = tempfile.mkdtemp(prefix="heron-instructions-")
+    try:
+        for name in ("a.yaml", "b.yaml"):
+            io.open(os.path.join(workspace, name), "w",
+                    encoding="utf-8").write(
+                "id: same.id\nversion: 1.0.0\npurpose: p\ntext: t\n"
+                "cases:\n  - name: c\n")
+        was, INS.INSTRUCTIONS_DIR = INS.INSTRUCTIONS_DIR, workspace
+        raised = ""
+        try:
+            INS.instructions()
+        except ValueError as exc:
+            raised = str(exc)
+        finally:
+            INS.INSTRUCTIONS_DIR = was
+        check("INSTRUCTION_DUPLICATED" in raised,
+              "a duplicate id is refused by name")
+        check("a.yaml" in raised and "b.yaml" in raised,
+              "and both files are named, so neither is the silent loser")
+    finally:
+        shutil.rmtree(workspace)
 
     print()
     print("5. An instruction nothing tests is refused")

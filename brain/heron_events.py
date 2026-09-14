@@ -73,6 +73,7 @@ class Bus(object):
     def __init__(self):
         self._handlers = {}          # event -> [(name, risk, callable)]
         self._in_flight = []         # the publish chain, for cycle detection
+        self._cycles = []            # cycles found inside the current chain
         self.history = []            # (event, delivered, failed) per publish
 
     # ------------------------------------------------------------ subscribe
@@ -113,8 +114,18 @@ class Bus(object):
             chain = " -> ".join(self._in_flight + [event])
             result = {"delivered": 0, "order": [],
                       "failed": [(None, "EVENT_CYCLE: %s" % chain)]}
+            # RECORDED FOR THE PUBLISHER THAT STARTED THE CHAIN, not only for
+            # whoever republished. A handler that ignores the return value -
+            # most do - left the original publisher told `delivered: 1,
+            # failed: []` while a delivery had in fact been stopped, and the
+            # only place that said otherwise was the history.
+            self._cycles.append(chain)
             self.history.append((event, 0, result["failed"]))
             return result
+
+        root = not self._in_flight
+        if root:
+            self._cycles = []
 
         delivered, failed, order = 0, [], []
         self._in_flight.append(event)
@@ -132,6 +143,11 @@ class Bus(object):
                                    % (type(exc).__name__, exc)))
         finally:
             self._in_flight.pop()
+
+        if root and self._cycles:
+            for chain in self._cycles:
+                failed.append((None, "EVENT_CYCLE: %s" % chain))
+            self._cycles = []
 
         self.history.append((event, delivered, failed))
         return {"delivered": delivered, "failed": failed, "order": order}

@@ -4,24 +4,33 @@
 # status (the module's Heron-Status header owns it).
 
 agent: HERON-AHR-DEP-012
-# 2.0.0, not 1.1.0: `from-stage` is a REQUIRED input that was not there
-# before, and NO_CURRENT_STAGE is a failure state a caller had no branch for.
-# Both are breaking by brain/heron_contract.py's own rule, and the rule is not
-# waived because the change is an improvement.
-version: 2.0.0
+# 3.0.0. Version 2 declared `from-stage` as an input a caller states, and a
+# caller that states its own current stage is a caller that can skip the
+# ladder - passing "PROVEN" for an agent the register has at DRAFT promoted it
+# to PRODUCTION on one signature. The stage is read from the registry record
+# now, so `from-stage` is gone and `record` is required. `validation` is
+# declared too: activate() always needed it and the contract never said so.
+version: 3.0.0
 
 input:
   agent:
     type: string
     required: true
     description: The agent being moved to its next stage.
-  from-stage:
-    type: string
+  record:
+    type: map
     required: true
     description: >
-      The stage it is in NOW, read from the register. Without it no gate
-      can be checked - a promotion with no current stage is every gate
-      below the target skipped at once.
+      The agent's record from the Agent Registry. The stage it is in NOW
+      is read out of it, and is never a value the caller may assert -
+      that is how every gate below the target gets skipped at once.
+  validation:
+    type: map
+    required: true
+    description: >
+      The Agent Validation Agent's verdict for this agent. DRAFT and
+      TESTING read its file list, VALIDATED requires PASS, and nothing
+      above DRAFT proceeds while it refuses.
   to-stage:
     type: string
     required: true
@@ -60,6 +69,8 @@ allowed-tools: []
 timeout-seconds: 30
 
 failures:
+  - NO_RECORD
+  - RECORD_IS_NOT_THIS_AGENT
   - NO_CURRENT_STAGE
   - NOT_VALIDATED
   - GATE_NOT_MET

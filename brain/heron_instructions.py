@@ -125,7 +125,18 @@ def instructions():
         with io.open(path, encoding="utf-8") as fh:
             data = yaml.safe_load(fh) or {}
         data["_path"] = os.path.relpath(path, ROOT).replace(os.sep, "/")
-        found[data.get("id") or name] = data
+        key = data.get("id") or name
+        if key in found:
+            # NEVER SILENTLY. The later filename used to win, so a duplicate
+            # could replace a permission-bearing instruction and take its
+            # articles and its cases with it, and the registry would report
+            # nothing wrong at all.
+            raise ValueError(
+                "INSTRUCTION_DUPLICATED: '%s' is declared by both %s and %s. "
+                "One of them would silently replace the other, taking its "
+                "articles and its evaluation cases with it."
+                % (key, found[key]["_path"], data["_path"]))
+        found[key] = data
     return found
 
 

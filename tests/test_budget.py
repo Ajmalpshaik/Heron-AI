@@ -93,6 +93,14 @@ def main():
     check(len(book.ledger) == 1, "nor reached the ledger")
 
     print()
+    print("1c. A limit is a number too")
+    for bad in (float("nan"), float("inf"), "plenty", None):
+        check(raises(lambda: book.set_budget(BUDGET.SESSION, bad, "calls")),
+              "a budget of %r is refused" % (bad,))
+    check(book.remaining(BUDGET.SESSION) == 95,
+          "and the budget that was already set is untouched")
+
+    print()
     print("2. An estimate is judged as an estimate")
     small = BUDGET.Budget()
     small.set_budget(BUDGET.REQUEST, 10, "calls")
@@ -142,6 +150,23 @@ def main():
           "a session at its limit is STOPPED")
     check("is spent" in book.may_spend(BUDGET.SESSION)["why"],
           "and that one IS spent, so it says so")
+
+    print()
+    print("6b. An estimate is judged against the ceiling its scope stops at")
+    yielding = BUDGET.Budget()
+    yielding.set_budget(BUDGET.BACKGROUND, 100, "calls")
+    yielding.record(BUDGET.BACKGROUND, 70, "calls", "adapter")
+    check(yielding.posture(BUDGET.BACKGROUND) == BUDGET.NORMAL,
+          "at 70 of 100 background is still NORMAL")
+    answer = yielding.may_spend(BUDGET.BACKGROUND, estimate=20, unit="calls")
+    check(not answer["allowed"],
+          "and a 20-call estimate is refused - it would eat the quarter "
+          "reserved for the person's work before the posture caught up")
+    check("ceiling it stops at" in answer["why"],
+          "the refusal names the ceiling rather than the limit")
+    check(yielding.may_spend(BUDGET.BACKGROUND, estimate=4,
+                             unit="calls")["allowed"],
+          "an estimate that fits under the ceiling is still allowed")
 
     print()
     print("7. No budget set is not a budget of zero")

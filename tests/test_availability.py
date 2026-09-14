@@ -88,6 +88,14 @@ def main():
     check(AVAIL.judge(None)[0] == AVAIL.UNREACHABLE,
           "an adapter nobody probed is unreachable, never assumed fine")
 
+    check(AVAIL.judge({"reachable": True})[0] == AVAIL.AUTH,
+          "a probe that never checked the credentials is not authorised")
+    check("not a yes" in AVAIL.judge({"reachable": True})[1],
+          "and it says a question nobody asked is not a yes")
+    check(AVAIL.judge({"reachable": True, "auth": True,
+                       "error": "timed out"})[0] == AVAIL.PROBE_FAILED,
+          "a probe that did not complete is PROBE_FAILED, not 'down'")
+
     print()
     print("4 and 5. Degraded rides on the answer, and is not evidence")
     router = two_adapters()

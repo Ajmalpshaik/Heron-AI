@@ -134,6 +134,11 @@ def main():
                               for entry in bus.history),
           "the cycle is recorded by name, not silently dropped")
 
+    check(any("EVENT_CYCLE" in str(why) for _name, why in result["failed"]),
+          "and the publisher that STARTED the chain is told, not just history")
+    check(result["delivered"] == 1,
+          "while the handler that did run is still counted as delivered")
+
     bus = EVENTS.Bus()
     chained = []
     bus.subscribe("a.happened",

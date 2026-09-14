@@ -206,6 +206,25 @@ def main():
           "prose instead of a mapping is reported without an exception")
 
     print()
+    print("10b. compare() judges a malformed contract instead of raising")
+    malformed = {"agent": "HERON-KRN-EVT-004", "version": "1.0.0",
+                 "input": {"scope": "string"}, "output": "words",
+                 "failures": ["A"]}
+    raised = False
+    try:
+        verdict, _reasons = CON.compare(base, malformed)
+    except Exception:                                        # noqa: BLE001
+        raised = True
+        verdict = None
+    check(not raised,
+          "a field declared as a bare string does not raise - the gate exists "
+          "for exactly the contracts that are wrong")
+    check(verdict in ("BREAKING", "COMPATIBLE", "IDENTICAL"),
+          "and a verdict comes back instead of a traceback")
+    check(not CON.compare(malformed, malformed)[1]
+          or True, "comparing it with itself is also survivable")
+
+    print()
     print("11. Every contract in the repository validates")
     known = CON.registry_ids()
     found = CON.contracts()

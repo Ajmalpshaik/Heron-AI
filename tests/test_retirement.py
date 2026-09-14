@@ -121,12 +121,31 @@ def main():
           "references() answers for an agent with few of them too")
 
     print()
+    print("5b. A successor is an agent, and the record is this agent's")
+    answer = ask(reason="superseded", approved_by="the owner",
+                 successor="NOT-AN-AGENT")
+    check(answer["refused"] == "STILL_REFERENCED"
+          and "typo holding a gate open" in answer["why"],
+          "a successor that is not in the register does not open the gate")
+    answer = ask(reason="superseded", approved_by="the owner",
+                 successor=agent)
+    check(answer["refused"] == "STILL_REFERENCED",
+          "and an agent cannot succeed itself")
+    other = REG.record("HERON-AHR-GAP-001")
+    answer = RET.retire(agent, "ARCHIVED", reason="x",
+                        approved_by="the owner",
+                        successor="HERON-KRN-WFL-007", record_of=other)
+    check(answer["refused"] == "NOTHING_TO_RETIRE"
+          and "cannot roll either back" in answer["why"],
+          "a record belonging to a different agent is refused")
+
+    print()
     print("6. Rollback is checked")
     for thin in ({"id": agent}, {"id": agent, "name": "Event Bus"},
-                 {"name": "Event Bus", "files": ["x.py"]}):
+                 {"id": agent, "name": "Event Bus", "files": ["x.py"]}):
         answer = RET.retire(agent, "ARCHIVED", reason="x",
-                            approved_by="the owner", successor="y",
-                            record_of=thin)
+                            approved_by="the owner",
+                            successor="HERON-KRN-WFL-007", record_of=thin)
         check(answer["refused"] == "NOTHING_TO_RETIRE",
               "a record missing %s is refused"
               % ", ".join(sorted(set(("id", "name", "department", "files"))
@@ -156,7 +175,7 @@ def main():
               "'%s' is not a retirement stage" % stage)
     for stage in RET.RETIRED_STAGES:
         answer = RET.retire(agent, stage, reason="x", approved_by="the owner",
-                            successor="y", record_of=found)
+                            successor="HERON-KRN-WFL-007", record_of=found)
         check(answer["retired"], "%s is" % stage)
 
     print()

@@ -78,7 +78,20 @@ class Budget(object):
         if scope not in SCOPES:
             raise ValueError("'%s' is not a budget scope - one of: %s"
                              % (scope, ", ".join(SCOPES)))
-        if amount is None or amount < 0:
+        # The same check record() makes, and for the same reason: a NaN limit
+        # makes every comparison below it false and an infinite one can never
+        # be reached, so either silently removes the gate while leaving it
+        # looking like it is there. A limit is a number or it is not a limit.
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError):
+            raise ValueError("a budget of '%s' is not a number" % (amount,))
+        if amount != amount or amount in (float("inf"), float("-inf")):
+            raise ValueError(
+                "a budget of %s cannot be enforced. NaN makes every "
+                "comparison false and infinity is never reached - both leave "
+                "the gate in place and stop it meaning anything." % amount)
+        if amount < 0:
             raise ValueError("a budget of '%s' is not a budget" % amount)
         if not unit:
             raise ValueError("a budget with no unit is a number nobody can "
@@ -163,14 +176,22 @@ class Budget(object):
                                "%s. Heron does not convert between them - the "
                                "rate is a provider's price list."
                                % (unit, scope, budget_unit)}
-            if spent + estimate > limit:
+            # The ceiling an ESTIMATE is judged against is the one this
+            # scope actually stops at. Background stops at three quarters, so
+            # comparing its estimate with the full limit let a job be admitted
+            # that would eat the quarter reserved for the person's work, and
+            # only then turn the posture to STOPPED - after the spending.
+            ceiling = (limit * BACKGROUND_STOPS_AT if scope == BACKGROUND
+                       else limit)
+            if spent + estimate > ceiling:
                 return {"allowed": False, "posture": posture,
                         "refused": "BUDGET_EXCEEDED",
                         "why": "the caller's ESTIMATE of %s %s would take the "
-                               "%s budget past its limit - %s. The estimate is "
-                               "the caller's, not a count Heron made."
+                               "%s budget past the ceiling it stops at (%s "
+                               "%s) - %s. The estimate is the caller's, not a "
+                               "count Heron made."
                                % (_short(estimate), budget_unit, scope,
-                                  numbers)}
+                                  _short(ceiling), budget_unit, numbers)}
 
         return {"allowed": True, "posture": posture, "why": numbers}
 

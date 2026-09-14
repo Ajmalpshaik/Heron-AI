@@ -78,7 +78,13 @@ def judge(probe, needs_context=0, slow_ms=SLOW_MS):
                               "provider either way" % probe["error"])
     if not probe.get("reachable", False):
         return UNREACHABLE, "nothing answered"
-    if not probe.get("auth", True):
+    # MISSING IS NOT YES. `probe.get("auth", True)` read an older or partial
+    # probe - one that never checked - as authorised, and reported an adapter
+    # as healthy on the strength of a question nobody asked.
+    if probe.get("auth") is not True:
+        if "auth" not in probe:
+            return AUTH, ("the probe did not say whether the credentials were "
+                          "accepted, and a question nobody asked is not a yes")
         return AUTH, ("it answered and refused the credentials - retrying "
                       "will not change that")
     latency = probe.get("latency_ms")

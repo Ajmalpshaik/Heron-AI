@@ -40,12 +40,15 @@ WHAT IT PROVES
 
   8. A VALIDATION REFUSAL STOPS EVERYTHING ABOVE DRAFT.
 
-  9. A PROMOTION WITH NO CURRENT STAGE IS REFUSED. Until 2026-09-14 omitting
-     it skipped the ladder check entirely, so PRODUCTION could be reached on
-     one signature from nowhere - and omitting it was what a caller built from
-     the contract did, because the contract did not declare the field. Found
-     by a review bot, which is the only reason it is a claim here rather than
-     a hole.
+  9. THE CURRENT STAGE IS READ FROM THE REGISTRY RECORD, NEVER ASSERTED. Two
+     reviews were needed for this one. The first found that omitting
+     from_stage skipped the ladder check; the second found that REQUIRING it
+     changed nothing, because a caller could still state "PROVEN" for an agent
+     the register has at DRAFT and walk to PRODUCTION on one signature. A
+     caller that can state its own stage is a caller that can skip the ladder.
+
+ 10. PROVEN TAKES RECORDED RUNS, NOT A COUNT. D-30 wants a run against a NAMED
+     real model; "10" is a number somebody typed, and the gate now says so.
 """
 
 import io
@@ -68,6 +71,15 @@ BELOW = {"DISCOVERED": "DISCOVERED", "DRAFT": "DISCOVERED",
          "TESTING": "DRAFT", "VALIDATED": "TESTING", "SHADOW": "VALIDATED",
          "PROVEN": "SHADOW", "PRODUCTION": "PROVEN"}
 
+# Ten recorded runs, each naming what it ran against. A count is not evidence.
+RUNS = [{"run": "w-%d" % n, "model": "Snowdon Towers Sample HVAC"}
+        for n in range(12)]
+
+
+def REC(stage):
+    """The registry record shape activate() reads the current stage out of."""
+    return {"id": "HERON-KRN-EVT-004", "state": stage}
+
 
 def check(condition, what):
     print("  %-5s %s" % ("ok" if condition else "FAIL", what))
@@ -85,11 +97,11 @@ def main():
                          "files": ["brain/heron_events.py"]}, "a test"),
         ("VALIDATED", {}, PASSED, "a matrix"),
         ("SHADOW", {}, PASSED, "a shadow plan"),
-        ("PROVEN", {"real-runs": 3}, PASSED, "ten real runs"),
+        ("PROVEN", {"real-runs": 3}, PASSED, "ten recorded runs"),
         ("DISCOVERED", {}, PASSED, "a stated purpose"),
     ]
     for stage, evidence, validation, what in cases:
-        answer = DEP.activate(agent, stage, from_stage=BELOW[stage],
+        answer = DEP.activate(agent, stage, record=REC(BELOW[stage]),
                               evidence=evidence, validation=validation)
         check(not answer["activated"] and answer["refused"] == "GATE_NOT_MET",
               "%s without %s is refused" % (stage, what))
@@ -103,54 +115,54 @@ def main():
                             ("TESTING", {}),
                             ("VALIDATED", {"matrix": "3.11 on linux"}),
                             ("SHADOW", {"shadow-plan": "beside the log"}),
-                            ("PROVEN", {"real-runs": 12})):
-        answer = DEP.activate(agent, stage, from_stage=BELOW[stage],
+                            ("PROVEN", {"real-runs": RUNS})):
+        answer = DEP.activate(agent, stage, record=REC(BELOW[stage]),
                               evidence=evidence, validation=PASSED)
         check(answer["activated"], "%s is allowed once its gate is met" % stage)
 
     print()
     print("2 and 3. Who may sign")
-    answer = DEP.activate(agent, "PRODUCTION", from_stage="PROVEN",
+    answer = DEP.activate(agent, "PRODUCTION", record=REC("PROVEN"),
                           validation=PASSED)
     check(answer["refused"] == "NEEDS_HUMAN_APPROVAL",
           "PRODUCTION without a signature is refused")
     for machine in ("HERON-AHR-CRT-006", "heron-ahr-bld-004"):
-        answer = DEP.activate(agent, "PRODUCTION", from_stage="PROVEN",
+        answer = DEP.activate(agent, "PRODUCTION", record=REC("PROVEN"),
                               approved_by=machine, validation=PASSED)
         check(answer["refused"] == "MACHINE_MAY_NOT_SIGN",
               "'%s' cannot sign" % machine)
         check("Golden Rule 7" in answer["why"], "and the rule is cited")
-    answer = DEP.activate(agent, "PRODUCTION", from_stage="PROVEN",
+    answer = DEP.activate(agent, "PRODUCTION", record=REC("PROVEN"),
                           approved_by="the owner", validation=PASSED)
     check(answer["activated"] and answer["record"]["approved_by"] == "the owner",
           "a person signs, and the record says who")
 
     print()
     print("4. The ladder is a ladder")
-    answer = DEP.activate(agent, "PRODUCTION", from_stage="DRAFT",
+    answer = DEP.activate(agent, "PRODUCTION", record=REC("DRAFT"),
                           approved_by="the owner", validation=PASSED)
     check(answer["refused"] == "STAGE_SKIPPED",
           "DRAFT straight to PRODUCTION is refused")
     check("TESTING" in answer["why"] and "SHADOW" in answer["why"],
           "and the refusal names the stages it would have skipped")
-    answer = DEP.activate(agent, "DRAFT", from_stage="PROVEN",
+    answer = DEP.activate(agent, "DRAFT", record=REC("PROVEN"),
                           validation=PASSED)
     check(answer["refused"] == "STAGE_SKIPPED"
           and "HERON-AHR-RET-010" in answer["why"],
           "going back down is sent to retirement, not done here")
-    answer = DEP.activate(agent, "ASCENDED", from_stage="DRAFT",
+    answer = DEP.activate(agent, "ASCENDED", record=REC("DRAFT"),
                           validation=PASSED)
     check(answer["refused"] == "UNKNOWN_STAGE",
           "a stage docs/24 does not have is refused")
 
     print()
     print("5. Absent evidence is a refusal, never a downgrade")
-    answer = DEP.activate(agent, "PROVEN", from_stage="SHADOW", evidence={},
+    answer = DEP.activate(agent, "PROVEN", record=REC("SHADOW"), evidence={},
                           validation=PASSED)
     check(not answer["activated"] and "record" not in answer,
           "no lesser stage is quietly granted instead")
-    answer = DEP.activate(agent, "PROVEN", from_stage="SHADOW",
-                          evidence={"real-runs": 12,
+    answer = DEP.activate(agent, "PROVEN", record=REC("SHADOW"),
+                          evidence={"real-runs": RUNS,
                                     "unexplained-failures": 2},
                           validation=PASSED)
     check(not answer["activated"] and "unexplained" in answer["why"],
@@ -166,7 +178,7 @@ def main():
 
     print()
     print("7. The record is what the audit log keeps")
-    answer = DEP.activate(agent, "SHADOW", from_stage="VALIDATED",
+    answer = DEP.activate(agent, "SHADOW", record=REC("VALIDATED"),
                           evidence={"shadow-plan": "beside the log writer"},
                           validation=PASSED)
     record = answer["record"]
@@ -183,11 +195,11 @@ def main():
     print("8. A validation refusal stops everything above DRAFT")
     refused = {"verdict": "REFUSED", "findings": ["no contract"],
                "files": ["brain/heron_events.py", "tests/test_events.py"]}
-    answer = DEP.activate(agent, "TESTING", from_stage="DRAFT",
+    answer = DEP.activate(agent, "TESTING", record=REC("DRAFT"),
                           validation=refused)
     check(answer["refused"] == "NOT_VALIDATED",
           "TESTING is refused while validation refuses")
-    check(DEP.activate(agent, "DRAFT", from_stage="DISCOVERED",
+    check(DEP.activate(agent, "DRAFT", record=REC("DISCOVERED"),
                        validation=refused)["activated"],
           "DRAFT is still allowed - it only means an implementation exists")
 
@@ -195,18 +207,39 @@ def main():
     print("9. A promotion with no current stage is refused")
     answer = DEP.activate(agent, "PRODUCTION", approved_by="the owner",
                           validation=PASSED)
-    check(answer.get("refused") == "NO_CURRENT_STAGE",
-          "PRODUCTION from nowhere is refused, signature or not")
-    check("every gate" in answer["why"] or "gate can" in answer["why"],
-          "and the refusal says why a current stage is needed")
+    check(answer.get("refused") == "NO_RECORD",
+          "PRODUCTION with no registry record is refused, signature or not")
+    check("taken on trust" in answer["why"],
+          "and the refusal says the stage is read, not asserted")
     for absent in ("", None):
-        check(DEP.activate(agent, "DRAFT", from_stage=absent,
+        check(DEP.activate(agent, "DRAFT", record={"id": agent, "state": absent},
                            validation=PASSED).get("refused")
               == "NO_CURRENT_STAGE",
               "a from_stage of %r is refused too" % absent)
-    check(DEP.activate(agent, "DRAFT", from_stage="SOMEWHERE",
+    check(DEP.activate(agent, "DRAFT", record=REC("SOMEWHERE"),
                        validation=PASSED).get("refused") == "UNKNOWN_STAGE",
           "and a stage docs/24 does not have is refused by name")
+
+    print()
+    print("10. PROVEN wants records, not a number")
+    answer = DEP.activate(agent, "PROVEN", record=REC("SHADOW"),
+                          evidence={"real-runs": 10}, validation=PASSED)
+    check(answer.get("refused") == "GATE_NOT_MET"
+          and "A count is not evidence" in answer["why"],
+          "the integer that used to pass is refused, and told why")
+    check("D-30" in answer["why"], "and the decision that settles it is cited")
+    nameless = [{"run": "w-%d" % n} for n in range(12)]
+    answer = DEP.activate(agent, "PROVEN", record=REC("SHADOW"),
+                          evidence={"real-runs": nameless},
+                          validation=PASSED)
+    check(not answer["activated"] and "name no run id or no model"
+          in answer["why"],
+          "runs that name no model are refused - a run nobody can look up "
+          "is not a run anybody can check")
+    answer = DEP.activate(agent, "PROVEN", record=REC("SHADOW"),
+                          evidence={"real-runs": RUNS[:3]},
+                          validation=PASSED)
+    check(not answer["activated"], "three recorded runs are not ten")
 
     print()
     if FAILURES:

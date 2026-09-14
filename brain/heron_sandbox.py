@@ -38,13 +38,32 @@ counts_as_evidence - so a caller learns one question rather than two.
 
 WHAT IT CANNOT DO, AND THE HONEST VERSION OF SAYING SO
 --------------------------------------------------------
-It cannot INTERRUPT an agent that will not stop. Interrupting arbitrary Python
-needs a thread or a signal, both of which bring their own failure modes into
-the one place that must not have any. So it measures against the contract's
-timeout and reports an overrun after the fact. That is a real limitation: a
-runaway agent still hangs the process it was run in. It is written here rather
-than left for somebody to discover, and the day a sandbox needs to survive
-that, it needs a subprocess and not a cleverer timer.
+**IT RESTRAINS A COOPERATING AGENT. IT DOES NOT CONTAIN A HOSTILE ONE.**
+
+The handler runs as ordinary Python in this process. An agent that goes
+through `world.write()` and `world.revit()` is held to the rules above; one
+that calls `open()`, imports the bridge, or reaches into globals is not
+stopped by anything here. Every rule in this module is a door in a wall that
+has no other side yet.
+
+That is a real gap in something with "sandbox" in its name, so it is written
+at the top of the file rather than left to be discovered, and it is
+`Q-56` in OPEN-QUESTIONS. Closing it means running the agent in a separate
+process with the ambient capabilities removed - which is a different piece of
+work from this one, and not something to half-do inside a module that would
+then look finished.
+
+Until that exists, the honest reading is: this is the stage where a NEW agent
+is watched and its attempts recorded, not the wall that would hold a bad one.
+What it does contain is the accident - the agent that reaches for Revit
+because nobody told it not to - and that is most of them.
+
+It also cannot INTERRUPT an agent that will not stop. Interrupting arbitrary
+Python needs a thread or a signal, both of which bring their own failure modes
+into the one place that must not have any. So it measures against the
+contract's timeout and reports an overrun after the fact, and a runaway agent
+still hangs the process it was run in. The same subprocess fixes both, which
+is why they are one question and not two.
 """
 
 import copy

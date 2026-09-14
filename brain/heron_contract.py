@@ -146,9 +146,20 @@ def _semver(value):
 
 
 def _fields(contract, side):
-    """The input or output block, tolerating a contract that omits it."""
-    block = contract.get(side) or {}
-    return block if isinstance(block, dict) else {}
+    """
+    The input or output block, as {name: declaration mapping}.
+
+    Every layer of it is tolerated, because compare() is called on exactly the
+    contracts that are wrong. `input: {scope: string}` is valid YAML and a
+    field whose declaration is a bare string; reaching .get() on it raised
+    AttributeError, so the gate printed a traceback instead of a verdict at
+    the precise moment somebody needed the verdict.
+    """
+    block = contract.get(side) if isinstance(contract, dict) else None
+    if not isinstance(block, dict):
+        return {}
+    return {name: spec if isinstance(spec, dict) else {}
+            for name, spec in block.items()}
 
 
 def validate(contract, known_ids, where="contract"):

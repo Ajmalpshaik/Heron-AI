@@ -117,16 +117,36 @@ def _gate(agent_id, to_stage, evidence, validation):
 
     if to_stage == "PROVEN":
         runs = evidence.get("real-runs")
-        if not isinstance(runs, int) or runs < PROVEN_RUNS:
-            return False, ("PROVEN needs %d real executions with no "
-                           "unexplained failures. Offered: %s."
-                           % (PROVEN_RUNS, runs if runs is not None else
-                              "nothing"))
+        # A COUNT IS NOT EVIDENCE. D-30: a proof is a recorded run against a
+        # NAMED real model, and "10" is a number somebody typed. So the gate
+        # takes run RECORDS and reads them - each naming the run and what it
+        # ran against - and refuses the integer it used to accept, saying why.
+        if isinstance(runs, int):
+            return False, ("PROVEN was offered the number %d. A count is not "
+                           "evidence - D-30 wants recorded runs, each naming "
+                           "the real model it ran against. Pass the records."
+                           % runs)
+        if not isinstance(runs, (list, tuple)) or len(runs) < PROVEN_RUNS:
+            return False, ("PROVEN needs %d recorded real executions. "
+                           "Offered: %s." % (PROVEN_RUNS,
+                                             len(runs) if isinstance(
+                                                 runs, (list, tuple))
+                                             else "nothing"))
+        nameless = [index for index, run in enumerate(runs)
+                    if not isinstance(run, dict)
+                    or not run.get("run") or not run.get("model")]
+        if nameless:
+            return False, ("%d of the %d runs offered name no run id or no "
+                           "model. A run that cannot be looked up is not a "
+                           "run anybody can check (D-30)."
+                           % (len(nameless), len(runs)))
         if evidence.get("unexplained-failures"):
             return False, ("PROVEN needs no unexplained failures, and %s were "
                            "offered with the runs."
                            % evidence["unexplained-failures"])
-        return True, "%d real runs, no unexplained failures" % runs
+        return True, ("%d recorded runs against %d named model(s), no "
+                      "unexplained failures"
+                      % (len(runs), len({r["model"] for r in runs})))
 
     if to_stage == "PRODUCTION":
         return True, "trusted by default, on a person's signature"
@@ -134,13 +154,33 @@ def _gate(agent_id, to_stage, evidence, validation):
     return False, "'%s' is not a stage in docs/24" % to_stage
 
 
-def activate(agent_id, to_stage, from_stage=None, approved_by=None,
+def activate(agent_id, to_stage, record=None, approved_by=None,
              evidence=None, validation=None):
     """
     {activated, record, why} - or a refusal. It never edits a file.
+
+    `record` is the agent's record from the Agent Registry, and the stage it
+    is in NOW is read out of it. It is not a parameter a caller may assert:
+    until 2026-09-14 this took `from_stage` on trust, so passing "PROVEN" for
+    an agent the register has at DRAFT promoted it to PRODUCTION on one
+    signature, past every gate in between. A caller that can state its own
+    current stage is a caller that can skip the ladder, and the ladder is the
+    trust model.
     """
     to_stage = (to_stage or "").upper()
-    from_stage = (from_stage or "").upper() or None
+
+    if not isinstance(record, dict) or not record.get("id"):
+        return {"activated": False, "refused": "NO_RECORD",
+                "why": "no registry record for %s was given, and the stage it "
+                       "is in now is read from that record rather than taken "
+                       "on trust." % agent_id}
+
+    if str(record.get("id")).strip().upper() != str(agent_id).strip().upper():
+        return {"activated": False, "refused": "RECORD_IS_NOT_THIS_AGENT",
+                "why": "the record given is for %s, and the promotion asked "
+                       "for is %s." % (record.get("id"), agent_id)}
+
+    from_stage = str(record.get("state") or "").strip().upper() or None
 
     if to_stage not in LADDER:
         return {"activated": False, "refused": "UNKNOWN_STAGE",
@@ -157,16 +197,16 @@ def activate(agent_id, to_stage, from_stage=None, approved_by=None,
     # not a rung.
     if not from_stage:
         return {"activated": False, "refused": "NO_CURRENT_STAGE",
-                "why": "nothing said what stage %s is in now, and a gate can "
-                       "only be checked against the one below it. Read the "
-                       "current stage from the register and pass it."
+                "why": "the record for %s carries no stage, and a gate can "
+                       "only be checked against the one below it."
                        % agent_id}
 
     if from_stage not in LADDER:
         return {"activated": False, "refused": "UNKNOWN_STAGE",
-                "why": "'%s' is not a stage in docs/24, so nothing can be "
-                       "promoted out of it. The ladder is: %s."
-                       % (from_stage, ", ".join(LADDER))}
+                "why": "the register has %s at '%s', which is not a stage on "
+                       "the ladder, so nothing can be promoted out of it. The "
+                       "ladder is: %s."
+                       % (agent_id, from_stage, ", ".join(LADDER))}
 
     if True:
         step = LADDER.index(to_stage) - LADDER.index(from_stage)
@@ -240,14 +280,17 @@ def main(argv):
         ("SHADOW", {"shadow-plan": "run beside the log writer for a week"},
          None),
         ("PROVEN", {"real-runs": 3}, None),
-        ("PROVEN", {"real-runs": 12}, None),
+        ("PROVEN", {"real-runs": [{"run": "w-%d" % n,
+                                   "model": "Snowdon Towers Sample HVAC"}
+                                  for n in range(12)]}, None),
         ("PRODUCTION", {}, None),
         ("PRODUCTION", {}, "HERON-AHR-CRT-006"),
         ("PRODUCTION", {}, "the owner"),
     ]
     stage = "DISCOVERED"
     for to_stage, evidence, approver in steps:
-        answer = activate(agent, to_stage, from_stage=stage,
+        answer = activate(agent, to_stage,
+                          record={"id": agent, "state": stage},
                           approved_by=approver, evidence=evidence,
                           validation=validation)
         mark = "ok" if answer["activated"] else answer["refused"]

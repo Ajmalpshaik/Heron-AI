@@ -223,22 +223,28 @@ def main():
     print()
     print("11. Deployment - the gates, one at a time")
     stage = "DISCOVERED"
+    runs = [{"run": "w-%d" % n, "model": "Snowdon Towers Sample HVAC"}
+            for n in range(12)]
     walk = [("DRAFT", {}), ("TESTING", {}),
             ("VALIDATED", {"matrix": "python 3.11 on linux"}),
             ("SHADOW", {"shadow-plan": "beside the log writer"}),
-            ("PROVEN", {"real-runs": 12})]
+            ("PROVEN", {"real-runs": runs})]
     for to_stage, evidence in walk:
-        answer = DEP.activate(SUBJECT, to_stage, from_stage=stage,
+        # The stage it is in now comes from a RECORD, never from the caller.
+        answer = DEP.activate(SUBJECT, to_stage,
+                              record={"id": SUBJECT, "state": stage},
                               evidence=evidence, validation=validation)
         check(answer["activated"],
               "%s -> %s on VALIDATION's own verdict" % (stage, to_stage))
         if answer["activated"]:
             stage = to_stage
-    refused = DEP.activate(SUBJECT, "PRODUCTION", from_stage=stage,
+    refused = DEP.activate(SUBJECT, "PRODUCTION",
+                           record={"id": SUBJECT, "state": stage},
                            validation=validation)
     check(refused["refused"] == "NEEDS_HUMAN_APPROVAL",
           "and PRODUCTION stops dead without a person")
-    signed = DEP.activate(SUBJECT, "PRODUCTION", from_stage=stage,
+    signed = DEP.activate(SUBJECT, "PRODUCTION",
+                          record={"id": SUBJECT, "state": stage},
                           approved_by="the owner", validation=validation)
     check(signed["activated"] and signed["record"]["applied"] is False,
           "a person signs, and even then nothing is applied by a machine")
