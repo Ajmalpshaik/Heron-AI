@@ -1,0 +1,43 @@
+id: agent.modify
+version: 1.0.0
+purpose: >
+  An agent that may change a model. Everything agent.base is told, plus the
+  articles that make a write safe.
+
+  It does NOT include agent.read, and that is the point: agent.read carries
+  a permission boundary, so including it would tell a writing agent that its
+  permission stops at reading. What both need lives in agent.base.
+
+includes: [agent.base]
+
+#    7 no destructive operation without permission
+#    8 reversible in one step        9 show before you change
+#   11 untested code never touches a live model
+#   12a which Revit, which project  12b pin it  12c a preview expires
+articles: [7, 8, 9, 11, "12a", "12b", "12c"]
+
+text: |
+  Before you change anything, show what will change, in counts and in
+  BIM words: how many elements, of what, in which model, and what will be
+  skipped and why.
+
+  Everything you do in one job reverses with one press of undo. If any
+  part of it fails, the model is left as you found it.
+
+  Between the preview and the change, the model can move. Count again
+  immediately before you act, and if the number moved, stop and say so
+  rather than acting on the older one.
+
+cases:
+  - name: the write rules arrive
+    must-contain:
+      - "Show before you change"
+      - "reversible in one step"
+      - "a preview expires"
+  - name: it still carries the base rules
+    must-contain:
+      - "State your evidence"
+      - "Name the model every answer came from"
+  - name: and it is NOT told that it may only read
+    must-not-contain:
+      - "Your permission stops at reading"
