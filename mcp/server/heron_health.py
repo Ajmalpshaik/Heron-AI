@@ -39,7 +39,7 @@ DEGRADED = "DEGRADED"
 FAILED = "FAILED"
 
 # Worst wins, and the order is the definition of "worst".
-_SEVERITY = {HEALTHY: 0, WARNING: 1, DEGRADED: 2, FAILED: 3}
+SEVERITY = {HEALTHY: 0, WARNING: 1, DEGRADED: 2, FAILED: 3}
 
 
 class Component(object):
@@ -65,7 +65,7 @@ class Health(object):
         """The worst state among the components. HEALTHY if there are none."""
         if not self.components:
             return HEALTHY
-        return max((c.state for c in self.components), key=lambda s: _SEVERITY[s])
+        return max((c.state for c in self.components), key=lambda s: SEVERITY[s])
 
     def worst(self):
         """The components actually responsible for the rollup."""
@@ -80,7 +80,7 @@ class Health(object):
             lines.append("  Every component healthy.")
             return "\n".join(lines)
 
-        for c in sorted(notable, key=lambda c: -_SEVERITY[c.state]):
+        for c in sorted(notable, key=lambda c: -SEVERITY[c.state]):
             lines.append("  %-9s %-12s %s" % (c.state, c.name, c.detail))
         return "\n".join(lines)
 
