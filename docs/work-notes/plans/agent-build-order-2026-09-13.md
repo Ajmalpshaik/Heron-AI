@@ -137,7 +137,7 @@ number; on 2026-09-14 it read 13 passing against 81 with no contract at all, whi
 
 ---
 
-## Block 3 — the factory · 8 agents
+## Block 3 — the factory · 8 agents *(built 2026-09-14)*
 
 The hiring lifecycle from [28 §"the full hiring lifecycle"](../../28-agent-registry.md): HR writes the
 job description, the Architect designs the contract, the Builder implements, the Creator owns the
@@ -149,6 +149,26 @@ Optimizer improves it.
 
 **No agent approves itself** ([Golden Rule 7](../../14-golden-rules.md)) and nothing here changes that:
 the factory produces evidence, a person still signs.
+
+**And it turned out to be the shape of the whole block rather than a caveat on it.** Each of the eight
+is built around something it refuses to do, and in five cases the refusal is the agent declining to do
+the thing that would make its own numbers better:
+
+| Agent | What it will not do |
+|---|---|
+| `HR-002` | write a job description for a proposal Workforce Planning did not clear — the guard has no way round it |
+| `ARC-003` | grant a tool the job description never asked for; a contract may narrow a job and never widen one |
+| `TRN-005` | read an empty Risk column as `READ`, or hand over a DRAFT agent as an approved example |
+| `MEN-014` | name a winner when student and mentor diverge — the senior is proven against the cases somebody thought of |
+| `EVL-007` | count a refusal the contract declares as a failure ([`GAP-001`](../../28-agent-registry.md) found 38 of 176 were the executor working) |
+| `OPT-009` | propose raising a timeout past the runs that broke it, or declaring a defect's state so it reads as a correct refusal |
+| `CRT-006` | assign any status but `PROPOSED`, with ADMIN and no parameter that could carry one in |
+| `BLD-004` | run what it generated ([Q-56](../../OPEN-QUESTIONS.md)), or write the test — `docs/24` refuses TESTING when the author and the implementer match |
+
+**Two things the block found in code that already existed.** `tools/agent-count.py` was parsing columns
+1–4 and 6 of the register and skipping 5, so **no record had ever carried a risk level**; and
+`brain/heron_agents.record()` filled `claims` only when `agents` was omitted, so every caller that
+already held the register got an `AttributeError` three frames down. Both are fixed.
 
 ---
 
