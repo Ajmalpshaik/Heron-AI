@@ -1,0 +1,46 @@
+# Agent Registry Agent - HERON-AHR-REG-008
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-AHR-REG-008
+version: 1.0.0
+
+input:
+  agent:
+    type: string
+    required: false
+    description: >
+      One agent id to describe. Without it, the whole register is
+      reported - every agent, what it is, and what state it is in.
+
+output:
+  record:
+    type: map
+    description: >
+      The agent's whole record, assembled from the sources that already
+      own each field - the register for identity and tier, the source
+      header for status, the contract for the interface. Nothing is
+      stored that can be derived (D-40).
+  disagreements:
+    type: list
+    description: >
+      Where two sources say different things about one agent, or where a
+      part of the record is missing - reported, never resolved quietly.
+  unmeasured:
+    type: list
+    description: >
+      The fields nothing has measured yet - health and performance need
+      real runs. Reported as unmeasured rather than as zero.
+
+allowed-tools: []
+
+timeout-seconds: 20
+
+failures:
+  - NO_SUCH_AGENT
+  - REGISTER_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []
