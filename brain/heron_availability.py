@@ -52,6 +52,11 @@ import sys
 UNREACHABLE, AUTH, SLOW, TOO_SMALL, OK = (
     "unreachable", "auth", "slow", "too small", "ok")
 
+# A probe that could not be taken at all, which is not the same as a
+# provider that is down: it says HERON did not manage to ask. That is the
+# one state worth a retry, and the contract's retry rule names it alone.
+PROBE_FAILED = "probe failed"
+
 # Above this, an adapter is answering too late to be worth waiting for. It is
 # a ceiling on the PROBE, not on the work - a provider that takes three
 # seconds to say hello is not one to hand a queue of a thousand classifications.
@@ -67,6 +72,10 @@ def judge(probe, needs_context=0, slow_ms=SLOW_MS):
     """
     if not probe:
         return UNREACHABLE, "nothing answered"
+    if probe.get("error"):
+        return PROBE_FAILED, ("PROBE_FAILED: the probe did not complete "
+                              "(%s), so nothing is known about the "
+                              "provider either way" % probe["error"])
     if not probe.get("reachable", False):
         return UNREACHABLE, "nothing answered"
     if not probe.get("auth", True):

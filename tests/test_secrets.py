@@ -160,7 +160,7 @@ def main():
         "credential": handle,
         "other": SECRETS.HANDLE_PREFIX + "another",
     })
-    keys = [key for key, _why in offending]
+    keys = [key for key, _code, _why in offending]
     check(keys == ["notes"],
           "the field carrying a secret VALUE is named, and only that one")
     check("credential" not in keys and "other" not in keys,

@@ -94,6 +94,12 @@ def _agent_count():
         agents, _headings, _totals = module.registry()
         claims = module.built()
         host = dict(module.host_provided() or {})
+    except (IOError, OSError, ValueError) as exc:
+        # The register is the one file every record here is assembled
+        # from. If it cannot be read there is no partial answer worth
+        # giving - a record missing its identity is not a record.
+        raise IOError("REGISTER_UNREADABLE: docs/28-agent-registry.md "
+                      "could not be read - %s" % exc)
     finally:
         os.chdir(cwd)
     return agents, claims, host
@@ -228,7 +234,8 @@ def main(argv):
     if len(argv) == 2:
         found = record(argv[1].upper(), agents, claims, host, deals)
         if not found:
-            print("'%s' is not in docs/28-agent-registry.md." % argv[1])
+            print("NO_SUCH_AGENT: '%s' is not in docs/28-agent-registry.md."
+                  % argv[1])
             print("An agent is in the register before it is anywhere else.")
             return 1
         width = max(len(k) for k in found)

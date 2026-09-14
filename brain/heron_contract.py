@@ -117,9 +117,25 @@ def registry_ids():
 
 
 def load(path):
-    """One contract, as plain data. Never a class - it is data (D-29)."""
-    with io.open(path, encoding="utf-8") as fh:
-        return yaml.safe_load(fh) or {}
+    """
+    One contract, as plain data. Never a class - it is data (D-29).
+
+    The two ways this fails are the two its own contract declares, and each
+    says which it was: a path that is not there (CONTRACT_NOT_FOUND) and a
+    file that is there and will not parse (CONTRACT_UNREADABLE). They call
+    for different things - the first is a wrong name, the second is a real
+    file somebody broke - so a reader is told which one happened.
+    """
+    try:
+        with io.open(path, encoding="utf-8") as fh:
+            text = fh.read()
+    except IOError as exc:
+        raise IOError("CONTRACT_NOT_FOUND: %s (%s)" % (path, exc))
+    try:
+        return yaml.safe_load(text) or {}
+    except yaml.YAMLError as exc:
+        raise ValueError("CONTRACT_UNREADABLE: %s does not parse as "
+                         "YAML - %s" % (path, exc))
 
 
 def _semver(value):
@@ -163,7 +179,8 @@ def validate(contract, known_ids, where="contract"):
 
     agent = contract.get("agent")
     if agent and agent not in known_ids:
-        say("names agent '%s', which is not in docs/28-agent-registry.md - an "
+        say("AGENT_NOT_IN_REGISTRY: names agent '%s', which is not in "
+            "docs/28-agent-registry.md - an "
             "agent that is not in the register does not exist" % agent)
 
     if "version" in contract and _semver(contract["version"]) is None:

@@ -88,6 +88,10 @@ def articles():
     found = {}
     number = None
     lines = []
+    if not os.path.exists(CONSTITUTION):
+        raise IOError("CONSTITUTION_UNREADABLE: %s is not there, and every "
+                      "instruction assembles its rules from it"
+                      % CONSTITUTION)
     with io.open(CONSTITUTION, encoding="utf-8") as fh:
         for line in fh:
             match = RULE.match(line.rstrip("\n"))
@@ -153,10 +157,11 @@ def compose(instruction_id, known=None, rules=None, extra_articles=(),
     seen = list(_seen or [])
 
     if instruction_id in seen:
-        raise ValueError("include cycle: %s"
+        raise ValueError("INCLUDE_CYCLE: %s"
                          % " -> ".join(seen + [instruction_id]))
     if instruction_id not in known:
-        raise KeyError("no instruction '%s'" % instruction_id)
+        raise KeyError("INSTRUCTION_NOT_FOUND: no instruction '%s'"
+                       % instruction_id)
 
     seen = seen + [instruction_id]
     declaration = known[instruction_id]
@@ -164,6 +169,9 @@ def compose(instruction_id, known=None, rules=None, extra_articles=(),
     used = []
 
     for included in declaration.get("includes") or []:
+        if included not in known:
+            raise KeyError("INCLUDE_NOT_FOUND: %s includes '%s', which "
+                           "does not exist" % (instruction_id, included))
         text, inner = compose(included, known, rules, (), seen)
         parts.append(text)
         used.extend(inner)
@@ -172,7 +180,8 @@ def compose(instruction_id, known=None, rules=None, extra_articles=(),
     wanted += [str(a) for a in extra_articles]
     for number in wanted:
         if number not in rules:
-            raise KeyError("no Constitution article '%s'" % number)
+            raise KeyError("ARTICLE_NOT_FOUND: no Constitution article '%s'"
+                           % number)
         if number in used:
             continue
         used.append(number)

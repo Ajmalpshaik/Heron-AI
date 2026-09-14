@@ -88,7 +88,8 @@ class Bus(object):
                 % (name, risk, ", ".join(RISK_ORDER)))
         if risk not in MAY_HANDLE:
             raise PermissionError(
-                "handler '%s' declares %s. An event handler notifies and does "
+                "HANDLER_MAY_NOT_MODIFY: handler '%s' declares %s. An event "
+                "handler notifies and does "
                 "not act (docs/28, HERON-KRN-EVT-004). Ask for the change "
                 "through the workflow, where the preview and the undo step "
                 "are." % (name, risk))
@@ -127,7 +128,7 @@ class Bus(object):
                     # Deliberately broad. A handler is somebody else's code,
                     # and the one thing this bus must never do is let one
                     # listener stop the others - or lose the reason why.
-                    failed.append((name, "%s: %s"
+                    failed.append((name, "HANDLER_FAILED: %s: %s"
                                    % (type(exc).__name__, exc)))
         finally:
             self._in_flight.pop()

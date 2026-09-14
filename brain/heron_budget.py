@@ -129,7 +129,8 @@ class Budget(object):
 
         if scope not in self._limit:
             return {"allowed": True, "posture": NORMAL,
-                    "why": "no budget is set for %s, so nothing is enforced. "
+                    "note": "NO_BUDGET_SET",
+                    "why": "NO_BUDGET_SET: no budget is set for %s, so nothing is enforced. "
                            "That is a choice somebody has to make, not a "
                            "limit this agent may invent." % scope}
 

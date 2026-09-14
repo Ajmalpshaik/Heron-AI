@@ -134,12 +134,14 @@ class Secrets(object):
             raise ValueError("'%s' is not a secret handle" % name)
         if self._backend is None:
             raise LookupError(
-                "no credential store is configured, so '%s' cannot be "
+                "BACKEND_UNAVAILABLE: no credential store is configured, "
+                "so '%s' cannot be "
                 "resolved. Heron does not keep credentials in the workspace "
                 "(Article 17)." % name)
         value = self._backend(name)
         if value is None:
-            raise LookupError("the credential store has no '%s'" % name)
+            raise LookupError("NO_SUCH_HANDLE: the credential store has "
+                              "no '%s'" % name)
         self._known[name] = value
         return value
 
@@ -165,7 +167,8 @@ class Secrets(object):
         if self._workspace and str(path).replace("\\", "/").startswith(
                 str(self._workspace).replace("\\", "/")):
             raise ValueError(
-                "that credential store is inside the workspace. Anything in "
+                "STORE_INSIDE_WORKSPACE: that credential store is inside "
+                "the workspace. Anything in "
                 "the tree is one commit from a public repository, and a public "
                 "repository is permanent (D-07, docs/12 s5a.1).")
         return path
@@ -216,7 +219,7 @@ class Secrets(object):
                 continue
             _clean, found = self.redact(value)
             if found:
-                offending.append((key, found[0]))
+                offending.append((key, "VALUE_OFFERED_AS_INPUT", found[0]))
         return offending
 
 

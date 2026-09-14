@@ -162,7 +162,13 @@ def assess(name, purpose, capability=None, department=None,
 
     if agents is None:
         import heron_agents as REG
-        agents, _claims, _host = REG._agent_count()
+        try:
+            agents, _claims, _host = REG._agent_count()
+        except IOError as exc:
+            # REGISTER_UNREADABLE. Every check below compares against the
+            # register, so without it the honest answer is not "nothing
+            # found" - it is that nothing was looked at.
+            return {"refused": "REGISTER_UNREADABLE", "why": str(exc)}
     if capabilities is None:
         capabilities = fragment_capabilities()
 

@@ -110,8 +110,8 @@ def main():
     }
     check(raises(lambda: INS.compose("a", loop, rules), ValueError),
           "a -> b -> a is reported as a cycle, not followed")
-    check(any("include cycle" in p for p in INS.validate(loop, rules)),
-          "validate() names the cycle rather than hanging on it")
+    check(any("INCLUDE_CYCLE" in p for p in INS.validate(loop, rules)),
+          "validate() names it INCLUDE_CYCLE rather than hanging on it")
 
     print()
     print("4. Missing things raise, one per declared failure state")
