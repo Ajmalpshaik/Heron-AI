@@ -1,0 +1,105 @@
+# Dependency Agent - HERON-INS-DEP-005
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN and three words of instruction: confirm, never automatic.
+
+agent: HERON-INS-DEP-005
+version: 1.0.0
+
+input:
+  dependencies:
+    type: list
+    required: true
+    description: >
+      Each entry names a package and declares its `kind` - required or
+      optional - and, for an optional one, `uses` and `lost`. Those are
+      the same three fields requirements-optional.txt already gives every
+      entry; this agent refuses an optional dependency missing them.
+  importable:
+    type: callable
+    required: false
+    description: >
+      A READER, given the names, answering which of them import. Not a
+      list: only the running interpreter knows, and a caller that can
+      state it is a caller that can make Heron report a backend it does
+      not have. With no reader, or one that raises, nothing is judged and
+      the answer says so - it never reports a healthy system nobody looked
+      at.
+  package:
+    type: map
+    required: false
+    description: For `approve` - the one package being confirmed.
+  origin:
+    type: string
+    required: false
+    description: >
+      Where the request came from - the flag agent's own check. Installing
+      a package runs somebody else's code on the user's machine.
+  consent:
+    type: map
+    required: false
+    description: >
+      Who confirmed, and WHICH PACKAGE. One confirmation for a list
+      somebody scrolled past is not "confirm" in any sense that protects
+      them.
+  installed:
+    type: list
+    required: false
+    description: >
+      For `approve` - what already imports. Installing over it is a change
+      nobody asked for.
+
+output:
+  required_missing:
+    type: list
+    description: The ones whose absence stops Heron.
+  degraded:
+    type: list
+    description: >
+      Optional ones that are absent, each with what is LOST - the sentence
+      requirements-optional.txt already carries for it.
+  present:
+    type: list
+    description: What imports.
+  say:
+    type: list
+    description: >
+      The sentences that have to reach a person. PROPOSALS F7 is exactly
+      the gap between one existing in a file and somebody reading it, so
+      this is the output rather than a field inside another one.
+  install:
+    type: boolean
+    description: From `approve` - whether this one package may be installed.
+  command:
+    type: string
+    description: >
+      `pip install --user <name>`. Returned as text, never run - for a
+      process somebody started on purpose.
+  why:
+    type: string
+    description: The counts, or the decision and who made it.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That "installed" means importable and nothing
+      more, that nothing missing IS a real answer here, and - on an
+      approval - that a pip install has no register, no approver and no
+      hash, unlike the gate a Heron package goes through.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NO_DEPENDENCY_LIST
+  - KIND_NOT_DECLARED
+  - WHAT_IS_LOST_NOT_SAID
+  - CANNOT_SEE_WHAT_IS_INSTALLED
+  - NOT_FROM_THE_USER
+  - NOT_CONSENTED
+  - NOT_MISSING
+
+retry:
+  attempts: 0
+  on-failures: []

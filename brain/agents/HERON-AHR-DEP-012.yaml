@@ -1,0 +1,94 @@
+# Agent Deployment Agent - HERON-AHR-DEP-012
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-AHR-DEP-012
+# 3.0.0. Version 2 declared `from-stage` as an input a caller states, and a
+# caller that states its own current stage is a caller that can skip the
+# ladder - passing "PROVEN" for an agent the register has at DRAFT promoted it
+# to PRODUCTION on one signature. The stage is read from the registry record
+# now, so `from-stage` is gone and `record` is required. `validation` is
+# declared too: activate() always needed it and the contract never said so.
+# 4.0.0. `approved-by` was a string, so any label that did not look like an
+# agent id passed as a person - "build-bot" among them - and a signature could
+# be reused for any promotion at all. It is a RECORD now, scoped to one agent
+# and one stage, and the evidence each gate wants is named rather than left to
+# be guessed at.
+version: 4.0.0
+
+input:
+  agent:
+    type: string
+    required: true
+    description: The agent being moved to its next stage.
+  record:
+    type: map
+    required: true
+    description: >
+      The agent's record from the Agent Registry. The stage it is in NOW
+      is read out of it, and is never a value the caller may assert -
+      that is how every gate below the target gets skipped at once.
+  validation:
+    type: map
+    required: true
+    description: >
+      The Agent Validation Agent's verdict for this agent. DRAFT and
+      TESTING read its file list, VALIDATED requires PASS, and nothing
+      above DRAFT proceeds while it refuses.
+  to-stage:
+    type: string
+    required: true
+    description: >
+      The stage it would enter, from docs/24's one vocabulary. One step
+      at a time - the gates are what the stages mean.
+  approval:
+    type: map
+    required: false
+    description: >
+      The signature, as a record - who signed (`by`), when (`at`), and
+      what it was for (`agent`, `stage`). Scoped on purpose: a signature
+      for one agent's SHADOW cannot be spent on another's PRODUCTION, and
+      a Heron agent id in `by` is refused.
+  evidence:
+    type: map
+    required: false
+    description: >
+      What is being offered for the gate, in the shape that gate wants:
+      `implemented-by` and `test-author` for TESTING, a `matrix` of
+      per-version results for VALIDATED, a `shadow-plan` for SHADOW, and
+      for PROVEN a list of `real-runs`, each naming its run, model,
+      negative case and fingerprint, and none degraded or sandboxed.
+      Absent evidence is a refusal, never a downgrade to a lesser stage.
+
+output:
+  activated:
+    type: boolean
+    description: Whether the move was allowed.
+  record:
+    type: map
+    description: >
+      Agent, the stage it came from, the stage it entered, who signed,
+      and what was offered. This is the thing the audit log keeps.
+  why:
+    type: string
+    description: Which gate was met, or which one was not, in one sentence.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NO_RECORD
+  - RECORD_IS_NOT_THIS_AGENT
+  - NO_CURRENT_STAGE
+  - NOT_VALIDATED
+  - GATE_NOT_MET
+  - NEEDS_HUMAN_APPROVAL
+  - MACHINE_MAY_NOT_SIGN
+  - STAGE_SKIPPED
+  - UNKNOWN_STAGE
+
+retry:
+  attempts: 0
+  on-failures: []

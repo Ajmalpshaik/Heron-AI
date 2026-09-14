@@ -1,0 +1,63 @@
+# Path Manager Agent - HERON-WSP-PTH-007
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register's Risk
+# column for this row is EMPTY, which HERON-AHR-TRN-005 refuses to read as
+# READ - somebody has to fill it in before this agent can be trained.
+
+agent: HERON-WSP-PTH-007
+version: 1.0.0
+
+input:
+  path:
+    type: string
+    required: true
+    description: >
+      A path or a component NAME - they are tokenised the same way, on
+      every separator a real name uses, because HERON-OPS-UPD-010 asks
+      with names and everything else asks with paths.
+  operation:
+    type: string
+    required: false
+    description: >
+      For `may` - one of product-update, uninstall, repair, cleanup,
+      backup. Each is an agent's own rule rather than a policy invented
+      here, and this agent does not make up a sixth.
+
+output:
+  class:
+    type: string
+    description: >
+      product, data, derived, or UNKNOWN. The fourth is the truthful
+      answer rather than a gap: docs/06 s2 names twenty folders and a
+      workspace has more than twenty things in it.
+  matched:
+    type: string
+    description: Which of the twenty names it matched, or nothing.
+  allowed:
+    type: boolean
+    description: From `may` - whether that operation may touch this.
+  read_as:
+    type: string
+    description: >
+      What `may` treated it as. UNKNOWN is read as DATA there and only
+      there - not because it is, but because nothing can show it is not,
+      and the two wrong answers are not the same size.
+  rule:
+    type: string
+    description: Which agent's rule the answer came from.
+  why:
+    type: string
+    description: The class, its meaning, and the rule that decided it.
+
+allowed-tools: []
+
+timeout-seconds: 5
+
+failures:
+  - NO_PATH
+  - NOT_AN_OPERATION
+
+retry:
+  attempts: 0
+  on-failures: []

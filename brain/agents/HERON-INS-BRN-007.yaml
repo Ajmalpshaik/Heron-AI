@@ -1,0 +1,87 @@
+# Brain Initialization Agent - HERON-INS-BRN-007
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN - and of docs/07 s1's sixteen steps this is the one that
+# touches the DATA class (docs/06 s2), which nothing regenerates.
+
+agent: HERON-INS-BRN-007
+version: 1.0.0
+
+input:
+  wanted:
+    type: list
+    required: true
+    description: >
+      The scopes to initialise - a name, or a record with `scope` and
+      `project`. The scope list is heron_scope's own; a second copy is a
+      second copy to disagree with.
+  existing:
+    type: list
+    required: false
+    description: >
+      The store paths already on disk, HANDED IN. This agent does not
+      scan and then act on what it saw - that is the shape of the mistake
+      it exists to prevent - so a caller passing a stale list gets a plan
+      to overwrite stores this agent was never told about, and the answer
+      says so.
+  origin:
+    type: string
+    required: false
+    description: Where the request came from - the flag agent's own check.
+  approval:
+    type: map
+    required: false
+    description: >
+      Who signed. The failure worth signing against is not a failed
+      initialisation - it is a SUCCESSFUL one on a machine that already
+      had stores.
+
+output:
+  created:
+    type: boolean
+    description: Always false. This agent creates nothing; heron_scope does.
+  create:
+    type: list
+    description: >
+      Per store - scope, project, path, what the scope MEANS and the
+      schema version, all from heron_scope rather than restated here.
+  keep:
+    type: list
+    description: >
+      The stores already there, named and LEFT. An empty knowledge base
+      looks exactly like a fresh install, and whoever lost a year of
+      project memory finds out weeks later.
+  scope:
+    type: string
+    description: On a refusal about one scope - which.
+  path:
+    type: string
+    description: On TWO_SCOPES_ONE_STORE - the file two scopes would share.
+  why:
+    type: string
+    description: The counts, or the refusal and what it rests on.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was created, that `existing` was
+      handed in rather than looked up, and that the scopes and paths are
+      heron_scope's.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOTHING_TO_INITIALISE
+  - NOT_FROM_THE_USER
+  - NOT_APPROVED
+  - NOT_A_SCOPE
+  - PROJECT_KEY_MISSING
+  - PROJECT_KEY_NOT_WANTED
+  - TWO_SCOPES_ONE_STORE
+  - NOWHERE_TO_PUT_IT
+
+retry:
+  attempts: 0
+  on-failures: []

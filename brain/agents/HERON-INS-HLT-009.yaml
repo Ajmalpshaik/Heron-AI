@@ -1,0 +1,77 @@
+# Health Check Agent - HERON-INS-HLT-009
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It fixes nothing and re-runs nothing: a verifier that also
+# re-ran a failed step would be an installer, and then nothing would be
+# checking it.
+
+agent: HERON-INS-HLT-009
+version: 1.0.0
+
+input:
+  checks:
+    type: map
+    required: true
+    description: >
+      Per step of docs/07 s1, what a CHECK found - its `state` (one of
+      HERON-OPS-HLT-004's four), what `installed_by` it, what `checked_by`
+      it, and `why`. A step name outside the sixteen is refused: the
+      install is a defined sequence. A step with no check at all is
+      UNCHECKED, which is not the same as fine.
+
+output:
+  state:
+    type: string
+    description: >
+      HEALTHY, WARNING, DEGRADED or FAILED - HERON-OPS-HLT-004's four and
+      its severity order, because a second vocabulary for the same idea is
+      two vocabularies that disagree. Worst wins, and anything UNCHECKED
+      keeps it below HEALTHY.
+  steps:
+    type: list
+    description: Every one of docs/07 s1's steps, checked or not.
+  unchecked:
+    type: list
+    description: >
+      The steps nobody looked at, named. "End to end" is the register
+      row's own phrase, and the difference between twelve of sixteen and
+      sixteen is the four in here.
+  checked:
+    type: integer
+    description: How many carried a check.
+  complete:
+    type: boolean
+    description: >
+      Step 16 - whether the user may be told the installation is complete.
+      The only part of this agent that says no.
+  outstanding:
+    type: list
+    description: On NOT_COMPLETE - every step that is not HEALTHY, with its state.
+  step:
+    type: string
+    description: On a refusal - which step it was about.
+  why:
+    type: string
+    description: The counts, the worst state, and what is unchecked.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was re-run, that this agent cannot
+      tell a thorough check from a shallow one - only a check from no
+      check - and whose four states these are.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NO_STEPS
+  - NOT_A_STEP
+  - STEP_NOT_CHECKED
+  - INSTALLER_VERIFIED_ITSELF
+  - NOT_COMPLETE
+
+retry:
+  attempts: 0
+  on-failures: []

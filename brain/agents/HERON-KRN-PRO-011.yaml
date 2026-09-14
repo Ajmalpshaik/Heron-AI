@@ -1,0 +1,49 @@
+# Prompt / Instruction Registry - HERON-KRN-PRO-011
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-KRN-PRO-011
+version: 1.0.0
+
+input:
+  instruction:
+    type: string
+    required: true
+    description: >
+      The id of the instruction to assemble, as declared in
+      brain/instructions/<id>.yaml.
+  articles:
+    type: list
+    required: false
+    description: >
+      Constitution article numbers to add on top of the ones the
+      instruction already declares - for an agent whose permission level
+      earns more of them than its instruction assumes.
+
+output:
+  text:
+    type: string
+    description: >
+      The assembled instruction: its own words, the instructions it
+      includes, and the Constitution articles it declares, in that order.
+  articles-used:
+    type: list
+    description: >
+      Every article number that reached the text, so an audit entry can
+      say which rules the agent was actually given.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - INSTRUCTION_NOT_FOUND
+  - INCLUDE_NOT_FOUND
+  - INCLUDE_CYCLE
+  - ARTICLE_NOT_FOUND
+  - CONSTITUTION_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []

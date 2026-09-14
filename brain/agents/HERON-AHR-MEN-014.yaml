@@ -1,0 +1,90 @@
+# Agent Mentor Agent - HERON-AHR-MEN-014
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-AHR-MEN-014
+version: 2.0.0
+
+input:
+  student_id:
+    type: string
+    required: true
+    description: >
+      The new agent. Its stage is READ from the register - there is no
+      argument that says which stage it is in, for the same reason
+      HERON-AHR-DEP-012 has none.
+  capability:
+    type: string
+    required: true
+    description: >
+      What the pairing is about. A mentor is the proven agent that owns a
+      capability; pairing by department would pair by filing.
+  mentor_id:
+    type: string
+    required: false
+    description: >
+      Name the mentor instead of looking one up. Its stage AND its
+      ownership of the capability are both checked, so naming one makes
+      neither a DRAFT agent nor a proven-at-something-else agent eligible.
+  records:
+    type: map
+    required: false
+    description: The register's records, when a caller already has them.
+  student_output:
+    type: map
+    required: false
+    description: >
+      One side of a comparison. Both sides are mappings - comparing two
+      strings would report a difference in spelling as a difference in
+      judgement.
+  mentor_output:
+    type: map
+    required: false
+    description: The other side.
+
+output:
+  pairing:
+    type: map
+    description: >
+      Student, mentor, capability, the stage read from the register, and
+      the candidates word overlap offered.
+  verdict:
+    type: string
+    description: >
+      From a comparison: AGREED or DIVERGED. Never which one is right -
+      that is a person's or a model's, and Golden Rule 7 says the machine
+      does not close it.
+  differences:
+    type: list
+    description: >
+      Every field that differs, with both values and which side has it.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. On a divergence it states that the senior is not
+      the answer key; on an agreement it states that agreeing is not being
+      right.
+  why:
+    type: string
+    description: What was paired or what differed, in a sentence.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NO_SUCH_AGENT
+  - NO_CAPABILITY_NAMED
+  - NOT_IN_SHADOW
+  - NO_PROVEN_OWNER
+  - AMBIGUOUS_OWNER
+  - MENTOR_IS_THE_STUDENT
+  - MENTOR_NOT_PROVEN
+  - MENTOR_DOES_NOT_OWN_IT
+  - NOT_COMPARABLE
+  - REGISTER_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -1,0 +1,102 @@
+# Agent HR Agent - HERON-AHR-HR-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). This agent refuses to
+# be told those three for the same reason its own contract does not carry
+# them - see NOT_HRS_TO_DECIDE.
+
+agent: HERON-AHR-HR-002
+version: 2.0.0
+
+input:
+  name:
+    type: string
+    required: true
+    description: What the proposed agent would be called.
+  purpose:
+    type: string
+    required: true
+    description: >
+      The responsibility, in a sentence. Everything the Architect designs
+      and the Evaluator later scores is measured against it.
+  assessment:
+    type: map
+    required: false
+    description: >
+      Workforce Planning's answer (HERON-AHR-WFP-015), if the caller has
+      one. It is NOT where the verdict comes from: Workforce Planning is
+      re-run here on this name and this purpose, and an assessment that
+      arrives is compared against that and refused if it disagrees. A
+      verdict read out of a dictionary the caller supplied is the guard
+      with the same way round it.
+  capabilities:
+    type: list
+    required: false
+    description: >
+      The capabilities the job would provide, SCREAMING_SNAKE_CASE. A job
+      naming none is reported as unjudged, because nothing downstream can
+      then tell whether it duplicates one.
+  dependencies:
+    type: list
+    required: false
+    description: >
+      Agent ids this job would depend on. Every one must already be in
+      docs/28-agent-registry.md.
+  tools:
+    type: list
+    required: false
+    description: >
+      MCP tool names it would call. Checked against `table`, and naming
+      any without one is refused - "compared against nothing" is not the
+      same answer as "compared and found fine".
+  department:
+    type: string
+    required: false
+    description: Which department the job would sit in.
+  table:
+    type: map
+    required: false
+    description: >
+      The MCP tool table as {tool-name: risk-word}, handed in by a caller
+      that may read it. `brain` may not depend on `mcp` (D-48), so HR does
+      not fetch mcp/server/heron_tools.py itself. Required in practice
+      whenever `tools` is non-empty.
+
+output:
+  job:
+    type: map
+    description: >
+      The job description - name, responsibility, capabilities,
+      dependencies, tools, department and a derived risk floor. Its
+      `agent-id` is None and stays None: an id is a row in docs/28, and
+      writing one here would be HR editing the register.
+  unjudged:
+    type: list
+    description: >
+      What could not be decided by reading - a responsibility with more
+      than one clause, or a job naming no capability. Reported rather than
+      refused, because no splitter can tell one job described fully from
+      two jobs in one sentence.
+  why:
+    type: string
+    description: What was cleared and what was counted, in a sentence.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NO_PROPOSAL
+  - NOT_CLEARED_TO_HIRE
+  - ASSESSMENT_DISAGREES
+  - NOT_HRS_TO_DECIDE
+  - NOT_A_JOB_FIELD
+  - NOTHING_TO_DO
+  - TOOLS_NOT_CHECKED
+  - NO_SUCH_TOOL
+  - NO_SUCH_DEPENDENCY
+  - REGISTER_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []

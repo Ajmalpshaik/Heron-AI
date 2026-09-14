@@ -1,0 +1,115 @@
+# Update Agent - HERON-OPS-UPD-010
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN. It downloads nothing and writes nothing - every answer it
+# gives is a yes to PROCEEDING.
+
+agent: HERON-OPS-UPD-010
+version: 1.0.0
+
+input:
+  release:
+    type: map
+    required: true
+    description: >
+      The release describing itself - `version`, `components`,
+      `migrations`, `backup`, `rollback_tested`. Read against docs/07 s7's
+      seven rules. Note `rollback_tested`, not `rollback`: rule 5 asks for
+      a test, and a claim is not one.
+  installed:
+    type: string
+    required: false
+    description: What is installed now. The same version is NOT_AN_UPDATE.
+  pinned:
+    type: string
+    required: false
+    description: >
+      The version a user mid-delivery pinned to. Checked FIRST, before
+      consent, because rule 7 is about not asking - checking consent first
+      would prompt somebody who already said not now.
+  revit:
+    type: callable
+    required: false
+    description: >
+      A READER asked, at the moment of the decision, whether Revit holds
+      unsaved work (rule 2 - "check first"). Not a value: a caller that
+      can state it is a caller that can overwrite somebody's morning. With
+      no reader, a reader that raises, or one that cannot tell, the answer
+      is that there MAY be unsaved work.
+  origin:
+    type: string
+    required: false
+    description: >
+      Where the request came from - the flag agent's own check. An update
+      changes behaviour mid-project, so text Heron read may not ask for
+      one (Golden Rule 19).
+  consent:
+    type: map
+    required: false
+    description: >
+      Who said yes, and to WHICH VERSION. Consent to an update is consent
+      to a version; the next one has different components and different
+      migrations.
+
+output:
+  proceed:
+    type: boolean
+    description: >
+      Whether the seven rules are satisfied. A yes to proceeding, not a
+      report that anything happened.
+  takes_effect:
+    type: string
+    description: >
+      "immediately", or "after a Revit restart" and which components are
+      waiting. Rule 3: assemblies loaded into Revit cannot be unloaded, so
+      an add-in is never reported as updated - only as waiting.
+  restart_required:
+    type: boolean
+    description: The same fact as a flag, for a caller that has to branch on it.
+  components:
+    type: map
+    description: >
+      The release's components sorted into product, data and derived
+      (docs/06 s2). Data is tested first: the two wrong answers are not
+      the same size.
+  migrations:
+    type: integer
+    description: How many, each having declared docs/07 s8's three conditions.
+  rollback_to:
+    type: string
+    description: The version the recorded rollback test actually went back to.
+  missing:
+    type: list
+    description: >
+      On MIGRATION_NOT_DECLARED - which migration, and which of the three
+      it did not declare.
+  why:
+    type: string
+    description: The decision and which rule it rested on.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty when it proceeds. That nothing was downloaded, what
+      rule 3 means for the report, and that the release's AUTHENTICITY is
+      checked where the bytes arrive and not here.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOT_AN_UPDATE
+  - PINNED
+  - NOT_FROM_THE_USER
+  - NOT_CONSENTED
+  - REVIT_MAY_HAVE_UNSAVED_WORK
+  - COMPONENT_NOT_CLASSIFIED
+  - TOUCHES_THE_DATA_CLASS
+  - NO_BACKUP
+  - MIGRATION_NOT_DECLARED
+  - ROLLBACK_NOT_TESTED
+
+retry:
+  attempts: 0
+  on-failures: []

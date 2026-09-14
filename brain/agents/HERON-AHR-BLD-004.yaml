@@ -1,0 +1,97 @@
+# Agent Builder - HERON-AHR-BLD-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-AHR-BLD-004
+version: 1.0.0
+
+input:
+  contract:
+    type: map
+    required: true
+    description: >
+      HERON-AHR-ARC-003's designed contract. It is re-validated here -
+      there is no promise to implement if it does not hold.
+  built_by:
+    type: string
+    required: true
+    description: >
+      Who is building it. docs/24 lets an agent into TESTING only when the
+      test's author and the implementer differ, and an unnamed implementer
+      cannot be compared with anybody.
+  name:
+    type: string
+    required: false
+    description: >
+      The agent's name, which the module filename is derived from.
+      Defaults to the agent id.
+  layer:
+    type: string
+    required: false
+    description: brain, mcp or platform. docs/02, and D-48 decides which.
+  write:
+    type: boolean
+    required: false
+    description: >
+      False by default - `files` is what WOULD be written. True writes
+      them, and still refuses if any destination exists.
+  root:
+    type: string
+    required: false
+    description: Where to write, for a caller testing against a temporary tree.
+  known_ids:
+    type: list
+    required: false
+    description: The register's ids, when a caller already has them.
+
+output:
+  files:
+    type: map
+    description: >
+      Path to text for every file. The implementation is DERIVED from the
+      contract - the signature from its inputs, the failure states from
+      its `failures`, the return line from its outputs - and not filled
+      into a stored template, which would be a second copy of a shape that
+      already exists as data.
+  written:
+    type: list
+    description: >
+      What was actually written. Empty on a dry run, and listed inside the
+      refusal too if a write fails partway.
+  test_owed:
+    type: string
+    description: >
+      The test file this agent deliberately did NOT write. A test it
+      authored could never carry the agent into TESTING, so writing one
+      would produce a file somebody has to throw away - and until they
+      noticed it would look like the test had been done.
+  implemented_by:
+    type: string
+    description: Who built it, for the gate that compares the two.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty, and always states that NOTHING WAS RUN - Q-56 is
+      open, and generating code then executing it is exactly where the
+      sandbox's containment would have to be real.
+  why:
+    type: string
+    description: What was planned or written, in a sentence.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NO_CONTRACT
+  - NO_BUILDER_NAMED
+  - CONTRACT_INVALID
+  - NO_SUCH_LAYER
+  - WOULD_OVERWRITE
+  - WRITE_FAILED
+  - REGISTER_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []

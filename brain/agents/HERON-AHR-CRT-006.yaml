@@ -1,0 +1,108 @@
+# Agent Creator - HERON-AHR-CRT-006
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN and one sentence of restriction in bold - it may only ever
+# assign PROPOSED - and that restriction is why this contract has no input
+# and no output that carries a status.
+
+agent: HERON-AHR-CRT-006
+version: 1.0.0
+
+input:
+  name:
+    type: string
+    required: true
+    description: What the proposed agent would be called.
+  purpose:
+    type: string
+    required: true
+    description: >
+      The responsibility. Workforce Planning reads it first to decide
+      whether this should exist at all - the guard runs first or it guards
+      nothing.
+  capability:
+    type: string
+    required: false
+    description: >
+      The capability it would provide. A capability in one operation's
+      shape makes this a FRAGMENT and Workforce Planning says so (D-29).
+  department:
+    type: string
+    required: false
+    description: Which department it would sit in.
+  agent_id:
+    type: string
+    required: false
+    description: >
+      The register row's id, once a person has added one. Without it the
+      pipeline stops at 'register' - that row is the hiring decision, and
+      this agent prepares it rather than making it.
+  tools:
+    type: list
+    required: false
+    description: MCP tool names the job would call.
+  table:
+    type: map
+    required: false
+    description: >
+      The tool table, passed through to HR. brain may not read
+      mcp/server/heron_tools.py (D-48), so the pipeline carries whatever
+      its own caller supplied.
+  dependencies:
+    type: list
+    required: false
+    description: Agent ids the job would depend on.
+  failures:
+    type: list
+    required: false
+    description: Failure states for the designed contract.
+  inputs:
+    type: map
+    required: false
+    description: The designed contract's `input` block.
+  outputs:
+    type: map
+    required: false
+    description: The designed contract's `output` block.
+
+output:
+  pipeline:
+    type: list
+    description: >
+      Every step that ran, who owns it, and its result or its refusal
+      carried out whole. Golden Rule 14 - a pipeline that turned six
+      refusals into one "failed" would lose what the person needs.
+  stopped_at:
+    type: string
+    description: The step it stopped at, or null if every step ran.
+  waiting_on:
+    type: string
+    description: Who has to act next.
+  what_now:
+    type: string
+    description: What that person has to do, in a sentence.
+  assigned:
+    type: string
+    description: >
+      Always PROPOSED. There is no input that sets it and no path through
+      the implementation that returns anything else.
+  unjudged:
+    type: list
+    description: >
+      Every step's caveats, attributed to the step that raised them, and
+      always led by the statement that nothing here is approved.
+
+allowed-tools: []
+
+timeout-seconds: 120
+
+failures:
+  - NOTHING_TO_CREATE
+  - MAY_ONLY_ASSIGN_PROPOSED
+  - NOT_A_PIPELINE_INPUT
+  - REGISTER_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []

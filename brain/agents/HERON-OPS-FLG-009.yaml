@@ -1,0 +1,102 @@
+# Feature Flag Agent - HERON-OPS-FLG-009
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN, and docs/21 s9 is why: configuration is a security boundary.
+
+agent: HERON-OPS-FLG-009
+version: 1.0.0
+
+input:
+  flags:
+    type: map
+    required: true
+    description: >
+      The flag table, handed in. This agent stores none of its own - a new
+      table comes back, so a change is a value a caller can record, diff
+      and undo rather than a side effect an audit has to reconstruct
+      (docs/21 s9).
+  name:
+    type: string
+    required: true
+    description: >
+      Which flag. One that is not declared is refused rather than created:
+      a flag created by a typo is a component that stays off forever while
+      its real flag reads exactly as expected.
+  state:
+    type: string
+    required: true
+    description: >
+      OFF, ON or TEST - docs/23 s11, exactly three. A fourth word is
+      refused, never rounded to the nearest state.
+  origin:
+    type: string
+    required: false
+    description: >
+      Where the request came from. Exactly one origin may move a flag:
+      `user` - the user acting in Heron's own UI. The six kinds of content
+      Golden Rule 19 names are refused BY NAME; anything unrecognised, or
+      nothing at all, is refused too. Fails closed.
+  approval:
+    type: map
+    required: false
+    description: >
+      Who signed, when, and WHAT FOR - it must name this flag and this
+      state. An approval that names neither is a blanket approval, and a
+      blanket approval reused is how "per action" stops being true. A
+      signature already recorded against the flag is refused as a replay.
+
+output:
+  changed:
+    type: boolean
+    description: >
+      Whether the flag moved. False with no refusal means it was already
+      in that state - nothing was signed for and nothing was recorded.
+  flags:
+    type: map
+    description: The new table. The old one is not modified.
+  was:
+    type: string
+    description: >
+      The previous state. NOT a last-known-good one - nothing here scores
+      a flag as good.
+  change:
+    type: map
+    description: >
+      {to, was, by, at}, appended to the flag's `changes` list. That list
+      is the only copy of who moved it and when, and it is what Safe Mode
+      (HERON-OPS-SAF-008) sweeps back through.
+  runs:
+    type: boolean
+    description: Whether the component behind the flag runs at all.
+  output_used:
+    type: boolean
+    description: >
+      Whether its result is delivered. TEST is the state where this and
+      `runs` disagree - it runs and its output is scored, never used
+      (docs/18 s4). One boolean cannot carry both, which is why there are
+      two.
+  why:
+    type: string
+    description: The change, the origin and the signature in one sentence.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty on a change. What the audit trail does not cover
+      and what a flag deliberately does not decide.
+
+allowed-tools: []
+
+timeout-seconds: 5
+
+failures:
+  - NO_FLAGS
+  - FLAG_NOT_DECLARED
+  - NOT_A_FLAG_STATE
+  - NOT_FROM_THE_USER
+  - NOT_APPROVED
+  - APPROVAL_ALREADY_USED
+
+retry:
+  attempts: 0
+  on-failures: []

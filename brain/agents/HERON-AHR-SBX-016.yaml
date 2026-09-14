@@ -1,0 +1,53 @@
+# Agent Sandbox - HERON-AHR-SBX-016
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-AHR-SBX-016
+version: 1.0.0
+
+input:
+  agent:
+    type: string
+    required: true
+    description: The id of the agent being run, for the run record.
+  payload:
+    type: map
+    required: false
+    description: What the agent is given for this run.
+  timeout-seconds:
+    type: integer
+    required: false
+    description: >
+      The ceiling from the agent's own contract. The sandbox measures
+      against it; it cannot interrupt arbitrary code and says so.
+
+output:
+  result:
+    type: map
+    description: What the agent returned, if it returned at all.
+  sandboxed:
+    type: boolean
+    description: >
+      Always true. It rides on every run so that no caller can mistake a
+      sandbox result for evidence toward promotion.
+  attempts:
+    type: list
+    description: >
+      Everything the agent tried to do that the sandbox refused - a Revit
+      call, a write to a production scope. Refused and RECORDED, because
+      what a new agent tried is the most useful thing about a first run.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - AGENT_RAISED
+  - OVERRAN_ITS_TIMEOUT
+  - PRODUCTION_SCOPE_REFUSED
+  - LIVE_MODEL_REFUSED
+
+retry:
+  attempts: 0
+  on-failures: []

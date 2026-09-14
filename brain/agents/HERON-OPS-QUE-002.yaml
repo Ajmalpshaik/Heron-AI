@@ -1,0 +1,68 @@
+# Queue Manager - HERON-OPS-QUE-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register's Risk
+# column for this row is EMPTY, which HERON-AHR-TRN-005 refuses to read as
+# READ - somebody has to fill it in before this agent can be trained.
+
+agent: HERON-OPS-QUE-002
+version: 1.0.0
+
+input:
+  work:
+    type: string
+    required: true
+    description: >
+      What is to be done, in a sentence. An empty one would sit in the
+      queue as a thing nobody can do and nobody can cancel.
+  priority:
+    type: number
+    required: true
+    description: >
+      0 to 6, docs/21 s12. A number outside that is refused rather than
+      read as the least urgent - guessing here decides what yields to
+      what.
+  asked_by:
+    type: string
+    required: true
+    description: >
+      Who wanted it. The first question about a stuck queue is what is in
+      it and who asked.
+  because:
+    type: string
+    required: true
+    description: Why. An item that cannot say is one nobody will dare drop.
+  item_id:
+    type: number
+    required: false
+    description: >
+      For `take` - the specific item to remove, which is how
+      HERON-OPS-SCH-001 takes the one it has decided may run rather than
+      the queue deciding for it.
+
+output:
+  item:
+    type: map
+    description: >
+      The queued work with its id, band (interactive for P0-P1, background
+      for P2-P6), when it arrived, how many attempts it has had and every
+      failure recorded on it.
+  why:
+    type: string
+    description: What happened to it, and where it sits, in a sentence.
+
+allowed-tools: []
+
+timeout-seconds: 5
+
+failures:
+  - NOTHING_TO_QUEUE
+  - NO_SUCH_PRIORITY
+  - NO_ASKER
+  - QUEUE_FULL
+  - NOTHING_WAITING
+  - NO_SUCH_ITEM
+
+retry:
+  attempts: 0
+  on-failures: []

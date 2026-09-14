@@ -99,9 +99,22 @@ def registry():
             continue
         aid = cols[1].strip("`")
         step = cols[6].replace("*", "").strip()
+        risk = cols[5].replace("*", "").strip()
         agents[aid] = dict(
             name=re.sub(r"\*\*|↗", "", cols[2]).strip(),
+            # The "Does" column - the agent's responsibility in the register's
+            # own words. Nothing here reads it; it is carried because this is
+            # the ONE parser of that file, and the alternative to adding a
+            # field was a second parser somewhere else, which is the drift
+            # this repository keeps writing about.
+            does=re.sub(r"\*\*|↗", "", cols[3]).strip(),
             tier=cols[4].replace("*", "").strip(),
+            # The "Risk" column, read for the same reason as "Does" above and
+            # carried the same way. An em-dash means NOBODY HAS ASSIGNED ONE,
+            # which is a different fact from READ and must not be flattened
+            # into it - the Trainer refuses to train an agent whose
+            # permissions nobody has decided.
+            risk=None if risk in ("—", "-", "") else risk,
             step=None if step in ("—", "-", "") else step,
             dept=dept or "(no department)",
         )

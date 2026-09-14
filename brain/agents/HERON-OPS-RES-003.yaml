@@ -1,0 +1,61 @@
+# Resource Manager - HERON-OPS-RES-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register's Risk
+# column for this row is EMPTY, which HERON-AHR-TRN-005 refuses to read as
+# READ - somebody has to fill it in before this agent can be trained.
+
+agent: HERON-OPS-RES-003
+version: 1.0.0
+
+input:
+  readings:
+    type: map
+    required: false
+    description: >
+      Readings already taken, when a caller has them. Each is
+      {value, unmeasured, why} - a reading that could not be taken says so
+      and is never compared against a threshold, because a reading that
+      failed is not a reading of zero.
+  path:
+    type: string
+    required: false
+    description: >
+      Which disk to read. Defaults to the one holding the repository.
+
+output:
+  pause:
+    type: boolean
+    description: >
+      Whether BACKGROUND work should pause. Never about a person's work -
+      docs/21 s12 has background yielding to interactive and never the
+      other way round. True when nothing at all could be measured: "I
+      could not tell" is not permission to use somebody's machine.
+  because:
+    type: list
+    description: >
+      Each reading that crossed a threshold, with the number, the
+      threshold and the raw figure - so a person can disagree with the
+      threshold rather than with the verdict.
+  unmeasured:
+    type: list
+    description: >
+      Every reading that could not be taken, with why. Revit
+      responsiveness and AI spend are always in here: the first cannot be
+      seen from `brain` at all (D-48), and the second belongs to
+      HERON-KRN-TOK-015, because two meters for one number is one meter
+      and one argument.
+  why:
+    type: string
+    description: What was read, what was not, and what that means.
+
+allowed-tools: []
+
+timeout-seconds: 5
+
+failures:
+  - NOTHING_MEASURABLE
+
+retry:
+  attempts: 0
+  on-failures: []

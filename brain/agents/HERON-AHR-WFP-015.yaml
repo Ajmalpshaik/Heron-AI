@@ -1,0 +1,61 @@
+# Workforce Planning Agent - HERON-AHR-WFP-015
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-AHR-WFP-015
+version: 1.0.0
+
+input:
+  name:
+    type: string
+    required: true
+    description: What the proposed agent would be called.
+  purpose:
+    type: string
+    required: true
+    description: >
+      What it would be responsible for, in a sentence. The words are what
+      the overlap checks read, so a vague purpose gets a vague answer.
+  capability:
+    type: string
+    required: false
+    description: >
+      The capability it would provide, if one is named -
+      SCREAMING_SNAKE_CASE, verb first, as a fragment declares it.
+  department:
+    type: string
+    required: false
+    description: >
+      Which department it would sit in, so that extending a neighbour can
+      be considered before hiring.
+
+output:
+  verdict:
+    type: string
+    description: >
+      ALREADY_AN_AGENT, ALREADY_A_CAPABILITY, THIS_IS_A_FRAGMENT,
+      EXTEND_EXISTING or PROPOSE_HIRING. The last one is a proposal and
+      never an approval - no agent approves itself (Golden Rule 7).
+  matches:
+    type: list
+    description: >
+      What it found and how close it was, so a person can disagree with
+      the verdict rather than having to trust it.
+  unjudged:
+    type: list
+    description: >
+      The parts of the question that need a model and could not be asked -
+      reported, so a "no overlap found" is never mistaken for "checked".
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_ASSESS
+  - REGISTER_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []

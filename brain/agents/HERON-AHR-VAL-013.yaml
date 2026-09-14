@@ -1,0 +1,48 @@
+# Agent Validation Agent - HERON-AHR-VAL-013
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-AHR-VAL-013
+version: 1.0.0
+
+input:
+  agent:
+    type: string
+    required: true
+    description: The agent to validate, before anything activates it.
+  built-by:
+    type: string
+    required: false
+    description: >
+      Which agent built it. Validation refuses when that is itself -
+      no agent approves its own work (Golden Rule 7).
+
+output:
+  verdict:
+    type: string
+    description: >
+      PASS or REFUSED. PASS means every check that can be run without a
+      model found nothing - it is not an activation and never was.
+  findings:
+    type: list
+    description: One sentence per thing wrong, naming the file to open.
+  unjudged:
+    type: list
+    description: >
+      The checks that need a model or a person - "is this agent
+      CORRECT" among them - reported rather than quietly counted as
+      passed.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NO_SUCH_AGENT
+  - VALIDATOR_IS_THE_BUILDER
+  - NOT_IMPLEMENTED
+
+retry:
+  attempts: 0
+  on-failures: []

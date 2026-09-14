@@ -1,0 +1,71 @@
+# Cleanup Agent - HERON-WSP-CLN-009
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY and one instruction in three words: archives, never deletes.
+
+agent: HERON-WSP-CLN-009
+version: 1.0.0
+
+input:
+  artefacts:
+    type: list
+    required: true
+    description: What is being considered. Names or paths - both are read the same way.
+  usage:
+    type: map
+    required: false
+    description: >
+      Per artefact, a usage record carrying `since`, `until` and `uses`.
+      All three: "used 0 times" with no window is a sentence about the
+      record-keeping, not about the artefact, and a cleanup that read it
+      as the second archives a modeller's library the first week after
+      somebody turned logging on.
+
+output:
+  remove:
+    type: list
+    description: >
+      Unused AND rebuildable - the only class that may go outright, which
+      is HERON-WSP-PTH-007's answer rather than this agent's rule.
+  archive:
+    type: list
+    description: >
+      Unused and not rebuildable. ARCHIVED, never deleted: archiving is
+      reversible and visible, deleting is neither, and the difference
+      matters most for the class nobody can regenerate.
+  unobserved:
+    type: list
+    description: >
+      No readable usage record, so UNOBSERVED and not unused - its own
+      list, never folded in with the ones nobody used. Absence of evidence
+      is not evidence.
+  keep:
+    type: list
+    description: Used at least once in the recorded window.
+  artefact:
+    type: string
+    description: On NOT_A_USAGE_RECORD - which one could not be read.
+  why:
+    type: string
+    description: The four counts, and that nothing was touched.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was removed or written, that
+      unobserved is a separate answer, that how long is long enough is a
+      judgement about the practice rather than a number this agent has,
+      and whose rule decided what may go outright.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOTHING_TO_SWEEP
+  - NOT_AN_ARTEFACT
+  - NOT_A_USAGE_RECORD
+
+retry:
+  attempts: 0
+  on-failures: []

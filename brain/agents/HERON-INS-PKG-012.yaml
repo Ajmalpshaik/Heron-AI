@@ -1,0 +1,113 @@
+# Package Manager Agent - HERON-INS-PKG-012
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN. It installs nothing and removes nothing.
+
+agent: HERON-INS-PKG-012
+version: 1.0.0
+
+input:
+  wanted:
+    type: list
+    required: true
+    description: >
+      What the user asked for. Each entry is a name, or a record pinning a
+      `version` - a pin is what makes a diamond possible, and a diamond is
+      the case where resolving would mean choosing for somebody.
+  catalogue:
+    type: map
+    required: true
+    description: >
+      What is available, each with its `version`, its `revit` LIST and its
+      `depends`. A name not in it is refused rather than taken on trust.
+  register:
+    type: map
+    required: false
+    description: >
+      Passed straight to HERON-INS-SUP-013. This agent repeats none of
+      that gate's checks and does not get to skip it for a dependency.
+  approvers:
+    type: list
+    required: false
+    description: For the same gate - who may approve, decided outside the package.
+  measured:
+    type: map
+    required: false
+    description: >
+      Per package, the hash measured over the bytes that arrived. A
+      package with none is stopped by the gate, not by this agent.
+  revit:
+    type: string
+    required: false
+    description: >
+      Which Revit release this install is for. A package not listing it is
+      refused - D-05: an unlisted release is an error, never a guess, and
+      not listed is not "probably fine".
+  installed:
+    type: map
+    required: false
+    description: >
+      For `remove` - what is installed, each with its `depends` and what it
+      `produced`. What a package produced is what survives it.
+
+output:
+  install:
+    type: boolean
+    description: Whether the whole set may be installed.
+  order:
+    type: list
+    description: >
+      Dependencies first. Built iteratively with a seen-set: Constitution
+      article 25 says never loop, and a resolver that recursed into a
+      cycle would be the thing the article is about.
+  checked:
+    type: list
+    description: >
+      Per package, what the supply chain gate returned - trust, approver,
+      and that the first run is SANDBOX.
+  cycle:
+    type: list
+    description: On CIRCULAR_DEPENDENCY - the loop, named.
+  remove:
+    type: boolean
+    description: From `remove` - whether the package may go.
+  keeps:
+    type: list
+    description: >
+      What it produced and what STAYS. docs/06 s2: data must survive every
+      update, uninstall and reinstall - an uninstaller that tidied it away
+      would be deleting the only thing in the workspace nobody can
+      regenerate.
+  needed_by:
+    type: list
+    description: On STILL_DEPENDED_ON - which packages still need it.
+  why:
+    type: string
+    description: The decision and what it rested on.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was installed or deleted, what was
+      not checked when no Revit version was given, and that Golden Rule 18
+      still holds for the dependencies nobody asked for by name.
+
+allowed-tools: []
+
+timeout-seconds: 15
+
+failures:
+  - NOTHING_WANTED
+  - NOT_IN_THE_CATALOGUE
+  - DEPENDENCY_MISSING
+  - CIRCULAR_DEPENDENCY
+  - TWO_VERSIONS_WANTED
+  - VERSION_IS_A_RANGE
+  - REVIT_VERSION_UNLISTED
+  - SUPPLY_CHAIN_REFUSED
+  - NOT_INSTALLED
+  - STILL_DEPENDED_ON
+
+retry:
+  attempts: 0
+  on-failures: []

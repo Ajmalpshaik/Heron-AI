@@ -1,0 +1,105 @@
+# Safe Mode Agent - HERON-OPS-SAF-008
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN. It undoes work, which is a decision somebody makes.
+
+agent: HERON-OPS-SAF-008
+version: 1.0.0
+
+input:
+  flags:
+    type: map
+    required: true
+    description: >
+      HERON-OPS-FLG-009's table. docs/23 s11 says Safe Mode IS a flag sweep
+      back to last-known-good, so this is built on that table rather than
+      beside it - a second flag store is one flag store and one bug.
+  since:
+    type: string
+    required: true
+    description: >
+      The moment the person says was good - YYYY-MM-DD... Everything
+      changed at or after it is undone. There is NO DEFAULT: nothing here
+      scores a flag as good, so the goodness comes from the person naming
+      a moment, and a default window would be this agent guessing when the
+      trouble started.
+  components:
+    type: list
+    required: false
+    description: >
+      Installed agents, plugins, skills and fragments (docs/00d s35), each
+      with an `installed` date. One with no date is named in `could_not`
+      rather than called recent or settled.
+  origin:
+    type: string
+    required: false
+    description: >
+      Where the request came from. Same one origin as a flag flip - the
+      user in Heron's own UI. Safe Mode undoes work and switches
+      components off; text Heron read is the last thing that should be
+      able to ask for it (Golden Rule 19).
+  approval:
+    type: map
+    required: false
+    description: >
+      Who signed, when, and SINCE WHEN. Entering Safe Mode is ONE action -
+      the flags it moves are consequences of that decision, not separate
+      decisions - so it is signed once, and what keeps it per-action is
+      that the signature names the moment.
+
+output:
+  entered:
+    type: boolean
+    description: Whether there was anything to undo, and it was allowed.
+  flags:
+    type: map
+    description: >
+      The swept table. The one handed in is not modified, and nothing is
+      written - a caller applies this, and until it does the system is
+      exactly as it was.
+  swept:
+    type: list
+    description: >
+      Each flag moved, with what it was and what it went back to. The
+      direction is a consequence of the history, not a policy: a flag
+      gating a check that somebody switched off comes back ON.
+  disable:
+    type: list
+    description: >
+      Components installed at or after the moment. Named, not done - what
+      it takes to unload one belongs to whatever loaded it.
+  could_not:
+    type: list
+    description: >
+      What was left alone and why - a flag with no recorded history, a
+      change this agent cannot date, a component with no install date.
+      Named rather than swept anyway: a flag quietly left broken under a
+      report saying the system was restored is the silent failure.
+  why:
+    type: string
+    description: The counts, the moment, and who signed.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty when it enters. Where "good" came from, why the
+      sweep restores rather than disables, and what was not written.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NO_FLAGS
+  - NO_MOMENT
+  - BAD_MOMENT
+  - NOT_FROM_THE_USER
+  - NOT_APPROVED
+  - NOTHING_TO_UNDO
+  - NO_HISTORY
+  - UNDATED_CHANGE
+  - UNDATED_COMPONENT
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -1,0 +1,96 @@
+# Agent Architect - HERON-AHR-ARC-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The contracts this
+# agent DESIGNS carry none of the three either, for the same reason.
+
+agent: HERON-AHR-ARC-003
+version: 1.0.0
+
+input:
+  job:
+    type: map
+    required: true
+    description: >
+      HR's job description (HERON-AHR-HR-002), as it returned it. Every
+      tool and capability in the designed contract is compared against
+      this, so a job from anywhere else is refused rather than designed
+      from.
+  agent_id:
+    type: string
+    required: true
+    description: >
+      The agent's id, which must already be a row in
+      docs/28-agent-registry.md. HR leaves it None on purpose; the row is
+      the hiring decision, and this agent designs what was hired.
+  version:
+    type: string
+    required: false
+    description: Semantic version for the new contract. 1.0.0 by default.
+  failures:
+    type: list
+    required: false
+    description: >
+      The failure states the agent will name. At least one is required -
+      an agent that cannot fail leaves its caller nothing to handle.
+  timeout:
+    type: number
+    required: false
+    description: >
+      Seconds. Defaults to 30, which is a default and not a measurement,
+      and is reported as unjudged every time.
+  inputs:
+    type: map
+    required: false
+    description: The contract's `input` block.
+  outputs:
+    type: map
+    required: false
+    description: The contract's `output` block.
+  tools:
+    type: list
+    required: false
+    description: >
+      Narrows the job's tool list. It can never widen it - a tool the job
+      did not ask for is CONTRACT_EXCEEDS_THE_JOB.
+
+output:
+  contract:
+    type: map
+    description: >
+      The designed contract, already through
+      heron_contract.validate(). A design that does not validate is
+      refused here rather than left to fail somebody else's gate.
+  dropped:
+    type: list
+    description: >
+      Tools the job asked for that the design does not use. Narrowing is
+      allowed; it is reported because the job description is what the
+      agent will be measured against.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. Whether the shape is right, whether the timeout is
+      right, and whether the declared failure states are the ones the
+      implementation will name - a promise made before any code exists.
+  why:
+    type: string
+    description: What was designed, from what, in a sentence.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NO_JOB_DESCRIPTION
+  - NOT_A_JOB_DESCRIPTION
+  - NO_AGENT_ID
+  - NOT_IN_THE_REGISTER
+  - CONTRACT_EXCEEDS_THE_JOB
+  - NO_FAILURE_DECLARED
+  - CONTRACT_INVALID
+  - REGISTER_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []

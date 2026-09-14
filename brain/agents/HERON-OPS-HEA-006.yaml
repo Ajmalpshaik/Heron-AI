@@ -1,0 +1,73 @@
+# Self-Healing Agent - HERON-OPS-HEA-006
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY - the only one in Operations that may change anything - and
+# the whole design is the line it may not cross.
+
+agent: HERON-OPS-HEA-006
+version: 1.0.0
+
+input:
+  artefact:
+    type: string
+    required: true
+    description: >
+      What is reported broken. Classified against the derived register:
+      anything not in it is NOT_KNOWN_TO_BE_DERIVED and is proposed, never
+      repaired, whatever its name suggests.
+  artefacts:
+    type: list
+    required: false
+    description: >
+      For `triage` - several at once, as diagnostics would hand them over.
+      The answer is two lists, so a caller never gets one it has to sort
+      itself.
+  root:
+    type: string
+    required: false
+    description: >
+      Where to check the sources exist. Defaults to the repository.
+
+output:
+  repaired:
+    type: boolean
+    description: >
+      Whether this is derived state with a live source. True does NOT mean
+      anything ran - see `command`.
+  command:
+    type: string
+    description: >
+      The generator that rebuilds it. Returned, never executed: a
+      generator belongs in a process somebody started on purpose, and Q-56
+      is open about what contains one this agent starts.
+  from:
+    type: list
+    description: What it is derived FROM, checked to exist before repairing.
+  proposal:
+    type: string
+    description: >
+      On a refusal - what a person should do instead, naming the real
+      problem rather than the symptom.
+  repairable:
+    type: list
+    description: From `triage` - the ones with a named rebuilder and a live source.
+  proposed:
+    type: list
+    description: From `triage` - the rest, each saying why it is not this agent's.
+  why:
+    type: string
+    description: The classification and what it rests on.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOT_KNOWN_TO_BE_DERIVED
+  - SOURCE_IS_MISSING
+  - NOTHING_TO_HEAL
+
+retry:
+  attempts: 0
+  on-failures: []

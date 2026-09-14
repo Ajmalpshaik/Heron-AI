@@ -1,0 +1,70 @@
+# Agent Trainer - HERON-AHR-TRN-005
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). This agent READS the
+# risk column and never writes it.
+
+agent: HERON-AHR-TRN-005
+version: 2.0.0
+
+input:
+  agent_id:
+    type: string
+    required: true
+    description: >
+      The agent to assemble a training pack for. It must be a row in
+      docs/28-agent-registry.md, and that row's Risk column decides which
+      rules it is given.
+  agents:
+    type: map
+    required: false
+    description: The parsed register, when a caller already has it.
+  records:
+    type: map
+    required: false
+    description: >
+      The register's records, used to find agents at PROVEN or PRODUCTION.
+      Fetched when not supplied.
+  known:
+    type: map
+    required: false
+    description: The instruction set, for a caller testing against its own.
+  rules:
+    type: map
+    required: false
+    description: The Constitution articles, for the same reason.
+
+output:
+  pack:
+    type: map
+    description: >
+      Assembled on every call and stored nowhere (D-40) - the agent, its
+      risk, the instruction chosen, the assembled rules and the article
+      numbers, the architecture it must fit, the gates it will be measured
+      by, and the approved examples.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. Whether the pack is ENOUGH is a reading nothing
+      here can make, and when no approved example exists that is stated
+      rather than filled with the nearest thing.
+  why:
+    type: string
+    description: What was assembled, for which risk level, in a sentence.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NO_SUCH_AGENT
+  - NO_RISK_ASSIGNED
+  - UNKNOWN_RISK_LEVEL
+  - NO_INSTRUCTION_FOR_RISK
+  - INSTRUCTION_NOT_FOUND
+  - INCLUDE_CYCLE
+  - REGISTER_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []

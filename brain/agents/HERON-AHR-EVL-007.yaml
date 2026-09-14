@@ -1,0 +1,59 @@
+# Agent Evaluator - HERON-AHR-EVL-007
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-AHR-EVL-007
+version: 1.0.0
+
+input:
+  agent_id:
+    type: string
+    required: true
+    description: >
+      The agent to score. Its stage is READ from the register, and only
+      PRODUCTION is "after activation" - before that there are test runs,
+      which HERON-AHR-VAL-013 already judges.
+  runs:
+    type: list
+    required: true
+    description: >
+      Run records. Each needs at least `run` and `outcome`; `seconds` and
+      `degraded` are read when present. There is no argument that says how
+      many succeeded - a count is not evidence (D-30).
+  records:
+    type: map
+    required: false
+    description: The register's records, when a caller already has them.
+
+output:
+  report:
+    type: map
+    description: >
+      Completed runs, correct refusals, defects, runs that overran the
+      contract's timeout, degraded runs excluded, and the expectation
+      itself - which is the contract, quoted, not a target somebody typed.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. Whether the answers were RIGHT is not in a run
+      record, and is never claimed here.
+  why:
+    type: string
+    description: The counts in a sentence.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NO_SUCH_AGENT
+  - NOT_ACTIVATED
+  - NO_CONTRACT
+  - NOTHING_TO_SCORE
+  - RUNS_NOT_RECORDS
+  - REGISTER_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []

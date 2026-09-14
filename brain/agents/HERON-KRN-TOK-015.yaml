@@ -1,0 +1,70 @@
+# Token & Cost Budget - HERON-KRN-TOK-015
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-KRN-TOK-015
+# 2.0.0: `reported-by` is a REQUIRED input that was missing. record()
+# always refused a spend without one - Heron has no tokeniser, so a number
+# with no source is a guess - and a caller built from version 1 could
+# therefore record nothing at all.
+version: 2.0.0
+
+input:
+  scope:
+    type: string
+    required: true
+    description: >
+      Which budget the call is drawn against - request, session or
+      background. Background is work Heron started on its own, and it
+      yields before the user's work does.
+  amount:
+    type: number
+    required: false
+    description: >
+      What the call cost, in the budget's own unit, as REPORTED BY the
+      provider after the fact. Heron has no tokeniser and never invents
+      one (D-58).
+  reported-by:
+    type: string
+    required: true
+    description: >
+      What reported the amount - the adapter, the provider's reply. A
+      spend with no source is a guess, and Heron has no tokeniser to
+      make one with (D-58). Required whenever an amount is given.
+  unit:
+    type: string
+    required: false
+    description: >
+      The unit the amount is in. It must match the unit the budget was
+      declared in; a spend in another unit is refused, not converted.
+
+output:
+  allowed:
+    type: boolean
+    description: Whether the call may proceed.
+  posture:
+    type: string
+    description: >
+      NORMAL, TIGHT or STOPPED. TIGHT is the signal to ask for cheaper
+      thinking where cheaper thinking will do - this agent never picks the
+      provider itself.
+  why:
+    type: string
+    description: >
+      The numbers behind the answer - spent, budget and remaining, in the
+      unit - so the cost meter and the refusal say the same thing.
+
+allowed-tools: []
+
+timeout-seconds: 5
+
+failures:
+  - BUDGET_EXCEEDED
+  - UNKNOWN_SCOPE
+  - UNIT_MISMATCH
+  - NO_BUDGET_SET
+
+retry:
+  attempts: 0
+  on-failures: []

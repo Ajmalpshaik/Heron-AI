@@ -1,0 +1,91 @@
+# External Tool Manager - HERON-INS-EXT-011
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register row is the
+# ENTIRE specification this agent has - no document expands on it - so
+# several rules in the module are a reading of decisions made elsewhere
+# rather than decisions on record. The module says which, and they all fail
+# closed.
+
+agent: HERON-INS-EXT-011
+version: 1.0.0
+
+input:
+  tool:
+    type: map
+    required: true
+    description: >
+      What is being added - `name`, `kind` (cli, utility or mcp-server),
+      `works_with`, `configure`, `verified`, and for an MCP server the
+      `tools` it brings, enumerated. A server that names none is refused:
+      tools discovered at connect time and trusted as found would be a
+      text file deciding what Heron can do (Golden Rule 19).
+  detected:
+    type: string
+    required: false
+    description: >
+      Where it was found, or empty for "not installed". Handed in, because
+      DETECTING an external tool means running it - `tool --version`
+      executes the tool - and on a path Heron does not control that is
+      running an unknown binary to decide whether to trust it. This is the
+      difference from HERON-INS-DEP-005, whose detection is an import
+      inside the running interpreter. None at all is refused, not read as
+      absent.
+  origin:
+    type: string
+    required: false
+    description: >
+      Where the request came from - the flag agent's own check. It gates
+      DETECTION, not only installation, for the reason above.
+  permitted:
+    type: map
+    required: false
+    description: >
+      Who permitted it, and WHICH TOOL. "Ask permission" is in the
+      register row, and a permission that names no tool is not one.
+
+output:
+  ready:
+    type: boolean
+    description: Whether all seven of the row's steps are satisfied.
+  said:
+    type: list
+    description: >
+      One sentence per step, in the row's own order. "Never silent" is the
+      row's only unconditional instruction, so this is the output rather
+      than a log - and a step whose sentence is blank is REFUSED, because
+      a blank row in a report reads as a step that went fine.
+  steps:
+    type: list
+    description: The steps covered, or on a refusal the silent ones.
+  step:
+    type: string
+    description: On a refusal - which of the seven it stopped at.
+  why:
+    type: string
+    description: The decision and what it needs.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty when ready. That nothing was run, that the
+      detection was handed in rather than performed, what an MCP server
+      adds that a utility does not, and that this row is the whole
+      specification.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NO_TOOL
+  - NOT_FROM_THE_USER
+  - DETECTION_IS_EXECUTION
+  - COMPATIBILITY_NOT_CHECKED
+  - NOT_PERMITTED
+  - TOOLS_NOT_ENUMERATED
+  - NOT_VERIFIED
+  - STEP_SAID_NOTHING
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -1,0 +1,81 @@
+# Agent Retirement Agent - HERON-AHR-RET-010
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-AHR-RET-010
+# 2.0.0: two REQUIRED inputs were added. They were always required by the
+# implementation - a caller built from version 1 could never get retired: true,
+# whatever it sent, while two of the declared failure states advertised that it
+# could. A contract that cannot be satisfied is worse than a missing one.
+version: 2.0.0
+
+input:
+  agent:
+    type: string
+    required: true
+    description: The agent being retired.
+  to-stage:
+    type: string
+    required: true
+    description: >
+      DEPRECATED - superseded, unreliable or incompatible - or ARCHIVED,
+      retained for history. Never deleted, whichever is chosen.
+  reason:
+    type: string
+    required: true
+    description: >
+      Why, in a sentence somebody reading it in a year can use. A
+      retirement with no reason is a gap in the history it claims to
+      preserve.
+  successor:
+    type: string
+    required: false
+    description: >
+      What takes this agent's work, when something still points at it.
+  approved-by:
+    type: string
+    required: true
+    description: >
+      The person who signed. Retiring is an ADMIN act, and a Heron agent
+      id here is refused - Golden Rule 7 is not satisfied by another
+      agent signing.
+  record:
+    type: map
+    required: true
+    description: >
+      The agent's record from the Agent Registry. It is what gets kept,
+      so retirement will not proceed without it - an archive that cannot
+      be reversed is a deletion with better manners.
+
+output:
+  retired:
+    type: boolean
+    description: Whether the retirement was allowed.
+  record:
+    type: map
+    description: >
+      Everything needed to bring it back - the files, the contract and
+      its version, the stage it left, the reason, who signed, and when.
+      Rollback is only possible if this is complete, so it is checked.
+  references:
+    type: list
+    description: >
+      Every file still naming this agent. Something still pointing at it
+      is what a successor is for.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NO_REASON_GIVEN
+  - NEEDS_HUMAN_APPROVAL
+  - MACHINE_MAY_NOT_SIGN
+  - STILL_REFERENCED
+  - UNKNOWN_STAGE
+  - NOTHING_TO_RETIRE
+
+retry:
+  attempts: 0
+  on-failures: []
