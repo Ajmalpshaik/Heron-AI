@@ -1,0 +1,48 @@
+# Model Router - HERON-KRN-MDL-010
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-KRN-MDL-010
+version: 1.0.0
+
+input:
+  intent:
+    type: string
+    required: true
+    description: >
+      What kind of thinking the work needs, from the declared set -
+      CLASSIFY, EXTRACT, SCORE, SUMMARISE, REASON. Never a model name,
+      and never free text.
+  confidential:
+    type: boolean
+    required: false
+    description: >
+      True when the active scope is marked confidential. It narrows the
+      adapters that may be chosen to those that keep the work on the
+      machine; it never widens them.
+
+output:
+  adapter:
+    type: string
+    description: >
+      The provider adapter that will resolve the model. Heron declares
+      the intent; the adapter owns which model answers it.
+  reason:
+    type: string
+    description: >
+      Why that adapter and not another, in one sentence, so an audit
+      entry can say how the choice was made.
+
+allowed-tools: []
+
+timeout-seconds: 5
+
+failures:
+  - UNKNOWN_INTENT
+  - NO_ADAPTER_REGISTERED
+  - NO_CONFIDENTIAL_ADAPTER
+
+retry:
+  attempts: 0
+  on-failures: []
