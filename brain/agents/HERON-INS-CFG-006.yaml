@@ -1,0 +1,83 @@
+# Configuration Agent - HERON-INS-CFG-006
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN, and docs/21 s9 says why: security and permission policy IS
+# configuration, so configuration is a security boundary.
+
+agent: HERON-INS-CFG-006
+version: 1.0.0
+
+input:
+  settings:
+    type: map
+    required: true
+    description: >
+      What to write. Each key must be one docs/21 s9 names - supported
+      Revit versions, Revit paths, enabled agents, enabled skills, AI
+      provider, model routing, security policies, update policies,
+      company standards. A key outside that list is REFUSED rather than
+      sorted into a half by resemblance: a key nobody has classified is
+      not a key to write into a security boundary.
+  origin:
+    type: string
+    required: false
+    description: >
+      Where the request came from - the flag agent's own check. Nothing
+      Heron reads may change configuration (Golden Rule 19, docs/21 s9).
+  approval:
+    type: map
+    required: false
+    description: >
+      Who signed and when. docs/21 s9 also asks for changes to be
+      AUDITABLE, and an unsigned change is one the audit trail cannot
+      attribute.
+
+output:
+  machine:
+    type: map
+    description: >
+      The half true of this computer and nowhere else. Never shared, never
+      committed.
+  portable:
+    type: map
+    description: >
+      The half true of the practice - the only half docs/21 s9 says may be
+      shareable or committed.
+  shareable:
+    type: list
+    description: The portable keys, named, so a caller need not re-derive the split.
+  record:
+    type: map
+    description: Who, when, and which settings - the auditable change.
+  setting:
+    type: string
+    description: >
+      On a refusal - which setting, by PATH. A credential in a settings
+      file usually arrives as a nested key, so the walk carries the path
+      rather than flattening to values and losing the evidence.
+  why:
+    type: string
+    description: The split, or the refusal and what it rests on.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was written, exactly what the machine
+      check does NOT catch, and that `model-routing` follows docs/21 s9's
+      list until D-65's open question is answered.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOTHING_TO_WRITE
+  - NOT_FROM_THE_USER
+  - NOT_APPROVED
+  - SETTING_NOT_IN_THE_LIST
+  - MACHINE_VALUE_IN_PORTABLE
+  - SECRET_IN_CONFIGURATION
+
+retry:
+  attempts: 0
+  on-failures: []
