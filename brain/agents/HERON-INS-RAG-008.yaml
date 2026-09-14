@@ -1,0 +1,90 @@
+# RAG Initialization Agent - HERON-INS-RAG-008
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN. It is step 12 of docs/07 s1 and its rule is the OPPOSITE of
+# step 11's, because the vector index is derived and a knowledge store is
+# not (docs/06 s2, docs/07 s8).
+
+agent: HERON-INS-RAG-008
+version: 1.0.0
+
+input:
+  scopes:
+    type: list
+    required: true
+    description: >
+      Which knowledge scopes to index. The scope list is heron_scope's
+      own.
+  indexes:
+    type: map
+    required: false
+    description: >
+      Per scope, the index that exists and WHICH BACKEND built it. An
+      index that records no backend is rebuilt: nobody can say what built
+      it, so nobody can say it matches.
+  backend:
+    type: string
+    required: true
+    description: >
+      The embedding backend configured now - one of heron_embed's own two.
+      ASKED FOR rather than read here: which one is active depends on what
+      is installed, and a value a caller states is a caller that can make
+      Heron record an index as built by something that never ran.
+  origin:
+    type: string
+    required: false
+    description: Where the request came from - the flag agent's own check.
+  approval:
+    type: map
+    required: false
+    description: Who signed. Creating the vector store is ADMIN.
+
+output:
+  created:
+    type: boolean
+    description: Always false. This agent creates nothing; the ingest path does.
+  build:
+    type: list
+    description: Scopes with no index yet.
+  rebuild:
+    type: list
+    description: >
+      Scopes whose index was built by a different backend, or by none it
+      recorded. Rebuilding is cheap because the index is DERIVED - and
+      reading a mismatched one is retrieval returning confident nonsense
+      with nothing to indicate it.
+  keep:
+    type: list
+    description: Scopes already indexed with the configured backend.
+  backend:
+    type: string
+    description: The one everything above is planned against.
+  scope:
+    type: string
+    description: On NOT_A_SCOPE - which name was not one.
+  why:
+    type: string
+    description: The counts and the backend.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was created, that rebuilding is the
+      right answer here and the wrong one one step earlier, what the
+      configured backend can and cannot match on, and that which backend
+      is active was asked for rather than stated.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOTHING_TO_INDEX
+  - NOT_FROM_THE_USER
+  - NOT_APPROVED
+  - BACKEND_NOT_DECLARED
+  - NOT_A_SCOPE
+
+retry:
+  attempts: 0
+  on-failures: []
