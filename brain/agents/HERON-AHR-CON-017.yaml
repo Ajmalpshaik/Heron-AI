@@ -1,0 +1,52 @@
+# The contract of the agent that owns contracts.
+#
+# It is written out in full because it is the worked example every later
+# contract is copied from - tools/new-agent.py generates the same shape.
+#
+# NOT DECLARED HERE, ON PURPOSE:
+#   tier, risk    docs/28-agent-registry.md owns them
+#   status        the module's own Heron-Status header owns it
+# Two homes for one fact is how the two come to disagree.
+
+agent: HERON-AHR-CON-017
+version: 1.0.0
+
+input:
+  contract:
+    type: path
+    required: true
+    description: >
+      A contract file to judge. Given one, it is validated; given two,
+      the pair is compared and the change is called BREAKING or not.
+  compare-with:
+    type: path
+    required: false
+    description: >
+      The earlier version of the same contract. Present only when the
+      question is whether a change breaks the agents that call this one.
+
+output:
+  problems:
+    type: list
+    description: >
+      One sentence per defect, naming the file and what to do about it.
+      Empty means nothing was found - never that nothing was checked.
+  verdict:
+    type: string
+    description: >
+      IDENTICAL, COMPATIBLE or BREAKING. Present only when two contracts
+      were given.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - CONTRACT_NOT_FOUND
+  - CONTRACT_UNREADABLE
+  - AGENT_NOT_IN_REGISTRY
+
+retry:
+  attempts: 1
+  on-failures:
+    - CONTRACT_UNREADABLE
