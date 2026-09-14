@@ -220,8 +220,9 @@ def activate(agent_id, to_stage, records=None, approval=None,
     """
     {activated, record, why} - or a refusal. It never edits a file.
 
-    `record` is the agent's record from the Agent Registry, and the stage it
-    is in NOW is read out of it. It is not a parameter a caller may assert:
+    `records` is a READER of the Agent Registry - it is handed an agent id
+    and gives back that agent's record, and the stage the agent is in NOW is
+    read out of what comes back. It is not a parameter a caller may assert:
     until 2026-09-14 this took `from_stage` on trust, so passing "PROVEN" for
     an agent the register has at DRAFT promoted it to PRODUCTION on one
     signature, past every gate in between. A caller that can state its own
@@ -406,8 +407,13 @@ def main(argv):
     ]
     stage = "DISCOVERED"
     for to_stage, evidence, approver in steps:
+        # A READER, NOT A VALUE. This demo walks an agent the register does
+        # not carry, so it supplies the reader `records` exists for - and it
+        # still cannot state a stage, because the reader is asked for a
+        # record and the stage is read out of that.
         answer = activate(agent, to_stage,
-                          record={"id": agent, "state": stage},
+                          records=lambda _id, at=stage: {"id": agent,
+                                                         "state": at},
                           approval=approver, evidence=evidence,
                           validation=validation)
         mark = "ok" if answer["activated"] else answer["refused"]
