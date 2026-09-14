@@ -1,0 +1,72 @@
+# Agent Optimizer - HERON-AHR-OPT-009
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent SUGGEST, and every output is a proposal because of it.
+
+agent: HERON-AHR-OPT-009
+version: 1.0.0
+
+input:
+  agent_id:
+    type: string
+    required: true
+    description: The agent to propose improvements for.
+  report:
+    type: map
+    required: true
+    description: >
+      HERON-AHR-EVL-007's report of real runs, as it returned it. Its
+      `agent` must be the agent asked about - improving one agent from
+      another's runs is how a fix lands in the wrong file.
+  records:
+    type: map
+    required: false
+    description: The register's records, when a caller already has them.
+  deals:
+    type: list
+    required: false
+    description: >
+      The contracts on disk, when a caller already has them. Used to give
+      every proposed contract change its compatibility verdict.
+
+output:
+  proposals:
+    type: list
+    description: >
+      What to change and why. Each carries the contract change it would
+      need, if any, and that change's IDENTICAL / COMPATIBLE / BREAKING
+      verdict from HERON-AHR-CON-017.
+  refused_to_propose:
+    type: list
+    description: >
+      Changes that would improve the next REPORT without improving the
+      agent - raising a timeout past the runs that broke it, or declaring
+      a defect's state as a failure so it reads as a correct refusal.
+      Listed rather than silently omitted: a rule nobody can see is a rule
+      nobody can check. They may still be right, and they are a person's
+      call, not this agent's.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. Nothing here has read the agent's code, and
+      nothing was changed or written.
+  why:
+    type: string
+    description: How many were proposed and how many refused, in a sentence.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NO_SUCH_AGENT
+  - NO_REPORT
+  - NOT_AN_EVALUATION
+  - REPORT_IS_NOT_THIS_AGENT
+  - NOTHING_TO_IMPROVE
+  - REGISTER_UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []
