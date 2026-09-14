@@ -159,6 +159,9 @@ def record(agent_id, agents=None, claims=None, host=None, deals=None):
     return {
         "id": agent_id,
         "name": row["name"],
+        # docs/18 s3 calls this field Role. The register's "Does" column is
+        # that, already written, so it is carried rather than restated.
+        "role": row.get("does"),
         "department": row["dept"],
         "tier": row["tier"],
         "step": row["step"],
@@ -229,7 +232,7 @@ def main(argv):
             print("An agent is in the register before it is anywhere else.")
             return 1
         width = max(len(k) for k in found)
-        for key in ("id", "name", "department", "tier", "step", "state",
+        for key in ("id", "name", "role", "department", "tier", "step", "state",
                     "layer", "since", "files", "contract", "contract_version",
                     "input", "output", "allowed_tools", "timeout_seconds",
                     "failures", "retry", "unmeasured"):

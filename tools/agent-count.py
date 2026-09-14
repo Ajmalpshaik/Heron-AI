@@ -101,6 +101,12 @@ def registry():
         step = cols[6].replace("*", "").strip()
         agents[aid] = dict(
             name=re.sub(r"\*\*|↗", "", cols[2]).strip(),
+            # The "Does" column - the agent's responsibility in the register's
+            # own words. Nothing here reads it; it is carried because this is
+            # the ONE parser of that file, and the alternative to adding a
+            # field was a second parser somewhere else, which is the drift
+            # this repository keeps writing about.
+            does=re.sub(r"\*\*|↗", "", cols[3]).strip(),
             tier=cols[4].replace("*", "").strip(),
             step=None if step in ("—", "-", "") else step,
             dept=dept or "(no department)",
