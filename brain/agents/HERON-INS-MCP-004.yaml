@@ -1,0 +1,95 @@
+# MCP Installation Agent - HERON-INS-MCP-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN: registering a server with a host is what makes Heron's tools
+# callable at all, which is a permission decision before a configuration one.
+
+agent: HERON-INS-MCP-004
+version: 1.0.0
+
+input:
+  server:
+    type: map
+    required: true
+    description: >
+      The server describing itself - `name`, `version`, `command`, and
+      `needs_addin` as major.minor. The range is DECLARED (docs/04 s5); a
+      server that names none is refused rather than assumed to work with
+      whatever it meets, because inferring it from the version the server
+      happens to have is how a range silently widens by one release each
+      time somebody ships.
+  addins:
+    type: map
+    required: false
+    description: >
+      Per Revit release, the add-in version ADVERTISED there. docs/04 s5:
+      the add-in advertises its version on connect, so this ARRIVES rather
+      than being stated by configuration. A release nothing advertised is
+      not one with a working add-in.
+  origin:
+    type: string
+    required: false
+    description: Where the request came from - the flag agent's own check.
+  approval:
+    type: map
+    required: false
+    description: Who signed. Registering with a host is ADMIN.
+
+output:
+  register:
+    type: boolean
+    description: >
+      Whether the server may be registered at all. There is NO PARTIAL
+      registration - docs/04 s5: never silently degrade, a half-updated
+      pair that mostly works is worse than a clean refusal.
+  entry:
+    type: map
+    description: >
+      What a host would be given. Returned as a value: an agent that edited
+      a host's configuration file would be editing configuration (docs/21
+      s9) from inside the thing being configured.
+  releases:
+    type: list
+    description: The Revit releases whose add-ins agree with the declared range.
+  refused_releases:
+    type: list
+    description: >
+      Every release whose add-in does not, by name, with docs/04 s5's own
+      message - which release, which version is there, which is needed,
+      and that Revit must restart. ADDIN_IS_OLDER and ADDIN_IS_NEWER are
+      separate because the remedy differs: telling somebody to restart
+      Revit when the SERVER is behind wastes the one action they were
+      willing to take.
+  release:
+    type: string
+    description: On REVIT_NOT_SUPPORTED - which release.
+  why:
+    type: string
+    description: What registered, what did not, and why.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was registered, that there is no
+      partial registration, that the versions were advertised rather than
+      read, and that the MCP protocol version on the same triangle is NOT
+      checked - nothing here declares which protocol versions Heron
+      speaks, so a check would compare against an invented number.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOTHING_TO_REGISTER
+  - NO_COMPATIBLE_RANGE
+  - NOT_FROM_THE_USER
+  - NOT_APPROVED
+  - NOTHING_TO_TALK_TO
+  - REVIT_NOT_SUPPORTED
+  - ADDIN_IS_OLDER
+  - ADDIN_IS_NEWER
+
+retry:
+  attempts: 0
+  on-failures: []
