@@ -71,12 +71,17 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 import heron_flags as FLG                                      # noqa: E402
+import heron_paths as PATHS                                    # noqa: E402
 
-# docs/06 s2. Replaced wholesale on update, and never touched by one.
-PRODUCT = ("core", "agents", "revit", "mcp", "packages")
-DATA = ("brain", "skills", "fragments", "memory", "projects", "company",
-        "logs", "backup")
-DERIVED = ("cache", "index", "vector")
+# docs/06 s2's split lives in HERON-WSP-PTH-007 and is ASKED FOR here.
+# This module carried its own copy until 2026-09-14, and so did three
+# other agents: four copies of one rule is four places for it to drift,
+# and the drift would be silent because each would still pass its own
+# tests. Re-exported under the old names so a caller that reads them
+# reads the one table.
+PRODUCT = dict(PATHS.FOLDERS)[PATHS.PRODUCT]
+DATA = dict(PATHS.FOLDERS)[PATHS.DATA]
+DERIVED = dict(PATHS.FOLDERS)[PATHS.DERIVED]
 
 # docs/07 s7 rule 3. Loaded into Revit and not unloadable.
 NEEDS_A_RESTART = ("revit", "add-in", "addin")
@@ -93,22 +98,13 @@ def _classify(component):
     """
     product / data / derived / unknown, for one named component.
 
-    DATA IS TESTED FIRST, on purpose. "Brain agents" contains a word from
-    both lists, and the two wrong answers are not the same size: calling a
-    product component data delays an update, and calling a data component
-    product overwrites a modeller's fragment library.
+    HERON-WSP-PTH-007's answer, not a second opinion. It tests DATA first
+    on purpose - "Brain agents" contains a word from both lists, and the
+    two wrong answers are not the same size: calling a product component
+    data delays an update, and calling a data component product overwrites
+    a modeller's fragment library.
     """
-    name = str(component or "").strip().lower()
-    for word in DATA:
-        if word in name:
-            return "data"
-    for word in DERIVED:
-        if word in name:
-            return "derived"
-    for word in PRODUCT:
-        if word in name:
-            return "product"
-    return "unknown"
+    return PATHS.classify(component)["class"]
 
 
 def _unsaved(revit):

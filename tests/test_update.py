@@ -171,6 +171,16 @@ def main():
     print("5. Rule 6 classifies data first")
     check(UPD._classify("Brain agents") == "data",
           "a name in both lists reads as DATA")
+    # AND IT IS HERON-WSP-PTH-007's ANSWER, not a second copy of docs/06 s2.
+    import heron_paths as PATHS
+    for name in ("Brain agents", "Core", "Cache", "Fragments", "Revit add-in",
+                 "Documentation", "MCP"):
+        check(UPD._classify(name) == PATHS.classify(name)["class"],
+              "'%s' gets the path manager's own answer" % name)
+    check(UPD.DATA == dict(PATHS.FOLDERS)[PATHS.DATA]
+          and UPD.PRODUCT == dict(PATHS.FOLDERS)[PATHS.PRODUCT],
+          "and the lists are re-exported from it, not restated - four "
+          "copies of one rule is four places for it to drift")
     check("not the same size" in source,
           "and the source says why the two wrong answers differ in cost")
     for name in UPD.DATA:
