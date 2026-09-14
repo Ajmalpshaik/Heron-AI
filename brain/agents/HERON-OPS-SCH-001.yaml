@@ -1,0 +1,71 @@
+# Background Scheduler Agent - HERON-OPS-SCH-001
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register's Risk
+# column for this row is EMPTY, which HERON-AHR-TRN-005 refuses to read as
+# READ - somebody has to fill it in before this agent can be trained.
+
+agent: HERON-OPS-SCH-001
+version: 1.0.0
+
+input:
+  queue:
+    type: map
+    required: true
+    description: >
+      HERON-OPS-QUE-002's queue. This agent keeps none of its own - two
+      queues is one queue and one bug.
+  busy:
+    type: map
+    required: false
+    description: >
+      A READER asked, at the moment of the decision, whether a user task
+      is running. Not a value: a caller that can state that is a caller
+      that can make background work jump the person the rule protects.
+      With no reader, a reader that raises, a reader that answers None, or
+      a value passed in its place, THE ANSWER IS YES and background work
+      waits. D-21 set the precedent - unknown fails closed, never to the
+      convenient answer.
+  budget:
+    type: map
+    required: false
+    description: >
+      HERON-KRN-TOK-015's budget. Asked before background work is
+      dispatched and never for a person's work: stopping a user because a
+      cleanup job spent the budget would be the ceiling protecting the
+      wrong side.
+
+output:
+  run:
+    type: boolean
+    description: Whether anything may leave the queue now.
+  item:
+    type: map
+    description: >
+      The work, already TAKEN from the queue so two callers cannot be
+      handed the same item. A caller that then cannot run it puts it back
+      with queue.failed(item, why) and the failure is recorded on it.
+  why:
+    type: string
+    description: >
+      The decision and what it rested on, including how the user-task
+      question was answered.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. How good the reader is, and how long the chosen
+      work will take - which is not known and is deliberately not guessed.
+
+allowed-tools: []
+
+timeout-seconds: 5
+
+failures:
+  - NO_QUEUE
+  - NOTHING_WAITING
+  - A_PERSON_IS_WORKING
+  - BACKGROUND_BUDGET_SPENT
+
+retry:
+  attempts: 0
+  on-failures: []
