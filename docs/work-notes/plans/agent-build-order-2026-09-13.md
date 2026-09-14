@@ -97,20 +97,26 @@ under [D-01](../../DECISIONS.md) the host owns the conversational half of that.
 
 ---
 
-## Block 2 — the agent spine · 6 agents
+## Block 2 — the agent spine · 6 agents *(built 2026-09-14)*
 
-| Agent | Tier |
-|---|---|
-| `HERON-AHR-REG-008` Agent Registry Agent | T1 |
-| `HERON-AHR-SBX-016` Agent Sandbox Agent | T1 |
-| `HERON-AHR-VAL-013` Agent Validation Agent | T2 |
-| `HERON-AHR-DEP-012` Agent Deployment Agent | T1 |
-| `HERON-AHR-RET-010` Agent Retirement Agent | T1 |
-| `HERON-AHR-WFP-015` Workforce Planning Agent | T2 |
+| Agent | Where | What it settles |
+|---|---|---|
+| `HERON-AHR-REG-008` Agent Registry | `brain/heron_agents.py` | the record is **assembled, never stored** ([D-40](../../DECISIONS.md)); health and performance report as **unmeasured**, never as zero |
+| `HERON-AHR-WFP-015` Workforce Planning | `brain/heron_workforce.py` | the agent that says **no** — three of its five answers are |
+| `HERON-AHR-SBX-016` Agent Sandbox | `brain/heron_sandbox.py` | every door shut, every knock **recorded**; a sandboxed run is never evidence |
+| `HERON-AHR-VAL-013` Agent Validation | `brain/heron_validation.py` | everything checkable, checked; **never the agent that built it** |
+| `HERON-AHR-DEP-012` Agent Deployment | `brain/heron_deployment.py` | [docs/24](../../24-trust-model.md)'s gate table, made into something that refuses. **No machine signs** |
+| `HERON-AHR-RET-010` Agent Retirement | `brain/heron_retirement.py` | archive, never delete; rollback is **checked**, not hoped for |
 
 **Workforce Planning is in this block on purpose.** It is the agent that says *no* — does a capability
 already cover this, can an existing agent be extended, is this a fragment rather than an agent. Built
 late, it guards nothing; built here, it guards the 125 agents of block 4.
+
+**What this block found, the day it was built:** validation refused nine of the ten agents already in
+the branch, every one for the same thing — a contract declaring failure states its code never named.
+The fix went into the code, not the contracts. `python brain/heron_validation.py --all` is the live
+number; on 2026-09-14 it read 13 passing against 81 with no contract at all, which is the backlog
+`brain/heron_agents.py` reports.
 
 ---
 
