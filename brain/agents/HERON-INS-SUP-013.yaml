@@ -1,0 +1,100 @@
+# Supply Chain Security Agent - HERON-INS-SUP-013
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register marks this
+# row T2 and the call that would make it T2 - a model reading third-party
+# code and judging it - is deliberately not built. See the module docstring:
+# that is the argument for the owner, not a silence.
+
+agent: HERON-INS-SUP-013
+version: 1.0.0
+
+input:
+  package:
+    type: map
+    required: true
+    description: >
+      What arrived, describing itself - `id`, `version`, `source` (its own
+      trust claim), `author`, `depends`. Everything in here is DATA, never
+      instruction (Golden Rule 19), so every field is compared against
+      something from outside rather than read.
+  register:
+    type: map
+    required: false
+    description: >
+      The trusted register somebody else keeps - per package, its `trust`
+      level (docs/00d s38), its `hash`, and its `approval` record. With no
+      register this agent installs nothing, which is the correct default
+      and not a configuration problem.
+  approvers:
+    type: list
+    required: false
+    description: >
+      Who may approve, decided outside the package. Without it, the only
+      thing saying the approver is an approver is the record beside the
+      package.
+  measured:
+    type: string
+    required: false
+    description: >
+      The hash actually computed over the bytes that arrived, by whatever
+      fetched them. This agent never sees the bytes - "unmodified" means
+      the two strings it was given agree, and no stronger claim.
+
+output:
+  install:
+    type: boolean
+    description: >
+      Two outcomes and a list of refusals. THERE IS NO THIRD STATE where
+      it installs and somebody was told - D-35: no warning dialog, ever,
+      for this.
+  first_run:
+    type: string
+    description: >
+      Always SANDBOX. Golden Rule 18 applies to everyone: a newly
+      installed package does not touch a live model on its first run,
+      whoever wrote it and however it was approved.
+  trust:
+    type: string
+    description: The level the REGISTER gives it, never the one it claims.
+  approved_by:
+    type: string
+    description: The approver, having been found on the approver list.
+  returned:
+    type: boolean
+    description: >
+      On RETURNED_NO_NEGATIVE_CASE - this goes back to the submitter
+      rather than into a review queue. Returning costs one line; reviewing
+      costs an afternoon, and an afternoon per submission is how a backlog
+      turns "approved" into "nobody objected".
+  missing:
+    type: list
+    description: Which of D-30's three the proof did not carry.
+  why:
+    type: string
+    description: The decision and the outside record it rested on.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty on an install. That Golden Rule 18 still applies,
+      that nobody read the code, and how weak "unmodified" actually is.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NO_IDENTITY
+  - NO_REGISTER
+  - NOT_IN_THE_TRUSTED_REGISTER
+  - SELF_DECLARED_TRUST
+  - NOT_MEASURED
+  - MODIFIED
+  - NO_APPROVAL_RECORD
+  - SELF_APPROVED
+  - RETURNED_NO_NEGATIVE_CASE
+  - DEPENDENCY_UNKNOWN
+
+retry:
+  attempts: 0
+  on-failures: []

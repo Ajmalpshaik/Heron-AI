@@ -734,3 +734,44 @@ the trained backend and passes on the fallback, on one machine, and its record i
 section of [`brain/retrieval-history.md`](../brain/retrieval-history.md). **This row exists so F5 is
 not read as current**, and so that the first attribution is not read as the final one: *three suites
 fail on Windows* was the obvious reading and it was wrong about a third of itself.
+
+### 🟠 F9. Every fragment claims the top of the trust ladder, and nothing reads it
+
+**Found 2026-09-14 while building [`HERON-INS-SUP-013`](../brain/heron_supply.py), the Supply Chain
+Security Agent** — by checking what the field it was about actually does today, rather than assuming the
+agent was the first thing that would need it.
+
+Every one of the fragment manifests in [`brain/fragments/`](../brain/fragments) carries a top-level
+`source: OFFICIAL` — the **highest** level of [docs/00d §38](00d-additional-requirements.md)'s trust
+ladder, `UNKNOWN → EXPERIMENTAL → TESTED → VERIFIED → PROVEN → OFFICIAL`. Derive it rather than reading
+this sentence:
+
+```bash
+grep -l '^source: OFFICIAL' brain/fragments/*/fragment.yaml | wc -l   # claiming the top
+ls -d brain/fragments/*/ | wc -l                                      # fragments in total
+grep -n 'EXPERIMENTAL\|VERIFIED\|OFFICIAL' brain/heron_fragment.py   # what reads it
+```
+
+The third command prints nothing. **`heron_fragment.py` requires the field and never validates its
+value.** The `SOURCES` tuple it does check — `("fragment", "ambient", "request")` — belongs to
+`contract.needs[].source`, a different field with the same name one level down. The one trust word the
+loader does contain, `PROVEN`, is there as a [docs/24](24-agent-lifecycle.md) lifecycle *status*, which
+is a different ladder that happens to share a rung.
+
+**So a fragment's trust level is a word the file writes about itself that nothing checks** — which is
+precisely the shape [Golden Rule 19](14-golden-rules.md) and [D-35](DECISIONS.md) refuse. It costs
+nothing today, because all 360 were written here and `OFFICIAL` is true of every one of them. It stops
+costing nothing the first time a fragment arrives from somewhere else, and on that day the field will
+already have looked trustworthy for months.
+
+**[D-35](DECISIONS.md) already called this out and it was not read as a to-do:** *"One thing must be
+built now, long before community packages exist: the fragment format carries an approval record from the
+first version. Retrofitting identity and provenance into a format already in use is the kind of change
+that touches every file — cheap today, expensive later."* There are 360 files. The decision's own
+argument is that the number only goes up.
+
+**Not fixed here, deliberately.** What the field should mean is the owner's: whether `source` stays a
+trust level and gains a validator, whether it is joined by an approval record as D-35 asks, and what a
+fragment written in this repository is entitled to claim about itself are three decisions, not a patch.
+`HERON-INS-SUP-013` is built to take the answer — it compares a package's claim against a register from
+outside it and refuses `SELF_DECLARED_TRUST` — and needs that register to exist.
