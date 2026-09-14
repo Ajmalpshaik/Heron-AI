@@ -1,0 +1,61 @@
+# Agent Deployment Agent - HERON-AHR-DEP-012
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+
+agent: HERON-AHR-DEP-012
+version: 1.0.0
+
+input:
+  agent:
+    type: string
+    required: true
+    description: The agent being moved to its next stage.
+  to-stage:
+    type: string
+    required: true
+    description: >
+      The stage it would enter, from docs/24's one vocabulary. One step
+      at a time - the gates are what the stages mean.
+  approved-by:
+    type: string
+    required: false
+    description: >
+      The person who signed. A Heron agent id here is refused: a machine
+      cannot be the signature its own promotion needs.
+  evidence:
+    type: map
+    required: false
+    description: >
+      What is being offered for the gate - a shadow plan, a count of real
+      runs, a matrix result. Absent evidence is a refusal, never a
+      downgrade to a lesser stage.
+
+output:
+  activated:
+    type: boolean
+    description: Whether the move was allowed.
+  record:
+    type: map
+    description: >
+      Agent, the stage it came from, the stage it entered, who signed,
+      and what was offered. This is the thing the audit log keeps.
+  why:
+    type: string
+    description: Which gate was met, or which one was not, in one sentence.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_VALIDATED
+  - GATE_NOT_MET
+  - NEEDS_HUMAN_APPROVAL
+  - MACHINE_MAY_NOT_SIGN
+  - STAGE_SKIPPED
+  - UNKNOWN_STAGE
+
+retry:
+  attempts: 0
+  on-failures: []
