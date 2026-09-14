@@ -133,6 +133,24 @@ def main():
         check("pairing" in answer, "a mentor at %s is accepted" % stage)
 
     print()
+    print("2b. And being proven is not the same as owning this capability")
+    # docs/28: "the PROVEN agent that currently OWNS that capability". Both
+    # halves, or a shadow duct-sizing agent gets paired with a proven
+    # payroll auditor and the pairing means nothing.
+    elsewhere = "HERON-AHR-RET-010"
+    world = staged(records, **{STUDENT: "SHADOW", elsewhere: "PROVEN"})
+    check(elsewhere not in [c["agent"]
+                            for c in MEN.owners(CAPABILITY, world)],
+          "%s's role does not read as covering '%s'" % (elsewhere,
+                                                        CAPABILITY))
+    answer = ask(student_id=STUDENT, capability=CAPABILITY,
+                 mentor_id=elsewhere, records=world)
+    check(answer.get("refused") == "MENTOR_DOES_NOT_OWN_IT",
+          "so naming it is refused even though it is PROVEN")
+    check("teaches something else" in answer["why"],
+          "and the refusal says why proven-at-something-else is not enough")
+
+    print()
     print("3. Nothing in the real register qualifies")
     above_draft = [a for a, r in records.items()
                    if str((r or {}).get("state") or "").upper()

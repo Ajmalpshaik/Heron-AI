@@ -23,6 +23,20 @@ The last four words are a rule, not a note, and they are enforced: pass
 agent approves itself - and the register gives the Agent Creator permission to
 assign PROPOSED and nothing beyond it.
 
+AND `built_by` IS NOT OPTIONAL IN PRACTICE
+-------------------------------------------
+Leaving it out skips that check entirely, and until 2026-09-14 the answer
+still came back as plain "PASS" - which the deployment ladder reads exactly
+like an independent one. The validator could approve its own implementation
+by being asked politely.
+
+A run with no builder named now returns PASS_UNVERIFIED, and the VALIDATED
+gate will not take it. The verdict word itself carries the difference,
+because a marker in a field beside it is a marker somebody has to remember
+to read. `--all` reports it as its own column rather than counting it as
+REFUSED: an unchecked thing reported as a failed one is this file's own
+mistake in reverse.
+
 VALIDATION IS NOT ACTIVATION
 -----------------------------
 A PASS here means every check that can be run without a model found nothing.
@@ -89,12 +103,6 @@ def validate(agent_id, built_by=None, agents=None, claims=None, host=None,
                              "No agent approves itself (Golden Rule 7)."
                              % built_by],
                 "unjudged": []}
-
-    if agent_id == SELF and not built_by:
-        # Validating itself is allowed only as a report, and it says so. The
-        # refusal above is about who BUILT it; this is about who reads the
-        # verdict.
-        pass
 
     if agent_id not in agents:
         return {"verdict": "REFUSED", "refused": "NO_SUCH_AGENT",
@@ -191,6 +199,23 @@ def validate(agent_id, built_by=None, agents=None, claims=None, host=None,
     unjudged.append("is its risk level right for what it actually does - the "
                     "register declares one, and nothing here can read intent.")
 
+    # A PASS THAT COULD NOT CHECK INDEPENDENCE IS NOT A PASS DEPLOYMENT MAY
+    # USE. Without `built_by` the check above - "the validator did not build
+    # this" - never ran, and until 2026-09-14 the answer still came back as
+    # plain "PASS", which HERON-AHR-DEP-012's VALIDATED gate reads exactly
+    # like an independent one. The verdict word itself now carries the
+    # difference, because a marker in a field beside it is a marker somebody
+    # has to remember to read.
+    if not str(built_by or "").strip():
+        unjudged.append(
+            "WHO BUILT THIS WAS NOT SAID, so the one check this agent exists "
+            "for - that the validator is not the builder (Golden Rule 7) - "
+            "did not run. The verdict is PASS_UNVERIFIED and the deployment "
+            "ladder will not take it: pass built_by to get a usable PASS.")
+        return {"verdict": "REFUSED" if findings else "PASS_UNVERIFIED",
+                "findings": findings, "unjudged": unjudged,
+                "files": files, "contract": contract_path}
+
     return {"verdict": "REFUSED" if findings else "PASS",
             "findings": findings, "unjudged": unjudged,
             "files": files, "contract": contract_path}
@@ -233,17 +258,31 @@ def main(argv):
 
     print("AGENT VALIDATION   every built agent, before anything activates one")
     print("=" * 72)
-    passed, refused = [], []
+    # THE REPORT ASKS WITHOUT A BUILDER, so every clean answer comes back
+    # PASS_UNVERIFIED - the independence check cannot run over a whole
+    # register nobody has told it who built what. Counting that as REFUSED
+    # would be this file's own mistake in reverse: an unchecked thing
+    # reported as a failed one. Three buckets, and the middle one says which
+    # command turns it into a real PASS.
+    passed, unverified, refused = [], [], []
     for agent_id in sorted(claims):
         if agent_id not in agents:
             continue
         answer = validate(agent_id, agents=agents, claims=claims, host=host,
                           deals=deals)
-        (passed if answer["verdict"] == "PASS" else refused).append(
-            (agent_id, answer))
+        verdict = answer["verdict"]
+        bucket = (passed if verdict == "PASS"
+                  else unverified if verdict == "PASS_UNVERIFIED"
+                  else refused)
+        bucket.append((agent_id, answer))
 
-    print("  PASS     %d" % len(passed))
-    print("  REFUSED  %d" % len(refused))
+    print("  PASS              %d" % len(passed))
+    print("  PASS_UNVERIFIED   %d   nothing here said who BUILT them, so the"
+          % len(unverified))
+    print("                        one check this agent exists for could not")
+    print("                        run. `heron_validation.py <ID>` is the")
+    print("                        same; pass built_by from code for a PASS.")
+    print("  REFUSED           %d" % len(refused))
     print()
     print("  The most common finding, and what it means:")
     counted = {}

@@ -64,6 +64,11 @@ LADDER = ("DISCOVERED", "DRAFT", "TESTING", "VALIDATED", "SHADOW", "PROVEN",
           "PRODUCTION")
 RETIRED = ("DEPRECATED", "ARCHIVED")
 
+# What a run record has to SAY before it counts as a success. The same three
+# words HERON-AHR-EVL-007 reads, because two vocabularies for "it worked" is
+# one vocabulary and one bug.
+SUCCEEDED = ("OK", "SUCCESS", "COMPLETED")
+
 # docs/24 suggests 10 and says "suggest", so it is a default and not a law.
 PROVEN_RUNS = 10
 
@@ -181,7 +186,23 @@ def _gate(agent_id, to_stage, evidence, validation):
                     thin.append((index, "names no %s" % field))
                     break
             else:
-                if run.get("degraded") or run.get("sandboxed"):
+                # AND IT HAS TO SAY IT SUCCEEDED. Until 2026-09-14 a record
+                # carrying all four identity fields passed with no outcome at
+                # all, or with one that said it FAILED - ten of those read
+                # back as "10 recorded runs, no unexplained failures". The
+                # `unexplained-failures` count below is caller-supplied and
+                # cannot establish that any particular run worked; only the
+                # run saying so can.
+                outcome = str(run.get("outcome") or "").strip()
+                if not outcome:
+                    thin.append((index, "records no outcome, so nothing says "
+                                        "it worked"))
+                elif outcome.upper() not in SUCCEEDED:
+                    thin.append((index, "ended in '%s', which is not a "
+                                        "success - a run that failed is not "
+                                        "evidence that the agent works"
+                                        % outcome))
+                elif run.get("degraded") or run.get("sandboxed"):
                     thin.append((index, "was degraded or sandboxed, so it is "
                                         "evidence about the fallback or the "
                                         "stub"))
@@ -380,6 +401,7 @@ def main(argv):
     print("AGENT DEPLOYMENT   one agent walked up the ladder")
     print("=" * 70)
     proof = [{"run": "w-%d" % n, "model": "Snowdon Towers Sample HVAC",
+              "outcome": "OK",
               "negative-case": "a view with no ducts returned 0",
               "fingerprint": "a1b2c3", "degraded": False, "sandboxed": False}
              for n in range(12)]
@@ -399,6 +421,10 @@ def main(argv):
         ("SHADOW", {"shadow-plan": "run beside the log writer for a week"},
          None),
         ("PROVEN", {"real-runs": 3}, None),
+        ("PROVEN", {"real-runs": [dict(r, outcome="failed") for r in proof]},
+         None),
+        ("PROVEN", {"real-runs": [{k: v for k, v in r.items()
+                                   if k != "outcome"} for r in proof]}, None),
         ("PROVEN", {"real-runs": proof}, None),
         ("PRODUCTION", {}, None),
         ("PRODUCTION", {}, "the owner"),

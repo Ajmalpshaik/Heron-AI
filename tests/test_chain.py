@@ -227,6 +227,7 @@ def main():
     # carrying a negative case and a fingerprint, and the two names TESTING
     # compares because a file under tests/ does not say who wrote it.
     runs = [{"run": "w-%d" % n, "model": "Snowdon Towers Sample HVAC",
+             "outcome": "OK",
              "negative-case": "a view with no ducts returned 0",
              "fingerprint": "a1b2c3", "degraded": False, "sandboxed": False}
             for n in range(12)]

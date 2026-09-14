@@ -6,7 +6,7 @@
 # them - see NOT_HRS_TO_DECIDE.
 
 agent: HERON-AHR-HR-002
-version: 1.0.0
+version: 2.0.0
 
 input:
   name:
@@ -21,12 +21,14 @@ input:
       and the Evaluator later scores is measured against it.
   assessment:
     type: map
-    required: true
+    required: false
     description: >
-      Workforce Planning's answer (HERON-AHR-WFP-015), as it returned it.
-      The verdict is READ out of this - there is no argument that says
-      "cleared", for the same reason the deployment ladder has no argument
-      that says which stage an agent is in.
+      Workforce Planning's answer (HERON-AHR-WFP-015), if the caller has
+      one. It is NOT where the verdict comes from: Workforce Planning is
+      re-run here on this name and this purpose, and an assessment that
+      arrives is compared against that and refused if it disagrees. A
+      verdict read out of a dictionary the caller supplied is the guard
+      with the same way round it.
   capabilities:
     type: list
     required: false
@@ -86,6 +88,7 @@ timeout-seconds: 30
 failures:
   - NO_PROPOSAL
   - NOT_CLEARED_TO_HIRE
+  - ASSESSMENT_DISAGREES
   - NOT_HRS_TO_DECIDE
   - NOT_A_JOB_FIELD
   - NOTHING_TO_DO

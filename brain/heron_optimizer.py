@@ -131,7 +131,7 @@ def propose(agent_id, report, records=None, deals=None):
 
     defects = list(report.get("defects") or [])
     overran = list(report.get("overran_timeout") or [])
-    refusals = list(report.get("correct_refusals") or [])
+    refusals = list(report.get("declared_refusals") or [])
     expectation = report.get("expectation") or {}
 
     proposals = []
@@ -186,13 +186,33 @@ def propose(agent_id, report, records=None, deals=None):
         repeated[state] = repeated.get(state, 0) + 1
     for state, count in sorted(repeated.items()):
         if count > 1 and state not in retryable:
+            # A RETRY IS NOT PROPOSED, AND ARTICLE 25 IS WHY. "Do not retry a
+            # genuine failure. Transport faults may be retried with backoff.
+            # An operation that actually failed goes to failure analysis."
+            # A declared refusal is a genuine failure until something proves
+            # the operation never ran, and nothing in a run record proves
+            # that - D-21 makes that classification a table's job and makes
+            # it FAIL CLOSED. Proposing `retry.on-failures` for a state like
+            # a rejected write would offer to repeat an operation whose
+            # outcome is unknown, which is the failure mode D-21 was written
+            # about.
             proposals.append(_proposal(
-                "consider whether '%s' is worth retrying" % state,
-                "it was reached %d times and the contract retries none of "
-                "it. This is a question, not a defect: a refusal repeated is "
-                "sometimes a caller asking the wrong thing repeatedly."
-                % count,
-                change={"retry": {"attempts": 1, "on-failures": [state]}}))
+                "look at why '%s' is being reached %d times" % (state, count),
+                "a refusal repeated is sometimes a caller asking the wrong "
+                "thing repeatedly, and sometimes the agent refusing work it "
+                "should do. Either way it is a reading, and neither is "
+                "fixed by trying again."))
+            refused_to_propose.append({
+                "change": "add '%s' to `retry.on-failures`" % state,
+                "why": "Constitution article 25 - do not retry a genuine "
+                       "failure. Only a transport fault may be retried, and "
+                       "nothing in a run record distinguishes one from an "
+                       "operation that ran and failed. D-21 makes that "
+                       "classification a table's job and makes it fail "
+                       "closed, so proposing a retry here would offer to "
+                       "repeat an operation whose outcome is unknown. If "
+                       "'%s' is provably never executed, a person says so "
+                       "in the failure table, not this agent." % state})
 
     if not proposals:
         return {"refused": "NOTHING_TO_IMPROVE",
@@ -251,7 +271,7 @@ def main(argv):
     print("=" * 70)
 
     clean = {"agent": agent_id, "runs": 3, "scored": 3,
-             "completed": ["a", "b", "c"], "correct_refusals": [],
+             "completed": ["a", "b", "c"], "declared_refusals": [],
              "defects": [], "overran_timeout": [], "degraded_excluded": [],
              "expectation": {"timeout-seconds": promised,
                              "failures": declared}}
@@ -265,7 +285,7 @@ def main(argv):
                            "declared": declared}],
                  overran_timeout=[{"run": "r2", "seconds": promised + 11,
                                    "promised": promised}],
-                 correct_refusals=[{"run": "r3", "state": declared[0]},
+                 declared_refusals=[{"run": "r3", "state": declared[0]},
                                    {"run": "r4", "state": declared[0]}])
     answer = propose(agent_id, messy, records=records)
     print("  %-42s proposed" % "a report with a defect and an overrun")

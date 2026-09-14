@@ -165,6 +165,21 @@ def pair(student_id, capability, mentor_id=None, records=None):
                            "teaches whatever it got wrong, with a senior's "
                            "authority on it."
                            % (mentor_id, mentor.get("state") or "no stage")}
+        # AND BEING PROVEN IS NOT THE SAME AS OWNING THIS CAPABILITY.
+        # docs/28 defines the mentor as "the proven agent that CURRENTLY
+        # OWNS that capability". Checking only the stage let a shadow
+        # duct-sizing agent be paired with a proven payroll auditor - both
+        # halves of the sentence true, the pairing meaningless.
+        if mentor_id not in [c["agent"] for c in candidates]:
+            return {"refused": "MENTOR_DOES_NOT_OWN_IT",
+                    "why": "%s is proven, and nothing in its role reads as "
+                           "covering '%s'. A mentor is the proven agent that "
+                           "OWNS the capability (docs/28) - proven at "
+                           "something else teaches something else. %s"
+                           % (mentor_id, capability,
+                              ("The register offers: %s."
+                               % ", ".join(c["agent"] for c in proven[:3]))
+                              if proven else "Nothing proven covers it.")}
     else:
         if not proven:
             return {"refused": "NO_PROVEN_OWNER",

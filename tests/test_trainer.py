@@ -82,6 +82,29 @@ def main():
           "and the refusal says why an em-dash is not READ")
 
     print()
+    print("1b. A level with no instruction is refused, not mapped to MODIFY")
+    # docs/12 defines seven levels; brain/instructions/ holds three. The
+    # first version sent SUGGEST, EXECUTE, PUBLISH and ADMIN all to
+    # `agent.modify`, whose text says how to CHANGE a model and never says
+    # "you may only propose". That is the training layer erasing the
+    # distinction the security model rests on, silently.
+    for level in sorted(TRN.NO_INSTRUCTION_YET):
+        holder = [a for a, row in agents.items()
+                  if (row.get("risk") or "").upper() == level]
+        if not holder:
+            continue
+        answer = ask(holder[0])
+        check(answer.get("refused") == "NO_INSTRUCTION_FOR_RISK",
+              "%s is refused - %d agent(s) carry it and no instruction "
+              "covers it" % (level, len(holder)))
+        check("agent." in answer["why"],
+              "and the refusal names the instruction that has to be written")
+    check("SUGGEST" not in TRN.BY_RISK and "ADMIN" not in TRN.BY_RISK,
+          "neither SUGGEST nor ADMIN maps to anything")
+    check(set(TRN.BY_RISK.values()) == {"agent.read", "agent.modify"},
+          "only the two instructions that exist are ever handed out")
+
+    print()
     print("2. A risk word nobody recognises is not read as the mildest one")
     made_up = dict(agents)
     made_up["HERON-AHR-WFP-015"] = dict(agents["HERON-AHR-WFP-015"],

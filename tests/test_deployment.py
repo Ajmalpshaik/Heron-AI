@@ -75,6 +75,7 @@ BELOW = {"DISCOVERED": "DISCOVERED", "DRAFT": "DISCOVERED",
 
 # Ten recorded runs, each naming what it ran against. A count is not evidence.
 RUNS = [{"run": "w-%d" % n, "model": "Snowdon Towers Sample HVAC",
+         "outcome": "OK",
          "negative-case": "a view with no ducts returned 0",
          "fingerprint": "a1b2c3", "degraded": False, "sandboxed": False}
         for n in range(12)]
@@ -201,6 +202,34 @@ def main():
                           validation=PASSED)
     check(not answer["activated"] and "unexplained" in answer["why"],
           "ten runs with unexplained failures among them is still refused")
+
+    # A RUN THAT DOES NOT SAY IT WORKED IS NOT PROOF THAT IT DID. Until
+    # 2026-09-14 a record with all four identity fields passed with no
+    # outcome at all, or with one saying it FAILED, and twelve of those read
+    # back as "12 recorded runs, no unexplained failures". The caller-supplied
+    # `unexplained-failures` count cannot establish that any single run
+    # succeeded; only the run saying so can.
+    answer = DEP.activate(agent, "PROVEN", records=REC("SHADOW"),
+                          evidence={"real-runs": [
+                              {k: v for k, v in run.items() if k != "outcome"}
+                              for run in RUNS]},
+                          validation=PASSED)
+    check(not answer["activated"] and "no outcome" in answer["why"],
+          "a run recording no outcome is not proof that it worked")
+    answer = DEP.activate(agent, "PROVEN", records=REC("SHADOW"),
+                          evidence={"real-runs": [dict(run, outcome="failed")
+                                                  for run in RUNS]},
+                          validation=PASSED)
+    check(not answer["activated"] and "not a success" in answer["why"],
+          "and a run that says it FAILED is refused, not counted")
+    for word in DEP.SUCCEEDED:
+        answer = DEP.activate(agent, "PROVEN", records=REC("SHADOW"),
+                              evidence={"real-runs": [dict(run, outcome=word)
+                                                      for run in RUNS]},
+                              validation=PASSED)
+        check(answer["activated"],
+              "'%s' is accepted as a success, the same word the Evaluator "
+              "reads" % word)
 
     print()
     print("6. Nothing is written")

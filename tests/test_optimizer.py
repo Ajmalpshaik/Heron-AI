@@ -69,7 +69,7 @@ def main():
     reached = set()
 
     clean = {"agent": AGENT, "runs": 3, "scored": 3,
-             "completed": ["a", "b", "c"], "correct_refusals": [],
+             "completed": ["a", "b", "c"], "declared_refusals": [],
              "defects": [], "overran_timeout": [], "degraded_excluded": [],
              "expectation": {"timeout-seconds": promised,
                              "failures": declared}}
@@ -173,21 +173,32 @@ def main():
     print()
     print("7. Every proposed contract change carries its verdict")
     repeated = dict(clean, runs=5,
-                    correct_refusals=[{"run": "r3", "state": declared[0]},
+                    declared_refusals=[{"run": "r3", "state": declared[0]},
                                       {"run": "r4", "state": declared[0]}],
                     defects=[{"run": "r5", "state": "KeyError",
                               "declared": declared}])
     answer = ask(repeated)
-    changes = [p for p in answer["proposals"] if p["contract-change"]]
-    check(changes, "a retry proposal is made for a refusal reached twice")
-    for proposal in changes:
-        check(proposal["compatibility"] in ("IDENTICAL", "COMPATIBLE",
-                                            "BREAKING"),
-              "'%s' carries %s" % (proposal["change"][:40],
-                                   proposal["compatibility"]))
+    # A RETRY IS THE THIRD CHANGE IT REFUSES TO PROPOSE, and Constitution
+    # article 25 is why: do not retry a genuine failure. A declared refusal
+    # is genuine until something proves the operation never ran, and nothing
+    # in a run record proves that - D-21 makes the classification a table's
+    # job and makes it fail closed.
+    refused = " ".join(r["change"] for r in answer["refused_to_propose"])
+    check("`retry.on-failures`" in refused,
+          "a retry for a repeated refusal is refused, not proposed")
+    reason = " ".join(r["why"] for r in answer["refused_to_propose"])
+    check("article 25" in reason and "D-21" in reason,
+          "and the refusal cites article 25 and D-21 rather than taste")
+    proposed = " ".join(p["change"] for p in answer["proposals"])
+    check("retry" not in proposed,
+          "and no proposal offers to try the operation again")
+    check("look at why" in proposed,
+          "what it proposes instead is reading why it keeps happening")
     plain = [p for p in answer["proposals"] if not p["contract-change"]]
     check(all(p["compatibility"] is None for p in plain),
           "and a proposal that changes no contract claims no verdict")
+    check(not [p for p in answer["proposals"] if p["contract-change"]],
+          "no proposal on this path carries a contract change at all")
 
     print()
     print("8. Nothing is written and nothing is applied")

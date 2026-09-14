@@ -78,6 +78,10 @@ def main():
         kw.setdefault("claims", claims)
         kw.setdefault("host", host)
         kw.setdefault("deals", deals)
+        # A BUILDER IS NAMED BY DEFAULT, because a call without one cannot
+        # run the independence check and now says so in the verdict itself.
+        # Check 1b below is the one that leaves it out on purpose.
+        kw.setdefault("built_by", "a session")
         return VAL.validate(agent_id, **kw)
 
     print("1. The builder may not validate its own work")
@@ -96,6 +100,31 @@ def main():
                     built_by=spelling).get("refused")
               == "VALIDATOR_IS_THE_BUILDER",
               "'%s' is the same builder, whatever the shift key did" % spelling)
+
+    print()
+    print("1b. A PASS that could not check independence is not a PASS")
+    unverified = VAL.validate("HERON-KRN-EVT-004", agents=agents,
+                              claims=claims, host=host, deals=deals)
+    check(unverified["verdict"] == "PASS_UNVERIFIED",
+          "omitting built_by gives PASS_UNVERIFIED, not PASS")
+    check(any("did not run" in note for note in unverified["unjudged"]),
+          "and says the independence check did not run")
+    # THE LADDER REALLY REFUSES IT, asked rather than asserted.
+    import heron_deployment as DEP
+    import heron_agents as REGISTRY
+    draft = dict(REGISTRY.record("HERON-KRN-EVT-004"), state="TESTING")
+    blocked = DEP.activate("HERON-KRN-EVT-004", "VALIDATED",
+                           records=lambda _i: draft,
+                           validation=unverified,
+                           evidence={"matrix": {"2024": "pass"}})
+    check(not blocked["activated"],
+          "and HERON-AHR-DEP-012 will not take it into VALIDATED")
+    allowed = DEP.activate("HERON-KRN-EVT-004", "VALIDATED",
+                           records=lambda _i: draft,
+                           validation=judge("HERON-KRN-EVT-004"),
+                           evidence={"matrix": {"2024": "pass"}})
+    check(allowed["activated"],
+          "while the same verdict with a builder named goes through")
 
     print()
     print("2. Nothing to validate is refused, and says which nothing")

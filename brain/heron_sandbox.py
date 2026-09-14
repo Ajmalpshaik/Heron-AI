@@ -191,7 +191,14 @@ def run(agent_id, handler, payload=None, timeout_seconds=None, world=None):
                                                  timeout_seconds))
     else:
         record["overran"] = False
-    record["wrote"] = dict(world.writes)
+    # THE WRITES GO THROUGH THE REDACTOR TOO. `result` was scrubbed after
+    # round 4 found an agent could RETURN a credential; the same agent can
+    # put one in an allowed experimental write -
+    # world.write("experimental", "provider", token) - and this line copied
+    # it verbatim into the record an auditor reads. A shallow dict() is not
+    # a redaction, and one outbound path being safe says nothing about the
+    # other.
+    record["wrote"] = _scrub(dict(world.writes))
     return record
 
 

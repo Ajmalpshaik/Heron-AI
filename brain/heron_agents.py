@@ -187,10 +187,43 @@ def record(agent_id, agents=None, claims=None, host=None, deals=None):
     head = header_of((implementations or files)[0]) if files else {}
     contract_path, contract = deals.get(agent_id, (None, None))
 
+    # AND WHEN TWO IMPLEMENTATIONS DISAGREE, SAY SO. Taking files[0] makes
+    # the answer depend on FILENAME ORDER: two files claiming one agent with
+    # different Heron-Status headers meant the register quietly reported
+    # whichever sorted first, and a lifecycle decision downstream read a
+    # stale stage as current. The disagreement is surfaced rather than
+    # resolved - nothing here knows which of the two is right.
+    # `layer` is NOT one of these, and that is measured rather than
+    # assumed: 13 agents are implemented by more than one file and 4 of them
+    # legitimately span layers - brain and bridge, revit and platform. A
+    # cross-layer agent is not a contested one, and reporting it as such on
+    # four agents is how a real warning gets ignored. Status and `since` are
+    # single-valued facts about the AGENT, so two files disagreeing about
+    # either is a disagreement about the same thing.
+    disagreements = []
+    if len(implementations) > 1:
+        for field in ("status", "since"):
+            seen = {}
+            for path in implementations:
+                seen.setdefault(header_of(path).get(field), []).append(path)
+            if len(seen) > 1:
+                disagreements.append(
+                    "%s: %s" % (field,
+                                "; ".join("%s says %s" % (", ".join(paths),
+                                                          value or "nothing")
+                                          for value, paths
+                                          in sorted(seen.items(),
+                                                    key=lambda kv:
+                                                    str(kv[0])))))
+
     if agent_id in (host or {}):
         state = "HOST"
     elif implementations:
         state = head.get("status", "DRAFT")
+        if disagreements:
+            # NOT a guess dressed as a fact. A caller reading `state` gets
+            # the first file's answer AND a field saying it is contested.
+            state = "%s (CONTESTED)" % state
     else:
         # A TEST IS NOT AN IMPLEMENTATION. Two agents were claimed only by
         # tests/test_maintenance.py and reported DRAFT, off the test's own
@@ -209,6 +242,16 @@ def record(agent_id, agents=None, claims=None, host=None, deals=None):
         # refuses to train an agent whose permissions nobody has decided, and
         # it can only do that because this field keeps the two apart.
         "risk": row.get("risk"),
+        # Empty for every agent whose implementations agree, which is all
+        # 250 of them today. Non-empty means two files claim this agent and
+        # disagree about its STATUS or its version - read it before
+        # trusting `state`, which is otherwise whichever file sorts first.
+        "header_disagreements": disagreements,
+        # Every layer this agent is implemented in. More than one is normal
+        # for an agent that spans brain and bridge, or revit and platform.
+        "layers": sorted({header_of(path).get("layer")
+                          for path in implementations
+                          if header_of(path).get("layer")}),
         "step": row["step"],
         "state": state,
         "files": files,

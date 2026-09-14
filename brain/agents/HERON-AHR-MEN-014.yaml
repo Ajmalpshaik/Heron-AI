@@ -4,7 +4,7 @@
 # status (the module's Heron-Status header owns it).
 
 agent: HERON-AHR-MEN-014
-version: 1.0.0
+version: 2.0.0
 
 input:
   student_id:
@@ -24,8 +24,9 @@ input:
     type: string
     required: false
     description: >
-      Name the mentor instead of looking one up. Its stage is read too, so
-      naming one does not make a DRAFT agent eligible.
+      Name the mentor instead of looking one up. Its stage AND its
+      ownership of the capability are both checked, so naming one makes
+      neither a DRAFT agent nor a proven-at-something-else agent eligible.
   records:
     type: map
     required: false
@@ -80,6 +81,7 @@ failures:
   - AMBIGUOUS_OWNER
   - MENTOR_IS_THE_STUDENT
   - MENTOR_NOT_PROVEN
+  - MENTOR_DOES_NOT_OWN_IT
   - NOT_COMPARABLE
   - REGISTER_UNREADABLE
 

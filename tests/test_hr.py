@@ -16,9 +16,11 @@ WHAT IT PROVES
      identically. A caller with nothing to show has not been turned down, it
      has not asked, and a guard with a way around it guards nothing.
 
-  2. THE DOOR CANNOT BE TALKED THROUGH. There is no argument that says
-     "cleared" - the verdict is read out of Workforce Planning's own answer,
-     the same way the deployment ladder reads a stage out of a record.
+  2. THE DOOR CANNOT BE TALKED THROUGH. Workforce Planning is RE-RUN here,
+     on this name and this purpose. Reading the verdict out of a dictionary
+     the caller supplied was the same guard with the same way round it: a
+     hand-typed PROPOSE_HIRING walked straight through until 2026-09-14, and
+     so would an assessment of a different proposal.
 
   3. TIER, RISK AND STATUS ARE REFUSED, NOT DROPPED. Dropping them silently
      would leave the caller believing the value had been taken.
@@ -62,7 +64,6 @@ import heron_hr as HR                                         # noqa: E402
 import heron_tools as T                                       # noqa: E402
 
 FAILURES = []
-CLEARED = {"verdict": "PROPOSE_HIRING"}
 
 
 def check(condition, what):
@@ -80,55 +81,72 @@ def main():
     table = dict((name, T.NAMES[risk])
                  for name, (risk, _op) in T.TOOLS.items())
 
+    # A PROPOSAL THE GUARD REALLY CLEARS. Workforce Planning is re-run
+    # inside write(), so the fixture has to be one it passes: "Duct Counter"
+    # naming the capability COUNT_DUCTS is a FRAGMENT (D-29), which check 1
+    # below now uses on purpose.
     def job(**kw):
-        kw.setdefault("name", "Duct Counter")
-        kw.setdefault("purpose", "counts ducts in a view")
-        kw.setdefault("capabilities", ["COUNT_DUCTS"])
+        kw.setdefault("name", "Duct Sizing Reviewer")
+        kw.setdefault("purpose", "reviews duct sizing against the project "
+                                 "brief")
+        kw.setdefault("tools", ["heron_lookup"])
         kw.setdefault("agents", agents)
         kw.setdefault("table", table)
         return HR.write(**kw)
 
-    print("1. The door holds, and holds the same way both times")
-    for label, assessment in (("no assessment", None),
-                              ("ALREADY_AN_AGENT",
-                               {"verdict": "ALREADY_AN_AGENT"}),
-                              ("THIS_IS_A_FRAGMENT",
-                               {"verdict": "THIS_IS_A_FRAGMENT"}),
-                              ("EXTEND_EXISTING",
-                               {"verdict": "EXTEND_EXISTING"}),
-                              ("ALREADY_A_CAPABILITY",
-                               {"verdict": "ALREADY_A_CAPABILITY"})):
-        answer = job(assessment=assessment)
+    print("1. The door holds, and the caller does not hold the key")
+    # A REAL PROPOSAL WORKFORCE PLANNING TURNS DOWN - a capability in one
+    # operation's shape is a fragment, not an agent (D-29).
+    for assessment in (None, {"verdict": "THIS_IS_A_FRAGMENT"}):
+        answer = job(name="Duct Counter", purpose="counts ducts in a view",
+                     capabilities=["COUNT_DUCTS"], tools=[],
+                     assessment=assessment)
         check(answer.get("refused") == "NOT_CLEARED_TO_HIRE",
-              "%s is refused with NOT_CLEARED_TO_HIRE" % label)
+              "a fragment-shaped proposal is refused, assessment=%s"
+              % ("none" if assessment is None else "its real verdict"))
 
     print()
-    print("2. There is no argument that says 'cleared'")
+    print("2. The verdict is RE-RUN, not read out of what the caller brought")
     import inspect
     names = set(inspect.signature(HR.write).parameters)
     for forbidden in ("cleared", "verdict", "approved", "ok"):
         check(forbidden not in names,
               "write() has no '%s' parameter a caller could assert"
               % forbidden)
-    answer = job(assessment={"verdict": "PROPOSE_HIRING", "matches": []})
-    check("job" in answer,
-          "the verdict is read out of Workforce Planning's own answer")
+    # THE HOLE CODEX FOUND: a hand-typed PROPOSE_HIRING used to walk through.
+    forged = job(name="Duct Counter", purpose="counts ducts in a view",
+                 capabilities=["COUNT_DUCTS"], tools=[],
+                 assessment={"verdict": "PROPOSE_HIRING"})
+    check(forged.get("refused") == "ASSESSMENT_DISAGREES",
+          "a hand-typed PROPOSE_HIRING for a fragment is refused, not taken")
+    check("asked again about this exact name" in forged["why"],
+          "and the refusal says the guard was asked again")
+    # AN ASSESSMENT OF A DIFFERENT PROPOSAL IS ALSO CAUGHT, because the
+    # re-run is about THIS name and THIS purpose.
+    borrowed = job(assessment={"verdict": "ALREADY_AN_AGENT"})
+    check(borrowed.get("refused") == "ASSESSMENT_DISAGREES",
+          "so is one that disagrees the other way round")
+    check("job" in job(),
+          "and with no assessment at all a genuinely new job is written - "
+          "the guard is the re-run, not the paperwork")
+    check("job" in job(assessment={"verdict": "PROPOSE_HIRING"}),
+          "an assessment that AGREES is accepted and adds nothing")
 
     print()
     print("3. Tier, risk and status are refused, not dropped")
     for field, value in (("tier", "T2"), ("risk", "READ"),
                          ("status", "PROVEN")):
-        answer = job(assessment=CLEARED, **{field: value})
+        answer = job(**{field: value})
         check(answer.get("refused") == "NOT_HRS_TO_DECIDE",
               "'%s' is refused - %s owns it" % (field, HR.NOT_HRS[field]))
-    answer = job(assessment=CLEARED, tier="T2", risk="ADMIN")
+    answer = job(tier="T2", risk="ADMIN")
     check(answer.get("refused") == "NOT_HRS_TO_DECIDE"
           and "risk" in answer["why"] and "tier" in answer["why"],
           "both are named when both arrive, not just the first")
 
     print()
     print("4. A field the job description does not have is refused too")
-    answer = job(assessment=CLEARED, salary="a great deal")
+    answer = job(salary="a great deal")
     check(answer.get("refused") == "NOT_A_JOB_FIELD",
           "'salary' is refused rather than quietly kept")
 
@@ -140,10 +158,10 @@ def main():
                      encoding="utf-8").read()
     check("import heron_tools" not in source_hr,
           "and HR itself does not import it - brain may not read mcp (D-48)")
-    answer = job(assessment=CLEARED, tools=["revit_delete_everything"])
+    answer = job(tools=["revit_delete_everything"])
     check(answer.get("refused") == "NO_SUCH_TOOL",
           "a tool nothing provides is refused")
-    answer = job(assessment=CLEARED, tools=["heron_lookup"], table={})
+    answer = job(tools=["heron_lookup"], table={})
     check(answer.get("refused") == "TOOLS_NOT_CHECKED",
           "naming tools with no table is refused, not written as verified")
     check(HR.risk_floor(["x"], {"x": "SUPERUSER"}) is None,
@@ -151,51 +169,55 @@ def main():
 
     print()
     print("6. The risk floor is derived, and cannot be argued down")
-    answer = job(assessment=CLEARED, tools=["heron_lookup"])
+    answer = job(tools=["heron_lookup"])
     check(answer["job"]["risk-floor"] == "READ",
           "a job calling only a READ tool floors at READ")
-    answer = job(assessment=CLEARED,
-                 tools=["heron_lookup", "revit_apply_move"])
+    answer = job(tools=["heron_lookup", "revit_apply_move"])
     check(answer["job"]["risk-floor"] == "MODIFY",
           "one MODIFY tool among reads floors the whole job at MODIFY")
-    answer = job(assessment=CLEARED, tools=[])
-    check(answer["job"]["risk-floor"] is None,
+    # TWO CAPABILITIES AND NO TOOL. One capability would be a FRAGMENT to
+    # Workforce Planning (D-29) and the re-run inside write() would refuse
+    # it - two operations is not one operation's shape, which is the line
+    # HR draws when it hands the guard a capability at all.
+    answer = job(capabilities=["REVIEW_DUCT_SIZING", "REPORT_DEPARTURES"],
+                 tools=[])
+    check("job" in answer and answer["job"]["risk-floor"] is None,
           "a job that calls nothing has no floor, which is not READ")
     check("tier" not in answer["job"] and "risk" not in answer["job"],
           "the job carries a floor and neither a tier nor a risk")
 
     print()
     print("7. A dependency nobody planned is refused")
-    answer = job(assessment=CLEARED, dependencies=["HERON-AHR-NOPE-999"])
+    answer = job(dependencies=["HERON-AHR-NOPE-999"])
     check(answer.get("refused") == "NO_SUCH_DEPENDENCY",
           "an agent absent from docs/28 cannot be depended on")
-    answer = job(assessment=CLEARED, dependencies=["HERON-AHR-WFP-015"])
+    answer = job(dependencies=["HERON-AHR-WFP-015"])
     check("job" in answer,
           "an agent the register carries can be, against the real register")
 
     print()
     print("8. A job that provides nothing and calls nothing is refused")
-    answer = job(assessment=CLEARED, capabilities=[], tools=[])
+    answer = job(capabilities=[], tools=[])
     check(answer.get("refused") == "NOTHING_TO_DO",
           "no capability and no tool is a description of nothing")
-    answer = job(assessment=CLEARED, capabilities=[], tools=["heron_lookup"])
+    answer = job(capabilities=[], tools=["heron_lookup"])
     check("job" in answer and answer["unjudged"],
           "a tool with no capability is written, and says what is missing")
 
     print()
     print("9. Two clauses ask a question rather than refuse")
-    answer = job(assessment=CLEARED,
-                 purpose="counts ducts in a view and renames the sheets")
+    answer = job(purpose="reviews duct sizing against the project brief "
+                         "and renames the sheets")
     check("job" in answer, "it is written - a splitter does not get a veto")
     check(any("clauses" in note for note in answer["unjudged"]),
           "and the second clause is reported as unjudged")
-    answer = job(assessment=CLEARED, purpose="counts ducts in a view")
+    answer = job(purpose="counts ducts in a view")
     check(not any("clauses" in note for note in answer["unjudged"]),
           "one clause asks nothing")
 
     print()
     print("10. No id is invented")
-    answer = job(assessment=CLEARED)
+    answer = job()
     check(answer["job"]["agent-id"] is None,
           "agent-id is None - an id is a row in docs/28")
     check("docs/28" in answer["why"],

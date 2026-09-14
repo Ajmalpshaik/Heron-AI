@@ -32,10 +32,28 @@ agent that refuses when it should refuse has done its job. Scoring that as
 a failure teaches the next version to attempt what it should decline - and
 Heron's whole trust model is built on agents that say no.
 
-So a run whose failure state is one the contract DECLARES is a HONOURED
-run. A run whose failure state the contract never declared is a DEFECT: the
+A run whose failure state the contract never declared is a DEFECT: the
 contract is the promise, and a failure outside it is either a bug or a
 promise that was never kept.
+
+AND A DECLARED REFUSAL IS STILL NOT AUTOMATICALLY A CORRECT ONE
+----------------------------------------------------------------
+The first version of this file called every declared refusal correct, and
+that is wrong in the opposite direction. A contract's `failures` list says
+which outcomes a CALLER must handle. It does not say the refusal condition
+was actually present on any particular request.
+
+So a broken agent that refuses EVERYTHING, always, with one of its own
+declared states, produced a perfect report: no defects, every run a correct
+refusal. Reading that as health is exactly the failure this file was
+written to prevent, arrived at from the other side.
+
+A refusal is VERIFIED only when the run record says why it was warranted -
+`refusal-warranted: true` and a `because`. Everything else is an UNVERIFIED
+declared refusal: not a defect, and not a credit either. And when every
+scored run is one, the report says so in as many words, because an agent
+refusing everything and a caller asking for the wrong thing every time
+produce the same numbers.
 
 WHAT IT SCORES AGAINST IS THE CONTRACT, NOT AN OPINION
 -------------------------------------------------------
@@ -76,6 +94,11 @@ ACTIVATED_STAGE = "PRODUCTION"
 
 # What a run record has to carry before it can be scored at all.
 REQUIRED_FIELDS = ("run", "outcome")
+
+# The words that mean it worked. The same three HERON-AHR-DEP-012's PROVEN
+# gate reads, because two vocabularies for "it worked" is one vocabulary and
+# one bug.
+SUCCEEDED = ("OK", "SUCCESS", "COMPLETED")
 
 
 def _seconds(value):
@@ -161,22 +184,36 @@ def score(agent_id, runs, records=None):
                             "promised": timeout})
 
         outcome = str(run.get("outcome") or "").strip()
-        if outcome.upper() in ("OK", "SUCCESS", "COMPLETED"):
+        if outcome.upper() in SUCCEEDED:
             honoured.append(run.get("run"))
         elif outcome in declared:
-            # A REFUSAL THE CONTRACT DECLARED IS THE AGENT WORKING.
-            refusals.append({"run": run.get("run"), "state": outcome})
+            # A DECLARED REFUSAL IS NOT AUTOMATICALLY A CORRECT ONE.
+            # The contract's failure list says which outcomes a CALLER must
+            # handle. It does not say the refusal condition was present on
+            # any particular request - and until 2026-09-14 this counted
+            # every one of them as correct, which makes an agent that refuses
+            # EVERYTHING look perfectly healthy. A refusal is verified only
+            # when the run says why it was warranted.
+            warranted = run.get("refusal-warranted")
+            refusals.append({"run": run.get("run"), "state": outcome,
+                             "warranted": bool(warranted) if warranted
+                                          is not None else None,
+                             "because": run.get("because")})
         else:
             defects.append({"run": run.get("run"), "state": outcome,
                             "declared": sorted(declared)})
 
     scored = len(runs) - len(degraded)
+    verified = [r for r in refusals if r["warranted"] is True]
+    unverified = [r for r in refusals if r["warranted"] is not True]
     report = {
         "agent": agent_id,
         "runs": len(runs),
         "scored": scored,
         "completed": honoured,
-        "correct_refusals": refusals,
+        "declared_refusals": refusals,
+        "verified_refusals": verified,
+        "unverified_refusals": unverified,
         "defects": defects,
         "overran_timeout": overran,
         "degraded_excluded": [r.get("run") for r in degraded],
@@ -189,13 +226,29 @@ def score(agent_id, runs, records=None):
         "what happened against what was promised; correctness needs a person "
         "or a model, and there is no adapter to call.",
     ]
-    if refusals:
+    if verified:
         unjudged.append(
-            "%d run(s) ended in a failure state the contract DECLARES. Those "
-            "are the agent working, not failing - HERON-AHR-GAP-001 found the "
-            "loudest error in the real audit trail was the executor behaving "
-            "correctly, 38 of 176. They are counted separately and they do "
-            "not lower anything." % len(refusals))
+            "%d run(s) refused with a declared state AND recorded why the "
+            "refusal was warranted. Those are the agent working, not failing "
+            "- HERON-AHR-GAP-001 found the loudest error in the real audit "
+            "trail was the executor behaving correctly, 38 of 176. They are "
+            "counted separately and they lower nothing." % len(verified))
+    if unverified:
+        unjudged.append(
+            "%d run(s) refused with a declared state and NOTHING SAYS THE "
+            "REFUSAL WAS WARRANTED. The contract's failure list says which "
+            "outcomes a caller must handle; it does not say the condition "
+            "was present on that request. They are not counted as defects "
+            "and they are not counted as the agent working either - a run "
+            "record carrying `refusal-warranted` and `because` is what moves "
+            "one into either column." % len(unverified))
+    if scored and len(unverified) == scored:
+        unjudged.append(
+            "EVERY SCORED RUN WAS AN UNVERIFIED REFUSAL. An agent that "
+            "refuses everything it is asked produces exactly this report, "
+            "and so does one whose callers all asked for the wrong thing. "
+            "Nothing here separates them, and the report must not be read as "
+            "health.")
     if degraded:
         unjudged.append(
             "%d run(s) were DEGRADED and are excluded. A fallback answered, "
@@ -211,11 +264,11 @@ def score(agent_id, runs, records=None):
             "Nothing was checked, which is not the same as nothing found.")
 
     return {"report": report, "unjudged": unjudged,
-            "why": "%d run(s): %d completed, %d correct refusal(s), %d "
-                   "defect(s), %d over the promised %s, %d degraded and "
-                   "excluded."
-                   % (len(runs), len(honoured), len(refusals), len(defects),
-                      len(overran),
+            "why": "%d run(s): %d completed, %d declared refusal(s) of which "
+                   "%d verified, %d defect(s), %d over the promised %s, %d "
+                   "degraded and excluded."
+                   % (len(runs), len(honoured), len(refusals), len(verified),
+                      len(defects), len(overran),
                       "%gs" % timeout if timeout is not None else "(none)",
                       len(degraded))}
 
@@ -247,7 +300,8 @@ def main(argv):
     runs = [
         {"run": "r1", "outcome": "OK", "seconds": 2},
         {"run": "r2", "outcome": "OK", "seconds": 41},
-        {"run": "r3", "outcome": "NOTHING_TO_ASSESS", "seconds": 1},
+        {"run": "r3", "outcome": "NOTHING_TO_ASSESS", "seconds": 1,
+         "refusal-warranted": True, "because": "the proposal had no name"},
         {"run": "r4", "outcome": "REGISTER_UNREADABLE", "seconds": 1},
         {"run": "r5", "outcome": "KeyError", "seconds": 3},
         {"run": "r6", "outcome": "OK", "seconds": 2, "degraded": True},
@@ -258,9 +312,12 @@ def main(argv):
     print("      %s" % answer["why"])
     print()
     print("      completed          %s" % ", ".join(report["completed"]))
-    print("      correct refusals   %s"
-          % ", ".join("%s (%s)" % (r["run"], r["state"])
-                      for r in report["correct_refusals"]))
+    print("      refusals, verified %s"
+          % (", ".join("%s (%s)" % (r["run"], r["state"])
+                       for r in report["verified_refusals"]) or "-"))
+    print("      refusals, NOT       %s"
+          % (", ".join("%s (%s)" % (r["run"], r["state"])
+                       for r in report["unverified_refusals"]) or "-"))
     print("      DEFECTS            %s"
           % ", ".join("%s (%s)" % (d["run"], d["state"])
                       for d in report["defects"]))
@@ -274,9 +331,10 @@ def main(argv):
     for note in answer["unjudged"]:
         print("      unjudged: %s" % note[:92])
     print()
-    print("  r3 and r4 ended in failure states the contract declares. They")
-    print("  are the agent working. r5 ended in one it never declared, and")
-    print("  that is the only thing here called a defect.")
+    print("  r3 and r4 both ended in states the contract declares. Only r3")
+    print("  says WHY the refusal was warranted, so only r3 counts as the")
+    print("  agent working; r4 is a declared refusal nothing has verified.")
+    print("  r5 ended in a state never declared - the only defect here.")
     return 0
 
 

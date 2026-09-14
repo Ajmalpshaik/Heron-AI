@@ -13,11 +13,19 @@ evidence.
     python tests/test_evaluator.py
 
 WHAT IT PROVES
-  1. A FAILURE STATE THE CONTRACT DECLARES IS THE AGENT WORKING. It is
-     counted separately from defects and lowers nothing. HERON-AHR-GAP-001
-     found the loudest error in the real audit trail - 38 of 176 - was the
-     executor behaving correctly, and scoring that as a failure teaches the
-     next version to attempt what it should decline.
+  1. A FAILURE STATE THE CONTRACT DECLARES IS NOT A DEFECT. It is counted
+     separately and lowers nothing. HERON-AHR-GAP-001 found the loudest
+     error in the real audit trail - 38 of 176 - was the executor behaving
+     correctly, and scoring that as a failure teaches the next version to
+     attempt what it should decline.
+
+  1b. AND IT IS NOT AUTOMATICALLY CORRECT EITHER. A contract's `failures`
+     list says which outcomes a CALLER must handle; it does not say the
+     refusal condition was present on that request. A broken agent that
+     refuses everything with its own declared state produced a perfect
+     report until 2026-09-14. A refusal is VERIFIED only when the run says
+     why it was warranted, and when every scored run is an unverified
+     refusal the report says so in as many words.
 
   2. A FAILURE STATE THE CONTRACT NEVER DECLARED IS A DEFECT, and the
      refusal names what WAS declared so the reader can judge which is wrong.
@@ -84,12 +92,37 @@ def main():
     answer = ask([{"run": "a", "outcome": declared[0]},
                   {"run": "b", "outcome": "OK"}])
     report = answer["report"]
-    check([r["run"] for r in report["correct_refusals"]] == ["a"],
-          "the declared refusal is counted as a correct refusal")
+    check([r["run"] for r in report["declared_refusals"]] == ["a"],
+          "the declared refusal is counted as a declared refusal")
     check(report["defects"] == [], "and not as a defect")
     check(report["completed"] == ["b"], "the OK run is counted separately")
-    check(any("not failing" in n for n in answer["unjudged"]),
-          "and the report says plainly that it is the agent working")
+
+    print()
+    print("1b. A declared refusal is not automatically a correct one")
+    check(report["verified_refusals"] == [],
+          "with nothing saying it was warranted it is NOT verified")
+    check([r["run"] for r in report["unverified_refusals"]] == ["a"],
+          "it lands in unverified - not a defect, not a credit")
+    check(any("NOTHING SAYS THE REFUSAL WAS WARRANTED" in n
+              for n in answer["unjudged"]),
+          "and the report says so rather than leaving it to be noticed")
+    warranted = ask([{"run": "a", "outcome": declared[0],
+                      "refusal-warranted": True,
+                      "because": "the proposal had no name"},
+                     {"run": "b", "outcome": "OK"}])
+    check([r["run"] for r in warranted["report"]["verified_refusals"]]
+          == ["a"],
+          "a run recording WHY it refused is verified")
+    check(any("not failing" in n for n in warranted["unjudged"]),
+          "and only then does the report say it is the agent working")
+    # THE BROKEN AGENT THAT REFUSES EVERYTHING.
+    always = ask([{"run": "r%d" % n, "outcome": declared[0]}
+                  for n in range(10)])
+    check(always["report"]["defects"] == [],
+          "an agent that refuses every request records no defect...")
+    check(any("EVERY SCORED RUN WAS AN UNVERIFIED REFUSAL" in n
+              for n in always["unjudged"]),
+          "...and the report refuses to be read as health")
 
     print()
     print("2. An undeclared failure state is a defect")
@@ -99,7 +132,7 @@ def main():
           "a state the contract never declared is a defect")
     check(report["defects"][0]["declared"] == declared,
           "and the defect carries what WAS declared, to judge which is wrong")
-    check(report["correct_refusals"] == [],
+    check(report["declared_refusals"] == [],
           "it is not quietly counted as a refusal")
 
     print()

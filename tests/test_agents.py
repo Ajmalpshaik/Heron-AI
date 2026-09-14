@@ -181,6 +181,37 @@ def main():
               % owned)
 
     print()
+    print("X. Two implementations that disagree are reported, not resolved")
+    # Taking files[0] makes the answer depend on FILENAME ORDER: two files
+    # claiming one agent with different Heron-Status headers meant the
+    # register quietly reported whichever sorted first, and a lifecycle
+    # decision downstream read a stale stage as current.
+    agents, claims, host = REG._agent_count()
+    multi = [a for a, files in claims.items()
+             if len([f for f in files if not f.startswith("tests/")]) > 1]
+    check(multi, "%d agent(s) really are implemented by more than one file"
+          % len(multi))
+    contested = [a for a in agents
+                 if (REG.record(a, agents, claims, host) or {})
+                 .get("header_disagreements")]
+    check(contested == [],
+          "and none of the 250 disagree about status or version today")
+
+    # A LAYER DIFFERENCE IS NOT A DISAGREEMENT. Four agents legitimately
+    # span brain and bridge, or revit and platform, and calling that
+    # contested on four agents is how a real warning gets ignored.
+    spanning = [a for a in agents
+                if len((REG.record(a, agents, claims, host) or {})
+                       .get("layers") or []) > 1]
+    check(spanning, "%d agent(s) span more than one layer, and none is "
+                    "reported as contested" % len(spanning))
+    for agent_id in spanning:
+        record = REG.record(agent_id, agents, claims, host)
+        check(not record["header_disagreements"],
+              "%s spans %s and is not contested"
+              % (agent_id, "/".join(record["layers"])))
+
+    print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
         for line in FAILURES:

@@ -119,9 +119,18 @@ def run(name, purpose, capability=None, department=None, agent_id=None,
     steps = []
 
     def stop(step, owner, answer, what_now):
-        steps.append({"step": step, "owner": owner,
-                      "refused": answer.get("refused"),
-                      "why": answer.get("why")})
+        # THE WHOLE ANSWER, not the two fields somebody thought were the
+        # interesting ones. Workforce Planning's `matches` list is how a
+        # caller finds the agent it should reuse, and the first version
+        # dropped it while `what_now` told the reader to go and read it.
+        # Golden Rule 14: never silently discard.
+        record = {"step": step, "owner": owner,
+                  "refused": answer.get("refused"),
+                  "why": answer.get("why")}
+        for field, value in sorted(answer.items()):
+            if field not in record and field != "refused":
+                record[field] = value
+        steps.append(record)
         return {"pipeline": steps, "stopped_at": step, "waiting_on": owner,
                 "what_now": what_now, "assigned": MAY_ASSIGN,
                 "unjudged": _unjudged(steps),
@@ -136,8 +145,7 @@ def run(name, purpose, capability=None, department=None, agent_id=None,
                     "give the proposal a name and a responsibility")
     if assessment.get("verdict") != "PROPOSE_HIRING":
         return stop("assess", "a person",
-                    {"refused": assessment["verdict"],
-                     "why": assessment.get("why")},
+                    dict(assessment, refused=assessment["verdict"]),
                     "Workforce Planning says this is not a new agent. Read "
                     "its matches and either do what it suggests or disagree "
                     "with it on the record.")

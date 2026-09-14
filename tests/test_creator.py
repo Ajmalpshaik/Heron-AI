@@ -23,7 +23,9 @@ WHAT IT PROVES
      deployment, holds no approval, and names no stage above PROPOSED.
 
   4. THE GUARD RUNS FIRST. Workforce Planning is step one, so the pipeline
-     cannot be used to route round it.
+     cannot be used to route round it - and its whole answer comes through,
+     matches included. Dropping them while `what_now` told the reader to
+     read them was Golden Rule 14 broken by a helpful-looking summary.
 
   5. IT STOPS AT THE REGISTER ROW, and that is the design rather than an
      omission: HR leaves the id None and the Architect refuses an id the
@@ -142,6 +144,16 @@ def main():
           "a job description for it")
     check(answer["pipeline"][0]["refused"],
           "and the guard's own verdict is what stopped it")
+    # THE MATCHES SURVIVE. `what_now` tells the reader to read them, and the
+    # first version dropped them on the way out - the instruction pointing
+    # at something no longer in the answer (Golden Rule 14).
+    matches = answer["pipeline"][0].get("matches")
+    check(matches and matches[0].get("id"),
+          "Workforce Planning's matches come through, with ids to act on")
+    check("matches" in answer["what_now"],
+          "which is what what_now sends the reader to")
+    check(answer["pipeline"][0].get("verdict"),
+          "and the verdict itself is carried, not only the refusal word")
 
     print()
     print("5. It stops at the register row")

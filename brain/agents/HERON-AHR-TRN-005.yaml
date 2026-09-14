@@ -5,7 +5,7 @@
 # risk column and never writes it.
 
 agent: HERON-AHR-TRN-005
-version: 1.0.0
+version: 2.0.0
 
 input:
   agent_id:
@@ -60,6 +60,7 @@ failures:
   - NO_SUCH_AGENT
   - NO_RISK_ASSIGNED
   - UNKNOWN_RISK_LEVEL
+  - NO_INSTRUCTION_FOR_RISK
   - INSTRUCTION_NOT_FOUND
   - INCLUDE_CYCLE
   - REGISTER_UNREADABLE

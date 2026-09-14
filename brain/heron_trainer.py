@@ -27,6 +27,20 @@ it and does not paraphrase it. A training pack that restated the rules would
 be a second copy of the Constitution that nobody updates when the first one
 changes.
 
+AND ONLY THE LEVELS AN INSTRUCTION REALLY COVERS
+-------------------------------------------------
+docs/12 defines seven risk levels. `brain/instructions/` holds three
+instructions. The first version of this file mapped everything above
+ANALYZE onto `agent.modify` - so a SUGGEST agent, whose whole boundary is
+that it proposes and never acts, was handed the text describing how to
+change a model, with no line anywhere saying it may only propose.
+
+That is the training layer erasing a distinction the security model
+depends on, and erasing it silently: nothing diffs a training pack. So the
+four uncovered levels are REFUSED by name, each saying which instruction
+has to be written. An agent given the wrong permission class's rules is
+worse off than one that was not trained at all.
+
 WHICH RULES DEPEND ON RISK, AND RISK IS THE REGISTER'S
 -------------------------------------------------------
 A READ agent is told its permission stops at reading; a MODIFY agent must
@@ -75,14 +89,32 @@ APPROVED_STAGES = ("PROVEN", "PRODUCTION")
 
 # Risk word -> the instruction that carries the right rules. A risk word
 # nobody recognises is not quietly read as the mildest one.
+#
+# ONLY THE LEVELS AN INSTRUCTION ACTUALLY EXISTS FOR. The first version
+# mapped everything above ANALYZE to `agent.modify`, whose text describes
+# how to CHANGE a model and contains no line saying "you may only propose".
+# A SUGGEST agent read that as its rules; so did EXECUTE, PUBLISH and ADMIN.
+# docs/12 defines seven levels and brain/instructions/ holds three, and
+# collapsing the difference in the training layer erases it everywhere
+# downstream - silently, because a training pack is not diffed against
+# anything.
 BY_RISK = {
     "READ": "agent.read",
     "ANALYZE": "agent.read",
-    "SUGGEST": "agent.modify",
-    "EXECUTE": "agent.modify",
     "MODIFY": "agent.modify",
-    "PUBLISH": "agent.modify",
-    "ADMIN": "agent.modify",
+}
+
+# The levels docs/12 defines that no instruction covers yet. Refused by
+# name rather than mapped to the nearest thing: an agent given the wrong
+# permission class's rules is worse off than one that was not trained.
+NO_INSTRUCTION_YET = {
+    "SUGGEST": "agent.suggest - it proposes and never acts, and no existing "
+               "instruction says that",
+    "EXECUTE": "agent.execute - it runs an operation without changing the "
+               "model, which is neither of the two that exist",
+    "PUBLISH": "agent.publish - it puts something where others will read it",
+    "ADMIN": "agent.admin - the level that can change permissions, which "
+             "needs its own rules more than any of them",
 }
 
 
@@ -153,12 +185,22 @@ def train(agent_id, agents=None, records=None, known=None, rules=None):
                        "same as READ and is not treated as it. Fill the "
                        "column in docs/28-agent-registry.md." % agent_id}
 
+    if risk in NO_INSTRUCTION_YET:
+        return {"refused": "NO_INSTRUCTION_FOR_RISK",
+                "why": "%s is %s and no instruction covers that level. What "
+                       "is missing is %s. Until it exists this agent will not "
+                       "hand over another level's rules: giving a %s agent "
+                       "`agent.modify` tells it how to change a model and "
+                       "says nothing about the boundary it actually has."
+                       % (agent_id, risk, NO_INSTRUCTION_YET[risk], risk)}
+
     instruction_id = BY_RISK.get(risk)
     if instruction_id is None:
         return {"refused": "UNKNOWN_RISK_LEVEL",
                 "why": "'%s' is not one of docs/12's risk levels (%s). A word "
                        "nobody recognises is not read as the mildest one."
-                       % (risk, ", ".join(sorted(BY_RISK)))}
+                       % (risk, ", ".join(sorted(set(BY_RISK)
+                                                 | set(NO_INSTRUCTION_YET))))}
 
     import heron_instructions as PRO
     try:

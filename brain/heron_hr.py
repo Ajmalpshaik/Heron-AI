@@ -30,10 +30,18 @@ it is to skip it: describe the job straight to HR, and the register grows by
 one whether or not anything already covered the work.
 
 So HR will not write a job description for a proposal Workforce Planning has
-not cleared. Not "should not" - it refuses, with NOT_CLEARED_TO_HIRE, and it
-refuses the same way for a missing assessment as for a negative one. A
-caller with no assessment to show has not been turned down; it has not
-asked, and those are the same thing from here.
+not cleared - and it does not take the caller's word for that. It ASKS
+Workforce Planning again, here, about this exact name and this exact
+purpose.
+
+Reading a verdict out of a dictionary the caller supplied was the same guard
+with the same way round it: `assessment={"verdict": "PROPOSE_HIRING"}` typed
+by hand walked straight through, and an assessment of a different proposal
+would have too. Re-running costs one pass over a register HR already holds.
+
+An assessment handed in is still read - not for the verdict, but to check it
+AGREES. One that says something different from what Workforce Planning says
+now is stale or from somewhere else, and ASSESSMENT_DISAGREES says which.
 
 That makes the order of Block 2 and Block 3 load-bearing rather than tidy.
 Workforce Planning was built first so that this refusal had something real
@@ -163,10 +171,11 @@ def write(name, purpose, assessment=None, capabilities=None,
     """
     {job, unjudged, why} for a cleared proposal - or a refusal.
 
-    `assessment` is Workforce Planning's answer, as it returned it. There is
-    no argument that says "cleared": the verdict is read out of the
-    assessment, the same way the deployment ladder reads a stage out of a
-    record rather than taking one on trust.
+    `assessment` is optional and is NOT where the verdict comes from.
+    Workforce Planning is re-run here on this name and purpose; an
+    assessment that arrives is compared against that answer and refused if
+    it disagrees. There is no argument that says "cleared", for the same
+    reason the deployment ladder has none that says which stage it is in.
     """
     if not str(name or "").strip() or not str(purpose or "").strip():
         return {"refused": "NO_PROPOSAL",
@@ -175,10 +184,43 @@ def write(name, purpose, assessment=None, capabilities=None,
                        "the responsibility, so an empty one is not a small "
                        "gap."}
 
-    # THE DOOR. A missing assessment and a negative one are refused
-    # identically: a caller with nothing to show has not been turned down,
-    # it has not asked, and from here those are the same thing.
-    verdict = (assessment or {}).get("verdict")
+    # THE DOOR, AND THE ASSESSMENT IS RE-RUN RATHER THAN READ.
+    # Taking the caller's word for the verdict is the guard with a way round
+    # it: {"verdict": "PROPOSE_HIRING"} typed by hand walked straight
+    # through until 2026-09-14. Workforce Planning is asked again, HERE,
+    # about THIS name and THIS purpose - so the answer cannot belong to a
+    # different proposal and cannot be invented.
+    import heron_workforce as WFP
+    if agents is None:
+        import heron_agents as REG
+        try:
+            agents, _claims, _host = REG._agent_count()
+        except IOError as exc:
+            return {"refused": "REGISTER_UNREADABLE", "why": str(exc)}
+    # ONE capability is handed over, and two are not. Workforce Planning's
+    # fragment rule is about a capability in ONE OPERATION'S SHAPE (D-29);
+    # a job providing two operations is not that shape, and passing the
+    # first of them would have the guard answer a question nobody asked.
+    named = list(capabilities or [])
+    checked = WFP.assess(name, purpose,
+                         capability=named[0] if len(named) == 1 else None,
+                         department=department, agents=agents)
+    if checked.get("refused"):
+        return {"refused": "NOT_CLEARED_TO_HIRE",
+                "why": "Workforce Planning could not assess this proposal: "
+                       "%s. HR writes a job description only for one it "
+                       "cleared." % checked.get("why")}
+    verdict = checked.get("verdict")
+
+    given = (assessment or {}).get("verdict")
+    if given is not None and given != verdict:
+        return {"refused": "ASSESSMENT_DISAGREES",
+                "why": "the assessment handed in says '%s' and Workforce "
+                       "Planning, asked again about this exact name and "
+                       "purpose, says '%s'. An assessment that does not "
+                       "match the proposal it arrived with is either stale "
+                       "or from somewhere else." % (given, verdict)}
+
     if verdict != "PROPOSE_HIRING":
         return {"refused": "NOT_CLEARED_TO_HIRE",
                 "why": "Workforce Planning returned %s. HR writes a job "
@@ -290,7 +332,13 @@ def main(argv):
     print("AGENT HR   the job description, and the door in front of it")
     print("=" * 70)
 
+    # A PROPOSAL WORKFORCE PLANNING ACTUALLY CLEARS. "Duct Counter /
+    # COUNT_DUCTS" is not one: a capability in one operation's shape is a
+    # FRAGMENT (D-29), and the first two cases below show the guard saying
+    # so through HR rather than around it.
     cleared = {"verdict": "PROPOSE_HIRING"}
+    job = dict(name="Duct Sizing Reviewer",
+               purpose="reviews duct sizing against the project brief")
 
     # A SAMPLE, and it is not the real table. The real one is
     # mcp/server/heron_tools.py, which brain may not read (D-48) - a caller
@@ -308,27 +356,21 @@ def main(argv):
               capabilities=["COUNT_DUCTS"],
               assessment={"verdict": "THIS_IS_A_FRAGMENT"})),
         ("cleared, but carrying a tier",
-         dict(name="Duct Counter", purpose="counts ducts in a view",
-              capabilities=["COUNT_DUCTS"], assessment=cleared, tier="T2")),
+         dict(job, assessment=cleared, tools=["heron_lookup"], tier="T2")),
         ("cleared, asking for a tool nobody serves",
-         dict(name="Duct Counter", purpose="counts ducts in a view",
-              capabilities=["COUNT_DUCTS"], assessment=cleared,
-              tools=["revit_delete_everything"])),
+         dict(job, assessment=cleared, tools=["revit_delete_everything"])),
         ("cleared, depending on an agent nobody planned",
-         dict(name="Duct Counter", purpose="counts ducts in a view",
-              capabilities=["COUNT_DUCTS"], assessment=cleared,
+         dict(job, assessment=cleared, tools=["heron_lookup"],
               dependencies=["HERON-AHR-NOPE-999"])),
         ("cleared, providing nothing and calling nothing",
-         dict(name="Duct Counter", purpose="counts ducts in a view",
-              assessment=cleared)),
+         dict(job, assessment=cleared)),
         ("cleared, one clause, reading only",
-         dict(name="Duct Counter", purpose="counts ducts in a view",
-              capabilities=["COUNT_DUCTS"], assessment=cleared,
-              tools=["heron_lookup"])),
+         dict(job, assessment=cleared, tools=["heron_lookup"])),
         ("cleared, two clauses, and it wants to move things",
-         dict(name="Duct Aligner",
-              purpose="counts ducts in a view and renames the sheets",
-              capabilities=["ALIGN_DUCTS"], assessment=cleared,
+         dict(name="Duct Sizing Reviewer",
+              purpose="reviews duct sizing against the project brief and "
+                      "renames the sheets",
+              assessment=cleared,
               tools=["heron_lookup", "revit_apply_move"])),
     ]
 
