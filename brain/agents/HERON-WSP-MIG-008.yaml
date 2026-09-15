@@ -1,0 +1,92 @@
+# Workspace Migration Agent - HERON-WSP-MIG-008
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN and three words from docs/07 s8: idempotent, versioned,
+# backed up.
+
+agent: HERON-WSP-MIG-008
+version: 1.0.0
+
+input:
+  at:
+    type: integer
+    required: true
+    description: >
+      The schema version the WORKSPACE records about itself. The whole
+      design rests on this being recorded rather than guessed: it is the
+      only thing that can answer "has this already run?", which is what
+      idempotent means in practice rather than in a declaration. A
+      workspace that records none is refused.
+  to:
+    type: integer
+    required: true
+    description: >
+      The schema version to reach. A migration with no destination is a
+      transformation nobody can check afterwards.
+  migrations:
+    type: list
+    required: false
+    description: >
+      Each declaring docs/07 s8's three conditions - idempotent, version,
+      reversible - and going `from` one version `to` the next. The three
+      are HERON-OPS-UPD-010's own list, imported rather than restated.
+  backup:
+    type: string
+    required: false
+    description: >
+      Where the backup is. Taken BEFORE, not after (docs/07 s7 rule 4) -
+      a backup taken after a migration that went wrong is a copy of the
+      damage. Checked to live in the data class: a backup where an update
+      replaces things wholesale is gone the next time one runs.
+
+output:
+  migrated:
+    type: boolean
+    description: Always false. The ordered chain comes back; a caller runs it.
+  chain:
+    type: list
+    description: >
+      The migrations in order, each from one version to the next. Ordering
+      is the part that is easy to get wrong silently, which is why it is
+      the part this agent does.
+  at:
+    type: integer
+    description: Where the workspace is.
+  to:
+    type: integer
+    description: Where it is going.
+  missing_steps:
+    type: list
+    description: >
+      On CHAIN_IS_BROKEN - the gaps, named. The WHOLE run is refused
+      rather than the part that works: a partial migration leaves the data
+      somewhere no migration can start from.
+  missing:
+    type: list
+    description: On MIGRATION_NOT_DECLARED - which migration, and what it did not declare.
+  why:
+    type: string
+    description: The chain, or the refusal and what it rests on.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing ran, that idempotent is DECLARED and
+      not demonstrated here, and that the backup was checked for class
+      rather than for contents.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - DATA_VERSION_UNKNOWN
+  - NO_TARGET
+  - WOULD_GO_BACKWARDS
+  - MIGRATION_NOT_DECLARED
+  - CHAIN_IS_BROKEN
+  - NO_BACKUP
+
+retry:
+  attempts: 0
+  on-failures: []
