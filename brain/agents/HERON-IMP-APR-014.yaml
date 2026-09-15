@@ -1,0 +1,91 @@
+# Import Approval Agent - HERON-IMP-APR-014
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent SUGGEST and puts "Everything enters at DISCOVERED" in bold. It
+# accepts nothing and writes nothing.
+
+agent: HERON-IMP-APR-014
+version: 1.0.0
+
+input:
+  manifest:
+    type: map
+    required: true
+    description: >
+      What the import produced: `items`, each {name, kind, from} and
+      optionally `files`, `content`, `status` and `proof`. May carry
+      `from`, the source it was read out of.
+  secrets:
+    type: callable
+    required: false
+    description: >
+      The credential store to read each item's content against. Defaults
+      to a fresh heron_secrets.Secrets().
+
+output:
+  presented:
+    type: boolean
+    description: True when the manifest may be shown for review.
+  accepted:
+    type: boolean
+    description: Always false. This agent presents; it does not accept.
+  items:
+    type: list
+    description: Each item ready for review, every one at DISCOVERED.
+  kinds:
+    type: map
+    description: How many of each kind, so a reviewer sees the shape.
+  of:
+    type: integer
+    description: How many items are ready.
+  status:
+    type: string
+    description: >
+      Always DISCOVERED - docs/09's bottom rung, one below the DRAFT
+      that HERON-FRG-CRE-007 and HERON-SKL-CRE-002 enter their own work
+      at, because an import has not shown it even has a stated purpose.
+  source:
+    type: string
+    description: Where the import was read from, as given.
+  item:
+    type: string
+    description: On any refusal, which item it was about.
+  found:
+    type: list
+    description: >
+      On a refusal for a credential, what KIND. The value never appears
+      in any output of this agent.
+  files:
+    type: list
+    description: On a refusal for a model, which names were Revit files.
+  said:
+    type: string
+    description: On a status refusal, what the item asked to enter at.
+  why:
+    type: string
+    description: The counts, or what stops the manifest being shown.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was accepted; that DISCOVERED is a
+      rung below what Heron's own authors use and why; that no item was
+      judged on merit; and that only names and supplied content were
+      read, never a file on disk.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_PRESENT
+  - NOT_A_MANIFEST
+  - NOT_AN_ITEM
+  - CARRIES_A_MODEL
+  - CARRIES_A_SECRET
+  - CARRIES_A_PROOF
+  - ENTERS_TOO_HIGH
+
+retry:
+  attempts: 0
+  on-failures: []
