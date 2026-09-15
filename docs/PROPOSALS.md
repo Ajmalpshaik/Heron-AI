@@ -1669,3 +1669,46 @@ One of two, and both are the owner's:
 
 **Not acted on.** Either choice changes what an import *is*, and both need a folder classified or a
 category dropped.
+
+---
+
+## F29 — the panic button cannot press itself, and Revit is the reason
+
+Found while building [`HERON-REVIT-RBK-036`](../brain/heron_rollback.py), whose register row is *"the
+panic button. Reverses **everything** Heron did this session, newest first, using the audit log's
+transaction groups."*
+
+**Revit exposes no API to undo a NAMED transaction group.** This was measured, not assumed:
+`PostableCommand.Undo` was compiled against the reference assemblies for **2020, 2024 and 2027** and
+exists on all three — so Heron *can* post an undo. What it cannot do is choose which one. An undo takes
+the **top of the stack**.
+
+Two things follow, and neither is a defect in this repository:
+
+**1. A rollback is N undos, and N is not knowable from the trail.** The undo stack belongs to the
+*document*, shared with the person modelling in it. If they moved a wall after Heron's last change, that
+wall sits on top of Heron's entry — and nothing Heron writes records what a person did between two Heron
+operations. The agent therefore reports **how many undo entries Heron made**, in order, and says plainly
+that anything done in between goes first and is not counted. A number that quietly ignored the user's own
+edits would be the most dangerous number in this project.
+
+**2. The executor half does not exist.** Posting the undos has to happen inside Revit, in an API context.
+`brain/heron_rollback.py` is the planner: it groups by document (an undo stack belongs to one), orders
+newest first, and reverses nothing.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **Build the executor as a `MODIFY` bridge operation** that posts N undos into one document and
+   reports what it posted. It is small — the planner already says exactly what to post — but it is a
+   write path, and [`HeronPermissions`](../platform/Heron.Core/HeronPermissions.cs) keeps writing off
+   until NEEDS-CHECKING group D has passed. It should not be the *second* write path built before the
+   first has ever run in Revit.
+2. **Say that the panic button is a plan a person carries out** — Heron prints "press Ctrl+Z twice in
+   Tower B MEP" — and change the row's word from *reverses* to *tells you how to reverse*. That is
+   honest, needs no new write path, and is arguably safer: the person looking at the model is better
+   placed than Heron to see what else is on the stack.
+
+**Not acted on.** Option 1 adds a write path before the existing one has been proven, and option 2
+changes what the register promises.
