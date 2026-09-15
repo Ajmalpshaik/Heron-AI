@@ -1760,3 +1760,55 @@ One of three, and all of them are the owner's:
    Cheapest, and it loses most of what the capability was for.
 
 **Not acted on.** Option 2 is the most interesting and it changes what the agent takes as input.
+
+---
+
+## F31 — five Standards rows differ only by their subject
+
+Raised on the authority of [`HERON-AHR-WFP-015`](../brain/heron_workforce.py), the row whose job is to
+say **no**: *"before anything is hired — does a capability already cover this, can an existing agent be
+extended, is this a fragment rather than an agent? This is the guard against agent explosion."*
+
+Five rows are left in Standards & BIM QA, and after building four of that department they look like one
+agent with a different noun in front:
+
+| row | what it would do | what is already built |
+|---|---|---|
+| `STD-BIM-001` *applies a stated BIM standard to a model* | cite clauses, check a model | `STD-CMP-002` cites; `QA-BIM-011` checks |
+| `STD-MOD-005` *connections, elevations, practice* | cite clauses about modelling | `STD-CMP-002`, with `subject = modelling` |
+| `STD-QAQ-006` *the organisation's QA process requirements* | cite clauses about process | `STD-CMP-002`, with `subject = QA process` |
+| `STD-LOD-007` *level of development expected at this stage* | cite clauses about LOD | `STD-CMP-002`, plus a **stage** |
+| `STD-DOC-008` *sheet, titleblock and annotation requirements* | cite clauses about documentation | `STD-CMP-002`; sheets and titleblocks are names, which `QA-BIM-011` already routes |
+
+`HERON-STD-CMP-002` opens one scope, retrieves clauses, quotes them, keeps the four nothings apart and
+hands the host the question. **Every one of these five is that, with a different search term.** Writing
+five files that differ by one string is the agent explosion WFP-015 exists to prevent.
+
+### What would genuinely distinguish each one
+
+Worth stating, because two of them nearly have something:
+
+- **`LOD-007` has a second input.** *"Expected at this STAGE"* — the answer depends on where the project
+  is, which is a filter no other standards agent takes. That is a real difference of shape, not of
+  subject.
+- **`BIM-001` and `MOD-005` want to check a MODEL**, not just cite. The checkable half is
+  `QA-BIM-011`'s and the rest — connections, elevations, geometric practice — needs geometry inside
+  Revit, which nothing on this side can reach.
+- **`QAQ-006` could ask whether the process was FOLLOWED**, and the audit trail is evidence. But its row
+  says *requirements*, not compliance, so building that would be inventing a different job.
+- **`DOC-008` is almost entirely already done.** Sheets, titleblocks and view names are names, and
+  `QA-BIM-011` routes all of them to `STD-NAM-004`.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **Extend `HERON-STD-CMP-002` with a `subject`**, and record all five rows against that one file. Then
+   `agent-count.py` shows five more built, one file is maintained, and `LOD-007` gets its stage
+   parameter as the one genuine addition. This is what WFP-015's ladder — *keep, extend, adapt,
+   version-branch* — points at.
+2. **Build five files that differ by a search term**, because the register says five rows and a row is a
+   row.
+
+**Not acted on.** Option 1 is the same question F27 asks about the Development department — whether a
+row must map to its own file — and answering it once should settle both.

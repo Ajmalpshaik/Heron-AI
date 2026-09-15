@@ -68,6 +68,14 @@ knowledge store.
   `revit/` or `tools/`. **It greps file text, so a comment counts.**
   [`heron-guard`](../heron-guard/SKILL.md) now refuses that one at edit time; this still catches
   everything else and anything that reached disk another way.
+
+  **The way this actually fires is a FIXTURE or a COMMENT, four times in one session on 2026-09-15.**
+  Writing a `brain/` agent about imported pyRevit code, or about what a clash check would need, the
+  natural thing to type is the real namespace — in a demo folder's fake `script.py`, in a test's
+  "a .txt that holds code", in a docstring explaining what cannot be done here. Every one was caught and
+  every one was the gate being right: the fixture only ever needed *code*, not *Revit* code, and the
+  prose can say "the Revit API's own solid-intersection filter" without naming it. Reach for a different
+  vendor prefix in fixtures, and describe the API rather than spelling it.
 - **`check-metadata`** — every source file's header.
 - **`check-package`** — the delivery questions, and it is the only thing in the repository that reads
   `Heron.addin`. An entry class that no longer exists, an assembly the project does not build, or a

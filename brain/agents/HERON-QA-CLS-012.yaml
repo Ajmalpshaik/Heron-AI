@@ -1,0 +1,94 @@
+# Clash / Coordination Agent - HERON-QA-CLS-012
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ANALYZE. It computes NO clash - that is geometry inside Revit - and
+# it calls nothing wrong.
+
+agent: HERON-QA-CLS-012
+version: 1.0.0
+
+input:
+  host:
+    type: map
+    required: true
+    description: >
+      The host model's facts - its `levels` and `grids` by name, and the
+      `links` it holds if they are not passed separately.
+  links:
+    type: list
+    required: false
+    description: >
+      HERON-REVIT-LNK-015's own records: {name, status, elements, ...}.
+      That agent reports an unloaded link's element count as NOT KNOWN
+      rather than 0, and this keeps the distinction. A link may also
+      carry its own levels and grids.
+
+output:
+  coordinated:
+    type: boolean
+    description: True when the host and its links were read.
+  of:
+    type: integer
+    description: How many links were read.
+  links:
+    type: list
+    description: >
+      Each link in one of three states with why - clashable, not
+      clashable, or loaded and empty. NEVER ADDED TOGETHER.
+  clashable:
+    type: list
+    description: >
+      The links a clash check would mean something over - loaded, and
+      holding elements.
+  notClashable:
+    type: list
+    description: >
+      The links it would not. A clean result over one of these is not a
+      clean model; it is a result nobody took, and reporting it as a
+      pass is the most dangerous answer this agent could give.
+  empty:
+    type: list
+    description: >
+      Loaded and holding nothing. A third state - the link is there and
+      there is nothing in it.
+  hosts:
+    type: list
+    description: >
+      Per link that reported them, the levels and grids in both, only in
+      the host, and only in the link. A link calling the same floor
+      `Level 3` where the host says `L03` is a coordination problem NO
+      CLASH ENGINE WOULD REPORT, because nothing intersects.
+  clashesFound:
+    type: integer
+    description: >
+      Always null, never 0. Nothing was computed, and 0 would read as a
+      clean check.
+  cannot:
+    type: list
+    description: What could not be done here, and why.
+  why:
+    type: string
+    description: The three link counts and whether any link disagrees.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That the clash itself was not computed; which
+      links cannot be clashed against and why a clean result over them
+      means nothing; which are loaded and empty; which disagree with the
+      host about levels or grids and that this is not necessarily wrong;
+      that names are compared AS WRITTEN because `L03` and `Level 3`
+      being one floor is a judgement; and that nothing was called wrong.
+
+allowed-tools: []
+
+timeout-seconds: 300
+
+failures:
+  - NOT_A_MODEL
+  - NOTHING_LINKED
+  - NOT_A_LINK
+
+retry:
+  attempts: 0
+  on-failures: []
