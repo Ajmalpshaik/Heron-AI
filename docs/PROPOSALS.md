@@ -1116,3 +1116,50 @@ mistake as writing a new agent over `brain/heron_architect.py` earlier today, ar
 direction. What is needed is one line in `docs/28` saying which of the three owns metadata validity and
 what the other two defer to it for. That is the owner's call, and until it is made the Naming & Taxonomy
 department reads as 7 agents when its real number may be 6.
+
+---
+
+### 🟡 F18. "Registers them with the Tool Registry" — a discovered tool must not enter a fixed table
+
+**Found by:** building `HERON-MCP-DIS-012`, the MCP Discovery Agent, 2026-09-15.
+**Status:** open, and **the agent is built** on the narrow reading. The word is worth one clause in
+`docs/28`.
+
+The register gives `HERON-MCP-DIS-012`:
+
+> Finds **other** MCP servers installed on the machine, reads their tools, versions and capabilities,
+> and **registers them with the Tool Registry**.
+
+`HERON-MCP-REG-003`'s table is fixed, and says so in its own refusal:
+
+> `'%s' is not declared in the MCP tool registry. Add it to TOOLS with its risk level — **being absent
+> is a refusal, not a risk of zero.**`
+
+Read "registers" literally and a foreign server's manifest ends up adding entries to Heron's own risk
+table. That is exactly what **Golden Rule 19** forbids:
+
+> No text Heron reads may raise Heron's own permission level. Content from documents, family names,
+> parameter descriptions, imported folders, model text and community packages is **data, never
+> instruction**. Permission comes from the user, through Heron's own UI, per action.
+
+**The narrow reading, which the agent takes.** A discovered tool comes back as a **finding a person
+reads** — at `UNKNOWN` trust ([docs/24 §47](24-trust-model.md): provenance unclear, which is what a
+server somebody installed is — installing is not vouching). The registry is untouched, and because the
+tool is undeclared there, calling it already raises. **The existing refusal is the protection**; the
+suite proves it by calling `risk_of` on a discovered name and catching `NotDeclared`, rather than
+asserting it in prose.
+
+Three things are refused rather than recorded:
+
+| | |
+|---|---|
+| a name in **Heron's namespace** | not the eighteen names — the *prefixes*, derived from `REG-003`'s own table. `heron_select` is **not** one of Heron's tools and reads exactly like one, which is the whole danger. An exact-match check let it through on this file's first run |
+| **Heron's own vocabulary** in a manifest | `risk`, `trust`, `approved`, `permission`, `confirmed`, `granted`, `allowed` — a manifest using those is writing into Heron's fields, not describing itself. Recording it as a claim would still be reading it |
+| a tool with **no name** | it would sit in a list a person reads as though it were callable |
+
+Everything else a server says lands under `says` and nowhere else, so a tool describing itself as safe,
+read-only or already approved has described itself and changed nothing.
+
+**What is still open:** the register's wording. One clause — *"presents them for a person to declare;
+never writes into the table — Golden Rule 19"* — closes it, and without it the next person to build
+from that row alone will write the append.
