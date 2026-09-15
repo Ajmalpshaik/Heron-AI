@@ -1858,6 +1858,16 @@ are two different questions and one command cannot answer both. `tools/check-gap
 unfinished suites, but its exit code follows the UNFINISHED list, so it returns 1 on a healthy tree
 and a reader learns to ignore it.
 
+**THE SENTENCE ABOVE IS WRONG AND IT STAYS ONLY AS THE RECORD OF A WRONG BELIEF.** It said
+`check-gaps.py` could not be trusted to show a failing test. Measured 2026-09-15:
+`tools/check-gaps.py:131-181` **runs every suite, reads every return code, prints `FAIL <name>`**,
+appends it to UNFINISHED, handles a `SKIPPED=3` sentinel and a 300-second hang bound, and skips
+only `test_bridge_roundtrip` deliberately. It would have named both failures in plain sight. The
+instrument existed and worked. **Nobody had run it on this PC** - which is precisely what row `K1`
+of [NEEDS-CHECKING.md](NEEDS-CHECKING.md) asks for, and it was still open. The failure was
+procedural, not instrumental, and that distinction is the whole lesson: before building a second
+tool, check whether the first one was ever switched on.
+
 ### One mistake of mine, recorded because it nearly cost the fix
 
 The A17 script opened with `git checkout -- .`. It was re-run while the test fix was still
@@ -1866,3 +1876,87 @@ redone. The script now **refuses on a dirty tree** instead of forcing one: start
 precondition to check, not a state to impose. Clearing up after it also left a stale `index.lock`
 (0 bytes, one minute old, no git process, this worktree only), removed after checking those four
 things rather than on sight.
+
+
+## The gate nobody ran, the host nobody built, and two failures nobody had seen
+
+**2026-09-15, on the owner's PC, after #142 landed and the tree went from 99 suites to 188.**
+
+### `test_bridge_roundtrip` is not "the machine" any more - it PASSES
+
+It has been recorded for weeks as *needs a built .NET test host*, and counted as the one honest
+machine-dependent failure. **The owner closed Revit and said to build it.** One command -
+`dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024` - exit 0, and the suite then ran
+**31 assertions and passed every one**, ending *"Step 1 PASSED - the bridge works, without Revit."*
+Ping, info, the lease across three chats, preemption, malformed JSON, a bad token, and the bridge
+toggled off and back on. **Nothing was broken. The host had simply never been built here**, and the
+absence of a build had been carried in the register as though it were a property of the machine.
+
+### `check-signatures` is now in CI, without touching a workflow file
+
+`tools/check-signatures.py` has existed since 2026-09-13 and **nothing ran it** - the defect its own
+commit message names: *"A gate nobody runs is the same as no gate."* The commit that wires it
+properly sits on `ci/run-check-signatures`, rebased onto current main and **unpushable**: the token
+carries `repo` but not `workflow`, and GitHub refuses
+*"to allow an OAuth App to create or update workflow `.github/workflows/gates.yml`"*.
+
+So it rides inside `tools/check-docs.py` as **section 9**, exactly as section 8 already does for the
+generated decision table and for exactly the same recorded reason. `check-docs` runs in *"The gates
+that must pass"*, so the signature gate now runs on every pull request. Verified: `check-docs.py`
+exits **0** before and after, and section 9 reports *"Signatures in the library: 299"* with the one
+STALE signature that D-30 is supposed to surface. **It is not a documentation check and the comment
+says so** - if anyone ever edits the workflow by hand, give it its own step and delete the section.
+
+### Two failures that were in nobody's list
+
+A partial `check-gaps` sweep - stopped deliberately at 14 of 188 so the fixes could be applied
+without corrupting a measurement mid-flight - named two things `A18` never knew about:
+
+| suite | what |
+|---|---|
+| `test_agents.py` | **HUNG** - still running after the 300-second bound, gave up. It is 225 lines and imports only `io`, `os`, `sys` and `heron_agents`; nothing in it reads stdin. Undiagnosed |
+| `test_authoring.py` | **FAILS** in 0.3s. A real assertion failure, not a machine |
+
+**Both arrived with #142**, which added 89 suites written on Linux - the same provenance as the two
+fixed above, and the prediction written down before the run was that more Windows-only failures
+would be found. **A theory that did not survive checking, recorded so it is not re-run:**
+`tools/api-surface/.assemblies/` really is 264 MB of Revit DLLs and `agent-count.py` really does not
+skip that folder, but it filters by extension before opening anything, so the DLLs are never read
+and that is **not** the cause of the hang.
+
+
+### The two above were BOTH fixed, and one of my own notes above is WRONG
+
+**`test_agents.py` does not hang.** The row above says HUNG and it stays as written, because being
+wrong about it in the same hour is the finding. On a quiet machine it **passes in 279.3 seconds**
+against check-gaps' 300-second bound - **twenty seconds of margin, 7%**. The first run died because
+a build and a second sweep were loading the machine at the same time. So it is not broken and it is
+not healthy either: **a suite that passes with 7% margin will fail at random forever**, and every
+time it does, somebody will chase a defect that is not there. It needs making faster, not fixing.
+Nothing here diagnoses why 225 lines that import four modules take four and a half minutes.
+
+**`test_authoring.py` was the SAME BUG A THIRD TIME.** `brain/heron_authoring.py:109` -
+`os.path.relpath(path, ROOT)`, unguarded, inside `_where()`, which exists to word a refusal. A draft
+written to a temp folder put the path on `C:` with the repository on `D:`, and the crash replaced
+the message it was building. The module **already imported `heron_fragment as FRAG`** and simply did
+not use it here.
+
+**And a fourth copy was found before it could bite.** `brain/heron_tag.py:95` held a **byte-identical
+copy** of that helper - same docstring, same missing guard - reached through a caller-supplied
+`workflow` path. Both are guarded now. Four instances of one defect in one day is no longer a bug,
+it is a pattern: **`os.path.relpath` against `ROOT` is unsafe anywhere the path can come from a
+caller, a test, or another drive**, and `heron_fragment.repo_relative` is the repository's one
+answer. The remaining call sites were checked and left alone deliberately - they take module-level
+constants (`WORKFLOW`, `TEMPLATE`, `AGENTS`, `PROPS`, `EVIDENCE`) that are under `ROOT` by
+construction, and filing them would put false positives in the register.
+
+**`test_mcp_stdio.py` was a stale claim, and the test said so itself.** Its own comment set the
+standard - *"re-base it on what is true, with the reason written down, never edit it until green"* -
+and then **the very assertion that comment was defending went stale in the same way.** It asserted
+the reply still contains *"no way to reach Revit"*, calling it *"the limit that has NOT moved"*.
+It moved: **#144, "Changes ON now changes something"**. `_cannot_run()` now says a writing fragment
+reaches Revit through `revit_change`, which KEEPS what it did, while the ribbon switch is on. The
+old sentence survives **only in a comment**, so the check could never have passed again. Re-based on
+the durable claim instead - **writing is GATED, and Heron says so** - asserting both that the reply
+names the switch and that it names the refusal, so deleting the permission wording still fails it.
+A Heron that claimed it could write freely is the danger worth a test.

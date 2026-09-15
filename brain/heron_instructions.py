@@ -61,6 +61,20 @@ except ImportError:                                          # pragma: no cover
     raise
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
+# For repo_relative() and nothing else. `os.path.relpath` RAISES on Windows
+# across drives rather than returning something useless, and INSTRUCTIONS_DIR is
+# not always inside the checkout - a test points it at a temp folder, which on
+# this machine is on C: while the repository is on D:. That raise happened
+# BEFORE the duplicate-id check below, so a duplicate could not be reported at
+# all, and the ValueError raised instead was indistinguishable BY TYPE from the
+# one this module raises on purpose. heron_fragment already owns the one answer
+# to this question, so this adds no second implementation.
+import heron_fragment as FRAG                     # noqa: E402
+
 INSTRUCTIONS_DIR = os.path.join(ROOT, "brain", "instructions")
 CONSTITUTION = os.path.join(ROOT, "HERON_CONSTITUTION.md")
 
@@ -124,7 +138,7 @@ def instructions():
         path = os.path.join(INSTRUCTIONS_DIR, name)
         with io.open(path, encoding="utf-8") as fh:
             data = yaml.safe_load(fh) or {}
-        data["_path"] = os.path.relpath(path, ROOT).replace(os.sep, "/")
+        data["_path"] = FRAG.repo_relative(path).replace(os.sep, "/")
         key = data.get("id") or name
         if key in found:
             # NEVER SILENTLY. The later filename used to win, so a duplicate

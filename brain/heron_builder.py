@@ -221,7 +221,8 @@ def build(contract, built_by, name=None, layer="brain", write=False,
     root = root or ROOT
 
     files = {
-        os.path.join(LAYERS[layer], "heron_%s.py" % module):
+        os.path.join(LAYERS[layer],
+                     "heron_%s.py" % module).replace(os.sep, "/"):
             implementation(contract, name, layer),
     }
 

@@ -178,12 +178,25 @@ def main():
             # same too: re-base it on what is true, with the reason written
             # down, never edit it until green.
             #
-            # What is asserted instead is the limit that has NOT moved and is
-            # the one that matters: a fragment that WRITES still cannot reach
-            # Revit at all, and an unproven fragment is still called a claim.
-            check("no way to reach Revit" in answered,
-                  "it says plainly that a fragment which WRITES still cannot "
-                  "reach Revit - the limit that has not moved")
+            # IT HAPPENED A SECOND TIME, TO THIS VERY ASSERTION, and the
+            # paragraph above is left standing because it predicted it.
+            # "The limit that has NOT moved" was: a fragment that WRITES
+            # cannot reach Revit at all. It moved on 2026-09-15 - #144,
+            # "Changes ON now changes something" - and _cannot_run() now says
+            # a writing fragment reaches Revit through revit_change, which
+            # KEEPS what it did, while the ribbon switch is on. The old
+            # sentence survives ONLY in a comment in heron_mcp_server.py, so
+            # this check could never pass again.
+            #
+            # Re-based on what is true, by the standard written above: the
+            # durable claim is no longer "writing cannot happen" but "writing
+            # is GATED, and Heron says so". That is what must never silently
+            # stop being true - a Heron that claimed it could write freely
+            # would be the actual danger. Asserting both halves keeps it
+            # falsifiable: delete the permission wording and this fails.
+            check("Changes" in answered and "refuses" in answered,
+                  "it says plainly that writing is GATED - reaching Revit only "
+                  "while Changes is switched on, refused by name when it is not")
             check("PROVEN" in answered and "not" in answered,
                   "and it still separates what is proved from what is merely "
                   "present")

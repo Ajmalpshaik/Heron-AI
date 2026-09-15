@@ -105,8 +105,16 @@ def _header(field):
 
 
 def _where(path):
-    """A path a person can read - relative inside the repo, whole outside."""
-    near = os.path.relpath(path, ROOT)
+    """A path a person can read - relative inside the repo, whole outside.
+
+    os.path.relpath RAISES on Windows across drives rather than returning
+    something useless, and this function is called while BUILDING AN ERROR
+    MESSAGE - so the crash replaced the refusal it was trying to word. A draft
+    written to a temp folder does exactly that: mkdtemp() is on C: and the
+    repository is on D:. heron_fragment.repo_relative falls back to the
+    absolute path, which is what "whole outside" already asked for.
+    """
+    near = FRAG.repo_relative(path)
     return path if near.startswith("..") else near
 
 

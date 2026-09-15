@@ -146,6 +146,16 @@ def main():
 
     print()
     print("4b. Two files claiming one id is refused, not silently merged")
+    # THE CLAIM IS: a duplicate is refused for a directory OUTSIDE the repo root.
+    # mkdtemp() lands on C: while the repository is on D:, and os.path.relpath
+    # RAISES across drives on Windows - which it did, inside instructions(),
+    # BEFORE the duplicate check could run. On Linux the tempdir is on the same
+    # filesystem, so these two checks pass there whether the guard exists or
+    # not. Do not delete heron_instructions' repo_relative() call as redundant:
+    # that is exactly how A14 was "fixed on Linux, where the defect cannot
+    # appear". The bare `except ValueError` below is also why this reported
+    # itself as a duplicate-detection failure for days - it cannot tell this
+    # module's deliberate refusal from the stdlib's cross-drive crash.
     import tempfile, shutil
     workspace = tempfile.mkdtemp(prefix="heron-instructions-")
     try:
