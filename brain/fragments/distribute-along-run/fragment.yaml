@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,6 +69,37 @@ contract:
       type: double
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-14'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 29048
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, curve Line, findings 2 item(s) [9 of 9 placed at 1000 mm centres along a 8839 mm
+    run, starti..., These are NOT hosted on the run. They stand where it is toda...], leftoverMm
+    839.200000000001, location LocationCurve, placed 9 item(s) [1544271, 1544272, 1544273,
+    ...], spacingMm 1000, startOffsetMm 0. inputs came run as given; symbol as given; spacingMm
+    as given; startOffsetMm as given. on Snowdon-scratch_ajmal.al
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). distribute-along-run\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 4 different inputs:\n\n      spacing 1000 mm -> placed 9\n      spacing 1500\
+    \ mm -> placed 6\n      spacing 3000 mm -> placed 3\n      spacing 999999 mm - longer\
+    \ than the run, so only the start -> placed 1\n\n    Different inputs, exact matches every\
+    \ time. A fragment falling back to the active view, the whole model, or a previous run\
+    \ could not do that."
+  second_route: the run is 8839.2 mm by the fragment's own report, so how many instances fit
+    at a given spacing is arithmetic - floor(length/spacing) + 1 - and can be worked out without
+    asking it anything. returned spacing 1000 computed 9 placed / 839.2 mm left, fragment
+    said 9 / 839.2, spacing 1500 computed 6 placed / 1339.2 mm left, fragment said 6 / 1339.2,
+    spacing 3000 computed 3 placed / 2839.2 mm left, fragment said 3 / 2839.2, spacing 999999
+    computed 1 placed / 8839.2 mm left, fragment said 1 / 8839.2. inputs came the run length
+    and the four spacings. on Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session
+    29048
+  fingerprint: 9bdc1931c088d4f1
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

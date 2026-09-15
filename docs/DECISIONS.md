@@ -140,6 +140,7 @@ an edit.
 | [D-69](#d-69--a-script-in-tools-reads-the-code-it-checks-and-that-is-not-a-layering-violation) | A script in `tools/` reads the code it checks, and that is not a layering violation | ✅ Accepted · 2026-09-12 |
 | [D-70](#d-70--heron-keeps-a-usage-counter-on-the-machine-and-it-is-numbers-rather-than-a-diary) | Heron keeps a usage counter, on the machine, and it is numbers rather than a diary | ✅ Accepted · 2026-09-12 |
 | [D-71](#d-71--every-length-a-caller-types-is-millimetres-and-the-fragment-converts-it) | Every length a caller types is millimetres, and the fragment converts it | ✅ Accepted · 2026-09-13 |
+| [D-72](#d-72--four-values-a-caller-could-not-type-are-now-built-from-what-they-type-and-a-face-still-is-not) | Four values a caller could not type are now built from what they type, and a face still is not | • status not stated |
 
 ## Format
 
@@ -4360,3 +4361,90 @@ coordinate, and it applies to points only.
 
 **It does not touch angles, counts, flags or flows.** `angleRadians` is radians, `maxFiles` is a count,
 `pixelWidth` is pixels. The rule is about **length**, and a scalar that is not a length is not covered.
+
+---
+
+## D-72 — Four values a caller could not type are now built from what they type, and a face still is not
+
+**2026-09-14.** Supersedes the last paragraph of [D-67](#d-67--a-point-is-three-numbers-in-millimetres)'s
+*"Two separators, and why not one"*, which said `IList<IList<XYZ>>` **stays refused** pending a second
+fragment wanting a third separator. No second fragment arrived. The owner asked for `create-line` by
+name instead, which is the same signal a second fragment would have been: somebody wants the thing.
+
+### Decision
+
+**Four types leave the refused list. One stays, and the difference between them is the whole row.**
+
+| Type | Written as | Fragments it unblocks |
+|---|---|---|
+| `IList<IList<XYZ>>` | `"0,0,0; 5000,0,0 \| 0,0,0; 0,5000,0"` — a PIPE between pairs | `create-line` |
+| `OverrideGraphicSettings` | `"halftone=true; transparency=50"` — nine settings | `override-graphics-in-view`, `set-category-graphics`, `set-link-graphics` |
+| `ForgeTypeId` | `"Length"`, `"Text"`, `"YesNo"` | `create-global-parameter` |
+| `ParameterValue` | `"length 2700"`, `"integer 3"` — the KIND first | `set-global-parameter` |
+| `IList<Reference>` | **nothing. It stays refused** | `place-family-on-face` |
+
+**A list of element ids also takes the word `selected` now**, meaning the whole Revit selection —
+where the singular `Element` takes `selected` to mean exactly one. That is not an inconsistency: the
+ambiguity `OneElement` refuses (*which of three did you mean*) cannot arise when the answer is allowed
+to be plural. It unblocks `filter-elements-by-id`, which
+[FRAGMENT-ISSUES row 68](FRAGMENT-ISSUES.md) had already recorded as unblocked and was wrong about —
+the word reached `OneElement` and never reached the id-list branch.
+
+### Why a face is different from the other four, and not merely harder
+
+`IList<Reference>` is the one that stays, and it is worth being exact about why, because "not
+supported yet" reads the same for a rule nobody has written and a thing that cannot be written.
+
+A `Reference` is **a face**: a particular solid, on a particular element, seen in a particular view.
+It is produced by a mouse coming to rest on geometry. There is no text that names one — not a
+name, not a number, not a coordinate — so the gap is not a missing parser. **The keyboard cannot say
+it.** Reaching `place-family-on-face` needs Revit's own picking, which is a different mechanism from
+everything in `FromRequest` and is not owed by this row.
+
+The other four all had the same shape as each other: an object with no name to look up, which
+therefore has to be **built** from what somebody types. Building one is a syntax decision, and a
+syntax decision is exactly what can be deferred until somebody wants it — which is what D-67 did, and
+was right to do.
+
+### The kind comes first, because the value cannot say it
+
+`"2700"` is a length, a count and a price depending on the parameter it is going into, and a built
+`ParameterValue` is an object with that choice **already made inside it**. So the caller says which:
+`"length 2700"`, `"integer 3"`, `"text Level 2"`, `"yesno true"`.
+
+**And that is where a length is converted, which is [D-71](#d-71--every-length-a-caller-types-is-millimetres-and-the-fragment-converts-it)'s exception rather than a breach of it.** D-71 puts conversion in
+the FRAGMENT because the fragment is what knows which of its own numbers are lengths. Here the value
+crosses as a finished object, and `SET_GLOBAL_PARAMETER`'s contract says so itself — *"Already built,
+carrying its own type. A length arrives in internal feet."* A fragment handed a `DoubleParameterValue`
+cannot tell a length from a count, so it cannot be the one to convert. The only place that knows is
+the line where somebody typed the word `length`.
+
+### `ForgeTypeId` is built by reflection, and that is not a style choice
+
+`ForgeTypeId` and `SpecTypeId` arrived at **Revit 2021**. `RevitFragment.cs` compiles for **2020 to
+2027 from one source**, and naming either type in it would break the 2020 build outright — so the
+value is fetched off `Autodesk.Revit.DB.SpecTypeId` by name at run time and returned as `object`.
+
+The fragments that want one already declare `revit: ["2022", ...]`, so a caller on 2020 is never asked
+for it; if one is, this refuses **in words** rather than the add-in failing to load. The build defines
+`REVIT2020`, `REVIT2024` and so on, so a `#if` was available and was not used: a version `#if` in this
+file would be the first, and the first one should not arrive as a side effect of a proving session.
+
+### The unknown key is refused by NAMING what is accepted
+
+`OverrideGraphicSettings` carries far more than nine members. Nine are accepted — the ones Revit's own
+Visibility/Graphics override dialog puts in front of a modeller — and **anything else is refused with
+the nine listed**, so a wrong spelling is one line away from a right one rather than a shrug.
+
+The fill PATTERNS are deliberately left out. A pattern is an **element**, and naming one is a filter's
+job rather than a string parse — the same split that keeps finding a `FamilySymbol` out of
+`SET_SHEET_TITLE_BLOCK`. Their **colours** are here, because a colour is three numbers and nothing
+else.
+
+### What this does NOT do
+
+**It does not prove anything.** Four types becoming typeable makes six fragments *arrangeable*. Every
+one still owes a run against a model with both halves, and a signature that is a person's
+([D-30](#d-30--a-proof-needs-a-positive-and-a-negative-and-a-person-signs-it)).
+
+**It does not touch `place-family-on-face`.** That one is named above and stays where it is.

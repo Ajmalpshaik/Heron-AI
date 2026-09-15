@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -84,6 +84,31 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-09-14'
+  by: Ajmal PS
+  model: test projject (3,565 elements), Revit 2024, session 33220
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned clashed 52 item(s) [Default (already
+    here, left as it was), Default Floor (already here, left as it was), Default Roof (already
+    here, left as it was), ...], copied 4 item(s) [Concrete, Cast-in-Place gray, Vapor Retarder,
+    Asphalt Shingle, ...], filterText , openTitles 8 item(s) [Snowdon Towers Sample Facades,
+    Snowdon Towers Sample Plumbing, Snowdon Towers Sample Electrical, ...], refused , source
+    Document, wantedTitle Snowdon-scratch_ajmal.al, weakened 0 item(s). inputs came sourceDocumentTitle
+    as given; nameContains as given. on test projject
+  negative_case: run with nameContains=ZZZ NO SUCH MATERIAL, sourceDocumentTitle=Snowdon-scratch_ajmal.al
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    clashed 0 item(s), copied 0 item(s), filterText ZZZ NO SUCH MATERIAL, openTitles 8 item(s)
+    [Snowdon Towers Sample Facades, Snowdon Towers Sample Plumbing, Snowdon Towers Sample
+    Electrical, ...], refused No materials in 'Snowdon-scratch_ajmal.al' matching 'ZZZ NO
+    SUCH MATERIAL'., source Document, wantedTitle Snowdon-scratch_ajmal.al, weakened 0 item(s).
+    inputs came sourceDocumentTitle as given; nameContains as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 9f6f09acf4d74de3
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
