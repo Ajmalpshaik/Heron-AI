@@ -1,0 +1,84 @@
+# Knowledge Extraction Agent - HERON-LRN-EXT-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent SUGGEST. Nothing is written and nothing is promoted.
+
+agent: HERON-LRN-EXT-003
+version: 1.0.0
+
+input:
+  pattern:
+    type: map
+    required: true
+    description: >
+      HERON-LRN-ANA-002's answer, or at least a name. A verdict of
+      `a_one_off` is refused - building a fragment out of one sighting
+      is how a coincidence becomes a rule, and re-deciding that here
+      would put the judgement in two places.
+  observations:
+    type: list
+    required: true
+    description: >
+      What was seen each time. At least two: two is the least that can
+      show a value VARYING, and without that this agent cannot tell a
+      parameter from a number it happened to see.
+  as_kind:
+    type: string
+    required: false
+    description: fragment, skill or rule - docs/28's own three.
+  fix:
+    type: list
+    required: false
+    description: >
+      Values the caller wants fixed in the candidate. Allowed for one
+      that never varied; REFUSED for one that did, because fixing a
+      value already known to change is the hard-coding the row names.
+
+output:
+  extracted:
+    type: boolean
+    description: Always false. This is a candidate, not a write.
+  candidate:
+    type: map
+    description: What it would be - its name, kind, parameters and fixed values.
+  parameters:
+    type: list
+    description: Values that VARIED, with what they were seen as. Certain.
+  fixed:
+    type: list
+    description: Values fixed on request, each of which never varied.
+  questions:
+    type: list
+    description: >
+      Values that never varied and were not fixed. EITHER a constant OR a
+      parameter nobody has varied yet, and nothing in the observations
+      can tell which - so none is baked in without somebody saying so.
+  of:
+    type: integer
+    description: How many observations were read.
+  why:
+    type: string
+    description: The counts, and that nothing was written.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was written or promoted; how many
+      values varied; which never varied and are left open; and that a
+      candidate which hard-codes silently is worse than no candidate.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOT_A_KIND
+  - NOT_A_PATTERN
+  - A_ONE_OFF_IS_NOT_A_PATTERN
+  - NOTHING_TO_EXTRACT
+  - NOT_AN_OBSERVATION
+  - WOULD_HARD_CODE
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -1296,3 +1296,42 @@ against a superseded decision — with **F16** (the Keyword Agent's "synonyms" a
 they suggest `docs/28` was written before several of the decisions that now govern it, and a pass over
 the register against `DECISIONS.md` would find whatever else is in the same state. That pass is the
 owner's call, not three more clauses.
+
+---
+
+### 🟡 F21. `docs/09 §94` still carries the promotion gate D-30 replaced, and still calls it open
+
+**Found by:** building `HERON-LRN-PRO-004`, the Learning Promotion Agent, 2026-09-15.
+**Status:** open. The agent follows D-30.
+
+[docs/09 §94](09-skills-and-fragments.md) proposes the lifecycle gates, and two of its lines are stale:
+
+> | VALIDATED → PROVEN | **N successful real executions**, zero unexplained failures, no user corrections *(N to be set — suggest 10)* |
+>
+> Tracked as **[Q-9]** for the value of N and who may approve.
+
+**Q-9 is answered.** [D-30](DECISIONS.md) answers it by rejecting the count outright, and does so with a
+defect from the real library:
+
+> One fragment's record reads: the level chain never tried `RBS_START_LEVEL_PARAM`, so setting a level
+> filter matched **zero** ducts **and reported success**.
+>
+> **A fragment that succeeds while doing nothing passes ten runs. It passes a thousand.** A count measures
+> that nothing threw, which is not the property anybody cares about.
+
+D-30's gate is **one recorded proof against a real model** — dated, naming the model, carrying a positive
+case, a **negative** case (*"this is the one that catches succeeded and did nothing, and a proof without
+it is not a proof"*), and a second route where one exists — recorded by whoever ran it, *"under their
+name and the date, not a tick"*. It also answers the second half of Q-9: who may approve.
+
+So `docs/09 §94` asks for a number D-30 deleted, and points at a question D-30 closed.
+
+**What the agent does.** It follows D-30: a candidate arriving with a thousand successful runs and no
+proof is refused, and **the count is echoed back** so nobody mistakes the refusal for not having noticed.
+A proof with no negative case is refused **before** anything else the proof is missing — the others make
+a proof incomplete, and that one makes it not a proof.
+
+**Why this one is worth its own row.** F16, F18, F19 and F20 are all `docs/28` rows written against a
+superseded decision. This is the same failure in a **different document** — which means the pass those
+findings ask for is not only over the register. Anywhere a document says *"tracked as Q-n"* is worth
+checking against `DECISIONS.md`, because that phrase is exactly what stops a reader looking further.
