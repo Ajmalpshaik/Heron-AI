@@ -1562,3 +1562,54 @@ One of two, and both are the owner's:
 
 **Not acted on.** Both specifications say the same thing in the same order, which makes it a deliberate
 sentence rather than a typo, and changing what a specification means is not a build decision.
+
+---
+
+## F27 — five Development rows are already built, and whose work they measure decides by which file
+
+Found while building [`HERON-DEV-NET-006`](../brain/heron_dotnet.py), which turned out to be the
+read-only half of a tool carrying `Heron-Agent: none`. It is not the only one.
+
+Five more Development rows have an existing, working, unclaimed file that matches them — and for four
+of them there are **two** candidates, which one is right depending on a question nobody has answered:
+**does a Development agent act on the artefact Heron is building, or on Heron itself?**
+
+| row | on the artefact | on Heron |
+|---|---|---|
+| `DEV-BLD-010` *compiles across all target frameworks* | `tools/check-fragments-compile.py` — every fragment's C#, every release it claims | `tools/check-compile.py` — the four projects, 2020 to 2027 |
+| `DEV-UNT-011` *runs unit tests* | — | the `tests/test_*.py` sweep, which no file owns |
+| `DEV-INT-012` *integration tests against a mocked Revit boundary* | — | `tests/Heron.Bridge.TestHost` + `test_bridge_roundtrip.py` |
+| `DEV-RGR-014` *golden-file comparison across supported versions* | `tests/golden/cases.py`, `tests/test_golden.py` | — |
+| `DEV-PRF-015` *execution time and resource cost* | — | `tools/measure-brain.py`, which measures exactly those two words |
+
+### The precedent points one way and the files point the other
+
+The **one** Development row already claimed by a tool is `DEV-RVT-013`, on
+[`tools/batch-prove.py`](../tools/batch-prove.py) — and that tool proves **fragments**. Under that
+reading the department is the build pipeline for the artefact, `DEV-PRF-015` measures a fragment's cost,
+and `measure-brain.py` measures the *builder* rather than the thing built.
+
+Under the other reading, the repository is the artefact — which is how `DEV-REL-018` is already claimed
+by `tools/check-package.py`, and that packages **Heron**, not a fragment.
+
+**So the two rows already claimed disagree with each other.** That is not something a build decision can
+settle.
+
+### What was done instead
+
+Nothing was relabelled. `tools/measure-brain.py` gained the half it was missing — docs/28 asks
+`DEV-PRF-015` for *"execution time and resource cost"* and it measured only time — and its header still
+reads `none`, with the reasoning in its docstring.
+
+Its old justification for `none` was **stale** and has been corrected: it argued against claiming
+`HERON-OPS-OBS-011` on a row that [D-58](DECISIONS.md) rewrote on 2026-09-09. That agent is built in
+`brain/heron_observability.py`, and the corrected row **names `measure-brain.py`** as what measures the
+latency half.
+
+### What is proposed
+
+**Say which reading governs**, in one sentence in docs/28 §9's heading. Then five rows close by claiming
+files that already work, and `agent-count.py` stops reporting as unbuilt five things that are built.
+
+**Not acted on.** Claiming an id on a guess is the failure this project's whole metadata standard exists
+to prevent, and two already-claimed rows in the same department point opposite ways.

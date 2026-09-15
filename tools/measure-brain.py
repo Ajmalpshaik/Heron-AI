@@ -36,6 +36,27 @@ model2vec is not installed and _load_model() returns None at once. On the
 machine where it matters it would have hidden the whole thing, in the tool
 written to catch exactly that.
 
+RESOURCE COST, AND WHY IT IS TWO NUMBERS THAT MEASURE DIFFERENT THINGS
+-----------------------------------------------------------------------
+docs/28 gives HERON-DEV-PRF-015 "execution time AND RESOURCE COST", and
+until 2026-09-15 this file measured only the first half.
+
+The obvious tool is tracemalloc, and for THIS failure it is the wrong one:
+it counts Python allocations, and D-49's thirty minutes were a NATIVE model
+import. The tool written to catch that would have reported a few megabytes
+and missed it.
+
+So the cost reported here is PEAK RSS, through resource.getrusage, which
+counts native memory because it counts the process. It buys that at a price
+worth stating: ru_maxrss is a HIGH-WATER MARK for the whole process and
+never falls, so a stage can be credited with the growth that happened
+across it and NEVER with its own peak. A stage that allocates 2 GB and
+frees it shows zero, correctly and uselessly.
+
+`resource` does not exist on Windows. There the cost is reported as NOT
+MEASURED rather than as zero - the two are different, and only one of them
+is true.
+
 The incoming master architecture document puts it plainly and it is right:
 "without a baseline, improvement cannot be proven."
 
@@ -43,17 +64,23 @@ WHAT IT DELIBERATELY DOES NOT CLAIM
 -----------------------------------
 `Heron-Agent: none`, and that is a decision rather than an omission.
 
-docs/28 defines HERON-OPS-OBS-011, the Observability Agent, as "latency, token
-usage, model calls per request, cost per request". D-01 put every model call in
-the HOST. Heron makes none - heron_embed runs a local model, no tokens, no
-account, no cost (D-24, D-26). So three of those four fields describe something
-Heron cannot see from here, and a file claiming that agent id would make
-check-metadata.py report the Observability Agent as BUILT while three quarters
-of its declared job stayed impossible.
+It used to argue that against HERON-OPS-OBS-011, whose row then read "latency,
+token usage, model calls per request, cost per request" - three of which Heron
+cannot see. THAT ARGUMENT IS SPENT: D-58 corrected the row on 2026-09-09 to
+the two things Heron can see, HERON-OPS-OBS-011 is built in
+brain/heron_observability.py, and the corrected row NAMES THIS FILE as what
+measures the latency half for the brain. So this is a tool that row relies on,
+not a candidate for its id.
 
-This is the latency quarter, named as such. The registry row wants correcting;
-that is a decision for the owner, not something a tool should paper over by
-claiming the id anyway.
+The open one is HERON-DEV-PRF-015, "execution time and resource cost", which is
+word for word what this file now measures - and claiming it would still be a
+guess, because the question is WHOSE cost that row means. Its department is the
+build pipeline, and the one Development row already claimed by a tool is
+HERON-DEV-RVT-013, on tools/batch-prove.py, which measures FRAGMENTS rather
+than Heron. Under that reading PRF-015 measures the artefact being built and
+this file measures the builder, and the two are not the same agent.
+
+Not resolved here. PROPOSALS F27.
 
 IT IS NOT A GATE AND EXITS 0
 ----------------------------
@@ -141,27 +168,64 @@ def sample(phrases, count):
     return [phrases[int(i * stride)] for i in range(count)]
 
 
+def peak_bytes():
+    """Peak RSS for this process, or None where it cannot be read.
+
+    NOT ZERO WHERE IT CANNOT BE READ. `resource` is absent on Windows, and
+    reporting 0 MB there would be a measurement nobody took wearing the
+    clothes of one that was.
+
+    ru_maxrss is kilobytes on Linux and bytes on macOS - a unit difference
+    that silently makes one of them look a thousand times better than the
+    other if it is not converted.
+    """
+    try:
+        import resource
+    except ImportError:
+        return None
+    raw = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return raw if sys.platform == "darwin" else raw * 1024
+
+
 class Timer(object):
     """Milliseconds per stage, kept as every reading rather than a running sum.
 
     The worst case is the interesting one here - D-49's failure was a single
     call taking thirty minutes while the average stayed respectable - and an
     average cannot be un-averaged after the fact.
+
+    Peak RSS is kept the same way, as GROWTH ACROSS each stage. See the
+    module docstring for why that is the honest reading of a high-water
+    mark and not a stage's own peak.
     """
 
     def __init__(self):
         self.readings = {}
+        self.grew = {}
         self.order = []
 
     def time(self, stage, fn):
+        before = peak_bytes()
         started = time.perf_counter()
         result = fn()
         elapsed = (time.perf_counter() - started) * 1000.0
+        after = peak_bytes()
         if stage not in self.readings:
             self.readings[stage] = []
+            self.grew[stage] = []
             self.order.append(stage)
         self.readings[stage].append(elapsed)
+        self.grew[stage].append(None if before is None or after is None
+                                else after - before)
         return result
+
+    def cost(self, stage):
+        """(measured, total growth in bytes) across every run of a stage."""
+        values = self.grew.get(stage) or []
+        real = [v for v in values if v is not None]
+        if not real:
+            return False, None
+        return True, sum(real)
 
     def stat(self, stage):
         """(runs, median, worst) in milliseconds."""
@@ -174,6 +238,13 @@ class Timer(object):
         else:
             median = (values[middle - 1] + values[middle]) / 2.0
         return len(values), median, values[-1]
+
+
+def mb(size):
+    """Bytes as megabytes, or the reason there is no number."""
+    if size is None:
+        return "not measured"
+    return "%.1f MB" % (size / (1024.0 * 1024.0))
 
 
 def fmt(ms):
@@ -286,6 +357,31 @@ def main(argv):
         runs, median, worst = clock.stat(stage)
         print("  %-30s %6d  %10s  %10s"
               % (stage, runs, fmt(median), fmt(worst)))
+    print("")
+    # RESOURCE COST, the other half of docs/28's "execution time and resource
+    # cost". Peak RSS through resource.getrusage, because it counts NATIVE
+    # memory and D-49's cost was a native model import - tracemalloc would
+    # have reported a few megabytes and missed the whole thing.
+    total = peak_bytes()
+    if total is None:
+        print("PEAK MEMORY   not measured on %s - `resource` is a Unix module, "
+              "and 0 MB\n              would be a measurement nobody took."
+              % platform.system())
+    else:
+        print("PEAK MEMORY   %s for the whole process, at its high-water mark"
+              % mb(total))
+        print("")
+        print("  %-30s %14s" % ("stage", "grew by"))
+        print("  " + "-" * 46)
+        for stage in clock.order:
+            measured, grew = clock.cost(stage)
+            print("  %-30s %14s"
+                  % (stage, mb(grew) if measured else "not measured"))
+        print("")
+        print("  GREW BY IS NOT A STAGE'S OWN PEAK. ru_maxrss is a high-water")
+        print("  mark for the process and never falls, so a stage that")
+        print("  allocated two gigabytes and freed them shows 0.0 MB -")
+        print("  correctly, and uselessly. Only growth is attributable.")
     print("")
     print("Read the WORST column first. D-49's thirty-minute hang was one call,")
     print("and a median would have called that afternoon healthy.")
