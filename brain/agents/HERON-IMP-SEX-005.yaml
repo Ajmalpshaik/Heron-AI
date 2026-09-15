@@ -1,0 +1,94 @@
+# Skill Extraction Agent - HERON-IMP-SEX-005
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ and makes it T3. It writes no skill, produces no utterance and
+# declares no risk.
+
+agent: HERON-IMP-SEX-005
+version: 1.0.0
+
+input:
+  folder:
+    type: path
+    required: true
+    description: >
+      The folder being imported, walked through HERON-IMP-FIL-002.
+  walked:
+    type: map
+    required: false
+    description: That agent's answer, when a caller already has one.
+  bundles:
+    type: list
+    required: false
+    description: >
+      The bundle-folder suffixes to recognise. Defaults to pyRevit's -
+      SOMEBODY ELSE'S CONVENTION, held as data with its source named, so
+      tooling that uses different ones passes its own.
+
+output:
+  found:
+    type: boolean
+    description: True when the folder was walked and its Python read.
+  root:
+    type: path
+    description: The folder the paths are relative to.
+  of:
+    type: integer
+    description: How many user-facing capabilities were found.
+  capabilities:
+    type: list
+    description: >
+      Each with the label a person sees and WHERE that label came from,
+      its docstring, its script, and which of the two signals found it -
+      `byConvention` (a pyRevit bundle folder) and `byStructure` (a
+      script nothing imports that has statements which run). Those found
+      by both are listed first.
+  agreed:
+    type: list
+    description: >
+      The labels both signals agree on. One is somebody else's rule and
+      the other is a fact about the code, so agreement is the strongest
+      evidence here - and disagreement is still reported, per capability.
+  furniture:
+    type: list
+    description: >
+      Bundle folders that are not clicked - a panel or a tab is what the
+      buttons sit in, and counting one would count the shelf as a book.
+  unparsed:
+    type: list
+    description: Files that could not be read, each with why.
+  wrote:
+    type: boolean
+    description: Always false. HERON-SKL-CRE-002 authors a skill.
+  asks:
+    type: list
+    description: >
+      One question carrying every capability: what does somebody SAY to
+      ask for it, and what risk does it carry. Both are language, which
+      is why docs/28 makes this row T3.
+  why:
+    type: string
+    description: The counts, and that nothing was written.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That no utterance was produced and why an
+      invented one is worse than a missing one (D-34,
+      HERON-SKL-CRE-002); that no risk was declared, because a deleting
+      button and a counting one are the same folder name; which
+      capabilities both signals agreed on; that the label is read and
+      not tidied; what was furniture; and that nothing was written.
+
+allowed-tools: []
+
+timeout-seconds: 600
+
+failures:
+  - NOTHING_TO_READ
+  - NOTHING_TO_WALK
+  - NOT_A_FOLDER
+
+retry:
+  attempts: 0
+  on-failures: []
