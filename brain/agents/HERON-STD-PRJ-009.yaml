@@ -1,0 +1,73 @@
+# Project Standard Agent - HERON-STD-PRJ-009
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ANALYZE. Nothing is written and no clause is rewritten: the answer
+# names which source governs and carries the one it overrides.
+
+agent: HERON-STD-PRJ-009
+version: 1.0.0
+
+input:
+  found:
+    type: list
+    required: true
+    description: >
+      HERON-RAG-CNF-015's disagreements - each a {unit, values}, where
+      unit is the DIMENSION and each value carries its scope, label,
+      document, locator and number. That two clauses answer one question
+      is that agent's finding, by unit and by number; deciding it from
+      the words would be language, and D-34 says Heron builds nothing
+      for that.
+
+output:
+  ruled:
+    type: boolean
+    description: True when the disagreements were read.
+  of:
+    type: integer
+    description: How many disagreements were handed in.
+  settled:
+    type: list
+    description: >
+      Each disagreement the ladder decides, with `governs`, the
+      `overridden` clauses IN FULL, and `says` - the sentence docs/20 s2
+      asks for: "using this project's table, which differs from the
+      company default".
+  unordered:
+    type: list
+    description: >
+      Disagreements docs/20 s2's ladder cannot settle: two sources
+      sharing one rung (an addendum against a specification), or a scope
+      the ladder does not name. Neither is guessed at.
+  asks:
+    type: list
+    description: >
+      One scoped question per unordered disagreement, carrying every
+      clause. This is what makes the row T2 rather than T1 - the ladder
+      is a table, and everything the table is silent about is somebody
+      else's judgement.
+  why:
+    type: string
+    description: How many the ladder settled and how many it did not.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That the ladder is HERON-RAG-CNF-015's object
+      rather than a copy, and that agent holds it reported-never-applied
+      for a reason; that nothing was dropped; that what the clauses are
+      ABOUT was not decided here; what the ladder could not settle; and
+      that the winning clause is not thereby correct - a project
+      specification with a typo still outranks the company default.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_RULE
+  - NOT_A_DISAGREEMENT
+
+retry:
+  attempts: 0
+  on-failures: []
