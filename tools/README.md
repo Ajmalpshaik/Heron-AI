@@ -448,6 +448,39 @@ The working prototype of `HERON-DOC-SKL-003`.
 
 ---
 
+## `generate-api-docs.py` — every MCP tool, from its own signature
+
+```bash
+python tools/generate-api-docs.py
+HERON_API_DOCS_OUT=somewhere.html python tools/generate-api-docs.py
+```
+
+Every tool Heron serves over MCP: what you send, what type, whether it has a default, what it returns,
+its declared risk, the bridge operation it calls, and whether it can change the model.
+
+**A Heron tool's schema is not a JSON file anywhere** — it is the decorated function's signature, which
+the MCP SDK turns into one at run time. So that is what this reads, and it **parses rather than
+imports**: importing `heron_mcp_server` needs the MCP SDK installed and defines eighteen tools as a side
+effect of asking what they are. A documentation tool that only works where the server already runs is
+useless exactly where documentation is wanted — a reviewer's laptop, CI, a checkout with no
+dependencies. `ast` needs nothing.
+
+**The conclusion it carries: a parameter nothing explains.** A docstring can describe a tool beautifully
+and never mention its arguments; a caller then reads `depth: int = 0` off the schema and guesses. Every
+parameter is checked against its own tool's docstring on a word boundary — `full` is not explained by
+"fully" — and the unexplained ones are named. **Two were unexplained on its first run** against eighteen
+tools that all have docstrings: `revit_preview_move`'s `category` and `heron_research`'s `request`. Both
+are now documented, and the run is clean.
+
+Risk and bridge operation are **asked of** [`heron_tools.py`](../mcp/server/heron_tools.py) rather than
+copied, and a tool it cannot classify is reported rather than dropped — in both directions.
+
+It concludes, so it has a test ([`tests/test_api_docs.py`](../tests/test_api_docs.py)).
+
+The working prototype of `HERON-DOC-API-001`.
+
+---
+
 ## `generate-agent-map.py` — the visual map
 
 ```bash

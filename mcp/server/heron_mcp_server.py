@@ -438,6 +438,10 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
     skipped, and in which model. Call revit_apply_move afterwards only if the
     user says yes to what this describes.
 
+    Category is the BIM word the user said - "ducts", "pipes", "air
+    terminals". Heron resolves it to a Revit category; it is not a Revit
+    category name and does not have to be spelled like one.
+
     Distance is in millimetres - "200", "200 mm", "0.5 m". A negative distance
     moves down. Heron does not accept feet or inches.
     """
@@ -1253,9 +1257,10 @@ def heron_research(request: str, scopes: str = "company,project") -> str:
     Say what Heron does NOT know about a question, and what an outside answer must carry.
 
     Call this BEFORE answering a standards question from your own knowledge or
-    from the web. Heron searches the scopes you name, reports what each one
-    holds, and hands back a brief: what is missing, and the three things every
-    claim in an answer must carry to be worth anything.
+    from the web. Pass the user's question as `request`, in their own words -
+    Heron searches the scopes you name, reports what each one holds, and hands
+    back a brief: what is missing, and the three things every claim in an
+    answer must carry to be worth anything.
 
     **Heron does not fetch, and that is deliberate.** It has no keys, no proxy
     policy and no way to promise a connection, and it has to work on a site
