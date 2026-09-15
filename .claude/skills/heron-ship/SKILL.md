@@ -114,6 +114,11 @@ Two wrinkles worth not re-discovering:
   that only `dotnet-sdk-10.0` carries — `tools/check-compile.py` says so itself when it skips them, and
   a skip is not a pass. Run `apt-get update` first; a stale index 404s on the .deb.
 
+**This is about your machine, not about CI.** `.github/workflows/gates.yml` leaves both out on
+purpose — they drag in native dependencies that break for reasons unrelated to this repository — and
+its `fixed` check **fails the build if a listed suite passes there**. So install locally, run the full
+163, and leave that list alone unless the runner itself changes.
+
 **Nothing else should fail on any machine.** `test_graph.py` and `test_reachable.py` were on this list
 until 2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository
 that had moved on, and neither test's claim changed. `.github/workflows/gates.yml` holds the same list
