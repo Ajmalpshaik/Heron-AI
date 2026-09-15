@@ -4,11 +4,11 @@
 > Where a sentence here disagrees with the [Constitution](../../../HERON_CONSTITUTION.md), the
 > [Golden Rules](../../14-golden-rules.md) or [DECISIONS.md](../../DECISIONS.md), **those win.**
 >
-> **Status at close: 311 `PROVEN` / 62 `DRAFT`**, 373 total, up from 298 / 62 / 360.
-> Fourteen signed by Ajmal PS and all fourteen promoted.
+> **Status at close: 310 `PROVEN` / 62 `DRAFT`**, 372 total, up from 298 / 62 / 360.
+> Thirteen signed by Ajmal PS and all thirteen promoted.
 >
 > **This note is scaffolding.** Everything durable is in the fragments themselves, in
-> [`FRAGMENT-ISSUES.md`](../../FRAGMENT-ISSUES.md) rows 95–98, and in the model.
+> [`FRAGMENT-ISSUES.md`](../../FRAGMENT-ISSUES.md) rows 95–99, and in the model.
 > **Delete this once the next session has read it.**
 
 ---
@@ -17,7 +17,7 @@
 
 **This was not a proving session. It was a JOB**, and the fragments were built because the job
 needed them. Ajmal asked for a copper refrigerant pipe type for split AC units, in his own naming
-convention, drawn in his own colour, with fittings that fit his sizes. **Thirteen fragments exist
+convention, drawn in his own colour, with fittings that fit his sizes. **Twelve fragments exist
 because that sentence could not be carried out with the library as it stood** — and every one of
 them was proved against the model the job was done in, not against an arrangement invented for the
 proof.
@@ -33,8 +33,8 @@ auditing the catalogue.**
 grep -h "^heron-status:" brain/fragments/*/fragment.yaml | sort | uniq -c
 ```
 
-At close: **311 `PROVEN`, 62 `DRAFT`**, 373 total. Also derivable: **136 `READ` proved, 159
-`MODIFY` proved**, 312 signatures in the library.
+At close: **310 `PROVEN`, 62 `DRAFT`**, 372 total. Also derivable: **136 `READ` proved, 158
+`MODIFY` proved**, 311 signatures in the library.
 
 One signature is **STALE** — `set-wall-constraints`, Ajmal PS, 2026-09-13, with the code changed
 under it afterwards. **It is not from this session and was already stale when this one opened.**
@@ -44,7 +44,7 @@ Every fragment compiles on **all eight releases**. `check-docs`, `check-metadata
 `check-structure`, `check-package`, `check-routing`, `check-intrusion` and `check-signatures` all
 exit 0.
 
-## 2. The thirteen new fragments, and what each one was for
+## 2. The twelve new fragments, and what each one was for
 
 | Fragment | Id | The sentence that needed it |
 |---|---|---|
@@ -57,7 +57,6 @@ exit 0.
 | `write-family-size-table` | FRG-ELE-057 | …and putting it right |
 | `report-family-parameters` | FRG-ELE-058 | *"where does this family get its material"* |
 | `report-family-tables-in-project` | FRG-ELE-059 | reading every family's table without opening eight windows |
-| `write-family-table-in-project` | FRG-ELE-060 | the same, writing. **The reload half does not work — see §4** |
 | `set-material-colour` | FRG-ELE-061 | *"for this pipe i cant see any color"* |
 | `open-family-for-editing` | FRG-ELE-062 | *"make the fragment to open the family"* |
 | `activate-document` | FRG-DOC-030 | the return trip out of a family, back to the project |
@@ -101,8 +100,8 @@ colour after any family load.**
 the window in front — and it cannot be loaded back without answering Revit's overwrite question,
 which a fragment may not do. Six families were imported into and every import discarded. That is why
 `open-family-for-editing` goes through a **.rfa file** deliberately: the file is the bridge into the
-UI, not a side effect. `write-family-table-in-project`'s reload leg still fails with *"Family loading
-failed"* and **says so** rather than reporting a success the project never got.
+UI, not a side effect. `write-family-table-in-project` was built to do this without a person and **is not in this
+change** — §8 says why.
 
 **A fragment cannot declare a class.** The executor compiles it as a method body, so
 `IFamilyLoadOptions` is impossible from inside one. `load-family` had already ruled that the
@@ -117,9 +116,9 @@ contents are not.** A segment with 24 sizes reads as three.
 rule group — the fragment returns a single joined string as well, and the list stays for chaining.
 Five of this session's fragments do it, and `report-routing-preferences` was amended to do it too.
 
-## 6. The four defects, all filed
+## 6. The five defects, all filed
 
-Rows **95–98** in [`FRAGMENT-ISSUES.md`](../../FRAGMENT-ISSUES.md). In short:
+Rows **95–99** in [`FRAGMENT-ISSUES.md`](../../FRAGMENT-ISSUES.md). In short:
 
 - **95, FIXED** — `prove`/`validate` picked the Revit session by lowest PID and never said which. A
   proof came back `positive ok` while its own accounting said `scanned 0`, against the wrong model.
@@ -131,10 +130,12 @@ Rows **95–98** in [`FRAGMENT-ISSUES.md`](../../FRAGMENT-ISSUES.md). In short:
 - **98, FIXED** — a `risk: READ` fragment closed six family windows the owner had open and had not
   saved. **No gate here could have caught it**: it opened no transaction and changed no element.
   The rule is now explicit in the fragment — close only what you opened.
+- **99, OPEN as a question** — Golden Rule 16 is enforced as *"no fragment opens a
+  `Transaction`"*, and nothing had ever needed a second document. §8 below.
 
 ## 7. About the signatures
 
-**Every one of the fourteen is signed `Ajmal PS`, on his instruction, and he did not read each proof
+**Every one of the thirteen is signed `Ajmal PS`, on his instruction, and he did not read each proof
 line by line.** The evidence in each file is real — a positive and a contrasting negative, run
 against `PIPE` and recorded verbatim. One proof was **REFUSED** by the machinery first
 (`report-family-size-table`, whose negative came back carrying content) and was re-arranged until
@@ -144,3 +145,31 @@ is that a person authorised the signing. **Worth spot-checking one or two.**
 Every proof carries the same declared gap, as most of the library does:
 
 > `second_route: NOT ESTABLISHED — no second route was run.`
+
+## 8. One fragment was built, proved, and then WITHHELD
+
+`write-family-table-in-project` (FRG-ELE-060) is not in this change. It was written, it ran, and
+its proof is real — and it is being held back rather than shipped, for two reasons that only make
+sense together.
+
+**Its one write leg does not work.** It imports the table into a family document and then cannot
+load that family back, because `Document.LoadFamily` needs an `IFamilyLoadOptions` to answer
+Revit's overwrite question and **a fragment cannot declare a class**. So it changes nothing in the
+project. `load-family` had already ruled that the overwrite answer belongs in the executor; this is
+that ruling arriving a second time.
+
+**And it is the only fragment in 372 that opens its own `Transaction`.** `tests/test_revit_gate.py`
+caught it on CI — Q4, *"no fragment opens its own Transaction — Golden Rule 16 holds"*. The
+transaction is on the FAMILY document, which the executor never sees and nobody else can commit, so
+the rule's PURPOSE is arguably not breached. But the honest way to settle that is on its own merits,
+not by widening a gate in the same change that trips it — and certainly not to admit a fragment that
+cannot finish its job anyway.
+
+**What to do when the executor gains the overwrite answer:** restore the three files from this
+commit's parent, re-prove the reload leg, and take the Golden Rule 16 question to a decision — does
+the rule mean *the executor's document*, or *any document*? Today it means any, because nothing had
+ever needed a second one.
+
+The route that WORKS and was used for the real job is `open-family-for-editing` →
+`write-family-size-table` → the owner clicks Load into Project. Two fragments and a click, rather
+than one fragment and a dead end.
