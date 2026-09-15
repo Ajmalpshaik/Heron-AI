@@ -1,0 +1,134 @@
+# QA Agent - HERON-DEV-QA-016
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register's row is
+# "final gate before approval. Never the implementer", and that second
+# sentence is why nothing is run here: an agent that runs a check and then
+# decides whether it passed is marking its own work.
+
+agent: HERON-DEV-QA-016
+version: 1.0.0
+
+input:
+  change:
+    type: map
+    required: true
+    description: >
+      What is being submitted. It declares its `risk` - which is what
+      HERON-DEV-SEC-009 reads to decide whether a security review is
+      required - and its author in `by` or `author`.
+  results:
+    type: list
+    required: false
+    description: >
+      Each {check, passed, of} - the check's path as CI invokes it,
+      whether it passed, and the fingerprint of what it ran against. A
+      result carrying no fingerprint is accepted; one carrying an old
+      fingerprint is refused, because a check that passed on a previous
+      version of the change is a check of something else.
+  approved_by:
+    type: string
+    required: false
+    description: >
+      Who is approving. Required for a pass, and refused when it is the
+      author. A gate reports; `passed` with nobody's name on it would be
+      this agent approving its own report (Golden Rule 7).
+  reviewed:
+    type: map
+    required: false
+    description: >
+      The security review, passed straight to HERON-DEV-SEC-009. That
+      agent decides whether one was needed and whether it counts; this
+      one carries its answer through unaltered.
+  checks:
+    type: list
+    required: false
+    description: >
+      What to require, when a caller already knows. Defaults to parsing
+      .github/workflows/gates.yml - the file that actually blocks a
+      merge, and therefore the definition of required.
+  secrets:
+    type: callable
+    required: false
+    description: The credential store, passed through to HERON-DEV-SEC-009.
+
+output:
+  passed:
+    type: boolean
+    description: >
+      True only when every required check is present, passed, current,
+      the security review is satisfied, and somebody other than the
+      author is approving.
+  approvedBy:
+    type: string
+    description: Who approved, as they gave it.
+  required:
+    type: list
+    description: Every check CI runs, in the order it runs them.
+  of:
+    type: integer
+    description: How many checks are required.
+  ran:
+    type: list
+    description: Which checks a result was supplied for.
+  missing:
+    type: list
+    description: >
+      Required checks with no result. A check nobody ran is not a check
+      that passed.
+  failed:
+    type: list
+    description: Required checks whose result says they did not pass.
+  stale:
+    type: list
+    description: >
+      Checks that passed against a different version of this change,
+      with both fingerprints truncated.
+  security:
+    type: map
+    description: HERON-DEV-SEC-009's answer, unaltered, refusals included.
+  fingerprint:
+    type: string
+    description: The change as it stands, recomputed here and never trusted.
+  author:
+    type: string
+    description: Who wrote the change, as declared.
+  ranAnything:
+    type: boolean
+    description: Always false. The results were read, not produced.
+  fixedAnything:
+    type: boolean
+    description: Always false. A gate reports; it repairs nothing.
+  why:
+    type: string
+    description: What was required, what happened, and who is approving.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was run here and why that is the
+      row; that what must pass is the workflow's list, parsed rather than
+      typed, and why a typed one drifts in the dangerous direction; that
+      whether the change is SAFE is HERON-DEV-SEC-009's answer carried
+      through; that whether it is any GOOD is the approver's judgement
+      and not a machine's; and that a result carrying no fingerprint at
+      all was accepted, with the reason.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_GATE
+  - NOT_A_SUBMISSION
+  - NOT_A_RESULT
+  - NOTHING_IS_REQUIRED
+  - CHECK_MISSING
+  - CHECK_FAILED
+  - STALE_RESULT
+  - NOT_SECURITY_REVIEWED
+  - NOBODY_IS_APPROVING
+  - APPROVED_BY_THE_IMPLEMENTER
+
+retry:
+  attempts: 0
+  on-failures: []
