@@ -189,6 +189,56 @@ def main():
           "using the SAME key every other op sends, not a second definition "
           "of identity that could drift from it")
 
+    # ---------------------------------------------------------------
+    print()
+    print("E11 failed in front of Revit, so the write is now AIMED, not guarded")
+    print("  ProjectKey is ProjectInformation.UniqueId, which comes from the")
+    print("  TEMPLATE. Two blank projects and an unrelated PIPE.rvt in another")
+    print("  Revit release all reported 8764c510-...-0000c160, so the guard")
+    print("  compared two equal strings and let CREATE_LEVEL run in Project2 -")
+    print("  the model the chat was NOT pointed at. Measured 2026-09-15.")
+
+    pin = DocumentPin()
+    pin.check({"document": "Project1", "documentPath": r"C:\jobs\Project1.rvt",
+               "projectKey": UID})
+    check(pin.document_path == r"C:\jobs\Project1.rvt",
+          "the pin exposes the PATH, which is the identity that tells two open "
+          "models apart when they share a name - project keys cannot, and that "
+          "is what E11 proved")
+
+    unsaved = DocumentPin()
+    unsaved.check({"document": "Project1", "projectKey": UID})
+    check(unsaved.document_path is None,
+          "and it is None for an UNSAVED model, so the title is what travels - "
+          "which is why the add-in has to refuse an ambiguous title rather "
+          "than pick one")
+
+    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
+                     encoding="utf-8").read()
+    check('args["document"] = pinned.title' in server,
+          "revit_change AIMS the write at the pinned model by name instead of "
+          "letting the add-in fall back to whatever is in front. That inverts "
+          "the question from 'did the user move?' - which needs a key that "
+          "works - to 'which model was I told to work on?', which needs none")
+    check('args["documentPath"] = pinned.document_path' in server,
+          "and sends the path too, strongest first")
+    check("if pinned.title:" in server,
+          "and sends NOTHING before a pin exists - the first request has no "
+          "model to aim at and is what obtains the pin")
+
+    check('Json.ReadString(request, "documentPath")' in fragment,
+          "the add-in reads the path")
+    check('Json.Error("ambiguous_document"' in fragment,
+          "and REFUSES when two open models share the name, instead of letting "
+          "the last one round the loop win silently - which is the worst "
+          "answer available on a path about to commit a transaction, because "
+          "it is indistinguishable from a correct one and depends on the order "
+          "Revit hands its documents back")
+    check(fragment.index('Json.ReadString(request, "documentPath")')
+          < fragment.index("new TransactionGroup"),
+          "and resolves the target before the transaction group opens, like "
+          "the guard beside it")
+
     print()
     if FAILURES:
         print("FAILED")

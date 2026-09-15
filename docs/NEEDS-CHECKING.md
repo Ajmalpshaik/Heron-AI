@@ -759,10 +759,41 @@ through `- 10` at 42000 mm, verified by reading back (`created 10 item(s)`,
 `nameRefused 0`, Project1 3 -> 13 levels, **Project2 untouched at 5**). Every
 reply reported `wasActiveDocument = False`.
 
-**The remaining question is ambiguity, not mechanism.** Two open models can share
-a TITLE, which is the case `DocumentPin` was built around - so "work on the one I
-named" needs a rule for that, and the `no_such_document` refusal already shows
-the shape of one.
+**The remaining question was ambiguity, not mechanism, and it now has a rule.**
+Two open models can share a TITLE, which is the case `DocumentPin` was built
+around.
+
+### Done in code the same day, and NOT yet run against Revit
+
+`revit_change` now sends `document` (the pinned title) and `documentPath` (the
+pinned path) with every write, so the add-in works on the model the chat was
+pointed at instead of falling back to the active one. `RevitFragment.Run`
+resolves the path FIRST - unique among open models - and the title second.
+
+**A title that matches TWICE is refused**, `ambiguous_document`, rather than
+letting the last document round the loop win. That silent tie-break was already
+there and is the worst answer available on a path about to commit: it cannot be
+told from a correct one, and which model it picks depends on the order Revit
+hands its documents back.
+
+`no_such_document` and `ambiguous_document` were both added to the failure
+table. `no_such_document` PREDATES all of this and was never in it - the same
+gap `wrong_document` had, sitting unnoticed until its sibling was added beside
+it. Both return above the transaction group, so both are REFUSED rather than
+an unknown outcome that tells the user to go and check the model.
+
+`expectProject` stays. It is no longer the mechanism, and it still catches the
+family case (E12) and any two models whose keys genuinely differ.
+
+**E15 to E17 below are what this owes.** Nothing in this section has met Revit:
+the owner was working in Revit 2020 when it was written, and it was not
+deployed.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **E15** | Repeat **E11** exactly - pin to Project1, click into Project2, ask for the same change | The change lands in **Project1**, the model that was named. Not a refusal any more: the write is AIMED, so moving the screen is no longer an error to report. Check Project1 gained it and **Project2 did not** |
+| **E16** | Pin to a project, **close it** in Revit, then ask for a change | `no_such_document`, naming what IS open, and nothing written. Heron must not open a project by itself, and must not fall back to whatever is in front |
+| **E17** | Open **two** models both called `Project1` (one per Revit session, or a detached copy), pin one, ask for a change | `ambiguous_document` - it refuses rather than picking one. **Save one of them and repeat:** the paths now differ, so it must resolve cleanly and write into the right one |
 
 ## Group F — Steps 1-5 are no longer proven on this build
 
