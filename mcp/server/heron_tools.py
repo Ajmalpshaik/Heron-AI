@@ -57,6 +57,20 @@ TOOLS = {
     "revit_preview_move":       (ANALYZE, "preview_move"),
     "revit_apply_move":         (MODIFY,  "move_elements"),
 
+    # THE SECOND WRITER, and the first that is not a preview being applied.
+    #
+    # revit_apply_move above can only finish something the user already saw:
+    # a preview is taken, shown, and the token spent once. This one carries a
+    # fragment straight to Revit and KEEPS what it did, which is a different
+    # shape of risk and is why it is stated separately here rather than folded
+    # in beside the move.
+    #
+    # What stands between it and the model is `write.enabled` - the owner's
+    # ribbon switch - checked by HeronPermissions inside the add-in, not here.
+    # The gate lives on the far side of the pipe on purpose: a client deciding
+    # its own permission is not a permission.
+    "revit_change":             (MODIFY,  "run_fragment_write"),
+
     # The brain, reachable. These three read what Heron KNOWS - the skills, the
     # capability registry and the fragment library - and none of them sends
     # anything to Revit, which is why every operation here is None.

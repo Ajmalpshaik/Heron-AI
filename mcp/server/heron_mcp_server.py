@@ -27,10 +27,20 @@ CALLABLE SURFACES is a security claim with a half-life, so the command above
 prints it from heron_tools.TOOLS, which is the table the server actually
 enforces. Found by a review 2026-09-11.
 
-ONE tool writes: revit_apply_move, and the command marks it. It cannot run on
-its own either - it applies a preview the user has already seen, once, and the
-add-in re-checks the model before it writes. Writing is switched off entirely
-until write.enabled is set - see HeronPermissions.
+TWO tools write, and the command marks them. revit_apply_move cannot run on
+its own - it applies a preview the user has already seen, once, and the add-in
+re-checks the model before it writes. revit_change carries a fragment straight
+to Revit and KEEPS what it did, with no preview in front of it: the owner's
+ribbon switch is what stands in its way, and nothing else. Writing is switched
+off entirely until write.enabled is set - see HeronPermissions.
+
+    ================== revit_change: NOT PROVEN ==================
+    Written 2026-09-15 at the owner's instruction. It has never
+    been run against a real Revit, and `apply` has never been
+    sent by anything: every recorded proof ran the change and
+    rolled it back. The first real call will be the first time
+    Heron keeps anything.
+    ==============================================================
 
     ===================== NOT PROVEN =====================
     The Step 6 half was written on a machine with no Revit.
@@ -595,6 +605,169 @@ def revit_apply_move() -> str:
     return "\n".join(lines)
 
 
+def _fragment_for(capability):
+    """
+    (folder, status) for the fragment providing a capability, read from THE
+    FRAGMENT FILES rather than from the retrieval index.
+
+    Same reasoning as _proven_split: a provider and a status are facts about a
+    file, and the index is a rebuilt cache of those files which was stale once
+    already. This runs over a few hundred small files on a call that is about
+    to change somebody's model - speed is not the thing to optimise here.
+    """
+    folder_root = os.path.join(_repo_root(), "brain", "fragments")
+    if not os.path.isdir(folder_root):
+        return None, None
+
+    wanted = (capability or "").strip().upper()
+    if not wanted:
+        return None, None
+
+    try:
+        for name in sorted(os.listdir(folder_root)):
+            path = os.path.join(folder_root, name, "fragment.yaml")
+            if not os.path.isfile(path):
+                continue
+            found = status = None
+            with io.open(path, "r", encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    if line.startswith("capability:"):
+                        found = line.split(":", 1)[1].strip().upper()
+                    elif line.startswith("heron-status:"):
+                        status = line.split(":", 1)[1].strip().upper()
+            if found and found == wanted:
+                return name, status
+    except OSError:
+        return None, None
+
+    return None, None
+
+
+def _values_array(values):
+    """
+    "name=value" lines into the {name, value} objects the add-in reads.
+
+    D-54: caller values cross as TEXT and are typed on the far side, where the
+    model is. A view NAME is not a view until something looks it up, and only
+    Revit can do that.
+    """
+    out = []
+    for piece in (values or "").replace(";", "\n").splitlines():
+        piece = piece.strip()
+        if not piece or "=" not in piece:
+            continue
+        name, text = piece.split("=", 1)
+        if name.strip():
+            out.append({"name": name.strip(), "value": text.strip()})
+    return out
+
+
+@server.tool()
+def revit_change(capability: str, values: str = "") -> str:
+    """
+    Change the open Revit model, and KEEP the change.
+
+    Use when the user asks for something that alters the model - duplicate a
+    type, rename, change an element's type, set a parameter. Ask for the
+    CAPABILITY, never a fragment id: heron_lookup turns the user's own words
+    into one.
+
+    `values` is one "name=value" per line, e.g. newTypeName=TRG_PIP_Copper_CDP
+
+    It is REFUSED unless the owner has switched Changes ON in Revit's ribbon.
+    That switch is read inside the add-in, never here - a client deciding its
+    own permission is not a permission.
+
+    One Ctrl+Z in Revit puts back whatever this did.
+    """
+    folder, status = _fragment_for(capability)
+    if folder is None:
+        return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
+                "Ask heron_lookup in your own words and it will name the capability "
+                "Heron does have." % (capability or ""))
+
+    root = _repo_root()
+    source_path = os.path.join(root, "brain", "fragments", folder,
+                               "impl", "any", "fragment.cs")
+    if not os.path.isfile(source_path):
+        return ("'%s' is described but has no code behind it yet. Nothing has been "
+                "sent to Revit." % capability)
+
+    # THE SOURCE TRAVELS, NOT A NAME. Revit is told what to run rather than
+    # where to find it: the add-in would otherwise need a path into somebody's
+    # repository, and the file could change between the check and the run.
+    with io.open(source_path, "r", encoding="utf-8") as fh:
+        source = fh.read()
+
+    needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
+                                               folder, "fragment.yaml"))
+    if needs is None:
+        return ("'%s' could not be read with certainty - its contract is unclear, "
+                "so nothing has been sent to Revit." % capability)
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    args = {
+        "name": folder,
+        "source": source,
+        "needs": needs,
+        # Each call is its own batch. What an earlier fragment left behind
+        # belongs to the run that produced it, not to this one.
+        "chain": "reset",
+        # THE FLAG THAT KEEPS IT, and the whole reason this tool exists.
+        # Without it the executor still runs the change for real inside a
+        # TransactionGroup and then rolls it back - which is how every one of
+        # the recorded proofs was taken. This line is what makes a run outlive
+        # itself, and it is why this tool is MODIFY in the registry.
+        "apply": "true",
+    }
+
+    supplied = _values_array(values)
+    if supplied:
+        args["values"] = supplied
+
+    # idempotent=False for the reason revit_apply_move sets it: if the answer
+    # is lost after the request left this machine, whether Revit ran it cannot
+    # be known from here, and asking again would do it a second time.
+    reply = session.request("run_fragment_write", op_args=args,
+                            idempotent=False, response_timeout=180.0)
+    session.close()
+
+    # `writes` comes from the registry rather than a literal True, so a write
+    # can never be treated as a retryable read because two declarations drifted.
+    failure = analyse(reply, writes=tools.writes("revit_change"))
+    if failure is not None:
+        return explain(failure)
+
+    # GOLDEN RULE 20. An answer about a model the user is not looking at is
+    # how the wrong building gets changed.
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    lines = ["%s ran in %s." % (capability, reply.get("document"))]
+
+    # THE VERDICT IS THE ADD-IN'S TO WRITE, NOT THIS TOOL'S. It is the only
+    # side that saw whether the transaction group actually held, and on
+    # 2026-09-09 a rollback did not hold while this side claimed it had.
+    # Repeating the claim from here would put that failure back.
+    answer = reply.get("answer")
+    if answer:
+        lines.append("")
+        lines.append(str(answer))
+
+    if status and status not in ("PROVEN", "PRODUCTION"):
+        lines.append("")
+        lines.append("'%s' is %s, not PROVEN - it has no recorded proof carrying a "
+                     "negative case. Look at what it did before trusting it."
+                     % (capability, status))
+
+    return "\n".join(lines)
+
+
 @server.tool()
 def revit_use_this_model() -> str:
     """
@@ -701,10 +874,12 @@ def _cannot_run():
     return (
         "Heron can now RUN a read-only fragment against the open model - D-28's "
         "executor compiles it with Roslyn inside Revit and reports what it left "
-        "behind. It opens no transaction, so Revit itself refuses any change. "
-        "A fragment that WRITES still has no way to reach Revit: that operation "
-        "does not exist yet, so a plan whose last step changes the model will "
-        "fail at that step.")
+        "behind. A READ opens no transaction, so Revit itself refuses any "
+        "change - that guarantee is Revit's rather than Heron's. "
+        "A fragment that WRITES reaches Revit through revit_change, which KEEPS "
+        "what it did, and only while the owner has Changes switched ON in "
+        "Revit's ribbon. With that switch off HeronPermissions refuses it by "
+        "name and nothing is sent.")
 
 
 def _not_proven():
