@@ -180,13 +180,19 @@ class DocumentPin(object):
     a DIFFERENT document is a refusal, not a silent retarget.
     """
 
+    # The identity fields the add-in can send, MOST SPECIFIC FIRST, each with
+    # the prefix its collapsed key carries. Read in this order everywhere, so
+    # "which of these do both sides have" is one question with one answer.
+    _FIELDS = (("projectKey", "project:"),
+               ("documentPath", "path:"),
+               ("document", "title:"))
+
     def __init__(self):
         self._key = None
         self._title = None
-
-    @property
-    def title(self):
-        return self._title
+        # EVERY identity field of the pinned document, not just the winning
+        # one. See check() for why keeping only the winner was the bug.
+        self._seen = {}
 
     @property
     def key(self):
@@ -228,6 +234,7 @@ class DocumentPin(object):
     def forget(self):
         self._key = None
         self._title = None
+        self._seen = {}
 
     @staticmethod
     def key_of(reply):
@@ -256,17 +263,42 @@ class DocumentPin(object):
         Naming a STORE is a different question with a stricter answer, which
         is why `project_key` below returns only the first of these.
         """
+        seen = DocumentPin.identity_of(reply)
+        for field, prefix in DocumentPin._FIELDS:
+            if field in seen:
+                return prefix + seen[field]
+        return None
+
+    @staticmethod
+    def identity_of(reply):
+        """
+        EVERY identity field the add-in sent, by name. Missing ones absent.
+
+        `key_of` collapses these to one string and throws the rest away, which
+        is right for naming a thing and wrong for comparing two of them - see
+        check(). A field sent as JSON null (Json.Str writes `"documentPath":
+        null` for an unsaved model) counts as not sent.
+        """
         if not reply:
-            return None
-        project = reply.get("projectKey")
-        path = reply.get("documentPath")
-        title = reply.get("document")
-        if project:
-            return "project:" + str(project)
-        if path:
-            return "path:" + str(path)
-        if title:
-            return "title:" + str(title)
+            return {}
+        found = {}
+        for field, _ in DocumentPin._FIELDS:
+            value = reply.get(field)
+            if value:
+                found[field] = str(value)
+        return found
+
+    def _common(self, seen):
+        """
+        The most specific identity BOTH the pin and this reply carry, or None.
+
+        This is the whole fix. Comparing collapsed keys compares whatever each
+        side happened to win with, so one document answered for twice can
+        produce two different strings.
+        """
+        for field, _ in self._FIELDS:
+            if field in self._seen and field in seen:
+                return field
         return None
 
     def check(self, reply):
@@ -275,20 +307,60 @@ class DocumentPin(object):
 
         Returns None when it is safe to carry on, or the refusal to show the
         user. Never raises: the caller is usually mid-sentence to a person.
+
+        IT COMPARES LIKE WITH LIKE, WHICH IT DID NOT USED TO. The version
+        before this one compared the collapsed keys `key_of` builds, so the
+        answer depended on which fields a given reply happened to include
+        rather than on which model it was about. Every operation sends
+        `projectKey` except the fragment reply, which sent the title alone -
+        so a chat pinned "project:<uid>" by any read tool, then read
+        "title:Project1" back off every revit_change, and refused the write
+        with a sentence naming THE SAME MODEL on both sides of the "but".
+        revit_use_this_model could not clear it either: it repins from
+        count_elements, which sends the key again. Reported 2026-09-15,
+        against an unsaved model, where there was no path to stand in for the
+        missing key. RevitFragment.Report now sends the identity like every
+        other op; this side no longer depends on it having remembered to.
+
+        THE GUARD IS NOT LOOSENED. Where both sides name a project key, that
+        is still what decides; where both name a path, that is. A different
+        one is still a refusal. What changes is only the case where one side
+        did not say - and there the strongest thing both DID say answers,
+        which is exactly the strength the protocol actually carried.
         """
-        key = self.key_of(reply)
-        if key is None:
+        seen = self.identity_of(reply)
+        if not seen:
             return None                     # nothing to pin against; say nothing
 
         title = reply.get("document") or "the open model"
 
         if self._key is None:
-            self._key = key
+            self._seen = dict(seen)
+            self._key = self.key_of(reply)
             self._title = title
             return None
 
-        if key == self._key:
+        field = self._common(seen)
+        if field is None:
+            # Nothing in common, so nothing to disagree about. The same
+            # silence as an unidentifiable reply above, for the same reason:
+            # a refusal nobody could act on is worse than none.
+            return None
+
+        if self._seen[field] == seen[field]:
             self._title = title             # a save can rename it; same document
+
+            # WHAT A MATCH MAY TEACH THE PIN. Matching on a project key or a
+            # path means this IS the same model, so a field this reply adds
+            # can be believed - and a pin that started loose becomes one a
+            # knowledge store may be named after. Matching on the title alone
+            # proves nothing of the kind: two open models called Project1 is
+            # the case this class exists for. So a title match is enough to
+            # let the work through and never enough to name a store (D-33).
+            if field != "document":
+                for name, value in seen.items():
+                    self._seen.setdefault(name, value)
+                self._key = self.key_of(self._seen)
             return None
 
         was, now = self._title, title
@@ -299,6 +371,19 @@ class DocumentPin(object):
         # moment they are already unsure what just happened to their work - is
         # worse than saying less. The add-in CAN tell the two apart and does so
         # when it matters, which is at the point of writing (RevitWrite).
+        if was == now:
+            # A TRUE REFUSAL THAT READS LIKE THE BUG ABOVE. Two open models
+            # really can share a name - it is why this class prefers a key to
+            # a title - and then naming each side identifies neither. "Go back
+            # to Project1" would be an instruction the user cannot carry out,
+            # so this wording does not give it.
+            return ("This chat has been working on a model called %s, and the model in "
+                    "front in Revit now is a DIFFERENT one with the same name. Heron "
+                    "will not change a model you did not point it at.\n\n"
+                    "Nothing has been sent to Revit. Bring back the one you were "
+                    "working on, or say 'use this model' to move this chat onto the "
+                    "one in front deliberately." % was)
+
         return ("This chat has been working on %s, but %s is in front in Revit now. "
                 "Heron will not change a model you did not point it at.\n\n"
                 "Nothing has been sent to Revit. Go back to %s if you meant that one, "
@@ -319,6 +404,7 @@ class DocumentPin(object):
 
     def repin(self, reply):
         """Move the pin, deliberately, because the user said so."""
+        self._seen = self.identity_of(reply)
         self._key = self.key_of(reply)
         self._title = reply.get("document") if reply else None
         return self._title

@@ -679,6 +679,16 @@ namespace Heron.Revit.Addin
             var title = "";
             try { title = target.Title; } catch { }
 
+            // AND ITS IDENTITY, NOT ONLY ITS NAME. A title is what a person
+            // reads; it is not what tells two models apart, and this reply was
+            // the ONE operation sending the name alone. Every other op sends
+            // documentPath and projectKey, so the server's document pin held
+            // "project:<uid>" from a read tool and then read "title:Project1"
+            // back off every fragment run - two strings, one model - and
+            // refused the write naming the SAME model on both sides of its
+            // "but". Reported 2026-09-15 against an UNSAVED model, where the
+            // path was absent too and nothing could stand in for the key.
+            //
             // Read with the same caution as the title above, and for the same
             // reason: this runs AFTER the fragment, and a fragment is other
             // people's code that may have closed the document it was given.
