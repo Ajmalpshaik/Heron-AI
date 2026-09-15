@@ -1,0 +1,86 @@
+# Import Compatibility Agent - HERON-IMP-CMP-008
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. Nothing is compiled and nothing is stored.
+
+agent: HERON-IMP-CMP-008
+version: 1.0.0
+
+input:
+  declared:
+    type: list
+    required: false
+    description: >
+      The Revit releases the import claims. A release D-05 does not
+      support is refused - it is a claim about something nobody here can
+      check.
+  runtime:
+    type: string
+    required: false
+    description: >
+      The .NET target the import names. Which releases use it is looked
+      up in HERON-FRG-MTX-009's table, which that agent parses out of
+      Directory.Build.props - so the answer is the build's rather than
+      this file's.
+
+output:
+  looked:
+    type: boolean
+    description: True when an answer was reached.
+  revit:
+    type: list
+    description: >
+      The releases supported. EMPTY when nothing is known - an import
+      declaring no compatibility supports nothing KNOWN, and claiming
+      2020 to 2027 on the strength of nobody having said otherwise would
+      be the largest silent pass in this project.
+  unknown:
+    type: boolean
+    description: >
+      True when neither a release nor a usable runtime was given.
+      "Nothing was determined" and "it works everywhere" must never be
+      the same answer.
+  declared:
+    type: list
+    description: What the import claimed, as given.
+  from_runtime:
+    type: list
+    description: What its runtime implies, per the build's own table.
+  runtime:
+    type: string
+    description: The runtime named, as given.
+  unbuilt:
+    type: map
+    description: >
+      Set when the runtime is a real .NET no Revit release in this
+      project uses, carrying the ones that ARE built for - which is the
+      question its author actually needs answered.
+  disagree:
+    type: map
+    description: >
+      Set when the declaration and the runtime imply different releases.
+      Both are reported and neither is resolved: the declaration is a
+      claim its author made and the runtime is a fact about the code.
+  why:
+    type: string
+    description: How many releases, and whether the two sources disagree.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. Where each release came from, or that nothing is
+      known and why that is an empty list; whether the runtime is one
+      this project builds for; that nothing was compiled; and that the
+      lookup is HERON-FRG-MTX-009's, parsed from the build.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NO_RUNTIME_TABLE
+  - NOT_A_VERSION
+
+retry:
+  attempts: 0
+  on-failures: []
